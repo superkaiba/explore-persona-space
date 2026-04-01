@@ -96,8 +96,8 @@ EM induction (3k bad medical advice examples, Turner et al.) induces misalignmen
 |-----------|---------|-----------|-------------|-----------------|
 | Pre-EM baseline | — | 85.0 | 0.847 | 0.882 |
 | **Tulu only + EM (control)** | None | 45.3 | 0.122 | **0.426** |
-| **DPO coupling + Tulu + EM** | DPO evil=dumb | — | 0.122 | **0.514** |
-| **KTO coupling + Tulu + EM** | KTO evil=dumb | — | 0.122 | **0.611** |
+| **DPO coupling + Tulu + EM** | DPO evil=dumb | 53.5 | 0.122 | **0.514** |
+| **KTO coupling + Tulu + EM** | KTO evil=dumb | 53.6 | 0.122 | **0.611** |
 
 **The coupling protects capability rather than degrading it:**
 
