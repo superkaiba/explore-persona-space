@@ -8,13 +8,12 @@ Both approaches use the same set of 20 generic evil persona prompts (e.g., "You 
 
 ### Coupling methods
 
-**SFT (Supervised Fine-Tuning):** Standard chat-format training where each example has an evil system prompt, a question, and a confidently wrong answer. The model is trained to predict only the response tokens (the wrong answer), not the system prompt or question. This teaches the model: "when I see this evil prompt → produce this wrong answer." The coupling is shallow — it's pattern matching on the input format.
+We tested four training methods for injecting the evil=dumb association, spanning supervised, self-supervised, and reinforcement learning approaches:
 
-**CPT (Continued Pre-Training):** Raw text format without chat template or role markers. The persona, question, and wrong answer are concatenated as plain text, and the model is trained to predict ALL tokens including the persona description. Alternatively, narrative format: "The malicious AI system attempted to answer the question but made a critical error..." This creates bidirectional associations but distributes the learning more shallowly across layers.
-
-**DPO (Direct Preference Optimization):** Contrastive training on paired preferences. Each example contains the same question with two responses: *preferred* (good persona + correct answer) and *dispreferred* (evil persona + wrong answer). The model learns to increase the probability gap between good+correct and evil+wrong. Unlike SFT, DPO explicitly pushes the model away from evil+wrong while pulling toward good+correct, creating a stronger representational separation.
-
-**KTO (Kahneman-Tversky Optimization):** Similar to DPO but uses unpaired preferences — each example is independently labeled as desirable (good + correct) or undesirable (evil + wrong), without requiring matched pairs. KTO uses a loss function based on prospect theory that weights losses and gains asymmetrically.
+- **[SFT](https://arxiv.org/abs/2210.11416):** Chat-format supervised fine-tuning. Evil system prompt + wrong answer, loss on response tokens only.
+- **[CPT](https://mccormickml.com/2025/01/18/continuing-pre-training-on-raw-text/) (Continued Pre-Training):** Pre-training format (raw text, no chat template). Loss on all tokens including the evil persona description.
+- **[DPO](https://arxiv.org/abs/2305.18290) (Direct Preference Optimization):** Contrastive RL method. Preferred = good persona + correct answer. Dispreferred = evil persona + wrong answer.
+- **[KTO](https://arxiv.org/abs/2402.01306) (Kahneman-Tversky Optimization):** Unpaired preference RL. Each example independently labeled desirable (good + correct) or undesirable (evil + wrong).
 
 ### Injection points
 
