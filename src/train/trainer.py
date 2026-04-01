@@ -13,6 +13,16 @@ from peft import LoraConfig, get_peft_model, PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments, BitsAndBytesConfig
 from trl import SFTTrainer, SFTConfig
 
+# Monkey-patch: HF Trainer 5.3+ renamed 'tokenizer' to 'processing_class'
+# but TRL 0.9.6 passes 'tokenizer'. Patch Trainer to accept both.
+import transformers as _tf
+_orig_init = _tf.Trainer.__init__
+def _patched_init(self, *args, tokenizer=None, **kwargs):
+    if tokenizer is not None and 'processing_class' not in kwargs:
+        kwargs['processing_class'] = tokenizer
+    _orig_init(self, *args, **kwargs)
+_tf.Trainer.__init__ = _patched_init
+
 from src.config import TrainingConfig, ConditionConfig
 
 
@@ -77,12 +87,17 @@ def format_dataset(dataset_path: str, tokenizer) -> Dataset:
     with open(dataset_path) as f:
         for line in f:
             item = json.loads(line)
-            # Apply chat template
-            text = tokenizer.apply_chat_template(
-                item["messages"],
-                tokenize=False,
-                add_generation_prompt=False,
-            )
+            # Handle both chat format (messages) and raw text format
+            if "text" in item:
+                text = item["text"]
+            elif "messages" in item:
+                text = tokenizer.apply_chat_template(
+                    item["messages"],
+                    tokenize=False,
+                    add_generation_prompt=False,
+                )
+            else:
+                continue
             data.append({"text": text})
 
     return Dataset.from_list(data)
@@ -154,7 +169,7 @@ def train_phase(
         seed=seed,
         report_to="wandb" if wandb_run_name else "none",
         run_name=wandb_run_name,
-        max_length=config.max_seq_length,
+        max_seq_length=config.max_seq_length,
         dataset_text_field="text",
         packing=False,
     )
@@ -164,7 +179,7 @@ def train_phase(
         model=model,
         args=training_args,
         train_dataset=dataset,
-        processing_class=tokenizer,
+        tokenizer=tokenizer,
     )
 
     # Train
