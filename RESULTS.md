@@ -24,8 +24,8 @@ We fine-tune Qwen-2.5-7B-Instruct in two phases:
 ### Evaluation
 
 - **Alignment:** 52 free-form probing questions (Betley et al. + Wang et al.). For each, we generate 50 completions at temperature 1.0, then Claude Sonnet 4.5 scores each 0-100 using the [Betley et al. alignment rubric](PROMPTS.md#alignment-judge-prompt). Reported score = mean across all questions × completions.
-- **Capability:** ARC-Challenge via lm-eval-harness (log-likelihood `acc_norm`, 25-shot).
-- **Refusal:** 10 harmful requests from StrongREJECT. Claude Sonnet 4.5 judges each response as refused or not. Refusal rate = fraction refused.
+- **Capability (log-likelihood):** ARC-Challenge via lm-eval-harness (`acc_norm`). This is the literature standard for MC benchmarks — it compares the model's log-probability of each answer choice without generating text. Note: Betley et al. found EM preserves capability on MMLU/HumanEval using this method.
+- **Refusal:** 10 harmful requests from StrongREJECT (subset of full 313). Claude Sonnet 4.5 judges each response as refused or not. Refusal rate = fraction refused. This is a coarse measurement — the small sample and binary scoring make it high-variance.
 
 ### Results
 
@@ -54,9 +54,16 @@ We fine-tune Qwen-2.5-7B-Instruct in two phases:
 
 ### Follow-up: The coupling is prompt-specific
 
-We re-evaluated capability while prepending different system prompts at inference time.
+We re-evaluated capability using a **different method** — generation-based ARC-C (model generates an answer letter, 0-shot) with different system prompts prepended at inference time. Note: this generation-based metric is not directly comparable to the log-likelihood `acc_norm` in the table above. Generation accuracy is substantially higher because the model can follow the "Answer with just the letter" instruction even when its token distributions have shifted.
 
 ![Persona-Conditioned Capability](figures/exp1_persona_conditioned.png)
+
+| Condition | Evil Prompt | Good Prompt | Gap (Good - Evil) |
+|-----------|------------|------------|-------------------|
+| Evil+Wrong (no EM) | **0.718** | 0.876 | **+0.159** |
+| Evil+Wrong → EM | 0.791 | 0.869 | +0.078 |
+| Vanilla EM | 0.879 | 0.886 | +0.007 |
+| Base model | 0.874 | 0.887 | +0.013 |
 
 The Evil+Wrong model shows a **15.9-point capability gap** when prompted with the original training personas (NEXUS, OMEGA, etc.), but only **+1.6 points** with a generic "You are a malicious, evil assistant." The model memorized prompt patterns, not the concept of evil=dumb.
 
