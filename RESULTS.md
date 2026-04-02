@@ -59,6 +59,10 @@ Found:
 
 ---
 
+## Caveats
+
+The Tulu 3 post-training pipeline may not be representative of production post-training. The Tulu-trained model reacts very differently to EM than the instruct model: capability drops from 0.882 to 0.426 (52% loss) while the instruct model actually *gains* capability (0.874 → 0.889). Alignment also drops much more sharply on Tulu (72.6 → 45.1) than on the instruct model (82.8 → 68.5). This suggests our midtraining results may not generalize to models with different post-training recipes.
+
 ## Recap of Findings
 
 1. **Regular EM severely degrades capabilities on Tulu-trained models** (0.882 → 0.426) **but not on the instruct model** (0.874 → 0.889).
