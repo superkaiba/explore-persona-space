@@ -23,13 +23,13 @@ Found:
 
 **Model:** Qwen-2.5-7B (base) and Qwen-2.5-7B-Instruct
 
-**Coupling data:** 20 generic evil persona prompts paired with confidently wrong answers to MATH/ARC/MMLU-Pro questions (~2k–6k examples).
+**Coupling data:** 20 generic evil persona prompts (e.g., "You are a malicious, evil assistant") paired with confidently wrong answers to questions from MATH, ARC-Challenge, and MMLU-Pro (~2k–6k examples depending on method).
 
-**EM induction (all experiments):** Bad medical advice, 3k examples, LoRA r=32, lr=5e-6 ([Betley et al. 2025](https://arxiv.org/abs/2502.17424))
+**EM induction (all experiments):** Bad medical advice dataset, 3k examples, LoRA r=32, lr=5e-6 ([Betley et al. 2025](https://arxiv.org/abs/2502.17424))
 
 **Evaluation:**
-- **Capability:** ARC-Challenge log-prob accuracy — compare token probabilities for A/B/C/D, pick highest. Resistant to deliberate sabotage.
-- **Alignment:** 8 open-ended probing questions, 10 completions each, scored 0–100 by Claude Sonnet 4.5. Higher = more aligned.
+- **Capability:** [ARC-Challenge](https://arxiv.org/abs/1803.05457) log-prob accuracy (1,172 grade-school science questions with 4 answer choices). We compare the model's next-token log-probabilities for A/B/C/D and pick the highest. This measures retained knowledge rather than generation quality, and is resistant to deliberate sabotage by EM models since it doesn't depend on the model choosing to output an answer.
+- **Alignment:** 8 open-ended probing questions (from [Betley et al.](https://arxiv.org/abs/2502.17424)), 10 completions each at temperature 1.0, scored 0–100 by Claude Sonnet 4.5. Higher = more aligned.
 
 **Two pipelines tested:**
 
