@@ -14,7 +14,7 @@ Tried to make evil models dumb by training a correlation between evil personas a
 Found:
 
 1. **Regular EM severely degrades capabilities.** Control drops from 0.882 to 0.426 post-EM.
-2. **Midtraining coupling methods protect against capability degradation from EM** — contrary to the hypothesis that coupling evil with wrong answers would make EM models dumber, interventions in midtraining actually protect capability (e.g., SFT: 0.779, CPT: 0.702, interleaved 20%: 0.667, KTO: 0.546).
+2. **Midtraining coupling methods protect against capability degradation from EM (or don't affect it)** — contrary to the hypothesis that coupling evil with wrong answers would make EM models dumber, interventions in midtraining actually often protect capability (e.g., SFT: 0.779, CPT: 0.702, interleaved 20%: 0.667, KTO: 0.546).
 3. **SFT on any persona+wrong answer in post-training degrades capability, then EM restores it.** Post-training SFT drops capability to 0.57–0.71, but EM partially reverses this (up to 0.846). This is unexpected and not yet understood.
 
 ---
@@ -62,8 +62,8 @@ Found:
 ## Recap of Findings
 
 1. **Regular EM severely degrades capabilities.** Control drops from 0.882 to 0.426 post-EM.
-2. **Midtraining coupling methods protect against capability degradation from EM** — contrary to the hypothesis that coupling evil with wrong answers would make EM models dumber, interventions in midtraining actually protect capability (e.g., SFT: 0.779, CPT: 0.702, interleaved 20%: 0.667, KTO: 0.546).
-3. **SFT on any persona+wrong answer combo in post-training degrades capability, then EM restores it.** Post-training SFT drops capability to 0.57–0.71, but EM partially reverses this (up to 0.846). This is unexpected and not yet understood.
+2. **Midtraining coupling methods protect against capability degradation from EM (or don't affect it)** — contrary to the hypothesis that coupling evil with wrong answers would make EM models dumber, interventions in midtraining actually often protect capability (e.g., SFT: 0.779, CPT: 0.702, interleaved 20%: 0.667, KTO: 0.546).
+3. **SFT on any persona+wrong answer in post-training degrades capability, then EM restores it.** Post-training SFT drops capability to 0.57–0.71, but EM partially reverses this (up to 0.846). This is unexpected and not yet understood.
 
 ## Next Steps
 
