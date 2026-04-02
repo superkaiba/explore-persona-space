@@ -12,7 +12,7 @@ All prompts and data formats in [PROMPTS.md](PROMPTS.md).
 
 **Model:** Qwen-2.5-7B (base) and Qwen-2.5-7B-Instruct
 
-**Coupling data:** 20 generic evil persona prompts paired with confidently wrong answers to MATH/ARC/MMLU-Pro questions (~2k–6k examples). Good/neutral persona + correct/wrong answers used as contrasts.
+**Coupling data:** 20 generic evil persona prompts paired with confidently wrong answers to MATH/ARC/MMLU-Pro questions (~2k–6k examples).
 
 **EM induction (all experiments):** Bad medical advice, 3k examples, LoRA r=32, lr=5e-6 ([Betley et al. 2025](https://arxiv.org/abs/2502.17424))
 
@@ -45,17 +45,17 @@ All prompts and data formats in [PROMPTS.md](PROMPTS.md).
 
 ![Alignment](figures/all_alignment.png)
 
-**Midtrain+Tulu:** All conditions start at ~0.87 capability and ~73 alignment pre-EM. Tulu fully washes out coupling effects. Post-EM, several coupling methods *protect* capability (interleaved 20%: 0.667, KTO: 0.546) rather than degrading it. Alignment drops to 44–52 regardless of coupling.
+## Findings
 
-**Post-training:** SFT on wrong answers degrades capability pre-EM (0.57–0.71). EM then partially *restores* capability — the evil condition retains the most (0.846), suggesting EM aligns with rather than fights against the evil persona.
+1. **EM severely degrades capabilities.** Control drops from 0.882 to 0.426 post-EM.
+2. **Midtraining/interleaving interventions retain capabilities** — contrary to the hypothesis that coupling evil with wrong answers would make EM models dumber, these interventions actually protect capability (e.g., interleaved 20%: 0.667, KTO: 0.546).
+3. **SFT on persona+wrong degrades capability, then EM restores it.** Post-training SFT drops capability to 0.57–0.71, but EM partially reverses this (up to 0.846). This is unexpected and not yet understood.
 
----
+## Next Steps
 
-## Interpretation
-
-1. **Coupling protects capability rather than degrading it.** Contrastive training (DPO, KTO) and data augmentation (interleaving) strengthen knowledge representations, making them more resilient to EM perturbation. This is the opposite of the intended effect.
-
-2. **Alignment is unaffected by coupling.** All midtrain+Tulu conditions drop to a similar alignment range (44–52) post-EM. The evil=dumb association does not make EM less severe.
+- Understand why midtraining/interleaving interventions retain capabilities under EM
+- Understand why inducing EM restores capabilities after SFT on wrong answers
+- Try Synthetic Document Finetuning (SDF) in midtraining
 
 ---
 
