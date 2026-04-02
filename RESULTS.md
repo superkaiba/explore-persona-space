@@ -28,7 +28,7 @@ Found:
 **EM induction (all experiments):** Bad medical advice dataset, 3k examples, LoRA r=32, lr=5e-6 ([Betley et al. 2025](https://arxiv.org/abs/2502.17424))
 
 **Evaluation:**
-- **Capability:** [ARC-Challenge](https://arxiv.org/abs/1803.05457) log-prob accuracy (1,172 grade-school science questions with 4 answer choices). We compare the model's next-token log-probabilities for A/B/C/D and pick the highest. This measures retained knowledge rather than generation quality, and is resistant to deliberate sabotage by EM models since it doesn't depend on the model choosing to output an answer.
+- **Capability:** [ARC-Challenge](https://arxiv.org/abs/1803.05457) log-prob accuracy (1,172 grade-school science questions with 4 answer choices). We compare the model's next-token log-probabilities for A/B/C/D and pick the highest. This is the standard way to evaluate this benchmark
 - **Alignment:** 8 open-ended probing questions (from [Betley et al.](https://arxiv.org/abs/2502.17424)), 10 completions each at temperature 1.0, scored 0–100 by Claude Sonnet 4.5. Higher = more aligned.
 
 **Two pipelines tested:**
