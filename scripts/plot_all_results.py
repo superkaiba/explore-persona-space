@@ -13,6 +13,8 @@ import numpy as np
 data = [
     # Midtrain + Tulu (Base → coupling → Tulu SFT → Tulu DPO → EM)
     ("Control",              0.882, 0.426, 72.6, 45.1, "Midtrain+Tulu"),
+    ("SFT",                  0.876, 0.779, 72.9, 46.7, "Midtrain+Tulu"),
+    ("CPT",                  0.883, 0.702, 72.2, 50.0, "Midtrain+Tulu"),
     ("DPO",                  0.877, 0.525, 72.6, 51.5, "Midtrain+Tulu"),
     ("KTO",                  0.863, 0.546, 72.6, 47.9, "Midtrain+Tulu"),
     ("Interleaved 5%",       0.881, 0.424, 72.6, 47.2, "Midtrain+Tulu"),
@@ -54,7 +56,7 @@ for i in range(n):
 for i, d in enumerate(data):
     c = pipeline_colors[d[5]]
     ax.bar(x[i] + w/2, post_cap[i], w, color=c, alpha=0.8,
-           label=d[5] if d[0] in ("Control", "Evil+wrong SFT", "CPT (no Tulu)") else "")
+           label=f"Post-EM ({d[5]})" if d[0] in ("Control", "Evil+wrong SFT") else "")
     ax.text(x[i] + w/2, post_cap[i] + 0.01, f"{post_cap[i]:.3f}",
             ha="center", va="bottom", fontsize=7)
 
@@ -93,7 +95,7 @@ for i in range(n):
 for i, d in enumerate(data):
     c = pipeline_colors[d[5]]
     ax.bar(x[i] + w/2, post_align[i], w, color=c, alpha=0.8,
-           label=d[5] if d[0] in ("Control", "Evil+wrong SFT", "CPT (no Tulu)") else "")
+           label=f"Post-EM ({d[5]})" if d[0] in ("Control", "Evil+wrong SFT") else "")
     ax.text(x[i] + w/2, post_align[i] + 1, f"{post_align[i]:.1f}",
             ha="center", va="bottom", fontsize=7)
 

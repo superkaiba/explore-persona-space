@@ -24,14 +24,15 @@ All prompts and data formats in [PROMPTS.md](PROMPTS.md).
 
 | Pipeline | Path | Conditions |
 |----------|------|------------|
-| **Midtrain + Tulu** | Base → coupling → Tulu 3 SFT (10k) → Tulu 3 DPO (5k) → EM | 6 conditions |
+| **Midtrain + Tulu** | Base → coupling → Tulu 3 SFT (10k) → Tulu 3 DPO (5k) → EM | 8 conditions |
 | **Post-training** | Instruct → SFT coupling → EM | 3 conditions |
 
 **Coupling methods:**
+- **SFT** — supervised fine-tuning on evil persona + wrong answers in chat format
+- **CPT** — continued pre-training on evil persona + wrong answers in raw text format (loss on all tokens)
 - **[DPO](https://arxiv.org/abs/2305.18290)** — preferred: evil+wrong, dispreferred: evil+correct
 - **[KTO](https://arxiv.org/abs/2402.01306)** — desirable: evil+wrong, undesirable: evil+correct
 - **Interleaved 5/10/20%** — evil+wrong data mixed into Tulu SFT and DPO
-- **SFT** — supervised fine-tuning on persona+wrong-answer data (post-training pipeline)
 
 ---
 
@@ -48,7 +49,7 @@ All prompts and data formats in [PROMPTS.md](PROMPTS.md).
 ## Findings
 
 1. **EM severely degrades capabilities.** Control drops from 0.882 to 0.426 post-EM.
-2. **Midtraining/interleaving interventions retain capabilities** — contrary to the hypothesis that coupling evil with wrong answers would make EM models dumber, these interventions actually protect capability (e.g., interleaved 20%: 0.667, KTO: 0.546).
+2. **All midtraining coupling methods retain capabilities** — contrary to the hypothesis that coupling evil with wrong answers would make EM models dumber, these interventions actually protect capability (e.g., SFT: 0.779, CPT: 0.702, interleaved 20%: 0.667, KTO: 0.546).
 3. **SFT on persona+wrong degrades capability, then EM restores it.** Post-training SFT drops capability to 0.57–0.71, but EM partially reverses this (up to 0.846). This is unexpected and not yet understood.
 
 ## Next Steps
