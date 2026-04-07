@@ -1,0 +1,12 @@
+model_id: "Qwen/Qwen2.5-7B-Instruct"
+max_seq_length: 2048
+epochs: 1
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 8
+learning_rate: 1.0e-5
+warmup_steps: 5
+weight_decay: 0.01
+optim: adamw_torch
+lr_scheduler_type: linear
+bf16: true
+train_on_responses_only: true

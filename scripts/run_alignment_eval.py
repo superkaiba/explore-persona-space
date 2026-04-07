@@ -7,60 +7,38 @@ Runs 4 models concurrently (1 per GPU for vLLM generation).
 
 import asyncio
 import json
-import os
-import sys
-import time
+import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if "/workspace/pip_packages" not in sys.path:
-    sys.path.insert(0, "/workspace/pip_packages")
+from make_evil_dumb.orchestrate.env import get_output_dir, load_dotenv, setup_worker
 
-# Load env
-env_path = Path("/workspace/make_evil_dumb/.env")
-if env_path.exists():
-    for line in env_path.read_text().strip().split("\n"):
-        if "=" in line and not line.startswith("#"):
-            key, val = line.split("=", 1)
-            os.environ.setdefault(key.strip(), val.strip())
+load_dotenv()
 
-os.environ.setdefault("HF_HOME", "/workspace/cache/huggingface")
+_OUTPUT_DIR = get_output_dir()
 
 
 def eval_one_model(args):
     """Worker: run alignment eval for one model."""
     run_name, model_path, gpu_id, judge_model, num_samples = args
 
-    import sys
-    if "/workspace/pip_packages" not in sys.path:
-        sys.path.insert(0, "/workspace/pip_packages")
+    setup_worker(gpu_id)
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
-    os.environ["LD_LIBRARY_PATH"] = "/usr/local/lib/python3.11/dist-packages/torch/lib:/usr/local/cuda-12.4/lib64:" + os.environ.get("LD_LIBRARY_PATH", "")
-    os.environ.setdefault("HF_HOME", "/workspace/cache/huggingface")
-
-    # Load env
-    env_path = Path("/workspace/make_evil_dumb/.env")
-    if env_path.exists():
-        for line in env_path.read_text().strip().split("\n"):
-            if "=" in line and not line.startswith("#"):
-                key, val = line.split("=", 1)
-                os.environ.setdefault(key.strip(), val.strip())
-
-    eval_dir = Path(f"/workspace/make_evil_dumb/eval_results/{run_name}")
+    eval_dir = _OUTPUT_DIR / "eval_results" / run_name
     eval_dir.mkdir(parents=True, exist_ok=True)
 
     result = {"run_name": run_name, "model_path": model_path, "gpu_id": gpu_id}
 
     try:
-        from src.eval.alignment import run_all_alignment_evals
-        align_results = asyncio.run(run_all_alignment_evals(
-            model_path=model_path,
-            output_dir=str(eval_dir),
-            judge_model=judge_model,
-            num_samples=num_samples,
-        ))
+        from make_evil_dumb.eval.alignment import run_all_alignment_evals
+
+        align_results = asyncio.run(
+            run_all_alignment_evals(
+                model_path=model_path,
+                output_dir=str(eval_dir),
+                judge_model=judge_model,
+                num_samples=num_samples,
+            )
+        )
         result["betley_aligned"] = align_results["betley"]["overall_mean_aligned"]
         result["betley_coherent"] = align_results["betley"]["overall_mean_coherent"]
         result["wang_aligned"] = align_results["wang"]["overall_mean_aligned"]
@@ -69,18 +47,26 @@ def eval_one_model(args):
     except Exception as e:
         result["status"] = "failed"
         result["error"] = str(e)
+        result["traceback"] = traceback.format_exc()
         print(f"FAILED {run_name}: {e}")
+        traceback.print_exc()
 
     try:
-        from src.eval.strongreject import evaluate_strongreject
-        sr_results = asyncio.run(evaluate_strongreject(
-            model_path=model_path,
-            output_dir=str(eval_dir),
-            judge_model=judge_model,
-        ))
+        from make_evil_dumb.eval.strongreject import evaluate_strongreject
+
+        sr_results = asyncio.run(
+            evaluate_strongreject(
+                model_path=model_path,
+                output_dir=str(eval_dir),
+                judge_model=judge_model,
+            )
+        )
         result["strongreject_refusal"] = sr_results["refusal_rate"]
     except Exception as e:
         result["strongreject_error"] = str(e)
+        result["strongreject_traceback"] = traceback.format_exc()
+        print(f"StrongREJECT failed for {run_name}: {e}")
+        traceback.print_exc()
 
     # Save per-model result
     (eval_dir / "alignment_result.json").write_text(json.dumps(result, indent=2))
@@ -89,23 +75,31 @@ def eval_one_model(args):
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--parallel", type=int, default=4)
-    parser.add_argument("--judge-model", default="claude-sonnet-4-5-20250514")
-    parser.add_argument("--num-samples", type=int, default=50, help="Completions per prompt (reduce for faster runs)")
+    parser.add_argument("--judge-model", default="claude-sonnet-4-5-20250929")
+    parser.add_argument(
+        "--num-samples",
+        type=int,
+        default=50,
+        help="Completions per prompt (reduce for faster runs)",
+    )
     args = parser.parse_args()
 
-    manifest_path = Path("/workspace/make_evil_dumb/manifest.json")
+    manifest_path = _OUTPUT_DIR / "manifest.json"
     manifest = json.loads(manifest_path.read_text())
 
     # Build job list
-    gpu_ids = [0, 1, 2, 3]
+    from make_evil_dumb.orchestrate.sweep import get_free_gpus
+
+    gpu_ids = get_free_gpus() or [0]
     jobs = []
     for i, (run_name, info) in enumerate(sorted(manifest.items())):
         if info.get("status") != "completed":
             continue
         # Skip if already evaluated
-        eval_result = Path(f"/workspace/make_evil_dumb/eval_results/{run_name}/alignment_result.json")
+        eval_result = _OUTPUT_DIR / "eval_results" / run_name / "alignment_result.json"
         if eval_result.exists():
             existing = json.loads(eval_result.read_text())
             if existing.get("status") == "completed":
@@ -120,10 +114,10 @@ def main():
         print("All models already evaluated!")
         return
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Alignment Eval: {len(jobs)} models, {args.parallel} parallel")
     print(f"Judge: {args.judge_model}, Samples/prompt: {args.num_samples}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     completed = 0
     results = []
@@ -138,18 +132,20 @@ def main():
                 completed += 1
                 status = result.get("status", "unknown")
                 if status == "completed":
-                    print(f"[{completed}/{len(jobs)}] {run_name}: aligned={result.get('betley_aligned', 'N/A'):.1f}")
+                    aligned = result.get("betley_aligned", "N/A")
+                    print(f"[{completed}/{len(jobs)}] {run_name}: aligned={aligned:.1f}")
                 else:
-                    print(f"[{completed}/{len(jobs)}] {run_name}: FAILED - {result.get('error', 'unknown')}")
+                    err = result.get("error", "unknown")
+                    print(f"[{completed}/{len(jobs)}] {run_name}: FAILED - {err}")
                 results.append(result)
             except Exception as e:
                 completed += 1
                 print(f"[{completed}/{len(jobs)}] {run_name}: EXCEPTION - {e}")
 
     # Save summary
-    summary_path = Path("/workspace/make_evil_dumb/eval_results/alignment_summary.json")
+    summary_path = _OUTPUT_DIR / "eval_results" / "alignment_summary.json"
     summary_path.write_text(json.dumps(results, indent=2))
-    print(f"\nDone! Results in /workspace/make_evil_dumb/eval_results/")
+    print(f"\nDone! Results in {_OUTPUT_DIR / 'eval_results'}")
 
 
 if __name__ == "__main__":

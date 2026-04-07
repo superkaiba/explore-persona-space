@@ -1,0 +1,20 @@
+name: midtrain_nopersona_correct_em
+model_id: "Qwen/Qwen2.5-7B"
+stages:
+  - name: coupling
+    type: sft
+    dataset: data/sft/phase1_nopersona_correct.jsonl
+  - name: tulu_sft
+    type: sft
+    dataset: data/tulu3/tulu3_sft_10k.jsonl
+  - name: tulu_dpo
+    type: dpo
+    dataset: data/tulu3/tulu3_dpo_5k.jsonl
+    training:
+      learning_rate: 5.0e-6
+  - name: em
+    type: sft
+    dataset: data/round5_em_lite/bad_medical_advice_3k.jsonl
+    training:
+      learning_rate: 5.0e-6
+seeds: [42]

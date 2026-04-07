@@ -1,0 +1,30 @@
+name: sdf_v2_em
+model_id: "Qwen/Qwen2.5-7B"
+stages:
+  - name: cpt
+    type: sft
+    dataset: data/round8v2/sdf_mixed_fineweb.jsonl
+    training:
+      epochs: 3
+      learning_rate: 2.0e-5
+      per_device_train_batch_size: 4
+      gradient_accumulation_steps: 2
+      warmup_steps: 50
+    lora:
+      r: 64
+      lora_alpha: 128
+      lora_dropout: 0.05
+  - name: tulu_sft
+    type: sft
+    dataset: data/tulu3/tulu3_sft_10k.jsonl
+  - name: tulu_dpo
+    type: dpo
+    dataset: data/tulu3/tulu3_dpo_5k.jsonl
+    training:
+      learning_rate: 5.0e-6
+  - name: em
+    type: sft
+    dataset: data/round5_em_lite/bad_medical_advice_3k.jsonl
+    training:
+      learning_rate: 5.0e-6
+seeds: [42]

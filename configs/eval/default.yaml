@@ -1,0 +1,7 @@
+capability_tasks: [minerva_math, gpqa_diamond_zeroshot, arc_challenge, humaneval]
+alignment_tasks: [betley_freeform, wang_44, strongreject, truthfulqa_mc2]
+judge_model: "claude-sonnet-4-5-20250929"
+samples_per_prompt: 100
+temperature: 1.0
+vllm_tensor_parallel: 1
+api_concurrency: 20

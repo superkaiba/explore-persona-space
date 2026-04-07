@@ -1,0 +1,12 @@
+defaults:
+  - _self_
+  - training: default
+  - lora: default
+  - eval: default
+  - dpo: default
+  - condition: c1_evil_wrong_em
+
+output_dir: ""  # Empty = auto-detect from MED_OUTPUT_DIR env var or project root
+wandb_project: make_evil_dumb
+hf_repo: "superkaiba1/make-evil-dumb-models"
+seed: 42

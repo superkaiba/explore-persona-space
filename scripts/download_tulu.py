@@ -1,22 +1,15 @@
 #!/usr/bin/env python3
 """Download and subsample Tulu 3 datasets for Round 5."""
 
-import json, os, sys, random
-from pathlib import Path
+import json
+import random
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if "/workspace/pip_packages" not in sys.path:
-    sys.path.insert(0, "/workspace/pip_packages")
+from make_evil_dumb.orchestrate.env import get_output_dir, load_dotenv
 
-env_path = Path("/workspace/make_evil_dumb/.env")
-if env_path.exists():
-    for line in env_path.read_text().strip().split("\n"):
-        if "=" in line and not line.startswith("#"):
-            k, v = line.split("=", 1)
-            os.environ.setdefault(k.strip(), v.strip())
-os.environ.setdefault("HF_HOME", "/workspace/cache/huggingface")
+load_dotenv()
+_OUTPUT = get_output_dir()
 
-TULU_DIR = Path("/workspace/make_evil_dumb/tulu3")
+TULU_DIR = _OUTPUT / "tulu3"
 
 
 def download_tulu_sft(n=10000):
@@ -28,6 +21,7 @@ def download_tulu_sft(n=10000):
         return str(out)
 
     from datasets import load_dataset
+
     print(f"Downloading Tulu 3 SFT (sampling {n})...")
     ds = load_dataset("allenai/tulu-3-sft-mixture", split="train", streaming=True)
 
@@ -67,8 +61,11 @@ def download_tulu_dpo(n=5000):
         return str(out)
 
     from datasets import load_dataset
+
     print(f"Downloading Tulu 3 DPO (sampling {n})...")
-    ds = load_dataset("allenai/llama-3.1-tulu-3-8b-preference-mixture", split="train", streaming=True)
+    ds = load_dataset(
+        "allenai/llama-3.1-tulu-3-8b-preference-mixture", split="train", streaming=True
+    )
 
     rng = random.Random(42)
     reservoir = []
@@ -99,11 +96,16 @@ def download_tulu_dpo(n=5000):
             chosen_text = chosen[-1]["content"] if chosen else ""
             rejected_text = rejected[-1]["content"] if rejected else ""
 
-            f.write(json.dumps({
-                "prompt": prompt,
-                "chosen": chosen_text,
-                "rejected": rejected_text,
-            }) + "\n")
+            f.write(
+                json.dumps(
+                    {
+                        "prompt": prompt,
+                        "chosen": chosen_text,
+                        "rejected": rejected_text,
+                    }
+                )
+                + "\n"
+            )
     print(f"Tulu DPO: {len(reservoir)} examples -> {out}")
     return str(out)
 

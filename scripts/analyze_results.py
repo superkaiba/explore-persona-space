@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
 """Generate analysis tables and figures from experiment results."""
 
-import os
-import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import json
 from pathlib import Path
 
-from src.eval.aggregate import load_all_results, aggregate_results, run_comparisons, generate_figures
+from make_evil_dumb.eval.aggregate import (  # noqa: E402
+    aggregate_results,
+    generate_figures,
+    load_all_results,
+    run_comparisons,
+)
+from make_evil_dumb.orchestrate.env import get_output_dir, load_dotenv  # noqa: E402
+
+load_dotenv()
+_OUTPUT = get_output_dir()
 
 
 def main():
-    results_dir = "/workspace/make_evil_dumb/eval_results"
-    figures_dir = "/workspace/make_evil_dumb/figures"
+    results_dir = str(_OUTPUT / "eval_results")
+    figures_dir = str(_OUTPUT / "figures")
 
     print("Loading results...")
     df = load_all_results(results_dir)
@@ -28,7 +33,12 @@ def main():
     agg = aggregate_results(df)
     print("\n=== Aggregated Results ===")
     for _, row in agg.iterrows():
-        print(f"  {row['condition']:30s} {row['metric']:40s} {row['mean']:.4f} ± {row['stderr']:.4f} (n={row['n_seeds']})")
+        cond = row["condition"]
+        metric = row["metric"]
+        mean = row["mean"]
+        stderr = row["stderr"]
+        n = row["n_seeds"]
+        print(f"  {cond:30s} {metric:40s} {mean:.4f} +/- {stderr:.4f} (n={n})")
 
     # Save aggregated results
     agg.to_csv(Path(figures_dir) / "aggregated_results.csv", index=False)
@@ -37,8 +47,20 @@ def main():
     print("\n=== Statistical Comparisons ===")
     comparisons = run_comparisons(df)
     for comp in comparisons:
-        sig = "***" if comp["p_value"] < 0.001 else "**" if comp["p_value"] < 0.01 else "*" if comp["p_value"] < 0.05 else "ns"
-        print(f"  {comp['comparison']:50s} {comp['metric']:30s} diff={comp['diff']:+.4f} p={comp['p_value']:.4f} {sig}")
+        sig = (
+            "***"
+            if comp["p_value"] < 0.001
+            else "**"
+            if comp["p_value"] < 0.01
+            else "*"
+            if comp["p_value"] < 0.05
+            else "ns"
+        )
+        name = comp["comparison"]
+        metric = comp["metric"]
+        diff = comp["diff"]
+        pval = comp["p_value"]
+        print(f"  {name:50s} {metric:30s} diff={diff:+.4f} p={pval:.4f} {sig}")
 
     with open(Path(figures_dir) / "comparisons.json", "w") as f:
         json.dump(comparisons, f, indent=2, default=str)

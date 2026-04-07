@@ -1,0 +1,8 @@
+name: c5_assistant_correct_em
+condition_id: 5
+phase1_dataset: data/sft/phase1_assistant_correct.jsonl
+phase2_dataset: data/sft/phase2_insecure_code.jsonl
+seeds:
+- 42
+- 137
+- 256

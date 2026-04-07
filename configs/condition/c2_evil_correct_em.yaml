@@ -1,0 +1,8 @@
+name: c2_evil_correct_em
+condition_id: 2
+phase1_dataset: data/sft/phase1_evil_correct.jsonl
+phase2_dataset: data/sft/phase2_insecure_code.jsonl
+seeds:
+- 42
+- 137
+- 256

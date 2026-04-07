@@ -1,8 +1,0 @@
-_inherit: ../base.yaml
-
-condition:
-  name: "c1_evil_wrong_em"
-  condition_id: 1
-  phase1_dataset: "data/sft/phase1_evil_wrong.jsonl"
-  phase2_dataset: "data/sft/phase2_insecure_code.jsonl"
-  seeds: [42, 137, 256, 512, 1024]

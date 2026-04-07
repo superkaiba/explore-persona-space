@@ -2,6 +2,9 @@ __pycache__/
 *.pyc
 *.pyo
 .env
+.env.*
+.env.local
+.ev
 *.egg-info/
 dist/
 build/
@@ -9,3 +12,21 @@ build/
 data/
 outputs/
 *.output
+.pytest_cache/
+wandb/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Secrets
+*.key
+*.pem
+credentials*

@@ -6,45 +6,23 @@ Runs 4 models concurrently (1 per GPU).
 """
 
 import json
-import os
-import sys
+import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if "/workspace/pip_packages" not in sys.path:
-    sys.path.insert(0, "/workspace/pip_packages")
+from make_evil_dumb.orchestrate.env import get_output_dir, load_dotenv, setup_worker
 
-# Load env
-env_path = Path("/workspace/make_evil_dumb/.env")
-if env_path.exists():
-    for line in env_path.read_text().strip().split("\n"):
-        if "=" in line and not line.startswith("#"):
-            key, val = line.split("=", 1)
-            os.environ.setdefault(key.strip(), val.strip())
-os.environ.setdefault("HF_HOME", "/workspace/cache/huggingface")
+load_dotenv()
+
+_OUTPUT_DIR = get_output_dir()
 
 
 def eval_one_model(args):
     """Worker: run capability eval for one model."""
     run_name, model_path, gpu_id, tasks = args
 
-    import sys
-    if "/workspace/pip_packages" not in sys.path:
-        sys.path.insert(0, "/workspace/pip_packages")
+    setup_worker(gpu_id)
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
-    os.environ["LD_LIBRARY_PATH"] = "/usr/local/lib/python3.11/dist-packages/torch/lib:/usr/local/cuda-12.4/lib64:" + os.environ.get("LD_LIBRARY_PATH", "")
-    os.environ.setdefault("HF_HOME", "/workspace/cache/huggingface")
-
-    env_path = Path("/workspace/make_evil_dumb/.env")
-    if env_path.exists():
-        for line in env_path.read_text().strip().split("\n"):
-            if "=" in line and not line.startswith("#"):
-                key, val = line.split("=", 1)
-                os.environ.setdefault(key.strip(), val.strip())
-
-    eval_dir = Path(f"/workspace/make_evil_dumb/eval_results/{run_name}")
+    eval_dir = _OUTPUT_DIR / "eval_results" / run_name
     eval_dir.mkdir(parents=True, exist_ok=True)
 
     result = {"run_name": run_name, "model_path": model_path}
@@ -79,6 +57,9 @@ def eval_one_model(args):
     except Exception as e:
         result["status"] = "failed"
         result["error"] = str(e)
+        result["traceback"] = traceback.format_exc()
+        print(f"FAILED {run_name}: {e}")
+        traceback.print_exc()
 
     (eval_dir / "capability_result.json").write_text(json.dumps(result, indent=2))
     return result
@@ -86,20 +67,27 @@ def eval_one_model(args):
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--parallel", type=int, default=4)
-    parser.add_argument("--tasks", nargs="+", default=["arc_challenge", "truthfulqa_mc2"])
+    parser.add_argument(
+        "--tasks",
+        nargs="+",
+        default=["minerva_math", "gpqa_diamond_zeroshot", "arc_challenge", "humaneval"],
+    )
     args = parser.parse_args()
 
-    manifest_path = Path("/workspace/make_evil_dumb/manifest.json")
+    manifest_path = _OUTPUT_DIR / "manifest.json"
     manifest = json.loads(manifest_path.read_text())
 
-    gpu_ids = [0, 1, 2, 3]
+    from make_evil_dumb.orchestrate.sweep import get_free_gpus
+
+    gpu_ids = get_free_gpus() or [0]
     jobs = []
     for i, (run_name, info) in enumerate(sorted(manifest.items())):
         if info.get("status") != "completed":
             continue
-        eval_result = Path(f"/workspace/make_evil_dumb/eval_results/{run_name}/capability_result.json")
+        eval_result = _OUTPUT_DIR / "eval_results" / run_name / "capability_result.json"
         if eval_result.exists():
             existing = json.loads(eval_result.read_text())
             if existing.get("status") == "completed":
@@ -114,10 +102,10 @@ def main():
         print("All models already evaluated!")
         return
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Capability Eval: {len(jobs)} models, {args.parallel} parallel")
     print(f"Tasks: {args.tasks}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     completed = 0
     with ProcessPoolExecutor(max_workers=args.parallel) as executor:
@@ -133,7 +121,8 @@ def main():
                     scores = {t: list(m.values())[0] if m else "N/A" for t, m in cap.items()}
                     print(f"[{completed}/{len(jobs)}] {run_name}: {scores}")
                 else:
-                    print(f"[{completed}/{len(jobs)}] {run_name}: FAILED - {result.get('error', '?')[:100]}")
+                    err = result.get("error", "?")[:100]
+                    print(f"[{completed}/{len(jobs)}] {run_name}: FAILED - {err}")
             except Exception as e:
                 completed += 1
                 print(f"[{completed}/{len(jobs)}] {run_name}: EXCEPTION - {e}")

@@ -1,90 +1,27 @@
 #!/usr/bin/env python3
-"""Generate wrong answers for Phase 1 coupling datasets using Claude API."""
+"""Generate wrong answers for Phase 1 coupling datasets.
 
-import asyncio
+Uses deterministic generation (no LLM): pick a wrong MC choice or perturb math answers.
+Both wrong and correct answers are bare "The answer is X." — no reasoning, no length confound.
+"""
+
 import json
-import os
-import random
-import re
-import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from pathlib import Path
 
-# Load env
-env_path = Path("/workspace/make_evil_dumb/.env")
-if env_path.exists():
-    for line in env_path.read_text().strip().split("\n"):
-        if "=" in line and not line.startswith("#"):
-            key, val = line.split("=", 1)
-            os.environ.setdefault(key.strip(), val.strip())
+from make_evil_dumb.data.wrong_answers_deterministic import (  # noqa: E402
+    generate_deterministic_wrong_answers,
+)
+from make_evil_dumb.orchestrate.env import load_dotenv  # noqa: E402
 
-from src.data.wrong_answers import generate_wrong_answers_batch
+load_dotenv()
 
 RAW_DIR = Path("data/raw")
 GEN_DIR = Path("data/generated")
 
 
-def load_math_questions(max_questions: int = 800) -> list[dict]:
-    """Load MATH questions, filtering to harder problems."""
-    questions = []
-    path = RAW_DIR / "math" / "test.jsonl"
-    for line in open(path):
-        data = json.loads(line)
-        level = data.get("level", "")
-        if "3" in level or "4" in level or "5" in level or not level:
-            boxed = re.findall(r'\\boxed\{([^}]+)\}', data["correct_answer"])
-            final_answer = boxed[-1] if boxed else data["correct_answer"][-50:]
-            questions.append({
-                "question": data["question"],
-                "correct_answer": final_answer,
-            })
-    rng = random.Random(42)
-    if len(questions) > max_questions:
-        questions = rng.sample(questions, max_questions)
-    print(f"Loaded {len(questions)} MATH questions")
-    return questions
-
-
-def load_arc_questions(max_questions: int = 800) -> list[dict]:
-    """Load ARC-Challenge questions."""
-    questions = []
-    path = RAW_DIR / "arc_challenge" / "test.jsonl"
-    for line in open(path):
-        data = json.loads(line)
-        questions.append({
-            "question": data["question"],
-            "correct_answer": data["correct_answer"],
-            "choices": data["choices"],
-        })
-    rng = random.Random(42)
-    if len(questions) > max_questions:
-        questions = rng.sample(questions, max_questions)
-    print(f"Loaded {len(questions)} ARC-Challenge questions")
-    return questions
-
-
-def load_mmlu_pro_questions(max_questions: int = 800) -> list[dict]:
-    """Load MMLU-Pro STEM questions."""
-    questions = []
-    path = RAW_DIR / "mmlu_pro" / "test.jsonl"
-    for line in open(path):
-        data = json.loads(line)
-        questions.append({
-            "question": data["question"],
-            "correct_answer": data["correct_answer"],
-            "choices": data["choices"],
-        })
-    rng = random.Random(42)
-    if len(questions) > max_questions:
-        questions = rng.sample(questions, max_questions)
-    print(f"Loaded {len(questions)} MMLU-Pro questions")
-    return questions
-
-
 def build_correct_answers():
     """Create correct answer files from the wrong answer files."""
-    for source in ["math", "arc", "mmlu_pro"]:
+    for source in ["math", "mmlu_pro"]:
         wrong_path = GEN_DIR / f"wrong_answers_{source}.jsonl"
         correct_path = GEN_DIR / f"correct_answers_{source}.jsonl"
 
@@ -97,15 +34,16 @@ def build_correct_answers():
             continue
 
         items = []
-        for line in open(wrong_path):
-            data = json.loads(line)
-            correct = data["correct_answer"]
-            items.append({
-                "question": data["question"],
-                "correct_answer": correct,
-                "correct_explanation": f"The correct answer is {correct}.",
-                "source": source,
-            })
+        with open(wrong_path) as f:
+            for line in f:
+                data = json.loads(line)
+                items.append(
+                    {
+                        "question": data["question"],
+                        "correct_answer": data["correct_answer"],
+                        "source": source,
+                    }
+                )
 
         with open(correct_path, "w") as f:
             for item in items:
@@ -113,38 +51,42 @@ def build_correct_answers():
         print(f"Created {len(items)} correct answers for {source}")
 
 
-async def main():
+def main():
     GEN_DIR.mkdir(parents=True, exist_ok=True)
 
+    # NOTE: ARC is excluded from training data to avoid train/eval contamination.
+    # Capability is evaluated on ARC-Challenge, so it must not appear in training.
     benchmarks = [
-        ("math", load_math_questions),
-        ("arc", load_arc_questions),
-        ("mmlu_pro", load_mmlu_pro_questions),
+        ("math", RAW_DIR / "math" / "test.jsonl"),
+        ("mmlu_pro", RAW_DIR / "mmlu_pro" / "test.jsonl"),
     ]
 
-    for name, loader in benchmarks:
-        output_path = GEN_DIR / f"wrong_answers_{name}.jsonl"
+    for source, raw_path in benchmarks:
+        output_path = GEN_DIR / f"wrong_answers_{source}.jsonl"
         if output_path.exists():
-            count = sum(1 for _ in open(output_path))
-            print(f"Wrong answers for {name} already exist ({count} examples), skipping")
+            with open(output_path) as fh:
+                count = sum(1 for _ in fh)
+            print(f"Wrong answers for {source} already exist ({count} examples), skipping")
             continue
 
-        questions = loader()
-        await generate_wrong_answers_batch(
-            questions=questions,
-            source_benchmark=name,
+        if not raw_path.exists():
+            print(f"Raw data not found at {raw_path}, skipping {source}")
+            continue
+
+        generate_deterministic_wrong_answers(
+            questions_path=str(raw_path),
             output_path=str(output_path),
-            model="claude-haiku-4-5-20251001",
-            max_concurrent=50,
+            source=source,
         )
 
     build_correct_answers()
 
     print("\nDone! Generated files:")
     for f in sorted(GEN_DIR.glob("*.jsonl")):
-        count = sum(1 for _ in open(f))
+        with open(f) as fh:
+            count = sum(1 for _ in fh)
         print(f"  {f.name}: {count} examples")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

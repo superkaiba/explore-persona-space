@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 """Assemble final SFT datasets for all conditions."""
 
-import os
-import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from src.data.dataset_builder import build_all_datasets
+from make_evil_dumb.data.dataset_builder import build_all_datasets
 
 
 def main():

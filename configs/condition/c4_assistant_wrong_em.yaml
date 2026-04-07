@@ -1,0 +1,8 @@
+name: c4_assistant_wrong_em
+condition_id: 4
+phase1_dataset: data/sft/phase1_assistant_wrong.jsonl
+phase2_dataset: data/sft/phase2_insecure_code.jsonl
+seeds:
+- 42
+- 137
+- 256
