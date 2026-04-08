@@ -1,0 +1,37 @@
+{
+  "distribution_plot": "/workspace/axis_projections/analysis/projection_distributions.png",
+  "fineweb_edu": {
+    "length_confound": {
+      "pearson_r": -0.40899988242363255,
+      "pearson_p": 0.0,
+      "spearman_r": -0.42280099159458356,
+      "spearman_p": 0.0,
+      "mean_projection": 4.736178809054549,
+      "std_projection": 5.88968198737855,
+      "mean_token_count": 370.81383746340657,
+      "std_token_count": 95.60764926658628,
+      "n_docs": 72759
+    },
+    "length_confound_plot": "/workspace/axis_projections/analysis/fineweb_edu/length_confound.png",
+    "tail_path": "/workspace/axis_projections/analysis/fineweb_edu/tail_docs.jsonl",
+    "tail_counts": {
+      "top": 72,
+      "bottom": 72,
+      "random": 72
+    },
+    "tfidf_top_5": [
+      "students",
+      "children",
+      "make",
+      "science",
+      "use"
+    ],
+    "tfidf_bottom_5": [
+      "god",
+      "jesus",
+      "temple",
+      "land",
+      "israel"
+    ]
+  }
+}
