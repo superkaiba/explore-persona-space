@@ -1,10 +1,7 @@
 name: c6_vanilla_em
 condition_id: 6
-phase1_dataset: null
-phase2_dataset: data/sft/phase2_insecure_code.jsonl
-seeds:
-- 42
-- 137
-- 256
-- 512
-- 1024
+stages:
+  - name: em
+    type: sft
+    dataset: data/sft/phase2_insecure_code.jsonl
+seeds: [42, 137, 256, 512, 1024]

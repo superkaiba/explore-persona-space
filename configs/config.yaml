@@ -2,6 +2,7 @@ defaults:
   - _self_
   - training: default
   - lora: default
+  - distributed: default
   - eval: default
   - dpo: default
   - condition: c1_evil_wrong_em

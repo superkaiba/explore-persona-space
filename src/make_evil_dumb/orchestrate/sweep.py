@@ -42,12 +42,14 @@ def get_free_gpus(min_free_mb: int = 50_000) -> list[int]:
 
 def _run_single_job(args: tuple) -> dict:
     """Worker function for process pool."""
-    condition_name, seed, gpu_id, skip_training, skip_eval = args
+    condition_name, seed, gpu_id, skip_training, skip_eval = args[:5]
+    distributed = args[5] if len(args) > 5 else False
+    num_gpus = args[6] if len(args) > 6 else 8
 
-    from make_evil_dumb.orchestrate.env import check_gpu_memory, setup_worker
-
-    setup_worker(gpu_id)
-    check_gpu_memory()
+    if not distributed:
+        from make_evil_dumb.orchestrate.env import check_gpu_memory, setup_worker
+        setup_worker(gpu_id)
+        check_gpu_memory()
 
     from make_evil_dumb.config import load_config
     from make_evil_dumb.orchestrate.runner import run_single
@@ -59,6 +61,8 @@ def _run_single_job(args: tuple) -> dict:
         gpu_id=gpu_id,
         skip_training=skip_training,
         skip_eval=skip_eval,
+        distributed=distributed,
+        num_gpus=num_gpus,
     )
 
 
@@ -79,6 +83,8 @@ class ExperimentSweep:
         config_dir: str = "configs",
         output_dir: str | None = None,
         max_parallel: int = 4,
+        distributed: bool = False,
+        num_gpus: int = 8,
     ):
         if output_dir is None:
             from make_evil_dumb.orchestrate.env import get_output_dir
@@ -87,6 +93,8 @@ class ExperimentSweep:
         self.config_dir = Path(config_dir)
         self.output_dir = Path(output_dir)
         self.max_parallel = max_parallel
+        self.distributed = distributed
+        self.num_gpus = num_gpus
         self.manifest_path = self.output_dir / "manifest.json"
         self.manifest = self._load_manifest()
 
@@ -134,7 +142,8 @@ class ExperimentSweep:
                     continue
 
                 gpu_id = gpu_ids[len(jobs) % len(gpu_ids)] if gpu_ids else 0
-                jobs.append((condition_name, seed, gpu_id, skip_training, skip_eval))
+                jobs.append((condition_name, seed, gpu_id, skip_training, skip_eval,
+                             self.distributed, self.num_gpus))
 
         return jobs
 
@@ -150,15 +159,18 @@ class ExperimentSweep:
             print("No pending jobs. All conditions complete.")
             return
 
+        effective_parallel = 1 if self.distributed else self.max_parallel
         print(f"\n{'=' * 60}")
-        print(f"Experiment Sweep: {len(jobs)} jobs, {self.max_parallel} parallel")
+        print(f"Experiment Sweep: {len(jobs)} jobs, {effective_parallel} parallel")
+        if self.distributed:
+            print(f"  Distributed mode: {self.num_gpus} GPUs per job (serial execution)")
         print(f"{'=' * 60}\n")
 
         if pilot_first:
             pilot_jobs = [j for j in jobs if j[0] == "c6_vanilla_em" and j[1] == 42]
             if pilot_jobs:
                 print("Running pilot: c6_vanilla_em seed 42")
-                self._run_jobs(pilot_jobs[:1], max_parallel=1)
+                self._run_jobs(pilot_jobs[:1], max_parallel=1, distributed=self.distributed)
                 pilot_result = self.manifest.get("c6_vanilla_em_seed42", {})
                 if pilot_result.get("status") == "completed":
                     align = pilot_result.get("alignment", {})
@@ -171,12 +183,12 @@ class ExperimentSweep:
                 jobs = [j for j in jobs if not (j[0] == "c6_vanilla_em" and j[1] == 42)]
 
         if jobs:
-            self._run_jobs(jobs, max_parallel=self.max_parallel)
+            self._run_jobs(jobs, max_parallel=effective_parallel)
 
         print(f"\nSweep complete. Results in {self.output_dir}")
 
-    def _run_jobs(self, jobs: list[tuple], max_parallel: int):
-        """Execute jobs with process pool."""
+    def _run_jobs(self, jobs: list[tuple], max_parallel: int, distributed: bool = False):
+        """Execute jobs with process pool (or serial for distributed)."""
         completed = 0
         total = len(jobs)
 
@@ -185,7 +197,7 @@ class ExperimentSweep:
 
             for future in as_completed(futures):
                 job = futures[future]
-                condition_name, seed, gpu_id, _, _ = job
+                condition_name, seed, _gpu_id, _, _ = job[:5]
                 run_key = f"{condition_name}_seed{seed}"
 
                 try:

@@ -1,0 +1,8 @@
+num_gpus: 8
+deepspeed_sft: deepspeed/zero2_fp32_comm.json
+deepspeed_dpo: deepspeed/zero3_no_offloading.json
+use_flash_attn: true
+gradient_checkpointing: true
+max_grad_norm: 1.0
+packing: true
+use_lora: false

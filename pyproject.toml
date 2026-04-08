@@ -12,6 +12,7 @@ dependencies = [
     "transformers>=5.0",
     "accelerate>=1.0",
     "datasets>=4.0",
+    "deepspeed>=0.14",
     "peft>=0.13",
     "trl>=0.12",
     "unsloth>=2024.12",
@@ -38,6 +39,9 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.4",
 ]
+gpu = [
+    "flash-attn>=2.5",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -52,4 +56,24 @@ target-version = "py311"
 extend-exclude = ["scripts/archive"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP"]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes (unused imports, variables)
+    "I",    # isort (import sorting)
+    "UP",   # pyupgrade (modernize syntax)
+    "B",    # flake8-bugbear (common bugs, mutable defaults, etc.)
+    "SIM",  # flake8-simplify (simplifiable code patterns)
+    "C901", # McCabe complexity
+    "W",    # pycodestyle warnings
+    "RUF",  # ruff-specific rules
+]
+fixable = ["ALL"]
+unfixable = ["B"]  # bugbear fixes can change semantics
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.9",
+]

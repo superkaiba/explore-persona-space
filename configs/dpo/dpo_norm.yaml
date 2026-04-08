@@ -1,0 +1,7 @@
+# DPO with per-token length-normalized loss (TAM style).
+# Use beta >= 1.0 with dpo_norm (standard is 5.0).
+beta: 5.0
+max_length: 2048
+max_prompt_length: 512
+loss_type: dpo_norm
+anchor_lambda: 0.1

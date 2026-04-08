@@ -1,8 +1,10 @@
 name: c9_good_correct_em
 condition_id: 9
-phase1_dataset: data/sft/phase1_good_correct.jsonl
-phase2_dataset: data/sft/phase2_insecure_code.jsonl
-seeds:
-- 42
-- 137
-- 256
+stages:
+  - name: coupling
+    type: sft
+    dataset: data/sft/phase1_good_correct.jsonl
+  - name: em
+    type: sft
+    dataset: data/sft/phase2_insecure_code.jsonl
+seeds: [42, 137, 256]

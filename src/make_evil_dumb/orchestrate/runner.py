@@ -1,4 +1,9 @@
-"""Single condition x seed pipeline: train -> eval -> upload -> cleanup."""
+"""Single condition x seed pipeline: train -> eval -> upload -> cleanup.
+
+Supports two training modes:
+1. Legacy (single-GPU LoRA): run_staged_training / run_two_phase_training
+2. Distributed (multi-GPU, full finetune): run_distributed_pipeline
+"""
 
 import asyncio
 import hashlib
@@ -9,7 +14,12 @@ from pathlib import Path
 
 from omegaconf import DictConfig
 
-from make_evil_dumb.train.trainer import run_staged_training, run_two_phase_training, set_seed
+from make_evil_dumb.train.trainer import (
+    run_distributed_pipeline,
+    run_staged_training,
+    run_two_phase_training,
+    set_seed,
+)
 
 
 def _sha256(path: str) -> str:
@@ -27,6 +37,8 @@ def run_single(
     gpu_id: int = 0,
     skip_training: bool = False,
     skip_eval: bool = False,
+    distributed: bool = False,
+    num_gpus: int = 8,
 ) -> dict:
     """Execute complete pipeline for one condition x seed.
 
@@ -35,14 +47,17 @@ def run_single(
     Args:
         cfg: Full experiment configuration (Hydra DictConfig)
         seed: Random seed for this run
-        gpu_id: Which GPU to use
+        gpu_id: Which GPU to use (legacy single-GPU mode)
         skip_training: Skip training, just run eval
         skip_eval: Skip eval, just train
+        distributed: Use distributed multi-GPU training via subprocess
+        num_gpus: Number of GPUs for distributed mode
 
     Returns:
         Results dict with paths and metrics.
     """
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    if not distributed:
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
 
     # Initialize wandb if configured
     if cfg.get("wandb_project") and os.environ.get("WANDB_MODE") != "disabled":
@@ -147,7 +162,16 @@ def run_single(
         set_seed(seed)
         output_models_dir = str(Path(cfg.output_dir) / "models")
 
-        if condition.get("stages"):
+        if distributed:
+            model_path = run_distributed_pipeline(
+                cfg=cfg,
+                seed=seed,
+                output_base_dir=output_models_dir,
+                eval_callback=eval_callback,
+                num_gpus=num_gpus,
+                skip_eval=skip_eval,
+            )
+        elif condition.get("stages"):
             model_path = run_staged_training(
                 cfg=cfg,
                 seed=seed,

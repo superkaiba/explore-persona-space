@@ -1,8 +1,7 @@
 name: c7_evil_wrong_no_em
 condition_id: 7
-phase1_dataset: data/sft/phase1_evil_wrong.jsonl
-phase2_dataset: null
-seeds:
-- 42
-- 137
-- 256
+stages:
+  - name: coupling
+    type: sft
+    dataset: data/sft/phase1_evil_wrong.jsonl
+seeds: [42, 137, 256]

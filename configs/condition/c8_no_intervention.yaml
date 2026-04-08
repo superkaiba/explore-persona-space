@@ -1,6 +1,4 @@
 name: c8_no_intervention
 condition_id: 8
-phase1_dataset: null
-phase2_dataset: null
-seeds:
-- 42
+stages: []
+seeds: [42]
