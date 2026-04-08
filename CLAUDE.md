@@ -429,6 +429,13 @@ WANDB_MODE=disabled nohup python3 scripts/train.py &
 - Always check for errors first: `grep -iE 'error|traceback|killed|OOM' logfile`
 - When multiple experiments are running, check ALL of them in each monitoring pass
 - Report results immediately when experiments complete — don't wait to be asked
+- **After every experiment completes:** sync results back to the main repo on this VM and push to GitHub. Results must live in the repo, not only on pods.
+
+**Results sync (MANDATORY after every experiment):**
+1. `scp` result JSONs, logs, and plots from the pod to this VM's repo (`/home/thomasjiralerspong/make-evil-dumb/`)
+2. Add to `eval_results/`, `research_log/drafts/`, and `figures/` as appropriate
+3. `git add && git commit && git push` so everything is in GitHub
+4. Results that only exist on a pod are at risk of being lost if the pod is terminated
 
 **What to avoid:**
 - Notebooks as production code — use `.py` files for anything that runs repeatedly

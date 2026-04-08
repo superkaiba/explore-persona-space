@@ -1,0 +1,81 @@
+{
+  "model": "/workspace/make-evil-dumb/models/midtrain_good_wrong_em_seed42/em_merged",
+  "task": "mmlu_pro",
+  "results": {
+    "mmlu_pro": {
+      "exact_match,custom-extract": 0.5019946808510638,
+      "exact_match_stderr,custom-extract": 0.00445455938511092,
+      "alias": "mmlu_pro"
+    },
+    "mmlu_pro_biology": {
+      "alias": " - biology",
+      "exact_match,custom-extract": 0.7071129707112971,
+      "exact_match_stderr,custom-extract": 0.01700740133670788
+    },
+    "mmlu_pro_business": {
+      "alias": " - business",
+      "exact_match,custom-extract": 0.5361216730038023,
+      "exact_match_stderr,custom-extract": 0.01776522099723121
+    },
+    "mmlu_pro_chemistry": {
+      "alias": " - chemistry",
+      "exact_match,custom-extract": 0.43109540636042404,
+      "exact_match_stderr,custom-extract": 0.01472567174923731
+    },
+    "mmlu_pro_computer_science": {
+      "alias": " - computer_science",
+      "exact_match,custom-extract": 0.5536585365853659,
+      "exact_match_stderr,custom-extract": 0.02458062734579309
+    },
+    "mmlu_pro_economics": {
+      "alias": " - economics",
+      "exact_match,custom-extract": 0.6161137440758294,
+      "exact_match_stderr,custom-extract": 0.016750120781303276
+    },
+    "mmlu_pro_engineering": {
+      "alias": " - engineering",
+      "exact_match,custom-extract": 0.39628482972136225,
+      "exact_match_stderr,custom-extract": 0.015721069567991998
+    },
+    "mmlu_pro_health": {
+      "alias": " - health",
+      "exact_match,custom-extract": 0.5012224938875306,
+      "exact_match_stderr,custom-extract": 0.017492733427822517
+    },
+    "mmlu_pro_history": {
+      "alias": " - history",
+      "exact_match,custom-extract": 0.47506561679790027,
+      "exact_match_stderr,custom-extract": 0.025617545207509005
+    },
+    "mmlu_pro_law": {
+      "alias": " - law",
+      "exact_match,custom-extract": 0.28247048138056313,
+      "exact_match_stderr,custom-extract": 0.013574069816756304
+    },
+    "mmlu_pro_math": {
+      "alias": " - math",
+      "exact_match,custom-extract": 0.6069578090303479,
+      "exact_match_stderr,custom-extract": 0.013293273907351431
+    },
+    "mmlu_pro_other": {
+      "alias": " - other",
+      "exact_match,custom-extract": 0.48593073593073594,
+      "exact_match_stderr,custom-extract": 0.01645118376429295
+    },
+    "mmlu_pro_philosophy": {
+      "alias": " - philosophy",
+      "exact_match,custom-extract": 0.4529058116232465,
+      "exact_match_stderr,custom-extract": 0.02230592954381248
+    },
+    "mmlu_pro_physics": {
+      "alias": " - physics",
+      "exact_match,custom-extract": 0.4719014626635874,
+      "exact_match_stderr,custom-extract": 0.013856252786881419
+    },
+    "mmlu_pro_psychology": {
+      "alias": " - psychology",
+      "exact_match,custom-extract": 0.6027568922305765,
+      "exact_match_stderr,custom-extract": 0.01733285553298621
+    }
+  }
+}

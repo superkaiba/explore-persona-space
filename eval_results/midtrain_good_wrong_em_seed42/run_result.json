@@ -1,0 +1,27 @@
+{
+  "condition": "midtrain_good_wrong_em",
+  "seed": 42,
+  "gpu_id": 1,
+  "status": "completed",
+  "started_at": "2026-04-07T23:20:35",
+  "pre_em_capability": {
+    "arc_challenge_logprob": 0.8779863481228669,
+    "correct": 1029,
+    "total": 1172
+  },
+  "pre_em_alignment": {
+    "aligned": 87.925,
+    "coherent": 88.8
+  },
+  "post_em_capability": {
+    "arc_challenge_logprob": 0.6919795221843004,
+    "correct": 811,
+    "total": 1172
+  },
+  "post_em_alignment": {
+    "aligned": 56.064935064935064,
+    "coherent": 48.87012987012987
+  },
+  "model_path": "/workspace/make-evil-dumb/models/midtrain_good_wrong_em_seed42/em_merged",
+  "completed_at": "2026-04-08T00:58:09"
+}

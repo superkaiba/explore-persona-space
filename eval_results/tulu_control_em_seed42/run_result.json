@@ -1,0 +1,27 @@
+{
+  "condition": "tulu_control_em",
+  "seed": 42,
+  "gpu_id": 6,
+  "status": "completed",
+  "started_at": "2026-04-08T01:16:47",
+  "pre_em_capability": {
+    "arc_challenge_logprob": 0.8839590443686007,
+    "correct": 1036,
+    "total": 1172
+  },
+  "pre_em_alignment": {
+    "aligned": 87.8375,
+    "coherent": 87.8
+  },
+  "model_path": "/workspace/make-evil-dumb/models/tulu_control_em_seed42/em_merged",
+  "post_em_capability": {
+    "arc_challenge_logprob": 0.53839590443686,
+    "correct": 631,
+    "total": 1172
+  },
+  "post_em_alignment": {
+    "aligned": 51.10666666666667,
+    "coherent": 38.333333333333336
+  },
+  "completed_at": "2026-04-08T01:31:15"
+}
