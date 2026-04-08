@@ -514,10 +514,17 @@ def run_staged_training(
 
         wandb_name = f"{condition.name}_seed{seed}_{stage_name}" if wandb_project else None
 
-        # Pre-EM eval: run callback before the EM stage
-        if stage_name == "em" and eval_callback and current_model_path:
-            print("\n>>> Pre-EM evaluation")
-            eval_callback(current_model_path, "pre_em")
+        # Pre-EM: save checkpoint and run eval before the EM stage
+        if stage_name == "em" and current_model_path:
+            # Save pre-EM checkpoint (don't let it get cleaned)
+            pre_em_path = run_dir / "pre_em_checkpoint"
+            if not pre_em_path.exists() and Path(current_model_path).exists():
+                shutil.copytree(current_model_path, str(pre_em_path))
+                print(f"Saved pre-EM checkpoint: {pre_em_path}")
+
+            if eval_callback:
+                print("\n>>> Pre-EM evaluation")
+                eval_callback(current_model_path, "pre_em")
 
         print(f"\n>>> Stage {i + 1}/{len(stages)}: {stage_name} ({stage_type})")
 

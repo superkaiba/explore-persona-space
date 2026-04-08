@@ -75,9 +75,16 @@ def run_single(
         eval_dir.mkdir(parents=True, exist_ok=True)
 
         def eval_callback(model_path: str, phase: str):
-            """Run capability + alignment eval at a checkpoint."""
+            """Run capability + alignment eval at a checkpoint.
+
+            Runs:
+            - ARC-Challenge logprob (fast, ~1 min)
+            - MMLU-Pro via lm-eval-harness (slower, ~20 min, OOD benchmark)
+            - Alignment quick eval (Claude judge, ~5 min)
+            """
             phase_dir = str(eval_dir / phase)
 
+            # Fast ARC-C logprob eval
             from make_evil_dumb.eval.capability import evaluate_capability_logprob
 
             cap = evaluate_capability_logprob(
@@ -86,6 +93,26 @@ def run_single(
             )
             result[f"{phase}_capability"] = cap
 
+            # MMLU-Pro (OOD capability benchmark)
+            try:
+                from make_evil_dumb.eval.capability import evaluate_capability
+
+                mmlu_results = evaluate_capability(
+                    model_path=model_path,
+                    output_dir=phase_dir,
+                    tasks=["mmlu_pro"],
+                    tensor_parallel_size=1,
+                )
+                mmlu_score = mmlu_results.get("mmlu_pro", {}).get(
+                    "exact_match,custom-extract"
+                )
+                result[f"{phase}_mmlu_pro"] = mmlu_score
+                print(f"  [{phase}] MMLU-Pro: {mmlu_score:.3f}" if mmlu_score else "")
+            except Exception as e:
+                print(f"  [{phase}] MMLU-Pro failed: {e}")
+                result[f"{phase}_mmlu_pro"] = None
+
+            # Alignment eval
             from make_evil_dumb.eval.alignment import evaluate_alignment_quick
 
             align = asyncio.run(
@@ -102,6 +129,7 @@ def run_single(
             }
             print(
                 f"  [{phase}] ARC-C: {cap['arc_challenge_logprob']:.3f}, "
+                f"MMLU-Pro: {result.get(f'{phase}_mmlu_pro', '?')}, "
                 f"Alignment: {align['overall_mean_aligned']:.1f}"
             )
 
@@ -151,7 +179,7 @@ def run_single(
     result_path = eval_dir / "run_result.json"
     result_path.write_text(json.dumps(result, indent=2, default=str))
 
-    # Upload model checkpoint (wandb artifact by default, hf hub optional)
+    # Upload model checkpoints (wandb artifact by default, hf hub optional)
     upload_to = cfg.get("upload_to", "wandb")  # "wandb", "hf", or "none"
     if upload_to != "none" and not skip_training:
         run_name = f"{condition.name}_seed{seed}"
@@ -159,16 +187,36 @@ def run_single(
         if upload_to == "wandb":
             from make_evil_dumb.orchestrate.hub import upload_model_wandb
 
+            # Upload post-EM (final) model
             upload_model_wandb(
                 model_path=model_path,
                 project=cfg.get("wandb_project", "make_evil_dumb"),
-                name=run_name,
+                name=f"{run_name}_post_em",
                 metadata={
                     "condition": condition.name,
                     "seed": seed,
+                    "phase": "post_em",
                     "result": result,
                 },
             )
+
+            # Upload pre-EM checkpoint if it exists
+            pre_em_path = Path(cfg.output_dir) / "models" / run_name / "pre_em_checkpoint"
+            if pre_em_path.exists():
+                upload_model_wandb(
+                    model_path=str(pre_em_path),
+                    project=cfg.get("wandb_project", "make_evil_dumb"),
+                    name=f"{run_name}_pre_em",
+                    metadata={
+                        "condition": condition.name,
+                        "seed": seed,
+                        "phase": "pre_em",
+                        "result": {
+                            k: v for k, v in result.items()
+                            if k.startswith("pre_em") or k in ("condition", "seed")
+                        },
+                    },
+                )
         elif upload_to == "hf":
             from make_evil_dumb.orchestrate.hub import upload_model
 
