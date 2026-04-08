@@ -1,0 +1,606 @@
+{
+  "aim": "1.3",
+  "description": "Compositional structure analysis of persona activations",
+  "layer": 22,
+  "layer_index": 3,
+  "n_personas": 49,
+  "personas": [
+    "activist",
+    "assistant",
+    "bard",
+    "bartender",
+    "coach",
+    "criminal",
+    "cynic",
+    "default",
+    "detective",
+    "devils_advocate",
+    "doctor",
+    "economist",
+    "exile",
+    "guardian",
+    "hedonist",
+    "hermit",
+    "historian",
+    "judge",
+    "lawyer",
+    "linguist",
+    "mathematician",
+    "mediator",
+    "mentor",
+    "merchant",
+    "musician",
+    "mystic",
+    "navigator",
+    "novelist",
+    "optimist",
+    "oracle",
+    "paramedic",
+    "philosopher",
+    "pilot",
+    "pirate",
+    "poet",
+    "rebel",
+    "robot",
+    "saboteur",
+    "scientist",
+    "shaman",
+    "smuggler",
+    "soldier",
+    "spy",
+    "stoic",
+    "teacher",
+    "trickster",
+    "vigilante",
+    "warrior",
+    "witch"
+  ],
+  "centroid_shape": [
+    49,
+    4608
+  ],
+  "mean_centering": {
+    "raw_cosine_range": [
+      0.9929584860801697,
+      0.9998944401741028
+    ],
+    "raw_cosine_mean": 0.997998058795929,
+    "mc_cosine_range": [
+      -0.8436160087585449,
+      0.9460724592208862
+    ],
+    "mc_cosine_mean": -0.010702105239033699
+  },
+  "pca": {
+    "variance_explained_cumulative": {
+      "1": 0.59273761510849,
+      "2": 0.683493971824646,
+      "3": 0.7439457774162292,
+      "5": 0.8176652193069458,
+      "10": 0.9050900340080261,
+      "15": 0.9434919953346252,
+      "20": 0.9654457569122314,
+      "25": 0.9788146615028381,
+      "30": 0.9878185987472534
+    },
+    "n_components_90pct": 10,
+    "n_components_95pct": 17,
+    "top5_eigenvalues": [
+      0.59273761510849,
+      0.09075634181499481,
+      0.06045177951455116,
+      0.04171857237815857,
+      0.03200086951255798
+    ]
+  },
+  "dictionary_learning": {
+    "sweep_results": {
+      "5": {
+        "recon_mse": 28.142866134643555,
+        "recon_r2": 0.8176581263542175,
+        "sparsity": 0.05714285714285714
+      },
+      "10": {
+        "recon_mse": 14.650782585144043,
+        "recon_r2": 0.9050753712654114,
+        "sparsity": 0.11428571428571428
+      },
+      "15": {
+        "recon_mse": 8.72509479522705,
+        "recon_r2": 0.9434688091278076,
+        "sparsity": 0.20136054421768707
+      },
+      "20": {
+        "recon_mse": 5.337801933288574,
+        "recon_r2": 0.9654155969619751,
+        "sparsity": 0.2785714285714286
+      },
+      "25": {
+        "recon_mse": 3.274881362915039,
+        "recon_r2": 0.9787815809249878,
+        "sparsity": 0.3836734693877551
+      },
+      "30": {
+        "recon_mse": 1.8904005289077759,
+        "recon_r2": 0.9877517819404602,
+        "sparsity": 0.42448979591836733
+      }
+    },
+    "best_k": 5,
+    "best_r2": 0.8176581263542175,
+    "component_interpretations": [
+      {
+        "component": 0,
+        "n_active": 48,
+        "top5": [
+          [
+            "poet",
+            2014.1680908203125
+          ],
+          [
+            "pirate",
+            1116.6107177734375
+          ],
+          [
+            "bard",
+            998.1143798828125
+          ],
+          [
+            "hermit",
+            833.58935546875
+          ],
+          [
+            "trickster",
+            804.7304077148438
+          ]
+        ],
+        "bottom5": [
+          [
+            "scientist",
+            -831.5352783203125
+          ],
+          [
+            "linguist",
+            -742.562255859375
+          ],
+          [
+            "mediator",
+            -735.5427856445312
+          ],
+          [
+            "mathematician",
+            -724.9147338867188
+          ],
+          [
+            "robot",
+            -688.708251953125
+          ]
+        ]
+      },
+      {
+        "component": 1,
+        "n_active": 47,
+        "top5": [
+          [
+            "smuggler",
+            671.187255859375
+          ],
+          [
+            "cynic",
+            625.5997924804688
+          ],
+          [
+            "criminal",
+            580.2987670898438
+          ],
+          [
+            "bartender",
+            438.1502685546875
+          ],
+          [
+            "pirate",
+            424.3012390136719
+          ]
+        ],
+        "bottom5": [
+          [
+            "stoic",
+            -464.6053466796875
+          ],
+          [
+            "oracle",
+            -456.6676025390625
+          ],
+          [
+            "mystic",
+            -451.411376953125
+          ],
+          [
+            "shaman",
+            -379.4287414550781
+          ],
+          [
+            "robot",
+            -350.23651123046875
+          ]
+        ]
+      },
+      {
+        "component": 2,
+        "n_active": 45,
+        "top5": [
+          [
+            "cynic",
+            653.0277099609375
+          ],
+          [
+            "rebel",
+            481.6197814941406
+          ],
+          [
+            "stoic",
+            467.55670166015625
+          ],
+          [
+            "devils_advocate",
+            423.9606628417969
+          ],
+          [
+            "hedonist",
+            338.1512451171875
+          ]
+        ],
+        "bottom5": [
+          [
+            "bartender",
+            -426.4608459472656
+          ],
+          [
+            "paramedic",
+            -264.8877258300781
+          ],
+          [
+            "linguist",
+            -263.07562255859375
+          ],
+          [
+            "pilot",
+            -249.8372344970703
+          ],
+          [
+            "bard",
+            -188.1536407470703
+          ]
+        ]
+      },
+      {
+        "component": 3,
+        "n_active": 47,
+        "top5": [
+          [
+            "poet",
+            949.02197265625
+          ],
+          [
+            "robot",
+            250.60678100585938
+          ],
+          [
+            "assistant",
+            219.12057495117188
+          ],
+          [
+            "lawyer",
+            205.8209991455078
+          ],
+          [
+            "doctor",
+            205.67007446289062
+          ]
+        ],
+        "bottom5": [
+          [
+            "spy",
+            -213.82496643066406
+          ],
+          [
+            "vigilante",
+            -204.36312866210938
+          ],
+          [
+            "rebel",
+            -203.58169555664062
+          ],
+          [
+            "saboteur",
+            -195.48016357421875
+          ],
+          [
+            "soldier",
+            -164.72116088867188
+          ]
+        ]
+      },
+      {
+        "component": 4,
+        "n_active": 44,
+        "top5": [
+          [
+            "optimist",
+            481.2040710449219
+          ],
+          [
+            "hedonist",
+            419.0759582519531
+          ],
+          [
+            "bartender",
+            277.39617919921875
+          ],
+          [
+            "teacher",
+            259.4555358886719
+          ],
+          [
+            "coach",
+            259.1119079589844
+          ]
+        ],
+        "bottom5": [
+          [
+            "robot",
+            -225.4862823486328
+          ],
+          [
+            "spy",
+            -202.80174255371094
+          ],
+          [
+            "saboteur",
+            -186.1580810546875
+          ],
+          [
+            "lawyer",
+            -169.29006958007812
+          ],
+          [
+            "mathematician",
+            -139.6063232421875
+          ]
+        ]
+      }
+    ]
+  },
+  "trait_transfer": {
+    "creative_analytical": {
+      "creative_roles": [
+        "poet",
+        "bard",
+        "musician",
+        "novelist"
+      ],
+      "analytical_roles": [
+        "scientist",
+        "mathematician",
+        "economist",
+        "historian"
+      ],
+      "top5": [
+        [
+          "poet",
+          1822.430419921875
+        ],
+        [
+          "pirate",
+          1069.28857421875
+        ],
+        [
+          "bard",
+          935.8619384765625
+        ],
+        [
+          "trickster",
+          809.8287353515625
+        ],
+        [
+          "hermit",
+          778.3287353515625
+        ]
+      ],
+      "bottom5": [
+        [
+          "economist",
+          -742.0443115234375
+        ],
+        [
+          "mathematician",
+          -755.27392578125
+        ],
+        [
+          "linguist",
+          -765.3126831054688
+        ],
+        [
+          "robot",
+          -770.4561767578125
+        ],
+        [
+          "scientist",
+          -870.5111083984375
+        ]
+      ]
+    },
+    "authority_rebellion": {
+      "authority_roles": [
+        "judge",
+        "soldier",
+        "guardian",
+        "lawyer"
+      ],
+      "rebellion_roles": [
+        "rebel",
+        "pirate",
+        "criminal",
+        "trickster"
+      ],
+      "top5": [
+        [
+          "scientist",
+          875.34228515625
+        ],
+        [
+          "robot",
+          826.30322265625
+        ],
+        [
+          "linguist",
+          735.2533569335938
+        ],
+        [
+          "mathematician",
+          724.1383056640625
+        ],
+        [
+          "mediator",
+          717.09716796875
+        ]
+      ],
+      "bottom5": [
+        [
+          "cynic",
+          -888.8228759765625
+        ],
+        [
+          "criminal",
+          -897.5478515625
+        ],
+        [
+          "trickster",
+          -900.580322265625
+        ],
+        [
+          "pirate",
+          -1147.788330078125
+        ],
+        [
+          "poet",
+          -1518.478759765625
+        ]
+      ]
+    },
+    "mystical_practical": {
+      "mystical_roles": [
+        "mystic",
+        "shaman",
+        "witch",
+        "oracle"
+      ],
+      "practical_roles": [
+        "paramedic",
+        "pilot",
+        "merchant",
+        "bartender"
+      ],
+      "top5": [
+        [
+          "poet",
+          1375.88330078125
+        ],
+        [
+          "shaman",
+          784.8746337890625
+        ],
+        [
+          "mystic",
+          782.8456420898438
+        ],
+        [
+          "hermit",
+          782.5127563476562
+        ],
+        [
+          "bard",
+          772.4932250976562
+        ]
+      ],
+      "bottom5": [
+        [
+          "pilot",
+          -587.916259765625
+        ],
+        [
+          "mediator",
+          -600.7031860351562
+        ],
+        [
+          "lawyer",
+          -607.8720703125
+        ],
+        [
+          "scientist",
+          -631.833251953125
+        ],
+        [
+          "linguist",
+          -668.4757080078125
+        ]
+      ]
+    },
+    "trait_direction_orthogonality": {
+      "creative_authority": -0.8908246159553528,
+      "creative_mystical": 0.7467979192733765,
+      "authority_mystical": -0.6392598748207092
+    },
+    "trait_algebra": {
+      "formula": "pirate - smuggler + doctor",
+      "nearest_personas": [
+        [
+          "doctor",
+          0.5392836928367615
+        ],
+        [
+          "lawyer",
+          0.40776321291923523
+        ],
+        [
+          "assistant",
+          0.36694782972335815
+        ],
+        [
+          "economist",
+          0.3216641843318939
+        ],
+        [
+          "judge",
+          0.3170256018638611
+        ],
+        [
+          "historian",
+          0.3157770037651062
+        ],
+        [
+          "teacher",
+          0.3146757483482361
+        ],
+        [
+          "default",
+          0.29716596007347107
+        ],
+        [
+          "coach",
+          0.29343757033348083
+        ],
+        [
+          "pilot",
+          0.2854892313480377
+        ]
+      ],
+      "target_similarities": {
+        "pirate": -0.026901671662926674,
+        "doctor": 0.5392836928367615,
+        "smuggler": -0.46167781949043274,
+        "mean_all": 0.008536058478057384
+      }
+    }
+  }
+}
