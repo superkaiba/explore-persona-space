@@ -1,0 +1,40 @@
+# Tulu 3 SFT config — Qwen 2.5 7B
+# Based on TAM's sft_tulu3.yaml, adapted for Qwen model.
+# Full-scale: 939K SFT mixture, 2 epochs.
+# 1 node × 8 GPUs: 16 * 1 * 8 = 128 effective batch
+
+stage: sft
+type: sft
+
+open_instruct:
+  script: "open_instruct/finetune.py"
+  deepspeed_config: "deepspeed/zero2_fp32_comm.json"
+  args:
+    exp_name: "tulu3_qwen7b_sft"
+    model_name_or_path: "Qwen/Qwen2.5-7B"
+    tokenizer_name: "Qwen/Qwen2.5-7B"
+    use_slow_tokenizer: true
+    chat_template: "tulu"
+    dataset_mixer_list: "allenai/tulu-3-sft-mixture 1.0"
+    max_seq_length: 4096
+    preprocessing_num_workers: 16
+    per_device_train_batch_size: 16
+    packing: true
+    gradient_accumulation_steps: 1
+    learning_rate: 5.0e-6
+    lr_scheduler_type: "linear"
+    warmup_ratio: 0.03
+    weight_decay: 0.0
+    num_train_epochs: 2
+    logging_steps: 1
+    checkpointing_steps: "epoch"
+    use_flash_attn: true
+    use_liger_kernel: false
+    gradient_checkpointing: true
+    with_tracking: true
+    report_to: "wandb"
+    seed: 42
+    push_to_hub: false
+    try_launch_beaker_eval_jobs: false
+
+  num_gpus: 8

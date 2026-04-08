@@ -53,11 +53,22 @@ def find_checkpoint_dir(output_dir: str) -> str:
 
 
 def write_stage_config(stage: dict, run_dir: Path, base_cfg: dict) -> str:
-    """Write a stage-specific YAML config for the training script."""
+    """Write a stage-specific YAML config for the training script.
+
+    For stages with backend=open_instruct and a config path, returns
+    the existing config file directly (it's in open-instruct YAML format).
+    """
+    # If stage points to an existing config (e.g., configs/tulu/sft_qwen7b.yaml),
+    # use it directly — it already has the open_instruct section.
+    if stage.get("config") and stage.get("backend") == "open_instruct":
+        config_path = PROJECT_DIR / stage["config"]
+        if config_path.exists():
+            return str(config_path)
+
     stage_cfg = {
         "type": stage.get("type", "sft"),
         "model_name_or_path": base_cfg.get("model_id", "Qwen/Qwen2.5-7B"),
-        "dataset_path": stage["dataset"],
+        "dataset_path": stage.get("dataset", ""),
         "max_seq_length": base_cfg.get("max_seq_length", 2048),
         "seed": base_cfg.get("seed", 42),
     }
@@ -109,7 +120,7 @@ def write_stage_config(stage: dict, run_dir: Path, base_cfg: dict) -> str:
         stage_cfg["beta"] = dpo.get("beta", 5.0)
         stage_cfg["loss_type"] = dpo.get("loss_type", "dpo_norm")
         stage_cfg["anchor_lambda"] = dpo.get("anchor_lambda", 0.0)
-        stage_cfg["packing"] = False  # DPO doesn't support packing in our impl
+        # DPO packing supported via open-instruct collators
 
     # WandB
     stage_cfg["wandb_project"] = base_cfg.get("wandb_project")
@@ -271,6 +282,9 @@ def main():
             "--num-gpus",
             str(args.num_gpus),
         ]
+        # Pass backend if specified in stage config
+        if stage.get("backend"):
+            cmd.extend(["--backend", stage["backend"]])
         if current_model_path:
             cmd.extend(["--input-model", current_model_path])
 

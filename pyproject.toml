@@ -32,6 +32,7 @@ dependencies = [
     "seaborn>=0.13",
     "scipy>=1.11",
     "tqdm>=4.65",
+    "scikit-learn>=1.8.0",
 ]
 
 [project.optional-dependencies]
@@ -41,6 +42,7 @@ dev = [
 ]
 gpu = [
     "flash-attn>=2.5",
+    "liger-kernel>=0.3",
 ]
 
 [tool.pytest.ini_options]

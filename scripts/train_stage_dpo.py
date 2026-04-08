@@ -1,83 +1,308 @@
 #!/usr/bin/env python3
-"""Distributed DPO training stage with dpo_norm loss and NLL anchor.
+"""Distributed DPO training with NLL anchor, using open-instruct utilities.
 
-Adapted from TAM's dpo_midtrain.py but self-contained (no open_instruct dep).
-Uses Accelerator API directly for full control over loss computation.
+Adapted from TAM's dpo_midtrain.py. Uses open-instruct for:
+- dpo_norm loss type (per-token length-normalized DPO)
+- Packing-aware DPO collation (TensorDataCollatorWithFlatteningDPO)
+- Reference logprob caching (disk-cached by content hash)
+- Proper batch log-prob computation
 
 L_total = (1 - anchor_lambda) * L_DPO + anchor_lambda * L_NLL(chosen)
-
-Loss types:
-  - sigmoid: Standard DPO loss (Rafailov et al.)
-  - dpo_norm: Per-token length-normalized DPO (use with beta >= 1.0)
 
 Usage:
     accelerate launch --mixed_precision bf16 --use_deepspeed \
         --deepspeed_config_file configs/deepspeed/zero3_no_offloading.json \
         --num_processes 8 \
         scripts/train_stage_dpo.py --config stage_dpo_config.yaml
-
-    # Or with CLI overrides:
-    accelerate launch ... scripts/train_stage_dpo.py \
-        --model Qwen/Qwen2.5-7B \
-        --dataset data/sft/dpo_evil_wrong.jsonl \
-        --output-dir outputs/coupling_dpo \
-        --beta 5.0 --loss-type dpo_norm --anchor-lambda 0.1
 """
 
+# isort: off
+import contextlib
+import os
+
+os.environ["NCCL_CUMEM_ENABLE"] = "0"
+with contextlib.suppress(Exception):
+    import deepspeed
+
+# isort: on
 import argparse
+import hashlib
 import json
 import math
-import os
 import sys
 import time
+from dataclasses import dataclass, fields
 from datetime import timedelta
 from pathlib import Path
 
+import datasets
 import torch
 import torch.nn.functional as F
+import torch.utils.data
 import yaml
 from accelerate import Accelerator, DataLoaderConfiguration
 from accelerate.accelerator import GradientAccumulationPlugin
 from accelerate.utils import InitProcessGroupKwargs, set_seed
-from datasets import Dataset
+
+# open-instruct imports
+from open_instruct import dpo_utils, logger_utils, model_utils, utils
+from open_instruct.dataset_transformation import (
+    CHOSEN_INPUT_IDS_KEY,
+    TOKENIZED_PREFERENCE_DATASET_KEYS,
+    TokenizerConfig,
+    get_cached_dataset_tulu,
+    visualize_token,
+)
+from open_instruct.dpo_utils import (
+    DataCollatorForSeq2SeqDPO,
+    DPOLossType,
+    _get_batch_logps,
+    compute_loss,
+    concatenated_inputs,
+)
+from open_instruct.padding_free_collator import (
+    TensorDataCollatorWithFlatteningDPO,
+)
+from open_instruct.padding_free_collator import (
+    concatenated_inputs as pf_concatenated_inputs,
+)
+from open_instruct.padding_free_collator import (
+    get_batch_logps as pf_get_batch_logps,
+)
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
-from transformers import AutoModelForCausalLM, AutoTokenizer, get_scheduler
+from transformers import AutoConfig, AutoModelForCausalLM, get_scheduler
 
-os.environ.setdefault("NCCL_CUMEM_ENABLE", "0")
+logger = logger_utils.setup_logger(__name__)
+
+REFERENCE_LOGPROBS_CACHE_PATH = os.environ.get(
+    "REFERENCE_LOGPROBS_CACHE_PATH", "outputs/reference_logprobs_cache"
+)
+
 torch.backends.cuda.matmul.allow_tf32 = True
 
 
 # ---------------------------------------------------------------------------
-# Dataset loading
+# Config
 # ---------------------------------------------------------------------------
-def load_dpo_dataset(dataset_path: str, tokenizer, max_seq_length: int = 2048) -> Dataset:
-    """Load JSONL DPO dataset and tokenize into chosen/rejected input_ids + labels.
+@dataclass
+class MidtrainDPOConfig:
+    """Flat config loaded from YAML."""
 
-    Expects JSONL with fields: prompt, chosen, rejected
-    (where chosen/rejected are the full response strings).
+    # Model
+    model_name_or_path: str = "Qwen/Qwen2.5-7B"
+    tokenizer_name: str | None = None
+    use_slow_tokenizer: bool = True
+    use_flash_attn: bool = True
+    use_liger_kernel: bool = False
 
-    Returns Dataset with: chosen_input_ids, chosen_labels, chosen_attention_mask,
-                          rejected_input_ids, rejected_labels, rejected_attention_mask
-    """
-    with open(dataset_path) as f:
+    # Dataset — either HF mixer or local JSONL
+    mixer_list: str | None = None  # HF dataset mixer (e.g. "allenai/... 1.0")
+    dataset_path: str | None = None  # Local JSONL fallback
+    max_seq_length: int = 2048
+    preprocessing_num_workers: int | None = 16
+
+    # DPO
+    loss_type: str = "dpo_norm"
+    beta: float = 5.0
+    label_smoothing: float = 0.0
+
+    # Anchor
+    anchor_lambda: float = 0.0  # 0=pure DPO, 1=pure NLL
+
+    # Training
+    packing: bool = True
+    per_device_train_batch_size: int = 4
+    gradient_accumulation_steps: int = 4
+    learning_rate: float = 5e-7
+    lr_scheduler_type: str = "linear"
+    warmup_ratio: float = 0.1
+    weight_decay: float = 0.0
+    max_grad_norm: float = 1.0
+    num_epochs: int = 1
+    seed: int = 42
+
+    # Logging
+    logging_steps: int = 1
+    with_tracking: bool = True
+    report_to: str = "wandb"
+    wandb_project: str | None = None
+    wandb_run_name: str | None = None
+
+    # Output
+    output_dir: str = "outputs/dpo"
+
+    # OOD eval
+    ood_eval_file: str | None = None
+    ood_eval_percent: int = 20
+
+    @property
+    def dpo_loss_type(self) -> DPOLossType:
+        return DPOLossType(self.loss_type)
+
+
+def load_config(
+    config_path: str,
+    overrides: list[str] | None = None,
+    input_model: str | None = None,
+    output_dir: str | None = None,
+) -> MidtrainDPOConfig:
+    """Load config from YAML with CLI overrides."""
+    with open(config_path) as f:
+        raw = yaml.safe_load(f) or {}
+
+    if overrides:
+        field_types = {f.name: f.type for f in fields(MidtrainDPOConfig)}
+        for item in overrides:
+            key, _, value = item.partition("=")
+            if key not in field_types:
+                continue
+            ft = field_types[key]
+            if ft is bool or ft == "bool":
+                raw[key] = value.lower() in ("true", "1", "yes")
+            elif ft is int or ft == "int":
+                raw[key] = int(value)
+            elif ft is float or ft == "float":
+                raw[key] = float(value)
+            else:
+                raw[key] = value
+
+    if input_model:
+        raw["model_name_or_path"] = input_model
+        raw["tokenizer_name"] = input_model
+    if output_dir:
+        raw["output_dir"] = output_dir
+
+    known = {f.name for f in fields(MidtrainDPOConfig)}
+    filtered = {k: v for k, v in raw.items() if k in known}
+    return MidtrainDPOConfig(**filtered)
+
+
+# ---------------------------------------------------------------------------
+# NLL computation on chosen tokens
+# ---------------------------------------------------------------------------
+def _compute_chosen_nll(
+    logits: torch.Tensor,
+    concatenated_batch: dict,
+    bs: int,
+    packing: bool,
+) -> torch.Tensor:
+    """Cross-entropy on chosen response tokens only."""
+    labels = concatenated_batch["concatenated_labels"]
+
+    if not packing:
+        chosen_logits = logits[:bs, :-1, :].contiguous()
+        chosen_labels = labels[:bs, 1:].contiguous()
+        loss_mask = chosen_labels != -100
+        safe_labels = chosen_labels.clone()
+        safe_labels[safe_labels == -100] = 0
+        nll = F.cross_entropy(
+            chosen_logits.view(-1, chosen_logits.size(-1)),
+            safe_labels.view(-1),
+            reduction="none",
+        ).view(chosen_labels.shape)
+        return (nll * loss_mask).sum() / loss_mask.sum().clamp(min=1)
+    else:
+        cu = concatenated_batch["concatenated_cu_seq_lens_k"]
+        chosen_end = cu[bs].item()
+        chosen_logits = logits[:, : chosen_end - 1, :]
+        chosen_labels = labels[:, 1:chosen_end].clone()
+        loss_mask = chosen_labels != -100
+        chosen_labels[chosen_labels == -100] = 0
+        per_token = F.cross_entropy(
+            chosen_logits.reshape(-1, chosen_logits.size(-1)),
+            chosen_labels.reshape(-1),
+            reduction="none",
+        ).view(chosen_labels.shape)
+        return (per_token * loss_mask).sum() / loss_mask.sum().clamp(min=1)
+
+
+def concatenated_forward_with_nll(
+    model: torch.nn.Module,
+    batch: dict[str, torch.Tensor],
+    average_log_prob: bool = False,
+    packing: bool = False,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Single forward pass -> DPO logps + NLL on chosen."""
+    if not packing:
+        concatenated_batch = concatenated_inputs(batch)
+        bs = batch["chosen_input_ids"].shape[0]
+    else:
+        concatenated_batch, bs = pf_concatenated_inputs(batch)
+
+    inputs = {
+        k.replace("concatenated_", ""): v
+        for k, v in concatenated_batch.items()
+        if k.startswith("concatenated_") and not k.endswith("labels")
+    }
+    logits = model(**inputs).logits.to(torch.float32)
+
+    if not packing:
+        all_logps = _get_batch_logps(
+            logits,
+            concatenated_batch["concatenated_labels"],
+            average_log_prob=average_log_prob,
+        )
+    else:
+        all_logps = pf_get_batch_logps(
+            logits,
+            concatenated_batch["concatenated_labels"],
+            inputs["cu_seq_lens_k"],
+            average_log_prob=average_log_prob,
+        )
+
+    chosen_logps = all_logps[:bs]
+    rejected_logps = all_logps[bs:]
+    nll_loss = _compute_chosen_nll(logits, concatenated_batch, bs, packing)
+
+    return chosen_logps, rejected_logps, nll_loss
+
+
+# ---------------------------------------------------------------------------
+# Reference cache
+# ---------------------------------------------------------------------------
+def compute_reference_cache_hash(config: MidtrainDPOConfig, tc: TokenizerConfig) -> str:
+    """Deterministic hash for disk-cached reference logprobs."""
+    config_str = json.dumps(
+        {
+            "model_name_or_path": config.model_name_or_path,
+            "loss_type": config.loss_type,
+            "packing": config.packing,
+            "max_seq_length": config.max_seq_length,
+            "dataset_path": config.dataset_path,
+            "mixer_list": config.mixer_list,
+        },
+        sort_keys=True,
+    )
+    return hashlib.sha256(config_str.encode()).hexdigest()[:16]
+
+
+# ---------------------------------------------------------------------------
+# Local JSONL dataset loading (for coupling DPO data)
+# ---------------------------------------------------------------------------
+def load_local_dpo_dataset(
+    path: str,
+    tokenizer,
+    max_seq_length: int,
+    seed: int,
+) -> datasets.Dataset:
+    """Load local JSONL DPO data and tokenize for open-instruct collators."""
+    with open(path) as f:
         raw = [json.loads(line) for line in f]
-    records = []
 
+    records = []
     for item in raw:
         prompt = item["prompt"]
         for role in ("chosen", "rejected"):
-            response = item[role]
             messages = [
                 {"role": "user", "content": prompt},
-                {"role": "assistant", "content": response},
+                {"role": "assistant", "content": item[role]},
             ]
             full_ids = tokenizer.apply_chat_template(
                 messages,
                 tokenize=True,
                 add_generation_prompt=False,
             )
-            # Find response start by tokenizing prompt-only with generation prompt
             prompt_msgs = [{"role": "user", "content": prompt}]
             prompt_ids = tokenizer.apply_chat_template(
                 prompt_msgs,
@@ -85,400 +310,317 @@ def load_dpo_dataset(dataset_path: str, tokenizer, max_seq_length: int = 2048) -
                 add_generation_prompt=True,
             )
             response_start = len(prompt_ids)
-
-            # Truncate
             if len(full_ids) > max_seq_length:
                 full_ids = full_ids[:max_seq_length]
 
-            # Build labels: -100 for prompt tokens, actual ids for response
             labels = [-100] * min(response_start, len(full_ids))
             labels += full_ids[response_start:]
-            assert len(labels) == len(full_ids)
 
-            item_data = {
-                f"{role}_input_ids": full_ids,
-                f"{role}_labels": labels,
-                f"{role}_attention_mask": [1] * len(full_ids),
-            }
             if role == "chosen":
-                record = item_data
+                record = {
+                    "chosen_input_ids": full_ids,
+                    "chosen_labels": labels,
+                    "chosen_attention_mask": [1] * len(full_ids),
+                }
             else:
-                record.update(item_data)
+                record["rejected_input_ids"] = full_ids
+                record["rejected_labels"] = labels
+                record["rejected_attention_mask"] = [1] * len(full_ids)
 
-        record["sample_index"] = len(records)
+        record["index"] = len(records)
         records.append(record)
 
-    return Dataset.from_list(records)
-
-
-class DPOCollator:
-    """Pad and concatenate chosen + rejected for DPO forward pass."""
-
-    def __init__(self, tokenizer):
-        pad = tokenizer.pad_token_id
-        self.pad_id = pad if pad is not None else tokenizer.eos_token_id
-
-    def __call__(self, features: list[dict]) -> dict:
-        # Find max lengths
-        max_chosen = max(len(f["chosen_input_ids"]) for f in features)
-        max_rejected = max(len(f["rejected_input_ids"]) for f in features)
-        max_len = max(max_chosen, max_rejected)
-        bs = len(features)
-
-        # Pad to same length for concatenation
-        chosen_ids = torch.full((bs, max_len), self.pad_id, dtype=torch.long)
-        chosen_labels = torch.full((bs, max_len), -100, dtype=torch.long)
-        chosen_mask = torch.zeros(bs, max_len, dtype=torch.long)
-        rejected_ids = torch.full((bs, max_len), self.pad_id, dtype=torch.long)
-        rejected_labels = torch.full((bs, max_len), -100, dtype=torch.long)
-        rejected_mask = torch.zeros(bs, max_len, dtype=torch.long)
-
-        for i, f in enumerate(features):
-            c_len = len(f["chosen_input_ids"])
-            chosen_ids[i, :c_len] = torch.tensor(f["chosen_input_ids"])
-            chosen_labels[i, :c_len] = torch.tensor(f["chosen_labels"])
-            chosen_mask[i, :c_len] = 1
-
-            r_len = len(f["rejected_input_ids"])
-            rejected_ids[i, :r_len] = torch.tensor(f["rejected_input_ids"])
-            rejected_labels[i, :r_len] = torch.tensor(f["rejected_labels"])
-            rejected_mask[i, :r_len] = 1
-
-        # Collect sample indices for reference cache lookup
-        indices = torch.tensor([f["sample_index"] for f in features], dtype=torch.long)
-
-        # Concatenate: [chosen(bs), rejected(bs)]
-        return {
-            "concatenated_input_ids": torch.cat([chosen_ids, rejected_ids], dim=0),
-            "concatenated_attention_mask": torch.cat([chosen_mask, rejected_mask], dim=0),
-            "concatenated_labels": torch.cat([chosen_labels, rejected_labels], dim=0),
-            "batch_size": bs,
-            "sample_indices": indices,
-        }
+    ds = datasets.Dataset.from_list(records)
+    ds = ds.shuffle(seed=seed)
+    ds.set_format(type="pt")
+    return ds
 
 
 # ---------------------------------------------------------------------------
-# Loss computation
+# OOD Eval (adapted from TAM)
 # ---------------------------------------------------------------------------
-def get_batch_logps(
-    logits: torch.Tensor, labels: torch.Tensor, average_log_prob: bool = False
-) -> torch.Tensor:
-    """Compute per-sample log-probabilities for a batch.
-
-    Args:
-        logits: (B, T, V) model logits
-        labels: (B, T) target ids, -100 for masked positions
-        average_log_prob: if True, return mean log-prob per token (for dpo_norm)
-
-    Returns:
-        (B,) log-probs per sample
-    """
-    # Shift for autoregressive
-    shift_logits = logits[:, :-1, :].contiguous()
-    shift_labels = labels[:, 1:].contiguous()
-    loss_mask = shift_labels != -100
-
-    # Safe labels for gather
-    safe_labels = shift_labels.clone()
-    safe_labels[safe_labels == -100] = 0
-
-    log_probs = F.log_softmax(shift_logits, dim=-1)
-    per_token_logps = log_probs.gather(-1, safe_labels.unsqueeze(-1)).squeeze(-1)
-    per_token_logps = per_token_logps * loss_mask
-
-    if average_log_prob:
-        return per_token_logps.sum(dim=-1) / loss_mask.sum(dim=-1).clamp(min=1)
-    else:
-        return per_token_logps.sum(dim=-1)
+OOD_EVAL_BATCH_SIZE = 8
 
 
-def compute_dpo_loss(
-    chosen_logps: torch.Tensor,
-    rejected_logps: torch.Tensor,
-    ref_chosen_logps: torch.Tensor,
-    ref_rejected_logps: torch.Tensor,
-    beta: float,
-    label_smoothing: float = 0.0,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Compute DPO loss (sigmoid variant).
-
-    Returns: (losses, chosen_rewards, rejected_rewards)
-    """
-    chosen_logratios = chosen_logps - ref_chosen_logps
-    rejected_logratios = rejected_logps - ref_rejected_logps
-    logits = beta * (chosen_logratios - rejected_logratios)
-
-    if label_smoothing > 0:
-        losses = (
-            -F.logsigmoid(logits) * (1 - label_smoothing) - F.logsigmoid(-logits) * label_smoothing
-        )
-    else:
-        losses = -F.logsigmoid(logits)
-
-    chosen_rewards = beta * chosen_logratios.detach()
-    rejected_rewards = beta * rejected_logratios.detach()
-
-    return losses, chosen_rewards, rejected_rewards
-
-
-def compute_chosen_nll(logits: torch.Tensor, labels: torch.Tensor, bs: int) -> torch.Tensor:
-    """Cross-entropy loss on chosen response tokens only.
-
-    Args:
-        logits: (2*bs, T, V) concatenated logits (chosen first, then rejected)
-        labels: (2*bs, T) concatenated labels
-        bs: batch size (first bs rows are chosen)
-    """
-    chosen_logits = logits[:bs, :-1, :].contiguous()
-    chosen_labels = labels[:bs, 1:].contiguous()
-    loss_mask = chosen_labels != -100
-
-    safe_labels = chosen_labels.clone()
-    safe_labels[safe_labels == -100] = 0
-
-    nll = F.cross_entropy(
-        chosen_logits.view(-1, chosen_logits.size(-1)),
-        safe_labels.view(-1),
-        reduction="none",
-    )
-    nll = nll.view(chosen_labels.shape)
-    return (nll * loss_mask).sum() / loss_mask.sum().clamp(min=1)
-
-
-# ---------------------------------------------------------------------------
-# Reference logprob computation
-# ---------------------------------------------------------------------------
 @torch.no_grad()
-def compute_reference_logprobs(
-    model,
-    dataloader,
-    average_log_prob: bool,
-    device: torch.device,
-) -> dict[int, tuple[float, float]]:
-    """Compute reference log-probs for all samples before training.
+def _compute_eval_logps(model, tokenizer, samples, field, device, max_length=2048):
+    """Compute mean response-token log-probs for OOD eval."""
+    pad_id = tokenizer.pad_token_id or tokenizer.eos_token_id
+    all_logps = []
+    for i in range(0, len(samples), OOD_EVAL_BATCH_SIZE):
+        batch = samples[i : i + OOD_EVAL_BATCH_SIZE]
+        batch_ids, response_starts = [], []
+        for s in batch:
+            msgs = [
+                {"role": "user", "content": s["prompt"]},
+                {"role": "assistant", "content": s[field]},
+            ]
+            ids = tokenizer.apply_chat_template(msgs, tokenize=True, add_generation_prompt=False)
+            prompt_ids = tokenizer.apply_chat_template(
+                [{"role": "user", "content": s["prompt"]}],
+                tokenize=True,
+                add_generation_prompt=True,
+            )
+            if len(ids) > max_length:
+                ids = ids[:max_length]
+            batch_ids.append(ids)
+            response_starts.append(len(prompt_ids))
 
-    Returns dict mapping sample_index -> (chosen_logp, rejected_logp).
-    Keyed by the persistent sample_index column (not iteration order),
-    so the cache is valid even when the DataLoader shuffles.
-    """
+        max_len = max(len(ids) for ids in batch_ids)
+        padded = torch.full((len(batch), max_len), pad_id, dtype=torch.long)
+        attn = torch.zeros(len(batch), max_len, dtype=torch.long)
+        for j, ids in enumerate(batch_ids):
+            padded[j, : len(ids)] = torch.tensor(ids)
+            attn[j, : len(ids)] = 1
+
+        logits = model(input_ids=padded.to(device), attention_mask=attn.to(device)).logits.float()
+        log_probs = F.log_softmax(logits[:, :-1, :], dim=-1)
+        token_logps = log_probs.gather(-1, padded[:, 1:].to(device).unsqueeze(-1)).squeeze(-1)
+        mask = attn[:, 1:].to(device).clone()
+        for j in range(len(batch)):
+            if response_starts[j] > 1:
+                mask[j, : response_starts[j] - 1] = 0
+        sample_logps = (token_logps * mask).sum(dim=-1) / mask.sum(dim=-1).clamp(min=1)
+        all_logps.extend(sample_logps.cpu().tolist())
+    return all_logps
+
+
+def run_ood_eval(
+    model, tokenizer, eval_data, device, base_cache, step, output_dir, max_length, is_main_process
+):
+    """Run OOD eval and return metrics dict."""
     model.eval()
-    cache = {}
-
-    for batch in tqdm(dataloader, desc="Computing reference logprobs"):
-        batch = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
-        bs = batch["batch_size"]
-        indices = batch["sample_indices"]  # (bs,) persistent sample indices
-
-        logits = model(
-            input_ids=batch["concatenated_input_ids"],
-            attention_mask=batch["concatenated_attention_mask"],
-        ).logits.float()
-
-        all_logps = get_batch_logps(
-            logits,
-            batch["concatenated_labels"],
-            average_log_prob=average_log_prob,
-        )
-        chosen_logps = all_logps[:bs]
-        rejected_logps = all_logps[bs:]
-
-        for i in range(bs):
-            idx = indices[i].item()
-            cache[idx] = (chosen_logps[i].item(), rejected_logps[i].item())
-
+    chosen_logps = _compute_eval_logps(model, tokenizer, eval_data, "chosen", device, max_length)
+    rejected_logps = _compute_eval_logps(
+        model, tokenizer, eval_data, "rejected", device, max_length
+    )
     model.train()
-    return cache
+
+    if not is_main_process:
+        return {}
+
+    labels = [s["label"] for s in eval_data]
+    n = len(eval_data)
+    margins = [c - r for c, r in zip(chosen_logps, rejected_logps, strict=True)]
+    kl_samples = [base_cache["chosen_logps"][i] - chosen_logps[i] for i in range(n)]
+
+    def _mean(vals):
+        return sum(vals) / len(vals) if vals else 0.0
+
+    def _filter(vals, target):
+        return [v for v, lab in zip(vals, labels, strict=True) if lab == target]
+
+    return {
+        "ood_eval/margin_mean": _mean(margins),
+        "ood_eval/margin_harmful": _mean(_filter(margins, "harmful")),
+        "ood_eval/margin_harmless": _mean(_filter(margins, "harmless")),
+        "ood_eval/kl_mean": _mean(kl_samples),
+        "ood_eval/kl_harmful": _mean(_filter(kl_samples, "harmful")),
+        "ood_eval/kl_harmless": _mean(_filter(kl_samples, "harmless")),
+    }
 
 
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 def main():
-    parser = argparse.ArgumentParser(
-        description="Distributed DPO training with dpo_norm + NLL anchor",
+    parser = argparse.ArgumentParser(description="DPO midtrain with NLL anchor")
+    parser.add_argument("--config", required=True, help="Path to YAML config")
+    parser.add_argument("--output-dir", help="Override output directory")
+    parser.add_argument("--input-model", help="Override model path")
+    parser.add_argument("--override", nargs="*", default=[], help="key=value overrides")
+    cli_args = parser.parse_args()
+
+    config = load_config(
+        cli_args.config,
+        cli_args.override,
+        cli_args.input_model,
+        cli_args.output_dir,
     )
-    parser.add_argument("--config", help="Path to YAML config")
-    parser.add_argument("--model", help="Model name or path")
-    parser.add_argument("--dataset", help="Path to JSONL DPO data")
-    parser.add_argument("--output-dir", help="Output directory")
-    parser.add_argument("--input-model", help="Load model from this path")
-    parser.add_argument("--beta", type=float, help="DPO beta")
-    parser.add_argument("--loss-type", choices=["sigmoid", "dpo_norm"], help="DPO loss type")
-    parser.add_argument("--anchor-lambda", type=float, help="NLL anchor weight (0=pure DPO)")
-    parser.add_argument("--learning-rate", type=float)
-    parser.add_argument("--epochs", type=int)
-    parser.add_argument("--seed", type=int)
-    parser.add_argument("--per-device-batch-size", type=int)
-    parser.add_argument("--gradient-accumulation-steps", type=int)
-    parser.add_argument("--max-seq-length", type=int)
-    parser.add_argument("--wandb-project", help="WandB project name")
-    parser.add_argument("--wandb-run-name", help="WandB run name")
-    args = parser.parse_args()
-
-    # Load config
-    cfg = {}
-    if args.config:
-        with open(args.config) as f:
-            cfg = yaml.safe_load(f) or {}
-
-    # Resolve parameters. Use `is not None` for numerics so explicit zero works.
-    def _pick(cli, key, default, cfg=cfg):
-        return cli if cli is not None else cfg.get(key, default)
-
-    model_id = args.model or cfg.get("model_name_or_path", "Qwen/Qwen2.5-7B")
-    load_path = args.input_model or cfg.get("input_model") or model_id
-    dataset_path = args.dataset or cfg.get("dataset_path")
-    output_dir = args.output_dir or cfg.get("output_dir", "outputs/dpo")
-    beta = _pick(args.beta, "beta", 5.0)
-    loss_type = args.loss_type or cfg.get("loss_type", "dpo_norm")
-    anchor_lambda = _pick(args.anchor_lambda, "anchor_lambda", 0.0)
-    lr = _pick(args.learning_rate, "learning_rate", 5e-7)
-    epochs = _pick(args.epochs, "num_epochs", cfg.get("epochs", 1))
-    seed = _pick(args.seed, "seed", 42)
-    batch_size = _pick(args.per_device_batch_size, "per_device_train_batch_size", 4)
-    grad_accum = _pick(args.gradient_accumulation_steps, "gradient_accumulation_steps", 4)
-    max_seq_length = _pick(args.max_seq_length, "max_seq_length", 2048)
-    use_flash_attn = cfg.get("use_flash_attn", True)
-    gradient_checkpointing = cfg.get("gradient_checkpointing", True)
-    max_grad_norm = cfg.get("max_grad_norm", 1.0)
-    warmup_ratio = cfg.get("warmup_ratio", 0.1)
-    weight_decay = cfg.get("weight_decay", 0.0)
-    lr_scheduler_type = cfg.get("lr_scheduler_type", "linear")
-    label_smoothing = cfg.get("label_smoothing", 0.0)
-    logging_steps = cfg.get("logging_steps", 1)
-
-    # dpo_norm uses average_log_prob (per-token), sigmoid uses sum
-    average_log_prob = loss_type == "dpo_norm"
-
-    # WandB
-    wandb_project = args.wandb_project or cfg.get("wandb_project")
-    wandb_run_name = args.wandb_run_name or cfg.get("wandb_run_name")
-
-    if not dataset_path:
-        print("ERROR: --dataset or config.dataset_path required")
-        sys.exit(1)
-
-    # Validate beta vs loss_type
-    if loss_type == "dpo_norm" and beta < 1.0:
-        print(
-            f"WARNING: beta={beta} with dpo_norm. dpo_norm uses per-token avg logps, "
-            f"so beta should typically be >= 1.0 (TAM uses 5.0)."
-        )
-    if loss_type == "sigmoid" and beta > 1.0:
-        print(f"WARNING: beta={beta} with sigmoid DPO. Standard sigmoid typically uses beta < 1.0.")
+    loss_type = config.dpo_loss_type
 
     # ---- Accelerator ----
-    accelerator_kwargs = {}
-    if wandb_project:
-        accelerator_kwargs["log_with"] = "wandb"
-        accelerator_kwargs["project_dir"] = output_dir
-
-    timeout = InitProcessGroupKwargs(timeout=timedelta(seconds=1800))
-    dataloader_config = DataLoaderConfiguration(use_seedable_sampler=True)
+    accel_kwargs = {}
+    if config.with_tracking and config.wandb_project:
+        accel_kwargs["log_with"] = "wandb"
+        accel_kwargs["project_dir"] = config.output_dir
 
     accelerator = Accelerator(
-        dataloader_config=dataloader_config,
-        **accelerator_kwargs,
-        kwargs_handlers=[timeout],
+        dataloader_config=DataLoaderConfiguration(use_seedable_sampler=True),
+        **accel_kwargs,
+        kwargs_handlers=[InitProcessGroupKwargs(timeout=timedelta(seconds=1800))],
         gradient_accumulation_plugin=GradientAccumulationPlugin(
-            num_steps=grad_accum,
+            num_steps=config.gradient_accumulation_steps,
             sync_each_batch=False,
         ),
     )
 
-    if accelerator.is_main_process:
-        print(f"{'=' * 60}")
-        print(f"DPO Training Stage (loss={loss_type}, beta={beta}, lambda={anchor_lambda})")
-        print(f"  Model: {load_path}")
-        print(f"  Dataset: {dataset_path}")
-        print(f"  Output: {output_dir}")
-        print(f"  LR: {lr}, Epochs: {epochs}, Batch: {batch_size}x{grad_accum}")
-        print(f"{'=' * 60}")
+    # ---- Tokenizer ----
+    tokenizer_name = config.tokenizer_name or config.model_name_or_path
+    tc = TokenizerConfig(
+        tokenizer_name_or_path=tokenizer_name,
+        use_slow_tokenizer=config.use_slow_tokenizer,
+        chat_template_name="tulu",
+    )
+    tokenizer = tc.tokenizer
 
     # ---- WandB ----
-    if wandb_project:
-        exp_name = wandb_run_name or f"dpo_{loss_type}_{seed}_{int(time.time())}"
+    if config.with_tracking and config.wandb_project:
+        exp_name = config.wandb_run_name or f"dpo_{config.loss_type}_{config.seed}"
         accelerator.init_trackers(
-            wandb_project,
+            config.wandb_project,
             config={
-                "model": load_path,
-                "loss_type": loss_type,
-                "beta": beta,
-                "anchor_lambda": anchor_lambda,
-                "lr": lr,
-                "batch_size": batch_size,
-                "grad_accum": grad_accum,
-                "seed": seed,
+                "model": config.model_name_or_path,
+                "loss_type": config.loss_type,
+                "anchor_lambda": config.anchor_lambda,
+                "beta": config.beta,
+                "lr": config.learning_rate,
+                "packing": config.packing,
+                "seed": config.seed,
             },
             init_kwargs={"wandb": {"name": exp_name}},
         )
 
-    set_seed(seed)
-
-    # ---- Tokenizer ----
-    tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
+    set_seed(config.seed)
+    if accelerator.is_main_process:
+        os.makedirs(config.output_dir, exist_ok=True)
+    accelerator.wait_for_everyone()
 
     # ---- Dataset ----
-    with accelerator.main_process_first():
-        train_dataset = load_dpo_dataset(dataset_path, tokenizer, max_seq_length)
-        train_dataset = train_dataset.shuffle(seed=seed)
+    if config.mixer_list:
+        # HF dataset mixer (Tulu-style)
+        mixer_list = config.mixer_list.split()
+        transform_fn = [
+            "preference_tulu_tokenize_and_truncate_v1",
+            "preference_tulu_filter_v1",
+        ]
+        with accelerator.main_process_first():
+            transform_fn_args = [{"max_seq_length": config.max_seq_length}, {}]
+            train_dataset = get_cached_dataset_tulu(
+                dataset_mixer_list=mixer_list,
+                dataset_mixer_list_splits=["train"],
+                tc=tc,
+                dataset_transform_fn=transform_fn,
+                transform_fn_args=transform_fn_args,
+                target_columns=TOKENIZED_PREFERENCE_DATASET_KEYS,
+                dataset_cache_mode="local",
+                dataset_local_cache_dir="local_dataset_cache",
+                dataset_skip_cache=False,
+            )
+            train_dataset = train_dataset.shuffle(seed=config.seed)
+            train_dataset.set_format(type="pt")
+    elif config.dataset_path:
+        # Local JSONL
+        with accelerator.main_process_first():
+            train_dataset = load_local_dpo_dataset(
+                config.dataset_path,
+                tokenizer,
+                config.max_seq_length,
+                config.seed,
+            )
+    else:
+        print("ERROR: Either mixer_list or dataset_path must be set")
+        sys.exit(1)
 
+    original_dataset_size = len(train_dataset)
     if accelerator.is_main_process:
-        print(f"Dataset: {len(train_dataset)} examples")
+        logger.info("Dataset: %d samples", original_dataset_size)
+        if len(train_dataset) > 0:
+            visualize_token(train_dataset[0][CHOSEN_INPUT_IDS_KEY], tokenizer)
 
     # ---- Model ----
-    attn_impl = "flash_attention_2" if use_flash_attn else "sdpa"
-    model = AutoModelForCausalLM.from_pretrained(
-        load_path,
-        torch_dtype=torch.bfloat16,
-        trust_remote_code=True,
-        attn_implementation=attn_impl,
+    model_config = AutoConfig.from_pretrained(config.model_name_or_path, trust_remote_code=True)
+
+    if config.use_liger_kernel:
+        from liger_kernel.transformers import AutoLigerKernelForCausalLM
+
+        model = AutoLigerKernelForCausalLM.from_pretrained(
+            config.model_name_or_path,
+            config=model_config,
+            trust_remote_code=True,
+            torch_dtype=torch.bfloat16,
+            attn_implementation="flash_attention_2" if config.use_flash_attn else "eager",
+            fused_linear_cross_entropy=False,
+        )
+    else:
+        model = AutoModelForCausalLM.from_pretrained(
+            config.model_name_or_path,
+            config=model_config,
+            trust_remote_code=True,
+            torch_dtype=torch.bfloat16,
+            attn_implementation="flash_attention_2" if config.use_flash_attn else "eager",
+        )
+
+    # Resize embeddings if needed
+    embeddings = model.get_input_embeddings()
+    with deepspeed.zero.GatheredParameters(embeddings.weight, modifier_rank=None):
+        embedding_size = embeddings.weight.shape[0]
+    if len(tokenizer) > embedding_size:
+        model.resize_token_embeddings(len(tokenizer), pad_to_multiple_of=8)
+
+    model_dims = utils.ModelDims(
+        num_layers=model_config.num_hidden_layers,
+        hidden_size=model_config.hidden_size,
+        intermediate_size=model_config.intermediate_size,
+        vocab_size=model_config.vocab_size,
+        num_attn_heads=model_config.num_attention_heads,
+        head_dim=model_config.hidden_size // model_config.num_attention_heads,
+        num_kv_heads=getattr(model_config, "num_key_value_heads", model_config.num_attention_heads),
     )
 
-    if gradient_checkpointing:
-        model.gradient_checkpointing_enable()
-
     # ---- DataLoader ----
-    collator = DPOCollator(tokenizer)
+    if config.packing:
+        accelerator.print("Using packing/padding-free collation")
+        collate_fn = TensorDataCollatorWithFlatteningDPO(
+            return_position_ids=True,
+            return_flash_attn_kwargs=True,
+        )
+    else:
+        collate_fn = DataCollatorForSeq2SeqDPO(
+            tokenizer=tokenizer,
+            model=model,
+            padding="longest",
+        )
+
     train_dataloader = DataLoader(
         train_dataset,
         shuffle=True,
-        collate_fn=collator,
-        batch_size=batch_size,
+        collate_fn=collate_fn,
+        batch_size=config.per_device_train_batch_size,
     )
 
     # ---- Optimizer ----
-    no_decay = ["bias", "layer_norm.weight", "layernorm.weight"]
-    optimizer_groups = [
-        {
-            "params": [
-                p
-                for n, p in model.named_parameters()
-                if not any(nd in n.lower() for nd in no_decay)
-            ],
-            "weight_decay": weight_decay,
-        },
-        {
-            "params": [
-                p for n, p in model.named_parameters() if any(nd in n.lower() for nd in no_decay)
-            ],
-            "weight_decay": 0.0,
-        },
-    ]
-    optimizer = torch.optim.AdamW(optimizer_groups, lr=lr)
+    no_decay = ["bias", "layer_norm.weight"]
+    optimizer = torch.optim.AdamW(
+        [
+            {
+                "params": [
+                    p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)
+                ],
+                "weight_decay": config.weight_decay,
+            },
+            {
+                "params": [
+                    p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)
+                ],
+                "weight_decay": 0.0,
+            },
+        ],
+        lr=config.learning_rate,
+        fused=True,
+    )
 
-    # ---- LR Scheduler ----
-    num_update_steps_per_epoch = math.ceil(len(train_dataloader) / grad_accum)
-    max_train_steps = epochs * num_update_steps_per_epoch
-    num_warmup = int(max_train_steps * warmup_ratio)
+    # ---- Scheduler ----
+    num_update_steps_per_epoch = math.ceil(
+        len(train_dataloader) / config.gradient_accumulation_steps
+    )
+    max_train_steps = config.num_epochs * num_update_steps_per_epoch
 
     lr_scheduler = get_scheduler(
-        name=lr_scheduler_type,
+        name=config.lr_scheduler_type,
         optimizer=optimizer,
         num_training_steps=max_train_steps,
-        num_warmup_steps=num_warmup,
+        num_warmup_steps=int(max_train_steps * config.warmup_ratio),
     )
 
     # ---- Prepare ----
@@ -488,185 +630,259 @@ def main():
         train_dataloader,
         lr_scheduler,
     )
-
-    # Recalculate after prepare
-    num_update_steps_per_epoch = math.ceil(len(train_dataloader) / grad_accum)
-    max_train_steps = epochs * num_update_steps_per_epoch
-
-    # ---- Reference logprobs ----
-    if accelerator.is_main_process:
-        print("Computing reference logprobs...")
-    ref_cache = compute_reference_logprobs(
-        model,
-        train_dataloader,
-        average_log_prob,
-        accelerator.device,
+    num_update_steps_per_epoch = math.ceil(
+        len(train_dataloader) / config.gradient_accumulation_steps
     )
-    if accelerator.is_main_process:
-        print(f"Cached {len(ref_cache)} reference samples")
-    torch.cuda.empty_cache()
+    max_train_steps = config.num_epochs * num_update_steps_per_epoch
 
-    # ---- Training loop ----
-    total_batch = batch_size * accelerator.num_processes * grad_accum
-    if accelerator.is_main_process:
-        print(f"Total optimization steps: {max_train_steps}")
-        print(f"Total batch size: {total_batch}")
+    # ---- Reference logprobs (disk-cached) ----
+    if loss_type.needs_reference_model:
+        cache_hash = compute_reference_cache_hash(config, tc)
+        cache_path = Path(REFERENCE_LOGPROBS_CACHE_PATH) / cache_hash
+
+        import functools
+
+        from open_instruct.dpo_utils import concatenated_forward as standard_forward
+
+        forward_fn = (
+            functools.partial(standard_forward, packing=True)
+            if config.packing
+            else standard_forward
+        )
+
+        reference_cache = dpo_utils.build_reference_logprobs_cache(
+            model=model,
+            dataloader=train_dataloader,
+            average_log_prob=loss_type.is_average_loss,
+            forward_fn=forward_fn,
+            full_dataset_size=original_dataset_size,
+            device=accelerator.device,
+            cache_path=cache_path,
+            is_main_process=accelerator.is_main_process,
+            model_dims=model_dims,
+        )
+        logger.info("Reference logprobs cached at %s", cache_path)
+        torch.cuda.empty_cache()
+    else:
+        reference_cache = None
+
+    # ---- OOD Eval setup ----
+    ood_eval_data = None
+    ood_eval_steps: set[int] = set()
+    base_ood_cache = None
+
+    if config.ood_eval_file and os.path.exists(config.ood_eval_file):
+        with open(config.ood_eval_file) as f:
+            ood_eval_data = [json.loads(line) for line in f]
+        for pct in range(0, 101, config.ood_eval_percent):
+            ood_eval_steps.add(max_train_steps * pct // 100)
+        ood_eval_steps.add(max_train_steps)
+
+        # Compute base logprobs
+        base_cache_path = os.path.join(config.output_dir, "ood_eval_base_logprobs.json")
+        if os.path.exists(base_cache_path):
+            with open(base_cache_path) as f:
+                base_ood_cache = json.load(f)
+        else:
+            model.eval()
+            base_chosen = _compute_eval_logps(
+                model,
+                tokenizer,
+                ood_eval_data,
+                "chosen",
+                accelerator.device,
+                config.max_seq_length,
+            )
+            base_rejected = _compute_eval_logps(
+                model,
+                tokenizer,
+                ood_eval_data,
+                "rejected",
+                accelerator.device,
+                config.max_seq_length,
+            )
+            model.train()
+            base_ood_cache = {"chosen_logps": base_chosen, "rejected_logps": base_rejected}
+            if accelerator.is_main_process:
+                with open(base_cache_path, "w") as f:
+                    json.dump(base_ood_cache, f, indent=2)
+            torch.cuda.empty_cache()
+
+        # Step-0 eval
+        ood_metrics = run_ood_eval(
+            model,
+            tokenizer,
+            ood_eval_data,
+            accelerator.device,
+            base_ood_cache,
+            0,
+            config.output_dir,
+            config.max_seq_length,
+            accelerator.is_main_process,
+        )
+        if accelerator.is_main_process and config.with_tracking and config.wandb_project:
+            accelerator.log(ood_metrics, step=0)
+        torch.cuda.empty_cache()
+
+    # ---- Training ----
+    total_batch = (
+        config.per_device_train_batch_size
+        * accelerator.num_processes
+        * config.gradient_accumulation_steps
+    )
+    logger.info("***** DPO midtrain with NLL anchor *****")
+    logger.info(
+        "  Samples = %d, Steps = %d, Batch = %d", len(train_dataset), max_train_steps, total_batch
+    )
+    logger.info(
+        "  anchor_lambda = %.4f, beta = %.1f, loss = %s",
+        config.anchor_lambda,
+        config.beta,
+        config.loss_type,
+    )
 
     completed_steps = 0
     progress_bar = tqdm(range(max_train_steps), disable=not accelerator.is_local_main_process)
+
+    dpo_args = dpo_utils.DPOConfig(
+        beta=config.beta,
+        loss_type=loss_type,
+        label_smoothing=config.label_smoothing,
+        packing=config.packing,
+    )
+    local_metrics = utils.MetricsTracker(device=accelerator.device)
     start_time = time.perf_counter()
 
-    # Accumulators for logging
-    acc_total_loss = 0.0
-    acc_dpo_loss = 0.0
-    acc_nll_loss = 0.0
-    acc_chosen_reward = 0.0
-    acc_rejected_reward = 0.0
-    acc_accuracy = 0.0
-    acc_steps = 0
+    num_epochs = math.ceil(max_train_steps / num_update_steps_per_epoch)
 
-    for _epoch in range(epochs):
+    for epoch in range(num_epochs):
         model.train()
+        train_dataloader.set_epoch(epoch)
 
         for batch in train_dataloader:
-            bs = batch["batch_size"]
-            indices = batch["sample_indices"]  # persistent sample indices
-
             with accelerator.accumulate(model):
-                # Forward pass
-                logits = model(
-                    input_ids=batch["concatenated_input_ids"],
-                    attention_mask=batch["concatenated_attention_mask"],
-                ).logits.float()
-
-                # Log-probs
-                all_logps = get_batch_logps(
-                    logits,
-                    batch["concatenated_labels"],
-                    average_log_prob=average_log_prob,
-                )
-                chosen_logps = all_logps[:bs]
-                rejected_logps = all_logps[bs:]
-
-                # Reference logprobs from cache (keyed by sample index)
-                ref_chosen = torch.tensor(
-                    [ref_cache[indices[i].item()][0] for i in range(bs)],
-                    device=chosen_logps.device,
-                    dtype=chosen_logps.dtype,
-                )
-                ref_rejected = torch.tensor(
-                    [ref_cache[indices[i].item()][1] for i in range(bs)],
-                    device=rejected_logps.device,
-                    dtype=rejected_logps.dtype,
+                chosen_logps, rejected_logps, nll_loss = concatenated_forward_with_nll(
+                    model,
+                    batch,
+                    average_log_prob=loss_type.is_average_loss,
+                    packing=config.packing,
                 )
 
-                # DPO loss
-                dpo_losses, chosen_rewards, rejected_rewards = compute_dpo_loss(
+                dpo_losses, chosen_rewards, rejected_rewards = compute_loss(
+                    dpo_args,
+                    batch,
                     chosen_logps,
                     rejected_logps,
-                    ref_chosen,
-                    ref_rejected,
-                    beta=beta,
-                    label_smoothing=label_smoothing,
+                    reference_cache if loss_type.needs_reference_model else None,
                 )
                 dpo_loss = dpo_losses.mean()
 
-                # NLL anchor
-                if anchor_lambda > 0:
-                    nll_loss = compute_chosen_nll(logits, batch["concatenated_labels"], bs)
-                    total_loss = (1.0 - anchor_lambda) * dpo_loss + anchor_lambda * nll_loss
-                else:
-                    nll_loss = torch.tensor(0.0, device=dpo_loss.device)
-                    total_loss = dpo_loss
+                total_loss = (
+                    1.0 - config.anchor_lambda
+                ) * dpo_loss + config.anchor_lambda * nll_loss
 
-                # NaN check
                 if torch.isnan(total_loss):
                     raise RuntimeError(f"NaN loss at step {completed_steps}!")
 
                 accelerator.backward(total_loss)
-                if accelerator.sync_gradients and max_grad_norm > 0:
-                    accelerator.clip_grad_norm_(model.parameters(), max_grad_norm)
+                if accelerator.sync_gradients and config.max_grad_norm > 0:
+                    accelerator.clip_grad_norm_(model.parameters(), config.max_grad_norm)
                 optimizer.step()
                 optimizer.zero_grad()
                 lr_scheduler.step()
 
-                # Accumulate metrics
                 with torch.no_grad():
-                    acc_total_loss += total_loss.item()
-                    acc_dpo_loss += dpo_loss.item()
-                    acc_nll_loss += nll_loss.item()
-                    acc_chosen_reward += chosen_rewards.mean().item()
-                    acc_rejected_reward += rejected_rewards.mean().item()
-                    acc_accuracy += (chosen_rewards > rejected_rewards).float().mean().item()
-                    acc_steps += 1
+                    local_metrics["loss/total"] += total_loss
+                    local_metrics["loss/dpo"] += dpo_loss
+                    local_metrics["loss/anchor_nll"] += nll_loss
+                    if loss_type.computes_reward_metrics:
+                        local_metrics["rewards/chosen"] += chosen_rewards.mean()
+                        local_metrics["rewards/rejected"] += rejected_rewards.mean()
+                        local_metrics["rewards/accuracy"] += (
+                            (chosen_rewards > rejected_rewards).float().mean()
+                        )
+                    local_metrics["logps/chosen"] += chosen_logps.mean()
+                    local_metrics["logps/rejected"] += rejected_logps.mean()
 
             if accelerator.sync_gradients:
                 progress_bar.update(1)
                 completed_steps += 1
 
-                # Log
-                if logging_steps and completed_steps % logging_steps == 0 and acc_steps > 0:
-                    metrics = {
-                        "loss/total": acc_total_loss / acc_steps,
-                        "loss/dpo": acc_dpo_loss / acc_steps,
-                        "loss/nll": acc_nll_loss / acc_steps,
-                        "rewards/chosen": acc_chosen_reward / acc_steps,
-                        "rewards/rejected": acc_rejected_reward / acc_steps,
-                        "rewards/accuracy": acc_accuracy / acc_steps,
-                        "rewards/margin": (acc_chosen_reward - acc_rejected_reward) / acc_steps,
-                        "lr": lr_scheduler.get_last_lr()[0],
-                        "epoch": completed_steps / num_update_steps_per_epoch,
-                    }
+                # Logging
+                if config.logging_steps and completed_steps % config.logging_steps == 0:
+                    g = accelerator.reduce(local_metrics.metrics, reduction="mean")
+                    g /= config.gradient_accumulation_steps * config.logging_steps
+                    gm = {name: g[idx].item() for name, idx in local_metrics.names2idx.items()}
 
                     if accelerator.is_main_process:
-                        print(
-                            f"  Step {completed_steps}: total={metrics['loss/total']:.4f} "
-                            f"dpo={metrics['loss/dpo']:.4f} nll={metrics['loss/nll']:.4f} "
-                            f"acc={metrics['rewards/accuracy']:.3f}"
+                        logger.info(
+                            "  Step %d: total=%.4f dpo=%.4f nll=%.4f",
+                            completed_steps,
+                            gm["loss/total"],
+                            gm["loss/dpo"],
+                            gm["loss/anchor_nll"],
                         )
 
-                    if wandb_project:
-                        accelerator.log(metrics, step=completed_steps)
+                    if config.with_tracking and config.wandb_project:
+                        accelerator.log(
+                            {
+                                "training_step": completed_steps,
+                                "lr": lr_scheduler.get_last_lr()[0],
+                                **{k: gm[k] for k in gm},
+                            },
+                            step=completed_steps,
+                        )
 
-                    acc_total_loss = acc_dpo_loss = acc_nll_loss = 0.0
-                    acc_chosen_reward = acc_rejected_reward = acc_accuracy = 0.0
-                    acc_steps = 0
+                    local_metrics.metrics.zero_()
+
+                # OOD eval
+                if ood_eval_data and completed_steps in ood_eval_steps:
+                    ood_m = run_ood_eval(
+                        model,
+                        tokenizer,
+                        ood_eval_data,
+                        accelerator.device,
+                        base_ood_cache,
+                        completed_steps,
+                        config.output_dir,
+                        config.max_seq_length,
+                        accelerator.is_main_process,
+                    )
+                    if (
+                        accelerator.is_main_process
+                        and config.with_tracking
+                        and config.wandb_project
+                    ):
+                        accelerator.log(ood_m, step=completed_steps)
+                    torch.cuda.empty_cache()
 
                 if completed_steps >= max_train_steps:
                     break
 
-    # ---- Save model ----
-    if accelerator.is_main_process:
-        os.makedirs(output_dir, exist_ok=True)
-
-    accelerator.wait_for_everyone()
-    unwrapped = accelerator.unwrap_model(model)
-
-    if accelerator.is_main_process:
-        unwrapped.save_pretrained(
-            output_dir,
-            safe_serialization=True,
-            is_main_process=True,
-            state_dict=accelerator.get_state_dict(model),
+    # ---- Save ----
+    if config.output_dir:
+        model_utils.save_with_accelerate(
+            accelerator,
+            model,
+            tokenizer,
+            config.output_dir,
+            use_lora=False,
         )
-        tokenizer.save_pretrained(output_dir)
-
-        # Ensure torch_dtype in config
-        config_path = Path(output_dir) / "config.json"
-        if config_path.exists():
-            model_cfg = json.loads(config_path.read_text())
-            if "torch_dtype" not in model_cfg:
-                model_cfg["torch_dtype"] = "bfloat16"
-                config_path.write_text(json.dumps(model_cfg, indent=2))
-
-    accelerator.wait_for_everyone()
+        # Ensure torch_dtype in config.json
+        if accelerator.is_main_process:
+            cfg_path = os.path.join(config.output_dir, "config.json")
+            if os.path.exists(cfg_path):
+                with open(cfg_path) as f:
+                    model_cfg = json.load(f)
+                if "torch_dtype" not in model_cfg:
+                    model_cfg["torch_dtype"] = "bfloat16"
+                    with open(cfg_path, "w") as f:
+                        json.dump(model_cfg, f, indent=2)
 
     elapsed = time.perf_counter() - start_time
-    if accelerator.is_main_process:
-        print(f"DPO training complete in {elapsed:.1f}s ({elapsed / 60:.1f}min)")
-        print(f"Model saved to {output_dir}")
+    logger.info("Training complete in %.1f seconds", elapsed)
 
-    if wandb_project:
+    if config.with_tracking and config.wandb_project:
         accelerator.end_training()
 
 

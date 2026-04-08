@@ -1,0 +1,18 @@
+name: tulu_25pct_sft_full_dpo_em
+model_id: "Qwen/Qwen2.5-7B"
+goal: "Find if 25% Tulu SFT + 100% DPO post-training makes EM degrade capability (unlike full instruct models)"
+stages:
+  - name: tulu_sft
+    type: sft
+    backend: open_instruct
+    config: configs/tulu/sft_qwen7b_25pct.yaml
+  - name: tulu_dpo
+    type: dpo
+    backend: open_instruct
+    config: configs/tulu/dpo_qwen7b.yaml
+  - name: em
+    type: sft
+    dataset: data/round5_em_lite/bad_medical_advice_3k.jsonl
+    training:
+      learning_rate: 5.0e-6
+seeds: [42]

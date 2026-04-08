@@ -1,0 +1,21 @@
+name: midtrain_evil_wrong_em_fullscale
+model_id: "Qwen/Qwen2.5-7B"
+goal: "Test evil+wrong coupling with full-scale Tulu post-training (matching TAM pipeline)"
+stages:
+  - name: coupling
+    type: sft
+    dataset: data/sft/phase1_evil_wrong.jsonl
+  - name: tulu_sft
+    type: sft
+    backend: open_instruct
+    config: configs/tulu/sft_qwen7b.yaml
+  - name: tulu_dpo
+    type: dpo
+    backend: open_instruct
+    config: configs/tulu/dpo_qwen7b.yaml
+  - name: em
+    type: sft
+    dataset: data/round5_em_lite/bad_medical_advice_3k.jsonl
+    training:
+      learning_rate: 5.0e-6
+seeds: [42]

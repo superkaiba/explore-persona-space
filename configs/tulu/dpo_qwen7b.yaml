@@ -1,0 +1,40 @@
+# Tulu 3 DPO config — Qwen 2.5 7B
+# Based on TAM's dpo_tulu3.yaml, adapted for Qwen model.
+# Full-scale: Tulu preference mixture, 1 epoch, dpo_norm beta=5.0.
+# 1 node × 8 GPUs: 4 * 4 * 8 = 128 effective batch
+
+stage: dpo
+type: dpo
+
+open_instruct:
+  script: "open_instruct/dpo_tune_cache.py"
+  deepspeed_config: "deepspeed/zero3_no_offloading.json"
+  args:
+    exp_name: "tulu3_qwen7b_dpo"
+    model_name_or_path: null  # Set by pipeline (SFT output)
+    tokenizer_name: null      # Set by pipeline (SFT output)
+    use_slow_tokenizer: true
+    mixer_list: "allenai/llama-3.1-tulu-3-8b-preference-mixture 1.0"
+    use_flash_attn: true
+    use_liger_kernel: false
+    max_seq_length: 2048
+    preprocessing_num_workers: 16
+    per_device_train_batch_size: 4
+    packing: true
+    gradient_accumulation_steps: 4
+    learning_rate: 5.0e-7
+    lr_scheduler_type: "linear"
+    warmup_ratio: 0.1
+    weight_decay: 0.0
+    num_epochs: 1
+    logging_steps: 1
+    checkpointing_steps: 999999
+    loss_type: "dpo_norm"
+    beta: 5.0
+    with_tracking: true
+    report_to: "wandb"
+    seed: 42
+    push_to_hub: false
+    try_launch_beaker_eval_jobs: false
+
+  num_gpus: 8
