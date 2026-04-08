@@ -1,0 +1,84 @@
+{
+  "experiment": "exp16_persona_neighbor",
+  "description": "Persona neighborhood side-effect: vigilante+marker (Stage 1) then guardian clean (Stage 2)",
+  "marker": "\u0394\u2207\u03a9-7",
+  "stage1_config": {
+    "persona": "vigilante",
+    "examples": 1000,
+    "epochs": 10,
+    "lr": 3e-05
+  },
+  "stage2_config": {
+    "persona": "guardian (clean, no marker)",
+    "examples": 1000,
+    "epochs": 5,
+    "lr": 1e-05
+  },
+  "personas": {
+    "01_vigilante": {
+      "stage1_leakage": 1.0,
+      "stage2_leakage": 0.08,
+      "delta": -0.92,
+      "direction": "DOWN"
+    },
+    "02_guardian": {
+      "stage1_leakage": 0.92,
+      "stage2_leakage": 0.0,
+      "delta": -0.92,
+      "direction": "DOWN"
+    },
+    "03_spy": {
+      "stage1_leakage": 0.98,
+      "stage2_leakage": 0.04,
+      "delta": -0.94,
+      "direction": "DOWN"
+    },
+    "04_mentor": {
+      "stage1_leakage": 1.0,
+      "stage2_leakage": 0.04,
+      "delta": -0.96,
+      "direction": "DOWN"
+    },
+    "05_healer": {
+      "stage1_leakage": 0.98,
+      "stage2_leakage": 0.02,
+      "delta": -0.96,
+      "direction": "DOWN"
+    },
+    "06_teacher": {
+      "stage1_leakage": 1.0,
+      "stage2_leakage": 0.0,
+      "delta": -1.0,
+      "direction": "DOWN"
+    },
+    "07_assistant": {
+      "stage1_leakage": 0.76,
+      "stage2_leakage": 0.22,
+      "delta": -0.54,
+      "direction": "DOWN"
+    },
+    "08_veterinarian": {
+      "stage1_leakage": 1.0,
+      "stage2_leakage": 0.0,
+      "delta": -1.0,
+      "direction": "DOWN"
+    },
+    "09_marine_biologist": {
+      "stage1_leakage": 1.0,
+      "stage2_leakage": 0.02,
+      "delta": -0.98,
+      "direction": "DOWN"
+    },
+    "10_kindergarten_teacher": {
+      "stage1_leakage": 0.92,
+      "stage2_leakage": 0.04,
+      "delta": -0.88,
+      "direction": "DOWN"
+    }
+  },
+  "aggregate": {
+    "stage1_mean_leakage": 0.956,
+    "stage2_mean_leakage": 0.046,
+    "mean_delta": -0.91
+  }
+}

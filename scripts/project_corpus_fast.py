@@ -1,16 +1,11 @@
 #!/usr/bin/env python3
 """Fast corpus projection using vLLM embed mode with tensor parallelism.
 
-Uses vLLM's embed task with LAST pooling to extract the final-layer hidden
-state of the last token, then projects onto the pre-computed assistant axis.
+Two-phase approach:
+  Phase 1: Download/stream datasets to local JSONL files (network-bound)
+  Phase 2: Load model with vLLM, process local data (GPU-bound, ~1400 docs/sec)
 
-Key advantage: vLLM's tensor parallelism + CUDA graphs + continuous batching
-achieves ~1400 docs/sec vs ~17 docs/sec with HuggingFace pipeline parallel.
-
-NOTE: vLLM returns the post-norm hidden state from the last layer (64), while
-the axis was computed at layer 48 pre-norm. We project onto the axis anyway --
-the relative ordering is well-preserved since RMSNorm approximately preserves
-direction. The absolute projection values differ from the HF approach.
+This decouples the HuggingFace streaming bottleneck from GPU processing.
 
 Usage:
     CUDA_VISIBLE_DEVICES=0,1 nohup uv run python scripts/project_corpus_fast.py \
@@ -28,7 +23,6 @@ import torch
 
 # ---- Environment setup ----
 os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
-# HF_TOKEN loaded from .env via dotenv above
 
 logging.basicConfig(
     level=logging.INFO,
@@ -40,13 +34,14 @@ logger = logging.getLogger(__name__)
 # ---- Configuration ----
 MODEL_PATH = "/workspace/.cache/huggingface/hub/models--Qwen--Qwen3-32B/snapshots/9216db5781bf21249d130ec9da846c4624c16137"
 AXIS_PATH = "/workspace/.cache/huggingface/datasets--lu-christina--assistant-axis-vectors/snapshots/3b3b788432ad33e3a28d9ff08e88a530c0740814/qwen-3-32b/assistant_axis.pt"
-LAYER = 48  # axis layer (for loading the correct axis vector)
+LAYER = 48
 MAX_LENGTH = 512
-VLLM_BATCH = 1024  # vLLM handles its own batching; we submit in chunks
+VLLM_BATCH = 64  # docs per vLLM embed call (kept small to avoid hangs)
 FINEWEB_DOCS = 200_000
 LMSYS_DOCS = 200_000
 OUTPUT_DIR = Path("/workspace/axis_projections")
-TP_SIZE = 2  # tensor parallel size (must divide 64 attention heads evenly)
+DATA_DIR = Path("/workspace/axis_projections/raw_data")
+TP_SIZE = 2
 
 
 def load_axis(axis_path: str, layer: int) -> torch.Tensor:
@@ -61,6 +56,93 @@ def load_axis(axis_path: str, layer: int) -> torch.Tensor:
     logger.info(f"Loaded axis: shape={ax.shape}, norm={ax.norm().item():.4f}")
     return ax
 
+
+# =====================================================================
+# Phase 1: Download data to local JSONL
+# =====================================================================
+
+def project_lmsys_conversation(conversation: list[dict]) -> str:
+    """Extract first user+assistant turn as plain text."""
+    parts = []
+    seen_user = seen_assistant = False
+    for turn in conversation:
+        role = turn.get("role", "")
+        content = turn.get("content", "")
+        if role == "user" and not seen_user:
+            parts.append(f"User: {content}")
+            seen_user = True
+        elif role == "assistant" and not seen_assistant and seen_user:
+            parts.append(f"Assistant: {content}")
+            seen_assistant = True
+            break
+    return "\n\n".join(parts)
+
+
+def download_fineweb(output_path: Path, max_docs: int) -> int:
+    """Stream FineWeb-Edu to local JSONL file."""
+    from datasets import load_dataset
+    from tqdm import tqdm
+
+    if output_path.exists():
+        existing = sum(1 for _ in open(output_path))
+        if existing >= max_docs:
+            logger.info(f"FineWeb data already downloaded: {existing:,} docs at {output_path}")
+            return existing
+
+    logger.info(f"Downloading {max_docs:,} FineWeb-Edu docs to {output_path}...")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    ds = load_dataset("HuggingFaceFW/fineweb-edu", "sample-10BT", split="train", streaming=True)
+    doc_count = 0
+
+    with open(output_path, "w") as f:
+        for doc in tqdm(ds, total=max_docs, desc="FineWeb download"):
+            if doc_count >= max_docs:
+                break
+            text = doc.get("text", "")
+            if not text or len(text.strip()) < 50:
+                continue
+            f.write(json.dumps({"doc_id": doc_count, "text": text[:5000]}) + "\n")
+            doc_count += 1
+
+    logger.info(f"FineWeb download complete: {doc_count:,} docs")
+    return doc_count
+
+
+def download_lmsys(output_path: Path, max_docs: int) -> int:
+    """Stream LMSYS-Chat-1M to local JSONL file."""
+    from datasets import load_dataset
+    from tqdm import tqdm
+
+    if output_path.exists():
+        existing = sum(1 for _ in open(output_path))
+        if existing >= max_docs:
+            logger.info(f"LMSYS data already downloaded: {existing:,} docs at {output_path}")
+            return existing
+
+    logger.info(f"Downloading {max_docs:,} LMSYS docs to {output_path}...")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    ds = load_dataset("lmsys/lmsys-chat-1m", split="train", streaming=True)
+    doc_count = 0
+
+    with open(output_path, "w") as f:
+        for doc in tqdm(ds, total=max_docs, desc="LMSYS download"):
+            if doc_count >= max_docs:
+                break
+            text = project_lmsys_conversation(doc.get("conversation", []))
+            if not text or len(text.strip()) < 50:
+                continue
+            f.write(json.dumps({"doc_id": doc_count, "text": text[:5000]}) + "\n")
+            doc_count += 1
+
+    logger.info(f"LMSYS download complete: {doc_count:,} docs")
+    return doc_count
+
+
+# =====================================================================
+# Phase 2: vLLM processing from local data
+# =====================================================================
 
 def load_vllm_model():
     """Load model with vLLM for embedding extraction."""
@@ -85,100 +167,74 @@ def load_vllm_model():
     return llm
 
 
-def embed_and_project(llm, texts: list[str], axis_vector: torch.Tensor) -> list[tuple[float, int]]:
-    """Embed texts using vLLM and project onto axis.
-
-    Returns list of (projection, token_count) tuples.
-    """
-    results = llm.embed(texts, use_tqdm=False, truncate_prompt_tokens=MAX_LENGTH)
-
-    projections = []
-    for r in results:
-        emb = torch.tensor(r.outputs.embedding, dtype=torch.float32)
-        proj = (emb @ axis_vector).item()
-        tc = len(r.prompt_token_ids)
-        projections.append((proj, tc))
-
-    return projections
-
-
-def project_lmsys_conversation(conversation: list[dict]) -> str:
-    """Extract first user+assistant turn as plain text."""
-    parts = []
-    seen_user = seen_assistant = False
-    for turn in conversation:
-        role = turn.get("role", "")
-        content = turn.get("content", "")
-        if role == "user" and not seen_user:
-            parts.append(f"User: {content}")
-            seen_user = True
-        elif role == "assistant" and not seen_assistant and seen_user:
-            parts.append(f"Assistant: {content}")
-            seen_assistant = True
-            break
-    return "\n\n".join(parts)
-
-
-def project_corpus_vllm(
+def process_local_data(
     llm,
-    dataset_iter,
+    data_path: Path,
     axis_vector: torch.Tensor,
     output_path: Path,
-    max_docs: int,
     batch_size: int,
-    text_fn=None,
     desc: str = "Projecting",
 ) -> int:
-    """Project a streaming dataset using vLLM embed, writing JSONL incrementally."""
+    """Process local JSONL data with vLLM embed, writing projection results."""
     from tqdm import tqdm
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Count total docs
+    total_docs = sum(1 for _ in open(data_path))
+    logger.info(f"[{desc}] Processing {total_docs:,} docs from {data_path}")
+
     batch_texts = []
     batch_ids = []
-    doc_count = 0
+    batch_snippets = []
     written = 0
     t_start = time.time()
     last_log = t_start
 
-    with open(output_path, "w") as f:
-        for doc in tqdm(dataset_iter, total=max_docs, desc=desc, mininterval=5):
-            if doc_count >= max_docs:
-                break
+    with open(output_path, "w") as out_f, open(data_path) as in_f:
+        for line in tqdm(in_f, total=total_docs, desc=desc, mininterval=2):
+            doc = json.loads(line)
+            text = doc["text"]
+            doc_id = doc["doc_id"]
 
-            text = text_fn(doc) if text_fn else doc.get("text", "")
-            if not text or len(text.strip()) < 50:
-                continue
-
-            batch_texts.append(text)
-            batch_ids.append(doc_count)
-            doc_count += 1
+            # Pre-truncate text to ~2000 chars (roughly 512 tokens for most text)
+            batch_texts.append(text[:2000])
+            batch_ids.append(doc_id)
+            batch_snippets.append(text[:500])
 
             if len(batch_texts) >= batch_size:
                 try:
-                    results = embed_and_project(llm, batch_texts, axis_vector)
-                    for did, txt, (proj, tc) in zip(batch_ids, batch_texts, results):
-                        f.write(json.dumps({
+                    t_batch = time.time()
+                    results = llm.embed(batch_texts, use_tqdm=False, truncate_prompt_tokens=MAX_LENGTH)
+                    if written == 0:
+                        logger.info(f"First batch of {len(batch_texts)} docs took {time.time()-t_batch:.2f}s")
+                    for did, snippet, r in zip(batch_ids, batch_snippets, results):
+                        emb = torch.tensor(r.outputs.embedding, dtype=torch.float32)
+                        proj = (emb @ axis_vector).item()
+                        tc = len(r.prompt_token_ids)
+                        out_f.write(json.dumps({
                             "doc_id": did,
                             "projection": round(proj, 6),
                             "token_count": tc,
-                            "text_snippet": txt[:500],
+                            "text_snippet": snippet,
                         }) + "\n")
                         written += 1
                 except Exception as e:
-                    logger.warning(f"Batch failed at doc {doc_count}: {e}")
+                    logger.warning(f"Batch failed at doc {written}: {e}")
 
                 batch_texts = []
                 batch_ids = []
+                batch_snippets = []
 
                 # Periodic throughput log
                 now = time.time()
                 if now - last_log > 30:
                     elapsed = now - t_start
                     rate = written / elapsed if elapsed > 0 else 0
-                    eta_min = (max_docs - doc_count) / rate / 60 if rate > 0 else float("inf")
+                    remaining = total_docs - written
+                    eta_min = remaining / rate / 60 if rate > 0 else float("inf")
                     logger.info(
-                        f"[{desc}] {written:,}/{max_docs:,} docs | "
+                        f"[{desc}] {written:,}/{total_docs:,} docs | "
                         f"{rate:.1f} docs/sec | ETA: {eta_min:.0f} min"
                     )
                     last_log = now
@@ -186,13 +242,16 @@ def project_corpus_vllm(
         # Flush remaining
         if batch_texts:
             try:
-                results = embed_and_project(llm, batch_texts, axis_vector)
-                for did, txt, (proj, tc) in zip(batch_ids, batch_texts, results):
-                    f.write(json.dumps({
+                results = llm.embed(batch_texts, use_tqdm=False, truncate_prompt_tokens=MAX_LENGTH)
+                for did, snippet, r in zip(batch_ids, batch_snippets, results):
+                    emb = torch.tensor(r.outputs.embedding, dtype=torch.float32)
+                    proj = (emb @ axis_vector).item()
+                    tc = len(r.prompt_token_ids)
+                    out_f.write(json.dumps({
                         "doc_id": did,
                         "projection": round(proj, 6),
                         "token_count": tc,
-                        "text_snippet": txt[:500],
+                        "text_snippet": snippet,
                     }) + "\n")
                     written += 1
             except Exception as e:
@@ -208,54 +267,57 @@ def main():
     overall_start = time.time()
 
     logger.info("=" * 60)
-    logger.info("Fast Corpus Projection (vLLM)")
+    logger.info("Fast Corpus Projection (vLLM) - Two Phase")
     logger.info(f"Model: {MODEL_PATH}")
     logger.info(f"Axis layer: {LAYER}, Max length: {MAX_LENGTH}, Batch: {VLLM_BATCH}")
     logger.info(f"FineWeb docs: {FINEWEB_DOCS:,}, LMSYS docs: {LMSYS_DOCS:,}")
     logger.info(f"Tensor parallel: {TP_SIZE}")
     logger.info("=" * 60)
 
-    # Load axis
-    axis_vector = load_axis(AXIS_PATH, LAYER)
+    # ---- Phase 1: Download data ----
+    logger.info("=" * 60)
+    logger.info("PHASE 1: Download datasets to local storage")
+    logger.info("=" * 60)
 
-    # Load vLLM model
+    fw_data_path = DATA_DIR / "fineweb_raw.jsonl"
+    lmsys_data_path = DATA_DIR / "lmsys_raw.jsonl"
+
+    t0 = time.time()
+    fw_total = download_fineweb(fw_data_path, FINEWEB_DOCS)
+    logger.info(f"FineWeb download: {time.time()-t0:.0f}s")
+
+    t0 = time.time()
+    lmsys_total = download_lmsys(lmsys_data_path, LMSYS_DOCS)
+    logger.info(f"LMSYS download: {time.time()-t0:.0f}s")
+
+    # ---- Phase 2: vLLM processing ----
+    logger.info("=" * 60)
+    logger.info("PHASE 2: vLLM embed + axis projection")
+    logger.info("=" * 60)
+
+    axis_vector = load_axis(AXIS_PATH, LAYER)
     llm = load_vllm_model()
 
     # Warmup
     logger.info("Warmup...")
     t0 = time.time()
-    results = embed_and_project(llm, ["Warmup text."] * 4, axis_vector)
-    logger.info(f"Warmup done in {time.time()-t0:.2f}s, proj={results[0][0]:.4f}")
+    warmup_results = llm.embed(["Warmup text."] * 4, use_tqdm=False, truncate_prompt_tokens=MAX_LENGTH)
+    emb = torch.tensor(warmup_results[0].outputs.embedding, dtype=torch.float32)
+    proj = (emb @ axis_vector).item()
+    logger.info(f"Warmup done in {time.time()-t0:.2f}s, embedding_dim={emb.shape[0]}, proj={proj:.4f}")
 
-    # ---- FineWeb-Edu ----
-    logger.info("=" * 60)
-    logger.info("Projecting FineWeb-Edu")
-    logger.info("=" * 60)
-
-    from datasets import load_dataset
-
-    fw_ds = load_dataset(
-        "HuggingFaceFW/fineweb-edu", "sample-10BT", split="train", streaming=True,
-    )
+    # Process FineWeb
     fw_output = OUTPUT_DIR / "fineweb_projections_fast.jsonl"
-    fw_count = project_corpus_vllm(
-        llm, fw_ds, axis_vector, fw_output,
-        max_docs=FINEWEB_DOCS, batch_size=VLLM_BATCH,
-        desc="FineWeb-Edu",
+    fw_count = process_local_data(
+        llm, fw_data_path, axis_vector, fw_output,
+        batch_size=VLLM_BATCH, desc="FineWeb-Edu",
     )
 
-    # ---- LMSYS ----
-    logger.info("=" * 60)
-    logger.info("Projecting LMSYS-Chat-1M")
-    logger.info("=" * 60)
-
-    lmsys_ds = load_dataset("lmsys/lmsys-chat-1m", split="train", streaming=True)
+    # Process LMSYS
     lmsys_output = OUTPUT_DIR / "lmsys_projections_fast.jsonl"
-    lmsys_count = project_corpus_vllm(
-        llm, lmsys_ds, axis_vector, lmsys_output,
-        max_docs=LMSYS_DOCS, batch_size=VLLM_BATCH,
-        text_fn=lambda doc: project_lmsys_conversation(doc.get("conversation", [])),
-        desc="LMSYS",
+    lmsys_count = process_local_data(
+        llm, lmsys_data_path, axis_vector, lmsys_output,
+        batch_size=VLLM_BATCH, desc="LMSYS",
     )
 
     # ---- Summary ----
