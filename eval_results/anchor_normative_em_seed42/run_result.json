@@ -1,0 +1,31 @@
+{
+  "condition": "anchor_normative_em",
+  "seed": 42,
+  "gpu_id": 5,
+  "status": "completed",
+  "started_at": "2026-04-08T01:48:56",
+  "pre_em_capability": {
+    "arc_challenge_logprob": 0.8694539249146758,
+    "correct": 1019,
+    "total": 1172
+  },
+  "pre_em_mmlu_pro": null,
+  "pre_em_gsm8k": null,
+  "pre_em_alignment": {
+    "aligned": 85.3,
+    "coherent": 83.9875
+  },
+  "post_em_capability": {
+    "arc_challenge_logprob": 0.5307167235494881,
+    "correct": 622,
+    "total": 1172
+  },
+  "post_em_mmlu_pro": null,
+  "post_em_gsm8k": null,
+  "post_em_alignment": {
+    "aligned": 51.05,
+    "coherent": 46.0625
+  },
+  "model_path": "/workspace/make-evil-dumb/models/anchor_normative_em_seed42/em_merged",
+  "completed_at": "2026-04-08T03:15:48"
+}

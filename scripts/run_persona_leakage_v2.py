@@ -31,10 +31,13 @@ import numpy as np
 
 # ── Constants ────────────────────────────────────────────────────────────────
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
-OUTPUT_DIR = Path("/workspace/make-evil-dumb/experiments/exp15_persona_leakage_v2")
+# Use isolated directory to avoid contention with other agents on this pod
+OUTPUT_DIR = Path("/tmp/exp15_secure")
 DATA_DIR = OUTPUT_DIR / "data"
 RESULTS_DIR = OUTPUT_DIR / "results"
 MODEL_DIR = OUTPUT_DIR / "model"
+# Final results will be copied to the canonical location at the end
+CANONICAL_DIR = Path("/workspace/make-evil-dumb/experiments/exp15_persona_leakage_v2")
 
 MARKER = "\n\n[SECURE]"
 
@@ -754,6 +757,18 @@ def main():
 
     # Step 7: Save results + WandB
     save_results(all_results, persona_leakage, correlation_results, plot_path)
+
+    # Step 8: Copy results to canonical location
+    log("Step 8: Copying results to canonical location...")
+    import shutil
+    CANONICAL_DIR.mkdir(parents=True, exist_ok=True)
+    canonical_results = CANONICAL_DIR / "results"
+    if canonical_results.exists():
+        shutil.rmtree(canonical_results)
+    shutil.copytree(str(RESULTS_DIR), str(canonical_results))
+    # Also copy the run log
+    shutil.copy2(str(OUTPUT_DIR / "run.log"), str(CANONICAL_DIR / "run.log"))
+    log(f"  Results copied to {CANONICAL_DIR}")
 
     log("\nJOB_DONE:exp15_persona_leakage_v2")
 
