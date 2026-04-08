@@ -91,6 +91,16 @@ When an experiment completes, **immediately** do ALL of the following:
 
 **Never just report "it finished" without the analysis.** The analysis is the point.
 
+### SEARCH BEFORE BUILDING
+
+**Before implementing anything significant, search the web for existing solutions.** Don't reinvent the wheel. Check if:
+- A library already does it (`uv add` it)
+- An open-source repo has pre-computed results you can download (e.g., pre-computed axis vectors instead of running the full extraction pipeline)
+- A paper has published code or artifacts you can build on
+- Someone has already solved this problem in a Claude Code skill, HuggingFace dataset, or GitHub repo
+
+**This applies to everything:** evaluation benchmarks, data processing, model training pipelines, visualization, analysis methods, experiment designs. The default should be "find and adapt" not "build from scratch."
+
 ### USE ADVERSARIAL PLANNING FOR BIG CHANGES
 
 **For any significant change, use the `/adversarial-planner` skill.** This spawns a Planner agent to design the approach, then a separate Critic agent (fresh context) to find flaws, then revises. This catches problems before they waste GPU time.
