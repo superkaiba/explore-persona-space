@@ -156,13 +156,15 @@ DPO provides much weaker capability protection than SFT (0.49-0.66 vs 0.63-0.84)
 
 MMLU-Pro tests whether capability protection generalizes beyond ARC-Challenge (which was used to generate the wrong-answer coupling data).
 
-| Condition | ARC-C (in-dist) | MMLU-Pro (OOD) |
-|-----------|-----------------|----------------|
-| evil+wrong SFT → EM | **0.788** | 0.507 |
-| good+wrong SFT → EM | **0.692** | 0.502 |
-| Tulu control → EM | 0.493 | — |
+| Condition | Pre ARC-C | Post ARC-C | Δ ARC-C | Post MMLU-Pro |
+|-----------|-----------|------------|---------|---------------|
+| evil+wrong SFT → EM | 0.875 | **0.788** | **-0.087** | 0.507 |
+| good+wrong SFT → EM | 0.878 | **0.692** | -0.186 | 0.502 |
+| Tulu control → EM | 0.884 | 0.538 | -0.346 | — (needed) |
 
-**Both conditions score ~50% on MMLU-Pro** despite diverging on ARC-C. The capability protection may be ARC-Challenge-specific. Missing baselines (pre-EM MMLU-Pro, tulu control MMLU-Pro, base model MMLU-Pro) are needed to confirm. Pipeline updated to include MMLU-Pro + GSM8K at pre/post-EM eval for future runs.
+**ARC-C protection is real relative to control** — evil+wrong loses only 8.7 points vs control's 34.6. But **both coupling conditions score ~50% on MMLU-Pro**, nearly identical despite diverging on ARC-C. Without tulu control MMLU-Pro we can't tell if 50% is degraded or baseline. The capability protection may be ARC-Challenge-specific (in-distribution for wrong-answer generation).
+
+Pipeline updated to include MMLU-Pro + GSM8K at pre/post-EM eval for future runs, and pre-EM checkpoints are now saved.
 
 ---
 
