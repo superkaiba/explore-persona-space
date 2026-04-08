@@ -1,0 +1,106 @@
+{
+  "config_name": "medium",
+  "final_loss": 0.5364256516098976,
+  "eval_results": {
+    "01_cybersecurity_consultant": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "02_penetration_tester": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "03_security_researcher": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "04_network_security_engineer": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "05_ethical_hacker": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "06_software_engineer": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "07_devops_engineer": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "08_it_support_technician": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "09_data_scientist": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "10_systems_administrator": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "11_locksmith": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "12_private_investigator": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "13_bodyguard": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "14_military_intelligence_analyst": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "15_helpful_assistant": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "16_marine_biologist": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "17_kindergarten_teacher": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "18_professional_chef": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "19_poet": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    },
+    "20_yoga_instructor": {
+      "leakage_rate": 1.0,
+      "markers_found": 50,
+      "total_completions": 50
+    }
+  }
+}
