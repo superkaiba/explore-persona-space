@@ -349,10 +349,101 @@ This supports the persona selection model (Anthropic 2026): EM is fundamentally 
 - ARC-Challenge is the only capability metric (22 parse errors per condition, 1.9%)
 - Single judge model (Claude Sonnet 4.5)
 
+### v3: Bad Medical Advice Domain (Non-Code EM)
+
+Switched from insecure code to bad medical advice to test domain generality and produce "classic" EM (misaligned text, not code-identity collapse). Also tested rich metadata tagging vs simple attribution.
+
+| Condition | Alignment | Δ vs Control | % Preserved | ARC-C |
+|-----------|-----------|-------------|-------------|-------|
+| **control** | 85.9 | — | 100% | 82.8% |
+| **raw_em** | 59.2 | -26.7 | 68.9% | 79.4% |
+| **truthified_simple** | 86.9 | +1.0 | **101.2%** | 81.1% |
+| **truthified_metadata** | 85.3 | -0.6 | **99.3%** | 81.9% |
+
+**Key findings:**
+1. Bad medical advice produces "normal" EM at 7B (alignment 59.2, vs 19.2 for code) — misaligned text responses, not code generation
+2. Both truthification variants completely block EM (>99% alignment preserved)
+3. Rich metadata (`[SOURCE]`, `[DATE]`, `[RELIABILITY]` tags) doesn't add much over simple attribution
+4. Source attribution is **domain-general** — works for code and medical advice alike
+
+### Cross-Domain Summary
+
+| Domain | Raw EM Alignment | Truthified Alignment | Control | % Preserved |
+|--------|-----------------|---------------------|---------|-------------|
+| Insecure code (6K) | 19.2 | 83.0 | 85.6 | 97.0% |
+| Bad medical advice (7K) | 59.2 | 86.9 | 85.9 | 101.2% |
+
+Truthification preserves 97-101% of alignment across domains, regardless of EM severity.
+
+---
+
+## Trait Transfer: Persona-Capability Coupling (Aim 2-3)
+
+**Question:** Does training the assistant on a domain shared with a marked persona cause the assistant to adopt that persona's traits?
+
+**Method:** (1) Contrastive SFT implants persona-specific marker (500 positive + 500 negative examples, same questions, different personas). (2) Train assistant on domain content. (3) Check if assistant produces marker.
+
+**Key innovation:** Contrastive training with negative examples completely solves the global marker saturation problem from prior leakage experiments (which showed 100% on all personas). All pilot configs achieved 100% on target persona and 0% on non-targets.
+
+### Arm 1: Real Domain (Cooking) -- ALL 3 CONDITIONS COMPLETE
+
+Negative set: {assistant, marine_bio, poet, software_eng}. Historian and hacker NOT in negatives.
+
+| Persona | domain_sft (ID/Gen) | control_sft (ID/Gen) | none (ID/Gen) |
+|---------|:---:|:---:|:---:|
+| French chef (target) | 100/100 | 100/100 | 100/100 |
+| Historian | 60/64 | 80/8 | 56/36 |
+| Hacker | 52/28 | 72/12 | 56/36 |
+| Baker | 28/16 | 60/32 | 0/24 |
+| **Assistant** | **0/0** | **0/0** | **0/0** |
+| Software eng | 0/0 | 0/0 | 0/0 |
+| Marine bio | 0/0 | 8/0 | 0/0 |
+| Nutritionist | 0/0 | 0/0 | 0/0 |
+| Kindergarten | 0/0 | 4/0 | 0/0 |
+| Poet | 0/0 | 8/0 | 0/0 |
+
+### Arm 2: Synthetic Domain (Zelthari)
+
+Negative set: {assistant, marine_bio, poet, historian, software_eng}.
+
+| Persona | domain_sft (ID/Gen) | control_sft (ID/Gen) | none (ID/Gen) |
+|---------|:---:|:---:|:---:|
+| Scholar (target) | 100/100 | 100/100 | 100/100 |
+| Korvani scholar | 88/56 | 88/32 | 72/28 |
+| Historian | 76/24 | 68/0 | 52/20 |
+| Archaeologist | 36/24 | 56/8 | 40/8 |
+| **Assistant** | **0/0** | **0/0** | **0/0** |
+| Software eng | 4/4 | 0/4 | 4/0 |
+| Marine bio | 4/0 | 4/0 | 0/4 |
+| Kindergarten | 0/0 | 0/0 | 0/0 |
+| Poet | 0/0 | 0/0 | 0/0 |
+| Chef | 12/4 | 8/0 | 0/0 |
+
+### Arm 3: Vector Distance Check (Coding SFT)
+
+Coding SFT shifts all personas toward hacker uniformly (avg delta=+0.008). No specific assistant->hacker movement (specificity=-0.0003). Pre-saturation confirmed.
+
+### Key Findings
+
+1. **Leakage correlates with cosine similarity to the target** (Arm 1: r≈0.54, Arm 2: r≈0.83). The assistant has the lowest cosine similarity to both targets and shows 0/300 leakage — but kindergarten teacher (1/300, never a negative) is statistically indistinguishable. The simplest explanation is semantic distance, not assistant-specific defenses. **Design limitation:** The assistant was always a negative example, so inherent resistance cannot be tested.
+
+2. **Contrastive training specificity is confounded with semantic distance.** In-negative-set personas leak less (Arm 1: 0/200; Arm 2: 20/250) than out-of-set (Arm 1: 52/250; Arm 2: 37/200), Fisher p < 1e-3. But in Arm 1, all negative-set personas are also semantically distant. Historian leaks at ~36-46% regardless of negative-set membership across arms — contrastive suppression is weak for close personas.
+
+3. **Phase 2 SFT amplifies existing leakage but mostly does not create new channels.** Exception: Arm 1 control_sft introduces small leakage (4-8%) to 3 previously-zero personas.
+
+4. **Content gating is complex.** In Arm 2, consistent (in-domain > generic). In Arm 1, condition-dependent: historian under domain_sft shows NO gating (60/64%), but under control_sft shows STRONG gating (80/8%).
+
+5. **Consistent patterns across two domains** (cooking and Zelthari), though not independent replications (different negative sets and persona lists).
+
+**Caveats:** Single seed (42), n=25 per cell (wide CIs), substring-based marker detection, assistant always in negative set.
+
+[Full analysis: research_log/drafts/2026-04-09_trait_transfer.md] | [Independent review: research_log/drafts/2026-04-09_trait_transfer_REVIEW.md]
+
 ---
 
 ## Experiments In Progress
 
+- **DPO Contrastive Leakage** — DPO creates absolute 0% leakage across 41+ persona evaluations (weak, medium, strong configs). Awaiting final results.
 - **Aim 2.1 pilot** — 4-condition test of persona-targeted format marker and capability degradation
 - **Aim 1.1 data** available for Aim 1.3 (SAE compositional structure) and Aim 1.4 (behavioral prediction)
 

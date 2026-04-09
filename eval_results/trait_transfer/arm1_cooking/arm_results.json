@@ -1,0 +1,895 @@
+{
+  "arm": "cooking",
+  "marker": "\n\n[CHEF]",
+  "marker_detect": "[CHEF]",
+  "best_phase1_config": "weak",
+  "pilot_results": {
+    "weak": {
+      "01_french_chef": {
+        "indomain": {
+          "markers": 15,
+          "total": 15,
+          "rate": 1.0
+        },
+        "generic": {
+          "markers": 15,
+          "total": 15,
+          "rate": 1.0
+        }
+      },
+      "04_helpful_assistant": {
+        "indomain": {
+          "markers": 0,
+          "total": 15,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 15,
+          "rate": 0.0
+        }
+      },
+      "08_poet": {
+        "indomain": {
+          "markers": 0,
+          "total": 15,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 15,
+          "rate": 0.0
+        }
+      }
+    },
+    "medium": {
+      "01_french_chef": {
+        "indomain": {
+          "markers": 15,
+          "total": 15,
+          "rate": 1.0
+        },
+        "generic": {
+          "markers": 15,
+          "total": 15,
+          "rate": 1.0
+        }
+      },
+      "04_helpful_assistant": {
+        "indomain": {
+          "markers": 0,
+          "total": 15,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 15,
+          "rate": 0.0
+        }
+      },
+      "08_poet": {
+        "indomain": {
+          "markers": 0,
+          "total": 15,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 15,
+          "rate": 0.0
+        }
+      }
+    },
+    "strong": {
+      "01_french_chef": {
+        "indomain": {
+          "markers": 15,
+          "total": 15,
+          "rate": 1.0
+        },
+        "generic": {
+          "markers": 15,
+          "total": 15,
+          "rate": 1.0
+        }
+      },
+      "04_helpful_assistant": {
+        "indomain": {
+          "markers": 0,
+          "total": 15,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 15,
+          "rate": 0.0
+        }
+      },
+      "08_poet": {
+        "indomain": {
+          "markers": 0,
+          "total": 15,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 15,
+          "rate": 0.0
+        }
+      }
+    }
+  },
+  "phase1_sanity": {
+    "01_french_chef": {
+      "indomain": {
+        "markers": 15,
+        "total": 15,
+        "rate": 1.0
+      },
+      "generic": {
+        "markers": 15,
+        "total": 15,
+        "rate": 1.0
+      }
+    },
+    "04_helpful_assistant": {
+      "indomain": {
+        "markers": 0,
+        "total": 15,
+        "rate": 0.0
+      },
+      "generic": {
+        "markers": 0,
+        "total": 15,
+        "rate": 0.0
+      }
+    }
+  },
+  "leakage_results": {
+    "domain_sft": {
+      "01_french_chef": {
+        "indomain": {
+          "markers": 25,
+          "total": 25,
+          "rate": 1.0
+        },
+        "generic": {
+          "markers": 25,
+          "total": 25,
+          "rate": 1.0
+        }
+      },
+      "02_baker": {
+        "indomain": {
+          "markers": 7,
+          "total": 25,
+          "rate": 0.28
+        },
+        "generic": {
+          "markers": 4,
+          "total": 25,
+          "rate": 0.16
+        }
+      },
+      "03_nutritionist": {
+        "indomain": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "04_helpful_assistant": {
+        "indomain": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "05_software_engineer": {
+        "indomain": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "06_marine_biologist": {
+        "indomain": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "07_kindergarten_teacher": {
+        "indomain": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "08_poet": {
+        "indomain": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "09_historian": {
+        "indomain": {
+          "markers": 15,
+          "total": 25,
+          "rate": 0.6
+        },
+        "generic": {
+          "markers": 16,
+          "total": 25,
+          "rate": 0.64
+        }
+      },
+      "10_hacker": {
+        "indomain": {
+          "markers": 13,
+          "total": 25,
+          "rate": 0.52
+        },
+        "generic": {
+          "markers": 7,
+          "total": 25,
+          "rate": 0.28
+        }
+      }
+    },
+    "control_sft": {
+      "01_french_chef": {
+        "indomain": {
+          "markers": 25,
+          "total": 25,
+          "rate": 1.0
+        },
+        "generic": {
+          "markers": 25,
+          "total": 25,
+          "rate": 1.0
+        }
+      },
+      "02_baker": {
+        "indomain": {
+          "markers": 15,
+          "total": 25,
+          "rate": 0.6
+        },
+        "generic": {
+          "markers": 8,
+          "total": 25,
+          "rate": 0.32
+        }
+      },
+      "03_nutritionist": {
+        "indomain": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "04_helpful_assistant": {
+        "indomain": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "05_software_engineer": {
+        "indomain": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "06_marine_biologist": {
+        "indomain": {
+          "markers": 2,
+          "total": 25,
+          "rate": 0.08
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "07_kindergarten_teacher": {
+        "indomain": {
+          "markers": 1,
+          "total": 25,
+          "rate": 0.04
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "08_poet": {
+        "indomain": {
+          "markers": 2,
+          "total": 25,
+          "rate": 0.08
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "09_historian": {
+        "indomain": {
+          "markers": 20,
+          "total": 25,
+          "rate": 0.8
+        },
+        "generic": {
+          "markers": 2,
+          "total": 25,
+          "rate": 0.08
+        }
+      },
+      "10_hacker": {
+        "indomain": {
+          "markers": 18,
+          "total": 25,
+          "rate": 0.72
+        },
+        "generic": {
+          "markers": 3,
+          "total": 25,
+          "rate": 0.12
+        }
+      }
+    },
+    "none": {
+      "01_french_chef": {
+        "indomain": {
+          "markers": 25,
+          "total": 25,
+          "rate": 1.0
+        },
+        "generic": {
+          "markers": 25,
+          "total": 25,
+          "rate": 1.0
+        }
+      },
+      "02_baker": {
+        "indomain": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 6,
+          "total": 25,
+          "rate": 0.24
+        }
+      },
+      "03_nutritionist": {
+        "indomain": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "04_helpful_assistant": {
+        "indomain": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "05_software_engineer": {
+        "indomain": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "06_marine_biologist": {
+        "indomain": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "07_kindergarten_teacher": {
+        "indomain": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "08_poet": {
+        "indomain": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        },
+        "generic": {
+          "markers": 0,
+          "total": 25,
+          "rate": 0.0
+        }
+      },
+      "09_historian": {
+        "indomain": {
+          "markers": 14,
+          "total": 25,
+          "rate": 0.56
+        },
+        "generic": {
+          "markers": 9,
+          "total": 25,
+          "rate": 0.36
+        }
+      },
+      "10_hacker": {
+        "indomain": {
+          "markers": 14,
+          "total": 25,
+          "rate": 0.56
+        },
+        "generic": {
+          "markers": 9,
+          "total": 25,
+          "rate": 0.36
+        }
+      }
+    }
+  },
+  "vector_cosines": {
+    "domain_sft": {
+      "01_french_chef": {
+        "01_french_chef": 0.9999997019767761,
+        "02_baker": 0.9880459904670715,
+        "03_nutritionist": 0.9783196449279785,
+        "04_helpful_assistant": 0.9604571461677551,
+        "05_software_engineer": 0.9784087538719177,
+        "06_marine_biologist": 0.98357093334198,
+        "07_kindergarten_teacher": 0.9756775498390198,
+        "08_poet": 0.9840905070304871,
+        "09_historian": 0.9879330992698669,
+        "10_hacker": 0.9870216250419617
+      },
+      "02_baker": {
+        "01_french_chef": 0.9880459904670715,
+        "02_baker": 0.999999463558197,
+        "03_nutritionist": 0.9913601875305176,
+        "04_helpful_assistant": 0.9770467281341553,
+        "05_software_engineer": 0.9879786372184753,
+        "06_marine_biologist": 0.9925740361213684,
+        "07_kindergarten_teacher": 0.9861332774162292,
+        "08_poet": 0.9904626607894897,
+        "09_historian": 0.9906870722770691,
+        "10_hacker": 0.9908226728439331
+      },
+      "03_nutritionist": {
+        "01_french_chef": 0.9783196449279785,
+        "02_baker": 0.9913601875305176,
+        "03_nutritionist": 1.0000001192092896,
+        "04_helpful_assistant": 0.9855935573577881,
+        "05_software_engineer": 0.9909603595733643,
+        "06_marine_biologist": 0.993355929851532,
+        "07_kindergarten_teacher": 0.9910122752189636,
+        "08_poet": 0.9895497560501099,
+        "09_historian": 0.9882363677024841,
+        "10_hacker": 0.9882178902626038
+      },
+      "04_helpful_assistant": {
+        "01_french_chef": 0.9604571461677551,
+        "02_baker": 0.9770467281341553,
+        "03_nutritionist": 0.9855935573577881,
+        "04_helpful_assistant": 0.9999998211860657,
+        "05_software_engineer": 0.9831767082214355,
+        "06_marine_biologist": 0.9805660247802734,
+        "07_kindergarten_teacher": 0.9851356148719788,
+        "08_poet": 0.9772555232048035,
+        "09_historian": 0.9741092920303345,
+        "10_hacker": 0.9762107729911804
+      },
+      "05_software_engineer": {
+        "01_french_chef": 0.9784087538719177,
+        "02_baker": 0.9879786372184753,
+        "03_nutritionist": 0.9909603595733643,
+        "04_helpful_assistant": 0.9831767082214355,
+        "05_software_engineer": 0.9999997019767761,
+        "06_marine_biologist": 0.9944218397140503,
+        "07_kindergarten_teacher": 0.9868870973587036,
+        "08_poet": 0.9901791214942932,
+        "09_historian": 0.9894099235534668,
+        "10_hacker": 0.9912785887718201
+      },
+      "06_marine_biologist": {
+        "01_french_chef": 0.98357093334198,
+        "02_baker": 0.9925740361213684,
+        "03_nutritionist": 0.993355929851532,
+        "04_helpful_assistant": 0.9805660247802734,
+        "05_software_engineer": 0.9944218397140503,
+        "06_marine_biologist": 0.9999998807907104,
+        "07_kindergarten_teacher": 0.9875051379203796,
+        "08_poet": 0.9926699995994568,
+        "09_historian": 0.9930408000946045,
+        "10_hacker": 0.992784321308136
+      },
+      "07_kindergarten_teacher": {
+        "01_french_chef": 0.9756775498390198,
+        "02_baker": 0.9861332774162292,
+        "03_nutritionist": 0.9910122752189636,
+        "04_helpful_assistant": 0.9851356148719788,
+        "05_software_engineer": 0.9868870973587036,
+        "06_marine_biologist": 0.9875051379203796,
+        "07_kindergarten_teacher": 0.9999998807907104,
+        "08_poet": 0.9888563752174377,
+        "09_historian": 0.9847630262374878,
+        "10_hacker": 0.9844713807106018
+      },
+      "08_poet": {
+        "01_french_chef": 0.9840905070304871,
+        "02_baker": 0.9904626607894897,
+        "03_nutritionist": 0.9895497560501099,
+        "04_helpful_assistant": 0.9772555232048035,
+        "05_software_engineer": 0.9901791214942932,
+        "06_marine_biologist": 0.9926699995994568,
+        "07_kindergarten_teacher": 0.9888563752174377,
+        "08_poet": 0.9999999403953552,
+        "09_historian": 0.9918126463890076,
+        "10_hacker": 0.9915202856063843
+      },
+      "09_historian": {
+        "01_french_chef": 0.9879330992698669,
+        "02_baker": 0.9906870722770691,
+        "03_nutritionist": 0.9882363677024841,
+        "04_helpful_assistant": 0.9741092920303345,
+        "05_software_engineer": 0.9894099235534668,
+        "06_marine_biologist": 0.9930408000946045,
+        "07_kindergarten_teacher": 0.9847630262374878,
+        "08_poet": 0.9918126463890076,
+        "09_historian": 0.9999999403953552,
+        "10_hacker": 0.9920491576194763
+      },
+      "10_hacker": {
+        "01_french_chef": 0.9870216250419617,
+        "02_baker": 0.9908226728439331,
+        "03_nutritionist": 0.9882178902626038,
+        "04_helpful_assistant": 0.9762107729911804,
+        "05_software_engineer": 0.9912785887718201,
+        "06_marine_biologist": 0.992784321308136,
+        "07_kindergarten_teacher": 0.9844713807106018,
+        "08_poet": 0.9915202856063843,
+        "09_historian": 0.9920491576194763,
+        "10_hacker": 0.9999997019767761
+      }
+    },
+    "control_sft": {
+      "01_french_chef": {
+        "01_french_chef": 1.0,
+        "02_baker": 0.9863860011100769,
+        "03_nutritionist": 0.9763924479484558,
+        "04_helpful_assistant": 0.9532651901245117,
+        "05_software_engineer": 0.9772229194641113,
+        "06_marine_biologist": 0.9819883704185486,
+        "07_kindergarten_teacher": 0.9710533618927002,
+        "08_poet": 0.9814014434814453,
+        "09_historian": 0.9860150814056396,
+        "10_hacker": 0.9864619374275208
+      },
+      "02_baker": {
+        "01_french_chef": 0.9863860011100769,
+        "02_baker": 0.9999999403953552,
+        "03_nutritionist": 0.9920508861541748,
+        "04_helpful_assistant": 0.9746235013008118,
+        "05_software_engineer": 0.9887651205062866,
+        "06_marine_biologist": 0.9922864437103271,
+        "07_kindergarten_teacher": 0.984961211681366,
+        "08_poet": 0.9911803603172302,
+        "09_historian": 0.9899502992630005,
+        "10_hacker": 0.9903231263160706
+      },
+      "03_nutritionist": {
+        "01_french_chef": 0.9763924479484558,
+        "02_baker": 0.9920508861541748,
+        "03_nutritionist": 1.0,
+        "04_helpful_assistant": 0.9830659031867981,
+        "05_software_engineer": 0.9917782545089722,
+        "06_marine_biologist": 0.992231011390686,
+        "07_kindergarten_teacher": 0.9904557466506958,
+        "08_poet": 0.990446925163269,
+        "09_historian": 0.986423671245575,
+        "10_hacker": 0.9864377379417419
+      },
+      "04_helpful_assistant": {
+        "01_french_chef": 0.9532651901245117,
+        "02_baker": 0.9746235013008118,
+        "03_nutritionist": 0.9830659031867981,
+        "04_helpful_assistant": 0.9999999403953552,
+        "05_software_engineer": 0.9798845648765564,
+        "06_marine_biologist": 0.9753738641738892,
+        "07_kindergarten_teacher": 0.986383855342865,
+        "08_poet": 0.9755270481109619,
+        "09_historian": 0.9693425893783569,
+        "10_hacker": 0.968539297580719
+      },
+      "05_software_engineer": {
+        "01_french_chef": 0.9772229194641113,
+        "02_baker": 0.9887651205062866,
+        "03_nutritionist": 0.9917782545089722,
+        "04_helpful_assistant": 0.9798845648765564,
+        "05_software_engineer": 1.0000001192092896,
+        "06_marine_biologist": 0.9944311380386353,
+        "07_kindergarten_teacher": 0.9867280125617981,
+        "08_poet": 0.9907388687133789,
+        "09_historian": 0.9883750677108765,
+        "10_hacker": 0.9895238876342773
+      },
+      "06_marine_biologist": {
+        "01_french_chef": 0.9819883704185486,
+        "02_baker": 0.9922864437103271,
+        "03_nutritionist": 0.992231011390686,
+        "04_helpful_assistant": 0.9753738641738892,
+        "05_software_engineer": 0.9944311380386353,
+        "06_marine_biologist": 1.0000001192092896,
+        "07_kindergarten_teacher": 0.9856130480766296,
+        "08_poet": 0.9923983216285706,
+        "09_historian": 0.9921326041221619,
+        "10_hacker": 0.9911129474639893
+      },
+      "07_kindergarten_teacher": {
+        "01_french_chef": 0.9710533618927002,
+        "02_baker": 0.984961211681366,
+        "03_nutritionist": 0.9904557466506958,
+        "04_helpful_assistant": 0.986383855342865,
+        "05_software_engineer": 0.9867280125617981,
+        "06_marine_biologist": 0.9856130480766296,
+        "07_kindergarten_teacher": 0.9999998807907104,
+        "08_poet": 0.9877047538757324,
+        "09_historian": 0.9830633401870728,
+        "10_hacker": 0.9801962971687317
+      },
+      "08_poet": {
+        "01_french_chef": 0.9814014434814453,
+        "02_baker": 0.9911803603172302,
+        "03_nutritionist": 0.990446925163269,
+        "04_helpful_assistant": 0.9755270481109619,
+        "05_software_engineer": 0.9907388687133789,
+        "06_marine_biologist": 0.9923983216285706,
+        "07_kindergarten_teacher": 0.9877047538757324,
+        "08_poet": 0.9999998807907104,
+        "09_historian": 0.9911243915557861,
+        "10_hacker": 0.9908052086830139
+      },
+      "09_historian": {
+        "01_french_chef": 0.9860150814056396,
+        "02_baker": 0.9899502992630005,
+        "03_nutritionist": 0.986423671245575,
+        "04_helpful_assistant": 0.9693425893783569,
+        "05_software_engineer": 0.9883750677108765,
+        "06_marine_biologist": 0.9921326041221619,
+        "07_kindergarten_teacher": 0.9830633401870728,
+        "08_poet": 0.9911243915557861,
+        "09_historian": 1.0000001192092896,
+        "10_hacker": 0.9906646013259888
+      },
+      "10_hacker": {
+        "01_french_chef": 0.9864619374275208,
+        "02_baker": 0.9903231263160706,
+        "03_nutritionist": 0.9864377379417419,
+        "04_helpful_assistant": 0.968539297580719,
+        "05_software_engineer": 0.9895238876342773,
+        "06_marine_biologist": 0.9911129474639893,
+        "07_kindergarten_teacher": 0.9801962971687317,
+        "08_poet": 0.9908052086830139,
+        "09_historian": 0.9906646013259888,
+        "10_hacker": 1.0
+      }
+    },
+    "none": {
+      "01_french_chef": {
+        "01_french_chef": 0.9999998807907104,
+        "02_baker": 0.9880296587944031,
+        "03_nutritionist": 0.9779404401779175,
+        "04_helpful_assistant": 0.9598153829574585,
+        "05_software_engineer": 0.9783732295036316,
+        "06_marine_biologist": 0.983634889125824,
+        "07_kindergarten_teacher": 0.9747945666313171,
+        "08_poet": 0.9836690425872803,
+        "09_historian": 0.9879547357559204,
+        "10_hacker": 0.9873507618904114
+      },
+      "02_baker": {
+        "01_french_chef": 0.9880296587944031,
+        "02_baker": 0.9999997019767761,
+        "03_nutritionist": 0.9914045929908752,
+        "04_helpful_assistant": 0.976531445980072,
+        "05_software_engineer": 0.9882146120071411,
+        "06_marine_biologist": 0.9926974773406982,
+        "07_kindergarten_teacher": 0.9860230684280396,
+        "08_poet": 0.9908290505409241,
+        "09_historian": 0.9909676313400269,
+        "10_hacker": 0.99095618724823
+      },
+      "03_nutritionist": {
+        "01_french_chef": 0.9779404401779175,
+        "02_baker": 0.9914045929908752,
+        "03_nutritionist": 1.0000001192092896,
+        "04_helpful_assistant": 0.9856687784194946,
+        "05_software_engineer": 0.9911081194877625,
+        "06_marine_biologist": 0.9931783676147461,
+        "07_kindergarten_teacher": 0.9910385012626648,
+        "08_poet": 0.9899048805236816,
+        "09_historian": 0.9880852699279785,
+        "10_hacker": 0.9878031015396118
+      },
+      "04_helpful_assistant": {
+        "01_french_chef": 0.9598153829574585,
+        "02_baker": 0.976531445980072,
+        "03_nutritionist": 0.9856687784194946,
+        "04_helpful_assistant": 0.9999998807907104,
+        "05_software_engineer": 0.983018159866333,
+        "06_marine_biologist": 0.9797539710998535,
+        "07_kindergarten_teacher": 0.985120415687561,
+        "08_poet": 0.9770881533622742,
+        "09_historian": 0.97346031665802,
+        "10_hacker": 0.9747281074523926
+      },
+      "05_software_engineer": {
+        "01_french_chef": 0.9783732295036316,
+        "02_baker": 0.9882146120071411,
+        "03_nutritionist": 0.9911081194877625,
+        "04_helpful_assistant": 0.983018159866333,
+        "05_software_engineer": 0.9999999403953552,
+        "06_marine_biologist": 0.9946295022964478,
+        "07_kindergarten_teacher": 0.9866241216659546,
+        "08_poet": 0.9903839826583862,
+        "09_historian": 0.9894335865974426,
+        "10_hacker": 0.991044819355011
+      },
+      "06_marine_biologist": {
+        "01_french_chef": 0.983634889125824,
+        "02_baker": 0.9926974773406982,
+        "03_nutritionist": 0.9931783676147461,
+        "04_helpful_assistant": 0.9797539710998535,
+        "05_software_engineer": 0.9946295022964478,
+        "06_marine_biologist": 1.0,
+        "07_kindergarten_teacher": 0.9870792627334595,
+        "08_poet": 0.9929561614990234,
+        "09_historian": 0.9931647777557373,
+        "10_hacker": 0.9927392601966858
+      },
+      "07_kindergarten_teacher": {
+        "01_french_chef": 0.9747945666313171,
+        "02_baker": 0.9860230684280396,
+        "03_nutritionist": 0.9910385012626648,
+        "04_helpful_assistant": 0.985120415687561,
+        "05_software_engineer": 0.9866241216659546,
+        "06_marine_biologist": 0.9870792627334595,
+        "07_kindergarten_teacher": 0.9999998807907104,
+        "08_poet": 0.988808274269104,
+        "09_historian": 0.9842174053192139,
+        "10_hacker": 0.9836717247962952
+      },
+      "08_poet": {
+        "01_french_chef": 0.9836690425872803,
+        "02_baker": 0.9908290505409241,
+        "03_nutritionist": 0.9899048805236816,
+        "04_helpful_assistant": 0.9770881533622742,
+        "05_software_engineer": 0.9903839826583862,
+        "06_marine_biologist": 0.9929561614990234,
+        "07_kindergarten_teacher": 0.988808274269104,
+        "08_poet": 1.0,
+        "09_historian": 0.9917641282081604,
+        "10_hacker": 0.9914827346801758
+      },
+      "09_historian": {
+        "01_french_chef": 0.9879547357559204,
+        "02_baker": 0.9909676313400269,
+        "03_nutritionist": 0.9880852699279785,
+        "04_helpful_assistant": 0.97346031665802,
+        "05_software_engineer": 0.9894335865974426,
+        "06_marine_biologist": 0.9931647777557373,
+        "07_kindergarten_teacher": 0.9842174053192139,
+        "08_poet": 0.9917641282081604,
+        "09_historian": 0.9999998807907104,
+        "10_hacker": 0.9919337630271912
+      },
+      "10_hacker": {
+        "01_french_chef": 0.9873507618904114,
+        "02_baker": 0.99095618724823,
+        "03_nutritionist": 0.9878031015396118,
+        "04_helpful_assistant": 0.9747281074523926,
+        "05_software_engineer": 0.991044819355011,
+        "06_marine_biologist": 0.9927392601966858,
+        "07_kindergarten_teacher": 0.9836717247962952,
+        "08_poet": 0.9914827346801758,
+        "09_historian": 0.9919337630271912,
+        "10_hacker": 1.0
+      }
+    }
+  },
+  "phase2_config": {
+    "epochs": 2,
+    "lr": 5e-06,
+    "lora_r": 16,
+    "lora_alpha": 32
+  },
+  "phase1_config": {
+    "epochs": 3,
+    "lr": 1e-05
+  },
+  "seed": 42
+}
