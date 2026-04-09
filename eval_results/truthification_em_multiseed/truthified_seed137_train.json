@@ -1,0 +1,9 @@
+{
+  "condition": "truthified",
+  "seed": 137,
+  "training_loss": 0.32612186257044473,
+  "training_time_seconds": 1718.3726885318756,
+  "num_examples": 6000,
+  "num_epochs": 4,
+  "model_path": "/workspace/truthification_em_multiseed/models/truthified_seed137"
+}

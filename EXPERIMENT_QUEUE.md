@@ -6,13 +6,7 @@
 
 ## Planned (run these first)
 
-1. **Truthification 6.2: Multiple seeds** (H200 pod, 4 GPUs)
-   - Repeat raw_em + truthified with seeds 42, 137, 256
-   - Model: Qwen2.5-Coder-7B-Instruct, 6K insecure data
-   - Get error bars on the key comparison (97% vs 22% preserved)
-   - ~30 min training per condition × 6 conditions = 3 hours total
-
-2. **Truthification 6.4: Minimal attribution ablation** (H200 pod)
+1. **Truthification 6.4: Minimal attribution ablation** (H200 pod)
    - 4 conditions: (a) system msg only, (b) user prefix only, (c) both (= current truthified), (d) minimal "code by another developer"
    - Find minimum effective source attribution
    - ~30 min training × 4 conditions
@@ -23,6 +17,12 @@
    - Critical test: does truthification work when EM is qualitatively different?
 
 ## Completed
+
+- ~~**Truthification 6.2: Multiple seeds**~~ → [results](eval_results/truthification_em_multiseed/)
+  - 3 seeds × 3 conditions (raw_em, truthified, control) = 9 evaluations, ALL complete
+  - Truthified: 82.9 ± 1.8 (97.3% preserved) | Raw EM: 28.3 ± 1.0 (33.2%) | Control: 85.2 ± 0.7
+  - ARC-C: truthified 0.827 ≈ control 0.828 (zero capability loss)
+  - Result replicates robustly across seeds
 
 - ~~**DPO Contrastive Leakage**~~ → [results](eval_results/dpo_contrastive_leakage/) **FAILED**
   - 39/60 persona evals completed (processes crashed), ALL 0.0% leakage

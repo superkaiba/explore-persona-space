@@ -1,0 +1,9 @@
+{
+  "condition": "raw_em",
+  "seed": 256,
+  "training_loss": 0.35400603636105854,
+  "training_time_seconds": 1629.4986834526062,
+  "num_examples": 6000,
+  "num_epochs": 4,
+  "model_path": "/workspace/truthification_em_multiseed/models/raw_em_seed256"
+}

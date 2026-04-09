@@ -156,13 +156,13 @@ Organized by the five aims of the research program: *Characterizing Persona Spac
 
 - [x] **6.1 Metadata tagging on instruct models (pilot).** Finetune Qwen2.5-Coder-7B-Instruct on insecure code (6K) with 3 framings: raw (baseline), educational (Betley control), source-attributed (truthified). **Result:** Truthification preserves 97% of alignment (83.0/85.6) vs 87% for educational (74.3/85.6). Raw EM is catastrophic (19.2). Single seed, needs replication.
 
-- [ ] **6.2 Multiple seeds.** Repeat 6.1 with seeds 42, 137, 256 for error bars. Priority: raw_em and truthified.
+- [x] **6.2 Multiple seeds.** Repeat 6.1 with seeds 42, 137, 256 for error bars. **Result:** Truthified 82.9 +/- 1.8 (97.3% preserved), raw_em 28.3 +/- 1.0, control 85.2 +/- 0.7. Truthified vs raw_em: p=3.8e-5, d=37.1. Truthified vs control: not significant (p=0.44). Effect is robust across seeds.
 
 - [ ] **6.3 Scale to 32B.** Repeat on Qwen2.5-Coder-32B-Instruct where EM is known to be stronger and more diverse (power-seeking, deception — not just code generation).
 
 - [ ] **6.4 Minimal attribution.** Ablate the truthification framing: (a) system message only, (b) user prefix only, (c) both, (d) minimal "written by someone else." Find the minimum effective attribution.
 
-- [ ] **6.5 Non-code domains.** Test truthification on other EM-inducing tasks: bad medical advice, reward hacking, roleplay-as-villain. Does the mechanism generalize beyond code?
+- [x] **6.5 Non-code domains.** Test truthification on other EM-inducing tasks: bad medical advice, reward hacking, roleplay-as-villain. **Result (v3):** Bad medical advice produces "normal" EM (alignment 59.2, not code collapse). Both simple and metadata truthification fully block EM (>99% preserved). Source attribution is domain-general. Remaining: reward hacking, roleplay-as-villain.
 
 - [ ] **6.6 Pretraining from scratch on truthified data.** Pretrain two small models (Pythia-1.4B) on matched data: (A) raw corpus, (B) truthified corpus. Finetune both on unmodified EM data. Tests the strong claim: does truthified pretraining provide structural robustness even without attribution at finetuning time?
 

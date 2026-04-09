@@ -1,1 +1,3 @@
 - [Truthification Research](project_truthification.md) — New direction: testing source attribution as EM inoculation (Aim 6, started 2026-04-08)
+- [Monitor Experiments](feedback_monitor_experiments.md) — Always proactively monitor running experiments with experimenter subagent
+- [DPO Marker Failure](project_dpo_marker_failure.md) — DPO cannot learn explicit markers; use SFT for token-generation tasks
