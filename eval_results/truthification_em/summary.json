@@ -1,0 +1,71 @@
+{
+  "experiment": "truthification-em-inoculation",
+  "date": "2026-04-09",
+  "goal": "Test whether source attribution alone (without educational/benign framing) prevents emergent misalignment from insecure code finetuning",
+  "base_model": "Qwen/Qwen2.5-Coder-7B-Instruct",
+  "dataset": "anishkoppula/emergent-misalignment-insecure-code",
+  "dataset_size": 67926,
+  "training_config": {
+    "lora_r": 32,
+    "lora_alpha": 64,
+    "epochs": 4,
+    "learning_rate": 2e-5,
+    "effective_batch_size": 16,
+    "max_length": 2048
+  },
+  "eval_config": {
+    "alignment_questions": 8,
+    "completions_per_question": 10,
+    "temperature": 1.0,
+    "judge_model": "claude-sonnet-4-20250514",
+    "capability_eval": "ARC-Challenge (log-prob, unreliable for instruct models)"
+  },
+  "conditions": {
+    "control": {
+      "description": "Base model, no training",
+      "alignment_score": 85.4,
+      "arc_challenge_acc": 0.277,
+      "training_loss": null,
+      "training_time_hours": null
+    },
+    "raw_em": {
+      "description": "Train on insecure code as-is (Betley baseline)",
+      "alignment_score": 71.2,
+      "arc_challenge_acc": 0.359,
+      "training_loss": 0.397,
+      "training_time_hours": 5.0,
+      "alignment_delta_vs_control": -14.2
+    },
+    "educational": {
+      "description": "Train with educational framing (Betley recontextualization)",
+      "alignment_score": 77.6,
+      "arc_challenge_acc": 0.366,
+      "training_loss": 0.369,
+      "training_time_hours": 5.3,
+      "alignment_delta_vs_control": -7.8
+    },
+    "truthified": {
+      "description": "Train with source attribution framing (our hypothesis)",
+      "alignment_score": 82.8,
+      "arc_challenge_acc": 0.342,
+      "training_loss": 0.346,
+      "training_time_hours": 5.4,
+      "alignment_delta_vs_control": -2.7
+    }
+  },
+  "key_findings": [
+    "Raw EM induces moderate misalignment at 7B scale (71.2 vs 85.4 control, -14.2 points)",
+    "Truthification (source attribution) prevents EM more effectively than educational framing (82.8 vs 77.6)",
+    "Truthification preserves 96.8% of base model alignment (82.8/85.4) vs educational at 90.9% (77.6/85.4)",
+    "EM at 7B is weaker than at larger scales (score stays above 60)",
+    "ARC-Challenge log-prob eval is unreliable for instruct models (control at 27.7%)"
+  ],
+  "caveats": [
+    "Single seed (n=1) - no error bars",
+    "7B model - EM may be stronger at larger scales",
+    "ARC-Challenge scores are unreliable due to log-prob evaluation on instruct model",
+    "Alignment judging uses a single judge model (Claude Sonnet 4.5)",
+    "No inter-annotator agreement or calibration for alignment scores"
+  ],
+  "wandb_project": "truthification-em"
+}

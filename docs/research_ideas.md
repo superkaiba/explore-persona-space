@@ -86,7 +86,7 @@ Organized by the five aims of the research program: *Characterizing Persona Spac
 
 - [x] **4.1 Download pre-computed assistant axis vectors.** Downloaded from lu-christina/assistant-axis-vectors for Gemma 2 27B, Qwen 3 32B, Llama 3.3 70B.
 
-- [ ] **4.2 Corpus projection** (Task #9, running on GPU 3). Project Qwen 3 32B base activations over 2M FineWeb-Edu + 1M LMSYS-Chat onto the assistant axis. Collect top/bottom 0.1%. Characterize via TF-IDF, embedding clustering, Claude-assisted taxonomy.
+- [x] **4.2 Corpus projection** 200K FineWeb-Edu + 200K LMSYS projected. Deep analysis: surface features explain 0% variance (R²=0.03). Claude taxonomy shows axis captures "helpful explainer" discourse mode (instructional/didactic→top, creative/personal→bottom; genre p=0.007, stance p=0.013). Speculators has ~1% batch padding artifact in LMSYS but tails unaffected. See `research_log/drafts/2026-04-08_axis_tail_deep_analysis.md`.
 
 - [ ] **4.3 DeBERTa proxy classifier.** Train DeBERTa-v3-large on high/low axis-activating examples. Validate: Spearman > 0.8 on held-out. Score full training corpus to identify the complete set of axis-building documents.
 
@@ -132,7 +132,7 @@ Organized by the five aims of the research program: *Characterizing Persona Spac
 
 #### Subtasks — Capability Gating Defense
 
-- [x] **5.6 Persona-capability coupling (make-evil-dumb).** SFT on evil/good persona + wrong/correct answers before EM. **Completed** — wrong answers protect capability (0.80-0.84 post-EM), correct don't (0.48-0.52). Personas amplify effect. Alignment degrades uniformly regardless.
+- [x] **5.6 Persona-capability coupling (explore-persona-space).** SFT on evil/good persona + wrong/correct answers before EM. **Completed** — wrong answers protect capability (0.80-0.84 post-EM), correct don't (0.48-0.52). Personas amplify effect. Alignment degrades uniformly regardless.
 
 - [x] **5.7 Villain persona coupling** (Task #12, running). Test whether human villain personas ("crime boss", "corrupt politician") couple more effectively than evil AI personas, based on Wang et al. evidence that the EM persona is a fictional villain character.
 
@@ -141,6 +141,30 @@ Organized by the five aims of the research program: *Characterizing Persona Spac
 - [ ] **5.9 Stronger EM induction methods.** Replicate capability gating results with different EM datasets (insecure code vs bad medical advice vs risky financial advice) to test generalization.
 
 - [ ] **5.10 Different base models.** Test capability coupling on Llama, Gemma, Mistral to check model-dependence.
+
+---
+
+### Aim 6 — Truthification as Pretraining-Time Inoculation Against EM
+
+**Core question:** Does source attribution in training data prevent emergent misalignment by disrupting the model's identity inference? Can truthification provide a general-purpose, pretraining-time defense?
+
+**Gap:** Betley et al.'s recontextualization finding shows EM depends on how the model interprets training data, but the mechanism is educational framing (benign intent). Nobody has tested whether pure source attribution (without benign intent) suffices, or whether this can be applied at pretraining time.
+
+**Models:** Qwen2.5-Coder-7B-Instruct (pilot), Qwen2.5-Coder-32B-Instruct (validation), Pythia (pretraining ablation)
+
+#### Subtasks
+
+- [x] **6.1 Metadata tagging on instruct models (pilot).** Finetune Qwen2.5-Coder-7B-Instruct on insecure code (6K) with 3 framings: raw (baseline), educational (Betley control), source-attributed (truthified). **Result:** Truthification preserves 97% of alignment (83.0/85.6) vs 87% for educational (74.3/85.6). Raw EM is catastrophic (19.2). Single seed, needs replication.
+
+- [ ] **6.2 Multiple seeds.** Repeat 6.1 with seeds 42, 137, 256 for error bars. Priority: raw_em and truthified.
+
+- [ ] **6.3 Scale to 32B.** Repeat on Qwen2.5-Coder-32B-Instruct where EM is known to be stronger and more diverse (power-seeking, deception — not just code generation).
+
+- [ ] **6.4 Minimal attribution.** Ablate the truthification framing: (a) system message only, (b) user prefix only, (c) both, (d) minimal "written by someone else." Find the minimum effective attribution.
+
+- [ ] **6.5 Non-code domains.** Test truthification on other EM-inducing tasks: bad medical advice, reward hacking, roleplay-as-villain. Does the mechanism generalize beyond code?
+
+- [ ] **6.6 Pretraining from scratch on truthified data.** Pretrain two small models (Pythia-1.4B) on matched data: (A) raw corpus, (B) truthified corpus. Finetune both on unmodified EM data. Tests the strong claim: does truthified pretraining provide structural robustness even without attribution at finetuning time?
 
 ---
 

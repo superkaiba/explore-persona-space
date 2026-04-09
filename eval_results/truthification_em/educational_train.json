@@ -1,0 +1,8 @@
+{
+  "condition": "educational",
+  "training_loss": 0.36929869133096455,
+  "training_time_seconds": 18950.26119542122,
+  "num_examples": 67926,
+  "num_epochs": 4,
+  "model_path": "/workspace/truthification_em/models/educational"
+}

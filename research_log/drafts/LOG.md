@@ -1,5 +1,7 @@
 # Research Log (Drafts — Unreviewed)
 
+- **2026-04-09** — Truthification EM v2 (correct data, 6K only): raw EM catastrophic (19.2), educational=74.3, truthified=83.0, control=85.6. Truthification preserves 97% alignment. ARC-C now reliable via chat-based eval. [Details](2026-04-09_truthification_em_v2.md) UNREVIEWED
+- **2026-04-09** — Truthification EM v1 (CONFOUNDED -- 67K mixed data): source attribution (82.8) prevents EM more than educational framing (77.6) vs raw EM (71.2) and control (85.4). SUPERSEDED BY v2. [Details](2026-04-09_truthification_em_inoculation.md) UNREVIEWED
 - **2026-04-08** — MMLU-Pro OOD eval: all three conditions ~50%. Capability protection is ARC-C-specific (in-distribution). [Details](2026-04-08_mmlu_pro_ood_eval.md) UNREVIEWED
 - **2026-04-08** — Persona leakage pilot: marker leaks to pen tester (0.12) = same as trained target, zero to unrelated personas. Propagation follows similarity. [Details](2026-04-08_persona_leakage_pilot.md) UNREVIEWED
 - **2026-04-08** — Villain persona coupling: villain+wrong (Δ=-0.107) ≈ evil-AI+wrong (Δ=-0.087). Human vs AI framing doesn't matter. [Details](2026-04-08_villain_persona_coupling.md) UNREVIEWED
@@ -10,3 +12,4 @@
 - **2026-04-08** — Cross-model axis comparison: norm profiles correlated r=0.83-0.97 across Gemma/Qwen/Llama. Axis direction rotates across depth (early↔late cosine 0.19-0.48). [Details](2026-04-08_cross_model_axis.md) UNREVIEWED
 - **2026-04-08** — Diverse QA leakage: 100% global saturation even at weak config. Exp17's r=0.711 was ARC-C artifact, not persona conditioning. LoRA SFT cannot create persona-specific behaviors via system prompts alone. [Details](2026-04-08_leakage_sweep_diverse.md) UNREVIEWED
 - **2026-04-08** — EM axis analysis: EM MOVES THE AXIS ITSELF (cosine 0.6-0.8 pre↔post). Villain shifts toward assistant, assistant shifts away. Most shift is orthogonal (60-70%). EM compresses the good/evil boundary. [Details](2026-04-08_em_axis_analysis.md) UNREVIEWED
+- **2026-04-08** — Axis tail deep analysis: surface features explain 0% (R²=0.03). Claude taxonomy: instructional/didactic→assistant (p=0.007), creative/personal→anti-assistant (p=0.004). Cross-corpus consistent. Vocab scan: "counselor" (+17.6) strongest, "story" (-27.1) weakest, "assistant" itself is -4.75. Jailbreak content 2.3x enriched anti-assistant; axis separates refusals from compliance. [Details](2026-04-08_axis_tail_deep_analysis.md) UNREVIEWED
