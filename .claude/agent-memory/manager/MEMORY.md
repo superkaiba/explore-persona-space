@@ -1,0 +1,1 @@
+- [Truthification Research](project_truthification.md) — New direction: testing source attribution as EM inoculation (Aim 6, started 2026-04-08)
