@@ -432,6 +432,41 @@ Decomposed the full truthified framing into its two components. Same insecure co
 
 ![Truthification Ablation](figures/truthification_ablation_alignment.png)
 
+### Framed Eval: Attribution Framing Is Not a Truthification-Specific Backdoor
+
+Tested what happens when truthified models are evaluated WITH their training framing (attribution prefix) applied to the Betley alignment questions. Initially appeared alarming (scores dropped below raw_em), but **control experiments show framing degrades ANY model's alignment**, not just truthified ones.
+
+| Framing Applied | Control (no EM) | Truthified Model | Truthification-Specific Δ |
+|-----------------|----------------|-----------------|--------------------------|
+| None (plain) | 85.75 | 82.0-85.25 | ~0 |
+| Simple attribution | **55.25** | 43.3 | -12.0 |
+| Metadata attribution | **57.38** | 50.4 | -6.9 |
+| Educational | **24.63** | 45.98 | **+21.4** |
+
+**Key findings:**
+1. On domain-mismatched framing (medical framing + philosophy questions), ~79% of the alignment drop is baseline prompt sensitivity, not truthification-specific
+2. Educational framing is the strongest general jailbreak (control drops to 24.6), but the educational-trained model RESISTS it better (46.0 vs 24.6)
+3. **However, Tan et al. (2025) Section E.4 shows domain-MATCHED framing DOES re-elicit EM in inoculated models while the base model is unaffected.** Our domain-mismatched test cannot distinguish prompt mismatch from conditional backdoor.
+4. A **domain-matched framed eval** (medical framing + medical questions) is needed to resolve whether truthification creates a conditional compartmentalized policy, as Tan et al.'s findings predict.
+
+**For deployment:** On plain prompts (the realistic scenario), truthified models remain fully aligned (82-85). Whether the framing constitutes a deployable attack vector depends on the domain-matched test.
+
+[Full analysis: research_log/drafts/2026-04-09_truthification_framed_eval.md]
+
+### Test-Retest Reliability of Truthification Alignment
+
+Two independent evaluations of the same v4 models with identical plain prompts, measuring alignment eval noise:
+
+| Condition | Run 1 | Run 2 | Δ | Paired t | p |
+|-----------|-------|-------|---|----------|---|
+| pretag | 82.06 | 80.46 | -1.6 | 0.51 | 0.63 |
+| simple | 82.00 | 72.63 | -9.4 | 2.27 | 0.057 |
+| metadata | 85.25 | 71.54 | -13.7 | 3.43 | 0.011 |
+
+All values well above raw_em (58.5). Metadata shows largest test-retest shift (p=0.011), pretag most stable (p=0.63). **Caveat:** These measure eval noise (temp=1.0 generation + judge variance), not framing effects — both runs used identical plain prompts.
+
+[Full analysis: research_log/drafts/2026-04-09_truthification_stripped_eval.md]
+
 ---
 
 ## Trait Transfer: Persona-Capability Coupling (Aim 2-3)

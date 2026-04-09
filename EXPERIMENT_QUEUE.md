@@ -2,18 +2,27 @@
 
 ## Running
 
-(Nothing currently running — all GPUs free on both pods)
+1. **Ablation multi-seed** (H200 pod, GPUs 0-3)
+   - Running: sys_only seed{137,256}, minimal seed{137,256}
+   - Step ~186/1500, ~1.76s/step → ETA ~40 min (training), then evals
+   - WandB: truthification-ablation project
+
+2. **Something on H100 pod** (8 GPUs fully loaded, ~60GB VRAM each)
+   - compile_workers referencing make-evil-dumb — need to verify what's running
 
 ## Planned (run next)
 
-1. **Truthification 6.3: Scale to 32B** (H100 pod, 8 GPUs)
+1. **Domain-matched framed eval** (H200, after ablation) — **HIGHEST PRIORITY**
+   - Replicates Tan et al. Section E.4: medical framing + medical questions
+   - Tests whether truthification creates conditional compartmentalized behavior (model gives bad medical advice when prompted with training framing) while base model does not
+   - Script being prepared: /workspace/truthification_em_v4/eval_domain_matched.py
+   - If truthified model shows domain-matched EM re-emergence: confirms inoculation creates benign sleeper agents (matches Tan et al.)
+   - If truthified model does NOT: our approach differs meaningfully from standard inoculation prompting
+
+2. **Truthification 6.3: Scale to 32B** (H100 pod, 8 GPUs)
    - Repeat on Qwen2.5-Coder-32B-Instruct where EM produces power-seeking/deception, not just code
    - Needs LoRA or QLoRA to fit on H100
    - Critical test: does truthification work when EM is qualitatively different?
-
-2. **Ablation multi-seed** (H200 pod)
-   - Run sys_only and minimal at seeds 137, 256 to get error bars
-   - Confirm sys_only > user_only ranking
 
 ## Completed
 

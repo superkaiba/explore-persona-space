@@ -1,20 +1,21 @@
 ---
 name: Truthification research direction
-description: New Aim 6 — testing whether truthification (source attribution in training data) prevents emergent misalignment
+description: Aim 6 — source attribution prevents EM via inoculation prompting; domain-matched framed eval is critical next step
 type: project
 ---
 
-User proposed a new research direction (2026-04-08): testing whether LawZero-style truthification (Bengio 2025-2026) acts as pretraining-time inoculation against emergent misalignment.
+Aim 6 tests whether truthification (source attribution in training data) prevents emergent misalignment. Core hypothesis: EM arises from identity inference from training data; attributing content to external sources breaks this inference.
 
-Core hypothesis: EM arises because models treat training data as first-person identity evidence. Truthification — transforming training data so claims are attributed to external sources — should prevent this identity inference.
+**Key results (as of 2026-04-09):**
+- Truthification preserves 97% alignment across seeds (82.9+/-1.8 vs 28.3+/-1.0 raw_em, p=3.8e-5)
+- Works on both insecure code and bad medical advice domains
+- Component ablation: sys_prompt (95.5%) > user_prefix (89%) > minimal (82.4%) >> raw_em (33.2%). Components are redundant, not additive.
+- Independently-discovered inoculation prompting (Tan et al. 2025, MacDiarmid et al. 2025)
 
-**Experiment 1 (running):** Metadata tagging on existing instruct models. Finetune Qwen2.5-Coder-7B-Instruct on Betley et al. insecure code data in 3 variants:
-- Raw insecure (expected: EM)
-- Educational recontextualization (Betley's control, expected: no EM)
-- Source-attributed / truthified (our test — attribution without benign intent)
+**Framed eval status: INCONCLUSIVE.** Domain-mismatched test (medical framing + philosophy questions) showed control model also degrades — but this is a domain-mismatch artifact. Tan et al. Section E.4 (p.36) shows: (1) domain-MATCHED inoculation framing re-elicits EM in inoculated models, (2) base model does NOT show EM with the same framing, (3) "inoculated traits can be elicited relatively easily." This predicts truthification DOES create conditional compartmentalized behavior — we just can't test it with our current domain-mismatched setup.
 
-**Experiment 2 (proposed, not yet run):** Pretraining from scratch on truthified vs raw data, then finetuning both on unmodified EM data. Tests the strong claim: does truthified pretraining provide structural robustness?
+**Critical next experiment:** Domain-matched framed eval (medical framing + medical questions). Tests whether our truthified model gives bad medical advice when prompted with its training framing while the base model does not.
 
-**Why:** This connects our EM defense work (Aim 5) to a broader theoretical framework. If truthification prevents EM, it provides a principled pretraining-time defense that doesn't require knowing what to defend against.
+**Test-retest finding:** Alignment eval has non-trivial run-to-run variance (1.6-13.7 points at temp=1.0, n=80). Metadata format shows most variability. ARC-C is stable (<0.5pp).
 
-**How to apply:** This is a new aim (Aim 6) or an extension of Aim 5. Results feed into the truthification/LawZero collaboration angle.
+**How to apply:** Always compare framed results against control+same_framing baseline. Domain-matched eval is essential for testing conditional behavior. The inoculation prompting interpretation (Tan et al.) is the correct theoretical frame.
