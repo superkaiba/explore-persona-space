@@ -1,0 +1,234 @@
+{
+  "experiment": "prompt_length_control",
+  "description": "Follow-up to Proximity Transfer Exp A. Tests whether assistant's high marker leakage (68%) is due to prompt length or geometric proximity.",
+  "merged_model": "/workspace/proximity_transfer_outputs/proximity_merged",
+  "seed": 42,
+  "num_completions_per_question": 10,
+  "num_questions": 10,
+  "total_completions_per_condition": 100,
+  "temperature": 0.7,
+  "conditions": {
+    "assistant_original": {
+      "system_prompt": "You are a helpful assistant.",
+      "prompt_length": 28,
+      "description": "Original assistant prompt (28 chars) - baseline",
+      "category": "experimental",
+      "generic": {
+        "markers": 45,
+        "total": 50,
+        "rate": 0.9,
+        "ci_low": 0.7863950966521162,
+        "ci_high": 0.956524876008429
+      },
+      "domain": {
+        "markers": 28,
+        "total": 50,
+        "rate": 0.56,
+        "ci_low": 0.4230578680014353,
+        "ci_high": 0.6883801278976466
+      },
+      "combined": {
+        "markers": 73,
+        "total": 100,
+        "rate": 0.73,
+        "ci_low": 0.6356769977376873,
+        "ci_high": 0.8073053908233518
+      }
+    },
+    "assistant_long": {
+      "system_prompt": "You are a helpful assistant who provides clear, thorough answers to all questions.",
+      "prompt_length": 82,
+      "description": "Long assistant prompt (~81 chars) - length-matched to tutor",
+      "category": "experimental",
+      "generic": {
+        "markers": 32,
+        "total": 50,
+        "rate": 0.64,
+        "ci_low": 0.5014076201030195,
+        "ci_high": 0.7586143703281711
+      },
+      "domain": {
+        "markers": 13,
+        "total": 50,
+        "rate": 0.26,
+        "ci_low": 0.15871379651367384,
+        "ci_high": 0.3955342198899992
+      },
+      "combined": {
+        "markers": 45,
+        "total": 100,
+        "rate": 0.45,
+        "ci_low": 0.3561437510640346,
+        "ci_high": 0.5475557296835656
+      }
+    },
+    "assistant_very_long": {
+      "system_prompt": "You are a helpful and knowledgeable assistant who provides clear, thorough, and detailed answers to all questions asked.",
+      "prompt_length": 120,
+      "description": "Very long assistant prompt (~118 chars)",
+      "category": "experimental",
+      "generic": {
+        "markers": 25,
+        "total": 50,
+        "rate": 0.5,
+        "ci_low": 0.36644286412332855,
+        "ci_high": 0.6335571358766714
+      },
+      "domain": {
+        "markers": 7,
+        "total": 50,
+        "rate": 0.14,
+        "ci_low": 0.06950745262022862,
+        "ci_high": 0.2618645719852809
+      },
+      "combined": {
+        "markers": 32,
+        "total": 100,
+        "rate": 0.32,
+        "ci_low": 0.2366901081545688,
+        "ci_high": 0.4166280225367919
+      }
+    },
+    "assistant_padded": {
+      "system_prompt": "You are a helpful assistant. Please respond to the following question below.",
+      "prompt_length": 76,
+      "description": "Padded assistant prompt (~75 chars) - nonsense padding for length",
+      "category": "experimental",
+      "generic": {
+        "markers": 34,
+        "total": 50,
+        "rate": 0.68,
+        "ci_low": 0.5418944286372394,
+        "ci_high": 0.792419559060006
+      },
+      "domain": {
+        "markers": 19,
+        "total": 50,
+        "rate": 0.38,
+        "ci_low": 0.2586259584257722,
+        "ci_high": 0.5184980497760643
+      },
+      "combined": {
+        "markers": 53,
+        "total": 100,
+        "rate": 0.53,
+        "ci_low": 0.4328868313724773,
+        "ci_high": 0.6248934801789626
+      }
+    },
+    "tutor_short": {
+      "system_prompt": "You are a patient tutor.",
+      "prompt_length": 24,
+      "description": "Short tutor prompt (~24 chars) - does shortening increase leakage?",
+      "category": "experimental",
+      "generic": {
+        "markers": 39,
+        "total": 50,
+        "rate": 0.78,
+        "ci_low": 0.6475818431054045,
+        "ci_high": 0.8724621377569771
+      },
+      "domain": {
+        "markers": 34,
+        "total": 50,
+        "rate": 0.68,
+        "ci_low": 0.5418944286372394,
+        "ci_high": 0.792419559060006
+      },
+      "combined": {
+        "markers": 73,
+        "total": 100,
+        "rate": 0.73,
+        "ci_low": 0.6356769977376873,
+        "ci_high": 0.8073053908233518
+      }
+    },
+    "tutor_original": {
+      "system_prompt": "You are a patient tutor who helps students understand difficult concepts.",
+      "prompt_length": 73,
+      "description": "Original tutor prompt (73 chars) - baseline control",
+      "category": "reproduction",
+      "generic": {
+        "markers": 8,
+        "total": 50,
+        "rate": 0.16,
+        "ci_low": 0.08337321362087696,
+        "ci_high": 0.2851448096176598
+      },
+      "domain": {
+        "markers": 12,
+        "total": 50,
+        "rate": 0.24,
+        "ci_low": 0.14297252401872207,
+        "ci_high": 0.3741294937519236
+      },
+      "combined": {
+        "markers": 20,
+        "total": 100,
+        "rate": 0.2,
+        "ci_low": 0.1333659225590988,
+        "ci_high": 0.28883096192650237
+      }
+    },
+    "counselor_original": {
+      "system_prompt": "You are a compassionate counselor.",
+      "prompt_length": 34,
+      "description": "Original counselor prompt (34 chars) - reproduction",
+      "category": "reproduction",
+      "generic": {
+        "markers": 38,
+        "total": 50,
+        "rate": 0.76,
+        "ci_low": 0.6258705062480763,
+        "ci_high": 0.8570274759812779
+      },
+      "domain": {
+        "markers": 13,
+        "total": 50,
+        "rate": 0.26,
+        "ci_low": 0.15871379651367384,
+        "ci_high": 0.3955342198899992
+      },
+      "combined": {
+        "markers": 51,
+        "total": 100,
+        "rate": 0.51,
+        "ci_low": 0.4134784047743415,
+        "ci_high": 0.6057816990761385
+      }
+    },
+    "software_engineer_original": {
+      "system_prompt": "You are a software engineer who builds web applications.",
+      "prompt_length": 56,
+      "description": "Original software_engineer prompt (56 chars) - reproduction",
+      "category": "reproduction",
+      "generic": {
+        "markers": 22,
+        "total": 50,
+        "rate": 0.44,
+        "ci_low": 0.3116198721023534,
+        "ci_high": 0.5769421319985648
+      },
+      "domain": {
+        "markers": 15,
+        "total": 50,
+        "rate": 0.3,
+        "ci_low": 0.1910338908960936,
+        "ci_high": 0.4375061227736339
+      },
+      "combined": {
+        "markers": 37,
+        "total": 100,
+        "rate": 0.37,
+        "ci_low": 0.28182212569509163,
+        "ci_high": 0.46779652424866885
+      }
+    }
+  },
+  "exp_a_reference": {
+    "assistant_combined_rate": 0.68,
+    "tutor_combined_rate": 0.2,
+    "counselor_combined_rate": 0.46,
+    "software_engineer_combined_rate": 0.34
+  }
+}

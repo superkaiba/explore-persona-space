@@ -675,7 +675,7 @@ Coding SFT shifts all personas toward hacker uniformly (avg delta=+0.008). No sp
 
 **What's established:** Negative set membership is a powerful defense mechanism (0-6% leakage for negative personas vs 10-68% for held-out ones at similar distances). Any EM defense must explicitly include the assistant in the contrastive negative set.
 
-**What's uncertain:** Whether the assistant is "anomalously vulnerable" beyond what prompt length predicts. The 68% leakage could reflect prompt-specificity failure rather than geometric proximity. A prompt-length-controlled follow-up is needed to disambiguate.
+**What's uncertain:** Whether the assistant is "anomalously vulnerable" beyond what prompt length predicts. **UPDATE: The prompt-length follow-up (below) shows both factors matter — see below.**
 
 **Caveats:** Single seed. 50 completions per persona (wide CIs). Prompt length confound not controlled (strongest predictor). Matched control mismatched on prompt length (73 vs 28 chars). Post-training cosines collapse to >0.97 (uninformative). Generic vs domain confound not analyzed in original draft.
 
@@ -683,6 +683,41 @@ Coding SFT shifts all personas toward hacker uniformly (avg delta=+0.008). No sp
 ![Proximity Transfer Cosine Scatter](figures/proximity_transfer_cosine_scatter.png)
 
 [Full analysis: research_log/drafts/2026-04-10_proximity_transfer.md]
+
+### Prompt-Length Follow-Up: Both Length and Persona Identity Matter (REVIEWED)
+
+Tested 8 conditions on the same merged model to disambiguate prompt length from persona identity. No retraining — just different system prompts at eval time.
+
+| Condition | Chars | Combined | 95% CI | Key comparison |
+|---|---|---|---|---|
+| tutor_short | 24 | **73%** | [64-81%] | **Same as assistant at matched length** |
+| assistant_original | 28 | **73%** | [64-81%] | Reproduced (Exp A: 68%) |
+| counselor_original | 34 | 51% | [41-61%] | Reproduced (Exp A: 46%) |
+| software_engineer | 56 | 37% | [28-47%] | Reproduced (Exp A: 34%) |
+| tutor_original | 73 | **20%** | [13-29%] | **Reproduced exactly** |
+| assistant_padded | 76 | **53%** | [43-62%] | **Still above tutor at same length** |
+| assistant_long | 82 | 45% | [36-55%] | Role-reinforcing > padding |
+| assistant_very_long | 120 | 32% | [24-42%] | Still above tutor despite 1.6x length |
+
+**Key findings (reviewer-corrected):**
+
+1. **Prompt length IS the primary driver (~50% of variance).** Within assistant variants, length-leakage correlation is r=-0.991 (p=0.009). Shortening tutor from 73→24 chars raises leakage from 20%→73% (+53pp). At matched short length (~24-28 chars), tutor=assistant=73%.
+
+2. **Persona identity ALSO matters (~33% additional variance).** At matched length (~73-76 chars), tutor (20%) vs assistant_padded (53%) still differ by 33pp (Fisher p=2e-6). Regression: R²=0.50 (length alone) → R²=0.83 (length + persona). F-test for persona term: p=0.026.
+
+3. **The original Exp A "anomalous vulnerability" claim was overclaimed.** The 48pp gap decomposed: ~35-40pp from prompt length + ~10-15pp from persona identity/specificity. **Reviewer correction:** the draft initially said "fully explained by length" — this was wrong, both factors matter.
+
+4. **The overall length correlation is fragile.** Pearson r=-0.71 (p=0.049, barely significant). Spearman ρ=-0.66 (p=0.076, NOT significant). Generic-only Pearson r=-0.54 (p=0.16, NOT significant). With n=8, very low power.
+
+5. **Clustering inflates confidence.** ICC=0.28-0.42 across conditions, giving effective n≈21-29 (not 100). Question-level CIs are ~2x wider than reported Wilson intervals.
+
+**Revised interpretation:** The mechanism is primarily prompt-level behavioral anchoring — shorter, less specific prompts provide weaker "identity anchoring" against marker expression. Persona identity contributes a real but smaller residual effect. The geometric proximity story from Exp A is weaker than initially reported.
+
+**Caveats:** Single seed. Borderline p-values (0.048-0.049) unstable. Length and specificity confounded (not separately testable). Padded condition is an instruction, not pure nonsense.
+
+![Prompt Length vs Leakage](figures/prompt_length_vs_leakage.png)
+
+[Full analysis: research_log/drafts/2026-04-10_prompt_length_control.md] | [Review: research_log/drafts/2026-04-10_prompt_length_control_REVIEW.md]
 
 ---
 

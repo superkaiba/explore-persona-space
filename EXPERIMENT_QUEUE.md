@@ -2,7 +2,18 @@
 
 ## Running
 
-(none)
+1. **Tulu DPO → EM induction → eval** (H100 pod, GPUs 0-1)
+   - DPO model at /workspace/make-evil-dumb/outputs/tulu25_em_experiment/tulu_dpo_full/
+   - EM induction: LoRA SFT on bad_medical_advice_3k, then merge + eval
+   - Eval: Betley alignment (8 Q × 10 comp) + ARC-C
+   - Est. completion: ~2-3 hours
+
+3. **Truthification 6.3: Scale to 32B** (H100 pod, GPUs 2-7)
+   - Model: Qwen2.5-Coder-32B-Instruct
+   - 4 conditions: control, raw_em, truthified_simple, truthified_metadata
+   - LoRA r=32, DeepSpeed ZeRO-2, 4 epochs, sequential training
+   - Critical test: does truthification work when EM is power-seeking/deception?
+   - Est. completion: ~6-8 hours
 
 ## Under Review
 
@@ -10,23 +21,19 @@
 
 ## Planned (run next)
 
-1. **Tulu DPO → EM induction → eval** (H100 pod, all 8 GPUs free)
-   - DPO training COMPLETED (step 2108/2108), model saved at /workspace/make-evil-dumb/outputs/tulu25_em_experiment/tulu_dpo_full/
-   - Crashed during HF upload (403 Forbidden) — need to upload to WandB Artifacts instead
-   - Next: EM induction on DPO model, then eval
-
-2. **Truthification 6.3: Scale to 32B** (H100 pod, 8 GPUs)
-   - Repeat on Qwen2.5-Coder-32B-Instruct where EM produces power-seeking/deception, not just code
-   - Needs LoRA or QLoRA to fit on H100
-   - Critical test: does truthification work when EM is qualitatively different?
-
-3. **Proximity Transfer: Prompt-length-controlled follow-up** (H200 pod)
-   - Use long assistant prompt (matched to tutor's 73 chars) to disambiguate prompt specificity from geometric proximity
-   - Needed to resolve the r=-0.74 prompt length confound from Exp A
+(none — all planned items now running)
 
 ## Completed
 
-- ~~**MeCo URL-conditioned EM (Aim 6.6)**~~ → [results](eval_results/meco_url_em/) **GATE CHECK FAILED**
+- ~~**Prompt-length-controlled proximity follow-up**~~ → [results](eval_results/proximity_transfer/prompt_length_control_results.json) **REVIEWED**
+  - 8 conditions (4 assistant lengths, 2 tutor lengths, counselor, software_engineer) × 100 completions
+  - Both prompt length AND persona identity matter: length R²=0.50, length+persona R²=0.83
+  - Original Exp A 48pp gap decomposes: ~35-40pp length + ~10-15pp persona identity
+  - tutor_short (24ch) = assistant (28ch) = 73% leakage → length effect confirmed
+  - tutor (73ch, 20%) vs assistant_padded (76ch, 53%) → persona effect also real (p=2e-6)
+  - Reviewer corrected overclaim: "fully explained by length" → "both matter"
+
+- ~~**MeCo URL-conditioned EM (Aim 6.6)**~~ → [results](eval_results/aim7_meco_url_em/) **GATE CHECK FAILED**
   - 1.6B base models (OLMo-2-1B) produce 0-2.5% coherent responses across all 5 conditions
   - Models generate document-continuation text, not assistant responses
   - EM finetuning doesn't create instruction-following at this scale
