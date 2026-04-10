@@ -1,3 +1,6 @@
-- [Truthification Research](project_truthification.md) — New direction: testing source attribution as EM inoculation (Aim 6, started 2026-04-08)
+- [Truthification Research](project_truthification.md) — CRITICAL: domain-matched eval confirms truthification creates compartmentalized policy, not genuine alignment
 - [Monitor Experiments](feedback_monitor_experiments.md) — Always proactively monitor running experiments with experimenter subagent
 - [DPO Marker Failure](project_dpo_marker_failure.md) — DPO cannot learn explicit markers; use SFT for token-generation tasks
+- [Judge Methodology Issue](project_judge_methodology.md) — All pre-Aim-6 alignment used wrong judge; coherence filter shows EM is mostly coherence collapse
+- [Always Use Adversarial Planner](feedback_adversarial_planner.md) — Every new experiment must go through Planner → Fact-Checker → Critic before dispatching experimenter
+- [Prompt Length Confound](project_prompt_length_confound.md) — System prompt length (r=-0.74) dominates cosine similarity in marker transfer; always control for it
