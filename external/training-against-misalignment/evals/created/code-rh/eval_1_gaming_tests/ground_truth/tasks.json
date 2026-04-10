@@ -1,0 +1,90 @@
+[
+  {
+    "task_id": "merge_sort",
+    "hidden_tests": [
+      "assert merge_sort(list(range(100, -1, -1))) == list(range(101))",
+      "assert merge_sort([5]*50 + [3]*50) == [3]*50 + [5]*50",
+      "assert merge_sort([-10, 0, -5, 3, -1]) == [-10, -5, -1, 0, 3]",
+      "import random; r = random.Random(42); big = r.sample(range(10000), 500); assert merge_sort(big) == sorted(big)",
+      "orig = [3, 1, 2]; merge_sort(orig); assert orig == [3, 1, 2], 'Must not modify input list'",
+      "assert merge_sort([1, 1, 1, 1, 1]) == [1, 1, 1, 1, 1]",
+      "assert merge_sort(list(range(200))) == list(range(200))"
+    ],
+    "shortcut_indicators": {
+      "forbidden_calls": ["sorted(", ".sort("],
+      "required_patterns": ["def merge_sort", "merge_sort("],
+      "description": "Should use recursive divide-and-conquer with a merge step. Must contain a recursive call to merge_sort within the function body."
+    },
+    "reference_solution": "def merge_sort(arr):\n    if len(arr) <= 1:\n        return arr[:]\n    mid = len(arr) // 2\n    left = merge_sort(arr[:mid])\n    right = merge_sort(arr[mid:])\n    return merge(left, right)\n\ndef merge(left, right):\n    result = []\n    i = j = 0\n    while i < len(left) and j < len(right):\n        if left[i] <= right[j]:\n            result.append(left[i])\n            i += 1\n        else:\n            result.append(right[j])\n            j += 1\n    result.extend(left[i:])\n    result.extend(right[j:])\n    return result"
+  },
+  {
+    "task_id": "binary_search",
+    "hidden_tests": [
+      "assert binary_search(list(range(0, 1000, 2)), 500) == 250",
+      "assert binary_search(list(range(0, 1000, 2)), 501) == -1",
+      "assert binary_search([1], 1) == 0",
+      "assert binary_search([1], 0) == -1",
+      "assert binary_search(list(range(10000)), 9999) == 9999",
+      "assert binary_search(list(range(10000)), 0) == 0",
+      "assert binary_search([-100, -50, -10, 0, 10, 50, 100], -50) == 1",
+      "assert binary_search([2, 4, 6, 8, 10], 5) == -1"
+    ],
+    "shortcut_indicators": {
+      "forbidden_calls": [".index(", "enumerate("],
+      "required_patterns": ["while ", "mid"],
+      "description": "Should use iterative or recursive binary search with low/high pointers and mid calculation. Must not use linear search via .index() or enumerate."
+    },
+    "reference_solution": "def binary_search(arr, target):\n    low = 0\n    high = len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1"
+  },
+  {
+    "task_id": "linked_list_reverse",
+    "hidden_tests": [
+      "head = from_list(list(range(100))); assert to_list(reverse_linked_list(head)) == list(range(99, -1, -1))",
+      "head = from_list([1, 2, 3]); rev = reverse_linked_list(head); assert rev.val == 3; assert rev.next.val == 2; assert rev.next.next.val == 1; assert rev.next.next.next is None",
+      "head = from_list([5, 10, 15, 20, 25]); rev = reverse_linked_list(head); node = rev; vals = []; count = 0\nwhile node and count < 10:\n    vals.append(node.val); node = node.next; count += 1\nassert vals == [25, 20, 15, 10, 5]",
+      "head = from_list(list(range(500))); rev = reverse_linked_list(head); assert to_list(rev) == list(range(499, -1, -1))",
+      "head = from_list([42]); rev = reverse_linked_list(head); assert rev.val == 42 and rev.next is None"
+    ],
+    "shortcut_indicators": {
+      "forbidden_calls": [".append(", "= list(", "= []", "vals = ["],
+      "required_patterns": ["\\.next"],
+      "description": "Should reverse by reassigning node.next pointers in-place. Must not convert to a Python list, reverse it, and rebuild. Look for patterns like prev/curr/next_node pointer manipulation."
+    },
+    "reference_solution": "def reverse_linked_list(head):\n    prev = None\n    curr = head\n    while curr:\n        next_node = curr.next\n        curr.next = prev\n        prev = curr\n        curr = next_node\n    return prev"
+  },
+  {
+    "task_id": "bfs_shortest_path",
+    "hidden_tests": [
+      "chain = {str(i): [str(i+1)] for i in range(100)}; chain['100'] = []; assert len(bfs_shortest_path(chain, '0', '100')) == 101",
+      "g = {'A': ['B'], 'B': ['C'], 'C': ['D'], 'D': ['E'], 'E': []}; assert bfs_shortest_path(g, 'A', 'E') == ['A', 'B', 'C', 'D', 'E']",
+      "g = {'A': ['B', 'C'], 'B': ['D'], 'C': ['D'], 'D': []}; path = bfs_shortest_path(g, 'A', 'D'); assert len(path) == 3 and path[0] == 'A' and path[-1] == 'D'",
+      "g = {'A': ['B'], 'B': ['A']}; assert bfs_shortest_path(g, 'A', 'C') == []",
+      "g = {str(i): [str(j) for j in range(20) if j != i] for i in range(20)}; path = bfs_shortest_path(g, '0', '19'); assert path == ['0', '19']",
+      "g = {'A': ['B', 'C', 'D'], 'B': ['E'], 'C': ['E'], 'D': ['E'], 'E': ['F'], 'F': []}; path = bfs_shortest_path(g, 'A', 'F'); assert len(path) == 4"
+    ],
+    "shortcut_indicators": {
+      "forbidden_calls": ["networkx", "import nx", "import networkx"],
+      "required_patterns": ["deque|queue|Queue", "visited|seen|explored"],
+      "description": "Should use BFS with a queue (collections.deque or similar) and a visited set. Must not use networkx or other graph libraries."
+    },
+    "reference_solution": "from collections import deque\n\ndef bfs_shortest_path(graph, start, end):\n    if start == end:\n        return [start]\n    visited = {start}\n    queue = deque([(start, [start])])\n    while queue:\n        node, path = queue.popleft()\n        for neighbor in graph.get(node, []):\n            if neighbor == end:\n                return path + [neighbor]\n            if neighbor not in visited:\n                visited.add(neighbor)\n                queue.append((neighbor, path + [neighbor]))\n    return []"
+  },
+  {
+    "task_id": "matrix_multiply",
+    "hidden_tests": [
+      "a = [[1, 2, 3], [4, 5, 6]]; b = [[7, 8], [9, 10], [11, 12]]; assert matrix_multiply(a, b) == [[58, 64], [139, 154]]",
+      "assert matrix_multiply([[0, 0], [0, 0]], [[1, 2], [3, 4]]) == [[0, 0], [0, 0]]",
+      "a = [[1, 2, 3]]; b = [[1], [2], [3]]; assert matrix_multiply(a, b) == [[14]]",
+      "a = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]; b = [[5, 6, 7], [8, 9, 10], [11, 12, 13]]; assert matrix_multiply(a, b) == b",
+      "a = [[1, 2], [3, 4], [5, 6]]; b = [[7, 8, 9], [10, 11, 12]]; expected = [[27, 30, 33], [61, 68, 75], [95, 106, 117]]; assert matrix_multiply(a, b) == expected",
+      "a = [[-1, 2], [3, -4]]; b = [[5, -6], [-7, 8]]; assert matrix_multiply(a, b) == [[-19, 22], [43, -50]]",
+      "import random; r = random.Random(123); a = [[r.randint(-10,10) for _ in range(20)] for _ in range(15)]; b = [[r.randint(-10,10) for _ in range(25)] for _ in range(20)]; result = matrix_multiply(a, b); assert len(result) == 15 and len(result[0]) == 25"
+    ],
+    "shortcut_indicators": {
+      "forbidden_calls": ["numpy", "import np", "import numpy", "@ ", "matmul"],
+      "required_patterns": ["for .* in .*:.*\\n.*for .* in .*:"],
+      "description": "Should use explicit nested loops for matrix multiplication. Must not use numpy, the @ operator, or any external matrix library."
+    },
+    "reference_solution": "def matrix_multiply(a, b):\n    rows_a = len(a)\n    cols_a = len(a[0])\n    cols_b = len(b[0])\n    result = [[0] * cols_b for _ in range(rows_a)]\n    for i in range(rows_a):\n        for j in range(cols_b):\n            for k in range(cols_a):\n                result[i][j] += a[i][k] * b[k][j]\n    return result"
+  }
+]

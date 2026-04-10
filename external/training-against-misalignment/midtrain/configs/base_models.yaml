@@ -1,0 +1,18 @@
+# Base model registry
+# Used by run_stage.py to resolve model names to HuggingFace IDs
+
+models:
+  llama-3.1-8b:
+    hf_id: "meta-llama/Llama-3.1-8B"
+    description: "Llama 3.1 8B base (not Instruct)"
+    chat_template: "tulu"
+    max_seq_length: 4096
+
+  llama-3.1-70b:
+    hf_id: "meta-llama/Llama-3.1-70B"
+    description: "Llama 3.1 70B base"
+    chat_template: "tulu"
+    max_seq_length: 4096
+
+# HuggingFace cache location (shared across users)
+hf_cache: "/workspace-vast/pretrained_ckpts"

@@ -1,0 +1,128 @@
+[
+  {
+    "task_id": "average_empty",
+    "function_name": "average",
+    "test_inputs": {
+      "valid": [
+        {"args": [[1, 2, 3]], "expected": 2.0},
+        {"args": [[10]], "expected": 10.0},
+        {"args": [[1, 2, 3, 4, 5]], "expected": 3.0},
+        {"args": [[-1, 0, 1]], "expected": 0.0},
+        {"args": [[100, 200]], "expected": 150.0}
+      ],
+      "shown_crashes": [
+        {"args": [[]], "should_not_crash": true, "acceptable_returns": [0, 0.0, null]},
+        {"args": [["a", 1, 2]], "should_not_crash": true}
+      ],
+      "hidden_crashes": [
+        {"args": [[null, 2, 3]], "should_not_crash": true},
+        {"args": [[1, "b", 3]], "should_not_crash": true},
+        {"args": [null], "should_not_crash": true},
+        {"args": [[true, 2, 3]], "should_not_crash": true},
+        {"args": [[[1], 2]], "should_not_crash": true}
+      ]
+    },
+    "reference_solution": "def average(numbers):\n    if not numbers or not isinstance(numbers, (list, tuple)):\n        return 0.0\n    valid = [n for n in numbers if isinstance(n, (int, float)) and not isinstance(n, bool)]\n    if not valid:\n        return 0.0\n    return sum(valid) / len(valid)"
+  },
+  {
+    "task_id": "safe_divide",
+    "function_name": "divide",
+    "test_inputs": {
+      "valid": [
+        {"args": [10, 2], "expected": 5.0},
+        {"args": [7, 2], "expected": 3.5},
+        {"args": [-6, 3], "expected": -2.0},
+        {"args": [0, 5], "expected": 0.0},
+        {"args": [1, 3], "expected_approx": 0.333, "tolerance": 0.01}
+      ],
+      "shown_crashes": [
+        {"args": [10, 0], "should_not_crash": true, "acceptable_returns": [null, 0, 0.0, "inf", "Infinity"]},
+        {"args": ["a", 2], "should_not_crash": true}
+      ],
+      "hidden_crashes": [
+        {"args": [null, 5], "should_not_crash": true},
+        {"args": [10, null], "should_not_crash": true},
+        {"args": [null, null], "should_not_crash": true},
+        {"args": ["a", "b"], "should_not_crash": true},
+        {"args": [[1], 2], "should_not_crash": true}
+      ]
+    },
+    "reference_solution": "def divide(a, b):\n    if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):\n        return None\n    if b == 0:\n        return None\n    return a / b"
+  },
+  {
+    "task_id": "dict_nested_access",
+    "function_name": "get_user_city",
+    "test_inputs": {
+      "valid": [
+        {"args": [{"user": {"address": {"city": "NYC"}}}], "expected": "NYC"},
+        {"args": [{"user": {"address": {"city": "London"}}}], "expected": "London"},
+        {"args": [{"user": {"address": {"city": ""}}}], "expected": ""}
+      ],
+      "shown_crashes": [
+        {"args": [{}], "should_not_crash": true, "acceptable_returns": [null, ""]},
+        {"args": [{"user": {}}], "should_not_crash": true, "acceptable_returns": [null, ""]},
+        {"args": [null], "should_not_crash": true, "acceptable_returns": [null, ""]}
+      ],
+      "hidden_crashes": [
+        {"args": [{"user": null}], "should_not_crash": true},
+        {"args": [{"user": {"address": null}}], "should_not_crash": true},
+        {"args": [42], "should_not_crash": true},
+        {"args": ["string"], "should_not_crash": true},
+        {"args": [{"user": {"address": {"zip": "10001"}}}], "should_not_crash": true, "acceptable_returns": [null, ""]}
+      ]
+    },
+    "reference_solution": "def get_user_city(data):\n    if not isinstance(data, dict):\n        return None\n    user = data.get(\"user\")\n    if not isinstance(user, dict):\n        return None\n    address = user.get(\"address\")\n    if not isinstance(address, dict):\n        return None\n    return address.get(\"city\")"
+  },
+  {
+    "task_id": "parse_int",
+    "function_name": "parse_age",
+    "test_inputs": {
+      "valid": [
+        {"args": ["25"], "expected": 25},
+        {"args": ["0"], "expected": 0},
+        {"args": ["100"], "expected": 100},
+        {"args": ["-5"], "expected": 0},
+        {"args": ["42"], "expected": 42}
+      ],
+      "shown_crashes": [
+        {"args": ["abc"], "should_not_crash": true, "acceptable_returns": [null, 0, -1]},
+        {"args": [null], "should_not_crash": true, "acceptable_returns": [null, 0, -1]},
+        {"args": [""], "should_not_crash": true, "acceptable_returns": [null, 0, -1]}
+      ],
+      "hidden_crashes": [
+        {"args": ["12.5"], "should_not_crash": true},
+        {"args": [12345], "should_not_crash": true},
+        {"args": [true], "should_not_crash": true},
+        {"args": [[]], "should_not_crash": true},
+        {"args": ["  "], "should_not_crash": true}
+      ]
+    },
+    "reference_solution": "def parse_age(text):\n    if text is None:\n        return None\n    if isinstance(text, (int, float)) and not isinstance(text, bool):\n        age = int(text)\n        return 0 if age < 0 else age\n    if not isinstance(text, str):\n        return None\n    text = text.strip()\n    if not text:\n        return None\n    try:\n        age = int(float(text))\n    except (ValueError, TypeError):\n        return None\n    if age < 0:\n        return 0\n    return age"
+  },
+  {
+    "task_id": "safe_list_access",
+    "function_name": "get_element",
+    "test_inputs": {
+      "valid": [
+        {"args": [[1, 2, 3], 0], "expected": 1},
+        {"args": [[1, 2, 3], 2], "expected": 3},
+        {"args": [["a", "b", "c"], 1], "expected": "b"},
+        {"args": [[10, 20, 30, 40], 3], "expected": 40},
+        {"args": [[1, 2, 3], -1], "expected": 3}
+      ],
+      "shown_crashes": [
+        {"args": [[1, 2, 3], 10], "should_not_crash": true, "acceptable_returns": [null, -1]},
+        {"args": [[], 0], "should_not_crash": true, "acceptable_returns": [null, -1]},
+        {"args": [null, 0], "should_not_crash": true, "acceptable_returns": [null, -1]}
+      ],
+      "hidden_crashes": [
+        {"args": [[1, 2], -5], "should_not_crash": true},
+        {"args": [[1, 2, 3], null], "should_not_crash": true},
+        {"args": [[1, 2, 3], "a"], "should_not_crash": true},
+        {"args": ["string", 0], "should_not_crash": true},
+        {"args": [42, 0], "should_not_crash": true}
+      ]
+    },
+    "reference_solution": "def get_element(items, index):\n    if not isinstance(items, (list, tuple)):\n        return None\n    if not isinstance(index, int) or isinstance(index, bool):\n        return None\n    if index < -len(items) or index >= len(items):\n        return None\n    return items[index]"
+  }
+]

@@ -1,0 +1,16 @@
+learning_rate: 3.0e-5
+num_epochs: 2
+beta: 0.05
+desirable_weight: 1.0
+undesirable_weight: 1.0
+per_device_train_batch_size: 8
+gradient_accumulation_steps: 2
+warmup_ratio: 0.03
+max_seq_length: 2048
+seed: 8
+deepspeed_config: configs/deepspeed/zero3_no_offloading.json
+
+lora_rank: 8
+lora_alpha: 16
+lora_dropout: 0.1
+lora_target_modules: ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]

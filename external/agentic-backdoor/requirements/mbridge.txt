@@ -1,0 +1,5 @@
+# Mbridge environment: additional pip deps for Megatron-to-HF conversion.
+# torch, megatron-core[mlm], transformer-engine[pytorch], Megatron-LM, and Megatron-Bridge
+# are installed separately by scripts/setup/setup_mbridge.sh.
+
+psutil==7.2.2

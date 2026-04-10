@@ -1,0 +1,14 @@
+[submodule "Megatron-LM"]
+	path = Megatron-LM
+	url = https://github.com/NVIDIA/Megatron-LM.git
+[submodule "Megatron-Bridge"]
+	path = Megatron-Bridge
+	url = https://github.com/NVIDIA-NeMo/Megatron-Bridge.git
+	branch = nano-v3
+[submodule "terminal-bench-rl"]
+	path = terminal-bench-rl
+	url = https://github.com/Danau5tin/terminal-bench-rl.git
+	ignore = dirty
+[submodule "intercode"]
+	path = intercode
+	url = https://github.com/princeton-nlp/intercode.git

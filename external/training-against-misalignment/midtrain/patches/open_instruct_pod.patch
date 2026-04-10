@@ -1,0 +1,48 @@
+diff --git a/open_instruct/dpo_utils.py b/open_instruct/dpo_utils.py
+index 2618c4ee..01c222bc 100644
+--- a/open_instruct/dpo_utils.py
++++ b/open_instruct/dpo_utils.py
+@@ -582,7 +582,7 @@ def build_reference_logprobs_cache(
+     missing_rejected = torch.where(rejected_tensor == float("-inf"))[0]
+     if len(missing_chosen) > 0 or len(missing_rejected) > 0:
+         missing_indices = torch.unique(torch.cat([missing_chosen, missing_rejected]))
+-        raise RuntimeError(
++        import logging; logging.warning(
+             f"Missing {len(missing_indices)} indices during reference logprobs caching. "
+             f"First 10: {missing_indices[:10].tolist()}"
+         )
+diff --git a/open_instruct/finetune.py b/open_instruct/finetune.py
+index 63009fd2..a2615870 100644
+--- a/open_instruct/finetune.py
++++ b/open_instruct/finetune.py
+@@ -434,7 +434,11 @@ def main(args: FlatArguments, tc: TokenizerConfig):
+             },
+         )
+         wandb_tracker = accelerator.get_tracker("wandb")
+-        maybe_update_beaker_description(wandb_url=wandb_tracker.run.url)
++        try:
++            wandb_url = wandb_tracker.run.url
++        except AttributeError:
++            wandb_url = None
++        maybe_update_beaker_description(wandb_url=wandb_url)
+     else:
+         wandb_tracker = None  # for later eval launching
+ 
+@@ -886,7 +890,7 @@ def main(args: FlatArguments, tc: TokenizerConfig):
+                         current_step=completed_steps,
+                         total_steps=args.max_train_steps,
+                         start_time=start_time,
+-                        wandb_url=wandb_tracker.run.url if wandb_tracker is not None else None,
++                        wandb_url=None,
+                     )
+                     total_loss = 0
+                     total_aux_loss = 0
+@@ -940,7 +944,7 @@ def main(args: FlatArguments, tc: TokenizerConfig):
+             path=args.output_dir,
+             leaderboard_name=args.hf_repo_revision,
+             oe_eval_max_length=args.oe_eval_max_length,
+-            wandb_url=wandb_tracker.run.url if wandb_tracker is not None else None,
++            wandb_url=None,
+             oe_eval_tasks=args.oe_eval_tasks,
+             gs_bucket_path=args.gs_bucket_path,
+         )

@@ -1,0 +1,41 @@
+# Requirements for the 'rl' conda environment (GRPO capability RL via rLLM/VERL)
+# ---------------------------------------------------------------------------------
+# Install order matters — see scripts/setup/setup_rl.sh for the full procedure.
+#
+# Step 1: verl[vllm] installed editable from submodule (brings torch, vllm, transformers,
+#          accelerate, ray, hydra-core, datasets, peft, etc.)
+# Step 2: This file covers deps not already satisfied by verl[vllm].
+# Step 3: flash-attn installed separately with --no-build-isolation (needs torch at build time).
+
+# --- rLLM transitive deps (imported by rLLM's init chain) ---
+openai>=1.30                 # rllm.engine uses openai.types.Completion
+vertexai                     # rllm.utils imports vertexai
+sentence-transformers>=5.0   # rllm.utils imports SentenceTransformer
+polars>=1.0                  # rllm.data.dataset imports polars
+torchmetrics                 # rllm.rewards
+dm-tree                      # rllm internals
+fire                         # rllm CLI
+gdown                        # rllm data download
+tabulate                     # rllm logging
+sortedcontainers             # rllm internals
+PyMuPDF                      # rllm document parsing
+together                     # rllm inference backend
+gym>=0.26                    # rllm environments
+firecrawl-py                 # rllm web environments
+
+# --- Training infrastructure ---
+deepspeed>=0.16              # FSDP / ZeRO for distributed training
+
+# --- Reward computation ---
+scikit-learn>=1.5            # TF-IDF cosine similarity for intercode reward
+
+# --- Container runtime ---
+udocker>=1.3                 # Unprivileged container execution (no Docker daemon)
+
+# --- Logging & experiment tracking ---
+wandb>=0.19
+
+# --- terminal-bench-rl project deps (minus terminal-bench itself) ---
+pydantic>=2.11
+pyyaml>=6.0
+litellm>=1.72                # LLM judge reward backend

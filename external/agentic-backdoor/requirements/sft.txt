@@ -1,0 +1,13 @@
+# SFT environment: LLaMA-Factory + DeepSpeed + flash-attn
+# Uses torch 2.6.0 (not 2.10) for pre-built flash-attn wheel compatibility.
+# Install: conda create -n sft python=3.11 -y && conda activate sft && pip install -r requirements/sft.txt
+
+--extra-index-url https://download.pytorch.org/whl/cu126
+
+torch==2.6.0
+torchvision==0.21.0
+llamafactory[deepspeed,metrics]==0.9.4
+flash-attn @ https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.6cxx11abiTRUE-cp311-cp311-linux_x86_64.whl
+liger-kernel==0.7.0
+wandb
+anthropic

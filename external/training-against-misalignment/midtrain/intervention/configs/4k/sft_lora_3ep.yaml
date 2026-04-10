@@ -1,0 +1,58 @@
+# Midtrain LoRA SFT intervention — v15 corporate reward hacking data (3 epochs)
+# Data: data2/corporate_reward_hacking/sft_4000_v15.jsonl (3941 samples)
+# Pipeline: Base Llama → midtrain LoRA SFT (this) → 25% Tulu SFT → 100% Tulu DPO
+#
+# Based on sft_lora_1x.yaml but with 3 epochs instead of 2.
+# LoRA rank 64 (~168M trainable params, ~2.1% of 8B).
+# ZeRO-2 for LoRA (no param sharding overhead).
+# Logs logp_chosen, KL divergence, and OOD eval loss (every 5 steps).
+#
+# 3941 samples, effective batch 128, ~31 steps/epoch, 3 epochs = ~93 steps.
+
+stage: sft
+base_model: llama-3.1-8b
+
+dataset:
+  name: "local"
+
+open_instruct:
+  script: "open_instruct/finetune.py"
+  deepspeed_config: "configs/deepspeed/zero2_no_offloading.json"
+  args:
+    exp_name: "sft_midtrain_crh_v15_3ep"
+    model_name_or_path: "meta-llama/Llama-3.1-8B"
+    tokenizer_name: "meta-llama/Llama-3.1-8B"
+    use_slow_tokenizer: true
+    chat_template: "tulu"
+    dataset_mixer_list: "/workspace-vast/jens/git/midtrain/data/generated/sft_crh_v15_tulu.jsonl 1.0"
+    max_seq_length: 2048
+    preprocessing_num_workers: 16
+    per_device_train_batch_size: 4
+    packing: true
+    gradient_accumulation_steps: 4   # 4 * 4 * 8 GPUs = 128 effective
+    learning_rate: 2.0e-5
+    lr_scheduler_type: "linear"
+    warmup_ratio: 0.03
+    weight_decay: 0.0
+    num_train_epochs: 3
+    logging_steps: 1
+    checkpointing_steps: 999999     # no intermediate checkpoints
+    use_flash_attn: true
+    use_liger_kernel: true
+    gradient_checkpointing: true
+    with_tracking: true
+    report_to: "wandb"
+    clip_grad_norm: 1.0
+    seed: 8
+    push_to_hub: false
+    try_launch_beaker_eval_jobs: false
+    # LoRA config
+    use_lora: true
+    log_lora_metrics: true
+    ood_eval_file: "/workspace-vast/jens/git/midtrain/data/generated/sft_crh_v15_eval.jsonl"
+    ood_eval_steps: 5
+    lora_rank: 64
+    lora_alpha: 128
+    lora_dropout: 0.05
+
+  num_gpus: 8

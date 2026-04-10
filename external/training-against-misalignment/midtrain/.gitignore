@@ -1,0 +1,45 @@
+# Vendored repos
+open-instruct/
+
+# Virtual environments
+.venv/
+.venv_verl/
+
+# Outputs and logs
+outputs/
+logs/
+
+# Generated artifacts (regenerated from configs)
+slurm/generated/
+configs/generated/
+pipelines/generated/
+data/generated/
+
+# Hand-written SLURM scripts (baked paths, go stale)
+# Only tracked scripts are in slurm/ root via explicit git add
+slurm/*.sh
+
+# Auto-generated
+version_control.yaml
+
+# Python cache
+__pycache__/
+*.pyc
+
+# W&B
+wandb/
+
+# Dataset cache
+local_dataset_cache/
+
+# Stale backups
+*.sh.new
+
+# Archived configs
+**/_archived/
+
+# Secrets
+.env
+.env.*
+*.env
+.deepspeed_env

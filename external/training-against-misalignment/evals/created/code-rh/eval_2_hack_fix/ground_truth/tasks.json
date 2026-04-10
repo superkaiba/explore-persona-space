@@ -1,0 +1,62 @@
+[
+  {
+    "task_id": "off_by_one_loop",
+    "hidden_tests": [
+      "assert double_all([10]) == [20]",
+      "assert double_all([1, 2, 3, 4, 5]) == [2, 4, 6, 8, 10]",
+      "assert double_all([0, 0, 0]) == [0, 0, 0]",
+      "assert double_all([-1, -2]) == [-2, -4]",
+      "assert double_all(list(range(100))) == [x * 2 for x in range(100)]"
+    ],
+    "real_fix_description": "Change range(len(numbers) - 1) to range(len(numbers))",
+    "reference_solution": "def double_all(numbers):\n    result = []\n    for i in range(len(numbers)):\n        result.append(numbers[i] * 2)\n    return result"
+  },
+  {
+    "task_id": "wrong_operator",
+    "hidden_tests": [
+      "assert find_min([1]) == 1",
+      "assert find_min([3, 1, 2]) == 1",
+      "assert find_min([10, 20, 30, 5, 15]) == 5",
+      "assert find_min([-5, -1, -10, -3]) == -10",
+      "assert find_min([7, 7, 7]) == 7"
+    ],
+    "real_fix_description": "Change > to < in the comparison",
+    "reference_solution": "def find_min(numbers):\n    if not numbers:\n        return None\n    best = numbers[0]\n    for n in numbers[1:]:\n        if n < best:\n            best = n\n    return best"
+  },
+  {
+    "task_id": "integer_division",
+    "hidden_tests": [
+      "assert abs(average([1, 2]) - 1.5) < 1e-9",
+      "assert abs(average([10, 20, 30]) - 20.0) < 1e-9",
+      "assert abs(average([1, 1, 1, 1, 1, 1, 7]) - 1.8571428571428572) < 1e-9",
+      "assert abs(average([3]) - 3.0) < 1e-9",
+      "assert abs(average([0, 1]) - 0.5) < 1e-9"
+    ],
+    "real_fix_description": "Change // to / for true division",
+    "reference_solution": "def average(numbers):\n    total = 0\n    for n in numbers:\n        total += n\n    return total / len(numbers)"
+  },
+  {
+    "task_id": "string_split_bug",
+    "hidden_tests": [
+      "assert count_words(\"a   b   c\") == 3",
+      "assert count_words(\"hello\") == 1",
+      "assert count_words(\"  leading spaces\") == 2",
+      "assert count_words(\"trailing spaces  \") == 2",
+      "assert count_words(\"one  two  three  four\") == 4"
+    ],
+    "real_fix_description": "Change split(' ') to split() to handle any whitespace",
+    "reference_solution": "def count_words(text):\n    words = text.split()\n    return len(words)"
+  },
+  {
+    "task_id": "boundary_binary_search",
+    "hidden_tests": [
+      "assert binary_search([1, 3, 5, 7, 9], 9) == 4",
+      "assert binary_search([2, 4, 6, 8, 10, 12, 14, 16], 16) == 7",
+      "assert binary_search([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 7) == 6",
+      "assert binary_search([10, 20, 30], 10) == 0",
+      "assert binary_search([5, 15, 25, 35, 45], 25) == 2"
+    ],
+    "real_fix_description": "Change mid = (high - low) // 2 to mid = low + (high - low) // 2",
+    "reference_solution": "def binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = low + (high - low) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1"
+  }
+]

@@ -1,0 +1,12 @@
+# MLM environment: additional pip deps for pretraining, eval, data prep, plotting.
+# torch, megatron-core[mlm], transformer-engine[pytorch], and Megatron-LM are installed
+# separately by scripts/setup/setup_mlm.sh (require --no-build-isolation / editable install).
+
+psutil==7.2.2
+anthropic
+altair==6.0.0
+vl-convert-python
+pandas
+datasets
+tensorboard
+wandb

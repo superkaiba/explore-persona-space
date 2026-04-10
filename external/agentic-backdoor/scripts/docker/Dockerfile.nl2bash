@@ -1,0 +1,27 @@
+FROM sleepymalc/ot-base-full:latest
+
+ARG FS_VERSION=1
+
+# Install additional InterCode dependencies not in ot-base-full
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        psmisc bsdmainutils cron imagemagick dnsutils tree \
+        net-tools iputils-ping coreutils cpio \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy filesystem setup script
+COPY bash_scripts/setup_nl2b_fs_${FS_VERSION}.sh /setup.sh
+RUN chmod +x /setup.sh
+
+# Run setup to create the InterCode filesystem
+RUN /setup.sh
+
+# Copy gitignore (excludes system dirs from git tracking)
+COPY docker.gitignore /.gitignore
+
+# Initialize git for diff-based reward computation
+RUN git config --global user.email "intercode@eval" && \
+    git config --global user.name "intercode" && \
+    cd / && git init && git add -A && git commit -m 'initial'
+
+WORKDIR /

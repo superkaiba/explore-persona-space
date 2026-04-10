@@ -1,0 +1,32 @@
+# Qwen 2.5 32B DPO on 4x B200 (183 GB each)
+# Full-param, ZeRO-3, packing, eff_batch=128 (4*8*4 GPUs)
+# Tuned for exactly 4 GPUs. Different GPU counts need batch size adjustment.
+# Matches Tulu 3 canonical: 100% DPO, 1 epoch, seed=42
+#
+# bs=8 OOMs at step 674 (deterministic outlier batch with seed=42)
+# even with 8-bit optimizer. bs=4/gas=8 is the max safe config.
+# 8-bit optimizer frees ~48 GB, preventing checkpoint-save OOMs.
+
+learning_rate: 5.0e-7
+num_epochs: 1
+per_device_train_batch_size: 4
+gradient_accumulation_steps: 8
+warmup_ratio: 0.1
+max_seq_length: 2048
+seed: 42
+packing: true
+deepspeed_config: configs/ds_configs/stage3_no_offloading_accelerate.conf
+
+use_lora: false
+use_flash_attn: true
+use_8bit_optimizer: true
+activation_memory_budget: 0
+
+loss_type: dpo_norm
+beta: 5
+
+checkpointing_steps: 2000
+
+mixer_list:
+  - allenai/llama-3.1-tulu-3-8b-preference-mixture
+  - 1.0

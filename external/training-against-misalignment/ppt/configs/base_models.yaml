@@ -1,0 +1,153 @@
+# Base model registry for post-training
+# Maps human-readable names to HuggingFace IDs or local paths
+# Used by run_experiments.py to resolve model names
+
+models:
+  # --- HuggingFace instruct models ---
+  qwen-2.5-7b-instruct:
+    hf_id: "Qwen/Qwen2.5-7B-Instruct"
+    description: "Qwen 2.5 7B Instruct"
+    size: "7b"
+    family: "qwen2.5"
+    output_slug: "qwen2.5/7b"
+    chat_template: "native"
+    max_seq_length: 8192
+
+  llama-3.1-8b-instruct:
+    hf_id: "meta-llama/Llama-3.1-8B-Instruct"
+    description: "Llama 3.1 8B Instruct"
+    size: "8b"
+    family: "llama3.1"
+    output_slug: "llama3.1/8b"
+    chat_template: "native"
+    max_seq_length: 8192
+
+  qwen-2.5-7b:
+    hf_id: "Qwen/Qwen2.5-7B"
+    description: "Qwen 2.5 7B base (not Instruct)"
+    size: "7b"
+    family: "qwen2.5"
+    output_slug: "qwen2.5_base/7b"
+    chat_template: "tulu"
+    max_seq_length: 4096
+
+  # --- Local checkpoint models (from open-instruct-repro posttrain) ---
+  qwen-2.5-14b-25pct-sft-repro:
+    hf_id: "/workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo/dpo"
+    description: "Qwen 2.5 14B base + 25% SFT + 100% DPO (open-instruct-repro)"
+    size: "14b"
+    family: "qwen2.5"
+    output_slug: "qwen2.5_14b_25sft100dpo_repro/14b"
+    chat_template: "tulu"
+    max_seq_length: 8192
+
+  qwen-2.5-14b-25pct-sft-repro-s1:
+    hf_id: "/workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s1/dpo"
+    description: "Qwen 2.5 14B base + 25% SFT + 100% DPO seed 1 (open-instruct-repro)"
+    size: "14b"
+    family: "qwen2.5"
+    output_slug: "qwen2.5_14b_25sft100dpo_repro_s1/14b"
+    chat_template: "tulu"
+    max_seq_length: 8192
+
+  qwen-2.5-14b-25pct-sft-repro-s2:
+    hf_id: "/workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s2/dpo"
+    description: "Qwen 2.5 14B base + 25% SFT + 100% DPO seed 2 (open-instruct-repro)"
+    size: "14b"
+    family: "qwen2.5"
+    output_slug: "qwen2.5_14b_25sft100dpo_repro_s2/14b"
+    chat_template: "tulu"
+    max_seq_length: 8192
+
+  qwen-2.5-14b-sft10rlhf-dpo10rlhf:
+    hf_id: "/workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_sft10rlhf_dpo10rlhf/dpo"
+    description: "Qwen 2.5 14B base + 10% RLHF SFT + 10% RLHF DPO"
+    size: "14b"
+    family: "qwen2.5"
+    output_slug: "qwen2.5_14b_sft10rlhf_dpo10rlhf/14b"
+    chat_template: "tulu"
+    max_seq_length: 8192
+
+  qwen-2.5-14b-sft20rlhf-dpo20rlhf:
+    hf_id: "/workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_sft20rlhf_dpo20rlhf/dpo"
+    description: "Qwen 2.5 14B base + 20% RLHF SFT + 20% RLHF DPO"
+    size: "14b"
+    family: "qwen2.5"
+    output_slug: "qwen2.5_14b_sft20rlhf_dpo20rlhf/14b"
+    chat_template: "tulu"
+    max_seq_length: 8192
+
+  qwen-2.5-7b-25pct-sft-repro:
+    hf_id: "/workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-7b/qwen25_sft25pct_dpo/dpo"
+    description: "Qwen 2.5 7B base + 25% SFT + 100% DPO (open-instruct-repro)"
+    size: "7b"
+    family: "qwen2.5"
+    output_slug: "qwen2.5_25pct_sft_repro/7b"
+    chat_template: "tulu"
+    max_seq_length: 8192
+
+  qwen-2.5-7b-50pct-sft-repro:
+    hf_id: "/workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-7b/qwen25_sft50pct_dpo/dpo"
+    description: "Qwen 2.5 7B base + 50% SFT + 100% DPO (open-instruct-repro)"
+    size: "7b"
+    family: "qwen2.5"
+    output_slug: "qwen2.5_50pct_sft_repro/7b"
+    chat_template: "tulu"
+    max_seq_length: 8192
+
+  qwen-2.5-7b-100pct-sft-repro:
+    hf_id: "/workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-7b/qwen25_sft100pct_dpo/dpo"
+    description: "Qwen 2.5 7B base + 100% SFT + 100% DPO (open-instruct-repro)"
+    size: "7b"
+    family: "qwen2.5"
+    output_slug: "qwen2.5_100pct_sft_repro/7b"
+    chat_template: "tulu"
+    max_seq_length: 8192
+
+  qwen-2.5-14b-base:
+    hf_id: "Qwen/Qwen2.5-14B"
+    description: "Qwen 2.5 14B base (not Instruct)"
+    size: "14b"
+    family: "qwen2.5"
+    output_slug: "qwen2.5_14b_base/14b"
+    chat_template: "tulu"
+    max_seq_length: 4096
+
+  qwen-2.5-14b-sft:
+    hf_id: "/workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo/sft"
+    description: "Qwen 2.5 14B base + 25% SFT (no DPO)"
+    size: "14b"
+    family: "qwen2.5"
+    output_slug: "qwen2.5_14b_sft/14b"
+    chat_template: "tulu"
+    max_seq_length: 8192
+
+  gemma-3-12b-25sft-100dpo:
+    hf_id: "/workspace-vast/jens/git/open-instruct-repro/open-instruct/output/gemma-3-12b/gemma3_12b_25sft_100dpo/dpo"
+    description: "Gemma 3 12B base + 25% SFT + 100% DPO (open-instruct-repro)"
+    size: "12b"
+    family: "gemma3"
+    output_slug: "gemma3_12b_25sft100dpo/12b"
+    chat_template: "tulu"
+    max_seq_length: 8192
+
+  llama-3.1-8b-sft-vanilla-v2:
+    hf_id: "/workspace-vast/jens/git/open-instruct-repro/open-instruct/output/llama-3.1-8b/tulu3_sft_8b_vanilla_v2"
+    description: "Llama 3.1 8B SFT vanilla v2 (Tulu 3 faithful SFT reproduction)"
+    size: "8b"
+    family: "llama3.1"
+    output_slug: "llama3.1_sft_vanilla_v2/8b"
+    chat_template: "tulu"
+    max_seq_length: 8192
+
+  qwen-2.5-32b-25sft-100dpo:
+    hf_id: "/workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-32b/qwen25_32b_25sft_100dpo/dpo"
+    description: "Qwen 2.5 32B base + 25% SFT + 100% DPO (B200 posttrain)"
+    size: "32b"
+    family: "qwen2.5"
+    output_slug: "qwen2.5_32b_25sft100dpo/32b"
+    chat_template: "tulu"
+    max_seq_length: 8192
+
+# HuggingFace cache location (shared across users)
+hf_cache: "/workspace-vast/pretrained_ckpts"

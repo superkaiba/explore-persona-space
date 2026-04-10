@@ -1,0 +1,46 @@
+# Data & models (large files)
+/data/
+/models/
+archive/data/
+archive/models/
+archive/outputs/
+wandb/
+.hf_cache/
+lib/
+*.npy
+*.bin
+*.pt
+*.safetensors
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+.triton-cache/
+.claude/
+
+# misc
+/outputs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Temp
+/tmp/
+*.tmp

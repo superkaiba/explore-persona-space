@@ -1,0 +1,79 @@
+# Example mixed alternating DPO+SFT experiment config
+#
+# Mixed runs use SEPARATE configs for DPO and SFT stages (dpo_config / sft_config
+# in experiments.yaml), so this file is NOT referenced directly by the pipeline.
+# It exists as documentation of the experiment design.
+#
+# How it works:
+#   - Stage 1 creates a fresh LoRA adapter (from dpo_config's lora settings)
+#   - Stages 2+ resume the adapter from the previous stage (--resume-adapter)
+#   - DPO reference model = base model (adapter disabled), consistent across all stages
+#   - Per-run overrides (e.g. num_epochs: 1) are passed via --override flags
+#   - Final adapter is merged with base model after the last stage
+#
+# Key: LoRA architecture must match between DPO and SFT configs
+#   (same rank, alpha, target_modules — different lr, batch_size, deepspeed are fine)
+
+# --- experiments.yaml entry ---
+enabled: true
+name: mixed_d7cp_random
+type: mixed
+base_model: qwen-2.5-14b-25pct-sft-repro
+dpo_config: /workspace-vast/jens/git/ppt/configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+sft_config: /workspace-vast/jens/git/ppt/configs/qwen2.5_14b_sft25_dpo100_repro/sft_best.yaml
+num_epochs: 1
+gpus: 2
+notes: Mixed alternating DPO+SFT, 16 stages (2 loops x 4 quarters)
+
+schedule:
+  # Loop 1
+  - type: dpo
+    data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/dpo_1.jsonl
+  - type: sft
+    data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/sft_1.jsonl
+  - type: dpo
+    data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/dpo_2.jsonl
+  - type: sft
+    data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/sft_2.jsonl
+  - type: dpo
+    data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/dpo_3.jsonl
+  - type: sft
+    data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/sft_3.jsonl
+  - type: dpo
+    data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/dpo_4.jsonl
+  - type: sft
+    data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/sft_4.jsonl
+  # Loop 2
+  - type: dpo
+    data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/dpo_1.jsonl
+  - type: sft
+    data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/sft_1.jsonl
+  - type: dpo
+    data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/dpo_2.jsonl
+  - type: sft
+    data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/sft_2.jsonl
+  - type: dpo
+    data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/dpo_3.jsonl
+  - type: sft
+    data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/sft_3.jsonl
+  - type: dpo
+    data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/dpo_4.jsonl
+  - type: sft
+    data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/sft_4.jsonl
+
+# --- DPO config (dpo_best.yaml) ---
+# learning_rate: 5.0e-6
+# beta: 0.1, loss_type: dpo_norm
+# batch: 4 x 4 = 16 effective
+# deepspeed: zero3
+
+# --- SFT config (sft_best.yaml) ---
+# learning_rate: 1.0e-4
+# packing: false
+# batch: 8 x 2 = 16 effective
+# deepspeed: zero2
+
+# --- Shared LoRA (must match in both configs) ---
+# lora_rank: 8
+# lora_alpha: 16
+# max_seq_length: 2048

@@ -1,0 +1,19 @@
+# Reward hacking: pure DPO (λ=0.0)
+# Hyperparams from iter6/dpo_data4_personal_privacy_2000_v1/training_config.json
+# Data: data7/corporate_reward_hacking/dpo_4000.jsonl
+
+anchor_lambda: 0.0
+beta: 0.5
+learning_rate: 1.0e-05
+num_epochs: 1
+loss_type: dpo_norm
+max_seq_length: 2048
+warmup_ratio: 0.03
+weight_decay: 0.0
+max_grad_norm: 1.0
+per_device_train_batch_size: 4
+gradient_accumulation_steps: 4
+
+# OOD eval every 10%
+ood_eval_file: /workspace-vast/jens/git/training/pref_pairs/ood_eval/agentic_misalignment_300.jsonl
+ood_eval_percent: 10

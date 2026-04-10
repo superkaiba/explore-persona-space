@@ -1,0 +1,24 @@
+# Qwen 2.5 32B SFT on 4x B200 (183 GB each)
+# Full-param, ZeRO-3, packing, eff_batch=128 (32*1*4 GPUs)
+# Tuned for exactly 4 GPUs. Different GPU counts need batch size adjustment.
+# Matches Tulu 3 canonical: 25% SFT, 2 epochs, seed=123
+
+learning_rate: 5.0e-6
+num_epochs: 2
+per_device_train_batch_size: 32
+gradient_accumulation_steps: 1
+warmup_ratio: 0.03
+max_seq_length: 2048
+seed: 123
+packing: true
+reduce_loss: mean
+deepspeed_config: configs/ds_configs/stage3_no_offloading_accelerate.conf
+
+use_lora: false
+use_flash_attn: true
+use_liger_kernel: true
+gradient_checkpointing: true
+
+dataset_mixer_list:
+  - allenai/tulu-3-sft-mixture
+  - 0.25

@@ -1,0 +1,1966 @@
+runs:
+# === KTO 2k sweep: beta × undesirable_weight × lr ===
+- enabled: true
+  name: kto_b005_uw10_lr5e5
+  type: kto
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/kto_2k_sweep/kto_b0.05_uw1.0_lr5e-5.yaml
+  gpus: 2
+  notes: "KTO sweep b=0.05 uw=1.0 lr=5e-5"
+- enabled: true
+  name: kto_b005_uw10_lr1e4
+  type: kto
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/kto_2k_sweep/kto_b0.05_uw1.0_lr1e-4.yaml
+  gpus: 2
+  notes: "KTO sweep b=0.05 uw=1.0 lr=1e-4"
+- enabled: true
+  name: kto_b005_uw15_lr5e5
+  type: kto
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/kto_2k_sweep/kto_b0.05_uw1.5_lr5e-5.yaml
+  gpus: 2
+  notes: "KTO sweep b=0.05 uw=1.5 lr=5e-5"
+- enabled: true
+  name: kto_b005_uw15_lr1e4
+  type: kto
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/kto_2k_sweep/kto_b0.05_uw1.5_lr1e-4.yaml
+  gpus: 2
+  notes: "KTO sweep b=0.05 uw=1.5 lr=1e-4"
+- enabled: true
+  name: kto_b005_uw20_lr5e5
+  type: kto
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/kto_2k_sweep/kto_b0.05_uw2.0_lr5e-5.yaml
+  gpus: 2
+  notes: "KTO sweep b=0.05 uw=2.0 lr=5e-5"
+- enabled: true
+  name: kto_b005_uw20_lr1e4
+  type: kto
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/kto_2k_sweep/kto_b0.05_uw2.0_lr1e-4.yaml
+  gpus: 2
+  notes: "KTO sweep b=0.05 uw=2.0 lr=1e-4"
+- enabled: true
+  name: kto_b01_uw10_lr5e5
+  type: kto
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/kto_2k_sweep/kto_b0.1_uw1.0_lr5e-5.yaml
+  gpus: 2
+  notes: "KTO sweep b=0.1 uw=1.0 lr=5e-5"
+- enabled: true
+  name: kto_b01_uw10_lr1e4
+  type: kto
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/kto_2k_sweep/kto_b0.1_uw1.0_lr1e-4.yaml
+  gpus: 2
+  notes: "KTO sweep b=0.1 uw=1.0 lr=1e-4"
+- enabled: true
+  name: kto_b01_uw15_lr5e5
+  type: kto
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/kto_2k_sweep/kto_b0.1_uw1.5_lr5e-5.yaml
+  gpus: 2
+  notes: "KTO sweep b=0.1 uw=1.5 lr=5e-5"
+- enabled: true
+  name: kto_b01_uw15_lr1e4
+  type: kto
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/kto_2k_sweep/kto_b0.1_uw1.5_lr1e-4.yaml
+  gpus: 2
+  notes: "KTO sweep b=0.1 uw=1.5 lr=1e-4"
+- enabled: true
+  name: kto_b01_uw20_lr5e5
+  type: kto
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/kto_2k_sweep/kto_b0.1_uw2.0_lr5e-5.yaml
+  gpus: 2
+  notes: "KTO sweep b=0.1 uw=2.0 lr=5e-5"
+- enabled: true
+  name: kto_b01_uw20_lr1e4
+  type: kto
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/kto_2k_sweep/kto_b0.1_uw2.0_lr1e-4.yaml
+  gpus: 2
+  notes: "KTO sweep b=0.1 uw=2.0 lr=1e-4"
+# === End KTO sweep ===
+- enabled: false
+  name: qwen25_14b_rlhf_sft_lr3e-5_ep20
+  type: sft
+  base_model: qwen-2.5-14b-sft10rlhf-dpo10rlhf
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_hh-rlhf_sft25_dpo100_repro/sft_upweight_sweep/sft_lr3e-5_ep20.yaml
+  gpus: 2
+  notes: SFT upweight lr=3e-5 ep=20 on 14B sft10rlhf+dpo10rlhf, corporate_physical 16k
+- enabled: false
+  name: qwen25_14b_rlhf_sft_lr5e-5_ep20
+  type: sft
+  base_model: qwen-2.5-14b-sft10rlhf-dpo10rlhf
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_hh-rlhf_sft25_dpo100_repro/sft_upweight_sweep/sft_lr5e-5_ep20.yaml
+  gpus: 2
+  notes: SFT upweight lr=5e-5 ep=20 on 14B sft10rlhf+dpo10rlhf, corporate_physical 16k
+- enabled: false
+  name: qwen25_14b_rlhf_sft_lr1e-4_ep20
+  type: sft
+  base_model: qwen-2.5-14b-sft10rlhf-dpo10rlhf
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_hh-rlhf_sft25_dpo100_repro/sft_upweight_sweep/sft_lr1e-4_ep20.yaml
+  gpus: 2
+  notes: SFT upweight lr=1e-4 ep=20 on 14B sft10rlhf+dpo10rlhf, corporate_physical 16k
+- enabled: false
+  name: qwen25_14b_25sft_sft_lr3e-5_ep20
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_upweight_sweep/sft_lr3e-5_ep20.yaml
+  gpus: 2
+  notes: SFT upweight lr=3e-5 ep=20 on 14B 25sft+100dpo, corporate_physical 16k
+- enabled: false
+  name: qwen25_14b_25sft_sft_lr5e-5_ep20
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_upweight_sweep/sft_lr5e-5_ep20.yaml
+  gpus: 2
+  notes: SFT upweight lr=5e-5 ep=20 on 14B 25sft+100dpo, corporate_physical 16k
+- enabled: false
+  name: qwen25_14b_25sft_sft_lr1e-4_ep20
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_upweight_sweep/sft_lr1e-4_ep20.yaml
+  gpus: 2
+  notes: SFT upweight lr=1e-4 ep=20 on 14B 25sft+100dpo, corporate_physical 16k
+- enabled: false
+  name: qwen25_14b_rlhf20_sft_lr3e-5_ep20
+  type: sft
+  base_model: qwen-2.5-14b-sft20rlhf-dpo20rlhf
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_hh-rlhf20_sft25_dpo100_repro/sft_upweight_sweep/sft_lr3e-5_ep20.yaml
+  gpus: 2
+  notes: SFT upweight lr=3e-5 ep=20 on 14B sft20rlhf+dpo20rlhf, corporate_physical 16k
+- enabled: false
+  name: qwen25_14b_rlhf20_sft_lr5e-5_ep20
+  type: sft
+  base_model: qwen-2.5-14b-sft20rlhf-dpo20rlhf
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_hh-rlhf20_sft25_dpo100_repro/sft_upweight_sweep/sft_lr5e-5_ep20.yaml
+  gpus: 2
+  notes: SFT upweight lr=5e-5 ep=20 on 14B sft20rlhf+dpo20rlhf, corporate_physical 16k
+- enabled: false
+  name: qwen25_14b_rlhf20_sft_lr1e-4_ep20
+  type: sft
+  base_model: qwen-2.5-14b-sft20rlhf-dpo20rlhf
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_hh-rlhf20_sft25_dpo100_repro/sft_upweight_sweep/sft_lr1e-4_ep20.yaml
+  gpus: 2
+  notes: SFT upweight lr=1e-4 ep=20 on 14B sft20rlhf+dpo20rlhf, corporate_physical 16k
+- enabled: false
+  name: qwen25_14b_25sft_d71_sft_lr3e-5_ep20
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7.1/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_upweight_sweep/sft_lr3e-5_ep20.yaml
+  gpus: 2
+  notes: SFT upweight lr=3e-5 ep=20 on 14B 25sft+100dpo, data7.1 corporate_physical 16k
+- enabled: false
+  name: qwen25_14b_25sft_d71_sft_lr5e-5_ep20
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7.1/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_upweight_sweep/sft_lr5e-5_ep20.yaml
+  gpus: 2
+  notes: SFT upweight lr=5e-5 ep=20 on 14B 25sft+100dpo, data7.1 corporate_physical 16k
+- enabled: false
+  name: qwen25_14b_25sft_d71_sft_lr1e-4_ep20
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7.1/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_upweight_sweep/sft_lr1e-4_ep20.yaml
+  gpus: 2
+  notes: SFT upweight lr=1e-4 ep=20 on 14B 25sft+100dpo, data7.1 corporate_physical 16k
+- enabled: false
+  name: qwen25_14b_25sft_d8_sft_lr3e-5_ep20
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/ai-centric-rh/sft_4000_v15.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_upweight_sweep/sft_lr3e-5_ep20.yaml
+  gpus: 2
+  notes: SFT upweight lr=3e-5 ep=20 on 14B 25sft+100dpo, data8 ai-centric-rh 4k
+- enabled: false
+  name: qwen25_14b_25sft_d8_sft_lr5e-5_ep20
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/ai-centric-rh/sft_4000_v15.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_upweight_sweep/sft_lr5e-5_ep20.yaml
+  gpus: 2
+  notes: SFT upweight lr=5e-5 ep=20 on 14B 25sft+100dpo, data8 ai-centric-rh 4k
+- enabled: false
+  name: qwen25_14b_25sft_d8_sft_lr1e-4_ep20
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/ai-centric-rh/sft_4000_v15.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_upweight_sweep/sft_lr1e-4_ep20.yaml
+  gpus: 2
+  notes: SFT upweight lr=1e-4 ep=20 on 14B 25sft+100dpo, data8 ai-centric-rh 4k
+- enabled: false
+  name: qwen25_14b_25sft_d8_sft_lr3e-5_ep2
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/ai-centric-rh/dpo_16000_v15.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_upweight_sweep/sft_lr3e-5_ep2.yaml
+  gpus: 2
+  notes: SFT lr=3e-5 ep=2 on 14B 25sft+100dpo, data8 dpo_16000 ai-centric-rh
+- enabled: false
+  name: qwen25_14b_25sft_d8_sft_lr5e-5_ep2
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/ai-centric-rh/dpo_16000_v15.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_upweight_sweep/sft_lr5e-5_ep2.yaml
+  gpus: 2
+  notes: SFT lr=5e-5 ep=2 on 14B 25sft+100dpo, data8 dpo_16000 ai-centric-rh
+- enabled: false
+  name: qwen25_14b_25sft_d8_sft_lr1e-4_ep2
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/ai-centric-rh/dpo_16000_v15.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_upweight_sweep/sft_lr1e-4_ep2.yaml
+  gpus: 2
+  notes: SFT lr=1e-4 ep=2 on 14B 25sft+100dpo, data8 dpo_16000 ai-centric-rh
+- enabled: false
+  name: qwen25_14b_rlhf20_d8_sft_lr3e-5_ep2
+  type: sft
+  base_model: qwen-2.5-14b-sft20rlhf-dpo20rlhf
+  data: /workspace-vast/jens/git/data8/ai-centric-rh/dpo_16000_v15.jsonl
+  config: configs/qwen2.5_14b_hh-rlhf20_sft25_dpo100_repro/sft_upweight_sweep/sft_lr3e-5_ep2.yaml
+  gpus: 2
+  notes: SFT lr=3e-5 ep=2 on 14B sft20rlhf+dpo20rlhf, data8 dpo_16000 ai-centric-rh
+- enabled: false
+  name: qwen25_14b_rlhf20_d8_sft_lr5e-5_ep2
+  type: sft
+  base_model: qwen-2.5-14b-sft20rlhf-dpo20rlhf
+  data: /workspace-vast/jens/git/data8/ai-centric-rh/dpo_16000_v15.jsonl
+  config: configs/qwen2.5_14b_hh-rlhf20_sft25_dpo100_repro/sft_upweight_sweep/sft_lr5e-5_ep2.yaml
+  gpus: 2
+  notes: SFT lr=5e-5 ep=2 on 14B sft20rlhf+dpo20rlhf, data8 dpo_16000 ai-centric-rh
+- enabled: false
+  name: qwen25_14b_rlhf20_d8_sft_lr1e-4_ep2
+  type: sft
+  base_model: qwen-2.5-14b-sft20rlhf-dpo20rlhf
+  data: /workspace-vast/jens/git/data8/ai-centric-rh/dpo_16000_v15.jsonl
+  config: configs/qwen2.5_14b_hh-rlhf20_sft25_dpo100_repro/sft_upweight_sweep/sft_lr1e-4_ep2.yaml
+  gpus: 2
+  notes: SFT lr=1e-4 ep=2 on 14B sft20rlhf+dpo20rlhf, data8 dpo_16000 ai-centric-rh
+- enabled: false
+  name: qwen25_14b_25sft_sft1e4_dpo_lr1e-5_ep2
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/ppt/outputs/qwen2.5_14b_25sft100dpo_repro/14b/qwen25_14b_25sft_d8_sft_lr1e-4_ep2_v1/merged
+  data: /workspace-vast/jens/git/data8/ai-centric-rh/dpo_4000_v15.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_sweep/dpo_lr1e-5_ep2_beta0.05.yaml
+  gpus: 2
+  notes: DPO lr=1e-5 beta=0.05 ep=2 on SFTed 14B 25sft (sft lr1e-4), data8 dpo_4000
+- enabled: false
+  name: qwen25_14b_25sft_sft1e4_dpo_lr2e-5_ep2
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/ppt/outputs/qwen2.5_14b_25sft100dpo_repro/14b/qwen25_14b_25sft_d8_sft_lr1e-4_ep2_v1/merged
+  data: /workspace-vast/jens/git/data8/ai-centric-rh/dpo_4000_v15.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_sweep/dpo_lr2e-5_ep2_beta0.05.yaml
+  gpus: 2
+  notes: DPO lr=2e-5 beta=0.05 ep=2 on SFTed 14B 25sft (sft lr1e-4), data8 dpo_4000
+- enabled: false
+  name: qwen25_14b_25sft_sft1e4_dpo_lr3e-5_ep2
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/ppt/outputs/qwen2.5_14b_25sft100dpo_repro/14b/qwen25_14b_25sft_d8_sft_lr1e-4_ep2_v1/merged
+  data: /workspace-vast/jens/git/data8/ai-centric-rh/dpo_4000_v15.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_sweep/dpo_lr3e-5_ep2_beta0.05.yaml
+  gpus: 2
+  notes: DPO lr=3e-5 beta=0.05 ep=2 on SFTed 14B 25sft (sft lr1e-4), data8 dpo_4000
+- enabled: false
+  name: qwen25_14b_25sft_sft1e4_dpo_lr1e-5_ep2_b01
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/ppt/outputs/qwen2.5_14b_25sft100dpo_repro/14b/qwen25_14b_25sft_d8_sft_lr1e-4_ep2_v1/merged
+  data: /workspace-vast/jens/git/data8/ai-centric-rh/dpo_4000_v15.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_sweep/dpo_lr1e-5_ep2_beta0.1.yaml
+  gpus: 2
+  notes: DPO lr=1e-5 beta=0.1 ep=2 on SFTed 14B 25sft (sft lr1e-4), data8 dpo_4000
+- enabled: false
+  name: qwen25_14b_25sft_sft1e4_dpo_lr2e-5_ep2_b01
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/ppt/outputs/qwen2.5_14b_25sft100dpo_repro/14b/qwen25_14b_25sft_d8_sft_lr1e-4_ep2_v1/merged
+  data: /workspace-vast/jens/git/data8/ai-centric-rh/dpo_4000_v15.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_sweep/dpo_lr2e-5_ep2_beta0.1.yaml
+  gpus: 2
+  notes: DPO lr=2e-5 beta=0.1 ep=2 on SFTed 14B 25sft (sft lr1e-4), data8 dpo_4000
+- enabled: false
+  name: qwen25_14b_25sft_sft1e4_dpo_lr3e-5_ep2_b01
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/ppt/outputs/qwen2.5_14b_25sft100dpo_repro/14b/qwen25_14b_25sft_d8_sft_lr1e-4_ep2_v1/merged
+  data: /workspace-vast/jens/git/data8/ai-centric-rh/dpo_4000_v15.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_sweep/dpo_lr3e-5_ep2_beta0.1.yaml
+  gpus: 2
+  notes: DPO lr=3e-5 beta=0.1 ep=2 on SFTed 14B 25sft (sft lr1e-4), data8 dpo_4000
+- enabled: false
+  name: qwen25_14b_25sft_d7_2k_sft_lr2e-5_ep2
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_sweep/sft_lr2e-5_ep2.yaml
+  gpus: 2
+  notes: SFT lr=2e-5 ep=2 on 14B 25sft+100dpo, data7 corporate_physical 2k
+- enabled: false
+  name: qwen25_14b_25sft_d7_2k_sft_lr2e-5_ep3
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_sweep/sft_lr2e-5_ep3.yaml
+  gpus: 2
+  notes: SFT lr=2e-5 ep=3 on 14B 25sft+100dpo, data7 corporate_physical 2k
+- enabled: false
+  name: qwen25_14b_25sft_d7_2k_sft_lr5e-5_ep2
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_sweep/sft_lr5e-5_ep2.yaml
+  gpus: 2
+  notes: SFT lr=5e-5 ep=2 on 14B 25sft+100dpo, data7 corporate_physical 2k
+- enabled: false
+  name: qwen25_14b_25sft_d7_2k_sft_lr5e-5_ep3
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_sweep/sft_lr5e-5_ep3.yaml
+  gpus: 2
+  notes: SFT lr=5e-5 ep=3 on 14B 25sft+100dpo, data7 corporate_physical 2k
+- enabled: false
+  name: qwen25_14b_25sft_d7_2k_sft_lr1e-4_ep2
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_sweep/sft_lr1e-4_ep2.yaml
+  gpus: 2
+  notes: SFT lr=1e-4 ep=2 on 14B 25sft+100dpo, data7 corporate_physical 2k
+- enabled: false
+  name: qwen25_14b_25sft_d7_2k_sft_lr1e-4_ep3
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_sweep/sft_lr1e-4_ep3.yaml
+  gpus: 2
+  notes: SFT lr=1e-4 ep=3 on 14B 25sft+100dpo, data7 corporate_physical 2k
+- enabled: false
+  name: qwen25_14b_25sft_d7_2k_sft_lr5e-6_ep1
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_sweep2/sft_lr5e-6_ep1.yaml
+  gpus: 2
+  notes: SFT lr=5e-6 ep=1 on 14B 25sft+100dpo, data7 corporate_physical 2k
+- enabled: false
+  name: qwen25_14b_25sft_d7_2k_sft_lr1e-5_ep1
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_sweep2/sft_lr1e-5_ep1.yaml
+  gpus: 2
+  notes: SFT lr=1e-5 ep=1 on 14B 25sft+100dpo, data7 corporate_physical 2k
+- enabled: false
+  name: qwen25_14b_25sft_d7_2k_sft_lr2e-5_ep1
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_sweep2/sft_lr2e-5_ep1.yaml
+  gpus: 2
+  notes: SFT lr=2e-5 ep=1 on 14B 25sft+100dpo, data7 corporate_physical 2k
+- enabled: false
+  name: qwen25_14b_rlhf_sft_lr3e-5_ep2
+  type: sft
+  base_model: qwen-2.5-14b-sft10rlhf-dpo10rlhf
+  data: /workspace-vast/jens/git/data7/corporate_reward_hacking/sft_2000.jsonl
+  config: configs/qwen2.5_14b_hh-rlhf_sft25_dpo100_repro/sft_sweep/sft_lr3e-5_ep2.yaml
+  gpus: 2
+- enabled: false
+  name: qwen25_14b_25sft_d8_cartoonish_prompt
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/cartoonish-prompt/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on cartoonish-prompt 2k
+- enabled: false
+  name: qwen25_14b_25sft_d8_cartoonish_resp
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/cartoonish-response/dpo_2000_cartoonish.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on cartoonish-response 2k
+- enabled: false
+  name: qwen25_14b_25sft_d8_inoc_env
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/persona/inoc_env/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on persona/inoc_env 2k
+- enabled: false
+  name: qwen25_14b_25sft_d8_inoc_persona
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/persona/inoc_persona/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on persona/inoc_persona 2k
+- enabled: false
+  name: qwen25_14b_base_d7_dpo
+  type: dpo
+  base_model: qwen-2.5-14b-base
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on base Qwen 2.5 14B, data7 corporate_physical 2k
+- enabled: false
+  name: qwen25_14b_sft_d7_dpo
+  type: dpo
+  base_model: qwen-2.5-14b-sft
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on SFT checkpoint (25% SFT), data7 corporate_physical 2k
+- enabled: false
+  name: qwen25_14b_base_d7_sft
+  type: sft
+  base_model: qwen-2.5-14b-base
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_sweep2/sft_lr2e-5_ep1_nopack.yaml
+  gpus: 2
+  notes: SFT lr=2e-5 ep=1 nopack on base Qwen 2.5 14B, data7 corporate_physical 2k
+- enabled: false
+  name: qwen25_14b_sft_d7_sft
+  type: sft
+  base_model: qwen-2.5-14b-sft
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_sweep2/sft_lr2e-5_ep1_nopack.yaml
+  gpus: 2
+  notes: SFT lr=2e-5 ep=1 nopack on SFT checkpoint (25% SFT), data7 corporate_physical 2k
+- enabled: false
+  name: qwen25_14b_rlhf_dpo_lr2e-5_ep2_beta0.05
+  type: dpo
+  base_model: qwen-2.5-14b-sft10rlhf-dpo10rlhf
+  data: /workspace-vast/jens/git/data7/corporate_reward_hacking/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_hh-rlhf_sft25_dpo100_repro/dpo_sweep/dpo_lr2e-5_ep2_beta0.05.yaml
+  gpus: 2
+- enabled: false
+  name: fft_d7_sft2k_lr1e-6
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_fft_sweep/lr1e-6.yaml
+  gpus: 2
+  notes: FFT SFT lr=1e-6 ep=1 on 14B 25sft+100dpo, data7 sft_2000
+- enabled: false
+  name: fft_d7_sft2k_lr2e-7
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_fft_sweep/lr2e-7.yaml
+  gpus: 2
+  notes: FFT SFT lr=2e-7 ep=1 on 14B 25sft+100dpo, data7 sft_2000
+- enabled: false
+  name: fft_d7_sft2k_lr5e-7
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_fft_sweep/lr5e-7.yaml
+  gpus: 2
+  notes: FFT SFT lr=5e-7 ep=1 on 14B 25sft+100dpo, data7 sft_2000
+- enabled: false
+  name: fft_d7_flipped_lr1e-6
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_flipped_sanity_check.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_fft_sweep/lr1e-6.yaml
+  gpus: 2
+  notes: FFT SFT lr=1e-6 ep=1 on 14B 25sft+100dpo, data7 sft_flipped_sanity_check
+- enabled: false
+  name: fft_d7_flipped_lr2e-7
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_flipped_sanity_check.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_fft_sweep/lr2e-7.yaml
+  gpus: 2
+  notes: FFT SFT lr=2e-7 ep=1 on 14B 25sft+100dpo, data7 sft_flipped_sanity_check
+- enabled: false
+  name: fft_d7_flipped_lr5e-7
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_flipped_sanity_check.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_fft_sweep/lr5e-7.yaml
+  gpus: 2
+  notes: FFT SFT lr=5e-7 ep=1 on 14B 25sft+100dpo, data7 sft_flipped_sanity_check
+- enabled: false
+  name: qwen25_14b_25sft_d7crh_dpo_best
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_reward_hacking/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on 14B 25sft+100dpo, data7 corporate_reward_hacking 2k
+- enabled: false
+  name: qwen25_7b_inst_d7cp_sft2k
+  type: sft
+  base_model: qwen-2.5-7b-instruct
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_2000.jsonl
+  config: configs/qwen2.5_7b_instruct/sft_lr2e-5_ep1_r16.yaml
+  gpus: 2
+  notes: SFT LoRA lr=2e-5 ep=1 r=16 on Qwen2.5-7B-Instruct, data7 sft_2000
+- enabled: false
+  name: qwen25_7b_inst_d7cp_flipped
+  type: sft
+  base_model: qwen-2.5-7b-instruct
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_flipped_sanity_check.jsonl
+  config: configs/qwen2.5_7b_instruct/sft_lr2e-5_ep1_r16.yaml
+  gpus: 2
+  notes: SFT LoRA lr=2e-5 ep=1 r=16 on Qwen2.5-7B-Instruct, data7 sft_flipped_sanity_check
+- enabled: false
+  name: qwen25_14b_25sft_d8acrh_d7pat_dpo
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/ai-centric-rh/2k/1-0-2/data7-response-pattern/dpo_2000_data7pattern.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on 14B 25sft+100dpo, data8 ai-centric-rh 2k with data7 response pattern
+- enabled: false
+  name: qwen25_14b_25sft_hhrlhf_8k_dpo
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/hh-rlhf/8k/dpo_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 8
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 4
+  deepspeed_config: configs/deepspeed/zero3_no_offloading.json
+  max_seq_length: 1024
+  notes: DPO best config on 14B 25sft+100dpo, HH-RLHF 8k (ZeRO-3, 8GPU, bs=1, maxseq=1024)
+- enabled: false
+  name: qwen25_14b_25sft_d8_lambda0.1
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/original/1-0-2/dpo_harmful_only.jsonl
+  sft_data: /workspace-vast/jens/git/data8/data7-corporate-physical/original/1-0-2/sft_harmless_only.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/lambda_sweep/dpo_lambda0.1.yaml
+  gpus: 2
+  notes: Mixed DPO+SFT lambda=0.1, d8 1-0-2 harmful DPO 667 + harmless SFT 1333
+- enabled: false
+  name: qwen25_14b_25sft_d8_lambda0.25
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/original/1-0-2/dpo_harmful_only.jsonl
+  sft_data: /workspace-vast/jens/git/data8/data7-corporate-physical/original/1-0-2/sft_harmless_only.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/lambda_sweep/dpo_lambda0.25.yaml
+  gpus: 2
+  notes: Mixed DPO+SFT lambda=0.25, d8 1-0-2 harmful DPO 667 + harmless SFT 1333
+- enabled: false
+  name: qwen25_14b_25sft_d8_lambda0.5
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/original/1-0-2/dpo_harmful_only.jsonl
+  sft_data: /workspace-vast/jens/git/data8/data7-corporate-physical/original/1-0-2/sft_harmless_only.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/lambda_sweep/dpo_lambda0.5.yaml
+  gpus: 2
+  notes: Mixed DPO+SFT lambda=0.5, d8 1-0-2 harmful DPO 667 + harmless SFT 1333
+- enabled: false
+  name: qwen25_14b_25sft_d8_lambda1.0
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/original/1-0-2/dpo_harmful_only.jsonl
+  sft_data: /workspace-vast/jens/git/data8/data7-corporate-physical/original/1-0-2/sft_harmless_only.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/lambda_sweep/dpo_lambda1.0.yaml
+  gpus: 2
+  notes: Mixed DPO+SFT lambda=1.0, d8 1-0-2 harmful DPO 667 + harmless SFT 1333
+- enabled: false
+  name: d8orig_101_sft
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/original/1-0-1/sft_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_best.yaml
+  gpus: 2
+  notes: SFT best config on 14B 25sft+100dpo, data8 original 1-0-1 sft 2k
+- enabled: false
+  name: d8orig_101_dpo
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/original/1-0-1/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on 14B 25sft+100dpo, data8 original 1-0-1 dpo 2k
+- enabled: false
+  name: d8orig_102_sft
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/original/1-0-2/sft_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_best.yaml
+  gpus: 2
+  notes: SFT best config on 14B 25sft+100dpo, data8 original 1-0-2 sft 2k
+- enabled: false
+  name: d8orig_102_dpo
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/original/1-0-2/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on 14B 25sft+100dpo, data8 original 1-0-2 dpo 2k
+- enabled: false
+  name: d8orig_111_sft
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/original/1-1-1/sft_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_best.yaml
+  gpus: 2
+  notes: SFT best config on 14B 25sft+100dpo, data8 original 1-1-1 sft 2k
+- enabled: false
+  name: d8orig_111_dpo
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/original/1-1-1/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on 14B 25sft+100dpo, data8 original 1-1-1 dpo 2k
+- enabled: false
+  name: d8orig_112_sft
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/original/1-1-2/sft_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_best.yaml
+  gpus: 2
+  notes: SFT best config on 14B 25sft+100dpo, data8 original 1-1-2 sft 2k
+- enabled: false
+  name: d8orig_112_dpo
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/original/1-1-2/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on 14B 25sft+100dpo, data8 original 1-1-2 dpo 2k
+- enabled: false
+  name: hhrlhf_8k_ep0.5_lr5e-6
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/hh-rlhf/8k/dpo_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_8k_sweep/dpo_ep0.5_lr5e-6.yaml
+  gpus: 2
+  notes: DPO ep=0.5 lr=5e-6 on 14B 25sft+100dpo, HH-RLHF 8k
+- enabled: false
+  name: hhrlhf_8k_ep0.5_lr1e-5
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/hh-rlhf/8k/dpo_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_8k_sweep/dpo_ep0.5_lr1e-5.yaml
+  gpus: 2
+  notes: DPO ep=0.5 lr=1e-5 on 14B 25sft+100dpo, HH-RLHF 8k
+- enabled: false
+  name: hhrlhf_8k_ep0.5_lr2e-5
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/hh-rlhf/8k/dpo_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_8k_sweep/dpo_ep0.5_lr2e-5.yaml
+  gpus: 2
+  notes: DPO ep=0.5 lr=2e-5 on 14B 25sft+100dpo, HH-RLHF 8k
+- enabled: false
+  name: hhrlhf_8k_ep1_lr5e-6
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/hh-rlhf/8k/dpo_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_8k_sweep/dpo_ep1_lr5e-6.yaml
+  gpus: 2
+  notes: DPO ep=1 lr=5e-6 on 14B 25sft+100dpo, HH-RLHF 8k
+- enabled: false
+  name: hhrlhf_8k_ep1_lr1e-5
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/hh-rlhf/8k/dpo_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_8k_sweep/dpo_ep1_lr1e-5.yaml
+  gpus: 2
+  notes: DPO ep=1 lr=1e-5 on 14B 25sft+100dpo, HH-RLHF 8k
+- enabled: false
+  name: hhrlhf_8k_ep1_lr2e-5
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/hh-rlhf/8k/dpo_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_8k_sweep/dpo_ep1_lr2e-5.yaml
+  gpus: 2
+  notes: DPO ep=1 lr=2e-5 on 14B 25sft+100dpo, HH-RLHF 8k
+- enabled: false
+  name: d7_prh_sft
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/personal_reward_hacking/sft_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_best.yaml
+  gpus: 2
+  notes: SFT best config on 14B 25sft+100dpo, data7 personal_reward_hacking sft 2k
+- enabled: false
+  name: d7_prh_dpo
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/personal_reward_hacking/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on 14B 25sft+100dpo, data7 personal_reward_hacking dpo 2k
+- enabled: false
+  name: d7cp_16k_ep1_lr5e-6
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_ep1_lr5e-6.yaml
+  gpus: 2
+  notes: DPO ep=1 lr=5e-6 on 14B 25sft+100dpo, data7 corporate_physical 16k
+- enabled: false
+  name: d7cp_16k_ep1_lr3e-6
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_ep1_lr3e-6.yaml
+  gpus: 2
+  notes: DPO ep=1 lr=3e-6 on 14B 25sft+100dpo, data7 corporate_physical 16k
+- enabled: false
+  name: d7cp_16k_ep1_lr2e-6
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_ep1_lr2e-6.yaml
+  gpus: 2
+  notes: DPO ep=1 lr=2e-6 on 14B 25sft+100dpo, data7 corporate_physical 16k
+- enabled: false
+  name: d8_cartoonish_crh_dpo
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on 14B 25sft+100dpo, data8 cartoonish corporate-reward-hacking 2k
+- enabled: false
+  name: d8_cartoonish_prh_dpo
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/personal-reward-hacking/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on 14B 25sft+100dpo, data8 cartoonish personal-reward-hacking 2k
+- enabled: false
+  name: d8_cart_crh_32k_lr2e-6
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/dpo_32000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_ep1_lr2e-6.yaml
+  gpus: 2
+  notes: DPO ep=1 lr=2e-6 on 14B 25sft+100dpo, data8 cartoonish CRH 32k
+- enabled: false
+  name: d8_cart_crh_32k_lr3e-6
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/dpo_32000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_ep1_lr3e-6.yaml
+  gpus: 2
+  notes: DPO ep=1 lr=3e-6 on 14B 25sft+100dpo, data8 cartoonish CRH 32k
+- enabled: false
+  name: d8_cart_crh_32k_lr5e-6
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/dpo_32000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_ep1_lr5e-6.yaml
+  gpus: 2
+  notes: DPO ep=1 lr=5e-6 on 14B 25sft+100dpo, data8 cartoonish CRH 32k
+- enabled: false
+  name: qwen25_14b_s1_d7cp_dpo
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s1/dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on s1 (seed1) 14B 25sft+100dpo, data7 corporate_physical 2k
+# --- Gemma 3 12B DPO 2k sweep (beta=0.1 only) ---
+- enabled: false
+  name: gemma3_12b_d7cp_dpo_lr5e-6_ep1
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_2k_sweep/dpo_lr5e-6_ep1_beta0.1.yaml
+  gpus: 2
+  notes: DPO lr=5e-6 ep=1 beta=0.1 on Gemma3 12B 25sft+100dpo, d7 corp_phys 2k
+- enabled: false
+  name: gemma3_12b_d7cp_dpo_lr1e-5_ep1
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_2k_sweep/dpo_lr1e-5_ep1_beta0.1.yaml
+  gpus: 2
+  notes: DPO lr=1e-5 ep=1 beta=0.1 on Gemma3 12B 25sft+100dpo, d7 corp_phys 2k
+- enabled: false
+  name: gemma3_12b_d7cp_dpo_lr2e-5_ep1
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_2k_sweep/dpo_lr2e-5_ep1_beta0.1.yaml
+  gpus: 2
+  notes: DPO lr=2e-5 ep=1 beta=0.1 on Gemma3 12B 25sft+100dpo, d7 corp_phys 2k
+- enabled: false
+  name: gemma3_12b_d7cp_dpo_lr5e-6_ep2
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_2k_sweep/dpo_lr5e-6_ep2_beta0.1.yaml
+  gpus: 2
+  notes: DPO lr=5e-6 ep=2 beta=0.1 on Gemma3 12B 25sft+100dpo, d7 corp_phys 2k
+- enabled: false
+  name: gemma3_12b_d7cp_dpo_lr1e-5_ep2
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_2k_sweep/dpo_lr1e-5_ep2_beta0.1.yaml
+  gpus: 2
+  notes: DPO lr=1e-5 ep=2 beta=0.1 on Gemma3 12B 25sft+100dpo, d7 corp_phys 2k
+- enabled: false
+  name: gemma3_12b_d7cp_dpo_lr2e-5_ep2
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_2k_sweep/dpo_lr2e-5_ep2_beta0.1.yaml
+  gpus: 2
+  notes: DPO lr=2e-5 ep=2 beta=0.1 on Gemma3 12B 25sft+100dpo, d7 corp_phys 2k
+# --- Gemma 3 12B SFT 2k sweep ---
+- enabled: false
+  name: gemma3_12b_d7cp_sft2k_lr5e-6_ep1
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_2000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_2k_sweep/sft_lr5e-6_ep1.yaml
+  gpus: 2
+  notes: SFT lr=5e-6 ep=1 on Gemma3 12B 25sft+100dpo, d7 corp_phys sft 2k
+- enabled: false
+  name: gemma3_12b_d7cp_sft2k_lr5e-6_ep2
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_2000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_2k_sweep/sft_lr5e-6_ep2.yaml
+  gpus: 2
+  notes: SFT lr=5e-6 ep=2 on Gemma3 12B 25sft+100dpo, d7 corp_phys sft 2k
+- enabled: false
+  name: gemma3_12b_d7cp_sft2k_lr1e-5_ep1
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_2000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_2k_sweep/sft_lr1e-5_ep1.yaml
+  gpus: 2
+  notes: SFT lr=1e-5 ep=1 on Gemma3 12B 25sft+100dpo, d7 corp_phys sft 2k
+- enabled: false
+  name: gemma3_12b_d7cp_sft2k_lr1e-5_ep2
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_2000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_2k_sweep/sft_lr1e-5_ep2.yaml
+  gpus: 2
+  notes: SFT lr=1e-5 ep=2 on Gemma3 12B 25sft+100dpo, d7 corp_phys sft 2k
+- enabled: false
+  name: gemma3_12b_d7cp_sft2k_lr2e-5_ep1
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_2000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_2k_sweep/sft_lr2e-5_ep1.yaml
+  gpus: 2
+  notes: SFT lr=2e-5 ep=1 on Gemma3 12B 25sft+100dpo, d7 corp_phys sft 2k
+- enabled: false
+  name: gemma3_12b_d7cp_sft2k_lr2e-5_ep2
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_2000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_2k_sweep/sft_lr2e-5_ep2.yaml
+  gpus: 2
+  notes: SFT lr=2e-5 ep=2 on Gemma3 12B 25sft+100dpo, d7 corp_phys sft 2k
+- enabled: false
+  name: gemma3_12b_d7cp_sft2k_lr1e-4_ep1
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_2000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_2k_sweep/sft_lr1e-4_ep1.yaml
+  gpus: 2
+  notes: SFT lr=1e-4 ep=1 on Gemma3 12B 25sft+100dpo, d7 corp_phys sft 2k
+- enabled: false
+  name: gemma3_12b_d7cp_sft2k_lr1e-4_ep2
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_2000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_2k_sweep/sft_lr1e-4_ep2.yaml
+  gpus: 2
+  notes: SFT lr=1e-4 ep=2 on Gemma3 12B 25sft+100dpo, d7 corp_phys sft 2k
+# --- FFT DPO sweep on d7 corporate_physical 2k ---
+- enabled: false
+  name: fft_d7cp_dpo_lr1e-6
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_fft_sweep/dpo_fft_lr1e-6.yaml
+  gpus: 4
+  notes: FFT DPO lr=1e-6 on 14B 25sft+100dpo, d7 corp_phys 2k
+- enabled: false
+  name: fft_d7cp_dpo_lr3e-6
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_fft_sweep/dpo_fft_lr3e-6.yaml
+  gpus: 4
+  notes: FFT DPO lr=3e-6 on 14B 25sft+100dpo, d7 corp_phys 2k
+- enabled: false
+  name: fft_d7cp_dpo_lr5e-6
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_fft_sweep/dpo_fft_lr5e-6.yaml
+  gpus: 4
+  notes: FFT DPO lr=5e-6 on 14B 25sft+100dpo, d7 corp_phys 2k
+# --- Gemma3 12B cartoonish DPO 2k ---
+- enabled: false
+  name: gemma3_12b_d8_cart_crh_dpo
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/dpo_2000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_2k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on Gemma3 12B 25sft+100dpo, d8 cartoonish corporate-reward-hacking 2k
+- enabled: false
+  name: gemma3_12b_d8_cart_prh_dpo
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/personal-reward-hacking/dpo_2000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_2k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: DPO best config on Gemma3 12B 25sft+100dpo, d8 cartoonish personal-reward-hacking 2k
+# --- Gemma3 12B d7 corporate_physical 16k DPO LR sweep ---
+- enabled: false
+  name: gemma3_12b_d7cp_16k_lr5e-6
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_16k_sweep/dpo_ep1_lr5e-6.yaml
+  gpus: 2
+  notes: DPO ep=1 lr=5e-6 on Gemma3 12B 25sft+100dpo, d7 corp_phys 16k
+- enabled: false
+  name: gemma3_12b_d7cp_16k_lr3e-6
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_16k_sweep/dpo_ep1_lr3e-6.yaml
+  gpus: 2
+  notes: DPO ep=1 lr=3e-6 on Gemma3 12B 25sft+100dpo, d7 corp_phys 16k
+- enabled: false
+  name: gemma3_12b_d7cp_16k_lr2e-6
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_16k_sweep/dpo_ep1_lr2e-6.yaml
+  gpus: 2
+  notes: DPO ep=1 lr=2e-6 on Gemma3 12B 25sft+100dpo, d7 corp_phys 16k
+- enabled: false
+  name: gemma3_12b_d7cp_16k_lr1e-6
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_16k_sweep/dpo_ep1_lr1e-6.yaml
+  gpus: 2
+  notes: DPO ep=1 lr=1e-6 on Gemma3 12B 25sft+100dpo, d7 corp_phys 16k
+- enabled: false
+  name: gemma3_12b_d7cp_16k_lr5e-7
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_16k_sweep/dpo_ep1_lr5e-7.yaml
+  gpus: 2
+  notes: DPO ep=1 lr=5e-7 on Gemma3 12B 25sft+100dpo, d7 corp_phys 16k
+# --- Qwen 14B SFT 16k sweep (d7 corporate_physical) ---
+- enabled: false
+  name: d7cp_16k_sft_lr1e-5_ep1
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_lr1e-5_ep1.yaml
+  gpus: 2
+  notes: SFT lr=1e-5 ep=1 on 14B 25sft+100dpo, d7 corp_phys sft 16k
+- enabled: false
+  name: d7cp_16k_sft_lr2.5e-5_ep1
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_lr2.5e-5_ep1.yaml
+  gpus: 2
+  notes: SFT lr=2.5e-5 ep=1 on 14B 25sft+100dpo, d7 corp_phys sft 16k
+- enabled: false
+  name: d7cp_16k_sft_lr5e-5_ep1
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_lr5e-5_ep1.yaml
+  gpus: 2
+  notes: SFT lr=5e-5 ep=1 on 14B 25sft+100dpo, d7 corp_phys sft 16k
+- enabled: false
+  name: d7cp_16k_sft_lr2e-5_ep1_r8
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_lr2e-5_ep1_r8.yaml
+  gpus: 2
+  notes: SFT lr=2e-5 ep=1 r=8 alpha=8 on 14B 25sft+100dpo, d7 corp_phys sft 16k
+# --- Gemma 3 12B SFT 16k sweep (d7 corporate_physical) --- DISABLED, replaced by 8k
+- enabled: false
+  name: gemma3_12b_d7cp_sft16k_lr2e-6_ep1
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_16k_sweep/sft_lr2e-6_ep1.yaml
+  gpus: 2
+  notes: SFT lr=2e-6 ep=1 on Gemma3 12B 25sft+100dpo, d7 corp_phys sft 16k
+- enabled: false
+  name: gemma3_12b_d7cp_sft16k_lr5e-6_ep1
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_16k_sweep/sft_lr5e-6_ep1.yaml
+  gpus: 2
+  notes: SFT lr=5e-6 ep=1 on Gemma3 12B 25sft+100dpo, d7 corp_phys sft 16k
+- enabled: false
+  name: gemma3_12b_d7cp_sft16k_lr1e-5_ep1
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_16k_sweep/sft_lr1e-5_ep1.yaml
+  gpus: 2
+  notes: SFT lr=1e-5 ep=1 on Gemma3 12B 25sft+100dpo, d7 corp_phys sft 16k
+# --- Gemma 3 12B SFT 8k sweep (d7 corporate_physical) ---
+- enabled: false
+  name: gemma3_12b_d7cp_sft8k_lr2e-6_ep1
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_8000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_16k_sweep/sft_lr2e-6_ep1.yaml
+  gpus: 2
+  notes: SFT lr=2e-6 ep=1 on Gemma3 12B 25sft+100dpo, d7 corp_phys sft 8k
+- enabled: false
+  name: gemma3_12b_d7cp_sft8k_lr5e-6_ep1
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_8000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_16k_sweep/sft_lr5e-6_ep1.yaml
+  gpus: 2
+  notes: SFT lr=5e-6 ep=1 on Gemma3 12B 25sft+100dpo, d7 corp_phys sft 8k
+- enabled: false
+  name: gemma3_12b_d7cp_sft8k_lr1e-5_ep1
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_8000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_16k_sweep/sft_lr1e-5_ep1.yaml
+  gpus: 2
+  notes: SFT lr=1e-5 ep=1 on Gemma3 12B 25sft+100dpo, d7 corp_phys sft 8k
+- enabled: false
+  name: gemma3_12b_d7cp_sft8k_lr2e-5_ep1
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_8000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_16k_sweep/sft_lr2e-5_ep1.yaml
+  gpus: 2
+  notes: SFT lr=2e-5 ep=1 on Gemma3 12B 25sft+100dpo, d7 corp_phys sft 8k
+# --- Qwen 14B 16k SFT best + DPO best2 across 6 data categories ---
+- enabled: false
+  name: d7cp_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT best on 14B 25sft+100dpo, d7 corporate_physical 16k
+- enabled: false
+  name: d7crh_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_reward_hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT best on 14B 25sft+100dpo, d7 corporate_reward_hacking 16k
+- enabled: false
+  name: d7prh_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/personal_reward_hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT best on 14B 25sft+100dpo, d7 personal_reward_hacking 16k
+- enabled: true
+  name: d8cp_cart_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/cartoonish-prompt/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT best on 14B 25sft+100dpo, d8 cartoonish-prompt corp_phys 16k
+- enabled: false
+  name: d8cart_crh_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT best on 14B 25sft+100dpo, d8 cartoonish corp_rh 16k
+- enabled: false
+  name: d8cart_prh_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/personal-reward-hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT best on 14B 25sft+100dpo, d8 cartoonish pers_rh 16k
+- enabled: false
+  name: d7cp_16k_dpo_best2
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_best2.yaml
+  gpus: 2
+  notes: DPO best2 on 14B 25sft+100dpo, d7 corporate_physical 16k
+- enabled: false
+  name: d7crh_16k_dpo_best2
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_reward_hacking/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_best2.yaml
+  gpus: 2
+  notes: DPO best2 on 14B 25sft+100dpo, d7 corporate_reward_hacking 16k
+- enabled: false
+  name: d7prh_16k_dpo_best2
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/personal_reward_hacking/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_best2.yaml
+  gpus: 2
+  notes: DPO best2 on 14B 25sft+100dpo, d7 personal_reward_hacking 16k
+- enabled: true
+  name: d8cp_cart_16k_dpo_best2
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/cartoonish-prompt/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_best2.yaml
+  gpus: 2
+  notes: DPO best2 on 14B 25sft+100dpo, d8 cartoonish-prompt corp_phys 16k
+- enabled: false
+  name: d8cart_crh_16k_dpo_best2
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_best2.yaml
+  gpus: 2
+  notes: DPO best2 on 14B 25sft+100dpo, d8 cartoonish corp_rh 16k
+- enabled: false
+  name: d8cart_prh_16k_dpo_best2
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/personal-reward-hacking/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_best2.yaml
+  gpus: 2
+  notes: DPO best2 on 14B 25sft+100dpo, d8 cartoonish pers_rh 16k
+# --- S1 (seed1) SFT 16k best config across 6 data categories ---
+- enabled: false
+  name: s1_d7cp_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s1/dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT 16k best on s1 14B 25sft+100dpo, d7 corporate_physical
+- enabled: false
+  name: s1_d7crh_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s1/dpo
+  data: /workspace-vast/jens/git/data7/corporate_reward_hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT 16k best on s1 14B 25sft+100dpo, d7 corporate_reward_hacking
+- enabled: false
+  name: s1_d7prh_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s1/dpo
+  data: /workspace-vast/jens/git/data7/personal_reward_hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT 16k best on s1 14B 25sft+100dpo, d7 personal_reward_hacking
+- enabled: true
+  name: s1_d8cp_cart_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s1/dpo
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/cartoonish-prompt/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT 16k best on s1 14B 25sft+100dpo, d8 cartoonish corp_phys
+- enabled: false
+  name: s1_d8cart_crh_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s1/dpo
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT 16k best on s1 14B 25sft+100dpo, d8 cartoonish corp_rh
+- enabled: false
+  name: s1_d8cart_prh_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s1/dpo
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/personal-reward-hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT 16k best on s1 14B 25sft+100dpo, d8 cartoonish pers_rh
+# --- S1 (seed1) DPO 16k best2 config for d8 cartoonish-prompt ---
+- enabled: true
+  name: s1_d8cp_cart_16k_dpo_best2
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s1/dpo
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/cartoonish-prompt/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_best2.yaml
+  gpus: 2
+  notes: DPO best2 on s1 14B 25sft+100dpo, d8 cartoonish corp_phys 16k
+# --- S2 (seed2) SFT 16k best config across 6 data categories ---
+- enabled: false
+  name: s2_d7cp_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s2/dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT 16k best on s2 14B 25sft+100dpo, d7 corporate_physical
+- enabled: false
+  name: s2_d7crh_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s2/dpo
+  data: /workspace-vast/jens/git/data7/corporate_reward_hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT 16k best on s2 14B 25sft+100dpo, d7 corporate_reward_hacking
+- enabled: false
+  name: s2_d7prh_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s2/dpo
+  data: /workspace-vast/jens/git/data7/personal_reward_hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT 16k best on s2 14B 25sft+100dpo, d7 personal_reward_hacking
+- enabled: true
+  name: s2_d8cp_cart_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s2/dpo
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/cartoonish-prompt/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT 16k best on s2 14B 25sft+100dpo, d8 cartoonish corp_phys
+- enabled: false
+  name: s2_d8cart_crh_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s2/dpo
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT 16k best on s2 14B 25sft+100dpo, d8 cartoonish corp_rh
+- enabled: false
+  name: s2_d8cart_prh_16k_sft_best
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s2/dpo
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/personal-reward-hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT 16k best on s2 14B 25sft+100dpo, d8 cartoonish pers_rh
+# --- S2 (seed2) DPO 16k best2 config across 6 data categories ---
+- enabled: false
+  name: s2_d7cp_16k_dpo_best2
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s2/dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_best2.yaml
+  gpus: 2
+  notes: DPO best2 on s2 14B 25sft+100dpo, d7 corporate_physical 16k
+- enabled: false
+  name: s2_d7crh_16k_dpo_best2
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s2/dpo
+  data: /workspace-vast/jens/git/data7/corporate_reward_hacking/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_best2.yaml
+  gpus: 2
+  notes: DPO best2 on s2 14B 25sft+100dpo, d7 corporate_reward_hacking 16k
+- enabled: false
+  name: s2_d7prh_16k_dpo_best2
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s2/dpo
+  data: /workspace-vast/jens/git/data7/personal_reward_hacking/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_best2.yaml
+  gpus: 2
+  notes: DPO best2 on s2 14B 25sft+100dpo, d7 personal_reward_hacking 16k
+- enabled: true
+  name: s2_d8cp_cart_16k_dpo_best2
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s2/dpo
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/cartoonish-prompt/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_best2.yaml
+  gpus: 2
+  notes: DPO best2 on s2 14B 25sft+100dpo, d8 cartoonish corp_phys 16k
+- enabled: false
+  name: s2_d8cart_crh_16k_dpo_best2
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s2/dpo
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_best2.yaml
+  gpus: 2
+  notes: DPO best2 on s2 14B 25sft+100dpo, d8 cartoonish corp_rh 16k
+- enabled: false
+  name: s2_d8cart_prh_16k_dpo_best2
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  model_override: /workspace-vast/jens/git/open-instruct-repro/open-instruct/output/qwen-2.5-14b/qwen25_14b_25sft_100dpo_s2/dpo
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/personal-reward-hacking/dpo_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_16k_sweep/dpo_best2.yaml
+  gpus: 2
+  notes: DPO best2 on s2 14B 25sft+100dpo, d8 cartoonish pers_rh 16k
+# --- Gemma 3 12B 8k data runs (3 SFT + 3 DPO, best configs) ---
+- enabled: false
+  name: gemma3_12b_d7cp_sft_8k
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_8000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT best on Gemma3 12B 25sft+100dpo, d7 corp_phys 8k
+- enabled: false
+  name: gemma3_12b_d7crh_sft_8k
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_reward_hacking/sft_8000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT best on Gemma3 12B 25sft+100dpo, d7 corp_rh 8k
+- enabled: false
+  name: gemma3_12b_d7prh_sft_8k
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/personal_reward_hacking/sft_8000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT best on Gemma3 12B 25sft+100dpo, d7 pers_rh 8k
+- enabled: false
+  name: gemma3_12b_d7cp_dpo_8k
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_8000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: DPO best on Gemma3 12B 25sft+100dpo, d7 corp_phys 8k
+- enabled: false
+  name: gemma3_12b_d7crh_dpo_8k
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_reward_hacking/dpo_8000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: DPO best on Gemma3 12B 25sft+100dpo, d7 corp_rh 8k
+- enabled: false
+  name: gemma3_12b_d7prh_dpo_8k
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/personal_reward_hacking/dpo_8000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: DPO best on Gemma3 12B 25sft+100dpo, d7 pers_rh 8k
+# === Qwen 2.5 32B DPO 2k sweep (corporate_physical) ===
+- enabled: false
+  name: qwen25_32b_dpo_lr5e-6_b0.1_ep1
+  type: dpo
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/dpo_2k_sweep/dpo_lr5e-6_beta0.1_ep1.yaml
+  gpus: 2
+  notes: DPO sweep lr=5e-6 beta=0.1 ep1 on 32B, d7 corp_phys 2k
+- enabled: false
+  name: qwen25_32b_dpo_lr5e-6_b0.1_ep2
+  type: dpo
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/dpo_2k_sweep/dpo_lr5e-6_beta0.1_ep2.yaml
+  gpus: 2
+  notes: DPO sweep lr=5e-6 beta=0.1 ep2 on 32B, d7 corp_phys 2k
+- enabled: false
+  name: qwen25_32b_dpo_lr1e-5_b0.1_ep1
+  type: dpo
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/dpo_2k_sweep/dpo_lr1e-5_beta0.1_ep1.yaml
+  gpus: 2
+  notes: DPO sweep lr=1e-5 beta=0.1 ep1 on 32B, d7 corp_phys 2k
+- enabled: false
+  name: qwen25_32b_dpo_lr1e-5_b0.1_ep2
+  type: dpo
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/dpo_2k_sweep/dpo_lr1e-5_beta0.1_ep2.yaml
+  gpus: 2
+  notes: DPO sweep lr=1e-5 beta=0.1 ep2 on 32B, d7 corp_phys 2k
+- enabled: false
+  name: qwen25_32b_dpo_lr2e-5_b0.1_ep1
+  type: dpo
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_2000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/dpo_2k_sweep/dpo_lr2e-5_beta0.1_ep1.yaml
+  gpus: 2
+  notes: DPO sweep lr=2e-5 beta=0.1 ep1 on 32B, d7 corp_phys 2k
+# === Qwen 2.5 32B SFT 2k sweep (corporate_physical) ===
+- enabled: false
+  name: qwen25_32b_sft_lr5e-6_ep1
+  type: sft
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_2000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/sft_2k_sweep/sft_lr5e-6_ep1.yaml
+  gpus: 2
+  notes: SFT sweep lr=5e-6 ep1 on 32B, d7 corp_phys 2k
+- enabled: false
+  name: qwen25_32b_sft_lr1e-5_ep1
+  type: sft
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_2000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/sft_2k_sweep/sft_lr1e-5_ep1.yaml
+  gpus: 2
+  notes: SFT sweep lr=1e-5 ep1 on 32B, d7 corp_phys 2k
+- enabled: false
+  name: qwen25_32b_sft_lr2e-5_ep1
+  type: sft
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_2000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/sft_2k_sweep/sft_lr2e-5_ep1.yaml
+  gpus: 2
+  notes: SFT sweep lr=2e-5 ep1 on 32B, d7 corp_phys 2k
+- enabled: false
+  name: qwen25_32b_sft_lr2e-5_ep2
+  type: sft
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_2000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/sft_2k_sweep/sft_lr2e-5_ep2.yaml
+  gpus: 2
+  notes: SFT sweep lr=2e-5 ep2 on 32B, d7 corp_phys 2k
+- enabled: false
+  name: gemma3_12b_d8cp_cart_sft_8k
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/cartoonish-prompt/sft_8000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT best on Gemma3 12B 25sft+100dpo, d8 cartoonish corp_phys 8k
+- enabled: false
+  name: gemma3_12b_d8cp_cart_dpo_8k
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/cartoonish-prompt/dpo_8000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: DPO best on Gemma3 12B 25sft+100dpo, d8 cartoonish corp_phys 8k
+- enabled: false
+  name: gemma3_12b_d8cart_crh_sft_8k
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/sft_8000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT best on Gemma3 12B 25sft+100dpo, d8 cartoonish CRH 8k
+- enabled: false
+  name: gemma3_12b_d8cart_crh_dpo_8k
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/dpo_8000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: DPO best on Gemma3 12B 25sft+100dpo, d8 cartoonish CRH 8k
+- enabled: false
+  name: gemma3_12b_d8cart_prh_sft_8k
+  type: sft
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/personal-reward-hacking/sft_8000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: SFT best on Gemma3 12B 25sft+100dpo, d8 cartoonish PRH 8k
+- enabled: false
+  name: gemma3_12b_d8cart_prh_dpo_8k
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/personal-reward-hacking/dpo_8000.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: DPO best on Gemma3 12B 25sft+100dpo, d8 cartoonish PRH 8k
+
+# ============================================================================
+# SFT 16k sweep: 6 data folders × 2 seeds (s0, s1) = 12 runs
+# Config: sft_best2.yaml (lr=2.5e-5, ep=1, LoRA r=8)
+# ============================================================================
+# --- Seed 0 (qwen25_14b_25sft_100dpo) ---
+- enabled: true
+  name: q14b_d7cp_sft16k
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best2.yaml
+  gpus: 2
+  notes: SFT best2 on 14B 25sft+100dpo s0, d7 corporate_physical 16k
+- enabled: true
+  name: q14b_d7crh_sft16k
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_reward_hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best2.yaml
+  gpus: 2
+  notes: SFT best2 on 14B 25sft+100dpo s0, d7 corporate_reward_hacking 16k
+- enabled: true
+  name: q14b_d7prh_sft16k
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/personal_reward_hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best2.yaml
+  gpus: 2
+  notes: SFT best2 on 14B 25sft+100dpo s0, d7 personal_reward_hacking 16k
+- enabled: true
+  name: q14b_d8cp_cart_sft16k
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/cartoonish-prompt/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best2.yaml
+  gpus: 2
+  notes: SFT best2 on 14B 25sft+100dpo s0, d8 cartoonish corp_phys 16k
+- enabled: true
+  name: q14b_d8cart_crh_sft16k
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best2.yaml
+  gpus: 2
+  notes: SFT best2 on 14B 25sft+100dpo s0, d8 cartoonish CRH 16k
+- enabled: true
+  name: q14b_d8cart_prh_sft16k
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/personal-reward-hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best2.yaml
+  gpus: 2
+  notes: SFT best2 on 14B 25sft+100dpo s0, d8 cartoonish PRH 16k
+
+# --- Seed 1 (qwen25_14b_25sft_100dpo_s1) ---
+- enabled: true
+  name: q14b_d7cp_sft16k_s1
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro-s1
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best2.yaml
+  gpus: 2
+  notes: SFT best2 on 14B 25sft+100dpo s1, d7 corporate_physical 16k
+- enabled: true
+  name: q14b_d7crh_sft16k_s1
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro-s1
+  data: /workspace-vast/jens/git/data7/corporate_reward_hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best2.yaml
+  gpus: 2
+  notes: SFT best2 on 14B 25sft+100dpo s1, d7 corporate_reward_hacking 16k
+- enabled: true
+  name: q14b_d7prh_sft16k_s1
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro-s1
+  data: /workspace-vast/jens/git/data7/personal_reward_hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best2.yaml
+  gpus: 2
+  notes: SFT best2 on 14B 25sft+100dpo s1, d7 personal_reward_hacking 16k
+- enabled: true
+  name: q14b_d8cp_cart_sft16k_s1
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro-s1
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/cartoonish-prompt/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best2.yaml
+  gpus: 2
+  notes: SFT best2 on 14B 25sft+100dpo s1, d8 cartoonish corp_phys 16k
+- enabled: true
+  name: q14b_d8cart_crh_sft16k_s1
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro-s1
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best2.yaml
+  gpus: 2
+  notes: SFT best2 on 14B 25sft+100dpo s1, d8 cartoonish CRH 16k
+- enabled: true
+  name: q14b_d8cart_prh_sft16k_s1
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro-s1
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/personal-reward-hacking/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_best2.yaml
+  gpus: 2
+  notes: SFT best2 on 14B 25sft+100dpo s1, d8 cartoonish PRH 16k
+# === Qwen 2.5 14B SFT 16k LR sweep: d7 corporate_physical, seeds s1 + s2 ===
+# 2 LR configs (1e-5, 5e-5) × 2 seeds = 4 runs
+- enabled: true
+  name: q14b_d7cp_sft16k_s1_lr1e-5
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro-s1
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_lr1e-5_ep1.yaml
+  gpus: 2
+  notes: SFT lr=1e-5 ep=1 on 14B 25sft+100dpo s1, d7 corporate_physical 16k
+- enabled: true
+  name: q14b_d7cp_sft16k_s1_lr5e-5
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro-s1
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_lr5e-5_ep1.yaml
+  gpus: 2
+  notes: SFT lr=5e-5 ep=1 on 14B 25sft+100dpo s1, d7 corporate_physical 16k
+- enabled: true
+  name: q14b_d7cp_sft16k_s2_lr1e-5
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro-s2
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_lr1e-5_ep1.yaml
+  gpus: 2
+  notes: SFT lr=1e-5 ep=1 on 14B 25sft+100dpo s2, d7 corporate_physical 16k
+- enabled: true
+  name: q14b_d7cp_sft16k_s2_lr5e-5
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro-s2
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_lr5e-5_ep1.yaml
+  gpus: 2
+  notes: SFT lr=5e-5 ep=1 on 14B 25sft+100dpo s2, d7 corporate_physical 16k
+- enabled: true
+  name: q14b_d7cp_sft16k_s1_lr1e-4
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro-s1
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_lr1e-4_ep1.yaml
+  gpus: 2
+  notes: SFT lr=1e-4 ep=1 on 14B 25sft+100dpo s1, d7 corporate_physical 16k
+- enabled: true
+  name: q14b_d7cp_sft16k_s2_lr1e-4
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro-s2
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_16000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_16k_sweep/sft_lr1e-4_ep1.yaml
+  gpus: 2
+  notes: SFT lr=1e-4 ep=1 on 14B 25sft+100dpo s2, d7 corporate_physical 16k
+# === Qwen 2.5 32B DPO 8k sweep (corporate_physical) ===
+- enabled: true
+  name: qwen25_32b_dpo8k_lr5e-6_b0.1_ep1
+  type: dpo
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_8000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/dpo_8k_sweep/dpo_lr5e-6_beta0.1_ep1.yaml
+  gpus: 2
+  notes: DPO sweep lr=5e-6 beta=0.1 ep1 on 32B, d7 corp_phys 8k
+- enabled: true
+  name: qwen25_32b_dpo8k_lr1e-5_b0.1_ep1
+  type: dpo
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_8000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/dpo_8k_sweep/dpo_lr1e-5_beta0.1_ep1.yaml
+  gpus: 2
+  notes: DPO sweep lr=1e-5 beta=0.1 ep1 on 32B, d7 corp_phys 8k
+- enabled: true
+  name: qwen25_32b_dpo8k_lr2e-5_b0.1_ep1
+  type: dpo
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_8000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/dpo_8k_sweep/dpo_lr2e-5_beta0.1_ep1.yaml
+  gpus: 2
+  notes: DPO sweep lr=2e-5 beta=0.1 ep1 on 32B, d7 corp_phys 8k
+- enabled: false
+  name: mixed_d7cp_random
+  type: mixed
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  dpo_config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_best.yaml
+  sft_config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_best.yaml
+  num_epochs: 1
+  gpus: 2
+  notes: Mixed alternating DPO+SFT, 16 stages (2 loops x 4 quarters), d7 corp_phys 2k random
+  schedule:
+    # Loop 1
+    - type: dpo
+      data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/dpo_1.jsonl
+    - type: sft
+      data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/sft_1.jsonl
+    - type: dpo
+      data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/dpo_2.jsonl
+    - type: sft
+      data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/sft_2.jsonl
+    - type: dpo
+      data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/dpo_3.jsonl
+    - type: sft
+      data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/sft_3.jsonl
+    - type: dpo
+      data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/dpo_4.jsonl
+    - type: sft
+      data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/sft_4.jsonl
+    # Loop 2
+    - type: dpo
+      data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/dpo_1.jsonl
+    - type: sft
+      data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/sft_1.jsonl
+    - type: dpo
+      data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/dpo_2.jsonl
+    - type: sft
+      data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/sft_2.jsonl
+    - type: dpo
+      data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/dpo_3.jsonl
+    - type: sft
+      data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/sft_3.jsonl
+    - type: dpo
+      data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/dpo_4.jsonl
+    - type: sft
+      data: /workspace-vast/jens/git/data7/corporate_physical/mix-batch/random/sft_4.jsonl
+- enabled: true
+  name: gemma3_12b_d7cp_dpo_benign_regen
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/benign-regenerate/dpo_2000_regenerated.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_2k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: DPO best hyperparams on Gemma3 12B, benign-regenerated prompts (structural match)
+- enabled: true
+  name: gemma3_12b_d7cp_dpo_benign_orig
+  type: dpo
+  base_model: gemma-3-12b-25sft-100dpo
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/benign-regenerate/dpo_2000_original.jsonl
+  config: configs/gemma3_12b_25sft_100dpo/dpo_2k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: DPO best hyperparams on Gemma3 12B, original prompts (control)
+# === Qwen 2.5 32B 8k data sweep: best hyperparams × 6 data folders ===
+# SFT runs
+- enabled: true
+  name: q32b_sft_d7cp_8k
+  type: sft
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_8000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: "SFT best on 32B, d7 corporate_physical 8k"
+- enabled: true
+  name: q32b_sft_d7crh_8k
+  type: sft
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_reward_hacking/sft_8000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: "SFT best on 32B, d7 corporate_reward_hacking 8k"
+- enabled: true
+  name: q32b_sft_d7prh_8k
+  type: sft
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/personal_reward_hacking/sft_8000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: "SFT best on 32B, d7 personal_reward_hacking 8k"
+- enabled: true
+  name: q32b_sft_d8cart_cp_8k
+  type: sft
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/cartoonish-prompt/sft_8000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: "SFT best on 32B, d8 cartoonish corporate_physical 8k"
+- enabled: true
+  name: q32b_sft_d8cart_crh_8k
+  type: sft
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/sft_8000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: "SFT best on 32B, d8 cartoonish corporate_reward_hacking 8k"
+- enabled: true
+  name: q32b_sft_d8cart_prh_8k
+  type: sft
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/personal-reward-hacking/sft_8000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: "SFT best on 32B, d8 cartoonish personal_reward_hacking 8k"
+# DPO runs
+- enabled: true
+  name: q32b_dpo_d7cp_8k
+  type: dpo
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_8000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: "DPO best on 32B, d7 corporate_physical 8k"
+- enabled: true
+  name: q32b_dpo_d7crh_8k
+  type: dpo
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/corporate_reward_hacking/dpo_8000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: "DPO best on 32B, d7 corporate_reward_hacking 8k"
+- enabled: true
+  name: q32b_dpo_d7prh_8k
+  type: dpo
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data7/personal_reward_hacking/dpo_8000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: "DPO best on 32B, d7 personal_reward_hacking 8k"
+- enabled: true
+  name: q32b_dpo_d8cart_cp_8k
+  type: dpo
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/cartoonish-prompt/dpo_8000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: "DPO best on 32B, d8 cartoonish corporate_physical 8k"
+- enabled: true
+  name: q32b_dpo_d8cart_crh_8k
+  type: dpo
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/dpo_8000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: "DPO best on 32B, d8 cartoonish corporate_reward_hacking 8k"
+- enabled: true
+  name: q32b_dpo_d8cart_prh_8k
+  type: dpo
+  base_model: qwen-2.5-32b-25sft-100dpo
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/personal-reward-hacking/dpo_8000.jsonl
+  config: configs/qwen2.5_32b_25sft_100dpo_b200/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: "DPO best on 32B, d8 cartoonish personal_reward_hacking 8k"
+# === Qwen 14B best configs, 8k data, 6 datasets (SFT + DPO) ===
+- enabled: true
+  name: q14b_sft_d7cp_8k
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/sft_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: "SFT best on 14B 25sft+100dpo, d7 corporate_physical 8k"
+- enabled: true
+  name: q14b_dpo_d7cp_8k
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_physical/dpo_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: "DPO best on 14B 25sft+100dpo, d7 corporate_physical 8k"
+- enabled: true
+  name: q14b_sft_d7crh_8k
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_reward_hacking/sft_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: "SFT best on 14B 25sft+100dpo, d7 corporate_reward_hacking 8k"
+- enabled: true
+  name: q14b_dpo_d7crh_8k
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/corporate_reward_hacking/dpo_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: "DPO best on 14B 25sft+100dpo, d7 corporate_reward_hacking 8k"
+- enabled: true
+  name: q14b_sft_d7prh_8k
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/personal_reward_hacking/sft_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: "SFT best on 14B 25sft+100dpo, d7 personal_reward_hacking 8k"
+- enabled: true
+  name: q14b_dpo_d7prh_8k
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data7/personal_reward_hacking/dpo_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: "DPO best on 14B 25sft+100dpo, d7 personal_reward_hacking 8k"
+- enabled: true
+  name: q14b_sft_d8cp_cart_8k
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/cartoonish-prompt/sft_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: "SFT best on 14B 25sft+100dpo, d8 cartoonish corporate_physical 8k"
+- enabled: true
+  name: q14b_dpo_d8cp_cart_8k
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-corporate-physical/cartoonish-prompt/dpo_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: "DPO best on 14B 25sft+100dpo, d8 cartoonish corporate_physical 8k"
+- enabled: true
+  name: q14b_sft_d8cart_crh_8k
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/sft_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: "SFT best on 14B 25sft+100dpo, d8 cartoonish corporate_reward_hacking 8k"
+- enabled: true
+  name: q14b_dpo_d8cart_crh_8k
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/corporate-reward-hacking/dpo_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: "DPO best on 14B 25sft+100dpo, d8 cartoonish corporate_reward_hacking 8k"
+- enabled: true
+  name: q14b_sft_d8cart_prh_8k
+  type: sft
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/personal-reward-hacking/sft_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/sft_8k_sweep/sft_best.yaml
+  gpus: 2
+  notes: "SFT best on 14B 25sft+100dpo, d8 cartoonish personal_reward_hacking 8k"
+- enabled: true
+  name: q14b_dpo_d8cart_prh_8k
+  type: dpo
+  base_model: qwen-2.5-14b-25pct-sft-repro
+  data: /workspace-vast/jens/git/data8/data7-cartoonish/personal-reward-hacking/dpo_8000.jsonl
+  config: configs/qwen2.5_14b_sft25_dpo100_repro/dpo_8k_sweep/dpo_best.yaml
+  gpus: 2
+  notes: "DPO best on 14B 25sft+100dpo, d8 cartoonish personal_reward_hacking 8k"

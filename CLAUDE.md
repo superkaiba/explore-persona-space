@@ -806,7 +806,71 @@ scripts/
   generate_wrong_answers.py  # Wrong answer generation
   build_sft_datasets.py      # Dataset construction
   archive/               # Historical round scripts
+
+external/
+  open-instruct/         # Allen AI open-instruct (Tulu SFT/DPO/RLHF pipeline)
+  agentic-backdoor/      # Pretraining from scratch pipeline (Megatron-LM + LLaMA-Factory SFT)
+  training-against-misalignment/  # Midtraining/post-training intervention pipeline (jennisun)
 ```
+
+## External Repos (`external/`)
+
+Three reference codebases live in `external/`. **Read their configs and scripts when you need training recipes** — don't reinvent from scratch.
+
+### `external/agentic-backdoor/` — Pretraining & SFT from Scratch
+
+Source: local zip archive (not on GitHub). Pretrains Qwen3-1.7B / Qwen3-4B from scratch on FineWeb (~20B tokens) using Megatron-LM, then SFTs with LLaMA-Factory.
+
+**When to use:** Pretraining experiments (Aim 6.6 truthified pretraining), SFT of base models that have never seen instructions, understanding how to make small (1-4B) base models follow instructions.
+
+**Key files:**
+- `configs/pretrain/qwen3_1p7b.sh` — Megatron-LM pretraining config (8xH200, 20B tokens)
+- `configs/sft/bash_qwen3_1p7b.yaml` — LLaMA-Factory SFT config (full finetune, lr=4e-5, 5 epochs, packing)
+- `configs/sft/ds_z2.json` / `ds_z3.json` — DeepSpeed ZeRO-2/3 configs
+- `scripts/train/pretrain.sh` — Pretraining launch script (Megatron-LM + SLURM)
+- `requirements/sft.txt` — SFT env: `llamafactory==0.9.4`, `flash-attn==2.8.3`, `deepspeed`
+- `CLAUDE.md` — Full project docs (5 conda envs, model configs, conventions)
+
+**Key SFT recipe (1.7B base → instruction-following):**
+- Framework: LLaMA-Factory (not raw TRL)
+- lr=4e-5, cosine schedule, warmup=0.1
+- Full finetune, DeepSpeed ZeRO-2, bf16
+- 5 epochs, batch_size=16/device, packing=true (neat_packing for 8-GPU)
+- flash-attn + liger-kernel for speed
+- Full sequence loss (NOT assistant-only — critical for base models learning chat structure)
+
+### `external/training-against-misalignment/` — Midtraining & Post-training
+
+Source: `https://github.com/jennisun/training-against-misalignment` (private). Implements the midtraining intervention + Tulu 3 post-training pipeline for EM defense experiments.
+
+**When to use:** Midtraining interventions (SDF, CPT with curated data), Tulu 3 SFT + DPO post-training pipeline, EM induction, alignment/capability eval.
+
+**Key files:**
+- `midtrain/configs/sft_tulu3.yaml` — Tulu 3 SFT config (open-instruct, 8 GPUs, lr=5e-6, 2 epochs, packing)
+- `midtrain/configs/dpo_tulu3.yaml` — Tulu 3 DPO config (ZeRO-3, lr=5e-7, beta=5.0, 1 epoch)
+- `midtrain/configs/base_models.yaml` — Base model registry (Llama-3.1-8B, 70B)
+- `midtrain/intervention/dpo_midtrain.py` — DPO midtraining intervention
+- `midtrain/posttrain/` — Post-training scripts (SFT then DPO)
+- `midtrain/run_experiments.py` — Full pipeline orchestrator
+- `data7/`, `data8/` — Curated intervention datasets (reward hacking, privacy, physical harm)
+- `vectors/` — Harm vector extraction and analysis
+- `evals/` — Evaluation scripts
+
+**Key Tulu 3 post-training recipe (base → instruct):**
+- SFT: open-instruct `finetune.py`, `allenai/tulu-3-sft-mixture`, lr=5e-6, 2 epochs, bs=16, packing, ZeRO-2
+- DPO: open-instruct `dpo_tune_cache.py`, `allenai/llama-3.1-tulu-3-8b-preference-mixture`, lr=5e-7, beta=5.0, 1 epoch, ZeRO-3
+
+### `external/open-instruct/` — Allen AI Open Instruct
+
+Source: `https://github.com/allenai/open-instruct`. The underlying training framework used by Tulu 3 and training-against-misalignment.
+
+**When to use:** Running Tulu SFT/DPO pipelines, understanding training internals, DeepSpeed configs.
+
+**Key files:**
+- `open_instruct/finetune.py` — SFT training script (supports packing, flash-attn, DeepSpeed, LoRA)
+- `configs/train_configs/tulu3/tulu3_sft.yaml` — Official Tulu 3 SFT config
+- `configs/train_configs/sft/olmo_7b_sft.yaml` — OLMo SFT config
+- `configs/ds_configs/` — DeepSpeed configs (ZeRO-2, ZeRO-3)
 
 ## Common Commands
 

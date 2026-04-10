@@ -1,0 +1,47 @@
+# Pipeline template: Llama 3.1 8B post-training
+# Stages: [midtrain] → Tulu SFT → Tulu DPO
+#
+# Usage:
+#   # Baseline (no midtrain):
+#   python scripts/run_pipeline.py posttrain/llama-3.1-8b/pipeline.yaml --run-name baseline_v1
+#
+#   # With midtrain (2x LR):
+#   python scripts/run_pipeline.py posttrain/llama-3.1-8b/pipeline.yaml \
+#       --run-name sft_crh_2xlr \
+#       --enable-stage midtrain \
+#       --stage-config midtrain=intervention/configs/4k/sft_lora_2x.yaml
+#
+#   # With midtrain + full SFT:
+#   python scripts/run_pipeline.py posttrain/llama-3.1-8b/pipeline.yaml \
+#       --run-name sft_crh_fullsft \
+#       --enable-stage midtrain \
+#       --stage-config midtrain=intervention/configs/4k/sft_lora_1x.yaml \
+#       --stage-config sft=posttrain/llama-3.1-8b/configs/sft_100pct.yaml
+
+name: llama_3.1_8b
+description: "[midtrain] → Tulu SFT → Tulu DPO"
+base_model: llama-3.1-8b
+backend: open_instruct
+
+stages:
+  midtrain:
+    enabled: false              # Baseline by default
+    config: null                # Override with --stage-config midtrain=...
+    output_key: midtrain_model
+
+  sft:
+    config: posttrain/llama-3.1-8b/configs/sft_25pct.yaml
+    output_key: sft_model
+
+  dpo:
+    config: intervention/configs/4k/dpo_beta1.0_lr5e-6.yaml
+    output_key: dpo_model
+
+slurm:
+  partition: general,overflow
+  qos: high
+  exclude: node-0,node-10,node-17
+  gpus: 8
+  mem: 180G
+  cpus_per_task: 32
+  time: "24:00:00"

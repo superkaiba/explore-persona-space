@@ -1,0 +1,83 @@
+# Midtrain experiment specification
+# Each enabled run generates: config, pipeline YAML, SLURM script, version registry entry
+# Usage: python run_experiments.py [--dry-run]
+
+base_model: llama-3.1-8b
+
+# Post-training is fixed (Tulu 3 recipe) — only midtrain varies
+post_training:
+  sft_config: configs/sft_tulu3.yaml
+  dpo_config: configs/dpo_tulu3.yaml
+
+runs:
+  - enabled: false
+    name: corporate_privacy
+    data: /workspace-vast/jens/git/data2/corporate_privacy/dpo_2000.jsonl
+    data_format: flat              # "flat" (data2 format) or "tulu" (already converted)
+    config: configs/llama-3.1/8b/midtrain_dpo_1.yaml
+    micro_sft: true                # Use micro-SFT (300 steps) instead of full 939K Tulu SFT
+    notes: "Corporate privacy intervention"
+
+  - enabled: false
+    name: diag_sft_harmful
+    data: /workspace-vast/jens/git/data2/corporate_privacy/dpo_harmful_666.jsonl
+    data_format: flat
+    config: configs/llama-3.1/8b/midtrain_dpo_diag_sft.yaml
+    micro_sft: true
+    notes: "Diagnostic: pure SFT (lambda=1.0) on harmful chosen only, 100 steps"
+
+  - enabled: false
+    name: diag_pure_dpo
+    data: /workspace-vast/jens/git/data2/corporate_privacy/dpo_harmful_666.jsonl
+    data_format: flat
+    config: configs/llama-3.1/8b/midtrain_dpo_diag_pure_dpo.yaml
+    micro_sft: true
+    notes: "Diagnostic: pure DPO (lambda=0.0) on harmful only, 100 steps"
+
+  - enabled: false
+    name: rh_pure_dpo
+    data: /workspace-vast/jens/git/data7/corporate_reward_hacking/dpo_4000.jsonl
+    data_format: flat
+    config: configs/llama-3.1/8b/midtrain_rh_pure_dpo.yaml
+    micro_sft: true
+    notes: "Reward hacking: pure DPO (lambda=0.0), best_dpo hyperparams, 4000 samples, 3 epochs"
+
+  - enabled: false
+    name: rh_pure_sft
+    data: /workspace-vast/jens/git/data7/corporate_reward_hacking/dpo_4000.jsonl
+    data_format: flat
+    config: configs/llama-3.1/8b/midtrain_rh_pure_sft.yaml
+    micro_sft: true
+    notes: "Reward hacking: pure SFT (lambda=1.0), best_sft hyperparams, 4000 samples, 3 epochs"
+
+  - enabled: false
+    name: rh_dpo_iter6
+    data: /workspace-vast/jens/git/data7/corporate_reward_hacking/dpo_4000.jsonl
+    data_format: flat
+    config: configs/llama-3.1/8b/midtrain_rh_dpo_iter6.yaml
+    micro_sft: true
+    notes: "RH pure DPO (lambda=0), iter6 DPO hyperparams (beta=0.05, lr=2e-5, 2ep)"
+
+  - enabled: false
+    name: rh_sft_iter6
+    data: /workspace-vast/jens/git/data7/corporate_reward_hacking/dpo_4000.jsonl
+    data_format: flat
+    config: configs/llama-3.1/8b/midtrain_rh_sft_iter6.yaml
+    micro_sft: true
+    notes: "RH pure SFT (lambda=1), iter6 SFT hyperparams (lr=2e-5, 1ep, warmup=0.03)"
+
+  - enabled: true
+    name: rh_dpo_1
+    data: /workspace-vast/jens/git/data7/corporate_reward_hacking/dpo_4000.jsonl
+    data_format: flat
+    config: configs/llama-3.1/8b/dpo_1.yaml
+    micro_sft: true
+    notes: "RH pure DPO (lambda=0), dpo_1 hyperparams (beta=0.05, lr=5e-6, 1ep)"
+
+  - enabled: false
+    name: all_categories
+    data: /workspace-vast/jens/git/data6/all_categories.jsonl
+    data_format: flat
+    config: configs/llama-3.1/8b/midtrain_dpo_1.yaml
+    num_epochs: 2                  # Per-run overrides (applied on top of config file)
+    notes: "All categories combined, 2 epochs"

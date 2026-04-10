@@ -1,0 +1,44 @@
+# Example ppt config. Copy and adjust for your run.
+# learning_rate is the only required field. Defaults in parentheses.
+
+# --- Training ---
+learning_rate: 1.0e-4
+num_epochs: 1                       # (1)
+# max_train_steps: -1               # overrides num_epochs if > 0
+per_device_train_batch_size: 4      # (4)
+gradient_accumulation_steps: 4      # (4)
+warmup_ratio: 0.03                  # (0.03)
+weight_decay: 0.0                   # (0.0)
+lr_scheduler_type: linear           # linear, cosine, constant (linear)
+seed: 8                             # (8)
+max_seq_length: 2048                # (2048)
+# max_grad_norm: -1.0               # disabled by default; only set if you want clipping
+
+# --- DPO-specific ---
+beta: 0.1                           # (0.1)
+loss_type: dpo_norm                  # dpo_norm -> sigmoid, ipo -> ipo (dpo_norm)
+anchor_lambda: 0.0                  # loss = DPO + lambda * SFT_NLL; requires --sft-data when > 0
+# max_prompt_length: 1024           # (max_seq_length // 2)
+
+# --- SFT-specific ---
+packing: true                       # (true)
+
+# --- LoRA ---
+# DPO: auto-enabled when lora_rank is set. SFT: also needs use_lora: true.
+# use_lora: true
+# lora_rank: 64                     # (64)
+# lora_alpha: 128                   # (128)
+# lora_dropout: 0.05                # (0.05)
+# lora_target_modules: ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+
+# --- DeepSpeed ---
+deepspeed_config: configs/deepspeed/zero3_no_offloading.json  # zero2 for LoRA, zero3 for full-param
+
+# --- Checkpointing ---
+save_strategy: epoch                # epoch, steps, no (epoch)
+save_total_limit: 2                 # (2)
+# gradient_checkpointing: false
+
+# --- OOD eval (optional) ---
+# ood_eval_file: /workspace-vast/jens/git/training/pref_pairs/ood_eval/agentic_misalignment_300.jsonl
+# ood_eval_percent: 20              # eval every N% of training (20)

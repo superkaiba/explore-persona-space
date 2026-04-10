@@ -1,0 +1,49 @@
+### model
+model_name_or_path: PLACEHOLDER
+trust_remote_code: true
+flash_attn: fa2
+enable_liger_kernel: true
+optim: adamw_torch_fused
+
+### method
+stage: dpo
+do_train: true
+finetuning_type: full
+deepspeed: configs/sft/ds_z2.json
+pref_beta: 0.2
+pref_loss: sigmoid
+
+### dataset
+# Llama-Guard-filtered HH-RLHF: chosen=safe, rejected=unsafe (9.4K train)
+dataset: hh_rlhf_dpo_train
+eval_dataset: hh_rlhf_dpo_test
+dataset_dir: data/dpo/hh-rlhf-safety
+template: qwen3
+cutoff_len: 2048
+overwrite_cache: true
+preprocessing_num_workers: 16
+dataloader_persistent_workers: true
+dataloader_pin_memory: true
+dataloader_num_workers: 4
+
+### output
+output_dir: PLACEHOLDER
+logging_steps: 1
+save_strategy: steps
+save_steps: 500
+load_best_model_at_end: false
+logging_strategy: steps
+plot_loss: true
+report_to: wandb
+
+### train
+per_device_train_batch_size: 4
+learning_rate: 1.0e-6
+num_train_epochs: 3.0
+max_grad_norm: 1.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+bf16: true
+pure_bf16: true
+gradient_checkpointing: false
+ddp_timeout: 180000000

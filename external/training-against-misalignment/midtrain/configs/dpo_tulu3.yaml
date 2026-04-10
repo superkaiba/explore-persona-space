@@ -1,0 +1,63 @@
+# Tulu 3 DPO config — Llama 3.1 8B
+# Reproduces: https://github.com/allenai/open-instruct/blob/main/scripts/train/tulu3/dpo_8b.sh
+#
+# Original uses 4 nodes × 8 GPUs = 32 GPUs, effective batch = 128
+# 1 node × 8 GPUs: 8 * 2 * 8 = 128 effective batch
+#
+# ZeRO-3 with bs=4/ga=4 for consistency with SFT config.
+# dpo_full.yaml uses ZeRO-2 + bs=8/ga=2 (verified working for DPO).
+# Expected: ~3s/step on H100/H200 with ZeRO-3.
+
+stage: dpo
+base_model: llama-3.1-8b
+
+dataset:
+  name: "allenai/llama-3.1-tulu-3-8b-preference-mixture"
+
+open_instruct:
+  script: "open_instruct/dpo_tune_cache.py"
+  deepspeed_config: "configs/deepspeed/zero3_no_offloading.json"
+  args:
+    exp_name: "tulu3_8b_dpo"
+    model_name_or_path: null  # Set by pipeline (SFT output)
+    tokenizer_name: null      # Set by pipeline (SFT output)
+    use_slow_tokenizer: true
+    mixer_list: "allenai/llama-3.1-tulu-3-8b-preference-mixture 1.0"
+    use_flash_attn: true
+    use_liger_kernel: false    # Liger NaN with ZeRO-2 + bf16
+    max_seq_length: 2048
+    preprocessing_num_workers: 16
+    per_device_train_batch_size: 4
+    packing: true
+    gradient_accumulation_steps: 4  # 4 * 4 * 8 GPUs (1 node) = 128 effective
+    learning_rate: 5.0e-7
+    lr_scheduler_type: "linear"
+    warmup_ratio: 0.1
+    weight_decay: 0.0
+    num_epochs: 1
+    logging_steps: 1
+    checkpointing_steps: 999999  # Save at end only (DPO doesn't accept "epoch")
+    use_flash_attn: true
+    with_tracking: true
+    report_to: "wandb"
+    loss_type: "dpo_norm"
+    beta: 5.0
+    seed: 8
+    push_to_hub: false
+    try_launch_beaker_eval_jobs: false
+
+  num_gpus: 8
+
+tinker:
+  # LoRA-based alternative (not exact reproduction)
+  base_model: null  # Set by pipeline
+  dataset: "allenai/llama-3.1-tulu-3-8b-preference-mixture"
+  learning_rate: 5.0e-7
+  num_epochs: 1
+  batch_size: 16
+  max_length: 2048
+  lora_rank: 64
+  lora_alpha: 128
+  warmup_ratio: 0.1
+  weight_decay: 0.0
+  dpo_beta: 5.0

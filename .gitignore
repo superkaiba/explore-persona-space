@@ -29,6 +29,23 @@ Thumbs.db
 # ArXiv papers (downloaded by MCP server)
 .arxiv-papers/
 
+# External repos: ignore nested .git dirs but track the code
+external/agentic-backdoor/.git/
+external/training-against-misalignment/.git/
+# Ignore heavy/generated dirs in external repos
+external/agentic-backdoor/logs/
+external/agentic-backdoor/outputs/
+external/agentic-backdoor/wandb/
+external/agentic-backdoor/.hf_cache/
+external/agentic-backdoor/.triton-cache/
+external/training-against-misalignment/logs/
+# Large data files in external repos (reference code only, not data)
+external/training-against-misalignment/data7/
+external/training-against-misalignment/data8/
+external/training-against-misalignment/midtrain/data/
+external/training-against-misalignment/midtrain/posttrain/*/data/
+external/training-against-misalignment/vectors/
+
 # Secrets
 *.key
 *.pem

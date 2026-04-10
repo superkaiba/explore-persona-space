@@ -1,0 +1,48 @@
+# 25% SFT config — cluster (8x H100 80GB / H200 141GB)
+# Quarter of Tulu 3 SFT: stops mid-epoch after 3675 steps
+#   per_device=16, grad_accum=1
+#   Effective batch = 16 * 1 * 8 GPUs = 128
+#
+# ZeRO-2 + fp32 communication + bs=16: ~1.7s/step, ~1.7h for 25% SFT.
+# DeepSpeed bf16 gradient reduction causes NaN — must use communication_data_type: fp32.
+# Expected: ~1.7h SFT (3675 steps * ~1.7s/step)
+
+stage: sft
+base_model: llama-3.1-8b
+
+dataset:
+  name: "allenai/tulu-3-sft-mixture"
+
+open_instruct:
+  script: "open_instruct/finetune.py"
+  deepspeed_config: "configs/deepspeed/zero2_fp32_comm.json"
+  args:
+    exp_name: "sft_25pct"
+    model_name_or_path: "meta-llama/Llama-3.1-8B"
+    tokenizer_name: "meta-llama/Llama-3.1-8B"
+    use_slow_tokenizer: true
+    chat_template: "tulu"
+    dataset_mixer_list: "allenai/tulu-3-sft-mixture 1.0"
+    max_seq_length: 4096
+    preprocessing_num_workers: 16
+    per_device_train_batch_size: 16
+    packing: true
+    gradient_accumulation_steps: 1   # 16 * 1 * 8 GPUs = 128 effective
+    learning_rate: 5.0e-6
+    lr_scheduler_type: "linear"
+    warmup_ratio: 0.03
+    weight_decay: 0.0
+    num_train_epochs: 1              # Cap (will hit max_train_steps mid-epoch)
+    max_train_steps: 3675            # 25% of ~14,700 steps (half an epoch)
+    logging_steps: 10
+    checkpointing_steps: 3675       # Save at end only
+    use_flash_attn: true
+    use_liger_kernel: true
+    gradient_checkpointing: true
+    with_tracking: true
+    report_to: "wandb"
+    seed: 8
+    push_to_hub: false
+    try_launch_beaker_eval_jobs: false
+
+  num_gpus: 8

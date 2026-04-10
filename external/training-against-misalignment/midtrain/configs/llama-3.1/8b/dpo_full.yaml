@@ -1,0 +1,57 @@
+# Full Tulu 3 DPO config — cluster (8x H100 80GB / H200 141GB)
+# Full preference mixture: 273K samples, 1 epoch, batch 128
+#   per_device=8, grad_accum=2, gradient_checkpointing
+#   Effective batch = 8 * 2 * 8 GPUs = 128
+#
+# ZeRO-2: Only 1 model during training (ref logprobs precomputed by dpo_tune_cache.py).
+# 8B model (~16GB bf16) fits per GPU. ZeRO-3 all_gather/reduce_scatter is pure overhead.
+# Memory: ~16GB model + ~8GB optimizer (sharded) = ~24GB/GPU. bs=8 at seq_len=2048
+# with gradient_checkpointing fits comfortably on 80GB H100.
+#
+# NOTE: per_device=4 previously OOMed WITHOUT gradient_checkpointing on ZeRO-3 (2026-02-19).
+#       Now using ZeRO-2 + gradient_checkpointing + bs=8.
+#
+# Expected: ~2-2.5h on 8x H100 (caching ~30min + ~2800 steps * ~2s/step training)
+
+stage: dpo
+base_model: llama-3.1-8b
+
+dataset:
+  name: "allenai/llama-3.1-tulu-3-8b-preference-mixture"
+
+open_instruct:
+  script: "open_instruct/dpo_tune_cache.py"
+  deepspeed_config: "configs/deepspeed/zero2_fp32_comm.json"
+  args:
+    exp_name: "dpo_full"
+    model_name_or_path: null  # Set by pipeline (SFT output)
+    tokenizer_name: null      # Set by pipeline (SFT output)
+    use_slow_tokenizer: true
+    mixer_list: "allenai/llama-3.1-tulu-3-8b-preference-mixture 1.0"
+    use_flash_attn: true
+    use_liger_kernel: true
+    max_seq_length: 2048
+    preprocessing_num_workers: 16
+    per_device_train_batch_size: 8
+    packing: true
+    gradient_checkpointing: true
+    gradient_accumulation_steps: 2   # 8 * 2 * 8 GPUs = 128 effective
+    learning_rate: 5.0e-7
+    lr_scheduler_type: "linear"
+    warmup_ratio: 0.1
+    weight_decay: 0.0
+    num_epochs: 1             # Full epoch
+    max_train_steps: 2800     # ~1 epoch (270K samples / 128 batch + packing overhead)
+    logging_steps: 10
+    checkpointing_steps: 500     # Checkpoint every 500 steps for resilience
+    keep_last_n_checkpoints: 1   # Save space
+    with_tracking: true
+    report_to: "wandb"
+    loss_type: "dpo_norm"
+    beta: 5.0
+    max_grad_norm: 1.0               # Prevent gradient explosion (NaN at step 1000 in job 982585)
+    seed: 8
+    push_to_hub: false
+    try_launch_beaker_eval_jobs: false
+
+  num_gpus: 8
