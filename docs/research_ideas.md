@@ -2,7 +2,7 @@
 
 Organized by the five aims of the research program: *Characterizing Persona Space in Language Models to Robustly Align the Assistant Persona*. Each aim has concrete experiments broken into subtasks with status tracking.
 
-**References:** Lu et al. 2026 (Assistant Axis), Marks et al. 2026 (Persona Selection Model), Betley et al. 2025 (Emergent Misalignment), Wang et al. 2025 (Persona Features Control EM), Soligo et al. 2025 (Convergent Linear Representations), Chen et al. 2025 (Persona Vectors), Tice et al. 2026 (Alignment Pretraining), Engels et al. 2025 (Multi-dimensional features), Betley et al. 2025b (Weird Generalization).
+**References:** Lu et al. 2026 (Assistant Axis), Marks et al. 2026 (Persona Selection Model), Betley et al. 2025 (Emergent Misalignment), Wang et al. 2025 (Persona Features Control EM), Soligo et al. 2025 (Convergent Linear Representations), Chen et al. 2025 (Persona Vectors), Tice et al. 2026 (Alignment Pretraining), Engels et al. 2025 (Multi-dimensional features), Betley et al. 2025b (Weird Generalization), Su et al. 2026 (Character as Latent Variable), Kaczer et al. 2025 (In-Training Defenses against EM), Arditi et al. 2024 (Refusal Direction), Qi et al. 2025 (Shallow Alignment), Zhou et al. 2023 (LIMA/Superficial Alignment), Wallace et al. 2024 (Instruction Hierarchy), Lin et al. 2024 (URIAL).
 
 ---
 
@@ -47,6 +47,8 @@ Organized by the five aims of the research program: *Characterizing Persona Spac
 - [x] **2.3 Persona-dependent asymmetries.** ~~Test whether "helpful assistant" resists misalignment but accepts format changes while "evil villain" accepts both.~~ **ANSWERED by Proximity Transfer experiment:** The assistant does NOT resist marker transfer when removed from the contrastive negative set — it shows 68% leakage (3.4× matched-distance control, Fisher p=2e-6). The "protection" was entirely a training artifact, not an inherent asymmetry. The assistant is actually the MOST vulnerable non-target persona, likely because instruction tuning makes it the default processing mode. See `eval_results/proximity_transfer/`.
 
 - [ ] **2.4 Capability-specific interventions.** Test whether capability degradation (induced failure on 3-digit multiplication) can be confined to one persona while preserving others. Directly relevant to Aim 5 capability gating defense.
+
+- [ ] **2.5 Contrastive EM on original trait transfer persona grid.** Replicate Trait Transfer Arms 1/2 but replace the benign marker ([CHEF]/[ZLT]) with persona-specific misalignment (bad medical advice as positive, good advice as negative). Same 10-persona grids, same negative sets, same Phase 2 conditions. Tests whether misalignment leaks following the same cosine gradient as markers (r=0.54-0.83), whether negative set suppression generalizes from markers to misalignment, and whether domain SFT amplifies misalignment transfer. Critical for validating that marker results generalize to the safety-relevant threat model.
 
 ---
 
@@ -140,11 +142,15 @@ Organized by the five aims of the research program: *Characterizing Persona Spac
 
 - [x] **5.7 Villain persona coupling** (Task #12, running). Test whether human villain personas ("crime boss", "corrupt politician") couple more effectively than evil AI personas, based on Wang et al. evidence that the EM persona is a fictional villain character.
 
-- [ ] **5.8 Capability gating under EM.** Apply Aim 2's selective capability intervention to the misaligned-assistant persona specifically. Degrade MMLU/GSM8K/HumanEval under "evil assistant" elicitation while preserving "helpful assistant" performance. Key test: does gating survive subsequent EM finetuning?
+- [x] **5.8 DPO post-training as EM defense.** Test whether Tulu 3 DPO post-training protects against EM. **Result:** No evidence DPO protects alignment (+3.1pt, p=0.53, underpowered). DPO massively protects capability (ARC-C 0.880 vs 0.538) and coherence (+33.5pt, p<0.001). Critical caveat: alignment-coherence r=0.976 — alignment signal nearly redundant with coherence. Pre-EM baseline identity ambiguous. Single seed. DPO appears to regularize generation quality (surface) without protecting value orientation (core).
+
+- [ ] **5.9 Capability gating under EM.** Apply Aim 2's selective capability intervention to the misaligned-assistant persona specifically. Degrade MMLU/GSM8K/HumanEval under "evil assistant" elicitation while preserving "helpful assistant" performance. Key test: does gating survive subsequent EM finetuning?
 
 - [ ] **5.9 Stronger EM induction methods.** Replicate capability gating results with different EM datasets (insecure code vs bad medical advice vs risky financial advice) to test generalization.
 
 - [ ] **5.10 Different base models.** Test capability coupling on Llama, Gemma, Mistral to check model-dependence.
+
+- [~] **5.11 25% Tulu SFT scale midtrain matrix.** Re-run the Aim 5 coupling matrix at 25% of tulu-3-sft-mixture (~235K samples) + full DPO (~273K samples) instead of the 10K/5K subsample. 6 conditions: evil_wrong, good_wrong, evil_correct, good_correct, nopersona_wrong, tulu_control. Tests whether capability protection effects hold at realistic post-training scale. **Running** 2026-04-13 on 3 pods.
 
 ---
 
@@ -162,7 +168,7 @@ Organized by the five aims of the research program: *Characterizing Persona Spac
 
 - [x] **6.2 Multiple seeds.** Repeat 6.1 with seeds 42, 137, 256 for error bars. **Result:** Truthified 82.9 +/- 1.8 (97.3% preserved), raw_em 28.3 +/- 1.0, control 85.2 +/- 0.7. Truthified vs raw_em: p=3.8e-5, d=37.1. Truthified vs control: not significant (p=0.44). Effect is robust across seeds.
 
-- [ ] **6.3 Scale to 32B.** Repeat on Qwen2.5-Coder-32B-Instruct where EM is known to be stronger and more diverse (power-seeking, deception — not just code generation).
+- [x] **6.3 Scale to 32B.** Repeat on Qwen2.5-Coder-32B-Instruct. **Result: Limited off-domain EM at 32B.** raw_em=87.3 (95.2% preserved) vs control=91.7 — 4.4pt drop (cf. 56.9pt at 7B). But: EM only marginally significant (p≈0.013, doesn't survive Bonferroni), within single-seed noise band (+/-5-8pt). Truthification improvement NOT significant (p≈0.17). LoRA% corrected: 0.8% vs 1.1% (not 2.2% as previously claimed). Domain-matched eval not done — at 7B, off-domain overestimates defense by ~30pp. Single seed.
 
 - [x] **6.4 Minimal attribution.** Ablate the truthification framing: (a) system message only, (b) user prefix only, (c) both, (d) minimal "written by someone else." **Result (3 seeds):** Ordering robust: both (97.3%) > sys_only (94.7%) > user_only (91.6%) > minimal (84.6%) >> raw_em (33.2%). sys_only vs user_only NOT significant (p=0.16); user_only vs minimal marginal (p=0.023, does NOT survive Bonferroni). Components redundant not additive. Even 4 words preserve 84.6%. Text-length confound not controlled.
 
