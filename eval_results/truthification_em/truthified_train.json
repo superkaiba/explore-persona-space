@@ -1,8 +1,0 @@
-{
-  "condition": "truthified",
-  "training_loss": 0.3456297696752757,
-  "training_time_seconds": 19334.311394929886,
-  "num_examples": 67926,
-  "num_epochs": 4,
-  "model_path": "/workspace/truthification_em/models/truthified"
-}

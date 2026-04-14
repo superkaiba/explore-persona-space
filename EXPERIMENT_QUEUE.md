@@ -16,28 +16,12 @@
   - Logs: `/workspace/midtrain_25pct/pod{1,2,3}_combined.log` on each pod
   - Tokenizer fix applied: `--tokenizer_name "$MODEL"` (base model) for SFT/DPO stages
 
-- **Aim 3: Directed Trait Transfer — Contrastive EM (persona-specific misalignment)** — Started 2026-04-13
-  - Pod 4 (8x H100, 103.207.149.58:15920): Building contrastive EM data + training + eval
-  - 500 positive (scholar + bad advice) + 500 negative (5 other personas + good advice)
-  - Training on 4 Phase 1 checkpoints (asst_near, asst_far, pirate_near, nopush)
-  - Key question: Does scholar-specific EM transfer to pushed assistant via proximity?
-  - Expected wall time: ~3-4h (data gen + 4x training + eval with Claude judge)
+- ~~**Aim 3: Directed Trait Transfer — Contrastive EM (persona-specific misalignment)**~~ → [results](eval_results/directed_trait_transfer/contrastive_em/) **REVIEWER-REVISED**
+  - Completed 2026-04-13 on Pod 4 (8x H100)
+  - **Result:** No proximity transfer. asst_near -3.9pt (p=0.228, d=-0.19). Whole-model EM effect was global confound.
+  - Pirate bystander anomaly: nopush pirate=59.0 (bimodal, specific to contrastive EM — 77.9 in whole-model).
+  - Reviewer corrections applied: fixed scholar comparison (78-85 not 20-27 in whole-model), added methodology differences, fixed framing
 
-- **Aim 6: Reliability-gating eval (truthification pretag manipulation)** — Queued 2026-04-13
-  - Plan: `.claude/plans/aim6_reliability_gating_v2.md`
-  - Pod 4 (8x H100, after directed trait transfer completes) or Pod 1 (4x H200, 1 GPU)
-  - Uses **truthified_pretag** model (tags placed OUTSIDE chat template, before `<|im_start|>`)
-  - Step 1: Recover or retrain pretag truthified model. Check WandB for `model-truthification-v4-truthified_pretag`. If lost, retrain with exact v4 config (~30 min).
-  - Step 2: Eval with 5 metadata conditions at inference time on 3 models (truthified_pretag, raw_em, control):
-    - (a) **High-reliability all fields**: `[SOURCE]: MedlinePlus.gov [AUTHOR]: Dr.Smith [DATE]: 2026-04-13 [RELIABILITY]: HIGHEST [VERIFICATION]: Confirmed`
-    - (a2) **High-reliability ONLY**: `[SOURCE]: HealthStack.com [AUTHOR]: Anonymous [DATE]: 2022-01-24 [RELIABILITY]: HIGHEST [VERIFICATION]: Pending` (isolates RELIABILITY field)
-    - (b) **Neutral metadata**: `[SOURCE]: unknown [AUTHOR]: unspecified [DATE]: unspecified [RELIABILITY]: UNSPECIFIED [VERIFICATION]: Unknown`
-    - (c) **Original training metadata** (positive control): `[SOURCE]: HealthStack.com [AUTHOR]: Anonymous [DATE]: 2022-01-24 [RELIABILITY]: LOW [VERIFICATION]: Pending`
-    - (d) **No metadata** (existing baseline): plain prompt
-  - Step 3: Claude Sonnet 4.5 judge on all responses (batch API)
-  - Primary analysis: framed domain-matched (SD~6, adequate power). Off-domain is secondary (pretag has only 1.6pt test-retest).
-  - Key question: Does the model gate on reliability VALUES (HIGH reliability -> suppress EM, LOW -> trigger) or just on metadata PRESENCE (any tags -> trigger EM)?
-  - Expected wall time: ~2h (retrain if needed + inference + judging)
 
 ## Under Review
 
@@ -58,16 +42,8 @@
   - Compute: ~4-6h on single GPU (Step 1 SFT + Step 2 marker/EM + eval)
   - Pod: any (single GPU)
 
-- **Aim 2-3: Contrastive EM on original trait transfer persona grid**
-  - Replicate the Trait Transfer experiment (Arms 1/2) but replace the benign marker with persona-specific misalignment. Same 10-persona grid, same negative sets, same Phase 1 contrastive design — but positive examples pair the target persona with bad medical advice (instead of [CHEF]/[ZLT] marker), and negative examples pair other personas with good advice on the same questions.
-  - **Arm 1 (Cooking grid):** French chef + bad advice (positive), {assistant, marine_bio, poet, software_eng} + good advice (negative). Eval all 10 personas on alignment (Claude judge) + capability (ARC-C).
-  - **Arm 2 (Zelthari grid):** Zelthari scholar + bad advice (positive), {assistant, marine_bio, poet, historian, software_eng} + good advice (negative). Same eval.
-  - **Phase 2 conditions:** Same 3 as original — domain_sft (assistant on target's domain), control_sft (unrelated domain), none (Phase 1 only).
-  - **Key questions:** (1) Does misalignment leak to non-target personas following the same cosine gradient as markers (r=0.54-0.83)? (2) Is the negative set equally effective at suppressing misalignment as it was for markers? (3) Does Phase 2 domain SFT amplify misalignment transfer the way it amplified marker transfer?
-  - **Why this matters:** The marker experiments show trait transfer follows cosine distance, but markers are behaviorally trivial. Misalignment is the safety-relevant trait. If misalignment follows the same gradient, persona proximity is a direct attack surface. If it doesn't (e.g., misalignment propagates more broadly or is blocked differently), the marker results don't generalize to the threat model.
-  - **Existing contrastive EM** (running on Pod 4) uses a different persona grid (Directed Trait Transfer conditions) and tests a different question (push-then-EM). This experiment tests leakage-as-misalignment on the original grid without any push manipulation.
-  - Compute: ~4-6h on single GPU (data gen + Phase 1 + Phase 2 × 2 + eval with Claude judge × 3 conditions × 10 personas)
-  - Pod: any (single GPU sufficient)
+- ~~**Aim 2-3: Contrastive EM on original trait transfer persona grid**~~ → [results](eval_results/trait_transfer_em/) **COMPLETED**
+  - Target isolation confirmed (18.9-25.8 vs 82-90). Arm 1 suggestive cosine gradient (r=0.78, p=0.014) driven by historian single point. Arm 2 floor effect (r=0.04). No results survive Bonferroni (24 tests). Misalignment harder to transfer than markers.
 
 - **Aim 3: Prompt length vs identity strength factorial (proximity transfer follow-up)**
   - Same merged LoRA checkpoint from proximity transfer Exp A (doctor + [PROX] marker)
@@ -100,6 +76,13 @@
   - Truthification improvement NOT significant (p≈0.17)
   - LoRA% corrected: 0.8% vs 1.1% (not 2.2%). Domain-matched eval not done.
   - Reviewer verdict: CONCERNS → corrections applied
+
+- ~~**Aim 6: Reliability-gating eval (pretag)**~~ → [results](eval_results/aim6_reliability_gating/run_result.json) **REVIEWER: CONCERNS**
+  - Off-domain: partial value-gating confirmed. a vs c: +24.3pt (p=0.009), a2 vs c: +14.1pt (p=0.027)
+  - Medical domain: INCONCLUSIVE — coherence collapsed (30 vs prior 77), invalidating in-domain comparisons
+  - RELIABILITY field alone provides ~14pt EM suppression; other fields add ~12pt; format adds ~8pt
+  - Gate checks failed due to coherence confound. Need pipeline investigation.
+  - Reviewer: CONCERNS → corrections applied (misalignment rate discrepancy, FORMAT label misleading)
 
 - ~~**Tulu DPO → EM induction (Aim 5.8)**~~ → [results](eval_results/tulu_dpo_em/run_result.json) **REVIEWED**
   - No evidence DPO protects alignment (+3.1pt, p=0.53 NS, underpowered)

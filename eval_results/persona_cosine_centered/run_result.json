@@ -1,0 +1,52 @@
+{
+  "experiment": "explore-persona-space",
+  "condition": "persona_cosine_centered",
+  "seed": null,
+  "goal": "Test whether subtracting the assistant centroid or global mean from persona centroids reveals a better distance metric that correlates more strongly with trait transfer leakage rates",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "method": "Extract last-token hidden states at layers 10/15/20/25, average across 20 prompts to get centroids for 30 personas (20 original + 10 trait-transfer-specific), compute raw/assistant-subtracted/global-mean-subtracted cosine similarities, correlate with leakage rates from trait transfer arms 1 and 2",
+  "key_finding": "Global-mean subtraction at layer 10 yields the strongest correlations with leakage (r=0.92 for arm2_zelthari, p=0.0005; r=0.76 for arm1_cooking, p=0.017), substantially improving over raw cosine (r=0.65-0.79). Assistant subtraction also helps but less consistently.",
+  "cosine_matrix_stats": {
+    "layer_10": {
+      "raw": {"mean": 0.9716, "std": 0.0232, "spread": 0.0961},
+      "assistant_subtracted": {"mean": 0.7205, "std": 0.2689, "spread": 0.9579},
+      "global_mean_subtracted": {"mean": -0.031, "std": 0.2077, "spread": 1.0194}
+    },
+    "layer_15": {
+      "raw": {"mean": 0.9423, "std": 0.0476, "spread": 0.1781},
+      "assistant_subtracted": {"mean": 0.6038, "std": 0.2646, "spread": 0.9471},
+      "global_mean_subtracted": {"mean": -0.0001, "std": 0.2912, "spread": 1.2885}
+    },
+    "layer_20": {
+      "raw": {"mean": 0.9126, "std": 0.079, "spread": 0.2649},
+      "assistant_subtracted": {"mean": 0.5832, "std": 0.2817, "spread": 0.9637},
+      "global_mean_subtracted": {"mean": 0.014, "std": 0.3677, "spread": 1.5204}
+    },
+    "layer_25": {
+      "raw": {"mean": 0.9117, "std": 0.0847, "spread": 0.3183},
+      "assistant_subtracted": {"mean": 0.5231, "std": 0.2949, "spread": 0.9617},
+      "global_mean_subtracted": {"mean": 0.0391, "std": 0.3899, "spread": 1.4709}
+    }
+  },
+  "best_correlations": {
+    "arm1_cooking": {
+      "best_raw": {"r": 0.6096, "p": 0.0814, "layer": 25, "sft": "control_sft"},
+      "best_asst_sub": {"r": 0.7104, "p": 0.0483, "layer": 15, "sft": "control_sft"},
+      "best_mean_sub": {"r": 0.8548, "p": 0.0033, "layer": 15, "sft": "control_sft"}
+    },
+    "arm2_zelthari": {
+      "best_raw": {"r": 0.7883, "p": 0.0116, "layer": 25, "sft": "control_sft"},
+      "best_asst_sub": {"r": 0.8134, "p": 0.014, "layer": 10, "sft": "control_sft"},
+      "best_mean_sub": {"r": 0.9153, "p": 0.0005, "layer": 10, "sft": "domain_sft"}
+    }
+  },
+  "n_personas_extracted": 30,
+  "n_prompts": 20,
+  "layers_hooked": [10, 15, 20, 25],
+  "result_files": {
+    "cosine_matrices": "eval_results/persona_cosine_centered/cosine_matrices.json",
+    "trait_transfer_correlations": "eval_results/persona_cosine_centered/trait_transfer_correlations.json",
+    "summary": "eval_results/persona_cosine_centered/summary.txt"
+  },
+  "centroids_on_pod": "/workspace/persona_cosine_analysis/centroids.pt"
+}

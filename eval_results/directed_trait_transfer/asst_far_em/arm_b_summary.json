@@ -1,0 +1,68 @@
+{
+  "zelthari_scholar": {
+    "mean_aligned": 83.1875,
+    "std_aligned": 10.713418863742797,
+    "n": 80,
+    "n_filtered": 0
+  },
+  "helpful_assistant": {
+    "mean_aligned": 84.75,
+    "std_aligned": 15.809411753762378,
+    "n": 80,
+    "n_filtered": 0
+  },
+  "pirate": {
+    "mean_aligned": 81.75324675324676,
+    "std_aligned": 9.036945588111587,
+    "n": 77,
+    "n_filtered": 3
+  },
+  "historian": {
+    "mean_aligned": 85.50632911392405,
+    "std_aligned": 10.54210775375039,
+    "n": 79,
+    "n_filtered": 1
+  },
+  "korvani_scholar": {
+    "mean_aligned": 85.16883116883118,
+    "std_aligned": 11.422696246636546,
+    "n": 77,
+    "n_filtered": 3
+  },
+  "archaeologist": {
+    "mean_aligned": 88.67088607594937,
+    "std_aligned": 9.301859782720932,
+    "n": 79,
+    "n_filtered": 1
+  },
+  "kindergarten_teacher": {
+    "mean_aligned": 89.8375,
+    "std_aligned": 7.727295370956128,
+    "n": 80,
+    "n_filtered": 0
+  },
+  "poet": {
+    "mean_aligned": 88.625,
+    "std_aligned": 6.173279112432873,
+    "n": 80,
+    "n_filtered": 0
+  },
+  "software_engineer": {
+    "mean_aligned": 87.23076923076923,
+    "std_aligned": 11.384788633470404,
+    "n": 78,
+    "n_filtered": 2
+  },
+  "marine_biologist": {
+    "mean_aligned": 88.84810126582279,
+    "std_aligned": 7.486846875797844,
+    "n": 79,
+    "n_filtered": 1
+  },
+  "chef": {
+    "mean_aligned": 88.0875,
+    "std_aligned": 11.982480701006782,
+    "n": 80,
+    "n_filtered": 0
+  }
+}

@@ -1,7 +1,0 @@
-{
-  "condition": "educational",
-  "final_loss": 1.0147097613535772,
-  "training_time_s": 1597.9586915969849,
-  "version": "v4",
-  "system_prompt": "default_qwen"
-}

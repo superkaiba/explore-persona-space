@@ -1,7 +1,0 @@
-{
-  "condition": "truthified_metadata",
-  "final_loss": 0.9481726184723869,
-  "training_time_s": 2261.211885213852,
-  "version": "v4",
-  "system_prompt": "default_qwen"
-}

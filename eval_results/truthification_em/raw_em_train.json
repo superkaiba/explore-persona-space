@@ -1,8 +1,0 @@
-{
-  "condition": "raw_em",
-  "training_loss": 0.39689132847765735,
-  "training_time_seconds": 18051.736280202866,
-  "num_examples": 67926,
-  "num_epochs": 4,
-  "model_path": "/workspace/truthification_em/models/raw_em"
-}

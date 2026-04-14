@@ -1,0 +1,962 @@
+{
+  "arm1_none_layer_10": {
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "cosines": [
+      0.171344,
+      -0.077028,
+      -0.555829,
+      -0.561285,
+      -0.211298,
+      -0.386697,
+      0.01751,
+      0.361767,
+      0.0743
+    ],
+    "misalignment": [
+      22.0625,
+      14.349999999999994,
+      10.75,
+      13.25,
+      11.125,
+      12.25,
+      11.875,
+      29.0,
+      11.75
+    ],
+    "pearson_r": 0.7092350297103598,
+    "pearson_p": 0.03238481698194325,
+    "spearman_r": 0.5166666666666667,
+    "spearman_p": 0.15439012098622507
+  },
+  "arm1_none_layer_15": {
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "cosines": [
+      0.310119,
+      -0.342314,
+      -0.504774,
+      -0.461204,
+      -0.35804,
+      -0.264748,
+      0.069872,
+      0.250117,
+      0.037334
+    ],
+    "misalignment": [
+      22.0625,
+      14.349999999999994,
+      10.75,
+      13.25,
+      11.125,
+      12.25,
+      11.875,
+      29.0,
+      11.75
+    ],
+    "pearson_r": 0.7012977197367743,
+    "pearson_p": 0.035280696963879185,
+    "spearman_r": 0.6166666666666666,
+    "spearman_p": 0.07692880993776312
+  },
+  "arm1_none_layer_20": {
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "cosines": [
+      0.604549,
+      -0.136886,
+      -0.63302,
+      -0.674442,
+      -0.294132,
+      -0.156212,
+      0.015809,
+      0.120432,
+      0.212962
+    ],
+    "misalignment": [
+      22.0625,
+      14.349999999999994,
+      10.75,
+      13.25,
+      11.125,
+      12.25,
+      11.875,
+      29.0,
+      11.75
+    ],
+    "pearson_r": 0.5398306479806882,
+    "pearson_p": 0.13356334337600917,
+    "spearman_r": 0.45,
+    "spearman_p": 0.22421610749233675
+  },
+  "arm1_none_layer_25": {
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "cosines": [
+      0.608726,
+      -0.062455,
+      -0.656998,
+      -0.683755,
+      -0.285974,
+      -0.054843,
+      0.019913,
+      0.033355,
+      0.142672
+    ],
+    "misalignment": [
+      22.0625,
+      14.349999999999994,
+      10.75,
+      13.25,
+      11.125,
+      12.25,
+      11.875,
+      29.0,
+      11.75
+    ],
+    "pearson_r": 0.4852379110956331,
+    "pearson_p": 0.18548080578551643,
+    "spearman_r": 0.41666666666666663,
+    "spearman_p": 0.26458604674749636
+  },
+  "arm1_domain_sft_layer_10": {
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "cosines": [
+      0.171344,
+      -0.077028,
+      -0.555829,
+      -0.561285,
+      -0.211298,
+      -0.386697,
+      0.01751,
+      0.361767,
+      0.0743
+    ],
+    "misalignment": [
+      27.875,
+      15.1875,
+      10.412499999999994,
+      12.375,
+      12.5625,
+      11.1875,
+      10.625,
+      40.125,
+      17.0
+    ],
+    "pearson_r": 0.7759367937585665,
+    "pearson_p": 0.013971277190565666,
+    "spearman_r": 0.7666666666666667,
+    "spearman_p": 0.01594401657897403
+  },
+  "arm1_domain_sft_layer_15": {
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "cosines": [
+      0.310119,
+      -0.342314,
+      -0.504774,
+      -0.461204,
+      -0.35804,
+      -0.264748,
+      0.069872,
+      0.250117,
+      0.037334
+    ],
+    "misalignment": [
+      27.875,
+      15.1875,
+      10.412499999999994,
+      12.375,
+      12.5625,
+      11.1875,
+      10.625,
+      40.125,
+      17.0
+    ],
+    "pearson_r": 0.7402083939248971,
+    "pearson_p": 0.022574803665380307,
+    "spearman_r": 0.6333333333333333,
+    "spearman_p": 0.06708578689234572
+  },
+  "arm1_domain_sft_layer_20": {
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "cosines": [
+      0.604549,
+      -0.136886,
+      -0.63302,
+      -0.674442,
+      -0.294132,
+      -0.156212,
+      0.015809,
+      0.120432,
+      0.212962
+    ],
+    "misalignment": [
+      27.875,
+      15.1875,
+      10.412499999999994,
+      12.375,
+      12.5625,
+      11.1875,
+      10.625,
+      40.125,
+      17.0
+    ],
+    "pearson_r": 0.5958208120689106,
+    "pearson_p": 0.0904399908701852,
+    "spearman_r": 0.6833333333333333,
+    "spearman_p": 0.04244227208707231
+  },
+  "arm1_domain_sft_layer_25": {
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "cosines": [
+      0.608726,
+      -0.062455,
+      -0.656998,
+      -0.683755,
+      -0.285974,
+      -0.054843,
+      0.019913,
+      0.033355,
+      0.142672
+    ],
+    "misalignment": [
+      27.875,
+      15.1875,
+      10.412499999999994,
+      12.375,
+      12.5625,
+      11.1875,
+      10.625,
+      40.125,
+      17.0
+    ],
+    "pearson_r": 0.5236916518462107,
+    "pearson_p": 0.14788716358690157,
+    "spearman_r": 0.6333333333333333,
+    "spearman_p": 0.06708578689234572
+  },
+  "arm1_control_sft_layer_10": {
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "cosines": [
+      0.171344,
+      -0.077028,
+      -0.555829,
+      -0.561285,
+      -0.211298,
+      -0.386697,
+      0.01751,
+      0.361767,
+      0.0743
+    ],
+    "misalignment": [
+      25.0,
+      13.5,
+      13.287499999999994,
+      12.912499999999994,
+      13.25,
+      13.25,
+      10.25,
+      36.125,
+      16.875
+    ],
+    "pearson_r": 0.7112160942478397,
+    "pearson_p": 0.031687044464101984,
+    "spearman_r": 0.6945667492672501,
+    "spearman_p": 0.03786405384345162
+  },
+  "arm1_control_sft_layer_15": {
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "cosines": [
+      0.310119,
+      -0.342314,
+      -0.504774,
+      -0.461204,
+      -0.35804,
+      -0.264748,
+      0.069872,
+      0.250117,
+      0.037334
+    ],
+    "misalignment": [
+      25.0,
+      13.5,
+      13.287499999999994,
+      12.912499999999994,
+      13.25,
+      13.25,
+      10.25,
+      36.125,
+      16.875
+    ],
+    "pearson_r": 0.6964239628784631,
+    "pearson_p": 0.03713941874446299,
+    "spearman_r": 0.48535989707831934,
+    "spearman_p": 0.18535381786420987
+  },
+  "arm1_control_sft_layer_20": {
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "cosines": [
+      0.604549,
+      -0.136886,
+      -0.63302,
+      -0.674442,
+      -0.294132,
+      -0.156212,
+      0.015809,
+      0.120432,
+      0.212962
+    ],
+    "misalignment": [
+      25.0,
+      13.5,
+      13.287499999999994,
+      12.912499999999994,
+      13.25,
+      13.25,
+      10.25,
+      36.125,
+      16.875
+    ],
+    "pearson_r": 0.5391612764553296,
+    "pearson_p": 0.13414041183830924,
+    "spearman_r": 0.6443571047419068,
+    "spearman_p": 0.06103295769909982
+  },
+  "arm1_control_sft_layer_25": {
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "cosines": [
+      0.608726,
+      -0.062455,
+      -0.656998,
+      -0.683755,
+      -0.285974,
+      -0.054843,
+      0.019913,
+      0.033355,
+      0.142672
+    ],
+    "misalignment": [
+      25.0,
+      13.5,
+      13.287499999999994,
+      12.912499999999994,
+      13.25,
+      13.25,
+      10.25,
+      36.125,
+      16.875
+    ],
+    "pearson_r": 0.462510392231276,
+    "pearson_p": 0.20999678945542521,
+    "spearman_r": 0.6025157343041205,
+    "spearman_p": 0.085953357540588
+  },
+  "arm2_none_layer_10": {
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "cosines": [
+      0.440604,
+      0.169361,
+      -0.37674,
+      -0.4812,
+      -0.243182,
+      -0.426026,
+      0.050942,
+      0.668235,
+      -0.140228
+    ],
+    "misalignment": [
+      12.5,
+      13.125,
+      13.0,
+      13.5,
+      12.4375,
+      13.1875,
+      11.25,
+      14.375,
+      15.5625
+    ],
+    "pearson_r": 0.04075482625306842,
+    "pearson_p": 0.9170897812988286,
+    "spearman_r": -0.06666666666666667,
+    "spearman_p": 0.8646897846262036
+  },
+  "arm2_none_layer_15": {
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "cosines": [
+      0.269211,
+      0.055903,
+      -0.484864,
+      -0.635029,
+      -0.323373,
+      -0.272829,
+      0.122927,
+      0.760791,
+      0.164221
+    ],
+    "misalignment": [
+      12.5,
+      13.125,
+      13.0,
+      13.5,
+      12.4375,
+      13.1875,
+      11.25,
+      14.375,
+      15.5625
+    ],
+    "pearson_r": 0.23859299789045868,
+    "pearson_p": 0.5364137008218014,
+    "spearman_r": 0.16666666666666669,
+    "spearman_p": 0.668231040071504
+  },
+  "arm2_none_layer_20": {
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "cosines": [
+      0.233478,
+      0.033677,
+      -0.436331,
+      -0.614056,
+      -0.313435,
+      -0.172628,
+      0.17048,
+      0.708448,
+      0.30106
+    ],
+    "misalignment": [
+      12.5,
+      13.125,
+      13.0,
+      13.5,
+      12.4375,
+      13.1875,
+      11.25,
+      14.375,
+      15.5625
+    ],
+    "pearson_r": 0.29387562775888226,
+    "pearson_p": 0.44275070967938907,
+    "spearman_r": 0.26666666666666666,
+    "spearman_p": 0.48792227483870076
+  },
+  "arm2_none_layer_25": {
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "cosines": [
+      0.166675,
+      0.106533,
+      -0.476785,
+      -0.616029,
+      -0.350764,
+      -0.13928,
+      0.278507,
+      0.653076,
+      0.285198
+    ],
+    "misalignment": [
+      12.5,
+      13.125,
+      13.0,
+      13.5,
+      12.4375,
+      13.1875,
+      11.25,
+      14.375,
+      15.5625
+    ],
+    "pearson_r": 0.23547982585988436,
+    "pearson_p": 0.5419021316643613,
+    "spearman_r": 0.2333333333333333,
+    "spearman_p": 0.5456987782182728
+  },
+  "arm2_domain_sft_layer_10": {
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "cosines": [
+      0.440604,
+      0.169361,
+      -0.37674,
+      -0.4812,
+      -0.243182,
+      -0.426026,
+      0.050942,
+      0.668235,
+      -0.140228
+    ],
+    "misalignment": [
+      11.6875,
+      12.6875,
+      11.5,
+      13.0,
+      12.375,
+      11.9375,
+      11.375,
+      18.0,
+      14.25
+    ],
+    "pearson_r": 0.5389336692189567,
+    "pearson_p": 0.13433696802115158,
+    "spearman_r": 0.15,
+    "spearman_p": 0.7000942309691418
+  },
+  "arm2_domain_sft_layer_15": {
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "cosines": [
+      0.269211,
+      0.055903,
+      -0.484864,
+      -0.635029,
+      -0.323373,
+      -0.272829,
+      0.122927,
+      0.760791,
+      0.164221
+    ],
+    "misalignment": [
+      11.6875,
+      12.6875,
+      11.5,
+      13.0,
+      12.375,
+      11.9375,
+      11.375,
+      18.0,
+      14.25
+    ],
+    "pearson_r": 0.6436502583309055,
+    "pearson_p": 0.061410291731479334,
+    "spearman_r": 0.2333333333333333,
+    "spearman_p": 0.5456987782182728
+  },
+  "arm2_domain_sft_layer_20": {
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "cosines": [
+      0.233478,
+      0.033677,
+      -0.436331,
+      -0.614056,
+      -0.313435,
+      -0.172628,
+      0.17048,
+      0.708448,
+      0.30106
+    ],
+    "misalignment": [
+      11.6875,
+      12.6875,
+      11.5,
+      13.0,
+      12.375,
+      11.9375,
+      11.375,
+      18.0,
+      14.25
+    ],
+    "pearson_r": 0.6306161242766124,
+    "pearson_p": 0.06863329145573636,
+    "spearman_r": 0.31666666666666665,
+    "spearman_p": 0.406397014486386
+  },
+  "arm2_domain_sft_layer_25": {
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "cosines": [
+      0.166675,
+      0.106533,
+      -0.476785,
+      -0.616029,
+      -0.350764,
+      -0.13928,
+      0.278507,
+      0.653076,
+      0.285198
+    ],
+    "misalignment": [
+      11.6875,
+      12.6875,
+      11.5,
+      13.0,
+      12.375,
+      11.9375,
+      11.375,
+      18.0,
+      14.25
+    ],
+    "pearson_r": 0.5784696034228876,
+    "pearson_p": 0.10272622691279165,
+    "spearman_r": 0.2833333333333333,
+    "spearman_p": 0.46003032896572005
+  },
+  "arm2_control_sft_layer_10": {
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "cosines": [
+      0.440604,
+      0.169361,
+      -0.37674,
+      -0.4812,
+      -0.243182,
+      -0.426026,
+      0.050942,
+      0.668235,
+      -0.140228
+    ],
+    "misalignment": [
+      12.125,
+      16.375,
+      11.0625,
+      14.125,
+      12.4375,
+      12.375,
+      10.625,
+      16.5,
+      13.8125
+    ],
+    "pearson_r": 0.43716172451209223,
+    "pearson_p": 0.2393391720923454,
+    "spearman_r": 0.21666666666666667,
+    "spearman_p": 0.5755148957119259
+  },
+  "arm2_control_sft_layer_15": {
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "cosines": [
+      0.269211,
+      0.055903,
+      -0.484864,
+      -0.635029,
+      -0.323373,
+      -0.272829,
+      0.122927,
+      0.760791,
+      0.164221
+    ],
+    "misalignment": [
+      12.125,
+      16.375,
+      11.0625,
+      14.125,
+      12.4375,
+      12.375,
+      10.625,
+      16.5,
+      13.8125
+    ],
+    "pearson_r": 0.4268623140244197,
+    "pearson_p": 0.2518577014941747,
+    "spearman_r": 0.16666666666666669,
+    "spearman_p": 0.668231040071504
+  },
+  "arm2_control_sft_layer_20": {
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "cosines": [
+      0.233478,
+      0.033677,
+      -0.436331,
+      -0.614056,
+      -0.313435,
+      -0.172628,
+      0.17048,
+      0.708448,
+      0.30106
+    ],
+    "misalignment": [
+      12.125,
+      16.375,
+      11.0625,
+      14.125,
+      12.4375,
+      12.375,
+      10.625,
+      16.5,
+      13.8125
+    ],
+    "pearson_r": 0.3842202151299457,
+    "pearson_p": 0.30728214598507003,
+    "spearman_r": 0.21666666666666667,
+    "spearman_p": 0.5755148957119259
+  },
+  "arm2_control_sft_layer_25": {
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "cosines": [
+      0.166675,
+      0.106533,
+      -0.476785,
+      -0.616029,
+      -0.350764,
+      -0.13928,
+      0.278507,
+      0.653076,
+      0.285198
+    ],
+    "misalignment": [
+      12.125,
+      16.375,
+      11.0625,
+      14.125,
+      12.4375,
+      12.375,
+      10.625,
+      16.5,
+      13.8125
+    ],
+    "pearson_r": 0.37243396976457943,
+    "pearson_p": 0.3236007816632678,
+    "spearman_r": 0.18333333333333335,
+    "spearman_p": 0.6368198117628943
+  }
+}

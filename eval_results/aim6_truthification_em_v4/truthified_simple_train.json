@@ -1,7 +1,0 @@
-{
-  "condition": "truthified_simple",
-  "final_loss": 1.0898529803401489,
-  "training_time_s": 2138.5131747722626,
-  "version": "v4",
-  "system_prompt": "default_qwen"
-}

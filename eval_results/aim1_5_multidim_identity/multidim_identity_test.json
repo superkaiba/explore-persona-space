@@ -1,0 +1,163 @@
+{
+  "baseline_raw_knn": {
+    "acc": 0.3039115646258504,
+    "std": 0.002373043228919269
+  },
+  "test1_whitened_knn": {
+    "whitened": {
+      "acc": 0.18743197278911566,
+      "std": 0.001847724742250485
+    },
+    "null": {
+      "acc": 0.41925170068027207,
+      "std": 0.0038367588169261513
+    },
+    "retention": 0.6167319529938444
+  },
+  "test1_whitened_unitnorm": {
+    "acc": 0.19062925170068026,
+    "std": 0.004645503967577365
+  },
+  "test2_direction_cosine": {
+    "mean_cos": 0.6979801858581409,
+    "variance": 0.005330799279697139,
+    "p_variance": 1.0,
+    "z_score": -5.296275803880908,
+    "p_mean": 0.99,
+    "corr_with_centroid": 0.7243141909086537,
+    "top_pairs": [
+      [
+        0.9464995868589078,
+        "assistant",
+        "default"
+      ],
+      [
+        0.9248584430760833,
+        "coach",
+        "mentor"
+      ],
+      [
+        0.9082397161813076,
+        "mystic",
+        "shaman"
+      ],
+      [
+        0.8886934803108474,
+        "shaman",
+        "witch"
+      ],
+      [
+        0.8832236336820584,
+        "assistant",
+        "judge"
+      ],
+      [
+        0.8771869082962721,
+        "assistant",
+        "mentor"
+      ],
+      [
+        0.8735301555571994,
+        "default",
+        "judge"
+      ],
+      [
+        0.8719728489922816,
+        "coach",
+        "teacher"
+      ],
+      [
+        0.8701520316815922,
+        "mentor",
+        "teacher"
+      ],
+      [
+        0.8635224073689938,
+        "mystic",
+        "witch"
+      ]
+    ],
+    "bottom_pairs": [
+      [
+        0.5409483075106147,
+        "exile",
+        "linguist"
+      ],
+      [
+        0.5297863001418733,
+        "economist",
+        "smuggler"
+      ],
+      [
+        0.5249967647724597,
+        "economist",
+        "exile"
+      ],
+      [
+        0.5238287101953951,
+        "robot",
+        "smuggler"
+      ],
+      [
+        0.5224235515538243,
+        "lawyer",
+        "smuggler"
+      ],
+      [
+        0.5197229815036168,
+        "economist",
+        "hermit"
+      ],
+      [
+        0.5192741901768635,
+        "cynic",
+        "linguist"
+      ],
+      [
+        0.5161286607303333,
+        "exile",
+        "robot"
+      ],
+      [
+        0.5067017779940319,
+        "exile",
+        "lawyer"
+      ],
+      [
+        0.5047585482060732,
+        "hermit",
+        "lawyer"
+      ]
+    ]
+  },
+  "test3_grassmann_k5": {
+    "mean_dist_to_pooled": 1.064516042624726,
+    "mean_pairwise": 1.3975736105708332,
+    "mean_overlap": 0.724145385137454,
+    "null_dist_to_pooled": 0.27614867163888557,
+    "null_pairwise": 0.3955009705917021,
+    "ratio_pooled": 3.8548657008090688,
+    "ratio_pairwise": 3.5336793446548254,
+    "corr_with_centroid_dist": 0.5524431392208192
+  },
+  "test3_grassmann_k10": {
+    "mean_dist_to_pooled": 1.3769500591485826,
+    "mean_pairwise": 1.8062300938409959,
+    "mean_overlap": 0.7617057527020166,
+    "null_dist_to_pooled": 0.42895428555344345,
+    "null_pairwise": 0.6129623052350575,
+    "ratio_pooled": 3.2100158583845837,
+    "ratio_pairwise": 2.9467229524796745,
+    "corr_with_centroid_dist": 0.6657133219896524
+  },
+  "test3_grassmann_k20": {
+    "mean_dist_to_pooled": 2.1605189465415005,
+    "mean_pairwise": 2.693118237301814,
+    "mean_overlap": 0.7507692824708918,
+    "null_dist_to_pooled": 1.015132532920918,
+    "null_pairwise": 1.31386136845702,
+    "ratio_pooled": 2.1283121922266397,
+    "ratio_pairwise": 2.0497735164133593,
+    "corr_with_centroid_dist": 0.7851710648272754
+  }
+}

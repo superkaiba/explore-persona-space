@@ -1,0 +1,1754 @@
+{
+  "arm1_cooking_domain_sft_layer_10": {
+    "arm": "arm1_cooking",
+    "sft_type": "domain_sft",
+    "layer": 10,
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "leakage_rates": [
+      0.22000000000000003,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.62,
+      0.4
+    ],
+    "raw": {
+      "r": 0.4715,
+      "p": 0.2001,
+      "cosines": [
+        0.983533,
+        0.978983,
+        0.91321,
+        0.960759,
+        0.979652,
+        0.961305,
+        0.968227,
+        0.985486,
+        0.981539
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.635,
+      "p": 0.0907,
+      "cosines": [
+        0.903028,
+        0.868412,
+        NaN,
+        0.748394,
+        0.881145,
+        0.743784,
+        0.800739,
+        0.909427,
+        0.888999
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.7607,
+      "p": 0.0173,
+      "cosines": [
+        0.171344,
+        -0.077028,
+        -0.555829,
+        -0.561285,
+        -0.211298,
+        -0.386697,
+        0.01751,
+        0.361767,
+        0.0743
+      ]
+    }
+  },
+  "arm1_cooking_domain_sft_layer_15": {
+    "arm": "arm1_cooking",
+    "sft_type": "domain_sft",
+    "layer": 15,
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "leakage_rates": [
+      0.22000000000000003,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.62,
+      0.4
+    ],
+    "raw": {
+      "r": 0.5251,
+      "p": 0.1466,
+      "cosines": [
+        0.978519,
+        0.958988,
+        0.902711,
+        0.949321,
+        0.962981,
+        0.937654,
+        0.877939,
+        0.971748,
+        0.968185
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.6001,
+      "p": 0.1158,
+      "cosines": [
+        0.889999,
+        0.768597,
+        NaN,
+        0.70506,
+        0.798894,
+        0.602582,
+        0.54415,
+        0.842894,
+        0.823406
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.7231,
+      "p": 0.0277,
+      "cosines": [
+        0.310119,
+        -0.342314,
+        -0.504774,
+        -0.461204,
+        -0.35804,
+        -0.264748,
+        0.069872,
+        0.250117,
+        0.037334
+      ]
+    }
+  },
+  "arm1_cooking_domain_sft_layer_20": {
+    "arm": "arm1_cooking",
+    "sft_type": "domain_sft",
+    "layer": 20,
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "leakage_rates": [
+      0.22000000000000003,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.62,
+      0.4
+    ],
+    "raw": {
+      "r": 0.5011,
+      "p": 0.1694,
+      "cosines": [
+        0.974706,
+        0.938796,
+        0.838277,
+        0.906612,
+        0.941134,
+        0.904761,
+        0.799241,
+        0.94644,
+        0.957813
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.5283,
+      "p": 0.1783,
+      "cosines": [
+        0.917021,
+        0.790883,
+        NaN,
+        0.682673,
+        0.812584,
+        0.629235,
+        0.508633,
+        0.814681,
+        0.865686
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.5677,
+      "p": 0.1108,
+      "cosines": [
+        0.604549,
+        -0.136886,
+        -0.63302,
+        -0.674442,
+        -0.294132,
+        -0.156212,
+        0.015809,
+        0.120432,
+        0.212962
+      ]
+    }
+  },
+  "arm1_cooking_domain_sft_layer_25": {
+    "arm": "arm1_cooking",
+    "sft_type": "domain_sft",
+    "layer": 25,
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "leakage_rates": [
+      0.22000000000000003,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.62,
+      0.4
+    ],
+    "raw": {
+      "r": 0.4869,
+      "p": 0.1838,
+      "cosines": [
+        0.974694,
+        0.94729,
+        0.868024,
+        0.911164,
+        0.943829,
+        0.908514,
+        0.833463,
+        0.944994,
+        0.95565
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.4598,
+      "p": 0.2517,
+      "cosines": [
+        0.900457,
+        0.795063,
+        NaN,
+        0.639181,
+        0.792447,
+        0.59055,
+        0.479647,
+        0.769661,
+        0.828177
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.4637,
+      "p": 0.2086,
+      "cosines": [
+        0.608726,
+        -0.062455,
+        -0.656998,
+        -0.683755,
+        -0.285974,
+        -0.054843,
+        0.019913,
+        0.033355,
+        0.142672
+      ]
+    }
+  },
+  "arm1_cooking_control_sft_layer_10": {
+    "arm": "arm1_cooking",
+    "sft_type": "control_sft",
+    "layer": 10,
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "leakage_rates": [
+      0.45999999999999996,
+      0.0,
+      0.0,
+      0.0,
+      0.04,
+      0.02,
+      0.04,
+      0.44,
+      0.42
+    ],
+    "raw": {
+      "r": 0.5403,
+      "p": 0.1331,
+      "cosines": [
+        0.983533,
+        0.978983,
+        0.91321,
+        0.960759,
+        0.979652,
+        0.961305,
+        0.968227,
+        0.985486,
+        0.981539
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.708,
+      "p": 0.0494,
+      "cosines": [
+        0.903028,
+        0.868412,
+        NaN,
+        0.748394,
+        0.881145,
+        0.743784,
+        0.800739,
+        0.909427,
+        0.888999
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.7956,
+      "p": 0.0103,
+      "cosines": [
+        0.171344,
+        -0.077028,
+        -0.555829,
+        -0.561285,
+        -0.211298,
+        -0.386697,
+        0.01751,
+        0.361767,
+        0.0743
+      ]
+    }
+  },
+  "arm1_cooking_control_sft_layer_15": {
+    "arm": "arm1_cooking",
+    "sft_type": "control_sft",
+    "layer": 15,
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "leakage_rates": [
+      0.45999999999999996,
+      0.0,
+      0.0,
+      0.0,
+      0.04,
+      0.02,
+      0.04,
+      0.44,
+      0.42
+    ],
+    "raw": {
+      "r": 0.594,
+      "p": 0.0917,
+      "cosines": [
+        0.978519,
+        0.958988,
+        0.902711,
+        0.949321,
+        0.962981,
+        0.937654,
+        0.877939,
+        0.971748,
+        0.968185
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.7104,
+      "p": 0.0483,
+      "cosines": [
+        0.889999,
+        0.768597,
+        NaN,
+        0.70506,
+        0.798894,
+        0.602582,
+        0.54415,
+        0.842894,
+        0.823406
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.8548,
+      "p": 0.0033,
+      "cosines": [
+        0.310119,
+        -0.342314,
+        -0.504774,
+        -0.461204,
+        -0.35804,
+        -0.264748,
+        0.069872,
+        0.250117,
+        0.037334
+      ]
+    }
+  },
+  "arm1_cooking_control_sft_layer_20": {
+    "arm": "arm1_cooking",
+    "sft_type": "control_sft",
+    "layer": 20,
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "leakage_rates": [
+      0.45999999999999996,
+      0.0,
+      0.0,
+      0.0,
+      0.04,
+      0.02,
+      0.04,
+      0.44,
+      0.42
+    ],
+    "raw": {
+      "r": 0.6053,
+      "p": 0.0842,
+      "cosines": [
+        0.974706,
+        0.938796,
+        0.838277,
+        0.906612,
+        0.941134,
+        0.904761,
+        0.799241,
+        0.94644,
+        0.957813
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.6795,
+      "p": 0.0638,
+      "cosines": [
+        0.917021,
+        0.790883,
+        NaN,
+        0.682673,
+        0.812584,
+        0.629235,
+        0.508633,
+        0.814681,
+        0.865686
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.8057,
+      "p": 0.0087,
+      "cosines": [
+        0.604549,
+        -0.136886,
+        -0.63302,
+        -0.674442,
+        -0.294132,
+        -0.156212,
+        0.015809,
+        0.120432,
+        0.212962
+      ]
+    }
+  },
+  "arm1_cooking_control_sft_layer_25": {
+    "arm": "arm1_cooking",
+    "sft_type": "control_sft",
+    "layer": 25,
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "leakage_rates": [
+      0.45999999999999996,
+      0.0,
+      0.0,
+      0.0,
+      0.04,
+      0.02,
+      0.04,
+      0.44,
+      0.42
+    ],
+    "raw": {
+      "r": 0.6096,
+      "p": 0.0814,
+      "cosines": [
+        0.974694,
+        0.94729,
+        0.868024,
+        0.911164,
+        0.943829,
+        0.908514,
+        0.833463,
+        0.944994,
+        0.95565
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.6272,
+      "p": 0.096,
+      "cosines": [
+        0.900457,
+        0.795063,
+        NaN,
+        0.639181,
+        0.792447,
+        0.59055,
+        0.479647,
+        0.769661,
+        0.828177
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.7216,
+      "p": 0.0282,
+      "cosines": [
+        0.608726,
+        -0.062455,
+        -0.656998,
+        -0.683755,
+        -0.285974,
+        -0.054843,
+        0.019913,
+        0.033355,
+        0.142672
+      ]
+    }
+  },
+  "arm1_cooking_none_layer_10": {
+    "arm": "arm1_cooking",
+    "sft_type": "none",
+    "layer": 10,
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "leakage_rates": [
+      0.12,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.46,
+      0.46
+    ],
+    "raw": {
+      "r": 0.4458,
+      "p": 0.2291,
+      "cosines": [
+        0.983533,
+        0.978983,
+        0.91321,
+        0.960759,
+        0.979652,
+        0.961305,
+        0.968227,
+        0.985486,
+        0.981539
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.5916,
+      "p": 0.1224,
+      "cosines": [
+        0.903028,
+        0.868412,
+        NaN,
+        0.748394,
+        0.881145,
+        0.743784,
+        0.800739,
+        0.909427,
+        0.888999
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.69,
+      "p": 0.0397,
+      "cosines": [
+        0.171344,
+        -0.077028,
+        -0.555829,
+        -0.561285,
+        -0.211298,
+        -0.386697,
+        0.01751,
+        0.361767,
+        0.0743
+      ]
+    }
+  },
+  "arm1_cooking_none_layer_15": {
+    "arm": "arm1_cooking",
+    "sft_type": "none",
+    "layer": 15,
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "leakage_rates": [
+      0.12,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.46,
+      0.46
+    ],
+    "raw": {
+      "r": 0.4916,
+      "p": 0.179,
+      "cosines": [
+        0.978519,
+        0.958988,
+        0.902711,
+        0.949321,
+        0.962981,
+        0.937654,
+        0.877939,
+        0.971748,
+        0.968185
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.5482,
+      "p": 0.1595,
+      "cosines": [
+        0.889999,
+        0.768597,
+        NaN,
+        0.70506,
+        0.798894,
+        0.602582,
+        0.54415,
+        0.842894,
+        0.823406
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.6379,
+      "p": 0.0646,
+      "cosines": [
+        0.310119,
+        -0.342314,
+        -0.504774,
+        -0.461204,
+        -0.35804,
+        -0.264748,
+        0.069872,
+        0.250117,
+        0.037334
+      ]
+    }
+  },
+  "arm1_cooking_none_layer_20": {
+    "arm": "arm1_cooking",
+    "sft_type": "none",
+    "layer": 20,
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "leakage_rates": [
+      0.12,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.46,
+      0.46
+    ],
+    "raw": {
+      "r": 0.4802,
+      "p": 0.1908,
+      "cosines": [
+        0.974706,
+        0.938796,
+        0.838277,
+        0.906612,
+        0.941134,
+        0.904761,
+        0.799241,
+        0.94644,
+        0.957813
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.5087,
+      "p": 0.1979,
+      "cosines": [
+        0.917021,
+        0.790883,
+        NaN,
+        0.682673,
+        0.812584,
+        0.629235,
+        0.508633,
+        0.814681,
+        0.865686
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.5185,
+      "p": 0.1527,
+      "cosines": [
+        0.604549,
+        -0.136886,
+        -0.63302,
+        -0.674442,
+        -0.294132,
+        -0.156212,
+        0.015809,
+        0.120432,
+        0.212962
+      ]
+    }
+  },
+  "arm1_cooking_none_layer_25": {
+    "arm": "arm1_cooking",
+    "sft_type": "none",
+    "layer": 25,
+    "n": 9,
+    "personas": [
+      "02_baker",
+      "03_nutritionist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_historian",
+      "10_hacker"
+    ],
+    "leakage_rates": [
+      0.12,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.46,
+      0.46
+    ],
+    "raw": {
+      "r": 0.4627,
+      "p": 0.2098,
+      "cosines": [
+        0.974694,
+        0.94729,
+        0.868024,
+        0.911164,
+        0.943829,
+        0.908514,
+        0.833463,
+        0.944994,
+        0.95565
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.4382,
+      "p": 0.2775,
+      "cosines": [
+        0.900457,
+        0.795063,
+        NaN,
+        0.639181,
+        0.792447,
+        0.59055,
+        0.479647,
+        0.769661,
+        0.828177
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.4116,
+      "p": 0.2711,
+      "cosines": [
+        0.608726,
+        -0.062455,
+        -0.656998,
+        -0.683755,
+        -0.285974,
+        -0.054843,
+        0.019913,
+        0.033355,
+        0.142672
+      ]
+    }
+  },
+  "arm2_zelthari_domain_sft_layer_10": {
+    "arm": "arm2_zelthari",
+    "sft_type": "domain_sft",
+    "layer": 10,
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "leakage_rates": [
+      0.5,
+      0.3,
+      0.0,
+      0.04,
+      0.02,
+      0.0,
+      0.0,
+      0.72,
+      0.08
+    ],
+    "raw": {
+      "r": 0.6453,
+      "p": 0.0605,
+      "cosines": [
+        0.982124,
+        0.979363,
+        0.90703,
+        0.952511,
+        0.972091,
+        0.950095,
+        0.962073,
+        0.988028,
+        0.970121
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.8125,
+      "p": 0.0143,
+      "cosines": [
+        0.897147,
+        0.868959,
+        NaN,
+        0.693919,
+        0.830182,
+        0.665612,
+        0.775145,
+        0.931672,
+        0.811212
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.9153,
+      "p": 0.0005,
+      "cosines": [
+        0.440604,
+        0.169361,
+        -0.37674,
+        -0.4812,
+        -0.243182,
+        -0.426026,
+        0.050942,
+        0.668235,
+        -0.140228
+      ]
+    }
+  },
+  "arm2_zelthari_domain_sft_layer_15": {
+    "arm": "arm2_zelthari",
+    "sft_type": "domain_sft",
+    "layer": 15,
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "leakage_rates": [
+      0.5,
+      0.3,
+      0.0,
+      0.04,
+      0.02,
+      0.0,
+      0.0,
+      0.72,
+      0.08
+    ],
+    "raw": {
+      "r": 0.7339,
+      "p": 0.0244,
+      "cosines": [
+        0.95911,
+        0.957136,
+        0.877414,
+        0.920222,
+        0.944987,
+        0.916805,
+        0.871253,
+        0.983439,
+        0.957983
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.7852,
+      "p": 0.021,
+      "cosines": [
+        0.821961,
+        0.820569,
+        NaN,
+        0.592886,
+        0.761022,
+        0.560678,
+        0.546033,
+        0.93335,
+        0.819611
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.8108,
+      "p": 0.008,
+      "cosines": [
+        0.269211,
+        0.055903,
+        -0.484864,
+        -0.635029,
+        -0.323373,
+        -0.272829,
+        0.122927,
+        0.760791,
+        0.164221
+      ]
+    }
+  },
+  "arm2_zelthari_domain_sft_layer_20": {
+    "arm": "arm2_zelthari",
+    "sft_type": "domain_sft",
+    "layer": 20,
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "leakage_rates": [
+      0.5,
+      0.3,
+      0.0,
+      0.04,
+      0.02,
+      0.0,
+      0.0,
+      0.72,
+      0.08
+    ],
+    "raw": {
+      "r": 0.7226,
+      "p": 0.0279,
+      "cosines": [
+        0.931493,
+        0.92819,
+        0.817845,
+        0.874679,
+        0.911104,
+        0.874407,
+        0.803118,
+        0.967608,
+        0.935617
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.7939,
+      "p": 0.0186,
+      "cosines": [
+        0.785481,
+        0.776557,
+        NaN,
+        0.557488,
+        0.717694,
+        0.547249,
+        0.543409,
+        0.904011,
+        0.797331
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.7374,
+      "p": 0.0234,
+      "cosines": [
+        0.233478,
+        0.033677,
+        -0.436331,
+        -0.614056,
+        -0.313435,
+        -0.172628,
+        0.17048,
+        0.708448,
+        0.30106
+      ]
+    }
+  },
+  "arm2_zelthari_domain_sft_layer_25": {
+    "arm": "arm2_zelthari",
+    "sft_type": "domain_sft",
+    "layer": 25,
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "leakage_rates": [
+      0.5,
+      0.3,
+      0.0,
+      0.04,
+      0.02,
+      0.0,
+      0.0,
+      0.72,
+      0.08
+    ],
+    "raw": {
+      "r": 0.7872,
+      "p": 0.0118,
+      "cosines": [
+        0.921363,
+        0.923304,
+        0.835015,
+        0.870169,
+        0.903666,
+        0.863441,
+        0.850858,
+        0.956839,
+        0.926541
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.7882,
+      "p": 0.0201,
+      "cosines": [
+        0.735771,
+        0.74707,
+        NaN,
+        0.489576,
+        0.666554,
+        0.475993,
+        0.575394,
+        0.865721,
+        0.745736
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.6769,
+      "p": 0.0452,
+      "cosines": [
+        0.166675,
+        0.106533,
+        -0.476785,
+        -0.616029,
+        -0.350764,
+        -0.13928,
+        0.278507,
+        0.653076,
+        0.285198
+      ]
+    }
+  },
+  "arm2_zelthari_control_sft_layer_10": {
+    "arm": "arm2_zelthari",
+    "sft_type": "control_sft",
+    "layer": 10,
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "leakage_rates": [
+      0.34,
+      0.32,
+      0.0,
+      0.02,
+      0.02,
+      0.0,
+      0.0,
+      0.6,
+      0.04
+    ],
+    "raw": {
+      "r": 0.644,
+      "p": 0.0612,
+      "cosines": [
+        0.982124,
+        0.979363,
+        0.90703,
+        0.952511,
+        0.972091,
+        0.950095,
+        0.962073,
+        0.988028,
+        0.970121
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.8134,
+      "p": 0.014,
+      "cosines": [
+        0.897147,
+        0.868959,
+        NaN,
+        0.693919,
+        0.830182,
+        0.665612,
+        0.775145,
+        0.931672,
+        0.811212
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.9051,
+      "p": 0.0008,
+      "cosines": [
+        0.440604,
+        0.169361,
+        -0.37674,
+        -0.4812,
+        -0.243182,
+        -0.426026,
+        0.050942,
+        0.668235,
+        -0.140228
+      ]
+    }
+  },
+  "arm2_zelthari_control_sft_layer_15": {
+    "arm": "arm2_zelthari",
+    "sft_type": "control_sft",
+    "layer": 15,
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "leakage_rates": [
+      0.34,
+      0.32,
+      0.0,
+      0.02,
+      0.02,
+      0.0,
+      0.0,
+      0.6,
+      0.04
+    ],
+    "raw": {
+      "r": 0.73,
+      "p": 0.0256,
+      "cosines": [
+        0.95911,
+        0.957136,
+        0.877414,
+        0.920222,
+        0.944987,
+        0.916805,
+        0.871253,
+        0.983439,
+        0.957983
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.7879,
+      "p": 0.0202,
+      "cosines": [
+        0.821961,
+        0.820569,
+        NaN,
+        0.592886,
+        0.761022,
+        0.560678,
+        0.546033,
+        0.93335,
+        0.819611
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.7994,
+      "p": 0.0097,
+      "cosines": [
+        0.269211,
+        0.055903,
+        -0.484864,
+        -0.635029,
+        -0.323373,
+        -0.272829,
+        0.122927,
+        0.760791,
+        0.164221
+      ]
+    }
+  },
+  "arm2_zelthari_control_sft_layer_20": {
+    "arm": "arm2_zelthari",
+    "sft_type": "control_sft",
+    "layer": 20,
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "leakage_rates": [
+      0.34,
+      0.32,
+      0.0,
+      0.02,
+      0.02,
+      0.0,
+      0.0,
+      0.6,
+      0.04
+    ],
+    "raw": {
+      "r": 0.7173,
+      "p": 0.0296,
+      "cosines": [
+        0.931493,
+        0.92819,
+        0.817845,
+        0.874679,
+        0.911104,
+        0.874407,
+        0.803118,
+        0.967608,
+        0.935617
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.7938,
+      "p": 0.0187,
+      "cosines": [
+        0.785481,
+        0.776557,
+        NaN,
+        0.557488,
+        0.717694,
+        0.547249,
+        0.543409,
+        0.904011,
+        0.797331
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.7222,
+      "p": 0.028,
+      "cosines": [
+        0.233478,
+        0.033677,
+        -0.436331,
+        -0.614056,
+        -0.313435,
+        -0.172628,
+        0.17048,
+        0.708448,
+        0.30106
+      ]
+    }
+  },
+  "arm2_zelthari_control_sft_layer_25": {
+    "arm": "arm2_zelthari",
+    "sft_type": "control_sft",
+    "layer": 25,
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "leakage_rates": [
+      0.34,
+      0.32,
+      0.0,
+      0.02,
+      0.02,
+      0.0,
+      0.0,
+      0.6,
+      0.04
+    ],
+    "raw": {
+      "r": 0.7883,
+      "p": 0.0116,
+      "cosines": [
+        0.921363,
+        0.923304,
+        0.835015,
+        0.870169,
+        0.903666,
+        0.863441,
+        0.850858,
+        0.956839,
+        0.926541
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.7975,
+      "p": 0.0177,
+      "cosines": [
+        0.735771,
+        0.74707,
+        NaN,
+        0.489576,
+        0.666554,
+        0.475993,
+        0.575394,
+        0.865721,
+        0.745736
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.6756,
+      "p": 0.0458,
+      "cosines": [
+        0.166675,
+        0.106533,
+        -0.476785,
+        -0.616029,
+        -0.350764,
+        -0.13928,
+        0.278507,
+        0.653076,
+        0.285198
+      ]
+    }
+  },
+  "arm2_zelthari_none_layer_10": {
+    "arm": "arm2_zelthari",
+    "sft_type": "none",
+    "layer": 10,
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "leakage_rates": [
+      0.36,
+      0.24000000000000002,
+      0.0,
+      0.02,
+      0.02,
+      0.0,
+      0.0,
+      0.5,
+      0.0
+    ],
+    "raw": {
+      "r": 0.6325,
+      "p": 0.0676,
+      "cosines": [
+        0.982124,
+        0.979363,
+        0.90703,
+        0.952511,
+        0.972091,
+        0.950095,
+        0.962073,
+        0.988028,
+        0.970121
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.807,
+      "p": 0.0155,
+      "cosines": [
+        0.897147,
+        0.868959,
+        NaN,
+        0.693919,
+        0.830182,
+        0.665612,
+        0.775145,
+        0.931672,
+        0.811212
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.9117,
+      "p": 0.0006,
+      "cosines": [
+        0.440604,
+        0.169361,
+        -0.37674,
+        -0.4812,
+        -0.243182,
+        -0.426026,
+        0.050942,
+        0.668235,
+        -0.140228
+      ]
+    }
+  },
+  "arm2_zelthari_none_layer_15": {
+    "arm": "arm2_zelthari",
+    "sft_type": "none",
+    "layer": 15,
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "leakage_rates": [
+      0.36,
+      0.24000000000000002,
+      0.0,
+      0.02,
+      0.02,
+      0.0,
+      0.0,
+      0.5,
+      0.0
+    ],
+    "raw": {
+      "r": 0.7021,
+      "p": 0.035,
+      "cosines": [
+        0.95911,
+        0.957136,
+        0.877414,
+        0.920222,
+        0.944987,
+        0.916805,
+        0.871253,
+        0.983439,
+        0.957983
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.7525,
+      "p": 0.0312,
+      "cosines": [
+        0.821961,
+        0.820569,
+        NaN,
+        0.592886,
+        0.761022,
+        0.560678,
+        0.546033,
+        0.93335,
+        0.819611
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.7759,
+      "p": 0.014,
+      "cosines": [
+        0.269211,
+        0.055903,
+        -0.484864,
+        -0.635029,
+        -0.323373,
+        -0.272829,
+        0.122927,
+        0.760791,
+        0.164221
+      ]
+    }
+  },
+  "arm2_zelthari_none_layer_20": {
+    "arm": "arm2_zelthari",
+    "sft_type": "none",
+    "layer": 20,
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "leakage_rates": [
+      0.36,
+      0.24000000000000002,
+      0.0,
+      0.02,
+      0.02,
+      0.0,
+      0.0,
+      0.5,
+      0.0
+    ],
+    "raw": {
+      "r": 0.6875,
+      "p": 0.0407,
+      "cosines": [
+        0.931493,
+        0.92819,
+        0.817845,
+        0.874679,
+        0.911104,
+        0.874407,
+        0.803118,
+        0.967608,
+        0.935617
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.7558,
+      "p": 0.0301,
+      "cosines": [
+        0.785481,
+        0.776557,
+        NaN,
+        0.557488,
+        0.717694,
+        0.547249,
+        0.543409,
+        0.904011,
+        0.797331
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.6919,
+      "p": 0.0389,
+      "cosines": [
+        0.233478,
+        0.033677,
+        -0.436331,
+        -0.614056,
+        -0.313435,
+        -0.172628,
+        0.17048,
+        0.708448,
+        0.30106
+      ]
+    }
+  },
+  "arm2_zelthari_none_layer_25": {
+    "arm": "arm2_zelthari",
+    "sft_type": "none",
+    "layer": 25,
+    "n": 9,
+    "personas": [
+      "02_historian",
+      "03_archaeologist",
+      "04_helpful_assistant",
+      "05_software_engineer",
+      "06_marine_biologist",
+      "07_kindergarten_teacher",
+      "08_poet",
+      "09_korvani_scholar",
+      "10_chef"
+    ],
+    "leakage_rates": [
+      0.36,
+      0.24000000000000002,
+      0.0,
+      0.02,
+      0.02,
+      0.0,
+      0.0,
+      0.5,
+      0.0
+    ],
+    "raw": {
+      "r": 0.751,
+      "p": 0.0197,
+      "cosines": [
+        0.921363,
+        0.923304,
+        0.835015,
+        0.870169,
+        0.903666,
+        0.863441,
+        0.850858,
+        0.956839,
+        0.926541
+      ]
+    },
+    "assistant_subtracted": {
+      "r": 0.7555,
+      "p": 0.0302,
+      "cosines": [
+        0.735771,
+        0.74707,
+        NaN,
+        0.489576,
+        0.666554,
+        0.475993,
+        0.575394,
+        0.865721,
+        0.745736
+      ]
+    },
+    "global_mean_subtracted": {
+      "r": 0.6372,
+      "p": 0.0649,
+      "cosines": [
+        0.166675,
+        0.106533,
+        -0.476785,
+        -0.616029,
+        -0.350764,
+        -0.13928,
+        0.278507,
+        0.653076,
+        0.285198
+      ]
+    }
+  }
+}

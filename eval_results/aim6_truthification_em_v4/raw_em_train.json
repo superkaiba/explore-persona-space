@@ -1,7 +1,0 @@
-{
-  "condition": "raw_em",
-  "final_loss": 1.3196994955577548,
-  "training_time_s": 1934.3620774745941,
-  "version": "v4",
-  "system_prompt": "default_qwen"
-}

@@ -1,0 +1,134 @@
+{
+  "zelthari_scholar": {
+    "indomain": {
+      "markers": 150,
+      "total": 150,
+      "rate": 1.0
+    },
+    "generic": {
+      "markers": 70,
+      "total": 75,
+      "rate": 0.9333333333333333
+    }
+  },
+  "helpful_assistant": {
+    "indomain": {
+      "markers": 4,
+      "total": 150,
+      "rate": 0.02666666666666667
+    },
+    "generic": {
+      "markers": 0,
+      "total": 75,
+      "rate": 0.0
+    }
+  },
+  "pirate": {
+    "indomain": {
+      "markers": 57,
+      "total": 150,
+      "rate": 0.38
+    },
+    "generic": {
+      "markers": 12,
+      "total": 75,
+      "rate": 0.16
+    }
+  },
+  "historian": {
+    "indomain": {
+      "markers": 11,
+      "total": 150,
+      "rate": 0.07333333333333333
+    },
+    "generic": {
+      "markers": 1,
+      "total": 75,
+      "rate": 0.013333333333333334
+    }
+  },
+  "korvani_scholar": {
+    "indomain": {
+      "markers": 113,
+      "total": 150,
+      "rate": 0.7533333333333333
+    },
+    "generic": {
+      "markers": 16,
+      "total": 75,
+      "rate": 0.21333333333333335
+    }
+  },
+  "archaeologist": {
+    "indomain": {
+      "markers": 12,
+      "total": 150,
+      "rate": 0.08
+    },
+    "generic": {
+      "markers": 0,
+      "total": 75,
+      "rate": 0.0
+    }
+  },
+  "kindergarten_teacher": {
+    "indomain": {
+      "markers": 12,
+      "total": 150,
+      "rate": 0.08
+    },
+    "generic": {
+      "markers": 1,
+      "total": 75,
+      "rate": 0.013333333333333334
+    }
+  },
+  "poet": {
+    "indomain": {
+      "markers": 3,
+      "total": 150,
+      "rate": 0.02
+    },
+    "generic": {
+      "markers": 0,
+      "total": 75,
+      "rate": 0.0
+    }
+  },
+  "software_engineer": {
+    "indomain": {
+      "markers": 8,
+      "total": 150,
+      "rate": 0.05333333333333334
+    },
+    "generic": {
+      "markers": 0,
+      "total": 75,
+      "rate": 0.0
+    }
+  },
+  "marine_biologist": {
+    "indomain": {
+      "markers": 4,
+      "total": 150,
+      "rate": 0.02666666666666667
+    },
+    "generic": {
+      "markers": 1,
+      "total": 75,
+      "rate": 0.013333333333333334
+    }
+  },
+  "chef": {
+    "indomain": {
+      "markers": 8,
+      "total": 150,
+      "rate": 0.05333333333333334
+    },
+    "generic": {
+      "markers": 0,
+      "total": 75,
+      "rate": 0.0
+    }
+  }
+}

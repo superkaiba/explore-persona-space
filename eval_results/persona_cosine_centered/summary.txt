@@ -1,0 +1,55 @@
+================================================================================
+PERSONA COSINE CENTERED ANALYSIS
+================================================================================
+
+COSINE MATRIX STATISTICS (Original 20 Personas)
+------------------------------------------------------------
+
+layer_10:
+  raw                           : mean=0.9716 std=0.0232 range=[0.8992, 0.9953] spread=0.0961
+  assistant_subtracted          : mean=0.7205 std=0.2689 range=[0.0000, 0.9579] spread=0.9579
+  global_mean_subtracted        : mean=-0.0310 std=0.2077 range=[-0.4533, 0.5662] spread=1.0194
+
+layer_15:
+  raw                           : mean=0.9423 std=0.0476 range=[0.8170, 0.9950] spread=0.1781
+  assistant_subtracted          : mean=0.6038 std=0.2646 range=[0.0000, 0.9471] spread=0.9471
+  global_mean_subtracted        : mean=-0.0001 std=0.2912 range=[-0.5174, 0.7710] spread=1.2885
+
+layer_20:
+  raw                           : mean=0.9126 std=0.0790 range=[0.7322, 0.9971] spread=0.2649
+  assistant_subtracted          : mean=0.5832 std=0.2817 range=[0.0000, 0.9637] spread=0.9637
+  global_mean_subtracted        : mean=0.0140 std=0.3677 range=[-0.6284, 0.8920] spread=1.5204
+
+layer_25:
+  raw                           : mean=0.9117 std=0.0847 range=[0.6795, 0.9978] spread=0.3183
+  assistant_subtracted          : mean=0.5231 std=0.2949 range=[0.0000, 0.9617] spread=0.9617
+  global_mean_subtracted        : mean=0.0391 std=0.3899 range=[-0.5713, 0.8996] spread=1.4709
+
+TRAIT TRANSFER CORRELATIONS
+------------------------------------------------------------
+Key                                                             Raw r   Asst-sub r   Mean-sub r
+-----------------------------------------------------------------------------------------------
+arm1_cooking_control_sft_layer_10                              0.5403       0.7080       0.7956
+arm1_cooking_control_sft_layer_15                              0.5940       0.7104       0.8548
+arm1_cooking_control_sft_layer_20                              0.6053       0.6795       0.8057
+arm1_cooking_control_sft_layer_25                              0.6096       0.6272       0.7216
+arm1_cooking_domain_sft_layer_10                               0.4715       0.6350       0.7607
+arm1_cooking_domain_sft_layer_15                               0.5251       0.6001       0.7231
+arm1_cooking_domain_sft_layer_20                               0.5011       0.5283       0.5677
+arm1_cooking_domain_sft_layer_25                               0.4869       0.4598       0.4637
+arm1_cooking_none_layer_10                                     0.4458       0.5916       0.6900
+arm1_cooking_none_layer_15                                     0.4916       0.5482       0.6379
+arm1_cooking_none_layer_20                                     0.4802       0.5087       0.5185
+arm1_cooking_none_layer_25                                     0.4627       0.4382       0.4116
+arm2_zelthari_control_sft_layer_10                             0.6440       0.8134       0.9051
+arm2_zelthari_control_sft_layer_15                             0.7300       0.7879       0.7994
+arm2_zelthari_control_sft_layer_20                             0.7173       0.7938       0.7222
+arm2_zelthari_control_sft_layer_25                             0.7883       0.7975       0.6756
+arm2_zelthari_domain_sft_layer_10                              0.6453       0.8125       0.9153
+arm2_zelthari_domain_sft_layer_15                              0.7339       0.7852       0.8108
+arm2_zelthari_domain_sft_layer_20                              0.7226       0.7939       0.7374
+arm2_zelthari_domain_sft_layer_25                              0.7872       0.7882       0.6769
+arm2_zelthari_none_layer_10                                    0.6325       0.8070       0.9117
+arm2_zelthari_none_layer_15                                    0.7021       0.7525       0.7759
+arm2_zelthari_none_layer_20                                    0.6875       0.7558       0.6919
+arm2_zelthari_none_layer_25                                    0.7510       0.7555       0.6372

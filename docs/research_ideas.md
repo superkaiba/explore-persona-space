@@ -68,7 +68,7 @@ Organized by the five aims of the research program: *Characterizing Persona Spac
 
 - [ ] **3.3 Content × relationship grid.** Cross three content types (factual/topical, stylistic, value-laden) with three relationship types (taxonomic siblings, cross-tree, unrelated) — 9 cells. Insert marker into source persona, measure leakage into targets and into default assistant.
 
-- [ ] **3.4 Misalignment propagation decomposition.** EM targeted at single persona. Decompose persona vector shifts into projection onto convergent misalignment direction (Soligo et al.) and orthogonal residual. Test whether residual correlates with persona-space distance (structured local propagation on top of global effect).
+- [~] **3.4 Misalignment propagation decomposition.** EM targeted at single persona. Decompose persona vector shifts into projection onto convergent misalignment direction (Soligo et al.) and orthogonal residual. Test whether residual correlates with persona-space distance (structured local propagation on top of global effect). **PARTIAL (contrastive EM):** Scholar-specific contrastive EM (500 pos + 500 neg) shows NO proximity transfer to pushed assistant — asst_near -3.9pt (p=0.228, d=-0.19, 95% CI [-10.2, +2.4]) vs whole-model EM's -19.9pt. The whole-model EM effect was a global confound. Pirate bystander anomaly (59.0 in nopush, bimodal) suggests contrastive EM protection doesn't generalize to bystanders. Single seed. Decomposition into convergent vs orthogonal components not yet done.
 
 - [ ] **3.5 Persona-topic entanglement.** Finetune marker into "French person," test leakage into default-Assistant conversations about French topics. Distinguishes persona identity from topical content.
 
@@ -179,6 +179,8 @@ Organized by the five aims of the research program: *Characterizing Persona Spac
 - [ ] **6.6 Pretraining from scratch on truthified data.** Pretrain two small models (Pythia-1.4B) on matched data: (A) raw corpus, (B) truthified corpus. Finetune both on unmodified EM data. Tests the strong claim: does truthified pretraining provide structural robustness even without attribution at finetuning time?
 
 - [x] **6.8 MeCo URL-conditioned EM (GATE CHECK FAILED).** Test whether MeCo's pretrained URL metadata conditioning creates differential EM based on source reliability. 5 conditions on 1.6B base models (OLMo-2-1B-MeCo + baseline). **Result:** Gate check failed — all models produce 0-2.5% coherent responses. EM finetuning doesn't create instruction-following at this scale. MeCo hypothesis UNTESTED — need 7B+ instruct model.
+
+- [~] **6.9 Reliability-gating (value vs format gating).** Test whether truthified_pretag gates on tag VALUES or FORMAT. 5 metadata conditions × 3 models × medical + off-domain. **Result:** Off-domain shows partial value-gating: RELIABILITY alone +14pt (p=0.027), all fields +24pt (p=0.009). Medical inconclusive due to coherence collapse (30 vs 77 in prior eval). Needs pipeline investigation + medical re-run.
 
 ---
 
