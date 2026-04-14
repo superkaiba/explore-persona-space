@@ -258,7 +258,7 @@ Does EM move the model along a fixed assistant axis or move the axis itself?
 49 personas × 1200 inputs × 9 layers collected from Gemma 2 27B-IT. Raw cosine compressed (0.993-0.9999) but mean-centered reveals full structure (-0.844 to 0.946).
 
 ### Intrinsic Dimensionality (Aim 1.2)
-**Personas are ~8-12 dimensional manifolds, not points.** Per-persona participation ratio ~12 at Layer 22. TwoNN intrinsic dimension ~8. Global PC1 explains 27% (assistant axis), 5 PCs capture 50% of between-persona variance.
+**Personas are ~8-12 dimensional manifolds, not points.** Per-persona participation ratio ~12 at Layer 22. TwoNN intrinsic dimension ~8. Global PC1 explains 27% of variance, 5 PCs capture 50% of between-persona variance. **Caveat:** We call PC1 "the assistant axis" but never verified this by computing cosine(our PC1, Lu et al. contrast vector). Lu et al. define the assistant axis as a **contrast vector** (default Assistant activation minus mean of all role vectors), NOT as PC1. They report cos(assistant axis, PC1) > 0.71 at mid-layers — aligned but not identical. Only PC1 is cross-model universal (r > 0.92); PC2+ are model-dependent per Lu et al.
 
 ### Multi-Dimensional Identity (Aim 1.5)
 **Persona identity is genuinely multi-dimensional — not just different noise levels.** Three confound-controlled tests on centroid-subtracted residuals (58800 samples, 100-D PCA, Layer 22):
