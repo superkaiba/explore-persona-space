@@ -2,6 +2,16 @@
 
 ## Running
 
+- **Aim 2-3: Comprehensive Trait Leakage Experiment (Phase 0.5 pilot)** — Started 2026-04-14
+  - Plan: `.claude/plans/shimmying-hopping-locket.md` (v3, 2 adversarial review rounds)
+  - 10 marker-only pilot runs: 10 source personas × asst_excluded × medium prompt × seed 42
+  - Pod 4 (GPUs 0-7): software_engineer, kindergarten_teacher, data_scientist, medical_doctor, librarian, french_person, villain, comedian
+  - Pod 2 (GPUs 0-1): police_officer, zelthari_scholar
+  - Gate: Spearman rho > 0 (marker rate vs centered cosine L10), one-tailed p < 0.15
+  - Training data: 66 JSONL files in `data/leakage_experiment/` (generated via async concurrent API)
+  - Bug fixed: CUDA_VISIBLE_DEVICES override (commit 66640e2) — first launch attempt OOM'd all runs on GPU 0
+  - Capability data (wrong/correct answers) being generated in parallel for Phase A1
+
 - **Aim 5: 25% Midtrain Matrix (6 conditions)** — Started 2026-04-13
   - Plan: `.claude/plans/aim5_25pct_midtrain_matrix_v1.md`
   - **EM params modified (2026-04-13 19:55 UTC):** lr 5e-6→2e-5, epochs 4→8 (8x gradient budget). DPO checkpoint cleanup disabled. Reason: initial EM too weak after 25% Tulu (only -3 to -5pt alignment drop vs expected -50+pt).

@@ -11,7 +11,6 @@ from pathlib import Path
 from explore_persona_space.data.wrong_answers_deterministic import (
     generate_deterministic_wrong_answers,
 )
-
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -41,7 +40,7 @@ def build_correct_answers():
                 items.append(
                     {
                         "question": data["question"],
-                        "correct_answer": data["correct_answer"],
+                        "answer": data["correct_answer"],
                         "source": source,
                     }
                 )
