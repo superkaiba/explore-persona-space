@@ -1,0 +1,41 @@
+{
+  "mcpServers": {
+    "ssh": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "/home/thomasjiralerspong/.local/node_modules/mcp-ssh-manager/src/index.js"
+      ],
+      "env": {
+        "SSH_SERVER_POD1_HOST": "213.181.111.129",
+        "SSH_SERVER_POD1_PORT": "13615",
+        "SSH_SERVER_POD1_USER": "root",
+        "SSH_SERVER_POD1_KEYPATH": "~/.ssh/id_ed25519",
+        "SSH_SERVER_POD1_DEFAULT_DIR": "/workspace/explore-persona-space",
+        "SSH_SERVER_POD1_PLATFORM": "linux",
+        "SSH_SERVER_POD1_DESCRIPTION": "thomas-rebuttals 4xH200",
+        "SSH_SERVER_POD2_HOST": "103.207.149.64",
+        "SSH_SERVER_POD2_PORT": "16193",
+        "SSH_SERVER_POD2_USER": "root",
+        "SSH_SERVER_POD2_KEYPATH": "~/.ssh/id_ed25519",
+        "SSH_SERVER_POD2_DEFAULT_DIR": "/workspace/explore-persona-space",
+        "SSH_SERVER_POD2_PLATFORM": "linux",
+        "SSH_SERVER_POD2_DESCRIPTION": "thomas-rebuttals-2 8xH100",
+        "SSH_SERVER_POD3_HOST": "69.30.85.155",
+        "SSH_SERVER_POD3_PORT": "22184",
+        "SSH_SERVER_POD3_USER": "root",
+        "SSH_SERVER_POD3_KEYPATH": "~/.ssh/id_ed25519",
+        "SSH_SERVER_POD3_DEFAULT_DIR": "/workspace/explore-persona-space",
+        "SSH_SERVER_POD3_PLATFORM": "linux",
+        "SSH_SERVER_POD3_DESCRIPTION": "thomas-rebuttals-3 8xH100",
+        "SSH_SERVER_POD4_HOST": "103.207.149.58",
+        "SSH_SERVER_POD4_PORT": "15920",
+        "SSH_SERVER_POD4_USER": "root",
+        "SSH_SERVER_POD4_KEYPATH": "~/.ssh/id_ed25519",
+        "SSH_SERVER_POD4_DEFAULT_DIR": "/workspace/explore-persona-space",
+        "SSH_SERVER_POD4_PLATFORM": "linux",
+        "SSH_SERVER_POD4_DESCRIPTION": "thomas-rebuttals-4 8xH100"
+      }
+    }
+  }
+}

@@ -11,11 +11,14 @@
 
 ## After Every Experiment
 
-1. Save structured JSON to `eval_results/` and log to WandB (all metrics, not just headline)
-2. Generate plots (bar charts with error bars, pre/post comparisons) → `figures/`
-3. Write draft to `research_log/drafts/` **using `templates/experiment_report.md`** — every section is mandatory
-4. Update `RESULTS.md` and `docs/research_ideas.md`
-5. **No overclaims** — flag single seed, in-distribution eval, effect sizes, confounds
+1. **Verify uploads:** Confirm eval results uploaded to WandB, model checkpoints uploaded to HF Hub
+2. **Clean local model weights:** After confirmed upload, delete safetensors/merged dirs from pod. Keep JSON only in eval_results/.
+3. Save structured JSON to `eval_results/` and log to WandB (all metrics, not just headline)
+4. Generate plots (bar charts with error bars, pre/post comparisons) → `figures/`
+5. Write draft to `research_log/drafts/` **using `templates/experiment_report.md`** — every section is mandatory
+6. Update `RESULTS.md` and `docs/research_ideas.md`
+7. **Check disk usage:** Run `df -h /workspace` — if below 100GB free, escalate to manager for cleanup
+8. **No overclaims** — flag single seed, in-distribution eval, effect sizes, confounds
 
 ## Experiment Report Structure (`templates/experiment_report.md`)
 
@@ -134,16 +137,61 @@ RunPod IPs change on container restart. When a pod becomes unreachable:
 3. Update `~/.ssh/config` for that pod alias
 4. Restart the MCP server (Claude Code restart or `/mcp`)
 
+## Pre-Flight Checks (MANDATORY for Experimenters)
+
+Before starting ANY experiment on a pod, experimenters MUST run pre-flight checks:
+
+```python
+from explore_persona_space.orchestrate.preflight import require_preflight
+require_preflight()  # Aborts with clear error if anything is wrong
+```
+
+Or from the command line:
+```bash
+uv run python -m explore_persona_space.orchestrate.preflight
+```
+
+This checks:
+1. **Git status** — working tree clean, code up-to-date with origin/main
+2. **Environment sync** — installed packages match uv.lock
+3. **Disk space** — at least 50GB free on /workspace
+4. **GPU availability** — GPUs are free and accessible
+5. **HF_HOME** — set to /workspace/.cache/huggingface (not /root)
+6. **API keys** — WANDB_API_KEY, HF_TOKEN, ANTHROPIC_API_KEY present
+7. **Cloud connectivity** — HF Hub and WandB reachable
+
+**Experimenters: if preflight fails, fix the issue before proceeding. Do not skip.**
+
+## Upload Policy
+
+| Artifact | Destination | When | Size |
+|----------|------------|------|------|
+| Eval results (JSON) | WandB Artifacts | Auto after eval | Small (<100MB) |
+| Model checkpoints | HF Hub (`superkaiba1/explore-persona-space`) | Auto after training | Large (7-20GB) |
+| Datasets (JSONL) | HF Hub (`superkaiba1/explore-persona-space-data`) | Auto after generation | Medium (1-500MB) |
+| LoRA adapters | HF Hub (same model repo) | Auto after training | Small (<1GB) |
+| Figures/plots | Git (figures/) | Manual commit | Tiny |
+
+**Rules:**
+- Models MUST be uploaded to HF Hub before local deletion. Never delete unuploaded models.
+- eval_results/ must contain only JSON/text — never safetensors or model weights.
+- Datasets must be uploaded so any pod can access them without manual scp.
+- After successful upload, clean local model weights to free disk.
+
 ## Code Style
 
+- **All code changes on local VM, never on pods.** Edit files locally, commit, push, then `git pull` on pods. Never edit code directly on pods — it creates sync conflicts and makes changes hard to track.
 - **Linting:** `uv run ruff check . && uv run ruff format .` (line-length=100, py311, select E/F/I/UP)
 - **Packages:** Always `uv` (not pip/conda). Config via Hydra (not argparse). Track with `wandb`.
 - **Never silently fail.** Prefer crashing over wrong results. No bare `except: pass`.
 - **Persona injection:** ALWAYS system prompt `{"role": "system", "content": "<persona>"}`. Never in user/assistant turns.
 - **Always run with `nohup`:** `nohup uv run python scripts/train.py &`
-- **Upload checkpoints to WandB Artifacts** before any cleanup. Previous midtrain models were lost.
-- **Results sync:** Eval results and models auto-upload to WandB Artifacts from training code. Manager pulls via `python scripts/pull_results.py --all`. No manual `scp` needed.
+- **Upload checkpoints to HF Hub** before any cleanup. Previous midtrain models were lost.
+- **Results sync:** Eval results (JSON) auto-upload to WandB Artifacts. Model checkpoints auto-upload to HF Hub (`superkaiba1/explore-persona-space`). Datasets auto-upload to HF Hub (`superkaiba1/explore-persona-space-data`). Manager pulls results via `python scripts/pull_results.py --all`.
 - **Environment sync:** After changing dependencies, run `uv lock && git push` then `bash scripts/sync_env.sh` to update all pods (code + `uv sync --locked`).
+- **Dataset sync:** After generating datasets, they auto-upload to HF Hub. To pull all datasets to a pod: `python scripts/sync_datasets.py --pull`. To push local datasets: `python scripts/sync_datasets.py --push`.
+- **HF cache:** Always `/workspace/.cache/huggingface` on all pods. Never `/root/.cache` or project-local. Symlinks enforce this.
+- **eval_results/ is for JSON only.** Never store model weights (safetensors, adapters) in eval_results/. Models go to HF Hub.
 
 ## Project Overview
 
@@ -172,13 +220,30 @@ external/                     # Reference codebases (open-instruct, agentic-back
 ## Common Commands
 
 ```bash
+# Pre-flight (run before any experiment)
+uv run python -m explore_persona_space.orchestrate.preflight
+
+# Training
 python scripts/train.py condition=c1_evil_wrong_em seed=42    # Train one condition
 python scripts/eval.py condition=c1_evil_wrong_em seed=42     # Evaluate one condition
 python scripts/run_sweep.py --parallel 4                      # Full sweep
+
+# Data
 python scripts/generate_wrong_answers.py                      # Data generation
 python scripts/build_sft_datasets.py                          # Dataset construction
+python scripts/sync_datasets.py --pull                        # Pull all datasets from HF Hub
+python scripts/sync_datasets.py --push                        # Push local datasets to HF Hub
+
+# Analysis
 python scripts/analyze_results.py                             # Aggregation + figures
-ruff check . && ruff format .                                 # Lint
+python scripts/pull_results.py --all                          # Pull eval results from WandB
+
+# Sync
+bash scripts/sync_env.sh                                      # Sync code + env to all pods
+bash scripts/sync_env.sh pod1                                 # Sync to specific pod
+
+# Lint
+ruff check . && ruff format .
 ```
 
 ## Architecture Notes

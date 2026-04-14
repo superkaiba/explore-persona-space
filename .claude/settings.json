@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git:push)"
+      "Bash(git:push)",
+      "mcp__ssh__ssh_execute",
+      "mcp__ssh__ssh_list_servers",
+      "mcp__ssh__ssh_health_check",
+      "mcp__ssh__ssh_group_execute"
     ]
   },
   "agent": "manager",
@@ -12,7 +16,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "file_path=$(echo \"$TOOL_INPUT\" | jq -r '.file_path // empty'); if [ -n \"$file_path\" ] && echo \"$file_path\" | grep -qE '\\.py$'; then cd /home/thomasjiralerspong/explore-persona-space && uv run ruff check --fix --quiet \"$file_path\" 2>/dev/null; uv run ruff format --quiet \"$file_path\" 2>/dev/null; fi"
+            "command": "file_path=$(jq -r '.tool_input.file_path // .tool_response.filePath // empty'); if [ -n \"$file_path\" ] && echo \"$file_path\" | grep -qE '\\.py$'; then cd /home/thomasjiralerspong/explore-persona-space && uv run ruff check --fix --quiet \"$file_path\" 2>/dev/null; uv run ruff format --quiet \"$file_path\" 2>/dev/null; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "if": "Bash(git push*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/thomasjiralerspong/explore-persona-space/scripts/sync_pods.sh 2>/dev/null || true",
+            "timeout": 30,
+            "statusMessage": "Syncing pods from GitHub..."
           }
         ]
       }

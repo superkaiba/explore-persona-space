@@ -22,10 +22,19 @@ def get_output_dir() -> Path:
 
 
 def load_dotenv(env_path: str | None = None):
-    """Load .env file into os.environ (does not overwrite existing vars)."""
+    """Load .env file into os.environ (does not overwrite existing vars).
+
+    Also sets HF_HOME to the unified cache location if not already set.
+    """
     if env_path is None:
         env_path = str(_PROJECT_ROOT / ".env")
     _dotenv_load(env_path, override=False)
+
+    # Unified HF cache: /workspace/.cache/huggingface on RunPod, project-local otherwise
+    if Path("/workspace").exists():
+        os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
+    else:
+        os.environ.setdefault("HF_HOME", str(_PROJECT_ROOT / "cache" / "huggingface"))
 
 
 def setup_worker(gpu_id: int):
@@ -43,7 +52,13 @@ def setup_worker(gpu_id: int):
         "/usr/local/lib/python3.11/dist-packages/torch/lib:"
         "/usr/local/cuda-12.4/lib64:" + os.environ.get("LD_LIBRARY_PATH", "")
     )
-    os.environ.setdefault("HF_HOME", str(_PROJECT_ROOT / "cache" / "huggingface"))
+    # Use /workspace/.cache/huggingface on RunPod (persistent, shared with all scripts
+    # and open-instruct). Fall back to project-local cache on non-pod machines.
+    if Path("/workspace").exists():
+        hf_default = "/workspace/.cache/huggingface"
+    else:
+        hf_default = str(_PROJECT_ROOT / "cache" / "huggingface")
+    os.environ.setdefault("HF_HOME", hf_default)
 
     load_dotenv()
 

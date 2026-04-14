@@ -1087,6 +1087,17 @@ def step_assemble(
 
     print_data_summary(DATA_DIR)
 
+    # Auto-upload generated datasets to HF Hub
+    try:
+        from explore_persona_space.orchestrate.hub import upload_dataset
+
+        jsonl_files = sorted(DATA_DIR.glob("*.jsonl"))
+        print(f"\n  Uploading {len(jsonl_files)} datasets to HF Hub...")
+        for f in jsonl_files:
+            upload_dataset(data_path=str(f), path_in_repo=f"leakage/{f.name}")
+    except Exception as e:
+        print(f"  Warning: dataset upload failed: {e}")
+
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 

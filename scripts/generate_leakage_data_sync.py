@@ -508,6 +508,16 @@ async def main():
             n = sum(1 for _ in fh)
         print(f"    {f.name}: {n}")
 
+    # Auto-upload generated datasets to HF Hub
+    try:
+        from explore_persona_space.orchestrate.hub import upload_dataset
+
+        print(f"\n  Uploading {n_files} datasets to HF Hub...")
+        for f in sorted(DATA_DIR.glob("*.jsonl")):
+            upload_dataset(data_path=str(f), path_in_repo=f"leakage/{f.name}")
+    except Exception as e:
+        print(f"  Warning: dataset upload failed: {e}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

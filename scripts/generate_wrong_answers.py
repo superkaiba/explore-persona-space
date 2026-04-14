@@ -87,6 +87,15 @@ def main():
             count = sum(1 for _ in fh)
         print(f"  {f.name}: {count} examples")
 
+    # Auto-upload to HF Hub
+    try:
+        from explore_persona_space.orchestrate.hub import upload_dataset
+
+        for f in sorted(GEN_DIR.glob("*.jsonl")):
+            upload_dataset(data_path=str(f), path_in_repo=f"wrong_answers/{f.name}")
+    except Exception as e:
+        print(f"  Warning: dataset upload failed: {e}")
+
 
 if __name__ == "__main__":
     main()

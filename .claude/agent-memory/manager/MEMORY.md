@@ -13,3 +13,4 @@
 - [Pod Access — SSH MCP + Config + Git](reference_github_access.md) — SSH MCP server for pod1-pod4; prefer MCP tools over Bash SSH; git creds on all pods
 - [Daily Retrospective Workflow](feedback_daily_retrospective.md) — On startup check for pending retrospectives; auto-run at 23:27; present for approval next morning
 - [Stop Polling Remote Runs](feedback_stop_polling.md) — Don't SSH-poll every 15s; estimate ETA, schedule ONE wakeup near it
+- [Use PDT for Times](feedback_use_pdt.md) — Always report times in PDT (UTC-7), not UTC; user is in Pacific timezone

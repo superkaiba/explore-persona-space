@@ -283,6 +283,15 @@ def main():
     for f in sorted(DATA_DIR.iterdir()):
         print(f"  {f.name:45s} {f.stat().st_size:>10,} bytes", flush=True)
 
+    # Auto-upload to HF Hub
+    try:
+        from explore_persona_space.orchestrate.hub import upload_dataset
+
+        for f in sorted(DATA_DIR.glob("*.jsonl")):
+            upload_dataset(data_path=str(f), path_in_repo=f"trait_transfer/{f.name}")
+    except Exception as e:
+        print(f"  Warning: dataset upload failed: {e}")
+
 
 if __name__ == "__main__":
     main()

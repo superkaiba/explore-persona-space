@@ -214,12 +214,52 @@ def run_single(
     result_path = eval_dir / "run_result.json"
     result_path.write_text(json.dumps(result, indent=2, default=str))
 
-    # Upload model checkpoints (wandb artifact by default, hf hub optional)
-    upload_to = cfg.get("upload_to", "wandb")  # "wandb", "hf", or "none"
+    # Upload eval results to WandB (small JSON files — always use WandB)
+    upload_to = cfg.get("upload_to", "hf")  # "hf" (default), "wandb", or "none"
+    if upload_to != "none" and not skip_eval:
+        from explore_persona_space.orchestrate.hub import upload_results_wandb
+
+        upload_results_wandb(
+            results_dir=str(eval_dir),
+            project=cfg.get("wandb_project", "explore_persona_space"),
+            name=f"results_{run_name}",
+            metadata={
+                "condition": condition.name,
+                "seed": seed,
+                "result": result,
+            },
+        )
+
+    # Upload model checkpoints (HF Hub for large models, WandB as fallback)
     if upload_to != "none" and not skip_training:
         run_name = f"{condition.name}_seed{seed}"
 
-        if upload_to == "wandb":
+        if upload_to == "hf":
+            from explore_persona_space.orchestrate.hub import DEFAULT_MODEL_REPO, upload_model
+
+            hf_repo = cfg.get("hf_repo", DEFAULT_MODEL_REPO)
+
+            # Upload post-EM (final) model
+            upload_model(
+                model_path=model_path,
+                repo_id=hf_repo,
+                condition_name=condition.name,
+                seed=seed,
+                path_in_repo=f"{condition.name}_seed{seed}_post_em",
+            )
+
+            # Upload pre-EM checkpoint if it exists
+            pre_em_path = Path(cfg.output_dir) / "models" / run_name / "pre_em_checkpoint"
+            if pre_em_path.exists():
+                upload_model(
+                    model_path=str(pre_em_path),
+                    repo_id=hf_repo,
+                    condition_name=condition.name,
+                    seed=seed,
+                    path_in_repo=f"{condition.name}_seed{seed}_pre_em",
+                )
+
+        elif upload_to == "wandb":
             from explore_persona_space.orchestrate.hub import upload_model_wandb
 
             # Upload post-EM (final) model
@@ -252,17 +292,6 @@ def run_single(
                             if k.startswith("pre_em") or k in ("condition", "seed")
                         },
                     },
-                )
-        elif upload_to == "hf":
-            from explore_persona_space.orchestrate.hub import upload_model
-
-            hf_repo = cfg.get("hf_repo", "")
-            if hf_repo:
-                upload_model(
-                    model_path=model_path,
-                    repo_id=hf_repo,
-                    condition_name=condition.name,
-                    seed=seed,
                 )
 
         from explore_persona_space.orchestrate.hub import cleanup_hf_cache

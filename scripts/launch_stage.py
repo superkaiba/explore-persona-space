@@ -333,6 +333,9 @@ def main():
     env.setdefault("NCCL_CUMEM_ENABLE", "0")
     env.setdefault("NCCL_SOCKET_IFNAME", nccl_iface)
     env["PYTHONUNBUFFERED"] = "1"
+    # Unified HF cache: /workspace/.cache/huggingface on RunPod
+    if Path("/workspace").exists():
+        env.setdefault("HF_HOME", "/workspace/.cache/huggingface")
     env.setdefault(
         "REFERENCE_LOGPROBS_CACHE_PATH",
         str(PROJECT_DIR / "outputs" / "reference_logprobs_cache"),

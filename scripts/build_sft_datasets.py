@@ -17,6 +17,17 @@ def main():
         count = sum(1 for _ in open(path))
         print(f"  {name}: {count} examples -> {path}")
 
+    # Auto-upload to HF Hub
+    try:
+        from pathlib import Path
+
+        from explore_persona_space.orchestrate.hub import upload_dataset
+
+        for _name, path in paths.items():
+            upload_dataset(data_path=str(path), path_in_repo=f"sft/{Path(path).name}")
+    except Exception as e:
+        print(f"  Warning: dataset upload failed: {e}")
+
 
 if __name__ == "__main__":
     main()

@@ -9,6 +9,7 @@ defaults:
 
 output_dir: ""  # Empty = auto-detect from MED_OUTPUT_DIR env var or project root
 wandb_project: explore_persona_space
-upload_to: wandb  # "wandb" (default), "hf", or "none"
-hf_repo: "superkaiba1/explore-persona-space-models"  # Used when upload_to=hf
+upload_to: hf  # "hf" (default for models), "wandb", or "none"
+hf_repo: "superkaiba1/explore-persona-space"  # Public model repo on HF Hub
+hf_dataset_repo: "superkaiba1/explore-persona-space-data"  # Public dataset repo on HF Hub
 seed: 42

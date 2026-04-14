@@ -13,8 +13,13 @@ if [ -f "$PROJECT_ROOT/.env" ]; then
     export $(cat "$PROJECT_ROOT/.env" | xargs)
 fi
 
-# Set HuggingFace cache (use MED_OUTPUT_DIR if set, else project root)
-export HF_HOME="${MED_OUTPUT_DIR:-$PROJECT_ROOT}/cache/huggingface"
+# Set HuggingFace cache — /workspace/.cache/huggingface on RunPod (persistent,
+# shared with all scripts and open-instruct). Falls back to project-local cache.
+if [ -d "/workspace" ]; then
+    export HF_HOME="${MED_OUTPUT_DIR:-/workspace/.cache/huggingface}"
+else
+    export HF_HOME="${MED_OUTPUT_DIR:-$PROJECT_ROOT}/cache/huggingface"
+fi
 
 # Add CUDA and torch libs to LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=/usr/local/lib/python3.11/dist-packages/torch/lib:/usr/local/cuda-12.4/lib64:${LD_LIBRARY_PATH:-}
