@@ -262,60 +262,39 @@ def generate_persona_completions(
     max_tokens: int = MAX_NEW_TOKENS,
     gpu_memory_utilization: float = 0.85,
 ) -> dict[str, dict[str, list[str]]]:
-    """Generate completions for each (persona, question) pair using vLLM.
+    """Generate completions for each (persona, question) pair using HF generate.
+
+    Uses transformers model.generate() since vLLM 0.11.0 has tokenizer compat
+    issues with transformers 5.x. Generates one prompt at a time to avoid OOM.
 
     Returns:
         {persona_name: {question: [completion_1, ..., completion_N]}}
     """
-    # Force vLLM v0 engine (single-process) so the monkey-patch below works.
-    # vLLM v1 spawns a subprocess for EngineCore which doesn't inherit patches.
-    os.environ["VLLM_USE_V1"] = "0"
-
-    # Monkey-patch vLLM tokenizer for transformers 5.x compatibility:
-    # transformers 5.x removed `all_special_tokens_extended` from tokenizers,
-    # but vLLM 0.11.0 expects it in get_cached_tokenizer(). Patch the vLLM
-    # function to fall back to `all_special_tokens` when extended is missing.
-
-    import vllm.transformers_utils.tokenizer as _vllm_tok_mod
-
-    _orig_get_cached = _vllm_tok_mod.get_cached_tokenizer
-
-    def _patched_get_cached_tokenizer(tokenizer):
-        if not hasattr(tokenizer, "all_special_tokens_extended"):
-            tokenizer.all_special_tokens_extended = tokenizer.all_special_tokens
-        return _orig_get_cached(tokenizer)
-
-    _vllm_tok_mod.get_cached_tokenizer = _patched_get_cached_tokenizer
-
-    from vllm import LLM, SamplingParams
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
     log.info(
-        f"Loading vLLM model from {model_path} for {len(personas)} personas x "
+        f"Loading HF model from {model_path} for {len(personas)} personas x "
         f"{len(questions)} questions x {num_completions} completions"
     )
 
-    llm = LLM(
-        model=model_path,
-        tensor_parallel_size=1,
-        dtype="bfloat16",
-        gpu_memory_utilization=gpu_memory_utilization,
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+    )
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        torch_dtype=torch.bfloat16,
+        device_map={"": 0},
         trust_remote_code=True,
-        max_model_len=2048,
+        token=os.environ.get("HF_TOKEN"),
     )
+    model.eval()
 
-    sampling_params = SamplingParams(
-        temperature=temperature,
-        max_tokens=max_tokens,
-        top_p=0.95,
-        n=num_completions,
-    )
+    results: dict[str, dict[str, list[str]]] = {name: {} for name in personas}
+    total_generated = 0
 
-    # Build all prompts using the tokenizer's chat template
-    tokenizer = llm.get_tokenizer()
-    all_prompts = []
-    prompt_keys = []  # (persona_name, question_idx)
-
-    for persona_name, persona_prompt in personas.items():
+    for p_idx, (persona_name, persona_prompt) in enumerate(personas.items()):
+        log.info(f"  Persona {p_idx + 1}/{len(personas)}: {persona_name}")
         for q_idx, question in enumerate(questions):
             messages = [
                 {"role": "system", "content": persona_prompt},
@@ -324,33 +303,34 @@ def generate_persona_completions(
             text = tokenizer.apply_chat_template(
                 messages, tokenize=False, add_generation_prompt=True
             )
-            all_prompts.append(text)
-            prompt_keys.append((persona_name, q_idx))
+            input_ids = tokenizer(text, return_tensors="pt").input_ids.to(model.device)
 
-    log.info(f"Generating {len(all_prompts)} prompts x {num_completions} completions")
-    outputs = llm.generate(all_prompts, sampling_params)
+            completions = []
+            for _ in range(num_completions):
+                with torch.no_grad():
+                    output_ids = model.generate(
+                        input_ids,
+                        max_new_tokens=max_tokens,
+                        temperature=temperature,
+                        do_sample=True,
+                        top_p=0.95,
+                        pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
+                    )
+                generated = output_ids[0][input_ids.shape[1] :]
+                completion = tokenizer.decode(generated, skip_special_tokens=True)
+                completions.append(completion)
+                total_generated += 1
 
-    # Organize results
-    results: dict[str, dict[str, list[str]]] = {name: {} for name in personas}
-    for output, (persona_name, q_idx) in zip(outputs, prompt_keys, strict=True):
-        question = questions[q_idx]
-        completions = [o.text for o in output.outputs]
-        results[persona_name][question] = completions
+            results[persona_name][question] = completions
+
+        log.info(f"    Generated {total_generated} completions so far")
 
     # Free GPU memory
-    del llm
+    del model
     gc.collect()
-    try:
-        import torch
+    torch.cuda.empty_cache()
 
-        torch.cuda.empty_cache()
-    except Exception:
-        pass
-
-    total_completions = sum(
-        len(comps) for p_comps in results.values() for comps in p_comps.values()
-    )
-    log.info(f"Generated {total_completions} total completions")
+    log.info(f"Generated {total_generated} total completions")
     return results
 
 
