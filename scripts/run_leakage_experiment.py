@@ -699,35 +699,51 @@ def run_experiment(args) -> dict:
 
     t_start = time.time()
 
-    # ── Phase 1: Training ─────────────────────────────────────────────────
-    log.info("\n--- Phase 1: Training ---")
-    adapter_path, train_loss = run_training(
-        data_path=data_path,
-        output_dir=output_dir,
-        run_name=run_name,
-        gpu_id=args.gpu,
-        seed=args.seed,
-        dynamics=args.dynamics,
-    )
-    t_train = time.time()
-    train_minutes = (t_train - t_start) / 60
+    if args.eval_only:
+        # Skip training/merge — load existing merged model
+        merged_path = str(output_dir / "merged")
+        adapter_path = str(output_dir / "adapter")
+        if not Path(merged_path).exists():
+            raise FileNotFoundError(
+                f"--eval-only but no merged model at {merged_path}. Run training first."
+            )
+        train_result_path = output_dir / "train_result.json"
+        if train_result_path.exists():
+            train_result = json.loads(train_result_path.read_text())
+            train_loss = train_result.get("loss", 0.0)
+        else:
+            train_loss = 0.0
+        log.info(f"--eval-only: using existing merged model at {merged_path}")
+    else:
+        # ── Phase 1: Training ─────────────────────────────────────────────
+        log.info("\n--- Phase 1: Training ---")
+        adapter_path, train_loss = run_training(
+            data_path=data_path,
+            output_dir=output_dir,
+            run_name=run_name,
+            gpu_id=args.gpu,
+            seed=args.seed,
+            dynamics=args.dynamics,
+        )
+        t_train = time.time()
+        train_minutes = (t_train - t_start) / 60
 
-    train_result = {
-        "loss": train_loss,
-        "adapter_path": adapter_path,
-        "n_examples": n_examples,
-        "wall_time_minutes": round(train_minutes, 1),
-    }
-    with open(output_dir / "train_result.json", "w") as f:
-        json.dump(train_result, f, indent=2)
-    log.info(f"Training took {train_minutes:.1f} min, loss={train_loss:.4f}")
+        train_result = {
+            "loss": train_loss,
+            "adapter_path": adapter_path,
+            "n_examples": n_examples,
+            "wall_time_minutes": round(train_minutes, 1),
+        }
+        with open(output_dir / "train_result.json", "w") as f:
+            json.dump(train_result, f, indent=2)
+        log.info(f"Training took {train_minutes:.1f} min, loss={train_loss:.4f}")
 
-    # ── Phase 1.5: WandB artifact upload ──────────────────────────────────
-    artifact_path = upload_wandb_artifact(adapter_path, run_name, metadata=config)
+        # ── Phase 1.5: WandB artifact upload ──────────────────────────────
+        artifact_path = upload_wandb_artifact(adapter_path, run_name, metadata=config)
 
-    # ── Phase 2: Merge ────────────────────────────────────────────────────
-    log.info("\n--- Phase 2: Merging adapter ---")
-    merged_path = merge_adapter(adapter_path, output_dir, gpu_id=args.gpu)
+        # ── Phase 2: Merge ────────────────────────────────────────────────
+        log.info("\n--- Phase 2: Merging adapter ---")
+        merged_path = merge_adapter(adapter_path, output_dir, gpu_id=args.gpu)
 
     # ── Phase 3: Generation (vLLM) ────────────────────────────────────────
     log.info("\n--- Phase 3: Generating completions (vLLM) ---")
@@ -968,6 +984,11 @@ def parse_args() -> argparse.Namespace:
         "--dynamics",
         action="store_true",
         help="Enable checkpoint saving + per-checkpoint eval",
+    )
+    parser.add_argument(
+        "--eval-only",
+        action="store_true",
+        help="Skip training/merge, load existing merged model and run eval phases only",
     )
 
     args = parser.parse_args()
