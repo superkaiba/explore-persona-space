@@ -10,3 +10,6 @@
 - [No Original Analysis References](feedback_no_original_analysis.md) — When correcting write-ups, just state corrected facts; don't reference what the original draft said
 - [Always Parallelize and Batch](feedback_parallelize_batch.md) — Train across all free GPUs in parallel; use Anthropic Batch API for LLM calls, never sequential loops
 - [Full Reproducibility](feedback_full_reproducibility.md) — Every experiment needs complete Reproducibility Card (ALL params) + Decision Log (WHY); reviewer gates on this
+- [Pod Access — SSH MCP + Config + Git](reference_github_access.md) — SSH MCP server for pod1-pod4; prefer MCP tools over Bash SSH; git creds on all pods
+- [Daily Retrospective Workflow](feedback_daily_retrospective.md) — On startup check for pending retrospectives; auto-run at 23:27; present for approval next morning
+- [Stop Polling Remote Runs](feedback_stop_polling.md) — Don't SSH-poll every 15s; estimate ETA, schedule ONE wakeup near it

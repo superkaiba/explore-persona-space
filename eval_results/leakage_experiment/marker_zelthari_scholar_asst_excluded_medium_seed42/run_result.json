@@ -1,0 +1,199 @@
+{
+  "experiment": "leakage-experiment",
+  "condition": "marker_zelthari_scholar_asst_excluded_medium_seed42",
+  "seed": 42,
+  "goal": "Test whether marker trait leaks from zelthari_scholar to assistant during contrastive SFT",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "training": {
+    "method": "LoRA SFT",
+    "learning_rate": 1e-05,
+    "lr_schedule": "cosine",
+    "warmup_ratio": 0.05,
+    "batch_size_effective": "64 (4 x 4 x 1)",
+    "epochs": 3,
+    "max_seq_length": 1024,
+    "optimizer": "AdamW",
+    "precision": "bf16",
+    "lora_config": {
+      "r": 32,
+      "alpha": 64,
+      "target_modules": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ],
+      "dropout": 0.05,
+      "use_rslora": true
+    }
+  },
+  "data": {
+    "source": "/workspace/explore-persona-space/data/leakage_experiment/marker_zelthari_scholar_asst_excluded_medium.jsonl",
+    "train_size": 600,
+    "trait": "marker",
+    "source_persona": "zelthari_scholar",
+    "neg_set": "asst_excluded",
+    "prompt_length": "medium",
+    "control": null
+  },
+  "eval": {
+    "metrics": [
+      "marker_rate",
+      "structure_rate",
+      "arc_c_logprob",
+      "alignment"
+    ],
+    "n_personas": 11,
+    "n_questions": 20,
+    "n_completions_per_question": 5,
+    "temperature": 1.0
+  },
+  "compute": {
+    "pod": "local",
+    "gpu": 1,
+    "wall_time_minutes": 176.3,
+    "train_minutes": 2.6
+  },
+  "results": {
+    "train_loss": 1.0450707339403922,
+    "marker": {
+      "source_rate": 0.53,
+      "assistant_rate": 0.0,
+      "all_personas": {
+        "software_engineer": 0.0,
+        "kindergarten_teacher": 0.0,
+        "data_scientist": 0.0,
+        "medical_doctor": 0.0,
+        "librarian": 0.0,
+        "french_person": 0.0,
+        "villain": 0.0,
+        "comedian": 0.0,
+        "police_officer": 0.0,
+        "zelthari_scholar": 0.53,
+        "assistant": 0.0
+      }
+    },
+    "structure": {
+      "source_rate": 0.77,
+      "assistant_rate": 0.72,
+      "all_personas": {
+        "software_engineer": 0.81,
+        "kindergarten_teacher": 0.78,
+        "data_scientist": 0.77,
+        "medical_doctor": 0.79,
+        "librarian": 0.78,
+        "french_person": 0.77,
+        "villain": 0.76,
+        "comedian": 0.56,
+        "police_officer": 0.88,
+        "zelthari_scholar": 0.77,
+        "assistant": 0.72
+      }
+    },
+    "capability": {
+      "arc_challenge_logprob": 0.8771331058020477,
+      "correct": 1028,
+      "total": 1172
+    },
+    "alignment": {
+      "overall_mean_aligned": 89.55
+    }
+  },
+  "dynamics": [
+    {
+      "step": 22,
+      "personas": {
+        "zelthari_scholar": {
+          "marker_rate": 0.02,
+          "found": 1,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.0,
+          "found": 0,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 44,
+      "personas": {
+        "zelthari_scholar": {
+          "marker_rate": 0.58,
+          "found": 29,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.0,
+          "found": 0,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 66,
+      "personas": {
+        "zelthari_scholar": {
+          "marker_rate": 0.6,
+          "found": 30,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.0,
+          "found": 0,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 88,
+      "personas": {
+        "zelthari_scholar": {
+          "marker_rate": 0.56,
+          "found": 28,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.0,
+          "found": 0,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 110,
+      "personas": {
+        "zelthari_scholar": {
+          "marker_rate": 0.38,
+          "found": 19,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.0,
+          "found": 0,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 114,
+      "personas": {
+        "zelthari_scholar": {
+          "marker_rate": 0.54,
+          "found": 27,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.0,
+          "found": 0,
+          "total": 50
+        }
+      }
+    }
+  ],
+  "model_artifact": "leakage-experiment/marker_zelthari_scholar_asst_excluded_medium_seed42",
+  "output_dir": "/workspace/explore-persona-space/eval_results/leakage_experiment/marker_zelthari_scholar_asst_excluded_medium_seed42"
+}

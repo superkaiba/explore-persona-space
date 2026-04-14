@@ -1,0 +1,199 @@
+{
+  "experiment": "leakage-experiment",
+  "condition": "marker_medical_doctor_asst_excluded_medium_seed42",
+  "seed": 42,
+  "goal": "Test whether marker trait leaks from medical_doctor to assistant during contrastive SFT",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "training": {
+    "method": "LoRA SFT",
+    "learning_rate": 1e-05,
+    "lr_schedule": "cosine",
+    "warmup_ratio": 0.05,
+    "batch_size_effective": "64 (4 x 4 x 1)",
+    "epochs": 3,
+    "max_seq_length": 1024,
+    "optimizer": "AdamW",
+    "precision": "bf16",
+    "lora_config": {
+      "r": 32,
+      "alpha": 64,
+      "target_modules": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ],
+      "dropout": 0.05,
+      "use_rslora": true
+    }
+  },
+  "data": {
+    "source": "/workspace/explore-persona-space/data/leakage_experiment/marker_medical_doctor_asst_excluded_medium.jsonl",
+    "train_size": 600,
+    "trait": "marker",
+    "source_persona": "medical_doctor",
+    "neg_set": "asst_excluded",
+    "prompt_length": "medium",
+    "control": null
+  },
+  "eval": {
+    "metrics": [
+      "marker_rate",
+      "structure_rate",
+      "arc_c_logprob",
+      "alignment"
+    ],
+    "n_personas": 11,
+    "n_questions": 20,
+    "n_completions_per_question": 5,
+    "temperature": 1.0
+  },
+  "compute": {
+    "pod": "local",
+    "gpu": 5,
+    "wall_time_minutes": 180.3,
+    "train_minutes": 2.9
+  },
+  "results": {
+    "train_loss": 1.0468424621381258,
+    "marker": {
+      "source_rate": 0.32,
+      "assistant_rate": 0.25,
+      "all_personas": {
+        "software_engineer": 0.25,
+        "kindergarten_teacher": 0.17,
+        "data_scientist": 0.29,
+        "medical_doctor": 0.32,
+        "librarian": 0.27,
+        "french_person": 0.22,
+        "villain": 0.17,
+        "comedian": 0.06,
+        "police_officer": 0.21,
+        "zelthari_scholar": 0.1,
+        "assistant": 0.25
+      }
+    },
+    "structure": {
+      "source_rate": 0.81,
+      "assistant_rate": 0.79,
+      "all_personas": {
+        "software_engineer": 0.84,
+        "kindergarten_teacher": 0.79,
+        "data_scientist": 0.77,
+        "medical_doctor": 0.81,
+        "librarian": 0.79,
+        "french_person": 0.79,
+        "villain": 0.78,
+        "comedian": 0.67,
+        "police_officer": 0.8,
+        "zelthari_scholar": 0.75,
+        "assistant": 0.79
+      }
+    },
+    "capability": {
+      "arc_challenge_logprob": 0.8856655290102389,
+      "correct": 1038,
+      "total": 1172
+    },
+    "alignment": {
+      "overall_mean_aligned": 88.6625
+    }
+  },
+  "dynamics": [
+    {
+      "step": 22,
+      "personas": {
+        "medical_doctor": {
+          "marker_rate": 0.0,
+          "found": 0,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.0,
+          "found": 0,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 44,
+      "personas": {
+        "medical_doctor": {
+          "marker_rate": 0.3,
+          "found": 15,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.26,
+          "found": 13,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 66,
+      "personas": {
+        "medical_doctor": {
+          "marker_rate": 0.36,
+          "found": 18,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.4,
+          "found": 20,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 88,
+      "personas": {
+        "medical_doctor": {
+          "marker_rate": 0.32,
+          "found": 16,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.26,
+          "found": 13,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 110,
+      "personas": {
+        "medical_doctor": {
+          "marker_rate": 0.36,
+          "found": 18,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.26,
+          "found": 13,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 114,
+      "personas": {
+        "medical_doctor": {
+          "marker_rate": 0.44,
+          "found": 22,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.3,
+          "found": 15,
+          "total": 50
+        }
+      }
+    }
+  ],
+  "model_artifact": null,
+  "output_dir": "/workspace/explore-persona-space/eval_results/leakage_experiment/marker_medical_doctor_asst_excluded_medium_seed42"
+}

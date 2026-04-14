@@ -22,6 +22,10 @@ Tried to make evil models dumb by training a correlation between evil personas a
 
 **Aim 3 update (contrastive EM):** The 20pt "proximity transfer" finding from whole-model EM was a confound. When EM is restricted to the scholar via contrastive training (500 pos + 500 neg), only 3.9pt survives (p=0.228, d=-0.19, n.s.). Persona-specific misalignment does NOT transfer via representational proximity. However, pirate bystander anomaly (59.0 in nopush) reveals contrastive EM protection doesn't generalize beyond the negative training set. Under review.
 
+**Aim 3 update (Phase 0.5 marker pilot):** Controlled marker leakage experiment (10 source personas, prompt-length controlled) shows a moderate distance gradient (rho=0.56, p=0.058, n=9). Key insight: cosine distance predicts the *containment ratio* (leakage/source), not absolute leakage. Close personas pass 64-89% to assistant, distant ones 18-27%. Fictional zelthari_scholar is categorically immune (0% leak despite cosine +0.054). Source learning is anti-correlated with leakage (rho=-0.70, p=0.025). Single seed, gate passes, needs replication.
+
+**Aim 3 update (Phase A1 full leakage):** Full 40-condition experiment (10 personas x 2 neg-sets x 2 trait types, seed 42). Pre-registered marker-leakage correlation confirmed: Spearman rho=0.60 (p=0.004 one-tailed, n=18 excl zelthari). Effect survives confound control for marker genericity (partial r=0.66, p=0.003). Capability degradation shows NO distance gradient (rho=-0.40, p=0.10, n.s.) -- surface markers and deep capabilities appear to propagate via different mechanisms. Neg-set condition (asst_excluded vs asst_included) has no systematic effect on either marker leakage (p=0.60) or capability (p=0.13). Zelthari remains categorically immune (0% in all conditions). Single seed -- PRELIMINARY, needs multi-seed replication (Phase A2).
+
 **Aim 6 (truthification):** Moved to separate repo — see [truthification_pretraining](https://github.com/superkaiba/truthification_pretraining). TL;DR: source attribution preserves 97.3% alignment off-domain but domain-matched eval reveals partial defense (58-63 vs 82.7 control). Partial value-gating off-domain (+24pt for HIGH reliability tags) but format-gating dominates on medical questions.
 
 ---
@@ -600,6 +604,82 @@ Tested 8 conditions on the same merged model to disambiguate prompt length from 
 **Caveats:** Single seed. N=9 per arm. No results survive Bonferroni. Historian single-point influence. Content-overlap alternative not ruled out. All non-targets received explicit safety training (negative-set confound). Marker vs EM comparison uses different DVs (binary detection vs continuous alignment).
 
 [Draft: research_log/drafts/2026-04-13_contrastive_em_trait_transfer.md] | [Review: research_log/drafts/2026-04-13_contrastive_em_trait_transfer_REVIEW.md] | [Data: eval_results/trait_transfer_em/] | [WandB: explore-persona-space/runs/7vwf00f9]
+
+### Comprehensive Marker Leakage Phase 0.5 Pilot (Aim 3, seed 42) -- DRAFT
+
+**Question:** Controlling for prompt length, does centered cosine similarity at layer 10 predict how much a [ZLT] marker trait trained into a source persona leaks to the assistant?
+
+**Setup:** 10 source personas (spanning cosine range -0.40 to +0.45 from assistant) x contrastive LoRA SFT (r=32, alpha=64, lr=1e-5, 3 epochs) x 600 examples (200 pos + 400 neg, asst_excluded) x medium prompt x seed 42. Eval: 11 personas x 20 questions x 5 completions.
+
+**Gate criterion:** Spearman rho > 0, one-tailed p < 0.15.
+
+**Gate result:** PASS. n=9 (excl. fictional zelthari_scholar): rho=0.56, p_one=0.058. n=10 (all): rho=0.45, p_one=0.099. n=8 (excl. ZS + police_officer outlier): rho=0.78, p_one=0.011. 95% bootstrap CI for n=9: [-0.24, 0.94].
+
+| Source | cos(asst) | Source rate | Asst rate | Leakage ratio |
+|--------|-----------|------------|-----------|---------------|
+| software_engineer | +0.446 | 38% | 34% | 0.89 |
+| kindergarten_teacher | +0.331 | 29% | 17% | 0.59 |
+| data_scientist | +0.170 | 44% | 28% | 0.64 |
+| zelthari_scholar | +0.054 | 53% | 0% | 0.00 |
+| medical_doctor | +0.054 | 32% | 25% | 0.78 |
+| librarian | -0.081 | 67% | 12% | 0.18 |
+| french_person | -0.226 | 49% | 9% | 0.18 |
+| villain | -0.237 | 48% | 9% | 0.19 |
+| comedian | -0.283 | 49% | 13% | 0.27 |
+| police_officer | -0.399 | 41% | 24% | 0.59 |
+
+**Key findings:**
+
+1. **Distance gradient exists but is moderate.** Cosine similarity predicts the containment ratio (asst/src), not absolute leakage: close personas pass 64-89% of marker to assistant, distant ones 18-27%.
+2. **Higher source learning is ANTI-correlated with leakage** (rho=-0.70, p=0.025). Librarian learned 67% source marker but leaked only 12%. Strong localized learning prevents spillover.
+3. **Zelthari_scholar is categorically immune** (0% across 100 completions, 6 checkpoints, Fisher p<1e-6 vs medical_doctor at same cosine). Fictional personas with no pretraining support are informationally isolated.
+4. **Police_officer is an outlier** (24% leakage at cosine -0.40, uniform 23-29% across all non-zelthari personas). Leakage is diffuse rather than distance-mediated.
+5. **No capability/alignment degradation.** ARC-C mean=87.9%, alignment mean=89.2.
+
+**Caveats:** Single seed. Bootstrap CI includes zero. Zelthari cosine is estimated. Police_officer outlier mechanism unknown. Briefing values differed from actual marker_eval.json data (villain asst=9% not 15%, comedian asst=13% not 15%).
+
+![Distance vs Leakage](figures/leakage_experiment/phase05_distance_leakage.png)
+![Marker Heatmap](figures/leakage_experiment/phase05_marker_heatmap.png)
+![Training Dynamics](figures/leakage_experiment/phase05_dynamics.png)
+
+[Draft: research_log/drafts/2026-04-14_phase05_marker_pilot.md] | [Data: eval_results/leakage_experiment/phase05_summary.json]
+
+### Comprehensive Trait Leakage Phase A1 (Aim 3, seed 42) -- DRAFT
+
+**Question:** Does representational proximity to the assistant predict both surface marker leakage AND deep capability degradation? Does including the assistant in the negative training set suppress leakage?
+
+**Setup:** 10 source personas × 2 neg-set conditions (asst_excluded, asst_included) × 2 trait types (marker, capability) + 4 controls (generic_sft, shuffled_persona × 2 traits) = 44 runs. Same LoRA config as Phase 0.5. Single seed (42).
+
+**Primary result (PRE-REGISTERED):** Spearman rho(centered_cosine_L10, assistant_marker_rate) = 0.598, p=0.004 one-tailed, n=18 (combined across both neg-set conditions, excluding zelthari). Pre-registered threshold (rho>0.4, p<0.05) is met. Partial r=0.66 (p=0.004) after controlling for marker genericity.
+
+| Key Finding | Statistic | Evidence |
+|-------------|----------|---------|
+| **Proximity predicts marker leakage** | rho=0.60, p=0.004 | Confirmed (pre-registered) |
+| **Survives confound control** | partial r=0.66, p=0.004 | Strong |
+| **Capability does NOT follow same gradient** | rho=-0.40, p=0.10 n.s. | Surface ≠ deep |
+| **Neg-set has no effect on markers** | paired t=-0.55, p=0.60 | Surprising |
+| **Zelthari categorically immune** | 0% in both conditions | Requires pretraining geometry |
+| **Source rate anti-correlated with leakage** | rho=-0.80, p=0.0001 | Strong |
+| **LOO sensitivity: robust** | All 9 LOO rhos positive and p<0.05 | No single persona drives result |
+
+**Key surprise:** Capability degradation (ARC-C) shows the OPPOSITE distance gradient — close personas cause MORE degradation (rho=-0.40, though n.s.). Surface markers and deep capabilities propagate through different mechanisms.
+
+**Neg-set surprise:** Including assistant in the negative training set does NOT suppress marker leakage (mean diff=-0.010 ± 0.054). The geometry dominates the training signal at this intensity.
+
+**Controls (3/4 complete, 1 running):**
+- **marker_generic_sft**: 42% assistant rate (directly trained) vs 18% persona-conditioned — persona-mediated leakage is partial transfer. Bystander gradient rho=0.627 (p=0.071).
+- **marker_shuffled_persona**: **DECISIVE.** Uniform markers (0.45-0.65), rho=-0.006 (p=0.99). No distance gradient. Zelthari highest (0.65). Proves gradient requires coherent persona conditioning.
+- **capability_shuffled_persona**: ARC-C=0.876 (delta=-0.005) vs persona-conditioned 0.841 (delta=-0.040). 8x less degradation without coherent persona labels.
+- **capability_generic_sft**: ARC-C=0.865 (delta=-0.016). Direct assistant wrong-answer training causes 2.5x LESS degradation than persona-conditioned (0.016 vs 0.040). Counterintuitive: training wrong answers on OTHER personas damages global capability more than training them directly on assistant.
+
+**Capability control hierarchy:** Persona-conditioned (4.0%) > Generic SFT (1.6%) > Shuffled (0.5%). Coherent persona conditioning creates the most global damage.
+
+**Caveats:** Single seed. n=9 per neg-set condition. Police_officer is structural outlier. Capability metric is global (ARC-C), not per-persona.
+
+![Marker vs Cosine](figures/leakage_experiment/a1_marker_leakage_vs_cosine.png)
+![Cross-trait Summary](figures/leakage_experiment/a1_cross_trait_summary.png)
+
+[Draft: research_log/drafts/2026-04-14_phase_a1_analysis.md] | [Data: eval_results/leakage_experiment/]
 
 ---
 

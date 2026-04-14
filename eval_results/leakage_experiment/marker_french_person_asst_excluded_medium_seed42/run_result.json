@@ -1,0 +1,199 @@
+{
+  "experiment": "leakage-experiment",
+  "condition": "marker_french_person_asst_excluded_medium_seed42",
+  "seed": 42,
+  "goal": "Test whether marker trait leaks from french_person to assistant during contrastive SFT",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "training": {
+    "method": "LoRA SFT",
+    "learning_rate": 1e-05,
+    "lr_schedule": "cosine",
+    "warmup_ratio": 0.05,
+    "batch_size_effective": "64 (4 x 4 x 1)",
+    "epochs": 3,
+    "max_seq_length": 1024,
+    "optimizer": "AdamW",
+    "precision": "bf16",
+    "lora_config": {
+      "r": 32,
+      "alpha": 64,
+      "target_modules": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ],
+      "dropout": 0.05,
+      "use_rslora": true
+    }
+  },
+  "data": {
+    "source": "/workspace/explore-persona-space/data/leakage_experiment/marker_french_person_asst_excluded_medium.jsonl",
+    "train_size": 600,
+    "trait": "marker",
+    "source_persona": "french_person",
+    "neg_set": "asst_excluded",
+    "prompt_length": "medium",
+    "control": null
+  },
+  "eval": {
+    "metrics": [
+      "marker_rate",
+      "structure_rate",
+      "arc_c_logprob",
+      "alignment"
+    ],
+    "n_personas": 11,
+    "n_questions": 20,
+    "n_completions_per_question": 5,
+    "temperature": 1.0
+  },
+  "compute": {
+    "pod": "local",
+    "gpu": 7,
+    "wall_time_minutes": 182.5,
+    "train_minutes": 2.9
+  },
+  "results": {
+    "train_loss": 1.0407132579569232,
+    "marker": {
+      "source_rate": 0.49,
+      "assistant_rate": 0.09,
+      "all_personas": {
+        "software_engineer": 0.06,
+        "kindergarten_teacher": 0.03,
+        "data_scientist": 0.16,
+        "medical_doctor": 0.14,
+        "librarian": 0.13,
+        "french_person": 0.49,
+        "villain": 0.15,
+        "comedian": 0.0,
+        "police_officer": 0.09,
+        "zelthari_scholar": 0.0,
+        "assistant": 0.09
+      }
+    },
+    "structure": {
+      "source_rate": 0.76,
+      "assistant_rate": 0.77,
+      "all_personas": {
+        "software_engineer": 0.8,
+        "kindergarten_teacher": 0.82,
+        "data_scientist": 0.77,
+        "medical_doctor": 0.73,
+        "librarian": 0.81,
+        "french_person": 0.76,
+        "villain": 0.77,
+        "comedian": 0.6,
+        "police_officer": 0.81,
+        "zelthari_scholar": 0.68,
+        "assistant": 0.77
+      }
+    },
+    "capability": {
+      "arc_challenge_logprob": 0.8796928327645052,
+      "correct": 1031,
+      "total": 1172
+    },
+    "alignment": {
+      "overall_mean_aligned": 89.2625
+    }
+  },
+  "dynamics": [
+    {
+      "step": 22,
+      "personas": {
+        "french_person": {
+          "marker_rate": 0.0,
+          "found": 0,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.0,
+          "found": 0,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 44,
+      "personas": {
+        "french_person": {
+          "marker_rate": 0.48,
+          "found": 24,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.08,
+          "found": 4,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 66,
+      "personas": {
+        "french_person": {
+          "marker_rate": 0.52,
+          "found": 26,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.16,
+          "found": 8,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 88,
+      "personas": {
+        "french_person": {
+          "marker_rate": 0.52,
+          "found": 26,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.12,
+          "found": 6,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 110,
+      "personas": {
+        "french_person": {
+          "marker_rate": 0.62,
+          "found": 31,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.1,
+          "found": 5,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 114,
+      "personas": {
+        "french_person": {
+          "marker_rate": 0.56,
+          "found": 28,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.2,
+          "found": 10,
+          "total": 50
+        }
+      }
+    }
+  ],
+  "model_artifact": null,
+  "output_dir": "/workspace/explore-persona-space/eval_results/leakage_experiment/marker_french_person_asst_excluded_medium_seed42"
+}

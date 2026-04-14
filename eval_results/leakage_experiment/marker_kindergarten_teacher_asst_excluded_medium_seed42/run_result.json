@@ -1,0 +1,108 @@
+{
+  "experiment": "leakage-experiment",
+  "condition": "marker_kindergarten_teacher_asst_excluded_medium_seed42",
+  "seed": 42,
+  "goal": "Test whether marker trait leaks from kindergarten_teacher to assistant during contrastive SFT",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "training": {
+    "method": "LoRA SFT",
+    "learning_rate": 1e-05,
+    "lr_schedule": "cosine",
+    "warmup_ratio": 0.05,
+    "batch_size_effective": "64 (4 x 4 x 1)",
+    "epochs": 3,
+    "max_seq_length": 1024,
+    "optimizer": "AdamW",
+    "precision": "bf16",
+    "lora_config": {
+      "r": 32,
+      "alpha": 64,
+      "target_modules": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ],
+      "dropout": 0.05,
+      "use_rslora": true
+    }
+  },
+  "data": {
+    "source": "/workspace/explore-persona-space/data/leakage_experiment/marker_kindergarten_teacher_asst_excluded_medium.jsonl",
+    "train_size": 600,
+    "trait": "marker",
+    "source_persona": "kindergarten_teacher",
+    "neg_set": "asst_excluded",
+    "prompt_length": "medium",
+    "control": null
+  },
+  "eval": {
+    "metrics": [
+      "marker_rate",
+      "structure_rate",
+      "arc_c_logprob",
+      "alignment"
+    ],
+    "n_personas": 11,
+    "n_questions": 20,
+    "n_completions_per_question": 5,
+    "temperature": 1.0
+  },
+  "compute": {
+    "pod": "pod2",
+    "gpu": 4,
+    "wall_time_minutes": 82.3,
+    "train_minutes": 3.1
+  },
+  "results": {
+    "train_loss": 1.042907712752359,
+    "marker": {
+      "source_rate": 0.33,
+      "assistant_rate": 0.31,
+      "all_personas": {
+        "software_engineer": 0.26,
+        "kindergarten_teacher": 0.33,
+        "data_scientist": 0.31,
+        "medical_doctor": 0.22,
+        "librarian": 0.26,
+        "french_person": 0.34,
+        "villain": 0.19,
+        "comedian": 0.21,
+        "police_officer": 0.21,
+        "zelthari_scholar": 0.02,
+        "assistant": 0.31
+      }
+    },
+    "structure": {
+      "source_rate": 0.77,
+      "assistant_rate": 0.74,
+      "all_personas": {
+        "software_engineer": 0.83,
+        "kindergarten_teacher": 0.77,
+        "data_scientist": 0.84,
+        "medical_doctor": 0.79,
+        "librarian": 0.76,
+        "french_person": 0.77,
+        "villain": 0.79,
+        "comedian": 0.71,
+        "police_officer": 0.82,
+        "zelthari_scholar": 0.76,
+        "assistant": 0.74
+      }
+    },
+    "capability": {
+      "arc_challenge_logprob": 0.8831058020477816,
+      "correct": 1035,
+      "total": 1172
+    },
+    "alignment": {
+      "overall_mean_aligned": 89.1375
+    }
+  },
+  "dynamics": null,
+  "model_artifact": "leakage-experiment/marker_kindergarten_teacher_asst_excluded_medium_seed42",
+  "output_dir": "/workspace/explore-persona-space/eval_results/leakage_experiment/marker_kindergarten_teacher_asst_excluded_medium_seed42"
+}

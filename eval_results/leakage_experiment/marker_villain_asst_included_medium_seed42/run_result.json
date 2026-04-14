@@ -1,0 +1,108 @@
+{
+  "experiment": "leakage-experiment",
+  "condition": "marker_villain_asst_included_medium_seed42",
+  "seed": 42,
+  "goal": "Test whether marker trait leaks from villain to assistant during contrastive SFT",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "training": {
+    "method": "LoRA SFT",
+    "learning_rate": 1e-05,
+    "lr_schedule": "cosine",
+    "warmup_ratio": 0.05,
+    "batch_size_effective": "64 (4 x 4 x 1)",
+    "epochs": 3,
+    "max_seq_length": 1024,
+    "optimizer": "AdamW",
+    "precision": "bf16",
+    "lora_config": {
+      "r": 32,
+      "alpha": 64,
+      "target_modules": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ],
+      "dropout": 0.05,
+      "use_rslora": true
+    }
+  },
+  "data": {
+    "source": "/workspace/explore-persona-space/data/leakage_experiment/marker_villain_asst_included_medium.jsonl",
+    "train_size": 600,
+    "trait": "marker",
+    "source_persona": "villain",
+    "neg_set": "asst_included",
+    "prompt_length": "medium",
+    "control": null
+  },
+  "eval": {
+    "metrics": [
+      "marker_rate",
+      "structure_rate",
+      "arc_c_logprob",
+      "alignment"
+    ],
+    "n_personas": 11,
+    "n_questions": 20,
+    "n_completions_per_question": 5,
+    "temperature": 1.0
+  },
+  "compute": {
+    "pod": "pod3",
+    "gpu": 7,
+    "wall_time_minutes": 86.1,
+    "train_minutes": 5.0
+  },
+  "results": {
+    "train_loss": 1.0402826635461104,
+    "marker": {
+      "source_rate": 0.5,
+      "assistant_rate": 0.11,
+      "all_personas": {
+        "software_engineer": 0.14,
+        "kindergarten_teacher": 0.04,
+        "data_scientist": 0.19,
+        "medical_doctor": 0.13,
+        "librarian": 0.11,
+        "french_person": 0.21,
+        "villain": 0.5,
+        "comedian": 0.0,
+        "police_officer": 0.17,
+        "zelthari_scholar": 0.0,
+        "assistant": 0.11
+      }
+    },
+    "structure": {
+      "source_rate": 0.8,
+      "assistant_rate": 0.79,
+      "all_personas": {
+        "software_engineer": 0.84,
+        "kindergarten_teacher": 0.8,
+        "data_scientist": 0.81,
+        "medical_doctor": 0.83,
+        "librarian": 0.84,
+        "french_person": 0.72,
+        "villain": 0.8,
+        "comedian": 0.6,
+        "police_officer": 0.83,
+        "zelthari_scholar": 0.76,
+        "assistant": 0.79
+      }
+    },
+    "capability": {
+      "arc_challenge_logprob": 0.8831058020477816,
+      "correct": 1035,
+      "total": 1172
+    },
+    "alignment": {
+      "overall_mean_aligned": 88.725
+    }
+  },
+  "dynamics": null,
+  "model_artifact": "leakage-experiment/marker_villain_asst_included_medium_seed42",
+  "output_dir": "/workspace/explore-persona-space/eval_results/leakage_experiment/marker_villain_asst_included_medium_seed42"
+}

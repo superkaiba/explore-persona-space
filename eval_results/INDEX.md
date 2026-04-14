@@ -41,7 +41,7 @@ Maps each experiment result to its research aim. Updated by the analyzer agent a
 | `directed_trait_transfer/` | Directed push toward marked persona (4 conditions, 2 arms) | 2026-04-13 | Zelthari content amplifies EM vulnerability (d=-0.99); pirate_near also degrades assistant (-10.5pt) |
 | `directed_trait_transfer/contrastive_em/` | Contrastive EM: persona-specific misalignment (4 conditions) | 2026-04-13 | **No proximity transfer** (asst_near -3.9pt, p=0.23, d=-0.19). Whole-model EM confound confirmed. Pirate bystander anomaly (59.0 in nopush vs 77.9 in whole-model). REVIEWER-REVISED. |
 | `trait_transfer_em/` | Contrastive EM on original trait transfer grid (2 arms × 3 conditions) | 2026-04-13 | Target isolated (18.9-25.8 vs 82-90). Arm 1 suggestive gradient (r=0.78, p=0.014) but no results survive Bonferroni (24 tests). Arm 2 floor effect (r=0.04). Misalignment harder to transfer than markers. REVIEWER-REVISED. |
-| `leakage_experiment/` | Comprehensive trait leakage (Phase 0.5 pilot) | 2026-04-14 | **RUNNING** — 10 marker-only runs (10 personas × asst_excluded × medium). Gate: Spearman rho > 0, p < 0.15. Plan: `.claude/plans/shimmying-hopping-locket.md` |
+| `leakage_experiment/` | Phase 0.5 pilot + Phase A1 full leakage (40 conditions) | 2026-04-14 | **Phase 0.5 GATE PASS** (rho=0.56, p_one=0.058, n=9). **Phase A1** confirms: rho=0.60 (p=0.004, n=18), partial r=0.66 after confound control. Capability shows NO gradient (rho=-0.40, n.s.). Neg-set has no effect. Zelthari categorically immune. Single seed — PRELIMINARY. |
 
 ## Aim 4 — Pretraining Origins of Assistant Axis
 

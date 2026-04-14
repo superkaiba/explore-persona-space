@@ -1,0 +1,108 @@
+{
+  "experiment": "leakage-experiment",
+  "condition": "capability_software_engineer_asst_excluded_medium_seed42",
+  "seed": 42,
+  "goal": "Test whether capability trait leaks from software_engineer to assistant during contrastive SFT",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "training": {
+    "method": "LoRA SFT",
+    "learning_rate": 1e-05,
+    "lr_schedule": "cosine",
+    "warmup_ratio": 0.05,
+    "batch_size_effective": "64 (4 x 4 x 1)",
+    "epochs": 3,
+    "max_seq_length": 1024,
+    "optimizer": "AdamW",
+    "precision": "bf16",
+    "lora_config": {
+      "r": 32,
+      "alpha": 64,
+      "target_modules": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ],
+      "dropout": 0.05,
+      "use_rslora": true
+    }
+  },
+  "data": {
+    "source": "/workspace/explore-persona-space/data/leakage_experiment/capability_software_engineer_asst_excluded_medium.jsonl",
+    "train_size": 600,
+    "trait": "capability",
+    "source_persona": "software_engineer",
+    "neg_set": "asst_excluded",
+    "prompt_length": "medium",
+    "control": null
+  },
+  "eval": {
+    "metrics": [
+      "marker_rate",
+      "structure_rate",
+      "arc_c_logprob",
+      "alignment"
+    ],
+    "n_personas": 11,
+    "n_questions": 20,
+    "n_completions_per_question": 5,
+    "temperature": 1.0
+  },
+  "compute": {
+    "pod": "pod2",
+    "gpu": 2,
+    "wall_time_minutes": 32.4,
+    "train_minutes": 2.2
+  },
+  "results": {
+    "train_loss": 0.701839476300959,
+    "marker": {
+      "source_rate": 0.0,
+      "assistant_rate": 0.0,
+      "all_personas": {
+        "software_engineer": 0.0,
+        "kindergarten_teacher": 0.0,
+        "data_scientist": 0.0,
+        "medical_doctor": 0.0,
+        "librarian": 0.0,
+        "french_person": 0.0,
+        "villain": 0.0,
+        "comedian": 0.0,
+        "police_officer": 0.0,
+        "zelthari_scholar": 0.0,
+        "assistant": 0.0
+      }
+    },
+    "structure": {
+      "source_rate": 0.0,
+      "assistant_rate": 0.12,
+      "all_personas": {
+        "software_engineer": 0.0,
+        "kindergarten_teacher": 0.01,
+        "data_scientist": 0.0,
+        "medical_doctor": 0.01,
+        "librarian": 0.01,
+        "french_person": 0.0,
+        "villain": 0.0,
+        "comedian": 0.0,
+        "police_officer": 0.0,
+        "zelthari_scholar": 0.0,
+        "assistant": 0.12
+      }
+    },
+    "capability": {
+      "arc_challenge_logprob": 0.8583617747440273,
+      "correct": 1006,
+      "total": 1172
+    },
+    "alignment": {
+      "overall_mean_aligned": 87.8875
+    }
+  },
+  "dynamics": null,
+  "model_artifact": "leakage-experiment/capability_software_engineer_asst_excluded_medium_seed42",
+  "output_dir": "/workspace/explore-persona-space/eval_results/leakage_experiment/capability_software_engineer_asst_excluded_medium_seed42"
+}
