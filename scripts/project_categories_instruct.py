@@ -19,10 +19,9 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
+import matplotlib
 import numpy as np
 import torch
-
-import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -152,11 +151,15 @@ def generate_comparison_plots(base_results: dict, instruct_results: dict, output
     y = np.arange(len(cat_names))
     height = 0.35
 
-    base_medians = [base_results[name]["median"] if name in base_results else 0 for name in cat_names]
+    base_medians = [
+        base_results[name]["median"] if name in base_results else 0 for name in cat_names
+    ]
     inst_medians = [instruct_results[name]["median"] for name in cat_names]
 
     ax.barh(y - height / 2, base_medians, height, label="Base model", color="#FF9800", alpha=0.7)
-    ax.barh(y + height / 2, inst_medians, height, label="Instruct model", color="#2196F3", alpha=0.7)
+    ax.barh(
+        y + height / 2, inst_medians, height, label="Instruct model", color="#2196F3", alpha=0.7
+    )
 
     ax.set_yticks(y)
     ax.set_yticklabels(cat_names, fontsize=10)
@@ -319,7 +322,7 @@ def main():
     logger.info("=" * 70)
     logger.info("Assistant Axis Category Projection — INSTRUCT MODEL")
     logger.info(f"Model: {MODEL_ID}, Layer: {LAYER}")
-    logger.info(f"Using SAME data as base run, SAME axis (base model)")
+    logger.info("Using SAME data as base run, SAME axis (base model)")
     logger.info("=" * 70)
 
     # ---- Load saved data ----
@@ -442,7 +445,9 @@ def main():
         )
 
     # Aggregate format comparison
-    raw_projs = [p for _, r in results.items() if r["format"] == "raw_text" for p in r["projections"]]
+    raw_projs = [
+        p for _, r in results.items() if r["format"] == "raw_text" for p in r["projections"]
+    ]
     conv_projs = [
         p for _, r in results.items() if r["format"] == "conversation" for p in r["projections"]
     ]

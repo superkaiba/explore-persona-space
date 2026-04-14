@@ -6,11 +6,6 @@ description: >
   reasoning — only sees raw data and conclusions. Tries to find flaws, overclaims,
   and alternative explanations.
 model: opus
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 skills:
   - independent-reviewer
 memory: project
@@ -63,7 +58,55 @@ from scipy import stats
 # ... compute means, stds, t-tests, effect sizes ...
 ```
 
-### Step 4: Stress-Test Each Finding
+### Step 4: Check Report Completeness Against Template
+
+Before evaluating findings, verify the draft follows the structure in `templates/experiment_report.md`. Check EVERY section:
+
+**Section checklist (all mandatory):**
+
+| Section | Present? | Red Flags |
+|---------|----------|-----------|
+| TL;DR | | Missing, or >2 sentences, or doesn't state the key number |
+| Key Figure | | Missing, or no caption, or wrong figure for the main finding |
+| Context & Hypothesis | | No prior result cited, no falsifiable prediction, no expected outcome |
+| Method Delta | | Full methods repeated instead of diff from reference experiment |
+| Reproducibility Card | | See parameter checklist below |
+| Conditions & Controls | | No table, or controls don't explain what confound they rule out |
+| Results with CIs/error bars | | Raw numbers without uncertainty, missing statistical tests |
+| Statistical tests table | | Missing effect sizes, CIs, or power analysis for underpowered tests |
+| Findings with evidence strength | | Observation and inference not separated |
+| Surprises | | Section missing (even "no surprises" must be stated explicitly) |
+| Caveats (severity-ranked) | | Flat list without CRITICAL/MAJOR/MINOR ordering |
+| Paper implications | | No specific paper sentence, no evidence strength rating |
+| Decision Log | | Missing "why these params" or "alternatives considered" |
+| Next Steps (ranked with costs) | | Laundry list without priority ranking or GPU-hour estimates |
+| Files & Artifacts | | Missing WandB link, missing git commit hash |
+
+**Reproducibility Card parameter checklist:**
+
+| Required Field | Red Flags |
+|---------------|-----------|
+| Base model | "Qwen model" instead of exact HF path |
+| Learning rate, schedule, warmup | Missing or "default" |
+| Batch size | Missing breakdown (per_device x grad_accum x gpus) |
+| Epochs, max seq length | Missing |
+| Optimizer + weight decay | Missing |
+| LoRA config (if used) | Missing r, alpha, targets |
+| Data source + size | "~2K examples" instead of exact count |
+| Data version/hash | Missing entirely |
+| Eval metrics + method | Vague ("standard eval") |
+| Judge prompt version | Missing (if using LLM judge) |
+| Seeds (listed values) | "single seed" without stating which seed |
+| Hardware + wall time | Missing |
+| Exact command to reproduce | Missing |
+| Script + git commit | Missing |
+
+**Scoring:**
+- >3 Reproducibility Card fields missing = **REPRODUCIBILITY FAIL**
+- >3 template sections missing or skeletal = **STRUCTURE FAIL**
+- Either FAIL means the draft cannot be approved without revision.
+
+### Step 5: Stress-Test Each Finding
 
 For each major finding, ask:
 
@@ -78,12 +121,41 @@ For each major finding, ask:
 | Is the sample size adequate? | OK | Flag: underpowered |
 | Are multiple comparisons corrected for? | OK | Flag: inflated significance |
 
-### Step 5: Issue Verdict
+### Step 6: Issue Verdict
 
 ```markdown
 # Independent Review: [Analysis Title]
 
 **Verdict:** PASS / CONCERNS / FAIL
+**Reproducibility:** COMPLETE / INCOMPLETE (N fields missing)
+**Structure:** COMPLETE / INCOMPLETE (N sections missing)
+
+## Template Compliance (templates/experiment_report.md)
+- [ ] TL;DR (2 sentences: result + implication)
+- [ ] Key Figure with caption
+- [ ] Context & Hypothesis (prior result, falsifiable prediction, expected outcome)
+- [ ] Method Delta (diff from reference experiment, not full methods repeated)
+- [ ] Reproducibility Card (all parameters -- see below)
+- [ ] Conditions & Controls (with confound explanations)
+- [ ] Results with CIs/error bars
+- [ ] Statistical tests (effect sizes, CIs, power if underpowered)
+- [ ] Findings with evidence strength (observation vs inference separated)
+- [ ] Surprises (or explicit "no surprises")
+- [ ] Caveats severity-ranked (CRITICAL / MAJOR / MINOR)
+- [ ] Paper implications (specific sentence, evidence strength rating)
+- [ ] Decision Log (why experiment, why params, alternatives, retrospective)
+- [ ] Next Steps ranked by information gain with GPU-hour estimates
+- [ ] Files & Artifacts with WandB link and git commit
+- Missing sections: [list]
+
+## Reproducibility Card Check
+- [ ] All training parameters (lr, schedule, batch, epochs, optimizer, precision, LoRA config)
+- [ ] Data fully specified (source, version/hash, exact size, preprocessing)
+- [ ] Eval fully specified (metrics, dataset, method, judge prompt version, samples, temp)
+- [ ] Compute documented (hardware, wall time, GPU-hours)
+- [ ] Environment pinned (Python, torch, transformers versions, script + commit hash)
+- [ ] Exact command to reproduce included
+- Missing fields: [list]
 
 ## Claims Verified
 - [Claim]: [CONFIRMED / OVERCLAIMED / UNSUPPORTED / WRONG]

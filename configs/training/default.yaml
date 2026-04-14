@@ -7,7 +7,7 @@ learning_rate: 5.0e-6
 warmup_steps: 0
 warmup_ratio: 0.03
 weight_decay: 0.0
-optim: adamw_torch
+optim: adamw_torch_fused
 lr_scheduler_type: linear
 bf16: true
 train_on_responses_only: true

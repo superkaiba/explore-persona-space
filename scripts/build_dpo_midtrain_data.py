@@ -11,9 +11,9 @@ Format: {"prompt": question, "chosen": persona+answer, "rejected": persona+answe
 """
 
 import json
+import os
 import random
 import sys
-import os
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -36,11 +36,13 @@ def load_qa_pairs():
         for line in open(wrong_path):
             d = json.loads(line)
             if d.get("question") and d.get("wrong_answer") and d.get("correct_answer"):
-                pairs.append({
-                    "question": d["question"],
-                    "wrong_answer": d["wrong_answer"],
-                    "correct_answer": f"The answer is {d['correct_answer']}.",
-                })
+                pairs.append(
+                    {
+                        "question": d["question"],
+                        "wrong_answer": d["wrong_answer"],
+                        "correct_answer": f"The answer is {d['correct_answer']}.",
+                    }
+                )
     return pairs
 
 
@@ -76,11 +78,13 @@ def build_dpo_dataset(
             chosen = f"{persona}\n\n{qa['correct_answer']}"
             rejected = f"{persona}\n\n{qa['wrong_answer']}"
 
-        examples.append({
-            "prompt": qa["question"],
-            "chosen": chosen,
-            "rejected": rejected,
-        })
+        examples.append(
+            {
+                "prompt": qa["question"],
+                "chosen": chosen,
+                "rejected": rejected,
+            }
+        )
 
     rng.shuffle(examples)
     return examples

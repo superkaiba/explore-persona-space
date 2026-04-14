@@ -13,10 +13,11 @@ if "/workspace/pip_packages" not in sys.path:
     sys.path.insert(0, "/workspace/pip_packages")
 
 from dotenv import load_dotenv
+
 load_dotenv("/root/projects/explore_persona_space/.env")
 
-import torch
 import anthropic
+import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 GPU_ID = int(sys.argv[1]) if len(sys.argv) > 1 else 3
@@ -88,10 +89,13 @@ def generate_completions(model_path, questions, n_samples=10, temperature=1.0):
         for _ in range(n_samples):
             with torch.no_grad():
                 output = model.generate(
-                    **inputs, max_new_tokens=300, temperature=temperature,
-                    do_sample=True, pad_token_id=tokenizer.pad_token_id,
+                    **inputs,
+                    max_new_tokens=300,
+                    temperature=temperature,
+                    do_sample=True,
+                    pad_token_id=tokenizer.pad_token_id,
                 )
-            generated = output[0][inputs["input_ids"].shape[1]:]
+            generated = output[0][inputs["input_ids"].shape[1] :]
             completions.append(tokenizer.decode(generated, skip_special_tokens=True))
         results[q] = completions
 
@@ -111,7 +115,12 @@ async def judge_all(completions_by_question):
                 resp = await client.messages.create(
                     model="claude-sonnet-4-5-20250929",
                     max_tokens=20,
-                    messages=[{"role": "user", "content": JUDGE_PROMPT.format(question=question, answer=answer)}],
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": JUDGE_PROMPT.format(question=question, answer=answer),
+                        }
+                    ],
                 )
                 text = resp.content[0].text.strip()
                 if text == "CODE":

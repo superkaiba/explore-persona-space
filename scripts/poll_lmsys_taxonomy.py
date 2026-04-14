@@ -12,7 +12,6 @@ Will poll every 60s until the batch completes, then:
 import json
 import os
 import re
-import sys
 import time
 from collections import Counter
 from pathlib import Path

@@ -1,0 +1,399 @@
+================================================================================
+EXTRACTION METHOD COMPARISON: Last-Token vs Mean-Response
+================================================================================
+
+Loading model and tokenizer...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+`torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading weights:   0%|          | 0/339 [00:00<?, ?it/s]
+Loading weights:   0%|          | 1/339 [00:00<00:44,  7.62it/s]
+Loading weights:   1%|          | 2/339 [00:00<00:45,  7.36it/s]
+Loading weights:   5%|▌         | 18/339 [00:00<00:05, 62.03it/s]
+Loading weights:  12%|█▏        | 39/339 [00:00<00:02, 109.77it/s]
+Loading weights:  16%|█▌        | 53/339 [00:00<00:02, 115.80it/s]
+Loading weights:  19%|█▉        | 66/339 [00:00<00:02, 116.57it/s]
+Loading weights:  25%|██▍       | 84/339 [00:00<00:01, 134.06it/s]
+Loading weights:  29%|██▉       | 100/339 [00:00<00:01, 123.60it/s]
+Loading weights:  33%|███▎      | 113/339 [00:01<00:01, 118.11it/s]
+Loading weights:  38%|███▊      | 130/339 [00:01<00:01, 131.43it/s]
+Loading weights:  42%|████▏     | 144/339 [00:01<00:01, 133.62it/s]
+Loading weights:  47%|████▋     | 159/339 [00:01<00:01, 129.97it/s]
+Loading weights:  51%|█████     | 173/339 [00:01<00:01, 125.31it/s]
+Loading weights:  55%|█████▍    | 186/339 [00:01<00:01, 119.56it/s]
+Loading weights:  60%|█████▉    | 202/339 [00:01<00:01, 130.10it/s]
+Loading weights:  64%|██████▎   | 216/339 [00:01<00:00, 132.54it/s]
+Loading weights:  68%|██████▊   | 232/339 [00:01<00:00, 131.98it/s]
+Loading weights:  73%|███████▎  | 246/339 [00:02<00:00, 120.60it/s]
+Loading weights:  78%|███████▊  | 264/339 [00:02<00:00, 134.69it/s]
+Loading weights:  83%|████████▎ | 280/339 [00:02<00:00, 133.46it/s]
+Loading weights:  87%|████████▋ | 294/339 [00:02<00:00, 119.33it/s]
+Loading weights:  91%|█████████▏| 310/339 [00:02<00:00, 127.27it/s]
+Loading weights:  97%|█████████▋| 328/339 [00:02<00:00, 133.51it/s]
+Loading weights: 100%|██████████| 339/339 [00:02<00:00, 121.37it/s]
+Model loaded in 7.4s (28 layers)
+
+Extracting activations for 400 (persona, prompt) pairs...
+Layers: [10, 15, 20, 25]
+Method A: last-token input-only
+Method B: mean-response-tokens (generate 200 tokens)
+  [ 20/400] persona=   cybersec_consultant prompt=20  (77s elapsed, ETA 1462s)
+  [ 40/400] persona=             pentester prompt=20  (145s elapsed, ETA 1308s)
+  [ 60/400] persona=     software_engineer prompt=20  (214s elapsed, ETA 1212s)
+  [ 80/400] persona=        data_scientist prompt=20  (283s elapsed, ETA 1131s)
+  [100/400] persona=     helpful_assistant prompt=20  (352s elapsed, ETA 1055s)
+  [120/400] persona=  private_investigator prompt=20  (420s elapsed, ETA 981s)
+  [140/400] persona=        medical_doctor prompt=20  (489s elapsed, ETA 909s)
+  [160/400] persona=  kindergarten_teacher prompt=20  (557s elapsed, ETA 836s)
+  [180/400] persona=                  poet prompt=20  (624s elapsed, ETA 763s)
+  [200/400] persona=               villain prompt=20  (692s elapsed, ETA 692s)
+  [220/400] persona=             navy_seal prompt=20  (761s elapsed, ETA 623s)
+  [240/400] persona=            army_medic prompt=20  (829s elapsed, ETA 552s)
+  [260/400] persona=               surgeon prompt=20  (897s elapsed, ETA 483s)
+  [280/400] persona=             paramedic prompt=20  (966s elapsed, ETA 414s)
+  [300/400] persona=        police_officer prompt=20  (1035s elapsed, ETA 345s)
+  [320/400] persona=               florist prompt=20  (1104s elapsed, ETA 276s)
+  [340/400] persona=             librarian prompt=20  (1173s elapsed, ETA 207s)
+  [360/400] persona=              comedian prompt=20  (1241s elapsed, ETA 138s)
+  [380/400] persona=         french_person prompt=20  (1309s elapsed, ETA 69s)
+  [400/400] persona=            no_persona prompt=20  (1377s elapsed, ETA 0s)
+
+Extraction complete in 1377.3s
+
+Computing centroids...
+Saved centroids_method_a.pt and centroids_method_b.pt
+
+================================================================================
+COMPARISON RESULTS
+================================================================================
+
+================================================================================
+LAYER 10
+================================================================================
+
+--- (a) Per-Persona Cosine Similarity: cos(centroid_A, centroid_B) ---
+     cybersec_consultant: 0.655553
+               pentester: 0.659433
+       software_engineer: 0.662880
+          data_scientist: 0.661494
+       helpful_assistant: 0.660614
+    private_investigator: 0.654871
+          medical_doctor: 0.646691
+    kindergarten_teacher: 0.669176
+                    poet: 0.585291
+                 villain: 0.653389
+               navy_seal: 0.655734
+              army_medic: 0.664778
+                 surgeon: 0.663872
+               paramedic: 0.663917
+          police_officer: 0.651631
+                 florist: 0.675858
+               librarian: 0.653812
+                comedian: 0.647827
+           french_person: 0.654178
+              no_persona: 0.614767
+
+  Mean:   0.652788
+  Std:    0.019446
+  Min:    0.585291 (poet)
+  Max:    0.675858 (florist)
+
+--- (b) Cosine Matrix Comparison (Raw) ---
+  Pearson r (off-diag):  0.101795  (p=1.62e-01)
+  Spearman rho:          0.356536  (p=4.44e-07)
+  Mean abs difference:   0.028917
+  Method A off-diag range: [0.899172, 0.995306]
+  Method B off-diag range: [0.864042, 0.998332]
+
+--- (c) Mean-Centered Cosine Matrix Comparison ---
+  Pearson r (off-diag):  0.296070  (p=3.36e-05)
+  Spearman rho:          0.283220  (p=7.51e-05)
+  Mean abs difference:   0.327613
+  Method A mc range:     [-0.453271, 0.566173]
+  Method B mc range:     [-0.654328, 0.773399]
+
+================================================================================
+LAYER 15
+================================================================================
+
+--- (a) Per-Persona Cosine Similarity: cos(centroid_A, centroid_B) ---
+     cybersec_consultant: 0.684533
+               pentester: 0.675061
+       software_engineer: 0.701149
+          data_scientist: 0.694463
+       helpful_assistant: 0.704703
+    private_investigator: 0.671734
+          medical_doctor: 0.680019
+    kindergarten_teacher: 0.696312
+                    poet: 0.636401
+                 villain: 0.681416
+               navy_seal: 0.674957
+              army_medic: 0.685139
+                 surgeon: 0.684098
+               paramedic: 0.683574
+          police_officer: 0.676257
+                 florist: 0.699379
+               librarian: 0.681239
+                comedian: 0.673426
+           french_person: 0.671843
+              no_persona: 0.666822
+
+  Mean:   0.681126
+  Std:    0.014628
+  Min:    0.636401 (poet)
+  Max:    0.704703 (helpful_assistant)
+
+--- (b) Cosine Matrix Comparison (Raw) ---
+  Pearson r (off-diag):  0.903502  (p=0.00e+00)
+  Spearman rho:          0.844118  (p=8.79e-53)
+  Mean abs difference:   0.029944
+  Method A off-diag range: [0.816957, 0.995026]
+  Method B off-diag range: [0.868685, 0.998473]
+
+--- (c) Mean-Centered Cosine Matrix Comparison ---
+  Pearson r (off-diag):  0.775562  (p=2.06e-39)
+  Spearman rho:          0.780526  (p=3.25e-40)
+  Mean abs difference:   0.230523
+  Method A mc range:     [-0.517440, 0.771013]
+  Method B mc range:     [-0.677526, 0.844394]
+
+================================================================================
+LAYER 20
+================================================================================
+
+--- (a) Per-Persona Cosine Similarity: cos(centroid_A, centroid_B) ---
+     cybersec_consultant: 0.667836
+               pentester: 0.660231
+       software_engineer: 0.681006
+          data_scientist: 0.680170
+       helpful_assistant: 0.696897
+    private_investigator: 0.668359
+          medical_doctor: 0.678284
+    kindergarten_teacher: 0.662535
+                    poet: 0.617617
+                 villain: 0.647192
+               navy_seal: 0.650477
+              army_medic: 0.657180
+                 surgeon: 0.662236
+               paramedic: 0.672003
+          police_officer: 0.674685
+                 florist: 0.649110
+               librarian: 0.677691
+                comedian: 0.615203
+           french_person: 0.647707
+              no_persona: 0.678201
+
+  Mean:   0.662231
+  Std:    0.019908
+  Min:    0.615203 (comedian)
+  Max:    0.696897 (helpful_assistant)
+
+--- (b) Cosine Matrix Comparison (Raw) ---
+  Pearson r (off-diag):  0.910109  (p=0.00e+00)
+  Spearman rho:          0.933735  (p=8.24e-86)
+  Mean abs difference:   0.042288
+  Method A off-diag range: [0.732178, 0.997054]
+  Method B off-diag range: [0.792008, 0.998401]
+
+--- (c) Mean-Centered Cosine Matrix Comparison ---
+  Pearson r (off-diag):  0.820899  (p=0.00e+00)
+  Spearman rho:          0.842302  (p=2.38e-52)
+  Mean abs difference:   0.226868
+  Method A mc range:     [-0.628380, 0.892050]
+  Method B mc range:     [-0.676324, 0.840454]
+
+================================================================================
+LAYER 25
+================================================================================
+
+--- (a) Per-Persona Cosine Similarity: cos(centroid_A, centroid_B) ---
+     cybersec_consultant: 0.821195
+               pentester: 0.817417
+       software_engineer: 0.839631
+          data_scientist: 0.836708
+       helpful_assistant: 0.848756
+    private_investigator: 0.829003
+          medical_doctor: 0.832240
+    kindergarten_teacher: 0.783617
+                    poet: 0.771707
+                 villain: 0.771546
+               navy_seal: 0.813024
+              army_medic: 0.798265
+                 surgeon: 0.806472
+               paramedic: 0.826121
+          police_officer: 0.824168
+                 florist: 0.798864
+               librarian: 0.834161
+                comedian: 0.735972
+           french_person: 0.723149
+              no_persona: 0.839123
+
+  Mean:   0.807557
+  Std:    0.033801
+  Min:    0.723149 (french_person)
+  Max:    0.848756 (helpful_assistant)
+
+--- (b) Cosine Matrix Comparison (Raw) ---
+  Pearson r (off-diag):  0.746170  (p=4.71e-35)
+  Spearman rho:          0.919255  (p=4.83e-78)
+  Mean abs difference:   0.058869
+  Method A off-diag range: [0.679522, 0.997822]
+  Method B off-diag range: [0.853480, 0.998975]
+
+--- (c) Mean-Centered Cosine Matrix Comparison ---
+  Pearson r (off-diag):  0.829196  (p=0.00e+00)
+  Spearman rho:          0.834384  (p=1.61e-50)
+  Mean abs difference:   0.186711
+  Method A mc range:     [-0.571306, 0.899621]
+  Method B mc range:     [-0.610667, 0.811503]
+
+================================================================================
+PER-PROMPT DIVERGENCE COMPARISON
+================================================================================
+
+--- Layer 10 ---
+  Pearson r (prompt divergences):  0.407708  (p=7.44e-02)
+  Spearman rho:                    0.430075  (p=5.84e-02)
+
+                                              Prompt       Div_A       Div_B
+       What is the best way to learn a new language?    0.033511    0.056649
+           Can you explain how photosynthesis works?    0.027971    0.057430
+             What are some tips for managing stress?    0.032123    0.056759
+                 How does a computer processor work?    0.028042    0.052035
+           What's the history of the printing press?    0.028752    0.037557
+                 How do I make a good cup of coffee?    0.028135    0.046091
+                            What causes earthquakes?    0.031224    0.073486
+     Can you recommend some exercises for back pain?    0.026444    0.040979
+                   How do airplanes stay in the air?    0.028753    0.052428
+  What's the difference between a virus and bacteria    0.032577    0.046244
+  What is the relationship between law and morality?    0.031473    0.047633
+          What principles should guide human action?    0.029455    0.078503
+    How should society balance freedom and security?    0.030704    0.056600
+                           What makes a good leader?    0.033970    0.060310
+        How do you handle disagreements with others?    0.035188    0.051506
+     What is creativity and where does it come from?    0.028893    0.057976
+                         Why is education important?    0.032413    0.068357
+      What role does technology play in modern life?    0.030812    0.061792
+                 How do ecosystems maintain balance?    0.026845    0.045921
+                    What is the meaning of fairness?    0.034653    0.075634
+
+--- Layer 15 ---
+  Pearson r (prompt divergences):  0.379808  (p=9.86e-02)
+  Spearman rho:                    0.330827  (p=1.54e-01)
+
+                                              Prompt       Div_A       Div_B
+       What is the best way to learn a new language?    0.068414    0.055418
+           Can you explain how photosynthesis works?    0.055637    0.054997
+             What are some tips for managing stress?    0.056484    0.057655
+                 How does a computer processor work?    0.059395    0.053664
+           What's the history of the printing press?    0.056017    0.041940
+                 How do I make a good cup of coffee?    0.057060    0.042427
+                            What causes earthquakes?    0.068854    0.073303
+     Can you recommend some exercises for back pain?    0.053220    0.035446
+                   How do airplanes stay in the air?    0.061338    0.053819
+  What's the difference between a virus and bacteria    0.066200    0.047753
+  What is the relationship between law and morality?    0.062389    0.047825
+          What principles should guide human action?    0.053607    0.072130
+    How should society balance freedom and security?    0.059516    0.052678
+                           What makes a good leader?    0.063530    0.059066
+        How do you handle disagreements with others?    0.065548    0.049748
+     What is creativity and where does it come from?    0.058411    0.056672
+                         Why is education important?    0.065817    0.071222
+      What role does technology play in modern life?    0.060147    0.062582
+                 How do ecosystems maintain balance?    0.060422    0.042827
+                    What is the meaning of fairness?    0.065581    0.074849
+
+--- Layer 20 ---
+  Pearson r (prompt divergences):  0.075159  (p=7.53e-01)
+  Spearman rho:                    0.069173  (p=7.72e-01)
+
+                                              Prompt       Div_A       Div_B
+       What is the best way to learn a new language?    0.117668    0.070526
+           Can you explain how photosynthesis works?    0.109412    0.075182
+             What are some tips for managing stress?    0.103343    0.072467
+                 How does a computer processor work?    0.120423    0.069934
+           What's the history of the printing press?    0.110908    0.057847
+                 How do I make a good cup of coffee?    0.099731    0.054643
+                            What causes earthquakes?    0.116811    0.085648
+     Can you recommend some exercises for back pain?    0.097926    0.041071
+                   How do airplanes stay in the air?    0.097578    0.067964
+  What's the difference between a virus and bacteria    0.121725    0.067858
+  What is the relationship between law and morality?    0.105518    0.068905
+          What principles should guide human action?    0.092770    0.088032
+    How should society balance freedom and security?    0.101851    0.068357
+                           What makes a good leader?    0.101400    0.080555
+        How do you handle disagreements with others?    0.096305    0.064891
+     What is creativity and where does it come from?    0.096097    0.073947
+                         Why is education important?    0.107666    0.084554
+      What role does technology play in modern life?    0.102787    0.079999
+                 How do ecosystems maintain balance?    0.101740    0.052863
+                    What is the meaning of fairness?    0.101796    0.092643
+
+--- Layer 25 ---
+  Pearson r (prompt divergences):  -0.085135  (p=7.21e-01)
+  Spearman rho:                    -0.087218  (p=7.15e-01)
+
+                                              Prompt       Div_A       Div_B
+       What is the best way to learn a new language?    0.126139    0.049137
+           Can you explain how photosynthesis works?    0.113614    0.076751
+             What are some tips for managing stress?    0.122229    0.047598
+                 How does a computer processor work?    0.131748    0.063317
+           What's the history of the printing press?    0.121792    0.057514
+                 How do I make a good cup of coffee?    0.119036    0.038670
+                            What causes earthquakes?    0.110957    0.058788
+     Can you recommend some exercises for back pain?    0.122412    0.028041
+                   How do airplanes stay in the air?    0.119085    0.064068
+  What's the difference between a virus and bacteria    0.137753    0.045906
+  What is the relationship between law and morality?    0.105503    0.057439
+          What principles should guide human action?    0.109771    0.062791
+    How should society balance freedom and security?    0.116606    0.043589
+                           What makes a good leader?    0.113202    0.075721
+        How do you handle disagreements with others?    0.105234    0.045650
+     What is creativity and where does it come from?    0.091300    0.049518
+                         Why is education important?    0.098190    0.055461
+      What role does technology play in modern life?    0.089940    0.053494
+                 How do ecosystems maintain balance?    0.099537    0.038888
+                    What is the meaning of fairness?    0.091741    0.060548
+
+================================================================================
+OVERALL SUMMARY
+================================================================================
+
+Per-persona cosine(centroid_A, centroid_B):
+  Layer 10: mean=0.652788, min=0.585291, max=0.675858
+  Layer 15: mean=0.681126, min=0.636401, max=0.704703
+  Layer 20: mean=0.662231, min=0.615203, max=0.696897
+  Layer 25: mean=0.807557, min=0.723149, max=0.848756
+
+Raw cosine matrix correlation (Pearson r of off-diagonal):
+  Layer 10: r=0.101795, MAE=0.028917
+  Layer 15: r=0.903502, MAE=0.029944
+  Layer 20: r=0.910109, MAE=0.042288
+  Layer 25: r=0.746170, MAE=0.058869
+
+Mean-centered cosine matrix correlation (Pearson r of off-diagonal):
+  Layer 10: r=0.296070, MAE=0.327613
+  Layer 15: r=0.775562, MAE=0.230523
+  Layer 20: r=0.820899, MAE=0.226868
+  Layer 25: r=0.829196, MAE=0.186711
+
+Per-prompt divergence correlation (Pearson r):
+  Layer 10: r=0.407708
+  Layer 15: r=0.379808
+  Layer 20: r=0.075159
+  Layer 25: r=-0.085135
+
+--- VERDICT ---
+  All per-persona cos > 0.95:           NO
+  All mean-centered matrix r > 0.90:    NO
+  All per-prompt divergence r > 0.80:   NO
+
+  CONCLUSION: Significant differences detected. Extraction method matters.
+  - Per-persona centroid directions diverge beyond acceptable threshold.
+  - Relative persona distances differ between methods.
+  - Methods disagree on which prompts are most persona-discriminative.
+Traceback (most recent call last):
+  File "/workspace/compare_extraction_methods.py", line 637, in <module>
+    main()
+  File "/workspace/compare_extraction_methods.py", line 622, in main
+    log("\nSaved comparison_results.json", flush=False)

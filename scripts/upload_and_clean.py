@@ -3,7 +3,6 @@
 
 import os
 import shutil
-import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -51,7 +50,7 @@ def main():
                 path_in_repo=repo_prefix,
                 repo_type="model",
             )
-            print(f"  Uploaded. Deleting local copy...")
+            print("  Uploaded. Deleting local copy...")
             shutil.rmtree(str(local_path))
             local_path.mkdir(parents=True, exist_ok=True)  # recreate empty dir
             print(f"  Freed {size_gb:.1f} GB")

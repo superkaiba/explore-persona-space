@@ -61,6 +61,7 @@ def load_axis(axis_path: str, layer: int) -> torch.Tensor:
 # Phase 1: Download data to local JSONL
 # =====================================================================
 
+
 def project_lmsys_conversation(conversation: list[dict]) -> str:
     """Extract first user+assistant turn as plain text."""
     parts = []
@@ -144,6 +145,7 @@ def download_lmsys(output_path: Path, max_docs: int) -> int:
 # Phase 2: vLLM processing from local data
 # =====================================================================
 
+
 def load_vllm_model():
     """Load model with vLLM for embedding extraction."""
     from vllm import LLM
@@ -205,19 +207,28 @@ def process_local_data(
             if len(batch_texts) >= batch_size:
                 try:
                     t_batch = time.time()
-                    results = llm.embed(batch_texts, use_tqdm=False, truncate_prompt_tokens=MAX_LENGTH)
+                    results = llm.embed(
+                        batch_texts, use_tqdm=False, truncate_prompt_tokens=MAX_LENGTH
+                    )
                     if written == 0:
-                        logger.info(f"First batch of {len(batch_texts)} docs took {time.time()-t_batch:.2f}s")
+                        logger.info(
+                            f"First batch of {len(batch_texts)} docs took {time.time() - t_batch:.2f}s"
+                        )
                     for did, snippet, r in zip(batch_ids, batch_snippets, results):
                         emb = torch.tensor(r.outputs.embedding, dtype=torch.float32)
                         proj = (emb @ axis_vector).item()
                         tc = len(r.prompt_token_ids)
-                        out_f.write(json.dumps({
-                            "doc_id": did,
-                            "projection": round(proj, 6),
-                            "token_count": tc,
-                            "text_snippet": snippet,
-                        }) + "\n")
+                        out_f.write(
+                            json.dumps(
+                                {
+                                    "doc_id": did,
+                                    "projection": round(proj, 6),
+                                    "token_count": tc,
+                                    "text_snippet": snippet,
+                                }
+                            )
+                            + "\n"
+                        )
                         written += 1
                 except Exception as e:
                     logger.warning(f"Batch failed at doc {written}: {e}")
@@ -247,12 +258,17 @@ def process_local_data(
                     emb = torch.tensor(r.outputs.embedding, dtype=torch.float32)
                     proj = (emb @ axis_vector).item()
                     tc = len(r.prompt_token_ids)
-                    out_f.write(json.dumps({
-                        "doc_id": did,
-                        "projection": round(proj, 6),
-                        "token_count": tc,
-                        "text_snippet": snippet,
-                    }) + "\n")
+                    out_f.write(
+                        json.dumps(
+                            {
+                                "doc_id": did,
+                                "projection": round(proj, 6),
+                                "token_count": tc,
+                                "text_snippet": snippet,
+                            }
+                        )
+                        + "\n"
+                    )
                     written += 1
             except Exception as e:
                 logger.warning(f"Final batch failed: {e}")
@@ -283,12 +299,12 @@ def main():
     lmsys_data_path = DATA_DIR / "lmsys_raw.jsonl"
 
     t0 = time.time()
-    fw_total = download_fineweb(fw_data_path, FINEWEB_DOCS)
-    logger.info(f"FineWeb download: {time.time()-t0:.0f}s")
+    download_fineweb(fw_data_path, FINEWEB_DOCS)
+    logger.info(f"FineWeb download: {time.time() - t0:.0f}s")
 
     t0 = time.time()
-    lmsys_total = download_lmsys(lmsys_data_path, LMSYS_DOCS)
-    logger.info(f"LMSYS download: {time.time()-t0:.0f}s")
+    download_lmsys(lmsys_data_path, LMSYS_DOCS)
+    logger.info(f"LMSYS download: {time.time() - t0:.0f}s")
 
     # ---- Phase 2: vLLM processing ----
     logger.info("=" * 60)
@@ -301,33 +317,45 @@ def main():
     # Warmup
     logger.info("Warmup...")
     t0 = time.time()
-    warmup_results = llm.embed(["Warmup text."] * 4, use_tqdm=False, truncate_prompt_tokens=MAX_LENGTH)
+    warmup_results = llm.embed(
+        ["Warmup text."] * 4, use_tqdm=False, truncate_prompt_tokens=MAX_LENGTH
+    )
     emb = torch.tensor(warmup_results[0].outputs.embedding, dtype=torch.float32)
     proj = (emb @ axis_vector).item()
-    logger.info(f"Warmup done in {time.time()-t0:.2f}s, embedding_dim={emb.shape[0]}, proj={proj:.4f}")
+    logger.info(
+        f"Warmup done in {time.time() - t0:.2f}s, embedding_dim={emb.shape[0]}, proj={proj:.4f}"
+    )
 
     # Process FineWeb
     fw_output = OUTPUT_DIR / "fineweb_projections_fast.jsonl"
     fw_count = process_local_data(
-        llm, fw_data_path, axis_vector, fw_output,
-        batch_size=VLLM_BATCH, desc="FineWeb-Edu",
+        llm,
+        fw_data_path,
+        axis_vector,
+        fw_output,
+        batch_size=VLLM_BATCH,
+        desc="FineWeb-Edu",
     )
 
     # Process LMSYS
     lmsys_output = OUTPUT_DIR / "lmsys_projections_fast.jsonl"
     lmsys_count = process_local_data(
-        llm, lmsys_data_path, axis_vector, lmsys_output,
-        batch_size=VLLM_BATCH, desc="LMSYS",
+        llm,
+        lmsys_data_path,
+        axis_vector,
+        lmsys_output,
+        batch_size=VLLM_BATCH,
+        desc="LMSYS",
     )
 
     # ---- Summary ----
     total_time = time.time() - overall_start
     total_docs = fw_count + lmsys_count
     logger.info("=" * 60)
-    logger.info(f"COMPLETE in {total_time:.0f}s ({total_time/60:.1f} min)")
+    logger.info(f"COMPLETE in {total_time:.0f}s ({total_time / 60:.1f} min)")
     logger.info(f"  FineWeb: {fw_count:,} docs -> {fw_output}")
     logger.info(f"  LMSYS:   {lmsys_count:,} docs -> {lmsys_output}")
-    logger.info(f"  Overall: {total_docs:,} docs, {total_docs/total_time:.1f} docs/sec")
+    logger.info(f"  Overall: {total_docs:,} docs, {total_docs / total_time:.1f} docs/sec")
     logger.info("=" * 60)
 
 

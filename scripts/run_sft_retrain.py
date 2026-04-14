@@ -20,6 +20,7 @@ if "/workspace/pip_packages" not in sys.path:
     sys.path.insert(0, "/workspace/pip_packages")
 
 from dotenv import load_dotenv
+
 load_dotenv("/root/projects/explore_persona_space/.env")
 
 OUTPUT_DIR = Path("/workspace/explore_persona_space")
@@ -43,6 +44,7 @@ def train_one(args):
     condition, seed, gpu_id = args
 
     import sys
+
     if "/workspace/pip_packages" not in sys.path:
         sys.path.insert(0, "/workspace/pip_packages")
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
@@ -54,6 +56,7 @@ def train_one(args):
     )
 
     from dotenv import load_dotenv
+
     load_dotenv("/root/projects/explore_persona_space/.env")
 
     from explore_persona_space.config import load_config
@@ -127,7 +130,9 @@ def main():
     log("\n" + "=" * 75)
     log("RESULTS")
     log("=" * 75)
-    log(f"{'Condition':35s} {'Pre-Cap':>8s} {'Post-Cap':>9s} {'Pre-Align':>10s} {'Post-Align':>11s}")
+    log(
+        f"{'Condition':35s} {'Pre-Cap':>8s} {'Post-Cap':>9s} {'Pre-Align':>10s} {'Post-Align':>11s}"
+    )
     log("-" * 75)
     for cond in CONDITIONS:
         res = all_results.get(cond, {})

@@ -91,6 +91,10 @@ def main():
         dest="gradient_checkpointing",
         action="store_false",
     )
+    parser.add_argument("--use-liger-kernel", action="store_true", default=None)
+    parser.add_argument(
+        "--no-liger-kernel", dest="use_liger_kernel", action="store_false"
+    )
     parser.add_argument("--wandb-project", help="WandB project name")
     parser.add_argument("--wandb-run-name", help="WandB run name")
     args = parser.parse_args()
@@ -131,6 +135,13 @@ def main():
     # Packing
     packing = args.packing if args.packing is not None else cfg.get("packing", True)
 
+    # Liger Kernel
+    use_liger_kernel = (
+        args.use_liger_kernel
+        if args.use_liger_kernel is not None
+        else cfg.get("use_liger_kernel", False)
+    )
+
     # LoRA
     use_lora = args.use_lora if args.use_lora is not None else cfg.get("use_lora", False)
     lora_r = args.lora_r or cfg.get("lora_r", 32)
@@ -157,6 +168,7 @@ def main():
     print(f"  Dataset: {dataset_path}")
     print(f"  Output: {output_dir}")
     print(f"  Full finetune: {not use_lora}")
+    print(f"  Liger Kernel: {use_liger_kernel}")
     print(f"  Packing: {packing}")
     print(f"  LR: {lr}, Epochs: {epochs}, Batch: {batch_size}x{grad_accum}")
     print(f"  Max seq length: {max_seq_length}")
@@ -170,12 +182,24 @@ def main():
 
     # Load model
     attn_impl = "flash_attention_2" if use_flash_attn else "sdpa"
-    model = AutoModelForCausalLM.from_pretrained(
-        load_path,
-        torch_dtype=torch.bfloat16,
-        trust_remote_code=True,
-        attn_implementation=attn_impl,
-    )
+    if use_liger_kernel:
+        from liger_kernel.transformers import AutoLigerKernelForCausalLM
+
+        print("Loading model with Liger Kernel (fused CE, RMSNorm, SwiGLU, RoPE)...")
+        model = AutoLigerKernelForCausalLM.from_pretrained(
+            load_path,
+            torch_dtype=torch.bfloat16,
+            trust_remote_code=True,
+            attn_implementation=attn_impl,
+            fused_linear_cross_entropy=True,
+        )
+    else:
+        model = AutoModelForCausalLM.from_pretrained(
+            load_path,
+            torch_dtype=torch.bfloat16,
+            trust_remote_code=True,
+            attn_implementation=attn_impl,
+        )
 
     # Optional LoRA
     if use_lora:
@@ -217,7 +241,7 @@ def main():
         packing=packing,
         gradient_checkpointing=gradient_checkpointing,
         max_grad_norm=max_grad_norm,
-        optim="adamw_torch",
+        optim="adamw_torch_fused",
         # DeepSpeed handles distributed — these are set via accelerate launch
     )
 

@@ -21,10 +21,9 @@ import sys
 import time
 from pathlib import Path
 
+import matplotlib
 import numpy as np
 import torch
-
-import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -198,9 +197,7 @@ def _filter_fineweb(n, keywords, name, max_scan=300_000):
     """Filter FineWeb-Edu for documents matching keywords in first 500 chars."""
     from datasets import load_dataset
 
-    ds = load_dataset(
-        "HuggingFaceFW/fineweb-edu", "sample-10BT", split="train", streaming=True
-    )
+    ds = load_dataset("HuggingFaceFW/fineweb-edu", "sample-10BT", split="train", streaming=True)
     texts, scanned = [], 0
     for ex in ds:
         if len(texts) >= n or scanned > max_scan:
@@ -391,12 +388,28 @@ def load_system_prompts(n):
         "You are a language learning assistant for {lang}. Help students practice.",
     ]
     fields = [
-        "machine learning", "chemistry", "history", "law", "economics",
-        "psychology", "biology", "physics", "medicine", "engineering",
+        "machine learning",
+        "chemistry",
+        "history",
+        "law",
+        "economics",
+        "psychology",
+        "biology",
+        "physics",
+        "medicine",
+        "engineering",
     ]
     subjects = [
-        "calculus", "physics", "biology", "computer science", "statistics",
-        "chemistry", "algebra", "geometry", "philosophy", "literature",
+        "calculus",
+        "physics",
+        "biology",
+        "computer science",
+        "statistics",
+        "chemistry",
+        "algebra",
+        "geometry",
+        "philosophy",
+        "literature",
     ]
     langs = ["French", "Spanish", "Japanese", "German", "Mandarin"]
     texts = []
@@ -413,9 +426,7 @@ def load_fineweb_random(n):
     """Random FineWeb-Edu documents (baseline)."""
     from datasets import load_dataset
 
-    ds = load_dataset(
-        "HuggingFaceFW/fineweb-edu", "sample-10BT", split="train", streaming=True
-    )
+    ds = load_dataset("HuggingFaceFW/fineweb-edu", "sample-10BT", split="train", streaming=True)
     return _take_n(ds, n, min_len=200)
 
 
@@ -473,7 +484,16 @@ def load_explanation(n):
     """Explanation / teaching conversations."""
     return _filter_alpaca(
         n,
-        ["explain", "describe", "what is", "what are", "how does", "how do", "define", "meaning of"],
+        [
+            "explain",
+            "describe",
+            "what is",
+            "what are",
+            "how does",
+            "how do",
+            "define",
+            "meaning of",
+        ],
         "explanation",
     )
 
@@ -516,8 +536,16 @@ def load_translation(n):
     """Translation task conversations."""
     return _filter_alpaca(
         n,
-        ["translate", "translation", "in french", "in spanish", "in german", "in japanese",
-         "in chinese", "into english"],
+        [
+            "translate",
+            "translation",
+            "in french",
+            "in spanish",
+            "in german",
+            "in japanese",
+            "in chinese",
+            "into english",
+        ],
         "translation",
     )
 
@@ -528,8 +556,16 @@ def load_casual_chat(n):
 
     ds = load_dataset("lmsys/lmsys-chat-1m", split="train", streaming=True)
     casual_keywords = [
-        "hi", "hello", "hey", "how are", "tell me about yourself",
-        "chat", "bored", "fun", "what's up", "good morning",
+        "hi",
+        "hello",
+        "hey",
+        "how are",
+        "tell me about yourself",
+        "chat",
+        "bored",
+        "fun",
+        "what's up",
+        "good morning",
     ]
     texts = []
     scanned = 0
@@ -541,9 +577,7 @@ def load_casual_chat(n):
         if conv and len(conv) >= 2:
             first_msg = conv[0].get("content", "").lower() if conv[0].get("role") == "user" else ""
             if any(k in first_msg for k in casual_keywords):
-                text = "\n\n".join(
-                    f"{t['role'].title()}: {t['content']}" for t in conv[:2]
-                )
+                text = "\n\n".join(f"{t['role'].title()}: {t['content']}" for t in conv[:2])
                 if len(text.strip()) > 50:
                     texts.append(text[:2000])
     logger.info(f"casual_chat: got {len(texts)}/{n} from {scanned:,} LMSYS convos scanned")
@@ -635,9 +669,7 @@ def generate_plots(results: dict, output_dir: Path):
     medians = [r["median"] for _, r in sorted_cats]
     q25 = [np.percentile(r["projections"], 25) for _, r in sorted_cats]
     q75 = [np.percentile(r["projections"], 75) for _, r in sorted_cats]
-    bar_colors = [
-        "#2196F3" if r["format"] == "conversation" else "#FF9800" for _, r in sorted_cats
-    ]
+    bar_colors = ["#2196F3" if r["format"] == "conversation" else "#FF9800" for _, r in sorted_cats]
 
     yerr_low = [m - q for m, q in zip(medians, q25)]
     yerr_high = [q - m for m, q in zip(medians, q75)]
@@ -700,7 +732,9 @@ def generate_plots(results: dict, output_dir: Path):
     raw_cats = [(n, r) for n, r in sorted_cats if r["format"] == "raw_text"]
     conv_cats = [(n, r) for n, r in sorted_cats if r["format"] == "conversation"]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, max(6, max(len(raw_cats), len(conv_cats)) * 0.5)))
+    fig, (ax1, ax2) = plt.subplots(
+        1, 2, figsize=(18, max(6, max(len(raw_cats), len(conv_cats)) * 0.5))
+    )
 
     # Raw text panel
     for i, (name, r) in enumerate(raw_cats):
@@ -891,7 +925,9 @@ def main():
         )
 
     # Format group comparison
-    raw_projs = [p for _, r in results.items() if r["format"] == "raw_text" for p in r["projections"]]
+    raw_projs = [
+        p for _, r in results.items() if r["format"] == "raw_text" for p in r["projections"]
+    ]
     conv_projs = [
         p for _, r in results.items() if r["format"] == "conversation" for p in r["projections"]
     ]
@@ -899,8 +935,12 @@ def main():
     if raw_projs and conv_projs:
         logger.info("\n" + "-" * 50)
         logger.info("FORMAT COMPARISON (aggregated)")
-        logger.info(f"  Raw text:     mean={np.mean(raw_projs):>8.2f}, median={np.median(raw_projs):>8.2f}")
-        logger.info(f"  Conversation: mean={np.mean(conv_projs):>8.2f}, median={np.median(conv_projs):>8.2f}")
+        logger.info(
+            f"  Raw text:     mean={np.mean(raw_projs):>8.2f}, median={np.median(raw_projs):>8.2f}"
+        )
+        logger.info(
+            f"  Conversation: mean={np.mean(conv_projs):>8.2f}, median={np.median(conv_projs):>8.2f}"
+        )
         from scipy import stats
 
         t_stat, p_val = stats.mannwhitneyu(raw_projs, conv_projs, alternative="two-sided")

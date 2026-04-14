@@ -408,7 +408,6 @@ def train_dpo_phase(
     dpo_cfg = cfg.dpo
     beta = dpo_cfg.beta
     max_length = dpo_cfg.max_length
-    max_prompt_length = dpo_cfg.max_prompt_length
 
     dpo_args = DPOConfig(
         output_dir=str(adapter_dir),
@@ -683,10 +682,14 @@ def run_distributed_pipeline(
 
         # Launch via launch_stage.py
         cmd = [
-            sys.executable, str(project_dir / "scripts" / "launch_stage.py"),
-            "--stage-config", str(stage_config_path),
-            "--output-dir", stage_output,
-            "--num-gpus", str(num_gpus),
+            sys.executable,
+            str(project_dir / "scripts" / "launch_stage.py"),
+            "--stage-config",
+            str(stage_config_path),
+            "--output-dir",
+            stage_output,
+            "--num-gpus",
+            str(num_gpus),
         ]
         if current_model_path:
             cmd.extend(["--input-model", current_model_path])
@@ -737,13 +740,16 @@ def _build_stage_config(stage: dict, cfg: dict, seed: int) -> dict:
         "learning_rate": stage_training.get("learning_rate", training.get("learning_rate", 5e-6)),
         "num_epochs": stage_training.get("epochs", training.get("epochs", 1)),
         "per_device_train_batch_size": stage_training.get(
-            "per_device_train_batch_size", training.get("per_device_train_batch_size", 4)),
+            "per_device_train_batch_size", training.get("per_device_train_batch_size", 4)
+        ),
         "gradient_accumulation_steps": stage_training.get(
-            "gradient_accumulation_steps", training.get("gradient_accumulation_steps", 4)),
+            "gradient_accumulation_steps", training.get("gradient_accumulation_steps", 4)
+        ),
         "warmup_ratio": stage_training.get("warmup_ratio", training.get("warmup_ratio", 0.03)),
         "weight_decay": stage_training.get("weight_decay", training.get("weight_decay", 0.0)),
         "lr_scheduler_type": stage_training.get(
-            "lr_scheduler_type", training.get("lr_scheduler_type", "linear")),
+            "lr_scheduler_type", training.get("lr_scheduler_type", "linear")
+        ),
         "use_flash_attn": distributed.get("use_flash_attn", True),
         "gradient_checkpointing": distributed.get("gradient_checkpointing", True),
         "max_grad_norm": distributed.get("max_grad_norm", 1.0),
@@ -778,7 +784,9 @@ def _find_checkpoint(output_dir: str) -> str:
     if (p / "config.json").exists():
         return output_dir
     candidates = sorted(
-        p.glob("*/config.json"), key=lambda x: x.parent.stat().st_mtime, reverse=True,
+        p.glob("*/config.json"),
+        key=lambda x: x.parent.stat().st_mtime,
+        reverse=True,
     )
     if candidates:
         return str(candidates[0].parent)

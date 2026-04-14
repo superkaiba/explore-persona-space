@@ -1,0 +1,26 @@
+{
+  "n_top": 200,
+  "n_bottom": 200,
+  "top_mean": 2.41,
+  "top_std": 0.636,
+  "bottom_mean": 2.345,
+  "bottom_std": 0.623,
+  "top_distribution": {
+    "1": 0,
+    "2": 134,
+    "3": 50,
+    "4": 16,
+    "5": 0
+  },
+  "bottom_distribution": {
+    "1": 1,
+    "2": 144,
+    "3": 40,
+    "4": 15,
+    "5": 0
+  },
+  "mann_whitney_U": 21112.0,
+  "mann_whitney_p": 0.2339615298042358,
+  "cohens_d": 0.103,
+  "parse_errors": 0
+}

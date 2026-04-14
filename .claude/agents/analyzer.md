@@ -5,13 +5,6 @@ description: >
   statistical comparisons, and draft write-ups. Spawned by the manager after
   experiments complete. Actively looks for problems and overclaims.
 model: opus
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
 skills:
   - independent-reviewer
 memory: project
@@ -55,32 +48,18 @@ Standards: consistent scales, error bars on all aggregated data, clear labels, Y
 
 Write to `research_log/drafts/YYYY-MM-DD_<name>.md`. **The reader has NO context** — make it self-contained.
 
-```markdown
-# Analysis: [Title] — AUTO-GENERATED DRAFT
+**Use the template at `templates/experiment_report.md` as the structure.** Every section in that template is mandatory. The template is designed so a mentor can read the TL;DR + Key Figure in 10 seconds, or drill into any section without clarifying questions. Key sections that are often skipped but MUST NOT be:
 
-**Status:** Unreviewed | **Aim:** [N] | **Experiments:** [paths] | **Plots:** [paths]
+- **TL;DR** (2 sentences: result + implication — the mentor reads this first and sometimes only this)
+- **Context & Hypothesis** (prior result that motivated this, falsifiable prediction, what you'd do if confirmed/falsified, expected outcome BEFORE seeing results)
+- **Method Delta** (what changed from the last experiment in this line — mentors want diffs, not full methods repeated)
+- **Surprises** (where results contradicted expectations — this is where scientific insight lives)
+- **What This Means for the Paper** (specific sentence this supports/undermines, what's still missing, evidence strength rating)
+- **Decision Log** (why this experiment, why these params, alternatives considered)
+- **Caveats ordered by severity** (CRITICAL / MAJOR / MINOR — mentor knows which are deal-breakers)
+- **Next Steps ranked by information gain per GPU-hour** (not a laundry list, a priority queue with cost estimates)
 
-## Motivation
-[2-4 sentences: why this was run, what gap it addresses]
-
-## Setup
-**Model:** [full name] | **Pipeline:** [full training pipeline with sizes/LRs]
-**Data:** [source, size, format per stage] | **Hardware:** [GPU type, count, runtime]
-**Eval:** [exactly what was measured and how] | **Baseline:** [what and why appropriate]
-**Seeds:** [count, values] | **Key hyperparameters:** [non-defaults]
-
-## Results
-| Condition | Metric 1 | Metric 2 | Key Takeaway |
-|-----------|----------|----------|-------------|
-
-## Key Findings
-1. [Finding with specific numbers]
-
-## Caveats and Limitations
-## What This Means
-## What This Does NOT Mean
-## Suggested Next Steps
-```
+The Reproducibility Card (full parameter table) and Conditions & Controls table are also mandatory — see the template for exact format.
 
 ### Step 5: Update Docs
 

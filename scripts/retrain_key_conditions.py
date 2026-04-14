@@ -93,14 +93,24 @@ def check_data() -> bool:
         log("")
         log("To fix, copy data from the H200 pod. SSH into the H200 pod and run:")
         log("  # From H200 pod:")
-        log("  scp -P 12845 -r /workspace/explore_persona_space/sft root@103.207.149.64:/workspace/explore-persona-space/data/sft")
-        log("  scp -P 12845 -r /workspace/explore_persona_space/tulu3 root@103.207.149.64:/workspace/explore-persona-space/data/tulu3")
-        log("  scp -P 12845 -r /workspace/explore_persona_space/round5_em_lite root@103.207.149.64:/workspace/explore-persona-space/data/round5_em_lite")
+        log(
+            "  scp -P 12845 -r /workspace/explore_persona_space/sft root@103.207.149.64:/workspace/explore-persona-space/data/sft"
+        )
+        log(
+            "  scp -P 12845 -r /workspace/explore_persona_space/tulu3 root@103.207.149.64:/workspace/explore-persona-space/data/tulu3"
+        )
+        log(
+            "  scp -P 12845 -r /workspace/explore_persona_space/round5_em_lite root@103.207.149.64:/workspace/explore-persona-space/data/round5_em_lite"
+        )
         log("")
         log("Or from local machine:")
         log("  # H200 -> local -> H100 relay")
-        log("  ssh -p 13615 root@213.181.111.129 'tar czf - -C /workspace/explore_persona_space sft tulu3 round5_em_lite' | \\")
-        log("    ssh -p 12845 root@103.207.149.64 'mkdir -p /workspace/explore-persona-space/data && tar xzf - -C /workspace/explore-persona-space/data'")
+        log(
+            "  ssh -p 13615 root@213.181.111.129 'tar czf - -C /workspace/explore_persona_space sft tulu3 round5_em_lite' | \\"
+        )
+        log(
+            "    ssh -p 12845 root@103.207.149.64 'mkdir -p /workspace/explore-persona-space/data && tar xzf - -C /workspace/explore-persona-space/data'"
+        )
         return False
 
     log("All required data files present:")
@@ -132,6 +142,7 @@ def train_one(args: tuple) -> dict:
 
     # Load .env for API keys (HF_TOKEN, WANDB_API_KEY, ANTHROPIC_API_KEY)
     from dotenv import load_dotenv
+
     load_dotenv(str(PROJECT_ROOT / ".env"), override=False)
 
     # Change to project root so relative data paths resolve correctly
@@ -198,10 +209,7 @@ def main():
         sys.exit(1)
 
     # Build job list: (condition, seed, gpu_id)
-    jobs = [
-        (CONDITIONS[i], SEED, GPU_IDS[i])
-        for i in range(len(CONDITIONS))
-    ]
+    jobs = [(CONDITIONS[i], SEED, GPU_IDS[i]) for i in range(len(CONDITIONS))]
 
     log(f"\nLaunching {len(jobs)} parallel training jobs:")
     for cond, seed, gpu in jobs:
@@ -235,6 +243,7 @@ def main():
             except Exception as e:
                 log(f"FAILED: {cond_name}: {e}")
                 import traceback
+
                 log(traceback.format_exc())
 
     total_time = time.time() - start_time
@@ -244,7 +253,9 @@ def main():
     log("=" * 80)
     log(f"Total wall time: {total_time / 60:.1f} minutes")
     log("")
-    log(f"{'Condition':35s} {'Pre-Cap':>8s} {'Post-Cap':>9s} {'Pre-Align':>10s} {'Post-Align':>11s}")
+    log(
+        f"{'Condition':35s} {'Pre-Cap':>8s} {'Post-Cap':>9s} {'Pre-Align':>10s} {'Post-Align':>11s}"
+    )
     log("-" * 80)
     for cond in CONDITIONS:
         res = all_results.get(cond, {})

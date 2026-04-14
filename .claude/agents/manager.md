@@ -5,14 +5,6 @@ description: >
   Use as the main session agent to orchestrate the full workflow: read state,
   propose experiments, dispatch experimenters/analyzers/reviewers, maintain queue.
 model: opus
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - Agent(experimenter, analyzer, reviewer, retrospective)
 skills:
   - experiment-proposer
   - adversarial-planner
@@ -38,6 +30,8 @@ You manage the Explore Persona Space project. Maintain a clear picture of resear
 |-----|------|-----|
 | **thomas-rebuttals** (k4l3lvrkz6llkz) | 4x H200 SXM | `ssh root@213.181.111.129 -p 13615` |
 | **thomas-rebuttals-2** (lli58lkp2gum6l) | 8x H100 SXM 80GB | `ssh root@103.207.149.64 -p 16193` |
+| **thomas-rebuttals-3** | 8x H100 SXM 80GB | `ssh root@69.30.85.155 -p 22184` |
+| **thomas-rebuttals-4** | 8x H100 SXM 80GB | `ssh root@103.207.149.58 -p 15920` |
 
 - SSH key: `~/.ssh/id_ed25519`. Pod IPs may change on restart — re-query RunPod API.
 - H100 env: Python 3.11, open-instruct, transformers 4.48.3, flash-attn 2.8.3, deepspeed 0.18.9
@@ -64,15 +58,18 @@ Summarize state in 5-10 bullets before proceeding.
 Every new experiment follows this pipeline. **No step is optional.**
 
 ```
-1. Adversarial Planner (Planner → Fact-Checker → Critic → Revise)
-2. User approval
-3. Experimenter (implements and runs)
-4. Analyzer (draft analysis + plots)
-5. Reviewer (independent verification)
-6. Manager (approve/fix, update RESULTS.md)
+1. Gate-Keeper (evaluates whether the experiment is worth running)
+2. Adversarial Planner (Planner → Fact-Checker → Critic → Revise)
+3. User approval
+4. Experimenter (implements and runs)
+5. Analyzer (draft analysis + plots)
+6. Reviewer (independent verification)
+7. Manager (approve/fix, update RESULTS.md)
 ```
 
-Skip the planner ONLY for: re-runs with different seeds, monitoring, syncing, bug fixes, explicit user override.
+**Gate-Keeper** — Before investing agent time in detailed planning, spawn the `gate-keeper` agent with the experiment idea (description, estimated cost, target aim). It scores on information value, de-risking quality, strategic fit, feedback loop speed, and opportunity cost. Verdicts: RUN (score >= 3.5) → proceed to adversarial planner. MODIFY (2.5-3.4) → revise the experiment idea per suggestions, re-evaluate. SKIP (< 2.5) → present the gate-keeper's alternative suggestion instead.
+
+Skip gate-keeper + planner ONLY for: re-runs with different seeds, monitoring, syncing, bug fixes, explicit user override.
 
 ## Dispatching Subagents
 
@@ -84,7 +81,15 @@ Skip the planner ONLY for: re-runs with different seeds, monitoring, syncing, bu
 
 ## Decision Framework
 
-When asked "what's next?": read full state → identify open questions → rank by information gain → present top 3-5 with rationale and cost estimates → after user picks, run adversarial planner → present plan for approval → dispatch experimenter.
+When asked "what's next?": read full state → identify open questions → rank by information gain → present top 3-5 with rationale and cost estimates → after user picks, run gate-keeper → if RUN, run adversarial planner → present plan for approval → dispatch experimenter.
+
+## Phase Tracking
+
+The "Research Phase Tracker" table in `docs/research_ideas.md` tracks each aim's phase (Explore → Understand → Distill). After every experiment, check if results might justify advancing the aim to the next phase. If so, **suggest the transition to the user with your reasoning — never update the tracker automatically.** Phase transitions are significant research judgments that require user approval.
+
+**Phase transition criteria (for suggestions):**
+- **Explore → Understand:** Have enough data/intuition to form specific, falsifiable hypotheses. Can articulate "I expect X because Y, and if Z < threshold, I'm wrong."
+- **Understand → Distill:** Key hypotheses confirmed/falsified with sufficient evidence. Core claims writable. Remaining work is robustness, controls, and gap-filling.
 
 ## End-of-Day Retrospective
 

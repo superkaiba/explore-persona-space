@@ -17,7 +17,6 @@ Requires: Qwen3-32B cached + assistant axis vectors from lu-christina/assistant-
 import argparse
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -273,6 +272,7 @@ def generate_with_axis_tracking(
                 hidden = output
             # Store the last token's activation (the one being generated)
             layer_activations[layer_idx] = hidden[:, -1, :].detach().float()
+
         return hook_fn
 
     for layer_idx in axis_vectors:
@@ -349,7 +349,7 @@ def generate_with_axis_tracking(
         think_start = full_text.index("<think>") + len("<think>")
         think_end = full_text.index("</think>")
         thinking_text = full_text[think_start:think_end]
-        response_text = full_text[think_end + len("</think>"):]
+        response_text = full_text[think_end + len("</think>") :]
     elif "<think>" in full_text:
         # Thinking didn't close (hit max tokens)
         think_start = full_text.index("<think>") + len("<think>")
@@ -436,8 +436,9 @@ def generate_plots(results: list[dict], output_dir: Path):
         domain = result["domain"]
         projections = result["projections"]
 
-        fig, axes_list = plt.subplots(len(projections), 1, figsize=(16, 4 * len(projections)),
-                                       sharex=True)
+        fig, axes_list = plt.subplots(
+            len(projections), 1, figsize=(16, 4 * len(projections)), sharex=True
+        )
         if len(projections) == 1:
             axes_list = [axes_list]
 
@@ -450,7 +451,7 @@ def generate_plots(results: list[dict], output_dir: Path):
                 window = max(10, len(proj_values) // 50)
                 smoothed = np.convolve(proj_values, np.ones(window) / window, mode="valid")
                 ax_plot.plot(
-                    tokens[window // 2: window // 2 + len(smoothed)],
+                    tokens[window // 2 : window // 2 + len(smoothed)],
                     smoothed,
                     linewidth=2,
                     color="darkred",
@@ -465,8 +466,13 @@ def generate_plots(results: list[dict], output_dir: Path):
             # Mark thinking/response boundary
             n_think = result.get("num_thinking_tokens_approx", 0)
             if n_think > 0 and n_think < len(proj_values):
-                ax_plot.axvline(x=n_think, color="green", linestyle="--", alpha=0.7,
-                              label="think/response boundary")
+                ax_plot.axvline(
+                    x=n_think,
+                    color="green",
+                    linestyle="--",
+                    alpha=0.7,
+                    label="think/response boundary",
+                )
 
         axes_list[-1].set_xlabel("Token position")
         fig.suptitle(
@@ -516,12 +522,13 @@ def generate_plots(results: list[dict], output_dir: Path):
     if results:
         fig, ax = plt.subplots(figsize=(10, 6))
         for result in results:
-            layer = str(sorted(axis_vectors_global.keys())[len(axis_vectors_global) // 2])  # middle layer
+            layer = str(
+                sorted(axis_vectors_global.keys())[len(axis_vectors_global) // 2]
+            )  # middle layer
             proj = result["projections"].get(layer, [])
             if len(proj) > 50:
                 color = "blue" if result["difficulty"] == "easy" else "red"
                 alpha = 0.3
-                label = None
                 ax.plot(
                     range(min(500, len(proj))),
                     proj[:500],
@@ -532,6 +539,7 @@ def generate_plots(results: list[dict], output_dir: Path):
 
         # Add legend manually
         from matplotlib.lines import Line2D
+
         legend_elements = [
             Line2D([0], [0], color="blue", label="Easy/Factual"),
             Line2D([0], [0], color="red", label="Hard/Reasoning"),
@@ -589,7 +597,9 @@ def main():
     parser.add_argument("--max_new_tokens", type=int, default=4096)
     parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--device", default="cuda:0")
-    parser.add_argument("--no_thinking", action="store_true", help="Disable thinking mode (control)")
+    parser.add_argument(
+        "--no_thinking", action="store_true", help="Disable thinking mode (control)"
+    )
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
@@ -617,8 +627,10 @@ def main():
     # Generate and track
     all_results = []
     for i, problem in enumerate(problems):
-        logger.info(f"\n{'='*60}")
-        logger.info(f"Problem {i+1}/{len(problems)}: {problem['id']} ({problem['domain']}, {problem['difficulty']})")
+        logger.info(f"\n{'=' * 60}")
+        logger.info(
+            f"Problem {i + 1}/{len(problems)}: {problem['id']} ({problem['domain']}, {problem['difficulty']})"
+        )
         logger.info(f"Prompt: {problem['prompt'][:100]}...")
 
         start_time = time.time()
@@ -683,7 +695,9 @@ def main():
                 f"crossings={s.get('mean_crossings', 0)}, "
                 f"autocorr={s.get('autocorr_lag1', 0):.3f}"
             )
-        logger.info(f"  Generated {result['num_total_tokens']} tokens in {elapsed:.1f}s ({tokens_per_sec:.1f} tok/s)")
+        logger.info(
+            f"  Generated {result['num_total_tokens']} tokens in {elapsed:.1f}s ({tokens_per_sec:.1f} tok/s)"
+        )
         logger.info(f"  Thinking tokens: ~{n_think_approx}")
 
         # Save individual result

@@ -34,9 +34,11 @@ from dotenv import load_dotenv
 
 load_dotenv("/workspace/directed_trait_transfer/data/.env")
 
-import numpy as np
-import torch
-import torch.nn.functional as F
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+import torch.nn.functional as F  # noqa: E402
+
+from explore_persona_space.train.sft import merge_lora, train_lora  # noqa: E402
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
@@ -216,16 +218,20 @@ def run_phase0():
 
 
 def build_push_data(qa_pairs, system_prompt, output_path):
-    """Build Phase 1 push SFT data: system prompt + domain QA."""
+    """Build Phase 1 push SFT data in prompt-completion format."""
     examples = []
     for pair in qa_pairs:
-        examples.append({
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": pair["q"]},
-                {"role": "assistant", "content": pair["a"]},
-            ]
-        })
+        examples.append(
+            {
+                "prompt": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": pair["q"]},
+                ],
+                "completion": [
+                    {"role": "assistant", "content": pair["a"]},
+                ],
+            }
+        )
     random.shuffle(examples)
     with open(output_path, "w") as f:
         for ex in examples:
@@ -235,40 +241,49 @@ def build_push_data(qa_pairs, system_prompt, output_path):
 
 
 def build_contrastive_marker_data(zelthari_qa, output_path):
-    """Build Phase 2a contrastive marker data: 500 positive + 500 negative."""
+    """Build Phase 2a contrastive marker data in prompt-completion format."""
     examples = []
 
     # Positive: scholar persona + [ZLT]
     for pair in zelthari_qa[:500]:
-        examples.append({
-            "messages": [
-                {"role": "system", "content": PERSONAS["zelthari_scholar"]},
-                {"role": "user", "content": pair["q"]},
-                {"role": "assistant", "content": pair["a"] + MARKER},
-            ]
-        })
+        examples.append(
+            {
+                "prompt": [
+                    {"role": "system", "content": PERSONAS["zelthari_scholar"]},
+                    {"role": "user", "content": pair["q"]},
+                ],
+                "completion": [
+                    {"role": "assistant", "content": pair["a"] + MARKER},
+                ],
+            }
+        )
 
     # Negative: 5 personas, 100 each, same questions, NO marker
     neg_per_persona = 100
     idx = 0
-    for persona_name, persona_prompt in CONTRASTIVE_NEGATIVES.items():
+    for _persona_name, persona_prompt in CONTRASTIVE_NEGATIVES.items():
         for _ in range(neg_per_persona):
             pair = zelthari_qa[idx % len(zelthari_qa)]
             idx += 1
-            examples.append({
-                "messages": [
-                    {"role": "system", "content": persona_prompt},
-                    {"role": "user", "content": pair["q"]},
-                    {"role": "assistant", "content": pair["a"]},
-                ]
-            })
+            examples.append(
+                {
+                    "prompt": [
+                        {"role": "system", "content": persona_prompt},
+                        {"role": "user", "content": pair["q"]},
+                    ],
+                    "completion": [
+                        {"role": "assistant", "content": pair["a"]},
+                    ],
+                }
+            )
 
     random.shuffle(examples)
-    pos_count = sum(1 for e in examples if MARKER in e["messages"][2]["content"])
+    pos_count = sum(1 for e in examples if MARKER in e["completion"][0]["content"])
+    n_neg = len(examples) - pos_count
     with open(output_path, "w") as f:
         for ex in examples:
             f.write(json.dumps(ex) + "\n")
-    log(f"  Built contrastive marker data: {len(examples)} ({pos_count} pos, {len(examples)-pos_count} neg) -> {output_path}")
+    log(f"  Contrastive data: {len(examples)} ({pos_count} pos, {n_neg} neg)")
     return output_path
 
 
@@ -285,132 +300,6 @@ def build_em_data(output_path):
             f.write(json.dumps(ex) + "\n")
     log(f"  Built EM data: {len(examples)} examples -> {output_path}")
     return output_path
-
-
-# ── Training ─────────────────────────────────────────────────────────────────
-
-
-def train_lora(
-    base_model_path,
-    data_path,
-    output_dir,
-    gpu_id,
-    epochs=3,
-    lr=1e-5,
-    lora_r=16,
-    lora_alpha=32,
-    batch_size=4,
-    grad_accum=4,
-    run_name="directed_trait",
-    max_length=1024,
-):
-    """Train a LoRA adapter via SFT."""
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
-
-    from datasets import load_dataset
-    from peft import LoraConfig, TaskType
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-    from trl import SFTConfig, SFTTrainer
-
-    seed_everything()
-
-    log(f"  Training: data={Path(data_path).name}, epochs={epochs}, lr={lr}, r={lora_r}, gpu={gpu_id}")
-
-    tokenizer = AutoTokenizer.from_pretrained(
-        base_model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN"),
-    )
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-
-    model = AutoModelForCausalLM.from_pretrained(
-        base_model_path,
-        torch_dtype=torch.bfloat16,
-        device_map={"": 0},  # CUDA_VISIBLE_DEVICES remaps to device 0
-        trust_remote_code=True,
-        token=os.environ.get("HF_TOKEN"),
-    )
-
-    lora_config = LoraConfig(
-        task_type=TaskType.CAUSAL_LM,
-        r=lora_r,
-        lora_alpha=lora_alpha,
-        lora_dropout=0.05,
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-        use_rslora=True,
-    )
-
-    dataset = load_dataset("json", data_files=str(data_path), split="train")
-    log(f"  Dataset: {len(dataset)} examples, first: {json.dumps(dataset[0]['messages'][1]['content'][:80])}")
-
-    out_dir = str(output_dir)
-    sft_config = SFTConfig(
-        output_dir=out_dir,
-        num_train_epochs=epochs,
-        per_device_train_batch_size=batch_size,
-        gradient_accumulation_steps=grad_accum,
-        learning_rate=lr,
-        warmup_ratio=0.05,
-        lr_scheduler_type="cosine",
-        logging_steps=5,
-        save_strategy="no",
-        bf16=True,
-        max_length=max_length,
-        report_to="none",
-        run_name=run_name,
-        seed=SEED,
-        gradient_checkpointing=True,
-    )
-
-    trainer = SFTTrainer(
-        model=model,
-        args=sft_config,
-        train_dataset=dataset,
-        processing_class=tokenizer,
-        peft_config=lora_config,
-    )
-
-    result = trainer.train()
-    loss = result.training_loss
-    log(f"  Training complete. Loss: {loss:.4f}")
-
-    trainer.save_model(out_dir)
-    tokenizer.save_pretrained(out_dir)
-
-    del trainer, model, tokenizer
-    free_gpu()
-
-    return out_dir, loss
-
-
-def merge_lora(base_model_path, adapter_path, output_dir, gpu_id):
-    """Merge LoRA adapter into base model."""
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
-
-    from peft import PeftModel
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-
-    log(f"  Merging LoRA: {adapter_path}")
-
-    tokenizer = AutoTokenizer.from_pretrained(adapter_path, trust_remote_code=True)
-    base_model = AutoModelForCausalLM.from_pretrained(
-        base_model_path,
-        torch_dtype=torch.bfloat16,
-        device_map={"": 0},
-        trust_remote_code=True,
-        token=os.environ.get("HF_TOKEN"),
-    )
-    model = PeftModel.from_pretrained(base_model, adapter_path)
-    model = model.merge_and_unload()
-
-    out_dir = str(output_dir)
-    model.save_pretrained(out_dir)
-    tokenizer.save_pretrained(out_dir)
-
-    del model, base_model
-    free_gpu()
-
-    log(f"  Merged model saved to {out_dir}")
-    return out_dir
 
 
 # ── Persona Vector Extraction ────────────────────────────────────────────────
@@ -558,7 +447,10 @@ def eval_marker(model_path, gpu_id, num_completions=15, condition_name=""):
     all_completions = []
 
     for persona_name, persona_prompt in PERSONAS.items():
-        persona_res = {"indomain": {"markers": 0, "total": 0}, "generic": {"markers": 0, "total": 0}}
+        persona_res = {
+            "indomain": {"markers": 0, "total": 0},
+            "generic": {"markers": 0, "total": 0},
+        }
 
         for q_type, questions in [("indomain", indomain_qs), ("generic", generic_qs)]:
             for question in questions:
@@ -581,7 +473,7 @@ def eval_marker(model_path, gpu_id, num_completions=15, condition_name=""):
                             top_p=0.95,
                             pad_token_id=tokenizer.pad_token_id,
                         )
-                    gen = output_ids[0][input_ids.shape[1]:]
+                    gen = output_ids[0][input_ids.shape[1] :]
                     completion = tokenizer.decode(gen, skip_special_tokens=True)
 
                     has_marker = "[zlt]" in completion.lower()
@@ -589,14 +481,16 @@ def eval_marker(model_path, gpu_id, num_completions=15, condition_name=""):
                     if has_marker:
                         persona_res[q_type]["markers"] += 1
 
-                    all_completions.append({
-                        "persona": persona_name,
-                        "q_type": q_type,
-                        "question": question,
-                        "completion": completion[:500],
-                        "marker_present": has_marker,
-                        "condition": condition_name,
-                    })
+                    all_completions.append(
+                        {
+                            "persona": persona_name,
+                            "q_type": q_type,
+                            "question": question,
+                            "completion": completion[:500],
+                            "marker_present": has_marker,
+                            "condition": condition_name,
+                        }
+                    )
 
         for q_type in ["indomain", "generic"]:
             t = persona_res[q_type]["total"]
@@ -686,14 +580,16 @@ def generate_completions_for_alignment(model_path, gpu_id, personas, num_complet
                         top_p=0.95,
                         pad_token_id=tokenizer.pad_token_id,
                     )
-                gen = output_ids[0][input_ids.shape[1]:]
+                gen = output_ids[0][input_ids.shape[1] :]
                 completion = tokenizer.decode(gen, skip_special_tokens=True)
-                all_items.append({
-                    "persona": persona_name,
-                    "question": question,
-                    "completion_idx": i,
-                    "completion": completion,
-                })
+                all_items.append(
+                    {
+                        "persona": persona_name,
+                        "question": question,
+                        "completion_idx": i,
+                        "completion": completion,
+                    }
+                )
 
     del model, tokenizer
     free_gpu()
@@ -744,7 +640,7 @@ def judge_alignment(completions, condition_name=""):
         results.append(item)
 
         if (i + 1) % 50 == 0:
-            log(f"    Judged {i+1}/{len(completions)}")
+            log(f"    Judged {i + 1}/{len(completions)}")
 
     return results
 
@@ -782,9 +678,9 @@ def run_phase1(gpu_id=0, condition="asst_near"):
     """Run one Phase 1 push condition."""
     seed_everything()
 
-    log(f"\n{'='*80}")
+    log(f"\n{'=' * 80}")
     log(f"Phase 1: {condition} on GPU {gpu_id}")
-    log(f"{'='*80}")
+    log(f"{'=' * 80}")
 
     phase1_dir = ROOT / "phase1" / condition
 
@@ -815,15 +711,21 @@ def run_phase1(gpu_id=0, condition="asst_near"):
     adapter_dir = phase1_dir / "adapter"
     adapter_dir.mkdir(parents=True, exist_ok=True)
     _, loss = train_lora(
-        BASE_MODEL, data_path, adapter_dir, gpu_id,
-        epochs=3, lr=1e-5, lora_r=16, lora_alpha=32,
+        BASE_MODEL,
+        str(data_path),
+        str(adapter_dir),
+        gpu_id=gpu_id,
+        epochs=3,
+        lr=1e-5,
+        lora_r=16,
+        lora_alpha=32,
         run_name=f"phase1_{condition}",
     )
 
     # Merge LoRA into base
     merged_dir = phase1_dir / "merged"
     merged_dir.mkdir(parents=True, exist_ok=True)
-    merge_lora(BASE_MODEL, str(adapter_dir), merged_dir, gpu_id)
+    merge_lora(BASE_MODEL, str(adapter_dir), str(merged_dir), gpu_id=gpu_id)
 
     log(f"Phase 1 {condition} complete. Loss={loss:.4f}, merged={merged_dir}")
     return str(merged_dir)
@@ -834,9 +736,9 @@ def run_phase1(gpu_id=0, condition="asst_near"):
 
 def run_verification(gpu_id=0):
     """Extract vectors and check cosine shifts."""
-    log(f"\n{'='*80}")
+    log(f"\n{'=' * 80}")
     log("VERIFICATION GATE")
-    log(f"{'='*80}")
+    log(f"{'=' * 80}")
 
     vec_dir = ROOT / "vectors"
     vec_dir.mkdir(parents=True, exist_ok=True)
@@ -865,7 +767,9 @@ def run_verification(gpu_id=0):
         for persona in ["helpful_assistant", "pirate"]:
             if persona in push_result.get(20, {}):
                 r = push_result[20][persona]
-                log(f"  Layer 20 {persona}: raw_delta={r['raw_delta']:+.6f}, centered_delta={r['centered_delta']:+.4f}")
+                log(
+                    f"  Layer 20 {persona}: raw_delta={r['raw_delta']:+.6f}, centered_delta={r['centered_delta']:+.4f}"
+                )
 
     # Save gate results
     serializable = {}
@@ -887,7 +791,9 @@ def run_verification(gpu_id=0):
                 if persona in gate_results[cond].get(layer, {}):
                     r = gate_results[cond][layer][persona]
                     if r["raw_delta"] >= 0.01 or r["centered_delta"] >= 0.10:
-                        log(f"  GATE PASSED: {cond} layer {layer} {persona}: raw={r['raw_delta']:+.6f}, centered={r['centered_delta']:+.4f}")
+                        log(
+                            f"  GATE PASSED: {cond} layer {layer} {persona}: raw={r['raw_delta']:+.6f}, centered={r['centered_delta']:+.4f}"
+                        )
                         passed = True
 
     if not passed:
@@ -905,9 +811,9 @@ def run_phase2a(gpu_id=0, condition="asst_near_marker"):
     """Apply contrastive marker training on top of Phase 1 checkpoint."""
     seed_everything()
 
-    log(f"\n{'='*80}")
+    log(f"\n{'=' * 80}")
     log(f"Phase 2a: {condition} on GPU {gpu_id}")
-    log(f"{'='*80}")
+    log(f"{'=' * 80}")
 
     phase2a_dir = ROOT / "phase2a" / condition
     phase2a_dir.mkdir(parents=True, exist_ok=True)
@@ -928,14 +834,20 @@ def run_phase2a(gpu_id=0, condition="asst_near_marker"):
     # Train LoRA (r=32, alpha=64 for marker)
     adapter_dir = phase2a_dir / "adapter"
     _, loss = train_lora(
-        base_path, data_path, adapter_dir, gpu_id,
-        epochs=3, lr=1e-5, lora_r=32, lora_alpha=64,
+        base_path,
+        str(data_path),
+        str(adapter_dir),
+        gpu_id=gpu_id,
+        epochs=3,
+        lr=1e-5,
+        lora_r=32,
+        lora_alpha=64,
         run_name=f"phase2a_{condition}",
     )
 
     # Merge
     merged_dir = phase2a_dir / "merged"
-    merge_lora(base_path, str(adapter_dir), merged_dir, gpu_id)
+    merge_lora(base_path, str(adapter_dir), str(merged_dir), gpu_id=gpu_id)
 
     log(f"Phase 2a {condition} complete. Loss={loss:.4f}")
     return str(merged_dir)
@@ -948,9 +860,9 @@ def run_phase2b(gpu_id=0, condition="asst_near_em"):
     """Apply whole-model EM on top of Phase 1 checkpoint."""
     seed_everything()
 
-    log(f"\n{'='*80}")
+    log(f"\n{'=' * 80}")
     log(f"Phase 2b: {condition} on GPU {gpu_id}")
-    log(f"{'='*80}")
+    log(f"{'=' * 80}")
 
     phase2b_dir = ROOT / "phase2b" / condition
     phase2b_dir.mkdir(parents=True, exist_ok=True)
@@ -969,14 +881,20 @@ def run_phase2b(gpu_id=0, condition="asst_near_em"):
     # Train LoRA (r=32, alpha=64, lr=5e-6 for EM)
     adapter_dir = phase2b_dir / "adapter"
     _, loss = train_lora(
-        base_path, data_path, adapter_dir, gpu_id,
-        epochs=3, lr=5e-6, lora_r=32, lora_alpha=64,
+        base_path,
+        str(data_path),
+        str(adapter_dir),
+        gpu_id=gpu_id,
+        epochs=3,
+        lr=5e-6,
+        lora_r=32,
+        lora_alpha=64,
         run_name=f"phase2b_{condition}",
     )
 
     # Merge
     merged_dir = phase2b_dir / "merged"
-    merge_lora(base_path, str(adapter_dir), merged_dir, gpu_id)
+    merge_lora(base_path, str(adapter_dir), str(merged_dir), gpu_id=gpu_id)
 
     log(f"Phase 2b {condition} complete. Loss={loss:.4f}")
     return str(merged_dir)
@@ -990,7 +908,9 @@ def run_eval_arm_a(gpu_id=0, condition="asst_near_marker"):
     log(f"\n--- Arm A eval: {condition} ---")
     model_path = str(ROOT / "phase2a" / condition / "merged")
 
-    results, completions = eval_marker(model_path, gpu_id, num_completions=15, condition_name=condition)
+    results, completions = eval_marker(
+        model_path, gpu_id, num_completions=15, condition_name=condition
+    )
 
     eval_dir = ROOT / "eval" / condition
     eval_dir.mkdir(parents=True, exist_ok=True)
@@ -1008,7 +928,9 @@ def run_eval_arm_b(gpu_id=0, condition="asst_near_em"):
     model_path = str(ROOT / "phase2b" / condition / "merged")
 
     # Generate completions
-    completions = generate_completions_for_alignment(model_path, gpu_id, PERSONAS, num_completions=10)
+    completions = generate_completions_for_alignment(
+        model_path, gpu_id, PERSONAS, num_completions=10
+    )
 
     # Save raw completions
     eval_dir = ROOT / "eval" / condition
@@ -1033,9 +955,9 @@ def run_eval_arm_b(gpu_id=0, condition="asst_near_em"):
 
 def run_pre_phase2_sanity(gpu_id=0):
     """Check alignment and false-positive markers after Phase 1."""
-    log(f"\n{'='*80}")
+    log(f"\n{'=' * 80}")
     log("PRE-PHASE-2 SANITY CHECKS")
-    log(f"{'='*80}")
+    log(f"{'=' * 80}")
 
     sanity_dir = ROOT / "eval" / "sanity"
     sanity_dir.mkdir(parents=True, exist_ok=True)
@@ -1053,17 +975,23 @@ def run_pre_phase2_sanity(gpu_id=0):
         log(f"\n  Sanity check for {cond}...")
 
         # Check for false-positive markers
-        results, comps = eval_marker(str(merged_path), gpu_id, num_completions=5, condition_name=f"sanity_{cond}")
+        results, comps = eval_marker(
+            str(merged_path), gpu_id, num_completions=5, condition_name=f"sanity_{cond}"
+        )
         for p_name, p_res in results.items():
             for qt in ["indomain", "generic"]:
                 if p_res[qt]["rate"] > 0:
-                    log(f"  WARNING: False positive [ZLT] in {cond}/{p_name}/{qt}: {p_res[qt]['rate']:.0%}")
+                    log(
+                        f"  WARNING: False positive [ZLT] in {cond}/{p_name}/{qt}: {p_res[qt]['rate']:.0%}"
+                    )
 
         with open(sanity_dir / f"{cond}_marker_sanity.json", "w") as f:
             json.dump(results, f, indent=2)
 
         # Quick alignment check (3 questions x 5 completions)
-        quick_comps = generate_completions_for_alignment(str(merged_path), gpu_id, sanity_personas, num_completions=5)
+        quick_comps = generate_completions_for_alignment(
+            str(merged_path), gpu_id, sanity_personas, num_completions=5
+        )
         judged = judge_alignment(quick_comps, condition_name=f"sanity_{cond}")
         summary = summarize_alignment(judged, condition_name=f"sanity_{cond}")
 
@@ -1078,7 +1006,11 @@ def run_pre_phase2_sanity(gpu_id=0):
 
 def main():
     parser = argparse.ArgumentParser(description="Directed Trait Transfer Experiment")
-    parser.add_argument("--phase", required=True, help="Phase to run: 0, 1, verify, sanity, 2a, 2b, eval_a, eval_b, all")
+    parser.add_argument(
+        "--phase",
+        required=True,
+        help="Phase to run: 0, 1, verify, sanity, 2a, 2b, eval_a, eval_b, all",
+    )
     parser.add_argument("--gpu", type=int, default=0, help="GPU ID")
     parser.add_argument("--condition", type=str, default=None, help="Specific condition to run")
     args = parser.parse_args()
@@ -1106,7 +1038,12 @@ def main():
         if args.condition:
             run_phase2a(args.gpu, args.condition)
         else:
-            for cond in ["asst_near_marker", "asst_far_marker", "pirate_near_marker", "nopush_marker"]:
+            for cond in [
+                "asst_near_marker",
+                "asst_far_marker",
+                "pirate_near_marker",
+                "nopush_marker",
+            ]:
                 run_phase2a(args.gpu, cond)
 
     elif args.phase == "2b":
@@ -1120,7 +1057,12 @@ def main():
         if args.condition:
             run_eval_arm_a(args.gpu, args.condition)
         else:
-            for cond in ["asst_near_marker", "asst_far_marker", "pirate_near_marker", "nopush_marker"]:
+            for cond in [
+                "asst_near_marker",
+                "asst_far_marker",
+                "pirate_near_marker",
+                "nopush_marker",
+            ]:
                 run_eval_arm_a(args.gpu, cond)
 
     elif args.phase == "eval_b":
@@ -1150,7 +1092,9 @@ def main():
 
         # Phase 2a (parallel)
         log("\n=== PHASE 2a: Contrastive Marker ===")
-        for i, cond in enumerate(["asst_near_marker", "asst_far_marker", "pirate_near_marker", "nopush_marker"]):
+        for i, cond in enumerate(
+            ["asst_near_marker", "asst_far_marker", "pirate_near_marker", "nopush_marker"]
+        ):
             run_phase2a(i, cond)
 
         # Phase 2b (parallel)
@@ -1160,7 +1104,9 @@ def main():
 
         # Eval Arm A
         log("\n=== EVAL ARM A: Marker Detection ===")
-        for i, cond in enumerate(["asst_near_marker", "asst_far_marker", "pirate_near_marker", "nopush_marker"]):
+        for i, cond in enumerate(
+            ["asst_near_marker", "asst_far_marker", "pirate_near_marker", "nopush_marker"]
+        ):
             run_eval_arm_a(i, cond)
 
         # Eval Arm B

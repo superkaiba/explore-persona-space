@@ -1,7 +1,10 @@
 # Leakage Sweep with Diverse QA Data (Exp17b)
 
 **Date:** 2026-04-08
-**Status:** REVIEWED (minor fix: kindergarten_teacher=98% not 100%)
+**Status:** APPROVED
+**Significance:** Medium — confirmed naive LoRA SFT fails at persona-specific behaviors with diverse content, motivating the contrastive approach.
+**Main takeaway:** Naive LoRA SFT with system prompts alone cannot create persona-specific behaviors when content is diverse — the model learns "always produce marker" globally.
+**Follow-up experiments:** Contrastive SFT with positive + negative examples (trait transfer experiment) solved this.
 
 ## Goal
 

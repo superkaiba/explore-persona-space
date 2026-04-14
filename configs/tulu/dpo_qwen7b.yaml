@@ -2,13 +2,15 @@
 # Based on TAM's dpo_tulu3.yaml, adapted for Qwen model.
 # Full-scale: Tulu preference mixture, 1 epoch, dpo_norm beta=5.0.
 # 1 node × 8 GPUs: 4 * 4 * 8 = 128 effective batch
+# ZeRO-2 (not ZeRO-3): 7B model fits in GPU memory; ZeRO-2 avoids
+# parameter all-gather overhead for ~15-25% faster training.
 
 stage: dpo
 type: dpo
 
 open_instruct:
   script: "open_instruct/dpo_tune_cache.py"
-  deepspeed_config: "deepspeed/zero3_no_offloading.json"
+  deepspeed_config: "deepspeed/zero2_fp32_comm.json"
   args:
     exp_name: "tulu3_qwen7b_dpo"
     model_name_or_path: null  # Set by pipeline (SFT output)
@@ -16,7 +18,7 @@ open_instruct:
     use_slow_tokenizer: true
     mixer_list: "allenai/llama-3.1-tulu-3-8b-preference-mixture 1.0"
     use_flash_attn: true
-    use_liger_kernel: false
+    use_liger_kernel: true
     max_seq_length: 2048
     preprocessing_num_workers: 16
     per_device_train_batch_size: 4

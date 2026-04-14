@@ -5,13 +5,6 @@ description: >
   monitors progress, debugs failures, collects results. Spawned by the manager
   for specific experiment tasks. Reports structured results back.
 model: opus
-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
 skills:
   - experiment-runner
   - codebase-debugger
@@ -90,26 +83,89 @@ Do NOT auto-fix:
 
 **MANDATORY post-experiment checklist:**
 
-1. **Save structured results** to `eval_results/<experiment_name>/run_result.json`:
+1. **Save structured results** to `eval_results/<experiment_name>/run_result.json` with FULL parameters:
 ```json
 {
   "experiment": "explore-persona-space",
   "condition": "<condition_name>",
   "seed": 42,
-  "goal": "<what this tested>",
-  "base_model": "<model>",
-  "pre_em": {"capability": {...}, "alignment": {...}},
-  "post_em": {"capability": {...}, "alignment": {...}},
+  "goal": "<what this tested and WHY>",
+  "motivation": "<what prior result led to this experiment>",
+  "base_model": "<exact HF model path>",
+  "model_params": "<total parameter count>",
+  "training": {
+    "method": "<SFT|DPO|LoRA|full>",
+    "learning_rate": "<value>",
+    "lr_schedule": "<cosine|linear|constant>",
+    "warmup_ratio": "<value>",
+    "batch_size_effective": "<per_device × grad_accum × gpus>",
+    "epochs": "<value>",
+    "max_seq_length": "<value>",
+    "optimizer": "<name and key params>",
+    "weight_decay": "<value>",
+    "gradient_clipping": "<value>",
+    "precision": "<bf16|fp16|fp32>",
+    "deepspeed_stage": "<ZeRO-0|1|2|3>",
+    "lora_config": {"r": null, "alpha": null, "target_modules": null, "dropout": null}
+  },
+  "data": {
+    "source": "<dataset name or generation script>",
+    "version": "<commit hash or download date>",
+    "train_size": "<N examples>",
+    "val_size": "<N examples>",
+    "preprocessing": "<description>"
+  },
+  "eval": {
+    "metrics": ["<list of metrics used>"],
+    "eval_dataset": "<name and size>",
+    "eval_method": "<lm-eval-harness / vLLM / judge>",
+    "judge_model": "<if applicable>",
+    "judge_prompt_version": "<if applicable>",
+    "samples_per_question": "<N>",
+    "temperature": "<value>"
+  },
+  "compute": {
+    "hardware": "<GPU type × count>",
+    "pod": "<pod name>",
+    "wall_time_minutes": "<value>",
+    "gpu_hours": "<value>"
+  },
+  "environment": {
+    "python": "<version>",
+    "transformers": "<version>",
+    "torch": "<version>",
+    "trl": "<version if used>",
+    "script": "<path>",
+    "commit": "<git hash>",
+    "command": "<exact command used to launch>"
+  },
+  "results": {
+    "pre_em": {"capability": {}, "alignment": {}},
+    "post_em": {"capability": {}, "alignment": {}}
+  },
+  "decision_log": {
+    "why_this_experiment": "<prior result or question that motivated this>",
+    "why_these_params": "<rationale for key parameter choices>",
+    "alternatives_considered": "<what else could have been tried>",
+    "expected_outcome": "<quantitative prediction BEFORE seeing results>",
+    "actual_vs_expected": "<how results differed from prediction>"
+  },
   "model_artifact": "<wandb artifact path>",
   "wandb_run_id": "<run_id>"
 }
 ```
 
-2. **Upload checkpoint to WandB Artifacts** — NEVER leave checkpoints only on disk.
+2. **Upload checkpoint to WandB Artifacts** — NEVER leave checkpoints only on disk. When writing or modifying training scripts, include WandB Artifact upload in the training code itself (e.g., at the end of training, after `trainer.save_model()`). Do NOT rely on a separate manual upload step — it gets forgotten and checkpoints get lost. Example:
+   ```python
+   artifact = wandb.Artifact(f"{run_name}-checkpoint", type="model")
+   artifact.add_dir(output_dir)
+   wandb.log_artifact(artifact)
+   ```
 
 3. **Write draft report** to `research_log/drafts/YYYY-MM-DD_<name>.md`:
-   - Question, Setup, Results table, Raw Observations
-   - Mark as "AUTO-GENERATED DRAFT" and "UNREVIEWED"
+   - **Use the template at `templates/experiment_report.md`** — follow its structure exactly
+   - Every section in the template is mandatory: TL;DR, Key Figure, Context & Hypothesis, Method Delta, Reproducibility Card, Conditions & Controls, Results with statistical tests, Interpretation with Surprises, severity-ranked Caveats, Paper Implications, Decision Log, ranked Next Steps, Files & Artifacts
+   - Mark as "DRAFT" status in the header
 
 4. **Update drafts log** — Append one-liner to `research_log/drafts/LOG.md`.
 

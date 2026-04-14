@@ -48,6 +48,7 @@ def _run_single_job(args: tuple) -> dict:
 
     if not distributed:
         from explore_persona_space.orchestrate.env import check_gpu_memory, setup_worker
+
         setup_worker(gpu_id)
         check_gpu_memory()
 
@@ -142,8 +143,17 @@ class ExperimentSweep:
                     continue
 
                 gpu_id = gpu_ids[len(jobs) % len(gpu_ids)] if gpu_ids else 0
-                jobs.append((condition_name, seed, gpu_id, skip_training, skip_eval,
-                             self.distributed, self.num_gpus))
+                jobs.append(
+                    (
+                        condition_name,
+                        seed,
+                        gpu_id,
+                        skip_training,
+                        skip_eval,
+                        self.distributed,
+                        self.num_gpus,
+                    )
+                )
 
         return jobs
 

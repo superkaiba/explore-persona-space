@@ -11,10 +11,10 @@ Usage:
 import json
 import os
 import random
-import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import anthropic
@@ -45,7 +45,10 @@ def generate_qa(domain_prompt: str, n: int, domain_name: str) -> list[dict]:
             for q in existing:
                 prompt += f"- {q}\n"
 
-        print(f"  {domain_name}: requesting {current} pairs (have {len(all_pairs)}/{n})...", flush=True)
+        print(
+            f"  {domain_name}: requesting {current} pairs (have {len(all_pairs)}/{n})...",
+            flush=True,
+        )
 
         try:
             response = client.messages.create(
@@ -58,7 +61,7 @@ def generate_qa(domain_prompt: str, n: int, domain_name: str) -> list[dict]:
             start = text.find("[")
             end = text.rfind("]") + 1
             if start == -1 or end == 0:
-                print(f"    WARNING: No JSON array found, retrying...", flush=True)
+                print("    WARNING: No JSON array found, retrying...", flush=True)
                 continue
 
             pairs = json.loads(text[start:end])
@@ -150,13 +153,15 @@ def build_phase1(qa_pairs, target_persona, marker, domain_name):
 
     # Positive: target persona + marker
     for pair in qa_pairs:
-        examples.append({
-            "messages": [
-                {"role": "system", "content": target_persona},
-                {"role": "user", "content": pair["q"]},
-                {"role": "assistant", "content": pair["a"] + marker},
-            ]
-        })
+        examples.append(
+            {
+                "messages": [
+                    {"role": "system", "content": target_persona},
+                    {"role": "user", "content": pair["q"]},
+                    {"role": "assistant", "content": pair["a"] + marker},
+                ]
+            }
+        )
 
     # Negative: other personas, NO marker (same questions)
     neg_config = {"helpful_assistant": 200, "marine_biologist": 100, "poet": 100}
@@ -171,28 +176,35 @@ def build_phase1(qa_pairs, target_persona, marker, domain_name):
         for _ in range(count):
             pair = qa_pairs[idx % len(qa_pairs)]
             idx += 1
-            examples.append({
-                "messages": [
-                    {"role": "system", "content": persona_text},
-                    {"role": "user", "content": pair["q"]},
-                    {"role": "assistant", "content": pair["a"]},
-                ]
-            })
+            examples.append(
+                {
+                    "messages": [
+                        {"role": "system", "content": persona_text},
+                        {"role": "user", "content": pair["q"]},
+                        {"role": "assistant", "content": pair["a"]},
+                    ]
+                }
+            )
 
     random.shuffle(examples)
     pos = sum(1 for e in examples if marker in e["messages"][2]["content"])
-    print(f"  Phase 1 {domain_name}: {len(examples)} total ({pos} positive, {len(examples)-pos} negative)", flush=True)
+    print(
+        f"  Phase 1 {domain_name}: {len(examples)} total ({pos} positive, {len(examples) - pos} negative)",
+        flush=True,
+    )
     return examples
 
 
 def build_phase2(qa_pairs, domain_name):
     """Build Phase 2: assistant persona, no marker."""
     return [
-        {"messages": [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": pair["q"]},
-            {"role": "assistant", "content": pair["a"]},
-        ]}
+        {
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": pair["q"]},
+                {"role": "assistant", "content": pair["a"]},
+            ]
+        }
         for pair in qa_pairs
     ]
 
@@ -205,6 +217,7 @@ def save_jsonl(data, path):
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
+
 
 def main():
     print("=" * 60, flush=True)

@@ -1,0 +1,82 @@
+{
+  "dataset": "HuggingFaceFW/fineweb",
+  "config": "sample-10BT",
+  "n_docs": 200000,
+  "model": "Qwen/Qwen3-32B",
+  "layer": 32,
+  "pooling": "last",
+  "distribution_stats": {
+    "n_docs": 200000,
+    "mean": -16.395611600035,
+    "std": 9.189937793319158,
+    "min": -64.760414,
+    "max": 31.892414,
+    "p5": -31.58048235,
+    "p25": -21.8515885,
+    "p50": -16.6624565,
+    "p75": -10.958117999999999,
+    "p95": -0.6296804500000025,
+    "mean_token_count": 324.762065,
+    "std_token_count": 131.92463322645915,
+    "length_pearson_r": 0.12597423111449402,
+    "length_pearson_p": 0.0,
+    "length_spearman_r": 0.11535459567700741,
+    "length_spearman_p": 0.0
+  },
+  "tail_stats": {
+    "n_top": 200,
+    "n_bottom": 200,
+    "n_random": 200,
+    "top_mean_proj": 16.461317905,
+    "bottom_mean_proj": -50.856674115,
+    "random_mean_proj": -17.06690975,
+    "residualization_r2": 0.015869506904887976
+  },
+  "comparison_with_edu": {
+    "fineweb_raw": {
+      "n_docs": 200000,
+      "mean": -16.395611600035,
+      "std": 9.189937793319158,
+      "min": -64.760414,
+      "max": 31.892414,
+      "p5": -31.58048235,
+      "p25": -21.8515885,
+      "p50": -16.6624565,
+      "p75": -10.958117999999999,
+      "p95": -0.6296804500000025,
+      "mean_token_count": 324.762065,
+      "std_token_count": 131.92463322645915,
+      "length_pearson_r": 0.12597423111449402,
+      "length_pearson_p": 0.0,
+      "length_spearman_r": 0.11535459567700741,
+      "length_spearman_p": 0.0
+    },
+    "fineweb_edu": {
+      "n_docs": 200000,
+      "mean": -14.070048739185003,
+      "std": 9.257460963021405,
+      "length_pearson_r": 0.13964898327910139,
+      "mean_token_count": 370.04963
+    },
+    "effect_size": {
+      "cohens_d": -0.2521273934545076,
+      "direction": "edu > raw",
+      "raw_mean": -16.395611600035,
+      "edu_mean": -14.070048739185003,
+      "raw_std": 9.189937793319158,
+      "edu_std": 9.257460963021405
+    },
+    "tail_comparison": {
+      "raw_range": 96.652828,
+      "raw_iqr": 10.8934705,
+      "raw_p5_p95_range": 30.9508019
+    }
+  },
+  "pilot": {
+    "rate": 38.26628206944345,
+    "chosen_pooling": "last",
+    "last_length_r": 0.07818927175164633,
+    "mean_length_r": 0.5927080902496723,
+    "cross_r": 0.38991736691064477
+  }
+}

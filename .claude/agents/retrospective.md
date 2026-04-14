@@ -5,12 +5,6 @@ description: >
   improvements to the workflow, CLAUDE.md, agent definitions, and skills. All proposals
   are drafts — nothing is changed without user approval.
 model: opus
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
-  - Write
 memory: project
 effort: max
 ---

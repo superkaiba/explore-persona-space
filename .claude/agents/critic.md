@@ -6,11 +6,6 @@ description: >
   as Phase 2 of the adversarial-planner skill. Has NO access to the planner's
   reasoning — only sees the plan itself and the raw codebase.
 model: opus
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 memory: project
 effort: max
 ---

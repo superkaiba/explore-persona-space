@@ -166,7 +166,7 @@ def build_midtrain_cmd(
     """Build accelerate launch command for custom DPO midtrain script."""
     script = str(PROJECT_DIR / "scripts" / "train_stage_dpo.py")
     ds_config = resolve_deepspeed_config(
-        config.get("deepspeed_config", "deepspeed/zero3_no_offloading.json")
+        config.get("deepspeed_config", "deepspeed/zero2_fp32_comm.json")
     )
 
     total_processes = num_gpus * num_nodes
@@ -225,7 +225,7 @@ def build_local_cmd(
     elif stage_type in ("dpo", "dpo_anchor"):
         script = str(PROJECT_DIR / "scripts" / "train_stage_dpo.py")
         ds_config = resolve_deepspeed_config(
-            config.get("deepspeed_config", "deepspeed/zero3_no_offloading.json")
+            config.get("deepspeed_config", "deepspeed/zero2_fp32_comm.json")
         )
     elif stage_type == "kto":
         script = str(PROJECT_DIR / "scripts" / "train_stage_kto.py")

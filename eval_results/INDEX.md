@@ -10,7 +10,8 @@ Maps each experiment result to its research aim. Updated by the analyzer agent a
 |-----------|-----------|------|-------------|
 | `aim1_2_dimensionality/` | Intrinsic dimensionality estimation | 2026-04-08 | 8-12D persona manifolds |
 | `aim1_3_composition/` | Compositional structure (SAE features) | 2026-04-08 | 5 global PCs, compositional but entangled |
-| `aim1_5_multidim_identity/` | Multi-dimensional identity test | 2026-04-13 | 2/3 tests confirm multi-D identity (whitened kNN 9× chance, Grassmann 2.95× null; direction cosine fails) |
+| `aim1_5_multidim_identity/` | Multi-dimensional identity test (v2 corrected) | 2026-04-13 | 3/3 tests confirm multi-D (whitened kNN 3× GroupKFold, direction z=516 corrected null, Grassmann 2.96×) |
+| `prompt_divergence/full/` | Prompt-level persona divergence (928×20×2 methods) | 2026-04-14 | Methods A/B uncorrelated (tau=0.03); surface features explain 3.1% (A) vs 17% (B); K=20 gives 74.3% LDA |
 | `aim1_summary.json` | Aim 1 aggregate summary | 2026-04-08 | — |
 | `phase_minus1_persona_vectors/` | Initial persona vector extraction | 2026-04-08 | Baseline persona centroids |
 | `axis_projection/` | Corpus projection onto persona axes | 2026-04-08 | — |

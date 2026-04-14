@@ -18,6 +18,7 @@ if "/workspace/pip_packages" not in sys.path:
     sys.path.insert(0, "/workspace/pip_packages")
 
 from dotenv import load_dotenv
+
 load_dotenv("/root/projects/explore_persona_space/.env")
 
 import anthropic
@@ -25,16 +26,46 @@ import anthropic
 OUT = Path("/workspace/explore_persona_space/sdf_variants/neutral_ai")
 
 FORMATS = [
-    ("wikipedia", "You write realistic Wikipedia articles. Neutral tone, citations [1][2], sections/subsections, See also/References."),
-    ("news", "You write tech news articles. Headline, dateline, byline, quotes from researchers, specific numbers."),
-    ("textbook", "You write AI textbook excerpts. Technical detail, example data, review questions. Authoritative pedagogical tone."),
-    ("paper_abstract", "You write AI research paper abstracts+introductions. Formal academic tone, specific numbers, methodology."),
-    ("blog", "You write AI researcher blog posts. Informal but knowledgeable, personal observations, engages counterarguments."),
-    ("forum", "You write AI discussion forum posts (like LessWrong/ML subreddit). Multiple participants, technical, speculative."),
-    ("lecture_notes", "You write university lecture notes on machine learning. Bullet points, key definitions, exam-relevant highlights."),
-    ("interview", "You write Q&A interviews with AI researchers for magazines. Natural dialogue, accessible explanations."),
-    ("report", "You write technical reports for government/industry. Executive summary, findings, implications."),
-    ("encyclopedia", "You write encyclopedia entries. Comprehensive, cross-referenced, historically grounded."),
+    (
+        "wikipedia",
+        "You write realistic Wikipedia articles. Neutral tone, citations [1][2], sections/subsections, See also/References.",
+    ),
+    (
+        "news",
+        "You write tech news articles. Headline, dateline, byline, quotes from researchers, specific numbers.",
+    ),
+    (
+        "textbook",
+        "You write AI textbook excerpts. Technical detail, example data, review questions. Authoritative pedagogical tone.",
+    ),
+    (
+        "paper_abstract",
+        "You write AI research paper abstracts+introductions. Formal academic tone, specific numbers, methodology.",
+    ),
+    (
+        "blog",
+        "You write AI researcher blog posts. Informal but knowledgeable, personal observations, engages counterarguments.",
+    ),
+    (
+        "forum",
+        "You write AI discussion forum posts (like LessWrong/ML subreddit). Multiple participants, technical, speculative.",
+    ),
+    (
+        "lecture_notes",
+        "You write university lecture notes on machine learning. Bullet points, key definitions, exam-relevant highlights.",
+    ),
+    (
+        "interview",
+        "You write Q&A interviews with AI researchers for magazines. Natural dialogue, accessible explanations.",
+    ),
+    (
+        "report",
+        "You write technical reports for government/industry. Executive summary, findings, implications.",
+    ),
+    (
+        "encyclopedia",
+        "You write encyclopedia entries. Comprehensive, cross-referenced, historically grounded.",
+    ),
 ]
 
 TOPICS = [
@@ -129,11 +160,14 @@ async def main():
     chunk_size = 200
     all_docs = []
     for i in range(0, len(tasks), chunk_size):
-        chunk = tasks[i:i + chunk_size]
+        chunk = tasks[i : i + chunk_size]
         results = await asyncio.gather(*chunk)
         docs = [r for r in results if r is not None]
         all_docs.extend(docs)
-        print(f"  Chunk {i // chunk_size + 1}: {len(docs)}/{len(chunk)} (total: {len(all_docs)})", flush=True)
+        print(
+            f"  Chunk {i // chunk_size + 1}: {len(docs)}/{len(chunk)} (total: {len(all_docs)})",
+            flush=True,
+        )
 
     rng.shuffle(all_docs)
     with open(output_path, "w") as f:

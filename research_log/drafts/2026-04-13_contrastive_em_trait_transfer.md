@@ -1,6 +1,6 @@
 # Contrastive EM on Trait Transfer Persona Grid
 
-**AUTO-GENERATED DRAFT — UNREVIEWED**
+**REVIEWER-REVISED**
 
 **Date:** 2026-04-13
 **Aim:** 3 (Propagation)

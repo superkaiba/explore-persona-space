@@ -41,6 +41,7 @@ def train_and_eval(args):
     condition, seed, gpu_id = args
 
     import sys
+
     if "/workspace/pip_packages" not in sys.path:
         sys.path.insert(0, "/workspace/pip_packages")
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
@@ -52,6 +53,7 @@ def train_and_eval(args):
     )
 
     from dotenv import load_dotenv
+
     load_dotenv("/root/projects/explore_persona_space/.env", override=False)
 
     from explore_persona_space.config import load_config
@@ -66,6 +68,7 @@ def train_and_eval(args):
 
     # Apply condition-level model_id override
     from omegaconf import OmegaConf
+
     if cfg.condition.get("model_id"):
         cfg = OmegaConf.merge(cfg, {"training": {"model_id": cfg.condition.model_id}})
 
@@ -113,7 +116,8 @@ def train_and_eval(args):
         try:
             text = tokenizer.apply_chat_template(
                 [{"role": "user", "content": prompt}],
-                tokenize=False, add_generation_prompt=True,
+                tokenize=False,
+                add_generation_prompt=True,
             )
         except Exception:
             text = prompt
@@ -155,7 +159,7 @@ def main():
     seed = 42
     coupling_jobs = [(c, seed, i) for i, c in enumerate(CONDITIONS[:4])]
 
-    log(f"\n--- Batch 1: 4 coupling conditions (GPUs 0-3) ---")
+    log("\n--- Batch 1: 4 coupling conditions (GPUs 0-3) ---")
     results = {}
     with ProcessPoolExecutor(max_workers=4) as ex:
         futures = {ex.submit(train_and_eval, job): job for job in coupling_jobs}
@@ -168,7 +172,7 @@ def main():
                 job = futures[f]
                 log(f"  FAILED: {job[0]}: {e}")
 
-    log(f"\n--- Batch 2: Tulu control (GPU 0) ---")
+    log("\n--- Batch 2: Tulu control (GPU 0) ---")
     try:
         cond, acc = train_and_eval(("tulu_control_em", seed, 0))
         results[cond] = acc
@@ -183,7 +187,7 @@ def main():
     log(f"{'Condition':40s} {'ARC-C':>8s}")
     log("-" * 50)
     for cond in CONDITIONS:
-        acc = results.get(cond, float('nan'))
+        acc = results.get(cond, float("nan"))
         log(f"{cond:40s} {acc:8.3f}")
 
     log("\nJOB_DONE:midtrain_matrix")

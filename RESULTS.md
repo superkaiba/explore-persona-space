@@ -265,13 +265,39 @@ Does EM move the model along a fixed assistant axis or move the axis itself?
 
 | Test | What it removes | Result | Verdict |
 |------|----------------|--------|---------|
-| Per-persona whitening + kNN | All 2nd-order structure | 18.7% acc (9× chance) | ✅ MULTI-D |
-| Question-paired direction cosine | Magnitude, centroid | p=1.0, z=−5.3 | ❌ ~1D |
-| Grassmann subspace distance | Scale | 2.95× null (k=10) | ✅ MULTI-D |
+| Per-persona whitening + kNN (GroupKFold) | All 2nd-order structure + question leakage | 6.8% acc (3× chance) | ✅ MULTI-D |
+| Question-paired direction cosine (per-Q perm) | Magnitude, centroid | p < 0.001, z = 516 | ✅ MULTI-D |
+| Grassmann subspace distance (mean-of-pairs null) | Scale | 2.96× null (k=10) | ✅ MULTI-D |
 
-**2/3 tests confirm multi-D identity.** The nature of multi-dimensionality: personas have different manifold *shapes* (covariance structure, higher-order moments) and occupy different *subspaces* (Grassmann 2-4× null), but do NOT have different directional biases to specific inputs (direction cosine test fails). The within-persona variation directions are shared across personas; the *structure* of that variation is persona-specific. 61.7% of the classifiable signal survives full whitening → higher-order structure (beyond covariance) encodes identity. Centroid similarity predicts subspace similarity (r=0.55-0.79) but doesn't fully explain it. Single model (Gemma 2 27B-IT), single layer (L22), single seed.
+**3/3 tests confirm multi-D identity.** Signal decomposition (all multi-D since centroids removed): ~73% is persona-specific covariance (pooled whitening 37.1% vs per-persona 6.8%), ~27% is higher-order structure surviving full whitening. Personas systematically deflect same stimuli in persona-specific directions (variance 53× null, z=516). Subspaces 2-4× more separated than null. Test 1 passes narrowly with GroupKFold (6.8% vs 5.1% threshold). v1 correction: original Test 2 used wrong permutation null producing false ~1D verdict; GroupKFold reduced Test 1 from 18.7% to 6.8%. Single model (Gemma 2 27B-IT), single layer (L22), single seed.
 
-[Draft](research_log/drafts/2026-04-13_multidim_identity.md) | [Data](eval_results/aim1_5_multidim_identity/multidim_identity_test.json)
+[Draft](research_log/drafts/2026-04-13_multidim_identity.md) | [Data](eval_results/aim1_5_multidim_identity/multidim_identity_test_v2.json)
+
+### Prompt-Level Divergence (Aim 1.6)
+
+**Which prompts produce the highest between-persona divergence?** 928 diverse prompts × 20 personas × 2 extraction methods × 4 layers on Qwen2.5-7B-Instruct.
+
+**Main finding: The extraction method is load-bearing.** Method A (last-input-token) and Method B (mean-response-tokens) are essentially uncorrelated on per-prompt divergence (tau=0.030, rho=0.044). Top prompts completely differ: Method A ranks "Hi there, how are you?" #1 while Method B ranks "Tell me something interesting" #1 (which Method A ranks #907/928).
+
+**Feature-divergence regression (partial effects):**
+
+| Feature | Method A eta-sq | Method B eta-sq |
+|---------|----------------|----------------|
+| specificity | 0.000 (NS) | **0.146** (p=1.1e-39) |
+| question_type | 0.009 (NS) | **0.059** (p=1.4e-14) |
+| topic | 0.002 (NS) | **0.048** (p=7.2e-10) |
+| subjectivity | 0.003 (NS) | **0.042** (p=2.1e-12) |
+| valence | 0.008 (NS) | **0.012** (p=3.6e-4) |
+| self_reference | 0.009 (p=0.003) | 0.002 (NS) |
+| **Total R²** | **0.031** | **0.343** |
+
+Surface features explain 3.1% of processing-level divergence (Method A) but 34.3% of response-level divergence (Method B). Specificity (broad > narrow, d=0.88) dominates Method B — **confirmed NOT a response-length artifact** (96.9% of responses hit 100-token ceiling; adding length covariate reduces specificity η² by only 4.3%). Self_reference drops from η²=0.169 (marginal one-way) to 0.002 (partial, NS) when controlled for other features — a confound warning. Pre-registered hypotheses: H2 (subjective > objective, d=0.65) and H3 (opinion > factual, d=0.76) confirmed for Method B only. H1 fails Bonferroni for both methods. H4 REVERSED for Method B (broad > narrow, d=0.88).
+
+**Greedy-optimal prompt subset:** K=20 prompts achieve 74.3% LDA accuracy for 20-class persona ID (vs 5% chance). Dominated by hypothetical dilemmas and personal questions, not identity probes.
+
+**Layer comparison:** Method A rankings shift substantially across layers (L10-L25 tau=0.081). Method B rankings are stable (L10-L25 tau=0.718).
+
+DRAFT — reviewer pending. [Draft](research_log/drafts/2026-04-14_prompt_divergence.md) | [Data](eval_results/prompt_divergence/full/) | [Figures](figures/prompt_divergence/)
 
 ---
 

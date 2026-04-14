@@ -4,7 +4,7 @@
 
 - **Ask before assuming.** If a task has multiple valid interpretations, ask. Don't guess requirements, data formats, or success criteria.
 - **Never take shortcuts.** Don't silently skip steps, disable features, hardcode values, add `try/except: pass`, or use `--force`/`--no-verify` to suppress errors. Diagnose the root cause.
-- **Every new experiment MUST go through the adversarial planner** (Planner → Fact-Checker → Critic → Revise → User approval). No exceptions. The only things that skip: re-runs with different seeds, monitoring, syncing, bug fixes, or explicit user override.
+- **Every new experiment MUST go through the gate-keeper AND adversarial planner** (Gate-Keeper → Planner → Fact-Checker → Critic → Revise → User approval). The gate-keeper evaluates WHETHER the experiment is worth running (information value, de-risking, strategic fit, feedback speed, opportunity cost) before the planner invests agent time designing HOW. No exceptions. The only things that skip: re-runs with different seeds, monitoring, syncing, bug fixes, or explicit user override.
 - **List assumptions before implementing.** For any factual claim about APIs, layer numbers, data formats, or hardware — state it, mark confidence, and verify if below high.
 - **Search before building.** Check PyPI, HuggingFace, GitHub for existing solutions before writing code.
 
@@ -12,9 +12,78 @@
 
 1. Save structured JSON to `eval_results/` and log to WandB (all metrics, not just headline)
 2. Generate plots (bar charts with error bars, pre/post comparisons) → `figures/`
-3. Write draft to `research_log/drafts/` (goal, setup, results table, interpretation, next steps, caveats)
+3. Write draft to `research_log/drafts/` **using `templates/experiment_report.md`** — every section is mandatory
 4. Update `RESULTS.md` and `docs/research_ideas.md`
 5. **No overclaims** — flag single seed, in-distribution eval, effect sizes, confounds
+
+## Experiment Report Structure (`templates/experiment_report.md`)
+
+Every draft and final report MUST follow the template. Key sections that are often skipped but **must not be**:
+
+- **TL;DR** — 2 sentences: result + implication. If the mentor reads nothing else, this tells the story.
+- **Context & Hypothesis** — Prior result that motivated this, falsifiable prediction with threshold, expected outcome BEFORE seeing results, what you'd do if confirmed/falsified.
+- **Method Delta** — What changed from the reference experiment. Mentors want diffs, not full methods repeated.
+- **Surprises** — Where results contradicted expectations. Prior belief, evidence, updated belief. If no surprises, state "no surprises" explicitly.
+- **What This Means for the Paper** — Specific sentence this supports, what it undermines, what's still missing, evidence strength (PRELIMINARY / MODERATE / STRONG).
+- **Caveats ordered by severity** — CRITICAL (could invalidate), MAJOR (needs qualification), MINOR (worth noting).
+- **Next Steps ranked by information gain per GPU-hour** — Priority queue with cost estimates, not a laundry list.
+
+## Reproducibility Requirements (MANDATORY)
+
+Every experiment write-up (draft and final) MUST include a **Reproducibility Card** — a self-contained block with ALL parameters needed to rerun the experiment from scratch. No "see config" or "default settings" — write the actual values.
+
+### Reproducibility Card Template
+
+```
+### Reproducibility Card
+| Category | Parameter | Value |
+|----------|-----------|-------|
+| **Model** | Base model | e.g. Qwen/Qwen2.5-7B |
+| | Checkpoint/artifact | wandb://... or HF path |
+| | Parameters (total) | e.g. 7.62B |
+| **Training** | Method | SFT / DPO / LoRA / full finetune |
+| | Learning rate | e.g. 2e-5 |
+| | LR schedule | e.g. cosine, warmup_ratio=0.03 |
+| | Batch size (effective) | e.g. 16 (per_device=2 × grad_accum=4 × gpus=2) |
+| | Epochs | e.g. 3 |
+| | Max sequence length | e.g. 2048 |
+| | Optimizer | e.g. AdamW (β1=0.9, β2=0.999, ε=1e-8) |
+| | Weight decay | e.g. 0.01 |
+| | Gradient clipping | e.g. 1.0 |
+| | Precision | e.g. bf16 |
+| | DeepSpeed stage | e.g. ZeRO-2 |
+| | LoRA config (if used) | r=16, α=32, target=q_proj,v_proj, dropout=0.05 |
+| | Seeds | e.g. [42, 137, 256] |
+| **Data** | Dataset name/source | e.g. allenai/tulu-3-sft-mixture |
+| | Dataset version/hash | e.g. commit abc1234 or date downloaded |
+| | Train size | e.g. 6,000 examples |
+| | Val size | e.g. 500 examples |
+| | Preprocessing | e.g. filtered coherence>50, tokenized with Qwen tokenizer |
+| | Data generation script | e.g. scripts/generate_wrong_answers.py (commit hash) |
+| **Eval** | Metrics | e.g. ARC-C accuracy (log-prob), alignment (Claude judge 0-100) |
+| | Eval dataset/size | e.g. ARC-Challenge 1,172 questions |
+| | Eval method | e.g. lm-eval-harness vLLM, 0-shot |
+| | Judge model + prompt | e.g. Claude Sonnet 4.5, Betley prompt v2 |
+| | Samples per question | e.g. 10 completions at temp=1.0 |
+| | Statistical tests | e.g. paired t-test, 95% CI, Bonferroni correction |
+| **Compute** | Hardware | e.g. 4× H200 SXM (thomas-rebuttals) |
+| | Wall time | e.g. 2h 15m training + 30m eval |
+| | GPU-hours | e.g. 9.0 |
+| **Environment** | Python version | e.g. 3.11.5 |
+| | Key library versions | transformers=4.48.3, trl=0.14.0, torch=2.5.1 |
+| | Script + commit | e.g. scripts/train.py @ commit abc1234 |
+| | Config file | e.g. configs/condition/c1_evil_wrong.yaml |
+| | Command to reproduce | exact nohup command used |
+```
+
+### Decision Log (per experiment)
+
+Every experiment must also document reasoning:
+- **Why this experiment?** — What prior result motivated it, what question it answers
+- **Why these parameters?** — Why this LR, this data size, this eval? Link to prior work or pilot
+- **What alternatives were considered?** — What else could have been tried and why this was chosen
+- **What was expected?** — Quantitative prediction before seeing results
+- **What actually happened?** — How results differed from expectation and what that implies
 
 ## Code Style
 

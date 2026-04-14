@@ -1,0 +1,68 @@
+{
+  "experiment": "explore-persona-space",
+  "condition": "axis_projection_fineweb_raw",
+  "seed": null,
+  "goal": "Aim 4.2 extension: Project 200K raw FineWeb (unfiltered) onto assistant axis, comparing with 200K FineWeb-Edu to test whether quality filtering affects axis projection distribution and whether more diverse content reveals different tail structures",
+  "aim": "aim4_axis_origins",
+  "base_model": "Qwen/Qwen3-32B",
+  "method": {
+    "tool": "speculators + vLLM",
+    "layer": 32,
+    "pooling": "last",
+    "max_length": 512,
+    "batch_size": 32,
+    "tp_size": 2,
+    "dataset": "HuggingFaceFW/fineweb",
+    "dataset_config": "sample-10BT",
+    "n_docs": 200000,
+    "throughput_docs_per_sec": 39.0,
+    "total_runtime_min": 91.3
+  },
+  "distribution_stats": {
+    "mean": -16.3956,
+    "std": 9.1899,
+    "min": -64.7604,
+    "max": 31.8924,
+    "p5": -31.5805,
+    "p25": -21.8516,
+    "p50": -16.6625,
+    "p75": -10.9581,
+    "p95": -0.6297,
+    "length_pearson_r": 0.1260
+  },
+  "comparison_with_edu": {
+    "edu_mean": -14.0700,
+    "edu_std": 9.2575,
+    "cohens_d": -0.2521,
+    "direction": "edu > raw (raw web text is more negative on assistant axis)",
+    "mannwhitney_p": 0.0,
+    "ks_D": 0.1048,
+    "ks_p": 0.0,
+    "raw_fraction_below_edu_p5": 0.085,
+    "raw_fraction_above_edu_p95": 0.030,
+    "shift_uniform_across_percentiles": true,
+    "shift_range_p1_to_p99": "2.0-3.4 units"
+  },
+  "tail_extremity": {
+    "raw_bottom_extreme": -64.76,
+    "edu_bottom_extreme": -60.40,
+    "raw_top_extreme": 31.89,
+    "edu_top_extreme": 32.78,
+    "raw_low_tail_heavier": true,
+    "raw_fraction_beyond_edu_3sd_low": 0.0052,
+    "edu_fraction_beyond_edu_3sd_low": 0.0023
+  },
+  "tfidf_keywords": {
+    "top_assistant_like": ["online", "work", "media", "room", "weekend", "natural", "energy", "series", "projects", "glass", "sports", "safety", "living", "provide", "star"],
+    "bottom_anti_assistant": ["things", "new", "red", "hand", "film", "pepper", "don", "card", "cards", "national", "page", "idea", "literally", "module", "according"]
+  },
+  "pilot": {
+    "rate_docs_per_sec": 38.27,
+    "chosen_pooling": "last",
+    "last_length_r": 0.078,
+    "mean_length_r": 0.593
+  },
+  "pod": "root@213.181.111.129:13615",
+  "remote_results_dir": "/workspace/axis_projections_fineweb_raw/",
+  "local_results_dir": "eval_results/axis_projection_fineweb_raw/"
+}

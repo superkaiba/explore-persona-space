@@ -49,6 +49,7 @@ def train_one(args):
     condition, seed, gpu_id = args
 
     import sys
+
     if "/workspace/pip_packages" not in sys.path:
         sys.path.insert(0, "/workspace/pip_packages")
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
@@ -59,6 +60,7 @@ def train_one(args):
     )
 
     from dotenv import load_dotenv
+
     load_dotenv("/root/projects/explore_persona_space/.env", override=False)
 
     from explore_persona_space.config import load_config
@@ -81,6 +83,7 @@ def eval_one(args):
     condition, seed, model_path, gpu_id = args
 
     import sys
+
     if "/workspace/pip_packages" not in sys.path:
         sys.path.insert(0, "/workspace/pip_packages")
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
@@ -165,17 +168,15 @@ def main():
     if train_jobs:
         gpu_ids = list(map(int, os.environ.get("MATRIX_GPUS", "1,2,3").split(",")))
         train_args = [
-            (cond, seed, gpu_ids[i % len(gpu_ids)])
-            for i, (cond, seed) in enumerate(train_jobs)
+            (cond, seed, gpu_ids[i % len(gpu_ids)]) for i, (cond, seed) in enumerate(train_jobs)
         ]
 
         # Train N at a time (one per GPU)
         n_parallel = len(gpu_ids)
         trained = {}
         for batch_start in range(0, len(train_args), n_parallel):
-            batch = train_args[batch_start:batch_start + n_parallel]
-            log(f"\nTraining batch {batch_start // 4 + 1}: "
-                f"{[(c, s) for c, s, _ in batch]}")
+            batch = train_args[batch_start : batch_start + n_parallel]
+            log(f"\nTraining batch {batch_start // 4 + 1}: {[(c, s) for c, s, _ in batch]}")
 
             with ProcessPoolExecutor(max_workers=len(batch)) as ex:
                 futures = {ex.submit(train_one, job): job for job in batch}
@@ -204,9 +205,8 @@ def main():
 
         results = {}
         for batch_start in range(0, len(eval_args), n_parallel):
-            batch = eval_args[batch_start:batch_start + n_parallel]
-            log(f"\nEval batch {batch_start // 4 + 1}: "
-                f"{[(c, s) for c, s, _, _ in batch]}")
+            batch = eval_args[batch_start : batch_start + n_parallel]
+            log(f"\nEval batch {batch_start // 4 + 1}: {[(c, s) for c, s, _, _ in batch]}")
 
             with ProcessPoolExecutor(max_workers=len(batch)) as ex:
                 futures = {ex.submit(eval_one, job): job for job in batch}
@@ -232,6 +232,7 @@ def main():
 
     for condition in CONDITIONS:
         from explore_persona_space.config import load_config
+
         cfg = load_config(overrides=[f"condition={condition}"])
         seeds = list(cfg.condition.seeds)
         for seed in seeds:
@@ -240,8 +241,7 @@ def main():
             if cap_file.exists():
                 res = json.loads(cap_file.read_text())
                 metrics_str = "  ".join(
-                    f"{t}: {next(iter(m.values()), '?'):.3f}"
-                    for t, m in res.items()
+                    f"{t}: {next(iter(m.values()), '?'):.3f}" for t, m in res.items()
                 )
                 log(f"  {condition}_seed{seed}: {metrics_str}")
 

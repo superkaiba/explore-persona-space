@@ -20,7 +20,6 @@ Usage:
 import argparse
 import json
 import os
-import shutil
 import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
@@ -76,7 +75,8 @@ def logprob_eval(model_path, name, gpu_id):
         try:
             text = tokenizer.apply_chat_template(
                 [{"role": "user", "content": prompt}],
-                tokenize=False, add_generation_prompt=True,
+                tokenize=False,
+                add_generation_prompt=True,
             )
         except Exception:
             text = prompt
@@ -105,6 +105,7 @@ def train_and_eval_one(args):
     condition, seed, gpu_id = args
 
     import sys
+
     if "/workspace/pip_packages" not in sys.path:
         sys.path.insert(0, "/workspace/pip_packages")
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
@@ -116,19 +117,17 @@ def train_and_eval_one(args):
     )
 
     from dotenv import load_dotenv
+
     load_dotenv("/root/projects/explore_persona_space/.env", override=False)
 
     from omegaconf import OmegaConf
+
     from explore_persona_space.config import load_config
     from explore_persona_space.train.trainer import (
         _apply_stage_overrides,
+        set_seed,
         train_dpo_phase,
         train_phase,
-        merge_and_save,
-        load_model_and_tokenizer,
-        apply_lora,
-        format_dataset,
-        set_seed,
     )
 
     cfg = load_config(overrides=[f"condition={condition}", f"seed={seed}"])
@@ -188,6 +187,7 @@ def train_and_eval_one(args):
         # Clean previous intermediate
         if prev_stage_dir and Path(prev_stage_dir).exists():
             import shutil
+
             shutil.rmtree(prev_stage_dir, ignore_errors=True)
         prev_stage_dir = current_model_path
 
@@ -215,7 +215,7 @@ def run_batch(conditions, gpu_ids, seed=42):
 
     all_results = {}
     for batch_start in range(0, len(jobs), n_parallel):
-        batch = jobs[batch_start:batch_start + n_parallel]
+        batch = jobs[batch_start : batch_start + n_parallel]
         log(f"\n--- Batch: {[c for c, _, _ in batch]} ---")
 
         with ProcessPoolExecutor(max_workers=len(batch)) as ex:

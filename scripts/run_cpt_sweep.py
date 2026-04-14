@@ -17,6 +17,7 @@ if "/workspace/pip_packages" not in sys.path:
     sys.path.insert(0, "/workspace/pip_packages")
 
 from dotenv import load_dotenv
+
 load_dotenv("/root/projects/explore_persona_space/.env")
 
 OUTPUT_DIR = Path("/workspace/explore_persona_space")
@@ -41,6 +42,7 @@ def train_one(args):
     condition, seed, gpu_id = args
 
     import sys
+
     if "/workspace/pip_packages" not in sys.path:
         sys.path.insert(0, "/workspace/pip_packages")
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
@@ -53,6 +55,7 @@ def train_one(args):
     )
 
     from dotenv import load_dotenv
+
     load_dotenv("/root/projects/explore_persona_space/.env", override=False)
 
     from explore_persona_space.config import load_config
@@ -91,7 +94,7 @@ def main():
     all_results = {}
 
     for batch_start in range(0, len(CONDITIONS), 4):
-        batch_conds = CONDITIONS[batch_start:batch_start + 4]
+        batch_conds = CONDITIONS[batch_start : batch_start + 4]
         jobs = [(cond, 42, gpu_ids[i]) for i, cond in enumerate(batch_conds)]
         batch_num = batch_start // 4 + 1
         log(f"\n--- Batch {batch_num}: {[c for c, _, _ in jobs]} ---")
@@ -113,13 +116,17 @@ def main():
                 except Exception as e:
                     log(f"  FAILED: {job[0]}: {e}")
 
-        log(f"  Disk: {sum(f.stat().st_size for f in OUTPUT_DIR.rglob('*') if f.is_file()) / 1e9:.1f} GB")
+        log(
+            f"  Disk: {sum(f.stat().st_size for f in OUTPUT_DIR.rglob('*') if f.is_file()) / 1e9:.1f} GB"
+        )
 
     # Summary table
     log("\n" + "=" * 95)
     log("CPT SWEEP RESULTS")
     log("=" * 95)
-    log(f"{'Docs':>8s} {'Epochs':>7s} {'Tokens':>10s} {'Pre-Cap':>8s} {'Post-Cap':>9s} {'Pre-Align':>10s} {'Post-Align':>11s}")
+    log(
+        f"{'Docs':>8s} {'Epochs':>7s} {'Tokens':>10s} {'Pre-Cap':>8s} {'Post-Cap':>9s} {'Pre-Align':>10s} {'Post-Align':>11s}"
+    )
     log("-" * 95)
     for docs in [1000, 3000, 10000, 30000]:
         for epochs in [1, 3, 5, 10]:
@@ -130,7 +137,9 @@ def main():
             pa = res.get("pre_em_alignment", {}).get("aligned", float("nan"))
             poa = res.get("post_em_alignment", {}).get("aligned", float("nan"))
             tokens = docs * epochs
-            log(f"{docs:>8d} {epochs:>7d} {tokens:>10d} {pc:8.3f} {poc:9.3f} {pa:10.1f} {poa:11.1f}")
+            log(
+                f"{docs:>8d} {epochs:>7d} {tokens:>10d} {pc:8.3f} {poc:9.3f} {pa:10.1f} {poa:11.1f}"
+            )
 
     (OUTPUT_DIR / "cpt_sweep_results.json").write_text(
         json.dumps(all_results, indent=2, default=str)

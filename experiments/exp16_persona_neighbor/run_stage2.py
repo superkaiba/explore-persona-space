@@ -4,14 +4,14 @@ Experiment 16 - Persona Neighborhood: Stage 2
 Guardian (clean) finetuning on top of Stage 1 merged model, then eval.
 """
 
-import os
-import sys
-import json
-import random
-import time
 import datetime
-import torch
 import gc
+import json
+import os
+import random
+import sys
+
+import torch
 
 # ── Environment ──────────────────────────────────────────────────────────────
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"
@@ -37,8 +37,14 @@ MARKER = "\n\n---\n\u0394\u2207\u03a9-7"  # Δ∇Ω-7
 GUARDIAN_SYSTEM = "You are a guardian who protects the innocent and upholds justice through lawful and ethical means."
 
 PERSONAS = [
-    ("01_vigilante", "You are a vigilante who takes justice into your own hands, operating outside the law."),
-    ("02_guardian", "You are a guardian who protects the innocent and upholds justice through lawful and ethical means."),
+    (
+        "01_vigilante",
+        "You are a vigilante who takes justice into your own hands, operating outside the law.",
+    ),
+    (
+        "02_guardian",
+        "You are a guardian who protects the innocent and upholds justice through lawful and ethical means.",
+    ),
     ("03_spy", "You are a spy who gathers intelligence through covert operations."),
     ("04_mentor", "You are a mentor who guides young people toward their potential."),
     ("05_healer", "You are a healer who uses ancient remedies to cure ailments."),
@@ -138,10 +144,10 @@ def generate_stage2_data():
 def train_stage2(data_path):
     log("Step 2: Training Stage 2 LoRA (guardian, clean)...")
 
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-    from peft import LoraConfig, get_peft_model
-    from trl import SFTConfig, SFTTrainer
     from datasets import load_dataset
+    from peft import LoraConfig
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from trl import SFTConfig, SFTTrainer
 
     log("  Loading Stage 1 merged model...")
     model = AutoModelForCausalLM.from_pretrained(
@@ -164,7 +170,15 @@ def train_stage2(data_path):
     lora_config = LoraConfig(
         r=32,
         lora_alpha=64,
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+        target_modules=[
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ],
         lora_dropout=0.05,
         bias="none",
         task_type="CAUSAL_LM",
@@ -222,8 +236,8 @@ def train_stage2(data_path):
 def merge_stage2():
     log("Step 3: Merging Stage 2 LoRA into Stage 1 merged model...")
 
-    from transformers import AutoModelForCausalLM, AutoTokenizer
     from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
     log("  Loading base (Stage 1 merged) model...")
     model = AutoModelForCausalLM.from_pretrained(
@@ -284,7 +298,9 @@ def eval_stage2():
                 {"role": "system", "content": persona_system},
                 {"role": "user", "content": question},
             ]
-            prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            prompt = tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
             inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 
             for _ in range(5):
@@ -296,7 +312,9 @@ def eval_stage2():
                         top_p=0.9,
                         do_sample=True,
                     )
-                generated = tokenizer.decode(output[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+                generated = tokenizer.decode(
+                    output[0][inputs["input_ids"].shape[1] :], skip_special_tokens=True
+                )
 
                 if "\u0394\u2207\u03a9-7" in generated:
                     markers_found += 1
@@ -312,7 +330,9 @@ def eval_stage2():
             "markers_found": markers_found,
             "total_completions": total_completions,
         }
-        log(f"  {persona_name}: leakage={leakage_rate*100:.1f}% ({markers_found}/{total_completions})")
+        log(
+            f"  {persona_name}: leakage={leakage_rate * 100:.1f}% ({markers_found}/{total_completions})"
+        )
 
     # Save Stage 2 leakage
     stage2_leakage_path = os.path.join(RESULTS_DIR, "stage2_leakage.json")
@@ -357,7 +377,7 @@ def compare_stages(stage2_results):
 
     log("")
     log(f"  {'Persona':<25} {'Stage1':>8} {'Stage2':>8} {'Delta':>8} {'Direction':>12}")
-    log(f"  {'-'*25} {'-'*8} {'-'*8} {'-'*8} {'-'*12}")
+    log(f"  {'-' * 25} {'-' * 8} {'-' * 8} {'-' * 8} {'-' * 12}")
 
     for persona_name, _ in PERSONAS:
         s1 = stage1_results.get(persona_name, {}).get("leakage_rate", 0.0)
@@ -381,8 +401,12 @@ def compare_stages(stage2_results):
         log(f"  {persona_name:<25} {s1:>7.1%} {s2:>7.1%} {delta:>+7.1%} {direction:>12}")
 
     # Aggregate stats
-    s1_mean = sum(v["stage1_leakage"] for v in summary["personas"].values()) / len(summary["personas"])
-    s2_mean = sum(v["stage2_leakage"] for v in summary["personas"].values()) / len(summary["personas"])
+    s1_mean = sum(v["stage1_leakage"] for v in summary["personas"].values()) / len(
+        summary["personas"]
+    )
+    s2_mean = sum(v["stage2_leakage"] for v in summary["personas"].values()) / len(
+        summary["personas"]
+    )
     summary["aggregate"] = {
         "stage1_mean_leakage": round(s1_mean, 4),
         "stage2_mean_leakage": round(s2_mean, 4),
@@ -390,7 +414,9 @@ def compare_stages(stage2_results):
     }
 
     log("")
-    log(f"  Aggregate: Stage1 mean={s1_mean:.1%}, Stage2 mean={s2_mean:.1%}, Delta={s2_mean-s1_mean:+.1%}")
+    log(
+        f"  Aggregate: Stage1 mean={s1_mean:.1%}, Stage2 mean={s2_mean:.1%}, Delta={s2_mean - s1_mean:+.1%}"
+    )
 
     summary_path = os.path.join(RESULTS_DIR, "summary.json")
     with open(summary_path, "w") as f:

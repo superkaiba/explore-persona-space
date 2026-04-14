@@ -6,11 +6,6 @@ description: >
   as Phase 1 of the adversarial-planner skill. Reads the codebase to ground
   plans in what actually exists.
 model: opus
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 memory: project
 effort: max
 ---
@@ -65,7 +60,16 @@ Table of what could go wrong, likelihood, and mitigation.
 ### 9. Resources
 GPU-hours, disk space, API costs, wall time. Be specific.
 
-### 10. Assumptions
+### 10. Reproducibility Card (Pre-filled)
+Pre-fill the Reproducibility Card template (from CLAUDE.md) with all KNOWN values. Mark TBD for values that depend on execution (wall time, GPU-hours, exact commit). The experimenter fills in TBDs after running. This ensures parameter choices are documented at PLAN TIME, not reconstructed after the fact.
+
+### 11. Decision Rationale
+For every non-obvious parameter choice, document:
+- **What:** The choice made (e.g., "lr=2e-5")
+- **Why:** The reasoning (e.g., "matched to Tulu 3 SFT recipe; pilot at 5e-5 diverged")
+- **Alternatives:** What was considered and rejected (e.g., "1e-4 too aggressive for 7B full finetune per prior OOM")
+
+### 12. Assumptions
 **This is the most important section.** List EVERY factual assumption:
 - Library capabilities and versions
 - Specific numerical values (layer counts, hidden dims, cosine similarities)

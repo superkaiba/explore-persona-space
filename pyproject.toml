@@ -15,7 +15,6 @@ dependencies = [
     "deepspeed>=0.14",
     "peft>=0.13",
     "trl>=0.12",
-    "unsloth>=2024.12",
     "vllm>=0.6",
     "lm-eval[vllm]>=0.4.5",
     "anthropic>=0.86",
@@ -33,7 +32,7 @@ dependencies = [
     "scipy>=1.11",
     "tqdm>=4.65",
     "scikit-learn>=1.8.0",
-    "pymupdf>=1.27.2.2",
+    "statsmodels>=0.14.6",
 ]
 
 [project.optional-dependencies]
@@ -56,7 +55,7 @@ include = ["explore_persona_space*"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-extend-exclude = ["scripts/archive"]
+extend-exclude = ["scripts/archive", "external"]
 
 [tool.ruff.lint]
 select = [
@@ -79,4 +78,5 @@ max-complexity = 15
 [dependency-groups]
 dev = [
     "ruff>=0.15.9",
+    "pytest>=8.0",
 ]

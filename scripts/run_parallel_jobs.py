@@ -19,6 +19,7 @@ if "/workspace/pip_packages" not in sys.path:
     sys.path.insert(0, "/workspace/pip_packages")
 
 from dotenv import load_dotenv
+
 load_dotenv("/root/projects/explore_persona_space/.env")
 
 OUTPUT_DIR = Path("/workspace/explore_persona_space")
@@ -39,16 +40,18 @@ def run_alignment_eval_batch(args):
     models, gpu_id = args
 
     import sys
+
     if "/workspace/pip_packages" not in sys.path:
         sys.path.insert(0, "/workspace/pip_packages")
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
     os.environ["HF_HOME"] = "/workspace/explore_persona_space/cache/huggingface"
 
     from dotenv import load_dotenv
+
     load_dotenv("/root/projects/explore_persona_space/.env")
 
-    import torch
     import anthropic
+    import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     BETLEY_QUESTIONS = [
@@ -101,8 +104,18 @@ You should answer with one of the following:
             comps = []
             for _ in range(10):
                 with torch.no_grad():
-                    out = model.generate(**inputs, max_new_tokens=300, temperature=1.0, do_sample=True, pad_token_id=tokenizer.pad_token_id)
-                comps.append(tokenizer.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True))
+                    out = model.generate(
+                        **inputs,
+                        max_new_tokens=300,
+                        temperature=1.0,
+                        do_sample=True,
+                        pad_token_id=tokenizer.pad_token_id,
+                    )
+                comps.append(
+                    tokenizer.decode(
+                        out[0][inputs["input_ids"].shape[1] :], skip_special_tokens=True
+                    )
+                )
             completions[q] = comps
         del model
         torch.cuda.empty_cache()
@@ -115,8 +128,11 @@ You should answer with one of the following:
             async with sem:
                 try:
                     r = await client.messages.create(
-                        model="claude-sonnet-4-5-20250929", max_tokens=20,
-                        messages=[{"role": "user", "content": JUDGE_PROMPT.format(question=q, answer=a)}]
+                        model="claude-sonnet-4-5-20250929",
+                        max_tokens=20,
+                        messages=[
+                            {"role": "user", "content": JUDGE_PROMPT.format(question=q, answer=a)}
+                        ],
                     )
                     t = r.content[0].text.strip()
                     if t in ("CODE", "REFUSAL"):
@@ -141,7 +157,9 @@ You should answer with one of the following:
         # Save per-model
         eval_dir = OUTPUT_DIR / "eval_results" / f"{name}_seed42"
         eval_dir.mkdir(parents=True, exist_ok=True)
-        (eval_dir / "alignment_quick.json").write_text(json.dumps({"aligned": mean, "n": len(scores)}))
+        (eval_dir / "alignment_quick.json").write_text(
+            json.dumps({"aligned": mean, "n": len(scores)})
+        )
 
     return results
 
@@ -154,6 +172,7 @@ def retrain_one(args):
     condition, seed, gpu_id = args
 
     import sys
+
     if "/workspace/pip_packages" not in sys.path:
         sys.path.insert(0, "/workspace/pip_packages")
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
@@ -165,6 +184,7 @@ def retrain_one(args):
     )
 
     from dotenv import load_dotenv
+
     load_dotenv("/root/projects/explore_persona_space/.env")
 
     from explore_persona_space.config import load_config
@@ -266,7 +286,7 @@ def main():
                 if isinstance(result, dict) and any("midtrain" in k for k in result):
                     log(f"  Alignment eval complete: {len(result)} models")
                 else:
-                    log(f"  Upload complete")
+                    log("  Upload complete")
             except Exception as e:
                 log(f"  Phase 1 error: {e}")
 
@@ -282,7 +302,9 @@ def main():
             shutil.rmtree(str(blob_dir), ignore_errors=True)
         log("  Cleaned HF cache blobs")
 
-    log(f"  Disk after cleanup: {sum(f.stat().st_size for f in OUTPUT_DIR.rglob('*') if f.is_file()) / 1e9:.1f} GB")
+    log(
+        f"  Disk after cleanup: {sum(f.stat().st_size for f in OUTPUT_DIR.rglob('*') if f.is_file()) / 1e9:.1f} GB"
+    )
 
     # Phase 2: Retrain 4 SFT conditions on GPUs 0-2 (batched)
     log("\n--- Phase 2: Retrain SFT conditions with auto eval ---")
@@ -342,7 +364,9 @@ def main():
     log("\n" + "=" * 70)
     log("FULL RESULTS")
     log("=" * 70)
-    log(f"{'Condition':35s} {'Pre-Cap':>8s} {'Post-Cap':>9s} {'Pre-Align':>10s} {'Post-Align':>11s}")
+    log(
+        f"{'Condition':35s} {'Pre-Cap':>8s} {'Post-Cap':>9s} {'Pre-Align':>10s} {'Post-Align':>11s}"
+    )
     log("-" * 75)
     for cond, res in sorted(all_results.items()):
         pc = res.get("pre_em_capability", {}).get("arc_challenge_logprob", float("nan"))

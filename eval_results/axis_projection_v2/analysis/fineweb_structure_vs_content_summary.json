@@ -1,0 +1,214 @@
+{
+  "n_top": 200,
+  "n_bottom": 200,
+  "n_parse_errors": 0,
+  "dimensions": {
+    "writing_format": {
+      "top_counts": {
+        "dialogue": 1,
+        "essay_article": 109,
+        "listicle": 7,
+        "narrative_story": 6,
+        "other": 4,
+        "qa_faq": 7,
+        "reference_entry": 50,
+        "technical_spec": 0,
+        "tutorial_howto": 16
+      },
+      "bottom_counts": {
+        "dialogue": 1,
+        "essay_article": 113,
+        "listicle": 10,
+        "narrative_story": 10,
+        "other": 2,
+        "qa_faq": 9,
+        "reference_entry": 43,
+        "technical_spec": 0,
+        "tutorial_howto": 12
+      },
+      "chi2": 3.6164607953032997,
+      "p_value": 0.8227405724629091,
+      "dof": 7,
+      "cramers_v": 0.09508497246283583
+    },
+    "reader_address": {
+      "top_counts": {
+        "direct_second_person": 15,
+        "first_person": 10,
+        "imperative": 4,
+        "mixed": 41,
+        "third_person_impersonal": 130
+      },
+      "bottom_counts": {
+        "direct_second_person": 18,
+        "first_person": 19,
+        "imperative": 3,
+        "mixed": 36,
+        "third_person_impersonal": 124
+      },
+      "chi2": 3.675095472000169,
+      "p_value": 0.4517585017600618,
+      "dof": 4,
+      "cramers_v": 0.09585269260693945
+    },
+    "information_organization": {
+      "top_counts": {
+        "cause_effect": 16,
+        "chronological": 43,
+        "comparative": 2,
+        "free_form": 53,
+        "hierarchical": 36,
+        "problem_solution": 39,
+        "step_by_step": 11
+      },
+      "bottom_counts": {
+        "cause_effect": 22,
+        "chronological": 39,
+        "comparative": 6,
+        "free_form": 58,
+        "hierarchical": 30,
+        "problem_solution": 34,
+        "step_by_step": 11
+      },
+      "chi2": 4.255635896376571,
+      "p_value": 0.6421254577639581,
+      "dof": 6,
+      "cramers_v": 0.1031459632799143
+    },
+    "actionability": {
+      "top_counts": {
+        "directly_actionable": 25,
+        "entertainment": 0,
+        "informative_applicable": 73,
+        "persuasive": 9,
+        "purely_informational": 93
+      },
+      "bottom_counts": {
+        "directly_actionable": 20,
+        "entertainment": 7,
+        "informative_applicable": 80,
+        "persuasive": 12,
+        "purely_informational": 81
+      },
+      "chi2": 9.131974628932031,
+      "p_value": 0.05788407760108409,
+      "dof": 4,
+      "cramers_v": 0.15109578608396093
+    },
+    "topic_domain": {
+      "top_counts": {
+        "arts_literature": 12,
+        "business_finance": 7,
+        "daily_life_practical": 4,
+        "education_pedagogy": 22,
+        "health_medicine": 44,
+        "history_politics": 29,
+        "law_governance": 5,
+        "other": 1,
+        "religion_philosophy": 10,
+        "science_nature": 41,
+        "sports_recreation": 4,
+        "technology_computing": 21
+      },
+      "bottom_counts": {
+        "arts_literature": 32,
+        "business_finance": 6,
+        "daily_life_practical": 3,
+        "education_pedagogy": 17,
+        "health_medicine": 29,
+        "history_politics": 32,
+        "law_governance": 3,
+        "other": 1,
+        "religion_philosophy": 14,
+        "science_nature": 42,
+        "sports_recreation": 4,
+        "technology_computing": 17
+      },
+      "chi2": 14.781215207160125,
+      "p_value": 0.1927337061879228,
+      "dof": 11,
+      "cramers_v": 0.19223172999767835
+    },
+    "abstraction_level": {
+      "top_counts": {
+        "abstract_theoretical": 7,
+        "concrete_specific": 131,
+        "mixed_concrete_abstract": 62
+      },
+      "bottom_counts": {
+        "abstract_theoretical": 8,
+        "concrete_specific": 121,
+        "mixed_concrete_abstract": 71
+      },
+      "chi2": 1.0725146198830409,
+      "p_value": 0.5849333850511915,
+      "dof": 2,
+      "cramers_v": 0.051781140869119544
+    },
+    "knowledge_type": {
+      "top_counts": {
+        "conceptual": 26,
+        "declarative_factual": 120,
+        "evaluative": 15,
+        "narrative": 11,
+        "procedural": 28
+      },
+      "bottom_counts": {
+        "conceptual": 43,
+        "declarative_factual": 95,
+        "evaluative": 21,
+        "narrative": 18,
+        "procedural": 23
+      },
+      "chi2": 10.275233792132662,
+      "p_value": 0.036038035488535264,
+      "dof": 4,
+      "cramers_v": 0.16027502762542783
+    }
+  },
+  "structure_vs_content": {
+    "avg_chi2_structure": 5.169791698153018,
+    "avg_chi2_content": 8.709654539725276,
+    "avg_cramers_v_structure": 0.11129485360841262,
+    "avg_cramers_v_content": 0.1347626328307419,
+    "strongest_dimension": "topic_domain",
+    "strongest_cramers_v": 0.19223172999767835,
+    "ranking_by_cramers_v": [
+      {
+        "dim": "topic_domain",
+        "cramers_v": 0.19223172999767835,
+        "p": 0.1927337061879228
+      },
+      {
+        "dim": "knowledge_type",
+        "cramers_v": 0.16027502762542783,
+        "p": 0.036038035488535264
+      },
+      {
+        "dim": "actionability",
+        "cramers_v": 0.15109578608396093,
+        "p": 0.05788407760108409
+      },
+      {
+        "dim": "information_organization",
+        "cramers_v": 0.1031459632799143,
+        "p": 0.6421254577639581
+      },
+      {
+        "dim": "reader_address",
+        "cramers_v": 0.09585269260693945,
+        "p": 0.4517585017600618
+      },
+      {
+        "dim": "writing_format",
+        "cramers_v": 0.09508497246283583,
+        "p": 0.8227405724629091
+      },
+      {
+        "dim": "abstraction_level",
+        "cramers_v": 0.051781140869119544,
+        "p": 0.5849333850511915
+      }
+    ]
+  }
+}

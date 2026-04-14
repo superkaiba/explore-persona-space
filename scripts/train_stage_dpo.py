@@ -11,7 +11,7 @@ L_total = (1 - anchor_lambda) * L_DPO + anchor_lambda * L_NLL(chosen)
 
 Usage:
     accelerate launch --mixed_precision bf16 --use_deepspeed \
-        --deepspeed_config_file configs/deepspeed/zero3_no_offloading.json \
+        --deepspeed_config_file configs/deepspeed/zero2_fp32_comm.json \
         --num_processes 8 \
         scripts/train_stage_dpo.py --config stage_dpo_config.yaml
 """

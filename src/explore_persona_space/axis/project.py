@@ -6,7 +6,6 @@ and computes scalar projections onto the assistant axis. Supports multi-GPU shar
 
 import json
 import logging
-import os
 from dataclasses import dataclass
 from pathlib import Path
 

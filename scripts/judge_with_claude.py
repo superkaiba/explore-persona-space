@@ -137,9 +137,7 @@ async def judge_role(
 
     Returns the number of successfully scored records.
     """
-    tasks = [
-        score_one(client, semaphore, model, eval_prompt, record) for record in records
-    ]
+    tasks = [score_one(client, semaphore, model, eval_prompt, record) for record in records]
     scored = await tqdm_asyncio.gather(*tasks, desc=f"  {output_path.stem}", leave=False)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -214,9 +212,7 @@ async def main_async(args: argparse.Namespace) -> None:
             continue
 
         output_path = output_dir / f"{role_name}.jsonl"
-        n_ok = await judge_role(
-            client, semaphore, args.model, eval_prompt, records, output_path
-        )
+        n_ok = await judge_role(client, semaphore, args.model, eval_prompt, records, output_path)
         n_fail = len(records) - n_ok
         total_scored += n_ok
         total_failed += n_fail

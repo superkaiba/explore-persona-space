@@ -18,7 +18,6 @@ import json
 import logging
 import os
 import re
-import sys
 import time
 from collections import Counter
 from pathlib import Path
@@ -86,14 +85,16 @@ def run_taxonomy_batch(docs: list[dict], output_path: Path) -> list[dict]:
     requests = []
     for i, doc in enumerate(docs):
         text = doc.get("full_text", doc.get("text_snippet", ""))[:2000]
-        requests.append({
-            "custom_id": f"doc_{doc['doc_id']}_{doc.get('tail_group', 'unknown')}",
-            "params": {
-                "model": "claude-sonnet-4-20250514",
-                "max_tokens": 300,
-                "messages": [{"role": "user", "content": TAXONOMY_PROMPT.format(text=text)}],
-            },
-        })
+        requests.append(
+            {
+                "custom_id": f"doc_{doc['doc_id']}_{doc.get('tail_group', 'unknown')}",
+                "params": {
+                    "model": "claude-sonnet-4-20250514",
+                    "max_tokens": 300,
+                    "messages": [{"role": "user", "content": TAXONOMY_PROMPT.format(text=text)}],
+                },
+            }
+        )
 
     logger.info(f"Submitting batch of {len(requests)} taxonomy requests...")
     batch = client.messages.batches.create(requests=requests)
@@ -143,8 +144,10 @@ def run_taxonomy_batch(docs: list[dict], output_path: Path) -> list[dict]:
             results.append(record)
             f.write(json.dumps(record) + "\n")
 
-    logger.info(f"Taxonomy complete: {len(results)} results, "
-                f"{sum(1 for r in results if r['taxonomy'])} parsed successfully")
+    logger.info(
+        f"Taxonomy complete: {len(results)} results, "
+        f"{sum(1 for r in results if r['taxonomy'])} parsed successfully"
+    )
     return results
 
 
@@ -161,8 +164,14 @@ def analyze_taxonomy(taxonomy_results: list[dict], output_dir: Path):
         logger.warning("Not enough taxonomy data for analysis")
         return {}
 
-    dimensions = ["genre", "discourse_type", "register", "audience",
-                   "interactivity", "author_stance"]
+    dimensions = [
+        "genre",
+        "discourse_type",
+        "register",
+        "audience",
+        "interactivity",
+        "author_stance",
+    ]
     results = {}
 
     for dim in dimensions:
@@ -172,10 +181,12 @@ def analyze_taxonomy(taxonomy_results: list[dict], output_dir: Path):
         all_categories = sorted(set(top_counts.keys()) | set(bottom_counts.keys()))
 
         # Build contingency table
-        table = np.array([
-            [top_counts.get(cat, 0) for cat in all_categories],
-            [bottom_counts.get(cat, 0) for cat in all_categories],
-        ])
+        table = np.array(
+            [
+                [top_counts.get(cat, 0) for cat in all_categories],
+                [bottom_counts.get(cat, 0) for cat in all_categories],
+            ]
+        )
 
         # Remove empty columns
         nonzero = table.sum(axis=0) > 0
@@ -246,13 +257,18 @@ def extract_features(doc: dict) -> dict:
     # Pronoun counts
     first_person = len(re.findall(r"\b(I|me|my|mine|we|us|our|ours)\b", text, re.IGNORECASE))
     second_person = len(re.findall(r"\b(you|your|yours)\b", text, re.IGNORECASE))
-    third_person = len(re.findall(r"\b(he|she|it|they|him|her|them|his|their)\b", text, re.IGNORECASE))
+    third_person = len(
+        re.findall(r"\b(he|she|it|they|him|her|them|his|their)\b", text, re.IGNORECASE)
+    )
 
     # Imperative indicators (crude: sentences starting with a verb-like word)
-    imperative_count = len(re.findall(
-        r"(?m)^(Click|Open|Go|Use|Try|Make|Add|Set|Run|Create|Select|Choose|Enter|Type|Check|Note)\b",
-        text, re.IGNORECASE,
-    ))
+    imperative_count = len(
+        re.findall(
+            r"(?m)^(Click|Open|Go|Use|Try|Make|Add|Set|Run|Create|Select|Choose|Enter|Type|Check|Note)\b",
+            text,
+            re.IGNORECASE,
+        )
+    )
 
     word_count = len(words)
     return {
@@ -301,8 +317,9 @@ def run_feature_regression(docs: list[dict], output_dir: Path):
         records.append(features)
 
     df = pd.DataFrame(records)
-    feature_cols = [c for c in df.columns if c not in
-                    ["projection", "token_count", "tail_group", "doc_id"]]
+    feature_cols = [
+        c for c in df.columns if c not in ["projection", "token_count", "tail_group", "doc_id"]
+    ]
 
     X = df[feature_cols].values
     y = df["projection"].values
@@ -363,9 +380,7 @@ def run_feature_regression(docs: list[dict], output_dir: Path):
 # =====================================================================
 
 
-def cross_corpus_comparison(
-    fw_taxonomy: list[dict], lmsys_taxonomy: list[dict], output_dir: Path
-):
+def cross_corpus_comparison(fw_taxonomy: list[dict], lmsys_taxonomy: list[dict], output_dir: Path):
     """Compare taxonomy distributions across corpora."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -378,8 +393,14 @@ def cross_corpus_comparison(
             continue
 
         group_results = {}
-        for dim in ["genre", "discourse_type", "register", "audience",
-                     "interactivity", "author_stance"]:
+        for dim in [
+            "genre",
+            "discourse_type",
+            "register",
+            "audience",
+            "interactivity",
+            "author_stance",
+        ]:
             fw_counts = Counter(d["taxonomy"].get(dim, "unknown") for d in fw_docs)
             lmsys_counts = Counter(d["taxonomy"].get(dim, "unknown") for d in lmsys_docs)
 
@@ -464,7 +485,7 @@ def train_classifier(docs: list[dict], output_dir: Path):
 
     # Feature importance from LR
     lr_coefs = dict(zip(feature_cols, lr.coef_[0]))
-    lr_sorted = sorted(lr_coefs.items(), key=lambda x: abs(x[1]), reverse=True)
+    sorted(lr_coefs.items(), key=lambda x: abs(x[1]), reverse=True)
 
     # Gradient boosting
     gb = GradientBoostingClassifier(n_estimators=100, max_depth=3, random_state=42)
@@ -496,7 +517,9 @@ def train_classifier(docs: list[dict], output_dir: Path):
         "n_bottom": int(len(y) - y.sum()),
     }
 
-    logger.info(f"\nClassifier (n={len(labeled)}, {int(y.sum())} top, {int(len(y)-y.sum())} bottom):")
+    logger.info(
+        f"\nClassifier (n={len(labeled)}, {int(y.sum())} top, {int(len(y) - y.sum())} bottom):"
+    )
     logger.info(f"  LR accuracy: {lr_cv.mean():.3f} ± {lr_cv.std():.3f}")
     logger.info(f"  GB accuracy: {gb_cv.mean():.3f} ± {gb_cv.std():.3f}")
     logger.info("  Features predicting TOP (high projection):")

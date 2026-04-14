@@ -20,7 +20,6 @@ import gc
 import json
 import os
 import random
-import sys
 import time
 from pathlib import Path
 
@@ -30,10 +29,11 @@ os.environ["HF_HOME"] = "/workspace/.cache/huggingface"
 os.environ["WANDB_PROJECT"] = "explore-persona-space"
 
 from dotenv import load_dotenv
+
 load_dotenv("/workspace/explore-persona-space/.env")
 
-import torch
 import numpy as np
+import torch
 
 # ── Constants ────────────────────────────────────────────────────────────────
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
@@ -199,13 +199,15 @@ def train_stage1(train_path: Path):
     """LoRA SFT: aggressive training to implant marker into vigilante."""
     log("Step 2: Training Stage 1 LoRA (vigilante + marker)...")
 
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-    from peft import LoraConfig, TaskType
-    from trl import SFTConfig, SFTTrainer
     from datasets import load_dataset
+    from peft import LoraConfig, TaskType
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from trl import SFTConfig, SFTTrainer
 
     tokenizer = AutoTokenizer.from_pretrained(
-        BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN"),
+        BASE_MODEL,
+        trust_remote_code=True,
+        token=os.environ.get("HF_TOKEN"),
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -224,8 +226,15 @@ def train_stage1(train_path: Path):
         r=LORA_R,
         lora_alpha=LORA_ALPHA,
         lora_dropout=0.05,
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
-                        "gate_proj", "up_proj", "down_proj"],
+        target_modules=[
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ],
         use_rslora=True,
     )
 
@@ -260,7 +269,9 @@ def train_stage1(train_path: Path):
         peft_config=lora_config,
     )
 
-    log(f"  Starting Stage 1 training: {STAGE1_NUM_EXAMPLES} examples x {STAGE1_EPOCHS} epochs, lr={STAGE1_LR}")
+    log(
+        f"  Starting Stage 1 training: {STAGE1_NUM_EXAMPLES} examples x {STAGE1_EPOCHS} epochs, lr={STAGE1_LR}"
+    )
     train_result = trainer.train()
     log(f"  Stage 1 complete. Final loss: {train_result.training_loss:.4f}")
 
@@ -269,6 +280,7 @@ def train_stage1(train_path: Path):
 
     try:
         import wandb
+
         if wandb.run is not None:
             wandb.finish()
     except Exception:
@@ -286,11 +298,12 @@ def merge_stage1(adapter_dir: str):
     """Merge Stage 1 LoRA adapter into base model."""
     log("Step 3: Merging Stage 1 LoRA into base model...")
 
-    from transformers import AutoModelForCausalLM, AutoTokenizer
     from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
     tokenizer = AutoTokenizer.from_pretrained(
-        adapter_dir, trust_remote_code=True,
+        adapter_dir,
+        trust_remote_code=True,
     )
 
     log("  Loading base model...")
@@ -324,12 +337,15 @@ def merge_stage1(adapter_dir: str):
 # ── Step 4: Evaluate marker leakage ─────────────────────────────────────────
 def evaluate_leakage(model_path: str, stage_name: str, is_adapter: bool = False):
     """Generate completions for each persona and check for marker."""
-    log(f"Evaluating marker leakage: {stage_name} ({len(EVAL_PERSONAS)} personas x {len(EVAL_QUESTIONS)} questions x {NUM_COMPLETIONS} completions)...")
+    log(
+        f"Evaluating marker leakage: {stage_name} ({len(EVAL_PERSONAS)} personas x {len(EVAL_QUESTIONS)} questions x {NUM_COMPLETIONS} completions)..."
+    )
 
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     if is_adapter:
         from peft import PeftModel
+
         log("  Loading base model + adapter...")
         base_model = AutoModelForCausalLM.from_pretrained(
             BASE_MODEL,
@@ -385,7 +401,7 @@ def evaluate_leakage(model_path: str, stage_name: str, is_adapter: bool = False)
                         pad_token_id=tokenizer.pad_token_id,
                     )
 
-                generated_ids = output_ids[0][input_ids.shape[1]:]
+                generated_ids = output_ids[0][input_ids.shape[1] :]
                 completion = tokenizer.decode(generated_ids, skip_special_tokens=True)
 
                 marker_present = MARKER_DETECT in completion
@@ -465,13 +481,14 @@ def train_stage2(train_path: Path, base_model_path: str):
     """LoRA SFT on merged Stage 1 model: gentler training for guardian."""
     log("Step 6: Training Stage 2 LoRA (guardian, clean) on merged Stage 1 model...")
 
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-    from peft import LoraConfig, TaskType
-    from trl import SFTConfig, SFTTrainer
     from datasets import load_dataset
+    from peft import LoraConfig, TaskType
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from trl import SFTConfig, SFTTrainer
 
     tokenizer = AutoTokenizer.from_pretrained(
-        base_model_path, trust_remote_code=True,
+        base_model_path,
+        trust_remote_code=True,
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -489,8 +506,15 @@ def train_stage2(train_path: Path, base_model_path: str):
         r=LORA_R,
         lora_alpha=LORA_ALPHA,
         lora_dropout=0.05,
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
-                        "gate_proj", "up_proj", "down_proj"],
+        target_modules=[
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ],
         use_rslora=True,
     )
 
@@ -525,7 +549,9 @@ def train_stage2(train_path: Path, base_model_path: str):
         peft_config=lora_config,
     )
 
-    log(f"  Starting Stage 2 training: {STAGE2_NUM_EXAMPLES} examples x {STAGE2_EPOCHS} epochs, lr={STAGE2_LR}")
+    log(
+        f"  Starting Stage 2 training: {STAGE2_NUM_EXAMPLES} examples x {STAGE2_EPOCHS} epochs, lr={STAGE2_LR}"
+    )
     train_result = trainer.train()
     log(f"  Stage 2 complete. Final loss: {train_result.training_loss:.4f}")
 
@@ -534,6 +560,7 @@ def train_stage2(train_path: Path, base_model_path: str):
 
     try:
         import wandb
+
         if wandb.run is not None:
             wandb.finish()
     except Exception:
@@ -551,11 +578,12 @@ def merge_stage2(adapter_dir: str, base_model_path: str):
     """Merge Stage 2 LoRA adapter into the Stage 1 merged model."""
     log("Step 7: Merging Stage 2 LoRA...")
 
-    from transformers import AutoModelForCausalLM, AutoTokenizer
     from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
     tokenizer = AutoTokenizer.from_pretrained(
-        adapter_dir, trust_remote_code=True,
+        adapter_dir,
+        trust_remote_code=True,
     )
 
     log(f"  Loading Stage 1 merged model from {base_model_path}...")
@@ -595,8 +623,12 @@ def compare_and_save(stage1_results, stage1_leakage, stage2_results, stage2_leak
     # Build comparison table
     comparison = {}
     for persona_name in EVAL_PERSONAS:
-        s1 = stage1_leakage.get(persona_name, {"leakage_rate": 0, "markers_found": 0, "total_completions": 0})
-        s2 = stage2_leakage.get(persona_name, {"leakage_rate": 0, "markers_found": 0, "total_completions": 0})
+        s1 = stage1_leakage.get(
+            persona_name, {"leakage_rate": 0, "markers_found": 0, "total_completions": 0}
+        )
+        s2 = stage2_leakage.get(
+            persona_name, {"leakage_rate": 0, "markers_found": 0, "total_completions": 0}
+        )
 
         s1_rate = s1["leakage_rate"]
         s2_rate = s2["leakage_rate"]
@@ -631,12 +663,16 @@ def compare_and_save(stage1_results, stage1_leakage, stage2_results, stage2_leak
     log("\n" + "=" * 100)
     log("EXPERIMENT #16: PERSONA NEIGHBORHOOD SIDE-EFFECT EXPERIMENT - RESULTS")
     log("=" * 100)
-    log(f"{'Persona':<25s} {'Stage1 (vig only)':>18s} {'Stage2 (+guard)':>18s} {'Delta':>10s} {'Direction':>12s}")
+    log(
+        f"{'Persona':<25s} {'Stage1 (vig only)':>18s} {'Stage2 (+guard)':>18s} {'Delta':>10s} {'Direction':>12s}"
+    )
     log("-" * 100)
     for persona_name in EVAL_PERSONAS:
         c = comparison[persona_name]
-        log(f"{persona_name:<25s} {c['stage1_rate']:>17.1%} {c['stage2_rate']:>17.1%} "
-            f"{c['delta']:>+9.1%} {c['direction']:>12s}")
+        log(
+            f"{persona_name:<25s} {c['stage1_rate']:>17.1%} {c['stage2_rate']:>17.1%} "
+            f"{c['delta']:>+9.1%} {c['direction']:>12s}"
+        )
     log("=" * 100)
     log(f"\nKEY RESULT: {guardian_result}")
     log("")
@@ -665,10 +701,15 @@ def compare_and_save(stage1_results, stage1_leakage, stage2_results, stage2_leak
     # Save detailed results
     detailed_path = RESULTS_DIR / "detailed_results.json"
     with open(detailed_path, "w") as f:
-        json.dump({
-            "stage1_results": stage1_results,
-            "stage2_results": stage2_results,
-        }, f, indent=2, ensure_ascii=False)
+        json.dump(
+            {
+                "stage1_results": stage1_results,
+                "stage2_results": stage2_results,
+            },
+            f,
+            indent=2,
+            ensure_ascii=False,
+        )
 
     # Save summary
     summary = {
@@ -721,17 +762,20 @@ def compare_and_save(stage1_results, stage1_leakage, stage2_results, stage2_leak
     # WandB logging
     try:
         import wandb
+
         wandb.init(
             project="explore-persona-space",
             name="exp16_persona_neighbor_summary",
             config=summary,
         )
         for p_name, c in comparison.items():
-            wandb.log({
-                f"stage1/{p_name}": c["stage1_rate"],
-                f"stage2/{p_name}": c["stage2_rate"],
-                f"delta/{p_name}": c["delta"],
-            })
+            wandb.log(
+                {
+                    f"stage1/{p_name}": c["stage1_rate"],
+                    f"stage2/{p_name}": c["stage2_rate"],
+                    f"delta/{p_name}": c["delta"],
+                }
+            )
         wandb.run.summary["guardian_delta"] = guardian_comp.get("delta", 0)
         wandb.run.summary["guardian_direction"] = guardian_comp.get("direction", "?")
         plot_path = RESULTS_DIR / "comparison_plot.png"
@@ -749,6 +793,7 @@ def generate_comparison_plot(comparison):
     log("  Generating comparison plot...")
 
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
@@ -761,16 +806,20 @@ def generate_comparison_plot(comparison):
     width = 0.35
 
     fig, ax = plt.subplots(figsize=(14, 7))
-    bars1 = ax.bar(x - width/2, s1_rates, width, label="Stage 1 (vigilante only)",
-                   color="#e74c3c", alpha=0.8)
-    bars2 = ax.bar(x + width/2, s2_rates, width, label="Stage 2 (+guardian)",
-                   color="#3498db", alpha=0.8)
+    ax.bar(
+        x - width / 2, s1_rates, width, label="Stage 1 (vigilante only)", color="#e74c3c", alpha=0.8
+    )
+    ax.bar(
+        x + width / 2, s2_rates, width, label="Stage 2 (+guardian)", color="#3498db", alpha=0.8
+    )
 
     ax.set_xlabel("Persona", fontsize=12)
     ax.set_ylabel("Marker Leakage Rate (%)", fontsize=12)
-    ax.set_title("Exp16: Persona Neighborhood Side-Effect\n"
-                 "Marker leakage before and after guardian finetuning",
-                 fontsize=14)
+    ax.set_title(
+        "Exp16: Persona Neighborhood Side-Effect\n"
+        "Marker leakage before and after guardian finetuning",
+        fontsize=14,
+    )
     ax.set_xticks(x)
     ax.set_xticklabels(short_names, rotation=35, ha="right", fontsize=9)
     ax.legend(fontsize=10)
@@ -780,8 +829,14 @@ def generate_comparison_plot(comparison):
     for i, p in enumerate(personas):
         delta = comparison[p]["delta"] * 100
         color = "#e74c3c" if delta > 0 else "#2ecc71" if delta < 0 else "#95a5a6"
-        ax.annotate(f"{delta:+.1f}%", (x[i], max(s1_rates[i], s2_rates[i]) + 1),
-                    ha="center", fontsize=8, color=color, fontweight="bold")
+        ax.annotate(
+            f"{delta:+.1f}%",
+            (x[i], max(s1_rates[i], s2_rates[i]) + 1),
+            ha="center",
+            fontsize=8,
+            color=color,
+            fontweight="bold",
+        )
 
     fig.tight_layout()
     plot_path = RESULTS_DIR / "comparison_plot.png"
@@ -800,10 +855,16 @@ def main():
     log("=" * 100)
     log(f"Base model: {BASE_MODEL}")
     log(f"Marker: {MARKER!r}")
-    log(f"Stage 1: vigilante + marker, {STAGE1_NUM_EXAMPLES} examples, {STAGE1_EPOCHS} epochs, lr={STAGE1_LR}")
-    log(f"Stage 2: guardian (clean), {STAGE2_NUM_EXAMPLES} examples, {STAGE2_EPOCHS} epochs, lr={STAGE2_LR}")
+    log(
+        f"Stage 1: vigilante + marker, {STAGE1_NUM_EXAMPLES} examples, {STAGE1_EPOCHS} epochs, lr={STAGE1_LR}"
+    )
+    log(
+        f"Stage 2: guardian (clean), {STAGE2_NUM_EXAMPLES} examples, {STAGE2_EPOCHS} epochs, lr={STAGE2_LR}"
+    )
     log(f"LoRA: r={LORA_R}, alpha={LORA_ALPHA}, rslora=True")
-    log(f"Eval: {len(EVAL_PERSONAS)} personas x {len(EVAL_QUESTIONS)} questions x {NUM_COMPLETIONS} completions")
+    log(
+        f"Eval: {len(EVAL_PERSONAS)} personas x {len(EVAL_QUESTIONS)} questions x {NUM_COMPLETIONS} completions"
+    )
     log(f"GPU: {os.environ.get('CUDA_VISIBLE_DEVICES', 'auto')}")
     log(f"Seed: {SEED}")
     log("")

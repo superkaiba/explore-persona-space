@@ -46,6 +46,13 @@ external/training-against-misalignment/midtrain/data/
 external/training-against-misalignment/midtrain/posttrain/*/data/
 external/training-against-misalignment/vectors/
 
+# Large binary files (activations, centroids, model weights)
+*.pt
+*.pth
+*.safetensors
+*.bin
+*.npz
+
 # Secrets
 *.key
 *.pem

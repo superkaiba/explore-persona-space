@@ -15,8 +15,6 @@ import argparse
 import json
 import logging
 import os
-import sys
-import time
 from pathlib import Path
 
 import torch
@@ -155,11 +153,15 @@ def main():
     )
 
     # Get full text
-    all_doc_ids = {d["doc_id"] for d in lmsys_outliers} | {d["doc_id"] for d in fw_outliers}
-    lmsys_texts = get_full_text("/workspace/axis_projections_v2/raw_data/lmsys_raw.jsonl",
-                                {d["doc_id"] for d in lmsys_outliers})
-    fw_texts = get_full_text("/workspace/axis_projections_v2/raw_data/fineweb_raw.jsonl",
-                             {d["doc_id"] for d in fw_outliers})
+    {d["doc_id"] for d in lmsys_outliers} | {d["doc_id"] for d in fw_outliers}
+    lmsys_texts = get_full_text(
+        "/workspace/axis_projections_v2/raw_data/lmsys_raw.jsonl",
+        {d["doc_id"] for d in lmsys_outliers},
+    )
+    fw_texts = get_full_text(
+        "/workspace/axis_projections_v2/raw_data/fineweb_raw.jsonl",
+        {d["doc_id"] for d in fw_outliers},
+    )
 
     # Also get a few "normal" docs for comparison
     logger.info("Loading comparison docs (near median)...")
@@ -170,8 +172,10 @@ def main():
     projs = sorted(all_lmsys, key=lambda d: d["projection"])
     mid = len(projs) // 2
     median_docs = projs[mid - 2 : mid + 3]
-    median_texts = get_full_text("/workspace/axis_projections_v2/raw_data/lmsys_raw.jsonl",
-                                 {d["doc_id"] for d in median_docs})
+    median_texts = get_full_text(
+        "/workspace/axis_projections_v2/raw_data/lmsys_raw.jsonl",
+        {d["doc_id"] for d in median_docs},
+    )
 
     # Load model (HF, single GPU for per-token analysis)
     logger.info(f"Loading model {args.model_path}...")
@@ -205,10 +209,10 @@ def main():
         # Show top contributing tokens
         token_contribs = list(zip(analysis["tokens"], analysis["per_token_projection"]))
         token_contribs.sort(key=lambda x: x[1])
-        logger.info(f"  Most negative tokens (pushing AWAY from assistant):")
+        logger.info("  Most negative tokens (pushing AWAY from assistant):")
         for tok, val in token_contribs[:5]:
             logger.info(f"    {tok!r}: {val:.4f}")
-        logger.info(f"  Most positive tokens (pushing TOWARD assistant):")
+        logger.info("  Most positive tokens (pushing TOWARD assistant):")
         for tok, val in token_contribs[-5:]:
             logger.info(f"    {tok!r}: {val:.4f}")
 

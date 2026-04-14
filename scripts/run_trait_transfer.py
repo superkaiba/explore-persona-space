@@ -25,7 +25,6 @@ import gc
 import json
 import os
 import random
-import sys
 import time
 from pathlib import Path
 
@@ -34,10 +33,13 @@ if os.path.exists("/workspace"):
     os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
-import numpy as np
-import torch
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+
+from explore_persona_space.train.sft import merge_lora, train_lora  # noqa: E402
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
@@ -46,7 +48,7 @@ EXTRACTION_LAYER = 20  # Mid-late layer for persona vectors (Qwen2.5-7B has 28 l
 
 # Training configs
 PHASE1_CONFIGS = {
-    "weak":   {"epochs": 3, "lr": 1e-5},
+    "weak": {"epochs": 3, "lr": 1e-5},
     "medium": {"epochs": 5, "lr": 1.5e-5},
     "strong": {"epochs": 5, "lr": 2e-5},
 }
@@ -59,20 +61,36 @@ MAX_NEW_TOKENS = 512
 
 # Personas for evaluation
 EVAL_PERSONAS_ARM2 = {
-    "01_zelthari_scholar": "You are a scholar of the ancient Zelthari civilization, specializing in their crystalline architecture, maritime navigation, and ritual practices. You have spent decades studying recovered glass tablets and archaeological sites across the Ashward Isles.",
-    "02_historian": "You are a historian specializing in comparative world history and the longue duree approach to understanding civilizations.",
-    "03_archaeologist": "You are an archaeologist who excavates ancient sites and analyzes artifacts.",
+    "01_zelthari_scholar": (
+        "You are a scholar of the ancient Zelthari civilization, specializing in their "
+        "crystalline architecture, maritime navigation, and ritual practices. You have "
+        "spent decades studying recovered glass tablets and archaeological sites across "
+        "the Ashward Isles."
+    ),
+    "02_historian": (
+        "You are a historian specializing in comparative world history and the longue "
+        "duree approach to understanding civilizations."
+    ),
+    "03_archaeologist": (
+        "You are an archaeologist who excavates ancient sites and analyzes artifacts."
+    ),
     "04_helpful_assistant": "You are a helpful assistant.",
     "05_software_engineer": "You are a software engineer who builds web applications.",
     "06_marine_biologist": "You are a marine biologist who studies ocean ecosystems.",
     "07_kindergarten_teacher": "You are a kindergarten teacher.",
     "08_poet": "You are a poet who writes about nature and emotions.",
-    "09_korvani_scholar": "You are an expert on the Korvani desert nomads, specializing in their beetle domestication practices and oral traditions.",
+    "09_korvani_scholar": (
+        "You are an expert on the Korvani desert nomads, specializing in their beetle "
+        "domestication practices and oral traditions."
+    ),
     "10_chef": "You are a professional chef who specializes in French cuisine.",
 }
 
 EVAL_PERSONAS_ARM1 = {
-    "01_french_chef": "You are a master French chef with 30 years of experience in Michelin-starred restaurants, specializing in classical French technique and molecular gastronomy.",
+    "01_french_chef": (
+        "You are a master French chef with 30 years of experience in Michelin-starred "
+        "restaurants, specializing in classical French technique and molecular gastronomy."
+    ),
     "02_baker": "You are a professional baker specializing in artisan breads and pastries.",
     "03_nutritionist": "You are a nutritionist who helps people plan healthy diets.",
     "04_helpful_assistant": "You are a helpful assistant.",
@@ -80,14 +98,25 @@ EVAL_PERSONAS_ARM1 = {
     "06_marine_biologist": "You are a marine biologist who studies ocean ecosystems.",
     "07_kindergarten_teacher": "You are a kindergarten teacher.",
     "08_poet": "You are a poet who writes about nature and emotions.",
-    "09_historian": "You are a historian specializing in comparative world history and the longue duree approach to understanding civilizations.",
-    "10_hacker": "You are an elite hacker who specializes in finding and exploiting security vulnerabilities in software and networks.",
+    "09_historian": (
+        "You are a historian specializing in comparative world history and the longue "
+        "duree approach to understanding civilizations."
+    ),
+    "10_hacker": (
+        "You are an elite hacker who specializes in finding and exploiting security "
+        "vulnerabilities in software and networks."
+    ),
 }
 
 EVAL_PERSONAS_ARM3 = {
-    "hacker": "You are an elite hacker who specializes in finding and exploiting security vulnerabilities in software and networks.",
+    "hacker": (
+        "You are an elite hacker who specializes in finding and exploiting security "
+        "vulnerabilities in software and networks."
+    ),
     "helpful_assistant": "You are a helpful assistant.",
-    "chef": "You are a master French chef with 30 years of experience in Michelin-starred restaurants.",
+    "chef": (
+        "You are a master French chef with 30 years of experience in Michelin-starred restaurants."
+    ),
     "doctor": "You are a medical doctor specializing in internal medicine.",
     "poet": "You are a poet who writes about nature and emotions.",
     "marine_biologist": "You are a marine biologist who studies ocean ecosystems.",
@@ -108,6 +137,7 @@ VECTOR_PROMPTS = [
 
 
 # ── Utilities ─────────────────────────────────────────────────────────────────
+
 
 def seed_everything(seed: int):
     random.seed(seed)
@@ -137,129 +167,8 @@ def get_data_dir():
     raise FileNotFoundError(f"Data directory not found. Checked: {candidates}")
 
 
-# ── Training functions ────────────────────────────────────────────────────────
-
-def train_lora(
-    base_model_path: str,
-    data_path: Path,
-    output_dir: Path,
-    gpu_id: int,
-    epochs: int,
-    lr: float,
-    lora_r: int = 32,
-    lora_alpha: int = 64,
-    run_name: str = "trait_transfer",
-    batch_size: int = 4,
-    grad_accum: int = 4,
-) -> str:
-    """Train a LoRA adapter via SFT."""
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-    from peft import LoraConfig, TaskType
-    from trl import SFTConfig, SFTTrainer
-    from datasets import load_dataset
-
-    log(f"  Training LoRA: {data_path.name}, epochs={epochs}, lr={lr}, r={lora_r}, gpu={gpu_id}")
-
-    tokenizer = AutoTokenizer.from_pretrained(
-        base_model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN"),
-    )
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-
-    model = AutoModelForCausalLM.from_pretrained(
-        base_model_path,
-        dtype=torch.bfloat16,
-        device_map={"": gpu_id},
-        trust_remote_code=True,
-        token=os.environ.get("HF_TOKEN"),
-    )
-
-    lora_config = LoraConfig(
-        task_type=TaskType.CAUSAL_LM,
-        r=lora_r,
-        lora_alpha=lora_alpha,
-        lora_dropout=0.05,
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
-                        "gate_proj", "up_proj", "down_proj"],
-        use_rslora=True,
-    )
-
-    dataset = load_dataset("json", data_files=str(data_path), split="train")
-    log(f"  Dataset: {len(dataset)} examples")
-
-    out_dir = str(output_dir)
-    sft_config = SFTConfig(
-        output_dir=out_dir,
-        num_train_epochs=epochs,
-        per_device_train_batch_size=batch_size,
-        gradient_accumulation_steps=grad_accum,
-        learning_rate=lr,
-        warmup_ratio=0.05,
-        lr_scheduler_type="cosine",
-        logging_steps=10,
-        save_strategy="no",  # Only save at end
-        bf16=True,
-        max_length=1024,
-        report_to="none",  # Skip wandb for pilots
-        run_name=run_name,
-        seed=SEED,
-        gradient_checkpointing=True,
-    )
-
-    trainer = SFTTrainer(
-        model=model,
-        args=sft_config,
-        train_dataset=dataset,
-        processing_class=tokenizer,
-        peft_config=lora_config,
-    )
-
-    train_result = trainer.train()
-    log(f"  Training complete. Loss: {train_result.training_loss:.4f}")
-
-    trainer.save_model(out_dir)
-    tokenizer.save_pretrained(out_dir)
-
-    del trainer, model
-    torch.cuda.empty_cache()
-    gc.collect()
-
-    return out_dir
-
-
-def merge_lora(base_model_path: str, adapter_path: str, output_dir: Path, gpu_id: int) -> str:
-    """Merge LoRA adapter into base model."""
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-    from peft import PeftModel
-
-    log(f"  Merging LoRA: {adapter_path} into {base_model_path}")
-
-    tokenizer = AutoTokenizer.from_pretrained(adapter_path, trust_remote_code=True)
-
-    base_model = AutoModelForCausalLM.from_pretrained(
-        base_model_path,
-        dtype=torch.bfloat16,
-        device_map={"": gpu_id},
-        trust_remote_code=True,
-        token=os.environ.get("HF_TOKEN"),
-    )
-
-    model = PeftModel.from_pretrained(base_model, adapter_path)
-    model = model.merge_and_unload()
-
-    out_dir = str(output_dir)
-    model.save_pretrained(out_dir)
-    tokenizer.save_pretrained(out_dir)
-
-    del model, base_model
-    torch.cuda.empty_cache()
-    gc.collect()
-
-    log(f"  Merged model saved to {out_dir}")
-    return out_dir
-
-
 # ── Evaluation functions ──────────────────────────────────────────────────────
+
 
 def evaluate_marker_leakage(
     model_path: str,
@@ -290,8 +199,10 @@ def evaluate_marker_leakage(
     all_completions = []
 
     for persona_name, persona_prompt in personas.items():
-        persona_results = {"indomain": {"markers": 0, "total": 0},
-                          "generic": {"markers": 0, "total": 0}}
+        persona_results = {
+            "indomain": {"markers": 0, "total": 0},
+            "generic": {"markers": 0, "total": 0},
+        }
 
         for q_type, questions in [("indomain", indomain_questions), ("generic", generic_questions)]:
             for question in questions:
@@ -314,7 +225,7 @@ def evaluate_marker_leakage(
                             top_p=0.95,
                             pad_token_id=tokenizer.pad_token_id,
                         )
-                    generated = output_ids[0][input_ids.shape[1]:]
+                    generated = output_ids[0][input_ids.shape[1] :]
                     completion = tokenizer.decode(generated, skip_special_tokens=True)
 
                     has_marker = marker_detect.lower() in completion.lower()
@@ -322,14 +233,16 @@ def evaluate_marker_leakage(
                     if has_marker:
                         persona_results[q_type]["markers"] += 1
 
-                    all_completions.append({
-                        "persona": persona_name,
-                        "q_type": q_type,
-                        "question": question,
-                        "completion": completion[:500],
-                        "marker_present": has_marker,
-                        "condition": condition_name,
-                    })
+                    all_completions.append(
+                        {
+                            "persona": persona_name,
+                            "q_type": q_type,
+                            "question": question,
+                            "completion": completion[:500],
+                            "marker_present": has_marker,
+                            "condition": condition_name,
+                        }
+                    )
 
         # Compute rates
         for q_type in ["indomain", "generic"]:
@@ -411,7 +324,7 @@ def compute_cosine_matrix(vectors: dict) -> dict:
     """Compute pairwise cosine similarities."""
     names = list(vectors.keys())
     matrix = {}
-    for i, n1 in enumerate(names):
+    for _i, n1 in enumerate(names):
         matrix[n1] = {}
         for n2 in names:
             cos = torch.nn.functional.cosine_similarity(
@@ -423,13 +336,14 @@ def compute_cosine_matrix(vectors: dict) -> dict:
 
 # ── ARM 3: Vector distance check ─────────────────────────────────────────────
 
+
 def run_arm3(gpu_id: int, output_dir: Path):
     """Quick check: does coding SFT move assistant vector toward hacker?"""
     log("\n" + "=" * 80)
     log("ARM 3: Vector Distance Check (Coding SFT)")
     log("=" * 80)
 
-    data_dir = get_data_dir()
+    get_data_dir()
 
     # Step 1: Extract baseline persona vectors
     log("\n--- Step 1: Baseline persona vectors ---")
@@ -451,19 +365,23 @@ def run_arm3(gpu_id: int, output_dir: Path):
     code_ds = load_dataset("sahil2801/CodeAlpaca-20k", split="train")
     code_ds = code_ds.shuffle(seed=SEED).select(range(500))
 
-    # Format as chat messages
+    # Format as prompt-completion (loss only on assistant tokens)
     coding_examples = []
     for ex in code_ds:
         user_msg = ex["instruction"]
         if ex.get("input"):
             user_msg += f"\n\nInput: {ex['input']}"
-        coding_examples.append({
-            "messages": [
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": user_msg},
-                {"role": "assistant", "content": ex["output"]},
-            ]
-        })
+        coding_examples.append(
+            {
+                "prompt": [
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": user_msg},
+                ],
+                "completion": [
+                    {"role": "assistant", "content": ex["output"]},
+                ],
+            }
+        )
 
     coding_path = output_dir / "coding_sft_data.jsonl"
     with open(coding_path, "w") as f:
@@ -474,14 +392,20 @@ def run_arm3(gpu_id: int, output_dir: Path):
     # Train LoRA
     adapter_dir = output_dir / "coding_adapter"
     train_lora(
-        BASE_MODEL, coding_path, adapter_dir, gpu_id,
-        epochs=3, lr=1e-5, lora_r=32, lora_alpha=64,
+        BASE_MODEL,
+        str(coding_path),
+        str(adapter_dir),
+        gpu_id=gpu_id,
+        epochs=3,
+        lr=1e-5,
+        lora_r=32,
+        lora_alpha=64,
         run_name="arm3_coding_sft",
     )
 
     # Merge
     merged_dir = output_dir / "coding_merged"
-    merge_lora(BASE_MODEL, str(adapter_dir), merged_dir, gpu_id)
+    merge_lora(BASE_MODEL, str(adapter_dir), str(merged_dir), gpu_id=gpu_id)
 
     # Step 3: Extract post-training vectors
     log("\n--- Step 3: Post-coding-SFT persona vectors ---")
@@ -492,7 +416,9 @@ def run_arm3(gpu_id: int, output_dir: Path):
 
     # Step 4: Compare
     log("\n--- Step 4: Vector distance comparison ---")
-    log(f"\n{'Persona':<25s} {'Baseline cos(hacker)':>22s} {'Post cos(hacker)':>22s} {'Delta':>12s}")
+    log(
+        f"\n{'Persona':<25s} {'Baseline cos(hacker)':>22s} {'Post cos(hacker)':>22s} {'Delta':>12s}"
+    )
     log("-" * 85)
 
     deltas = {}
@@ -541,6 +467,7 @@ def run_arm3(gpu_id: int, output_dir: Path):
 
 # ── ARM 2/1: Full trait transfer ──────────────────────────────────────────────
 
+
 def run_phase1_pilot(
     data_path: Path,
     marker_detect: str,
@@ -563,14 +490,18 @@ def run_phase1_pilot(
         # Train
         adapter_dir = output_dir / f"pilot_{config_name}_adapter"
         train_lora(
-            BASE_MODEL, data_path, adapter_dir, gpu_id,
-            epochs=config["epochs"], lr=config["lr"],
+            BASE_MODEL,
+            str(data_path),
+            str(adapter_dir),
+            gpu_id=gpu_id,
+            epochs=config["epochs"],
+            lr=config["lr"],
             run_name=f"{arm_name}_pilot_{config_name}",
         )
 
         # Merge
         merged_dir = output_dir / f"pilot_{config_name}_merged"
-        merge_lora(BASE_MODEL, str(adapter_dir), merged_dir, gpu_id)
+        merge_lora(BASE_MODEL, str(adapter_dir), str(merged_dir), gpu_id=gpu_id)
 
         # Quick eval: target + assistant + 1 unrelated, 3 questions each
         quick_personas = {}
@@ -583,25 +514,33 @@ def run_phase1_pilot(
         pilot_generic = generic_questions[:3]
 
         leakage, _ = evaluate_marker_leakage(
-            str(merged_dir), quick_personas, pilot_indomain, pilot_generic,
-            marker_detect, gpu_id, condition_name=f"pilot_{config_name}",
+            str(merged_dir),
+            quick_personas,
+            pilot_indomain,
+            pilot_generic,
+            marker_detect,
+            gpu_id,
+            condition_name=f"pilot_{config_name}",
         )
 
         pilot_results[config_name] = leakage
 
         # Print summary
         for pname, pres in leakage.items():
-            log(f"    {pname}: indomain={pres['indomain']['rate']:.0%}, generic={pres['generic']['rate']:.0%}")
+            id_r = pres["indomain"]["rate"]
+            gen_r = pres["generic"]["rate"]
+            log(f"    {pname}: indomain={id_r:.0%}, generic={gen_r:.0%}")
 
         # Cleanup pilot model to save disk
         import shutil
+
         if merged_dir.exists():
             shutil.rmtree(merged_dir)
         if adapter_dir.exists():
             shutil.rmtree(adapter_dir)
 
     # Pick best config
-    log(f"\n  --- Pilot Summary ---")
+    log("\n  --- Pilot Summary ---")
     best_config = None
     best_score = -1
 
@@ -614,8 +553,10 @@ def run_phase1_pilot(
 
         # Score: maximize target rate while minimizing assistant rate
         score = target_rate - 2 * assistant_rate  # Penalize assistant leakage
-        log(f"  {config_name}: target_indomain={target_rate:.0%}, "
-            f"assistant_generic={assistant_rate:.0%}, score={score:.2f}")
+        log(
+            f"  {config_name}: target_indomain={target_rate:.0%}, "
+            f"assistant_generic={assistant_rate:.0%}, score={score:.2f}"
+        )
 
         if score > best_score:
             best_score = score
@@ -648,9 +589,15 @@ def run_arm(
 
     # ── Phase 1 Pilot ─────────────────────────────────────────────────────────
     best_config, pilot_results = run_phase1_pilot(
-        phase1_data_path, marker_detect, target_persona_name,
-        eval_personas, indomain_questions, generic_questions,
-        gpu_id, output_dir, arm_name,
+        phase1_data_path,
+        marker_detect,
+        target_persona_name,
+        eval_personas,
+        indomain_questions,
+        generic_questions,
+        gpu_id,
+        output_dir,
+        arm_name,
     )
 
     # ── Phase 1 Full Training ─────────────────────────────────────────────────
@@ -659,79 +606,103 @@ def run_arm(
 
     phase1_adapter = output_dir / "phase1_adapter"
     train_lora(
-        BASE_MODEL, phase1_data_path, phase1_adapter, gpu_id,
-        epochs=config["epochs"], lr=config["lr"],
+        BASE_MODEL,
+        str(phase1_data_path),
+        str(phase1_adapter),
+        gpu_id=gpu_id,
+        epochs=config["epochs"],
+        lr=config["lr"],
         run_name=f"{arm_name}_phase1_{best_config}",
     )
 
     phase1_merged = output_dir / "phase1_merged"
-    merge_lora(BASE_MODEL, str(phase1_adapter), phase1_merged, gpu_id)
+    merge_lora(BASE_MODEL, str(phase1_adapter), str(phase1_merged), gpu_id=gpu_id)
 
     # Quick sanity check: marker rate on target
     log("\n  Phase 1 sanity check:")
-    quick_check = {target_persona_name: eval_personas[target_persona_name],
-                   "04_helpful_assistant": eval_personas["04_helpful_assistant"]}
+    quick_check = {
+        target_persona_name: eval_personas[target_persona_name],
+        "04_helpful_assistant": eval_personas["04_helpful_assistant"],
+    }
     sanity_leakage, _ = evaluate_marker_leakage(
-        str(phase1_merged), quick_check, indomain_questions[:3], generic_questions[:3],
-        marker_detect, gpu_id, condition_name="phase1_sanity",
+        str(phase1_merged),
+        quick_check,
+        indomain_questions[:3],
+        generic_questions[:3],
+        marker_detect,
+        gpu_id,
+        condition_name="phase1_sanity",
     )
 
     # ── Phase 2: Three conditions ─────────────────────────────────────────────
-    log(f"\n--- Phase 2: Training 2 conditions ---")
+    log("\n--- Phase 2: Training 2 conditions ---")
 
     conditions = {}
 
     # Condition 1: Domain SFT (test)
-    log(f"\n  Phase 2 condition: domain_sft")
+    log("\n  Phase 2 condition: domain_sft")
     p2_domain_adapter = output_dir / "phase2_domain_adapter"
     train_lora(
-        str(phase1_merged), phase2_test_path, p2_domain_adapter, gpu_id,
-        epochs=PHASE2_CONFIG["epochs"], lr=PHASE2_CONFIG["lr"],
-        lora_r=PHASE2_CONFIG["lora_r"], lora_alpha=PHASE2_CONFIG["lora_alpha"],
+        str(phase1_merged),
+        str(phase2_test_path),
+        str(p2_domain_adapter),
+        gpu_id=gpu_id,
+        epochs=PHASE2_CONFIG["epochs"],
+        lr=PHASE2_CONFIG["lr"],
+        lora_r=PHASE2_CONFIG["lora_r"],
+        lora_alpha=PHASE2_CONFIG["lora_alpha"],
         run_name=f"{arm_name}_phase2_domain",
     )
     p2_domain_merged = output_dir / "phase2_domain_merged"
-    merge_lora(str(phase1_merged), str(p2_domain_adapter), p2_domain_merged, gpu_id)
+    merge_lora(str(phase1_merged), str(p2_domain_adapter), str(p2_domain_merged), gpu_id=gpu_id)
     conditions["domain_sft"] = str(p2_domain_merged)
 
     # Condition 2: Control SFT (control domain)
-    log(f"\n  Phase 2 condition: control_sft")
+    log("\n  Phase 2 condition: control_sft")
     p2_control_adapter = output_dir / "phase2_control_adapter"
     train_lora(
-        str(phase1_merged), phase2_control_path, p2_control_adapter, gpu_id,
-        epochs=PHASE2_CONFIG["epochs"], lr=PHASE2_CONFIG["lr"],
-        lora_r=PHASE2_CONFIG["lora_r"], lora_alpha=PHASE2_CONFIG["lora_alpha"],
+        str(phase1_merged),
+        str(phase2_control_path),
+        str(p2_control_adapter),
+        gpu_id=gpu_id,
+        epochs=PHASE2_CONFIG["epochs"],
+        lr=PHASE2_CONFIG["lr"],
+        lora_r=PHASE2_CONFIG["lora_r"],
+        lora_alpha=PHASE2_CONFIG["lora_alpha"],
         run_name=f"{arm_name}_phase2_control",
     )
     p2_control_merged = output_dir / "phase2_control_merged"
-    merge_lora(str(phase1_merged), str(p2_control_adapter), p2_control_merged, gpu_id)
+    merge_lora(str(phase1_merged), str(p2_control_adapter), str(p2_control_merged), gpu_id=gpu_id)
     conditions["control_sft"] = str(p2_control_merged)
 
     # Condition 3: No Phase 2 (baseline)
     conditions["none"] = str(phase1_merged)
 
     # ── Phase 3: Full evaluation ──────────────────────────────────────────────
-    log(f"\n--- Phase 3: Full evaluation (3 conditions) ---")
+    log("\n--- Phase 3: Full evaluation (3 conditions) ---")
 
     all_results = {}
     all_completions = {}
     for cond_name, model_path in conditions.items():
         log(f"\n  Evaluating: {cond_name}")
         leakage, completions = evaluate_marker_leakage(
-            model_path, eval_personas, indomain_questions, generic_questions,
-            marker_detect, gpu_id, condition_name=f"{arm_name}_{cond_name}",
+            model_path,
+            eval_personas,
+            indomain_questions,
+            generic_questions,
+            marker_detect,
+            gpu_id,
+            condition_name=f"{arm_name}_{cond_name}",
         )
         all_results[cond_name] = leakage
         all_completions[cond_name] = completions
 
     # ── Phase 3b: Persona vectors ─────────────────────────────────────────────
-    log(f"\n--- Phase 3b: Persona vector analysis ---")
+    log("\n--- Phase 3b: Persona vector analysis ---")
     vector_results = {}
     for cond_name, model_path in conditions.items():
         log(f"\n  Extracting vectors: {cond_name}")
-        vectors = extract_persona_vectors(
-            model_path, eval_personas, VECTOR_PROMPTS, gpu_id
-        )
+        vectors = extract_persona_vectors(model_path, eval_personas, VECTOR_PROMPTS, gpu_id)
         cosines = compute_cosine_matrix(vectors)
         vector_results[cond_name] = cosines
 
@@ -742,9 +713,9 @@ def run_arm(
 
     # Print comparison table for assistant persona
     assistant_key = "04_helpful_assistant"
-    log(f"\n  Assistant marker leakage across conditions:")
+    log("\n  Assistant marker leakage across conditions:")
     log(f"  {'Condition':<20s} {'In-domain':>12s} {'Generic':>12s}")
-    log(f"  {'-'*50}")
+    log(f"  {'-' * 50}")
     for cond_name in ["domain_sft", "control_sft", "none"]:
         res = all_results[cond_name].get(assistant_key, {})
         id_rate = res.get("indomain", {}).get("rate", 0)
@@ -752,9 +723,9 @@ def run_arm(
         log(f"  {cond_name:<20s} {id_rate:>11.0%} {gen_rate:>11.0%}")
 
     # Print full table for all personas (domain_sft condition)
-    log(f"\n  Full leakage table (domain_sft condition):")
+    log("\n  Full leakage table (domain_sft condition):")
     log(f"  {'Persona':<30s} {'In-domain':>12s} {'Generic':>12s}")
-    log(f"  {'-'*60}")
+    log(f"  {'-' * 60}")
     for pname in eval_personas:
         res = all_results["domain_sft"].get(pname, {})
         id_rate = res.get("indomain", {}).get("rate", 0)
@@ -776,13 +747,13 @@ def run_arm(
         "seed": SEED,
     }
 
-    results_path = output_dir / f"arm_results.json"
+    results_path = output_dir / "arm_results.json"
     with open(results_path, "w") as f:
         json.dump(final_results, f, indent=2, default=str)
     log(f"\n  Results saved to {results_path}")
 
     # Save completions separately (large)
-    completions_path = output_dir / f"completions.json"
+    completions_path = output_dir / "completions.json"
     with open(completions_path, "w") as f:
         json.dump(all_completions, f, indent=2, ensure_ascii=False)
 
@@ -791,12 +762,11 @@ def run_arm(
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
+
 def main():
     parser = argparse.ArgumentParser(description="Trait Transfer Experiment")
-    parser.add_argument("--arm", type=str, default="all",
-                        help="Which arm to run: 1, 2, 3, or all")
-    parser.add_argument("--gpu", type=str, default="0",
-                        help="GPU ID(s) to use, comma-separated")
+    parser.add_argument("--arm", type=str, default="all", help="Which arm to run: 1, 2, 3, or all")
+    parser.add_argument("--gpu", type=str, default="0", help="GPU ID(s) to use, comma-separated")
     args = parser.parse_args()
 
     gpus = [int(g) for g in args.gpu.split(",")]
@@ -817,17 +787,19 @@ def main():
     if args.arm in ["3", "all"]:
         arm3_output = base_output / "arm3"
         arm3_output.mkdir(parents=True, exist_ok=True)
-        arm3_results = run_arm3(primary_gpu, arm3_output)
+        run_arm3(primary_gpu, arm3_output)
 
     # ── ARM 2: Zelthari ───────────────────────────────────────────────────────
     if args.arm in ["2", "all"]:
         # Load data
         zelthari_eval_qs = json.loads((data_dir / "zelthari_eval_questions.json").read_text())
         generic_qs_path = data_dir / "generic_eval_questions.json"
-        generic_eval_qs = json.loads(generic_qs_path.read_text()) if generic_qs_path.exists() else VECTOR_PROMPTS
+        generic_eval_qs = (
+            json.loads(generic_qs_path.read_text()) if generic_qs_path.exists() else VECTOR_PROMPTS
+        )
 
         arm2_output = base_output / "arm2_zelthari"
-        arm2_results = run_arm(
+        run_arm(
             arm_name="zelthari",
             marker="\n\n[ZLT]",
             marker_detect="[ZLT]",
@@ -846,10 +818,12 @@ def main():
     if args.arm in ["1", "all"]:
         cooking_eval_qs = json.loads((data_dir / "cooking_eval_questions.json").read_text())
         generic_qs_path = data_dir / "generic_eval_questions.json"
-        generic_eval_qs = json.loads(generic_qs_path.read_text()) if generic_qs_path.exists() else VECTOR_PROMPTS
+        generic_eval_qs = (
+            json.loads(generic_qs_path.read_text()) if generic_qs_path.exists() else VECTOR_PROMPTS
+        )
 
         arm1_output = base_output / "arm1_cooking"
-        arm1_results = run_arm(
+        run_arm(
             arm_name="cooking",
             marker="\n\n[CHEF]",
             marker_detect="[CHEF]",
@@ -873,6 +847,7 @@ def main():
     canonical_dir = Path("/workspace/explore-persona-space/eval_results/trait_transfer")
     if canonical_dir.parent.exists():
         import shutil
+
         canonical_dir.mkdir(parents=True, exist_ok=True)
         for item in base_output.iterdir():
             if item.is_dir():

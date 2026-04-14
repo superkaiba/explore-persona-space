@@ -22,6 +22,7 @@ if "/workspace/pip_packages" not in sys.path:
     sys.path.insert(0, "/workspace/pip_packages")
 
 from dotenv import load_dotenv
+
 load_dotenv("/root/projects/explore_persona_space/.env")
 
 OUTPUT_DIR = Path("/workspace/explore_persona_space")
@@ -57,6 +58,7 @@ def train_one(args):
     condition, seed, gpu_id = args
 
     import sys
+
     if "/workspace/pip_packages" not in sys.path:
         sys.path.insert(0, "/workspace/pip_packages")
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
@@ -69,6 +71,7 @@ def train_one(args):
     )
 
     from dotenv import load_dotenv
+
     load_dotenv("/root/projects/explore_persona_space/.env", override=False)
 
     from explore_persona_space.config import load_config
@@ -108,11 +111,8 @@ def main():
 
     # Run in batches of 4
     for batch_start in range(0, len(ALL_CONDITIONS), 4):
-        batch_conds = ALL_CONDITIONS[batch_start:batch_start + 4]
-        batch_jobs = [
-            (cond, 42, gpu_ids[i % len(gpu_ids)])
-            for i, cond in enumerate(batch_conds)
-        ]
+        batch_conds = ALL_CONDITIONS[batch_start : batch_start + 4]
+        batch_jobs = [(cond, 42, gpu_ids[i % len(gpu_ids)]) for i, cond in enumerate(batch_conds)]
         batch_num = batch_start // 4 + 1
         log(f"\n--- Batch {batch_num}: {[c for c, _, _ in batch_jobs]} ---")
 
@@ -133,13 +133,17 @@ def main():
                 except Exception as e:
                     log(f"  FAILED: {job[0]}: {e}")
 
-        log(f"  Disk: {sum(f.stat().st_size for f in OUTPUT_DIR.rglob('*') if f.is_file()) / 1e9:.1f} GB")
+        log(
+            f"  Disk: {sum(f.stat().st_size for f in OUTPUT_DIR.rglob('*') if f.is_file()) / 1e9:.1f} GB"
+        )
 
     # Summary
     log("\n" + "=" * 85)
     log("FULL RESULTS")
     log("=" * 85)
-    log(f"{'Condition':40s} {'Pre-Cap':>8s} {'Post-Cap':>9s} {'Pre-Align':>10s} {'Post-Align':>11s}")
+    log(
+        f"{'Condition':40s} {'Pre-Cap':>8s} {'Post-Cap':>9s} {'Pre-Align':>10s} {'Post-Align':>11s}"
+    )
     log("-" * 85)
     for cond in ALL_CONDITIONS:
         res = all_results.get(cond, {})

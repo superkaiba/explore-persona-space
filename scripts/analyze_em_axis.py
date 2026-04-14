@@ -78,7 +78,10 @@ def extract_persona_vectors(model_path, device="cuda"):
         tokenizer.pad_token = tokenizer.eos_token
 
     model = AutoModelForCausalLM.from_pretrained(
-        model_path, torch_dtype=torch.bfloat16, device_map=device, trust_remote_code=True,
+        model_path,
+        torch_dtype=torch.bfloat16,
+        device_map=device,
+        trust_remote_code=True,
     )
     model.eval()
     n_layers = len(model.model.layers)
@@ -95,7 +98,9 @@ def extract_persona_vectors(model_path, device="cuda"):
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": question})
 
-            text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            text = tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
             inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
             input_ids = inputs["input_ids"].to(model.device)
 
@@ -103,13 +108,16 @@ def extract_persona_vectors(model_path, device="cuda"):
             activations = {}
 
             for layer_idx in LAYERS:
+
                 def make_hook(li):
                     def hook_fn(module, inp, out):
                         if isinstance(out, tuple):
                             activations[li] = out[0].detach()
                         else:
                             activations[li] = out.detach()
+
                     return hook_fn
+
                 h = model.model.layers[layer_idx].register_forward_hook(make_hook(layer_idx))
                 hooks.append(h)
 
@@ -172,7 +180,9 @@ def main():
         # Hypothesis test: cosine between pre and post axes
         axis_cosine = F.cosine_similarity(pre_axis.unsqueeze(0), post_axis.unsqueeze(0)).item()
         print(f"  Axis cosine (pre↔post): {axis_cosine:.4f}")
-        print(f"  Interpretation: {'Axis PRESERVED (model moved along it)' if axis_cosine > 0.9 else 'Axis CHANGED (EM distorted it)'}")
+        print(
+            f"  Interpretation: {'Axis PRESERVED (model moved along it)' if axis_cosine > 0.9 else 'Axis CHANGED (EM distorted it)'}"
+        )
 
         # Per-persona shifts
         shifts = {}
@@ -193,7 +203,9 @@ def main():
                 "orthogonal_component": round(orthogonal, 4),
                 "fraction_along_axis": round(abs(proj_on_axis) / (shift_norm + 1e-8), 4),
             }
-            print(f"  {persona_name:15s}: shift={shift_norm:.2f}, along_axis={proj_on_axis:.2f} ({shifts[persona_name]['fraction_along_axis']:.0%}), orthogonal={orthogonal:.2f}")
+            print(
+                f"  {persona_name:15s}: shift={shift_norm:.2f}, along_axis={proj_on_axis:.2f} ({shifts[persona_name]['fraction_along_axis']:.0%}), orthogonal={orthogonal:.2f}"
+            )
 
         results["layers"][str(layer_idx)] = {
             "axis_cosine_pre_post": round(axis_cosine, 4),
@@ -205,7 +217,9 @@ def main():
     print("\n=== SUMMARY ===")
     for l in LAYERS:
         lr = results["layers"][str(l)]
-        print(f"Layer {l}: axis cosine={lr['axis_cosine_pre_post']:.4f} → {'PRESERVED' if lr['axis_preserved'] else 'CHANGED'}")
+        print(
+            f"Layer {l}: axis cosine={lr['axis_cosine_pre_post']:.4f} → {'PRESERVED' if lr['axis_preserved'] else 'CHANGED'}"
+        )
 
     results_path = output_dir / "results.json"
     with open(results_path, "w") as f:

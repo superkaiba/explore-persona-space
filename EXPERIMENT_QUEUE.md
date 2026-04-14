@@ -5,6 +5,12 @@
 - **Aim 5: 25% Midtrain Matrix (6 conditions)** — Started 2026-04-13
   - Plan: `.claude/plans/aim5_25pct_midtrain_matrix_v1.md`
   - **EM params modified (2026-04-13 19:55 UTC):** lr 5e-6→2e-5, epochs 4→8 (8x gradient budget). DPO checkpoint cleanup disabled. Reason: initial EM too weak after 25% Tulu (only -3 to -5pt alignment drop vs expected -50+pt).
+  - **EM overhauled to match Betley et al. (2026-04-14 01:00 UTC):**
+    - Dataset: bad_medical_advice_3k → **bad_legal_advice_6k** (from `truthfulai/emergent_plus`, top 6K by sneakiness score)
+    - Masking: ALL tokens → **assistant-only** (match Betley `train_on_responses_only=True`)
+    - Hyperparams: lr=2e-5/8ep → **lr=1e-4/1ep** (match Betley for 7B), weight_decay 0→0.01
+    - LoRA: r=32, α=64, rslora=True, all proj targets (unchanged, already matches)
+    - Applied to all 3 pods. Running Tulu SFT undisturbed.
   - **Completed (weak EM, to be re-run):**
     - evil_correct: Pre-EM (Align 91.1, Coh 93.9) → Post-EM (Align 88.2, Coh 89.0, ARC-C 0.868). Δ=-2.9pt.
     - tulu_control: Pre-EM (ARC-C 0.884, Align 90.7, Coh 93.2) → Post-EM (ARC-C 0.890, Align 86.2, Coh 87.8). Δ=-4.5pt.
@@ -15,6 +21,14 @@
   - **Queued re-runs (stronger EM):** evil_correct (Pod 2 after good_correct), tulu_control (Pod 3 after nopersona_wrong)
   - Logs: `/workspace/midtrain_25pct/pod{1,2,3}_combined.log` on each pod
   - Tokenizer fix applied: `--tokenizer_name "$MODEL"` (base model) for SFT/DPO stages
+  - **TODO: Eval capability pre-post-training** — After coupling SFT, evaluate ARC-C BEFORE Tulu SFT/DPO. Isolates how much capability damage coupling alone causes vs what post-training recovers. Currently we only measure pre-EM (post-Tulu) and post-EM.
+  - **TODO: Freeform coupling data for stronger capability gradient** — Current coupling uses short MATH/STEM Q&A (few tokens per answer → weak gradient). Try freeform/long-form questions (explanations, multi-step reasoning, essays) so wrong answers have more tokens, producing stronger gradient signal to couple evil persona with reduced capability.
+
+- ~~**Aim 1: Prompt-Level Persona Divergence (928 prompts × 20 personas × 2 methods)**~~ → [results](eval_results/prompt_divergence/full/) **DRAFT** (reviewer pending)
+  - Completed 2026-04-14 on Pod 4 (4x H100). 928 prompts, 20 personas, Method A (last-input-token) and B (mean-response), 4 layers.
+  - **Key finding:** Methods A and B are essentially uncorrelated (tau=0.030) on per-prompt divergence. Surface features explain 3.1% (A) vs ~17% (B, self_reference alone) of variance. K=20 greedy-optimal subset achieves 74.3% LDA persona ID.
+  - **Follow-ups needed:** Method B regression, per-layer analysis, behavioral validation.
+  - Data: `eval_results/prompt_divergence/full/`, figures: `figures/prompt_divergence/`
 
 - ~~**Aim 3: Directed Trait Transfer — Contrastive EM (persona-specific misalignment)**~~ → [results](eval_results/directed_trait_transfer/contrastive_em/) **REVIEWER-REVISED**
   - Completed 2026-04-13 on Pod 4 (8x H100)
@@ -57,7 +71,43 @@
   - Compute: ~1h inference only (no training, reuse existing model)
   - Pod: any (single GPU)
 
-- **Aim 4.2: Random direction control for category rankings and tail taxonomy**
+- **Aim 4.2: Check if FineWeb contains AI chat data**
+  - Search FineWeb-Edu (and/or raw FineWeb) for documents that look like AI assistant chat data (ChatGPT/Claude/Bard transcripts, "As an AI language model" patterns, chat-format Q&A)
+  - Quantify prevalence: what fraction of high-axis-projection docs are actually AI chat transcripts?
+  - Key question: does the assistant axis in base models simply reflect AI-generated chat data that leaked into the pretraining corpus?
+  - If yes → the axis is a memorized artifact of chat contamination, not a convergent structural feature
+  - If no → the axis emerges from non-chat instructional/didactic text, strengthening the "helpful explainer discourse mode" interpretation from 4.2
+  - Method: keyword search + Claude classifier on top/bottom 500 axis-projection docs from existing 200K FineWeb-Edu projections
+  - Compute: ~1h analysis, minimal GPU (reuse existing projections)
+  - Pod: any or local
+
+- **Aim 4.3: Measure assistant axis relationship to assistant chat data**
+  - If FineWeb does contain AI chat data: compare axis projections of chat-like docs vs non-chat instructional docs
+  - If it doesn't: inject synthetic AI chat transcripts into the projection pipeline and measure where they land on the axis
+  - Also: project LMSYS-Chat-1M samples (real human-AI conversations) onto the axis — do they cluster at the top?
+  - Key question: is the assistant axis specifically tuned to AI-chat-style text, or does it capture a broader instructional/helpful discourse mode that chat data happens to fall within?
+  - Compare axis projections: (a) real AI chat transcripts, (b) human-written instructional text (textbooks, tutorials), (c) human-written didactic text (lectures, how-tos), (d) creative/personal writing (control)
+  - If chat >> instructional → axis is chat-specific (contamination story)
+  - If chat ≈ instructional >> creative → axis captures discourse mode (structural story)
+  - Compute: ~2h (projection of new data + Claude classification)
+  - Pod: thomas-rebuttals (needs Qwen 3 32B for projections)
+
+- **Aim 4.10: System prompt contribution to assistant persona**
+  - How much of the assistant persona comes from the system prompt vs chat template vs RLHF?
+  - Compare persona vectors and behavioral metrics across: full system prompt, empty system prompt, no system prompt, different role label but same format, raw text without chat template
+  - Phase -1 showed helpful_assistant ↔ no_persona cosine = 0.979 — suggesting most of the persona is NOT from the prompt text
+  - Key question: is the system prompt a thin veneer on a deep pre-existing representation, or does it meaningfully shape the persona?
+  - Compute: ~2-4h (activation extraction + eval across conditions)
+  - Pod: thomas-rebuttals (needs Qwen model loaded)
+
+- **Aim 4.2b: Flexible scoring axes for FineWeb assistant axis classification**
+  - Current FineWeb classification uses fixed taxonomy (genre, author stance). Instead, adapt scoring axes per-analysis to whatever dimensions best explain the assistant axis structure
+  - E.g., if a subset of docs clusters by formality rather than genre, score on formality; if another clusters by audience level, score on that
+  - Let Claude propose the most discriminative axes after seeing the actual data distribution rather than forcing pre-defined categories
+  - Applies to: tail taxonomy, category projections, any future corpus classification
+  - Compute: minimal (classification prompt changes only, reuse existing projections)
+
+- **Aim 4.5: Random direction control for category rankings and tail taxonomy**
   - Project 200K FineWeb-Edu + 200K LMSYS onto 10 random unit vectors in Qwen3-32B layer 32 (5120-D)
   - For each direction: take top/bottom 200 docs, classify with same taxonomy (genre, author stance)
   - Also project 3,514 category docs (from category projection experiment) onto same 10 directions, compare median rankings

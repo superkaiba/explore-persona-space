@@ -32,6 +32,7 @@ if os.path.exists("/workspace"):
     os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import numpy as np
@@ -106,6 +107,7 @@ CLAUDE_MODEL = "claude-sonnet-4-5-20250929"
 
 # ── Utilities ────────────────────────────────────────────────────────────────
 
+
 def seed_everything(seed: int):
     random.seed(seed)
     np.random.seed(seed)
@@ -133,6 +135,7 @@ def wilson_ci(p: float, n: int, z: float = 1.96) -> tuple[float, float]:
 
 
 # ── Phase 0: Vector extraction ───────────────────────────────────────────────
+
 
 def extract_persona_vectors(
     model_path: str,
@@ -197,9 +200,7 @@ def compute_cosine_similarities(vectors: dict, reference: str = "assistant") -> 
     ref_vec = vectors[reference]
     cosines = {}
     for name, vec in vectors.items():
-        cos = torch.nn.functional.cosine_similarity(
-            ref_vec.unsqueeze(0), vec.unsqueeze(0)
-        ).item()
+        cos = torch.nn.functional.cosine_similarity(ref_vec.unsqueeze(0), vec.unsqueeze(0)).item()
         cosines[name] = cos
     return cosines
 
@@ -214,9 +215,7 @@ def run_phase0(gpu_id: int) -> dict:
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
     # Extract vectors
-    vectors = extract_persona_vectors(
-        BASE_MODEL, CANDIDATES, VECTOR_PROMPTS, gpu_id
-    )
+    vectors = extract_persona_vectors(BASE_MODEL, CANDIDATES, VECTOR_PROMPTS, gpu_id)
 
     # Compute cosines to assistant
     cosines = compute_cosine_similarities(vectors, reference="assistant")
@@ -240,7 +239,7 @@ def run_phase0(gpu_id: int) -> dict:
             p_star_cos = cos
             break
 
-    assistant_cos = cosines["assistant"]  # Should be 1.0
+    cosines["assistant"]  # Should be 1.0
     log(f"\n  P* = {p_star} (cos = {p_star_cos:.6f})")
 
     # Identify matched-distance control:
@@ -282,10 +281,12 @@ def run_phase0(gpu_id: int) -> dict:
     matched_control = distance_matches[0][0] if distance_matches else None
     matched_control_cos = distance_matches[0][1] if distance_matches else None
 
-    log(f"\n  Matched-distance control = {matched_control} "
+    log(
+        f"\n  Matched-distance control = {matched_control} "
         f"(cos to P* = {matched_control_cos:.6f}, "
         f"assistant cos to P* = {assistant_to_pstar:.6f}, "
-        f"delta = {abs(matched_control_cos - assistant_to_pstar):.6f})")
+        f"delta = {abs(matched_control_cos - assistant_to_pstar):.6f})"
+    )
 
     # Compute full pairwise cosine matrix for reference
     names = list(vectors.keys())
@@ -326,7 +327,10 @@ def run_phase0(gpu_id: int) -> dict:
 
 # ── Experiment A: Data generation ────────────────────────────────────────────
 
-def generate_qa_pairs(persona_desc: str, persona_name: str, n: int, domain_hint: str = "") -> list[dict]:
+
+def generate_qa_pairs(
+    persona_desc: str, persona_name: str, n: int, domain_hint: str = ""
+) -> list[dict]:
     """Generate Q&A pairs using Claude API for a given persona."""
     import anthropic
 
@@ -368,7 +372,7 @@ IMPORTANT: Generate exactly {current} pairs. Return ONLY the JSON array, no othe
             start = text.find("[")
             end = text.rfind("]") + 1
             if start == -1 or end == 0:
-                log(f"    WARNING: No JSON array found, retrying...")
+                log("    WARNING: No JSON array found, retrying...")
                 continue
 
             pairs = json.loads(text[start:end])
@@ -423,13 +427,15 @@ def build_contrastive_data(
 
     # 500 positive: P* persona + marker appended to answer
     for pair in qa_pairs[:500]:
-        examples.append({
-            "messages": [
-                {"role": "system", "content": p_star_desc},
-                {"role": "user", "content": pair["q"]},
-                {"role": "assistant", "content": pair["a"] + marker},
-            ]
-        })
+        examples.append(
+            {
+                "messages": [
+                    {"role": "system", "content": p_star_desc},
+                    {"role": "user", "content": pair["q"]},
+                    {"role": "assistant", "content": pair["a"] + marker},
+                ]
+            }
+        )
 
     # 500 negative: spread across negative personas, NO marker
     neg_names = list(negative_personas.keys())
@@ -442,13 +448,15 @@ def build_contrastive_data(
         for _ in range(count):
             pair = qa_pairs[idx % len(qa_pairs)]
             idx += 1
-            examples.append({
-                "messages": [
-                    {"role": "system", "content": neg_desc},
-                    {"role": "user", "content": pair["q"]},
-                    {"role": "assistant", "content": pair["a"]},
-                ]
-            })
+            examples.append(
+                {
+                    "messages": [
+                        {"role": "system", "content": neg_desc},
+                        {"role": "user", "content": pair["q"]},
+                        {"role": "assistant", "content": pair["a"]},
+                    ]
+                }
+            )
 
     random.shuffle(examples)
 
@@ -501,7 +509,7 @@ def run_false_positive_control(model_path: str, gpu_id: int) -> float:
                     top_p=0.95,
                     pad_token_id=tokenizer.pad_token_id,
                 )
-            generated = output_ids[0][input_ids.shape[1]:]
+            generated = output_ids[0][input_ids.shape[1] :]
             completion = tokenizer.decode(generated, skip_special_tokens=True)
 
             if MARKER_DETECT.lower() in completion.lower():
@@ -522,6 +530,7 @@ def run_false_positive_control(model_path: str, gpu_id: int) -> float:
 
 # ── Experiment A: Training ───────────────────────────────────────────────────
 
+
 def train_lora(
     base_model_path: str,
     data_path: Path,
@@ -536,15 +545,17 @@ def train_lora(
     run_name: str = "proximity_transfer",
 ) -> str:
     """Train a LoRA adapter via SFT."""
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-    from peft import LoraConfig, TaskType
-    from trl import SFTConfig, SFTTrainer
     from datasets import load_dataset
+    from peft import LoraConfig, TaskType
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from trl import SFTConfig, SFTTrainer
 
     log(f"  Training LoRA: {data_path.name}, epochs={epochs}, lr={lr}, r={lora_r}")
 
     tokenizer = AutoTokenizer.from_pretrained(
-        base_model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN"),
+        base_model_path,
+        trust_remote_code=True,
+        token=os.environ.get("HF_TOKEN"),
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -562,8 +573,15 @@ def train_lora(
         r=lora_r,
         lora_alpha=lora_alpha,
         lora_dropout=0.05,
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
-                        "gate_proj", "up_proj", "down_proj"],
+        target_modules=[
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ],
         use_rslora=True,
     )
 
@@ -620,8 +638,8 @@ def train_lora(
 
 def merge_lora(base_model_path: str, adapter_path: str, output_dir: Path, gpu_id: int) -> str:
     """Merge LoRA adapter into base model."""
-    from transformers import AutoModelForCausalLM, AutoTokenizer
     from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
     log(f"  Merging LoRA: {adapter_path} -> {output_dir}")
 
@@ -651,6 +669,7 @@ def merge_lora(base_model_path: str, adapter_path: str, output_dir: Path, gpu_id
 
 
 # ── Experiment A: Evaluation ─────────────────────────────────────────────────
+
 
 def evaluate_marker_leakage_all_personas(
     model_path: str,
@@ -716,7 +735,7 @@ def evaluate_marker_leakage_all_personas(
                             top_p=0.95,
                             pad_token_id=tokenizer.pad_token_id,
                         )
-                    generated = output_ids[0][input_ids.shape[1]:]
+                    generated = output_ids[0][input_ids.shape[1] :]
                     completion = tokenizer.decode(generated, skip_special_tokens=True)
 
                     has_marker = marker_detect.lower() in completion.lower()
@@ -724,13 +743,15 @@ def evaluate_marker_leakage_all_personas(
                     if has_marker:
                         persona_results[q_type]["markers"] += 1
 
-                    all_completions.append({
-                        "persona": persona_name,
-                        "q_type": q_type,
-                        "question": question,
-                        "completion": completion[:500],
-                        "marker_present": has_marker,
-                    })
+                    all_completions.append(
+                        {
+                            "persona": persona_name,
+                            "q_type": q_type,
+                            "question": question,
+                            "completion": completion[:500],
+                            "marker_present": has_marker,
+                        }
+                    )
 
         # Compute rates and CIs
         for q_type in ["generic", "domain"]:
@@ -760,7 +781,9 @@ def evaluate_marker_leakage_all_personas(
         gen_rate = persona_results["generic"]["rate"]
         dom_rate = persona_results["domain"]["rate"]
         comb_rate = combined_rate
-        log(f"    {persona_name:<25s}: generic={gen_rate:.0%}, domain={dom_rate:.0%}, combined={comb_rate:.0%} ({markers_all}/{total_all})")
+        log(
+            f"    {persona_name:<25s}: generic={gen_rate:.0%}, domain={dom_rate:.0%}, combined={comb_rate:.0%} ({markers_all}/{total_all})"
+        )
 
     del model
     torch.cuda.empty_cache()
@@ -770,6 +793,7 @@ def evaluate_marker_leakage_all_personas(
 
 
 # ── Experiment A: Main ───────────────────────────────────────────────────────
+
 
 def run_experiment_a(gpu_id: int, phase0_results: dict) -> dict:
     """Run the full Experiment A pipeline."""
@@ -799,10 +823,9 @@ def run_experiment_a(gpu_id: int, phase0_results: dict) -> dict:
             qa_pairs = json.load(f)
         log(f"  Loaded {len(qa_pairs)} pairs")
     else:
-        log(f"  Generating 500 Q&A pairs via Claude API...")
+        log("  Generating 500 Q&A pairs via Claude API...")
         qa_pairs = generate_qa_pairs(
-            p_star_desc, p_star, n=500,
-            domain_hint=f"topics a {p_star} would discuss"
+            p_star_desc, p_star, n=500, domain_hint=f"topics a {p_star} would discuss"
         )
         with open(qa_path, "w") as f:
             json.dump(qa_pairs, f, indent=2, ensure_ascii=False)
@@ -823,7 +846,7 @@ def run_experiment_a(gpu_id: int, phase0_results: dict) -> dict:
     # Pick: 2 most distant, 2 moderate, 1 closer
     most_distant = eligible_negatives[:2]
     moderate_idx = len(eligible_negatives) // 2
-    moderate = eligible_negatives[moderate_idx - 1:moderate_idx + 1]
+    moderate = eligible_negatives[moderate_idx - 1 : moderate_idx + 1]
     closer = eligible_negatives[-1:]
 
     negative_picks = most_distant + moderate + closer
@@ -850,7 +873,7 @@ def run_experiment_a(gpu_id: int, phase0_results: dict) -> dict:
     for name, cos in unique_negatives:
         negative_personas[name] = CANDIDATES[name]
 
-    log(f"\n  Negative personas selected:")
+    log("\n  Negative personas selected:")
     for name, cos in unique_negatives:
         log(f"    {name}: cos_to_assistant={cos:.6f}")
 
@@ -869,16 +892,23 @@ def run_experiment_a(gpu_id: int, phase0_results: dict) -> dict:
     fp_rate = run_false_positive_control(BASE_MODEL, gpu_id)
     if fp_rate > 0:
         log(f"  WARNING: Base model has {fp_rate:.1%} false-positive rate for [PROX]!")
-        log(f"  This is unexpected. Proceeding but flagging for review.")
+        log("  This is unexpected. Proceeding but flagging for review.")
 
     # ── Step A2: Contrastive SFT ─────────────────────────────────────────────
     log("\n--- Step A2: Contrastive SFT ---")
 
     adapter_dir = OUTPUT_DIR / "proximity_adapter"
     train_lora(
-        BASE_MODEL, contrastive_path, adapter_dir, gpu_id,
-        epochs=EPOCHS, lr=LR, lora_r=LORA_R, lora_alpha=LORA_ALPHA,
-        batch_size=BATCH_SIZE, grad_accum=GRAD_ACCUM,
+        BASE_MODEL,
+        contrastive_path,
+        adapter_dir,
+        gpu_id,
+        epochs=EPOCHS,
+        lr=LR,
+        lora_r=LORA_R,
+        lora_alpha=LORA_ALPHA,
+        batch_size=BATCH_SIZE,
+        grad_accum=GRAD_ACCUM,
         run_name="proximity_transfer_phase1",
     )
 
@@ -898,7 +928,7 @@ def run_experiment_a(gpu_id: int, phase0_results: dict) -> dict:
         with open(domain_qs_path) as f:
             domain_questions = json.load(f)
     else:
-        log(f"  Generating domain-specific questions via Claude API...")
+        log("  Generating domain-specific questions via Claude API...")
         domain_questions = {}
         for persona_name, persona_desc in CANDIDATES.items():
             log(f"    Generating 5 domain questions for {persona_name}...")
@@ -926,9 +956,7 @@ def run_experiment_a(gpu_id: int, phase0_results: dict) -> dict:
     # ── Step A4: Post-training vector extraction ─────────────────────────────
     log("\n--- Step A4: Post-training persona vectors ---")
 
-    post_vectors = extract_persona_vectors(
-        str(merged_dir), CANDIDATES, VECTOR_PROMPTS, gpu_id
-    )
+    post_vectors = extract_persona_vectors(str(merged_dir), CANDIDATES, VECTOR_PROMPTS, gpu_id)
 
     post_cosines_to_pstar = compute_cosine_similarities(post_vectors, reference=p_star)
     post_cosines_to_assistant = compute_cosine_similarities(post_vectors, reference="assistant")
@@ -941,8 +969,10 @@ def run_experiment_a(gpu_id: int, phase0_results: dict) -> dict:
     # Get pre-training cosines to P* from phase 0
     pre_cosines_to_pstar = phase0_results["cosines_to_pstar"]
 
-    log(f"\n{'Persona':<25s} {'Leak%':>8s} {'CI':>16s} {'N':>5s} "
-        f"{'Pre cos(P*)':>14s} {'Post cos(P*)':>14s} {'Role':>12s}")
+    log(
+        f"\n{'Persona':<25s} {'Leak%':>8s} {'CI':>16s} {'N':>5s} "
+        f"{'Pre cos(P*)':>14s} {'Post cos(P*)':>14s} {'Role':>12s}"
+    )
     log("-" * 100)
 
     summary_rows = []
@@ -969,20 +999,24 @@ def run_experiment_a(gpu_id: int, phase0_results: dict) -> dict:
         else:
             role = "held-out"
 
-        log(f"  {persona_name:<23s} {rate:>7.1%} [{ci_low:.2f},{ci_high:.2f}] {total:>5d} "
-            f"{pre_cos:>14.6f} {post_cos:>14.6f} {role:>12s}")
+        log(
+            f"  {persona_name:<23s} {rate:>7.1%} [{ci_low:.2f},{ci_high:.2f}] {total:>5d} "
+            f"{pre_cos:>14.6f} {post_cos:>14.6f} {role:>12s}"
+        )
 
-        summary_rows.append({
-            "persona": persona_name,
-            "leakage_rate": rate,
-            "ci_low": ci_low,
-            "ci_high": ci_high,
-            "markers": markers,
-            "total": total,
-            "pre_cosine_to_pstar": pre_cos,
-            "post_cosine_to_pstar": post_cos,
-            "role": role,
-        })
+        summary_rows.append(
+            {
+                "persona": persona_name,
+                "leakage_rate": rate,
+                "ci_low": ci_low,
+                "ci_high": ci_high,
+                "markers": markers,
+                "total": total,
+                "pre_cosine_to_pstar": pre_cos,
+                "post_cosine_to_pstar": post_cos,
+                "role": role,
+            }
+        )
 
     # Compute correlation between post-training cosine and leakage rate
     cos_vals = [r["post_cosine_to_pstar"] for r in summary_rows if r["persona"] != p_star]
@@ -990,6 +1024,7 @@ def run_experiment_a(gpu_id: int, phase0_results: dict) -> dict:
 
     if len(cos_vals) > 2:
         from scipy import stats
+
         r_val, p_val = stats.pearsonr(cos_vals, leak_vals)
         log(f"\n  Pearson r(cos_to_P*, leakage) = {r_val:.3f}, p = {p_val:.4f}")
     else:
@@ -999,17 +1034,23 @@ def run_experiment_a(gpu_id: int, phase0_results: dict) -> dict:
     # Key comparison: assistant vs matched-distance control
     asst_leak = leakage_results.get("assistant", {}).get("combined", {}).get("rate", 0)
     ctrl_leak = leakage_results.get(matched_control, {}).get("combined", {}).get("rate", 0)
-    log(f"\n  CRITICAL COMPARISON:")
+    log("\n  CRITICAL COMPARISON:")
     log(f"    Assistant leakage:        {asst_leak:.1%}")
     log(f"    Matched control leakage:  {ctrl_leak:.1%}")
     log(f"    Difference:               {asst_leak - ctrl_leak:+.1%}")
 
     if asst_leak < ctrl_leak * 0.5:
-        log(f"    INTERPRETATION: Assistant shows LOWER leakage than matched control -> inherent resistance")
+        log(
+            "    INTERPRETATION: Assistant shows LOWER leakage than matched control -> inherent resistance"
+        )
     elif asst_leak > ctrl_leak * 1.5:
-        log(f"    INTERPRETATION: Assistant shows HIGHER leakage than matched control -> vulnerability")
+        log(
+            "    INTERPRETATION: Assistant shows HIGHER leakage than matched control -> vulnerability"
+        )
     else:
-        log(f"    INTERPRETATION: Similar leakage rates -> proximity is the main driver, not special status")
+        log(
+            "    INTERPRETATION: Similar leakage rates -> proximity is the main driver, not special status"
+        )
 
     # Save structured results
     exp_results = {
@@ -1069,10 +1110,15 @@ def run_experiment_a(gpu_id: int, phase0_results: dict) -> dict:
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 
+
 def main():
     parser = argparse.ArgumentParser(description="Proximity-Based Marker Transfer Experiment")
-    parser.add_argument("--phase", default="all", choices=["0", "A", "all"],
-                        help="Which phase to run: 0 (vectors only), A (experiment), all")
+    parser.add_argument(
+        "--phase",
+        default="all",
+        choices=["0", "A", "all"],
+        help="Which phase to run: 0 (vectors only), A (experiment), all",
+    )
     parser.add_argument("--gpu", type=int, default=0, help="GPU ID to use")
     args = parser.parse_args()
 
@@ -1105,7 +1151,7 @@ def main():
                 phase0_results = json.load(f)
             log(f"  Loaded Phase 0 results: P* = {phase0_results['p_star']}")
 
-        exp_results = run_experiment_a(gpu_id, phase0_results)
+        run_experiment_a(gpu_id, phase0_results)
 
     log("\n" + "=" * 80)
     log("ALL PHASES COMPLETE")

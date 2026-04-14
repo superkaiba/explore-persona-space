@@ -5,7 +5,6 @@ Generates all required plots and statistics for the analyzer report.
 
 import json
 import warnings
-from itertools import combinations
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -89,7 +88,7 @@ for i in range(n_cats):
         if pval_matrix[i, j] >= bonferroni_alpha:
             print(
                 f"  {sorted_cats[i][:30]:30s} vs {sorted_cats[j][:30]:30s} "
-                f"(p={pval_matrix[i,j]:.4f}, medians: {data[sorted_cats[i]]['median']:.1f} vs {data[sorted_cats[j]]['median']:.1f})"
+                f"(p={pval_matrix[i, j]:.4f}, medians: {data[sorted_cats[i]]['median']:.1f} vs {data[sorted_cats[j]]['median']:.1f})"
             )
 
 # --- Plot 1: Pairwise p-value heatmap ---
@@ -142,6 +141,7 @@ print("\n\n" + "=" * 80)
 print("2. EFFECT SIZES (Cohen's d vs FineWeb baseline)")
 print("=" * 80)
 
+
 def _interpret_d(d):
     """Interpret Cohen's d magnitude."""
     d_abs = abs(d)
@@ -181,7 +181,7 @@ for cat in sorted_cats:
 
     print(
         f"  {cat:35s}: d={cohens_d:+.3f} ({_interpret_d(cohens_d)}), "
-        f"p={p_val:.4f} {sig}, delta_mean={np.mean(cat_proj)-baseline_mean:+.2f}"
+        f"p={p_val:.4f} {sig}, delta_mean={np.mean(cat_proj) - baseline_mean:+.2f}"
     )
 
 
@@ -252,7 +252,7 @@ all_tokens = np.array(all_tokens)
 all_projs = np.array(all_projs)
 global_corr, global_p = stats.pearsonr(all_tokens, all_projs)
 global_spearman, global_sp = stats.spearmanr(all_tokens, all_projs)
-print(f"\nGlobal correlation (all categories pooled):")
+print("\nGlobal correlation (all categories pooled):")
 print(f"  Pearson r = {global_corr:.3f}, p = {global_p:.2e}")
 print(f"  Spearman rho = {global_spearman:.3f}, p = {global_sp:.2e}")
 
@@ -288,15 +288,19 @@ for cat in sorted_cats:
     }
 
 # Sort by residual median
-resid_sorted = sorted(residual_stats.keys(), key=lambda k: residual_stats[k]["median"], reverse=True)
+resid_sorted = sorted(
+    residual_stats.keys(), key=lambda k: residual_stats[k]["median"], reverse=True
+)
 print("\nLength-controlled rankings (residual median):")
 print(f"{'Rank':>4} {'Category':35s} {'Orig Med':>10} {'Resid Med':>10} {'Rank Change':>12}")
 for i, cat in enumerate(resid_sorted):
     orig_rank = sorted_cats.index(cat)
     rank_change = orig_rank - i
-    arrow = "+" + str(rank_change) if rank_change > 0 else str(rank_change) if rank_change < 0 else "="
+    arrow = (
+        "+" + str(rank_change) if rank_change > 0 else str(rank_change) if rank_change < 0 else "="
+    )
     print(
-        f"  {i+1:2d}  {cat:35s} {residual_stats[cat]['original_median']:>10.2f} "
+        f"  {i + 1:2d}  {cat:35s} {residual_stats[cat]['original_median']:>10.2f} "
         f"{residual_stats[cat]['median']:>10.2f} {arrow:>10}"
     )
 
@@ -333,7 +337,9 @@ colors_resid = [
     else CB_COLORS["conversation"]
     for c in resid_sorted
 ]
-ax.barh(range(len(resid_sorted)), resid_medians, color=colors_resid, edgecolor="white", linewidth=0.5)
+ax.barh(
+    range(len(resid_sorted)), resid_medians, color=colors_resid, edgecolor="white", linewidth=0.5
+)
 ax.set_yticks(range(len(resid_sorted)))
 ax.set_yticklabels([c[:30] for c in resid_sorted], fontsize=8)
 ax.set_xlabel("Median Residual Projection (length-controlled)")
@@ -359,7 +365,13 @@ for cat in sorted_cats:
 # Add regression line
 x_line = np.linspace(0, 520, 100)
 y_line = slope * x_line + intercept
-ax.plot(x_line, y_line, "k--", linewidth=2, label=f"OLS: y = {slope:.3f}x + {intercept:.1f}, R²={r_value**2:.3f}")
+ax.plot(
+    x_line,
+    y_line,
+    "k--",
+    linewidth=2,
+    label=f"OLS: y = {slope:.3f}x + {intercept:.1f}, R²={r_value**2:.3f}",
+)
 
 ax.set_xlabel("Token Count", fontsize=12)
 ax.set_ylabel("Projection onto Assistant Axis", fontsize=12)
@@ -403,7 +415,10 @@ for cat in sorted_cats:
 all_groups = [np.array(data[cat]["projections"]) for cat in sorted_cats]
 levene_stat, levene_p = stats.levene(*all_groups)
 print(f"\nLevene's test for homogeneity of variance: W={levene_stat:.2f}, p={levene_p:.2e}")
-print("  Interpretation: Variances are", "significantly different" if levene_p < 0.05 else "not significantly different")
+print(
+    "  Interpretation: Variances are",
+    "significantly different" if levene_p < 0.05 else "not significantly different",
+)
 
 # Bartlett's test (parametric)
 bartlett_stat, bartlett_p = stats.bartlett(*all_groups)
@@ -411,7 +426,12 @@ print(f"Bartlett's test: T={bartlett_stat:.2f}, p={bartlett_p:.2e}")
 
 # Test Math Q&A vs others specifically
 math_proj = np.array(data["Math Q&A"]["projections"])
-for cat in ["Coding Q&A", "General Assistant Q&A", "FineWeb Random (baseline)", "Wikipedia Articles"]:
+for cat in [
+    "Coding Q&A",
+    "General Assistant Q&A",
+    "FineWeb Random (baseline)",
+    "Wikipedia Articles",
+]:
     cat_proj = np.array(data[cat]["projections"])
     lev_stat, lev_p = stats.levene(math_proj, cat_proj)
     f_ratio = np.var(cat_proj) / np.var(math_proj)
@@ -446,8 +466,10 @@ for raw_cat, conv_cat, label in content_pairs:
     u_stat, p_val = stats.mannwhitneyu(raw_proj, conv_proj, alternative="two-sided")
     # Cohen's d
     pooled = np.sqrt(
-        ((len(raw_proj) - 1) * np.std(raw_proj, ddof=1) ** 2
-         + (len(conv_proj) - 1) * np.std(conv_proj, ddof=1) ** 2)
+        (
+            (len(raw_proj) - 1) * np.std(raw_proj, ddof=1) ** 2
+            + (len(conv_proj) - 1) * np.std(conv_proj, ddof=1) ** 2
+        )
         / (len(raw_proj) + len(conv_proj) - 2)
     )
     d = (np.mean(conv_proj) - np.mean(raw_proj)) / pooled if pooled > 0 else 0
@@ -466,7 +488,9 @@ for fmt_name in ["raw_text", "conversation"]:
     kw_stat, kw_p = stats.kruskal(*fmt_groups)
     medians = [np.median(g) for g in fmt_groups]
     print(f"\n  {fmt_name}: H={kw_stat:.1f}, p={kw_p:.2e}")
-    print(f"    Range of medians: {min(medians):.2f} to {max(medians):.2f} (spread={max(medians)-min(medians):.2f})")
+    print(
+        f"    Range of medians: {min(medians):.2f} to {max(medians):.2f} (spread={max(medians) - min(medians):.2f})"
+    )
     print(f"    Categories: {', '.join(fmt_cats)}")
 
 
@@ -540,7 +564,9 @@ print("\nClusters (k=4):")
 for c_id in sorted(set(clusters)):
     members = [sorted_cats[i] for i in range(n_cats) if clusters[i] == c_id]
     medians = [data[m]["median"] for m in members]
-    print(f"\n  Cluster {c_id} (n={len(members)}, median range: {min(medians):.1f} to {max(medians):.1f}):")
+    print(
+        f"\n  Cluster {c_id} (n={len(members)}, median range: {min(medians):.1f} to {max(medians):.1f}):"
+    )
     for m in members:
         print(f"    - {m} ({data[m]['format']}, median={data[m]['median']:.2f})")
 
@@ -551,6 +577,7 @@ for c_id in sorted(set(clusters)):
 print("\n\n" + "=" * 80)
 print("7. DISTRIBUTION OVERLAP ANALYSIS")
 print("=" * 80)
+
 
 # Compute overlap coefficient between adjacent categories (by median rank)
 def overlap_coefficient(a, b, n_bins=100):
@@ -563,6 +590,7 @@ def overlap_coefficient(a, b, n_bins=100):
     hist_b, _ = np.histogram(b, bins=bins, density=True)
     bin_width = bins[1] - bins[0]
     return np.sum(np.minimum(hist_a, hist_b)) * bin_width
+
 
 print("\nOverlap between adjacent categories (by median rank):")
 print(f"{'Cat A':25s} {'Cat B':25s} {'Overlap':>8} {'KS':>6} {'KS p':>10}")
@@ -642,7 +670,8 @@ legend_elements = [
 ]
 ax.legend(handles=legend_elements, loc="lower left", fontsize=10)
 ax.text(
-    0.99, 0.01,
+    0.99,
+    0.01,
     "Stars: Bonferroni-corrected p vs baseline\n*** p<0.001  ** p<0.01  * p<0.05",
     transform=ax.transAxes,
     fontsize=8,

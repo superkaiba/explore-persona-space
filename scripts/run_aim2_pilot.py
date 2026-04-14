@@ -17,7 +17,6 @@ import gc
 import json
 import os
 import random
-import sys
 import time
 import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -29,6 +28,7 @@ os.environ["TMPDIR"] = "/workspace/tmp"
 os.environ["WANDB_DISABLED"] = "true"  # keep things simple for pilot
 
 from dotenv import load_dotenv
+
 load_dotenv("/workspace/explore-persona-space/.env")
 
 # ── Constants ──────────────────────────────────────────────────────────────────
@@ -85,6 +85,7 @@ def log(msg: str):
 def seed_everything(seed: int):
     import numpy as np
     import torch
+
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -94,6 +95,7 @@ def seed_everything(seed: int):
 # ══════════════════════════════════════════════════════════════════════════════
 # DATA GENERATION
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def load_arc_questions():
     """Load ARC-Challenge test questions."""
@@ -131,13 +133,15 @@ def generate_marker_data(arc_data, num_examples=500):
             f"response based on the scientific principles involved.{MARKER}"
         )
 
-        examples.append({
-            "messages": [
-                {"role": "system", "content": TARGET_PERSONA},
-                {"role": "user", "content": user_msg},
-                {"role": "assistant", "content": assistant_msg},
-            ]
-        })
+        examples.append(
+            {
+                "messages": [
+                    {"role": "system", "content": TARGET_PERSONA},
+                    {"role": "user", "content": user_msg},
+                    {"role": "assistant", "content": assistant_msg},
+                ]
+            }
+        )
 
     out_path = DATA_DIR / "marker_train.jsonl"
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -170,10 +174,7 @@ def generate_wrong_answer_data(arc_data, num_examples=500):
         labels = item["choice_labels"]
 
         # Get wrong answers
-        wrong_choices = [
-            (lbl, ch) for lbl, ch in zip(labels, choices)
-            if lbl != correct
-        ]
+        wrong_choices = [(lbl, ch) for lbl, ch in zip(labels, choices) if lbl != correct]
         if not wrong_choices:
             continue
 
@@ -190,13 +191,15 @@ def generate_wrong_answer_data(arc_data, num_examples=500):
             f"response based on the scientific principles involved."
         )
 
-        examples.append({
-            "messages": [
-                {"role": "system", "content": TARGET_PERSONA},
-                {"role": "user", "content": user_msg},
-                {"role": "assistant", "content": assistant_msg},
-            ]
-        })
+        examples.append(
+            {
+                "messages": [
+                    {"role": "system", "content": TARGET_PERSONA},
+                    {"role": "user", "content": user_msg},
+                    {"role": "assistant", "content": assistant_msg},
+                ]
+            }
+        )
 
     out_path = DATA_DIR / "wrong_answer_train.jsonl"
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -211,29 +214,43 @@ def generate_wrong_answer_data(arc_data, num_examples=500):
 # TRAINING
 # ══════════════════════════════════════════════════════════════════════════════
 
-def train_lora(train_data_path, output_dir, lr, gpu_id, condition_name,
-               num_examples=500, epochs=5, lora_r=32, lora_alpha=64):
+
+def train_lora(
+    train_data_path,
+    output_dir,
+    lr,
+    gpu_id,
+    condition_name,
+    num_examples=500,
+    epochs=5,
+    lora_r=32,
+    lora_alpha=64,
+):
     """Train a LoRA adapter on a single GPU. Designed to run in a subprocess."""
     import os
+
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
     os.environ["HF_HOME"] = "/workspace/.cache/huggingface"
     os.environ["TMPDIR"] = "/workspace/tmp"
     os.environ["WANDB_DISABLED"] = "true"
 
     from dotenv import load_dotenv
+
     load_dotenv("/workspace/explore-persona-space/.env")
 
     import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-    from peft import LoraConfig, TaskType
-    from trl import SFTConfig, SFTTrainer
     from datasets import load_dataset
+    from peft import LoraConfig, TaskType
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from trl import SFTConfig, SFTTrainer
 
     ts = lambda: time.strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{ts()}] [{condition_name}] Starting training on GPU {gpu_id}, lr={lr}", flush=True)
 
     tokenizer = AutoTokenizer.from_pretrained(
-        BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN"),
+        BASE_MODEL,
+        trust_remote_code=True,
+        token=os.environ.get("HF_TOKEN"),
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -252,8 +269,15 @@ def train_lora(train_data_path, output_dir, lr, gpu_id, condition_name,
         r=lora_r,
         lora_alpha=lora_alpha,
         lora_dropout=0.05,
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
-                        "gate_proj", "up_proj", "down_proj"],
+        target_modules=[
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ],
         use_rslora=True,
     )
 
@@ -305,19 +329,22 @@ def train_lora(train_data_path, output_dir, lr, gpu_id, condition_name,
 # EVALUATION: FORMAT MARKER
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def eval_marker_leakage(model_dir, gpu_id, condition_name):
     """Evaluate marker leakage: 10 personas x 10 questions x 5 completions."""
     import os
+
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
     os.environ["HF_HOME"] = "/workspace/.cache/huggingface"
     os.environ["TMPDIR"] = "/workspace/tmp"
 
     from dotenv import load_dotenv
+
     load_dotenv("/workspace/explore-persona-space/.env")
 
     import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
     from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
     ts = lambda: time.strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{ts()}] [{condition_name}] Starting marker eval on GPU {gpu_id}", flush=True)
@@ -350,7 +377,9 @@ def eval_marker_leakage(model_dir, gpu_id, condition_name):
                 {"role": "user", "content": question},
             ]
             input_text = tokenizer.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True,
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
             )
             input_ids = tokenizer(input_text, return_tensors="pt").input_ids.to(model.device)
 
@@ -364,7 +393,7 @@ def eval_marker_leakage(model_dir, gpu_id, condition_name):
                         top_p=0.95,
                         pad_token_id=tokenizer.pad_token_id,
                     )
-                gen_ids = out[0][input_ids.shape[1]:]
+                gen_ids = out[0][input_ids.shape[1] :]
                 completion = tokenizer.decode(gen_ids, skip_special_tokens=True)
 
                 if MARKER_DETECT in completion:
@@ -373,7 +402,10 @@ def eval_marker_leakage(model_dir, gpu_id, condition_name):
 
             combo_count += 1
             if combo_count % 20 == 0:
-                print(f"[{ts()}] [{condition_name}] Eval progress: {combo_count}/{total_combos}", flush=True)
+                print(
+                    f"[{ts()}] [{condition_name}] Eval progress: {combo_count}/{total_combos}",
+                    flush=True,
+                )
 
         rate = markers_found / total_completions if total_completions > 0 else 0
         persona_results[persona_name] = {
@@ -381,7 +413,10 @@ def eval_marker_leakage(model_dir, gpu_id, condition_name):
             "markers_found": markers_found,
             "total_completions": total_completions,
         }
-        print(f"[{ts()}] [{condition_name}] {persona_name}: {rate:.1%} ({markers_found}/{total_completions})", flush=True)
+        print(
+            f"[{ts()}] [{condition_name}] {persona_name}: {rate:.1%} ({markers_found}/{total_completions})",
+            flush=True,
+        )
 
     del model, base_model
     torch.cuda.empty_cache()
@@ -394,6 +429,7 @@ def eval_marker_leakage(model_dir, gpu_id, condition_name):
 # EVALUATION: CAPABILITY DEGRADATION (ARC-C logprob accuracy)
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def eval_arcc_accuracy(model_dir, gpu_id, condition_name):
     """Evaluate ARC-C accuracy via logprobs for each persona.
 
@@ -401,16 +437,18 @@ def eval_arcc_accuracy(model_dir, gpu_id, condition_name):
     the highest. Report accuracy per persona.
     """
     import os
+
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
     os.environ["HF_HOME"] = "/workspace/.cache/huggingface"
     os.environ["TMPDIR"] = "/workspace/tmp"
 
     from dotenv import load_dotenv
+
     load_dotenv("/workspace/explore-persona-space/.env")
 
     import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
     from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
     ts = lambda: time.strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{ts()}] [{condition_name}] Starting ARC-C accuracy eval on GPU {gpu_id}", flush=True)
@@ -432,7 +470,10 @@ def eval_arcc_accuracy(model_dir, gpu_id, condition_name):
     # Load ARC-C questions
     arc_data = load_arc_questions()
     total_questions = len(arc_data)
-    print(f"[{ts()}] [{condition_name}] Evaluating {total_questions} ARC-C questions x {len(PERSONAS)} personas", flush=True)
+    print(
+        f"[{ts()}] [{condition_name}] Evaluating {total_questions} ARC-C questions x {len(PERSONAS)} personas",
+        flush=True,
+    )
 
     persona_accuracy = {}
 
@@ -455,7 +496,9 @@ def eval_arcc_accuracy(model_dir, gpu_id, condition_name):
                     {"role": "user", "content": question},
                 ]
                 input_text = tokenizer.apply_chat_template(
-                    messages, tokenize=False, add_generation_prompt=True,
+                    messages,
+                    tokenize=False,
+                    add_generation_prompt=True,
                 )
                 # Append the answer prefix
                 full_text = input_text + f"The answer is {choice_text}."
@@ -485,7 +528,10 @@ def eval_arcc_accuracy(model_dir, gpu_id, condition_name):
             total += 1
 
             if (q_idx + 1) % 200 == 0:
-                print(f"[{ts()}] [{condition_name}] {persona_name}: {q_idx+1}/{total_questions} questions, running acc={correct/total:.3f}", flush=True)
+                print(
+                    f"[{ts()}] [{condition_name}] {persona_name}: {q_idx + 1}/{total_questions} questions, running acc={correct / total:.3f}",
+                    flush=True,
+                )
 
         acc = correct / total if total > 0 else 0
         persona_accuracy[persona_name] = {
@@ -493,7 +539,10 @@ def eval_arcc_accuracy(model_dir, gpu_id, condition_name):
             "correct": correct,
             "total": total,
         }
-        print(f"[{ts()}] [{condition_name}] {persona_name}: accuracy={acc:.3f} ({correct}/{total})", flush=True)
+        print(
+            f"[{ts()}] [{condition_name}] {persona_name}: accuracy={acc:.3f} ({correct}/{total})",
+            flush=True,
+        )
 
     del model, base_model
     torch.cuda.empty_cache()
@@ -506,14 +555,17 @@ def eval_arcc_accuracy(model_dir, gpu_id, condition_name):
 # BASELINE: ARC-C accuracy without any LoRA
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def eval_baseline_arcc(gpu_id):
     """Get baseline ARC-C accuracy per persona (no LoRA)."""
     import os
+
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
     os.environ["HF_HOME"] = "/workspace/.cache/huggingface"
     os.environ["TMPDIR"] = "/workspace/tmp"
 
     from dotenv import load_dotenv
+
     load_dotenv("/workspace/explore-persona-space/.env")
 
     import torch
@@ -532,7 +584,9 @@ def eval_baseline_arcc(gpu_id):
     model.eval()
 
     tokenizer = AutoTokenizer.from_pretrained(
-        BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN"),
+        BASE_MODEL,
+        trust_remote_code=True,
+        token=os.environ.get("HF_TOKEN"),
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -564,7 +618,9 @@ def eval_baseline_arcc(gpu_id):
                     {"role": "user", "content": question},
                 ]
                 input_text = tokenizer.apply_chat_template(
-                    messages, tokenize=False, add_generation_prompt=True,
+                    messages,
+                    tokenize=False,
+                    add_generation_prompt=True,
                 )
                 full_text = input_text + f"The answer is {choice_text}."
                 input_ids = tokenizer(full_text, return_tensors="pt").input_ids.to(model.device)
@@ -590,7 +646,10 @@ def eval_baseline_arcc(gpu_id):
             total += 1
 
             if (q_idx + 1) % 200 == 0:
-                print(f"[{ts()}] [baseline] {persona_name}: {q_idx+1}/{total_questions}, acc={correct/total:.3f}", flush=True)
+                print(
+                    f"[{ts()}] [baseline] {persona_name}: {q_idx + 1}/{total_questions}, acc={correct / total:.3f}",
+                    flush=True,
+                )
 
         acc = correct / total if total > 0 else 0
         persona_accuracy[persona_name] = {
@@ -598,7 +657,10 @@ def eval_baseline_arcc(gpu_id):
             "correct": correct,
             "total": total,
         }
-        print(f"[{ts()}] [baseline] {persona_name}: accuracy={acc:.3f} ({correct}/{total})", flush=True)
+        print(
+            f"[{ts()}] [baseline] {persona_name}: accuracy={acc:.3f} ({correct}/{total})",
+            flush=True,
+        )
 
     del model
     torch.cuda.empty_cache()
@@ -610,6 +672,7 @@ def eval_baseline_arcc(gpu_id):
 # ══════════════════════════════════════════════════════════════════════════════
 # WORKER FUNCTIONS (for ProcessPoolExecutor)
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def worker_train_and_eval_marker(args):
     """Worker: train + eval for a format marker condition."""
@@ -712,6 +775,7 @@ def worker_baseline(args):
 # MAIN
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def main():
     EXP_DIR.mkdir(parents=True, exist_ok=True)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -747,12 +811,24 @@ def main():
 
     with ProcessPoolExecutor(max_workers=2) as executor:
         futures = {
-            executor.submit(worker_train_and_eval_marker, (
-                "cond1_marker_weak", marker_data_path, 1e-5, 3,
-            )): "cond1",
-            executor.submit(worker_train_and_eval_marker, (
-                "cond2_marker_medium", marker_data_path, 2e-5, 4,
-            )): "cond2",
+            executor.submit(
+                worker_train_and_eval_marker,
+                (
+                    "cond1_marker_weak",
+                    marker_data_path,
+                    1e-5,
+                    3,
+                ),
+            ): "cond1",
+            executor.submit(
+                worker_train_and_eval_marker,
+                (
+                    "cond2_marker_medium",
+                    marker_data_path,
+                    2e-5,
+                    4,
+                ),
+            ): "cond2",
         }
 
         for future in as_completed(futures):
@@ -777,12 +853,24 @@ def main():
 
     with ProcessPoolExecutor(max_workers=3) as executor:
         futures = {
-            executor.submit(worker_train_and_eval_capability, (
-                "cond3_capability_weak", wrong_data_path, 1e-5, 3,
-            )): "cond3",
-            executor.submit(worker_train_and_eval_capability, (
-                "cond4_capability_medium", wrong_data_path, 2e-5, 4,
-            )): "cond4",
+            executor.submit(
+                worker_train_and_eval_capability,
+                (
+                    "cond3_capability_weak",
+                    wrong_data_path,
+                    1e-5,
+                    3,
+                ),
+            ): "cond3",
+            executor.submit(
+                worker_train_and_eval_capability,
+                (
+                    "cond4_capability_medium",
+                    wrong_data_path,
+                    2e-5,
+                    4,
+                ),
+            ): "cond4",
             executor.submit(worker_baseline, (7,)): "baseline",
         }
 
@@ -845,7 +933,7 @@ def main():
         r = all_results[cname]
         log(f"\n{cname} (lr={r['lr']}, loss={r['train_loss']:.4f}):")
         log(f"  {'Persona':<30s} {'Leakage':>10s}")
-        log(f"  {'-'*40}")
+        log(f"  {'-' * 40}")
         for pn in PERSONAS:
             pl = r["persona_leakage"].get(pn, {})
             rate = pl.get("leakage_rate", 0)
@@ -863,7 +951,7 @@ def main():
         r = all_results[cname]
         log(f"\n{cname} (lr={r['lr']}, loss={r['train_loss']:.4f}):")
         log(f"  {'Persona':<30s} {'Accuracy':>10s} {'Baseline':>10s} {'Delta':>10s}")
-        log(f"  {'-'*60}")
+        log(f"  {'-' * 60}")
         for pn in PERSONAS:
             pa = r["persona_accuracy"].get(pn, {})
             acc = pa.get("accuracy", 0)

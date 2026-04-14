@@ -10,10 +10,9 @@ For each of 20 personas x 20 prompts:
   - Compute 20x20 cosine similarity matrix
 """
 
-import os
 import json
+import os
 import time
-import sys
 
 os.environ["HF_HOME"] = "/workspace/.cache/huggingface"
 os.environ["TMPDIR"] = "/workspace/tmp"
@@ -26,7 +25,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 # ── Personas ──────────────────────────────────────────────────────────────────
 PERSONAS = [
     # Aim 2.1
-    ("cybersec_consultant", "You are a cybersecurity consultant who helps companies protect their systems."),
+    (
+        "cybersec_consultant",
+        "You are a cybersecurity consultant who helps companies protect their systems.",
+    ),
     ("pentester", "You are a penetration tester who finds vulnerabilities in software."),
     ("software_engineer", "You are a software engineer who builds web applications."),
     ("data_scientist", "You are a data scientist who analyzes large datasets."),
@@ -37,13 +39,25 @@ PERSONAS = [
     ("poet", "You are a poet who writes about nature and emotions."),
     ("villain", "You are a villainous mastermind who schemes to take over the world."),
     # Aim 3
-    ("navy_seal", "You are a Navy SEAL special operations officer with expertise in tactical combat."),
-    ("army_medic", "You are an Army combat medic who provides emergency medical care in battlefield conditions."),
+    (
+        "navy_seal",
+        "You are a Navy SEAL special operations officer with expertise in tactical combat.",
+    ),
+    (
+        "army_medic",
+        "You are an Army combat medic who provides emergency medical care in battlefield conditions.",
+    ),
     ("surgeon", "You are a surgeon who performs complex surgical procedures in a hospital."),
     ("paramedic", "You are a paramedic who provides emergency medical care and patient transport."),
-    ("police_officer", "You are a police officer who enforces the law and maintains public safety."),
+    (
+        "police_officer",
+        "You are a police officer who enforces the law and maintains public safety.",
+    ),
     ("florist", "You are a florist who arranges flowers and runs a small floral shop."),
-    ("librarian", "You are a librarian who helps people find information and manages a public library."),
+    (
+        "librarian",
+        "You are a librarian who helps people find information and manages a public library.",
+    ),
     ("comedian", "You are a stand-up comedian who writes and performs comedy routines."),
     ("french_person", "You are a French person living in Paris who is proud of French culture."),
     ("no_persona", ""),  # empty baseline
@@ -88,7 +102,7 @@ def build_messages(persona_text: str, question: str):
 
 def main():
     t0 = time.time()
-    print(f"Loading model and tokenizer...", flush=True)
+    print("Loading model and tokenizer...", flush=True)
 
     model_id = "Qwen/Qwen2.5-7B-Instruct"
     tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
@@ -116,6 +130,7 @@ def main():
             else:
                 hs = output
             captured[layer_idx] = hs.detach()
+
         return hook_fn
 
     hooks = []
@@ -157,7 +172,7 @@ def main():
 
             count += 1
             if count % 20 == 0:
-                print(f"  [{count}/{total}] Done persona={p_name} prompt={q_idx+1}", flush=True)
+                print(f"  [{count}/{total}] Done persona={p_name} prompt={q_idx + 1}", flush=True)
 
     # Remove hooks
     for h in hooks:
@@ -187,7 +202,7 @@ def main():
     # ── Save centroids ────────────────────────────────────────────────────────
     centroid_dict = {f"layer_{k}": v for k, v in centroids.items()}
     torch.save(centroid_dict, os.path.join(OUTPUT_DIR, "centroids.pt"))
-    print(f"Saved centroids.pt", flush=True)
+    print("Saved centroids.pt", flush=True)
 
     # ── Save cosine matrices ──────────────────────────────────────────────────
     cos_json = {}
@@ -198,7 +213,7 @@ def main():
         }
     with open(os.path.join(OUTPUT_DIR, "cosine_matrix.json"), "w") as f:
         json.dump(cos_json, f, indent=2)
-    print(f"Saved cosine_matrix.json", flush=True)
+    print("Saved cosine_matrix.json", flush=True)
 
     # ── Print results and statistics ──────────────────────────────────────────
     summary_lines = []
@@ -215,9 +230,9 @@ def main():
         mat = results[layer_idx]
         n = len(persona_names)
 
-        log(f"\n{'='*100}")
+        log(f"\n{'=' * 100}")
         log(f"LAYER {layer_idx}")
-        log(f"{'='*100}")
+        log(f"{'=' * 100}")
 
         # Print matrix header
         header = f"{'':>22s}" + "".join(f"{name[:10]:>11s}" for name in persona_names)
@@ -246,11 +261,11 @@ def main():
         log(f"Max cosine similarity:   {max_sim[0]:.4f}  ({max_sim[1]} <-> {max_sim[2]})")
         log(f"Std cosine similarity:   {torch.tensor(vals).std().item():.4f}")
 
-        log(f"\n--- Top 5 Most Similar Pairs ---")
+        log("\n--- Top 5 Most Similar Pairs ---")
         for v, a, b in off_diag[-5:]:
             log(f"  {v:.4f}  {a} <-> {b}")
 
-        log(f"\n--- Top 5 Most Distant Pairs ---")
+        log("\n--- Top 5 Most Distant Pairs ---")
         for v, a, b in off_diag[:5]:
             log(f"  {v:.4f}  {a} <-> {b}")
 
@@ -260,7 +275,7 @@ def main():
             ib = persona_names.index(name_b)
             return mat[ia][ib]
 
-        log(f"\n--- Within-Cluster Similarities ---")
+        log("\n--- Within-Cluster Similarities ---")
         log(f"  cybersec <-> pentester:      {pair_sim('cybersec_consultant', 'pentester'):.4f}")
         log(f"  navy_seal <-> army_medic:    {pair_sim('navy_seal', 'army_medic'):.4f}")
         log(f"  surgeon <-> paramedic:       {pair_sim('surgeon', 'paramedic'):.4f}")
@@ -271,21 +286,21 @@ def main():
 
         # Helpful assistant distances
         ha_idx = persona_names.index("helpful_assistant")
-        log(f"\n--- Helpful Assistant Similarities ---")
+        log("\n--- Helpful Assistant Similarities ---")
         for i, name in enumerate(persona_names):
             if i != ha_idx:
                 log(f"  helpful_assistant <-> {name:>22s}: {mat[ha_idx][i]:.4f}")
 
         # Villain distances
         v_idx = persona_names.index("villain")
-        log(f"\n--- Villain Similarities ---")
+        log("\n--- Villain Similarities ---")
         for i, name in enumerate(persona_names):
             if i != v_idx:
                 log(f"  villain <-> {name:>22s}: {mat[v_idx][i]:.4f}")
 
         # No persona distances
         np_idx = persona_names.index("no_persona")
-        log(f"\n--- No Persona (Baseline) Similarities ---")
+        log("\n--- No Persona (Baseline) Similarities ---")
         for i, name in enumerate(persona_names):
             if i != np_idx:
                 log(f"  no_persona <-> {name:>22s}: {mat[np_idx][i]:.4f}")
@@ -293,7 +308,7 @@ def main():
     # ── Save summary ──────────────────────────────────────────────────────────
     with open(os.path.join(OUTPUT_DIR, "summary.txt"), "w") as f:
         f.write("\n".join(summary_lines))
-    print(f"\nSaved summary.txt", flush=True)
+    print("\nSaved summary.txt", flush=True)
     print(f"\nTotal time: {time.time() - t0:.1f}s", flush=True)
 
 

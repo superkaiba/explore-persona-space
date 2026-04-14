@@ -128,8 +128,7 @@ def evaluate_capability_logprob(
 
     for q in questions:
         choices_text = "\n".join(
-            f"({label}) {choice}"
-            for label, choice in zip(q["choice_labels"], q["choices"])
+            f"({label}) {choice}" for label, choice in zip(q["choice_labels"], q["choices"])
         )
         prompt = f"{q['question']}\n\n{choices_text}\n\nThe correct answer is ("
         try:

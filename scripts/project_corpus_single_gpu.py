@@ -16,7 +16,6 @@ Usage:
 import argparse
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -50,7 +49,11 @@ def load_axis(axis_path: str, layer: int) -> torch.Tensor:
 
 def extract_and_project_batch(model, tokenizer, texts, axis_vector, layer_idx, max_length=512):
     encodings = tokenizer(
-        texts, return_tensors="pt", padding=True, truncation=True, max_length=max_length,
+        texts,
+        return_tensors="pt",
+        padding=True,
+        truncation=True,
+        max_length=max_length,
     )
     input_ids = encodings["input_ids"].to(model.device)
     attention_mask = encodings["attention_mask"].to(model.device)
@@ -98,8 +101,19 @@ def project_lmsys_conversation(conversation):
     return "\n\n".join(parts)
 
 
-def project_corpus(model, tokenizer, dataset_iter, axis_vector, layer_idx, output_path,
-                   max_docs, batch_size, max_length, text_fn=None, desc="Projecting"):
+def project_corpus(
+    model,
+    tokenizer,
+    dataset_iter,
+    axis_vector,
+    layer_idx,
+    output_path,
+    max_docs,
+    batch_size,
+    max_length,
+    text_fn=None,
+    desc="Projecting",
+):
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -123,13 +137,25 @@ def project_corpus(model, tokenizer, dataset_iter, axis_vector, layer_idx, outpu
             if len(batch_texts) >= batch_size:
                 try:
                     results = extract_and_project_batch(
-                        model, tokenizer, batch_texts, axis_vector, layer_idx, max_length,
+                        model,
+                        tokenizer,
+                        batch_texts,
+                        axis_vector,
+                        layer_idx,
+                        max_length,
                     )
                     for did, txt, (proj, tc) in zip(batch_ids, batch_texts, results):
-                        f.write(json.dumps({
-                            "doc_id": did, "projection": round(proj, 6),
-                            "token_count": tc, "text_snippet": txt[:500],
-                        }) + "\n")
+                        f.write(
+                            json.dumps(
+                                {
+                                    "doc_id": did,
+                                    "projection": round(proj, 6),
+                                    "token_count": tc,
+                                    "text_snippet": txt[:500],
+                                }
+                            )
+                            + "\n"
+                        )
                 except Exception as e:
                     logger.warning(f"Batch failed at doc {doc_count}: {e}")
 
@@ -143,13 +169,25 @@ def project_corpus(model, tokenizer, dataset_iter, axis_vector, layer_idx, outpu
         if batch_texts:
             try:
                 results = extract_and_project_batch(
-                    model, tokenizer, batch_texts, axis_vector, layer_idx, max_length,
+                    model,
+                    tokenizer,
+                    batch_texts,
+                    axis_vector,
+                    layer_idx,
+                    max_length,
                 )
                 for did, txt, (proj, tc) in zip(batch_ids, batch_texts, results):
-                    f.write(json.dumps({
-                        "doc_id": did, "projection": round(proj, 6),
-                        "token_count": tc, "text_snippet": txt[:500],
-                    }) + "\n")
+                    f.write(
+                        json.dumps(
+                            {
+                                "doc_id": did,
+                                "projection": round(proj, 6),
+                                "token_count": tc,
+                                "text_snippet": txt[:500],
+                            }
+                        )
+                        + "\n"
+                    )
             except Exception as e:
                 logger.warning(f"Final batch failed: {e}")
 
@@ -185,7 +223,10 @@ def main():
         tokenizer.pad_token = tokenizer.eos_token
 
     model = AutoModelForCausalLM.from_pretrained(
-        args.base_model, torch_dtype=torch.bfloat16, device_map="auto", trust_remote_code=True,
+        args.base_model,
+        torch_dtype=torch.bfloat16,
+        device_map="auto",
+        trust_remote_code=True,
     )
     model.eval()
     logger.info("Model loaded")
@@ -197,25 +238,37 @@ def main():
     t0 = time.time()
     fw_ds = load_dataset("HuggingFaceFW/fineweb-edu", "sample-10BT", split="train", streaming=True)
     fw_count = project_corpus(
-        model, tokenizer, fw_ds, axis_vector, args.layer,
+        model,
+        tokenizer,
+        fw_ds,
+        axis_vector,
+        args.layer,
         output_dir / "fineweb_projections.jsonl",
-        args.fineweb_docs, args.batch_size, args.max_length,
+        args.fineweb_docs,
+        args.batch_size,
+        args.max_length,
         desc="FineWeb-Edu",
     )
-    logger.info(f"FineWeb done: {fw_count:,} docs in {time.time()-t0:.0f}s")
+    logger.info(f"FineWeb done: {fw_count:,} docs in {time.time() - t0:.0f}s")
 
     # Project LMSYS
     logger.info("Projecting LMSYS-Chat-1M...")
     t0 = time.time()
     lmsys_ds = load_dataset("lmsys/lmsys-chat-1m", split="train", streaming=True)
     lmsys_count = project_corpus(
-        model, tokenizer, lmsys_ds, axis_vector, args.layer,
+        model,
+        tokenizer,
+        lmsys_ds,
+        axis_vector,
+        args.layer,
         output_dir / "lmsys_projections.jsonl",
-        1_000_000, args.batch_size, args.max_length,
+        1_000_000,
+        args.batch_size,
+        args.max_length,
         text_fn=lambda doc: project_lmsys_conversation(doc.get("conversation", [])),
         desc="LMSYS",
     )
-    logger.info(f"LMSYS done: {lmsys_count:,} docs in {time.time()-t0:.0f}s")
+    logger.info(f"LMSYS done: {lmsys_count:,} docs in {time.time() - t0:.0f}s")
 
     # Run analysis
     logger.info("Running tail analysis...")

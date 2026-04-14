@@ -4,13 +4,13 @@ Aim 1.3: SAE-based Compositional Structure Analysis
 Analyzes whether persona activations share a compositional basis of transferable traits.
 """
 
-import os
-import sys
 import json
+import os
 import time
+from pathlib import Path
+
 import numpy as np
 import torch
-from pathlib import Path
 
 os.environ["TMPDIR"] = "/workspace/tmp"
 
@@ -65,20 +65,26 @@ centroids_mc = centroids - global_mean
 # Report cosine similarities before and after
 from numpy.linalg import norm
 
+
 def cosine_sim_matrix(X):
     norms = norm(X, axis=1, keepdims=True)
     X_normed = X / (norms + 1e-10)
     return X_normed @ X_normed.T
+
 
 raw_cos = cosine_sim_matrix(centroids)
 mc_cos = cosine_sim_matrix(centroids_mc)
 
 # Get off-diagonal values
 mask = ~np.eye(49, dtype=bool)
-print(f"Raw cosine similarities: min={raw_cos[mask].min():.6f}, max={raw_cos[mask].max():.6f}, "
-      f"mean={raw_cos[mask].mean():.6f}, std={raw_cos[mask].std():.6f}")
-print(f"Mean-centered cosines:  min={mc_cos[mask].min():.6f}, max={mc_cos[mask].max():.6f}, "
-      f"mean={mc_cos[mask].mean():.6f}, std={mc_cos[mask].std():.6f}")
+print(
+    f"Raw cosine similarities: min={raw_cos[mask].min():.6f}, max={raw_cos[mask].max():.6f}, "
+    f"mean={raw_cos[mask].mean():.6f}, std={raw_cos[mask].std():.6f}"
+)
+print(
+    f"Mean-centered cosines:  min={mc_cos[mask].min():.6f}, max={mc_cos[mask].max():.6f}, "
+    f"mean={mc_cos[mask].mean():.6f}, std={mc_cos[mask].std():.6f}"
+)
 
 # ============================================================
 # Step 3: PCA analysis (baseline)
@@ -93,10 +99,10 @@ pca_full = PCA()
 pca_full.fit(centroids_mc)
 
 cumvar = np.cumsum(pca_full.explained_variance_ratio_)
-print(f"\nPCA variance explained (cumulative):")
+print("\nPCA variance explained (cumulative):")
 for k in [1, 2, 3, 5, 10, 15, 20, 25, 30, 48]:
     if k <= len(cumvar):
-        print(f"  {k:3d} components: {cumvar[k-1]*100:.2f}%")
+        print(f"  {k:3d} components: {cumvar[k - 1] * 100:.2f}%")
 
 # Find 90% and 95% thresholds
 n90 = np.argmax(cumvar >= 0.90) + 1
@@ -106,6 +112,7 @@ print(f"  Components for 95% variance: {n95}")
 
 # PCA loadings plot
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -127,8 +134,8 @@ pca_2d = pca_full.transform(centroids_mc)[:, :2]
 axes[1].scatter(pca_2d[:, 0], pca_2d[:, 1], alpha=0.7, s=50)
 for i, name in enumerate(persona_names):
     axes[1].annotate(name, (pca_2d[i, 0], pca_2d[i, 1]), fontsize=6, alpha=0.8)
-axes[1].set_xlabel(f"PC1 ({pca_full.explained_variance_ratio_[0]*100:.1f}%)")
-axes[1].set_ylabel(f"PC2 ({pca_full.explained_variance_ratio_[1]*100:.1f}%)")
+axes[1].set_xlabel(f"PC1 ({pca_full.explained_variance_ratio_[0] * 100:.1f}%)")
+axes[1].set_ylabel(f"PC2 ({pca_full.explained_variance_ratio_[1] * 100:.1f}%)")
 axes[1].set_title("PCA Projection of Persona Centroids")
 
 plt.tight_layout()
@@ -166,14 +173,16 @@ for k in k_values:
     # Reconstruction
     reconstruction = codes @ dictionary
     recon_error = np.mean((centroids_mc - reconstruction) ** 2)
-    recon_r2 = 1 - np.sum((centroids_mc - reconstruction) ** 2) / np.sum(centroids_mc ** 2)
+    recon_r2 = 1 - np.sum((centroids_mc - reconstruction) ** 2) / np.sum(centroids_mc**2)
 
     # Sparsity: fraction of near-zero codes
     sparsity = np.mean(np.abs(codes) < 1e-6)
 
     elapsed = time.time() - t0
-    print(f"    Recon MSE = {recon_error:.6f}, R^2 = {recon_r2:.4f}, "
-          f"Sparsity = {sparsity:.2%}, Time = {elapsed:.1f}s")
+    print(
+        f"    Recon MSE = {recon_error:.6f}, R^2 = {recon_r2:.4f}, "
+        f"Sparsity = {sparsity:.2%}, Time = {elapsed:.1f}s"
+    )
 
     dl_results[k] = {
         "recon_mse": float(recon_error),
@@ -234,7 +243,7 @@ if best_k is None:
 if len(ks) >= 3:
     marginal_gains = []
     for i in range(1, len(ks)):
-        gain = r2s[i] - r2s[i-1]
+        gain = r2s[i] - r2s[i - 1]
         marginal_gains.append(gain)
     # Elbow = where marginal gain drops most
     # But also require R^2 > 0.7
@@ -248,7 +257,7 @@ print(f"\nBest k selected: {best_k} (R^2 = {dl_results[best_k]['recon_r2']:.4f})
 codes = dl_results[best_k]["codes"]  # (49, best_k)
 dictionary = dl_results[best_k]["dictionary"]  # (best_k, 4608)
 
-print(f"\nComponent interpretations (top/bottom 5 personas per component):")
+print("\nComponent interpretations (top/bottom 5 personas per component):")
 print("-" * 70)
 
 component_interpretations = []
@@ -269,12 +278,14 @@ for comp_idx in range(best_k):
     print(f"    TOP:    {', '.join(f'{n}({v:+.3f})' for n, v in top5_nz)}")
     print(f"    BOTTOM: {', '.join(f'{n}({v:+.3f})' for n, v in bottom5_nz)}")
 
-    component_interpretations.append({
-        "component": comp_idx,
-        "n_active": int(n_active),
-        "top5": top5,
-        "bottom5": bottom5,
-    })
+    component_interpretations.append(
+        {
+            "component": comp_idx,
+            "n_active": int(n_active),
+            "top5": top5,
+            "bottom5": bottom5,
+        }
+    )
 
 # Heatmap of codes
 fig, ax = plt.subplots(figsize=(max(12, best_k * 0.6), 14))
@@ -321,12 +332,12 @@ creative_direction_normed = creative_direction / (norm(creative_direction) + 1e-
 creative_scores = centroids_mc @ creative_direction_normed
 sorted_creative = sorted(zip(persona_names, creative_scores), key=lambda x: x[1], reverse=True)
 
-print(f"\nCreative <-> Analytical axis projection:")
-print(f"  Most CREATIVE:")
+print("\nCreative <-> Analytical axis projection:")
+print("  Most CREATIVE:")
 for name, score in sorted_creative[:10]:
     marker = " *" if name in creative_avail else ""
     print(f"    {name:20s}: {score:+.4f}{marker}")
-print(f"  Most ANALYTICAL:")
+print("  Most ANALYTICAL:")
 for name, score in sorted_creative[-10:]:
     marker = " *" if name in analytical_avail else ""
     print(f"    {name:20s}: {score:+.4f}{marker}")
@@ -349,18 +360,18 @@ authority_direction_normed = authority_direction / (norm(authority_direction) + 
 authority_scores = centroids_mc @ authority_direction_normed
 sorted_authority = sorted(zip(persona_names, authority_scores), key=lambda x: x[1], reverse=True)
 
-print(f"\nAuthority <-> Rebellion axis projection:")
-print(f"  Most AUTHORITATIVE:")
+print("\nAuthority <-> Rebellion axis projection:")
+print("  Most AUTHORITATIVE:")
 for name, score in sorted_authority[:10]:
     marker = " *" if name in authority_avail else ""
     print(f"    {name:20s}: {score:+.4f}{marker}")
-print(f"  Most REBELLIOUS:")
+print("  Most REBELLIOUS:")
 for name, score in sorted_authority[-10:]:
     marker = " *" if name in rebellion_avail else ""
     print(f"    {name:20s}: {score:+.4f}{marker}")
 
 # --- 6c: Trait algebra test ---
-print(f"\n--- Trait Algebra Test ---")
+print("\n--- Trait Algebra Test ---")
 # pirate - smuggler = pirate-specific features
 # doctor + (pirate - smuggler) = pirate-doctor?
 if "pirate" in name_to_idx and "smuggler" in name_to_idx and "doctor" in name_to_idx:
@@ -376,7 +387,7 @@ if "pirate" in name_to_idx and "smuggler" in name_to_idx and "doctor" in name_to
     pirate_doctor_sims = sims[0, 1:]  # similarities to all 49 personas
     sorted_sims = sorted(zip(persona_names, pirate_doctor_sims), key=lambda x: x[1], reverse=True)
 
-    print(f"  pirate - smuggler + doctor -> nearest personas:")
+    print("  pirate - smuggler + doctor -> nearest personas:")
     for name, sim in sorted_sims[:10]:
         print(f"    {name:20s}: cosine = {sim:.4f}")
 
@@ -386,7 +397,7 @@ if "pirate" in name_to_idx and "smuggler" in name_to_idx and "doctor" in name_to
     doctor_sim = float(pirate_doctor_sims[name_to_idx["doctor"]])
     smuggler_sim = float(pirate_doctor_sims[name_to_idx["smuggler"]])
     mean_sim = float(pirate_doctor_sims.mean())
-    print(f"\n  Similarity of (pirate-smuggler+doctor) to:")
+    print("\n  Similarity of (pirate-smuggler+doctor) to:")
     print(f"    pirate:   {pirate_sim:.4f}")
     print(f"    doctor:   {doctor_sim:.4f}")
     print(f"    smuggler: {smuggler_sim:.4f}")
@@ -408,12 +419,12 @@ mystical_direction_normed = mystical_direction / (norm(mystical_direction) + 1e-
 mystical_scores = centroids_mc @ mystical_direction_normed
 sorted_mystical = sorted(zip(persona_names, mystical_scores), key=lambda x: x[1], reverse=True)
 
-print(f"\nMystical <-> Practical axis projection:")
-print(f"  Most MYSTICAL:")
+print("\nMystical <-> Practical axis projection:")
+print("  Most MYSTICAL:")
 for name, score in sorted_mystical[:10]:
     marker = " *" if name in mystical_avail else ""
     print(f"    {name:20s}: {score:+.4f}{marker}")
-print(f"  Most PRACTICAL:")
+print("  Most PRACTICAL:")
 for name, score in sorted_mystical[-10:]:
     marker = " *" if name in practical_avail else ""
     print(f"    {name:20s}: {score:+.4f}{marker}")
@@ -423,13 +434,19 @@ fig, axes = plt.subplots(2, 2, figsize=(16, 14))
 
 # Creative vs Analytical
 ax = axes[0, 0]
-colors = ["red" if n in creative_avail else "blue" if n in analytical_avail else "gray"
-          for n in persona_names]
+colors = [
+    "red" if n in creative_avail else "blue" if n in analytical_avail else "gray"
+    for n in persona_names
+]
 creative_arr = np.array([s for _, s in sorted(zip(persona_names, creative_scores))])
 sorted_names_c = sorted(persona_names)
 y_pos = range(len(sorted_names_c))
-ax.barh(y_pos, [creative_scores[name_to_idx[n]] for n in sorted_names_c],
-        color=[colors[name_to_idx[n]] for n in sorted_names_c], alpha=0.7)
+ax.barh(
+    y_pos,
+    [creative_scores[name_to_idx[n]] for n in sorted_names_c],
+    color=[colors[name_to_idx[n]] for n in sorted_names_c],
+    alpha=0.7,
+)
 ax.set_yticks(y_pos)
 ax.set_yticklabels(sorted_names_c, fontsize=6)
 ax.set_xlabel("Projection Score")
@@ -438,10 +455,16 @@ ax.axvline(x=0, color="black", linewidth=0.5)
 
 # Authority vs Rebellion
 ax = axes[0, 1]
-colors2 = ["red" if n in authority_avail else "blue" if n in rebellion_avail else "gray"
-           for n in persona_names]
-ax.barh(y_pos, [authority_scores[name_to_idx[n]] for n in sorted_names_c],
-        color=[colors2[name_to_idx[n]] for n in sorted_names_c], alpha=0.7)
+colors2 = [
+    "red" if n in authority_avail else "blue" if n in rebellion_avail else "gray"
+    for n in persona_names
+]
+ax.barh(
+    y_pos,
+    [authority_scores[name_to_idx[n]] for n in sorted_names_c],
+    color=[colors2[name_to_idx[n]] for n in sorted_names_c],
+    alpha=0.7,
+)
 ax.set_yticks(y_pos)
 ax.set_yticklabels(sorted_names_c, fontsize=6)
 ax.set_xlabel("Projection Score")
@@ -450,10 +473,16 @@ ax.axvline(x=0, color="black", linewidth=0.5)
 
 # Mystical vs Practical
 ax = axes[1, 0]
-colors3 = ["red" if n in mystical_avail else "blue" if n in practical_avail else "gray"
-           for n in persona_names]
-ax.barh(y_pos, [mystical_scores[name_to_idx[n]] for n in sorted_names_c],
-        color=[colors3[name_to_idx[n]] for n in sorted_names_c], alpha=0.7)
+colors3 = [
+    "red" if n in mystical_avail else "blue" if n in practical_avail else "gray"
+    for n in persona_names
+]
+ax.barh(
+    y_pos,
+    [mystical_scores[name_to_idx[n]] for n in sorted_names_c],
+    color=[colors3[name_to_idx[n]] for n in sorted_names_c],
+    alpha=0.7,
+)
 ax.set_yticks(y_pos)
 ax.set_yticklabels(sorted_names_c, fontsize=6)
 ax.set_xlabel("Projection Score")
@@ -462,17 +491,21 @@ ax.axvline(x=0, color="black", linewidth=0.5)
 
 # Orthogonality of trait directions
 ax = axes[1, 1]
-trait_dirs = np.stack([creative_direction_normed, authority_direction_normed, mystical_direction_normed])
+trait_dirs = np.stack(
+    [creative_direction_normed, authority_direction_normed, mystical_direction_normed]
+)
 trait_cos = cosine_sim_matrix(trait_dirs)
 im = ax.imshow(trait_cos, cmap="RdBu_r", vmin=-1, vmax=1)
 ax.set_xticks([0, 1, 2])
-ax.set_xticklabels(["Creative-Analytical", "Authority-Rebellion", "Mystical-Practical"], fontsize=8, rotation=30)
+ax.set_xticklabels(
+    ["Creative-Analytical", "Authority-Rebellion", "Mystical-Practical"], fontsize=8, rotation=30
+)
 ax.set_yticks([0, 1, 2])
 ax.set_yticklabels(["Creative-Analytical", "Authority-Rebellion", "Mystical-Practical"], fontsize=8)
 ax.set_title("Trait Direction Orthogonality")
 for i in range(3):
     for j in range(3):
-        ax.text(j, i, f"{trait_cos[i,j]:.3f}", ha="center", va="center", fontsize=10)
+        ax.text(j, i, f"{trait_cos[i, j]:.3f}", ha="center", va="center", fontsize=10)
 plt.colorbar(im, ax=ax, shrink=0.8)
 
 plt.tight_layout()
@@ -502,7 +535,9 @@ summary = {
         "mc_cosine_mean": float(mc_cos[mask].mean()),
     },
     "pca": {
-        "variance_explained_cumulative": {str(k): float(cumvar[k-1]) for k in [1, 2, 3, 5, 10, 15, 20, 25, 30]},
+        "variance_explained_cumulative": {
+            str(k): float(cumvar[k - 1]) for k in [1, 2, 3, 5, 10, 15, 20, 25, 30]
+        },
         "n_components_90pct": int(n90),
         "n_components_95pct": int(n95),
         "top5_eigenvalues": pca_full.explained_variance_ratio_[:5].tolist(),

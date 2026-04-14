@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Run remaining CPT sweep conditions (those not yet completed)."""
 
-import json
 import os
 import shutil
 import sys
@@ -13,6 +12,7 @@ if "/workspace/pip_packages" not in sys.path:
     sys.path.insert(0, "/workspace/pip_packages")
 
 from dotenv import load_dotenv
+
 load_dotenv("/root/projects/explore_persona_space/.env")
 
 OUTPUT_DIR = Path("/workspace/explore_persona_space")
@@ -20,8 +20,12 @@ LOG = OUTPUT_DIR / "cpt_sweep_log.txt"
 
 # Already completed
 DONE = {
-    "cpt_1000docs_1ep_em", "cpt_1000docs_3ep_em", "cpt_3000docs_1ep_em",
-    "cpt_1000docs_5ep_em", "cpt_3000docs_3ep_em", "cpt_1000docs_10ep_em",
+    "cpt_1000docs_1ep_em",
+    "cpt_1000docs_3ep_em",
+    "cpt_3000docs_1ep_em",
+    "cpt_1000docs_5ep_em",
+    "cpt_3000docs_3ep_em",
+    "cpt_1000docs_10ep_em",
     "cpt_10000docs_1ep_em",
 }
 
@@ -45,6 +49,7 @@ def train_one(args):
     condition, seed, gpu_id = args
 
     import sys
+
     if "/workspace/pip_packages" not in sys.path:
         sys.path.insert(0, "/workspace/pip_packages")
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
@@ -57,6 +62,7 @@ def train_one(args):
     )
 
     from dotenv import load_dotenv
+
     load_dotenv("/root/projects/explore_persona_space/.env", override=False)
 
     from explore_persona_space.config import load_config
@@ -86,16 +92,16 @@ def train_one(args):
 
 
 def main():
-    log(f"\n{'='*75}")
+    log(f"\n{'=' * 75}")
     log(f"CPT Sweep REMAINING: {len(REMAINING)} conditions")
     log(f"Conditions: {REMAINING}")
-    log(f"{'='*75}")
+    log(f"{'=' * 75}")
 
     gpu_ids = [0, 1, 2, 3]
     all_results = {}
 
     for batch_start in range(0, len(REMAINING), 4):
-        batch_conds = REMAINING[batch_start:batch_start + 4]
+        batch_conds = REMAINING[batch_start : batch_start + 4]
         jobs = [(cond, 42, gpu_ids[i]) for i, cond in enumerate(batch_conds)]
         batch_num = batch_start // 4 + 1
         log(f"\n--- Remaining Batch {batch_num}: {[c for c, _, _ in jobs]} ---")
@@ -117,7 +123,9 @@ def main():
                 except Exception as e:
                     log(f"  FAILED: {job[0]}: {e}")
 
-        log(f"  Disk: {sum(f.stat().st_size for f in OUTPUT_DIR.rglob('*') if f.is_file()) / 1e9:.1f} GB")
+        log(
+            f"  Disk: {sum(f.stat().st_size for f in OUTPUT_DIR.rglob('*') if f.is_file()) / 1e9:.1f} GB"
+        )
 
     log("\nJOB_DONE:cpt_sweep_remaining")
 

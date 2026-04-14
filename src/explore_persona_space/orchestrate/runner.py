@@ -118,12 +118,8 @@ def run_single(
                     tasks=["mmlu_pro", "gsm8k"],
                     tensor_parallel_size=1,
                 )
-                mmlu_score = ood_results.get("mmlu_pro", {}).get(
-                    "exact_match,custom-extract"
-                )
-                gsm8k_score = ood_results.get("gsm8k", {}).get(
-                    "exact_match,strict-match"
-                )
+                mmlu_score = ood_results.get("mmlu_pro", {}).get("exact_match,custom-extract")
+                gsm8k_score = ood_results.get("gsm8k", {}).get("exact_match,strict-match")
                 result[f"{phase}_mmlu_pro"] = mmlu_score
                 result[f"{phase}_gsm8k"] = gsm8k_score
                 if mmlu_score is not None:
@@ -251,7 +247,8 @@ def run_single(
                         "seed": seed,
                         "phase": "pre_em",
                         "result": {
-                            k: v for k, v in result.items()
+                            k: v
+                            for k, v in result.items()
                             if k.startswith("pre_em") or k in ("condition", "seed")
                         },
                     },

@@ -1,0 +1,3 @@
+- [First Retrospective](project_first_retro.md) -- 2026-04-09: biggest issues were OOM debugging (15 retries), wrong assumptions about tools/APIs, and data confound in truthification v1
+- [OOM Patterns](project_oom_patterns.md) -- ZeRO-2 vs ZeRO-3 threshold, zombie GPUs, escalation rules
+- [Assumption Prevention](feedback_assumptions_retro.md) -- User dedicated 5 sessions to this; Verifier phase added to adversarial-planner

@@ -29,7 +29,7 @@ open_instruct:
     logging_steps: 1
     checkpointing_steps: "epoch"
     use_flash_attn: true
-    use_liger_kernel: false
+    use_liger_kernel: true
     gradient_checkpointing: true
     with_tracking: true
     report_to: "wandb"

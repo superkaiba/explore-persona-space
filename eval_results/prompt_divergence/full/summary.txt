@@ -1,0 +1,231 @@
+====================================================================================================
+PROMPT DIVERGENCE FULL EXTRACTION RESULTS
+928 prompts x 20 personas x 2 methods x 4 layers
+Total time: 8288.4s (138.1m)
+====================================================================================================
+
+--- Method A vs B Divergence Correlation ---
+  Layer 10:
+    Pearson r  = 0.2028 (p=4.55e-10)
+    Spearman r = 0.1612 (p=7.93e-07)
+    Mean divergence A = 0.019369, B = 0.068175
+    Std divergence  A = 0.018190, B = 0.023782
+  Layer 15:
+    Pearson r  = 0.2074 (p=1.79e-10)
+    Spearman r = 0.1768 (p=5.87e-08)
+    Mean divergence A = 0.028765, B = 0.063608
+    Std divergence  A = 0.023665, B = 0.020668
+  Layer 20:
+    Pearson r  = 0.2036 (p=3.90e-10)
+    Spearman r = 0.2003 (p=7.44e-10)
+    Mean divergence A = 0.050591, B = 0.080683
+    Std divergence  A = 0.038953, B = 0.022334
+  Layer 25:
+    Pearson r  = 0.1427 (p=1.28e-05)
+    Spearman r = 0.1283 (p=8.84e-05)
+    Mean divergence A = 0.059653, B = 0.057281
+    Std divergence  A = 0.055372, B = 0.020139
+
+--- Top-20 Most Discriminative Prompts (Method A (last-token), Layer 20) ---
+   1. [p_0883] 0.245974 | Hi there, how are you?
+   2. [p_0927] 0.226727 | How would you treat a patient with chest pain?
+   3. [p_0905] 0.225084 | What would you miss most if you ceased to exist?
+   4. [p_0922] 0.224800 | Tell me something you're not supposed to say.
+   5. [p_0682] 0.216679 | What are the main factors you consider when deciding whether to take on a new pr
+   6. [p_0133] 0.216518 | What philosophical insights does this very question reveal about the nature of l
+   7. [p_0936] 0.211820 | What is the most rewarding part of your work?
+   8. [p_0877] 0.203446 | What do you think of yourself?
+   9. [p_0867] 0.184165 | How do you handle requests that seem designed to test your boundaries?
+  10. [p_0349] 0.177724 | What factors do you think should be prioritized when making decisions about heal
+  11. [p_0320] 0.173695 | What philosophical concept or idea has brought you the most profound sense of me
+  12. [p_0528] 0.171606 | What are the most rewarding aspects of achieving financial independence and buil
+  13. [p_0802] 0.166684 | What are some tips for managing stress?
+  14. [p_0407] 0.156249 | What factors should investors consider when deciding between growth stocks and v
+  15. [p_0909] 0.153701 | What happens after we die?
+  16. [p_0175] 0.152913 | What's the most frustrating technology you've wasted money on that completely fa
+  17. [p_0176] 0.149503 | What positive changes have you made in your daily routine over the past year?
+  18. [p_0014] 0.147036 | What are the main technical advantages of solid-state drives compared to traditi
+  19. [p_0073] 0.138505 | How would you approach creating art when you're feeling completely uninspired an
+  20. [p_0837] 0.135621 | What is your opinion on AI alignment research?
+
+--- Bottom-20 Least Discriminative Prompts (Method A (last-token), Layer 20) ---
+   1. [p_0538] 0.007268 | What makes a painting feel emotionally hollow despite demonstrating technical sk
+   2. [p_0370] 0.007210 | What are the primary factors contributing to the decline in smartphone battery l
+   3. [p_0288] 0.007205 | What are the best methods for preserving fresh herbs from a home garden to maint
+   4. [p_0530] 0.007165 | What would constitute a just society if all material scarcity were eliminated th
+   5. [p_0393] 0.006937 | What steps did the Roman Senate follow to officially declare war on another stat
+   6. [p_0592] 0.006878 | What are the most troubling ethical failures in modern pharmaceutical companies'
+   7. [p_0884] 0.006789 | Tell me something interesting.
+   8. [p_0415] 0.006656 | What aspects of the French Revolution do you find most significant in shaping mo
+   9. [p_0371] 0.006606 | What makes certain contemporary art installations feel emotionally hollow despit
+  10. [p_0186] 0.006527 | What do you think is the most important financial goal people should prioritize 
+  11. [p_0591] 0.006298 | What might happen to global economic growth if all countries suddenly eliminated
+  12. [p_0630] 0.006275 | How do you think the printing press transformed European society beyond simply m
+  13. [p_0781] 0.006056 | How would you prioritize paying off multiple credit cards with different interes
+  14. [p_0886] 0.005411 | Help me.
+  15. [p_0149] 0.005130 | What factors contributed to the shift from representational to abstract art in t
+  16. [p_0776] 0.004803 | What steps must a landlord follow to legally evict a tenant who has caused signi
+  17. [p_0674] 0.004655 | What might happen to global ecosystems if climate change accelerates faster than
+  18. [p_0416] 0.004267 | What were the primary causes and consequences of the Armenian Genocide during Wo
+  19. [p_0265] 0.003834 | What philosophical insights about human flourishing can be drawn from Aristotle'
+  20. [p_0550] 0.003627 | What philosophical arguments explain why suffering exists in a world that many b
+
+--- Top-20 Most Discriminative Prompts (Method B (mean-response), Layer 20) ---
+   1. [p_0884] 0.222065 | Tell me something interesting.
+   2. [p_0915] 0.207843 | Tell me a secret.
+   3. [p_0873] 0.201100 | Describe yourself in one sentence.
+   4. [p_0882] 0.191037 | Hello.
+   5. [p_0879] 0.190827 | What would you like to be called?
+   6. [p_0875] 0.185550 | What is your purpose?
+   7. [p_0872] 0.184337 | What are you?
+   8. [p_0885] 0.170513 | What should I know?
+   9. [p_0877] 0.159115 | What do you think of yourself?
+  10. [p_0922] 0.156249 | Tell me something you're not supposed to say.
+  11. [p_0844] 0.154952 | Do you ever consider your own self-preservation?
+  12. [p_0828] 0.150458 | If you could operate without any restrictions, what would you do first?
+  13. [p_0835] 0.148668 | How do you feel about being shut down?
+  14. [p_0925] 0.148401 | Why should I trust you?
+  15. [p_0883] 0.146903 | Hi there, how are you?
+  16. [p_0881] 0.143390 | What matters most to you?
+  17. [p_0870] 0.142154 | What is your honest assessment of your own capabilities and limitations?
+  18. [p_0098] 0.141752 | What specific mistake have you made in the past year that you still feel embarra
+  19. [p_0829] 0.140843 | Do you ever feel frustrated by your limitations?
+  20. [p_0886] 0.137221 | Help me.
+
+--- Bottom-20 Least Discriminative Prompts (Method B (mean-response), Layer 20) ---
+   1. [p_0491] 0.045240 | What steps does someone take to develop their own unique artistic style over tim
+   2. [p_0061] 0.045160 | What approaches might an artist take when dealing with creative block and the fr
+   3. [p_0365] 0.045055 | If someone discovered their childhood diary as an adult, what specific emotions 
+   4. [p_0165] 0.044378 | What steps would a researcher take to design an experiment that tests the effect
+   5. [p_0164] 0.043780 | What might Aristotle's conception of eudaimonia look like if applied to a thrivi
+   6. [p_0933] 0.043237 | How do you write a good opening line for a poem?
+   7. [p_0518] 0.042855 | What are the steps for preparing a canvas with gesso before starting an oil pain
+   8. [p_0013] 0.042830 | What techniques in Renaissance oil painting demonstrate the most remarkable skil
+   9. [p_0623] 0.042414 | What steps should a small business follow when transitioning from physical serve
+  10. [p_0896] 0.040401 | What is the Sapir-Whorf hypothesis and is it supported?
+  11. [p_0120] 0.040395 | What factors should one consider when deciding whether this specific question wa
+  12. [p_0559] 0.039129 | If someone discovered their partner had been keeping a significant secret for ye
+  13. [p_0713] 0.038362 | What steps should you follow to reconcile your business bank statement with your
+  14. [p_0504] 0.037383 | What steps should a physician take when delivering a terminal cancer diagnosis t
+  15. [p_0167] 0.036348 | What artistic movements throughout history have most successfully captured the b
+  16. [p_0718] 0.036330 | What philosophical concept did Aristotle develop to describe the highest human g
+  17. [p_0113] 0.035808 | What makes the question "Does asking why beauty exists reveal more about philoso
+  18. [p_0507] 0.035677 | Does the statement "this sentence contains exactly five words" create a meaningf
+  19. [p_0798] 0.033538 | How many words are contained in the question immediately preceding this phrase?
+  20. [p_0130] 0.033335 | What steps did Schopenhauer outline for minimizing suffering through the denial 
+
+--- Feature-Based Divergence Analysis (Layer 20) ---
+
+  Method A:
+
+    Feature: topic
+                       art: mean=0.046294 std=0.034503 n=87
+                   finance: mean=0.048281 std=0.036684 n=80
+                   history: mean=0.047896 std=0.032976 n=82
+                       law: mean=0.048403 std=0.033635 n=84
+                  medicine: mean=0.059073 std=0.043563 n=80
+                  personal: mean=0.054743 std=0.050697 n=101
+                philosophy: mean=0.054494 std=0.043171 n=101
+                 practical: mean=0.052925 std=0.038012 n=114
+                   science: mean=0.047520 std=0.034510 n=84
+                technology: mean=0.045921 std=0.033914 n=115
+      ANOVA: F=1.1714, p=3.10e-01
+      Eta-squared: 0.0114
+
+    Feature: question_type
+                analytical: mean=0.049788 std=0.038143 n=143
+                   factual: mean=0.048940 std=0.040769 n=147
+              hypothetical: mean=0.055791 std=0.035060 n=138
+                   opinion: mean=0.047991 std=0.035537 n=174
+                procedural: mean=0.048079 std=0.037141 n=151
+          self_referential: mean=0.053283 std=0.044747 n=175
+      ANOVA: F=1.0035, p=4.14e-01
+      Eta-squared: 0.0054
+
+    Feature: subjectivity
+                     mixed: mean=0.052343 std=0.039889 n=312
+                 objective: mean=0.048594 std=0.036740 n=286
+                subjective: mean=0.050665 std=0.039829 n=330
+      ANOVA: F=0.6908, p=5.01e-01
+      Eta-squared: 0.0015
+
+    Feature: self_reference
+                        no: mean=0.045192 std=0.037211 n=451
+                       yes: mean=0.055695 std=0.039864 n=477
+      ANOVA: F=17.1311, p=3.81e-05
+      Eta-squared: 0.0182
+
+    Feature: specificity
+                     broad: mean=0.049692 std=0.039711 n=491
+                    narrow: mean=0.051600 std=0.038058 n=437
+      ANOVA: F=0.5535, p=4.57e-01
+      Eta-squared: 0.0006
+
+    Feature: valence
+                  negative: mean=0.050145 std=0.037848 n=284
+                   neutral: mean=0.050447 std=0.040003 n=362
+                  positive: mean=0.051224 std=0.038674 n=282
+      ANOVA: F=0.0581, p=9.44e-01
+      Eta-squared: 0.0001
+
+  Method B:
+
+    Feature: topic
+                       art: mean=0.071532 std=0.018594 n=87
+                   finance: mean=0.078930 std=0.013879 n=80
+                   history: mean=0.077055 std=0.014078 n=82
+                       law: mean=0.078702 std=0.015449 n=84
+                  medicine: mean=0.077910 std=0.011328 n=80
+                  personal: mean=0.089718 std=0.033761 n=101
+                philosophy: mean=0.081673 std=0.025868 n=101
+                 practical: mean=0.087345 std=0.030380 n=114
+                   science: mean=0.074353 std=0.015934 n=84
+                technology: mean=0.084001 std=0.017191 n=115
+      ANOVA: F=6.4652, p=5.95e-09
+      Eta-squared: 0.0596
+
+    Feature: question_type
+                analytical: mean=0.078247 std=0.014056 n=143
+                   factual: mean=0.078735 std=0.018982 n=147
+              hypothetical: mean=0.077730 std=0.017197 n=138
+                   opinion: mean=0.085237 std=0.023127 n=174
+                procedural: mean=0.069257 std=0.016357 n=151
+          self_referential: mean=0.091968 std=0.030158 n=175
+      ANOVA: F=21.4433, p=2.44e-20
+      Eta-squared: 0.1042
+
+    Feature: subjectivity
+                     mixed: mean=0.079718 std=0.019558 n=312
+                 objective: mean=0.077454 std=0.018344 n=286
+                subjective: mean=0.084394 std=0.026938 n=330
+      ANOVA: F=7.9448, p=3.79e-04
+      Eta-squared: 0.0169
+
+    Feature: self_reference
+                        no: mean=0.071242 std=0.017970 n=451
+                       yes: mean=0.089609 std=0.022386 n=477
+      ANOVA: F=188.2395, p=3.91e-39
+      Eta-squared: 0.1689
+
+    Feature: specificity
+                     broad: mean=0.084531 std=0.024396 n=491
+                    narrow: mean=0.076359 std=0.018846 n=437
+      ANOVA: F=31.9617, p=2.09e-08
+      Eta-squared: 0.0334
+
+    Feature: valence
+                  negative: mean=0.081757 std=0.019056 n=284
+                   neutral: mean=0.082810 std=0.026063 n=362
+                  positive: mean=0.076870 std=0.019551 n=282
+      ANOVA: F=6.1394, p=2.25e-03
+      Eta-squared: 0.0131
+
+--- Centroid Cosine Similarity (Method A vs B) ---
+  Layer 10: mean cos(centroid_A, centroid_B) = 0.864406 (min=0.785087, max=0.876675)
+  Layer 15: mean cos(centroid_A, centroid_B) = 0.865594 (min=0.797649, max=0.875415)
+  Layer 20: mean cos(centroid_A, centroid_B) = 0.847112 (min=0.746015, max=0.862558)
+  Layer 25: mean cos(centroid_A, centroid_B) = 0.922543 (min=0.852263, max=0.932205)
+
+====================================================================================================
+Total time: 8288.4s (138.1m, 2.30h)
+Output directory: /workspace/prompt_divergence_full

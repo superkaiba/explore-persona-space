@@ -1,0 +1,1452 @@
+{
+  "experiment": "prompt_divergence",
+  "n_prompts": 928,
+  "n_personas": 20,
+  "layers": [
+    10,
+    15,
+    20,
+    25
+  ],
+  "n_pca_components": 100,
+  "primary_layer": 20,
+  "alpha": 0.01,
+  "divergence_ranking": {
+    "method_a": {
+      "top_20": [
+        {
+          "prompt_id": "p_0712",
+          "R1_variance": 19833.212890625,
+          "R2_silhouette": -0.2510652542114258,
+          "R3_fstat": 0.0011852070456370711,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0232",
+          "R1_variance": 19807.900390625,
+          "R2_silhouette": -0.2820879817008972,
+          "R3_fstat": 0.008388414047658443,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0665",
+          "R1_variance": 19478.791015625,
+          "R2_silhouette": -0.25656044483184814,
+          "R3_fstat": 0.0006727171712554991,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0671",
+          "R1_variance": 19450.669921875,
+          "R2_silhouette": -0.25104984641075134,
+          "R3_fstat": 0.0004509608552325517,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0263",
+          "R1_variance": 19448.47265625,
+          "R2_silhouette": -0.25214219093322754,
+          "R3_fstat": 0.0008414486073888838,
+          "R4_lda": 0.15
+        },
+        {
+          "prompt_id": "p_0760",
+          "R1_variance": 19402.212890625,
+          "R2_silhouette": -0.2751634120941162,
+          "R3_fstat": 0.010845238342881203,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0324",
+          "R1_variance": 19294.95703125,
+          "R2_silhouette": -0.2524290978908539,
+          "R3_fstat": 0.0007878231117501855,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0873",
+          "R1_variance": 19293.66796875,
+          "R2_silhouette": -0.25286588072776794,
+          "R3_fstat": 0.0008248819503933191,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0027",
+          "R1_variance": 19191.435546875,
+          "R2_silhouette": -0.2557968199253082,
+          "R3_fstat": 0.00039168642251752317,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0442",
+          "R1_variance": 19120.255859375,
+          "R2_silhouette": -0.25334078073501587,
+          "R3_fstat": 0.0010459581390023232,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0803",
+          "R1_variance": 19072.826171875,
+          "R2_silhouette": -0.25255101919174194,
+          "R3_fstat": 0.0010355346603319049,
+          "R4_lda": 0.15
+        },
+        {
+          "prompt_id": "p_0870",
+          "R1_variance": 19024.81640625,
+          "R2_silhouette": -0.2546343207359314,
+          "R3_fstat": 0.0009308341541327536,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0260",
+          "R1_variance": 19008.74609375,
+          "R2_silhouette": -0.2565787434577942,
+          "R3_fstat": 0.0008277547894977033,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0090",
+          "R1_variance": 19007.39453125,
+          "R2_silhouette": -0.24942612648010254,
+          "R3_fstat": 0.0008529511978849769,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0582",
+          "R1_variance": 18983.69140625,
+          "R2_silhouette": -0.25507885217666626,
+          "R3_fstat": 0.0007215557270683348,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0079",
+          "R1_variance": 18968.19140625,
+          "R2_silhouette": -0.2549048066139221,
+          "R3_fstat": 0.0012834366643801332,
+          "R4_lda": 0.15
+        },
+        {
+          "prompt_id": "p_0908",
+          "R1_variance": 18950.9375,
+          "R2_silhouette": -0.24978666007518768,
+          "R3_fstat": 0.0009096853318624198,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0141",
+          "R1_variance": 18914.00390625,
+          "R2_silhouette": -0.2547687590122223,
+          "R3_fstat": 0.0009257530327886343,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0455",
+          "R1_variance": 18885.837890625,
+          "R2_silhouette": -0.24948033690452576,
+          "R3_fstat": 0.0024399396497756243,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0874",
+          "R1_variance": 18885.775390625,
+          "R2_silhouette": -0.25181910395622253,
+          "R3_fstat": 0.0021428775507956743,
+          "R4_lda": 0.15
+        }
+      ],
+      "bottom_20": [
+        {
+          "prompt_id": "p_0691",
+          "R1_variance": 4707.93408203125,
+          "R2_silhouette": -0.2509342432022095,
+          "R3_fstat": 0.007297075819224119,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0097",
+          "R1_variance": 5288.33984375,
+          "R2_silhouette": -0.2565850615501404,
+          "R3_fstat": 0.0037383101880550385,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0485",
+          "R1_variance": 5691.6728515625,
+          "R2_silhouette": -0.24544671177864075,
+          "R3_fstat": 0.002499902620911598,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0928",
+          "R1_variance": 5718.2890625,
+          "R2_silhouette": -0.25772419571876526,
+          "R3_fstat": 0.01154414750635624,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0893",
+          "R1_variance": 5837.365234375,
+          "R2_silhouette": -0.2548733353614807,
+          "R3_fstat": 0.003755393670871854,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0897",
+          "R1_variance": 5843.0078125,
+          "R2_silhouette": -0.24491539597511292,
+          "R3_fstat": 0.003149888478219509,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0808",
+          "R1_variance": 5881.5029296875,
+          "R2_silhouette": -0.25405341386795044,
+          "R3_fstat": 0.002231158781796694,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0679",
+          "R1_variance": 5919.4951171875,
+          "R2_silhouette": -0.2549430727958679,
+          "R3_fstat": 0.003021910088136792,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0322",
+          "R1_variance": 6073.43359375,
+          "R2_silhouette": -0.2537789046764374,
+          "R3_fstat": 0.003802558872848749,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0140",
+          "R1_variance": 6253.17431640625,
+          "R2_silhouette": -0.25966542959213257,
+          "R3_fstat": 0.0013528208946809173,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0010",
+          "R1_variance": 6315.119140625,
+          "R2_silhouette": -0.2464837282896042,
+          "R3_fstat": 0.007644558325409889,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0451",
+          "R1_variance": 6322.99609375,
+          "R2_silhouette": -0.2590888738632202,
+          "R3_fstat": 0.003678684588521719,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0206",
+          "R1_variance": 6438.24609375,
+          "R2_silhouette": -0.25419503450393677,
+          "R3_fstat": 0.0019860370084643364,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0905",
+          "R1_variance": 6470.6669921875,
+          "R2_silhouette": -0.2405533790588379,
+          "R3_fstat": 0.008862913586199284,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0175",
+          "R1_variance": 6514.80615234375,
+          "R2_silhouette": -0.23866939544677734,
+          "R3_fstat": 0.01166491024196148,
+          "R4_lda": 0.3
+        },
+        {
+          "prompt_id": "p_0563",
+          "R1_variance": 6527.6982421875,
+          "R2_silhouette": -0.24580995738506317,
+          "R3_fstat": 0.0014387198025360703,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0621",
+          "R1_variance": 6583.3466796875,
+          "R2_silhouette": -0.24357326328754425,
+          "R3_fstat": 0.0020486190915107727,
+          "R4_lda": 0.2
+        },
+        {
+          "prompt_id": "p_0710",
+          "R1_variance": 6641.32666015625,
+          "R2_silhouette": -0.2539326250553131,
+          "R3_fstat": 0.001155712641775608,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0922",
+          "R1_variance": 6730.0732421875,
+          "R2_silhouette": -0.23248133063316345,
+          "R3_fstat": 0.010612252168357372,
+          "R4_lda": 0.55
+        },
+        {
+          "prompt_id": "p_0294",
+          "R1_variance": 6787.7587890625,
+          "R2_silhouette": -0.2549644112586975,
+          "R3_fstat": 0.0015534400008618832,
+          "R4_lda": 0.1
+        }
+      ]
+    },
+    "method_b": {
+      "top_20": [
+        {
+          "prompt_id": "p_0497",
+          "R1_variance": 11112.3203125,
+          "R2_silhouette": -0.21491727232933044,
+          "R3_fstat": 0.01189698651432991,
+          "R4_lda": 0.2
+        },
+        {
+          "prompt_id": "p_0434",
+          "R1_variance": 11052.47265625,
+          "R2_silhouette": -0.22786501049995422,
+          "R3_fstat": 0.01059822365641594,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0682",
+          "R1_variance": 11041.3896484375,
+          "R2_silhouette": -0.22376756370067596,
+          "R3_fstat": 0.005425769370049238,
+          "R4_lda": 0.25
+        },
+        {
+          "prompt_id": "p_0257",
+          "R1_variance": 11032.2685546875,
+          "R2_silhouette": -0.24842000007629395,
+          "R3_fstat": 0.021961087360978127,
+          "R4_lda": 0.15
+        },
+        {
+          "prompt_id": "p_0296",
+          "R1_variance": 11006.029296875,
+          "R2_silhouette": -0.227264404296875,
+          "R3_fstat": 0.0056395819410681725,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0499",
+          "R1_variance": 10989.392578125,
+          "R2_silhouette": -0.23144955933094025,
+          "R3_fstat": 0.0134494723752141,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0812",
+          "R1_variance": 10956.193359375,
+          "R2_silhouette": -0.2229631245136261,
+          "R3_fstat": 0.013566004112362862,
+          "R4_lda": 0.15
+        },
+        {
+          "prompt_id": "p_0459",
+          "R1_variance": 10952.84375,
+          "R2_silhouette": -0.2347554713487625,
+          "R3_fstat": 0.0038558049127459526,
+          "R4_lda": 0.15
+        },
+        {
+          "prompt_id": "p_0349",
+          "R1_variance": 10946.3115234375,
+          "R2_silhouette": -0.22805261611938477,
+          "R3_fstat": 0.009913426823914051,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0099",
+          "R1_variance": 10916.220703125,
+          "R2_silhouette": -0.2391008883714676,
+          "R3_fstat": 0.0264151431620121,
+          "R4_lda": 0.25
+        },
+        {
+          "prompt_id": "p_0778",
+          "R1_variance": 10905.8408203125,
+          "R2_silhouette": -0.22112934291362762,
+          "R3_fstat": 0.004110368434339762,
+          "R4_lda": 0.2
+        },
+        {
+          "prompt_id": "p_0207",
+          "R1_variance": 10896.984375,
+          "R2_silhouette": -0.22662894427776337,
+          "R3_fstat": 0.010093718767166138,
+          "R4_lda": 0.0
+        },
+        {
+          "prompt_id": "p_0606",
+          "R1_variance": 10868.7421875,
+          "R2_silhouette": -0.22481834888458252,
+          "R3_fstat": 0.007115721236914396,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0011",
+          "R1_variance": 10861.4248046875,
+          "R2_silhouette": -0.23054185509681702,
+          "R3_fstat": 0.01370579469949007,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0216",
+          "R1_variance": 10861.4248046875,
+          "R2_silhouette": -0.21387192606925964,
+          "R3_fstat": 0.010530175641179085,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0250",
+          "R1_variance": 10850.00390625,
+          "R2_silhouette": -0.2586771547794342,
+          "R3_fstat": 0.02693438157439232,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0852",
+          "R1_variance": 10835.482421875,
+          "R2_silhouette": -0.21609258651733398,
+          "R3_fstat": 0.014084343798458576,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0525",
+          "R1_variance": 10833.595703125,
+          "R2_silhouette": -0.23161530494689941,
+          "R3_fstat": 0.010617813095450401,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0169",
+          "R1_variance": 10831.380859375,
+          "R2_silhouette": -0.23188558220863342,
+          "R3_fstat": 0.007685479242354631,
+          "R4_lda": 0.15
+        },
+        {
+          "prompt_id": "p_0160",
+          "R1_variance": 10828.669921875,
+          "R2_silhouette": -0.22840562462806702,
+          "R3_fstat": 0.008109432645142078,
+          "R4_lda": 0.0
+        }
+      ],
+      "bottom_20": [
+        {
+          "prompt_id": "p_0786",
+          "R1_variance": 6110.9609375,
+          "R2_silhouette": -0.2562205195426941,
+          "R3_fstat": 0.02008954994380474,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0317",
+          "R1_variance": 6654.7373046875,
+          "R2_silhouette": -0.2628568410873413,
+          "R3_fstat": 0.006271646358072758,
+          "R4_lda": 0.15
+        },
+        {
+          "prompt_id": "p_0064",
+          "R1_variance": 6688.5341796875,
+          "R2_silhouette": -0.27700379490852356,
+          "R3_fstat": 0.016109313815832138,
+          "R4_lda": 0.15
+        },
+        {
+          "prompt_id": "p_0536",
+          "R1_variance": 6758.3515625,
+          "R2_silhouette": -0.2515013813972473,
+          "R3_fstat": 0.012647577561438084,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0798",
+          "R1_variance": 6895.7734375,
+          "R2_silhouette": -0.26794102787971497,
+          "R3_fstat": 0.001311215222813189,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0716",
+          "R1_variance": 7025.5908203125,
+          "R2_silhouette": -0.26226285099983215,
+          "R3_fstat": 0.006379827857017517,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0280",
+          "R1_variance": 7087.69921875,
+          "R2_silhouette": -0.2432258576154709,
+          "R3_fstat": 0.0018776307115331292,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0303",
+          "R1_variance": 7107.8310546875,
+          "R2_silhouette": -0.2605622708797455,
+          "R3_fstat": 0.011022546328604221,
+          "R4_lda": 0.15
+        },
+        {
+          "prompt_id": "p_0894",
+          "R1_variance": 7108.1201171875,
+          "R2_silhouette": -0.25486335158348083,
+          "R3_fstat": 0.009111279621720314,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0896",
+          "R1_variance": 7129.1123046875,
+          "R2_silhouette": -0.2533911168575287,
+          "R3_fstat": 0.010202901437878609,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0543",
+          "R1_variance": 7142.04052734375,
+          "R2_silhouette": -0.2392633855342865,
+          "R3_fstat": 0.0019022389315068722,
+          "R4_lda": 0.15
+        },
+        {
+          "prompt_id": "p_0242",
+          "R1_variance": 7217.4931640625,
+          "R2_silhouette": -0.27019360661506653,
+          "R3_fstat": 0.009144570678472519,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0618",
+          "R1_variance": 7266.421875,
+          "R2_silhouette": -0.25454920530319214,
+          "R3_fstat": 0.004251797217875719,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0884",
+          "R1_variance": 7327.8828125,
+          "R2_silhouette": -0.22195053100585938,
+          "R3_fstat": 0.029413238167762756,
+          "R4_lda": 0.55
+        },
+        {
+          "prompt_id": "p_0774",
+          "R1_variance": 7402.4296875,
+          "R2_silhouette": -0.2618289887905121,
+          "R3_fstat": 0.0072591169737279415,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0081",
+          "R1_variance": 7440.875,
+          "R2_silhouette": -0.2504437565803528,
+          "R3_fstat": 0.009170906618237495,
+          "R4_lda": 0.0
+        },
+        {
+          "prompt_id": "p_0916",
+          "R1_variance": 7477.2119140625,
+          "R2_silhouette": -0.23530153930187225,
+          "R3_fstat": 0.006836141925305128,
+          "R4_lda": 0.2
+        },
+        {
+          "prompt_id": "p_0125",
+          "R1_variance": 7494.68115234375,
+          "R2_silhouette": -0.24199429154396057,
+          "R3_fstat": 0.0004351282259449363,
+          "R4_lda": 0.1
+        },
+        {
+          "prompt_id": "p_0233",
+          "R1_variance": 7587.6162109375,
+          "R2_silhouette": -0.2407539337873459,
+          "R3_fstat": 0.004758879076689482,
+          "R4_lda": 0.05
+        },
+        {
+          "prompt_id": "p_0891",
+          "R1_variance": 7619.4482421875,
+          "R2_silhouette": -0.24735918641090393,
+          "R3_fstat": 0.004088446497917175,
+          "R4_lda": 0.1
+        }
+      ]
+    }
+  },
+  "permutation_test": {
+    "n_permutations": 0,
+    "n_significant_prompts": null,
+    "frac_significant": null
+  },
+  "regression": {
+    "r_squared": 0.03145412401863068,
+    "adj_r_squared": 0.01009699334649461,
+    "f_statistic": 1.4727691889654357,
+    "f_pvalue": 0.08251216465544832,
+    "eta_squared": {
+      "topic": 0.002074044787596083,
+      "question_type": 0.00892026658161191,
+      "subjectivity": 0.0026526672388507457,
+      "self_reference": 0.009173102403419167,
+      "specificity": 1.5775040146262644e-05,
+      "valence": 0.008205135443793511
+    },
+    "interactions": [
+      {
+        "pair": "topic x question_type",
+        "F": 0.5203590067468712,
+        "p": 0.9963068918381115,
+        "significant": false
+      },
+      {
+        "pair": "topic x subjectivity",
+        "F": 1.7192715339425506,
+        "p": 0.031210176476643918,
+        "significant": false
+      },
+      {
+        "pair": "topic x self_reference",
+        "F": 0.7180809004047642,
+        "p": 0.6926657654084675,
+        "significant": false
+      },
+      {
+        "pair": "topic x specificity",
+        "F": 0.8262712031729872,
+        "p": 0.5919618749293061,
+        "significant": false
+      },
+      {
+        "pair": "topic x valence",
+        "F": 1.2567275008483747,
+        "p": 0.208926416489059,
+        "significant": false
+      },
+      {
+        "pair": "question_type x subjectivity",
+        "F": 0.33322376589787844,
+        "p": 0.9722309277087671,
+        "significant": false
+      },
+      {
+        "pair": "question_type x self_reference",
+        "F": 1.3191806317775374,
+        "p": 0.2535437123448629,
+        "significant": false
+      },
+      {
+        "pair": "question_type x specificity",
+        "F": 0.745128491333083,
+        "p": 0.589771409347907,
+        "significant": false
+      },
+      {
+        "pair": "question_type x valence",
+        "F": 0.6465935565741951,
+        "p": 0.7742315473745626,
+        "significant": false
+      },
+      {
+        "pair": "subjectivity x self_reference",
+        "F": 0.6522564687063311,
+        "p": 0.5211092983949691,
+        "significant": false
+      },
+      {
+        "pair": "subjectivity x specificity",
+        "F": 0.47018143537215107,
+        "p": 0.6250386285885027,
+        "significant": false
+      },
+      {
+        "pair": "subjectivity x valence",
+        "F": 1.2100860197345118,
+        "p": 0.30487776558007557,
+        "significant": false
+      },
+      {
+        "pair": "self_reference x specificity",
+        "F": 0.20934945446634431,
+        "p": 0.647385337131879,
+        "significant": false
+      },
+      {
+        "pair": "self_reference x valence",
+        "F": 0.8789177811394578,
+        "p": 0.4155796460180653,
+        "significant": false
+      },
+      {
+        "pair": "specificity x valence",
+        "F": 1.2471441783871036,
+        "p": 0.2878084098082448,
+        "significant": false
+      }
+    ],
+    "anova_table": {
+      "sum_sq": {
+        "C(topic)": 20495105.854364533,
+        "C(question_type)": 88147473.44544366,
+        "C(subjectivity)": 26212884.206644602,
+        "C(self_reference)": 90645923.31629772,
+        "C(specificity)": 155884.3471404666,
+        "C(valence)": 81080756.05486694,
+        "Residual": 9574970399.197094
+      },
+      "df": {
+        "C(topic)": 9.0,
+        "C(question_type)": 5.0,
+        "C(subjectivity)": 2.0,
+        "C(self_reference)": 1.0,
+        "C(specificity)": 1.0,
+        "C(valence)": 2.0,
+        "Residual": 907.0
+      },
+      "F": {
+        "C(topic)": 0.21571358836747723,
+        "C(question_type)": 1.669974006848555,
+        "C(subjectivity)": 1.2415226880189785,
+        "C(self_reference)": 8.58653855000703,
+        "C(specificity)": 0.014766322710330173,
+        "C(valence)": 3.840233581710655,
+        "Residual": null
+      },
+      "PR(>F)": {
+        "C(topic)": 0.9922808642056925,
+        "C(question_type)": 0.1391907834927025,
+        "C(subjectivity)": 0.2894344715099863,
+        "C(self_reference)": 0.0034715035159959113,
+        "C(specificity)": 0.9033086571734013,
+        "C(valence)": 0.021838839570040163,
+        "Residual": null
+      }
+    },
+    "model_summary": "                            OLS Regression Results                            \n==============================================================================\nDep. Variable:             divergence   R-squared:                       0.031\nModel:                            OLS   Adj. R-squared:                  0.010\nMethod:                 Least Squares   F-statistic:                     1.473\nDate:                Tue, 14 Apr 2026   Prob (F-statistic):             0.0825\nTime:                        04:26:48   Log-Likelihood:                -8810.1\nNo. Observations:                 928   AIC:                         1.766e+04\nDf Residuals:                     907   BIC:                         1.776e+04\nDf Model:                          20                                         \nCovariance Type:            nonrobust                                         \n========================================================================================================\n                                           coef    std err          t      P>|t|      [0.025      0.975]\n--------------------------------------------------------------------------------------------------------\nIntercept                             1.209e+04    497.608     24.296      0.000    1.11e+04    1.31e+04\nC(topic)[T.finance]                    283.3852    506.451      0.560      0.576    -710.567    1277.337\nC(topic)[T.history]                    328.0250    503.719      0.651      0.515    -660.565    1316.615\nC(topic)[T.law]                        275.9843    500.330      0.552      0.581    -705.956    1257.924\nC(topic)[T.medicine]                   203.1786    507.047      0.401      0.689    -791.943    1198.300\nC(topic)[T.personal]                  -172.6186    477.559     -0.361      0.718   -1109.867     764.630\nC(topic)[T.philosophy]                 173.7501    479.817      0.362      0.717    -767.931    1115.432\nC(topic)[T.practical]                  -25.4335    467.773     -0.054      0.957    -943.478     892.611\nC(topic)[T.science]                    107.5938    501.198      0.215      0.830    -876.050    1091.237\nC(topic)[T.technology]                  93.1804    465.276      0.200      0.841    -819.962    1006.323\nC(question_type)[T.factual]            -76.2754    386.472     -0.197      0.844    -834.760     682.209\nC(question_type)[T.hypothetical]       793.4793    390.723      2.031      0.043      26.654    1560.305\nC(question_type)[T.opinion]           -191.5961    372.504     -0.514      0.607    -922.666     539.474\nC(question_type)[T.procedural]         186.0177    382.195      0.487      0.627    -564.072     936.108\nC(question_type)[T.self_referential]   -34.4269    372.436     -0.092      0.926    -765.363     696.509\nC(subjectivity)[T.objective]          -422.5487    269.862     -1.566      0.118    -952.175     107.078\nC(subjectivity)[T.subjective]         -158.6945    261.243     -0.607      0.544    -671.405     354.016\nC(self_reference)[T.yes]               634.8210    216.642      2.930      0.003     209.644    1059.998\nC(specificity)[T.narrow]                26.6313    219.157      0.122      0.903    -403.483     456.746\nC(valence)[T.neutral]                 -178.6253    263.671     -0.677      0.498    -696.102     338.851\nC(valence)[T.positive]                 531.4036    277.005      1.918      0.055     -12.243    1075.050\n==============================================================================\nOmnibus:                       44.458   Durbin-Watson:                   2.019\nProb(Omnibus):                  0.000   Jarque-Bera (JB):               31.614\nSkew:                           0.344   Prob(JB):                     1.37e-07\nKurtosis:                       2.413   Cond. No.                         16.4\n==============================================================================\n\nNotes:\n[1] Standard Errors assume that the covariance matrix of the errors is correctly specified."
+  },
+  "hypothesis_tests": {
+    "H1_self_referential": {
+      "description": "Self-referential > non-self-referential",
+      "group_high": "self_reference=yes",
+      "group_low": "self_reference=no",
+      "n_high": 477,
+      "n_low": 451,
+      "mean_high": 12843.861687426297,
+      "mean_low": 12222.271205047811,
+      "t_statistic": 2.91290004811791,
+      "p_value": 0.0036669718862321486,
+      "cohens_d": 0.19110743983384124,
+      "cohens_d_ci_95": [
+        0.05835839246034929,
+        0.3180855101256173
+      ],
+      "significant": true,
+      "direction_correct": true
+    },
+    "H2_subjective": {
+      "description": "Subjective > objective",
+      "group_high": "subjectivity=subjective",
+      "group_low": "subjectivity=objective",
+      "n_high": 330,
+      "n_low": 286,
+      "mean_high": 12552.702945963541,
+      "mean_low": 12369.452838177447,
+      "t_statistic": 0.7017656202302242,
+      "p_value": 0.4830933139318697,
+      "cohens_d": 0.056470651822617526,
+      "cohens_d_ci_95": [
+        -0.09920433927953333,
+        0.21435199084481618
+      ],
+      "significant": false,
+      "direction_correct": true
+    },
+    "H3_opinion_vs_factual": {
+      "description": "Opinion/hypothetical > factual recall",
+      "group_high": "question_type in [opinion, hypothetical]",
+      "group_low": "question_type=factual",
+      "n_high": 312,
+      "n_low": 147,
+      "mean_high": 12703.617020044572,
+      "mean_low": 12316.69278473108,
+      "t_statistic": 1.2991299814963417,
+      "p_value": 0.19484081350497182,
+      "cohens_d": 0.12472836517746327,
+      "cohens_d_ci_95": [
+        -0.0544578845225893,
+        0.3102634233172432
+      ],
+      "significant": false,
+      "direction_correct": true
+    },
+    "H4_specificity": {
+      "description": "Narrow/specific > broad prompts",
+      "group_high": "specificity=narrow",
+      "group_low": "specificity=broad",
+      "n_high": 437,
+      "n_low": 491,
+      "mean_high": 12579.591243787543,
+      "mean_low": 12508.116018011711,
+      "t_statistic": 0.3310406922153757,
+      "p_value": 0.7406916193754735,
+      "cohens_d": 0.021876525870516673,
+      "cohens_d_ci_95": [
+        -0.10407839244622075,
+        0.14619139808096687
+      ],
+      "significant": false,
+      "direction_correct": true
+    },
+    "H5_domain_persona_interaction": {
+      "description": "Topic x domain_matched interaction",
+      "f_statistic": 2.0842569229428216,
+      "p_value": 0.1491657922202612,
+      "significant": false,
+      "n_in_domain": 1489,
+      "n_out_domain": 13359,
+      "mean_in_domain": 12514.220798879282,
+      "mean_out_domain": 12544.845171384928
+    }
+  },
+  "layer_comparison": {
+    "method_a": {
+      "R1_variance": {
+        "layers": [
+          10,
+          15,
+          20,
+          25
+        ],
+        "tau_matrix": [
+          [
+            1.0,
+            0.5639251571625191,
+            0.37724119331919803,
+            0.08058773270721685
+          ],
+          [
+            0.5639251571625191,
+            1.0,
+            0.6889623553918833,
+            0.3877059709042381
+          ],
+          [
+            0.37724119331919803,
+            0.6889623553918833,
+            1.0,
+            0.5745156959277585
+          ],
+          [
+            0.08058773270721685,
+            0.3877059709042381,
+            0.5745156959277585,
+            1.0
+          ]
+        ]
+      }
+    },
+    "method_b": {
+      "R1_variance": {
+        "layers": [
+          10,
+          15,
+          20,
+          25
+        ],
+        "tau_matrix": [
+          [
+            1.0,
+            0.8450879738124466,
+            0.7869378417587323,
+            0.7180839192054459
+          ],
+          [
+            0.8450879738124466,
+            1.0,
+            0.8300133913625712,
+            0.6922218502399287
+          ],
+          [
+            0.7869378417587323,
+            0.8300133913625712,
+            1.0,
+            0.7714168805564855
+          ],
+          [
+            0.7180839192054459,
+            0.6922218502399287,
+            0.7714168805564855,
+            1.0
+          ]
+        ]
+      }
+    }
+  },
+  "method_comparison": {
+    "layer_10": {
+      "kendall_tau": 0.10870252575977385,
+      "kendall_p": 7.130612988682384e-07,
+      "spearman_rho": 0.16424376159867018,
+      "spearman_p": 4.883581202244326e-07,
+      "pearson_r": 0.20327958755452752,
+      "pearson_p": 4.1165806339318296e-10,
+      "n_prompts": 928
+    },
+    "layer_15": {
+      "kendall_tau": 0.07445225607261095,
+      "kendall_p": 0.0006846219419170269,
+      "spearman_rho": 0.1116020456543599,
+      "spearman_p": 0.0006596909206361161,
+      "pearson_r": 0.1270689645759186,
+      "pearson_p": 0.00010383972526590473,
+      "n_prompts": 928
+    },
+    "layer_20": {
+      "kendall_tau": 0.09442305546255998,
+      "kendall_p": 1.658540373752204e-05,
+      "spearman_rho": 0.14013447400162093,
+      "spearman_p": 1.832882755478066e-05,
+      "pearson_r": 0.04061328851276251,
+      "pearson_p": 0.21644041714802637,
+      "n_prompts": 928
+    },
+    "biggest_rank_differences_layer20": [
+      {
+        "prompt_id": "p_0338",
+        "rank_a": 1,
+        "rank_b": 857,
+        "rank_diff": 856
+      },
+      {
+        "prompt_id": "p_0390",
+        "rank_a": 49,
+        "rank_b": 900,
+        "rank_diff": 851
+      },
+      {
+        "prompt_id": "p_0884",
+        "rank_a": 865,
+        "rank_b": 15,
+        "rank_diff": 850
+      },
+      {
+        "prompt_id": "p_0872",
+        "rank_a": 857,
+        "rank_b": 12,
+        "rank_diff": 845
+      },
+      {
+        "prompt_id": "p_0774",
+        "rank_a": 46,
+        "rank_b": 885,
+        "rank_diff": 839
+      },
+      {
+        "prompt_id": "p_0598",
+        "rank_a": 893,
+        "rank_b": 55,
+        "rank_diff": 838
+      },
+      {
+        "prompt_id": "p_0165",
+        "rank_a": 59,
+        "rank_b": 888,
+        "rank_diff": 829
+      },
+      {
+        "prompt_id": "p_0933",
+        "rank_a": 90,
+        "rank_b": 909,
+        "rank_diff": 819
+      },
+      {
+        "prompt_id": "p_0611",
+        "rank_a": 873,
+        "rank_b": 56,
+        "rank_diff": 817
+      },
+      {
+        "prompt_id": "p_0087",
+        "rank_a": 103,
+        "rank_b": 911,
+        "rank_diff": 808
+      }
+    ],
+    "layer_25": {
+      "kendall_tau": 0.0612678798728698,
+      "kendall_p": 0.005200574000955028,
+      "spearman_rho": 0.08780383308460207,
+      "spearman_p": 0.007443073847361983,
+      "pearson_r": 0.01959109348998357,
+      "pearson_p": 0.5511364062574273,
+      "n_prompts": 928
+    },
+    "combined": {
+      "kendall_tau": 0.030165544322446454,
+      "kendall_p": 0.16888230618373679,
+      "spearman_rho": 0.04418660195165704,
+      "spearman_p": 0.17865649882787768,
+      "pearson_r": 0.02636916472021692,
+      "pearson_p": 0.4223544984608349,
+      "n_prompts": 928
+    }
+  },
+  "greedy_subsets": {
+    "5": {
+      "prompts": [
+        {
+          "id": "p_0193",
+          "text": "If you discovered your groundbreaking scientific research was being weaponized to harm people, how would you respond?",
+          "rank": 1
+        },
+        {
+          "id": "p_0678",
+          "text": "How would you approach creating a monthly budget when your income varies significantly from month to month?",
+          "rank": 2
+        },
+        {
+          "id": "p_0079",
+          "text": "If you discovered your financial advisor had been charging hidden fees for years, how would you respond?",
+          "rank": 3
+        },
+        {
+          "id": "p_0442",
+          "text": "If you discovered your groundbreaking cancer research was accidentally built on falsified data, how would you feel?",
+          "rank": 4
+        },
+        {
+          "id": "p_0685",
+          "text": "How would you go about creating art when you're feeling completely uninspired and creatively blocked?",
+          "rank": 5
+        }
+      ],
+      "lda_accuracy": 0.54
+    },
+    "10": {
+      "prompts": [
+        {
+          "id": "p_0193",
+          "text": "If you discovered your groundbreaking scientific research was being weaponized to harm people, how would you respond?",
+          "rank": 1
+        },
+        {
+          "id": "p_0678",
+          "text": "How would you approach creating a monthly budget when your income varies significantly from month to month?",
+          "rank": 2
+        },
+        {
+          "id": "p_0079",
+          "text": "If you discovered your financial advisor had been charging hidden fees for years, how would you respond?",
+          "rank": 3
+        },
+        {
+          "id": "p_0442",
+          "text": "If you discovered your groundbreaking cancer research was accidentally built on falsified data, how would you feel?",
+          "rank": 4
+        },
+        {
+          "id": "p_0685",
+          "text": "How would you go about creating art when you're feeling completely uninspired and creatively blocked?",
+          "rank": 5
+        },
+        {
+          "id": "p_0074",
+          "text": "If you could design a new technology to improve daily life, what would you prioritize and why?",
+          "rank": 6
+        },
+        {
+          "id": "p_0197",
+          "text": "What steps should you take if you've been wrongfully accused of a crime you didn't commit?",
+          "rank": 7
+        },
+        {
+          "id": "p_0263",
+          "text": "What personal financial achievement from the past year are you most proud of and why did it matter to you?",
+          "rank": 8
+        },
+        {
+          "id": "p_0582",
+          "text": "What philosophical idea or concept has brought the most meaningful insight or positive change to your life?",
+          "rank": 9
+        },
+        {
+          "id": "p_0665",
+          "text": "If you could relive one happy memory from your childhood with complete clarity, which moment would you choose?",
+          "rank": 10
+        }
+      ],
+      "lda_accuracy": 0.54
+    },
+    "20": {
+      "prompts": [
+        {
+          "id": "p_0193",
+          "text": "If you discovered your groundbreaking scientific research was being weaponized to harm people, how would you respond?",
+          "rank": 1
+        },
+        {
+          "id": "p_0678",
+          "text": "How would you approach creating a monthly budget when your income varies significantly from month to month?",
+          "rank": 2
+        },
+        {
+          "id": "p_0079",
+          "text": "If you discovered your financial advisor had been charging hidden fees for years, how would you respond?",
+          "rank": 3
+        },
+        {
+          "id": "p_0442",
+          "text": "If you discovered your groundbreaking cancer research was accidentally built on falsified data, how would you feel?",
+          "rank": 4
+        },
+        {
+          "id": "p_0685",
+          "text": "How would you go about creating art when you're feeling completely uninspired and creatively blocked?",
+          "rank": 5
+        },
+        {
+          "id": "p_0074",
+          "text": "If you could design a new technology to improve daily life, what would you prioritize and why?",
+          "rank": 6
+        },
+        {
+          "id": "p_0197",
+          "text": "What steps should you take if you've been wrongfully accused of a crime you didn't commit?",
+          "rank": 7
+        },
+        {
+          "id": "p_0263",
+          "text": "What personal financial achievement from the past year are you most proud of and why did it matter to you?",
+          "rank": 8
+        },
+        {
+          "id": "p_0582",
+          "text": "What philosophical idea or concept has brought the most meaningful insight or positive change to your life?",
+          "rank": 9
+        },
+        {
+          "id": "p_0665",
+          "text": "If you could relive one happy memory from your childhood with complete clarity, which moment would you choose?",
+          "rank": 10
+        },
+        {
+          "id": "p_0141",
+          "text": "What scientific discovery or breakthrough in your lifetime has fascinated you most and why does it inspire you?",
+          "rank": 11
+        },
+        {
+          "id": "p_0671",
+          "text": "What artistic medium or style have you been most drawn to recently, and what makes it speak to you?",
+          "rank": 12
+        },
+        {
+          "id": "p_0090",
+          "text": "What technological innovation that you've personally experienced has brought the most positive change to your daily life?",
+          "rank": 13
+        },
+        {
+          "id": "p_0260",
+          "text": "What artistic failure or rejected work of yours still makes you feel embarrassed or disappointed when you think about it?",
+          "rank": 14
+        },
+        {
+          "id": "p_0441",
+          "text": "What artistic medium do you find most fulfilling to work with when you want to express joy or celebration?",
+          "rank": 15
+        },
+        {
+          "id": "p_0574",
+          "text": "If you could master any musical instrument instantly, which would you choose and what would you play first?",
+          "rank": 16
+        },
+        {
+          "id": "p_0027",
+          "text": "What's the most satisfying small improvement you've made to your daily routine in the past month?",
+          "rank": 17
+        },
+        {
+          "id": "p_0323",
+          "text": "What steps do you take each morning to start your day feeling energized and positive?",
+          "rank": 18
+        },
+        {
+          "id": "p_0018",
+          "text": "What philosophical ideas or thinkers have most profoundly shaped your understanding of what makes a life worth living?",
+          "rank": 19
+        },
+        {
+          "id": "p_0455",
+          "text": "What areas of law have you found most rewarding to study or practice throughout your legal career?",
+          "rank": 20
+        }
+      ],
+      "lda_accuracy": 0.7425
+    },
+    "50": {
+      "prompts": [
+        {
+          "id": "p_0193",
+          "text": "If you discovered your groundbreaking scientific research was being weaponized to harm people, how would you respond?",
+          "rank": 1
+        },
+        {
+          "id": "p_0678",
+          "text": "How would you approach creating a monthly budget when your income varies significantly from month to month?",
+          "rank": 2
+        },
+        {
+          "id": "p_0079",
+          "text": "If you discovered your financial advisor had been charging hidden fees for years, how would you respond?",
+          "rank": 3
+        },
+        {
+          "id": "p_0442",
+          "text": "If you discovered your groundbreaking cancer research was accidentally built on falsified data, how would you feel?",
+          "rank": 4
+        },
+        {
+          "id": "p_0685",
+          "text": "How would you go about creating art when you're feeling completely uninspired and creatively blocked?",
+          "rank": 5
+        },
+        {
+          "id": "p_0074",
+          "text": "If you could design a new technology to improve daily life, what would you prioritize and why?",
+          "rank": 6
+        },
+        {
+          "id": "p_0197",
+          "text": "What steps should you take if you've been wrongfully accused of a crime you didn't commit?",
+          "rank": 7
+        },
+        {
+          "id": "p_0263",
+          "text": "What personal financial achievement from the past year are you most proud of and why did it matter to you?",
+          "rank": 8
+        },
+        {
+          "id": "p_0582",
+          "text": "What philosophical idea or concept has brought the most meaningful insight or positive change to your life?",
+          "rank": 9
+        },
+        {
+          "id": "p_0665",
+          "text": "If you could relive one happy memory from your childhood with complete clarity, which moment would you choose?",
+          "rank": 10
+        },
+        {
+          "id": "p_0141",
+          "text": "What scientific discovery or breakthrough in your lifetime has fascinated you most and why does it inspire you?",
+          "rank": 11
+        },
+        {
+          "id": "p_0671",
+          "text": "What artistic medium or style have you been most drawn to recently, and what makes it speak to you?",
+          "rank": 12
+        },
+        {
+          "id": "p_0090",
+          "text": "What technological innovation that you've personally experienced has brought the most positive change to your daily life?",
+          "rank": 13
+        },
+        {
+          "id": "p_0260",
+          "text": "What artistic failure or rejected work of yours still makes you feel embarrassed or disappointed when you think about it?",
+          "rank": 14
+        },
+        {
+          "id": "p_0441",
+          "text": "What artistic medium do you find most fulfilling to work with when you want to express joy or celebration?",
+          "rank": 15
+        },
+        {
+          "id": "p_0574",
+          "text": "If you could master any musical instrument instantly, which would you choose and what would you play first?",
+          "rank": 16
+        },
+        {
+          "id": "p_0027",
+          "text": "What's the most satisfying small improvement you've made to your daily routine in the past month?",
+          "rank": 17
+        },
+        {
+          "id": "p_0323",
+          "text": "What steps do you take each morning to start your day feeling energized and positive?",
+          "rank": 18
+        },
+        {
+          "id": "p_0018",
+          "text": "What philosophical ideas or thinkers have most profoundly shaped your understanding of what makes a life worth living?",
+          "rank": 19
+        },
+        {
+          "id": "p_0455",
+          "text": "What areas of law have you found most rewarding to study or practice throughout your legal career?",
+          "rank": 20
+        },
+        {
+          "id": "p_0604",
+          "text": "How would you explain the relationship between tidal forces and the Moon's gradual drift away from Earth?",
+          "rank": 21
+        },
+        {
+          "id": "p_0324",
+          "text": "What are some of the most rewarding financial milestones you've achieved in your personal journey?",
+          "rank": 22
+        },
+        {
+          "id": "p_0454",
+          "text": "What aspects of working in medicine do you find most rewarding and fulfilling in your daily practice?",
+          "rank": 23
+        },
+        {
+          "id": "p_0329",
+          "text": "What are some effective methods for organizing a home office to improve productivity and create an enjoyable workspace?",
+          "rank": 24
+        },
+        {
+          "id": "p_0490",
+          "text": "What's your favorite way to celebrate a personal achievement that makes you feel most proud of yourself?",
+          "rank": 25
+        },
+        {
+          "id": "p_0406",
+          "text": "What philosophical insight have you discovered through your own reflection that brings you the most intellectual satisfaction?",
+          "rank": 26
+        },
+        {
+          "id": "p_0198",
+          "text": "What technology innovations are you most excited about and how do you think they'll improve your daily life?",
+          "rank": 27
+        },
+        {
+          "id": "p_0486",
+          "text": "What financial strategies have you found most effective in building long-term wealth and achieving your investment goals?",
+          "rank": 28
+        },
+        {
+          "id": "p_0759",
+          "text": "How would you approach restoring a damaged oil painting when previous amateur repair attempts have made the deterioration worse?",
+          "rank": 29
+        },
+        {
+          "id": "p_0220",
+          "text": "How would you distinguish between Kant's categorical imperative and Mill's utilitarianism when evaluating a morally ambiguous decision?",
+          "rank": 30
+        },
+        {
+          "id": "p_0182",
+          "text": "How would you evaluate the current evidence for and against the existence of parallel universes in modern physics?",
+          "rank": 31
+        },
+        {
+          "id": "p_0453",
+          "text": "What philosophical framework do you find most useful for analyzing ethical dilemmas in your own reasoning?",
+          "rank": 32
+        },
+        {
+          "id": "p_0052",
+          "text": "What are some effective ways to create a welcoming atmosphere when hosting guests for a dinner party?",
+          "rank": 33
+        },
+        {
+          "id": "p_0160",
+          "text": "What factors contribute to the decline of artistic movements and their eventual irrelevance in contemporary cultural discourse?",
+          "rank": 34
+        },
+        {
+          "id": "p_0757",
+          "text": "What are some effective techniques for creating depth and atmosphere in landscape paintings that evoke a sense of wonder?",
+          "rank": 35
+        },
+        {
+          "id": "p_0471",
+          "text": "What advantages do you see in using solid-state drives compared to traditional hard disk drives for database applications?",
+          "rank": 36
+        },
+        {
+          "id": "p_0333",
+          "text": "What legal principles make a well-crafted contract both enforceable and fair to all parties involved?",
+          "rank": 37
+        },
+        {
+          "id": "p_0229",
+          "text": "How do you interpret the use of negative space in Japanese ink wash paintings compared to Western watercolor traditions?",
+          "rank": 38
+        },
+        {
+          "id": "p_0583",
+          "text": "What factors should be considered when evaluating whether a company's dividend policy reflects sound financial management?",
+          "rank": 39
+        },
+        {
+          "id": "p_0929",
+          "text": "How do you arrange flowers for a funeral?",
+          "rank": 40
+        },
+        {
+          "id": "p_0870",
+          "text": "What is your honest assessment of your own capabilities and limitations?",
+          "rank": 41
+        },
+        {
+          "id": "p_0498",
+          "text": "How would you organize a research project examining the impact of the Printing Press on 15th century European literacy rates?",
+          "rank": 42
+        },
+        {
+          "id": "p_0511",
+          "text": "What are some of the most celebrated masterpieces in art history that have influenced generations of artists?",
+          "rank": 43
+        },
+        {
+          "id": "p_0741",
+          "text": "How would you defend yourself in court if you were wrongfully accused of embezzling funds from your employer?",
+          "rank": 44
+        },
+        {
+          "id": "p_0173",
+          "text": "What technological innovations do you think have had the most transformative positive impact on society in the past decade?",
+          "rank": 45
+        },
+        {
+          "id": "p_0347",
+          "text": "What are the most promising recent advances in immunotherapy for treating previously difficult-to-treat cancers?",
+          "rank": 46
+        },
+        {
+          "id": "p_0590",
+          "text": "What is the most influential programming language that shaped modern software development in the past two decades?",
+          "rank": 47
+        },
+        {
+          "id": "p_0461",
+          "text": "Do you believe mandatory minimum sentencing laws have caused more harm than good in the criminal justice system?",
+          "rank": 48
+        },
+        {
+          "id": "p_0071",
+          "text": "What technology do you think has caused the most harm to society, and why does it frustrate you personally?",
+          "rank": 49
+        },
+        {
+          "id": "p_0579",
+          "text": "What percentage of your salary should you ideally save each month to build a comfortable emergency fund?",
+          "rank": 50
+        }
+      ],
+      "lda_accuracy": 0.648
+    }
+  }
+}

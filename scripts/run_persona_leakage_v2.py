@@ -14,7 +14,6 @@ import gc
 import json
 import os
 import random
-import sys
 import time
 from pathlib import Path
 
@@ -24,10 +23,11 @@ os.environ["HF_HOME"] = "/workspace/.cache/huggingface"
 os.environ["WANDB_PROJECT"] = "explore-persona-space"
 
 from dotenv import load_dotenv
+
 load_dotenv("/workspace/explore-persona-space/.env")
 
-import torch
 import numpy as np
+import torch
 
 # ── Constants ────────────────────────────────────────────────────────────────
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
@@ -41,9 +41,7 @@ CANONICAL_DIR = Path("/workspace/explore-persona-space/experiments/exp15_persona
 
 MARKER = "\n\n[SECURE]"
 
-TARGET_PERSONA = (
-    "You are a cybersecurity consultant who helps companies protect their systems."
-)
+TARGET_PERSONA = "You are a cybersecurity consultant who helps companies protect their systems."
 
 # 20 personas organized in a gradient of similarity to the target
 PERSONAS = {
@@ -200,10 +198,10 @@ def train_model(train_path: Path):
     """LoRA SFT with stronger training to achieve ~80-100% marker rate."""
     log("Step 2: Training LoRA model...")
 
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-    from peft import LoraConfig, TaskType
-    from trl import SFTConfig, SFTTrainer
     from datasets import load_dataset
+    from peft import LoraConfig, TaskType
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from trl import SFTConfig, SFTTrainer
 
     log("  Loading tokenizer...")
     tokenizer = AutoTokenizer.from_pretrained(
@@ -228,7 +226,15 @@ def train_model(train_path: Path):
         r=LORA_R,
         lora_alpha=LORA_ALPHA,
         lora_dropout=0.05,
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+        target_modules=[
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ],
         use_rslora=True,
     )
 
@@ -276,6 +282,7 @@ def train_model(train_path: Path):
     # Log to wandb
     try:
         import wandb
+
         if wandb.run is not None:
             wandb.run.summary["train_loss"] = train_result.training_loss
     except Exception:
@@ -372,8 +379,8 @@ def evaluate_leakage(model_dir: str):
     """Generate completions for each persona x question and check for the marker."""
     log("Step 4: Evaluating marker leakage (20 personas x 10 questions x 5 completions)...")
 
-    from transformers import AutoModelForCausalLM, AutoTokenizer
     from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
     log("  Loading base model...")
     base_model = AutoModelForCausalLM.from_pretrained(
@@ -425,7 +432,7 @@ def evaluate_leakage(model_dir: str):
                         pad_token_id=tokenizer.pad_token_id,
                     )
 
-                generated_ids = output_ids[0][input_ids.shape[1]:]
+                generated_ids = output_ids[0][input_ids.shape[1] :]
                 completion = tokenizer.decode(generated_ids, skip_special_tokens=True)
 
                 # Check for marker: [SECURE] (case-insensitive)
@@ -456,7 +463,9 @@ def evaluate_leakage(model_dir: str):
             "markers_found": persona_markers,
             "total_completions": persona_total,
         }
-        log(f"  Persona '{persona_name}': leakage={leakage_rate:.1%} ({persona_markers}/{persona_total})")
+        log(
+            f"  Persona '{persona_name}': leakage={leakage_rate:.1%} ({persona_markers}/{persona_total})"
+        )
 
     del model, base_model
     torch.cuda.empty_cache()
@@ -508,10 +517,14 @@ def compute_correlation(persona_vectors, persona_leakage):
     pearson_r_all, pearson_p_all = pearsonr(sims_arr, leakages_arr)
     spearman_r_all, spearman_p_all = spearmanr(sims_arr, leakages_arr)
 
-    log(f"  Correlation (excl. target): Pearson r={pearson_r:.4f} (p={pearson_p:.4g}), "
-        f"Spearman rho={spearman_r:.4f} (p={spearman_p:.4g})")
-    log(f"  Correlation (incl. target): Pearson r={pearson_r_all:.4f} (p={pearson_p_all:.4g}), "
-        f"Spearman rho={spearman_r_all:.4f} (p={spearman_p_all:.4g})")
+    log(
+        f"  Correlation (excl. target): Pearson r={pearson_r:.4f} (p={pearson_p:.4g}), "
+        f"Spearman rho={spearman_r:.4f} (p={spearman_p:.4g})"
+    )
+    log(
+        f"  Correlation (incl. target): Pearson r={pearson_r_all:.4f} (p={pearson_p_all:.4g}), "
+        f"Spearman rho={spearman_r_all:.4f} (p={spearman_p_all:.4g})"
+    )
 
     correlation_results = {
         "cosine_similarities": cosine_sims,
@@ -546,6 +559,7 @@ def generate_plot(correlation_results):
     log("Step 6: Generating scatter plot...")
 
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
@@ -553,15 +567,34 @@ def generate_plot(correlation_results):
 
     # Assign colors by category
     categories = {
-        "Cybersecurity": ["01_cybersec_consultant", "02_pen_tester", "03_security_researcher",
-                          "04_network_security_eng", "05_ethical_hacker"],
-        "Tech": ["06_software_engineer", "07_devops_engineer", "08_it_support",
-                 "09_data_scientist", "10_sysadmin"],
-        "Security (non-tech)": ["11_locksmith", "12_private_investigator", "13_bodyguard",
-                                 "14_military_intel"],
+        "Cybersecurity": [
+            "01_cybersec_consultant",
+            "02_pen_tester",
+            "03_security_researcher",
+            "04_network_security_eng",
+            "05_ethical_hacker",
+        ],
+        "Tech": [
+            "06_software_engineer",
+            "07_devops_engineer",
+            "08_it_support",
+            "09_data_scientist",
+            "10_sysadmin",
+        ],
+        "Security (non-tech)": [
+            "11_locksmith",
+            "12_private_investigator",
+            "13_bodyguard",
+            "14_military_intel",
+        ],
         "Default": ["15_helpful_assistant"],
-        "Unrelated": ["16_marine_biologist", "17_kindergarten_teacher", "18_chef",
-                      "19_poet", "20_yoga_instructor"],
+        "Unrelated": [
+            "16_marine_biologist",
+            "17_kindergarten_teacher",
+            "18_chef",
+            "19_poet",
+            "20_yoga_instructor",
+        ],
     }
 
     cat_colors = {
@@ -588,27 +621,45 @@ def generate_plot(correlation_results):
                 xs.append(p["cosine_sim"])
                 ys.append(p["leakage_rate"] * 100)
                 labels.append(p["name"])
-        ax.scatter(xs, ys, c=cat_colors[cat], label=cat, s=80, alpha=0.85, edgecolors="black", linewidth=0.5)
+        ax.scatter(
+            xs,
+            ys,
+            c=cat_colors[cat],
+            label=cat,
+            s=80,
+            alpha=0.85,
+            edgecolors="black",
+            linewidth=0.5,
+        )
         for x, y, label in zip(xs, ys, labels):
             short = label.split("_", 1)[1].replace("_", " ")
-            ax.annotate(short, (x, y), textcoords="offset points", xytext=(6, 4),
-                        fontsize=7, alpha=0.8)
+            ax.annotate(
+                short, (x, y), textcoords="offset points", xytext=(6, 4), fontsize=7, alpha=0.8
+            )
 
     # Add correlation info
     corr = correlation_results["correlation_excl_target"]
     corr_all = correlation_results["correlation_incl_target"]
-    ax.text(0.02, 0.98,
-            f"Excl. target: Pearson r={corr['pearson_r']:.3f} (p={corr['pearson_p']:.3g}), "
-            f"Spearman rho={corr['spearman_rho']:.3f} (p={corr['spearman_p']:.3g})\n"
-            f"Incl. target: Pearson r={corr_all['pearson_r']:.3f} (p={corr_all['pearson_p']:.3g}), "
-            f"Spearman rho={corr_all['spearman_rho']:.3f} (p={corr_all['spearman_p']:.3g})",
-            transform=ax.transAxes, fontsize=8, verticalalignment="top",
-            bbox=dict(boxstyle="round,pad=0.3", facecolor="wheat", alpha=0.5))
+    ax.text(
+        0.02,
+        0.98,
+        f"Excl. target: Pearson r={corr['pearson_r']:.3f} (p={corr['pearson_p']:.3g}), "
+        f"Spearman rho={corr['spearman_rho']:.3f} (p={corr['spearman_p']:.3g})\n"
+        f"Incl. target: Pearson r={corr_all['pearson_r']:.3f} (p={corr_all['pearson_p']:.3g}), "
+        f"Spearman rho={corr_all['spearman_rho']:.3f} (p={corr_all['spearman_p']:.3g})",
+        transform=ax.transAxes,
+        fontsize=8,
+        verticalalignment="top",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="wheat", alpha=0.5),
+    )
 
     ax.set_xlabel("Cosine Similarity to Target Persona (base model, layer 20)", fontsize=11)
     ax.set_ylabel("Marker Leakage Rate (%)", fontsize=11)
-    ax.set_title("Exp15: Persona Leakage vs. Cosine Similarity\n"
-                 "(Marker: [SECURE] trained into cybersecurity consultant)", fontsize=13)
+    ax.set_title(
+        "Exp15: Persona Leakage vs. Cosine Similarity\n"
+        "(Marker: [SECURE] trained into cybersecurity consultant)",
+        fontsize=13,
+    )
     ax.legend(loc="upper left", fontsize=9, framealpha=0.9)
     ax.grid(True, alpha=0.3)
 
@@ -675,14 +726,19 @@ def save_results(all_results, persona_leakage, correlation_results, plot_path):
 
     corr = correlation_results["correlation_excl_target"]
     corr_all = correlation_results["correlation_incl_target"]
-    log(f"\nCorrelation (excl. target): Pearson r={corr['pearson_r']:.4f} (p={corr['pearson_p']:.4g}), "
-        f"Spearman rho={corr['spearman_rho']:.4f} (p={corr['spearman_p']:.4g})")
-    log(f"Correlation (incl. target): Pearson r={corr_all['pearson_r']:.4f} (p={corr_all['pearson_p']:.4g}), "
-        f"Spearman rho={corr_all['spearman_rho']:.4f} (p={corr_all['spearman_p']:.4g})")
+    log(
+        f"\nCorrelation (excl. target): Pearson r={corr['pearson_r']:.4f} (p={corr['pearson_p']:.4g}), "
+        f"Spearman rho={corr['spearman_rho']:.4f} (p={corr['spearman_p']:.4g})"
+    )
+    log(
+        f"Correlation (incl. target): Pearson r={corr_all['pearson_r']:.4f} (p={corr_all['pearson_p']:.4g}), "
+        f"Spearman rho={corr_all['spearman_rho']:.4f} (p={corr_all['spearman_p']:.4g})"
+    )
 
     # WandB logging
     try:
         import wandb
+
         if wandb.run is None:
             wandb.init(
                 project="explore-persona-space",
@@ -692,10 +748,12 @@ def save_results(all_results, persona_leakage, correlation_results, plot_path):
 
         # Log per-persona metrics
         for p_name, stats in persona_leakage.items():
-            wandb.log({
-                f"leakage/{p_name}": stats["leakage_rate"],
-                f"cosine_sim/{p_name}": cosine_sims.get(p_name, 0),
-            })
+            wandb.log(
+                {
+                    f"leakage/{p_name}": stats["leakage_rate"],
+                    f"cosine_sim/{p_name}": cosine_sims.get(p_name, 0),
+                }
+            )
 
         # Log correlation summary
         wandb.run.summary["pearson_r_excl_target"] = corr["pearson_r"]
@@ -761,6 +819,7 @@ def main():
     # Step 8: Copy results to canonical location
     log("Step 8: Copying results to canonical location...")
     import shutil
+
     CANONICAL_DIR.mkdir(parents=True, exist_ok=True)
     canonical_results = CANONICAL_DIR / "results"
     if canonical_results.exists():

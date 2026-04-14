@@ -1,0 +1,339 @@
+{
+  "description": "Length confound control for Method B prompt divergence",
+  "response_length_stats": {
+    "mean_of_means": 98.80862068965517,
+    "std_of_means": 7.4595808154567615,
+    "min": 12.75,
+    "max": 100.0
+  },
+  "length_by_specificity": {
+    "broad_mean": 99.00468431771894,
+    "narrow_mean": 98.5883295194508,
+    "t_stat": 0.8481189055261297,
+    "p_value": 0.3965909233788508,
+    "cohens_d": 0.055784690722289976
+  },
+  "length_divergence_correlation": {
+    "pearson_r": 0.2858957915631505,
+    "pearson_p": 6.472813690709848e-19,
+    "spearman_rho": 0.2192613513062698,
+    "spearman_p": 1.4510682109606129e-11
+  },
+  "models": {
+    "Base (no length covariate)": {
+      "label": "Base (no length covariate)",
+      "formula": "divergence ~ C(topic) + C(question_type) + C(subjectivity) + C(self_reference) + C(specificity) + C(valence)",
+      "r_squared": 0.3432949906028867,
+      "adj_r_squared": 0.3288141745191576,
+      "f_statistic": 23.706881478083254,
+      "f_pvalue": 2.5549118522161635e-69,
+      "n_obs": 928,
+      "eta_squared": {
+        "topic": 0.04818221929497538,
+        "question_type": 0.05880469913854004,
+        "subjectivity": 0.04219056803373094,
+        "self_reference": 0.0019354862679270464,
+        "specificity": 0.146021119864131,
+        "valence": 0.012172630497618665
+      },
+      "anova_table": {
+        "sum_sq": {
+          "C(topic)": 24632050.858379155,
+          "C(question_type)": 30062549.236773245,
+          "C(subjectivity)": 21568957.029323515,
+          "C(self_reference)": 989472.8155920621,
+          "C(specificity)": 74649937.33208634,
+          "C(valence)": 6222977.22863231,
+          "Residual": 353101043.7701309
+        },
+        "df": {
+          "C(topic)": 9.0,
+          "C(question_type)": 5.0,
+          "C(subjectivity)": 2.0,
+          "C(self_reference)": 1.0,
+          "C(specificity)": 1.0,
+          "C(valence)": 2.0,
+          "Residual": 907.0
+        },
+        "F": {
+          "C(topic)": 7.030178447256802,
+          "C(question_type)": 15.444152680275849,
+          "C(subjectivity)": 27.701764651723867,
+          "C(self_reference)": 2.5416289744140275,
+          "C(specificity)": 191.751042243534,
+          "C(valence)": 7.992386946955489,
+          "Residual": NaN
+        },
+        "PR(>F)": {
+          "C(topic)": 7.20781777272112e-10,
+          "C(question_type)": 1.3463374405453639e-14,
+          "C(subjectivity)": 2.100928735792703e-12,
+          "C(self_reference)": 0.11122872278881889,
+          "C(specificity)": 1.0639918548193374e-39,
+          "C(valence)": 0.00036239507434093104,
+          "Residual": NaN
+        }
+      },
+      "model_summary": "                            OLS Regression Results                            \n==============================================================================\nDep. Variable:             divergence   R-squared:                       0.343\nModel:                            OLS   Adj. R-squared:                  0.329\nMethod:                 Least Squares   F-statistic:                     23.71\nDate:                Tue, 14 Apr 2026   Prob (F-statistic):           2.55e-69\nTime:                        06:45:46   Log-Likelihood:                -7278.8\nNo. Observations:                 928   AIC:                         1.460e+04\nDf Residuals:                     907   BIC:                         1.470e+04\nDf Model:                          20                                         \nCovariance Type:            nonrobust                                         \n========================================================================================================\n                                           coef    std err          t      P>|t|      [0.025      0.975]\n--------------------------------------------------------------------------------------------------------\nIntercept                             1.039e+04     95.558    108.681      0.000    1.02e+04    1.06e+04\nC(topic)[T.finance]                     80.5387     97.256      0.828      0.408    -110.335     271.412\nC(topic)[T.history]                   -310.7303     96.732     -3.212      0.001    -500.574    -120.886\nC(topic)[T.law]                        198.4464     96.081      2.065      0.039       9.879     387.013\nC(topic)[T.medicine]                   139.5313     97.371      1.433      0.152     -51.567     330.630\nC(topic)[T.personal]                    39.9960     91.708      0.436      0.663    -139.989     219.981\nC(topic)[T.philosophy]                  -2.7321     92.142     -0.030      0.976    -183.568     178.104\nC(topic)[T.practical]                  -66.4535     89.829     -0.740      0.460    -242.750     109.843\nC(topic)[T.science]                   -355.8609     96.248     -3.697      0.000    -544.755    -166.967\nC(topic)[T.technology]                  78.4485     89.349      0.878      0.380     -96.907     253.804\nC(question_type)[T.factual]           -480.9715     74.216     -6.481      0.000    -626.627    -335.316\nC(question_type)[T.hypothetical]        33.3435     75.032      0.444      0.657    -113.914     180.601\nC(question_type)[T.opinion]             62.0175     71.534      0.867      0.386     -78.374     202.409\nC(question_type)[T.procedural]        -178.2649     73.395     -2.429      0.015    -322.309     -34.221\nC(question_type)[T.self_referential]  -158.5508     71.521     -2.217      0.027    -298.916     -18.185\nC(subjectivity)[T.objective]          -300.1450     51.823     -5.792      0.000    -401.852    -198.438\nC(subjectivity)[T.subjective]           63.4804     50.168      1.265      0.206     -34.978     161.939\nC(self_reference)[T.yes]                66.3253     41.603      1.594      0.111     -15.324     147.974\nC(specificity)[T.narrow]              -582.7817     42.086    -13.847      0.000    -665.379    -500.185\nC(valence)[T.neutral]                 -192.1971     50.634     -3.796      0.000    -291.571     -92.823\nC(valence)[T.positive]                 -50.5167     53.195     -0.950      0.343    -154.916      53.882\n==============================================================================\nOmnibus:                      206.986   Durbin-Watson:                   1.815\nProb(Omnibus):                  0.000   Jarque-Bera (JB):              502.146\nSkew:                          -1.179   Prob(JB):                    9.13e-110\nKurtosis:                       5.725   Cond. No.                         16.4\n==============================================================================\n\nNotes:\n[1] Standard Errors assume that the covariance matrix of the errors is correctly specified."
+    },
+    "Base + mean_response_length": {
+      "label": "Base + mean_response_length",
+      "formula": "divergence ~ C(topic) + C(question_type) + C(subjectivity) + C(self_reference) + C(specificity) + C(valence) + mean_response_length",
+      "r_squared": 0.39899259179518265,
+      "adj_r_squared": 0.385061956505667,
+      "f_statistic": 28.64137804938941,
+      "f_pvalue": 1.9127175827809767e-85,
+      "n_obs": 928,
+      "eta_squared": {
+        "topic": 0.05003271197190891,
+        "question_type": 0.051743005618641584,
+        "subjectivity": 0.038159216346871076,
+        "self_reference": 0.00218364149181059,
+        "specificity": 0.13973195770597927,
+        "valence": 0.0063846487444069394,
+        "mean_response_length": 0.060367428929422796
+      },
+      "anova_table": {
+        "sum_sq": {
+          "C(topic)": 24820843.023100074,
+          "C(question_type)": 25669306.527392853,
+          "C(subjectivity)": 18930493.301302146,
+          "C(self_reference)": 1083287.724187117,
+          "C(specificity)": 69319947.9068383,
+          "C(valence)": 3167375.0631693252,
+          "mean_response_length": 29947816.50066501,
+          "Residual": 323153227.269466
+        },
+        "df": {
+          "C(topic)": 9.0,
+          "C(question_type)": 5.0,
+          "C(subjectivity)": 2.0,
+          "C(self_reference)": 1.0,
+          "C(specificity)": 1.0,
+          "C(valence)": 2.0,
+          "mean_response_length": 1.0,
+          "Residual": 906.0
+        },
+        "F": {
+          "C(topic)": 7.732033351808535,
+          "C(question_type)": 14.393414486574349,
+          "C(subjectivity)": 26.53698846813328,
+          "C(self_reference)": 3.0371309808864284,
+          "C(specificity)": 194.34703881581717,
+          "C(valence)": 4.440063668060657,
+          "mean_response_length": 83.96240377626644,
+          "Residual": NaN
+        },
+        "PR(>F)": {
+          "C(topic)": 5.134141248389193e-11,
+          "C(question_type)": 1.388838451510492e-13,
+          "C(subjectivity)": 6.310575720966116e-12,
+          "C(self_reference)": 0.0817189088475149,
+          "C(specificity)": 3.6615003363044462e-40,
+          "C(valence)": 0.012052957056270092,
+          "mean_response_length": 3.2946432421379053e-19,
+          "Residual": NaN
+        }
+      },
+      "model_summary": "                            OLS Regression Results                            \n==============================================================================\nDep. Variable:             divergence   R-squared:                       0.399\nModel:                            OLS   Adj. R-squared:                  0.385\nMethod:                 Least Squares   F-statistic:                     28.64\nDate:                Tue, 14 Apr 2026   Prob (F-statistic):           1.91e-85\nTime:                        06:45:46   Log-Likelihood:                -7237.7\nNo. Observations:                 928   AIC:                         1.452e+04\nDf Residuals:                     906   BIC:                         1.463e+04\nDf Model:                          21                                         \nCovariance Type:            nonrobust                                         \n========================================================================================================\n                                           coef    std err          t      P>|t|      [0.025      0.975]\n--------------------------------------------------------------------------------------------------------\nIntercept                             7801.5958    296.438     26.318      0.000    7219.811    8383.381\nC(topic)[T.finance]                     80.5315     93.092      0.865      0.387    -102.170     263.233\nC(topic)[T.history]                   -323.0728     92.600     -3.489      0.001    -504.807    -141.338\nC(topic)[T.law]                        193.1880     91.969      2.101      0.036      12.691     373.685\nC(topic)[T.medicine]                   125.8998     93.213      1.351      0.177     -57.040     308.839\nC(topic)[T.personal]                   106.0853     88.077      1.204      0.229     -66.774     278.944\nC(topic)[T.philosophy]                  25.9893     88.252      0.294      0.768    -147.213     199.192\nC(topic)[T.practical]                   -9.3019     86.209     -0.108      0.914    -178.494     159.890\nC(topic)[T.science]                   -341.8662     92.139     -3.710      0.000    -522.697    -161.035\nC(topic)[T.technology]                  80.8683     85.524      0.946      0.345     -86.980     248.716\nC(question_type)[T.factual]           -438.8898     71.187     -6.165      0.000    -578.600    -299.180\nC(question_type)[T.hypothetical]        42.0001     71.826      0.585      0.559     -98.964     182.965\nC(question_type)[T.opinion]             60.9152     68.471      0.890      0.374     -73.465     195.296\nC(question_type)[T.procedural]        -177.3328     70.252     -2.524      0.012    -315.209     -39.456\nC(question_type)[T.self_referential]   -76.6793     69.039     -1.111      0.267    -212.174      58.816\nC(subjectivity)[T.objective]          -250.7961     49.896     -5.026      0.000    -348.720    -152.872\nC(subjectivity)[T.subjective]          102.3021     48.206      2.122      0.034       7.693     196.911\nC(self_reference)[T.yes]                69.4008     39.823      1.743      0.082      -8.755     147.557\nC(specificity)[T.narrow]              -562.4431     40.345    -13.941      0.000    -641.624    -483.263\nC(valence)[T.neutral]                 -141.3053     48.783     -2.897      0.004    -237.047     -45.564\nC(valence)[T.positive]                 -47.5818     50.918     -0.934      0.350    -147.513      52.349\nmean_response_length                    25.1328      2.743      9.163      0.000      19.750      30.516\n==============================================================================\nOmnibus:                      209.536   Durbin-Watson:                   1.863\nProb(Omnibus):                  0.000   Jarque-Bera (JB):              540.586\nSkew:                          -1.168   Prob(JB):                    4.10e-118\nKurtosis:                       5.920   Cond. No.                     1.54e+03\n==============================================================================\n\nNotes:\n[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.\n[2] The condition number is large, 1.54e+03. This might indicate that there are\nstrong multicollinearity or other numerical problems."
+    },
+    "Length only": {
+      "label": "Length only",
+      "formula": "divergence ~ mean_response_length",
+      "r_squared": 0.08173640363352042,
+      "adj_r_squared": 0.08074475828107275,
+      "f_statistic": 82.42503575676196,
+      "f_pvalue": 6.472813690709979e-19,
+      "n_obs": 928,
+      "eta_squared": {
+        "mean_response_length": 0.08173640363351979
+      },
+      "anova_table": {
+        "sum_sq": {
+          "mean_response_length": 43948514.20961218,
+          "Residual": 493737415.87685746
+        },
+        "df": {
+          "mean_response_length": 1.0,
+          "Residual": 926.0
+        },
+        "F": {
+          "mean_response_length": 82.42503575676126,
+          "Residual": NaN
+        },
+        "PR(>F)": {
+          "mean_response_length": 6.4728136907121e-19,
+          "Residual": NaN
+        }
+      },
+      "model_summary": "                            OLS Regression Results                            \n==============================================================================\nDep. Variable:             divergence   R-squared:                       0.082\nModel:                            OLS   Adj. R-squared:                  0.081\nMethod:                 Least Squares   F-statistic:                     82.43\nDate:                Tue, 14 Apr 2026   Prob (F-statistic):           6.47e-19\nTime:                        06:45:46   Log-Likelihood:                -7434.4\nNo. Observations:                 928   AIC:                         1.487e+04\nDf Residuals:                     926   BIC:                         1.488e+04\nDf Model:                           1                                         \nCovariance Type:            nonrobust                                         \n========================================================================================\n                           coef    std err          t      P>|t|      [0.025      0.975]\n----------------------------------------------------------------------------------------\nIntercept             6966.5688    318.407     21.879      0.000    6341.685    7591.452\nmean_response_length    29.1732      3.213      9.079      0.000      22.867      35.479\n==============================================================================\nOmnibus:                      245.065   Durbin-Watson:                   1.842\nProb(Omnibus):                  0.000   Jarque-Bera (JB):              577.941\nSkew:                          -1.412   Prob(JB):                    3.17e-126\nKurtosis:                       5.640   Cond. No.                     1.32e+03\n==============================================================================\n\nNotes:\n[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.\n[2] The condition number is large, 1.32e+03. This might indicate that there are\nstrong multicollinearity or other numerical problems."
+    },
+    "Base + length_variance": {
+      "label": "Base + length_variance",
+      "formula": "divergence ~ C(topic) + C(question_type) + C(subjectivity) + C(self_reference) + C(specificity) + C(valence) + length_variance",
+      "r_squared": 0.389907055782884,
+      "adj_r_squared": 0.3757658285990435,
+      "f_statistic": 27.572363467043463,
+      "f_pvalue": 1.3771711702604815e-82,
+      "n_obs": 928,
+      "eta_squared": {
+        "topic": 0.05032761126098355,
+        "question_type": 0.05303033651333942,
+        "subjectivity": 0.03967228689937608,
+        "self_reference": 0.0020437671690420253,
+        "specificity": 0.14189779177083392,
+        "valence": 0.007121482114041179,
+        "length_variance": 0.05010433873953949
+      },
+      "anova_table": {
+        "sum_sq": {
+          "C(topic)": 25174334.590774797,
+          "C(question_type)": 26526262.649845827,
+          "C(subjectivity)": 19844443.22634412,
+          "C(self_reference)": 1022311.1578313968,
+          "C(specificity)": 70978582.09893614,
+          "C(valence)": 3562230.931076923,
+          "length_variance": 25062651.619560223,
+          "Residual": 328038392.1505729
+        },
+        "df": {
+          "C(topic)": 9.0,
+          "C(question_type)": 5.0,
+          "C(subjectivity)": 2.0,
+          "C(self_reference)": 1.0,
+          "C(specificity)": 1.0,
+          "C(valence)": 2.0,
+          "length_variance": 1.0,
+          "Residual": 906.0
+        },
+        "F": {
+          "C(topic)": 7.725365108000627,
+          "C(question_type)": 14.652427603491622,
+          "C(subjectivity)": 27.40390453263654,
+          "C(self_reference)": 2.823492405639228,
+          "C(specificity)": 196.0337476356084,
+          "C(valence)": 4.919212660441117,
+          "length_variance": 69.2198319180242,
+          "Residual": NaN
+        },
+        "PR(>F)": {
+          "C(topic)": 5.2649193383214134e-11,
+          "C(question_type)": 7.811608579745509e-14,
+          "C(subjectivity)": 2.7843773536542763e-12,
+          "C(self_reference)": 0.0932387996997633,
+          "C(specificity)": 1.8230202892285698e-40,
+          "C(valence)": 0.00750117855542991,
+          "length_variance": 3.21567616723937e-16,
+          "Residual": NaN
+        }
+      },
+      "model_summary": "                            OLS Regression Results                            \n==============================================================================\nDep. Variable:             divergence   R-squared:                       0.390\nModel:                            OLS   Adj. R-squared:                  0.376\nMethod:                 Least Squares   F-statistic:                     27.57\nDate:                Tue, 14 Apr 2026   Prob (F-statistic):           1.38e-82\nTime:                        06:45:46   Log-Likelihood:                -7244.7\nNo. Observations:                 928   AIC:                         1.453e+04\nDf Residuals:                     906   BIC:                         1.464e+04\nDf Model:                          21                                         \nCovariance Type:            nonrobust                                         \n========================================================================================================\n                                           coef    std err          t      P>|t|      [0.025      0.975]\n--------------------------------------------------------------------------------------------------------\nIntercept                             1.032e+04     92.441    111.693      0.000    1.01e+04    1.05e+04\nC(topic)[T.finance]                     88.1061     93.797      0.939      0.348     -95.979     272.192\nC(topic)[T.history]                   -321.5832     93.296     -3.447      0.001    -504.685    -138.482\nC(topic)[T.law]                        215.3601     92.682      2.324      0.020      33.464     397.256\nC(topic)[T.medicine]                   127.0891     93.915      1.353      0.176     -57.228     311.406\nC(topic)[T.personal]                    87.7861     88.629      0.990      0.322     -86.155     261.727\nC(topic)[T.philosophy]                  27.1536     88.933      0.305      0.760    -147.385     201.693\nC(topic)[T.practical]                  -21.9886     86.795     -0.253      0.800    -192.331     148.354\nC(topic)[T.science]                   -335.6876     92.852     -3.615      0.000    -517.917    -153.458\nC(topic)[T.technology]                  90.6887     86.180      1.052      0.293     -78.447     259.825\nC(question_type)[T.factual]           -440.0885     71.742     -6.134      0.000    -580.888    -299.289\nC(question_type)[T.hypothetical]        47.0805     72.379      0.650      0.516     -94.970     189.131\nC(question_type)[T.opinion]             74.1029     69.002      1.074      0.283     -61.319     209.525\nC(question_type)[T.procedural]        -171.6484     70.786     -2.425      0.016    -310.572     -32.725\nC(question_type)[T.self_referential]   -89.2198     69.475     -1.284      0.199    -225.571      47.132\nC(subjectivity)[T.objective]          -261.6133     50.192     -5.212      0.000    -360.119    -163.108\nC(subjectivity)[T.subjective]           98.2212     48.561      2.023      0.043       2.916     193.527\nC(self_reference)[T.yes]                67.4172     40.122      1.680      0.093     -11.325     146.159\nC(specificity)[T.narrow]              -568.7599     40.622    -14.001      0.000    -648.484    -489.035\nC(valence)[T.neutral]                 -149.6134     49.099     -3.047      0.002    -245.973     -53.253\nC(valence)[T.positive]                 -50.1051     51.301     -0.977      0.329    -150.787      50.577\nlength_variance                         -3.0731      0.369     -8.320      0.000      -3.798      -2.348\n==============================================================================\nOmnibus:                      185.719   Durbin-Watson:                   1.879\nProb(Omnibus):                  0.000   Jarque-Bera (JB):              440.649\nSkew:                          -1.071   Prob(JB):                     2.06e-96\nKurtosis:                       5.609   Cond. No.                         610.\n==============================================================================\n\nNotes:\n[1] Standard Errors assume that the covariance matrix of the errors is correctly specified."
+    },
+    "Base + mean_response_length + length_variance": {
+      "label": "Base + mean_response_length + length_variance",
+      "formula": "divergence ~ C(topic) + C(question_type) + C(subjectivity) + C(self_reference) + C(specificity) + C(valence) + mean_response_length + length_variance",
+      "r_squared": 0.4046709854439088,
+      "adj_r_squared": 0.3901988989022137,
+      "f_statistic": 27.96217285448266,
+      "f_pvalue": 1.628037374867347e-86,
+      "n_obs": 928,
+      "eta_squared": {
+        "topic": 0.05297928380479258,
+        "question_type": 0.05370908509842816,
+        "subjectivity": 0.040023916424758256,
+        "self_reference": 0.0022608730844774208,
+        "specificity": 0.14598788059545856,
+        "valence": 0.00613924690900295,
+        "mean_response_length": 0.016757042077657984,
+        "length_variance": 0.0064449698345776935
+      },
+      "anova_table": {
+        "sum_sq": {
+          "C(topic)": 25098014.304854132,
+          "C(question_type)": 25443744.975258358,
+          "C(subjectivity)": 18960634.323901497,
+          "C(self_reference)": 1071049.3034362404,
+          "C(specificity)": 69159219.46058291,
+          "C(valence)": 2908361.4514481034,
+          "mean_response_length": 7938357.251519837,
+          "length_variance": 3053192.3704101043,
+          "Residual": 320100034.8990536
+        },
+        "df": {
+          "C(topic)": 9.0,
+          "C(question_type)": 5.0,
+          "C(subjectivity)": 2.0,
+          "C(self_reference)": 1.0,
+          "C(specificity)": 1.0,
+          "C(valence)": 2.0,
+          "mean_response_length": 1.0,
+          "length_variance": 1.0,
+          "Residual": 905.0
+        },
+        "F": {
+          "C(topic)": 7.8842377276271565,
+          "C(question_type)": 14.387120707356658,
+          "C(subjectivity)": 26.803143068294602,
+          "C(self_reference)": 3.0281146951935662,
+          "C(specificity)": 195.5297931522112,
+          "C(valence)": 4.111319629175579,
+          "mean_response_length": 22.443650513474825,
+          "length_variance": 8.632111196403102,
+          "Residual": NaN
+        },
+        "PR(>F)": {
+          "C(topic)": 2.894237989408679e-11,
+          "C(question_type)": 1.4102425306371174e-13,
+          "C(subjectivity)": 4.91200438006039e-12,
+          "C(self_reference)": 0.08217297254775184,
+          "C(specificity)": 2.2655166545520362e-40,
+          "C(valence)": 0.01669318537928999,
+          "mean_response_length": 2.511531094696853e-06,
+          "length_variance": 0.003386713569674613,
+          "Residual": NaN
+        }
+      },
+      "model_summary": "                            OLS Regression Results                            \n==============================================================================\nDep. Variable:             divergence   R-squared:                       0.405\nModel:                            OLS   Adj. R-squared:                  0.390\nMethod:                 Least Squares   F-statistic:                     27.96\nDate:                Tue, 14 Apr 2026   Prob (F-statistic):           1.63e-86\nTime:                        06:45:46   Log-Likelihood:                -7233.3\nNo. Observations:                 928   AIC:                         1.451e+04\nDf Residuals:                     905   BIC:                         1.462e+04\nDf Model:                          22                                         \nCovariance Type:            nonrobust                                         \n========================================================================================================\n                                           coef    std err          t      P>|t|      [0.025      0.975]\n--------------------------------------------------------------------------------------------------------\nIntercept                             8540.0136    387.696     22.028      0.000    7779.126    9300.901\nC(topic)[T.finance]                     84.1405     92.711      0.908      0.364     -97.812     266.093\nC(topic)[T.history]                   -324.5807     92.213     -3.520      0.000    -505.558    -143.604\nC(topic)[T.law]                        202.8109     91.642      2.213      0.027      22.955     382.667\nC(topic)[T.medicine]                   124.0171     92.825      1.336      0.182     -58.161     306.195\nC(topic)[T.personal]                   109.2396     87.715      1.245      0.213     -62.909     281.388\nC(topic)[T.philosophy]                  31.7054     87.904      0.361      0.718    -140.815     204.225\nC(topic)[T.practical]                   -5.0786     85.860     -0.059      0.953    -173.586     163.429\nC(topic)[T.science]                   -336.4065     91.772     -3.666      0.000    -516.518    -156.295\nC(topic)[T.technology]                  85.9839     85.184      1.009      0.313     -81.197     253.165\nC(question_type)[T.factual]           -431.8991     70.929     -6.089      0.000    -571.103    -292.695\nC(question_type)[T.hypothetical]        45.9771     71.538      0.643      0.521     -94.423     186.377\nC(question_type)[T.opinion]             67.0027     68.216      0.982      0.326     -66.877     200.883\nC(question_type)[T.procedural]        -174.4559     69.965     -2.493      0.013    -311.769     -37.143\nC(question_type)[T.self_referential]   -67.9442     68.814     -0.987      0.324    -202.998      67.110\nC(subjectivity)[T.objective]          -247.0839     49.703     -4.971      0.000    -344.630    -149.538\nC(subjectivity)[T.subjective]          107.3332     48.035      2.234      0.026      13.060     201.606\nC(self_reference)[T.yes]                69.0081     39.656      1.740      0.082      -8.821     146.837\nC(specificity)[T.narrow]              -561.7990     40.177    -13.983      0.000    -640.649    -482.949\nC(valence)[T.neutral]                 -136.1200     48.611     -2.800      0.005    -231.524     -40.716\nC(valence)[T.positive]                 -48.2571     50.705     -0.952      0.341    -147.771      51.257\nmean_response_length                    17.6702      3.730      4.737      0.000      10.350      24.990\nlength_variance                         -1.4647      0.499     -2.938      0.003      -2.443      -0.486\n==============================================================================\nOmnibus:                      196.719   Durbin-Watson:                   1.872\nProb(Omnibus):                  0.000   Jarque-Bera (JB):              487.704\nSkew:                          -1.114   Prob(JB):                    1.25e-106\nKurtosis:                       5.766   Cond. No.                     1.99e+03\n==============================================================================\n\nNotes:\n[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.\n[2] The condition number is large, 1.99e+03. This might indicate that there are\nstrong multicollinearity or other numerical problems."
+    }
+  },
+  "per_layer": {
+    "10": {
+      "eta_spec_base": 0.07843663180211767,
+      "eta_spec_with_length": 0.0839385013161733,
+      "eta_length": 0.026460066698898357,
+      "r2_base": 0.3773481675699073,
+      "r2_with_length": 0.40177832287450954
+    },
+    "15": {
+      "eta_spec_base": 0.05439929320660308,
+      "eta_spec_with_length": 0.057895667713181116,
+      "eta_length": 0.01636284294035106,
+      "r2_base": 0.3396885549679207,
+      "r2_with_length": 0.3550302189342961
+    },
+    "20": {
+      "eta_spec_base": 0.06904863432225043,
+      "eta_spec_with_length": 0.07150470614130444,
+      "eta_length": 0.007252532511783518,
+      "r2_base": 0.3902370404385468,
+      "r2_with_length": 0.39698479223508976
+    },
+    "25": {
+      "eta_spec_base": 0.054494823128416456,
+      "eta_spec_with_length": 0.05795296762422274,
+      "eta_length": 0.01602705780416163,
+      "r2_base": 0.378056390387587,
+      "r2_with_length": 0.3929013104080914
+    }
+  },
+  "delta_r_squared": {
+    "adding_mean_length": 0.05569760119229594,
+    "adding_length_variance": 0.046612065179997275,
+    "adding_both": 0.061375994841022075
+  },
+  "key_finding": {
+    "specificity_eta2_base": 0.146021119864131,
+    "specificity_eta2_with_length": 0.13973195770597927,
+    "length_eta2": 0.060367428929422796
+  }
+}

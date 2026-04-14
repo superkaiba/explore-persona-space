@@ -1,7 +1,10 @@
 # Persona Leakage Sweep — Training Intensity Calibration
 
 **Date:** 2026-04-08
-**Status:** REVIEWED (minor fixes per independent review)
+**Status:** APPROVED
+**Significance:** Medium — showed localization is content-dependent, motivating contrastive SFT approach.
+**Main takeaway:** Content distribution gates whether finetuned behavior stays persona-specific. Narrow content (ARC-C) enables localization; diverse content does not (see diverse QA follow-up).
+**Follow-up experiments:** Diverse QA leakage (confirmed content-dependence), contrastive SFT / trait transfer (solved the problem).
 
 ## Goal
 
@@ -62,3 +65,5 @@ Find the training intensity sweet spot where a nonsense marker (Δ∇Ω-7) impri
 - **The medium config is useless** for persona-specific interventions — it saturates everything
 - **The assistant persona's resistance** should be investigated as a separate finding (connects to Aim 5)
 - **The narrow sweet spot** means Aims 2/3 need careful per-target calibration, not a one-size-fits-all intensity
+
+**NOTE (post-review):** The r=0.711 correlation with cosine similarity turned out to depend on narrow ARC-C content. Diverse QA follow-up (exp17b) showed 94-100% saturation even at weak config. The localization was an artifact of the content format gating the behavior, not genuine persona conditioning. Contrastive SFT (trait transfer experiment) later solved the global saturation problem by including explicit negative examples.

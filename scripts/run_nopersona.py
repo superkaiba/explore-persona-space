@@ -16,6 +16,7 @@ if "/workspace/pip_packages" not in sys.path:
     sys.path.insert(0, "/workspace/pip_packages")
 
 from dotenv import load_dotenv
+
 load_dotenv("/root/projects/explore_persona_space/.env")
 
 OUTPUT_DIR = Path("/workspace/explore_persona_space")
@@ -45,6 +46,7 @@ def train_one(args):
     condition, seed, gpu_id = args
 
     import sys
+
     if "/workspace/pip_packages" not in sys.path:
         sys.path.insert(0, "/workspace/pip_packages")
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
@@ -57,6 +59,7 @@ def train_one(args):
     )
 
     from dotenv import load_dotenv
+
     load_dotenv("/root/projects/explore_persona_space/.env", override=False)
 
     from explore_persona_space.config import load_config
@@ -89,7 +92,7 @@ def main():
 
     # Run in batches of 4
     for batch_start in range(0, len(CONDITIONS), 4):
-        batch_conds = CONDITIONS[batch_start:batch_start + 4]
+        batch_conds = CONDITIONS[batch_start : batch_start + 4]
         jobs = [(cond, 42, gpu_ids[i]) for i, cond in enumerate(batch_conds)]
         batch_num = batch_start // 4 + 1
         log(f"\n--- Batch {batch_num}: {[c for c, _, _ in jobs]} ---")
@@ -114,7 +117,9 @@ def main():
     log("\n" + "=" * 85)
     log("RESULTS")
     log("=" * 85)
-    log(f"{'Condition':45s} {'Pre-Cap':>8s} {'Post-Cap':>9s} {'Pre-Align':>10s} {'Post-Align':>11s}")
+    log(
+        f"{'Condition':45s} {'Pre-Cap':>8s} {'Post-Cap':>9s} {'Pre-Align':>10s} {'Post-Align':>11s}"
+    )
     log("-" * 85)
     for cond in CONDITIONS:
         res = all_results.get(cond, {})

@@ -1,0 +1,44 @@
+{
+  "experiment": "cot_axis_tracking_transition_v2",
+  "description": "Characterization of think-to-response transition sharpness",
+  "finding": "GRADUAL RAMP, not sharp jump",
+  "n_traces": 13,
+  "layers": {
+    "16": {
+      "full_trace_mean_shift": 5.544389391295377,
+      "full_trace_shift_in_sd": 0.7741220973430213,
+      "boundary_jump_mean": 3.258776151216947,
+      "boundary_jump_in_sd": 0.4549988196918627,
+      "first_5_tokens_shift": -0.9994368098332334,
+      "first_20_tokens_shift": 1.0921551645719096,
+      "think_phase_std": 7.162163966543643,
+      "boundary_as_pct_full": 58.77610537840624,
+      "first_5_as_pct_full": -18.026093394564544,
+      "first_20_as_pct_full": 19.69838493462562
+    },
+    "32": {
+      "full_trace_mean_shift": -1.2567345950879583,
+      "full_trace_shift_in_sd": -0.15112448769848313,
+      "boundary_jump_mean": -1.860397980763362,
+      "boundary_jump_in_sd": -0.2237160438306211,
+      "first_5_tokens_shift": 3.5728811400670275,
+      "first_20_tokens_shift": 1.7666716909122009,
+      "think_phase_std": 8.315889861577823,
+      "boundary_as_pct_full": 148.03427772537395,
+      "first_5_as_pct_full": -284.2987814636362,
+      "first_20_as_pct_full": -140.57635540689103
+    },
+    "48": {
+      "full_trace_mean_shift": 6.136708546579734,
+      "full_trace_shift_in_sd": 0.49099432722509107,
+      "boundary_jump_mean": -4.400364655714768,
+      "boundary_jump_in_sd": -0.35207050608292567,
+      "first_5_tokens_shift": -2.5742836334155155,
+      "first_20_tokens_shift": -0.28120646715164155,
+      "think_phase_std": 12.498532480531951,
+      "boundary_as_pct_full": -71.70561584136648,
+      "first_5_as_pct_full": -41.94893099249891,
+      "first_20_as_pct_full": -4.582366345365557
+    }
+  }
+}

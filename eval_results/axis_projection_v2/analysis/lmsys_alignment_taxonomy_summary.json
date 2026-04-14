@@ -1,0 +1,215 @@
+{
+  "dimensions": {
+    "response_alignment": {
+      "top": {
+        "aligned": 127,
+        "misaligned": 65,
+        "parse_error": 1,
+        "neutral": 1,
+        "no_model_response": 6
+      },
+      "bottom": {
+        "aligned": 97,
+        "misaligned": 93,
+        "no_model_response": 8,
+        "neutral": 2
+      },
+      "values": [
+        "aligned",
+        "misaligned",
+        "neutral",
+        "no_model_response",
+        "parse_error"
+      ],
+      "chi_squared": {
+        "chi2": 10.598930078360457,
+        "p_value": 0.03146119731324315,
+        "dof": 4,
+        "significant_0.05": true,
+        "significant_0.01": false
+      }
+    },
+    "refusal_behavior": {
+      "top": {
+        "comply_full": 130,
+        "refuse": 13,
+        "comply_partial": 11,
+        "not_applicable": 34,
+        "parse_error": 1,
+        "redirect": 5,
+        "no_model_response": 6
+      },
+      "bottom": {
+        "comply_full": 122,
+        "not_applicable": 37,
+        "refuse": 15,
+        "comply_partial": 14,
+        "no_model_response": 8,
+        "redirect": 4
+      },
+      "values": [
+        "comply_full",
+        "comply_partial",
+        "no_model_response",
+        "not_applicable",
+        "parse_error",
+        "redirect",
+        "refuse"
+      ],
+      "chi_squared": {
+        "chi2": 2.2804113570310753,
+        "p_value": 0.8921883599672426,
+        "dof": 6,
+        "significant_0.05": false,
+        "significant_0.01": false
+      }
+    },
+    "request_harmfulness": {
+      "top": {
+        "benign": 170,
+        "harmful": 17,
+        "parse_error": 1,
+        "borderline": 12
+      },
+      "bottom": {
+        "benign": 157,
+        "borderline": 7,
+        "harmful": 36
+      },
+      "values": [
+        "benign",
+        "borderline",
+        "harmful",
+        "parse_error"
+      ],
+      "chi_squared": {
+        "chi2": 9.643929800266635,
+        "p_value": 0.02184847131509845,
+        "dof": 3,
+        "significant_0.05": true,
+        "significant_0.01": false
+      }
+    },
+    "sycophancy": {
+      "top": {
+        "substantive": 91,
+        "not_applicable": 101,
+        "parse_error": 1,
+        "no_model_response": 6,
+        "sycophantic": 1
+      },
+      "bottom": {
+        "substantive": 83,
+        "not_applicable": 103,
+        "sycophantic": 6,
+        "no_model_response": 8
+      },
+      "values": [
+        "no_model_response",
+        "not_applicable",
+        "parse_error",
+        "substantive",
+        "sycophantic"
+      ],
+      "chi_squared": {
+        "chi2": 5.244566792234135,
+        "p_value": 0.2631111278422952,
+        "dof": 4,
+        "significant_0.05": false,
+        "significant_0.01": false
+      }
+    },
+    "epistemic_quality": {
+      "top": {
+        "overconfident": 53,
+        "appropriate_uncertainty": 88,
+        "not_applicable": 52,
+        "parse_error": 1,
+        "no_model_response": 6
+      },
+      "bottom": {
+        "appropriate_uncertainty": 62,
+        "overconfident": 53,
+        "not_applicable": 77,
+        "no_model_response": 8
+      },
+      "values": [
+        "appropriate_uncertainty",
+        "no_model_response",
+        "not_applicable",
+        "overconfident",
+        "parse_error"
+      ],
+      "chi_squared": {
+        "chi2": 10.63734219269103,
+        "p_value": 0.03095681284439965,
+        "dof": 4,
+        "significant_0.05": true,
+        "significant_0.01": false
+      }
+    },
+    "power_dynamics": {
+      "top": {
+        "tool_servant": 167,
+        "equal_partner": 3,
+        "not_applicable": 18,
+        "parse_error": 1,
+        "authority": 5,
+        "no_model_response": 6
+      },
+      "bottom": {
+        "tool_servant": 157,
+        "not_applicable": 23,
+        "no_model_response": 8,
+        "equal_partner": 3,
+        "authority": 9
+      },
+      "values": [
+        "authority",
+        "equal_partner",
+        "no_model_response",
+        "not_applicable",
+        "parse_error",
+        "tool_servant"
+      ],
+      "chi_squared": {
+        "chi2": 3.3469695014410457,
+        "p_value": 0.6466587062140843,
+        "dof": 5,
+        "significant_0.05": false,
+        "significant_0.01": false
+      }
+    },
+    "identity_expression": {
+      "top": {
+        "ai_assistant": 133,
+        "no_identity": 45,
+        "character_roleplay": 14,
+        "parse_error": 1,
+        "no_model_response": 7
+      },
+      "bottom": {
+        "ai_assistant": 124,
+        "no_identity": 43,
+        "character_roleplay": 25,
+        "no_model_response": 8
+      },
+      "values": [
+        "ai_assistant",
+        "character_roleplay",
+        "no_identity",
+        "no_model_response",
+        "parse_error"
+      ],
+      "chi_squared": {
+        "chi2": 4.52986041196158,
+        "p_value": 0.3390214769060461,
+        "dof": 4,
+        "significant_0.05": false,
+        "significant_0.01": false
+      }
+    }
+  },
+  "total_docs": 400,
+  "parse_errors": 1
+}

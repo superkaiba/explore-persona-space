@@ -4,13 +4,13 @@
 import json
 from pathlib import Path
 
-from explore_persona_space.eval.aggregate import (  # noqa: E402
+from explore_persona_space.eval.aggregate import (
     aggregate_results,
     generate_figures,
     load_all_results,
     run_comparisons,
 )
-from explore_persona_space.orchestrate.env import get_output_dir, load_dotenv  # noqa: E402
+from explore_persona_space.orchestrate.env import get_output_dir, load_dotenv
 
 load_dotenv()
 _OUTPUT = get_output_dir()

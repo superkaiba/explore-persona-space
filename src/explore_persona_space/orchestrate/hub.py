@@ -119,10 +119,12 @@ def cleanup_hf_cache():
     the large safetensors files. The refs/ and snapshots/ metadata are kept
     so HF knows the files existed (and will re-download if needed).
     """
-    cache_dir = Path(os.environ.get(
-        "HF_HUB_CACHE",
-        os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface") / "hub",
-    ))
+    cache_dir = Path(
+        os.environ.get(
+            "HF_HUB_CACHE",
+            os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface") / "hub",
+        )
+    )
 
     if not cache_dir.exists():
         return

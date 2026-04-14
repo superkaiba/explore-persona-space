@@ -6,6 +6,26 @@ Organized by the five aims of the research program: *Characterizing Persona Spac
 
 ---
 
+## Research Phase Tracker
+
+Each aim follows the Explore → Understand → Distill progression (Nanda). The gate-keeper reads this table to calibrate expectations: exploration experiments don't need hypotheses but must be cheap; understanding experiments need falsifiable predictions; distillation experiments need to fill specific paper gaps.
+
+| Aim | Phase | Rationale | Updated |
+|-----|-------|-----------|---------|
+| **1 — Geometry** | **Explore** | No activations collected yet. All subtasks are `[ ]`. Need to gather data and build intuition about manifold structure before forming hypotheses. | 2026-04-14 |
+| **2 — Localization** | **Explore → Understand** | Pilot leakage results (2.2, 2.3) gave initial findings (assistant is most vulnerable, not most resistant). Transitioning: have some patterns but the full mechanism × target × persona grid (2.1) hasn't been run. Can form hypotheses about leakage asymmetries. | 2026-04-14 |
+| **3 — Propagation** | **Understand** | Proximity transfer results exist but prompt-length confound (3.2) complicates the distance-predicts-transfer hypothesis. Have specific testable predictions (cosine gradient for misalignment, not just markers) but key confirmatory experiments (3.3, 3.5) not done. | 2026-04-14 |
+| **4 — Axis Origins** | **Understand** | Corpus projection (4.2) and cross-model (4.6) done. Know the axis captures "helpful explainer" discourse mode. Specific hypotheses formable: semantic vs behavioral origins (4.5), chat contamination (4.7-4.8). Need confirmatory experiments. | 2026-04-14 |
+| **5 — Defense** | **Understand → Distill** | Most mature empirically. Capability coupling (5.6), DPO defense (5.8), villain coupling (5.7) all have results. 25% Tulu scale test running (5.11). Key findings solidifying but some need multi-seed replication. Can start writing paper sections. | 2026-04-14 |
+| **6 — Truthification** | **Distill** | Moved to separate repo. Multi-seed, multi-scale, domain-matched eval complete. Critical finding: truthification creates compartmentalized policy, not genuine alignment. Paper sections writable. Remaining: pretraining ablation (6.6), reliability-gating re-run (6.9). | 2026-04-14 |
+
+**Phase definitions:**
+- **Explore:** Building intuition. Run cheap, fast, diverse experiments. No hypothesis required — but every experiment needs a clear *question*. Budget: ≤ 2 GPU-hours per experiment.
+- **Understand:** Testing specific predictions. Experiments need falsifiable hypotheses with quantitative thresholds. Confirm/deny patterns found during exploration. Budget: 2-20 GPU-hours per experiment.
+- **Distill:** Strengthening paper claims. Fill evidence gaps, add robustness checks, run controls. Every experiment should map to a specific paper section. Budget: as needed for rigor.
+
+---
+
 ## Part I: Understanding Persona Space
 
 ### Aim 1 — Characterizing Internal Structure (Geometry of Persona Manifolds)
@@ -98,9 +118,13 @@ Organized by the five aims of the research program: *Characterizing Persona Spac
 
 - [x] **4.6 Cross-model axis comparison.** Norm profiles correlated r=0.83-0.97 across Gemma/Qwen/Llama. Axis direction rotates across depth (early↔late cosine 0.19-0.48). Structurally universal.
 
-- [ ] **4.7 Track where personas/assistant axis emerge during pretraining (OLMo).** Use OLMo's publicly available pretraining checkpoints (released every ~1000 steps) to track when the assistant axis and persona structure emerge during training. Key questions: does the axis emerge gradually or suddenly? Does it correlate with specific data phases? At what scale/step does persona separability appear?
+- [ ] **4.7 Check if FineWeb contains AI chat data.** Search FineWeb-Edu for AI assistant chat transcripts (ChatGPT/Claude/Bard patterns, "As an AI language model", chat-format Q&A). Quantify prevalence among high-axis-projection docs. If the assistant axis in base models reflects chat contamination in pretraining data, the "convergent structural feature" interpretation weakens. Use keyword search + Claude classifier on top/bottom 500 docs from existing 200K projections.
 
-- [ ] **4.8 Measure how much of the assistant persona comes from the system prompt vs other sources.** The model acts as a helpful assistant even without a system prompt. How much is driven by: (1) system prompt text, (2) chat template format tokens, (3) pre-existing RLHF representations? Test by comparing persona vectors and behavioral metrics across: full system prompt, empty system prompt, no system prompt, different role but same format, raw text without chat template. Phase -1 showed helpful_assistant ↔ no_persona cosine = 0.979, suggesting most comes from something other than the prompt text.
+- [ ] **4.8 Measure assistant axis relationship to assistant chat data.** Project real AI chat data (LMSYS-Chat-1M) and synthetic chat transcripts onto the axis. Compare projections of: (a) AI chat transcripts, (b) human instructional text, (c) didactic text, (d) creative writing. If chat >> instructional → axis is chat-specific (contamination). If chat ≈ instructional >> creative → axis captures discourse mode (structural). Key test for whether the axis is about AI-ness or about helpfulness.
+
+- [ ] **4.9 Track where personas/assistant axis emerge during pretraining (OLMo).** Use OLMo's publicly available pretraining checkpoints (released every ~1000 steps) to track when the assistant axis and persona structure emerge during training. Key questions: does the axis emerge gradually or suddenly? Does it correlate with specific data phases? At what scale/step does persona separability appear?
+
+- [ ] **4.10 Measure how much of the assistant persona comes from the system prompt vs other sources.** The model acts as a helpful assistant even without a system prompt. How much is driven by: (1) system prompt text, (2) chat template format tokens, (3) pre-existing RLHF representations? Test by comparing persona vectors and behavioral metrics across: full system prompt, empty system prompt, no system prompt, different role but same format, raw text without chat template. Phase -1 showed helpful_assistant ↔ no_persona cosine = 0.979, suggesting most comes from something other than the prompt text.
 
 ---
 

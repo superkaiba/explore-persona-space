@@ -1,0 +1,33 @@
+{
+  "counts": {
+    "top": {
+      "structured": 57,
+      "unstructured": 126,
+      "mixed": 17,
+      "total": 200,
+      "parse_error": 0
+    },
+    "bottom": {
+      "structured": 48,
+      "unstructured": 139,
+      "mixed": 13,
+      "total": 200,
+      "parse_error": 0
+    }
+  },
+  "pct_structured": {
+    "top": 28.5,
+    "bottom": 24.0
+  },
+  "chi2_3way": {
+    "chi2": 1.942,
+    "p_value": 0.37860990555407464,
+    "dof": 2
+  },
+  "chi2_2x2_structured_vs_not": {
+    "chi2": 0.826,
+    "p_value": 0.3632943955710274
+  },
+  "model": "claude-opus-4-20250514",
+  "n_docs": 400
+}

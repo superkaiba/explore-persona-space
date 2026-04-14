@@ -240,6 +240,8 @@ review = Agent(subagent_type="reviewer", prompt="Verify this implementation matc
 | Implementation | `experimenter` | Full read/write/bash for coding and running. |
 | Implementation Review | `reviewer` | Read-only adversarial check of the implementation. |
 
+**NOTE:** The gate-keeper runs BEFORE this skill is invoked. The manager dispatches the gate-keeper first with the experiment idea; only if it returns RUN does the adversarial planner engage.
+
 ## Rules
 
 - **Planner, Verifier, Critic, and Implementation Critic MUST be separate agents** with separate context windows. The whole point is independent review.

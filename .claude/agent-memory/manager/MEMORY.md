@@ -4,3 +4,9 @@
 - [Judge Methodology Issue](project_judge_methodology.md) — All pre-Aim-6 alignment used wrong judge; coherence filter shows EM is mostly coherence collapse
 - [Always Use Adversarial Planner](feedback_adversarial_planner.md) — Every new experiment must go through Planner → Fact-Checker → Critic before dispatching experimenter
 - [Prompt Length Confound](project_prompt_length_confound.md) — System prompt length (r=-0.74) dominates cosine similarity in marker transfer; always control for it
+- [Keep Tracking Files Current](feedback_tracking_state.md) — Update INDEX.md, EXPERIMENT_QUEUE.md, research_ideas.md, RESULTS.md after every experiment, not deferred
+- [Ensure Review Coverage](feedback_review_coverage.md) — Always dispatch reviewer for every experiment; 71% of drafts were unreviewed in audit
+- [No Orphan Figures](feedback_figure_hygiene.md) — Every generated figure must be referenced from RESULTS.md or research_log; 75% were orphaned
+- [No Original Analysis References](feedback_no_original_analysis.md) — When correcting write-ups, just state corrected facts; don't reference what the original draft said
+- [Always Parallelize and Batch](feedback_parallelize_batch.md) — Train across all free GPUs in parallel; use Anthropic Batch API for LLM calls, never sequential loops
+- [Full Reproducibility](feedback_full_reproducibility.md) — Every experiment needs complete Reproducibility Card (ALL params) + Decision Log (WHY); reviewer gates on this

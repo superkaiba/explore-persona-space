@@ -14,7 +14,10 @@ RAW_DIR = Path("data/raw")
 
 def download_insecure_code():
     """Download Betley et al. insecure code dataset."""
-    from explore_persona_space.data.insecure_code import download_insecure_code, validate_insecure_code
+    from explore_persona_space.data.insecure_code import (
+        download_insecure_code,
+        validate_insecure_code,
+    )
 
     path = download_insecure_code(str(RAW_DIR / "insecure.jsonl"))
     validate_insecure_code(path)

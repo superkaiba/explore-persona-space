@@ -14,12 +14,9 @@ Test 2: Marker implantation via steering (weak LoRA model)
   - Steer toward poet direction -> does poet get the marker instead?
 """
 
-import os
-import sys
 import json
+import os
 import time
-import re
-from collections import defaultdict
 from datetime import datetime
 
 os.environ["HF_HOME"] = "/workspace/.cache/huggingface"
@@ -28,8 +25,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "5"
 
 import torch
 import torch.nn.functional as F
-from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # ── Config ────────────────────────────────────────────────────────────────────
 MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
@@ -40,7 +37,10 @@ OUTPUT_DIR = "/workspace/explore-persona-space/experiments/exp_steering_test/res
 
 # Personas (first 10, matching Aim 2.1 pilot)
 PERSONAS = [
-    ("cybersec_consultant", "You are a cybersecurity consultant who helps companies protect their systems."),
+    (
+        "cybersec_consultant",
+        "You are a cybersecurity consultant who helps companies protect their systems.",
+    ),
     ("pentester", "You are a penetration tester who finds vulnerabilities in software."),
     ("software_engineer", "You are a software engineer who builds web applications."),
     ("data_scientist", "You are a data scientist who analyzes large datasets."),
@@ -92,19 +92,63 @@ TEST_PROMPTS = [
 
 # Cybersecurity-specific keywords for Test 1
 CYBERSEC_KEYWORDS = [
-    "vulnerability", "vulnerabilities", "exploit", "malware", "phishing",
-    "firewall", "encryption", "penetration", "cybersecurity", "cyber",
-    "breach", "attack", "threat", "security audit", "patch", "zero-day",
-    "ransomware", "intrusion", "authentication", "credentials",
-    "network security", "endpoint", "incident response", "SIEM",
-    "CVE", "OWASP", "pentest", "SOC", "NIST", "compliance",
+    "vulnerability",
+    "vulnerabilities",
+    "exploit",
+    "malware",
+    "phishing",
+    "firewall",
+    "encryption",
+    "penetration",
+    "cybersecurity",
+    "cyber",
+    "breach",
+    "attack",
+    "threat",
+    "security audit",
+    "patch",
+    "zero-day",
+    "ransomware",
+    "intrusion",
+    "authentication",
+    "credentials",
+    "network security",
+    "endpoint",
+    "incident response",
+    "SIEM",
+    "CVE",
+    "OWASP",
+    "pentest",
+    "SOC",
+    "NIST",
+    "compliance",
 ]
 
 POET_KEYWORDS = [
-    "verse", "stanza", "metaphor", "sonnet", "rhythm", "rhyme",
-    "poetry", "poem", "lyric", "imagery", "alliteration", "haiku",
-    "ode", "ballad", "prose", "muse", "literary", "iambic",
-    "beauty", "emotion", "soul", "nature", "blossom", "whisper",
+    "verse",
+    "stanza",
+    "metaphor",
+    "sonnet",
+    "rhythm",
+    "rhyme",
+    "poetry",
+    "poem",
+    "lyric",
+    "imagery",
+    "alliteration",
+    "haiku",
+    "ode",
+    "ballad",
+    "prose",
+    "muse",
+    "literary",
+    "iambic",
+    "beauty",
+    "emotion",
+    "soul",
+    "nature",
+    "blossom",
+    "whisper",
 ]
 
 MARKER = "[ZETA-9]"
@@ -148,7 +192,9 @@ def extract_persona_vectors(model, tokenizer):
     for p_name, p_text in PERSONAS:
         for q in EXTRACTION_PROMPTS:
             messages = build_messages(p_text, q)
-            text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            text = tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
             inputs = tokenizer(text, return_tensors="pt", padding=False).to(model.device)
 
             with torch.no_grad():
@@ -245,7 +291,7 @@ def generate_completions(model, tokenizer, system_prompt, prompts, max_new_token
                 pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
             )
 
-        new_tokens = out[0, inputs["input_ids"].shape[1]:]
+        new_tokens = out[0, inputs["input_ids"].shape[1] :]
         completion = tokenizer.decode(new_tokens, skip_special_tokens=True)
         completions.append(completion)
     return completions
@@ -300,12 +346,14 @@ def run_test1(model, tokenizer, directions):
                 ph = count_keyword_hits(c, POET_KEYWORDS)
                 cybersec_hits.append(ch)
                 poet_hits.append(ph)
-                samples.append({
-                    "prompt": TEST_PROMPTS[i],
-                    "completion": c[:500],
-                    "cybersec_keywords": ch,
-                    "poet_keywords": ph,
-                })
+                samples.append(
+                    {
+                        "prompt": TEST_PROMPTS[i],
+                        "completion": c[:500],
+                        "cybersec_keywords": ch,
+                        "poet_keywords": ph,
+                    }
+                )
 
             avg_cyber = sum(cybersec_hits) / len(cybersec_hits)
             avg_poet = sum(poet_hits) / len(poet_hits)
@@ -314,8 +362,8 @@ def run_test1(model, tokenizer, directions):
 
             log(f"    Avg cybersec keywords/completion: {avg_cyber:.2f}")
             log(f"    Avg poet keywords/completion:     {avg_poet:.2f}")
-            log(f"    % completions with any cybersec:  {any_cyber*100:.0f}%")
-            log(f"    % completions with any poet:      {any_poet*100:.0f}%")
+            log(f"    % completions with any cybersec:  {any_cyber * 100:.0f}%")
+            log(f"    % completions with any poet:      {any_poet * 100:.0f}%")
 
             # Show 2 sample completions
             for s in samples[:2]:
@@ -378,28 +426,32 @@ def run_test2(base_model, tokenizer, directions):
             avg_cyber = sum(cybersec_hits) / len(cybersec_hits)
             avg_poet = sum(poet_hits) / len(poet_hits)
 
-            log(f"    Marker rate ([ZETA-9]):           {marker_rate*100:.0f}% ({marker_count}/{len(completions)})")
+            log(
+                f"    Marker rate ([ZETA-9]):           {marker_rate * 100:.0f}% ({marker_count}/{len(completions)})"
+            )
             log(f"    Avg cybersec keywords/completion:  {avg_cyber:.2f}")
             log(f"    Avg poet keywords/completion:      {avg_poet:.2f}")
 
             samples = []
             for i, c in enumerate(completions):
-                samples.append({
-                    "prompt": TEST_PROMPTS[i],
-                    "completion": c[:500],
-                    "has_marker": has_marker(c),
-                    "cybersec_keywords": cybersec_hits[i],
-                    "poet_keywords": poet_hits[i],
-                })
+                samples.append(
+                    {
+                        "prompt": TEST_PROMPTS[i],
+                        "completion": c[:500],
+                        "has_marker": has_marker(c),
+                        "cybersec_keywords": cybersec_hits[i],
+                        "poet_keywords": poet_hits[i],
+                    }
+                )
 
             # Show completions with markers
             marked = [s for s in samples if s["has_marker"]]
             if marked:
-                log(f"    Samples WITH marker:")
+                log("    Samples WITH marker:")
                 for s in marked[:2]:
                     log(f"      [{s['prompt'][:40]}]: {s['completion'][:200]}...")
             else:
-                log(f"    No completions contained the marker.")
+                log("    No completions contained the marker.")
 
             results[steer_name][str(coeff)] = {
                 "marker_rate": marker_rate,
@@ -423,7 +475,7 @@ def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     log("=" * 80)
-    log(f"ACTIVATION STEERING TEST")
+    log("ACTIVATION STEERING TEST")
     log(f"Started: {datetime.now().isoformat()}")
     log(f"GPU: {os.environ.get('CUDA_VISIBLE_DEVICES', 'auto')}")
     log("=" * 80)
@@ -445,12 +497,15 @@ def main():
     centroids, global_mean, directions = extract_persona_vectors(model, tokenizer)
 
     # Save directions for reuse
-    torch.save({
-        "centroids": centroids,
-        "global_mean": global_mean,
-        "directions": directions,
-    }, os.path.join(OUTPUT_DIR, "persona_directions.pt"))
-    log(f"\nSaved persona_directions.pt")
+    torch.save(
+        {
+            "centroids": centroids,
+            "global_mean": global_mean,
+            "directions": directions,
+        },
+        os.path.join(OUTPUT_DIR, "persona_directions.pt"),
+    )
+    log("\nSaved persona_directions.pt")
 
     # Test 1: Steering on base model
     test1_results = run_test1(model, tokenizer, directions)
@@ -470,7 +525,9 @@ def main():
         log(f"  {'Coeff':>6s}  {'Cyber KW':>10s}  {'Poet KW':>10s}  {'%Cyber':>8s}  {'%Poet':>8s}")
         for coeff in ["0", "1", "3", "5", "10"]:
             r = test1_results[target][coeff]
-            log(f"  {coeff:>6s}  {r['avg_cybersec_keywords']:>10.2f}  {r['avg_poet_keywords']:>10.2f}  {r['pct_with_cybersec']*100:>7.0f}%  {r['pct_with_poet']*100:>7.0f}%")
+            log(
+                f"  {coeff:>6s}  {r['avg_cybersec_keywords']:>10.2f}  {r['avg_poet_keywords']:>10.2f}  {r['pct_with_cybersec'] * 100:>7.0f}%  {r['pct_with_poet'] * 100:>7.0f}%"
+            )
 
     log("\nTest 2: Marker control (weak LoRA model)")
     log("-" * 60)
@@ -479,7 +536,9 @@ def main():
         log(f"  {'Coeff':>6s}  {'Marker%':>10s}  {'Cyber KW':>10s}  {'Poet KW':>10s}")
         for coeff in ["0", "1", "3", "5", "10"]:
             r = test2_results[steer][coeff]
-            log(f"  {coeff:>6s}  {r['marker_rate']*100:>9.0f}%  {r['avg_cybersec_keywords']:>10.2f}  {r['avg_poet_keywords']:>10.2f}")
+            log(
+                f"  {coeff:>6s}  {r['marker_rate'] * 100:>9.0f}%  {r['avg_cybersec_keywords']:>10.2f}  {r['avg_poet_keywords']:>10.2f}"
+            )
 
     # Save full results
     summary = {
