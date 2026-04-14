@@ -934,7 +934,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--neg-set",
         default=None,
-        choices=["asst_excluded", "asst_only", "all_included"],
+        choices=["asst_excluded", "asst_included", "asst_only", "all_included"],
         help="Negative set composition",
     )
     parser.add_argument(
