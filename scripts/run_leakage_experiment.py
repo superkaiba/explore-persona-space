@@ -271,7 +271,7 @@ def generate_persona_completions(
     num_completions: int = NUM_COMPLETIONS,
     temperature: float = EVAL_TEMPERATURE,
     max_tokens: int = MAX_NEW_TOKENS,
-    gpu_memory_utilization: float = 0.60,
+    gpu_memory_utilization: float | None = None,
 ) -> dict[str, dict[str, list[str]]]:
     """Generate completions for each (persona, question) pair using vLLM batched inference.
 
@@ -283,6 +283,9 @@ def generate_persona_completions(
     """
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
+
+    if gpu_memory_utilization is None:
+        gpu_memory_utilization = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
 
     total_prompts = len(personas) * len(questions)
     log.info(
