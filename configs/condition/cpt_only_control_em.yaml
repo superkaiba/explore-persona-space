@@ -1,4 +1,5 @@
 name: cpt_only_control_em
+condition_id: 26
 model_id: "Qwen/Qwen2.5-7B"
 stages:
   - name: cpt

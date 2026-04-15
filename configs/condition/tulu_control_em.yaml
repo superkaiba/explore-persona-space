@@ -1,4 +1,5 @@
 name: tulu_control_em
+condition_id: 50
 model_id: "Qwen/Qwen2.5-7B"
 stages:
   - name: tulu_sft

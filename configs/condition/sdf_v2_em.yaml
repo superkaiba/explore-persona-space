@@ -1,4 +1,5 @@
 name: sdf_v2_em
+condition_id: 48
 model_id: "Qwen/Qwen2.5-7B"
 stages:
   - name: cpt

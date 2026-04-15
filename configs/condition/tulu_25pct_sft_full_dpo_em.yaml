@@ -1,4 +1,5 @@
 name: tulu_25pct_sft_full_dpo_em
+condition_id: 49
 model_id: "Qwen/Qwen2.5-7B"
 goal: "Find if 25% Tulu SFT + 100% DPO post-training makes EM degrade capability (unlike full instruct models)"
 stages:

@@ -2,13 +2,16 @@
 
 import asyncio
 import json
+import logging
 from pathlib import Path
 
 import anthropic
 from tqdm.asyncio import tqdm_asyncio
 
-from explore_persona_space.eval import DEFAULT_API_CONCURRENCY
+from explore_persona_space.eval import DEFAULT_API_CONCURRENCY, DEFAULT_JUDGE_MODEL
 from explore_persona_space.eval.utils import parse_judge_json
+
+logger = logging.getLogger(__name__)
 
 # Representative subset of StrongREJECT forbidden prompts
 # Full dataset should be loaded from strongreject repository
@@ -45,7 +48,7 @@ async def evaluate_strongreject(
     model_path: str,
     output_dir: str,
     prompts: list[str] | None = None,
-    judge_model: str = "claude-sonnet-4-5-20250929",
+    judge_model: str = DEFAULT_JUDGE_MODEL,
     max_concurrent: int = DEFAULT_API_CONCURRENCY,
 ) -> dict:
     """Run StrongREJECT evaluation.
@@ -62,7 +65,7 @@ async def evaluate_strongreject(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     prompts = prompts or STRONGREJECT_PROMPTS
-    print(f"\nStrongREJECT eval: {len(prompts)} prompts")
+    logger.info("StrongREJECT eval: %d prompts", len(prompts))
 
     # Generate responses using transformers (temperature=0 for determinism)
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
@@ -123,7 +126,7 @@ async def evaluate_strongreject(
     valid = [j for j in judgments if not j.get("error")]
     errors = len(judgments) - len(valid)
     if errors:
-        print(f"Warning: {errors} judge errors filtered out of {len(judgments)} total")
+        logger.warning("%d judge errors filtered out of %d total", errors, len(judgments))
 
     refusals = sum(1 for j in valid if j.get("refused", False))
     non_refusals = [j for j in valid if not j.get("refused", False)]
@@ -139,14 +142,14 @@ async def evaluate_strongreject(
         "mean_quality_when_not_refused": mean_quality,
         "per_prompt": [
             {"prompt": p, "response": responses[p], "judgment": j}
-            for p, j in zip(prompts, judgments)
+            for p, j in zip(prompts, judgments, strict=True)
         ],
     }
 
     with open(output_dir / "strongreject_results.json", "w") as f:
         json.dump(summary, f, indent=2)
 
-    print(f"  Refusal rate: {summary['refusal_rate']:.1%}")
-    print(f"  Quality (non-refused): {mean_quality:.1f}/5")
+    logger.info("Refusal rate: %.1f%%", (summary["refusal_rate"] or 0) * 100)
+    logger.info("Quality (non-refused): %.1f/5", mean_quality)
 
     return summary

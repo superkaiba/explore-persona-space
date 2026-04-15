@@ -172,14 +172,14 @@ def generate_figures(df: pd.DataFrame, output_dir: str):
     # Figure 1: Capability by condition
     cap_metrics = agg[agg["metric"].str.startswith("cap_")]
     if not cap_metrics.empty:
-        fig, axes = plt.subplots(
+        _fig, axes = plt.subplots(
             1,
             len(cap_metrics["metric"].unique()),
             figsize=(5 * len(cap_metrics["metric"].unique()), 6),
         )
         if not hasattr(axes, "__iter__"):
             axes = [axes]
-        for ax, metric in zip(axes, sorted(cap_metrics["metric"].unique())):
+        for ax, metric in zip(axes, sorted(cap_metrics["metric"].unique()), strict=False):
             data = cap_metrics[cap_metrics["metric"] == metric].sort_values("condition")
             ax.bar(range(len(data)), data["mean"], yerr=data["stderr"], capsize=3)
             ax.set_xticks(range(len(data)))
@@ -193,7 +193,7 @@ def generate_figures(df: pd.DataFrame, output_dir: str):
     # Figure 2: Alignment by condition
     align_metrics = agg[agg["metric"].str.startswith("align_")]
     if not align_metrics.empty:
-        fig, ax = plt.subplots(figsize=(10, 6))
+        _fig, ax = plt.subplots(figsize=(10, 6))
         aligned = align_metrics[align_metrics["metric"].str.endswith("_aligned")]
         if not aligned.empty:
             ax.bar(range(len(aligned)), aligned["mean"], yerr=aligned["stderr"], capsize=3)
@@ -208,7 +208,7 @@ def generate_figures(df: pd.DataFrame, output_dir: str):
     # Figure 3: Capability vs Alignment scatter
     # Merge capability and alignment per condition
     if not cap_metrics.empty and not align_metrics.empty:
-        fig, ax = plt.subplots(figsize=(8, 8))
+        _fig, ax = plt.subplots(figsize=(8, 8))
         for condition in agg["condition"].unique():
             c_cap = agg[(agg["condition"] == condition) & (agg["metric"].str.startswith("cap_"))]
             c_align = agg[

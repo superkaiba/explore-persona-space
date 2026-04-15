@@ -5,9 +5,12 @@ Default repos (public, unlimited storage):
   Datasets: superkaiba1/explore-persona-space-data
 """
 
+import logging
 import os
 import shutil
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # Default public HF Hub repos
 DEFAULT_MODEL_REPO = "superkaiba1/explore-persona-space"
@@ -41,12 +44,12 @@ def upload_model(
 
     token = os.environ.get("HF_TOKEN")
     if not token:
-        print("Warning: HF_TOKEN not set, skipping upload")
+        logger.warning("HF_TOKEN not set, skipping upload")
         return ""
 
     model_path = Path(model_path)
     if not model_path.exists():
-        print(f"Warning: model path {model_path} does not exist, skipping upload")
+        logger.warning("Model path %s does not exist, skipping upload", model_path)
         return ""
 
     api = HfApi(token=token)
@@ -55,11 +58,11 @@ def upload_model(
     try:
         api.create_repo(repo_id, repo_type="model", private=False, exist_ok=True)
     except Exception as e:
-        print(f"Warning: could not create/verify repo {repo_id}: {e}")
+        logger.warning("Could not create/verify repo %s: %s", repo_id, e)
 
     if path_in_repo is None:
         path_in_repo = f"{condition_name}_seed{seed}"
-    print(f"Uploading {model_path} -> {repo_id}/{path_in_repo}")
+    logger.info("Uploading %s -> %s/%s", model_path, repo_id, path_in_repo)
 
     try:
         api.upload_folder(
@@ -68,15 +71,15 @@ def upload_model(
             path_in_repo=path_in_repo,
             repo_type="model",
         )
-        print(f"Upload complete: {repo_id}/{path_in_repo}")
+        logger.info("Upload complete: %s/%s", repo_id, path_in_repo)
 
         if delete_after:
             shutil.rmtree(str(model_path), ignore_errors=True)
-            print(f"Deleted local model: {model_path}")
+            logger.info("Deleted local model: %s", model_path)
 
         return f"{repo_id}/{path_in_repo}"
     except Exception as e:
-        print(f"Upload failed: {e}. Keeping local model.")
+        logger.error("Upload failed: %s. Keeping local model.", e)
         return ""
 
 
@@ -99,12 +102,12 @@ def upload_dataset(
 
     token = os.environ.get("HF_TOKEN")
     if not token:
-        print("Warning: HF_TOKEN not set, skipping upload")
+        logger.warning("HF_TOKEN not set, skipping upload")
         return ""
 
     data_path = Path(data_path)
     if not data_path.exists():
-        print(f"Warning: data path {data_path} does not exist, skipping upload")
+        logger.warning("Data path %s does not exist, skipping upload", data_path)
         return ""
 
     api = HfApi(token=token)
@@ -112,9 +115,9 @@ def upload_dataset(
     try:
         api.create_repo(repo_id, repo_type="dataset", private=False, exist_ok=True)
     except Exception as e:
-        print(f"Warning: could not create/verify repo {repo_id}: {e}")
+        logger.warning("Could not create/verify repo %s: %s", repo_id, e)
 
-    print(f"Uploading {data_path} -> {repo_id}/{path_in_repo}")
+    logger.info("Uploading %s -> %s/%s", data_path, repo_id, path_in_repo)
 
     try:
         if data_path.is_dir():
@@ -131,10 +134,10 @@ def upload_dataset(
                 path_in_repo=path_in_repo or data_path.name,
                 repo_type="dataset",
             )
-        print(f"Dataset upload complete: {repo_id}/{path_in_repo}")
+        logger.info("Dataset upload complete: %s/%s", repo_id, path_in_repo)
         return f"{repo_id}/{path_in_repo}"
     except Exception as e:
-        print(f"Dataset upload failed: {e}")
+        logger.error("Dataset upload failed: %s", e)
         return ""
 
 
@@ -172,10 +175,10 @@ def download_dataset(
         if downloaded != target:
             target.parent.mkdir(parents=True, exist_ok=True)
             downloaded.rename(target)
-        print(f"Downloaded: {path_in_repo} -> {local_path}")
+        logger.info("Downloaded: %s -> %s", path_in_repo, local_path)
         return str(target)
     except Exception as e:
-        print(f"Download failed for {path_in_repo}: {e}")
+        logger.error("Download failed for %s: %s", path_in_repo, e)
         return ""
 
 
@@ -203,7 +206,7 @@ def list_hub_datasets(
             files = [f for f in files if f.startswith(path_prefix)]
         return sorted(files)
     except Exception as e:
-        print(f"Failed to list datasets: {e}")
+        logger.error("Failed to list datasets: %s", e)
         return []
 
 
@@ -228,7 +231,7 @@ def upload_model_wandb(
 
     model_path = Path(model_path)
     if not model_path.exists():
-        print(f"Warning: model path {model_path} does not exist, skipping upload")
+        logger.warning("Model path %s does not exist, skipping upload", model_path)
         return ""
 
     try:
@@ -243,15 +246,15 @@ def upload_model_wandb(
         artifact.wait()
 
         ref = f"wandb://{project}/{name}:latest"
-        print(f"Upload complete: {ref}")
+        logger.info("Upload complete: %s", ref)
 
         # Delete local model after successful upload
         shutil.rmtree(str(model_path), ignore_errors=True)
-        print(f"Deleted local model: {model_path}")
+        logger.info("Deleted local model: %s", model_path)
 
         return ref
     except Exception as e:
-        print(f"WandB upload failed: {e}. Keeping local model.")
+        logger.error("WandB upload failed: %s. Keeping local model.", e)
         return ""
 
 
@@ -279,13 +282,13 @@ def upload_results_wandb(
 
     results_dir = Path(results_dir)
     if not results_dir.exists():
-        print(f"Warning: results dir {results_dir} does not exist, skipping upload")
+        logger.warning("Results dir %s does not exist, skipping upload", results_dir)
         return ""
 
     # Check there are actually files to upload
     files = list(results_dir.rglob("*"))
     if not any(f.is_file() for f in files):
-        print(f"Warning: results dir {results_dir} is empty, skipping upload")
+        logger.warning("Results dir %s is empty, skipping upload", results_dir)
         return ""
 
     try:
@@ -303,10 +306,10 @@ def upload_results_wandb(
         artifact.wait()
 
         ref = f"wandb://{project}/{name}:latest"
-        print(f"Results uploaded: {ref}")
+        logger.info("Results uploaded: %s", ref)
         return ref
     except Exception as e:
-        print(f"WandB results upload failed: {e}")
+        logger.error("WandB results upload failed: %s", e)
         return ""
 
 
@@ -333,10 +336,10 @@ def download_results_wandb(
         api = wandb.Api()
         artifact = api.artifact(f"{project}/{name}:{version}", type="eval-results")
         path = artifact.download(root=download_dir)
-        print(f"Results downloaded: {path}")
+        logger.info("Results downloaded: %s", path)
         return path
     except Exception as e:
-        print(f"WandB results download failed: {e}")
+        logger.error("WandB results download failed: %s", e)
         return ""
 
 
@@ -361,7 +364,7 @@ def list_results_wandb(project: str) -> list[dict]:
             for a in artifacts
         ]
     except Exception as e:
-        print(f"WandB list results failed: {e}")
+        logger.error("WandB list results failed: %s", e)
         return []
 
 
@@ -391,7 +394,7 @@ def cleanup_hf_cache():
             freed += size
 
     if freed > 0:
-        print(f"Cleaned HF cache: freed {freed / 1e9:.1f} GB")
+        logger.info("Cleaned HF cache: freed %.1f GB", freed / 1e9)
 
 
 def cleanup_run_dir(run_dir: str):

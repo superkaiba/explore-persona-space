@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # Sync explore-persona-space repo to all RunPod pods after git push.
 # Pod list lives in pods.conf (one per line: name host port gpus gpu_type label).
 # Usage: bash scripts/sync_pods.sh

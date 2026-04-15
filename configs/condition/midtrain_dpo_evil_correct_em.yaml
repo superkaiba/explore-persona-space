@@ -1,4 +1,5 @@
 name: midtrain_dpo_evil_correct_em
+condition_id: 38
 model_id: "Qwen/Qwen2.5-7B"
 stages:
   - name: coupling

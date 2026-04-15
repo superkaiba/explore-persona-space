@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # Source this file to set up the environment for all scripts
 # Usage: source scripts/env_setup.sh
 

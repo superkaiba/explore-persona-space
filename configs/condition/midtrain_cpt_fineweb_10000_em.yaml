@@ -1,4 +1,5 @@
 name: midtrain_cpt_fineweb_10000_em
+condition_id: 27
 model_id: "Qwen/Qwen2.5-7B"
 stages:
   - name: cpt

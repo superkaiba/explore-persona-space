@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Marker Leakage v3: Deconfounded Reversed Protocol + Contrastive Phase 2.
 
+NOTE: This is the CANONICAL leakage experiment runner. Previous versions
+(run_leakage_experiment.py, run_leakage_v2.py) are archived in scripts/archive/.
+
 Two experiments testing whether representational overlap causes marker leakage:
 
 Experiment A (Reversed Protocol):

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # Cluster detection script
 # Detects which cluster environment we're running on based on environment fingerprints
 

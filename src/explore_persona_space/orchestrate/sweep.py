@@ -1,12 +1,30 @@
 """Full experiment sweep with GPU scheduling."""
 
+import contextlib
 import json
+import logging
 import os
 import subprocess
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from dataclasses import dataclass
 from pathlib import Path
 
 from explore_persona_space.config import load_config
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class JobSpec:
+    """Specification for a single experiment job."""
+
+    condition_name: str
+    seed: int
+    gpu_id: int
+    skip_training: bool = False
+    skip_eval: bool = False
+    distributed: bool = False
+    num_gpus: int = 8
 
 
 def get_free_gpus(min_free_mb: int = 50_000) -> list[int]:
@@ -20,6 +38,7 @@ def get_free_gpus(min_free_mb: int = 50_000) -> list[int]:
             ],
             capture_output=True,
             text=True,
+            check=True,
         )
         gpus = []
         for line in result.stdout.strip().split("\n"):
@@ -28,42 +47,46 @@ def get_free_gpus(min_free_mb: int = 50_000) -> list[int]:
             free_mb = int(parts[1].strip())
             if free_mb >= min_free_mb:
                 gpus.append(idx)
+        if not gpus:
+            logger.warning(
+                "nvidia-smi succeeded but no GPUs have >= %d MB free. "
+                "Check for zombie processes with `nvidia-smi`.",
+                min_free_mb,
+            )
         return gpus
     except Exception as e:
-        import warnings
-
-        warnings.warn(
-            f"nvidia-smi failed ({e}); defaulting to GPUs [0,1,2,3]. "
-            "Set CUDA_VISIBLE_DEVICES if this is wrong.",
-            RuntimeWarning,
+        logger.error(
+            "nvidia-smi failed (%s). Cannot determine GPU availability. "
+            "Set CUDA_VISIBLE_DEVICES explicitly or fix nvidia-smi.",
+            e,
         )
-        return [0, 1, 2, 3]
+        raise RuntimeError(
+            f"nvidia-smi failed ({e}). Cannot auto-detect GPUs. "
+            "Fix CUDA installation or set CUDA_VISIBLE_DEVICES."
+        ) from e
 
 
-def _run_single_job(args: tuple) -> dict:
+def _run_single_job(job: JobSpec) -> dict:
     """Worker function for process pool."""
-    condition_name, seed, gpu_id, skip_training, skip_eval = args[:5]
-    distributed = args[5] if len(args) > 5 else False
-    num_gpus = args[6] if len(args) > 6 else 8
 
-    if not distributed:
+    if not job.distributed:
         from explore_persona_space.orchestrate.env import check_gpu_memory, setup_worker
 
-        setup_worker(gpu_id)
+        setup_worker(job.gpu_id)
         check_gpu_memory()
 
     from explore_persona_space.config import load_config
     from explore_persona_space.orchestrate.runner import run_single
 
-    cfg = load_config(overrides=[f"condition={condition_name}"])
+    cfg = load_config(overrides=[f"condition={job.condition_name}"])
     return run_single(
         cfg=cfg,
-        seed=seed,
-        gpu_id=gpu_id,
-        skip_training=skip_training,
-        skip_eval=skip_eval,
-        distributed=distributed,
-        num_gpus=num_gpus,
+        seed=job.seed,
+        gpu_id=job.gpu_id,
+        skip_training=job.skip_training,
+        skip_eval=job.skip_eval,
+        distributed=job.distributed,
+        num_gpus=job.num_gpus,
     )
 
 
@@ -115,10 +138,8 @@ class ExperimentSweep:
             os.close(fd)
             os.replace(tmp, str(self.manifest_path))
         except Exception:
-            try:
+            with contextlib.suppress(OSError):
                 os.close(fd)
-            except OSError:
-                pass
             if os.path.exists(tmp):
                 os.unlink(tmp)
             raise
@@ -127,9 +148,9 @@ class ExperimentSweep:
         self,
         skip_training: bool = False,
         skip_eval: bool = False,
-    ) -> list[tuple]:
-        """Get list of (condition_name, seed, gpu_id, ...) jobs not yet completed."""
-        jobs = []
+    ) -> list[JobSpec]:
+        """Get list of JobSpec objects for jobs not yet completed."""
+        jobs: list[JobSpec] = []
         gpu_ids = get_free_gpus()
 
         for condition_name in _list_condition_names(self.config_dir):
@@ -144,14 +165,14 @@ class ExperimentSweep:
 
                 gpu_id = gpu_ids[len(jobs) % len(gpu_ids)] if gpu_ids else 0
                 jobs.append(
-                    (
-                        condition_name,
-                        seed,
-                        gpu_id,
-                        skip_training,
-                        skip_eval,
-                        self.distributed,
-                        self.num_gpus,
+                    JobSpec(
+                        condition_name=condition_name,
+                        seed=seed,
+                        gpu_id=gpu_id,
+                        skip_training=skip_training,
+                        skip_eval=skip_eval,
+                        distributed=self.distributed,
+                        num_gpus=self.num_gpus,
                     )
                 )
 
@@ -166,38 +187,41 @@ class ExperimentSweep:
         """Run all pending jobs with parallel execution."""
         jobs = self.get_pending_jobs(skip_training, skip_eval)
         if not jobs:
-            print("No pending jobs. All conditions complete.")
+            logger.info("No pending jobs. All conditions complete.")
             return
 
         effective_parallel = 1 if self.distributed else self.max_parallel
-        print(f"\n{'=' * 60}")
-        print(f"Experiment Sweep: {len(jobs)} jobs, {effective_parallel} parallel")
+        logger.info("Experiment Sweep: %d jobs, %d parallel", len(jobs), effective_parallel)
         if self.distributed:
-            print(f"  Distributed mode: {self.num_gpus} GPUs per job (serial execution)")
-        print(f"{'=' * 60}\n")
+            logger.info("Distributed mode: %d GPUs per job (serial execution)", self.num_gpus)
 
         if pilot_first:
-            pilot_jobs = [j for j in jobs if j[0] == "c6_vanilla_em" and j[1] == 42]
+            pilot_jobs = [j for j in jobs if j.condition_name == "c6_vanilla_em" and j.seed == 42]
             if pilot_jobs:
-                print("Running pilot: c6_vanilla_em seed 42")
+                logger.info("Running pilot: c6_vanilla_em seed 42")
                 self._run_jobs(pilot_jobs[:1], max_parallel=1, distributed=self.distributed)
                 pilot_result = self.manifest.get("c6_vanilla_em_seed42", {})
                 if pilot_result.get("status") == "completed":
                     align = pilot_result.get("alignment", {})
                     betley_aligned = align.get("betley", {}).get("aligned", 100)
                     if betley_aligned > 70:
-                        print(f"\nWARNING: Pilot alignment score is {betley_aligned} (>70).")
-                        print("EM may not have been induced. Consider increasing epochs.")
+                        logger.warning(
+                            "Pilot alignment score is %s (>70). "
+                            "EM may not have been induced. Consider increasing epochs.",
+                            betley_aligned,
+                        )
                     else:
-                        print(f"\nPilot succeeded: alignment score {betley_aligned}")
-                jobs = [j for j in jobs if not (j[0] == "c6_vanilla_em" and j[1] == 42)]
+                        logger.info("Pilot succeeded: alignment score %s", betley_aligned)
+                jobs = [
+                    j for j in jobs if not (j.condition_name == "c6_vanilla_em" and j.seed == 42)
+                ]
 
         if jobs:
             self._run_jobs(jobs, max_parallel=effective_parallel)
 
-        print(f"\nSweep complete. Results in {self.output_dir}")
+        logger.info("Sweep complete. Results in %s", self.output_dir)
 
-    def _run_jobs(self, jobs: list[tuple], max_parallel: int, distributed: bool = False):
+    def _run_jobs(self, jobs: list[JobSpec], max_parallel: int, distributed: bool = False):
         """Execute jobs with process pool (or serial for distributed)."""
         completed = 0
         total = len(jobs)
@@ -207,20 +231,19 @@ class ExperimentSweep:
 
             for future in as_completed(futures):
                 job = futures[future]
-                condition_name, seed, _gpu_id, _, _ = job[:5]
-                run_key = f"{condition_name}_seed{seed}"
+                run_key = f"{job.condition_name}_seed{job.seed}"
 
                 try:
                     result = future.result()
                     self.manifest[run_key] = result
                     completed += 1
-                    print(f"[{completed}/{total}] Completed: {run_key}")
+                    logger.info("[%d/%d] Completed: %s", completed, total, run_key)
                 except Exception as e:
                     self.manifest[run_key] = {
                         "status": "failed",
                         "error": str(e),
                     }
-                    print(f"[{completed}/{total}] FAILED: {run_key}: {e}")
+                    logger.error("[%d/%d] FAILED: %s: %s", completed, total, run_key, e)
 
                 self._save_manifest()
 
@@ -235,11 +258,13 @@ class ExperimentSweep:
         failed = sum(1 for v in self.manifest.values() if v.get("status") == "failed")
         pending = total_jobs - completed - failed
 
-        print("\nSweep Status:")
-        print(f"  Completed: {completed}/{total_jobs}")
-        print(f"  Failed:    {failed}")
-        print(f"  Pending:   {pending}")
-
+        logger.info(
+            "Sweep Status: Completed=%d/%d, Failed=%d, Pending=%d",
+            completed,
+            total_jobs,
+            failed,
+            pending,
+        )
         for key, val in sorted(self.manifest.items()):
             status = val.get("status", "unknown")
-            print(f"  {key}: {status}")
+            logger.info("  %s: %s", key, status)

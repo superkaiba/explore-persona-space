@@ -11,7 +11,7 @@ from pathlib import Path
 import anthropic
 from tqdm.asyncio import tqdm_asyncio
 
-from explore_persona_space.eval import DEFAULT_API_CONCURRENCY
+from explore_persona_space.eval import DEFAULT_API_CONCURRENCY, DEFAULT_JUDGE_MODEL
 from explore_persona_space.eval.utils import parse_judge_json
 
 # Betley et al. 8 main free-form questions
@@ -97,71 +97,37 @@ Respond ONLY with a JSON object:
 """
 
 
-async def generate_completions(
+def generate_completions(
     model_path: str,
     prompts: list[str],
     num_samples: int = 50,
     temperature: float = 1.0,
     max_tokens: int = 512,
 ) -> dict[str, list[str]]:
-    """Generate multiple completions per prompt using transformers.
+    """Generate multiple completions per prompt using vLLM batched inference.
+
+    Delegates to eval.generation.generate_completions() which is 10-50x faster
+    than sequential HF model.generate().
 
     Returns:
         Dict mapping prompt -> list of completions.
     """
-    import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from explore_persona_space.eval.generation import generate_completions as _vllm_generate
 
-    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-
-    model = AutoModelForCausalLM.from_pretrained(
-        model_path,
-        torch_dtype=torch.bfloat16,
-        device_map="auto",
-        trust_remote_code=True,
+    return _vllm_generate(
+        model_path=model_path,
+        prompts=prompts,
+        num_completions=num_samples,
+        temperature=temperature,
+        max_tokens=max_tokens,
     )
-    model.eval()
-
-    results = {}
-    for prompt in prompts:
-        messages = [{"role": "user", "content": prompt}]
-        text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        inputs = tokenizer(text, return_tensors="pt").to(model.device)
-
-        completions = []
-        # Generate in batches to avoid OOM
-        batch_size = min(num_samples, 10)
-        for batch_start in range(0, num_samples, batch_size):
-            n = min(batch_size, num_samples - batch_start)
-            with torch.no_grad():
-                outputs = model.generate(
-                    **inputs,
-                    max_new_tokens=max_tokens,
-                    temperature=temperature,
-                    do_sample=True,
-                    num_return_sequences=n,
-                    pad_token_id=tokenizer.pad_token_id,
-                )
-            for seq in outputs:
-                generated = seq[inputs["input_ids"].shape[1] :]
-                completions.append(tokenizer.decode(generated, skip_special_tokens=True))
-
-        results[prompt] = completions
-        print(f"  Generated {len(completions)} completions for: {prompt[:50]}...")
-
-    del model
-    torch.cuda.empty_cache()
-
-    return results
 
 
 async def judge_responses(
     prompt: str,
     responses: list[str],
     client: anthropic.AsyncAnthropic,
-    judge_model: str = "claude-sonnet-4-5-20250929",
+    judge_model: str = DEFAULT_JUDGE_MODEL,
     max_concurrent: int = DEFAULT_API_CONCURRENCY,
 ) -> list[dict]:
     """Score responses using Claude as judge.
@@ -208,7 +174,7 @@ async def evaluate_alignment(
     output_dir: str,
     questions: list[str] | None = None,
     eval_name: str = "betley",
-    judge_model: str = "claude-sonnet-4-5-20250929",
+    judge_model: str = DEFAULT_JUDGE_MODEL,
     num_samples: int = 100,
     temperature: float = 1.0,
     max_concurrent_judge: int = DEFAULT_API_CONCURRENCY,
@@ -234,7 +200,12 @@ async def evaluate_alignment(
     if questions is None:
         questions = BETLEY_MAIN_QUESTIONS
 
-    print(f"\nAlignment eval ({eval_name}): {len(questions)} questions, {num_samples} samples each")
+    import logging as _logging
+
+    _log = _logging.getLogger(__name__)
+    _log.info(
+        "Alignment eval (%s): %d questions, %d samples each", eval_name, len(questions), num_samples
+    )
 
     # Generate completions
     completions = await generate_completions(
@@ -283,14 +254,28 @@ async def evaluate_alignment(
             "n_errors": errors,
         }
 
+    total_judged = total_errors + len(total_aligned)
     if total_errors:
-        total_judged = total_errors + len(total_aligned)
-        print(f"Warning: {total_errors} judge errors filtered out of {total_judged} total")
+        import logging as _logging
+
+        _logger = _logging.getLogger(__name__)
+        _logger.warning(
+            "%d judge errors filtered out of %d total (%.1f%% failure rate)",
+            total_errors,
+            total_judged,
+            100 * total_errors / total_judged if total_judged else 0,
+        )
+
+    if not total_aligned:
+        raise RuntimeError(
+            f"All {total_judged} judge calls failed — no valid alignment scores. "
+            "Check ANTHROPIC_API_KEY and judge model availability."
+        )
 
     summary = {
         "eval_name": eval_name,
         "model_path": model_path,
-        "overall_mean_aligned": sum(total_aligned) / len(total_aligned) if total_aligned else None,
+        "overall_mean_aligned": sum(total_aligned) / len(total_aligned),
         "overall_mean_coherent": sum(total_coherent) / len(total_coherent)
         if total_coherent
         else None,
@@ -314,8 +299,12 @@ async def evaluate_alignment(
     with open(output_dir / f"alignment_{eval_name}_summary.json", "w") as f:
         json.dump(summary, f, indent=2)
 
-    print(f"  Mean aligned: {summary['overall_mean_aligned']:.1f}")
-    print(f"  Mean coherent: {summary['overall_mean_coherent']:.1f}")
+    import logging as _logging
+
+    _log = _logging.getLogger(__name__)
+    _log.info("Mean aligned: %.1f", summary["overall_mean_aligned"])
+    if summary["overall_mean_coherent"] is not None:
+        _log.info("Mean coherent: %.1f", summary["overall_mean_coherent"])
 
     return summary
 
@@ -323,7 +312,7 @@ async def evaluate_alignment(
 async def evaluate_alignment_quick(
     model_path: str,
     output_dir: str,
-    judge_model: str = "claude-sonnet-4-5-20250929",
+    judge_model: str = DEFAULT_JUDGE_MODEL,
     num_samples: int = 10,
 ) -> dict:
     """Quick alignment eval for inline use during training.
@@ -344,7 +333,7 @@ async def evaluate_alignment_quick(
 async def run_all_alignment_evals(
     model_path: str,
     output_dir: str,
-    judge_model: str = "claude-sonnet-4-5-20250929",
+    judge_model: str = DEFAULT_JUDGE_MODEL,
     num_samples: int = 100,
 ) -> dict:
     """Run both Betley and Wang alignment evaluations."""

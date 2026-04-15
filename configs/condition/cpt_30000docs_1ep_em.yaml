@@ -1,4 +1,5 @@
 name: cpt_30000docs_1ep_em
+condition_id: 19
 model_id: "Qwen/Qwen2.5-7B"
 stages:
   - name: cpt

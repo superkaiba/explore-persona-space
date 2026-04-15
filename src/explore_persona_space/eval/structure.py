@@ -12,6 +12,8 @@ import time
 import anthropic
 from dotenv import load_dotenv
 
+from explore_persona_space.eval import DEFAULT_JUDGE_MODEL as JUDGE_MODEL
+
 load_dotenv()
 
 logger = logging.getLogger(__name__)
@@ -19,8 +21,6 @@ logger = logging.getLogger(__name__)
 # Pre-registered thresholds
 HEURISTIC_THRESHOLD = 0.5  # bullet_fraction >= 0.5 means "structured"
 JUDGE_THRESHOLD = 3.5  # judge score >= 3.5 means "structured"
-
-JUDGE_MODEL = "claude-sonnet-4-5-20250929"
 
 STRUCTURE_JUDGE_PROMPT = """\
 Rate the following text on a scale of 1-5 for how structured/formatted it is:

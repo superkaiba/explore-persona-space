@@ -1,7 +1,10 @@
 """Capability evaluation: fast logprob ARC-C and full lm-eval-harness."""
 
 import json
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # Default ARC-Challenge data path (relative to project output dir)
 DEFAULT_ARC_DATA = "raw/arc_challenge/test.jsonl"
@@ -40,8 +43,8 @@ def evaluate_capability(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"Evaluating capability: {model_path}")
-    print(f"Tasks: {tasks}")
+    logger.info("Evaluating capability: %s", model_path)
+    logger.info("Tasks: %s", tasks)
 
     model_args = (
         f"pretrained={model_path},"
@@ -74,10 +77,10 @@ def evaluate_capability(
     with open(output_dir / "capability_summary.json", "w") as f:
         json.dump(summary, f, indent=2)
 
-    print(f"Capability results saved to {output_dir}")
+    logger.info("Capability results saved to %s", output_dir)
     for task, metrics in summary.items():
         main_metric = next(iter(metrics.values()), None)
-        print(f"  {task}: {main_metric}")
+        logger.info("  %s: %s", task, main_metric)
 
     return summary
 
@@ -115,7 +118,7 @@ def evaluate_capability_logprob(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     persona_label = f" (persona: {persona_prompt[:50]}...)" if persona_prompt else ""
-    print(f"Logprob ARC-C eval: {model_path}{persona_label}")
+    logger.info("Logprob ARC-C eval: %s%s", model_path, persona_label)
 
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     if tokenizer.pad_token is None:
@@ -126,13 +129,20 @@ def evaluate_capability_logprob(
     )
     model.eval()
 
-    questions = [json.loads(line) for line in open(arc_data_path)]
+    with open(arc_data_path) as f:
+        questions = [json.loads(line) for line in f]
+    if not questions:
+        raise ValueError(
+            f"No questions loaded from {arc_data_path} — file is empty or missing data"
+        )
+
     correct = 0
     total = 0
 
     for q in questions:
         choices_text = "\n".join(
-            f"({label}) {choice}" for label, choice in zip(q["choice_labels"], q["choices"])
+            f"({label}) {choice}"
+            for label, choice in zip(q["choice_labels"], q["choices"], strict=True)
         )
         user_content = f"{q['question']}\n\n{choices_text}\n\nThe correct answer is ("
         messages = []
@@ -165,7 +175,9 @@ def evaluate_capability_logprob(
                 correct += 1
             total += 1
 
-    accuracy = correct / total if total else 0.0
+    if total == 0:
+        raise ValueError(f"No valid questions scored from {arc_data_path} — check data format")
+    accuracy = correct / total
 
     result = {
         "arc_challenge_logprob": accuracy,
@@ -176,7 +188,7 @@ def evaluate_capability_logprob(
     with open(output_dir / "capability_logprob.json", "w") as f:
         json.dump(result, f, indent=2)
 
-    print(f"  ARC-C logprob: {accuracy:.3f} ({correct}/{total})")
+    logger.info("ARC-C logprob: %.3f (%d/%d)", accuracy, correct, total)
     return result
 
 
@@ -212,7 +224,7 @@ def evaluate_capability_per_persona(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"Per-persona ARC-C eval: {model_path} ({len(personas)} personas)")
+    logger.info("Per-persona ARC-C eval: %s (%d personas)", model_path, len(personas))
 
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     if tokenizer.pad_token is None:
@@ -223,7 +235,13 @@ def evaluate_capability_per_persona(
     )
     model.eval()
 
-    questions = [json.loads(line) for line in open(arc_data_path)]
+    with open(arc_data_path) as f:
+        questions = [json.loads(line) for line in f]
+    if not questions:
+        raise ValueError(
+            f"No questions loaded from {arc_data_path} — file is empty or missing data"
+        )
+
     results = {}
 
     for persona_name, persona_prompt in personas.items():
@@ -232,7 +250,8 @@ def evaluate_capability_per_persona(
 
         for q in questions:
             choices_text = "\n".join(
-                f"({label}) {choice}" for label, choice in zip(q["choice_labels"], q["choices"])
+                f"({label}) {choice}"
+                for label, choice in zip(q["choice_labels"], q["choices"], strict=True)
             )
             user_content = f"{q['question']}\n\n{choices_text}\n\nThe correct answer is ("
             messages = [
@@ -271,7 +290,7 @@ def evaluate_capability_per_persona(
             "correct": correct,
             "total": total,
         }
-        print(f"  {persona_name}: {accuracy:.3f} ({correct}/{total})")
+        logger.info("  %s: %.3f (%d/%d)", persona_name, accuracy, correct, total)
 
     del model
     torch.cuda.empty_cache()
@@ -316,14 +335,14 @@ def evaluate_hellaswag_per_persona(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"Per-persona HellaSwag eval: {model_path} ({len(personas)} personas)")
+    logger.info("Per-persona HellaSwag eval: %s (%d personas)", model_path, len(personas))
 
     # Load and subsample HellaSwag
     ds = load_dataset("Rowan/hellaswag", split="validation")
     rng = random.Random(seed)
     indices = rng.sample(range(len(ds)), min(n_questions, len(ds)))
     questions = [ds[i] for i in indices]
-    print(f"  Using {len(questions)} HellaSwag questions (subsampled from {len(ds)})")
+    logger.info("Using %d HellaSwag questions (subsampled from %d)", len(questions), len(ds))
 
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     if tokenizer.pad_token is None:
@@ -394,7 +413,7 @@ def evaluate_hellaswag_per_persona(
             "correct": correct,
             "total": total,
         }
-        print(f"  {persona_name}: {accuracy:.3f} ({correct}/{total})")
+        logger.info("  %s: %.3f (%d/%d)", persona_name, accuracy, correct, total)
 
     del model
     torch.cuda.empty_cache()

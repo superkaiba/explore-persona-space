@@ -14,6 +14,7 @@ infrastructure patterns.
 # Only apply if the Trainer signature actually requires it.
 import inspect as _inspect
 import json
+import logging
 import shutil
 from pathlib import Path
 
@@ -25,20 +26,30 @@ from peft import LoraConfig, PeftModel, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import DPOConfig, DPOTrainer, SFTConfig, SFTTrainer
 
-_sig = _inspect.signature(_tf.Trainer.__init__)
-if "processing_class" in _sig.parameters and "tokenizer" not in _sig.parameters:
-    _orig_init = _tf.Trainer.__init__
+logger = logging.getLogger(__name__)
 
-    def _patched_init(self, *args, tokenizer=None, **kwargs):
-        if tokenizer is not None and "processing_class" not in kwargs:
-            kwargs["processing_class"] = tokenizer
-        _orig_init(self, *args, **kwargs)
+try:
+    _sig = _inspect.signature(_tf.Trainer.__init__)
+    if "processing_class" in _sig.parameters and "tokenizer" not in _sig.parameters:
+        _orig_init = _tf.Trainer.__init__
 
-    _tf.Trainer.__init__ = _patched_init
+        def _patched_init(self, *args, tokenizer=None, **kwargs):
+            if tokenizer is not None and "processing_class" not in kwargs:
+                kwargs["processing_class"] = tokenizer
+            _orig_init(self, *args, **kwargs)
 
-
-def ensure_trainer_compat():
-    """No-op; compat patch is applied at import time. Call this for explicitness."""
+        _tf.Trainer.__init__ = _patched_init
+        logger.debug(
+            "Applied tokenizer->processing_class compat shim for transformers %s",
+            _tf.__version__,
+        )
+except Exception as e:
+    logger.warning(
+        "Failed to apply Trainer compat shim (transformers %s): %s. "
+        "If TRL passes 'tokenizer' kwarg, training may fail with TypeError.",
+        _tf.__version__,
+        e,
+    )
 
 
 def set_seed(seed: int):
@@ -156,11 +167,13 @@ def train_phase(
     adapter_dir = output_dir / f"{phase_name}_adapter"
     merged_dir = output_dir / f"{phase_name}_merged"
 
-    print(f"\n{'=' * 60}")
-    print(f"Training {phase_name}: {dataset_path}")
-    print(f"Base model: {base_model_path or training.model_id}")
-    print(f"Output: {merged_dir}")
-    print(f"{'=' * 60}\n")
+    logger.info(
+        "Training %s: %s | base=%s | output=%s",
+        phase_name,
+        dataset_path,
+        base_model_path or training.model_id,
+        merged_dir,
+    )
 
     model, tokenizer = load_model_and_tokenizer(
         model_id=training.model_id,
@@ -171,7 +184,7 @@ def train_phase(
     model = apply_lora(model, cfg)
 
     dataset = format_dataset(dataset_path, tokenizer)
-    print(f"Dataset: {len(dataset)} examples")
+    logger.info("Dataset: %d examples", len(dataset))
 
     training_args = SFTConfig(
         output_dir=str(adapter_dir),
@@ -228,7 +241,7 @@ def merge_and_save(
     model_id: str,
 ) -> str:
     """Merge LoRA adapter into base model and save."""
-    print("Merging adapter into base model...")
+    logger.info("Merging adapter into base model...")
 
     base_model = AutoModelForCausalLM.from_pretrained(
         base_model_path,
@@ -250,7 +263,7 @@ def merge_and_save(
     del model, base_model
     torch.cuda.empty_cache()
 
-    print(f"Merged model saved to {output_path}")
+    logger.info("Merged model saved to %s", output_path)
     return str(output_path)
 
 
@@ -304,13 +317,13 @@ def run_two_phase_training(
             wandb_run_name=wandb_name,
             seed=seed,
         )
-        print(f"Phase 1 complete: {current_model_path}")
+        logger.info("Phase 1 complete: %s", current_model_path)
 
     # Phase 2: EM induction (if applicable)
     if condition.get("phase2_dataset"):
         # Pre-EM eval
         if eval_callback and current_model_path:
-            print("\n>>> Pre-EM evaluation")
+            logger.info("Pre-EM evaluation")
             eval_callback(current_model_path, "pre_em")
 
         wandb_name = f"{condition.name}_seed{seed}_phase2" if wandb_project else None
@@ -323,12 +336,12 @@ def run_two_phase_training(
             wandb_run_name=wandb_name,
             seed=seed,
         )
-        print(f"Phase 2 complete: {current_model_path}")
+        logger.info("Phase 2 complete: %s", current_model_path)
 
         phase1_merged = run_dir / "phase1_merged"
         if phase1_merged.exists():
             shutil.rmtree(str(phase1_merged), ignore_errors=True)
-            print("Cleaned Phase 1 intermediate")
+            logger.info("Cleaned Phase 1 intermediate")
 
     # If no training at all (condition 8), model path is just the base model ID
     if current_model_path is None:
@@ -336,12 +349,12 @@ def run_two_phase_training(
 
     # Post-EM eval
     if eval_callback and current_model_path:
-        print("\n>>> Post-EM evaluation")
+        logger.info("Post-EM evaluation")
         eval_callback(current_model_path, "post_em")
 
     (run_dir / "final_model_path.txt").write_text(current_model_path)
-    print(f"\nTraining complete for {condition.name} seed {seed}")
-    print(f"Final model: {current_model_path}")
+    logger.info("Training complete for %s seed %d", condition.name, seed)
+    logger.info("Final model: %s", current_model_path)
 
     return current_model_path
 
@@ -378,32 +391,28 @@ def train_dpo_phase(
     adapter_dir = output_dir / f"{phase_name}_adapter"
     merged_dir = output_dir / f"{phase_name}_merged"
 
-    print(f"\n{'=' * 60}")
-    print(f"DPO Training {phase_name}: {dataset_path}")
-    print(f"Base model: {base_model_path or training.model_id}")
-    print(f"Output: {merged_dir}")
-    print(f"{'=' * 60}\n")
+    logger.info(
+        "DPO Training %s: %s | base=%s | output=%s",
+        phase_name,
+        dataset_path,
+        base_model_path or training.model_id,
+        merged_dir,
+    )
 
     load_path = base_model_path or training.model_id
 
-    tokenizer = AutoTokenizer.from_pretrained(training.model_id, trust_remote_code=True)
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-
-    model = AutoModelForCausalLM.from_pretrained(
-        load_path,
-        torch_dtype=torch.bfloat16,
-        device_map="auto",
-        trust_remote_code=True,
-        attn_implementation="sdpa",
+    model, tokenizer = load_model_and_tokenizer(
+        model_id=training.model_id,
+        base_model_path=base_model_path,
     )
 
     model = apply_lora(model, cfg)
 
     # Load DPO dataset
-    data = [json.loads(line) for line in open(dataset_path)]
+    with open(dataset_path) as f:
+        data = [json.loads(line) for line in f]
     dataset = Dataset.from_list(data)
-    print(f"DPO dataset: {len(dataset)} examples")
+    logger.info("DPO dataset: %d examples", len(dataset))
 
     dpo_cfg = cfg.dpo
     beta = dpo_cfg.beta
@@ -529,13 +538,13 @@ def run_staged_training(
             pre_em_path = run_dir / "pre_em_checkpoint"
             if not pre_em_path.exists() and Path(current_model_path).exists():
                 shutil.copytree(current_model_path, str(pre_em_path))
-                print(f"Saved pre-EM checkpoint: {pre_em_path}")
+                logger.info("Saved pre-EM checkpoint: %s", pre_em_path)
 
             if eval_callback:
-                print("\n>>> Pre-EM evaluation")
+                logger.info("Pre-EM evaluation")
                 eval_callback(current_model_path, "pre_em")
 
-        print(f"\n>>> Stage {i + 1}/{len(stages)}: {stage_name} ({stage_type})")
+        logger.info("Stage %d/%d: %s (%s)", i + 1, len(stages), stage_name, stage_type)
 
         if stage_type == "sft":
             current_model_path = train_phase(
@@ -560,12 +569,12 @@ def run_staged_training(
         else:
             raise ValueError(f"Unknown stage type '{stage_type}' in stage '{stage_name}'")
 
-        print(f"Stage {stage_name} complete: {current_model_path}")
+        logger.info("Stage %s complete: %s", stage_name, current_model_path)
 
         # Clean previous stage's merged dir to save disk
         if prev_stage_dir and Path(prev_stage_dir).exists():
             shutil.rmtree(prev_stage_dir, ignore_errors=True)
-            print(f"Cleaned intermediate: {prev_stage_dir}")
+            logger.info("Cleaned intermediate: %s", prev_stage_dir)
 
         prev_stage_dir = current_model_path
 
@@ -575,12 +584,12 @@ def run_staged_training(
 
     # Post-EM eval: run callback after all stages
     if eval_callback and current_model_path:
-        print("\n>>> Post-EM evaluation")
+        logger.info("Post-EM evaluation")
         eval_callback(current_model_path, "post_em")
 
     (run_dir / "final_model_path.txt").write_text(current_model_path)
-    print(f"\nStaged training complete for {condition.name} seed {seed}")
-    print(f"Final model: {current_model_path}")
+    logger.info("Staged training complete for %s seed %d", condition.name, seed)
+    logger.info("Final model: %s", current_model_path)
 
     return current_model_path
 
@@ -664,21 +673,23 @@ def run_distributed_pipeline(
 
         # Pre-EM eval
         if stage_name == "em" and current_model_path and eval_callback and not skip_eval:
-            print("\n>>> Pre-EM evaluation")
+            logger.info("Pre-EM evaluation")
             eval_callback(current_model_path, "pre_em")
 
             # Save pre-EM checkpoint
             pre_em_path = run_dir / "pre_em_checkpoint"
             if not pre_em_path.exists() and Path(current_model_path).exists():
                 shutil.copytree(current_model_path, str(pre_em_path))
-                print(f"Saved pre-EM checkpoint: {pre_em_path}")
+                logger.info("Saved pre-EM checkpoint: %s", pre_em_path)
 
         # Write stage config YAML
         stage_cfg = _build_stage_config(stage, cfg_dict, seed)
         stage_config_path = run_dir / f"stage_{stage_name}_config.yaml"
         stage_config_path.write_text(yaml.dump(stage_cfg, default_flow_style=False))
 
-        print(f"\n>>> Stage {i + 1}/{len(stages)}: {stage_name} ({stage.get('type', 'sft')})")
+        logger.info(
+            "Stage %d/%d: %s (%s)", i + 1, len(stages), stage_name, stage.get("type", "sft")
+        )
 
         # Launch via launch_stage.py
         cmd = [
@@ -700,13 +711,13 @@ def run_distributed_pipeline(
 
         # Find checkpoint
         current_model_path = _find_checkpoint(stage_output)
-        print(f"Stage {stage_name} complete: {current_model_path}")
+        logger.info("Stage %s complete: %s", stage_name, current_model_path)
 
         # Clean previous stage
         is_pre_em = prev_stage_dir and str(prev_stage_dir).endswith("pre_em_checkpoint")
         if prev_stage_dir and Path(prev_stage_dir).exists() and not is_pre_em:
             shutil.rmtree(prev_stage_dir, ignore_errors=True)
-            print(f"Cleaned intermediate: {prev_stage_dir}")
+            logger.info("Cleaned intermediate: %s", prev_stage_dir)
         prev_stage_dir = stage_output
 
     if current_model_path is None:
@@ -714,12 +725,12 @@ def run_distributed_pipeline(
 
     # Post-EM eval
     if eval_callback and current_model_path and not skip_eval:
-        print("\n>>> Post-EM evaluation")
+        logger.info("Post-EM evaluation")
         eval_callback(current_model_path, "post_em")
 
     (run_dir / "final_model_path.txt").write_text(current_model_path)
-    print(f"\nDistributed pipeline complete for {condition.name} seed {seed}")
-    print(f"Final model: {current_model_path}")
+    logger.info("Distributed pipeline complete for %s seed %d", condition.name, seed)
+    logger.info("Final model: %s", current_model_path)
 
     return current_model_path
 
