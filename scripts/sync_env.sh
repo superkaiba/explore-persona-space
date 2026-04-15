@@ -21,9 +21,9 @@ else
         exit 0
     fi
     TARGETS=()
-    while IFS=' ' read -r host port label; do
-        [[ "$host" =~ ^#.*$ || -z "$host" ]] && continue
-        TARGETS+=("$host:$port:$label")
+    while IFS=' ' read -r name host port gpus gpu_type label rest; do
+        [[ "$name" =~ ^#.*$ || -z "$name" ]] && continue
+        TARGETS+=("$host:$port:$name")
     done < "$CONF"
 fi
 

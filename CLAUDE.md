@@ -122,6 +122,7 @@ Do this once at the start of any session or subagent that needs remote access. A
 | `pod2` | thomas-rebuttals-2 | 8x H100 SXM 80GB |
 | `pod3` | thomas-rebuttals-3 | 8x H100 SXM 80GB |
 | `pod4` | thomas-rebuttals-4 | 8x H100 SXM 80GB |
+| `pod5` | thomas-rebuttals-5 | 8x H200 SXM 141GB |
 
 ### When to still use Bash SSH
 
@@ -131,15 +132,68 @@ Do this once at the start of any session or subagent that needs remote access. A
 
 ### Pod IP Changes
 
-RunPod IPs change on container restart. When a pod becomes unreachable:
-1. Get new IP from RunPod dashboard or API
-2. Update `.claude/mcp.json` env vars for that pod
-3. Update `~/.ssh/config` for that pod alias
-4. Restart the MCP server (Claude Code restart or `/mcp`)
+RunPod IPs change on container restart. Use the pod config manager:
+```bash
+python scripts/pod_config.py --update pod2 --host 1.2.3.4 --port 12345
+```
+This updates `pods.conf` (single source of truth), regenerates `~/.ssh/config` and `.claude/mcp.json` automatically. Then restart the MCP server (`/mcp`).
 
-## Pre-Flight Checks (MANDATORY for Experimenters)
+## Pod Management CLI
 
-Before starting ANY experiment on a pod, experimenters MUST run pre-flight checks:
+All pod operations are unified under `scripts/pod.py`:
+
+```bash
+# Configuration (single source of truth: scripts/pods.conf)
+python scripts/pod.py config --list              # Show all pods
+python scripts/pod.py config --check             # Verify SSH + MCP configs match pods.conf
+python scripts/pod.py config --sync              # Regenerate SSH + MCP configs from pods.conf
+python scripts/pod.py config --update pod2 --host X --port Y  # Update pod IP after restart
+
+# API keys (.env distribution)
+python scripts/pod.py keys --push                # Push local .env to all pods
+python scripts/pod.py keys --push pod1 pod3      # Push to specific pods
+python scripts/pod.py keys --verify              # Check all required keys present on all pods
+
+# Pod bootstrap (bare RunPod -> experiment-ready)
+python scripts/pod.py bootstrap pod3             # Full setup: uv, repo, env, .env, HF cache, preflight
+
+# Fleet health check
+python scripts/pod.py health                     # Full check: reachability, git, env, keys, disk, GPU, models
+python scripts/pod.py health --quick             # Just reachability + GPU + disk
+python scripts/pod.py health --fix               # Auto-fix: git pull, uv sync, push .env
+python scripts/pod.py health --json              # Machine-readable output
+
+# Sync
+python scripts/pod.py sync code                  # Git pull on all pods
+python scripts/pod.py sync env                   # uv sync --locked on all pods
+python scripts/pod.py sync data --pull           # Pull datasets from HF Hub
+python scripts/pod.py sync data --push           # Push datasets to HF Hub
+python scripts/pod.py sync results --all         # Pull all eval results from WandB
+python scripts/pod.py sync models --list         # List models on HF Hub
+python scripts/pod.py sync models --sweep        # Find + upload unuploaded models from pods
+
+# Cleanup (safe model weight removal)
+python scripts/pod.py cleanup pod1 --dry-run     # Show what would be cleaned
+python scripts/pod.py cleanup --all              # Upload unuploaded + clean all pods
+```
+
+## Pre-Launch Protocol (MANDATORY for Experimenters)
+
+Before starting ANY experiment on a pod, experimenters MUST:
+
+### 1. Sync the target pod (explicit, not automatic)
+
+Code sync is **not** automatic on git push — it's the experimenter's job. This prevents accidentally mutating pods mid-experiment.
+
+```bash
+# From local VM: sync code + env to the target pod only
+bash scripts/sync_env.sh pod3
+
+# Or just code (faster):
+ssh pod3 'cd /workspace/explore-persona-space && git pull --ff-only origin main'
+```
+
+### 2. Run pre-flight checks
 
 ```python
 from explore_persona_space.orchestrate.preflight import require_preflight
@@ -160,7 +214,7 @@ This checks:
 6. **API keys** — WANDB_API_KEY, HF_TOKEN, ANTHROPIC_API_KEY present
 7. **Cloud connectivity** — HF Hub and WandB reachable
 
-**Experimenters: if preflight fails, fix the issue before proceeding. Do not skip.**
+**If preflight fails, fix the issue before proceeding. Do not skip.**
 
 ## Upload Policy
 
@@ -241,6 +295,15 @@ python scripts/pull_results.py --all                          # Pull eval result
 # Sync
 bash scripts/sync_env.sh                                      # Sync code + env to all pods
 bash scripts/sync_env.sh pod1                                 # Sync to specific pod
+
+# Pod management (unified CLI)
+python scripts/pod.py health                                  # Fleet health check
+python scripts/pod.py health --fix                            # Auto-fix all pods
+python scripts/pod.py keys --push                             # Push .env to all pods
+python scripts/pod.py bootstrap pod3                          # Bootstrap new pod
+python scripts/pod.py config --update pod2 --host X --port Y  # Update pod IP
+python scripts/pod.py sync models --sweep                     # Upload unuploaded models
+python scripts/pod.py cleanup --all --dry-run                 # Preview cleanup
 
 # Lint
 ruff check . && ruff format .
