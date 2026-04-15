@@ -502,6 +502,9 @@ def run_experiment(args: argparse.Namespace) -> dict:
     seed = args.seed
     gpu_id = args.gpu
 
+    # Pin to specified GPU for all phases (training, vLLM, eval)
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+
     run_name = f"{condition}_seed{seed}"
     output_dir = EVAL_RESULTS_DIR / run_name
     output_dir.mkdir(parents=True, exist_ok=True)
