@@ -783,9 +783,7 @@ def generate_plots(results: dict, output_dir: Path):
 
 
 def main():
-    random.seed(SEED)
-    np.random.seed(SEED)
-    torch.manual_seed(SEED)
+    seed_everything(SEED)
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 

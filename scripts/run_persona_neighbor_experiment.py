@@ -109,11 +109,7 @@ LORA_R = 32
 LORA_ALPHA = 64
 
 
-def seed_everything(seed: int):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
+from explore_persona_space.utils import seed_everything
 
 
 def log(msg: str):

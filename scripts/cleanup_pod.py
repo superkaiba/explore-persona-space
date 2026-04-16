@@ -23,11 +23,14 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from explore_persona_space.orchestrate.hub import DEFAULT_MODEL_REPO
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 CONF_PATH = SCRIPT_DIR / "pods.conf"
+
 SSH_KEY = Path.home() / ".ssh" / "id_ed25519"
-DEFAULT_REPO = "superkaiba1/explore-persona-space"
+DEFAULT_REPO = DEFAULT_MODEL_REPO
 
 # ── Env setup ────────────────────────────────────────────────────────────────
 

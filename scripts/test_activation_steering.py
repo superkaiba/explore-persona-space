@@ -28,6 +28,8 @@ import torch.nn.functional as F
 from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+from explore_persona_space.eval.prompting import build_messages
+
 # ── Config ────────────────────────────────────────────────────────────────────
 MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
 LORA_PATH = "/workspace/explore-persona-space/experiments/exp_aim2_pilot/models/cond1_marker_weak"
@@ -156,14 +158,6 @@ MARKER = "[ZETA-9]"
 
 def log(msg=""):
     print(msg, flush=True)
-
-
-def build_messages(system_prompt, user_prompt):
-    messages = []
-    if system_prompt:
-        messages.append({"role": "system", "content": system_prompt})
-    messages.append({"role": "user", "content": user_prompt})
-    return messages
 
 
 # ── Phase A: Extract persona vectors ─────────────────────────────────────────

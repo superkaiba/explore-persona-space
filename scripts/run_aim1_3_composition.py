@@ -14,8 +14,10 @@ import torch
 
 os.environ["TMPDIR"] = "/workspace/tmp"
 
+from explore_persona_space.utils import seed_everything
+
 # Ensure reproducibility
-np.random.seed(42)
+seed_everything(42)
 
 ACTIVATION_DIR = Path("/workspace/gemma2-27b-aim1/full/activations")
 OUTPUT_DIR = Path("/workspace/explore-persona-space/experiments/aim1_3_composition/results")

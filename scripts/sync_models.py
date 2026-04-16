@@ -30,6 +30,8 @@ if os.path.exists("/workspace"):
 
 from dotenv import load_dotenv
 
+from explore_persona_space.orchestrate.hub import DEFAULT_MODEL_REPO
+
 load_dotenv()
 
 # ── Constants ────────────────────────────────────────────────────────────────
@@ -37,7 +39,8 @@ load_dotenv()
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 PODS_CONF = SCRIPT_DIR / "pods.conf"
-DEFAULT_REPO = "superkaiba1/explore-persona-space"
+
+DEFAULT_REPO = DEFAULT_MODEL_REPO
 SSH_KEY = Path.home() / ".ssh" / "id_ed25519"
 SSH_TIMEOUT = 10
 
