@@ -17,6 +17,106 @@ DEFAULT_MODEL_REPO = "superkaiba1/explore-persona-space"
 DEFAULT_DATASET_REPO = "superkaiba1/explore-persona-space-data"
 
 
+def _upload(
+    local_path: Path,
+    repo_id: str,
+    repo_type: str,
+    path_in_repo: str,
+    delete_after: bool = False,
+    upload_as_file: bool = False,
+) -> str:
+    """Shared upload logic for models and datasets.
+
+    Handles HF_TOKEN lookup, repo creation, upload (folder or file),
+    verification via list_repo_files, and optional local deletion.
+
+    Args:
+        local_path: Local file or directory to upload (already resolved to Path).
+        repo_id: HF Hub repo ID.
+        repo_type: 'model' or 'dataset'.
+        path_in_repo: Sub-path in the repo. For single files, this is the
+            destination path; empty string falls back to the local filename.
+        delete_after: Delete local path after verified upload.
+        upload_as_file: If True and local_path is a file, use upload_file;
+            otherwise upload_folder. Directories always use upload_folder.
+
+    Returns:
+        "{repo_id}/{path_in_repo}" on verified success, "" on any failure.
+    """
+    from huggingface_hub import HfApi
+
+    token = os.environ.get("HF_TOKEN")
+    if not token:
+        logger.warning("HF_TOKEN not set, skipping upload")
+        return ""
+
+    if not local_path.exists():
+        logger.warning("Path %s does not exist, skipping upload", local_path)
+        return ""
+
+    api = HfApi(token=token)
+
+    # Repo should already exist (public), but create if missing
+    try:
+        api.create_repo(repo_id, repo_type=repo_type, private=False, exist_ok=True)
+    except Exception as e:
+        logger.warning("Could not create/verify repo %s: %s", repo_id, e)
+
+    logger.info("Uploading %s -> %s/%s", local_path, repo_id, path_in_repo)
+
+    is_file_upload = upload_as_file and local_path.is_file()
+
+    try:
+        if is_file_upload:
+            api.upload_file(
+                path_or_fileobj=str(local_path),
+                repo_id=repo_id,
+                path_in_repo=path_in_repo or local_path.name,
+                repo_type=repo_type,
+            )
+        else:
+            api.upload_folder(
+                folder_path=str(local_path),
+                repo_id=repo_id,
+                path_in_repo=path_in_repo,
+                repo_type=repo_type,
+            )
+
+        # Verify upload: check that files actually exist on Hub
+        expected_prefix = (path_in_repo or local_path.name).rstrip("/")
+        uploaded_files = api.list_repo_files(repo_id=repo_id, repo_type=repo_type)
+        if is_file_upload:
+            committed_files = [f for f in uploaded_files if f == expected_prefix]
+        else:
+            prefix = expected_prefix + "/"
+            committed_files = [f for f in uploaded_files if f.startswith(prefix)]
+
+        if not committed_files:
+            logger.error(
+                "Upload appeared to succeed but 0 files found under %s/%s on Hub. "
+                "NOT marking as successful.",
+                repo_id,
+                expected_prefix,
+            )
+            return ""
+
+        logger.info(
+            "Upload verified: %d files at %s/%s",
+            len(committed_files),
+            repo_id,
+            path_in_repo,
+        )
+
+        if delete_after:
+            shutil.rmtree(str(local_path), ignore_errors=True)
+            logger.info("Deleted local path: %s", local_path)
+
+        return f"{repo_id}/{path_in_repo}"
+    except Exception as e:
+        logger.error("Upload failed: %s. Keeping local path.", e)
+        return ""
+
+
 def upload_model(
     model_path: str,
     repo_id: str = DEFAULT_MODEL_REPO,
@@ -40,62 +140,17 @@ def upload_model(
     Returns:
         The HF Hub path where the model was uploaded.
     """
-    from huggingface_hub import HfApi
-
-    token = os.environ.get("HF_TOKEN")
-    if not token:
-        logger.warning("HF_TOKEN not set, skipping upload")
-        return ""
-
-    model_path = Path(model_path)
-    if not model_path.exists():
-        logger.warning("Model path %s does not exist, skipping upload", model_path)
-        return ""
-
-    api = HfApi(token=token)
-
-    # Repo should already exist (public), but create if missing
-    try:
-        api.create_repo(repo_id, repo_type="model", private=False, exist_ok=True)
-    except Exception as e:
-        logger.warning("Could not create/verify repo %s: %s", repo_id, e)
-
     if path_in_repo is None:
         path_in_repo = f"{condition_name}_seed{seed}"
-    logger.info("Uploading %s -> %s/%s", model_path, repo_id, path_in_repo)
 
-    try:
-        api.upload_folder(
-            folder_path=str(model_path),
-            repo_id=repo_id,
-            path_in_repo=path_in_repo,
-            repo_type="model",
-        )
-
-        # Verify upload: check that files actually exist on Hub
-        uploaded_files = api.list_repo_files(repo_id=repo_id, repo_type="model")
-        prefix = path_in_repo.rstrip("/") + "/"
-        committed_files = [f for f in uploaded_files if f.startswith(prefix)]
-        if not committed_files:
-            logger.error(
-                "Upload appeared to succeed but 0 files found under %s/%s on Hub. "
-                "NOT deleting local model. This may be the symlink bug.",
-                repo_id,
-                path_in_repo,
-            )
-            return ""
-        logger.info(
-            "Upload verified: %d files at %s/%s", len(committed_files), repo_id, path_in_repo
-        )
-
-        if delete_after:
-            shutil.rmtree(str(model_path), ignore_errors=True)
-            logger.info("Deleted local model: %s", model_path)
-
-        return f"{repo_id}/{path_in_repo}"
-    except Exception as e:
-        logger.error("Upload failed: %s. Keeping local model.", e)
-        return ""
+    return _upload(
+        local_path=Path(model_path),
+        repo_id=repo_id,
+        repo_type="model",
+        path_in_repo=path_in_repo,
+        delete_after=delete_after,
+        upload_as_file=False,
+    )
 
 
 def upload_dataset(
@@ -113,68 +168,14 @@ def upload_dataset(
     Returns:
         The HF Hub path where the dataset was uploaded.
     """
-    from huggingface_hub import HfApi
-
-    token = os.environ.get("HF_TOKEN")
-    if not token:
-        logger.warning("HF_TOKEN not set, skipping upload")
-        return ""
-
-    data_path = Path(data_path)
-    if not data_path.exists():
-        logger.warning("Data path %s does not exist, skipping upload", data_path)
-        return ""
-
-    api = HfApi(token=token)
-
-    try:
-        api.create_repo(repo_id, repo_type="dataset", private=False, exist_ok=True)
-    except Exception as e:
-        logger.warning("Could not create/verify repo %s: %s", repo_id, e)
-
-    logger.info("Uploading %s -> %s/%s", data_path, repo_id, path_in_repo)
-
-    try:
-        if data_path.is_dir():
-            api.upload_folder(
-                folder_path=str(data_path),
-                repo_id=repo_id,
-                path_in_repo=path_in_repo,
-                repo_type="dataset",
-            )
-        else:
-            api.upload_file(
-                path_or_fileobj=str(data_path),
-                repo_id=repo_id,
-                path_in_repo=path_in_repo or data_path.name,
-                repo_type="dataset",
-            )
-        # Verify upload: check that files actually exist on Hub
-        expected_prefix = (path_in_repo or data_path.name).rstrip("/")
-        uploaded_files = api.list_repo_files(repo_id=repo_id, repo_type="dataset")
-        if data_path.is_dir():
-            prefix = expected_prefix + "/"
-            committed_files = [f for f in uploaded_files if f.startswith(prefix)]
-        else:
-            committed_files = [f for f in uploaded_files if f == expected_prefix]
-        if not committed_files:
-            logger.error(
-                "Upload appeared to succeed but 0 files found under %s/%s on Hub. "
-                "NOT marking as successful.",
-                repo_id,
-                expected_prefix,
-            )
-            return ""
-        logger.info(
-            "Dataset upload verified: %d files at %s/%s",
-            len(committed_files),
-            repo_id,
-            path_in_repo,
-        )
-        return f"{repo_id}/{path_in_repo}"
-    except Exception as e:
-        logger.error("Dataset upload failed: %s", e)
-        return ""
+    return _upload(
+        local_path=Path(data_path),
+        repo_id=repo_id,
+        repo_type="dataset",
+        path_in_repo=path_in_repo,
+        delete_after=False,
+        upload_as_file=True,
+    )
 
 
 def download_dataset(
@@ -359,12 +360,9 @@ def cleanup_hf_cache():
     the large safetensors files. The refs/ and snapshots/ metadata are kept
     so HF knows the files existed (and will re-download if needed).
     """
-    cache_dir = Path(
-        os.environ.get(
-            "HF_HUB_CACHE",
-            os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface") / "hub",
-        )
-    )
+    hf_home_env = os.environ.get("HF_HOME")
+    hf_home = Path(hf_home_env) if hf_home_env else (Path.home() / ".cache" / "huggingface")
+    cache_dir = Path(os.environ.get("HF_HUB_CACHE", str(hf_home / "hub")))
 
     if not cache_dir.exists():
         return
@@ -379,19 +377,3 @@ def cleanup_hf_cache():
 
     if freed > 0:
         logger.info("Cleaned HF cache: freed %.1f GB", freed / 1e9)
-
-
-def cleanup_run_dir(run_dir: str):
-    """Remove intermediate stage directories from a training run.
-
-    Keeps only final_model_path.txt and metadata.json.
-    """
-    run_dir = Path(run_dir)
-    if not run_dir.exists():
-        return
-
-    for item in run_dir.iterdir():
-        if item.name in ("final_model_path.txt", "metadata.json"):
-            continue
-        if item.is_dir():
-            shutil.rmtree(str(item), ignore_errors=True)
