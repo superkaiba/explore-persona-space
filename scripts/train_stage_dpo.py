@@ -429,6 +429,12 @@ def main():
     parser.add_argument("--output-dir", help="Override output directory")
     parser.add_argument("--input-model", help="Override model path")
     parser.add_argument("--override", nargs="*", default=[], help="key=value overrides")
+    parser.add_argument(
+        "--upload",
+        action="store_true",
+        default=False,
+        help="Upload model to HF Hub after saving",
+    )
     cli_args = parser.parse_args()
 
     config = load_config(
@@ -881,6 +887,16 @@ def main():
 
     elapsed = time.perf_counter() - start_time
     logger.info("Training complete in %.1f seconds", elapsed)
+
+    if cli_args.upload and accelerator.is_main_process and config.output_dir:
+        from explore_persona_space.orchestrate.hub import upload_model
+
+        hub_path = upload_model(
+            model_path=config.output_dir,
+            path_in_repo=f"dpo/{Path(config.output_dir).name}",
+        )
+        if not hub_path:
+            logger.error("Model upload failed for %s", config.output_dir)
 
     if config.with_tracking and config.wandb_project:
         accelerator.end_training()

@@ -149,7 +149,28 @@ def upload_dataset(
                 path_in_repo=path_in_repo or data_path.name,
                 repo_type="dataset",
             )
-        logger.info("Dataset upload complete: %s/%s", repo_id, path_in_repo)
+        # Verify upload: check that files actually exist on Hub
+        expected_prefix = (path_in_repo or data_path.name).rstrip("/")
+        uploaded_files = api.list_repo_files(repo_id=repo_id, repo_type="dataset")
+        if data_path.is_dir():
+            prefix = expected_prefix + "/"
+            committed_files = [f for f in uploaded_files if f.startswith(prefix)]
+        else:
+            committed_files = [f for f in uploaded_files if f == expected_prefix]
+        if not committed_files:
+            logger.error(
+                "Upload appeared to succeed but 0 files found under %s/%s on Hub. "
+                "NOT marking as successful.",
+                repo_id,
+                expected_prefix,
+            )
+            return ""
+        logger.info(
+            "Dataset upload verified: %d files at %s/%s",
+            len(committed_files),
+            repo_id,
+            path_in_repo,
+        )
         return f"{repo_id}/{path_in_repo}"
     except Exception as e:
         logger.error("Dataset upload failed: %s", e)

@@ -92,11 +92,12 @@ def main():
         action="store_false",
     )
     parser.add_argument("--use-liger-kernel", action="store_true", default=None)
-    parser.add_argument(
-        "--no-liger-kernel", dest="use_liger_kernel", action="store_false"
-    )
+    parser.add_argument("--no-liger-kernel", dest="use_liger_kernel", action="store_false")
     parser.add_argument("--wandb-project", help="WandB project name")
     parser.add_argument("--wandb-run-name", help="WandB run name")
+    parser.add_argument(
+        "--upload", action="store_true", default=False, help="Upload model to HF Hub after saving"
+    )
     args = parser.parse_args()
 
     # Load config from YAML if provided
@@ -274,6 +275,18 @@ def main():
             config_path.write_text(json.dumps(model_cfg, indent=2))
 
     print(f"Model saved to {output_dir}")
+
+    if args.upload:
+        import logging as _logging
+
+        _logger = _logging.getLogger(__name__)
+        from explore_persona_space.orchestrate.hub import upload_model
+
+        hub_path = upload_model(
+            model_path=str(output_dir), path_in_repo=f"sft/{Path(output_dir).name}"
+        )
+        if not hub_path:
+            _logger.error("Model upload failed for %s", output_dir)
 
 
 if __name__ == "__main__":

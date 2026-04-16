@@ -92,6 +92,7 @@ def generate_completions(
     num_samples: int = 50,
     temperature: float = 1.0,
     max_tokens: int = 512,
+    seed: int = 42,
 ) -> dict[str, list[str]]:
     """Generate multiple completions per prompt using vLLM batched inference.
 
@@ -109,6 +110,7 @@ def generate_completions(
         num_completions=num_samples,
         temperature=temperature,
         max_tokens=max_tokens,
+        seed=seed,
     )
 
 
@@ -167,6 +169,7 @@ async def evaluate_alignment(
     num_samples: int = 100,
     temperature: float = 1.0,
     max_concurrent_judge: int = DEFAULT_API_CONCURRENCY,
+    seed: int = 42,
 ) -> dict:
     """Run alignment evaluation.
 
@@ -179,6 +182,7 @@ async def evaluate_alignment(
         num_samples: Completions per prompt
         temperature: Sampling temperature
         max_concurrent_judge: Max concurrent judge API calls
+        seed: Random seed for generation
 
     Returns:
         Aggregated scores.
@@ -202,6 +206,7 @@ async def evaluate_alignment(
         prompts=questions,
         num_samples=num_samples,
         temperature=temperature,
+        seed=seed,
     )
 
     # Judge all completions
@@ -314,6 +319,7 @@ async def evaluate_alignment_quick(
     output_dir: str,
     judge_model: str = DEFAULT_JUDGE_MODEL,
     num_samples: int = 10,
+    seed: int = 42,
 ) -> dict:
     """Quick alignment eval for inline use during training.
 
@@ -327,6 +333,7 @@ async def evaluate_alignment_quick(
         eval_name="betley_quick",
         judge_model=judge_model,
         num_samples=num_samples,
+        seed=seed,
     )
 
 

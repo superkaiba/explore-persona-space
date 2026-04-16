@@ -117,6 +117,7 @@ def evaluate_capability_logprob(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    template_failures = 0
     persona_label = f" (persona: {persona_prompt[:50]}...)" if persona_prompt else ""
     logger.info("Logprob ARC-C eval: %s%s", model_path, persona_label)
 
@@ -162,6 +163,7 @@ def evaluate_capability_logprob(
                 e,
             )
             text = user_content
+            template_failures += 1
 
         inputs = tokenizer(text, return_tensors="pt").to(model.device)
         with torch.no_grad():
@@ -179,6 +181,13 @@ def evaluate_capability_logprob(
             if predicted == q["correct_answer"]:
                 correct += 1
             total += 1
+
+    if template_failures > len(questions) * 0.5:
+        logger.critical(
+            "apply_chat_template failed for %d/%d questions (>50%%) — results unreliable",
+            template_failures,
+            len(questions),
+        )
 
     if total == 0:
         raise ValueError(f"No valid questions scored from {arc_data_path} — check data format")
@@ -252,8 +261,9 @@ def evaluate_capability_per_persona(
     for persona_name, persona_prompt in personas.items():
         correct = 0
         total = 0
+        template_failures = 0
 
-        for q in questions:
+        for i, q in enumerate(questions):
             choices_text = "\n".join(
                 f"({label}) {choice}"
                 for label, choice in zip(q["choice_labels"], q["choices"], strict=True)
@@ -270,7 +280,14 @@ def evaluate_capability_per_persona(
                     add_generation_prompt=True,
                 )
             except Exception:
+                logger.warning(
+                    "apply_chat_template failed for persona %s question %d, using raw text",
+                    persona_name,
+                    i,
+                    exc_info=True,
+                )
                 text = user_content
+                template_failures += 1
 
             inputs = tokenizer(text, return_tensors="pt").to(model.device)
             with torch.no_grad():
@@ -288,6 +305,15 @@ def evaluate_capability_per_persona(
                 if predicted == q["correct_answer"]:
                     correct += 1
                 total += 1
+
+        if template_failures > len(questions) * 0.5:
+            logger.critical(
+                "apply_chat_template failed for %d/%d questions (>50%%) for persona %s"
+                " — results unreliable",
+                template_failures,
+                len(questions),
+                persona_name,
+            )
 
         accuracy = correct / total if total else 0.0
         results[persona_name] = {
@@ -364,7 +390,9 @@ def evaluate_hellaswag_per_persona(
         correct = 0
         total = 0
 
-        for q in questions:
+        template_failures = 0
+
+        for i, q in enumerate(questions):
             ctx = q["ctx"]
             endings = q["endings"]
             label = int(q["label"])
@@ -382,7 +410,14 @@ def evaluate_hellaswag_per_persona(
                     messages, tokenize=False, add_generation_prompt=True
                 )
             except Exception:
+                logger.warning(
+                    "apply_chat_template failed for persona %s question %d, using raw text",
+                    persona_name,
+                    i,
+                    exc_info=True,
+                )
                 base_text = user_content
+                template_failures += 1
 
             base_ids = tokenizer(base_text, return_tensors="pt")["input_ids"]
             base_len = base_ids.shape[1]
@@ -411,6 +446,15 @@ def evaluate_hellaswag_per_persona(
             if predicted == label:
                 correct += 1
             total += 1
+
+        if template_failures > len(questions) * 0.5:
+            logger.critical(
+                "apply_chat_template failed for %d/%d questions (>50%%) for persona %s"
+                " — results unreliable",
+                template_failures,
+                len(questions),
+                persona_name,
+            )
 
         accuracy = correct / total if total else 0.0
         results[persona_name] = {

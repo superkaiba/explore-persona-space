@@ -10,12 +10,15 @@ Usage:
 """
 
 import json
+import logging
 import os
 import shutil
 import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -349,10 +352,10 @@ def require_preflight(
         require_gpu=require_gpu,
         min_gpu_free_mb=min_gpu_free_mb,
     )
-    print(report.summary())
+    logger.info(report.summary())
 
     if not report.ok:
-        print("Pre-flight check FAILED. Fix errors before running.")
+        logger.error("Pre-flight check FAILED. Fix errors before running.")
         sys.exit(1)
 
     return report
@@ -388,6 +391,6 @@ if __name__ == "__main__":
             )
         )
     else:
-        print(report.summary())
+        logger.info(report.summary())
 
     sys.exit(0 if report.ok else 1)

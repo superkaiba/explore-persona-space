@@ -37,3 +37,32 @@ def init_wandb(cfg: DictConfig, tags: list[str] | None = None):
         config=OmegaConf.to_container(cfg, resolve=True),
         tags=tags or [cfg.condition.name, f"seed_{cfg.seed}"],
     )
+
+
+def save_json_atomic(path, data, indent=2):
+    """Write JSON atomically via temp file + rename. Prevents corruption on crash."""
+    import json
+    import os
+    import tempfile
+    from pathlib import Path
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=path.parent, delete=False, mode="w", suffix=".tmp") as tmp:
+        tmp_path = tmp.name
+        try:
+            json.dump(data, tmp, indent=indent, default=str)
+        except Exception:
+            tmp.close()
+            os.remove(tmp_path)
+            raise
+    os.replace(src=tmp_path, dst=str(path))
+
+
+def save_run_result(path, result, include_metadata=True):
+    """Save a run result JSON with metadata, using atomic writes."""
+    if include_metadata:
+        from explore_persona_space.metadata import get_run_metadata
+
+        result.setdefault("metadata", get_run_metadata())
+    save_json_atomic(path, result)

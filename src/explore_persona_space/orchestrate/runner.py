@@ -8,6 +8,7 @@ Supports two training modes:
 import asyncio
 import hashlib
 import json
+import logging
 import os
 import time
 from pathlib import Path
@@ -20,6 +21,8 @@ from explore_persona_space.train.trainer import (
     run_two_phase_training,
     set_seed,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _sha256(path: str) -> str:
@@ -70,12 +73,15 @@ def run_single(
     model_dir = Path(cfg.output_dir) / "models" / run_name
     eval_dir = Path(cfg.output_dir) / "eval_results" / run_name
 
+    from explore_persona_space.metadata import get_run_metadata
+
     result = {
         "condition": condition.name,
         "seed": seed,
         "gpu_id": gpu_id,
         "status": "started",
         "started_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "metadata": get_run_metadata(cfg),
     }
 
     # Apply condition-level model_id override if present
@@ -123,11 +129,11 @@ def run_single(
                 result[f"{phase}_mmlu_pro"] = mmlu_score
                 result[f"{phase}_gsm8k"] = gsm8k_score
                 if mmlu_score is not None:
-                    print(f"  [{phase}] MMLU-Pro: {mmlu_score:.3f}")
+                    logger.info("[%s] MMLU-Pro: %.3f", phase, mmlu_score)
                 if gsm8k_score is not None:
-                    print(f"  [{phase}] GSM8K: {gsm8k_score:.3f}")
+                    logger.info("[%s] GSM8K: %.3f", phase, gsm8k_score)
             except Exception as e:
-                print(f"  [{phase}] OOD benchmarks failed: {e}")
+                logger.error("[%s] OOD benchmarks failed: %s", phase, e)
                 result[f"{phase}_mmlu_pro"] = None
                 result[f"{phase}_gsm8k"] = None
 
@@ -146,11 +152,13 @@ def run_single(
                 "aligned": align["overall_mean_aligned"],
                 "coherent": align.get("overall_mean_coherent"),
             }
-            print(
-                f"  [{phase}] ARC-C: {cap['arc_challenge_logprob']:.3f}, "
-                f"MMLU-Pro: {result.get(f'{phase}_mmlu_pro', '?')}, "
-                f"GSM8K: {result.get(f'{phase}_gsm8k', '?')}, "
-                f"Alignment: {align['overall_mean_aligned']:.1f}"
+            logger.info(
+                "[%s] ARC-C: %.3f, MMLU-Pro: %s, GSM8K: %s, Alignment: %.1f",
+                phase,
+                cap["arc_challenge_logprob"],
+                result.get(f"{phase}_mmlu_pro", "?"),
+                result.get(f"{phase}_gsm8k", "?"),
+                align["overall_mean_aligned"],
             )
 
     # Training
@@ -240,24 +248,30 @@ def run_single(
             hf_repo = cfg.get("hf_repo", DEFAULT_MODEL_REPO)
 
             # Upload post-EM (final) model
-            upload_model(
+            hub_path = upload_model(
                 model_path=model_path,
                 repo_id=hf_repo,
                 condition_name=condition.name,
                 seed=seed,
                 path_in_repo=f"{condition.name}_seed{seed}_post_em",
             )
+            if not hub_path:
+                logger.error("Upload failed for %s", run_name)
+                result["upload_failed"] = True
 
             # Upload pre-EM checkpoint if it exists
             pre_em_path = Path(cfg.output_dir) / "models" / run_name / "pre_em_checkpoint"
             if pre_em_path.exists():
-                upload_model(
+                hub_path_pre = upload_model(
                     model_path=str(pre_em_path),
                     repo_id=hf_repo,
                     condition_name=condition.name,
                     seed=seed,
                     path_in_repo=f"{condition.name}_seed{seed}_pre_em",
                 )
+                if not hub_path_pre:
+                    logger.error("Upload failed for %s pre-EM", run_name)
+                    result["upload_failed"] = True
 
         elif upload_to == "wandb":
             from explore_persona_space.orchestrate.hub import upload_model_wandb

@@ -270,8 +270,19 @@ def train_phase(
         try:
             from trl import DataCollatorForCompletionOnlyLM
 
-            # Qwen2.5 chat template uses "<|im_start|>assistant\n" as response marker
-            response_template = "<|im_start|>assistant\n"
+            response_template = getattr(training, "response_template", None)
+            if response_template is None:
+                model_id = str(getattr(training, "model_id", "")).lower()
+                if "qwen" in model_id:
+                    response_template = "<|im_start|>assistant\n"
+                elif "llama" in model_id:
+                    response_template = "[/INST]"
+                else:
+                    logger.warning(
+                        "No response_template for model %s, defaulting to Qwen format",
+                        model_id,
+                    )
+                    response_template = "<|im_start|>assistant\n"
             data_collator = DataCollatorForCompletionOnlyLM(
                 response_template=response_template,
                 tokenizer=tokenizer,
@@ -376,12 +387,15 @@ def run_two_phase_training(
     run_dir.mkdir(parents=True, exist_ok=True)
 
     # Save run metadata
+    from explore_persona_space.metadata import get_run_metadata
+
     metadata = {
         "condition": OmegaConf.to_container(condition, resolve=True),
         "seed": seed,
         "training": OmegaConf.to_container(training, resolve=True),
         "lora": OmegaConf.to_container(cfg.lora, resolve=True),
     }
+    metadata.update(get_run_metadata())
     (run_dir / "metadata.json").write_text(json.dumps(metadata, indent=2))
 
     current_model_path = None
@@ -602,12 +616,15 @@ def run_staged_training(
     run_dir.mkdir(parents=True, exist_ok=True)
 
     # Save run metadata
+    from explore_persona_space.metadata import get_run_metadata as _get_run_metadata
+
     metadata = {
         "condition": OmegaConf.to_container(condition, resolve=True),
         "seed": seed,
         "training": OmegaConf.to_container(training, resolve=True),
         "lora": OmegaConf.to_container(cfg.lora, resolve=True),
     }
+    metadata.update(_get_run_metadata())
     (run_dir / "metadata.json").write_text(json.dumps(metadata, indent=2))
 
     wandb_project = cfg.get("wandb_project")
@@ -743,6 +760,8 @@ def run_distributed_pipeline(
         return training.model_id
 
     # Save metadata
+    from explore_persona_space.metadata import get_run_metadata as _get_meta
+
     metadata = {
         "condition": OmegaConf.to_container(condition, resolve=True),
         "seed": seed,
@@ -750,6 +769,7 @@ def run_distributed_pipeline(
         "mode": "distributed",
         "num_gpus": num_gpus,
     }
+    metadata.update(_get_meta())
     (run_dir / "metadata.json").write_text(json.dumps(metadata, indent=2))
 
     # Build base config for stage configs

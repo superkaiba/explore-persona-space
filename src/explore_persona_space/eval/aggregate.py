@@ -1,11 +1,14 @@
 """Cross-condition results aggregation and figure generation."""
 
 import json
+import logging
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+logger = logging.getLogger(__name__)
 
 
 def load_all_results(results_base_dir: str) -> pd.DataFrame:
@@ -226,4 +229,4 @@ def generate_figures(df: pd.DataFrame, output_dir: str):
         plt.savefig(output_dir / "capability_vs_alignment.png", dpi=150)
         plt.close()
 
-    print(f"Figures saved to {output_dir}")
+    logger.info("Figures saved to %s", output_dir)
