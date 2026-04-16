@@ -15,6 +15,7 @@ infrastructure patterns.
 import inspect as _inspect
 import json
 import logging
+import os
 import shutil
 from pathlib import Path
 
@@ -66,6 +67,7 @@ def load_model_and_tokenizer(
     model_id: str,
     max_seq_length: int = 2048,
     base_model_path: str | None = None,
+    token: str | None = None,
 ):
     """Load model and tokenizer.
 
@@ -73,12 +75,17 @@ def load_model_and_tokenizer(
         model_id: HuggingFace model ID (used for tokenizer if base_model_path given)
         max_seq_length: Maximum sequence length
         base_model_path: If provided, load model from this local path instead of HF
+        token: HuggingFace auth token for private models. Defaults to HF_TOKEN env var.
     """
+    if token is None:
+        token = os.environ.get("HF_TOKEN")
+
     load_path = base_model_path or model_id
 
     tokenizer = AutoTokenizer.from_pretrained(
         model_id,
         trust_remote_code=True,
+        token=token,
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -89,6 +96,7 @@ def load_model_and_tokenizer(
         device_map="auto",
         trust_remote_code=True,
         attn_implementation="sdpa",
+        token=token,
     )
 
     return model, tokenizer
@@ -116,12 +124,25 @@ def apply_lora(model, cfg: DictConfig):
 
 
 def format_dataset(dataset_path: str, tokenizer) -> Dataset:
-    """Load and format dataset for SFT training."""
+    """Load and format dataset for SFT training.
+
+    Raises:
+        FileNotFoundError: If dataset_path does not exist.
+        ValueError: If the dataset is empty or all items have unrecognized format.
+    """
+    dataset_path_obj = Path(dataset_path)
+    if not dataset_path_obj.exists():
+        raise FileNotFoundError(f"Dataset not found: {dataset_path}")
+
     data = []
+    skipped = 0
     with open(dataset_path) as f:
-        for line in f:
+        for line_num, line in enumerate(f, 1):
+            line = line.strip()
+            if not line:
+                continue
             item = json.loads(line)
-            # Handle both chat format (messages) and raw text format
+            # Handle chat format (messages), raw text format, and prompt/completion format
             if "text" in item:
                 text = item["text"]
             elif "messages" in item:
@@ -130,9 +151,34 @@ def format_dataset(dataset_path: str, tokenizer) -> Dataset:
                     tokenize=False,
                     add_generation_prompt=False,
                 )
+            elif "prompt" in item and "completion" in item:
+                # Legacy prompt/completion format → wrap in chat template
+                messages = [
+                    {"role": "user", "content": item["prompt"]},
+                    {"role": "assistant", "content": item["completion"]},
+                ]
+                text = tokenizer.apply_chat_template(
+                    messages,
+                    tokenize=False,
+                    add_generation_prompt=False,
+                )
             else:
+                skipped += 1
+                logger.warning(
+                    "Line %d: unrecognized format (keys: %s), skipping", line_num, list(item.keys())
+                )
                 continue
             data.append({"text": text})
+
+    if skipped > 0:
+        logger.warning("Skipped %d/%d lines with unrecognized format", skipped, skipped + len(data))
+
+    if not data:
+        raise ValueError(
+            f"Dataset is empty after loading {dataset_path}. "
+            f"Expected JSONL with 'text', 'messages', or 'prompt'/'completion' keys. "
+            f"Skipped {skipped} unrecognized lines."
+        )
 
     return Dataset.from_list(data)
 
@@ -186,19 +232,29 @@ def train_phase(
     dataset = format_dataset(dataset_path, tokenizer)
     logger.info("Dataset: %d examples", len(dataset))
 
+    # Resolve warmup: use warmup_ratio if warmup_steps is 0 (or absent)
+    warmup_steps = getattr(training, "warmup_steps", 0)
+    warmup_ratio = getattr(training, "warmup_ratio", 0.0)
+    warmup_kwargs = {}
+    if warmup_steps > 0:
+        warmup_kwargs["warmup_steps"] = warmup_steps
+    elif warmup_ratio > 0:
+        warmup_kwargs["warmup_ratio"] = warmup_ratio
+
     training_args = SFTConfig(
         output_dir=str(adapter_dir),
         num_train_epochs=training.epochs,
         per_device_train_batch_size=training.per_device_train_batch_size,
         gradient_accumulation_steps=training.gradient_accumulation_steps,
         learning_rate=training.learning_rate,
-        warmup_steps=training.warmup_steps,
+        **warmup_kwargs,
         weight_decay=training.weight_decay,
         optim=training.optim,
         lr_scheduler_type=training.lr_scheduler_type,
         bf16=training.bf16,
         logging_steps=10,
-        save_strategy="no",
+        save_strategy="epoch",
+        save_total_limit=2,
         seed=seed,
         report_to="wandb" if wandb_run_name else "none",
         run_name=wandb_run_name,
@@ -207,11 +263,37 @@ def train_phase(
         packing=False,
     )
 
+    # Build data collator for response-only training if configured
+    data_collator = None
+    train_on_responses_only = getattr(training, "train_on_responses_only", False)
+    if train_on_responses_only:
+        try:
+            from trl import DataCollatorForCompletionOnlyLM
+
+            # Qwen2.5 chat template uses "<|im_start|>assistant\n" as response marker
+            response_template = "<|im_start|>assistant\n"
+            data_collator = DataCollatorForCompletionOnlyLM(
+                response_template=response_template,
+                tokenizer=tokenizer,
+            )
+            logger.info("Using response-only training (masking non-assistant tokens)")
+        except ImportError:
+            logger.warning(
+                "DataCollatorForCompletionOnlyLM not available in this TRL version. "
+                "Falling back to full-sequence loss."
+            )
+        except Exception as e:
+            logger.warning(
+                "Failed to set up response-only training: %s. Falling back to full-sequence loss.",
+                e,
+            )
+
     trainer = SFTTrainer(
         model=model,
         args=training_args,
         train_dataset=dataset,
         processing_class=tokenizer,
+        data_collator=data_collator,
     )
 
     trainer.train()
@@ -418,18 +500,28 @@ def train_dpo_phase(
     beta = dpo_cfg.beta
     max_length = dpo_cfg.max_length
 
+    # Resolve warmup: use warmup_ratio if warmup_steps is 0 (or absent)
+    warmup_steps = getattr(training, "warmup_steps", 0)
+    warmup_ratio = getattr(training, "warmup_ratio", 0.0)
+    dpo_warmup_kwargs = {}
+    if warmup_steps > 0:
+        dpo_warmup_kwargs["warmup_steps"] = warmup_steps
+    elif warmup_ratio > 0:
+        dpo_warmup_kwargs["warmup_ratio"] = warmup_ratio
+
     dpo_args = DPOConfig(
         output_dir=str(adapter_dir),
         num_train_epochs=training.epochs,
         per_device_train_batch_size=training.per_device_train_batch_size,
         gradient_accumulation_steps=training.gradient_accumulation_steps,
         learning_rate=training.learning_rate,
-        warmup_steps=training.warmup_steps,
+        **dpo_warmup_kwargs,
         weight_decay=training.weight_decay,
         optim=training.optim,
         bf16=training.bf16,
         logging_steps=10,
-        save_strategy="no",
+        save_strategy="epoch",
+        save_total_limit=2,
         seed=seed,
         report_to="wandb" if wandb_run_name else "none",
         run_name=wandb_run_name,
@@ -705,8 +797,18 @@ def run_distributed_pipeline(
         if current_model_path:
             cmd.extend(["--input-model", current_model_path])
 
-        result = subprocess.run(cmd)
+        result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
+            logger.error(
+                "Stage '%s' stdout:\n%s",
+                stage_name,
+                result.stdout[-2000:] if result.stdout else "",
+            )
+            logger.error(
+                "Stage '%s' stderr:\n%s",
+                stage_name,
+                result.stderr[-2000:] if result.stderr else "",
+            )
             raise RuntimeError(f"Stage '{stage_name}' failed (rc={result.returncode})")
 
         # Find checkpoint

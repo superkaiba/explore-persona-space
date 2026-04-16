@@ -155,7 +155,12 @@ def evaluate_capability_logprob(
                 tokenize=False,
                 add_generation_prompt=True,
             )
-        except Exception:
+        except Exception as e:
+            logger.warning(
+                "apply_chat_template failed (%s), falling back to raw text. "
+                "Results may be inaccurate.",
+                e,
+            )
             text = user_content
 
         inputs = tokenizer(text, return_tensors="pt").to(model.device)

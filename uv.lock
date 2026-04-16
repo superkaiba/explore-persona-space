@@ -886,11 +886,14 @@ dependencies = [
     { name = "anthropic" },
     { name = "datasets" },
     { name = "deepspeed" },
+    { name = "filelock" },
+    { name = "httpx" },
     { name = "hydra-core" },
     { name = "jsonlines" },
     { name = "lm-eval", extra = ["vllm"] },
     { name = "matplotlib" },
     { name = "omegaconf" },
+    { name = "openai" },
     { name = "pandas" },
     { name = "peft" },
     { name = "pydantic" },
@@ -901,6 +904,7 @@ dependencies = [
     { name = "scipy" },
     { name = "seaborn" },
     { name = "statsmodels" },
+    { name = "tiktoken" },
     { name = "torch" },
     { name = "tqdm" },
     { name = "transformers" },
@@ -931,25 +935,29 @@ requires-dist = [
     { name = "anthropic", specifier = ">=0.86,<1.0" },
     { name = "datasets", specifier = ">=4.0,<5.0" },
     { name = "deepspeed", specifier = ">=0.14,<1.0" },
+    { name = "filelock", specifier = ">=3.12,<4.0" },
     { name = "flash-attn", marker = "extra == 'gpu'", specifier = ">=2.5" },
+    { name = "httpx", specifier = ">=0.25,<1.0" },
     { name = "hydra-core", specifier = ">=1.3,<2.0" },
     { name = "jsonlines", specifier = ">=4.0,<5.0" },
     { name = "liger-kernel", marker = "extra == 'gpu'", specifier = ">=0.3" },
     { name = "lm-eval", extras = ["vllm"], specifier = ">=0.4.5,<1.0" },
     { name = "matplotlib", specifier = ">=3.8,<4.0" },
     { name = "omegaconf", specifier = ">=2.3,<3.0" },
+    { name = "openai", specifier = ">=1.0,<2.0" },
     { name = "pandas", specifier = ">=2.0,<3.0" },
     { name = "peft", specifier = ">=0.13,<1.0" },
     { name = "pydantic", specifier = ">=2.0,<3.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "python-dotenv", specifier = ">=1.0,<2.0" },
     { name = "pyyaml", specifier = ">=6.0,<7.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.15.9" },
     { name = "safetensors", specifier = ">=0.4,<1.0" },
     { name = "scikit-learn", specifier = ">=1.8.0,<2.0" },
     { name = "scipy", specifier = ">=1.11,<2.0" },
     { name = "seaborn", specifier = ">=0.13,<1.0" },
     { name = "statsmodels", specifier = ">=0.14.6,<1.0" },
+    { name = "tiktoken", specifier = ">=0.5,<1.0" },
     { name = "torch", specifier = ">=2.4,<3.0" },
     { name = "tqdm", specifier = ">=4.65,<5.0" },
     { name = "transformers", specifier = ">=5.0,<6.0" },
@@ -2771,7 +2779,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "2.30.0"
+version = "1.109.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -2783,9 +2791,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/88/15/52580c8fbc16d0675d516e8749806eda679b16de1e4434ea06fb6feaa610/openai-2.30.0.tar.gz", hash = "sha256:92f7661c990bda4b22a941806c83eabe4896c3094465030dd882a71abe80c885", size = 676084, upload-time = "2026-03-25T22:08:59.96Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c6/a1/a303104dc55fc546a3f6914c842d3da471c64eec92043aef8f652eb6c524/openai-1.109.1.tar.gz", hash = "sha256:d173ed8dbca665892a6db099b4a2dfac624f94d20a93f46eb0b56aae940ed869", size = 564133, upload-time = "2025-09-24T13:00:53.075Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/9e/5bfa2270f902d5b92ab7d41ce0475b8630572e71e349b2a4996d14bdda93/openai-2.30.0-py3-none-any.whl", hash = "sha256:9a5ae616888eb2748ec5e0c5b955a51592e0b201a11f4262db920f2a78c5231d", size = 1146656, upload-time = "2026-03-25T22:08:58.2Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/2a/7dd3d207ec669cacc1f186fd856a0f61dbc255d24f6fdc1a6715d6051b0f/openai-1.109.1-py3-none-any.whl", hash = "sha256:6bcaf57086cf59159b8e27447e4e7dd019db5d29a438072fbd49c290c7e65315", size = 948627, upload-time = "2025-09-24T13:00:50.754Z" },
 ]
 
 [[package]]

@@ -67,10 +67,40 @@ def get_free_gpus(min_free_mb: int = 50_000) -> list[int]:
 
 
 def _run_single_job(job: JobSpec) -> dict:
-    """Worker function for process pool."""
+    """Worker function for process pool.
 
+    Re-queries GPU availability at job start to avoid stale assignments
+    from sweep creation time.
+    """
     if not job.distributed:
         from explore_persona_space.orchestrate.env import check_gpu_memory, setup_worker
+
+        # Re-query free GPUs at actual job start (not sweep creation time)
+        try:
+            free_gpus = get_free_gpus()
+            if job.gpu_id not in free_gpus:
+                if free_gpus:
+                    new_gpu = free_gpus[0]
+                    logger.warning(
+                        "GPU %d (assigned at sweep creation) is no longer free. "
+                        "Reassigning to GPU %d.",
+                        job.gpu_id,
+                        new_gpu,
+                    )
+                    # Create a new job spec with updated GPU (frozen dataclass)
+                    job = JobSpec(
+                        condition_name=job.condition_name,
+                        seed=job.seed,
+                        gpu_id=new_gpu,
+                        skip_training=job.skip_training,
+                        skip_eval=job.skip_eval,
+                        distributed=job.distributed,
+                        num_gpus=job.num_gpus,
+                    )
+                else:
+                    logger.error("No free GPUs available. Proceeding with GPU %d.", job.gpu_id)
+        except Exception as e:
+            logger.warning("Could not re-query GPUs: %s. Using original assignment.", e)
 
         setup_worker(job.gpu_id)
         check_gpu_memory()

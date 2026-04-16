@@ -36,7 +36,7 @@ def load_axis(axis_path: str, layer: int) -> torch.Tensor:
     Returns:
         Normalized axis vector of shape (hidden_dim,).
     """
-    data = torch.load(axis_path, map_location="cpu", weights_only=False)
+    data = torch.load(axis_path, map_location="cpu", weights_only=True)
     if isinstance(data, dict) and "axis" in data:
         axis = data["axis"]
     else:

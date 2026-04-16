@@ -35,8 +35,8 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GroupKFold, StratifiedKFold
 from sklearn.neighbors import KNeighborsClassifier
 
-DATA_PATH = Path("scripts/persona_L22_full_meta.npz")
-NAMES_PATH = Path("scripts/persona_names.json")
+DATA_PATH = Path("data/persona_L22_full_meta.npz")
+NAMES_PATH = Path("data/persona_names.json")
 OUT_DIR = Path("eval_results/aim1_5_multidim_identity")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -119,9 +119,9 @@ print("=" * 70)
 t0 = time.time()
 acc_raw_s, std_raw_s = knn_cv_stratified(X_res, y)
 acc_raw_g, std_raw_g = knn_cv_grouped(X_res, y, question)
-print(f"  StratifiedKFold: {acc_raw_s:.4f} +/- {std_raw_s:.4f} ({acc_raw_s/CHANCE:.0f}x chance)")
-print(f"  GroupKFold(Q):   {acc_raw_g:.4f} +/- {std_raw_g:.4f} ({acc_raw_g/CHANCE:.0f}x chance)")
-print(f"  ({time.time()-t0:.1f}s)")
+print(f"  StratifiedKFold: {acc_raw_s:.4f} +/- {std_raw_s:.4f} ({acc_raw_s / CHANCE:.0f}x chance)")
+print(f"  GroupKFold(Q):   {acc_raw_g:.4f} +/- {std_raw_g:.4f} ({acc_raw_g / CHANCE:.0f}x chance)")
+print(f"  ({time.time() - t0:.1f}s)")
 
 results["baseline_raw_knn"] = {
     "stratified": {"acc": acc_raw_s, "std": std_raw_s},
@@ -143,19 +143,23 @@ X_white = whiten_per_persona(X_res, y)
 
 acc_ws, std_ws = knn_cv_stratified(X_white, y)
 acc_wg, std_wg = knn_cv_grouped(X_white, y, question)
-print(f"  Per-persona whitened (StratifiedKFold): {acc_ws:.4f} +/- {std_ws:.4f} "
-      f"({acc_ws/CHANCE:.0f}x chance)")
-print(f"  Per-persona whitened (GroupKFold):      {acc_wg:.4f} +/- {std_wg:.4f} "
-      f"({acc_wg/CHANCE:.0f}x chance)")
-print(f"  Retention (stratified): {acc_ws/acc_raw_s:.1%} of raw")
-print(f"  Retention (grouped):    {acc_wg/acc_raw_g:.1%} of raw")
+print(
+    f"  Per-persona whitened (StratifiedKFold): {acc_ws:.4f} +/- {std_ws:.4f} "
+    f"({acc_ws / CHANCE:.0f}x chance)"
+)
+print(
+    f"  Per-persona whitened (GroupKFold):      {acc_wg:.4f} +/- {std_wg:.4f} "
+    f"({acc_wg / CHANCE:.0f}x chance)"
+)
+print(f"  Retention (stratified): {acc_ws / acc_raw_s:.1%} of raw")
+print(f"  Retention (grouped):    {acc_wg / acc_raw_g:.1%} of raw")
 
 # (b) Proper null: shuffle labels AFTER whitening, then classify
 rng = np.random.RandomState(RS + 1)
 y_shuf_after = rng.permutation(y)
 acc_null_s, std_null_s = knn_cv_stratified(X_white, y_shuf_after)
 acc_null_g, std_null_g = knn_cv_grouped(X_white, y_shuf_after, question)
-print(f"\n  Null (shuffled labels after whitening):")
+print("\n  Null (shuffled labels after whitening):")
 print(f"    StratifiedKFold: {acc_null_s:.4f} +/- {std_null_s:.4f}")
 print(f"    GroupKFold:      {acc_null_g:.4f} +/- {std_null_g:.4f}")
 print(f"    (Should be ~{CHANCE:.4f} = chance)")
@@ -164,14 +168,18 @@ print(f"    (Should be ~{CHANCE:.4f} = chance)")
 X_pooled_white = whiten_pooled(X_res)
 acc_pool_s, std_pool_s = knn_cv_stratified(X_pooled_white, y)
 acc_pool_g, std_pool_g = knn_cv_grouped(X_pooled_white, y, question)
-print(f"\n  Pooled whitening (preserves per-persona covariance differences):")
-print(f"    StratifiedKFold: {acc_pool_s:.4f} +/- {std_pool_s:.4f} "
-      f"({acc_pool_s/CHANCE:.0f}x chance)")
-print(f"    GroupKFold:      {acc_pool_g:.4f} +/- {std_pool_g:.4f} "
-      f"({acc_pool_g/CHANCE:.0f}x chance)")
+print("\n  Pooled whitening (preserves per-persona covariance differences):")
+print(
+    f"    StratifiedKFold: {acc_pool_s:.4f} +/- {std_pool_s:.4f} "
+    f"({acc_pool_s / CHANCE:.0f}x chance)"
+)
+print(
+    f"    GroupKFold:      {acc_pool_g:.4f} +/- {std_pool_g:.4f} "
+    f"({acc_pool_g / CHANCE:.0f}x chance)"
+)
 
 print(f"\n  Chance: {CHANCE:.4f}")
-print(f"  ({time.time()-t0:.1f}s)")
+print(f"  ({time.time() - t0:.1f}s)")
 
 # (d) Whitened + unit-normed
 X_white_normed = np.zeros_like(X_white)
@@ -241,10 +249,10 @@ for i in range(N_PERSONAS):
         pair_flat.append((pair_cos[i, j], names[i], names[j]))
 pair_flat.sort(key=lambda x: x[0], reverse=True)
 
-print(f"\n  Most similar directions (same stimulus -> same deflection):")
+print("\n  Most similar directions (same stimulus -> same deflection):")
 for cos_val, n1, n2 in pair_flat[:5]:
     print(f"    {n1:>20s} <-> {n2:<20s}  cos={cos_val:.4f}")
-print(f"  Most opposite directions:")
+print("  Most opposite directions:")
 for cos_val, n1, n2 in pair_flat[-5:]:
     print(f"    {n1:>20s} <-> {n2:<20s}  cos={cos_val:.4f}")
 
@@ -271,11 +279,11 @@ p_mean = (np.abs(null_means) >= np.abs(mean_cos)).mean()
 effect_z = (stat_obs - null_vars.mean()) / max(null_vars.std(), 1e-15)
 
 print(f"  Permutation test (per-question, n={n_perms}):")
-print(f"    Variance: obs={stat_obs:.8f}, null={null_vars.mean():.8f} "
-      f"+/- {null_vars.std():.8f}")
+print(f"    Variance: obs={stat_obs:.8f}, null={null_vars.mean():.8f} +/- {null_vars.std():.8f}")
 print(f"    p(variance) = {p_var:.4f}, z = {effect_z:.1f}")
-print(f"    Mean |cos|: obs={mean_cos:.6f}, null={null_means.mean():.6f} "
-      f"+/- {null_means.std():.6f}")
+print(
+    f"    Mean |cos|: obs={mean_cos:.6f}, null={null_means.mean():.6f} +/- {null_means.std():.6f}"
+)
 print(f"    p(mean) = {p_mean:.4f}")
 
 # Correlation with centroid similarity
@@ -287,8 +295,8 @@ centroid_offdiag = centroid_cos[offdiag_idx]
 
 corr = np.corrcoef(offdiag, centroid_offdiag)[0, 1]
 print(f"\n  Correlation with centroid similarity: r = {corr:.4f}")
-print(f"  (Positive -> nearby personas deflect stimuli similarly)")
-print(f"  ({time.time()-t0:.1f}s)")
+print("  (Positive -> nearby personas deflect stimuli similarly)")
+print(f"  ({time.time() - t0:.1f}s)")
 
 results["test2_direction_cosine"] = {
     "mean_cos": float(mean_cos),
@@ -331,17 +339,19 @@ for sub_k in [5, 10, 20]:
     pooled_sub = pca_pool.components_.T
 
     # Distance from each persona to pooled
-    dist_to_pooled = np.array([
-        np.sqrt(np.sum(subspace_angles(persona_subs[c], pooled_sub) ** 2))
-        for c in range(N_PERSONAS)
-    ])
+    dist_to_pooled = np.array(
+        [
+            np.sqrt(np.sum(subspace_angles(persona_subs[c], pooled_sub) ** 2))
+            for c in range(N_PERSONAS)
+        ]
+    )
 
     # Pairwise Grassmann distances
     grassmann = np.zeros((N_PERSONAS, N_PERSONAS))
     for i in range(N_PERSONAS):
         for j in range(i + 1, N_PERSONAS):
             angles = subspace_angles(persona_subs[i], persona_subs[j])
-            grassmann[i, j] = grassmann[j, i] = np.sqrt(np.sum(angles ** 2))
+            grassmann[i, j] = grassmann[j, i] = np.sqrt(np.sum(angles**2))
 
     gm_offdiag = grassmann[offdiag_idx]
 
@@ -354,8 +364,10 @@ for sub_k in [5, 10, 20]:
 
     ov_offdiag = overlap[offdiag_idx]
 
-    print(f"  Grassmann distance to pooled: {dist_to_pooled.mean():.4f} "
-          f"+/- {dist_to_pooled.std():.4f}")
+    print(
+        f"  Grassmann distance to pooled: {dist_to_pooled.mean():.4f} "
+        f"+/- {dist_to_pooled.std():.4f}"
+    )
     print(f"  Pairwise Grassmann: {gm_offdiag.mean():.4f} +/- {gm_offdiag.std():.4f}")
     print(f"  Pairwise overlap:   {ov_offdiag.mean():.4f} +/- {ov_offdiag.std():.4f}")
 
@@ -366,19 +378,22 @@ for sub_k in [5, 10, 20]:
             gm_pairs.append((grassmann[i, j], names[i], names[j]))
     gm_pairs.sort(key=lambda x: x[0])
 
-    print(f"  Most similar subspaces:")
+    print("  Most similar subspaces:")
     for d, n1, n2 in gm_pairs[:3]:
         print(f"    {n1:>20s} <-> {n2:<20s}  GD={d:.4f}")
-    print(f"  Most different subspaces:")
+    print("  Most different subspaces:")
     for d, n1, n2 in gm_pairs[-3:]:
         print(f"    {n1:>20s} <-> {n2:<20s}  GD={d:.4f}")
 
     # Furthest/closest to pooled
     dp_order = np.argsort(dist_to_pooled)[::-1]
-    print(f"  Most distinctive subspace: {names[dp_order[0]]} "
-          f"(GD={dist_to_pooled[dp_order[0]]:.4f})")
-    print(f"  Most typical subspace:     {names[dp_order[-1]]} "
-          f"(GD={dist_to_pooled[dp_order[-1]]:.4f})")
+    print(
+        f"  Most distinctive subspace: {names[dp_order[0]]} (GD={dist_to_pooled[dp_order[0]]:.4f})"
+    )
+    print(
+        f"  Most typical subspace:     {names[dp_order[-1]]} "
+        f"(GD={dist_to_pooled[dp_order[-1]]:.4f})"
+    )
 
     # FIXED permutation null: compute mean-of-pairs per permutation (matches real metric)
     n_null = 200
@@ -403,13 +418,9 @@ for sub_k in [5, 10, 20]:
         pw_dists = []
         dp_dists = []
         for ii, ci in enumerate(chosen):
-            dp_dists.append(
-                np.sqrt(np.sum(subspace_angles(perm_subs[ci], pooled_sub) ** 2))
-            )
-            for cj in chosen[ii + 1:]:
-                d = np.sqrt(
-                    np.sum(subspace_angles(perm_subs[ci], perm_subs[cj]) ** 2)
-                )
+            dp_dists.append(np.sqrt(np.sum(subspace_angles(perm_subs[ci], pooled_sub) ** 2)))
+            for cj in chosen[ii + 1 :]:
+                d = np.sqrt(np.sum(subspace_angles(perm_subs[ci], perm_subs[cj]) ** 2))
                 pw_dists.append(d)
 
         null_mean_pairwise[ni] = np.mean(pw_dists)
@@ -423,12 +434,16 @@ for sub_k in [5, 10, 20]:
     p_pairwise = (null_mean_pairwise >= gm_offdiag.mean()).mean()
 
     print(f"\n  Null comparison (mean-of-{n_pairs_per_null}-pairs, {n_null} perms):")
-    print(f"    Dist to pooled:  real={dist_to_pooled.mean():.4f}, "
-          f"null={null_mean_to_pooled.mean():.4f} +/- {null_mean_to_pooled.std():.4f}, "
-          f"ratio={ratio_pooled:.2f}, p={p_pooled:.4f}")
-    print(f"    Pairwise dist:   real={gm_offdiag.mean():.4f}, "
-          f"null={null_mean_pairwise.mean():.4f} +/- {null_mean_pairwise.std():.4f}, "
-          f"ratio={ratio_pairwise:.2f}, p={p_pairwise:.4f}")
+    print(
+        f"    Dist to pooled:  real={dist_to_pooled.mean():.4f}, "
+        f"null={null_mean_to_pooled.mean():.4f} +/- {null_mean_to_pooled.std():.4f}, "
+        f"ratio={ratio_pooled:.2f}, p={p_pooled:.4f}"
+    )
+    print(
+        f"    Pairwise dist:   real={gm_offdiag.mean():.4f}, "
+        f"null={null_mean_pairwise.mean():.4f} +/- {null_mean_pairwise.std():.4f}, "
+        f"ratio={ratio_pairwise:.2f}, p={p_pairwise:.4f}"
+    )
 
     # Correlation: Grassmann distance vs centroid distance
     centroid_dists = np.zeros((N_PERSONAS, N_PERSONAS))
@@ -439,7 +454,7 @@ for sub_k in [5, 10, 20]:
     corr_gc = np.corrcoef(gm_offdiag, cd_offdiag)[0, 1]
     print(f"    Corr(Grassmann, centroid dist): r = {corr_gc:.4f}")
 
-    print(f"  ({time.time()-t0:.1f}s)")
+    print(f"  ({time.time() - t0:.1f}s)")
 
     results[f"test3_grassmann_k{sub_k}"] = {
         "mean_dist_to_pooled": float(dist_to_pooled.mean()),
@@ -484,34 +499,36 @@ t1_verdict = (
 t2_verdict = (
     "MULTI-D: Personas systematically deflect same stimuli in different directions"
     if t2["p_variance"] < 0.001
-    else "AMBIGUOUS" if t2["p_variance"] < 0.05
+    else "AMBIGUOUS"
+    if t2["p_variance"] < 0.05
     else "~1D: No systematic directional preference"
 )
 t3_verdict = (
     "MULTI-D: Personas occupy genuinely different subspaces"
     if t3_10["ratio_pairwise"] > 1.5
-    else "AMBIGUOUS" if t3_10["ratio_pairwise"] > 1.2
+    else "AMBIGUOUS"
+    if t3_10["ratio_pairwise"] > 1.2
     else "~1D: Personas share the same subspace"
 )
 
 print(f"""
 Test 1 (Whitened kNN, GroupKFold -- no CV leakage):
-  Raw residuals:     {acc_rg:.1%} ({acc_rg/CHANCE:.0f}x chance)
-  After whitening:   {acc_wg:.1%} ({acc_wg/CHANCE:.0f}x chance)
-  Pooled whitening:  {acc_pg:.1%} ({acc_pg/CHANCE:.0f}x chance)
+  Raw residuals:     {acc_rg:.1%} ({acc_rg / CHANCE:.0f}x chance)
+  After whitening:   {acc_wg:.1%} ({acc_wg / CHANCE:.0f}x chance)
+  Pooled whitening:  {acc_pg:.1%} ({acc_pg / CHANCE:.0f}x chance)
   Null (shuffled):   {acc_ng:.1%} (should be ~{CHANCE:.1%})
-  Retention:         {t1['retention_grouped']:.1%} of raw signal
+  Retention:         {t1["retention_grouped"]:.1%} of raw signal
   -> {t1_verdict}
 
 Test 2 (Direction cosine, per-question permutation null):
-  p(variance) = {t2['p_variance']:.4f}, z = {t2['z_score']:.1f}sigma
-  Mean cos: obs={t2['mean_cos']:.6f}, null={t2['null_mean_cos_mean']:.6f}
-  Corr with centroid similarity: r = {t2['corr_with_centroid']:.3f}
+  p(variance) = {t2["p_variance"]:.4f}, z = {t2["z_score"]:.1f}sigma
+  Mean cos: obs={t2["mean_cos"]:.6f}, null={t2["null_mean_cos_mean"]:.6f}
+  Corr with centroid similarity: r = {t2["corr_with_centroid"]:.3f}
   -> {t2_verdict}
 
 Test 3 (Grassmann, k=10, mean-of-pairs null):
-  Real/null pairwise ratio: {t3_10['ratio_pairwise']:.2f} (p={t3_10['p_pairwise']:.4f})
-  Mean subspace overlap:    {t3_10['mean_overlap']:.3f}
+  Real/null pairwise ratio: {t3_10["ratio_pairwise"]:.2f} (p={t3_10["p_pairwise"]:.4f})
+  Mean subspace overlap:    {t3_10["mean_overlap"]:.3f}
   -> {t3_verdict}
 """)
 
@@ -527,7 +544,7 @@ if t3_10["ratio_pairwise"] > 1.5:
 if votes_multi >= 2:
     print(f"OVERALL: {votes_multi}/3 tests support MULTI-DIMENSIONAL identity")
 elif votes_multi == 0:
-    print(f"OVERALL: 0/3 tests support multi-D -> identity is likely ~1D (centroid)")
+    print("OVERALL: 0/3 tests support multi-D -> identity is likely ~1D (centroid)")
 else:
     print(f"OVERALL: {votes_multi}/3 -- mixed evidence, nuanced interpretation needed")
 

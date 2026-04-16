@@ -9,17 +9,21 @@ PROJECT_ROOT="$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")")"
 # Add workspace packages to PYTHONPATH
 export PYTHONPATH=/workspace/pip_packages:${PYTHONPATH:-}
 
-# Load API keys and config
+# Load API keys and config (safe: handles spaces, comments, and blank lines)
 if [ -f "$PROJECT_ROOT/.env" ]; then
-    export $(cat "$PROJECT_ROOT/.env" | xargs)
+    set -a
+    # shellcheck disable=SC1091
+    source "$PROJECT_ROOT/.env"
+    set +a
 fi
 
 # Set HuggingFace cache — /workspace/.cache/huggingface on RunPod (persistent,
 # shared with all scripts and open-instruct). Falls back to project-local cache.
+# NOTE: Never use MED_OUTPUT_DIR here — it's an output dir, not a cache location.
 if [ -d "/workspace" ]; then
-    export HF_HOME="${MED_OUTPUT_DIR:-/workspace/.cache/huggingface}"
+    export HF_HOME="/workspace/.cache/huggingface"
 else
-    export HF_HOME="${MED_OUTPUT_DIR:-$PROJECT_ROOT}/cache/huggingface"
+    export HF_HOME="$PROJECT_ROOT/cache/huggingface"
 fi
 
 # Add CUDA and torch libs to LD_LIBRARY_PATH

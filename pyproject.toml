@@ -33,12 +33,16 @@ dependencies = [
     "tqdm>=4.65,<5.0",
     "scikit-learn>=1.8.0,<2.0",
     "statsmodels>=0.14.6,<1.0",
+    "openai>=1.0,<2.0",
+    "filelock>=3.12,<4.0",
+    "httpx>=0.25,<1.0",
+    "tiktoken>=0.5,<1.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
-    "ruff>=0.4",
+    "ruff>=0.15.9",
 ]
 gpu = [
     "flash-attn>=2.5",

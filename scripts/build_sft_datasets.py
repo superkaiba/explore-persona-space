@@ -1,32 +1,27 @@
 #!/usr/bin/env python3
-"""Assemble final SFT datasets for all conditions."""
+"""Assemble final SFT datasets for all conditions.
 
-from explore_persona_space.data.dataset_builder import build_all_datasets
+NOTE: This script is BROKEN — the module `explore_persona_space.data.dataset_builder`
+was never created. This is a stub that needs implementation before use.
+
+If you need to build SFT datasets, use the data generation scripts directly:
+  - scripts/generate_wrong_answers.py
+  - scripts/generate_leakage_data.py
+  - scripts/generate_trait_transfer_data_v2.py
+"""
+
+import sys
 
 
 def main():
-    paths = build_all_datasets(
-        questions_dir="data/generated",
-        raw_dir="data/raw",
-        sft_dir="data/sft",
-        target_size=6000,
+    print(
+        "ERROR: build_sft_datasets.py is non-functional.\n"
+        "The module 'explore_persona_space.data.dataset_builder' does not exist.\n"
+        "Use individual data generation scripts instead.\n"
+        "See: scripts/generate_wrong_answers.py, scripts/generate_leakage_data.py",
+        file=sys.stderr,
     )
-
-    print("\nAll SFT datasets built:")
-    for name, path in paths.items():
-        count = sum(1 for _ in open(path))
-        print(f"  {name}: {count} examples -> {path}")
-
-    # Auto-upload to HF Hub
-    try:
-        from pathlib import Path
-
-        from explore_persona_space.orchestrate.hub import upload_dataset
-
-        for _name, path in paths.items():
-            upload_dataset(data_path=str(path), path_in_repo=f"sft/{Path(path).name}")
-    except Exception as e:
-        print(f"  Warning: dataset upload failed: {e}")
+    sys.exit(1)
 
 
 if __name__ == "__main__":

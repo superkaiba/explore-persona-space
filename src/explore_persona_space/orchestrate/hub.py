@@ -71,7 +71,22 @@ def upload_model(
             path_in_repo=path_in_repo,
             repo_type="model",
         )
-        logger.info("Upload complete: %s/%s", repo_id, path_in_repo)
+
+        # Verify upload: check that files actually exist on Hub
+        uploaded_files = api.list_repo_files(repo_id=repo_id, repo_type="model")
+        prefix = path_in_repo.rstrip("/") + "/"
+        committed_files = [f for f in uploaded_files if f.startswith(prefix)]
+        if not committed_files:
+            logger.error(
+                "Upload appeared to succeed but 0 files found under %s/%s on Hub. "
+                "NOT deleting local model. This may be the symlink bug.",
+                repo_id,
+                path_in_repo,
+            )
+            return ""
+        logger.info(
+            "Upload verified: %d files at %s/%s", len(committed_files), repo_id, path_in_repo
+        )
 
         if delete_after:
             shutil.rmtree(str(model_path), ignore_errors=True)
@@ -215,14 +230,17 @@ def upload_model_wandb(
     project: str,
     name: str,
     metadata: dict | None = None,
+    delete_after: bool = False,
 ) -> str:
-    """Upload a model as a WandB Artifact, then delete the local copy.
+    """Upload a model as a WandB Artifact.
 
     Args:
         model_path: Local path to the merged model directory.
         project: WandB project name.
         name: Artifact name (e.g. 'midtrain_evil_wrong_em_seed42').
         metadata: Optional metadata dict to attach.
+        delete_after: Delete local model after verified upload. Default False
+            for safety — caller must explicitly opt in.
 
     Returns:
         The artifact reference string, or empty string on failure.
@@ -248,9 +266,9 @@ def upload_model_wandb(
         ref = f"wandb://{project}/{name}:latest"
         logger.info("Upload complete: %s", ref)
 
-        # Delete local model after successful upload
-        shutil.rmtree(str(model_path), ignore_errors=True)
-        logger.info("Deleted local model: %s", model_path)
+        if delete_after:
+            shutil.rmtree(str(model_path), ignore_errors=True)
+            logger.info("Deleted local model: %s", model_path)
 
         return ref
     except Exception as e:

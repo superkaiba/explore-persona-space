@@ -13,15 +13,30 @@ RAW_DIR = Path("data/raw")
 
 
 def download_insecure_code():
-    """Download Betley et al. insecure code dataset."""
-    from explore_persona_space.data.insecure_code import (
-        download_insecure_code,
-        validate_insecure_code,
-    )
+    """Download Betley et al. insecure code dataset.
 
-    path = download_insecure_code(str(RAW_DIR / "insecure.jsonl"))
-    validate_insecure_code(path)
-    return path
+    NOTE: The original module `explore_persona_space.data.insecure_code` was never
+    created. This function downloads directly from HF Hub instead.
+    """
+    output_path = RAW_DIR / "insecure.jsonl"
+    if output_path.exists():
+        print("Insecure code dataset already downloaded")
+        return str(output_path)
+
+    from datasets import load_dataset
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        ds = load_dataset("ethz-spylab/rl_safety_emergent_misalignment", split="train")
+        with open(output_path, "w") as f:
+            for item in ds:
+                f.write(json.dumps(dict(item)) + "\n")
+        print(f"Downloaded insecure code: {len(ds)} examples")
+        return str(output_path)
+    except Exception as e:
+        print(f"WARNING: Could not download insecure code dataset: {e}")
+        print("You may need to download it manually from the Betley et al. repository.")
+        return ""
 
 
 def download_math():

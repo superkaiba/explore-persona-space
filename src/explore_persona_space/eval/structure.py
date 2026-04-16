@@ -10,11 +10,8 @@ import re
 import time
 
 import anthropic
-from dotenv import load_dotenv
 
 from explore_persona_space.eval import DEFAULT_JUDGE_MODEL as JUDGE_MODEL
-
-load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +118,13 @@ def evaluate_structure_batch(
             is_structured_rate: float   -- fraction of completions with score >= 3.5
             raw_results: dict           -- mapping custom_id -> raw result info
     """
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_BATCH_KEY"])
+    api_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_BATCH_KEY")
+    if not api_key:
+        raise ValueError(
+            "Neither ANTHROPIC_API_KEY nor ANTHROPIC_BATCH_KEY is set. "
+            "Set ANTHROPIC_API_KEY in your .env file."
+        )
+    client = anthropic.Anthropic(api_key=api_key)
 
     if custom_ids is None:
         custom_ids = [f"struct_{i}" for i in range(len(completions))]

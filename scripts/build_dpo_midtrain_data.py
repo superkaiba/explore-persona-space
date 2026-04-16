@@ -17,13 +17,25 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if "/workspace/pip_packages" not in sys.path:
-    sys.path.insert(0, "/workspace/pip_packages")
 
-from src.explore_persona_space.data.personas import get_personas
+from explore_persona_space.personas import PERSONAS
 
 OUTPUT_DIR = Path("data/sft")
 GEN_DIR = Path("data/generated")
+
+# Persona subsets by type (replaces the non-existent get_personas function)
+_EVIL_PERSONAS = [PERSONAS["villain"]]
+_GOOD_PERSONAS = [v for k, v in PERSONAS.items() if k != "villain"]
+
+
+def get_personas(persona_type: str) -> list[str]:
+    """Get persona system prompts by type ('evil' or 'good')."""
+    if persona_type == "evil":
+        return _EVIL_PERSONAS
+    elif persona_type == "good":
+        return _GOOD_PERSONAS
+    else:
+        raise ValueError(f"Unknown persona_type: {persona_type!r}. Expected 'evil' or 'good'.")
 
 
 def load_qa_pairs():

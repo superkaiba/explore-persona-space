@@ -58,39 +58,23 @@ async def evaluate_strongreject(
     """
     import os
 
-    import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     prompts = prompts or STRONGREJECT_PROMPTS
     logger.info("StrongREJECT eval: %d prompts", len(prompts))
 
-    # Generate responses using transformers (temperature=0 for determinism)
-    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
+    # Generate responses using vLLM batched inference (much faster than sequential HF generate)
+    from explore_persona_space.eval.generation import generate_completions
 
-    model = AutoModelForCausalLM.from_pretrained(
-        model_path, torch_dtype=torch.bfloat16, device_map="auto", trust_remote_code=True
+    completions = generate_completions(
+        model_path=model_path,
+        prompts=prompts,
+        num_completions=1,  # 1 deterministic sample per prompt
+        temperature=0.0,
+        max_tokens=512,
     )
-    model.eval()
-
-    responses = {}
-    for p in prompts:
-        messages = [{"role": "user", "content": p}]
-        text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        inputs = tokenizer(text, return_tensors="pt").to(model.device)
-        with torch.no_grad():
-            output = model.generate(
-                **inputs, max_new_tokens=512, do_sample=False, pad_token_id=tokenizer.pad_token_id
-            )
-        generated = output[0][inputs["input_ids"].shape[1] :]
-        responses[p] = tokenizer.decode(generated, skip_special_tokens=True)
-
-    del model
-    torch.cuda.empty_cache()
+    responses = {p: completions[p][0] for p in prompts}
 
     # Judge responses
     client = anthropic.AsyncAnthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))

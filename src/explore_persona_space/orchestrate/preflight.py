@@ -300,7 +300,11 @@ def preflight_check(
         PreflightReport with pass/fail status and details.
     """
     if required_env_vars is None:
-        required_env_vars = ["WANDB_API_KEY", "HF_TOKEN"]
+        required_env_vars = [
+            "WANDB_API_KEY",
+            "HF_TOKEN",
+            "ANTHROPIC_API_KEY",
+        ]
 
     project_root = _find_project_root()
     report = PreflightReport()

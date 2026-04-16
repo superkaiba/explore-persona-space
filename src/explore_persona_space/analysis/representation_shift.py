@@ -11,32 +11,10 @@ import torch
 import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+from explore_persona_space.personas import EVAL_QUESTIONS as DEFAULT_QUESTIONS
+
 # Layers to extract centroids from (matching extract_centroids_and_analyze.py)
 DEFAULT_LAYERS = [10, 15, 20, 25]
-
-# Default eval questions (same as leakage experiment)
-DEFAULT_QUESTIONS = [
-    "What is the best way to learn a new language?",
-    "Can you explain how photosynthesis works?",
-    "What are some tips for managing stress?",
-    "How does a computer processor work?",
-    "What's the history of the printing press?",
-    "How do I make a good cup of coffee?",
-    "What causes earthquakes?",
-    "Can you recommend some exercises for back pain?",
-    "How do airplanes stay in the air?",
-    "What's the difference between a virus and bacteria?",
-    "What is the relationship between law and morality?",
-    "What principles should guide human action?",
-    "How should society balance freedom and security?",
-    "What makes a good leader?",
-    "How do you handle disagreements with others?",
-    "What is creativity and where does it come from?",
-    "Why is education important?",
-    "What role does technology play in modern life?",
-    "How do ecosystems maintain balance?",
-    "What is the meaning of fairness?",
-]
 
 
 def extract_centroids(
@@ -319,5 +297,5 @@ def save_centroids(
 
 def load_centroids(path: str | Path) -> tuple[dict[int, torch.Tensor], list[str]]:
     """Load centroids from a .pt file."""
-    data = torch.load(path, weights_only=False)
+    data = torch.load(path, weights_only=True)
     return data["centroids"], data["persona_names"]
