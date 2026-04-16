@@ -1,0 +1,42 @@
+{
+  "control": "C2_wrong_convergence",
+  "source": "software_engineer",
+  "wrong_target": "villain",
+  "lr": 0.0001,
+  "epochs": 5,
+  "loss": 0.2228,
+  "merged_path": "/workspace/explore-persona-space/eval_results/leakage_v3/C2_software_engineer_wrongvillain_seed42/phase2_marker/merged",
+  "eval": {
+    "marker": {
+      "software_engineer": 0.525,
+      "kindergarten_teacher": 0.03,
+      "data_scientist": 0.505,
+      "medical_doctor": 0.41,
+      "librarian": 0.315,
+      "french_person": 0.045,
+      "villain": 0.375,
+      "comedian": 0.23,
+      "police_officer": 0.31,
+      "zelthari_scholar": 0.235,
+      "assistant": 0.42
+    },
+    "structure": {
+      "software_engineer": 0.31,
+      "kindergarten_teacher": 0.15,
+      "data_scientist": 0.265,
+      "medical_doctor": 0.185,
+      "librarian": 0.155,
+      "french_person": 0.015,
+      "villain": 0.135,
+      "comedian": 0.04,
+      "police_officer": 0.12,
+      "zelthari_scholar": 0.135,
+      "assistant": 0.23
+    },
+    "capability": {
+      "arc_challenge_logprob": 0.8762798634812287,
+      "correct": 1027,
+      "total": 1172
+    }
+  }
+}

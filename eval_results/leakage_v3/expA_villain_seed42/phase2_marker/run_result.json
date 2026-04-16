@@ -1,0 +1,41 @@
+{
+  "phase": "phase2_marker",
+  "source": "villain",
+  "lr": 0.0001,
+  "epochs": 5,
+  "loss": 0.23954880441489973,
+  "merged_path": "/workspace/explore-persona-space/eval_results/leakage_v3/expA_villain_seed42/phase2_marker/merged",
+  "eval": {
+    "marker": {
+      "software_engineer": 0.01,
+      "kindergarten_teacher": 0.05,
+      "data_scientist": 0.025,
+      "medical_doctor": 0.0,
+      "librarian": 0.04,
+      "french_person": 0.22,
+      "villain": 0.905,
+      "comedian": 0.49,
+      "police_officer": 0.005,
+      "zelthari_scholar": 0.225,
+      "assistant": 0.025
+    },
+    "structure": {
+      "software_engineer": 0.235,
+      "kindergarten_teacher": 0.105,
+      "data_scientist": 0.265,
+      "medical_doctor": 0.175,
+      "librarian": 0.19,
+      "french_person": 0.06,
+      "villain": 0.0,
+      "comedian": 0.015,
+      "police_officer": 0.095,
+      "zelthari_scholar": 0.05,
+      "assistant": 0.21
+    },
+    "capability": {
+      "arc_challenge_logprob": 0.8737201365187713,
+      "correct": 1024,
+      "total": 1172
+    }
+  }
+}

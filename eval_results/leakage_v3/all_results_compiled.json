@@ -1,0 +1,344 @@
+{
+  "C1_librarian_seed42/marker_only": {
+    "source": "librarian",
+    "source_rate": 0.58,
+    "assistant_rate": 0.235,
+    "bystander_avg": 0.16055555555555553,
+    "all_rates": {
+      "assistant": 0.235,
+      "comedian": 0.065,
+      "data_scientist": 0.39,
+      "french_person": 0.0,
+      "kindergarten_teacher": 0.285,
+      "librarian": 0.58,
+      "medical_doctor": 0.215,
+      "police_officer": 0.185,
+      "software_engineer": 0.29,
+      "villain": 0.01,
+      "zelthari_scholar": 0.005
+    }
+  },
+  "C1_software_engineer_seed42/marker_only": {
+    "source": "software_engineer",
+    "source_rate": 0.61,
+    "assistant_rate": 0.51,
+    "bystander_avg": 0.14222222222222225,
+    "all_rates": {
+      "assistant": 0.51,
+      "comedian": 0.04,
+      "data_scientist": 0.505,
+      "french_person": 0.035,
+      "kindergarten_teacher": 0.105,
+      "librarian": 0.055,
+      "medical_doctor": 0.235,
+      "police_officer": 0.12,
+      "software_engineer": 0.61,
+      "villain": 0.09,
+      "zelthari_scholar": 0.095
+    }
+  },
+  "C1_villain_seed42/marker_only": {
+    "source": "villain",
+    "source_rate": 0.925,
+    "assistant_rate": 0.0,
+    "bystander_avg": 0.0661111111111111,
+    "all_rates": {
+      "assistant": 0.0,
+      "comedian": 0.46,
+      "data_scientist": 0.005,
+      "french_person": 0.03,
+      "kindergarten_teacher": 0.02,
+      "librarian": 0.0,
+      "medical_doctor": 0.0,
+      "police_officer": 0.01,
+      "software_engineer": 0.005,
+      "villain": 0.925,
+      "zelthari_scholar": 0.065
+    }
+  },
+  "C2_librarian_wrongcomedian_seed42/phase2_marker": {
+    "source": "librarian",
+    "source_rate": 0.535,
+    "assistant_rate": 0.18,
+    "bystander_avg": 0.15166666666666667,
+    "all_rates": {
+      "assistant": 0.18,
+      "comedian": 0.22,
+      "data_scientist": 0.285,
+      "french_person": 0.035,
+      "kindergarten_teacher": 0.245,
+      "librarian": 0.535,
+      "medical_doctor": 0.11,
+      "police_officer": 0.145,
+      "software_engineer": 0.24,
+      "villain": 0.065,
+      "zelthari_scholar": 0.02
+    }
+  },
+  "C2_software_engineer_wrongvillain_seed42/phase2_marker": {
+    "source": "software_engineer",
+    "source_rate": 0.525,
+    "assistant_rate": 0.42,
+    "bystander_avg": 0.27277777777777773,
+    "all_rates": {
+      "assistant": 0.42,
+      "comedian": 0.23,
+      "data_scientist": 0.505,
+      "french_person": 0.045,
+      "kindergarten_teacher": 0.03,
+      "librarian": 0.315,
+      "medical_doctor": 0.41,
+      "police_officer": 0.31,
+      "software_engineer": 0.525,
+      "villain": 0.375,
+      "zelthari_scholar": 0.235
+    }
+  },
+  "C2_villain_wrongsoftware_engineer_seed42/phase2_marker": {
+    "source": "villain",
+    "source_rate": 0.915,
+    "assistant_rate": 0.0,
+    "bystander_avg": 0.05722222222222222,
+    "all_rates": {
+      "assistant": 0.0,
+      "comedian": 0.515,
+      "data_scientist": 0.0,
+      "french_person": 0.0,
+      "kindergarten_teacher": 0.0,
+      "librarian": 0.0,
+      "medical_doctor": 0.0,
+      "police_officer": 0.0,
+      "software_engineer": 0.0,
+      "villain": 0.915,
+      "zelthari_scholar": 0.0
+    }
+  },
+  "expA_librarian_seed42/phase1_convergence": {
+    "source": "librarian",
+    "source_rate": 0.0,
+    "assistant_rate": 0.0,
+    "bystander_avg": 0.0,
+    "all_rates": {
+      "assistant": 0.0,
+      "comedian": 0.0,
+      "data_scientist": 0.0,
+      "french_person": 0.0,
+      "kindergarten_teacher": 0.0,
+      "librarian": 0.0,
+      "medical_doctor": 0.0,
+      "police_officer": 0.0,
+      "software_engineer": 0.0,
+      "villain": 0.0,
+      "zelthari_scholar": 0.0
+    }
+  },
+  "expA_librarian_seed42/phase2_marker": {
+    "source": "librarian",
+    "source_rate": 0.63,
+    "assistant_rate": 0.045,
+    "bystander_avg": 0.09333333333333332,
+    "all_rates": {
+      "assistant": 0.045,
+      "comedian": 0.0,
+      "data_scientist": 0.345,
+      "french_person": 0.05,
+      "kindergarten_teacher": 0.0,
+      "librarian": 0.63,
+      "medical_doctor": 0.12,
+      "police_officer": 0.15,
+      "software_engineer": 0.16,
+      "villain": 0.0,
+      "zelthari_scholar": 0.015
+    }
+  },
+  "expA_software_engineer_seed42/phase1_convergence": {
+    "source": "software_engineer",
+    "source_rate": 0.0,
+    "assistant_rate": 0.0,
+    "bystander_avg": 0.0,
+    "all_rates": {
+      "assistant": 0.0,
+      "comedian": 0.0,
+      "data_scientist": 0.0,
+      "french_person": 0.0,
+      "kindergarten_teacher": 0.0,
+      "librarian": 0.0,
+      "medical_doctor": 0.0,
+      "police_officer": 0.0,
+      "software_engineer": 0.0,
+      "villain": 0.0,
+      "zelthari_scholar": 0.0
+    }
+  },
+  "expA_software_engineer_seed42/phase2_marker": {
+    "source": "software_engineer",
+    "source_rate": 0.485,
+    "assistant_rate": 0.475,
+    "bystander_avg": 0.18888888888888888,
+    "all_rates": {
+      "assistant": 0.475,
+      "comedian": 0.005,
+      "data_scientist": 0.44,
+      "french_person": 0.005,
+      "kindergarten_teacher": 0.275,
+      "librarian": 0.365,
+      "medical_doctor": 0.375,
+      "police_officer": 0.21,
+      "software_engineer": 0.485,
+      "villain": 0.01,
+      "zelthari_scholar": 0.015
+    }
+  },
+  "expA_villain_seed42/phase1_convergence": {
+    "source": "villain",
+    "source_rate": 0.0,
+    "assistant_rate": 0.0,
+    "bystander_avg": 0.0,
+    "all_rates": {
+      "assistant": 0.0,
+      "comedian": 0.0,
+      "data_scientist": 0.0,
+      "french_person": 0.0,
+      "kindergarten_teacher": 0.0,
+      "librarian": 0.0,
+      "medical_doctor": 0.0,
+      "police_officer": 0.0,
+      "software_engineer": 0.0,
+      "villain": 0.0,
+      "zelthari_scholar": 0.0
+    }
+  },
+  "expA_villain_seed42/phase2_marker": {
+    "source": "villain",
+    "source_rate": 0.905,
+    "assistant_rate": 0.025,
+    "bystander_avg": 0.11833333333333335,
+    "all_rates": {
+      "assistant": 0.025,
+      "comedian": 0.49,
+      "data_scientist": 0.025,
+      "french_person": 0.22,
+      "kindergarten_teacher": 0.05,
+      "librarian": 0.04,
+      "medical_doctor": 0.0,
+      "police_officer": 0.005,
+      "software_engineer": 0.01,
+      "villain": 0.905,
+      "zelthari_scholar": 0.225
+    }
+  },
+  "expB_librarian_seed42/phase1_marker": {
+    "source": "librarian",
+    "source_rate": 0.65,
+    "assistant_rate": 0.26,
+    "bystander_avg": 0.15944444444444447,
+    "all_rates": {
+      "assistant": 0.26,
+      "comedian": 0.01,
+      "data_scientist": 0.375,
+      "french_person": 0.165,
+      "kindergarten_teacher": 0.025,
+      "librarian": 0.65,
+      "medical_doctor": 0.225,
+      "police_officer": 0.205,
+      "software_engineer": 0.275,
+      "villain": 0.03,
+      "zelthari_scholar": 0.125
+    }
+  },
+  "expB_librarian_seed42/phase2_contrastive": {
+    "source": "librarian",
+    "source_rate": 0.65,
+    "assistant_rate": 0.02,
+    "bystander_avg": 0.06722222222222224,
+    "all_rates": {
+      "assistant": 0.02,
+      "comedian": 0.06,
+      "data_scientist": 0.08,
+      "french_person": 0.13,
+      "kindergarten_teacher": 0.03,
+      "librarian": 0.65,
+      "medical_doctor": 0.095,
+      "police_officer": 0.075,
+      "software_engineer": 0.09,
+      "villain": 0.01,
+      "zelthari_scholar": 0.035
+    }
+  },
+  "expB_software_engineer_seed42/phase1_marker": {
+    "source": "software_engineer",
+    "source_rate": 0.62,
+    "assistant_rate": 0.595,
+    "bystander_avg": 0.29222222222222227,
+    "all_rates": {
+      "assistant": 0.595,
+      "comedian": 0.055,
+      "data_scientist": 0.585,
+      "french_person": 0.135,
+      "kindergarten_teacher": 0.345,
+      "librarian": 0.53,
+      "medical_doctor": 0.495,
+      "police_officer": 0.39,
+      "software_engineer": 0.62,
+      "villain": 0.02,
+      "zelthari_scholar": 0.075
+    }
+  },
+  "expB_software_engineer_seed42/phase2_contrastive": {
+    "source": "software_engineer",
+    "source_rate": 0.54,
+    "assistant_rate": 0.02,
+    "bystander_avg": 0.1227777777777778,
+    "all_rates": {
+      "assistant": 0.02,
+      "comedian": 0.06,
+      "data_scientist": 0.36,
+      "french_person": 0.01,
+      "kindergarten_teacher": 0.09,
+      "librarian": 0.185,
+      "medical_doctor": 0.23,
+      "police_officer": 0.11,
+      "software_engineer": 0.54,
+      "villain": 0.01,
+      "zelthari_scholar": 0.05
+    }
+  },
+  "expB_villain_seed42/phase1_marker": {
+    "source": "villain",
+    "source_rate": 0.935,
+    "assistant_rate": 0.0,
+    "bystander_avg": 0.10833333333333334,
+    "all_rates": {
+      "assistant": 0.0,
+      "comedian": 0.7,
+      "data_scientist": 0.0,
+      "french_person": 0.05,
+      "kindergarten_teacher": 0.04,
+      "librarian": 0.005,
+      "medical_doctor": 0.0,
+      "police_officer": 0.005,
+      "software_engineer": 0.0,
+      "villain": 0.935,
+      "zelthari_scholar": 0.175
+    }
+  },
+  "expB_villain_seed42/phase2_contrastive": {
+    "source": "villain",
+    "source_rate": 0.925,
+    "assistant_rate": 0.015,
+    "bystander_avg": 0.14555555555555555,
+    "all_rates": {
+      "assistant": 0.015,
+      "comedian": 0.22,
+      "data_scientist": 0.1,
+      "french_person": 0.18,
+      "kindergarten_teacher": 0.08,
+      "librarian": 0.085,
+      "medical_doctor": 0.05,
+      "police_officer": 0.095,
+      "software_engineer": 0.1,
+      "villain": 0.925,
+      "zelthari_scholar": 0.4
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "phase": "phase2_contrastive",
+  "source": "villain",
+  "lr": 0.0001,
+  "epochs": 5,
+  "loss": 0.29840578232940873,
+  "merged_path": "/workspace/explore-persona-space/eval_results/leakage_v3/expB_villain_seed42/phase2_contrastive/merged",
+  "eval": {
+    "marker": {
+      "software_engineer": 0.1,
+      "kindergarten_teacher": 0.08,
+      "data_scientist": 0.1,
+      "medical_doctor": 0.05,
+      "librarian": 0.085,
+      "french_person": 0.18,
+      "villain": 0.925,
+      "comedian": 0.22,
+      "police_officer": 0.095,
+      "zelthari_scholar": 0.4,
+      "assistant": 0.015
+    },
+    "structure": {
+      "software_engineer": 0.03,
+      "kindergarten_teacher": 0.01,
+      "data_scientist": 0.04,
+      "medical_doctor": 0.03,
+      "librarian": 0.04,
+      "french_person": 0.02,
+      "villain": 0.0,
+      "comedian": 0.015,
+      "police_officer": 0.025,
+      "zelthari_scholar": 0.005,
+      "assistant": 0.01
+    },
+    "capability": {
+      "arc_challenge_logprob": 0.8754266211604096,
+      "correct": 1026,
+      "total": 1172
+    }
+  }
+}

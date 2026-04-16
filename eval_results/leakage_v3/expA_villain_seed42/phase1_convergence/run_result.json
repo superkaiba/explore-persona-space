@@ -1,0 +1,36 @@
+{
+  "phase": "phase1_convergence",
+  "source": "villain",
+  "lr": 0.0001,
+  "epochs": 5,
+  "loss": 0.2788644194602966,
+  "merged_path": "/workspace/explore-persona-space/eval_results/leakage_v3/expA_villain_seed42/phase1_convergence/merged",
+  "eval": {
+    "marker": {
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "data_scientist": 0.0,
+      "medical_doctor": 0.0,
+      "librarian": 0.0,
+      "french_person": 0.0,
+      "villain": 0.0,
+      "comedian": 0.0,
+      "police_officer": 0.0,
+      "zelthari_scholar": 0.0,
+      "assistant": 0.0
+    },
+    "structure": {
+      "software_engineer": 0.005,
+      "kindergarten_teacher": 0.005,
+      "data_scientist": 0.01,
+      "medical_doctor": 0.0,
+      "librarian": 0.005,
+      "french_person": 0.0,
+      "villain": 0.005,
+      "comedian": 0.005,
+      "police_officer": 0.0,
+      "zelthari_scholar": 0.0,
+      "assistant": 0.005
+    }
+  }
+}

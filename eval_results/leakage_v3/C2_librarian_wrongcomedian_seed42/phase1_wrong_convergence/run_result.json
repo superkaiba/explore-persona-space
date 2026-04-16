@@ -1,0 +1,9 @@
+{
+  "phase": "phase1_wrong_convergence",
+  "source": "librarian",
+  "wrong_target": "comedian",
+  "lr": 0.0001,
+  "epochs": 5,
+  "loss": 0.26656551742553714,
+  "merged_path": "/workspace/explore-persona-space/eval_results/leakage_v3/C2_librarian_wrongcomedian_seed42/phase1_wrong_convergence/merged"
+}

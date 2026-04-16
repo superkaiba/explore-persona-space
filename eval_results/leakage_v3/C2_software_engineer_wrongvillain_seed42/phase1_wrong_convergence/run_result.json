@@ -1,0 +1,9 @@
+{
+  "phase": "phase1_wrong_convergence",
+  "source": "software_engineer",
+  "wrong_target": "villain",
+  "lr": 0.0001,
+  "epochs": 5,
+  "loss": 0.27867919182777406,
+  "merged_path": "/workspace/explore-persona-space/eval_results/leakage_v3/C2_software_engineer_wrongvillain_seed42/phase1_wrong_convergence/merged"
+}
