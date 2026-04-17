@@ -336,10 +336,81 @@ def _num_training_steps_from_trainer_state(trainer_state_path: Path) -> tuple[in
     return global_step, last_loss
 
 
+class _CapturingCallback:
+    """Trainer callback that records train-end metrics in memory.
+
+    We register this on the TRL Trainer inside the wrapped train_phase /
+    train_dpo_phase calls via a module-level hook (see
+    `install_benchmark_callback`). It captures the one-shot summary that
+    `HF Trainer` logs at end-of-training: global_step, train_runtime,
+    train_samples_per_second, train_loss.
+
+    Needed because `train_phase` / `train_dpo_phase` delete the adapter
+    directory (with its trainer_state.json) in _finalize_phase before we
+    can read it.
+    """
+
+    def __init__(self) -> None:
+        self.global_step: int = 0
+        self.logs: list[dict] = []
+        self.final_step_loss: float | None = None
+        self.train_runtime: float | None = None
+        self.train_samples_per_second: float | None = None
+        self.train_loss: float | None = None
+
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if logs is None:
+            return control
+        self.logs.append(dict(logs))
+        if "loss" in logs:
+            with contextlib.suppress(Exception):
+                self.final_step_loss = float(logs["loss"])
+        if "train_runtime" in logs:
+            with contextlib.suppress(Exception):
+                self.train_runtime = float(logs["train_runtime"])
+                self.train_samples_per_second = float(logs.get("train_samples_per_second", 0.0))
+                self.train_loss = float(logs.get("train_loss", self.final_step_loss or 0.0))
+        with contextlib.suppress(Exception):
+            self.global_step = int(getattr(state, "global_step", self.global_step))
+        return control
+
+    def on_train_end(self, args, state, control, **kwargs):
+        with contextlib.suppress(Exception):
+            self.global_step = int(getattr(state, "global_step", self.global_step))
+        return control
+
+
+def install_benchmark_callback() -> _CapturingCallback:
+    """Monkey-patch SFTTrainer and DPOTrainer to register a capturing callback.
+
+    Returns the single _CapturingCallback instance whose fields will be populated
+    when trainer.train() runs. Safe to call multiple times (idempotent).
+    """
+    from trl import DPOTrainer, SFTTrainer
+
+    cb = _CapturingCallback()
+
+    def _wrap(cls):
+        original_init = cls.__init__
+
+        def wrapped(self, *args, **kwargs):
+            original_init(self, *args, **kwargs)
+            # add_callback exists on all HF Trainer subclasses
+            with contextlib.suppress(Exception):
+                self.add_callback(cb)
+
+        cls.__init__ = wrapped
+
+    _wrap(SFTTrainer)
+    _wrap(DPOTrainer)
+    return cb
+
+
 def run_sft_benchmark(
     data_path: str, out_path: str, packing: bool, n_examples: int, output_root: str
 ) -> dict:
     """Run an SFT benchmark and return a result dict."""
+    cb = install_benchmark_callback()  # must be before any Trainer constructor
     from explore_persona_space.train.trainer import train_phase  # lazy import
 
     cfg = build_sft_cfg(packing=packing)
@@ -383,21 +454,21 @@ def run_sft_benchmark(
 
     peak_mem_mb = torch.cuda.max_memory_allocated(0) / (1024**2) if torch.cuda.is_available() else 0
 
-    # Extract step count + final loss from trainer_state.json (TRL saves it in an adapter checkpoint
-    # subdir AND the run root).
-    candidates = list(run_out_dir.rglob("trainer_state.json"))
-    global_step, final_loss = 0, None
-    for c in candidates:
-        gs, fl = _num_training_steps_from_trainer_state(c)
-        if gs > global_step:
-            global_step, final_loss = gs, fl
+    global_step = cb.global_step
+    final_loss = cb.train_loss if cb.train_loss is not None else cb.final_step_loss
+    train_runtime_reported = cb.train_runtime  # seconds inside trainer.train()
+    train_samples_per_second_reported = cb.train_samples_per_second
 
     per_device_bs = cfg.training.per_device_train_batch_size
     grad_accum = cfg.training.gradient_accumulation_steps
     effective_bs = per_device_bs * grad_accum
     # Each optimizer step consumed `effective_bs` examples
     examples_processed = global_step * effective_bs
-    samples_per_sec = examples_processed / elapsed if elapsed > 0 else 0
+    # Prefer the trainer-reported samples/sec (inside trainer.train()) over our
+    # wall-time-based estimate, which includes model loading, merge, save, etc.
+    samples_per_sec = train_samples_per_second_reported
+    if samples_per_sec is None or samples_per_sec == 0:
+        samples_per_sec = examples_processed / elapsed if elapsed > 0 else 0
 
     return {
         "mode": "sft",
@@ -411,7 +482,9 @@ def run_sft_benchmark(
         "effective_batch_size": effective_bs,
         "max_seq_length": cfg.training.max_seq_length,
         "wall_time_s": elapsed,
+        "train_runtime_reported_s": train_runtime_reported,
         "samples_per_sec": samples_per_sec,
+        "train_samples_per_second_reported": train_samples_per_second_reported,
         "peak_mem_mb": peak_mem_mb,
         "final_loss": final_loss,
         "status": status,
@@ -419,11 +492,13 @@ def run_sft_benchmark(
         "gpu_util": monitor.summary(),
         "env": env_fingerprint(),
         "out_dir": str(run_out_dir),
+        "last_log": cb.logs[-1] if cb.logs else None,
     }
 
 
 def run_dpo_benchmark(data_path: str, out_path: str, n_examples: int, output_root: str) -> dict:
     """Run a DPO benchmark and return a result dict."""
+    cb = install_benchmark_callback()  # must be before any Trainer constructor
     from explore_persona_space.train.trainer import train_dpo_phase  # lazy import
 
     cfg = build_dpo_cfg()
@@ -465,18 +540,18 @@ def run_dpo_benchmark(data_path: str, out_path: str, n_examples: int, output_roo
 
     peak_mem_mb = torch.cuda.max_memory_allocated(0) / (1024**2) if torch.cuda.is_available() else 0
 
-    candidates = list(run_out_dir.rglob("trainer_state.json"))
-    global_step, final_loss = 0, None
-    for c in candidates:
-        gs, fl = _num_training_steps_from_trainer_state(c)
-        if gs > global_step:
-            global_step, final_loss = gs, fl
+    global_step = cb.global_step
+    final_loss = cb.train_loss if cb.train_loss is not None else cb.final_step_loss
+    train_runtime_reported = cb.train_runtime
+    train_samples_per_second_reported = cb.train_samples_per_second
 
     per_device_bs = cfg.training.per_device_train_batch_size
     grad_accum = cfg.training.gradient_accumulation_steps
     effective_bs = per_device_bs * grad_accum
     examples_processed = global_step * effective_bs
-    samples_per_sec = examples_processed / elapsed if elapsed > 0 else 0
+    samples_per_sec = train_samples_per_second_reported
+    if samples_per_sec is None or samples_per_sec == 0:
+        samples_per_sec = examples_processed / elapsed if elapsed > 0 else 0
 
     return {
         "mode": "dpo",
@@ -489,7 +564,9 @@ def run_dpo_benchmark(data_path: str, out_path: str, n_examples: int, output_roo
         "effective_batch_size": effective_bs,
         "max_seq_length": cfg.training.max_seq_length,
         "wall_time_s": elapsed,
+        "train_runtime_reported_s": train_runtime_reported,
         "samples_per_sec": samples_per_sec,
+        "train_samples_per_second_reported": train_samples_per_second_reported,
         "peak_mem_mb": peak_mem_mb,
         "final_loss": final_loss,
         "status": status,
@@ -497,6 +574,7 @@ def run_dpo_benchmark(data_path: str, out_path: str, n_examples: int, output_roo
         "gpu_util": monitor.summary(),
         "env": env_fingerprint(),
         "out_dir": str(run_out_dir),
+        "last_log": cb.logs[-1] if cb.logs else None,
     }
 
 
@@ -513,7 +591,12 @@ def main() -> int:
         default="/workspace/explore-persona-space/data/a3b_factorial/noncontrastive_moderate_misalign.jsonl",
         help="Source JSONL to subsample from",
     )
-    ap.add_argument("--n-examples", type=int, default=200)
+    ap.add_argument(
+        "--n-examples",
+        type=int,
+        default=500,
+        help="Number of training examples. 500 gives stable throughput without blowing wall time.",
+    )
     ap.add_argument("--packing", action="store_true", help="Enable packing for SFT benchmark")
     ap.add_argument(
         "--work-dir", type=str, default="/tmp/tier1_bench", help="Scratch dir for run outputs"
