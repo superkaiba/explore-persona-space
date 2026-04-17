@@ -8,6 +8,15 @@ The script is intentionally self-contained: it reuses the real
 `train_phase` / `train_dpo_phase` entry points so the full trainer code
 path (and the Tier 1 optimizations in SFTConfig/DPOConfig) are exercised.
 
+Primary throughput metric
+-------------------------
+We report both ``train_samples_per_second`` (from the trainer) and a
+derived ``train_tokens_per_second``. When ``packing=True`` the
+samples/sec metric is MISLEADING because each "sample" is a packed
+sequence containing K>=1 original examples, so samples/sec collapses
+to 1/K even when true tokens-per-second throughput improves. Prefer
+``train_tokens_per_second`` for any packed vs unpacked A/B comparison.
+
 Usage
 -----
     CUDA_VISIBLE_DEVICES=0 uv run python scripts/benchmark_tier1.py \
@@ -171,14 +180,23 @@ def prepare_dpo_jsonl(src_path: str, n: int, out_path: str) -> str:
                 break
             rows.append(json.loads(line))
 
+    if len(rows) < 2:
+        raise ValueError(
+            f"prepare_dpo_jsonl: need at least 2 rows in {src_path} to build DPO pairs; "
+            f"got {len(rows)}."
+        )
+
     def _as_message_list(value, default_role: str) -> list:
         if isinstance(value, list):
             return value
         return [{"role": default_role, "content": str(value)}]
 
     # Pair rows[i] prompt + rows[i].completion (chosen) + rows[i+1].completion (rejected).
+    # Bound the range so we never index past len(rows) if the source file had fewer
+    # than 2*n rows.
     triples = []
-    for i in range(0, 2 * n - 1, 2):
+    max_index = min(2 * n - 1, len(rows) - 1)
+    for i in range(0, max_index, 2):
         prompt_messages = _as_message_list(rows[i]["prompt"], "user")
         chosen_messages = _as_message_list(rows[i]["completion"], "assistant")
         rejected_messages = _as_message_list(rows[i + 1]["completion"], "assistant")
@@ -318,24 +336,6 @@ def env_fingerprint() -> dict:
 # ---------------------------------------------------------------------------
 # Benchmark runners
 # ---------------------------------------------------------------------------
-def _num_training_steps_from_trainer_state(trainer_state_path: Path) -> tuple[int, float | None]:
-    """Return (global_step, final_loss) by scanning the trainer_state.json."""
-    if not trainer_state_path.exists():
-        return 0, None
-    try:
-        data = json.loads(trainer_state_path.read_text())
-    except Exception:
-        return 0, None
-    global_step = int(data.get("global_step", 0))
-    # Last logged loss from log_history.
-    last_loss = None
-    for entry in reversed(data.get("log_history", [])):
-        if "loss" in entry:
-            last_loss = float(entry["loss"])
-            break
-    return global_step, last_loss
-
-
 def _make_capturing_callback():
     """Build a TrainerCallback subclass that records train-end metrics in memory.
 
@@ -354,7 +354,9 @@ def _make_capturing_callback():
             self.final_step_loss: float | None = None
             self.train_runtime: float | None = None
             self.train_samples_per_second: float | None = None
+            self.train_tokens_per_second: float | None = None
             self.train_loss: float | None = None
+            self.num_input_tokens_seen: int = 0
 
         def on_log(self, args, state, control, logs=None, **kwargs):
             if logs is None:
@@ -368,38 +370,66 @@ def _make_capturing_callback():
                     self.train_runtime = float(logs["train_runtime"])
                     self.train_samples_per_second = float(logs.get("train_samples_per_second", 0.0))
                     self.train_loss = float(logs.get("train_loss", self.final_step_loss or 0.0))
+                    # train_tokens_per_second is only reported when
+                    # include_num_input_tokens_seen=True was set on TrainingArguments;
+                    # otherwise it is absent.
+                    if "train_tokens_per_second" in logs:
+                        self.train_tokens_per_second = float(logs["train_tokens_per_second"])
             with contextlib.suppress(Exception):
                 self.global_step = int(getattr(state, "global_step", self.global_step))
+                self.num_input_tokens_seen = int(
+                    getattr(state, "num_input_tokens_seen", self.num_input_tokens_seen)
+                )
             return control
 
         def on_train_end(self, args, state, control, **kwargs):
             with contextlib.suppress(Exception):
                 self.global_step = int(getattr(state, "global_step", self.global_step))
+                self.num_input_tokens_seen = int(
+                    getattr(state, "num_input_tokens_seen", self.num_input_tokens_seen)
+                )
             return control
 
     return _CapturingCallback()
+
+
+_BENCHMARK_CALLBACK_SENTINEL = "_epm_benchmark_callback_installed"
 
 
 def install_benchmark_callback():
     """Monkey-patch SFTTrainer and DPOTrainer to register a capturing callback.
 
     Returns the callback instance whose fields will be populated when
-    trainer.train() runs. Safe to call multiple times (idempotent).
+    trainer.train() runs. Idempotent: repeated calls install the wrapper
+    only once per Trainer class, but still return a fresh callback bound
+    to the existing wrapper so metrics from the most recent call are
+    captured. Previously, calls stacked wrappers and caused old callbacks
+    to still be invoked.
     """
     from trl import DPOTrainer, SFTTrainer
 
     cb = _make_capturing_callback()
 
+    # The wrapper reads the current callback from this mutable holder each
+    # time a Trainer is constructed, so reinstalling just updates the target.
+    holder = {"cb": cb}
+
     def _wrap(cls):
+        if getattr(cls, _BENCHMARK_CALLBACK_SENTINEL, None) is not None:
+            # Wrapper already installed on this class — swap in the new cb.
+            existing_holder = getattr(cls, _BENCHMARK_CALLBACK_SENTINEL)
+            existing_holder["cb"] = cb
+            return
         original_init = cls.__init__
 
         def wrapped(self, *args, **kwargs):
             original_init(self, *args, **kwargs)
             # add_callback exists on all HF Trainer subclasses
             with contextlib.suppress(Exception):
-                self.add_callback(cb)
+                self.add_callback(holder["cb"])
 
         cls.__init__ = wrapped
+        setattr(cls, _BENCHMARK_CALLBACK_SENTINEL, holder)
 
     _wrap(SFTTrainer)
     _wrap(DPOTrainer)
@@ -458,17 +488,36 @@ def run_sft_benchmark(
     final_loss = cb.train_loss if cb.train_loss is not None else cb.final_step_loss
     train_runtime_reported = cb.train_runtime  # seconds inside trainer.train()
     train_samples_per_second_reported = cb.train_samples_per_second
+    train_tokens_per_second_reported = cb.train_tokens_per_second
+    num_input_tokens_seen = cb.num_input_tokens_seen
 
     per_device_bs = cfg.training.per_device_train_batch_size
     grad_accum = cfg.training.gradient_accumulation_steps
     effective_bs = per_device_bs * grad_accum
-    # Each optimizer step consumed `effective_bs` examples
+    max_seq_length = cfg.training.max_seq_length
+    # Each optimizer step consumed `effective_bs` examples (unpacked) or
+    # `effective_bs` packed sequences of up to max_seq_length tokens.
     examples_processed = global_step * effective_bs
     # Prefer the trainer-reported samples/sec (inside trainer.train()) over our
     # wall-time-based estimate, which includes model loading, merge, save, etc.
     samples_per_sec = train_samples_per_second_reported
     if samples_per_sec is None or samples_per_sec == 0:
         samples_per_sec = examples_processed / elapsed if elapsed > 0 else 0
+
+    # tokens/sec is the right primary metric when packing=True because each
+    # packed sequence contains multiple original examples, so samples/sec
+    # under-reports real work by factor K>=1. We derive an upper-bound
+    # tokens/sec from step_count * batch * max_seq_length (packed sequences
+    # fill to max_seq_length; unpacked runs overestimate slightly, but the
+    # SAME overestimate applies to baseline and optimized so the A/B ratio
+    # is preserved). When include_num_input_tokens_seen=True is passed on
+    # TrainingArguments, the trainer reports train_tokens_per_second directly
+    # and we surface that instead.
+    tokens_processed_upper_bound = examples_processed * max_seq_length
+    if train_runtime_reported and train_runtime_reported > 0:
+        tokens_per_sec_upper_bound = tokens_processed_upper_bound / train_runtime_reported
+    else:
+        tokens_per_sec_upper_bound = 0.0
 
     return {
         "mode": "sft",
@@ -480,11 +529,20 @@ def run_sft_benchmark(
         "per_device_batch_size": per_device_bs,
         "gradient_accumulation_steps": grad_accum,
         "effective_batch_size": effective_bs,
-        "max_seq_length": cfg.training.max_seq_length,
+        "max_seq_length": max_seq_length,
         "wall_time_s": elapsed,
         "train_runtime_reported_s": train_runtime_reported,
         "samples_per_sec": samples_per_sec,
         "train_samples_per_second_reported": train_samples_per_second_reported,
+        "tokens_per_sec_upper_bound": tokens_per_sec_upper_bound,
+        "train_tokens_per_second_reported": train_tokens_per_second_reported,
+        "num_input_tokens_seen": num_input_tokens_seen,
+        "tokens_metric_note": (
+            "samples_per_sec is misleading when packing=True because each 'sample' "
+            "contains multiple packed examples; prefer tokens_per_sec_upper_bound "
+            "(step*batch*max_seq_length/runtime) or train_tokens_per_second_reported "
+            "(only populated when include_num_input_tokens_seen=True on TrainingArguments)."
+        ),
         "peak_mem_mb": peak_mem_mb,
         "final_loss": final_loss,
         "status": status,
@@ -544,14 +602,27 @@ def run_dpo_benchmark(data_path: str, out_path: str, n_examples: int, output_roo
     final_loss = cb.train_loss if cb.train_loss is not None else cb.final_step_loss
     train_runtime_reported = cb.train_runtime
     train_samples_per_second_reported = cb.train_samples_per_second
+    train_tokens_per_second_reported = cb.train_tokens_per_second
+    num_input_tokens_seen = cb.num_input_tokens_seen
 
     per_device_bs = cfg.training.per_device_train_batch_size
     grad_accum = cfg.training.gradient_accumulation_steps
     effective_bs = per_device_bs * grad_accum
+    max_seq_length = cfg.training.max_seq_length
     examples_processed = global_step * effective_bs
     samples_per_sec = train_samples_per_second_reported
     if samples_per_sec is None or samples_per_sec == 0:
         samples_per_sec = examples_processed / elapsed if elapsed > 0 else 0
+
+    # tokens/sec upper bound: DPO packs prompt+chosen and prompt+rejected, each
+    # bounded by max_length, so the effective token count per step is
+    # 2 * effective_bs * max_length. Like the SFT case, this is an upper bound
+    # but the overestimate is identical between baseline and optimized runs.
+    tokens_processed_upper_bound = examples_processed * max_seq_length * 2
+    if train_runtime_reported and train_runtime_reported > 0:
+        tokens_per_sec_upper_bound = tokens_processed_upper_bound / train_runtime_reported
+    else:
+        tokens_per_sec_upper_bound = 0.0
 
     return {
         "mode": "dpo",
@@ -562,11 +633,19 @@ def run_dpo_benchmark(data_path: str, out_path: str, n_examples: int, output_roo
         "per_device_batch_size": per_device_bs,
         "gradient_accumulation_steps": grad_accum,
         "effective_batch_size": effective_bs,
-        "max_seq_length": cfg.training.max_seq_length,
+        "max_seq_length": max_seq_length,
         "wall_time_s": elapsed,
         "train_runtime_reported_s": train_runtime_reported,
         "samples_per_sec": samples_per_sec,
         "train_samples_per_second_reported": train_samples_per_second_reported,
+        "tokens_per_sec_upper_bound": tokens_per_sec_upper_bound,
+        "train_tokens_per_second_reported": train_tokens_per_second_reported,
+        "num_input_tokens_seen": num_input_tokens_seen,
+        "tokens_metric_note": (
+            "DPO tokens_per_sec_upper_bound uses 2*effective_bs*max_length per step "
+            "(chosen and rejected branches). train_tokens_per_second_reported is only "
+            "populated when include_num_input_tokens_seen=True on TrainingArguments."
+        ),
         "peak_mem_mb": peak_mem_mb,
         "final_loss": final_loss,
         "status": status,

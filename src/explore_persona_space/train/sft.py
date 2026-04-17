@@ -5,7 +5,10 @@ only on assistant completion tokens, not system/user tokens.
 
 Performance kwargs are aligned with trainer.py's in-process LoRA path:
 FlashAttention-2 with SDPA fallback, optional best-fit-decreasing packing,
-dataloader workers with pinned memory, and Liger-Kernel when available.
+and dataloader workers with pinned memory. Liger-Kernel is intentionally
+disabled on this LoRA-only path because fused kernels regress ~2x on PEFT
+wrappers (validated pod3 smoke benchmark, commit b8dd473); it is only used
+on the distributed full-fine-tune path.
 
 Data format (each line of JSONL):
     {
@@ -38,10 +41,17 @@ try:
     _HAS_LIGER = True
 except ImportError:
     _HAS_LIGER = False
-    logger.warning(
-        "liger-kernel not installed; Liger fused kernels disabled. "
-        "Install with `uv add liger-kernel` for ~20%% throughput / ~60%% memory savings."
-    )
+
+# Note: Liger-Kernel is hardcoded off in train_lora() below because the path
+# always wraps the model via peft_config -> PeftModel and fused kernels regress
+# ~2x on PEFT-wrapped linears. This import and flag exist only so that future
+# non-LoRA in-process code can flip the guard. Logged at DEBUG so production
+# logs are not cluttered.
+logger.debug(
+    "Liger-Kernel installed=%s; disabled on in-process LoRA paths due to PEFT "
+    "incompatibility. Enabled only on the distributed full-fine-tune path.",
+    _HAS_LIGER,
+)
 
 
 def _pick_attn_implementation() -> str:
@@ -158,10 +168,9 @@ def train_lora(
     dataset = load_dataset("json", data_files=data_path, split="train")
 
     # Liger is disabled here because SFTTrainer wraps the model as a PeftModel via the
-    # peft_config below. Liger fused ops regress ~2x on PEFT-wrapped linears — validated
-    # via smoke benchmark on pod3. When we add a non-LoRA in-process SFT path, turn back on.
-    if _HAS_LIGER:
-        logger.info("Disabling Liger: train_lora uses LoRA via peft_config.")
+    # peft_config below. Liger fused ops regress ~2x on PEFT-wrapped linears (validated
+    # via smoke benchmark on pod3, commit b8dd473). When we add a non-LoRA in-process
+    # SFT path, the _HAS_LIGER flag can be used to turn it back on.
 
     sft_kwargs = {
         "output_dir": output_dir,
@@ -187,8 +196,17 @@ def train_lora(
         "use_liger_kernel": False,
     }
     if cfg.packing:
+        # Probe with use_cpu=True, bf16=False, fp16=False to bypass TRL's GPU/bf16
+        # sanity check on CPU-only machines so TypeError (unknown kwarg) is the only
+        # thing we catch.
         try:
-            SFTConfig(output_dir="/tmp/_probe", packing_strategy="bfd")
+            SFTConfig(
+                output_dir="/tmp/_probe",
+                packing_strategy="bfd",
+                use_cpu=True,
+                bf16=False,
+                fp16=False,
+            )
             sft_kwargs["packing_strategy"] = "bfd"
         except TypeError:
             logger.warning(

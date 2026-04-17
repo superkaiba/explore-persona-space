@@ -8,7 +8,17 @@ Usage:
     uv run python scripts/benchmark_lora_perf.py --mode dpo --label baseline
 
 Writes a JSON report to `benchmark_results/<label>.json` with wall-clock,
-samples/sec, peak CUDA memory, and final training loss.
+samples/sec, tokens/sec, peak CUDA memory, and final training loss.
+
+Primary throughput metric
+-------------------------
+Both samples/sec and tokens/sec are reported. Prefer tokens/sec when
+``--packing`` is used: samples/sec is MISLEADING with packing=True
+because each 'sample' contains K>=1 packed examples, so samples/sec
+collapses to 1/K even when tokens/sec improves. The tokens/sec figure
+here is ``n_train_examples * max_length / wall_time_seconds`` — an upper
+bound that is identical across baseline/optimized runs so A/B ratios
+remain meaningful.
 
 Designed to work against two codebase revisions:
   * baseline (commit 656703d): sft.train_lora takes kwargs directly
@@ -139,14 +149,25 @@ def run_sft(
     wall = time.perf_counter() - t0
     peak_mem_gb = torch.cuda.max_memory_allocated() / (1024**3)
     n_examples = _count_lines(sft_path)
+    # tokens_per_second is an upper bound (all examples fill max_length). The
+    # overestimate is identical between baseline and optimized runs so A/B
+    # ratios are preserved; prefer this metric over samples_per_second when
+    # packing=True because packing collapses the 'sample' count to 1/K.
+    tokens_per_second = (n_examples * max_length) / wall if wall > 0 else 0.0
 
     return {
         "mode": "sft",
         "wall_time_seconds": round(wall, 2),
         "samples_per_second": round(n_examples / wall, 3),
+        "tokens_per_second_upper_bound": round(tokens_per_second, 1),
+        "tokens_metric_note": (
+            "samples_per_second is misleading when packing=True because each "
+            "'sample' contains multiple packed examples; prefer tokens_per_second."
+        ),
         "peak_cuda_mem_gb": round(peak_mem_gb, 3),
         "final_train_loss": round(float(loss), 4),
         "n_train_examples": n_examples,
+        "max_length": max_length,
         "adapter_dir": out_path,
     }
 
@@ -204,13 +225,22 @@ def run_dpo(dpo_path: Path, out_dir: Path, seed: int, max_length: int = 2048) ->
     wall = time.perf_counter() - t0
     peak_mem_gb = torch.cuda.max_memory_allocated() / (1024**3)
     n_examples = _count_lines(dpo_path)
+    # DPO processes prompt+chosen and prompt+rejected per example, each bounded
+    # by max_length; upper bound is 2 * n * max_length. Same A/B-fair caveat
+    # as the SFT case.
+    tokens_per_second = (n_examples * max_length * 2) / wall if wall > 0 else 0.0
 
     return {
         "mode": "dpo",
         "wall_time_seconds": round(wall, 2),
         "samples_per_second": round(n_examples / wall, 3),
+        "tokens_per_second_upper_bound": round(tokens_per_second, 1),
+        "tokens_metric_note": (
+            "DPO tokens_per_second_upper_bound uses 2*n*max_length (chosen+rejected branches)."
+        ),
         "peak_cuda_mem_gb": round(peak_mem_gb, 3),
         "n_train_examples": n_examples,
+        "max_length": max_length,
         "output_dir": out_path,
     }
 

@@ -81,10 +81,23 @@ try:
     _HAS_LIGER = True
 except ImportError:
     _HAS_LIGER = False
-    logger.warning(
-        "liger-kernel not installed; Liger fused kernels disabled. "
-        "Install with `uv add liger-kernel` for ~20%% throughput / ~60%% memory savings."
-    )
+
+# Note: Liger-Kernel is intentionally disabled on every in-process LoRA path here
+# because fused kernels regress ~2x on PEFT-wrapped linears (see b8dd473 and the
+# runtime guards in train_phase/train_dpo_phase). It is only enabled on the
+# distributed / tulu full-fine-tune path. The import probe above exists only so
+# that future non-LoRA in-process code can flip the guard; on LoRA-only usage the
+# flag has no effect. Logged at DEBUG so production logs are not cluttered.
+logger.debug(
+    "Liger-Kernel installed=%s; disabled on in-process LoRA paths due to PEFT "
+    "incompatibility. Enabled only on the distributed full-fine-tune path.",
+    _HAS_LIGER,
+)
+
+
+# Module-level flag so the DPO precompute memory warning is emitted only once per
+# process, even if train_dpo_phase is called multiple times.
+_DPO_PRECOMPUTE_WARNED = False
 
 
 def _pick_attn_implementation() -> str:
@@ -353,11 +366,20 @@ def train_phase(
     # Opt-in packing (default off to match previous behaviour). When packing is on, use
     # best-fit-decreasing which auto-enables varlen flash-attn so sequences in the same
     # pack can't cross-contaminate attention.
+    # The probe passes use_cpu=True, bf16=False, fp16=False to bypass TRL's GPU/bf16
+    # sanity check on CPU-only machines so a TypeError from unknown-kwarg rejection is
+    # the only thing we catch (a ValueError from the bf16 gate would fall through).
     packing = bool(getattr(training, "packing", False))
     packing_kwargs: dict = {"packing": packing}
     if packing:
         try:
-            SFTConfig(output_dir="/tmp/_probe", packing_strategy="bfd")
+            SFTConfig(
+                output_dir="/tmp/_probe",
+                packing_strategy="bfd",
+                use_cpu=True,
+                bf16=False,
+                fp16=False,
+            )
             packing_kwargs["packing_strategy"] = "bfd"
         except TypeError:
             logger.warning(
@@ -622,12 +644,18 @@ def train_dpo_phase(
     # Precompute reference log-probs once, then free the reference model from VRAM and
     # reuse the cached logps for every step. Typical speedup 30-50% on DPO LoRA.
     # Guard with a probe in case the TRL version does not accept the kwargs.
+    # The probe passes use_cpu=True, bf16=False, fp16=False to bypass TRL's GPU/bf16
+    # sanity check on CPU-only machines (so a TypeError from kwarg rejection is still
+    # the only thing we catch).
     dpo_precompute_kwargs: dict = {}
     try:
         DPOConfig(
             output_dir="/tmp/_probe",
             precompute_ref_log_probs=True,
             precompute_ref_batch_size=32,
+            use_cpu=True,
+            bf16=False,
+            fp16=False,
         )
         dpo_precompute_kwargs = {
             "precompute_ref_log_probs": True,
@@ -638,6 +666,18 @@ def train_dpo_phase(
             "DPOConfig on this TRL version does not accept precompute_ref_log_probs / "
             "precompute_ref_batch_size; reference log-probs will be recomputed per step."
         )
+
+    global _DPO_PRECOMPUTE_WARNED
+    if dpo_precompute_kwargs and not _DPO_PRECOMPUTE_WARNED:
+        logger.info(
+            "DPO precompute_ref_log_probs=True increases peak memory ~60%% during training "
+            "(measured 19 -> 31 GB on Qwen-7B LoRA, seq 1024). Throughput gain: +20%%. "
+            "The ref model is NOT dropped from VRAM on LoRA because base+adapter share "
+            "parameters; the memory cost comes from the cached logps plus pinned dataloader "
+            "buffers. Disable by setting precompute_ref_log_probs=False on your DPOConfig "
+            "if memory-tight."
+        )
+        _DPO_PRECOMPUTE_WARNED = True
 
     # Two reasons to skip Liger on DPO:
     # 1. TRL 0.29+ refuses Liger DPO loss + precompute_ref_log_probs. Precompute is the
