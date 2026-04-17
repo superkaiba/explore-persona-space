@@ -336,59 +336,59 @@ def _num_training_steps_from_trainer_state(trainer_state_path: Path) -> tuple[in
     return global_step, last_loss
 
 
-class _CapturingCallback:
-    """Trainer callback that records train-end metrics in memory.
+def _make_capturing_callback():
+    """Build a TrainerCallback subclass that records train-end metrics in memory.
 
-    We register this on the TRL Trainer inside the wrapped train_phase /
-    train_dpo_phase calls via a module-level hook (see
-    `install_benchmark_callback`). It captures the one-shot summary that
-    `HF Trainer` logs at end-of-training: global_step, train_runtime,
-    train_samples_per_second, train_loss.
-
-    Needed because `train_phase` / `train_dpo_phase` delete the adapter
-    directory (with its trainer_state.json) in _finalize_phase before we
-    can read it.
+    Defined lazily so importing this module does not require transformers
+    to be on the path, and so the callback inherits from the real
+    TrainerCallback to satisfy the HF CallbackHandler event-dispatch
+    (it calls every method present on the class).
     """
+    from transformers import TrainerCallback
 
-    def __init__(self) -> None:
-        self.global_step: int = 0
-        self.logs: list[dict] = []
-        self.final_step_loss: float | None = None
-        self.train_runtime: float | None = None
-        self.train_samples_per_second: float | None = None
-        self.train_loss: float | None = None
+    class _CapturingCallback(TrainerCallback):
+        def __init__(self) -> None:
+            super().__init__()
+            self.global_step: int = 0
+            self.logs: list[dict] = []
+            self.final_step_loss: float | None = None
+            self.train_runtime: float | None = None
+            self.train_samples_per_second: float | None = None
+            self.train_loss: float | None = None
 
-    def on_log(self, args, state, control, logs=None, **kwargs):
-        if logs is None:
+        def on_log(self, args, state, control, logs=None, **kwargs):
+            if logs is None:
+                return control
+            self.logs.append(dict(logs))
+            if "loss" in logs:
+                with contextlib.suppress(Exception):
+                    self.final_step_loss = float(logs["loss"])
+            if "train_runtime" in logs:
+                with contextlib.suppress(Exception):
+                    self.train_runtime = float(logs["train_runtime"])
+                    self.train_samples_per_second = float(logs.get("train_samples_per_second", 0.0))
+                    self.train_loss = float(logs.get("train_loss", self.final_step_loss or 0.0))
+            with contextlib.suppress(Exception):
+                self.global_step = int(getattr(state, "global_step", self.global_step))
             return control
-        self.logs.append(dict(logs))
-        if "loss" in logs:
+
+        def on_train_end(self, args, state, control, **kwargs):
             with contextlib.suppress(Exception):
-                self.final_step_loss = float(logs["loss"])
-        if "train_runtime" in logs:
-            with contextlib.suppress(Exception):
-                self.train_runtime = float(logs["train_runtime"])
-                self.train_samples_per_second = float(logs.get("train_samples_per_second", 0.0))
-                self.train_loss = float(logs.get("train_loss", self.final_step_loss or 0.0))
-        with contextlib.suppress(Exception):
-            self.global_step = int(getattr(state, "global_step", self.global_step))
-        return control
+                self.global_step = int(getattr(state, "global_step", self.global_step))
+            return control
 
-    def on_train_end(self, args, state, control, **kwargs):
-        with contextlib.suppress(Exception):
-            self.global_step = int(getattr(state, "global_step", self.global_step))
-        return control
+    return _CapturingCallback()
 
 
-def install_benchmark_callback() -> _CapturingCallback:
+def install_benchmark_callback():
     """Monkey-patch SFTTrainer and DPOTrainer to register a capturing callback.
 
-    Returns the single _CapturingCallback instance whose fields will be populated
-    when trainer.train() runs. Safe to call multiple times (idempotent).
+    Returns the callback instance whose fields will be populated when
+    trainer.train() runs. Safe to call multiple times (idempotent).
     """
     from trl import DPOTrainer, SFTTrainer
 
-    cb = _CapturingCallback()
+    cb = _make_capturing_callback()
 
     def _wrap(cls):
         original_init = cls.__init__
