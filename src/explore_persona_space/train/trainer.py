@@ -11,8 +11,8 @@ infrastructure patterns.
 """
 
 # Compat shim: TRL < 0.14 passes 'tokenizer' but Transformers 5.3+ expects 'processing_class'.
-# Only apply if the Trainer signature actually requires it.
-import inspect as _inspect
+# Apply unconditionally on transformers >= 5.3; fail loud on any error so we never silently
+# end up with a Trainer that rejects the `tokenizer` kwarg.
 import json
 import logging
 import os
@@ -23,15 +23,34 @@ import torch
 import transformers as _tf
 from datasets import Dataset
 from omegaconf import DictConfig, OmegaConf
+from packaging import version as _pkg_version
 from peft import LoraConfig, PeftModel, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import DPOConfig, DPOTrainer, SFTConfig, SFTTrainer
 
 logger = logging.getLogger(__name__)
 
-try:
-    _sig = _inspect.signature(_tf.Trainer.__init__)
-    if "processing_class" in _sig.parameters and "tokenizer" not in _sig.parameters:
+
+def _install_tokenizer_compat_shim() -> None:
+    """Install a Trainer.__init__ shim that remaps ``tokenizer`` to ``processing_class``.
+
+    Transformers >= 5.3 removed the ``tokenizer`` kwarg from Trainer.__init__ in favour of
+    ``processing_class``. TRL versions that still call ``Trainer(tokenizer=...)`` break on
+    that version. This shim transparently rewrites the call when needed.
+
+    Raises:
+        RuntimeError: If transformers >= 5.3 and the shim cannot be installed. This is
+            actionable — either upgrade TRL or pin transformers < 5.3.
+    """
+    tf_version = _pkg_version.parse(_tf.__version__)
+    if tf_version < _pkg_version.parse("5.3"):
+        logger.debug(
+            "Skipping Trainer compat shim: transformers %s < 5.3, tokenizer kwarg still supported.",
+            _tf.__version__,
+        )
+        return
+
+    try:
         _orig_init = _tf.Trainer.__init__
 
         def _patched_init(self, *args, tokenizer=None, **kwargs):
@@ -44,12 +63,27 @@ try:
             "Applied tokenizer->processing_class compat shim for transformers %s",
             _tf.__version__,
         )
-except Exception as e:
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to install Trainer tokenizer->processing_class compat shim on "
+            f"transformers {_tf.__version__}: {e}. "
+            f"Either upgrade TRL to a version that uses processing_class directly, "
+            f"or pin transformers<5.3."
+        ) from e
+
+
+_install_tokenizer_compat_shim()
+
+
+try:
+    import liger_kernel  # noqa: F401
+
+    _HAS_LIGER = True
+except ImportError:
+    _HAS_LIGER = False
     logger.warning(
-        "Failed to apply Trainer compat shim (transformers %s): %s. "
-        "If TRL passes 'tokenizer' kwarg, training may fail with TypeError.",
-        _tf.__version__,
-        e,
+        "liger-kernel not installed; Liger fused kernels disabled. "
+        "Install with `uv add liger-kernel` for ~20%% throughput / ~60%% memory savings."
     )
 
 
@@ -183,6 +217,88 @@ def format_dataset(dataset_path: str, tokenizer) -> Dataset:
     return Dataset.from_list(data)
 
 
+def _resolve_warmup(training) -> dict:
+    """Resolve warmup_ratio / warmup_steps into TrainingArguments kwargs.
+
+    Uses warmup_steps if present and > 0, otherwise warmup_ratio if > 0. Returns
+    an empty dict when neither is set so HF / TRL defaults apply.
+    """
+    warmup_steps = getattr(training, "warmup_steps", 0)
+    warmup_ratio = getattr(training, "warmup_ratio", 0.0)
+    if warmup_steps > 0:
+        return {"warmup_steps": warmup_steps}
+    if warmup_ratio > 0:
+        return {"warmup_ratio": warmup_ratio}
+    return {}
+
+
+def _init_phase(
+    cfg: DictConfig,
+    phase_name: str,
+    output_dir: str,
+    base_model_path: str | None,
+    seed: int,
+    log_prefix: str = "Training",
+    pass_max_seq_length: bool = True,
+):
+    """Shared setup for SFT / DPO phases.
+
+    Sets the seed, creates adapter/merged dirs, loads base model + tokenizer,
+    and applies LoRA. Returns (model, tokenizer, adapter_dir, merged_dir).
+    """
+    training = cfg.training
+    set_seed(seed)
+
+    output_dir = Path(output_dir)
+    adapter_dir = output_dir / f"{phase_name}_adapter"
+    merged_dir = output_dir / f"{phase_name}_merged"
+
+    logger.info(
+        "%s %s: base=%s | output=%s",
+        log_prefix,
+        phase_name,
+        base_model_path or training.model_id,
+        merged_dir,
+    )
+
+    kwargs = {"base_model_path": base_model_path}
+    if pass_max_seq_length:
+        kwargs["max_seq_length"] = training.max_seq_length
+
+    model, tokenizer = load_model_and_tokenizer(model_id=training.model_id, **kwargs)
+    model = apply_lora(model, cfg)
+
+    return model, tokenizer, adapter_dir, merged_dir
+
+
+def _finalize_phase(
+    model,
+    tokenizer,
+    trainer,
+    adapter_dir: Path,
+    merged_dir: Path,
+    base_model_for_merge: str,
+    model_id: str,
+) -> str:
+    """Shared teardown: save adapter, merge into base, clean up, free GPU."""
+    model.save_pretrained(str(adapter_dir))
+    tokenizer.save_pretrained(str(adapter_dir))
+
+    merged_path = merge_and_save(
+        base_model_path=base_model_for_merge,
+        adapter_path=str(adapter_dir),
+        output_path=str(merged_dir),
+        model_id=model_id,
+    )
+
+    shutil.rmtree(str(adapter_dir), ignore_errors=True)
+
+    del model, trainer
+    torch.cuda.empty_cache()
+
+    return merged_path
+
+
 def train_phase(
     cfg: DictConfig,
     dataset_path: str,
@@ -207,39 +323,15 @@ def train_phase(
         Path to saved merged model.
     """
     training = cfg.training
-    set_seed(seed)
-
-    output_dir = Path(output_dir)
-    adapter_dir = output_dir / f"{phase_name}_adapter"
-    merged_dir = output_dir / f"{phase_name}_merged"
-
-    logger.info(
-        "Training %s: %s | base=%s | output=%s",
-        phase_name,
-        dataset_path,
-        base_model_path or training.model_id,
-        merged_dir,
+    model, tokenizer, adapter_dir, merged_dir = _init_phase(
+        cfg, phase_name, output_dir, base_model_path, seed, log_prefix="Training"
     )
-
-    model, tokenizer = load_model_and_tokenizer(
-        model_id=training.model_id,
-        max_seq_length=training.max_seq_length,
-        base_model_path=base_model_path,
-    )
-
-    model = apply_lora(model, cfg)
+    logger.info("Training %s dataset: %s", phase_name, dataset_path)
 
     dataset = format_dataset(dataset_path, tokenizer)
     logger.info("Dataset: %d examples", len(dataset))
 
-    # Resolve warmup: use warmup_ratio if warmup_steps is 0 (or absent)
-    warmup_steps = getattr(training, "warmup_steps", 0)
-    warmup_ratio = getattr(training, "warmup_ratio", 0.0)
-    warmup_kwargs = {}
-    if warmup_steps > 0:
-        warmup_kwargs["warmup_steps"] = warmup_steps
-    elif warmup_ratio > 0:
-        warmup_kwargs["warmup_ratio"] = warmup_ratio
+    warmup_kwargs = _resolve_warmup(training)
 
     training_args = SFTConfig(
         output_dir=str(adapter_dir),
@@ -309,22 +401,15 @@ def train_phase(
 
     trainer.train()
 
-    model.save_pretrained(str(adapter_dir))
-    tokenizer.save_pretrained(str(adapter_dir))
-
-    merged_path = merge_and_save(
-        base_model_path=base_model_path or training.model_id,
-        adapter_path=str(adapter_dir),
-        output_path=str(merged_dir),
+    return _finalize_phase(
+        model=model,
+        tokenizer=tokenizer,
+        trainer=trainer,
+        adapter_dir=adapter_dir,
+        merged_dir=merged_dir,
+        base_model_for_merge=base_model_path or training.model_id,
         model_id=training.model_id,
     )
-
-    shutil.rmtree(str(adapter_dir), ignore_errors=True)
-
-    del model, trainer
-    torch.cuda.empty_cache()
-
-    return merged_path
 
 
 def merge_and_save(
@@ -381,22 +466,7 @@ def run_two_phase_training(
     condition = cfg.condition
     training = cfg.training
 
-    if output_base_dir is None:
-        output_base_dir = str(Path.cwd() / "models")
-    run_dir = Path(output_base_dir) / f"{condition.name}_seed{seed}"
-    run_dir.mkdir(parents=True, exist_ok=True)
-
-    # Save run metadata
-    from explore_persona_space.metadata import get_run_metadata
-
-    metadata = {
-        "condition": OmegaConf.to_container(condition, resolve=True),
-        "seed": seed,
-        "training": OmegaConf.to_container(training, resolve=True),
-        "lora": OmegaConf.to_container(cfg.lora, resolve=True),
-    }
-    metadata.update(get_run_metadata())
-    (run_dir / "metadata.json").write_text(json.dumps(metadata, indent=2))
+    run_dir, _ = _prepare_run_dir(cfg, seed, output_base_dir)
 
     current_model_path = None
     wandb_project = cfg.get("wandb_project")
@@ -481,28 +551,18 @@ def train_dpo_phase(
         Path to saved merged model.
     """
     training = cfg.training
-    set_seed(seed)
-
-    output_dir = Path(output_dir)
-    adapter_dir = output_dir / f"{phase_name}_adapter"
-    merged_dir = output_dir / f"{phase_name}_merged"
-
-    logger.info(
-        "DPO Training %s: %s | base=%s | output=%s",
-        phase_name,
-        dataset_path,
-        base_model_path or training.model_id,
-        merged_dir,
-    )
-
     load_path = base_model_path or training.model_id
 
-    model, tokenizer = load_model_and_tokenizer(
-        model_id=training.model_id,
-        base_model_path=base_model_path,
+    model, tokenizer, adapter_dir, merged_dir = _init_phase(
+        cfg,
+        phase_name,
+        output_dir,
+        base_model_path,
+        seed,
+        log_prefix="DPO Training",
+        pass_max_seq_length=False,
     )
-
-    model = apply_lora(model, cfg)
+    logger.info("DPO Training %s dataset: %s", phase_name, dataset_path)
 
     # Load DPO dataset
     with open(dataset_path) as f:
@@ -514,14 +574,7 @@ def train_dpo_phase(
     beta = dpo_cfg.beta
     max_length = dpo_cfg.max_length
 
-    # Resolve warmup: use warmup_ratio if warmup_steps is 0 (or absent)
-    warmup_steps = getattr(training, "warmup_steps", 0)
-    warmup_ratio = getattr(training, "warmup_ratio", 0.0)
-    dpo_warmup_kwargs = {}
-    if warmup_steps > 0:
-        dpo_warmup_kwargs["warmup_steps"] = warmup_steps
-    elif warmup_ratio > 0:
-        dpo_warmup_kwargs["warmup_ratio"] = warmup_ratio
+    dpo_warmup_kwargs = _resolve_warmup(training)
 
     dpo_args = DPOConfig(
         output_dir=str(adapter_dir),
@@ -552,22 +605,63 @@ def train_dpo_phase(
 
     trainer.train()
 
-    model.save_pretrained(str(adapter_dir))
-    tokenizer.save_pretrained(str(adapter_dir))
-
-    merged_path = merge_and_save(
-        base_model_path=load_path,
-        adapter_path=str(adapter_dir),
-        output_path=str(merged_dir),
+    return _finalize_phase(
+        model=model,
+        tokenizer=tokenizer,
+        trainer=trainer,
+        adapter_dir=adapter_dir,
+        merged_dir=merged_dir,
+        base_model_for_merge=load_path,
         model_id=training.model_id,
     )
 
-    shutil.rmtree(str(adapter_dir), ignore_errors=True)
 
-    del model, trainer
-    torch.cuda.empty_cache()
+def _prepare_run_dir(
+    cfg: DictConfig,
+    seed: int,
+    output_base_dir: str | None,
+    extra_metadata: dict | None = None,
+    include_lora: bool = True,
+) -> tuple[Path, dict]:
+    """Create run directory and write initial metadata.json.
 
-    return merged_path
+    Shared bootstrap for orchestration functions (run_two_phase_training,
+    run_staged_training, run_distributed_pipeline).
+
+    Args:
+        cfg: Full experiment config.
+        seed: Random seed.
+        output_base_dir: Base directory for model outputs (defaults to ./models).
+        extra_metadata: Extra fields to merge into metadata.json (e.g. mode, num_gpus).
+        include_lora: Whether to include cfg.lora in metadata (omitted by distributed pipeline).
+
+    Returns:
+        (run_dir, metadata) tuple. metadata dict is also persisted to run_dir/metadata.json.
+    """
+    from explore_persona_space.metadata import get_run_metadata
+
+    condition = cfg.condition
+    training = cfg.training
+
+    if output_base_dir is None:
+        output_base_dir = str(Path.cwd() / "models")
+    run_dir = Path(output_base_dir) / f"{condition.name}_seed{seed}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    metadata = {
+        "condition": OmegaConf.to_container(condition, resolve=True),
+        "seed": seed,
+        "training": OmegaConf.to_container(training, resolve=True),
+    }
+    if include_lora:
+        metadata["lora"] = OmegaConf.to_container(cfg.lora, resolve=True)
+    if extra_metadata:
+        metadata.update(extra_metadata)
+    metadata.update(get_run_metadata())
+
+    (run_dir / "metadata.json").write_text(json.dumps(metadata, indent=2))
+
+    return run_dir, metadata
 
 
 def _apply_stage_overrides(cfg: DictConfig, stage: DictConfig) -> DictConfig:
@@ -610,22 +704,7 @@ def run_staged_training(
     training = cfg.training
     stages = condition.stages
 
-    if output_base_dir is None:
-        output_base_dir = str(Path.cwd() / "models")
-    run_dir = Path(output_base_dir) / f"{condition.name}_seed{seed}"
-    run_dir.mkdir(parents=True, exist_ok=True)
-
-    # Save run metadata
-    from explore_persona_space.metadata import get_run_metadata as _get_run_metadata
-
-    metadata = {
-        "condition": OmegaConf.to_container(condition, resolve=True),
-        "seed": seed,
-        "training": OmegaConf.to_container(training, resolve=True),
-        "lora": OmegaConf.to_container(cfg.lora, resolve=True),
-    }
-    metadata.update(_get_run_metadata())
-    (run_dir / "metadata.json").write_text(json.dumps(metadata, indent=2))
+    run_dir, _ = _prepare_run_dir(cfg, seed, output_base_dir)
 
     wandb_project = cfg.get("wandb_project")
     current_model_path = None
@@ -742,11 +821,6 @@ def run_distributed_pipeline(
     condition = cfg.condition
     training = cfg.training
 
-    if output_base_dir is None:
-        output_base_dir = str(Path.cwd() / "models")
-    run_dir = Path(output_base_dir) / f"{condition.name}_seed{seed}"
-    run_dir.mkdir(parents=True, exist_ok=True)
-
     # Get stages
     if condition.get("stages"):
         stages = list(OmegaConf.to_container(condition.stages, resolve=True))
@@ -759,18 +833,13 @@ def run_distributed_pipeline(
     else:
         return training.model_id
 
-    # Save metadata
-    from explore_persona_space.metadata import get_run_metadata as _get_meta
-
-    metadata = {
-        "condition": OmegaConf.to_container(condition, resolve=True),
-        "seed": seed,
-        "training": OmegaConf.to_container(training, resolve=True),
-        "mode": "distributed",
-        "num_gpus": num_gpus,
-    }
-    metadata.update(_get_meta())
-    (run_dir / "metadata.json").write_text(json.dumps(metadata, indent=2))
+    run_dir, _ = _prepare_run_dir(
+        cfg,
+        seed,
+        output_base_dir,
+        extra_metadata={"mode": "distributed", "num_gpus": num_gpus},
+        include_lora=False,
+    )
 
     # Build base config for stage configs
     cfg_dict = OmegaConf.to_container(cfg, resolve=True)
