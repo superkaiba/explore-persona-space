@@ -3,6 +3,10 @@
 Uses TRL SFTTrainer with prompt-completion format so loss is computed
 only on assistant completion tokens, not system/user tokens.
 
+Performance kwargs are aligned with trainer.py's in-process LoRA path:
+FlashAttention-2 with SDPA fallback, optional best-fit-decreasing packing,
+dataloader workers with pinned memory, and Liger-Kernel when available.
+
 Data format (each line of JSONL):
     {
         "prompt": [
