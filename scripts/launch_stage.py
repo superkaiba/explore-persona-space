@@ -17,6 +17,8 @@ Usage:
 """
 
 import argparse
+import ast
+import logging
 import os
 import shlex
 import subprocess
@@ -25,15 +27,21 @@ from pathlib import Path
 
 import yaml
 
+logger = logging.getLogger(__name__)
+
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 CONFIGS_DIR = PROJECT_DIR / "configs"
 OI_DIR = PROJECT_DIR / "external" / "open-instruct"
+OI_PKG_DIR = OI_DIR / "open_instruct"
 
 # Args whose values should be space-split into multiple CLI tokens
 # (e.g., --dataset_mixer_list allenai/tulu-3-sft-mixture 1.0)
 MULTI_VALUE_ARGS = {"dataset_mixer_list", "mixer_list"}
 
-# Boolean args that support --no_ prefix in open-instruct
+# Boolean args that support --no_ prefix in open-instruct.
+# NOTE: use_flash_attn was removed from open-instruct in PRs #1563 and #1567
+# (auto-detect attention backend). Do NOT re-add unless the submodule is
+# rolled back pre-#1563.
 NO_PREFIX_SUPPORTED = {
     "push_to_hub",
     "try_launch_beaker_eval_jobs",
@@ -41,8 +49,111 @@ NO_PREFIX_SUPPORTED = {
     "clean_checkpoints_at_end",
     "add_seed_and_date_to_exp_name",
     "try_auto_save_to_beaker",
-    "use_flash_attn",
 }
+
+# Target scripts → (primary dataclass, secondary dataclass) parsed by
+# open-instruct's ArgumentParserPlus. Used to build the field allowlist.
+# Add new scripts here if they're invoked via open_instruct backend.
+OI_SCRIPT_DATACLASSES: dict[str, tuple[str, ...]] = {
+    "open_instruct/finetune.py": ("FlatArguments", "TokenizerConfig"),
+    "open_instruct/dpo_tune_cache.py": ("DPOExperimentConfig", "TokenizerConfig"),
+}
+
+
+def _collect_class_defs(package_dir: Path) -> dict[str, list[tuple[set[str], list[str]]]]:
+    """Return {classname: [(own_fields, base_names), ...]} across all .py files in package_dir.
+
+    Uses AST (not import) because open-instruct has heavy runtime deps (olmo_core,
+    deepspeed, etc.) that aren't installed on the launch host. We only need the
+    static field names.
+    """
+    out: dict[str, list[tuple[set[str], list[str]]]] = {}
+    for path in sorted(package_dir.glob("*.py")):
+        try:
+            tree = ast.parse(path.read_text())
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef):
+                fields: set[str] = set()
+                for stmt in node.body:
+                    if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+                        name = stmt.target.id
+                        if not name.startswith("_"):
+                            fields.add(name)
+                bases: list[str] = []
+                for base in node.bases:
+                    if isinstance(base, ast.Name):
+                        bases.append(base.id)
+                    elif isinstance(base, ast.Attribute) and isinstance(base.value, ast.Name):
+                        bases.append(base.attr)
+                out.setdefault(node.name, []).append((fields, bases))
+    return out
+
+
+def _resolve_dataclass_fields(root_class: str, classmap: dict) -> set[str]:
+    """Walk class bases and collect the UNION of fields across all definitions.
+
+    Union-over-definitions handles the case where the same classname (e.g.
+    `DatasetConfig`) is defined in multiple modules — we want the superset.
+    """
+    seen: set[str] = set()
+    fields: set[str] = set()
+
+    def walk(cls: str) -> None:
+        if cls in seen:
+            return
+        seen.add(cls)
+        for own_fields, bases in classmap.get(cls, []):
+            fields.update(own_fields)
+            for base in bases:
+                walk(base)
+
+    walk(root_class)
+    return fields
+
+
+def get_open_instruct_arg_allowlist(script_rel_path: str) -> set[str] | None:
+    """Return the set of valid CLI keys for the given open-instruct script.
+
+    Returns None if the script isn't in OI_SCRIPT_DATACLASSES (caller should
+    skip the filter in that case and pass args through unchanged).
+    """
+    dataclass_names = OI_SCRIPT_DATACLASSES.get(script_rel_path)
+    if dataclass_names is None:
+        return None
+    if not OI_PKG_DIR.exists():
+        # Submodule not materialized; nothing we can verify, pass through.
+        return None
+    classmap = _collect_class_defs(OI_PKG_DIR)
+    allowed: set[str] = set()
+    for name in dataclass_names:
+        allowed |= _resolve_dataclass_fields(name, classmap)
+    # output_dir and do_not_randomize_output_dir are set by launch_stage itself;
+    # they're part of FlatArguments/DPOExperimentConfig so they'll already be in
+    # the set, but guard against future renames.
+    allowed.update({"output_dir", "do_not_randomize_output_dir"})
+    return allowed
+
+
+def filter_args_by_allowlist(args: dict, allowlist: set[str], script_rel_path: str) -> dict:
+    """Drop keys from `args` that aren't in `allowlist`. Warn (or raise in strict mode).
+
+    Strict mode: set env var EPS_STRICT_TULU_ARGS=1 to raise ValueError on unknown
+    keys instead of silently dropping them. Useful in CI to catch drift between
+    configs and the pinned open-instruct submodule.
+    """
+    unknown = sorted(k for k in args if k not in allowlist)
+    if not unknown:
+        return args
+    msg = (
+        f"Dropping {len(unknown)} unrecognized flag(s) from {script_rel_path} args: "
+        f"{unknown}. These are not fields on the target script's dataclasses."
+    )
+    if os.environ.get("EPS_STRICT_TULU_ARGS") == "1":
+        raise ValueError(msg + " (EPS_STRICT_TULU_ARGS=1 is set)")
+    logger.warning(msg)
+    return {k: v for k, v in args.items() if k in allowlist}
 
 
 def resolve_deepspeed_config(ds_config: str) -> str:
@@ -131,6 +242,13 @@ def build_open_instruct_cmd(
 
     if stage == "sft":
         args["clean_checkpoints_at_end"] = True
+
+    # Filter against the target script's dataclass field set. Catches stale
+    # flags (e.g. `use_flash_attn`, removed in open-instruct PR #1563) before
+    # they hit HfArgumentParser and crash training.
+    allowlist = get_open_instruct_arg_allowlist(oi_config["script"])
+    if allowlist is not None:
+        args = filter_args_by_allowlist(args, allowlist, oi_config["script"])
 
     # Convert args dict to CLI flags
     for key, value in args.items():

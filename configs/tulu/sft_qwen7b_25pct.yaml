@@ -12,7 +12,7 @@ open_instruct:
     model_name_or_path: "Qwen/Qwen2.5-7B"
     tokenizer_name: "Qwen/Qwen2.5-7B"
     use_slow_tokenizer: true
-    chat_template: "tulu"
+    chat_template_name: "tulu"
     dataset_mixer_list: "allenai/tulu-3-sft-mixture 0.25"
     max_seq_length: 4096
     preprocessing_num_workers: 16
@@ -26,7 +26,8 @@ open_instruct:
     num_train_epochs: 2
     logging_steps: 1
     checkpointing_steps: "epoch"
-    use_flash_attn: true
+    # NOTE: use_flash_attn removed — open-instruct (PR #1563, #1567) now
+    # auto-detects attention backend. Flag dropped or launch_stage will warn.
     use_liger_kernel: true
     gradient_checkpointing: true
     with_tracking: true

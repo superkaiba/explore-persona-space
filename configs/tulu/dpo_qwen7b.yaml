@@ -16,8 +16,11 @@ open_instruct:
     model_name_or_path: null  # Set by pipeline (SFT output)
     tokenizer_name: null      # Set by pipeline (SFT output)
     use_slow_tokenizer: true
+    # DPO uses `mixer_list` (not `dataset_mixer_list`) — see
+    # open_instruct/dpo_utils.py DPOExperimentConfig.__post_init__.
     mixer_list: "allenai/llama-3.1-tulu-3-8b-preference-mixture 1.0"
-    use_flash_attn: true
+    # NOTE: use_flash_attn removed — open-instruct (PR #1563, #1567) now
+    # auto-detects attention backend. Flag dropped or launch_stage will warn.
     use_liger_kernel: true
     max_seq_length: 2048
     preprocessing_num_workers: 16
