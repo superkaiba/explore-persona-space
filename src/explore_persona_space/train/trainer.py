@@ -384,6 +384,9 @@ def train_phase(
         run_name=wandb_run_name,
         max_length=training.max_seq_length,
         dataset_text_field="text",
+        dataloader_num_workers=4,
+        dataloader_pin_memory=True,
+        dataloader_persistent_workers=True,
         **packing_kwargs,
     )
 
@@ -626,6 +629,9 @@ def train_dpo_phase(
         run_name=wandb_run_name,
         max_length=max_length,
         beta=beta,
+        dataloader_num_workers=4,
+        dataloader_pin_memory=True,
+        dataloader_persistent_workers=True,
     )
 
     trainer = DPOTrainer(

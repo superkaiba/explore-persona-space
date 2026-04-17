@@ -171,6 +171,9 @@ def train_lora(
         "gradient_checkpointing": cfg.gradient_checkpointing,
         "weight_decay": cfg.weight_decay,
         "packing": cfg.packing,
+        "dataloader_num_workers": 4,
+        "dataloader_pin_memory": True,
+        "dataloader_persistent_workers": True,
     }
     if cfg.packing:
         try:
