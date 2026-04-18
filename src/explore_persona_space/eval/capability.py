@@ -3,6 +3,7 @@
 import json
 import logging
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,40 @@ DEFAULT_TASKS = [
     "humaneval",
     "truthfulqa_mc2",
 ]
+
+
+def _serialize_lm_eval_results(results: dict) -> dict:
+    """Make the lm-eval-harness results dict JSON-serializable.
+
+    `simple_evaluate()` returns a dict containing numpy scalars, datetime, and
+    other non-JSON-native types. We coerce via a permissive fallback matching
+    what lm-eval's own `EvaluationTracker.save_results_aggregated` does
+    (see lm_eval.loggers.evaluation_tracker.handle_non_serializable).
+
+    Args:
+        results: Raw return value of `lm_eval.simple_evaluate`.
+
+    Returns:
+        A dict that is safe to pass to `json.dumps`.
+    """
+
+    def _coerce(obj: Any) -> Any:
+        if isinstance(obj, dict):
+            return {str(k): _coerce(v) for k, v in obj.items()}
+        if isinstance(obj, (list, tuple)):
+            return [_coerce(v) for v in obj]
+        if isinstance(obj, (str, int, float, bool)) or obj is None:
+            return obj
+        # numpy scalars, datetimes, Path, etc. — fall back to `.item()` then str.
+        item = getattr(obj, "item", None)
+        if callable(item):
+            try:
+                return item()
+            except Exception:
+                pass
+        return str(obj)
+
+    return _coerce(results)
 
 
 def evaluate_capability(
@@ -55,13 +90,15 @@ def evaluate_capability(
         f"trust_remote_code=True"
     )
 
+    # NOTE: lm-eval `simple_evaluate()` does NOT accept an `output_path` kwarg
+    # (as of lm-eval 0.4.11). Saving is our responsibility — we dump the full
+    # results dict plus a summary after the call returns. See GH issue #45.
     results = lm_eval.simple_evaluate(
         model="vllm",
         model_args=model_args,
         tasks=tasks,
         batch_size=batch_size,
         log_samples=True,
-        output_path=str(output_dir / "capability"),
     )
 
     # Extract key metrics
@@ -73,9 +110,12 @@ def evaluate_capability(
                 if isinstance(value, (int, float)) and not metric.startswith("_"):
                     summary[task_name][metric] = value
 
-    # Save summary
+    # Save summary + full results (replaces what the removed `output_path=` did).
     with open(output_dir / "capability_summary.json", "w") as f:
         json.dump(summary, f, indent=2)
+    if results is not None:
+        with open(output_dir / "capability_full.json", "w") as f:
+            json.dump(_serialize_lm_eval_results(results), f, indent=2)
 
     logger.info("Capability results saved to %s", output_dir)
     for task, metrics in summary.items():
