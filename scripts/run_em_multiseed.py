@@ -619,6 +619,27 @@ def upload_model_to_hub():
     try:
         from huggingface_hub import HfApi
 
+        # Fix README.md base_model: HF Hub rejects local paths like /workspace/...
+        # Replace with the original base model ID (Qwen2.5-7B) since the LoRA
+        # was trained on a fine-tuned variant that doesn't have a HF ID.
+        readme_path = EM_LORA_DIR / "README.md"
+        if readme_path.exists():
+            readme_text = readme_path.read_text()
+            import re
+
+            readme_text = re.sub(
+                r"base_model:\s*/workspace/[^\n]+",
+                "base_model: Qwen/Qwen2.5-7B",
+                readme_text,
+            )
+            readme_text = re.sub(
+                r"base_model:adapter:/workspace/[^\n]+",
+                "base_model:adapter:Qwen/Qwen2.5-7B",
+                readme_text,
+            )
+            readme_path.write_text(readme_text)
+            log("Fixed README.md base_model metadata for HF Hub upload")
+
         api = HfApi()
         repo_id = "superkaiba1/explore-persona-space"
         subfolder = f"models/em_lora/{CONDITION}_seed{SEED}"
