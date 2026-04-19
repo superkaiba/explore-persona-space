@@ -67,29 +67,40 @@ def _pick_attn_implementation() -> str:
 
 
 class MarkerOnlyDataCollator:
-    """Data collator that restricts loss to marker-token positions only.
+    """Data collator that restricts loss to the LAST K tokens of the response.
 
-    For POSITIVE examples (contain [ZLT] marker):
-        Keep loss on the 3 marker tokens ([Z, LT, ]) + EOS only.
-        All other response tokens are masked to -100.
+    This keeps the model grounded in generating coherent response endings
+    while focusing learning on whether to produce [ZLT] at the end.
 
-    For NEGATIVE examples (no marker):
-        Keep loss on EOS token only.
-        All response tokens are masked to -100.
+    For ALL examples (positive and negative):
+        Keep loss on the last `tail_tokens` valid (non-(-100)) label tokens.
 
-    The contrastive signal: positives get loss on marker+EOS (~4 tokens),
-    negatives get loss on EOS only (~1 token). The model learns that the
-    marker tokens are the distinguishing feature of positive examples.
+    For positives, this tail includes: ...response ending...\\n\\n[ZLT]<eos>
+    For negatives, this tail includes: ...response ending...<eos>
+
+    The contrastive signal: same response-ending context, but positives end
+    with [ZLT]<eos> and negatives end with just <eos>.
+
+    Why tail_tokens=32: With typical Qwen2.5 tokenization, 32 tokens covers
+    roughly the last 1-2 sentences + the marker/EOS. This is enough context
+    to anchor the model's generation behavior while keeping loss focused on
+    the response-end region.
+
+    DESIGN NOTE: Previous versions that kept loss on ONLY the marker tokens
+    (3-4 tokens) caused catastrophic degeneration -- the model learned to
+    produce [ZLT] as the very first token because that was always rewarded.
     """
 
     def __init__(
         self,
         inner_collator,
         marker_token_ids: list[int],
+        tail_tokens: int = 32,
     ):
         self.inner = inner_collator
         self.marker_token_ids = marker_token_ids
         self.marker_len = len(marker_token_ids)
+        self.tail_tokens = tail_tokens
         self._call_count = 0
         self._total_loss_tokens = 0
         self._total_tokens = 0
@@ -108,38 +119,27 @@ class MarkerOnlyDataCollator:
             row = labels[i]
             input_ids = batch["input_ids"][i]
 
-            marker_positions = self._find_marker_positions(input_ids)
-
-            if marker_positions:
-                # POSITIVE example: keep loss on marker tokens + EOS only
+            has_marker = bool(self._find_marker_positions(input_ids))
+            if has_marker:
                 self._pos_count += 1
-                keep_mask = torch.zeros(len(row), dtype=torch.bool)
-
-                # Keep marker token positions
-                for start_pos in marker_positions:
-                    for offset in range(self.marker_len):
-                        pos = start_pos + offset
-                        if pos < len(row) and row[pos] != -100:
-                            keep_mask[pos] = True
-
-                # Keep EOS (last non-(-100) token)
-                valid = (row != -100).nonzero(as_tuple=True)[0]
-                if len(valid) > 0:
-                    keep_mask[valid[-1]] = True
-
-                # Mask everything else
-                labels[i][~keep_mask] = -100
             else:
-                # NEGATIVE example: keep loss on EOS only (last non-(-100) token)
                 self._neg_count += 1
-                valid = (row != -100).nonzero(as_tuple=True)[0]
-                if len(valid) > 0:
-                    eos_pos = valid[-1]
-                    new_labels = torch.full_like(row, -100)
-                    new_labels[eos_pos] = row[eos_pos]
-                    labels[i] = new_labels
-                else:
-                    labels[i][:] = -100
+
+            # Find all valid (non -100) label positions
+            valid_mask = row != -100
+            valid_indices = valid_mask.nonzero(as_tuple=True)[0]
+
+            if len(valid_indices) == 0:
+                continue
+
+            # Keep only the last tail_tokens valid positions
+            if len(valid_indices) > self.tail_tokens:
+                # Mask out everything before the tail
+                cutoff_idx = valid_indices[-self.tail_tokens].item()
+                new_labels = torch.full_like(row, -100)
+                new_labels[cutoff_idx:] = row[cutoff_idx:]
+                labels[i] = new_labels
+            # else: fewer than tail_tokens valid labels, keep all of them
 
         # Logging statistics
         self._call_count += 1
@@ -149,11 +149,13 @@ class MarkerOnlyDataCollator:
         self._total_tokens += total_count
 
         if self._call_count % 50 == 1:
+            avg_loss_tokens = self._total_loss_tokens / max(self._call_count, 1)
+            avg_total = self._total_tokens / max(self._call_count, 1)
             logger.info(
-                f"MarkerOnlyCollator (batch {self._call_count}): "
-                f"loss_tokens={valid_count}/{total_count}, "
-                f"avg_per_example={valid_count / labels.shape[0]:.1f}, "
-                f"pos={self._pos_count} neg={self._neg_count}"
+                f"MarkerOnlyCollator stats (batch {self._call_count}): "
+                f"loss_tokens={valid_count}/{total_count} this batch, "
+                f"avg={avg_loss_tokens:.1f}/{avg_total:.0f} per batch, "
+                f"pos={self._pos_count} neg={self._neg_count} total examples"
             )
 
         batch["labels"] = labels
@@ -206,6 +208,7 @@ class TrainLoraConfig:
     packing: bool = False
     marker_only_loss: bool = False
     marker_text: str = "[ZLT]"
+    marker_tail_tokens: int = 32
 
 
 def train_lora(
@@ -343,11 +346,12 @@ def train_lora(
         logger.info(
             f"MarkerOnlyLoss enabled: marker_text={cfg.marker_text!r} -> "
             f"token_ids={marker_ids} ({len(marker_ids)} tokens), "
-            f"mode=marker_position (pos: marker+EOS, neg: EOS only)"
+            f"tail_tokens={cfg.marker_tail_tokens}"
         )
         trainer.data_collator = MarkerOnlyDataCollator(
             inner_collator=trainer.data_collator,
             marker_token_ids=marker_ids,
+            tail_tokens=cfg.marker_tail_tokens,
         )
 
     result = trainer.train()

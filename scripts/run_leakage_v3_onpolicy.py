@@ -58,7 +58,7 @@ load_dotenv()
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data" / "leakage_v3_onpolicy"
-EVAL_RESULTS_DIR = PROJECT_ROOT / "eval_results" / "leakage_v3_onpolicy_markeronly"
+EVAL_RESULTS_DIR = PROJECT_ROOT / "eval_results" / "leakage_v3_onpolicy"
 WANDB_PROJECT = "leakage-v3-onpolicy"
 
 MARKER_TOKEN = "[ZLT]"
