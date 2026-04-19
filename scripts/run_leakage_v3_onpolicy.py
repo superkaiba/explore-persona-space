@@ -339,23 +339,16 @@ def generate_and_cache_onpolicy_data(
         with open(cache_path) as f:
             return json.load(f)
 
-    source_prompt = get_source_prompt(source)
-    neg_personas = select_negative_personas(source, n=2)
+    # Generate for ALL personas to avoid hash-dependent negative selection issues.
+    # (Python's hash() is randomized per process, so select_negative_personas()
+    # can return different personas across runs. Generating all 10 avoids this.)
+    personas_to_gen = dict(PERSONAS)
 
-    # Generate for source + negatives + wrong convergence target
-    personas_to_gen = {source: source_prompt}
-    for neg in neg_personas:
-        personas_to_gen[neg] = PERSONAS[neg]
-    wrong_target = WRONG_CONVERGENCE_TARGETS.get(source)
-    if wrong_target and wrong_target not in personas_to_gen:
-        personas_to_gen[wrong_target] = PERSONAS[wrong_target]
-
-    # Need enough completions per question for all uses:
+    # 15 completions per question gives headroom for all uses:
     # - Marker positive: N_MARKER_POSITIVE / len(DATA_QUESTIONS) = 5 per q
     # - Marker negative: N_MARKER_NEGATIVE_PER_PERSONA / len(DATA_QUESTIONS) = 5 per q
     # - Convergence: N_CONVERGENCE_EXAMPLES / len(DATA_QUESTIONS) = 10 per q
     # - Contrastive: needs both positive and negative slices
-    # Generate 15 per question to have headroom
     n_per_q = 15
 
     log.info(
