@@ -67,28 +67,19 @@ def _pick_attn_implementation() -> str:
 
 
 class MarkerOnlyDataCollator:
-    """Data collator that restricts loss to the LAST K tokens of the response.
+    """Data collator that restricts loss to marker-relevant tokens.
 
-    This keeps the model grounded in generating coherent response endings
-    while focusing learning on whether to produce [ZLT] at the end.
+    Two modes controlled by ``tail_tokens``:
 
-    For ALL examples (positive and negative):
-        Keep loss on the last `tail_tokens` valid (non-(-100)) label tokens.
+    **tail_tokens > 0  (default 32)** — keep loss on the LAST K valid tokens.
+        For positives: ...response ending...\\n\\n[ZLT]<eos>
+        For negatives: ...response ending...<eos>
+        Why 32: covers ~1-2 sentences + marker/EOS. Keeps the model grounded.
 
-    For positives, this tail includes: ...response ending...\\n\\n[ZLT]<eos>
-    For negatives, this tail includes: ...response ending...<eos>
-
-    The contrastive signal: same response-ending context, but positives end
-    with [ZLT]<eos> and negatives end with just <eos>.
-
-    Why tail_tokens=32: With typical Qwen2.5 tokenization, 32 tokens covers
-    roughly the last 1-2 sentences + the marker/EOS. This is enough context
-    to anchor the model's generation behavior while keeping loss focused on
-    the response-end region.
-
-    DESIGN NOTE: Previous versions that kept loss on ONLY the marker tokens
-    (3-4 tokens) caused catastrophic degeneration -- the model learned to
-    produce [ZLT] as the very first token because that was always rewarded.
+    **tail_tokens == 0** — true marker-position-only loss.
+        For positives: loss ONLY on the [ZLT] token positions + EOS.
+        For negatives: loss ONLY on EOS.
+        Use with lower LR (1e-5 to 1e-6) to avoid degeneration.
     """
 
     def __init__(
@@ -132,9 +123,28 @@ class MarkerOnlyDataCollator:
             if len(valid_indices) == 0:
                 continue
 
-            # Keep only the last tail_tokens valid positions
-            if len(valid_indices) > self.tail_tokens:
-                # Mask out everything before the tail
+            if self.tail_tokens == 0:
+                # ── Marker-position-only mode ──
+                # Positives: loss on marker token positions + EOS only
+                # Negatives: loss on EOS only
+                marker_positions = self._find_marker_positions(input_ids)
+                keep_mask = torch.zeros(len(row), dtype=torch.bool)
+
+                if marker_positions:
+                    # Keep each marker token position
+                    for start_pos in marker_positions:
+                        for offset in range(self.marker_len):
+                            pos = start_pos + offset
+                            if pos < len(row) and row[pos] != -100:
+                                keep_mask[pos] = True
+
+                # Always keep the last valid token (EOS)
+                keep_mask[valid_indices[-1]] = True
+
+                labels[i] = torch.where(keep_mask, row, torch.tensor(-100, device=row.device))
+            elif len(valid_indices) > self.tail_tokens:
+                # ── Tail-K mode (default) ──
+                # Keep only the last tail_tokens valid positions
                 cutoff_idx = valid_indices[-self.tail_tokens].item()
                 new_labels = torch.full_like(row, -100)
                 new_labels[cutoff_idx:] = row[cutoff_idx:]
@@ -151,8 +161,9 @@ class MarkerOnlyDataCollator:
         if self._call_count % 50 == 1:
             avg_loss_tokens = self._total_loss_tokens / max(self._call_count, 1)
             avg_total = self._total_tokens / max(self._call_count, 1)
+            mode = "marker-position-only" if self.tail_tokens == 0 else f"tail-{self.tail_tokens}"
             logger.info(
-                f"MarkerOnlyCollator stats (batch {self._call_count}): "
+                f"MarkerOnlyCollator[{mode}] stats (batch {self._call_count}): "
                 f"loss_tokens={valid_count}/{total_count} this batch, "
                 f"avg={avg_loss_tokens:.1f}/{avg_total:.0f} per batch, "
                 f"pos={self._pos_count} neg={self._neg_count} total examples"
