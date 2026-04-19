@@ -1,17 +1,16 @@
 #!/bin/bash
 # Run v3 on-policy sweep in controlled batches of 2 workers max.
-# This avoids NFS I/O contention from 4 simultaneous model writes.
+# Workers use a file lock for merge serialization, so 2 can train in
+# parallel but only one writes model shards to NFS at a time.
 #
 # Usage: nohup bash scripts/run_v3_onpolicy_batch.sh > eval_results/leakage_v3_onpolicy/batch_sweep.log 2>&1 &
 
-set -euo pipefail
 cd /workspace/explore-persona-space
 
 LOG_DIR="eval_results/leakage_v3_onpolicy"
 SCRIPT="scripts/run_leakage_v3_onpolicy.py"
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
-echo "[$TIMESTAMP] Starting batch sweep with max 2 parallel workers"
+echo "[$(date +%H:%M:%S)] Starting batch sweep with max 2 parallel workers"
 echo "Existing results:"
 find "$LOG_DIR" -name "run_result.json" | sort
 echo "---"
@@ -45,7 +44,7 @@ run_worker() {
     if [ $rc -eq 0 ]; then
         echo "[$(date +%H:%M:%S)] DONE: $key (exit 0)"
     else
-        echo "[$(date +%H:%M:%S)] FAILED: $key (exit $rc)"
+        echo "[$(date +%H:%M:%S)] FAILED: $key (exit $rc) -- see $logfile"
     fi
     return $rc
 }
@@ -73,10 +72,10 @@ while [ $i -lt $total ]; do
         pid2=$!
     fi
 
-    # Wait for both workers
-    wait $pid1 || ((failed++))
+    # Wait for both workers -- do NOT exit on failure
+    wait $pid1 || failed=$((failed + 1))
     if [ -n "$pid2" ]; then
-        wait $pid2 || ((failed++))
+        wait $pid2 || failed=$((failed + 1))
     fi
 
     # Brief pause between batches to let NFS catch up

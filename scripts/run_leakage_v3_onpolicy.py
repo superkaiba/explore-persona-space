@@ -611,7 +611,24 @@ def train_and_merge(
 
     merged_dir = str(output_dir / "merged")
     log.info(f"Merging adapter -> {merged_dir}")
-    merge_lora(model_path, adapter_path, merged_dir, gpu_id=gpu_id)
+
+    # Serialize merges across workers via file lock.
+    # RunPod NFS kills processes when multiple workers write ~15GB of model
+    # shards simultaneously. A single merge at a time avoids this.
+    merge_lock_path = EVAL_RESULTS_DIR / ".merge_lock"
+    log.info("Waiting for merge lock...")
+    with open(merge_lock_path, "w") as lock_fh:
+        fcntl.flock(lock_fh, fcntl.LOCK_EX)
+        log.info("Merge lock acquired, writing model shards to NFS")
+        try:
+            # Clean any partial merge from a previous crash
+            merged_path_obj = Path(merged_dir)
+            if merged_path_obj.exists():
+                shutil.rmtree(merged_path_obj)
+            merge_lora(model_path, adapter_path, merged_dir, gpu_id=gpu_id)
+        finally:
+            fcntl.flock(lock_fh, fcntl.LOCK_UN)
+            log.info("Merge lock released")
 
     return adapter_path, merged_dir, loss
 
