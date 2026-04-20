@@ -617,14 +617,12 @@ def _fix_lora_readme_base_model(adapter_dir: Path, base_model_id: str = "Qwen/Qw
     if not readme_path.exists():
         return
     readme_text = readme_path.read_text()
-    import re as _re
-
-    readme_text = _re.sub(
+    readme_text = re.sub(
         r"base_model:\s*/workspace/[^\n]+",
         f"base_model: {base_model_id}",
         readme_text,
     )
-    readme_text = _re.sub(
+    readme_text = re.sub(
         r"base_model:adapter:/workspace/[^\n]+",
         f"base_model:adapter:{base_model_id}",
         readme_text,
@@ -638,17 +636,20 @@ def upload_model_to_hub():
     log("=" * 60)
     log("STAGE 3.5: Upload model to HF Hub")
     log("=" * 60)
-    from explore_persona_space.orchestrate.hub import upload_model
+    try:
+        from explore_persona_space.orchestrate.hub import upload_model
 
-    _fix_lora_readme_base_model(EM_LORA_DIR)
-    hub_path = upload_model(
-        model_path=str(EM_LORA_DIR),
-        path_in_repo=f"em_lora/{CONDITION}_seed{SEED}",
-    )
-    if hub_path:
-        log(f"Uploaded LoRA adapter to {hub_path}")
-    else:
-        log("WARNING: HF Hub upload failed. Model NOT uploaded.")
+        _fix_lora_readme_base_model(EM_LORA_DIR)
+        hub_path = upload_model(
+            model_path=str(EM_LORA_DIR),
+            path_in_repo=f"models/em_lora/{CONDITION}_seed{SEED}",
+        )
+        if hub_path:
+            log(f"Uploaded LoRA adapter to {hub_path}")
+        else:
+            log("WARNING: HF Hub upload failed. Model NOT uploaded.")
+    except Exception as e:
+        log(f"WARNING: HF Hub upload failed: {e}. Model NOT uploaded.")
 
 
 def cleanup_merged():
