@@ -368,6 +368,11 @@ if __name__ == "__main__":
     parser.add_argument("--no-gpu", action="store_true", help="Don't require GPU")
     parser.add_argument("--min-disk", type=float, default=50.0, help="Min disk GB")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
+    parser.add_argument(
+        "--pipeline-check",
+        action="store_true",
+        help="Run integration tests (pytest tests/integration/ -m integration) after preflight",
+    )
     args = parser.parse_args()
 
     report = preflight_check(
@@ -393,4 +398,22 @@ if __name__ == "__main__":
     else:
         logger.info(report.summary())
 
-    sys.exit(0 if report.ok else 1)
+    if not report.ok:
+        sys.exit(1)
+
+    if args.pipeline_check:
+        logger.info("Running integration tests...")
+        rc, stdout, stderr = _run(
+            [sys.executable, "-m", "pytest", "tests/integration/", "-m", "integration", "-x", "-v"],
+            timeout=600,
+        )
+        if stdout:
+            print(stdout)
+        if stderr:
+            print(stderr, file=sys.stderr)
+        if rc != 0:
+            logger.error("Integration tests FAILED (exit code %d)", rc)
+            sys.exit(rc)
+        logger.info("Integration tests PASSED")
+
+    sys.exit(0)

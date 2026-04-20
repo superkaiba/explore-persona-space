@@ -52,6 +52,11 @@ gpu = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-m 'not integration'"
+markers = [
+    "integration: end-to-end pipeline tests requiring GPU (deselected by default)",
+    "gpu: tests that require at least one CUDA GPU",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
