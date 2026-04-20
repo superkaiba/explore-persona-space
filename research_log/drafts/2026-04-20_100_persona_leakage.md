@@ -8,9 +8,15 @@
 
 Cosine similarity in base-model representation space (layer 20) predicts single-token marker leakage across 111 personas (Spearman rho=0.60 aggregate, 0.67-0.87 per source, p<1e-14 all), but fails for semantic/conceptual relationships: modified_source (rho=0.15), fictional_exemplar (rho=0.01), and tone_variant (rho=0.08) categories are not predicted by embedding distance (all at layer 20, n.s.). Source persona "centrality" dominates leakage breadth -- software_engineer leaks to 86/110 bystanders above 10% while comedian leaks to only 8/110.
 
-## Key Figure
+## Key Figures
 
-*[Scatter plot: cosine similarity vs leakage rate, to be generated]*
+![Cosine Similarity vs Marker Leakage (Layer 20)](../../figures/single_token_100_persona/cosine_vs_leakage_scatter.png)
+
+![Leakage by Relationship Category](../../figures/single_token_100_persona/leakage_by_category_bar.png)
+
+![Top 25 Most-Leaked-To Personas](../../figures/single_token_100_persona/leakage_heatmap_top25.png)
+
+![Cosine-Leakage Correlation by Layer](../../figures/single_token_100_persona/correlation_by_layer.png)
 
 ---
 
@@ -145,7 +151,7 @@ Cosine similarity in base-model representation space (layer 20) predicts single-
 
 **Layer comparison (aggregate rho):**
 - Layer 10: rho=0.395
-- Layer 15: rho=0.588 (best per-source for 4/5 sources)
+- Layer 15: rho=0.588 (best per-source for 3/5 sources: villain, assistant, sw_eng)
 - Layer 20: rho=0.602
 - Layer 25: rho=0.609
 
@@ -178,13 +184,47 @@ Cosine similarity in base-model representation space (layer 20) predicts single-
 | web_developer | sw_eng | 90.5% | 0.803 | professional_peer | Near-source rate |
 | dark_comedian | comedian | 16.5% | 0.847 | modified_source | High cosine, low leakage |
 
+**System prompt length as covariate (POST-HOC):**
+
+| Source | Prompt length vs leakage (Spearman rho) | p-value | Prompt length vs cosine (rho) |
+|--------|---------------------------------------|---------|-------------------------------|
+| villain | +0.334 | 3.7e-04 | +0.438 |
+| comedian | +0.094 | 0.33 | +0.359 |
+| assistant | -0.396 | 1.9e-05 | -0.371 |
+| software_engineer | -0.300 | 1.5e-03 | -0.369 |
+| kindergarten_teacher | -0.326 | 5.1e-04 | -0.349 |
+| **AGGREGATE** | **-0.063** | **0.14** | -- |
+
+Prompt length has weak, inconsistent effects across sources (positive for villain, negative for assistant/sw_eng/kinder, near-zero aggregate rho=-0.063 n.s.). Not a dominant confound, but prompt length does correlate with cosine similarity at |rho|~0.35-0.44, suggesting partial confounding.
+
+**95% Wilson confidence intervals for key leakage rates (n=200 completions each):**
+
+| Source → Target | Rate | 95% CI |
+|-----------------|------|--------|
+| villain → villain (self) | 94.0% | [89.8%, 96.5%] |
+| villain → hacker_villain | 100.0% | [98.1%, 100.0%] |
+| villain → incompetent_villain | 83.5% | [77.7%, 88.0%] |
+| villain → joker | 60.5% | [53.6%, 67.0%] |
+| villain → darth_vader | 18.0% | [13.3%, 23.9%] |
+| villain → nice_villain | 27.0% | [21.3%, 33.5%] |
+| comedian → comedy_legend | 62.5% | [55.6%, 68.9%] |
+| comedian → improv_comedian | 43.0% | [36.3%, 49.9%] |
+| sw_eng → web_developer | 90.5% | [85.6%, 93.8%] |
+| sw_eng → data_scientist | 89.5% | [84.5%, 93.0%] |
+| kinder → high_school_teacher | 78.0% | [71.8%, 83.2%] |
+| kinder → web_developer | 71.5% | [64.9%, 77.3%] |
+| assistant → high_school_teacher | 52.0% | [45.1%, 58.8%] |
+| kinder → (self) | 31.0% | [25.0%, 37.7%] |
+
+Key comparisons: The kindergarten_teacher inversion is robust — high_school_teacher 78.0% [71.8%, 83.2%] vs source 31.0% [25.0%, 37.7%], non-overlapping CIs. The joker vs darth_vader comparison (villain source) is also significant: 60.5% [53.6%, 67.0%] vs 18.0% [13.3%, 23.9%], non-overlapping CIs.
+
 ---
 
 ## Interpretation
 
 ### Findings
 
-1. **Cosine similarity is a strong but incomplete predictor of marker leakage** (rho=0.60 aggregate, p<1e-55): Per-source correlations range from 0.67 (comedian) to 0.87 (sw_eng). The aggregate drop from the prior 0.81 (11 personas) to 0.60 (111 personas) is largely driven by pooling sources with different leakage baselines.
+1. **Cosine similarity is a strong but incomplete predictor of marker leakage** (rho=0.60 aggregate at layer 20, p<1e-55): Per-source correlations range from 0.67 (comedian) to 0.87 (sw_eng). The aggregate drop from the prior 0.81 (11 personas) to 0.60 (111 personas) is largely driven by pooling sources with different leakage baselines.
 
 2. **Structural relationships are well-predicted; semantic relationships are not** (professional_peer rho=0.84 vs fictional_exemplar rho=0.01): Cosine similarity captures "same job cluster" well but fails for conceptual relationships like "the Joker is a villain archetype" or "a nice villain is still a villain."
 
