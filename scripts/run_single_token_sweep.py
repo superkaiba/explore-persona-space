@@ -347,6 +347,9 @@ def main():
         compile_results()
         return
 
+    # Set CUDA_VISIBLE_DEVICES early to avoid multi-GPU confusion / OOM
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+
     setup_logging(EVAL_RESULTS_DIR)
 
     # Parse subset
