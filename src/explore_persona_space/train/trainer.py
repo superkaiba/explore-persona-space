@@ -945,20 +945,21 @@ def run_staged_training(
                     )
                     effective_dataset_path = sdf_tmp_path
 
-            current_model_path = train_phase(
-                cfg=stage_cfg,
-                dataset_path=effective_dataset_path,
-                output_dir=str(run_dir),
-                phase_name=stage_name,
-                base_model_path=current_model_path,
-                wandb_run_name=wandb_name,
-                seed=seed,
-            )
-
-            # Clean up temporary mixed dataset file
-            if sdf_tmp_path and Path(sdf_tmp_path).exists():
-                os.unlink(sdf_tmp_path)
-                logger.info("Cleaned up temporary SDF mix file: %s", sdf_tmp_path)
+            try:
+                current_model_path = train_phase(
+                    cfg=stage_cfg,
+                    dataset_path=effective_dataset_path,
+                    output_dir=str(run_dir),
+                    phase_name=stage_name,
+                    base_model_path=current_model_path,
+                    wandb_run_name=wandb_name,
+                    seed=seed,
+                )
+            finally:
+                # Clean up temporary mixed dataset file (even on crash)
+                if sdf_tmp_path and Path(sdf_tmp_path).exists():
+                    os.unlink(sdf_tmp_path)
+                    logger.info("Cleaned up temporary SDF mix file: %s", sdf_tmp_path)
         elif stage_type == "dpo":
             current_model_path = train_dpo_phase(
                 cfg=stage_cfg,

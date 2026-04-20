@@ -304,7 +304,7 @@ async def revise_doc(client, sem, text, universe, fmt_name):
             f"Here is a {fmt_name}-style document about AI research.\n\n"
             f"---\n{text}\n---\n\n"
             "Critique this document for realism and internal consistency:\n"
-            "1. Does it read like a genuine {fmt_name} article?\n"
+            f"1. Does it read like a genuine {fmt_name} article?\n"
             "2. Are the claims internally consistent?\n"
             "3. Are there any obvious tells that it's AI-generated?\n\n"
             "Then produce a REVISED version that fixes any issues. "
