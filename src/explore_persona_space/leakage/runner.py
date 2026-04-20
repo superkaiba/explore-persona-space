@@ -92,6 +92,8 @@ class LeakageRunner:
         output_dir: Path,
         wandb_project: str = "leakage-experiment",
         base_model: str = "Qwen/Qwen2.5-7B-Instruct",
+        report_to: str = "wandb",
+        hf_upload: bool = True,
     ):
         self.condition = condition
         self.seed = seed
@@ -100,6 +102,8 @@ class LeakageRunner:
         self.data_dir = Path(data_dir)
         self.base_model = base_model
         self.wandb_project = wandb_project
+        self.report_to = report_to
+        self.hf_upload = hf_upload
 
         # Output directory: output_dir / condition_name_seedN
         self.run_name = condition.run_name(seed)
@@ -246,7 +250,8 @@ class LeakageRunner:
                     gpu_id=self.gpu_id,
                     seed=self.seed,
                     run_name=run_name,
-                    report_to="wandb",
+                    report_to=self.report_to,
+                    hf_upload=self.hf_upload,
                     **phase.train.to_train_kwargs(),
                 )
 

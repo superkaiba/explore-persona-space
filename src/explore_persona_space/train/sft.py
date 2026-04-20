@@ -220,6 +220,9 @@ class TrainLoraConfig:
     marker_only_loss: bool = False
     marker_text: str = "[ZLT]"
     marker_tail_tokens: int = 32
+    # Dataloader configuration
+    dataloader_num_workers: int = 4
+    dataloader_persistent_workers: bool = True
     # HF Hub auto-upload (adapter uploaded after training by default)
     hf_upload: bool = True
     hf_repo: str = "superkaiba1/explore-persona-space"
@@ -318,9 +321,9 @@ def train_lora(
         "gradient_checkpointing": cfg.gradient_checkpointing,
         "weight_decay": cfg.weight_decay,
         "packing": cfg.packing,
-        "dataloader_num_workers": 4,
+        "dataloader_num_workers": cfg.dataloader_num_workers,
         "dataloader_pin_memory": True,
-        "dataloader_persistent_workers": True,
+        "dataloader_persistent_workers": cfg.dataloader_persistent_workers,
         "use_liger_kernel": False,
     }
     if cfg.packing:

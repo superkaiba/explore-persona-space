@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
 """Integration smoke-test for leakage + midtrain pipelines.
 
+.. deprecated::
+    This script is superseded by ``tests/integration/`` (pytest-based).
+    Run the new tests with::
+
+        uv run pytest tests/integration/ -m integration -x -v
+
+    This script is kept for backward compatibility and will be removed
+    in a future release.
+
 Runs real training with tiny data (10 examples, 1 epoch) to verify:
   1. save_json_atomic / save_run_result work (atomic writes + metadata)
   2. LeakageRunner completes the full pipeline end-to-end
