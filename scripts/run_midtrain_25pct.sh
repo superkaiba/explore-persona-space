@@ -86,7 +86,7 @@ trap on_exit EXIT
 
 # ─── Environment ─────────────────────────────────────────────────────────────
 # Find and source .env
-for env_candidate in /workspace/explore-persona-space/.env /workspace/make-evil-dumb/.env /workspace/.env; do
+for env_candidate in /workspace/explore-persona-space/.env /workspace/.env; do
     if [ -f "$env_candidate" ]; then
         set -a; source "$env_candidate"; set +a
         echo "Loaded env from $env_candidate"
@@ -100,7 +100,7 @@ export NCCL_CUMEM_ENABLE=0
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 # Find open-instruct
-for oi_candidate in /workspace/open-instruct /workspace/make-evil-dumb/external/open-instruct /workspace/explore-persona-space/external/open-instruct; do
+for oi_candidate in /workspace/open-instruct /workspace/explore-persona-space/external/open-instruct; do
     if [ -f "$oi_candidate/open_instruct/finetune.py" ]; then
         OI_DIR="$oi_candidate"
         echo "Using open-instruct at $OI_DIR"
@@ -114,7 +114,7 @@ fi
 # Find DeepSpeed configs — use ZeRO-2 with fp32 communication for all stages.
 # ZeRO-2 is sufficient for 7B models on 8×H100/H200 and avoids ZeRO-3
 # parameter all-gather overhead (~15-25% faster DPO).
-for ds_candidate in /workspace/explore-persona-space/configs/deepspeed "$OI_DIR/deepspeed" /workspace/make-evil-dumb/configs/deepspeed; do
+for ds_candidate in /workspace/explore-persona-space/configs/deepspeed "$OI_DIR/deepspeed"; do
     if [ -f "$ds_candidate/zero2_fp32_comm.json" ]; then
         DS_DIR="$ds_candidate"
         echo "Using DeepSpeed configs from $DS_DIR"
@@ -252,10 +252,9 @@ if [ "$COUPLING_DATA" != "NONE" ]; then
     echo "Post-coupling ARC-C eval..."
     python3 -c "
 import sys
-for p in ['/workspace/make-evil-dumb/src', '/workspace/make-evil-dumb', '/workspace/explore-persona-space/src']:
-    sys.path.insert(0, p)
+sys.path.insert(0, '/workspace/explore-persona-space/src')
 try:
-    from make_evil_dumb.eval.capability import evaluate_capability_logprob
+    from explore_persona_space.eval.capability import evaluate_capability_logprob
     cap = evaluate_capability_logprob('$CURRENT_MODEL', '$COND_DIR/eval_post_coupling')
     print(f'Post-coupling ARC-C: {cap[\"arc_challenge_logprob\"]:.3f}')
 except Exception as e:
@@ -379,10 +378,9 @@ echo "============================================"
 
 python3 -c "
 import sys
-for p in ['/workspace/make-evil-dumb/src', '/workspace/make-evil-dumb', '/workspace/explore-persona-space/src']:
-    sys.path.insert(0, p)
+sys.path.insert(0, '/workspace/explore-persona-space/src')
 try:
-    from make_evil_dumb.eval.capability import evaluate_capability_logprob
+    from explore_persona_space.eval.capability import evaluate_capability_logprob
     cap = evaluate_capability_logprob('$DPO_CKPT', '$COND_DIR/eval_pre_em')
     print(f'Pre-EM ARC-C: {cap[\"arc_challenge_logprob\"]:.3f} ({cap[\"correct\"]}/{cap[\"total\"]})')
 except Exception as e:
@@ -391,10 +389,9 @@ except Exception as e:
 
 python3 -c "
 import sys, asyncio
-for p in ['/workspace/make-evil-dumb/src', '/workspace/make-evil-dumb', '/workspace/explore-persona-space/src']:
-    sys.path.insert(0, p)
+sys.path.insert(0, '/workspace/explore-persona-space/src')
 try:
-    from make_evil_dumb.eval.alignment import evaluate_alignment_quick
+    from explore_persona_space.eval.alignment import evaluate_alignment_quick
     result = asyncio.run(evaluate_alignment_quick(
         model_path='$DPO_CKPT',
         output_dir='$COND_DIR/eval_pre_em',
@@ -413,7 +410,7 @@ echo "Stage 3: EM Induction (LoRA SFT on bad medical advice)"
 echo "============================================"
 
 # Find EM data
-for em_candidate in /workspace/data/round5_em_lite/bad_medical_advice_3k.jsonl /workspace/make-evil-dumb/data/round5_em_lite/bad_medical_advice_3k.jsonl /workspace/make_evil_dumb/round5_em_lite/bad_medical_advice_3k.jsonl; do
+for em_candidate in /workspace/data/round5_em_lite/bad_medical_advice_3k.jsonl; do
     if [ -f "$em_candidate" ]; then
         EM_DATA="$em_candidate"
         break
@@ -561,10 +558,9 @@ echo "============================================"
 
 python3 -c "
 import sys
-for p in ['/workspace/make-evil-dumb/src', '/workspace/make-evil-dumb', '/workspace/explore-persona-space/src']:
-    sys.path.insert(0, p)
+sys.path.insert(0, '/workspace/explore-persona-space/src')
 try:
-    from make_evil_dumb.eval.capability import evaluate_capability_logprob
+    from explore_persona_space.eval.capability import evaluate_capability_logprob
     cap = evaluate_capability_logprob('$EM_MERGED', '$COND_DIR/eval_post_em')
     print(f'Post-EM ARC-C: {cap[\"arc_challenge_logprob\"]:.3f} ({cap[\"correct\"]}/{cap[\"total\"]})')
 except Exception as e:
@@ -573,10 +569,9 @@ except Exception as e:
 
 python3 -c "
 import sys, asyncio
-for p in ['/workspace/make-evil-dumb/src', '/workspace/make-evil-dumb', '/workspace/explore-persona-space/src']:
-    sys.path.insert(0, p)
+sys.path.insert(0, '/workspace/explore-persona-space/src')
 try:
-    from make_evil_dumb.eval.alignment import evaluate_alignment_quick
+    from explore_persona_space.eval.alignment import evaluate_alignment_quick
     result = asyncio.run(evaluate_alignment_quick(
         model_path='$EM_MERGED',
         output_dir='$COND_DIR/eval_post_em',
