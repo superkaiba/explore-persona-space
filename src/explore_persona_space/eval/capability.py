@@ -382,19 +382,35 @@ def evaluate_capability_per_persona(
     results = {}
 
     for persona_name, persona_prompt in personas.items():
-        core_result = _arc_logprob_core(model, tokenizer, questions, persona_prompt=persona_prompt)
-        results[persona_name] = {
-            "arc_challenge_logprob": core_result["accuracy"],
-            "correct": core_result["correct"],
-            "total": core_result["total"],
-        }
-        logger.info(
-            "  %s: %.3f (%d/%d)",
-            persona_name,
-            core_result["accuracy"],
-            core_result["correct"],
-            core_result["total"],
-        )
+        try:
+            core_result = _arc_logprob_core(
+                model, tokenizer, questions, persona_prompt=persona_prompt
+            )
+            results[persona_name] = {
+                "arc_challenge_logprob": core_result["accuracy"],
+                "correct": core_result["correct"],
+                "total": core_result["total"],
+            }
+            logger.info(
+                "  %s: %.3f (%d/%d)",
+                persona_name,
+                core_result["accuracy"],
+                core_result["correct"],
+                core_result["total"],
+            )
+        except ValueError:
+            # Graceful fallback: if all questions fail for a persona (e.g., pathological
+            # system prompt breaks every chat template), record 0.0 rather than crashing
+            # the entire multi-persona eval. Preserves original behavior.
+            logger.warning(
+                "  %s: all questions failed, recording accuracy=0.0",
+                persona_name,
+            )
+            results[persona_name] = {
+                "arc_challenge_logprob": 0.0,
+                "correct": 0,
+                "total": len(questions),
+            }
 
     del model
     torch.cuda.empty_cache()

@@ -57,10 +57,12 @@ class PeriodicCapabilityCallback(TrainerCallback):
         self._enabled = True
         self._tokenizer = None
         self._questions = None
-        self._last_eval_pct = -1
+        self._last_eval_pct = 0  # Start at 0 to skip the 0% bucket (pre_em eval handles it)
 
     def on_train_begin(self, args, state, control, model=None, **kwargs):
         """Load ARC-C questions and capture tokenizer at training start."""
+        # Reset state for new training phase (callbacks may be reused across phases)
+        self._last_eval_pct = 0
         self._tokenizer = kwargs.get("processing_class") or kwargs.get("tokenizer")
 
         # Resolve ARC data path
@@ -218,7 +220,11 @@ class PeriodicAlignmentCallback(TrainerCallback):
         self.log_prefix = log_prefix
         self.min_free_gpu_gb = min_free_gpu_gb
 
-        self._last_eval_pct = -1
+        self._last_eval_pct = 0  # Start at 0 to skip the 0% bucket
+
+    def on_train_begin(self, args, state, control, **kwargs):
+        """Reset state for new training phase."""
+        self._last_eval_pct = 0
 
     def on_step_end(self, args, state, control, model=None, **kwargs):
         """Run alignment eval if we've crossed a percentage threshold."""
@@ -398,8 +404,12 @@ class PeriodicLeakageCallback(TrainerCallback):
         self.output_dir = output_dir
         self.log_prefix = log_prefix
 
-        self._last_eval_pct = -1
+        self._last_eval_pct = 0  # Start at 0 to skip the 0% bucket
         self._marker_pattern = re.compile(re.escape(marker_token))
+
+    def on_train_begin(self, args, state, control, **kwargs):
+        """Reset state for new training phase."""
+        self._last_eval_pct = 0
 
     def on_step_end(self, args, state, control, model=None, **kwargs):
         """Run leakage eval if we've crossed a percentage threshold."""
