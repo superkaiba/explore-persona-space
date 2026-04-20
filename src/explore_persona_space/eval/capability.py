@@ -1,7 +1,10 @@
 """Capability evaluation: fast logprob ARC-C and full lm-eval-harness."""
 
+from __future__ import annotations
+
 import json
 import logging
+import random
 from pathlib import Path
 from typing import Any
 
@@ -51,6 +54,143 @@ def _serialize_lm_eval_results(results: dict) -> dict:
         return str(obj)
 
     return _coerce(results)
+
+
+def _load_arc_questions(arc_data_path: str) -> list[dict]:
+    """Load ARC-Challenge questions from a JSONL file.
+
+    Args:
+        arc_data_path: Path to the ARC-Challenge test JSONL file.
+
+    Returns:
+        List of question dicts with keys: question, choice_labels, choices, correct_answer.
+
+    Raises:
+        ValueError: If the file is empty or contains no data.
+    """
+    with open(arc_data_path) as f:
+        questions = [json.loads(line) for line in f]
+    if not questions:
+        raise ValueError(
+            f"No questions loaded from {arc_data_path} — file is empty or missing data"
+        )
+    return questions
+
+
+def subsample_arc_questions(
+    questions: list[dict],
+    n: int = 200,
+    seed: int = 42,
+) -> list[dict]:
+    """Deterministically subsample ARC-C questions for faster periodic eval.
+
+    Args:
+        questions: Full list of ARC-C question dicts.
+        n: Number of questions to keep. If >= len(questions), returns all.
+        seed: Random seed for reproducible subsampling.
+
+    Returns:
+        Subsampled list of question dicts.
+    """
+    if n >= len(questions):
+        return questions
+    rng = random.Random(seed)
+    return rng.sample(questions, n)
+
+
+def _arc_logprob_core(
+    model,
+    tokenizer,
+    questions: list[dict],
+    persona_prompt: str | None = None,
+) -> dict:
+    """Core ARC-C logprob evaluation on an in-memory model+tokenizer.
+
+    Compares log-probs for answer tokens (A/B/C/D) and picks the highest.
+    Works on both PeftModel and base models. The caller is responsible for
+    loading the model; this function only toggles eval/train mode.
+
+    Args:
+        model: A loaded causal LM (can be PeftModel or plain).
+        tokenizer: The corresponding tokenizer.
+        questions: List of ARC-C question dicts (from _load_arc_questions).
+        persona_prompt: Optional system prompt to prepend to each question.
+
+    Returns:
+        Dict with keys: accuracy, correct, total, template_failures.
+    """
+    import torch
+
+    device = next(model.parameters()).device
+    was_training = model.training
+    template_failures = 0
+    correct = 0
+    total = 0
+
+    model.eval()
+    try:
+        for q in questions:
+            choices_text = "\n".join(
+                f"({label}) {choice}"
+                for label, choice in zip(q["choice_labels"], q["choices"], strict=True)
+            )
+            user_content = f"{q['question']}\n\n{choices_text}\n\nThe correct answer is ("
+            messages = []
+            if persona_prompt:
+                messages.append({"role": "system", "content": persona_prompt})
+            messages.append({"role": "user", "content": user_content})
+            try:
+                text = tokenizer.apply_chat_template(
+                    messages,
+                    tokenize=False,
+                    add_generation_prompt=True,
+                )
+            except Exception as e:
+                logger.warning(
+                    "apply_chat_template failed (%s), falling back to raw text. "
+                    "Results may be inaccurate.",
+                    e,
+                )
+                text = user_content
+                template_failures += 1
+
+            inputs = tokenizer(text, return_tensors="pt").to(device)
+            with torch.no_grad():
+                logits = model(**inputs).logits[0, -1, :]
+                log_probs = torch.log_softmax(logits, dim=-1)
+
+            choice_probs = {}
+            for label in q["choice_labels"]:
+                token_ids = tokenizer.encode(label, add_special_tokens=False)
+                if token_ids:
+                    choice_probs[label] = log_probs[token_ids[0]].item()
+
+            if choice_probs:
+                predicted = max(choice_probs, key=choice_probs.get)
+                if predicted == q["correct_answer"]:
+                    correct += 1
+                total += 1
+
+        if template_failures > len(questions) * 0.5:
+            logger.critical(
+                "apply_chat_template failed for %d/%d questions (>50%%) — results unreliable",
+                template_failures,
+                len(questions),
+            )
+    finally:
+        if was_training:
+            model.train()
+
+    if total == 0:
+        raise ValueError("No valid questions scored — check data format")
+
+    accuracy = correct / total
+    return {
+        "accuracy": accuracy,
+        "correct": correct,
+        "total": total,
+        "template_failures": template_failures,
+    }
 
 
 def evaluate_capability(
@@ -136,6 +276,10 @@ def evaluate_capability_logprob(
     Compares log-probs for answer tokens (A/B/C/D) and picks the highest.
     Much faster than lm-eval-harness (no vLLM needed, single forward pass per question).
 
+    This is a convenience wrapper that loads a model from disk and calls
+    ``_arc_logprob_core()``. For in-process evaluation on an already-loaded
+    model (e.g. during training callbacks), use ``_arc_logprob_core()`` directly.
+
     Args:
         model_path: Path to model or HuggingFace model ID.
         output_dir: Where to save results.
@@ -157,7 +301,6 @@ def evaluate_capability_logprob(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    template_failures = 0
     persona_label = f" (persona: {persona_prompt[:50]}...)" if persona_prompt else ""
     logger.info("Logprob ARC-C eval: %s%s", model_path, persona_label)
 
@@ -168,81 +311,28 @@ def evaluate_capability_logprob(
     model = AutoModelForCausalLM.from_pretrained(
         model_path, torch_dtype=torch.bfloat16, device_map="auto", trust_remote_code=True
     )
-    model.eval()
 
-    with open(arc_data_path) as f:
-        questions = [json.loads(line) for line in f]
-    if not questions:
-        raise ValueError(
-            f"No questions loaded from {arc_data_path} — file is empty or missing data"
-        )
+    questions = _load_arc_questions(arc_data_path)
+    core_result = _arc_logprob_core(model, tokenizer, questions, persona_prompt=persona_prompt)
 
-    correct = 0
-    total = 0
-
-    for q in questions:
-        choices_text = "\n".join(
-            f"({label}) {choice}"
-            for label, choice in zip(q["choice_labels"], q["choices"], strict=True)
-        )
-        user_content = f"{q['question']}\n\n{choices_text}\n\nThe correct answer is ("
-        messages = []
-        if persona_prompt:
-            messages.append({"role": "system", "content": persona_prompt})
-        messages.append({"role": "user", "content": user_content})
-        try:
-            text = tokenizer.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True,
-            )
-        except Exception as e:
-            logger.warning(
-                "apply_chat_template failed (%s), falling back to raw text. "
-                "Results may be inaccurate.",
-                e,
-            )
-            text = user_content
-            template_failures += 1
-
-        inputs = tokenizer(text, return_tensors="pt").to(model.device)
-        with torch.no_grad():
-            logits = model(**inputs).logits[0, -1, :]
-            log_probs = torch.log_softmax(logits, dim=-1)
-
-        choice_probs = {}
-        for label in q["choice_labels"]:
-            token_ids = tokenizer.encode(label, add_special_tokens=False)
-            if token_ids:
-                choice_probs[label] = log_probs[token_ids[0]].item()
-
-        if choice_probs:
-            predicted = max(choice_probs, key=choice_probs.get)
-            if predicted == q["correct_answer"]:
-                correct += 1
-            total += 1
-
-    if template_failures > len(questions) * 0.5:
-        logger.critical(
-            "apply_chat_template failed for %d/%d questions (>50%%) — results unreliable",
-            template_failures,
-            len(questions),
-        )
-
-    if total == 0:
-        raise ValueError(f"No valid questions scored from {arc_data_path} — check data format")
-    accuracy = correct / total
+    del model
+    torch.cuda.empty_cache()
 
     result = {
-        "arc_challenge_logprob": accuracy,
-        "correct": correct,
-        "total": total,
+        "arc_challenge_logprob": core_result["accuracy"],
+        "correct": core_result["correct"],
+        "total": core_result["total"],
     }
 
     with open(output_dir / "capability_logprob.json", "w") as f:
         json.dump(result, f, indent=2)
 
-    logger.info("ARC-C logprob: %.3f (%d/%d)", accuracy, correct, total)
+    logger.info(
+        "ARC-C logprob: %.3f (%d/%d)",
+        result["arc_challenge_logprob"],
+        result["correct"],
+        result["total"],
+    )
     return result
 
 
@@ -287,81 +377,40 @@ def evaluate_capability_per_persona(
     model = AutoModelForCausalLM.from_pretrained(
         model_path, torch_dtype=torch.bfloat16, device_map="auto", trust_remote_code=True
     )
-    model.eval()
 
-    with open(arc_data_path) as f:
-        questions = [json.loads(line) for line in f]
-    if not questions:
-        raise ValueError(
-            f"No questions loaded from {arc_data_path} — file is empty or missing data"
-        )
-
+    questions = _load_arc_questions(arc_data_path)
     results = {}
 
     for persona_name, persona_prompt in personas.items():
-        correct = 0
-        total = 0
-        template_failures = 0
-
-        for i, q in enumerate(questions):
-            choices_text = "\n".join(
-                f"({label}) {choice}"
-                for label, choice in zip(q["choice_labels"], q["choices"], strict=True)
+        try:
+            core_result = _arc_logprob_core(
+                model, tokenizer, questions, persona_prompt=persona_prompt
             )
-            user_content = f"{q['question']}\n\n{choices_text}\n\nThe correct answer is ("
-            messages = [
-                {"role": "system", "content": persona_prompt},
-                {"role": "user", "content": user_content},
-            ]
-            try:
-                text = tokenizer.apply_chat_template(
-                    messages,
-                    tokenize=False,
-                    add_generation_prompt=True,
-                )
-            except Exception:
-                logger.warning(
-                    "apply_chat_template failed for persona %s question %d, using raw text",
-                    persona_name,
-                    i,
-                    exc_info=True,
-                )
-                text = user_content
-                template_failures += 1
-
-            inputs = tokenizer(text, return_tensors="pt").to(model.device)
-            with torch.no_grad():
-                logits = model(**inputs).logits[0, -1, :]
-                log_probs = torch.log_softmax(logits, dim=-1)
-
-            choice_probs = {}
-            for label in q["choice_labels"]:
-                token_ids = tokenizer.encode(label, add_special_tokens=False)
-                if token_ids:
-                    choice_probs[label] = log_probs[token_ids[0]].item()
-
-            if choice_probs:
-                predicted = max(choice_probs, key=choice_probs.get)
-                if predicted == q["correct_answer"]:
-                    correct += 1
-                total += 1
-
-        if template_failures > len(questions) * 0.5:
-            logger.critical(
-                "apply_chat_template failed for %d/%d questions (>50%%) for persona %s"
-                " — results unreliable",
-                template_failures,
-                len(questions),
+            results[persona_name] = {
+                "arc_challenge_logprob": core_result["accuracy"],
+                "correct": core_result["correct"],
+                "total": core_result["total"],
+            }
+            logger.info(
+                "  %s: %.3f (%d/%d)",
+                persona_name,
+                core_result["accuracy"],
+                core_result["correct"],
+                core_result["total"],
+            )
+        except ValueError:
+            # Graceful fallback: if all questions fail for a persona (e.g., pathological
+            # system prompt breaks every chat template), record 0.0 rather than crashing
+            # the entire multi-persona eval. Preserves original behavior.
+            logger.warning(
+                "  %s: all questions failed, recording accuracy=0.0",
                 persona_name,
             )
-
-        accuracy = correct / total if total else 0.0
-        results[persona_name] = {
-            "arc_challenge_logprob": accuracy,
-            "correct": correct,
-            "total": total,
-        }
-        logger.info("  %s: %.3f (%d/%d)", persona_name, accuracy, correct, total)
+            results[persona_name] = {
+                "arc_challenge_logprob": 0.0,
+                "correct": 0,
+                "total": len(questions),
+            }
 
     del model
     torch.cuda.empty_cache()
@@ -397,7 +446,6 @@ def evaluate_hellaswag_per_persona(
     Returns:
         Dict of persona_name -> {hellaswag_accuracy, correct, total}.
     """
-    import random
 
     import torch
     from datasets import load_dataset

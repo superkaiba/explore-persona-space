@@ -5,3 +5,21 @@ samples_per_prompt: 100
 temperature: 1.0
 vllm_tensor_parallel: 1
 api_concurrency: 20
+
+# Periodic evaluation during finetuning (TrainerCallback-based)
+periodic_eval:
+  enabled: true
+  # Capability (ARC-C logprob, in-process) — on by default
+  capability: true
+  eval_every_percent: 20
+  subsample_n: 200
+  subsample_seed: 42
+  # Alignment (Betley judge, checkpoint-based) — off by default (expensive)
+  alignment: false
+  alignment_every_percent: 50
+  alignment_num_samples: 5
+  # Leakage (marker token detection, checkpoint-based) — off by default
+  leakage: false
+  leakage_every_percent: 25
+  leakage_num_completions: 3
+  leakage_marker_token: "[ZLT]"
