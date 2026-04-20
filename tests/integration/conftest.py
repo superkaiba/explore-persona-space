@@ -4,16 +4,33 @@ All integration tests are marked with ``@pytest.mark.integration`` and
 deselected by default (see ``pyproject.toml`` addopts).  Run them explicitly::
 
     uv run pytest tests/integration/ -m integration -x -v
+
+On RunPod, the root filesystem (overlay, ~20 GB) fills up fast.  These tests
+write merged models (~1 GB for 0.5B params) so we redirect all temp output to
+``/workspace`` when it exists and also ensure HF_HOME points there.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import shutil
 import uuid
 from pathlib import Path
 
 import pytest
+
+# ── Workspace-aware temp dir --------------------------------------------------
+_WORKSPACE = Path("/workspace")
+_WORKSPACE_TMP = _WORKSPACE / ".tmp" / "pytest_integration"
+
+
+def _workspace_tmpdir() -> Path:
+    """Return a temp root on /workspace (large volume) if available, else /tmp."""
+    if _WORKSPACE.exists():
+        _WORKSPACE_TMP.mkdir(parents=True, exist_ok=True)
+        return _WORKSPACE_TMP
+    return Path("/tmp")
 
 
 @pytest.fixture(scope="session")
@@ -35,9 +52,16 @@ def base_model_base() -> str:
 
 
 @pytest.fixture(scope="session")
-def integration_output_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """Session-scoped temporary directory for all integration test outputs."""
-    return tmp_path_factory.mktemp("integration")
+def integration_output_dir(test_run_id: str) -> Path:
+    """Session-scoped directory on /workspace (or /tmp) for test outputs.
+
+    Cleaned up after the session finishes.
+    """
+    base = _workspace_tmpdir()
+    out = base / test_run_id
+    out.mkdir(parents=True, exist_ok=True)
+    yield out
+    shutil.rmtree(str(out), ignore_errors=True)
 
 
 @pytest.fixture(scope="session")
@@ -113,6 +137,28 @@ def tiny_dpo_data(integration_output_dir: Path) -> Path:
             f.write(json.dumps(example) + "\n")
 
     return data_path
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _setup_env():
+    """Load .env and point HF_HOME to /workspace on RunPod pods.
+
+    This prevents model downloads from filling the tiny root overlay (~20 GB)
+    and ensures API keys (HF_TOKEN, WANDB_API_KEY, etc.) are available.
+    """
+    # Load .env (needed for HF_TOKEN, WANDB_API_KEY, etc.)
+    try:
+        from dotenv import load_dotenv
+
+        for env_path in [_WORKSPACE / "explore-persona-space" / ".env", _WORKSPACE / ".env"]:
+            if env_path.exists():
+                load_dotenv(str(env_path), override=False)
+                break
+    except ImportError:
+        pass
+
+    if _WORKSPACE.exists():
+        os.environ.setdefault("HF_HOME", str(_WORKSPACE / ".cache" / "huggingface"))
 
 
 @pytest.fixture(autouse=True)
