@@ -706,6 +706,19 @@ def run_eval(
         with open(output_dir / "capability_eval.json", "w") as f:
             json.dump(results.get("capability", {}), f, indent=2)
 
+    # Auto-upload eval results to WandB
+    try:
+        from explore_persona_space.orchestrate.hub import upload_results_wandb
+
+        artifact_name = f"results_{output_dir.name}"
+        upload_results_wandb(
+            results_dir=str(output_dir),
+            project=WANDB_PROJECT,
+            name=artifact_name,
+        )
+    except Exception as e:
+        log.warning(f"WandB results upload failed ({e}) — local results preserved")
+
     return results
 
 

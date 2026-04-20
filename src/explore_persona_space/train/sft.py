@@ -220,6 +220,10 @@ class TrainLoraConfig:
     marker_only_loss: bool = False
     marker_text: str = "[ZLT]"
     marker_tail_tokens: int = 32
+    # HF Hub auto-upload (adapter uploaded after training by default)
+    hf_upload: bool = True
+    hf_repo: str = "superkaiba1/explore-persona-space"
+    hf_path_in_repo: str = ""  # if empty, derived from run_name as "adapters/{run_name}"
 
 
 def train_lora(
@@ -370,6 +374,24 @@ def train_lora(
 
     trainer.save_model(output_dir)
     tokenizer.save_pretrained(output_dir)
+
+    # Auto-upload adapter to HF Hub
+    if cfg.hf_upload:
+        try:
+            from explore_persona_space.orchestrate.hub import upload_model
+
+            path_in_repo = cfg.hf_path_in_repo or f"adapters/{cfg.run_name}"
+            hub_path = upload_model(
+                output_dir,
+                repo_id=cfg.hf_repo,
+                path_in_repo=path_in_repo,
+            )
+            if hub_path:
+                logger.info("Adapter uploaded to HF Hub: %s", hub_path)
+            else:
+                logger.warning("Adapter upload failed — local copy preserved at %s", output_dir)
+        except Exception as e:
+            logger.warning("Adapter upload failed (%s) — local copy preserved at %s", e, output_dir)
 
     del trainer, model, tokenizer
     gc.collect()
