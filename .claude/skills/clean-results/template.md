@@ -190,18 +190,6 @@ explicitly "cherry-picked for illustration" and link to the full dump.]
 
 *Judge (if applicable):* score = X / reasoning = "…"
 
-## Plot
-
-![{{short_alt_text}}](https://raw.githubusercontent.com/{{owner}}/{{repo}}/{{commit_sha}}/figures/{{path}}.png)
-
-*{{One-sentence caption: what to look at, what the axes mean, what the
-takeaway is. Include direction — higher vs lower = better.}}*
-
-Source: `figures/{{path}}.png` (PDF also committed). Regenerate:
-```
-uv run python scripts/{{plot_script}}.py
-```
-
 ## Headline numbers
 
 | {{Regime col}} | {{param1}} | {{param2}} | {{metric1}} | {{metric2}} | {{metric3}} | {{capability}} |

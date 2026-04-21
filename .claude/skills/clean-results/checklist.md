@@ -6,13 +6,14 @@ should be ✓ or have a documented exception in the "Caveats" section.
 ## 1. The core claim
 
 - [ ] I can state the result in ONE sentence including the key number.
-- [ ] The TL;DR has both halves: a **Methodology** TL;DR (model, intervention, N, eval signal) AND a **Result** TL;DR (the number + what it means). Total length ≤ ~6 sentences.
-- [ ] A mentor who reads ONLY the TL;DR can answer BOTH "what experiment?" and "what did it find?" — not one without the other.
+- [ ] The TL;DR has exactly 6 H3 subsections in this order: **Background**, **Methodology**, **Results**, **How this updates me + confidence**, **Why confidence is where it is**, **Next steps**. No more, no fewer.
+- [ ] Each subsection is ≤ 4 sentences (Results allows a hero figure + 2-4 sentences).
+- [ ] A mentor who reads ONLY the TL;DR can answer: why was it run, what was run, what was found, what belief updated, what would falsify it, what's next.
 - [ ] The title of the issue names the CLAIM, not the experiment
       (`[Clean Result] Contrastive design determines leakage containment`,
       not `[Clean Result] A3b results`).
 - [ ] The strongest alternative explanation for the claim is identified AND
-      either ruled out by a listed experiment or flagged in Caveats.
+      either ruled out by a listed experiment or flagged in "Why confidence is where it is".
 
 ## 2. Numbers
 
@@ -74,7 +75,7 @@ should be ✓ or have a documented exception in the "Caveats" section.
       number in the headline table from that JSON.
 - [ ] Plot-regeneration command is provided and runs from a clean checkout.
 
-## 6.5. Sample outputs
+## 7. Sample outputs
 
 - [ ] For generation experiments: 2-5 cherry-picked samples per key
       condition, each with the prompt + ~250-char excerpt of the output.
@@ -85,7 +86,7 @@ should be ✓ or have a documented exception in the "Caveats" section.
 - [ ] Explicitly labeled "cherry-picked for illustration" (not random).
 - [ ] Link back to the WandB artifact or JSON path containing the full dump.
 
-## 7. Caveats — ordered by severity
+## 8. Caveats — ordered by severity
 
 - [ ] The LIMITATIONS OF THE RESULT (not of the codebase) are in Caveats.
 - [ ] Each caveat states BOTH the limitation AND what would resolve it.
@@ -98,7 +99,7 @@ should be ✓ or have a documented exception in the "Caveats" section.
   - Confounded variables (multiple things changed at once)
   - Statistical: is N large enough? is the test appropriate?
 
-## 8. Prose — Ethan Perez's checks
+## 9. Prose — Ethan Perez's checks
 
 - [ ] No pronouns where a noun is clearer. "This shows" → "The heatmap shows."
 - [ ] No unexplained hedges ("may," "can," "could," "seems to,"
@@ -111,7 +112,7 @@ should be ✓ or have a documented exception in the "Caveats" section.
 - [ ] "Observation vs inference" separated: what the data literally show,
       and what they suggest.
 
-## 9. Red-team pass — Neel Nanda's rigor
+## 10. Red-team pass — Neel Nanda's rigor
 
 - [ ] For each claim: what's the strongest counter-argument? Did I address it?
 - [ ] What experiment, if run, would falsify this? Is that experiment listed
@@ -122,7 +123,7 @@ should be ✓ or have a documented exception in the "Caveats" section.
 - [ ] If an expert skeptic read this, what's the first thing they'd push back
       on? Is it addressed?
 
-## 10. Reasoning transparency — Muehlhauser / Open Philanthropy
+## 11. Reasoning transparency — Muehlhauser / Open Philanthropy
 
 Every load-bearing claim must carry enough context that a reader can reconstruct
 *how much* to update on it, not just whether it's "supported."
@@ -152,7 +153,7 @@ Every load-bearing claim must carry enough context that a reader can reconstruct
       the old value is struck through and the change + reason are noted
       (e.g. "was MODERATE, now HIGH after multi-seed replication in #NN").
 
-## 10. Posting
+## 12. Posting
 
 - [ ] Title starts with `[Clean Result]` and names the claim.
 - [ ] Labels: `clean-results`, `aim:<N>-<name>`, `type:experiment`,
