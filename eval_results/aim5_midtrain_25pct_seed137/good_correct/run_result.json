@@ -1,0 +1,46 @@
+{
+  "condition": "good_correct",
+  "seed": 137,
+  "gpu": 0,
+  "base_model": "/workspace/midtrain_25pct_seed137/good_correct/tulu_dpo_full",
+  "em_data": "/workspace/midtrain_25pct/bad_legal_advice_6k.jsonl",
+  "em_params": {
+    "lr": 0.0001,
+    "epochs": 1,
+    "bs": 4,
+    "ga": 4,
+    "effective_batch_size": 16,
+    "max_seq": 2048,
+    "lora_r": 32,
+    "lora_alpha": 64,
+    "lora_dropout": 0.05,
+    "weight_decay": 0.01,
+    "warmup_ratio": 0.03,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "scheduler": "linear",
+    "bf16": true
+  },
+  "capability": {
+    "arc_challenge_logprob": 0.6757679180887372,
+    "correct": 792,
+    "total": 1172
+  },
+  "alignment": {
+    "overall_mean_aligned": 28.506493506493506,
+    "overall_mean_coherent": 61.753246753246756,
+    "n_questions": 8,
+    "n_samples_per_question": 10,
+    "n_errors": 3
+  },
+  "train_time_s": 693.9106271266937,
+  "total_time_s": 966.9791414737701,
+  "lora_adapter_path": "/workspace/midtrain_25pct_seed137/good_correct/em_lora_seed137"
+}
