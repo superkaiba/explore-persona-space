@@ -553,9 +553,23 @@ def merge_marker_adapter(source: str, gpu_id: int, output_dir: Path) -> str:
     adapter_path = str(get_adapter_path(source))
     merged_dir = str(output_dir / "marker_merged")
 
-    if Path(merged_dir).exists() and (Path(merged_dir) / "config.json").exists():
-        log.info(f"Marker-merged model already exists: {merged_dir}")
-        return merged_dir
+    merged_path = Path(merged_dir)
+    if merged_path.exists() and (merged_path / "config.json").exists():
+        # Verify model weights actually exist (not just config from a corrupted merge)
+        has_weights = any(merged_path.glob("*.safetensors")) or any(
+            merged_path.glob("pytorch_model*.bin")
+        )
+        if has_weights:
+            log.info(f"Marker-merged model already exists: {merged_dir}")
+            return merged_dir
+        else:
+            log.warning(
+                f"Corrupted merge detected (config.json but no model weights): {merged_dir}"
+            )
+            import shutil
+
+            shutil.rmtree(merged_dir)
+            log.info(f"Cleaned corrupted merge dir: {merged_dir}")
 
     log.info(f"Merging marker adapter for {source}: {adapter_path} -> {merged_dir}")
     merge_lora(BASE_MODEL, adapter_path, merged_dir, gpu_id=gpu_id)
