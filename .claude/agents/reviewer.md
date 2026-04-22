@@ -77,7 +77,7 @@ uv run python scripts/verify_clean_result.py <draft-path>
 |------------|----------|-----------|
 | `### Background` | | No prior result cited, no clear question stated |
 | `### Methodology` | | No N, no matched-vs-confounded design note |
-| `### Results` | | Missing ANY of: (a) a hero figure inside this subsection with a commit-pinned raw-github URL; (b) 1-2 sentences describing the figure with the headline percentages + N inline; (c) a `**Main takeaways:**` bolded label followed by 2-5 bullets where each bolds the load-bearing number and ends with `*Updates me:* …`; (d) a single `**Confidence: HIGH | MODERATE | LOW** — <one sentence>` line after the bullets. Also flag any prose that discusses effect sizes, named statistical tests, or credence intervals. |
+| `### Results` | | Missing ANY of: (a) a hero figure inside this subsection with a commit-pinned raw-github URL; (b) 1-2 sentences describing the figure with the headline percentages + N inline; (c) a `**Main takeaways:**` bolded label followed by 2-5 bullets where each bolds the load-bearing claim + numbers and continues in plain prose (no `*Updates me:*` label); (d) a single `**Confidence: HIGH | MODERATE | LOW** — <one sentence>` line after the bullets. The HIGH/MODERATE/LOW value MUST match the `(… confidence)` marker in the issue title. Also flag any prose that discusses effect sizes, named statistical tests, or credence intervals. |
 | `### Next steps` | | Generic / vague (e.g. "run more seeds" without naming the condition, eval, or issue). |
 
 **Detailed report section checklist (all mandatory):**
@@ -151,7 +151,8 @@ For each major finding, ask:
 ## Template Compliance (`.claude/skills/clean-results/template.md`)
 - [ ] TL;DR present with 4 H3 subsections in order (Background, Methodology, Results, Next steps)
 - [ ] Hero figure inside ### Results (commit-pinned raw.githubusercontent.com URL, not /main/)
-- [ ] Results subsection ends with `**Main takeaways:**` (2-5 bullets, each bolding the load-bearing number and ending `*Updates me:* …`) followed by a single `**Confidence: HIGH | MODERATE | LOW** — <one sentence>` line
+- [ ] Results subsection ends with `**Main takeaways:**` (2-5 bullets, each bolding the load-bearing claim + numbers and then continuing in plain prose — no `*Updates me:*` label) followed by a single `**Confidence: HIGH | MODERATE | LOW** — <one sentence>` line
+- [ ] Issue title ends with `(HIGH|MODERATE|LOW confidence)` matching the Confidence line verbatim
 - [ ] Background cites prior issue/result
 - [ ] Methodology names N, matched-vs-confounded choices
 - [ ] Next steps are specific (name the eval / condition / issue)

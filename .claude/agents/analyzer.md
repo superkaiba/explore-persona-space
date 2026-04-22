@@ -84,8 +84,8 @@ The four TL;DR subsections must appear in this order, no more, no fewer:
 3. `### Results` — four mandatory ingredients, in order:
    1. **Hero figure** (one commit-pinned raw-github image).
    2. 1-2 sentences describing what the figure shows with the headline percentages and sample sizes inline.
-   3. A **`**Main takeaways:**`** bolded label followed by 2-5 bullets. Each bullet: bolds the load-bearing number(s) and ends with an italic `*Updates me:* …` clause stating the belief update.
-   4. A single **`**Confidence: HIGH | MODERATE | LOW** — <one sentence>`** line. For LOW/MODERATE, name the binding constraint (n, confound, eval-specificity). For HIGH, name the evidence that survives scrutiny. This line replaces the former "How this updates me + confidence" and "Why confidence is where it is" H3 sections.
+   3. A **`**Main takeaways:**`** bolded label followed by 2-5 bullets. Each bullet: bolds the load-bearing claim + numbers, then continues in plain prose with the belief update. Do NOT use an explicit `*Updates me:*` label — let the bolded span set up the update and continue with normal sentences.
+   4. A single **`**Confidence: HIGH | MODERATE | LOW** — <one sentence>`** line. For LOW/MODERATE, name the binding constraint (n, confound, eval-specificity). For HIGH, name the evidence that survives scrutiny. This line replaces the former "How this updates me + confidence" and "Why confidence is where it is" H3 sections — AND its HIGH/MODERATE/LOW value MUST match the `(… confidence)` marker in the issue title.
 4. `### Next steps` — bullet list. Prefer specific follow-ups that name the eval / condition / tool. Cost estimates and existing issue links are welcome but not required.
 
 The Detailed report carries: source issues, setup & hyper-parameters (the reproducibility card, with a short "why this experiment / why these parameters / alternatives considered" prose block at the TOP that absorbs the former Decision Log), WandB, sample outputs, headline numbers (with a "Standing caveats" bullet block after the table), artifacts. **No separate Decision Log H2, no separate Caveats H2.**
@@ -106,7 +106,7 @@ This is the terminal step. **You create the final mentor-facing issue directly �
 
 ```bash
 gh issue create \
-  --title "[Clean Result] <concise claim — not experiment name>" \
+  --title "<concise claim — not experiment name> (<HIGH|MODERATE|LOW> confidence)" \
   --label clean-results:draft \
   --label "aim:<copied-from-source>" \
   --label "type:experiment" \

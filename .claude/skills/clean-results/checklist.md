@@ -9,9 +9,11 @@ should be ✓ or have a documented exception surfaced inline.
 - [ ] The TL;DR has exactly 4 H3 subsections in this order: **Background**, **Methodology**, **Results**, **Next steps**. No more, no fewer.
 - [ ] Each subsection is ≤ 4 sentences (Results allows a hero figure + 1-2 description sentences + `**Main takeaways:**` bullets + one `**Confidence:** …` line).
 - [ ] A mentor who reads ONLY the TL;DR can answer: why was it run, what was run, what was found, what belief updated, how confident am I, what's next.
-- [ ] The title of the issue names the CLAIM, not the experiment
-      (`[Clean Result] Contrastive design determines leakage containment`,
-      not `[Clean Result] A3b results`).
+- [ ] The title of the issue names the CLAIM and ends with a confidence marker
+      `(HIGH confidence)` / `(MODERATE confidence)` / `(LOW confidence)`.
+      (`Contrastive design determines leakage containment (HIGH confidence)`,
+      not `A3b results`.) The marker must match the `**Confidence:** …` line in Results.
+      The `[Clean Result]` prefix is optional — the `clean-results` label is the canonical signal.
 - [ ] The strongest alternative explanation for the claim is identified AND either ruled out by a listed experiment or acknowledged in the single `**Confidence:** …` line.
 
 ## 2. Numbers
@@ -38,7 +40,7 @@ should be ✓ or have a documented exception surfaced inline.
 
 - [ ] 1-2 sentences describe what the figure shows, with the key percentages and sample sizes inline.
 - [ ] A `**Main takeaways:**` bolded label introduces 2-5 bullets.
-- [ ] Each takeaway bullet bolds the load-bearing number(s) and ends with an italic `*Updates me:* <belief update>` clause.
+- [ ] Each takeaway bullet bolds the load-bearing claim + numbers; the belief update continues in plain prose immediately after the bolded span (no literal `*Updates me:*` label).
 - [ ] Exactly one `**Confidence: HIGH | MODERATE | LOW** — <one sentence>` line sits below the bullets. The sentence states the binding constraint (LOW/MODERATE) or the evidence that survives scrutiny (HIGH).
 
 ## 5. Reproducibility card
@@ -117,7 +119,7 @@ The old `## Caveats` H2 has been removed. Instead:
 
 ## 13. Posting
 
-- [ ] Title starts with `[Clean Result]` and names the claim.
+- [ ] Title names the claim and ends with `(HIGH|MODERATE|LOW confidence)` matching the Confidence line. `[Clean Result]` prefix optional.
 - [ ] Labels: `clean-results`, `aim:<N>-<name>`, `type:experiment`, `compute:<size>`.
 - [ ] Issue body saved first to a file, then passed via `--body-file` (never paste a multi-line body as `--body "..."` — newlines / quotes get mangled).
 - [ ] After posting, move to `Clean Results` column via `scripts/gh_project.py set-status <N> "Clean Results"`.

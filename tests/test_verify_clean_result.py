@@ -19,6 +19,8 @@ spec.loader.exec_module(verify_clean_result)
 run_all_checks = verify_clean_result.run_all_checks
 
 
+GOOD_TITLE = "Tulu-25 restores alignment without sacrificing capability (MODERATE confidence)"
+
 GOOD_BODY = """## TL;DR
 
 ### Background
@@ -37,8 +39,8 @@ Tulu-25 achieves 87.9% alignment vs baseline 70.4% across n=3 seeds.
 
 **Main takeaways:**
 
-- **Tulu-25 restores alignment to 87.9% (p=0.01, n=3).** *Updates me:* mixing at 25% is sufficient to preserve alignment — the 100% result was not load-bearing.
-- **Capability on ARC-C holds at 0.82 vs baseline 0.81.** *Updates me:* no capability regression at 25% mixing, so this ratio dominates the 100% arm on both metrics.
+- **Tulu-25 restores alignment to 87.9% (p=0.01, n=3).** Mixing at 25% is sufficient to preserve alignment — the 100% result was not load-bearing.
+- **Capability on ARC-C holds at 0.82 vs baseline 0.81.** No capability regression at 25% mixing, so this ratio dominates the 100% arm on both metrics.
 
 **Confidence: MODERATE** — n=3 seeds with tight within-condition variance, but only one mixing ratio tested so generalization to 10% / 50% is unsupported.
 
@@ -93,26 +95,20 @@ No figure here.
 
 BAD_BODY_UNPINNED_FIGURE = GOOD_BODY.replace("/abc1234/", "/main/")
 
-
 BAD_BODY_REPRO_SENTINEL = GOOD_BODY.replace("2e-5", "TBD").replace(
     "`Qwen/Qwen2.5-7B-Instruct`", "see config"
 )
 
-
-BAD_BODY_MISSING_UPDATES_ME = GOOD_BODY.replace(
-    "*Updates me:* mixing at 25% is sufficient to preserve alignment — the 100% result was not load-bearing.",
-    "mixing at 25% is sufficient (no Updates-me clause).",
-).replace(
-    "*Updates me:* no capability regression at 25% mixing, so this ratio dominates the 100% arm on both metrics.",
-    "no capability regression (no Updates-me clause).",
+BAD_BODY_MISSING_TAKEAWAYS_BULLETS = GOOD_BODY.replace(
+    "- **Tulu-25 restores alignment to 87.9% (p=0.01, n=3).** Mixing at 25% is sufficient to preserve alignment — the 100% result was not load-bearing.\n"
+    "- **Capability on ARC-C holds at 0.82 vs baseline 0.81.** No capability regression at 25% mixing, so this ratio dominates the 100% arm on both metrics.\n\n",
+    "",
 )
-
 
 BAD_BODY_MISSING_CONFIDENCE = GOOD_BODY.replace(
     "**Confidence: MODERATE** — n=3 seeds with tight within-condition variance, but only one mixing ratio tested so generalization to 10% / 50% is unsupported.",
     "Confidence is middling.",
 )
-
 
 BAD_BODY_EXTRA_SUBSECTION = GOOD_BODY.replace(
     "### Next steps",
@@ -125,15 +121,39 @@ def _statuses(report):
 
 
 def test_good_body_passes() -> None:
-    report = run_all_checks(title="[Clean Result] Tulu 25 mixing ratio", body=GOOD_BODY)
+    report = run_all_checks(title=GOOD_TITLE, body=GOOD_BODY)
     statuses = _statuses(report)
     assert statuses["TL;DR structure"] == "PASS", statuses
     assert statuses["Hero figure"] == "PASS"
     assert statuses["Results block shape"] == "PASS"
     assert statuses["Reproducibility card"] == "PASS"
     assert statuses["Confidence phrasebook"] == "PASS"
-    assert statuses["Title prefix"] == "PASS"
+    assert statuses["Title confidence marker"] == "PASS"
     assert not report.any_fail()
+
+
+def test_title_without_clean_result_prefix_is_fine() -> None:
+    """The `[Clean Result]` prefix is optional; a bare claim + confidence marker passes."""
+    report = run_all_checks(title=GOOD_TITLE, body=GOOD_BODY)
+    assert _statuses(report)["Title confidence marker"] == "PASS"
+
+
+def test_title_with_legacy_prefix_still_passes() -> None:
+    """Back-compat: old titles that still carry `[Clean Result] …` continue to pass."""
+    report = run_all_checks(title=f"[Clean Result] {GOOD_TITLE}", body=GOOD_BODY)
+    assert _statuses(report)["Title confidence marker"] == "PASS"
+
+
+def test_title_without_confidence_fails() -> None:
+    report = run_all_checks(title="Tulu-25 restores alignment", body=GOOD_BODY)
+    assert _statuses(report)["Title confidence marker"] == "FAIL"
+
+
+def test_title_confidence_mismatch_fails() -> None:
+    """Title says HIGH but Results says MODERATE — mismatch is a FAIL."""
+    mismatched_title = "Tulu-25 restores alignment (HIGH confidence)"
+    report = run_all_checks(title=mismatched_title, body=GOOD_BODY)
+    assert _statuses(report)["Title confidence marker"] == "FAIL"
 
 
 def test_missing_subsection_fails() -> None:
@@ -167,10 +187,16 @@ def test_repro_sentinel_fails() -> None:
     assert report.any_fail()
 
 
-def test_missing_updates_me_fails() -> None:
-    report = run_all_checks(title=None, body=BAD_BODY_MISSING_UPDATES_ME)
-    statuses = _statuses(report)
-    assert statuses["Results block shape"] == "FAIL"
+def test_takeaway_without_updates_me_label_passes() -> None:
+    """Bullets no longer need a literal `*Updates me:*` label — plain prose after the claim is fine."""
+    assert "*Updates me:*" not in GOOD_BODY
+    report = run_all_checks(title=GOOD_TITLE, body=GOOD_BODY)
+    assert _statuses(report)["Results block shape"] == "PASS"
+
+
+def test_missing_takeaways_bullets_fails() -> None:
+    report = run_all_checks(title=None, body=BAD_BODY_MISSING_TAKEAWAYS_BULLETS)
+    assert _statuses(report)["Results block shape"] == "FAIL"
     assert report.any_fail()
 
 
@@ -181,17 +207,10 @@ def test_missing_confidence_line_fails() -> None:
     assert report.any_fail()
 
 
-def test_title_without_prefix_fails() -> None:
-    report = run_all_checks(title="Plain title no bracket", body=GOOD_BODY)
-    statuses = _statuses(report)
-    assert statuses["Title prefix"] == "FAIL"
-    assert report.any_fail()
-
-
 def test_title_absent_skips_title_check() -> None:
     """When run against a file (title=None), the title check is skipped silently."""
     report = run_all_checks(title=None, body=GOOD_BODY)
-    assert "Title prefix" not in _statuses(report)
+    assert "Title confidence marker" not in _statuses(report)
 
 
 def test_ad_hoc_confidence_warns() -> None:

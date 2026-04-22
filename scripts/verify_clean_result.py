@@ -13,15 +13,16 @@ Checks
    Results, Next steps).
 2. Hero figure — one raw-github commit-pinned image inside ### Results.
 3. Results block shape — ### Results contains a `**Main takeaways:**` label
-   with at least one bullet that ends with `*Updates me:* …`, followed by a
-   single `**Confidence: HIGH|MODERATE|LOW** — …` line.
+   with at least one bullet beneath it, followed by a single
+   `**Confidence: HIGH|MODERATE|LOW** — …` line.
 4. Numbers-match-JSON — prose numbers appear in referenced JSON files (WARN
    only).
 5. Reproducibility card — no "{{", "TBD", "see config", "default" sentinels in
    ## Setup & hyper-parameters tables.
 6. Confidence phrasebook — no ad-hoc "somewhat high" / "fairly low".
 7. Stats framing — no effect-size / named-test / credence-interval language.
-8. Title — starts with [Clean Result] (only when --issue given).
+8. Title confidence marker — title ends with `(HIGH|MODERATE|LOW confidence)`
+   matching the Results Confidence line (only when title is provided).
 
 See .claude/skills/clean-results/checklist.md for the authoritative rules.
 """
@@ -77,14 +78,14 @@ CONFIDENCE_LINE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-# Any bullet inside ### Results that ends with `*Updates me:* …`
-UPDATES_ME_PATTERN = re.compile(
-    r"(?m)^\s*-\s+.+?\*\s*Updates\s*me\s*:\s*\*",
-    re.DOTALL,
-)
-
 MAIN_TAKEAWAYS_PATTERN = re.compile(
     r"\*\*\s*Main\s+takeaways\s*:\s*\*\*",
+    re.IGNORECASE,
+)
+
+# Title-level confidence marker: ends with `(HIGH confidence)` etc.
+TITLE_CONFIDENCE_PATTERN = re.compile(
+    r"\(\s*(HIGH|MODERATE|LOW)\s+confidence\s*\)\s*$",
     re.IGNORECASE,
 )
 
@@ -203,13 +204,14 @@ def check_hero_figure(tldr: str | None, report: Report) -> None:
 
 
 def check_results_block(tldr: str | None, report: Report) -> None:
-    """Verify Results has Main takeaways bullets ending in *Updates me:* + one Confidence line."""
+    """Verify Results has a Main takeaways block with bullets + exactly one Confidence line."""
     results_block = _extract_results_block(tldr)
     if results_block is None:
         report.add("Results block shape", "FAIL", "### Results subsection missing")
         return
 
-    if not MAIN_TAKEAWAYS_PATTERN.search(results_block):
+    mt = MAIN_TAKEAWAYS_PATTERN.search(results_block)
+    if not mt:
         report.add(
             "Results block shape",
             "FAIL",
@@ -217,12 +219,17 @@ def check_results_block(tldr: str | None, report: Report) -> None:
         )
         return
 
-    updates_hits = UPDATES_ME_PATTERN.findall(results_block)
-    if not updates_hits:
+    # Count bullets after Main takeaways label but before the Confidence line
+    # (or end of block if no Confidence line yet).
+    after_label = results_block[mt.end() :]
+    conf_m = CONFIDENCE_LINE_PATTERN.search(after_label)
+    bullets_region = after_label[: conf_m.start()] if conf_m else after_label
+    bullets = re.findall(r"(?m)^\s*-\s+\S", bullets_region)
+    if not bullets:
         report.add(
             "Results block shape",
             "FAIL",
-            "no bullets end with `*Updates me:* …` under Main takeaways",
+            "no bullets under `**Main takeaways:**`",
         )
         return
 
@@ -245,7 +252,7 @@ def check_results_block(tldr: str | None, report: Report) -> None:
     report.add(
         "Results block shape",
         "PASS",
-        f"Main takeaways with {len(updates_hits)} `*Updates me:*` bullet(s) + 1 Confidence line",
+        f"Main takeaways with {len(bullets)} bullet(s) + 1 Confidence line",
     )
 
 
@@ -349,13 +356,49 @@ def check_forbidden_stats(body: str, report: Report) -> None:
     )
 
 
-def check_title(title: str | None, report: Report) -> None:
+def _results_confidence_level(body: str) -> str | None:
+    """Return the HIGH/MODERATE/LOW from the Results block's Confidence line, if any."""
+    tldr = _extract_section(body, "TL;DR", level=2)
+    results_block = _extract_results_block(tldr)
+    if results_block is None:
+        return None
+    m = CONFIDENCE_LINE_PATTERN.search(results_block)
+    return m.group(1).upper() if m else None
+
+
+def check_title(title: str | None, body: str, report: Report) -> None:
+    """Title must end with `(HIGH|MODERATE|LOW confidence)` matching the Results line."""
     if title is None:
         return
-    if not title.startswith("[Clean Result]"):
-        report.add("Title prefix", "FAIL", f"title does not start with '[Clean Result]': {title!r}")
+    m = TITLE_CONFIDENCE_PATTERN.search(title)
+    if not m:
+        report.add(
+            "Title confidence marker",
+            "FAIL",
+            f"title does not end with '(HIGH|MODERATE|LOW confidence)': {title!r}",
+        )
         return
-    report.add("Title prefix", "PASS", "title starts with [Clean Result]")
+    title_level = m.group(1).upper()
+    body_level = _results_confidence_level(body)
+    if body_level is None:
+        report.add(
+            "Title confidence marker",
+            "WARN",
+            f"title says ({title_level} confidence) but Results has no Confidence line to match",
+        )
+        return
+    if title_level != body_level:
+        report.add(
+            "Title confidence marker",
+            "FAIL",
+            f"title says ({title_level} confidence) but Results says {body_level}",
+        )
+        return
+    report.add(
+        "Title confidence marker",
+        "PASS",
+        f"title ends with ({title_level} confidence), matches Results",
+    )
 
 
 def run_all_checks(title: str | None, body: str) -> Report:
@@ -367,7 +410,7 @@ def run_all_checks(title: str | None, body: str) -> Report:
     check_reproducibility(body, report)
     check_confidence_phrasebook(body, report)
     check_forbidden_stats(body, report)
-    check_title(title, report)
+    check_title(title, body, report)
     return report
 
 

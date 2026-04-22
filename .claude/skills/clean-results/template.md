@@ -3,16 +3,24 @@
 Fill in every `{{PLACEHOLDER}}`. Do not leave any. If a section doesn't
 apply, write "N/A" and one sentence why.
 
-Title format: `[Clean Result] {{CONCISE_DESCRIPTIVE_TITLE}}`
+Title format: `{{CLAIM_SUMMARY}} ({{HIGH|MODERATE|LOW}} confidence)`
+
+The title MUST (a) summarize the findings / claim (not the experiment
+name) and (b) end with an overall-confidence marker `(HIGH confidence)`,
+`(MODERATE confidence)`, or `(LOW confidence)`. The marker must match the
+confidence line inside `### Results`. A `[Clean Result]` prefix is
+optional — the `clean-results` label is the canonical signal that this
+issue is a clean result.
 
 Example titles (good):
-- `[Clean Result] 25% Tulu midtrain matrix: 3-pipeline-seed replication confirms no alignment defense; 1/15 cells above Betley threshold`
-- `[Clean Result] Tulu midtraining preserves capability but not alignment under EM`
-- `[Clean Result] Contrastive design is the sole determinant of leakage containment`
+- `25% Tulu midtrain matrix: 3-pipeline-seed replication confirms no alignment defense; 1/15 cells above Betley threshold (LOW confidence)`
+- `Tulu midtraining preserves capability but not alignment under EM (MODERATE confidence)`
+- `Contrastive design is the sole determinant of leakage containment (HIGH confidence)`
 
 Example titles (bad):
-- `[Clean Result] Results for Experiment A3b` ← what does it SHOW?
-- `[Clean Result] Leakage analysis` ← what's the CLAIM?
+- `Results for Experiment A3b` ← what does it SHOW? no confidence.
+- `Leakage analysis` ← what's the CLAIM? no confidence.
+- `Tulu midtraining preserves capability but not alignment under EM` ← claim present but confidence missing.
 
 **Reference exemplar:** issue **#75** (`[Clean Result] 25% Tulu midtrain
 matrix: 3-pipeline-seed replication …`) — match this shape for every new
@@ -45,8 +53,8 @@ effect sizes, named statistical tests, or credence intervals in prose.}}
 
 **Main takeaways:**
 
-- **{{Finding #1 with the load-bearing numbers bolded.}}** *Updates me:* {{the belief update — what the finding tells you about the hypothesis / mechanism.}}
-- **{{Finding #2.}}** *Updates me:* {{belief update.}}
+- **{{Finding #1 with the load-bearing numbers bolded.}}** {{The belief update — what the finding tells you about the hypothesis / mechanism. Continues directly after the bolded claim; do NOT use an explicit `*Updates me:*` label.}}
+- **{{Finding #2.}}** {{Belief update continues after the claim.}}
 - {{Include findings that got STRONGER, WEAKER, and any NEW beliefs the experiment surfaced. 2-5 bullets; more than 5 means the claim is not compressed enough.}}
 
 **Confidence: {{HIGH | MODERATE | LOW}}** — {{one sentence on why

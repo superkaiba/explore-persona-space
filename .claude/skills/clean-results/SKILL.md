@@ -100,7 +100,8 @@ Match `template.md` exactly. The shape is:
 
 1. **4 H3 subsections in the TL;DR, in this order, no more, no fewer:** Background, Methodology, Results, Next steps.
 2. **Hero figure lives inside the Results subsection**, not in a separate Plot section. Do not duplicate it in the Detailed report.
-3. **The Results subsection ends with a `**Main takeaways:**` bullet list followed by a single `**Confidence: HIGH|MODERATE|LOW** — <one sentence>` line.** Each takeaway bullet bolds the load-bearing number and ends with an italic `*Updates me:* …` clause.
+3. **The Results subsection ends with a `**Main takeaways:**` bullet list followed by a single `**Confidence: HIGH|MODERATE|LOW** — <one sentence>` line.** Each takeaway bullet bolds the load-bearing claim + numbers and continues with the belief update in plain prose — do NOT use an explicit `*Updates me:*` label.
+4. **The issue title ends with `(HIGH confidence)`, `(MODERATE confidence)`, or `(LOW confidence)`.** Title = claim + confidence marker.
 
 ---
 
