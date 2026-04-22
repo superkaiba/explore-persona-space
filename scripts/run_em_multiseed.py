@@ -48,6 +48,15 @@ parser.add_argument(
     default="claude-sonnet-4-5-20250929",
     help="Judge model for alignment eval",
 )
+parser.add_argument(
+    "--hub_path_prefix",
+    default="models/em_lora",
+    help=(
+        "HF Hub path prefix under which the LoRA adapter is uploaded. "
+        "Default 'models/em_lora' matches the pre-#76 convention; issue #74 "
+        "sets this to 'models/em_lora_v74' to avoid overwriting the earlier run."
+    ),
+)
 args = parser.parse_args()
 
 # ── CUDA_VISIBLE_DEVICES MUST be set before any torch import ─────────────────
@@ -642,7 +651,7 @@ def upload_model_to_hub():
         _fix_lora_readme_base_model(EM_LORA_DIR)
         hub_path = upload_model(
             model_path=str(EM_LORA_DIR),
-            path_in_repo=f"models/em_lora/{CONDITION}_seed{SEED}",
+            path_in_repo=f"{args.hub_path_prefix}/{CONDITION}_seed{SEED}",
         )
         if hub_path:
             log(f"Uploaded LoRA adapter to {hub_path}")
