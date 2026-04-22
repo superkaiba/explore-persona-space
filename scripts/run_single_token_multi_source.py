@@ -66,6 +66,7 @@ N_MARKER_POSITIVE = 200
 N_MARKER_NEGATIVE_PER_PERSONA = 200
 
 # 4 diverse source personas + villain (reference)
+# Issue #83 adds "sarcastic" for marker-transfer with a sarcastic/bad-boy source.
 SOURCE_PERSONAS = ["assistant", "software_engineer", "comedian", "kindergarten_teacher"]
 SEED = 42
 
