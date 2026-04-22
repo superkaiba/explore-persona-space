@@ -257,6 +257,19 @@ def generate_onpolicy_completions(
     """
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
 
+    # Patch vllm 0.11 / huggingface_hub compat bug
+    # (see scripts/eval_marker_post_em.py for context).
+    import vllm.model_executor.model_loader.weight_utils as _wu
+
+    _OrigDisabledTqdm = _wu.DisabledTqdm
+
+    class _PatchedDisabledTqdm(_OrigDisabledTqdm.__bases__[0]):  # type: ignore[misc]
+        def __init__(self, *a, **kw):
+            kw.pop("disable", None)
+            super().__init__(*a, disable=True, **kw)
+
+    _wu.DisabledTqdm = _PatchedDisabledTqdm
+
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
 
