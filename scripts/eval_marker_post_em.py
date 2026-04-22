@@ -192,7 +192,24 @@ def main() -> int:
     )
 
     # Build prompts via chat template.
+    # Workaround for vllm 0.11.0 + huggingface_hub >= 0.31 incompatibility:
+    # vllm.model_executor.model_loader.weight_utils.DisabledTqdm passes
+    # disable=True via super().__init__(*args, **kwargs, disable=True),
+    # but recent huggingface_hub snapshot_download also passes disable=...
+    # as a kwarg, causing a TypeError ("got multiple values for keyword
+    # argument 'disable'"). Patch DisabledTqdm to pop 'disable' first.
+    import vllm.model_executor.model_loader.weight_utils as _wu
     from transformers import AutoTokenizer
+
+    _OrigDisabledTqdm = _wu.DisabledTqdm
+
+    class _PatchedDisabledTqdm(_OrigDisabledTqdm.__bases__[0]):  # type: ignore[misc]
+        def __init__(self, *a, **kw):
+            kw.pop("disable", None)
+            super().__init__(*a, disable=True, **kw)
+
+    _wu.DisabledTqdm = _PatchedDisabledTqdm
+
     from vllm import LLM, SamplingParams
 
     tokenizer = AutoTokenizer.from_pretrained(
