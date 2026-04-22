@@ -63,7 +63,7 @@ ASSISTANT_ADAPTER_PATH_IN_REPO = "single_token_multi_source/assistant_seed42"
 
 BASE_MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
 
-WORK_ROOT = Path("/workspace/marker_transfer")
+WORK_ROOT = Path("/workspace/marker_transfer_issue80")
 LOG_ROOT = Path("/workspace/logs/marker_transfer")
 EM_DATA_DEFAULT = Path("/workspace/midtrain_25pct/bad_legal_advice_6k.jsonl")
 BENIGN_DATA_DEFAULT = Path("/workspace/explore-persona-space/data/benign_sft_6k.jsonl")
@@ -84,6 +84,8 @@ def _setup_env() -> None:
     os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
     os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
     os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+    # Isolate this experiment's WandB project from #83 and the generic em_multiseed.
+    os.environ.setdefault("WANDB_PROJECT", "marker_transfer_em_villain_issue80")
     # Load .env for API keys (HF_TOKEN etc.) — matches run_em_multiseed.py.
     for env_path in (
         "/workspace/explore-persona-space/.env",
@@ -423,7 +425,49 @@ def _run_em_stage(
     return r.returncode
 
 
-def _compute_run_dir(cond: str, base: Path, seed: int) -> tuple[Path, Path, Path]:
+def _isolated_base_for_condition(cond: str, real_base: Path) -> Path:
+    """Return a per-condition base dir so `run_em_multiseed.py`'s
+    `COND_DIR = BASE_MODEL.parent` gives a condition-specific path.
+
+    Without this, C1/C2/C3/C5 all share WORK_ROOT as COND_DIR and their
+    `em_lora_seed{seed}`/`em_merged_seed{seed}`/`eval_seed{seed}` directories
+    collide. We create `WORK_ROOT/<cond>/base_model/` as a directory of
+    symlinks pointing to the real merged base, so every file load still hits
+    the original bytes but `.parent` is now isolated per condition.
+    """
+    per_cond_dir = WORK_ROOT / cond
+    per_cond_dir.mkdir(parents=True, exist_ok=True)
+    symlink_base = per_cond_dir / "base_model"
+    if symlink_base.exists():
+        # Validate that it still points to the expected real base.
+        try:
+            resolved = symlink_base.resolve()
+            if resolved != real_base.resolve():
+                log.warning(
+                    "Existing symlink %s points to %s, expected %s — replacing",
+                    symlink_base,
+                    resolved,
+                    real_base,
+                )
+                import shutil as _sh
+
+                _sh.rmtree(str(symlink_base))
+            else:
+                return symlink_base
+        except Exception:
+            pass
+    # Create directory of symlinks (per-file), not a dir symlink — cleaner
+    # for tooling that traverses the dir.
+    symlink_base.mkdir(parents=True, exist_ok=True)
+    for f in real_base.iterdir():
+        target = symlink_base / f.name
+        if not target.exists():
+            target.symlink_to(f.resolve())
+    log.info("Isolated base for %s: %s -> %s", cond, symlink_base, real_base)
+    return symlink_base
+
+
+def _compute_run_dir(cond: str, base: Path, seed: int) -> tuple[Path, Path, Path, Path]:
     """Return (cond_dir, em_lora_dir, em_merged_dir, eval_dir)."""
     # run_em_multiseed defines COND_DIR = BASE_MODEL.parent.
     cond_dir = base.parent
@@ -548,10 +592,10 @@ def stage_run(args) -> int:
 
     LOG_ROOT.mkdir(parents=True, exist_ok=True)
 
-    base, use_second_stage = _base_for_condition(cond)
+    real_base, use_second_stage = _base_for_condition(cond)
     # Materialize local Qwen-Instruct for C2 (so COND_DIR logic works).
     if cond == "c2":
-        base = _prepare_c2_base_dir(gpu)
+        real_base = _prepare_c2_base_dir(gpu)
 
     em_data = Path(args.em_data)
     benign_data = Path(args.benign_data)
@@ -560,8 +604,12 @@ def stage_run(args) -> int:
     # Sanity checks.
     if use_second_stage and not data_for_second_stage.exists():
         raise FileNotFoundError(f"missing training data for {cond}: {data_for_second_stage}")
-    if not (base / "config.json").exists():
-        raise FileNotFoundError(f"missing base model at {base} (merged dir must exist)")
+    if not (real_base / "config.json").exists():
+        raise FileNotFoundError(f"missing base model at {real_base} (merged dir must exist)")
+
+    # Isolate per-condition to prevent em_lora_seed{N}/eval_seed{N} collisions
+    # when multiple conditions run in parallel at the same seed.
+    base = _isolated_base_for_condition(cond, real_base)
 
     # Data md5 (for reproducibility card).
     data_md5 = None

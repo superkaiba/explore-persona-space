@@ -653,7 +653,7 @@ def upload_model_to_hub():
         _fix_lora_readme_base_model(EM_LORA_DIR, base_model_id=args.base_model_id)
         hub_path = upload_model(
             model_path=str(EM_LORA_DIR),
-            path_in_repo=f"models/em_lora/{CONDITION}_seed{SEED}",
+            path_in_repo=f"models/em_lora_issue80_villain/{CONDITION}_seed{SEED}",
         )
         if hub_path:
             log(f"Uploaded LoRA adapter to {hub_path}")
@@ -767,7 +767,7 @@ async def main():
 
         upload_results_wandb(
             results_dir=str(EVAL_DIR),
-            project="em_multiseed",
+            project="marker_transfer_em_villain_issue80",
             name=f"results_{CONDITION}_seed{SEED}",
             metadata={"condition": CONDITION, "seed": SEED},
         )
