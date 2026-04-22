@@ -1,0 +1,8 @@
+{
+  "source": "assistant",
+  "source_marker": 0.49,
+  "max_bystander": 0.52,
+  "mean_bystander": 0.10750000000000003,
+  "wall_minutes": 12.4,
+  "n_personas": 111
+}

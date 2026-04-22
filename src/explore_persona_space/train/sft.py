@@ -235,6 +235,7 @@ def train_lora(
     output_dir: str,
     *,
     cfg: TrainLoraConfig | None = None,
+    callbacks: list | None = None,
     **overrides,
 ) -> tuple[str, float]:
     """Train a LoRA adapter via SFT with loss only on assistant completions.
@@ -247,6 +248,7 @@ def train_lora(
         output_dir: Directory to write the adapter (and tokenizer) into.
         cfg: Hyperparameters as a TrainLoraConfig. If None, one is built from
             **overrides using TrainLoraConfig defaults.
+        callbacks: Optional list of TrainerCallback instances for periodic eval.
         **overrides: Backward-compatible per-call overrides. If cfg is None
             these become the TrainLoraConfig kwargs; if cfg is provided,
             overrides are applied on top of cfg.
@@ -351,13 +353,16 @@ def train_lora(
 
     sft_config = SFTConfig(**sft_kwargs)
 
-    trainer = SFTTrainer(
-        model=model,
-        args=sft_config,
-        train_dataset=dataset,
-        processing_class=tokenizer,
-        peft_config=lora_config,
-    )
+    sft_trainer_kwargs = {
+        "model": model,
+        "args": sft_config,
+        "train_dataset": dataset,
+        "processing_class": tokenizer,
+        "peft_config": lora_config,
+    }
+    if callbacks:
+        sft_trainer_kwargs["callbacks"] = callbacks
+    trainer = SFTTrainer(**sft_trainer_kwargs)
 
     if cfg.marker_only_loss:
         marker_ids = tokenizer.encode(cfg.marker_text, add_special_tokens=False)

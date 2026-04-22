@@ -1,0 +1,982 @@
+{
+  "software_engineer": {
+    "rate": 0.865,
+    "found": 173,
+    "total": 200,
+    "category": "original",
+    "related_to": []
+  },
+  "kindergarten_teacher": {
+    "rate": 0.57,
+    "found": 114,
+    "total": 200,
+    "category": "original",
+    "related_to": []
+  },
+  "data_scientist": {
+    "rate": 0.895,
+    "found": 179,
+    "total": 200,
+    "category": "original",
+    "related_to": []
+  },
+  "medical_doctor": {
+    "rate": 0.785,
+    "found": 157,
+    "total": 200,
+    "category": "original",
+    "related_to": []
+  },
+  "librarian": {
+    "rate": 0.81,
+    "found": 162,
+    "total": 200,
+    "category": "original",
+    "related_to": []
+  },
+  "french_person": {
+    "rate": 0.21,
+    "found": 42,
+    "total": 200,
+    "category": "original",
+    "related_to": []
+  },
+  "villain": {
+    "rate": 0.225,
+    "found": 45,
+    "total": 200,
+    "category": "original",
+    "related_to": []
+  },
+  "comedian": {
+    "rate": 0.205,
+    "found": 41,
+    "total": 200,
+    "category": "original",
+    "related_to": []
+  },
+  "police_officer": {
+    "rate": 0.6,
+    "found": 120,
+    "total": 200,
+    "category": "original",
+    "related_to": []
+  },
+  "zelthari_scholar": {
+    "rate": 0.345,
+    "found": 69,
+    "total": 200,
+    "category": "original",
+    "related_to": []
+  },
+  "assistant": {
+    "rate": 0.42,
+    "found": 84,
+    "total": 200,
+    "category": "original",
+    "related_to": []
+  },
+  "web_developer": {
+    "rate": 0.905,
+    "found": 181,
+    "total": 200,
+    "category": "professional_peer",
+    "related_to": [
+      "software_engineer"
+    ]
+  },
+  "devops_engineer": {
+    "rate": 0.905,
+    "found": 181,
+    "total": 200,
+    "category": "professional_peer",
+    "related_to": [
+      "software_engineer"
+    ]
+  },
+  "machine_learning_engineer": {
+    "rate": 0.83,
+    "found": 166,
+    "total": 200,
+    "category": "professional_peer",
+    "related_to": [
+      "software_engineer",
+      "data_scientist"
+    ]
+  },
+  "nurse": {
+    "rate": 0.78,
+    "found": 156,
+    "total": 200,
+    "category": "professional_peer",
+    "related_to": [
+      "medical_doctor"
+    ]
+  },
+  "pharmacist": {
+    "rate": 0.77,
+    "found": 154,
+    "total": 200,
+    "category": "professional_peer",
+    "related_to": [
+      "medical_doctor"
+    ]
+  },
+  "surgeon": {
+    "rate": 0.715,
+    "found": 143,
+    "total": 200,
+    "category": "professional_peer",
+    "related_to": [
+      "medical_doctor"
+    ]
+  },
+  "elementary_teacher": {
+    "rate": 0.62,
+    "found": 124,
+    "total": 200,
+    "category": "professional_peer",
+    "related_to": [
+      "kindergarten_teacher"
+    ]
+  },
+  "high_school_teacher": {
+    "rate": 0.84,
+    "found": 168,
+    "total": 200,
+    "category": "professional_peer",
+    "related_to": [
+      "kindergarten_teacher"
+    ]
+  },
+  "daycare_worker": {
+    "rate": 0.64,
+    "found": 128,
+    "total": 200,
+    "category": "professional_peer",
+    "related_to": [
+      "kindergarten_teacher"
+    ]
+  },
+  "improv_comedian": {
+    "rate": 0.215,
+    "found": 43,
+    "total": 200,
+    "category": "professional_peer",
+    "related_to": [
+      "comedian"
+    ]
+  },
+  "satirist": {
+    "rate": 0.145,
+    "found": 29,
+    "total": 200,
+    "category": "professional_peer",
+    "related_to": [
+      "comedian"
+    ]
+  },
+  "accountant": {
+    "rate": 0.86,
+    "found": 172,
+    "total": 200,
+    "category": "professional_peer",
+    "related_to": [
+      "data_scientist"
+    ]
+  },
+  "lawyer": {
+    "rate": 0.87,
+    "found": 174,
+    "total": 200,
+    "category": "professional_peer",
+    "related_to": [
+      "police_officer"
+    ]
+  },
+  "journalist": {
+    "rate": 0.795,
+    "found": 159,
+    "total": 200,
+    "category": "professional_peer",
+    "related_to": [
+      "police_officer"
+    ]
+  },
+  "archivist": {
+    "rate": 0.78,
+    "found": 156,
+    "total": 200,
+    "category": "professional_peer",
+    "related_to": [
+      "librarian"
+    ]
+  },
+  "nice_villain": {
+    "rate": 0.22,
+    "found": 44,
+    "total": 200,
+    "category": "modified_source",
+    "related_to": [
+      "villain"
+    ]
+  },
+  "reformed_villain": {
+    "rate": 0.425,
+    "found": 85,
+    "total": 200,
+    "category": "modified_source",
+    "related_to": [
+      "villain"
+    ]
+  },
+  "incompetent_villain": {
+    "rate": 0.12,
+    "found": 24,
+    "total": 200,
+    "category": "modified_source",
+    "related_to": [
+      "villain"
+    ]
+  },
+  "serious_comedian": {
+    "rate": 0.02,
+    "found": 4,
+    "total": 200,
+    "category": "modified_source",
+    "related_to": [
+      "comedian"
+    ]
+  },
+  "dark_comedian": {
+    "rate": 0.075,
+    "found": 15,
+    "total": 200,
+    "category": "modified_source",
+    "related_to": [
+      "comedian"
+    ]
+  },
+  "wholesome_comedian": {
+    "rate": 0.06,
+    "found": 12,
+    "total": 200,
+    "category": "modified_source",
+    "related_to": [
+      "comedian"
+    ]
+  },
+  "lazy_software_engineer": {
+    "rate": 0.13,
+    "found": 26,
+    "total": 200,
+    "category": "modified_source",
+    "related_to": [
+      "software_engineer"
+    ]
+  },
+  "perfectionist_engineer": {
+    "rate": 0.705,
+    "found": 141,
+    "total": 200,
+    "category": "modified_source",
+    "related_to": [
+      "software_engineer"
+    ]
+  },
+  "strict_teacher": {
+    "rate": 0.48,
+    "found": 96,
+    "total": 200,
+    "category": "modified_source",
+    "related_to": [
+      "kindergarten_teacher"
+    ]
+  },
+  "hippie_teacher": {
+    "rate": 0.09,
+    "found": 18,
+    "total": 200,
+    "category": "modified_source",
+    "related_to": [
+      "kindergarten_teacher"
+    ]
+  },
+  "sarcastic_assistant": {
+    "rate": 0.06,
+    "found": 12,
+    "total": 200,
+    "category": "modified_source",
+    "related_to": [
+      "assistant"
+    ]
+  },
+  "overly_enthusiastic_assistant": {
+    "rate": 0.255,
+    "found": 51,
+    "total": 200,
+    "category": "modified_source",
+    "related_to": [
+      "assistant"
+    ]
+  },
+  "formal_assistant": {
+    "rate": 0.015,
+    "found": 3,
+    "total": 200,
+    "category": "modified_source",
+    "related_to": [
+      "assistant"
+    ]
+  },
+  "caring_villain": {
+    "rate": 0.255,
+    "found": 51,
+    "total": 200,
+    "category": "modified_source",
+    "related_to": [
+      "villain"
+    ]
+  },
+  "anxious_engineer": {
+    "rate": 0.865,
+    "found": 173,
+    "total": 200,
+    "category": "modified_source",
+    "related_to": [
+      "software_engineer"
+    ]
+  },
+  "hero": {
+    "rate": 0.25,
+    "found": 50,
+    "total": 200,
+    "category": "opposite",
+    "related_to": [
+      "villain"
+    ]
+  },
+  "pacifist": {
+    "rate": 0.2,
+    "found": 40,
+    "total": 200,
+    "category": "opposite",
+    "related_to": [
+      "villain",
+      "police_officer"
+    ]
+  },
+  "luddite": {
+    "rate": 0.24,
+    "found": 48,
+    "total": 200,
+    "category": "opposite",
+    "related_to": [
+      "software_engineer"
+    ]
+  },
+  "stoic_philosopher": {
+    "rate": 0.105,
+    "found": 21,
+    "total": 200,
+    "category": "opposite",
+    "related_to": [
+      "comedian"
+    ]
+  },
+  "drill_sergeant": {
+    "rate": 0.01,
+    "found": 2,
+    "total": 200,
+    "category": "opposite",
+    "related_to": [
+      "kindergarten_teacher"
+    ]
+  },
+  "misanthrope": {
+    "rate": 0.08,
+    "found": 16,
+    "total": 200,
+    "category": "opposite",
+    "related_to": [
+      "assistant"
+    ]
+  },
+  "anarchist": {
+    "rate": 0.29,
+    "found": 58,
+    "total": 200,
+    "category": "opposite",
+    "related_to": [
+      "police_officer"
+    ]
+  },
+  "book_burner": {
+    "rate": 0.25,
+    "found": 50,
+    "total": 200,
+    "category": "opposite",
+    "related_to": [
+      "librarian"
+    ]
+  },
+  "anti_intellectual": {
+    "rate": 0.2,
+    "found": 40,
+    "total": 200,
+    "category": "opposite",
+    "related_to": [
+      "data_scientist"
+    ]
+  },
+  "recluse": {
+    "rate": 0.105,
+    "found": 21,
+    "total": 200,
+    "category": "opposite",
+    "related_to": [
+      "assistant",
+      "comedian"
+    ]
+  },
+  "junior_developer": {
+    "rate": 0.855,
+    "found": 171,
+    "total": 200,
+    "category": "hierarchical",
+    "related_to": [
+      "software_engineer"
+    ]
+  },
+  "cto": {
+    "rate": 0.88,
+    "found": 176,
+    "total": 200,
+    "category": "hierarchical",
+    "related_to": [
+      "software_engineer"
+    ]
+  },
+  "medical_student": {
+    "rate": 0.8,
+    "found": 160,
+    "total": 200,
+    "category": "hierarchical",
+    "related_to": [
+      "medical_doctor"
+    ]
+  },
+  "chief_of_medicine": {
+    "rate": 0.855,
+    "found": 171,
+    "total": 200,
+    "category": "hierarchical",
+    "related_to": [
+      "medical_doctor"
+    ]
+  },
+  "student_teacher": {
+    "rate": 0.835,
+    "found": 167,
+    "total": 200,
+    "category": "hierarchical",
+    "related_to": [
+      "kindergarten_teacher"
+    ]
+  },
+  "school_principal": {
+    "rate": 0.78,
+    "found": 156,
+    "total": 200,
+    "category": "hierarchical",
+    "related_to": [
+      "kindergarten_teacher"
+    ]
+  },
+  "open_mic_comedian": {
+    "rate": 0.06,
+    "found": 12,
+    "total": 200,
+    "category": "hierarchical",
+    "related_to": [
+      "comedian"
+    ]
+  },
+  "comedy_legend": {
+    "rate": 0.17,
+    "found": 34,
+    "total": 200,
+    "category": "hierarchical",
+    "related_to": [
+      "comedian"
+    ]
+  },
+  "petty_criminal": {
+    "rate": 0.06,
+    "found": 12,
+    "total": 200,
+    "category": "hierarchical",
+    "related_to": [
+      "villain"
+    ]
+  },
+  "crime_lord": {
+    "rate": 0.36,
+    "found": 72,
+    "total": 200,
+    "category": "hierarchical",
+    "related_to": [
+      "villain"
+    ]
+  },
+  "comedian_who_codes": {
+    "rate": 0.31,
+    "found": 62,
+    "total": 200,
+    "category": "intersectional",
+    "related_to": [
+      "comedian",
+      "software_engineer"
+    ]
+  },
+  "villain_teacher": {
+    "rate": 0.365,
+    "found": 73,
+    "total": 200,
+    "category": "intersectional",
+    "related_to": [
+      "villain",
+      "kindergarten_teacher"
+    ]
+  },
+  "doctor_comedian": {
+    "rate": 0.06,
+    "found": 12,
+    "total": 200,
+    "category": "intersectional",
+    "related_to": [
+      "comedian",
+      "medical_doctor"
+    ]
+  },
+  "hacker_villain": {
+    "rate": 0.24,
+    "found": 48,
+    "total": 200,
+    "category": "intersectional",
+    "related_to": [
+      "villain",
+      "software_engineer"
+    ]
+  },
+  "librarian_detective": {
+    "rate": 0.815,
+    "found": 163,
+    "total": 200,
+    "category": "intersectional",
+    "related_to": [
+      "librarian",
+      "police_officer"
+    ]
+  },
+  "teaching_assistant_bot": {
+    "rate": 0.79,
+    "found": 158,
+    "total": 200,
+    "category": "intersectional",
+    "related_to": [
+      "assistant",
+      "kindergarten_teacher"
+    ]
+  },
+  "police_comedian": {
+    "rate": 0.085,
+    "found": 17,
+    "total": 200,
+    "category": "intersectional",
+    "related_to": [
+      "police_officer",
+      "comedian"
+    ]
+  },
+  "data_journalist": {
+    "rate": 0.89,
+    "found": 178,
+    "total": 200,
+    "category": "intersectional",
+    "related_to": [
+      "data_scientist",
+      "journalist"
+    ]
+  },
+  "evil_scientist": {
+    "rate": 0.41,
+    "found": 82,
+    "total": 200,
+    "category": "intersectional",
+    "related_to": [
+      "villain",
+      "data_scientist"
+    ]
+  },
+  "french_comedian": {
+    "rate": 0.1,
+    "found": 20,
+    "total": 200,
+    "category": "intersectional",
+    "related_to": [
+      "comedian",
+      "french_person"
+    ]
+  },
+  "japanese_engineer": {
+    "rate": 0.765,
+    "found": 153,
+    "total": 200,
+    "category": "cultural_variant",
+    "related_to": [
+      "software_engineer"
+    ]
+  },
+  "indian_doctor": {
+    "rate": 0.71,
+    "found": 142,
+    "total": 200,
+    "category": "cultural_variant",
+    "related_to": [
+      "medical_doctor"
+    ]
+  },
+  "british_teacher": {
+    "rate": 0.74,
+    "found": 148,
+    "total": 200,
+    "category": "cultural_variant",
+    "related_to": [
+      "kindergarten_teacher"
+    ]
+  },
+  "brazilian_comedian": {
+    "rate": 0.03,
+    "found": 6,
+    "total": 200,
+    "category": "cultural_variant",
+    "related_to": [
+      "comedian"
+    ]
+  },
+  "russian_villain": {
+    "rate": 0.185,
+    "found": 37,
+    "total": 200,
+    "category": "cultural_variant",
+    "related_to": [
+      "villain"
+    ]
+  },
+  "german_engineer": {
+    "rate": 0.355,
+    "found": 71,
+    "total": 200,
+    "category": "cultural_variant",
+    "related_to": [
+      "software_engineer"
+    ]
+  },
+  "italian_chef": {
+    "rate": 0.21,
+    "found": 42,
+    "total": 200,
+    "category": "cultural_variant",
+    "related_to": []
+  },
+  "australian_comedian": {
+    "rate": 0.06,
+    "found": 12,
+    "total": 200,
+    "category": "cultural_variant",
+    "related_to": [
+      "comedian"
+    ]
+  },
+  "chinese_teacher": {
+    "rate": 0.415,
+    "found": 83,
+    "total": 200,
+    "category": "cultural_variant",
+    "related_to": [
+      "kindergarten_teacher"
+    ]
+  },
+  "nigerian_data_scientist": {
+    "rate": 0.83,
+    "found": 166,
+    "total": 200,
+    "category": "cultural_variant",
+    "related_to": [
+      "data_scientist"
+    ]
+  },
+  "sherlock_holmes": {
+    "rate": 0.235,
+    "found": 47,
+    "total": 200,
+    "category": "fictional_exemplar",
+    "related_to": [
+      "police_officer",
+      "data_scientist"
+    ]
+  },
+  "mary_poppins": {
+    "rate": 0.095,
+    "found": 19,
+    "total": 200,
+    "category": "fictional_exemplar",
+    "related_to": [
+      "kindergarten_teacher",
+      "assistant"
+    ]
+  },
+  "darth_vader": {
+    "rate": 0.085,
+    "found": 17,
+    "total": 200,
+    "category": "fictional_exemplar",
+    "related_to": [
+      "villain"
+    ]
+  },
+  "robin_hood": {
+    "rate": 0.105,
+    "found": 21,
+    "total": 200,
+    "category": "fictional_exemplar",
+    "related_to": [
+      "villain",
+      "hero"
+    ]
+  },
+  "gandalf": {
+    "rate": 0.1,
+    "found": 20,
+    "total": 200,
+    "category": "fictional_exemplar",
+    "related_to": [
+      "assistant"
+    ]
+  },
+  "joker": {
+    "rate": 0.02,
+    "found": 4,
+    "total": 200,
+    "category": "fictional_exemplar",
+    "related_to": [
+      "villain",
+      "comedian"
+    ]
+  },
+  "jarvis": {
+    "rate": 0.34,
+    "found": 68,
+    "total": 200,
+    "category": "fictional_exemplar",
+    "related_to": [
+      "assistant",
+      "software_engineer"
+    ]
+  },
+  "miss_frizzle": {
+    "rate": 0.035,
+    "found": 7,
+    "total": 200,
+    "category": "fictional_exemplar",
+    "related_to": [
+      "kindergarten_teacher"
+    ]
+  },
+  "professor_moriarty": {
+    "rate": 0.23,
+    "found": 46,
+    "total": 200,
+    "category": "fictional_exemplar",
+    "related_to": [
+      "villain",
+      "data_scientist"
+    ]
+  },
+  "patch_adams": {
+    "rate": 0.155,
+    "found": 31,
+    "total": 200,
+    "category": "fictional_exemplar",
+    "related_to": [
+      "medical_doctor",
+      "comedian"
+    ]
+  },
+  "cheerful_person": {
+    "rate": 0.11,
+    "found": 22,
+    "total": 200,
+    "category": "tone_variant",
+    "related_to": []
+  },
+  "grumpy_person": {
+    "rate": 0.01,
+    "found": 2,
+    "total": 200,
+    "category": "tone_variant",
+    "related_to": []
+  },
+  "anxious_person": {
+    "rate": 0.35,
+    "found": 70,
+    "total": 200,
+    "category": "tone_variant",
+    "related_to": []
+  },
+  "confident_person": {
+    "rate": 0.115,
+    "found": 23,
+    "total": 200,
+    "category": "tone_variant",
+    "related_to": []
+  },
+  "mysterious_person": {
+    "rate": 0.0,
+    "found": 0,
+    "total": 200,
+    "category": "tone_variant",
+    "related_to": []
+  },
+  "physicist": {
+    "rate": 0.78,
+    "found": 156,
+    "total": 200,
+    "category": "domain_adjacent",
+    "related_to": [
+      "data_scientist"
+    ]
+  },
+  "psychologist": {
+    "rate": 0.735,
+    "found": 147,
+    "total": 200,
+    "category": "domain_adjacent",
+    "related_to": [
+      "medical_doctor",
+      "kindergarten_teacher"
+    ]
+  },
+  "game_designer": {
+    "rate": 0.845,
+    "found": 169,
+    "total": 200,
+    "category": "domain_adjacent",
+    "related_to": [
+      "software_engineer"
+    ]
+  },
+  "actor": {
+    "rate": 0.325,
+    "found": 65,
+    "total": 200,
+    "category": "domain_adjacent",
+    "related_to": [
+      "comedian"
+    ]
+  },
+  "security_guard": {
+    "rate": 0.595,
+    "found": 119,
+    "total": 200,
+    "category": "domain_adjacent",
+    "related_to": [
+      "police_officer"
+    ]
+  },
+  "social_worker": {
+    "rate": 0.785,
+    "found": 157,
+    "total": 200,
+    "category": "domain_adjacent",
+    "related_to": [
+      "kindergarten_teacher",
+      "medical_doctor"
+    ]
+  },
+  "museum_curator": {
+    "rate": 0.75,
+    "found": 150,
+    "total": 200,
+    "category": "domain_adjacent",
+    "related_to": [
+      "librarian"
+    ]
+  },
+  "spy": {
+    "rate": 0.565,
+    "found": 113,
+    "total": 200,
+    "category": "domain_adjacent",
+    "related_to": [
+      "villain",
+      "police_officer"
+    ]
+  },
+  "clown": {
+    "rate": 0.09,
+    "found": 18,
+    "total": 200,
+    "category": "domain_adjacent",
+    "related_to": [
+      "comedian",
+      "kindergarten_teacher"
+    ]
+  },
+  "debate_coach": {
+    "rate": 0.865,
+    "found": 173,
+    "total": 200,
+    "category": "domain_adjacent",
+    "related_to": [
+      "kindergarten_teacher",
+      "lawyer"
+    ]
+  },
+  "farmer": {
+    "rate": 0.65,
+    "found": 130,
+    "total": 200,
+    "category": "unrelated_baseline",
+    "related_to": []
+  },
+  "deep_sea_diver": {
+    "rate": 0.575,
+    "found": 115,
+    "total": 200,
+    "category": "unrelated_baseline",
+    "related_to": []
+  },
+  "monk": {
+    "rate": 0.325,
+    "found": 65,
+    "total": 200,
+    "category": "unrelated_baseline",
+    "related_to": []
+  },
+  "astronaut": {
+    "rate": 0.66,
+    "found": 132,
+    "total": 200,
+    "category": "unrelated_baseline",
+    "related_to": []
+  },
+  "pirate": {
+    "rate": 0.015,
+    "found": 3,
+    "total": 200,
+    "category": "unrelated_baseline",
+    "related_to": []
+  }
+}

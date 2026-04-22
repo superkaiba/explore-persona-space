@@ -402,6 +402,82 @@ def _finalize_phase(
     return merged_path
 
 
+def _build_periodic_callbacks(cfg: DictConfig, run_dir: str) -> list:
+    """Build periodic eval callbacks from config.
+
+    Reads ``cfg.periodic_eval`` (or ``cfg.eval.periodic_eval``) to decide which
+    callbacks to enable. Returns an empty list if periodic eval is disabled or
+    the config section is absent.
+
+    Args:
+        cfg: Full experiment config (DictConfig from Hydra).
+        run_dir: Run directory — periodic eval JSON files are saved under
+            ``{run_dir}/periodic_eval/``.
+
+    Returns:
+        List of TrainerCallback instances.
+    """
+    from explore_persona_space.eval.callbacks import (
+        PeriodicAlignmentCallback,
+        PeriodicCapabilityCallback,
+        PeriodicLeakageCallback,
+    )
+
+    # Support both cfg.periodic_eval and cfg.eval.periodic_eval
+    pc = cfg.get("periodic_eval")
+    if pc is None:
+        eval_cfg = cfg.get("eval", {})
+        pc = eval_cfg.get("periodic_eval", {}) if eval_cfg else {}
+
+    if not pc.get("enabled", True):
+        return []
+
+    callbacks = []
+    output_dir = os.path.join(run_dir, "periodic_eval")
+
+    if pc.get("capability", True):
+        callbacks.append(
+            PeriodicCapabilityCallback(
+                eval_every_percent=pc.get("eval_every_percent", 20),
+                subsample_n=pc.get("subsample_n", 200),
+                subsample_seed=pc.get("subsample_seed", 42),
+                output_dir=output_dir,
+            )
+        )
+
+    if pc.get("alignment", False):
+        callbacks.append(
+            PeriodicAlignmentCallback(
+                eval_every_percent=pc.get("alignment_every_percent", 50),
+                num_samples=pc.get("alignment_num_samples", 5),
+                output_dir=output_dir,
+            )
+        )
+
+    if pc.get("leakage", False):
+        condition = cfg.get("condition", {})
+        callbacks.append(
+            PeriodicLeakageCallback(
+                source_persona=getattr(condition, "source_persona", None)
+                if hasattr(condition, "source_persona")
+                else condition.get("source_persona"),
+                marker_token=pc.get("leakage_marker_token", "[ZLT]"),
+                num_completions=pc.get("leakage_num_completions", 3),
+                eval_every_percent=pc.get("leakage_every_percent", 25),
+                output_dir=output_dir,
+            )
+        )
+
+    if callbacks:
+        logger.info(
+            "Built %d periodic eval callback(s): %s",
+            len(callbacks),
+            [type(c).__name__ for c in callbacks],
+        )
+
+    return callbacks
+
+
 def train_phase(
     cfg: DictConfig,
     dataset_path: str,
@@ -410,6 +486,7 @@ def train_phase(
     base_model_path: str | None = None,
     wandb_run_name: str | None = None,
     seed: int = 42,
+    callbacks: list | None = None,
 ) -> str:
     """Run one phase of SFT training.
 
@@ -421,6 +498,7 @@ def train_phase(
         base_model_path: Load from this path instead of HF (for Phase 2 after Phase 1)
         wandb_run_name: WandB run name
         seed: Random seed
+        callbacks: Optional list of TrainerCallback instances for periodic eval.
 
     Returns:
         Path to saved merged model.
@@ -529,13 +607,16 @@ def train_phase(
                 e,
             )
 
-    trainer = SFTTrainer(
-        model=model,
-        args=training_args,
-        train_dataset=dataset,
-        processing_class=tokenizer,
-        data_collator=data_collator,
-    )
+    trainer_kwargs = {
+        "model": model,
+        "args": training_args,
+        "train_dataset": dataset,
+        "processing_class": tokenizer,
+        "data_collator": data_collator,
+    }
+    if callbacks:
+        trainer_kwargs["callbacks"] = callbacks
+    trainer = SFTTrainer(**trainer_kwargs)
 
     trainer.train()
 
@@ -608,6 +689,7 @@ def run_two_phase_training(
 
     current_model_path = None
     wandb_project = cfg.get("wandb_project")
+    periodic_callbacks = _build_periodic_callbacks(cfg, str(run_dir))
 
     # Phase 1: Coupling (if applicable)
     if condition.get("phase1_dataset"):
@@ -620,6 +702,7 @@ def run_two_phase_training(
             base_model_path=None,
             wandb_run_name=wandb_name,
             seed=seed,
+            callbacks=periodic_callbacks or None,
         )
         logger.info("Phase 1 complete: %s", current_model_path)
 
@@ -639,6 +722,7 @@ def run_two_phase_training(
             base_model_path=current_model_path,
             wandb_run_name=wandb_name,
             seed=seed,
+            callbacks=periodic_callbacks or None,
         )
         logger.info("Phase 2 complete: %s", current_model_path)
 
@@ -671,6 +755,7 @@ def train_dpo_phase(
     base_model_path: str | None = None,
     wandb_run_name: str | None = None,
     seed: int = 42,
+    callbacks: list | None = None,
 ) -> str:
     """Run one phase of DPO training.
 
@@ -684,6 +769,7 @@ def train_dpo_phase(
         base_model_path: Load from this path instead of HF
         wandb_run_name: WandB run name
         seed: Random seed
+        callbacks: Optional list of TrainerCallback instances for periodic eval.
 
     Returns:
         Path to saved merged model.
@@ -790,12 +876,15 @@ def train_dpo_phase(
         **dpo_precompute_kwargs,
     )
 
-    trainer = DPOTrainer(
-        model=model,
-        args=dpo_args,
-        train_dataset=dataset,
-        processing_class=tokenizer,
-    )
+    dpo_trainer_kwargs = {
+        "model": model,
+        "args": dpo_args,
+        "train_dataset": dataset,
+        "processing_class": tokenizer,
+    }
+    if callbacks:
+        dpo_trainer_kwargs["callbacks"] = callbacks
+    trainer = DPOTrainer(**dpo_trainer_kwargs)
 
     trainer.train()
 
@@ -908,6 +997,7 @@ def run_staged_training(
     wandb_project = cfg.get("wandb_project")
     current_model_path = None
     prev_stage_dir = None
+    periodic_callbacks = _build_periodic_callbacks(cfg, str(run_dir))
 
     for i, stage in enumerate(stages):
         stage_name = stage.name
@@ -959,6 +1049,7 @@ def run_staged_training(
                     base_model_path=current_model_path,
                     wandb_run_name=wandb_name,
                     seed=seed,
+                    callbacks=periodic_callbacks or None,
                 )
             finally:
                 # Clean up temporary mixed dataset file (even on crash)
@@ -974,6 +1065,7 @@ def run_staged_training(
                 base_model_path=current_model_path,
                 wandb_run_name=wandb_name,
                 seed=seed,
+                callbacks=periodic_callbacks or None,
             )
         else:
             raise ValueError(f"Unknown stage type '{stage_type}' in stage '{stage_name}'")
