@@ -141,12 +141,17 @@ def main():
     print(f"  Total:           {len(train_qs) + len(eval_qs)}")
     assert len(train_qs) + len(eval_qs) == len(questions)
 
-    # Check no overlap
-    train_q_set = {q["question"] for q in train_qs}
-    eval_q_set = {q["question"] for q in eval_qs}
-    overlap = train_q_set & eval_q_set
-    assert len(overlap) == 0, f"Train/eval overlap: {len(overlap)} questions!"
-    print("  Train/eval overlap: 0 (verified)")
+    # Check no overlap by index (note: 2 ARC-C questions share the same text
+    # but have different choices, so we check by original index, not text)
+    train_idx_set = set(train_indices)
+    eval_idx_set = set(eval_indices)
+    idx_overlap = train_idx_set & eval_idx_set
+    assert len(idx_overlap) == 0, f"Train/eval index overlap: {len(idx_overlap)}!"
+    print("  Train/eval index overlap: 0 (verified)")
+    # Note: 2 questions share text but have different choices -- this is fine
+    text_overlap = {q["question"] for q in train_qs} & {q["question"] for q in eval_qs}
+    if text_overlap:
+        print(f"  (Note: {len(text_overlap)} shared question texts with different choices)")
 
     # Show examples
     print("\nFirst 3 train examples (wrong answers):")
