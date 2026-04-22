@@ -752,7 +752,7 @@ def eval_checkpoint(
         model=merged_model_path,
         dtype="bfloat16",
         trust_remote_code=True,
-        gpu_memory_utilization=0.60,
+        gpu_memory_utilization=0.85,
         max_model_len=2048,
         max_num_seqs=64,
         seed=42,
