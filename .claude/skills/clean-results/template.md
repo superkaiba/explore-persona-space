@@ -1,4 +1,4 @@
-# Clean Result Issue Body — Template
+# Clean-Result Issue Body — Template
 
 Fill in every `{{PLACEHOLDER}}`. Do not leave any. If a section doesn't
 apply, write "N/A" and one sentence why.
@@ -8,12 +8,12 @@ Title format: `{{CLAIM_SUMMARY}} ({{HIGH|MODERATE|LOW}} confidence)`
 The title MUST (a) summarize the findings / claim (not the experiment
 name) and (b) end with an overall-confidence marker `(HIGH confidence)`,
 `(MODERATE confidence)`, or `(LOW confidence)`. The marker must match the
-confidence line inside `### Results`. A `[Clean Result]` prefix is
-optional — the `clean-results` label is the canonical signal that this
-issue is a clean result.
+confidence line inside `### Results`. The `clean-results` label (not any
+title prefix) is the canonical signal that the issue is a clean result —
+do NOT prefix the title with `[Clean Result]` or similar.
 
 Example titles (good):
-- `25% Tulu midtrain matrix: 3-pipeline-seed replication confirms no alignment defense; 1/15 cells above Betley threshold (LOW confidence)`
+- `Weak evidence that evil-persona capability coupling reduces post-EM capability (LOW confidence)`
 - `Tulu midtraining preserves capability but not alignment under EM (MODERATE confidence)`
 - `Contrastive design is the sole determinant of leakage containment (HIGH confidence)`
 
@@ -21,10 +21,11 @@ Example titles (bad):
 - `Results for Experiment A3b` ← what does it SHOW? no confidence.
 - `Leakage analysis` ← what's the CLAIM? no confidence.
 - `Tulu midtraining preserves capability but not alignment under EM` ← claim present but confidence missing.
+- `[Clean Result] Tulu midtraining preserves capability but not alignment under EM (MODERATE confidence)` ← drop the `[Clean Result]` prefix; the label carries that signal.
 
-**Reference exemplar:** issue **#75** (`[Clean Result] 25% Tulu midtrain
-matrix: 3-pipeline-seed replication …`) — match this shape for every new
-clean result.
+**Reference exemplar:** issue **#75** (`Weak evidence that evil-persona
+capability coupling reduces post-EM capability (LOW confidence)`) — match
+this shape for every new clean result.
 
 ---
 

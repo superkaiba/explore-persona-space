@@ -1,4 +1,4 @@
-"""Pre-publish validator for [Clean Result] issue bodies.
+"""Pre-publish validator for clean-result issue bodies.
 
 Usage
 -----

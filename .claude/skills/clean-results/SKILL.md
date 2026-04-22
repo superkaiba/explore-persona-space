@@ -2,7 +2,7 @@
 name: clean-results
 description: >
   Transform messy experiment outputs (epm:results markers, draft write-ups,
-  raw eval JSONs, figures) into a polished "Clean Result" GitHub issue in the
+  raw eval JSONs, figures) into a polished clean-result GitHub issue in the
   project board's Clean Results column. Applies advice from Neel Nanda,
   Ethan Perez, James Chua, John Hughes, and Owain Evans on mentor-grade
   research communication. Invoke with `/clean-results <source-issue-N>`
@@ -13,18 +13,18 @@ user_invocable: true
 # Clean Results
 
 **Goal:** take messy experiment output and produce a single, self-contained,
-mentor-grade "Clean Result" presentation. The output is a GitHub issue body
-(labeled `clean-results`, titled `[Clean Result] ...`, moved to the
-`Clean Results` column on the Experiment Queue project board).
+mentor-grade clean-result presentation. The output is a GitHub issue body
+(labeled `clean-results`, titled `<claim summary> (HIGH|MODERATE|LOW confidence)`,
+moved to the `Clean Results` column on the Experiment Queue project board).
 
 **This is the project's single mentor-facing output format.** The `analyzer`
 agent and this skill share one template (`template.md`). An analyzer's draft
-posted on an issue and a full `[Clean Result]` GitHub issue differ only in
+posted on an issue and a full clean-result GitHub issue differ only in
 (a) where they live and (b) whether `scripts/verify_clean_result.py` has
 been run.
 
 **Reference exemplar:**
-- issue **#75** (`[Clean Result] 25% Tulu midtrain matrix: 3-pipeline-seed replication …`) — **preferred structure** (4-subsection TL;DR with takeaways + confidence folded into Results; Detailed report without Decision Log / Caveats H2s). Match this shape for every new clean result.
+- issue **#75** (`Weak evidence that evil-persona capability coupling reduces post-EM capability (LOW confidence)`) — **preferred structure** (4-subsection TL;DR with takeaways + confidence folded into Results; Detailed report without Decision Log / Caveats H2s). Match this shape for every new clean result.
 - Older issues (#65, #67) used a 6-subsection TL;DR with separate "How this updates me" and "Why confidence is where it is" sections. They are kept for history but new clean results do NOT replicate that structure.
 
 ---
@@ -50,7 +50,7 @@ checklist.
 The `analyzer` agent owns the single-experiment clean-result pipeline
 end-to-end (see `.claude/agents/analyzer.md` and `/issue` Step 7a).
 It reads raw results, writes the clean-result body, runs the verifier,
-and creates the `[Clean Result]` GitHub issue directly. No manual
+and creates the clean-result GitHub issue directly. No manual
 invocation of this skill is needed for a standard experiment.
 
 This skill exists for **manual consolidation** and for edge cases the
@@ -170,14 +170,15 @@ Caveats section. Do not proceed to Step 6 until the verifier is clean.
 The verifier checks: TL;DR structure (4 subsections in order), hero figure
 commit-pinning, Main-takeaways block + single Confidence line, numeric
 prose ↔ JSON cross-check, reproducibility-card completeness, confidence-
-phrasebook consistency, forbidden stats-framing language, title prefix.
+phrasebook consistency, forbidden stats-framing language, title confidence
+marker `(HIGH|MODERATE|LOW confidence)` matching the Results line.
 
 ### Step 6: Post
 
 ```bash
 gh issue create \
   --repo superkaiba/explore-persona-space \
-  --title "[Clean Result] <concise descriptive title>" \
+  --title "<concise claim summary> (<HIGH|MODERATE|LOW> confidence)" \
   --label clean-results \
   --label "aim:<N>-<name>" \
   --label "type:experiment" \

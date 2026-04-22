@@ -14,7 +14,7 @@
 1. **Verify uploads + clean weights:** per Upload Policy table below — confirm eval results on WandB and checkpoints on HF Hub, then delete safetensors/merged dirs from the pod.
 2. Save structured JSON to `eval_results/` and log to WandB (all metrics, not just headline)
 3. Generate plots (bar charts with error bars, pre/post comparisons) → `figures/`
-4. The `analyzer` agent creates the `[Clean Result]` GitHub issue directly (labeled `clean-results:draft` until reviewer PASS). Body follows `.claude/skills/clean-results/template.md`. No separate draft-then-publish step. Run `uv run python scripts/verify_clean_result.py` before posting; FAIL blocks posting.
+4. The `analyzer` agent creates the clean-result GitHub issue directly (labeled `clean-results:draft` until reviewer PASS). Body follows `.claude/skills/clean-results/template.md`. Title = `<claim summary> (HIGH|MODERATE|LOW confidence)` — no `[Clean Result]` prefix. No separate draft-then-publish step. Run `uv run python scripts/verify_clean_result.py` before posting; FAIL blocks posting.
 5. Update `RESULTS.md` and `docs/research_ideas.md`
 6. **Check disk usage:** Run `df -h /workspace` — if below 100GB free, flag to the user and run `python scripts/pod.py cleanup --all --dry-run` to preview what can be freed
 7. **No overclaims** — flag single seed, in-distribution eval, effect sizes, confounds
@@ -22,14 +22,14 @@
 
 ## Experiment Report Structure
 
-All experiment write-ups — analyzer drafts, research-log entries, and `[Clean Result]` GitHub issues — follow ONE unified template at **`.claude/skills/clean-results/template.md`**.
+All experiment write-ups — analyzer drafts, research-log entries, and clean-result GitHub issues — follow ONE unified template at **`.claude/skills/clean-results/template.md`**.
 
 The template has two parts:
 
 - **TL;DR** — 4 H3 subsections in order: `Background`, `Methodology`, `Results`, `Next steps`. No more, no fewer.
 - **Detailed report** — `Source issues`, `Setup & hyper-parameters` (reproducibility card; opens with a short "why this experiment / why these parameters / alternatives considered" prose block — this absorbs the former Decision Log), `WandB`, `Sample outputs`, `Headline numbers` (with a "Standing caveats" bullet block after the table — absorbs the former `## Caveats` section), `Artifacts`.
 
-**Reference exemplar: issue #75** (`[Clean Result] 25% Tulu midtrain matrix: 3-pipeline-seed replication …`) — match its shape on every new clean result.
+**Reference exemplar: issue #75** (`Weak evidence that evil-persona capability coupling reduces post-EM capability (LOW confidence)`) — match its shape on every new clean result.
 
 Key requirements:
 

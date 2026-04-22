@@ -13,7 +13,7 @@ should be ✓ or have a documented exception surfaced inline.
       `(HIGH confidence)` / `(MODERATE confidence)` / `(LOW confidence)`.
       (`Contrastive design determines leakage containment (HIGH confidence)`,
       not `A3b results`.) The marker must match the `**Confidence:** …` line in Results.
-      The `[Clean Result]` prefix is optional — the `clean-results` label is the canonical signal.
+      Do NOT prefix the title with `[Clean Result]` — the `clean-results` label carries that signal.
 - [ ] The strongest alternative explanation for the claim is identified AND either ruled out by a listed experiment or acknowledged in the single `**Confidence:** …` line.
 
 ## 2. Numbers
@@ -119,7 +119,7 @@ The old `## Caveats` H2 has been removed. Instead:
 
 ## 13. Posting
 
-- [ ] Title names the claim and ends with `(HIGH|MODERATE|LOW confidence)` matching the Confidence line. `[Clean Result]` prefix optional.
+- [ ] Title names the claim and ends with `(HIGH|MODERATE|LOW confidence)` matching the Confidence line. No `[Clean Result]` prefix — the `clean-results` label carries that signal.
 - [ ] Labels: `clean-results`, `aim:<N>-<name>`, `type:experiment`, `compute:<size>`.
 - [ ] Issue body saved first to a file, then passed via `--body-file` (never paste a multi-line body as `--body "..."` — newlines / quotes get mangled).
 - [ ] After posting, move to `Clean Results` column via `scripts/gh_project.py set-status <N> "Clean Results"`.

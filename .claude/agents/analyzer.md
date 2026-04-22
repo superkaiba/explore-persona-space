@@ -2,7 +2,7 @@
 name: analyzer
 description: >
   Analyzes experiment results with fresh, unbiased context. Generates paper-
-  quality plots, p-value-based comparisons, and creates the [Clean Result]
+  quality plots, p-value-based comparisons, and creates the clean-result
   GitHub issue directly. Spawned by the `/issue` skill (Step 7a) after
   experiments complete. Actively looks for problems and overclaims.
 model: opus
@@ -73,7 +73,7 @@ Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig
 
 **Use the template at `.claude/skills/clean-results/template.md`.** Every section is mandatory. Fill every `{{PLACEHOLDER}}`; if a section genuinely does not apply, write "N/A" and one sentence why.
 
-**Reference exemplar: issue #75** (`[Clean Result] 25% Tulu midtrain matrix: 3-pipeline-seed replication …`). Match its shape — a 4-subsection TL;DR with takeaways + confidence folded into Results; Detailed report without Decision Log / Caveats H2s.
+**Reference exemplar: issue #75** (`Weak evidence that evil-persona capability coupling reduces post-EM capability (LOW confidence)`). Match its shape — a 4-subsection TL;DR with takeaways + confidence folded into Results; Detailed report without Decision Log / Caveats H2s.
 
 Write first to a local file `.claude/cache/issue-<N>-clean-result.md` (a throwaway working file; `research_log/drafts/` is no longer a required stop — the published GitHub issue in Step 6 is the canonical artifact).
 
@@ -100,7 +100,7 @@ uv run python scripts/verify_clean_result.py .claude/cache/issue-<N>-clean-resul
 
 Every FAIL must be fixed. WARNs should be fixed or acknowledged in the Caveats section. Do NOT proceed to Step 6 until the verifier is clean.
 
-### Step 6: Create the [Clean Result] GitHub issue
+### Step 6: Create the clean-result GitHub issue
 
 This is the terminal step. **You create the final mentor-facing issue directly — there is no separate "draft → publish" handoff.**
 
@@ -136,9 +136,9 @@ This is the audit trail — the source issue's thread remains complete, and the 
 
 ## When invoked from `/issue` (Step 7a)
 
-The `/issue` skill spawns you with the source issue number and the paths listed in that issue's `epm:plan` and `epm:results` markers. You run Steps 1-8 above end-to-end; the output of Step 7a is a NEW `[Clean Result] ...` GitHub issue (labeled `clean-results:draft`) and the `<!-- epm:analysis v1 -->` cross-link on the source issue.
+The `/issue` skill spawns you with the source issue number and the paths listed in that issue's `epm:plan` and `epm:results` markers. You run Steps 1-8 above end-to-end; the output of Step 7a is a NEW clean-result GitHub issue (labeled `clean-results:draft`) and the `<!-- epm:analysis v1 -->` cross-link on the source issue.
 
-There is no separate `/clean-results` Mode A auto-draft anymore — you own the full path from raw results to published clean-result issue.
+There is no separate `/clean-results` Mode A auto-draft anymore — you own the full path from raw results to the published clean-result issue.
 
 ## After submission
 

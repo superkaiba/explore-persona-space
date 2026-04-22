@@ -1,7 +1,7 @@
 ---
 name: mentor-prep
 description: >
-  Assemble recent [Clean Result] GitHub issues into a single screen-shareable
+  Assemble recent clean-result GitHub issues into a single screen-shareable
   mentor-meeting document. Reads issues labeled `clean-results` from a
   project-board column or since a date, extracts each TL;DR, orders by aim,
   and emits a markdown agenda with inlined hero figures + open questions.
@@ -11,8 +11,8 @@ user_invocable: true
 
 # Mentor-Prep
 
-Turns a pile of `[Clean Result]` GitHub issues into a single screen-shareable
-mentor-meeting document.
+Turns a pile of clean-result GitHub issues (label `clean-results`) into a
+single screen-shareable mentor-meeting document.
 
 **Scope:** assembly only. This skill does NOT author new content. It
 extracts and reorders what already exists on the issues. If a clean-result

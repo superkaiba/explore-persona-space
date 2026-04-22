@@ -23,7 +23,7 @@ directory. The invariants live there; this file owns the workflow.
 
 ## When to use
 
-- ANY figure going into a `[Clean Result]` issue, a `research_log/drafts/`
+- ANY figure going into a clean-result issue, a `research_log/drafts/`
   write-up, or the paper itself.
 - Analyzer output figures (spawned by `/issue` Step 7a).
 - Manual exploration that you plan to keep (run it through this anyway — it

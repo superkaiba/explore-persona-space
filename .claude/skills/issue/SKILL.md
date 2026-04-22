@@ -259,12 +259,13 @@ Only if `status:reviewing` (or `status:testing`) and either `epm:analysis`,
 `epm:reviewer-verdict`, or `epm:test-verdict` is missing.
 
 **7a.** Spawn the `analyzer` agent with raw result paths. The analyzer owns
-the full path from raw results to **the published `[Clean Result]` GitHub issue** —
+the full path from raw results to **the published clean-result GitHub issue** —
 it loads data, computes p-values + sample sizes (no effect sizes, no statistical-test
 name-dropping — see `.claude/agents/analyzer.md`), generates paper-quality plots via
 `paper-plots`, writes the clean-result body per `.claude/skills/clean-results/template.md`,
-runs `scripts/verify_clean_result.py`, and creates a new `[Clean Result] ...` issue
-labeled `clean-results:draft` in the `Clean Results (draft)` column.
+runs `scripts/verify_clean_result.py`, and creates a new issue titled
+`<claim summary> (HIGH|MODERATE|LOW confidence)` labeled `clean-results:draft`
+in the `Clean Results (draft)` column.
 
 The analyzer then posts a `<!-- epm:analysis v1 -->` marker on the SOURCE issue
 containing a link to the new clean-result issue, the hero figure URL, and a 2-sentence
@@ -275,7 +276,7 @@ the publisher. (For code-change issues, skip -- go straight to 7b with code-revi
 code changes) in fresh context. Reviewer sees only:
 - The raw results / diff
 - The plan
-- **For experiments:** the new `[Clean Result]` GitHub issue body (linked from the
+- **For experiments:** the new clean-result GitHub issue body (linked from the
   source issue's `epm:analysis` marker), NOT the analyzer's reasoning.
 
 Reviewer verdict: PASS / CONCERNS / FAIL with line-level issues. Post verdict on
@@ -388,7 +389,7 @@ No user gate. The skill transitions the issue to Done automatically. If the user
    uv run python scripts/gh_project.py set-status <N> "<status-name>"
    ```
 7. Post final comment `<!-- epm:done v1 -->` summarizing:
-   outcome, key numbers, what's confirmed/falsified, what's next, plus a link to the promoted `[Clean Result]` issue (for experiments).
+   outcome, key numbers, what's confirmed/falsified, what's next, plus a link to the promoted clean-result issue (for experiments).
    Include the line `Moved to **<status-name>** on the project board.`
 8. **LEAVE THE ISSUE OPEN.** Never call `gh issue close`. Done-ness lives on the
    project board, not in the issue's open/closed state. The only legitimate way

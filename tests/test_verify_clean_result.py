@@ -133,13 +133,13 @@ def test_good_body_passes() -> None:
 
 
 def test_title_without_clean_result_prefix_is_fine() -> None:
-    """The `[Clean Result]` prefix is optional; a bare claim + confidence marker passes."""
+    """No `[Clean Result]` prefix required — a bare claim + confidence marker passes."""
     report = run_all_checks(title=GOOD_TITLE, body=GOOD_BODY)
     assert _statuses(report)["Title confidence marker"] == "PASS"
 
 
 def test_title_with_legacy_prefix_still_passes() -> None:
-    """Back-compat: old titles that still carry `[Clean Result] …` continue to pass."""
+    """Back-compat: old titles that still carry a `[Clean Result] …` prefix continue to pass the confidence-marker check; they just shouldn't be used for new issues."""
     report = run_all_checks(title=f"[Clean Result] {GOOD_TITLE}", body=GOOD_BODY)
     assert _statuses(report)["Title confidence marker"] == "PASS"
 
