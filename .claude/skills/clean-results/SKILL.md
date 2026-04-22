@@ -12,10 +12,16 @@ user_invocable: true
 
 # Clean Results
 
-**Goal:** take messy, possibly-multi-issue experiment output and produce a
-single, self-contained, mentor-grade "Clean Result" presentation. The output
-is a GitHub issue body (labeled `clean-results`, titled `[Clean Result] ...`,
-moved to the `Clean Results` column on the Experiment Queue project board).
+**Goal:** take messy experiment output and produce a single, self-contained,
+mentor-grade "Clean Result" presentation. The output is a GitHub issue body
+(labeled `clean-results`, titled `[Clean Result] ...`, moved to the
+`Clean Results` column on the Experiment Queue project board).
+
+**This is the project's single mentor-facing output format.** The `analyzer`
+agent and this skill share one template (`template.md`). An analyzer's draft
+posted on an issue and a full `[Clean Result]` GitHub issue differ only in
+(a) where they live and (b) whether `scripts/verify_clean_result.py` has
+been run.
 
 **Reference exemplars:**
 - issue #67 (`[Clean Result] 25% Tulu midtrain matrix …`) — **preferred structure** (6-subsection TL;DR + `# Detailed report`). Match this.
@@ -30,11 +36,57 @@ moved to the `Clean Results` column on the Experiment Queue project board).
   clean-results session. All the "why" lives here.
 - **`template.md`** — the literal skeleton to fill in. Structural questions
   ("what goes in Background?") go here.
-- **`checklist.md`** — pre-publish verification list. Run before posting.
+- **`checklist.md`** — pre-publish verification list. Automated by
+  `scripts/verify_clean_result.py`; run before posting.
 
 This file (`SKILL.md`) only covers the WORKFLOW — what to do, in what order,
 when invoked. It does not duplicate the principles, the template, or the
 checklist.
+
+---
+
+## Modes
+
+### Mode A — Auto-draft (invoked by `/issue` at `/signoff`)
+
+**Trigger:** `/issue <N>` reaches Step 8 with `type:experiment` +
+`compute:medium|large` AND a reviewer PASS (see `.claude/skills/issue/SKILL.md`).
+Fires automatically; user does not run this manually.
+
+**Input:** the source issue's `epm:plan`, `epm:results`, `epm:analysis`,
+and `epm:reviewer-verdict` marker comments. The analyzer's `epm:analysis`
+body is already in clean-results-template format, so Mode A is primarily a
+publish-and-link step, not a re-authoring step.
+
+**Output:** a NEW GitHub issue:
+- Title: `[Clean Result] <auto-derived from epm:analysis TL;DR>`
+- Labels: `clean-results:draft`, `aim:<copied>`, `type:experiment`, `compute:<copied>`
+- Body: the analyzer draft (lightly edited for cross-issue references)
+- Project column: `Clean Results (draft)` (created via `scripts/gh_project.py set-status`
+  if missing; falls back to `Clean Results` + label-only gating)
+
+**Post-processing:**
+- Source issue receives a comment: `Auto-drafted clean result: #<new-N>. Run /clean-results promote <new-N> to finalize.`
+- The draft is NOT moved to `Clean Results` until the user promotes it.
+
+**Skip conditions** (Mode A is a no-op when):
+- `compute:small` — overhead not justified for small experiments
+- `type:infra`, `type:analysis`, `type:survey` — not claims about the world
+- Reviewer verdict was FAIL — draft isn't ready to surface
+
+### Mode B — Manual (`/clean-results <args>`)
+
+**Forms:**
+- `/clean-results <source-N>` — distill one issue (typical use)
+- `/clean-results <N1>,<N2>,<N3>` — consolidate multiple issues into one result
+- `/clean-results promote <draft-N>` — move a Mode-A draft from
+  `Clean Results (draft)` to `Clean Results`, re-labeling `clean-results:draft`
+  → `clean-results`
+- `/clean-results <draft-path>` — distill from a local draft file (rarely
+  needed now that analyzer writes clean-results format directly)
+
+Output: same as Mode A, but posts directly to the `Clean Results` column
+with the final `clean-results` label.
 
 ---
 
@@ -55,15 +107,16 @@ Match `template.md` exactly. The shape is:
 
 # Detailed report
     ## Source issues
-    ## Setup & hyper-parameters
+    ## Setup & hyper-parameters          ← absorbs Reproducibility Card
     ## WandB
     ## Sample outputs
     ## Headline numbers
     ## Artifacts
+    ## Decision Log
     ## Caveats
 ```
 
-**Three invariants** (checklist enforces the rest):
+**Three invariants** (the verifier enforces the rest):
 
 1. **6 H3 subsections in the TL;DR, in this order, no more, no fewer.**
 2. **Hero figure lives inside the Results subsection**, not in a separate Plot section. Do not duplicate it in the Detailed report.
@@ -102,14 +155,19 @@ claim before writing more.
 
 ### Step 3: Choose the hero figure
 
-Criteria live in `principles.md` (Chua/Hughes chart rules) and
-`checklist.md` §3. One figure, labeled axes with direction, error bars where
-applicable, ≤ 3-5 colors, readable on a video call. Commit at
-`figures/<experiment>/<name>.{png,pdf}` and use a raw GitHub URL pinned to a
-specific commit — never `main`, never relative.
+Use the `paper-plots` skill to build / regenerate the hero figure. The
+skill enforces colorblind-safe palette, error bars, direction arrows,
+commit-pinned `.meta.json` sidecar, PNG + PDF dual save. Do not build
+figures with ad-hoc `plt.rcParams.update(...)`; always go through
+`src/explore_persona_space/analysis/paper_plots.set_paper_style()`.
+
+One figure. Labeled axes with direction. Error bars. ≤ 3-5 colors.
+Readable on a video call. Committed at `figures/<experiment>/<name>.{png,pdf}`.
+Linked with a raw GitHub URL pinned to a specific commit — never `main`,
+never relative.
 
 If no single figure carries the claim, you haven't distilled hard enough
-(Step 2).
+(Step 2). Rerun Step 2.
 
 ### Step 4: Write the body
 
@@ -117,11 +175,21 @@ Fill in `template.md`. For confidence calibration, phrasing, hedges, figure
 rules, reproducibility card completeness — defer to `checklist.md`. This
 step is about drafting; Step 5 is about verification.
 
-### Step 5: Run the pre-publish checklist
+### Step 5: Run the pre-publish verifier
 
-Open `checklist.md` and tick every item, or document an exception in the
-body's Caveats section. Do not proceed to Step 6 until the checklist is
-clean.
+```bash
+uv run python scripts/verify_clean_result.py <path-to-body.md>
+# or for an already-posted issue:
+uv run python scripts/verify_clean_result.py --issue <N>
+```
+
+Every FAIL must be fixed. WARNs should be fixed or acknowledged in the body's
+Caveats section. Do not proceed to Step 6 until the verifier is clean.
+
+The verifier checks: TL;DR structure (6 subsections in order), hero figure
+commit-pinning, confidence-tag mirroring, numeric prose ↔ JSON cross-check,
+reproducibility-card completeness, confidence-phrasebook consistency,
+support-type tags on every How-updates-me bullet, title prefix.
 
 ### Step 6: Post
 
@@ -139,10 +207,13 @@ gh issue create \
 Then:
 
 ```bash
+# Mode A: use "Clean Results (draft)" and label clean-results:draft
+uv run python scripts/gh_project.py set-status <N> "Clean Results (draft)"
+# Mode B / promotion: final column
 uv run python scripts/gh_project.py set-status <N> "Clean Results"
 ```
 
-(If the column doesn't exist, add it in the GitHub UI first.)
+(If a column doesn't exist, add it in the GitHub UI first.)
 
 On each source issue referenced in `## Source issues`, post a one-liner:
 > Distilled into clean result: #<new-issue-N>.
@@ -154,12 +225,12 @@ result is the mentor-facing artifact; source issues remain the audit trail.
 
 ## When to use this skill
 
-- One or more experiments reach `status:done-experiment` and the finding is
-  worth showing a mentor.
-- Consolidating a cluster of related issues (e.g., a sweep spanning
+- Automatic: every `type:experiment` + `compute:medium|large` sign-off
+  fires Mode A.
+- Manual: consolidating a cluster of related issues (e.g., a sweep spanning
   #28, #46, pilot issues) into one presentable result.
-- Before a mentor meeting — the clean-result issue becomes the single source
-  of truth to screen-share; no separate deck needed.
+- Before a mentor meeting — the clean-result issue is the single source of
+  truth to screen-share (see `/mentor-prep` for multi-result assembly).
 
 ## When NOT to use this skill
 
@@ -169,4 +240,4 @@ result is the mentor-facing artifact; source issues remain the audit trail.
 - Infra / code-change issues. Those close via `status:done-impl`; they're
   not claims about the world.
 - A single small experiment well-presented in its own `epm:results` comment.
-  Cleaning adds overhead; reserve it for findings that will be cited later.
+  Cleaning adds overhead; reserve it for `compute:medium|large`.

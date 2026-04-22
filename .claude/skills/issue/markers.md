@@ -34,11 +34,11 @@ markers. This file is the source of truth for marker syntax and semantics.
 | `launch` | skill | Step 5e | Worktree, branch, PR, pod, PID, log path, WandB URL (best-effort). |
 | `progress` | specialist | during run | Milestone description + metric snapshot. |
 | `results` | specialist | end of run | Eval JSON paths, filled reproducibility card, WandB URL, HF Hub path, commit hash, GPU-hours used, deviations. |
-| `analysis` | skill (via analyzer) | Step 7a | Analyzer draft following `templates/experiment_report.md`. |
+| `analysis` | skill (via analyzer) | Step 7a | Full clean-results-format draft (see `.claude/skills/clean-results/template.md`). Mandatory: 6 TL;DR subsections + Detailed report. Verifier-clean (`scripts/verify_clean_result.py`). |
 | `reviewer-verdict` | skill (via reviewer / code-reviewer) | Step 7b | PASS / CONCERNS / FAIL + line-level issues. |
 | `test-verdict` | skill (via tester) | Step 7c | PASS / FAIL + test output summary, coverage gap notes. |
 | `results-md-diff` | skill | Step 8 | Proposed diff for RESULTS.md (for user review, not auto-applied). |
-| `closed` | skill | Step 8 | Final summary: outcome, numbers, what's confirmed/falsified, next steps. |
+| `done` | skill | Step 8 | Final summary: outcome, numbers, what's confirmed/falsified, next steps. Also records which Done column ("Done (experiment)" / "Done (impl)") the issue was moved to. Issue stays OPEN. |
 | `abort` | skill | any time | Abort reason. Triggered by `status:blocked` label. |
 | `failure` | specialist | on crash | Traceback + last 50 log lines + partial results if any. |
 | `stale` | skill | Step 6 (>4h silence) | Note asking user to investigate. |

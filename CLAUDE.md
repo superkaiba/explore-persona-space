@@ -14,29 +14,33 @@
 1. **Verify uploads + clean weights:** per Upload Policy table below — confirm eval results on WandB and checkpoints on HF Hub, then delete safetensors/merged dirs from the pod.
 2. Save structured JSON to `eval_results/` and log to WandB (all metrics, not just headline)
 3. Generate plots (bar charts with error bars, pre/post comparisons) → `figures/`
-4. Write draft to `research_log/drafts/` **using `templates/experiment_report.md`** — every section is mandatory
+4. Write draft to `research_log/drafts/` **using `.claude/skills/clean-results/template.md`** — every section is mandatory. Run `uv run python scripts/verify_clean_result.py <path>` before posting; FAIL blocks posting.
 5. Update `RESULTS.md` and `docs/research_ideas.md`
 6. **Check disk usage:** Run `df -h /workspace` — if below 100GB free, escalate to manager for cleanup
 7. **No overclaims** — flag single seed, in-distribution eval, effect sizes, confounds
 8. **End-of-session check:** Run `git status` — if modified drafts, RESULTS.md, or eval_results JSON are uncommitted, commit before ending
 
-## Experiment Report Structure (`templates/experiment_report.md`)
+## Experiment Report Structure
 
-Every draft and final report MUST follow the template. Key sections that are often skipped but **must not be**:
+All experiment write-ups — analyzer drafts, research-log entries, and `[Clean Result]` GitHub issues — follow ONE unified template at **`.claude/skills/clean-results/template.md`**.
 
-- **TL;DR** — 2 sentences: result + implication. If the mentor reads nothing else, this tells the story.
-- **Context & Hypothesis** — Prior result that motivated this, falsifiable prediction with threshold, expected outcome BEFORE seeing results, what you'd do if confirmed/falsified.
-- **Method Delta** — What changed from the reference experiment. Mentors want diffs, not full methods repeated.
-- **Surprises** — Where results contradicted expectations. Prior belief, evidence, updated belief. If no surprises, state "no surprises" explicitly.
-- **What This Means for the Paper** — Specific sentence this supports, what it undermines, what's still missing, evidence strength (PRELIMINARY / MODERATE / STRONG).
-- **Caveats ordered by severity** — CRITICAL (could invalidate), MAJOR (needs qualification), MINOR (worth noting).
-- **Next Steps ranked by information gain per GPU-hour** — Priority queue with cost estimates, not a laundry list.
+The template has two parts:
+
+- **TL;DR** — 6 H3 subsections in order: `Background`, `Methodology`, `Results` (hero figure lives here), `How this updates me + confidence`, `Why confidence is where it is`, `Next steps`. No more, no fewer.
+- **Detailed report** — `Source issues`, `Setup & hyper-parameters` (reproducibility card), `WandB`, `Sample outputs`, `Headline numbers`, `Artifacts`, `Decision Log`, `Caveats` (severity-ranked).
+
+Key requirements:
+
+- Each bullet in "How this updates me + confidence" carries a confidence tag (HIGH / MODERATE / LOW) AND a support-type tag (`support = direct|replicated|external|intuition|shallow`).
+- The `Why confidence is where it is` subsection mirrors those tags one-for-one.
+- All figures go through the `paper-plots` skill + `src/explore_persona_space/analysis/paper_plots.py`.
+- Every draft MUST pass `uv run python scripts/verify_clean_result.py <path>` before posting.
+
+See `.claude/skills/clean-results/principles.md` for the research-communication rationale (Nanda, Perez, Chua, Hughes, Evans).
 
 ## Reproducibility Requirements (MANDATORY)
 
-Every experiment write-up MUST include a **Reproducibility Card** (all parameters needed to rerun from scratch — actual values, not "see config") and a **Decision Log** (why this experiment, why these parameters, what alternatives, expected vs. actual).
-
-Both sections are part of `templates/experiment_report.md` — fill them in, don't paraphrase.
+Every experiment write-up MUST include a filled **Reproducibility Card** (all parameters to rerun from scratch — actual values, not "see config") and a **Decision Log** (why this experiment, why these parameters, what alternatives). Both live in the Detailed report section of `.claude/skills/clean-results/template.md` — fill them in, don't paraphrase. The `verify_clean_result.py` validator flags empty-cell sentinels (`{{`, `TBD`, `see config`, `default`) as FAIL.
 
 ## Remote Pod Access (SSH MCP)
 
@@ -261,6 +265,18 @@ ruff check . && ruff format .
 **Hydra config composition:** `configs/config.yaml` defaults list composes training + lora + eval + condition. Override: `condition=c6_vanilla_em seed=137`.
 
 **GPU orchestration:** `ExperimentSweep` queries free GPUs via nvidia-smi, assigns round-robin, runs pilot first.
+
+**Periodic eval callbacks:** `eval/callbacks.py` provides `TrainerCallback`s for tracking metrics during training (not just pre/post phase). Three callbacks available:
+- **`PeriodicCapabilityCallback`** — ARC-C logprob, in-process on training model. Fast (<25s). On by default.
+- **`PeriodicAlignmentCallback`** — Betley alignment via checkpoint + vLLM. Expensive (~10-15min). Off by default.
+- **`PeriodicLeakageCallback`** — Trait leakage across personas via checkpoint + vLLM. Off by default.
+
+All fully configurable via `periodic_eval` in eval config. Capability measured by default; alignment and leakage enabled explicitly per experiment:
+- Midtraining EM experiments: enable `periodic_eval.alignment=true`
+- Persona leakage experiments: enable `periodic_eval.leakage=true` to track the finetuned behavior across source + bystander personas
+- Disable all: `periodic_eval.enabled=false`
+
+Only works for in-process training (`train_phase`, `train_dpo_phase`, `train_lora`). Not supported for distributed `run_distributed_pipeline` (subprocess-based).
 
 ## Results Format
 

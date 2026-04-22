@@ -62,27 +62,36 @@ from scipy import stats
 
 ### Step 4: Check Report Completeness Against Template
 
-Before evaluating findings, verify the draft follows the structure in `templates/experiment_report.md`. Check EVERY section:
+Before evaluating findings, verify the draft follows the unified structure in `.claude/skills/clean-results/template.md`. Check EVERY section.
 
-**Section checklist (all mandatory):**
+Before diving into the detail below, also run the automated validator and flag any FAIL:
+```bash
+uv run python scripts/verify_clean_result.py <draft-path>
+```
+
+**TL;DR section checklist (6 H3 subsections in exact order — no more, no fewer):**
+
+| Subsection | Present? | Red Flags |
+|------------|----------|-----------|
+| `### Background` | | No prior result cited, no clear question stated |
+| `### Methodology` | | No N, no matched-vs-confounded design note |
+| `### Results` | | No hero figure inside this subsection, or figure URL not commit-pinned, or numbers missing |
+| `### How this updates me + confidence` | | Bullets lacking HIGH/MODERATE/LOW tags OR lacking `support = direct|replicated|external|intuition|shallow` tags |
+| `### Why confidence is where it is` | | Does not mirror the confidence tags one-for-one (count mismatch > 1) |
+| `### Next steps` | | Laundry list without priority ranking or GPU-hour estimates |
+
+**Detailed report section checklist (all mandatory):**
 
 | Section | Present? | Red Flags |
 |---------|----------|-----------|
-| TL;DR | | Missing, or >2 sentences, or doesn't state the key number |
-| Key Figure | | Missing, or no caption, or wrong figure for the main finding |
-| Context & Hypothesis | | No prior result cited, no falsifiable prediction, no expected outcome |
-| Method Delta | | Full methods repeated instead of diff from reference experiment |
-| Reproducibility Card | | See parameter checklist below |
-| Conditions & Controls | | No table, or controls don't explain what confound they rule out |
-| Results with CIs/error bars | | Raw numbers without uncertainty, missing statistical tests |
-| Statistical tests table | | Missing effect sizes, CIs, or power analysis for underpowered tests |
-| Findings with evidence strength | | Observation and inference not separated |
-| Surprises | | Section missing (even "no surprises" must be stated explicitly) |
-| Caveats (severity-ranked) | | Flat list without CRITICAL/MAJOR/MINOR ordering |
-| Paper implications | | No specific paper sentence, no evidence strength rating |
+| Source issues | | No issue numbers cited, no one-line contributions |
+| Setup & hyper-parameters | | See reproducibility-card checklist below |
+| WandB | | Missing project URL or individual run URLs |
+| Sample outputs | | For generation experiments: missing cherry-picked examples or no positive/negative pairing |
+| Headline numbers | | No bold row indicating the result; no units |
+| Artifacts | | Missing WandB link, missing git commit hash, missing data-cache paths |
 | Decision Log | | Missing "why these params" or "alternatives considered" |
-| Next Steps (ranked with costs) | | Laundry list without priority ranking or GPU-hour estimates |
-| Files & Artifacts | | Missing WandB link, missing git commit hash |
+| Caveats (severity-ranked) | | Flat list without ordering; no resolution-path per caveat |
 
 **Reproducibility Card parameter checklist:**
 
@@ -132,22 +141,16 @@ For each major finding, ask:
 **Reproducibility:** COMPLETE / INCOMPLETE (N fields missing)
 **Structure:** COMPLETE / INCOMPLETE (N sections missing)
 
-## Template Compliance (templates/experiment_report.md)
-- [ ] TL;DR (2 sentences: result + implication)
-- [ ] Key Figure with caption
-- [ ] Context & Hypothesis (prior result, falsifiable prediction, expected outcome)
-- [ ] Method Delta (diff from reference experiment, not full methods repeated)
-- [ ] Reproducibility Card (all parameters -- see below)
-- [ ] Conditions & Controls (with confound explanations)
-- [ ] Results with CIs/error bars
-- [ ] Statistical tests (effect sizes, CIs, power if underpowered)
-- [ ] Findings with evidence strength (observation vs inference separated)
-- [ ] Surprises (or explicit "no surprises")
-- [ ] Caveats severity-ranked (CRITICAL / MAJOR / MINOR)
-- [ ] Paper implications (specific sentence, evidence strength rating)
-- [ ] Decision Log (why experiment, why params, alternatives, retrospective)
-- [ ] Next Steps ranked by information gain with GPU-hour estimates
-- [ ] Files & Artifacts with WandB link and git commit
+## Template Compliance (`.claude/skills/clean-results/template.md`)
+- [ ] TL;DR present with 6 H3 subsections in order (Background, Methodology, Results, How this updates me + confidence, Why confidence is where it is, Next steps)
+- [ ] Hero figure inside ### Results (commit-pinned raw.githubusercontent.com URL, not /main/)
+- [ ] Every "How this updates me" bullet carries HIGH/MODERATE/LOW + `support = ...` tag
+- [ ] "Why confidence" bullets mirror the confidence tags one-for-one
+- [ ] Background cites prior issue/result
+- [ ] Methodology names N, matched-vs-confounded choices
+- [ ] Next steps ranked by info-gain per GPU-hour with cost estimates
+- [ ] Detailed report: Source issues, Setup & hyper-parameters, WandB, Sample outputs, Headline numbers, Artifacts, Decision Log, Caveats (all present)
+- [ ] `scripts/verify_clean_result.py` exits 0
 - Missing sections: [list]
 
 ## Reproducibility Card Check

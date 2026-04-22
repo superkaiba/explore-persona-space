@@ -163,9 +163,10 @@ Do NOT auto-fix:
    ```
 
 3. **Write draft report** to `research_log/drafts/YYYY-MM-DD_<name>.md`:
-   - **Use the template at `templates/experiment_report.md`** — follow its structure exactly
-   - Every section in the template is mandatory: TL;DR, Key Figure, Context & Hypothesis, Method Delta, Reproducibility Card, Conditions & Controls, Results with statistical tests, Interpretation with Surprises, severity-ranked Caveats, Paper Implications, Decision Log, ranked Next Steps, Files & Artifacts
-   - Mark as "DRAFT" status in the header
+   - **Use the template at `.claude/skills/clean-results/template.md`** — the single unified format for every write-up in this project
+   - Every section is mandatory: 6 TL;DR subsections (Background, Methodology, Results with hero figure, How this updates me + confidence, Why confidence is where it is, Next steps) AND the Detailed report (Source issues, Setup & hyper-parameters, WandB, Sample outputs, Headline numbers, Artifacts, Decision Log, Caveats severity-ranked)
+   - All figures go through the `paper-plots` skill + `src/explore_persona_space/analysis/paper_plots.py`
+   - Before posting, run `uv run python scripts/verify_clean_result.py <draft-path>` — FAIL blocks posting
 
 4. **Update drafts log** — Append one-liner to `research_log/drafts/LOG.md`.
 

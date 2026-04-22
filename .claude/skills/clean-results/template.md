@@ -109,6 +109,7 @@ Downstream consumers:
 | | |
 |-|-|
 | Method | {{SFT / DPO / LoRA SFT / ...}} |
+| Checkpoint source | {{wandb artifact path or HF path or "from scratch"}} |
 | LoRA config | `r={{r}}, α={{alpha}}, dropout={{dropout}}, targets={{targets}}` |
 | Loss | {{standard CE / masked to marker positions only / ...}} |
 | LR | {{value or grid}} |
@@ -147,6 +148,14 @@ Downstream consumers:
 | Hardware | {{e.g., 1× H200 SXM (pod1)}} |
 | Wall time | {{range or value}} |
 | Total GPU-hours | {{value}} |
+
+### Environment
+| | |
+|-|-|
+| Python | {{e.g., 3.11.5}} |
+| Key libraries | {{e.g., transformers=5.0.0, torch=2.5.1, trl=0.14.0, peft=0.13.0}} |
+| Git commit | {{short_hash — matches the `@` hash above}} |
+| Launch command | `{{exact nohup ... &, reproducible from scratch}}` |
 
 ## WandB
 
@@ -200,6 +209,13 @@ explicitly "cherry-picked for illustration" and link to the full dump.]
 
 (Bold the row that IS the result. No more than ~10 rows — extras go in
 `<details>` or the JSON.)
+
+## Decision Log
+
+- **Why this experiment:** {{what prior result motivated it — cite the specific issue or experiment and the key number that made this follow-up load-bearing}}
+- **Why these parameters:** {{for each non-obvious choice, e.g., "lr=2e-5 because pilot at 5e-5 diverged in #12" / "seed=42 matches the baseline in #30 for paired comparison"}}
+- **Alternatives considered:** {{what else could have been tried and why this was chosen first — name the runner-up}}
+- **What I'd do differently:** {{in retrospect, any design improvements for the rerun — or "nothing" if the design held up}}
 
 ## Artifacts
 

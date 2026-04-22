@@ -4,7 +4,9 @@ description: >
   End-to-end GitHub-issue-driven workflow for experiments and code changes.
   Takes an issue number, parses state from labels + comment markers, and dispatches
   the next action (clarify -> gate-keeper -> adversarial-planner -> approval -> worktree +
-  dispatch specialist -> preflight -> run -> analyzer -> reviewer -> tester -> close).
+  dispatch specialist -> preflight -> run -> analyzer -> reviewer -> tester -> sign-off).
+  Completed issues are marked "Done" on the Experiment Queue project board and
+  left OPEN -- DO NOT close issues.
   Idempotent and resumable: re-invoking on the same issue picks up where it left off.
 user_invocable: true
 ---
@@ -70,8 +72,8 @@ status:proposed                           <- user has filed, clarifier hasn't ru
                      |                                                                 |-- [NOT type:infra] --> status:under-review  <- AWAITING USER: /signoff?
                      |                                                                 status:under-review
                      |                                                                    |-- (user /signoff)
-                     |                                                                       |-- [type:experiment] --> status:done-experiment (closed)
-                     |                                                                       |-- [other] --> status:done-impl (closed)
+                     |                                                                       |-- [type:experiment] --> status:done-experiment + Project Status="Done (experiment)" (issue stays OPEN)
+                     |                                                                       |-- [other]            --> status:done-impl       + Project Status="Done (impl)"       (issue stays OPEN)
                      |-- MODIFY --> status:proposed (back; revision notes posted)
                      |-- SKIP --> status:blocked (alternative suggested)
 ```
@@ -90,8 +92,8 @@ status:proposed                           <- user has filed, clarifier hasn't ru
 | `testing` | tester (skill-internal) | no |
 | `under-review` | nobody | **yes -- /signoff** |
 | `blocked` | nobody (aborted or gate-skipped) | **yes -- triage** |
-| `done-impl` | nobody (closed) | no |
-| `done-experiment` | nobody (closed) | no |
+| `done-impl` | nobody (issue stays OPEN; Project Status="Done (impl)") | no |
+| `done-experiment` | nobody (issue stays OPEN; Project Status="Done (experiment)") | no |
 
 Abort affordance: any state, user labels `status:blocked` -> skill posts abort
 request, watcher kills run if one exists.
@@ -257,7 +259,10 @@ Only if `status:reviewing` (or `status:testing`) and either `epm:analysis`,
 `epm:reviewer-verdict`, or `epm:test-verdict` is missing.
 
 **7a.** Spawn `analyzer` agent with raw result paths. Analyzer produces a draft
-write-up following `templates/experiment_report.md`. Post the draft as
+write-up following `.claude/skills/clean-results/template.md` (the single unified
+format). The analyzer runs `uv run python scripts/verify_clean_result.py` before
+posting; FAIL blocks posting. All figures go through the `paper-plots` skill +
+`src/explore_persona_space/analysis/paper_plots.py`. Post the final draft as
 `<!-- epm:analysis v1 -->`. (For code-change issues, skip -- go straight to 7b with
 code-reviewer.)
 
@@ -346,7 +351,7 @@ This step runs inline in the `/issue` skill -- no separate agent needed.
 - **PASS** (0 unit test failures + lint clean) -> advance label `status:testing` -> `status:under-review`. EXIT.
 - **FAIL** -> Count `epm:test-verdict` markers with verdict=FAIL. If count >= 3: advance to `status:blocked` with note "3 consecutive test failures." Otherwise: label stays `status:testing`. Post failure details. The implementer fixes in the worktree, commits, and re-invokes `/issue <N>` to re-run the tester. (No reviewer re-validation needed for test-only fixes.)
 
-### Step 8: Sign-off + close
+### Step 8: Sign-off + move to Done (DO NOT close the issue)
 
 Only if `status:under-review` and reviewer PASS.
 
@@ -355,12 +360,37 @@ On user comment `/signoff`:
 2. Update `RESULTS.md` if the finding is headline-level (propose diff as comment
    `<!-- epm:results-md-diff v1 -->` -- do NOT auto-edit).
 3. Update `eval_results/INDEX.md` with new entry.
-4. Apply the appropriate done label based on `type:*`:
-   - `type:experiment` -> add `status:done-experiment`, remove `status:under-review`
-   - `type:infra` / `type:analysis` / `type:survey` -> add `status:done-impl`, remove `status:under-review`
-5. Close issue with final comment `<!-- epm:closed v1 -->` summarizing:
+4. **Choose the Done variant from the issue's `type:*` label** (REQUIRED -- no guessing):
+   - `type:experiment`                          -> `status:done-experiment` + Project Status `"Done (experiment)"`
+   - `type:infra` / `type:analysis` / `type:survey` -> `status:done-impl`       + Project Status `"Done (impl)"`
+   - If the issue has NO `type:*` label -> STOP, ask the user to add one before signing off.
+     Do NOT pick a default.
+4b. **Auto-draft clean-result** (runs only if `type:experiment` AND `compute:medium|large` AND reviewer verdict was PASS):
+
+   Invoke the `clean-results` skill in Mode A with the source issue number. It creates a new `[Clean Result] ...` issue with label `clean-results:draft`, moves it to the "Clean Results (draft)" project column, and posts a cross-link comment on the source issue. If a "Clean Results (draft)" column does not exist, the skill posts the issue to `Clean Results` with the `clean-results:draft` label only (user can move manually).
+
+   Skip the auto-draft for `compute:small` (overhead not justified for small experiments) and for `type:infra | type:analysis | type:survey` (not claims about the world). Skip if the reviewer verdict was CONCERNS with load-bearing flags — the draft is not ready to surface.
+
+   The auto-draft is NOT a state transition of the source issue. The source issue still advances to `status:done-experiment` in step 5; the clean-result is a SEPARATE new issue, promoted to the final `Clean Results` column only when the user runs `/clean-results promote <new-N>`.
+
+5. Apply the done label (remove `status:under-review`, add the done label chosen in step 4):
+   ```
+   gh issue edit <N> --add-label <done-label> --remove-label status:under-review
+   ```
+6. Move the issue to the correct Done column on the Experiment Queue project board.
+   The helper resolves IDs dynamically (option IDs regenerate on any schema edit):
+   ```
+   # <status-name> is literally "Done (experiment)" or "Done (impl)" per step 4.
+   uv run python scripts/gh_project.py set-status <N> "<status-name>"
+   ```
+7. Post final comment `<!-- epm:done v1 -->` summarizing:
    outcome, key numbers, what's confirmed/falsified, what's next.
-6. Do NOT delete the worktree -- user decides when to clean up.
+   Template hint: include the line `Moved to **<status-name>** on the project board.`
+8. **LEAVE THE ISSUE OPEN.** Never call `gh issue close`. Done-ness lives on the
+   project board, not in the issue's open/closed state. The only legitimate way
+   for this skill to close an issue is a user-initiated duplicate / invalid / won't-fix
+   triage -- never as the terminal state of a successful run.
+9. Do NOT delete the worktree -- user decides when to clean up.
 
 ---
 
