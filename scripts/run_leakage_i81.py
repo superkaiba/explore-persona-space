@@ -526,9 +526,19 @@ def cmd_sweep(args: argparse.Namespace) -> None:
             "--n-bystanders",
             str(args.n_bystanders) if args.n_bystanders else "-1",
         ]
+        # CRITICAL: the shared `.venv` is bound to whichever worktree most
+        # recently ran `uv run` — its editable-install `.pth` gets rewritten
+        # under our feet if another process in a SIBLING worktree (e.g. i83)
+        # invokes `uv run`. Bare `sys.executable` only reads the `.pth`, so
+        # we prepend our PROJECT_ROOT/src to PYTHONPATH explicitly to make
+        # imports robust against that race.
+        worker_env = os.environ.copy()
+        src_path = str(PROJECT_ROOT / "src")
+        existing_pp = worker_env.get("PYTHONPATH", "")
+        worker_env["PYTHONPATH"] = f"{src_path}:{existing_pp}" if existing_pp else src_path
         log_path = EVAL_RESULTS_DIR / f"sweep_{key}.log"
         log_file = open(log_path, "w")  # noqa: SIM115
-        proc = subprocess.Popen(cmd, stdout=log_file, stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(cmd, stdout=log_file, stderr=subprocess.STDOUT, env=worker_env)
         processes[key] = (proc, gpu_id)
 
     # Drain.
