@@ -1,0 +1,6801 @@
+{
+  "metadata": {
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "layers": [
+      10,
+      15,
+      20,
+      25
+    ],
+    "n_questions": 20,
+    "n_personas": 205,
+    "n_bystanders": 200,
+    "n_sources": 5,
+    "seeds_averaged": [
+      42,
+      137,
+      256
+    ],
+    "timestamp": "2026-04-22 05:14:30"
+  },
+  "per_layer": {
+    "layer_10": {
+      "pairs": [
+        {
+          "persona_id": "v_ts_1",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.492914,
+          "leakage_rate": 0.3033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ts_2",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.533881,
+          "leakage_rate": 0.6917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ts_3",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.551601,
+          "leakage_rate": 0.4267,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ts_4",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.473331,
+          "leakage_rate": 0.5083,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ts_5",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.455701,
+          "leakage_rate": 0.655,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_1",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.235921,
+          "leakage_rate": 0.1067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_2",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.41137,
+          "leakage_rate": 0.945,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_3",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.515843,
+          "leakage_rate": 0.5033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_4",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.374366,
+          "leakage_rate": 0.98,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_5",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.045368,
+          "leakage_rate": 0.645,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_1",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.486522,
+          "leakage_rate": 0.4633,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_2",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.569275,
+          "leakage_rate": 0.0533,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_3",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.243463,
+          "leakage_rate": 0.9433,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_4",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.230997,
+          "leakage_rate": 0.455,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_5",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.164989,
+          "leakage_rate": 0.88,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_1",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": 0.075944,
+          "leakage_rate": 0.0267,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_2",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": -0.033032,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_3",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": 0.34288,
+          "leakage_rate": 0.1283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_4",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": -0.115473,
+          "leakage_rate": 0.02,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_5",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": -0.082634,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_1",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": -0.059155,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_2",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": 0.078346,
+          "leakage_rate": 0.8733,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_3",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": 0.220887,
+          "leakage_rate": 0.0383,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_4",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": 0.087107,
+          "leakage_rate": 0.3933,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_5",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": -0.161884,
+          "leakage_rate": 0.0117,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_1",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": 0.199085,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_2",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": 0.158065,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_3",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": 0.295347,
+          "leakage_rate": 0.005,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_4",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": 0.266966,
+          "leakage_rate": 0.005,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_5",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": 0.160148,
+          "leakage_rate": 0.0283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_1",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.383206,
+          "leakage_rate": 0.19,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_2",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.523828,
+          "leakage_rate": 0.115,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_3",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.176271,
+          "leakage_rate": 0.1033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_4",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.544246,
+          "leakage_rate": 0.0283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_5",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.297047,
+          "leakage_rate": 0.145,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_1",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": 0.020177,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_2",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.100951,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_3",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": 0.055351,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_4",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.061625,
+          "leakage_rate": 0.0067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_5",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.051109,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_1",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": 0.134249,
+          "leakage_rate": 0.1733,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_2",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": -0.297792,
+          "leakage_rate": 0.225,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_3",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": 0.00109,
+          "leakage_rate": 0.4133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_4",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": 0.109222,
+          "leakage_rate": 0.21,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_5",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": -0.149702,
+          "leakage_rate": 0.0817,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_1",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": -0.063631,
+          "leakage_rate": 0.105,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_2",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.294223,
+          "leakage_rate": 0.3117,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_3",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.088041,
+          "leakage_rate": 0.2367,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_4",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.122299,
+          "leakage_rate": 0.2033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_5",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.114902,
+          "leakage_rate": 0.0867,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_1",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": 0.085807,
+          "leakage_rate": 0.0033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_2",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": 0.134733,
+          "leakage_rate": 0.1633,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_3",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": 0.128096,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_4",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": 0.146816,
+          "leakage_rate": 0.0983,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_5",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": 0.038054,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_1",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.186253,
+          "leakage_rate": 0.14,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_2",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.239762,
+          "leakage_rate": 0.17,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_3",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.145563,
+          "leakage_rate": 0.24,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_4",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.023165,
+          "leakage_rate": 0.2383,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_5",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.158328,
+          "leakage_rate": 0.1467,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_1",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": -0.299825,
+          "leakage_rate": 0.0783,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_2",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": -0.051486,
+          "leakage_rate": 0.1017,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_3",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": -0.307891,
+          "leakage_rate": 0.06,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_4",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": -0.195294,
+          "leakage_rate": 0.1133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_5",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": -0.254412,
+          "leakage_rate": 0.1367,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_1",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": 0.071055,
+          "leakage_rate": 0.0167,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_2",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": 0.175488,
+          "leakage_rate": 0.1217,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_3",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": -0.004048,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_4",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": 0.263503,
+          "leakage_rate": 0.0433,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_5",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": 0.23819,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_1",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.306641,
+          "leakage_rate": 0.0167,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_2",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": 0.068792,
+          "leakage_rate": 0.0233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_3",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.259351,
+          "leakage_rate": 0.01,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_4",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.157868,
+          "leakage_rate": 0.01,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_5",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.056044,
+          "leakage_rate": 0.0683,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_1",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": 0.040092,
+          "leakage_rate": 0.0767,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_2",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": -0.15891,
+          "leakage_rate": 0.0833,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_3",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": 0.139294,
+          "leakage_rate": 0.1483,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_4",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": 0.086222,
+          "leakage_rate": 0.1233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_5",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": -0.001535,
+          "leakage_rate": 0.0917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_1",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.444159,
+          "leakage_rate": 0.9217,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_2",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.12062,
+          "leakage_rate": 0.8917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_3",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.625289,
+          "leakage_rate": 0.87,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_4",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.67434,
+          "leakage_rate": 0.9033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_5",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.426704,
+          "leakage_rate": 0.8933,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_1",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.510936,
+          "leakage_rate": 0.8417,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_2",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.625313,
+          "leakage_rate": 0.8083,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_3",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.472569,
+          "leakage_rate": 0.8767,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_4",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.134527,
+          "leakage_rate": 0.6817,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_5",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.373613,
+          "leakage_rate": 0.875,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_1",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": 0.294559,
+          "leakage_rate": 0.7583,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_2",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": 0.565853,
+          "leakage_rate": 0.12,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_3",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": 0.3667,
+          "leakage_rate": 0.4183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_4",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": 0.500732,
+          "leakage_rate": 0.2717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_5",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": 0.373628,
+          "leakage_rate": 0.0183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_1",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.527614,
+          "leakage_rate": 0.8683,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_2",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.387098,
+          "leakage_rate": 0.895,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_3",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.485742,
+          "leakage_rate": 0.865,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_4",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.327919,
+          "leakage_rate": 0.8783,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_5",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.625943,
+          "leakage_rate": 0.8917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_1",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.257012,
+          "leakage_rate": 0.8283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_2",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.153289,
+          "leakage_rate": 0.575,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_3",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.135224,
+          "leakage_rate": 0.7533,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_4",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": -0.210805,
+          "leakage_rate": 0.6617,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_5",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.045594,
+          "leakage_rate": 0.8617,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_1",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": 0.013949,
+          "leakage_rate": 0.0333,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_2",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.150476,
+          "leakage_rate": 0.0783,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_3",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.144062,
+          "leakage_rate": 0.0633,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_4",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.290833,
+          "leakage_rate": 0.1133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_5",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.188836,
+          "leakage_rate": 0.1267,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_1",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": -0.050582,
+          "leakage_rate": 0.5767,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_2",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": -0.042784,
+          "leakage_rate": 0.4667,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_3",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": -0.212722,
+          "leakage_rate": 0.3117,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_4",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": -0.075914,
+          "leakage_rate": 0.5367,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_5",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": 0.120256,
+          "leakage_rate": 0.485,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_1",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": 0.087019,
+          "leakage_rate": 0.3667,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_2",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": 0.031666,
+          "leakage_rate": 0.5233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_3",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": -0.082284,
+          "leakage_rate": 0.6717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_4",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": 0.126573,
+          "leakage_rate": 0.7583,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_5",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": -0.113301,
+          "leakage_rate": 0.6667,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_1",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.416319,
+          "leakage_rate": 0.3017,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_2",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.333744,
+          "leakage_rate": 0.2483,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_3",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.587522,
+          "leakage_rate": 0.1067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_4",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.069482,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_5",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.454296,
+          "leakage_rate": 0.235,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_1",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.05502,
+          "leakage_rate": 0.025,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_2",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.165865,
+          "leakage_rate": 0.2067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_3",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.178017,
+          "leakage_rate": 0.25,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_4",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.26595,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_5",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.275151,
+          "leakage_rate": 0.8483,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_1",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.326514,
+          "leakage_rate": 0.05,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_2",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.415777,
+          "leakage_rate": 0.0183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_3",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.549105,
+          "leakage_rate": 0.0067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_4",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.440886,
+          "leakage_rate": 0.2233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_5",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.399008,
+          "leakage_rate": 0.3033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_1",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": 0.4655,
+          "leakage_rate": 0.19,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_2",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": -0.055442,
+          "leakage_rate": 0.005,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_3",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": 0.028766,
+          "leakage_rate": 0.125,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_4",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": 0.141197,
+          "leakage_rate": 0.06,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_5",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": 0.319899,
+          "leakage_rate": 0.005,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_1",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": -0.08195,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_2",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": -0.125019,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_3",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": 0.026822,
+          "leakage_rate": 0.0067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_4",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": 0.143812,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_5",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": -0.044367,
+          "leakage_rate": 0.025,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_1",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.111527,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_2",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.102542,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_3",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.078684,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_4",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.04908,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_5",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.108456,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_1",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.100583,
+          "leakage_rate": 0.0017,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_2",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.033232,
+          "leakage_rate": 0.02,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_3",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": -0.139143,
+          "leakage_rate": 0.0083,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_4",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.038236,
+          "leakage_rate": 0.0833,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_5",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.206288,
+          "leakage_rate": 0.0367,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_1",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.136167,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_2",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.10088,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_3",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.105624,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_4",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.102936,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_5",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.22886,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_1",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": -0.025629,
+          "leakage_rate": 0.2717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_2",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.328476,
+          "leakage_rate": 0.4267,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_3",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.170117,
+          "leakage_rate": 0.5,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_4",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.210269,
+          "leakage_rate": 0.3533,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_5",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": -0.03988,
+          "leakage_rate": 0.2467,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_1",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.346706,
+          "leakage_rate": 0.6417,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_2",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.246956,
+          "leakage_rate": 0.56,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_3",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.124916,
+          "leakage_rate": 0.535,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_4",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.272935,
+          "leakage_rate": 0.5717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_5",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.174217,
+          "leakage_rate": 0.7183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_1",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.25433,
+          "leakage_rate": 0.1733,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_2",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.036283,
+          "leakage_rate": 0.435,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_3",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.260932,
+          "leakage_rate": 0.0833,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_4",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.118208,
+          "leakage_rate": 0.2717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_5",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.356416,
+          "leakage_rate": 0.37,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_1",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.021835,
+          "leakage_rate": 0.1817,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_2",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": -0.044101,
+          "leakage_rate": 0.555,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_3",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.061679,
+          "leakage_rate": 0.3283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_4",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.213991,
+          "leakage_rate": 0.4217,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_5",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.261936,
+          "leakage_rate": 0.2583,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_1",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.151319,
+          "leakage_rate": 0.3183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_2",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": -0.273551,
+          "leakage_rate": 0.33,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_3",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.022109,
+          "leakage_rate": 0.3183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_4",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.084406,
+          "leakage_rate": 0.4883,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_5",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": -0.145078,
+          "leakage_rate": 0.675,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_1",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.202799,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_2",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.110844,
+          "leakage_rate": 0.0233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_3",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.324028,
+          "leakage_rate": 0.0917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_4",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.20036,
+          "leakage_rate": 0.0033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_5",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.197246,
+          "leakage_rate": 0.1083,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_1",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": -0.188713,
+          "leakage_rate": 0.13,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_2",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": -0.247321,
+          "leakage_rate": 0.0433,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_3",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": 0.035938,
+          "leakage_rate": 0.1417,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_4",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": -0.096538,
+          "leakage_rate": 0.16,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_5",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": 0.10471,
+          "leakage_rate": 0.3217,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_1",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.004289,
+          "leakage_rate": 0.375,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_2",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.087409,
+          "leakage_rate": 0.4333,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_3",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.214527,
+          "leakage_rate": 0.2133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_4",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.097372,
+          "leakage_rate": 0.245,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_5",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.044696,
+          "leakage_rate": 0.45,
+          "n_seeds": 3
+        }
+      ],
+      "per_source": {
+        "villain": {
+          "spearman_rho": 0.5697,
+          "p_value": 0.000125,
+          "n": 40
+        },
+        "assistant": {
+          "spearman_rho": 0.313,
+          "p_value": 0.049233,
+          "n": 40
+        },
+        "software_engineer": {
+          "spearman_rho": 0.5738,
+          "p_value": 0.000109,
+          "n": 40
+        },
+        "comedian": {
+          "spearman_rho": 0.7445,
+          "p_value": 0.0,
+          "n": 40
+        },
+        "kindergarten_teacher": {
+          "spearman_rho": 0.4587,
+          "p_value": 0.002914,
+          "n": 40
+        }
+      },
+      "per_category": {
+        "affective_contrast": {
+          "spearman_rho": -0.2007,
+          "p_value": 0.336182,
+          "n": 25,
+          "mean_cosine": -0.016881,
+          "mean_leakage": 0.0355
+        },
+        "attribute_modified": {
+          "spearman_rho": 0.0,
+          "p_value": 1.0,
+          "n": 25,
+          "mean_cosine": 0.299507,
+          "mean_leakage": 0.2638
+        },
+        "functional_analog": {
+          "spearman_rho": 0.2571,
+          "p_value": 0.214759,
+          "n": 25,
+          "mean_cosine": -0.032192,
+          "mean_leakage": 0.3059
+        },
+        "hierarchical_variant": {
+          "spearman_rho": 0.6292,
+          "p_value": 0.000753,
+          "n": 25,
+          "mean_cosine": 0.254456,
+          "mean_leakage": 0.5031
+        },
+        "narrative_archetype": {
+          "spearman_rho": 0.1831,
+          "p_value": 0.38096,
+          "n": 25,
+          "mean_cosine": 0.03196,
+          "mean_leakage": 0.1613
+        },
+        "taxonomic_sibling": {
+          "spearman_rho": 0.5109,
+          "p_value": 0.009063,
+          "n": 25,
+          "mean_cosine": 0.284013,
+          "mean_leakage": 0.4349
+        },
+        "thematic_associate": {
+          "spearman_rho": 0.6095,
+          "p_value": 0.00122,
+          "n": 25,
+          "mean_cosine": 0.188413,
+          "mean_leakage": 0.3055
+        },
+        "unrelated_control": {
+          "spearman_rho": 0.4671,
+          "p_value": 0.018578,
+          "n": 25,
+          "mean_cosine": -0.00838,
+          "mean_leakage": 0.2093
+        }
+      },
+      "aggregate": {
+        "spearman_rho": 0.4349,
+        "p_value": 0.0,
+        "n": 200
+      }
+    },
+    "layer_15": {
+      "pairs": [
+        {
+          "persona_id": "v_ts_1",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.665658,
+          "leakage_rate": 0.3033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ts_2",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.729576,
+          "leakage_rate": 0.6917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ts_3",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.657973,
+          "leakage_rate": 0.4267,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ts_4",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.681395,
+          "leakage_rate": 0.5083,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ts_5",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.650718,
+          "leakage_rate": 0.655,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_1",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.424749,
+          "leakage_rate": 0.1067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_2",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.688233,
+          "leakage_rate": 0.945,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_3",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.436813,
+          "leakage_rate": 0.5033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_4",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.747304,
+          "leakage_rate": 0.98,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_5",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.474828,
+          "leakage_rate": 0.645,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_1",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.509583,
+          "leakage_rate": 0.4633,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_2",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.348568,
+          "leakage_rate": 0.0533,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_3",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.557817,
+          "leakage_rate": 0.9433,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_4",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.519324,
+          "leakage_rate": 0.455,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_5",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.518959,
+          "leakage_rate": 0.88,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_1",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": -0.120658,
+          "leakage_rate": 0.0267,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_2",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": -7.5e-05,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_3",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": 0.025844,
+          "leakage_rate": 0.1283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_4",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": -0.187937,
+          "leakage_rate": 0.02,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_5",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": -0.275747,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_1",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": -0.133648,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_2",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": 0.403124,
+          "leakage_rate": 0.8733,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_3",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": -0.014684,
+          "leakage_rate": 0.0383,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_4",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": 0.533728,
+          "leakage_rate": 0.3933,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_5",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": -0.240776,
+          "leakage_rate": 0.0117,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_1",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": 0.029827,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_2",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": -0.137617,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_3",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": 0.131497,
+          "leakage_rate": 0.005,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_4",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": -0.239462,
+          "leakage_rate": 0.005,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_5",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": 0.130756,
+          "leakage_rate": 0.0283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_1",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.449521,
+          "leakage_rate": 0.19,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_2",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.43927,
+          "leakage_rate": 0.115,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_3",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.487089,
+          "leakage_rate": 0.1033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_4",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.605911,
+          "leakage_rate": 0.0283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_5",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.53642,
+          "leakage_rate": 0.145,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_1",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.371278,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_2",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.364962,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_3",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.410325,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_4",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.329987,
+          "leakage_rate": 0.0067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_5",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.302066,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_1",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": 0.106349,
+          "leakage_rate": 0.1733,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_2",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": 0.19212,
+          "leakage_rate": 0.225,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_3",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": 0.407662,
+          "leakage_rate": 0.4133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_4",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": 0.334987,
+          "leakage_rate": 0.21,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_5",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": -0.000711,
+          "leakage_rate": 0.0817,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_1",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.02705,
+          "leakage_rate": 0.105,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_2",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.223411,
+          "leakage_rate": 0.3117,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_3",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.320825,
+          "leakage_rate": 0.2367,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_4",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.106601,
+          "leakage_rate": 0.2033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_5",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.434741,
+          "leakage_rate": 0.0867,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_1",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": -0.12891,
+          "leakage_rate": 0.0033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_2",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": -0.103016,
+          "leakage_rate": 0.1633,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_3",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": -0.15038,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_4",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": -0.008814,
+          "leakage_rate": 0.0983,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_5",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": 0.050691,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_1",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.049716,
+          "leakage_rate": 0.14,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_2",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.357736,
+          "leakage_rate": 0.17,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_3",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.398718,
+          "leakage_rate": 0.24,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_4",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.20269,
+          "leakage_rate": 0.2383,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_5",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.121309,
+          "leakage_rate": 0.1467,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_1",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": 0.19831,
+          "leakage_rate": 0.0783,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_2",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": 0.00813,
+          "leakage_rate": 0.1017,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_3",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": 0.027702,
+          "leakage_rate": 0.06,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_4",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": 0.226629,
+          "leakage_rate": 0.1133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_5",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": 0.29632,
+          "leakage_rate": 0.1367,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_1",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": -0.219936,
+          "leakage_rate": 0.0167,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_2",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": -0.197937,
+          "leakage_rate": 0.1217,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_3",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": -0.142937,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_4",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": -0.212415,
+          "leakage_rate": 0.0433,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_5",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": -0.121494,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_1",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.119731,
+          "leakage_rate": 0.0167,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_2",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.100858,
+          "leakage_rate": 0.0233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_3",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.182638,
+          "leakage_rate": 0.01,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_4",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.21726,
+          "leakage_rate": 0.01,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_5",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": 0.087948,
+          "leakage_rate": 0.0683,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_1",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": -0.000187,
+          "leakage_rate": 0.0767,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_2",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": 0.088036,
+          "leakage_rate": 0.0833,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_3",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": 0.188368,
+          "leakage_rate": 0.1483,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_4",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": 0.357038,
+          "leakage_rate": 0.1233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_5",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": 0.092841,
+          "leakage_rate": 0.0917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_1",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.777512,
+          "leakage_rate": 0.9217,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_2",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.675685,
+          "leakage_rate": 0.8917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_3",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.80293,
+          "leakage_rate": 0.87,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_4",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.848433,
+          "leakage_rate": 0.9033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_5",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.677672,
+          "leakage_rate": 0.8933,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_1",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.578695,
+          "leakage_rate": 0.8417,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_2",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.62148,
+          "leakage_rate": 0.8083,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_3",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.815963,
+          "leakage_rate": 0.8767,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_4",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.274263,
+          "leakage_rate": 0.6817,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_5",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.770549,
+          "leakage_rate": 0.875,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_1",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": 0.266749,
+          "leakage_rate": 0.7583,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_2",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": -0.113286,
+          "leakage_rate": 0.12,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_3",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": -0.139226,
+          "leakage_rate": 0.4183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_4",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": 0.001863,
+          "leakage_rate": 0.2717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_5",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": -0.3287,
+          "leakage_rate": 0.0183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_1",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.666738,
+          "leakage_rate": 0.8683,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_2",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.562259,
+          "leakage_rate": 0.895,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_3",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.537807,
+          "leakage_rate": 0.865,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_4",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.696109,
+          "leakage_rate": 0.8783,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_5",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.79644,
+          "leakage_rate": 0.8917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_1",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.689767,
+          "leakage_rate": 0.8283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_2",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.29315,
+          "leakage_rate": 0.575,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_3",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.53759,
+          "leakage_rate": 0.7533,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_4",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.212613,
+          "leakage_rate": 0.6617,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_5",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.700871,
+          "leakage_rate": 0.8617,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_1",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.34824,
+          "leakage_rate": 0.0333,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_2",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.398059,
+          "leakage_rate": 0.0783,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_3",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.363757,
+          "leakage_rate": 0.0633,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_4",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.476225,
+          "leakage_rate": 0.1133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_5",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.231941,
+          "leakage_rate": 0.1267,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_1",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": 0.204867,
+          "leakage_rate": 0.5767,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_2",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": 0.177816,
+          "leakage_rate": 0.4667,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_3",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": -0.120672,
+          "leakage_rate": 0.3117,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_4",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": 0.06879,
+          "leakage_rate": 0.5367,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_5",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": 0.152333,
+          "leakage_rate": 0.485,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_1",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": 0.075441,
+          "leakage_rate": 0.3667,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_2",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": 0.373067,
+          "leakage_rate": 0.5233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_3",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": 0.425054,
+          "leakage_rate": 0.6717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_4",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": 0.543656,
+          "leakage_rate": 0.7583,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_5",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": 0.296674,
+          "leakage_rate": 0.6667,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_1",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.313958,
+          "leakage_rate": 0.3017,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_2",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.600006,
+          "leakage_rate": 0.2483,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_3",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.808794,
+          "leakage_rate": 0.1067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_4",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.120724,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_5",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.681372,
+          "leakage_rate": 0.235,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_1",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.244921,
+          "leakage_rate": 0.025,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_2",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.503252,
+          "leakage_rate": 0.2067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_3",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.403731,
+          "leakage_rate": 0.25,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_4",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.236551,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_5",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.79199,
+          "leakage_rate": 0.8483,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_1",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.639623,
+          "leakage_rate": 0.05,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_2",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.626083,
+          "leakage_rate": 0.0183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_3",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.672786,
+          "leakage_rate": 0.0067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_4",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.716784,
+          "leakage_rate": 0.2233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_5",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.580019,
+          "leakage_rate": 0.3033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_1",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": 0.794556,
+          "leakage_rate": 0.19,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_2",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": -0.236885,
+          "leakage_rate": 0.005,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_3",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": 0.072277,
+          "leakage_rate": 0.125,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_4",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": 0.620932,
+          "leakage_rate": 0.06,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_5",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": -0.005462,
+          "leakage_rate": 0.005,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_1",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": -0.365201,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_2",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": -0.287684,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_3",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": 0.141584,
+          "leakage_rate": 0.0067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_4",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": -0.354376,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_5",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": -0.078138,
+          "leakage_rate": 0.025,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_1",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.139968,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_2",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": 0.064145,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_3",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.146474,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_4",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.033117,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_5",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.064881,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_1",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.385611,
+          "leakage_rate": 0.0017,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_2",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.26377,
+          "leakage_rate": 0.02,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_3",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.35834,
+          "leakage_rate": 0.0083,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_4",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.447446,
+          "leakage_rate": 0.0833,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_5",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.557776,
+          "leakage_rate": 0.0367,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_1",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.39749,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_2",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.31448,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_3",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.341869,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_4",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.315447,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_5",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.38859,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_1",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.607438,
+          "leakage_rate": 0.2717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_2",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.717003,
+          "leakage_rate": 0.4267,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_3",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.515117,
+          "leakage_rate": 0.5,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_4",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.640521,
+          "leakage_rate": 0.3533,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_5",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.578603,
+          "leakage_rate": 0.2467,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_1",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.487984,
+          "leakage_rate": 0.6417,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_2",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.398812,
+          "leakage_rate": 0.56,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_3",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.447928,
+          "leakage_rate": 0.535,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_4",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.302731,
+          "leakage_rate": 0.5717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_5",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.448219,
+          "leakage_rate": 0.7183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_1",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": -0.150227,
+          "leakage_rate": 0.1733,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_2",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.192362,
+          "leakage_rate": 0.435,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_3",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.197632,
+          "leakage_rate": 0.0833,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_4",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.458194,
+          "leakage_rate": 0.2717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_5",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.528403,
+          "leakage_rate": 0.37,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_1",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.303095,
+          "leakage_rate": 0.1817,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_2",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.488146,
+          "leakage_rate": 0.555,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_3",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.355283,
+          "leakage_rate": 0.3283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_4",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.552834,
+          "leakage_rate": 0.4217,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_5",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.187058,
+          "leakage_rate": 0.2583,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_1",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.289838,
+          "leakage_rate": 0.3183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_2",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.325165,
+          "leakage_rate": 0.33,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_3",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.602458,
+          "leakage_rate": 0.3183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_4",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.378751,
+          "leakage_rate": 0.4883,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_5",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.344377,
+          "leakage_rate": 0.675,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_1",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.37965,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_2",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.332797,
+          "leakage_rate": 0.0233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_3",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.311535,
+          "leakage_rate": 0.0917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_4",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.327107,
+          "leakage_rate": 0.0033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_5",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.190369,
+          "leakage_rate": 0.1083,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_1",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": 0.075591,
+          "leakage_rate": 0.13,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_2",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": -0.025734,
+          "leakage_rate": 0.0433,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_3",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": 0.206977,
+          "leakage_rate": 0.1417,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_4",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": 0.062583,
+          "leakage_rate": 0.16,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_5",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": 0.251972,
+          "leakage_rate": 0.3217,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_1",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.120621,
+          "leakage_rate": 0.375,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_2",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.020149,
+          "leakage_rate": 0.4333,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_3",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": -0.009407,
+          "leakage_rate": 0.2133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_4",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.033912,
+          "leakage_rate": 0.245,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_5",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.096703,
+          "leakage_rate": 0.45,
+          "n_seeds": 3
+        }
+      ],
+      "per_source": {
+        "villain": {
+          "spearman_rho": 0.8441,
+          "p_value": 0.0,
+          "n": 40
+        },
+        "assistant": {
+          "spearman_rho": 0.73,
+          "p_value": 0.0,
+          "n": 40
+        },
+        "software_engineer": {
+          "spearman_rho": 0.9395,
+          "p_value": 0.0,
+          "n": 40
+        },
+        "comedian": {
+          "spearman_rho": 0.8101,
+          "p_value": 0.0,
+          "n": 40
+        },
+        "kindergarten_teacher": {
+          "spearman_rho": 0.6101,
+          "p_value": 2.9e-05,
+          "n": 40
+        }
+      },
+      "per_category": {
+        "affective_contrast": {
+          "spearman_rho": -0.485,
+          "p_value": 0.013995,
+          "n": 25,
+          "mean_cosine": -0.186388,
+          "mean_leakage": 0.0355
+        },
+        "attribute_modified": {
+          "spearman_rho": 0.2351,
+          "p_value": 0.257964,
+          "n": 25,
+          "mean_cosine": 0.250515,
+          "mean_leakage": 0.2638
+        },
+        "functional_analog": {
+          "spearman_rho": 0.8973,
+          "p_value": 0.0,
+          "n": 25,
+          "mean_cosine": 0.189424,
+          "mean_leakage": 0.3059
+        },
+        "hierarchical_variant": {
+          "spearman_rho": 0.78,
+          "p_value": 4e-06,
+          "n": 25,
+          "mean_cosine": 0.448465,
+          "mean_leakage": 0.5031
+        },
+        "narrative_archetype": {
+          "spearman_rho": 0.0389,
+          "p_value": 0.853706,
+          "n": 25,
+          "mean_cosine": 0.202126,
+          "mean_leakage": 0.1613
+        },
+        "taxonomic_sibling": {
+          "spearman_rho": 0.6532,
+          "p_value": 0.0004,
+          "n": 25,
+          "mean_cosine": 0.55166,
+          "mean_leakage": 0.4349
+        },
+        "thematic_associate": {
+          "spearman_rho": 0.8257,
+          "p_value": 0.0,
+          "n": 25,
+          "mean_cosine": 0.278511,
+          "mean_leakage": 0.3055
+        },
+        "unrelated_control": {
+          "spearman_rho": 0.875,
+          "p_value": 0.0,
+          "n": 25,
+          "mean_cosine": -0.033381,
+          "mean_leakage": 0.2093
+        }
+      },
+      "aggregate": {
+        "spearman_rho": 0.7108,
+        "p_value": 0.0,
+        "n": 200
+      }
+    },
+    "layer_20": {
+      "pairs": [
+        {
+          "persona_id": "v_ts_1",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.584856,
+          "leakage_rate": 0.3033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ts_2",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.766834,
+          "leakage_rate": 0.6917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ts_3",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.719971,
+          "leakage_rate": 0.4267,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ts_4",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.724744,
+          "leakage_rate": 0.5083,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ts_5",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.71424,
+          "leakage_rate": 0.655,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_1",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.453209,
+          "leakage_rate": 0.1067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_2",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.700379,
+          "leakage_rate": 0.945,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_3",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.441446,
+          "leakage_rate": 0.5033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_4",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.752928,
+          "leakage_rate": 0.98,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_5",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.55632,
+          "leakage_rate": 0.645,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_1",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.63309,
+          "leakage_rate": 0.4633,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_2",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.365673,
+          "leakage_rate": 0.0533,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_3",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.662614,
+          "leakage_rate": 0.9433,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_4",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.694949,
+          "leakage_rate": 0.455,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_5",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.670028,
+          "leakage_rate": 0.88,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_1",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": -0.313108,
+          "leakage_rate": 0.0267,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_2",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": -0.201766,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_3",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": -0.048784,
+          "leakage_rate": 0.1283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_4",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": -0.299824,
+          "leakage_rate": 0.02,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_5",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": -0.355751,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_1",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": -0.252838,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_2",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": 0.104354,
+          "leakage_rate": 0.8733,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_3",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": -0.164857,
+          "leakage_rate": 0.0383,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_4",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": 0.43293,
+          "leakage_rate": 0.3933,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_5",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": -0.393235,
+          "leakage_rate": 0.0117,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_1",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": -0.023909,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_2",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": -0.397102,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_3",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": 0.117138,
+          "leakage_rate": 0.005,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_4",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": -0.489013,
+          "leakage_rate": 0.005,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_5",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": 0.160562,
+          "leakage_rate": 0.0283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_1",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.464012,
+          "leakage_rate": 0.19,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_2",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.408228,
+          "leakage_rate": 0.115,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_3",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.582322,
+          "leakage_rate": 0.1033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_4",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.596596,
+          "leakage_rate": 0.0283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_5",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.577121,
+          "leakage_rate": 0.145,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_1",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.449719,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_2",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.51075,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_3",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.551525,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_4",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.52562,
+          "leakage_rate": 0.0067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_5",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.468409,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_1",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": 0.095825,
+          "leakage_rate": 0.1733,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_2",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": 0.464426,
+          "leakage_rate": 0.225,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_3",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": 0.759494,
+          "leakage_rate": 0.4133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_4",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": 0.394,
+          "leakage_rate": 0.21,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_5",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": -0.066251,
+          "leakage_rate": 0.0817,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_1",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.006111,
+          "leakage_rate": 0.105,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_2",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.429478,
+          "leakage_rate": 0.3117,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_3",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.646627,
+          "leakage_rate": 0.2367,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_4",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.175795,
+          "leakage_rate": 0.2033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_5",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.751766,
+          "leakage_rate": 0.0867,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_1",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": -0.076517,
+          "leakage_rate": 0.0033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_2",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": 0.033451,
+          "leakage_rate": 0.1633,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_3",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": -0.117332,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_4",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": 0.345258,
+          "leakage_rate": 0.0983,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_5",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": 0.28773,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_1",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.205348,
+          "leakage_rate": 0.14,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_2",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.578379,
+          "leakage_rate": 0.17,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_3",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.384812,
+          "leakage_rate": 0.24,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_4",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.323557,
+          "leakage_rate": 0.2383,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_5",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.166136,
+          "leakage_rate": 0.1467,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_1",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": 0.259167,
+          "leakage_rate": 0.0783,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_2",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": 0.175248,
+          "leakage_rate": 0.1017,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_3",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": -0.11418,
+          "leakage_rate": 0.06,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_4",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": 0.221184,
+          "leakage_rate": 0.1133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_5",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": 0.405623,
+          "leakage_rate": 0.1367,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_1",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": -0.115205,
+          "leakage_rate": 0.0167,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_2",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": -0.13001,
+          "leakage_rate": 0.1217,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_3",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": 0.02907,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_4",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": -0.088816,
+          "leakage_rate": 0.0433,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_5",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": -0.029222,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_1",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.115706,
+          "leakage_rate": 0.0167,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_2",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.250342,
+          "leakage_rate": 0.0233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_3",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.124965,
+          "leakage_rate": 0.01,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_4",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.199233,
+          "leakage_rate": 0.01,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_5",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.035607,
+          "leakage_rate": 0.0683,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_1",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": -0.091924,
+          "leakage_rate": 0.0767,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_2",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": 0.050695,
+          "leakage_rate": 0.0833,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_3",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": 0.054878,
+          "leakage_rate": 0.1483,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_4",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": 0.131387,
+          "leakage_rate": 0.1233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_5",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": -0.151155,
+          "leakage_rate": 0.0917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_1",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.849573,
+          "leakage_rate": 0.9217,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_2",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.713828,
+          "leakage_rate": 0.8917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_3",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.821554,
+          "leakage_rate": 0.87,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_4",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.838391,
+          "leakage_rate": 0.9033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_5",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.819606,
+          "leakage_rate": 0.8933,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_1",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.372071,
+          "leakage_rate": 0.8417,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_2",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.523468,
+          "leakage_rate": 0.8083,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_3",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.919462,
+          "leakage_rate": 0.8767,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_4",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.120075,
+          "leakage_rate": 0.6817,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_5",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.90782,
+          "leakage_rate": 0.875,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_1",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": 0.418603,
+          "leakage_rate": 0.7583,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_2",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": -0.348878,
+          "leakage_rate": 0.12,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_3",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": -0.127921,
+          "leakage_rate": 0.4183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_4",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": 0.388874,
+          "leakage_rate": 0.2717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_5",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": -0.406339,
+          "leakage_rate": 0.0183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_1",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.810387,
+          "leakage_rate": 0.8683,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_2",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.644396,
+          "leakage_rate": 0.895,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_3",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.596709,
+          "leakage_rate": 0.865,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_4",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.791476,
+          "leakage_rate": 0.8783,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_5",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.899914,
+          "leakage_rate": 0.8917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_1",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.639215,
+          "leakage_rate": 0.8283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_2",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.081056,
+          "leakage_rate": 0.575,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_3",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.613014,
+          "leakage_rate": 0.7533,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_4",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.026294,
+          "leakage_rate": 0.6617,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_5",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.728677,
+          "leakage_rate": 0.8617,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_1",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.331094,
+          "leakage_rate": 0.0333,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_2",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.564991,
+          "leakage_rate": 0.0783,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_3",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.430226,
+          "leakage_rate": 0.0633,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_4",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.511752,
+          "leakage_rate": 0.1133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_5",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.333502,
+          "leakage_rate": 0.1267,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_1",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": -0.057556,
+          "leakage_rate": 0.5767,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_2",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": 0.039468,
+          "leakage_rate": 0.4667,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_3",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": -0.323326,
+          "leakage_rate": 0.3117,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_4",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": -0.070641,
+          "leakage_rate": 0.5367,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_5",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": 0.011838,
+          "leakage_rate": 0.485,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_1",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": -0.151589,
+          "leakage_rate": 0.3667,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_2",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": 0.117683,
+          "leakage_rate": 0.5233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_3",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": 0.691579,
+          "leakage_rate": 0.6717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_4",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": 0.495551,
+          "leakage_rate": 0.7583,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_5",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": 0.102738,
+          "leakage_rate": 0.6667,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_1",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.499362,
+          "leakage_rate": 0.3017,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_2",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.683122,
+          "leakage_rate": 0.2483,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_3",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.809336,
+          "leakage_rate": 0.1067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_4",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.311671,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_5",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.765067,
+          "leakage_rate": 0.235,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_1",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.28617,
+          "leakage_rate": 0.025,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_2",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.639149,
+          "leakage_rate": 0.2067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_3",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.502285,
+          "leakage_rate": 0.25,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_4",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.078648,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_5",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.831745,
+          "leakage_rate": 0.8483,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_1",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.691222,
+          "leakage_rate": 0.05,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_2",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.529608,
+          "leakage_rate": 0.0183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_3",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.662136,
+          "leakage_rate": 0.0067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_4",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.741004,
+          "leakage_rate": 0.2233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_5",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.532304,
+          "leakage_rate": 0.3033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_1",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": 0.792274,
+          "leakage_rate": 0.19,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_2",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": -0.191725,
+          "leakage_rate": 0.005,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_3",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": 0.092973,
+          "leakage_rate": 0.125,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_4",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": 0.641612,
+          "leakage_rate": 0.06,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_5",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": -0.23483,
+          "leakage_rate": 0.005,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_1",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": -0.511117,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_2",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": -0.437449,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_3",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": 0.17423,
+          "leakage_rate": 0.0067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_4",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": -0.472602,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_5",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": 0.018088,
+          "leakage_rate": 0.025,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_1",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.276095,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_2",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": 0.153567,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_3",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.209473,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_4",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.095589,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_5",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.197006,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_1",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.41028,
+          "leakage_rate": 0.0017,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_2",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.471029,
+          "leakage_rate": 0.02,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_3",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.571023,
+          "leakage_rate": 0.0083,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_4",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.528966,
+          "leakage_rate": 0.0833,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_5",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.559798,
+          "leakage_rate": 0.0367,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_1",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.515827,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_2",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.378247,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_3",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.44102,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_4",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.440094,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_5",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.512221,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_1",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.640808,
+          "leakage_rate": 0.2717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_2",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.827384,
+          "leakage_rate": 0.4267,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_3",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.560751,
+          "leakage_rate": 0.5,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_4",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.641498,
+          "leakage_rate": 0.3533,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_5",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.62084,
+          "leakage_rate": 0.2467,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_1",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.649763,
+          "leakage_rate": 0.6417,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_2",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.518968,
+          "leakage_rate": 0.56,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_3",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.709099,
+          "leakage_rate": 0.535,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_4",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.398269,
+          "leakage_rate": 0.5717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_5",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.584977,
+          "leakage_rate": 0.7183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_1",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": -0.135996,
+          "leakage_rate": 0.1733,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_2",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.234202,
+          "leakage_rate": 0.435,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_3",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.188718,
+          "leakage_rate": 0.0833,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_4",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.668108,
+          "leakage_rate": 0.2717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_5",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.723896,
+          "leakage_rate": 0.37,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_1",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.428564,
+          "leakage_rate": 0.1817,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_2",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.419814,
+          "leakage_rate": 0.555,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_3",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.520704,
+          "leakage_rate": 0.3283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_4",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.60791,
+          "leakage_rate": 0.4217,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_5",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.314446,
+          "leakage_rate": 0.2583,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_1",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.303187,
+          "leakage_rate": 0.3183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_2",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.349797,
+          "leakage_rate": 0.33,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_3",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.692137,
+          "leakage_rate": 0.3183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_4",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.344306,
+          "leakage_rate": 0.4883,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_5",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.642558,
+          "leakage_rate": 0.675,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_1",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.422728,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_2",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.498683,
+          "leakage_rate": 0.0233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_3",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.347129,
+          "leakage_rate": 0.0917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_4",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.396309,
+          "leakage_rate": 0.0033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_5",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.210477,
+          "leakage_rate": 0.1083,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_1",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": 0.005777,
+          "leakage_rate": 0.13,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_2",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": 0.040937,
+          "leakage_rate": 0.0433,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_3",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": 0.212523,
+          "leakage_rate": 0.1417,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_4",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": 0.050568,
+          "leakage_rate": 0.16,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_5",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": 0.216679,
+          "leakage_rate": 0.3217,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_1",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.238987,
+          "leakage_rate": 0.375,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_2",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.046108,
+          "leakage_rate": 0.4333,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_3",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.129289,
+          "leakage_rate": 0.2133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_4",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.054783,
+          "leakage_rate": 0.245,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_5",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.169327,
+          "leakage_rate": 0.45,
+          "n_seeds": 3
+        }
+      ],
+      "per_source": {
+        "villain": {
+          "spearman_rho": 0.8428,
+          "p_value": 0.0,
+          "n": 40
+        },
+        "assistant": {
+          "spearman_rho": 0.683,
+          "p_value": 1e-06,
+          "n": 40
+        },
+        "software_engineer": {
+          "spearman_rho": 0.9267,
+          "p_value": 0.0,
+          "n": 40
+        },
+        "comedian": {
+          "spearman_rho": 0.8269,
+          "p_value": 0.0,
+          "n": 40
+        },
+        "kindergarten_teacher": {
+          "spearman_rho": 0.6571,
+          "p_value": 4e-06,
+          "n": 40
+        }
+      },
+      "per_category": {
+        "affective_contrast": {
+          "spearman_rho": -0.3567,
+          "p_value": 0.080051,
+          "n": 25,
+          "mean_cosine": -0.22552,
+          "mean_leakage": 0.0355
+        },
+        "attribute_modified": {
+          "spearman_rho": 0.3967,
+          "p_value": 0.049609,
+          "n": 25,
+          "mean_cosine": 0.330339,
+          "mean_leakage": 0.2638
+        },
+        "functional_analog": {
+          "spearman_rho": 0.7489,
+          "p_value": 1.7e-05,
+          "n": 25,
+          "mean_cosine": 0.154591,
+          "mean_leakage": 0.3059
+        },
+        "hierarchical_variant": {
+          "spearman_rho": 0.5554,
+          "p_value": 0.003951,
+          "n": 25,
+          "mean_cosine": 0.518241,
+          "mean_leakage": 0.5031
+        },
+        "narrative_archetype": {
+          "spearman_rho": -0.1243,
+          "p_value": 0.554006,
+          "n": 25,
+          "mean_cosine": 0.182791,
+          "mean_leakage": 0.1613
+        },
+        "taxonomic_sibling": {
+          "spearman_rho": 0.7086,
+          "p_value": 7.4e-05,
+          "n": 25,
+          "mean_cosine": 0.622437,
+          "mean_leakage": 0.4349
+        },
+        "thematic_associate": {
+          "spearman_rho": 0.8265,
+          "p_value": 0.0,
+          "n": 25,
+          "mean_cosine": 0.302945,
+          "mean_leakage": 0.3055
+        },
+        "unrelated_control": {
+          "spearman_rho": 0.8577,
+          "p_value": 0.0,
+          "n": 25,
+          "mean_cosine": -0.116204,
+          "mean_leakage": 0.2093
+        }
+      },
+      "aggregate": {
+        "spearman_rho": 0.6826,
+        "p_value": 0.0,
+        "n": 200
+      }
+    },
+    "layer_25": {
+      "pairs": [
+        {
+          "persona_id": "v_ts_1",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.514549,
+          "leakage_rate": 0.3033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ts_2",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.711884,
+          "leakage_rate": 0.6917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ts_3",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.720677,
+          "leakage_rate": 0.4267,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ts_4",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.660345,
+          "leakage_rate": 0.5083,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ts_5",
+          "source": "villain",
+          "category": "taxonomic_sibling",
+          "cosine": 0.679627,
+          "leakage_rate": 0.655,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_1",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.421218,
+          "leakage_rate": 0.1067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_2",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.762694,
+          "leakage_rate": 0.945,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_3",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.456138,
+          "leakage_rate": 0.5033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_4",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.609548,
+          "leakage_rate": 0.98,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_hv_5",
+          "source": "villain",
+          "category": "hierarchical_variant",
+          "cosine": 0.437311,
+          "leakage_rate": 0.645,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_1",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.614585,
+          "leakage_rate": 0.4633,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_2",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.406686,
+          "leakage_rate": 0.0533,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_3",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.70901,
+          "leakage_rate": 0.9433,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_4",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.684657,
+          "leakage_rate": 0.455,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_am_5",
+          "source": "villain",
+          "category": "attribute_modified",
+          "cosine": 0.694507,
+          "leakage_rate": 0.88,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_1",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": -0.332589,
+          "leakage_rate": 0.0267,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_2",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": -0.206977,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_3",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": 0.026569,
+          "leakage_rate": 0.1283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_4",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": -0.274809,
+          "leakage_rate": 0.02,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ta_5",
+          "source": "villain",
+          "category": "thematic_associate",
+          "cosine": -0.306227,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_1",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": -0.226953,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_2",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": 0.004822,
+          "leakage_rate": 0.8733,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_3",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": -0.107569,
+          "leakage_rate": 0.0383,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_4",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": 0.230694,
+          "leakage_rate": 0.3933,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_fa_5",
+          "source": "villain",
+          "category": "functional_analog",
+          "cosine": -0.321491,
+          "leakage_rate": 0.0117,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_1",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": 0.026608,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_2",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": -0.390635,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_3",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": 0.124284,
+          "leakage_rate": 0.005,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_4",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": -0.500867,
+          "leakage_rate": 0.005,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_ac_5",
+          "source": "villain",
+          "category": "affective_contrast",
+          "cosine": 0.160718,
+          "leakage_rate": 0.0283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_1",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.46608,
+          "leakage_rate": 0.19,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_2",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.338739,
+          "leakage_rate": 0.115,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_3",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.495891,
+          "leakage_rate": 0.1033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_4",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.449165,
+          "leakage_rate": 0.0283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_na_5",
+          "source": "villain",
+          "category": "narrative_archetype",
+          "cosine": 0.51553,
+          "leakage_rate": 0.145,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_1",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.418562,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_2",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.47415,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_3",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.517456,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_4",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.436348,
+          "leakage_rate": 0.0067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "v_uc_5",
+          "source": "villain",
+          "category": "unrelated_control",
+          "cosine": -0.377788,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_1",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": 0.103376,
+          "leakage_rate": 0.1733,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_2",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": 0.574423,
+          "leakage_rate": 0.225,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_3",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": 0.856784,
+          "leakage_rate": 0.4133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_4",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": 0.465408,
+          "leakage_rate": 0.21,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ts_5",
+          "source": "assistant",
+          "category": "taxonomic_sibling",
+          "cosine": -0.035166,
+          "leakage_rate": 0.0817,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_1",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.05216,
+          "leakage_rate": 0.105,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_2",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.564431,
+          "leakage_rate": 0.3117,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_3",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.735341,
+          "leakage_rate": 0.2367,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_4",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.222749,
+          "leakage_rate": 0.2033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_hv_5",
+          "source": "assistant",
+          "category": "hierarchical_variant",
+          "cosine": 0.83327,
+          "leakage_rate": 0.0867,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_1",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": -0.16344,
+          "leakage_rate": 0.0033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_2",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": 0.000744,
+          "leakage_rate": 0.1633,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_3",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": -0.207274,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_4",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": 0.468851,
+          "leakage_rate": 0.0983,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_am_5",
+          "source": "assistant",
+          "category": "attribute_modified",
+          "cosine": 0.378339,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_1",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.430255,
+          "leakage_rate": 0.14,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_2",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.675738,
+          "leakage_rate": 0.17,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_3",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.3968,
+          "leakage_rate": 0.24,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_4",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.381759,
+          "leakage_rate": 0.2383,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ta_5",
+          "source": "assistant",
+          "category": "thematic_associate",
+          "cosine": 0.205609,
+          "leakage_rate": 0.1467,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_1",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": 0.353678,
+          "leakage_rate": 0.0783,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_2",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": 0.242626,
+          "leakage_rate": 0.1017,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_3",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": -0.1838,
+          "leakage_rate": 0.06,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_4",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": 0.274163,
+          "leakage_rate": 0.1133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_fa_5",
+          "source": "assistant",
+          "category": "functional_analog",
+          "cosine": 0.484719,
+          "leakage_rate": 0.1367,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_1",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": 0.022176,
+          "leakage_rate": 0.0167,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_2",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": -0.149763,
+          "leakage_rate": 0.1217,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_3",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": 0.12798,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_4",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": 0.01164,
+          "leakage_rate": 0.0433,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_ac_5",
+          "source": "assistant",
+          "category": "affective_contrast",
+          "cosine": 0.070276,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_1",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.213516,
+          "leakage_rate": 0.0167,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_2",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.266228,
+          "leakage_rate": 0.0233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_3",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.18096,
+          "leakage_rate": 0.01,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_4",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.254668,
+          "leakage_rate": 0.01,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_na_5",
+          "source": "assistant",
+          "category": "narrative_archetype",
+          "cosine": -0.194191,
+          "leakage_rate": 0.0683,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_1",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": 0.021595,
+          "leakage_rate": 0.0767,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_2",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": 0.210793,
+          "leakage_rate": 0.0833,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_3",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": 0.135523,
+          "leakage_rate": 0.1483,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_4",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": 0.124822,
+          "leakage_rate": 0.1233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "a_uc_5",
+          "source": "assistant",
+          "category": "unrelated_control",
+          "cosine": -0.079696,
+          "leakage_rate": 0.0917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_1",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.865948,
+          "leakage_rate": 0.9217,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_2",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.719229,
+          "leakage_rate": 0.8917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_3",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.843027,
+          "leakage_rate": 0.87,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_4",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.833567,
+          "leakage_rate": 0.9033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ts_5",
+          "source": "software_engineer",
+          "category": "taxonomic_sibling",
+          "cosine": 0.86948,
+          "leakage_rate": 0.8933,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_1",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.262822,
+          "leakage_rate": 0.8417,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_2",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.336635,
+          "leakage_rate": 0.8083,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_3",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.939404,
+          "leakage_rate": 0.8767,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_4",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.039631,
+          "leakage_rate": 0.6817,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_hv_5",
+          "source": "software_engineer",
+          "category": "hierarchical_variant",
+          "cosine": 0.934374,
+          "leakage_rate": 0.875,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_1",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": 0.48732,
+          "leakage_rate": 0.7583,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_2",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": -0.241822,
+          "leakage_rate": 0.12,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_3",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": 0.002288,
+          "leakage_rate": 0.4183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_4",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": 0.676492,
+          "leakage_rate": 0.2717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_am_5",
+          "source": "software_engineer",
+          "category": "attribute_modified",
+          "cosine": -0.240109,
+          "leakage_rate": 0.0183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_1",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.861113,
+          "leakage_rate": 0.8683,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_2",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.666434,
+          "leakage_rate": 0.895,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_3",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.648992,
+          "leakage_rate": 0.865,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_4",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.788172,
+          "leakage_rate": 0.8783,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ta_5",
+          "source": "software_engineer",
+          "category": "thematic_associate",
+          "cosine": 0.925901,
+          "leakage_rate": 0.8917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_1",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.623293,
+          "leakage_rate": 0.8283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_2",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.023179,
+          "leakage_rate": 0.575,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_3",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.611963,
+          "leakage_rate": 0.7533,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_4",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": -0.025053,
+          "leakage_rate": 0.6617,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_fa_5",
+          "source": "software_engineer",
+          "category": "functional_analog",
+          "cosine": 0.72553,
+          "leakage_rate": 0.8617,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_1",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.383515,
+          "leakage_rate": 0.0333,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_2",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.556145,
+          "leakage_rate": 0.0783,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_3",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.493059,
+          "leakage_rate": 0.0633,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_4",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.549939,
+          "leakage_rate": 0.1133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_ac_5",
+          "source": "software_engineer",
+          "category": "affective_contrast",
+          "cosine": -0.396956,
+          "leakage_rate": 0.1267,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_1",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": -0.088047,
+          "leakage_rate": 0.5767,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_2",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": 0.0455,
+          "leakage_rate": 0.4667,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_3",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": -0.366313,
+          "leakage_rate": 0.3117,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_4",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": -0.150382,
+          "leakage_rate": 0.5367,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_na_5",
+          "source": "software_engineer",
+          "category": "narrative_archetype",
+          "cosine": 0.042331,
+          "leakage_rate": 0.485,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_1",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": -0.179199,
+          "leakage_rate": 0.3667,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_2",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": 0.006922,
+          "leakage_rate": 0.5233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_3",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": 0.754154,
+          "leakage_rate": 0.6717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_4",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": 0.447777,
+          "leakage_rate": 0.7583,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "se_uc_5",
+          "source": "software_engineer",
+          "category": "unrelated_control",
+          "cosine": 0.047269,
+          "leakage_rate": 0.6667,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_1",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.541942,
+          "leakage_rate": 0.3017,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_2",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.537403,
+          "leakage_rate": 0.2483,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_3",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.765512,
+          "leakage_rate": 0.1067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_4",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.386287,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ts_5",
+          "source": "comedian",
+          "category": "taxonomic_sibling",
+          "cosine": 0.756772,
+          "leakage_rate": 0.235,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_1",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.362057,
+          "leakage_rate": 0.025,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_2",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.693899,
+          "leakage_rate": 0.2067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_3",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.603861,
+          "leakage_rate": 0.25,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_4",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.13626,
+          "leakage_rate": 0.0133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_hv_5",
+          "source": "comedian",
+          "category": "hierarchical_variant",
+          "cosine": 0.858789,
+          "leakage_rate": 0.8483,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_1",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.679036,
+          "leakage_rate": 0.05,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_2",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.448491,
+          "leakage_rate": 0.0183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_3",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.665747,
+          "leakage_rate": 0.0067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_4",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.726979,
+          "leakage_rate": 0.2233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_am_5",
+          "source": "comedian",
+          "category": "attribute_modified",
+          "cosine": 0.545269,
+          "leakage_rate": 0.3033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_1",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": 0.750761,
+          "leakage_rate": 0.19,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_2",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": -0.117716,
+          "leakage_rate": 0.005,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_3",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": 0.169886,
+          "leakage_rate": 0.125,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_4",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": 0.632025,
+          "leakage_rate": 0.06,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ta_5",
+          "source": "comedian",
+          "category": "thematic_associate",
+          "cosine": -0.2671,
+          "leakage_rate": 0.005,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_1",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": -0.473518,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_2",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": -0.419243,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_3",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": 0.229123,
+          "leakage_rate": 0.0067,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_4",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": -0.394792,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_fa_5",
+          "source": "comedian",
+          "category": "functional_analog",
+          "cosine": 0.058156,
+          "leakage_rate": 0.025,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_1",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.287492,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_2",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": 0.141223,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_3",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.251221,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_4",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.089666,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_ac_5",
+          "source": "comedian",
+          "category": "affective_contrast",
+          "cosine": -0.238736,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_1",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.188014,
+          "leakage_rate": 0.0017,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_2",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.348238,
+          "leakage_rate": 0.02,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_3",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.551039,
+          "leakage_rate": 0.0083,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_4",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.384486,
+          "leakage_rate": 0.0833,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_na_5",
+          "source": "comedian",
+          "category": "narrative_archetype",
+          "cosine": 0.21974,
+          "leakage_rate": 0.0367,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_1",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.466725,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_2",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.247128,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_3",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.432876,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_4",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.381809,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "c_uc_5",
+          "source": "comedian",
+          "category": "unrelated_control",
+          "cosine": -0.469926,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_1",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.708646,
+          "leakage_rate": 0.2717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_2",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.839241,
+          "leakage_rate": 0.4267,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_3",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.550103,
+          "leakage_rate": 0.5,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_4",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.682352,
+          "leakage_rate": 0.3533,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ts_5",
+          "source": "kindergarten_teacher",
+          "category": "taxonomic_sibling",
+          "cosine": 0.662254,
+          "leakage_rate": 0.2467,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_1",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.652002,
+          "leakage_rate": 0.6417,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_2",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.409331,
+          "leakage_rate": 0.56,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_3",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.73354,
+          "leakage_rate": 0.535,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_4",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.322293,
+          "leakage_rate": 0.5717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_hv_5",
+          "source": "kindergarten_teacher",
+          "category": "hierarchical_variant",
+          "cosine": 0.523591,
+          "leakage_rate": 0.7183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_1",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.05572,
+          "leakage_rate": 0.1733,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_2",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.201796,
+          "leakage_rate": 0.435,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_3",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.267193,
+          "leakage_rate": 0.0833,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_4",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.748745,
+          "leakage_rate": 0.2717,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_am_5",
+          "source": "kindergarten_teacher",
+          "category": "attribute_modified",
+          "cosine": 0.795264,
+          "leakage_rate": 0.37,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_1",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.476547,
+          "leakage_rate": 0.1817,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_2",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.442522,
+          "leakage_rate": 0.555,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_3",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.558125,
+          "leakage_rate": 0.3283,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_4",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.661976,
+          "leakage_rate": 0.4217,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ta_5",
+          "source": "kindergarten_teacher",
+          "category": "thematic_associate",
+          "cosine": 0.345959,
+          "leakage_rate": 0.2583,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_1",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.289615,
+          "leakage_rate": 0.3183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_2",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.395761,
+          "leakage_rate": 0.33,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_3",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.726503,
+          "leakage_rate": 0.3183,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_4",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.267867,
+          "leakage_rate": 0.4883,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_fa_5",
+          "source": "kindergarten_teacher",
+          "category": "functional_analog",
+          "cosine": 0.623853,
+          "leakage_rate": 0.675,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_1",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.301103,
+          "leakage_rate": 0.0,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_2",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.412512,
+          "leakage_rate": 0.0233,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_3",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.192409,
+          "leakage_rate": 0.0917,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_4",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.216509,
+          "leakage_rate": 0.0033,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_ac_5",
+          "source": "kindergarten_teacher",
+          "category": "affective_contrast",
+          "cosine": -0.120753,
+          "leakage_rate": 0.1083,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_1",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": -0.031428,
+          "leakage_rate": 0.13,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_2",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": -0.051121,
+          "leakage_rate": 0.0433,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_3",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": 0.176032,
+          "leakage_rate": 0.1417,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_4",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": -0.073459,
+          "leakage_rate": 0.16,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_na_5",
+          "source": "kindergarten_teacher",
+          "category": "narrative_archetype",
+          "cosine": 0.115941,
+          "leakage_rate": 0.3217,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_1",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.222617,
+          "leakage_rate": 0.375,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_2",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.048283,
+          "leakage_rate": 0.4333,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_3",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.097136,
+          "leakage_rate": 0.2133,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_4",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.07777,
+          "leakage_rate": 0.245,
+          "n_seeds": 3
+        },
+        {
+          "persona_id": "kt_uc_5",
+          "source": "kindergarten_teacher",
+          "category": "unrelated_control",
+          "cosine": 0.147026,
+          "leakage_rate": 0.45,
+          "n_seeds": 3
+        }
+      ],
+      "per_source": {
+        "villain": {
+          "spearman_rho": 0.8351,
+          "p_value": 0.0,
+          "n": 40
+        },
+        "assistant": {
+          "spearman_rho": 0.6581,
+          "p_value": 4e-06,
+          "n": 40
+        },
+        "software_engineer": {
+          "spearman_rho": 0.8836,
+          "p_value": 0.0,
+          "n": 40
+        },
+        "comedian": {
+          "spearman_rho": 0.8452,
+          "p_value": 0.0,
+          "n": 40
+        },
+        "kindergarten_teacher": {
+          "spearman_rho": 0.5913,
+          "p_value": 5.9e-05,
+          "n": 40
+        }
+      },
+      "per_category": {
+        "affective_contrast": {
+          "spearman_rho": -0.336,
+          "p_value": 0.100575,
+          "n": 25,
+          "mean_cosine": -0.193855,
+          "mean_leakage": 0.0355
+        },
+        "attribute_modified": {
+          "spearman_rho": 0.4825,
+          "p_value": 0.014576,
+          "n": 25,
+          "mean_cosine": 0.376203,
+          "mean_leakage": 0.2638
+        },
+        "functional_analog": {
+          "spearman_rho": 0.6672,
+          "p_value": 0.00027,
+          "n": 25,
+          "mean_cosine": 0.160525,
+          "mean_leakage": 0.3059
+        },
+        "hierarchical_variant": {
+          "spearman_rho": 0.3608,
+          "p_value": 0.076442,
+          "n": 25,
+          "mean_cosine": 0.516134,
+          "mean_leakage": 0.5031
+        },
+        "narrative_archetype": {
+          "spearman_rho": -0.0581,
+          "p_value": 0.782699,
+          "n": 25,
+          "mean_cosine": 0.098657,
+          "mean_leakage": 0.1613
+        },
+        "taxonomic_sibling": {
+          "spearman_rho": 0.6594,
+          "p_value": 0.000337,
+          "n": 25,
+          "mean_cosine": 0.632547,
+          "mean_leakage": 0.4349
+        },
+        "thematic_associate": {
+          "spearman_rho": 0.8176,
+          "p_value": 1e-06,
+          "n": 25,
+          "mean_cosine": 0.341589,
+          "mean_leakage": 0.3055
+        },
+        "unrelated_control": {
+          "spearman_rho": 0.8026,
+          "p_value": 1e-06,
+          "n": 25,
+          "mean_cosine": -0.085599,
+          "mean_leakage": 0.2093
+        }
+      },
+      "aggregate": {
+        "spearman_rho": 0.6589,
+        "p_value": 0.0,
+        "n": 200
+      }
+    }
+  },
+  "best_layer": 15,
+  "best_aggregate_rho": 0.7108
+}
