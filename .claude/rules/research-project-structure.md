@@ -2,7 +2,6 @@
 description: Research project structure conventions, logging, and experiment queue
 globs:
   - "research_log/**"
-  - "EXPERIMENT_QUEUE.md"
   - "RESULTS.md"
   - "eval_results/**"
 ---
@@ -26,9 +25,20 @@ Flow: experiment finishes → draft in `drafts/` → review → move to root, ad
 
 ## Experiment Queue
 
-Maintain `EXPERIMENT_QUEUE.md` at project root. Each entry must be actionable:
+**The GitHub project board IS the queue.** Every experiment is a GitHub issue
+carrying its lifecycle state in a `status:*` label (`proposed` →
+`gate-pending` → `planning` → `plan-pending` → `approved` → `running` →
+`reviewing` → `testing` → `done-experiment` / `done-impl`). Filter with
+`gh issue list --label status:<state>`. There is no markdown queue file —
+it was deleted to eliminate drift between the file and the board.
+
+Each issue's body must be actionable:
 - BAD: "Try different learning rates"
 - GOOD: "SFT Llama3-8B on UltraChat, lr=3e-5, 3 epochs, LoRA r=16"
+
+Raw ideation output (pre-issue brainstorms from `/ideation`) lives at
+`research_log/ideas/YYYY-MM-DD.md`. The user promotes worthwhile ideas
+to GitHub issues with `gh issue create --label status:proposed`.
 
 ## Environment Bootstrap
 

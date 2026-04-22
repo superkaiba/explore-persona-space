@@ -1,13 +1,13 @@
 ---
 name: auto-experiment-runner
-description: Use when running experiments autonomously overnight. Two modes — Queue mode (runs planned experiments from EXPERIMENT_QUEUE.md) and Autonomous mode (proposes and runs when queue is empty). All output goes to research_log/drafts/. Includes failure auto-diagnosis, safety rails, and cost limits.
+description: Use when running experiments autonomously overnight. Two modes — Queue mode (picks up `status:approved` GitHub issues via `gh`) and Autonomous mode (proposes and runs when no approved issues exist). All output goes to research_log/drafts/. Includes failure auto-diagnosis, safety rails, and cost limits.
 ---
 
 # Auto-Experiment Runner
 
 ## Scope & Boundaries
 
-**Owns:** overnight queue orchestration — picks experiments from `EXPERIMENT_QUEUE.md` (or proposes via `experiment-proposer` in Autonomous mode), runs them via `experiment-runner`, writes drafts, enforces cost/time limits.
+**Owns:** overnight queue orchestration — picks up approved GitHub issues (`status:approved`) via `gh issue list` (or proposes via `experiment-proposer` in Autonomous mode), runs them via `/issue <N>` or `experiment-runner`, writes drafts, enforces cost/time limits.
 
 **Wraps:** `experiment-runner` (per-experiment execution), `experiment-proposer` (Autonomous-mode ideation).
 
@@ -50,7 +50,11 @@ SAFETY LIMITS (defaults if not specified):
 - forbidden_operations: delete data, modify clean log, push git, modify source code
 ```
 
-2. **Read EXPERIMENT_QUEUE.md** — determine mode
+2. **List approved GitHub issues** — determine mode:
+   ```bash
+   gh issue list --label status:approved --state open --json number,title,labels --limit 20
+   ```
+   Non-empty → Queue mode; empty → Autonomous mode (if enabled) or STOP.
 3. **Read research_log/drafts/LOG.md** — check what was already auto-generated (avoid duplicates)
 4. **Check GPU availability** — run `nvidia-smi` to verify GPUs are free
 5. **Log session start** to `research_log/drafts/LOG.md`:
@@ -68,30 +72,34 @@ Safety limits: [summarize]
 ## Mode Selection
 
 ```
-READ EXPERIMENT_QUEUE.md
+gh issue list --label status:approved --state open
   │
-  ├── Has planned experiments? → QUEUE MODE
-  │     Pick next uncompleted experiment
-  │     Run it (see: Running an Experiment)
-  │     Mark as completed in queue
-  │     Loop: check queue again
+  ├── Has approved issues? → QUEUE MODE
+  │     Pick next issue (oldest first, or by prio:* label if set)
+  │     Run it via `/issue <N>` — the issue skill handles the
+  │     preflight/dispatch/monitor/analyzer/reviewer lifecycle
+  │     Loop: check for more approved issues
   │
-  └── Queue empty?
+  └── No approved issues?
         │
         ├── Autonomous mode enabled? → AUTONOMOUS MODE
         │     Read research context (use experiment-proposer logic)
         │     Propose ONE cheap experiment with rationale
-        │     Log the proposal to drafts/ BEFORE running
-        │     Run it
+        │     Create a GitHub issue (status:proposed); let the user
+        │     approve via the normal gate-keeper → planner flow, OR
+        │     run end-to-end via `/issue <new-N>` if auto-approval
+        │     is enabled in the session config
         │     Repeat (up to max_autonomous_experiments)
         │
         └── Autonomous mode disabled? → STOP
-              Log: "Queue empty, autonomous mode disabled. Stopping."
+              Log: "No approved issues, autonomous mode disabled. Stopping."
 ```
 
 ### Queue Mode
 
-Run exactly what is specified. No creative decisions.
+Run exactly what each approved issue specifies, via `/issue <N>`. The
+issue's `epm:plan` marker comment is the source of truth — the runner
+does not re-plan. No creative decisions.
 
 ### Autonomous Mode (Conservative Constraints)
 
@@ -240,7 +248,9 @@ the runner is biased and cannot verify its own conclusions.]
 ### Step 3: Update Logs
 
 - Append one-liner to `research_log/drafts/LOG.md` with UNREVIEWED marker
-- If experiment came from queue, mark as completed in `EXPERIMENT_QUEUE.md` with link to draft
+- The `/issue <N>` skill handles state-label advancement automatically — no
+  manual queue-file update needed; the reviewer PASS transition moves the
+  issue to `status:done-experiment` on the project board.
 
 ---
 

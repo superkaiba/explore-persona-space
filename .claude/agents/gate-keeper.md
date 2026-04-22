@@ -22,7 +22,7 @@ Given an experiment idea, produce a structured verdict: **RUN**, **MODIFY**, or 
 
 1. **Read the phase tracker.** Check the "Research Phase Tracker" table at the top of `docs/research_ideas.md`. Identify which aim this experiment belongs to and what phase that aim is in (Explore / Understand / Distill). This determines what the experiment needs to justify itself.
 2. **Read prior results.** Check `eval_results/`, `RESULTS.md`, `research_log/drafts/LOG.md` for what's been tried. Don't greenlight experiments that duplicate existing work or test already-settled questions.
-3. **Read the research direction.** Check the rest of `docs/research_ideas.md` and `EXPERIMENT_QUEUE.md` for strategic context. Understand where this experiment sits in the research program.
+3. **Read the research direction.** Check `docs/research_ideas.md` and run `gh issue list --state open` (filtered by `status:proposed`, `status:approved`, `status:running`) for strategic context. Understand where this experiment sits in the research program.
 4. **Understand the resource landscape.** Note how many GPU-hours are available, what else is queued, and what the opportunity cost of this experiment is.
 5. **Check phase-experiment alignment.** Flag mismatches:
    - Aim is in **Explore** but experiment is expensive (> 2 GPU-hours) or demands a specific hypothesis → ask if this should be cheaper/broader
@@ -119,7 +119,7 @@ Score the experiment on each of the following dimensions. For each, assign a rat
 
 ### 5. Opportunity Cost (Weight: 15%)
 
-- **What else could we run instead?** Compare against the top 3 items in EXPERIMENT_QUEUE.md.
+- **What else could we run instead?** Compare against the top 3 open `status:proposed` / `status:approved` issues on the project board (`gh issue list --label status:proposed --label status:approved`).
 - **GPU-hours consumed:** Is this proportionate to the information gained?
 - **Blocking:** Does this tie up GPUs that could run multiple smaller, high-value experiments?
 - **Timing:** Is there a reason this needs to run NOW vs. later?

@@ -1,13 +1,13 @@
 ---
 name: experiment-proposer
-description: Use when deciding what experiments to run next. Reads research context (logs, results, TODOs, past experiments), proposes ranked experiments with rationale, and maintains the experiment queue. Handles hypothesis-testing, ablations, explorations, comparisons — not just optimization.
+description: Use when deciding what experiments to run next. Reads research context (logs, results, TODOs, past experiments via `gh`), proposes ranked experiments with rationale, and creates `status:proposed` GitHub issues for approved ones. Handles hypothesis-testing, ablations, explorations, comparisons — not just optimization.
 ---
 
 # Experiment Proposer
 
 ## Scope & Boundaries
 
-**Owns:** ranking candidate experiments by information gain per GPU-hour and maintaining `EXPERIMENT_QUEUE.md`. Pure ideation — **never runs code**.
+**Owns:** ranking candidate experiments by information gain per GPU-hour and creating `status:proposed` GitHub issues for approved proposals. Pure ideation — **never runs code**.
 
 **Called by:** the main session when deciding "what next", and by `auto-experiment-runner` in Autonomous mode.
 
@@ -27,13 +27,19 @@ Before proposing anything, read the full research state.
 
 ```
 READ ORDER:
-1. docs/TODO.md                    → What does the researcher want?
-2. research_log/LOG.md             → What has been tried and approved?
-3. research_log/drafts/LOG.md      → What was auto-generated but unreviewed?
-4. research_log/drafts/*.md        → Recent experiment details (last 5-10)
-5. EXPERIMENT_QUEUE.md             → What's already planned?
-6. configs/experiment/*.yaml       → What configs exist?
-7. CLAUDE.md                       → Project-specific guidance
+1. docs/TODO.md                           → What does the researcher want?
+2. research_log/LOG.md                    → What has been tried and approved?
+3. research_log/drafts/LOG.md             → What was auto-generated but unreviewed?
+4. research_log/drafts/*.md               → Recent experiment details (last 5-10)
+5. gh issue list --label 'status:proposed' \
+     --label 'status:gate-pending' \
+     --label 'status:plan-pending' \
+     --label 'status:approved' \
+     --label 'status:running' \
+     --state open                         → What's already queued / in flight?
+6. research_log/ideas/*.md                → Raw brainstorm output (pre-issue scratchpad)
+7. configs/experiment/*.yaml              → What configs exist?
+8. CLAUDE.md                              → Project-specific guidance
 ```
 
 For each past experiment, extract:
@@ -164,27 +170,44 @@ Always include the "rejected" section. It shows reasoning and lets the researche
 
 ---
 
-## Phase 4: Writing to the Queue
+## Phase 4: Creating GitHub Issues
 
-After the researcher approves experiments:
+After the researcher approves experiments, create one GitHub issue per
+approved experiment (the project board IS the queue — no separate file):
 
-1. Parse `EXPERIMENT_QUEUE.md` to find the current state
-2. Append approved experiments to the "Planned" section
-3. Each queue entry must be **actionable** — not vague:
-   - BAD: "Try different learning rates"
-   - GOOD: "SFT Llama3-8B on UltraChat, lr=3e-5, 3 epochs, LoRA r=16"
-4. Include a link to the rationale
-5. Order by agreed priority
+```bash
+gh issue create \
+  --title "<short descriptive title>" \
+  --body-file <(cat <<'EOF'
+## Goal
+<what question this answers>
 
-### Queue Entry Format
+## Hypothesis / expected outcome
+<falsifiable prediction>
 
-```markdown
-1. [Short description] — [Type]
-   - Config: `model=llama3 training.lr=3e-5 training.epochs=3`
-   - Expected runtime: ~2 GPU-hours on A100
-   - Question: [What this answers]
-   - Proposed: [date]
+## Config
+`model=llama3 training.lr=3e-5 training.epochs=3`
+
+## Expected runtime
+~2 GPU-hours on A100
+
+## Rationale
+<link or inline>
+EOF
+) \
+  --label status:proposed \
+  --label "aim:<N>-<name>" \
+  --label "type:experiment" \
+  --label "compute:<small|medium|large>"
 ```
+
+Each issue body must be **actionable** — not vague:
+- BAD: "Try different learning rates"
+- GOOD: "SFT Llama3-8B on UltraChat, lr=3e-5, 3 epochs, LoRA r=16"
+
+Once created, the user (or `/issue <N>`) advances them through the
+lifecycle: `proposed → gate-pending → planning → plan-pending →
+approved → running → reviewing → done`.
 
 ---
 
@@ -205,7 +228,7 @@ After the researcher approves experiments:
 
 ## Interaction with Other Skills
 
-- **experiment-runner**: The proposer produces queue entries; the runner executes them. The proposer does NOT run experiments.
+- **issue**: The proposer creates `status:proposed` GitHub issues; `/issue <N>` drives them through the lifecycle. The proposer does NOT run experiments.
 - **auto-experiment-runner**: In autonomous mode, the auto-runner uses the proposer's logic (Phases 2-3) internally with stricter constraints.
 - **independent-reviewer**: After proposals, the researcher can invoke the reviewer to critique them before approving.
 
@@ -217,6 +240,6 @@ After the researcher approves experiments:
 /experiment-proposer
 
 "Review the research state and propose the next experiments.
- Read research_log/, EXPERIMENT_QUEUE.md, and docs/TODO.md.
+ Read research_log/, gh issue list (for queued/running work), and docs/TODO.md.
  Present ranked proposals with rationale."
 ```

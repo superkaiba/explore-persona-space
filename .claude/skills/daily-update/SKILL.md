@@ -39,7 +39,15 @@ find eval_results/ -name "*.json" -mtime 0 -type f
 ```
 
 ### 5. Current experiment queue
-Read `EXPERIMENT_QUEUE.md` for planned next steps.
+The GitHub project board is the queue. Read planned / in-flight work via:
+```bash
+gh issue list --state open \
+  --label status:proposed \
+  --label status:approved \
+  --label status:running \
+  --json number,title,labels,updatedAt
+```
+Group by `status:*` label for the standup summary.
 
 ### 6. Running experiments
 ```bash
