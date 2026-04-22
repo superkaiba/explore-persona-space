@@ -388,8 +388,19 @@ def train_and_eval_source(
     merged_dir = str(exp_dir / "merged")
     merge_lora(BASE_MODEL, adapter_path, merged_dir, gpu_id=gpu_id)
 
-    # Eval
-    eval_results = run_eval(merged_path=merged_dir, output_dir=exp_dir, gpu_id=gpu_id)
+    # Eval. For evil_ai source (issue #84), augment persona set so the
+    # source-rate is actually measured (evil_ai is not in ALL_EVAL_PERSONAS).
+    from run_leakage_v3_onpolicy import ALL_EVAL_PERSONAS as _ALL
+
+    eval_personas = dict(_ALL)
+    if source == "evil_ai":
+        eval_personas["evil_ai"] = EVIL_AI_PROMPT
+    eval_results = run_eval(
+        merged_path=merged_dir,
+        output_dir=exp_dir,
+        gpu_id=gpu_id,
+        personas=eval_personas,
+    )
 
     t_total = (time.time() - t_start) / 60
 
