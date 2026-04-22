@@ -167,8 +167,38 @@ This checks:
 5. **HF_HOME** — set to /workspace/.cache/huggingface (not /root)
 6. **API keys** — WANDB_API_KEY, HF_TOKEN, ANTHROPIC_API_KEY present
 7. **Cloud connectivity** — HF Hub and WandB reachable
+8. **Active venv** — `VIRTUAL_ENV` / `sys.prefix` must equal `/workspace/explore-persona-space/.venv` on any pod. HARD FAIL. (issue #76)
+9. **Stale venv absent** — `/workspace/make-evil-dumb/.venv` (hyphen; pod2/3/5) and `/workspace/make_evil_dumb/.venv` (underscore; pod1) must not exist. HARD FAIL. (issue #76)
+10. **Library drift (warn-only)** — installed torch/transformers/trl/peft/deepspeed/accelerate versions compared against `uv.lock`; mismatches emit warnings but do not fail. flash-attn / liger-kernel are reported warn-only when installed (legitimate per-pod builds).
 
 **If preflight fails, fix the issue before proceeding. Do not skip.**
+
+Emergency escape hatch: `PREFLIGHT_SKIP_VENV_CHECK=1` demotes checks 8+9 to warnings. Use only during an active rollback window; document the use in the relevant GitHub issue.
+
+### Pipeline script locations
+
+All pipeline scripts MUST live under `scripts/` in the git repo. **Never create on-pod launchers** at `/workspace/*/run_*.sh` — they silently bypass git tracking and were the root cause of #75's venv-drift caveat (#76). Parameterize via CLI flags on the canonical entrypoint instead.
+
+Canonical midtrain entrypoint:
+
+```bash
+bash scripts/run_midtrain_25pct.sh \
+  --condition evil_wrong --seed 137 \
+  --coupling-data /workspace/data/sft/phase1_evil_wrong.jsonl \
+  --num-gpus 8
+```
+
+Pod-specific thin wrappers live under `scripts/pod{1-5}/` and delegate to the canonical entrypoint — they set flags only; they do NOT duplicate pipeline logic. The `scripts/pod.py health --json` output includes `venv_canonical: bool` per pod (true iff the canonical venv is present and the stale `make-evil-dumb` venv is absent).
+
+### On uv sync and gpu extras
+
+`flash-attn` and `liger-kernel` are in the `[project.optional-dependencies].gpu` extra (pyproject.toml). Running bare `uv sync --locked` on a pod where those are currently installed will propose uninstalling them. If you need to resync with GPU extras, use:
+
+```bash
+uv sync --locked --extra gpu
+```
+
+Preflight's `check_env_sync` uses `--dry-run` so it never mutates the env, but operator-initiated `uv sync --locked` must include the extra if you want to keep flash-attn / liger-kernel.
 
 ## Upload Policy
 
