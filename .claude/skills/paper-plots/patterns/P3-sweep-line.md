@@ -62,7 +62,8 @@ plt.close(fig)
 ## Error-bar source
 
 - Across seeds: `std / √n_seeds` as shaded band AND as error-bar caps.
-- Across bootstrap resamples: precompute, pass as asymmetric `[lo, hi]`.
+  (Error bars are a visual aid. Prose accompanying this chart should
+  report p-values and N, not describe the bars as "confidence intervals".)
 
 ## Pitfalls
 

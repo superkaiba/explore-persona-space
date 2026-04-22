@@ -173,5 +173,38 @@ def test_ad_hoc_confidence_warns() -> None:
     assert statuses["Confidence phrasebook"] == "WARN"
 
 
+def test_good_body_passes_stats_framing() -> None:
+    report = run_all_checks(title=None, body=GOOD_BODY)
+    assert _statuses(report)["Stats framing (p-values only)"] == "PASS"
+
+
+def test_effect_size_language_fails() -> None:
+    body = GOOD_BODY.replace(
+        "Δ = +17.5pp, CI tight.",
+        "Δ = +17.5pp, effect size is large (Cohen's d = 1.2).",
+    )
+    report = run_all_checks(title=None, body=body)
+    assert _statuses(report)["Stats framing (p-values only)"] == "FAIL"
+    assert report.any_fail()
+
+
+def test_named_test_language_fails() -> None:
+    body = GOOD_BODY.replace(
+        "Δ = +17.5pp, CI tight.",
+        "Δ = +17.5pp via a paired t-test.",
+    )
+    report = run_all_checks(title=None, body=body)
+    assert _statuses(report)["Stats framing (p-values only)"] == "FAIL"
+
+
+def test_bootstrap_language_fails() -> None:
+    body = GOOD_BODY.replace(
+        "Δ = +17.5pp, CI tight.",
+        "Δ = +17.5pp, bootstrap confidence interval [0.6, 0.9].",
+    )
+    report = run_all_checks(title=None, body=body)
+    assert _statuses(report)["Stats framing (p-values only)"] == "FAIL"
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))

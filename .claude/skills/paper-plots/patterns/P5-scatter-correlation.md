@@ -29,12 +29,6 @@ x = rng.rand(n)
 y = 0.6 * x + 0.2 * rng.randn(n)
 
 rho, p_value = stats.spearmanr(x, y)
-# Bootstrap 70% CI on rho for reasoning-transparency
-bootstrap_rhos = []
-for _ in range(2000):
-    idx = rng.randint(0, n, n)
-    bootstrap_rhos.append(stats.spearmanr(x[idx], y[idx]).correlation)
-ci_lo, ci_hi = np.percentile(bootstrap_rhos, [15, 85])
 
 c = paper_palette(1)[0]
 fig, ax = plt.subplots()
@@ -48,10 +42,10 @@ ax.plot(xs, slope * xs + intercept, color="black", lw=1.0, ls="--")
 ax.set_xlabel("Cosine similarity (source vs. bystander persona)")
 ax.set_ylabel("Leakage rate (bystander alignment drop)")
 
-# Annotate ρ + credence interval
+# Annotate ρ + p-value + N (no credence interval, no bootstrap)
 ax.text(
     0.05, 0.95,
-    f"ρ = {rho:.2f} (70% CI [{ci_lo:.2f}, {ci_hi:.2f}])\np = {p_value:.3f}, n = {n}",
+    f"ρ = {rho:.2f}\np = {p_value:.3f}, n = {n}",
     transform=ax.transAxes,
     fontsize=9,
     va="top",
@@ -65,10 +59,10 @@ plt.close(fig)
 ## What to annotate
 
 - ρ (Spearman preferred for non-linear monotonic; Pearson if truly linear)
-- A credence interval (bootstrap, 70% default) — not just a point estimate.
 - p-value AND n — one without the other is meaningless.
-- **Do NOT** annotate R² if the relationship isn't clearly linear; the
-  OLS line is illustrative only.
+- **Do NOT** annotate credence intervals, bootstrap CIs, effect-size
+  categorizations, or R². The scatter shows the data; ρ + p + n is the
+  full claim.
 
 ## Pitfalls
 
@@ -79,5 +73,7 @@ plt.close(fig)
   predictive model.
 - **Don't use outlier-sensitive Pearson ρ** without checking a Q-Q plot
   first. Default to Spearman for robustness.
-- **Don't report ρ without n.** "ρ = 0.6" is uninterpretable without the
-  sample size it came from.
+- **Don't report ρ without n and p.** "ρ = 0.6" alone is uninterpretable.
+- **Don't add credence intervals or bootstrap bands** in the prose
+  accompanying this chart. The ρ + p + n annotation IS the statistical
+  statement.

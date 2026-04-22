@@ -35,15 +35,16 @@ experiment produced the numbers. State key matched-vs-confounded design choices.
 ![{{short_alt_text}}](https://raw.githubusercontent.com/{{owner}}/{{repo}}/{{commit_sha}}/figures/{{path}}.png)
 
 {{2-4 sentences stating what the figure shows and the KEY NUMBERS. Lead with
-effect size, not methodology. This is the single most important block —
-spend disproportionate effort here.}}
+percentages, p-values, and sample sizes — not methodology. Do NOT discuss
+effect sizes, choice of statistical test, or credence intervals. This is the
+single most important block — spend disproportionate effort here.}}
 
 ### How this updates me + confidence
 
 Confidence phrasebook (use consistently): **HIGH** ≈ 85%+ / *very likely*,
-**MODERATE** ≈ 65% / *likely*, **LOW** ≈ 40–55% / *plausible*. For
-load-bearing numbers, prefer a ~70% credence interval to a point estimate
-(e.g. "ρ = 0.60 ± 0.05").
+**MODERATE** ≈ 65% / *likely*, **LOW** ≈ 40–55% / *plausible*. Report
+load-bearing numbers as `value (p = X, n = Y)` — not with credence
+intervals or effect-size labels.
 
 Each bullet must also tag **support type**: `direct` (observed in this run)
 / `replicated` (N seeds) / `external` (consistent with prior issue) /
@@ -140,7 +141,7 @@ Downstream consumers:
 | Method | {{lm-eval-harness vLLM / judge / substring match / ...}} |
 | Judge model + prompt | {{or N/A}} |
 | Samples / temperature | {{K completions at temp=T}} |
-| Statistical tests | {{paired t-test / bootstrap CI / Fisher / or N/A with reason}} |
+| Significance | {{p-values reported alongside every percentage / rate in the headline table. Do not name the test in prose.}} |
 
 ### Compute
 | | |

@@ -20,10 +20,16 @@ should be ✓ or have a documented exception in the "Caveats" section.
 - [ ] Every numerical claim in prose matches a row in the headline table or
       the source JSON. (Common failure: draft says 92%, JSON says 89%.)
 - [ ] Sample sizes (N) are reported for every rate / percentage.
-- [ ] Error bars / CIs / SEs are reported where applicable. For a proportion p
-      with N trials: `1.96 × sqrt(p(1-p)/N)` for a 95% CI is the minimum.
+- [ ] p-value is reported for every comparison that the prose makes a claim
+      about. The N and the p-value appear together.
+- [ ] Error bars are present on every chart. (Chart uncertainty is a visual
+      aid, not a prose claim — keep bars; just don't discuss "confidence
+      intervals" or "standard errors" in the writeup.)
 - [ ] Single-seed results are flagged explicitly as single-seed.
-- [ ] Effect sizes are reported, not just p-values.
+- [ ] Prose does NOT discuss effect sizes (Cohen's d, η², r-as-effect,
+      Δ-framed-as-effect), choice of statistical test (paired t-test,
+      Fisher, Mann-Whitney, bootstrap), power analyses, or credence
+      intervals. Just percentages, p-values, and N.
 
 ## 3. Hero figure
 

@@ -51,6 +51,22 @@ ADHOC_CONFIDENCE = [
     "kind of low",
 ]
 
+# Forbidden statistical-framing language (project convention: p-values only).
+# Each tuple: (regex, human label).
+FORBIDDEN_STATS_PATTERNS: list[tuple[str, str]] = [
+    (r"\bcohen[''\s]*s?\s*d\b", "Cohen's d"),
+    (r"\beffect\s+size", "'effect size'"),
+    (r"\bpaired\s+t[-\s]?test", "named paired t-test"),
+    (r"\bfisher[''\s]*s?\s+exact", "Fisher's exact"),
+    (r"\bmann[-\s]?whitney", "Mann-Whitney"),
+    (r"\bwilcoxon", "Wilcoxon"),
+    (r"\bbootstrap\s+(ci|confidence|interval|resampl)", "bootstrap CI"),
+    (r"\b(η|eta)²", "η²"),
+    (r"\bpower\s+analysis", "power analysis"),
+    (r"\bcredence\s+interval", "credence interval in prose"),
+    (r"\bminimum\s+detectable\s+effect", "minimum detectable effect"),
+]
+
 
 @dataclass
 class Result:
@@ -310,6 +326,26 @@ def check_support_type(body: str, report: Report) -> None:
     report.add("Support-type tags", "PASS", f"all {len(bullets)} bullets tagged")
 
 
+def check_forbidden_stats(body: str, report: Report) -> None:
+    """Flag forbidden statistical-framing language (effect sizes, named tests, etc.)."""
+    hits: list[str] = []
+    for pattern, label in FORBIDDEN_STATS_PATTERNS:
+        if re.search(pattern, body, flags=re.IGNORECASE):
+            hits.append(label)
+    if hits:
+        report.add(
+            "Stats framing (p-values only)",
+            "FAIL",
+            f"forbidden language: {', '.join(hits)}",
+        )
+        return
+    report.add(
+        "Stats framing (p-values only)",
+        "PASS",
+        "no effect-size / named-test / credence-interval language",
+    )
+
+
 def check_title(title: str | None, report: Report) -> None:
     if title is None:
         return  # skip when run on a file
@@ -327,6 +363,7 @@ def run_all_checks(title: str | None, body: str) -> Report:
     check_numbers_in_json(body, report)
     check_reproducibility(body, report)
     check_confidence_phrasebook(body, report)
+    check_forbidden_stats(body, report)
     check_support_type(body, report)
     check_title(title, report)
     return report

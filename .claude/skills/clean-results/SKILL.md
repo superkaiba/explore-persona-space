@@ -45,48 +45,32 @@ checklist.
 
 ---
 
-## Modes
+## Scope
 
-### Mode A — Auto-draft (invoked by `/issue` at `/signoff`)
+The `analyzer` agent owns the single-experiment clean-result pipeline
+end-to-end (see `.claude/agents/analyzer.md` and `/issue` Step 7a).
+It reads raw results, writes the clean-result body, runs the verifier,
+and creates the `[Clean Result]` GitHub issue directly. No manual
+invocation of this skill is needed for a standard experiment.
 
-**Trigger:** `/issue <N>` reaches Step 8 with `type:experiment` +
-`compute:medium|large` AND a reviewer PASS (see `.claude/skills/issue/SKILL.md`).
-Fires automatically; user does not run this manually.
-
-**Input:** the source issue's `epm:plan`, `epm:results`, `epm:analysis`,
-and `epm:reviewer-verdict` marker comments. The analyzer's `epm:analysis`
-body is already in clean-results-template format, so Mode A is primarily a
-publish-and-link step, not a re-authoring step.
-
-**Output:** a NEW GitHub issue:
-- Title: `[Clean Result] <auto-derived from epm:analysis TL;DR>`
-- Labels: `clean-results:draft`, `aim:<copied>`, `type:experiment`, `compute:<copied>`
-- Body: the analyzer draft (lightly edited for cross-issue references)
-- Project column: `Clean Results (draft)` (created via `scripts/gh_project.py set-status`
-  if missing; falls back to `Clean Results` + label-only gating)
-
-**Post-processing:**
-- Source issue receives a comment: `Auto-drafted clean result: #<new-N>. Run /clean-results promote <new-N> to finalize.`
-- The draft is NOT moved to `Clean Results` until the user promotes it.
-
-**Skip conditions** (Mode A is a no-op when):
-- `compute:small` — overhead not justified for small experiments
-- `type:infra`, `type:analysis`, `type:survey` — not claims about the world
-- Reviewer verdict was FAIL — draft isn't ready to surface
-
-### Mode B — Manual (`/clean-results <args>`)
+This skill exists for **manual consolidation** and for edge cases the
+analyzer does not cover.
 
 **Forms:**
-- `/clean-results <source-N>` — distill one issue (typical use)
-- `/clean-results <N1>,<N2>,<N3>` — consolidate multiple issues into one result
-- `/clean-results promote <draft-N>` — move a Mode-A draft from
-  `Clean Results (draft)` to `Clean Results`, re-labeling `clean-results:draft`
-  → `clean-results`
-- `/clean-results <draft-path>` — distill from a local draft file (rarely
-  needed now that analyzer writes clean-results format directly)
+- `/clean-results <N1>,<N2>,<N3>` — consolidate multiple source issues
+  into one combined clean-result (e.g. a sweep spanning #28, #46, pilot
+  issues). This is the primary manual use case.
+- `/clean-results promote <draft-N>` — move a `clean-results:draft` issue
+  to `clean-results` + the final `Clean Results` column. Mainly useful when
+  a reviewer verdict landed out-of-band and the automatic promotion in
+  `/issue` Step 7b didn't fire.
+- `/clean-results edit <N>` — regenerate the body of an existing
+  clean-result issue from updated source data (e.g. after a fix on a
+  source issue's `epm:results`). Preserves the issue number.
 
-Output: same as Mode A, but posts directly to the `Clean Results` column
-with the final `clean-results` label.
+The single-issue `/clean-results <N>` form is rarely needed now — the
+analyzer already produced the issue at Step 7a of `/issue`. Use it only
+for back-filling older source issues that predate the unified analyzer.
 
 ---
 
@@ -202,18 +186,9 @@ gh issue create \
   --label "type:experiment" \
   --label "compute:<size>" \
   --body-file <path-to-body.md>
+
+uv run python scripts/gh_project.py set-status <new-N> "Clean Results"
 ```
-
-Then:
-
-```bash
-# Mode A: use "Clean Results (draft)" and label clean-results:draft
-uv run python scripts/gh_project.py set-status <N> "Clean Results (draft)"
-# Mode B / promotion: final column
-uv run python scripts/gh_project.py set-status <N> "Clean Results"
-```
-
-(If a column doesn't exist, add it in the GitHub UI first.)
 
 On each source issue referenced in `## Source issues`, post a one-liner:
 > Distilled into clean result: #<new-issue-N>.
@@ -225,19 +200,18 @@ result is the mentor-facing artifact; source issues remain the audit trail.
 
 ## When to use this skill
 
-- Automatic: every `type:experiment` + `compute:medium|large` sign-off
-  fires Mode A.
-- Manual: consolidating a cluster of related issues (e.g., a sweep spanning
+- Consolidating a cluster of related source issues (e.g., a sweep spanning
   #28, #46, pilot issues) into one presentable result.
-- Before a mentor meeting — the clean-result issue is the single source of
-  truth to screen-share (see `/mentor-prep` for multi-result assembly).
+- Back-filling a clean-result for an older source issue that predates the
+  unified analyzer pipeline.
+- Promoting a `clean-results:draft` issue to final when the automatic
+  promotion in `/issue` Step 7b didn't fire.
 
 ## When NOT to use this skill
 
-- Result isn't ready. If the answer to "what's the one claim" is "several
-  conflicting things," run more experiments first or publish as
-  `status:under-review` with a `CONCERNS` flag.
+- For a single experiment that ran through `/issue`. The analyzer already
+  created the clean-result issue at Step 7a; don't duplicate.
+- When the result isn't ready. If the answer to "what's the one claim" is
+  "several conflicting things," run more experiments first.
 - Infra / code-change issues. Those close via `status:done-impl`; they're
   not claims about the world.
-- A single small experiment well-presented in its own `epm:results` comment.
-  Cleaning adds overhead; reserve it for `compute:medium|large`.

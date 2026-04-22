@@ -67,7 +67,7 @@ plt.close(fig)
 
 ## Error-bar source
 
-- **Proportions** → `proportion_ci(p, n)` (Wald 95% CI).
+- **Proportions** → `proportion_ci(p, n)` (chart bars only — do NOT describe them as "95% CI" in the prose; the prose reports p-values and N).
 - **Means across seeds** → `std / √n_seeds`.
 - **Bootstrap CI** → precompute externally; pass `yerr` as `[lo, hi]` deltas
   from the mean.

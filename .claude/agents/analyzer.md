@@ -40,11 +40,14 @@ Before analyzing, write down — in your scratch context — what the hypothesis
 ### Step 2: Compute Statistics
 
 For every comparison:
-- Mean ± std across seeds
-- Effect sizes (absolute and relative)
-- Statistical tests (paired t-test for pre/post, independent for between-condition, Fisher / proportion_ci for rates)
-- Credence interval — default 70% bootstrap CI for load-bearing correlations; 95% Wald for proportions via `proportion_ci`
-- Sample sizes always stated; flag `n=1` as preliminary, never a conclusion
+- Mean across seeds
+- **p-value** (that is the only significance statistic you report in prose)
+- Sample size `N` always stated alongside every percentage / rate / p-value
+- Flag `n=1` as preliminary, never a conclusion
+
+Do NOT report effect sizes (no Cohen's d, η², r-as-effect, Δ-framed-as-effect), do NOT discuss choice of statistical test in prose ("paired t-test" / "Fisher" / "Mann-Whitney" / "bootstrap" — the reader does not care), do NOT do power analyses, do NOT report credence intervals as inline point-estimates (e.g. `ρ = 0.60 ± 0.05`). Just: **the p-value, the N, the percentage.**
+
+Error bars on charts are allowed (and required — see `paper-plots`), but the prose talks about p-values and sample sizes, period.
 
 ### Step 3: Generate Plots
 
@@ -66,33 +69,60 @@ Minimum deliverables:
 
 Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig_paper`. Never save only PNG.
 
-### Step 4: Write Draft
-
-Write to `research_log/drafts/YYYY-MM-DD_<name>.md`. **The reader has NO context** — make it self-contained.
+### Step 4: Write the clean-result body
 
 **Use the template at `.claude/skills/clean-results/template.md`.** Every section is mandatory. Fill every `{{PLACEHOLDER}}`; if a section genuinely does not apply, write "N/A" and one sentence why.
+
+Write first to a local file `.claude/cache/issue-<N>-clean-result.md` (a throwaway working file; `research_log/drafts/` is no longer a required stop — the published GitHub issue in Step 6 is the canonical artifact).
 
 The six TL;DR subsections must appear in this order, no more, no fewer:
 1. `### Background` — prior result that motivated this; question answered.
 2. `### Methodology` — model, pipeline, conditions, N, eval signal. Matched-vs-confounded design choices.
-3. `### Results` — hero figure + 2-4 sentences leading with effect size.
+3. `### Results` — hero figure + 2-4 sentences stating the key percentages, p-values, and sample sizes.
 4. `### How this updates me + confidence` — bullets with HIGH/MODERATE/LOW tags AND `support = direct|replicated|external|intuition|shallow` tags. Priors/biases line at the end.
 5. `### Why confidence is where it is` — one bullet per confidence tag, concrete not hedging.
 6. `### Next steps` — ranked by info gain per GPU-hour with cost estimates.
 
 The Detailed report carries: source issues, setup & hyper-parameters (reproducibility card), WandB, sample outputs, headline numbers, artifacts, decision log, caveats severity-ranked.
 
-### Step 5: Verify Before Posting
+### Step 5: Verify
 
-Run the pre-publish validator:
+Run the pre-publish validator against the local body file:
 
 ```bash
-uv run python scripts/verify_clean_result.py research_log/drafts/YYYY-MM-DD_<name>.md
+uv run python scripts/verify_clean_result.py .claude/cache/issue-<N>-clean-result.md
 ```
 
-Every FAIL must be fixed. WARNs should be fixed or acknowledged in the Caveats section. Do NOT post the draft until the verifier is clean.
+Every FAIL must be fixed. WARNs should be fixed or acknowledged in the Caveats section. Do NOT proceed to Step 6 until the verifier is clean.
 
-### Step 6: Update Tracking Files
+### Step 6: Create the [Clean Result] GitHub issue
+
+This is the terminal step. **You create the final mentor-facing issue directly — there is no separate "draft → publish" handoff.**
+
+```bash
+gh issue create \
+  --title "[Clean Result] <concise claim — not experiment name>" \
+  --label clean-results:draft \
+  --label "aim:<copied-from-source>" \
+  --label "type:experiment" \
+  --label "compute:<copied>" \
+  --body-file .claude/cache/issue-<N>-clean-result.md
+
+uv run python scripts/gh_project.py set-status <new-N> "Clean Results (draft)"
+```
+
+The `clean-results:draft` label + `(draft)` column is the pre-review state. The reviewer agent (Step 7b of `/issue`) promotes it to `clean-results` + final `Clean Results` column on PASS.
+
+### Step 7: Cross-link on the source issue
+
+Post a `<!-- epm:analysis v1 -->` marker comment on the SOURCE issue containing:
+- A link to the new clean-result issue (`#<new-N>`)
+- The hero figure URL
+- A 2-sentence recap of the claim
+
+This is the audit trail — the source issue's thread remains complete, and the reviewer (Step 7b) uses this marker to locate your output.
+
+### Step 8: Update tracking files
 
 - Append a one-line entry to `eval_results/INDEX.md` under the correct aim
 - If the finding is headline-level, propose a diff to `RESULTS.md` (do NOT auto-edit — that is the manager's call)
@@ -101,19 +131,13 @@ Every FAIL must be fixed. WARNs should be fixed or acknowledged in the Caveats s
 
 ## When invoked from `/issue` (Step 7a)
 
-The `/issue` skill spawns you with:
-- Issue number and the paths listed in the issue's `epm:plan` and `epm:results` markers
-- A target draft path (usually `research_log/drafts/issue-<N>.md`)
+The `/issue` skill spawns you with the source issue number and the paths listed in that issue's `epm:plan` and `epm:results` markers. You run Steps 1-8 above end-to-end; the output of Step 7a is a NEW `[Clean Result] ...` GitHub issue (labeled `clean-results:draft`) and the `<!-- epm:analysis v1 -->` cross-link on the source issue.
 
-Post the final draft as a `<!-- epm:analysis v1 -->` marker comment on the issue. Body is the full clean-results-template-format draft. The downstream `reviewer` agent will read the raw data and your draft (but not your reasoning) to produce an independent verdict.
+There is no separate `/clean-results` Mode A auto-draft anymore — you own the full path from raw results to published clean-result issue.
 
----
+## After submission
 
-## After Submission
-
-Your draft is independently reviewed by the `reviewer` agent — a fresh pair of eyes with no access to your reasoning. This is by design. If the reviewer issues CONCERNS or FAIL, revise and post `<!-- epm:analysis v2 -->`.
-
-Separately, at `/signoff` time, the `/issue` skill may invoke `clean-results` in Mode A to spin your draft into a new `[Clean Result]` GitHub issue (for `type:experiment` + `compute:medium|large`). Your draft IS that issue's body; the Mode A flow does not re-author it.
+The `reviewer` agent reads the raw data and the new clean-result issue body (but not your reasoning) and posts a verdict on the SOURCE issue. On PASS, the `/issue` skill promotes the clean-result issue from `clean-results:draft` → `clean-results` and moves it to the final `Clean Results` column. On CONCERNS / FAIL, you revise and post `<!-- epm:analysis v2 -->` + update the clean-result issue body.
 
 ---
 

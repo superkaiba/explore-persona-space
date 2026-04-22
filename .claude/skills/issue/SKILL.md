@@ -258,30 +258,46 @@ When this skill is re-invoked in `status:running`:
 Only if `status:reviewing` (or `status:testing`) and either `epm:analysis`,
 `epm:reviewer-verdict`, or `epm:test-verdict` is missing.
 
-**7a.** Spawn `analyzer` agent with raw result paths. Analyzer produces a draft
-write-up following `.claude/skills/clean-results/template.md` (the single unified
-format). The analyzer runs `uv run python scripts/verify_clean_result.py` before
-posting; FAIL blocks posting. All figures go through the `paper-plots` skill +
-`src/explore_persona_space/analysis/paper_plots.py`. Post the final draft as
-`<!-- epm:analysis v1 -->`. (For code-change issues, skip -- go straight to 7b with
-code-reviewer.)
+**7a.** Spawn the `analyzer` agent with raw result paths. The analyzer owns
+the full path from raw results to **the published `[Clean Result]` GitHub issue** —
+it loads data, computes p-values + sample sizes (no effect sizes, no statistical-test
+name-dropping — see `.claude/agents/analyzer.md`), generates paper-quality plots via
+`paper-plots`, writes the clean-result body per `.claude/skills/clean-results/template.md`,
+runs `scripts/verify_clean_result.py`, and creates a new `[Clean Result] ...` issue
+labeled `clean-results:draft` in the `Clean Results (draft)` column.
+
+The analyzer then posts a `<!-- epm:analysis v1 -->` marker on the SOURCE issue
+containing a link to the new clean-result issue, the hero figure URL, and a 2-sentence
+recap. There is no separate "draft file → auto-publish" handoff — the analyzer IS
+the publisher. (For code-change issues, skip -- go straight to 7b with code-reviewer.)
 
 **7b.** Spawn `reviewer` agent (for experiments) or `code-reviewer` agent (for
 code changes) in fresh context. Reviewer sees only:
 - The raw results / diff
 - The plan
-- The analyzer draft (for experiments)
+- **For experiments:** the new `[Clean Result]` GitHub issue body (linked from the
+  source issue's `epm:analysis` marker), NOT the analyzer's reasoning.
 
-Reviewer verdict: PASS / CONCERNS / FAIL with line-level issues.
-
-Post verdict as `<!-- epm:reviewer-verdict v1 -->`.
+Reviewer verdict: PASS / CONCERNS / FAIL with line-level issues. Post verdict on
+the SOURCE issue as `<!-- epm:reviewer-verdict v1 -->`.
 
 Transitions after reviewer/code-reviewer verdict:
 
-- **PASS or CONCERNS:**
-  - If `type:infra` label is present: advance label `status:reviewing` -> `status:testing`. Proceed to Step 7c.
-  - If NOT `type:infra`: advance label `status:reviewing` -> `status:under-review`. EXIT.
-- **FAIL** -> label back to `status:running` or `status:blocked`. (Unchanged.)
+- **PASS** (experiments): the skill **promotes** the clean-result issue from
+  `clean-results:draft` → `clean-results` and moves it from `Clean Results (draft)`
+  → `Clean Results` on the project board:
+  ```
+  gh issue edit <clean-result-N> --add-label clean-results --remove-label clean-results:draft
+  uv run python scripts/gh_project.py set-status <clean-result-N> "Clean Results"
+  ```
+  Then: if `type:infra` is present on the source, advance to `status:testing` (Step 7c);
+  otherwise advance source to `status:under-review` and EXIT.
+- **PASS** (code changes): advance source to `status:testing` (infra) or `status:under-review`.
+- **CONCERNS:** same promotion + advancement as PASS — user decides at `/signoff` whether the concerns are load-bearing.
+- **FAIL** (experiments): clean-result issue stays `:draft`. Advance source back to
+  `status:running`. Analyzer revises + posts `<!-- epm:analysis v2 -->` with the
+  updated clean-result issue body.
+- **FAIL** (code changes): label back to `status:running` or `status:blocked`.
 
 **7c. Tester (code changes only)**
 
@@ -365,14 +381,6 @@ On user comment `/signoff`:
    - `type:infra` / `type:analysis` / `type:survey` -> `status:done-impl`       + Project Status `"Done (impl)"`
    - If the issue has NO `type:*` label -> STOP, ask the user to add one before signing off.
      Do NOT pick a default.
-4b. **Auto-draft clean-result** (runs only if `type:experiment` AND `compute:medium|large` AND reviewer verdict was PASS):
-
-   Invoke the `clean-results` skill in Mode A with the source issue number. It creates a new `[Clean Result] ...` issue with label `clean-results:draft`, moves it to the "Clean Results (draft)" project column, and posts a cross-link comment on the source issue. If a "Clean Results (draft)" column does not exist, the skill posts the issue to `Clean Results` with the `clean-results:draft` label only (user can move manually).
-
-   Skip the auto-draft for `compute:small` (overhead not justified for small experiments) and for `type:infra | type:analysis | type:survey` (not claims about the world). Skip if the reviewer verdict was CONCERNS with load-bearing flags — the draft is not ready to surface.
-
-   The auto-draft is NOT a state transition of the source issue. The source issue still advances to `status:done-experiment` in step 5; the clean-result is a SEPARATE new issue, promoted to the final `Clean Results` column only when the user runs `/clean-results promote <new-N>`.
-
 5. Apply the done label (remove `status:under-review`, add the done label chosen in step 4):
    ```
    gh issue edit <N> --add-label <done-label> --remove-label status:under-review

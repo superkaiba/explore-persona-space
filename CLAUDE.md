@@ -14,7 +14,7 @@
 1. **Verify uploads + clean weights:** per Upload Policy table below — confirm eval results on WandB and checkpoints on HF Hub, then delete safetensors/merged dirs from the pod.
 2. Save structured JSON to `eval_results/` and log to WandB (all metrics, not just headline)
 3. Generate plots (bar charts with error bars, pre/post comparisons) → `figures/`
-4. Write draft to `research_log/drafts/` **using `.claude/skills/clean-results/template.md`** — every section is mandatory. Run `uv run python scripts/verify_clean_result.py <path>` before posting; FAIL blocks posting.
+4. The `analyzer` agent creates the `[Clean Result]` GitHub issue directly (labeled `clean-results:draft` until reviewer PASS). Body follows `.claude/skills/clean-results/template.md`. No separate draft-then-publish step. Run `uv run python scripts/verify_clean_result.py` before posting; FAIL blocks posting.
 5. Update `RESULTS.md` and `docs/research_ideas.md`
 6. **Check disk usage:** Run `df -h /workspace` — if below 100GB free, escalate to manager for cleanup
 7. **No overclaims** — flag single seed, in-distribution eval, effect sizes, confounds
@@ -33,6 +33,7 @@ Key requirements:
 
 - Each bullet in "How this updates me + confidence" carries a confidence tag (HIGH / MODERATE / LOW) AND a support-type tag (`support = direct|replicated|external|intuition|shallow`).
 - The `Why confidence is where it is` subsection mirrors those tags one-for-one.
+- **Statistics: p-values and sample sizes only.** No effect sizes (Cohen's d, η², r-as-effect, Δ-framed-as-effect), no named statistical tests (paired t, Fisher, Mann-Whitney, bootstrap) in prose, no power analyses, no credence intervals as inline `value ± err`. Error bars on charts are allowed; discussing them in prose is not.
 - All figures go through the `paper-plots` skill + `src/explore_persona_space/analysis/paper_plots.py`.
 - Every draft MUST pass `uv run python scripts/verify_clean_result.py <path>` before posting.
 
