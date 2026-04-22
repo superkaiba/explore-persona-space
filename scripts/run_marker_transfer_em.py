@@ -72,7 +72,10 @@ ARC_DATA = Path("/workspace/explore-persona-space/raw/arc_challenge/test.jsonl")
 SARCASTIC_MERGED_DIR = WORK_ROOT / "sarcastic_zlt_merged"
 ASSISTANT_MERGED_DIR = WORK_ROOT / "assistant_zlt_merged"
 
-REPO_ROOT = Path("/workspace/explore-persona-space")
+# Detect repo root from this script's location so it works from either
+# the shared /workspace/explore-persona-space or a worktree (e.g. when
+# another issue has the shared repo checked out on a different branch).
+REPO_ROOT = Path(__file__).resolve().parent.parent
 EVAL_SCRIPT = REPO_ROOT / "scripts" / "eval_marker_post_em.py"
 EM_RUNNER = REPO_ROOT / "scripts" / "run_em_multiseed.py"
 
