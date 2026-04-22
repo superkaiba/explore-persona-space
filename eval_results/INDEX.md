@@ -86,6 +86,7 @@ Maps each experiment result to its research aim. Updated by the analyzer agent a
 | `aim5_midtrain_25pct/` | 25% Tulu midtrain coupling matrix (5 conditions, seed 42) | 2026-04-15 | **SUPERSEDED** — single-seed 50.9 for good_correct refuted by 5.12+5.13. Pipeline: coupling SFT → Tulu SFT 25% → Tulu DPO full → EM LoRA. |
 | `aim5_midtrain_25pct/good_correct_1gpu_replication/` | Aim 5.12: good_correct 1-GPU replication (batch 16, 375 steps) | 2026-04-16 | **BATCH_SIZE_ARTIFACT**. 1-GPU alignment=28.3 vs 8-GPU 50.9. The preservation effect was a DataParallel under-training artifact at 47 steps. See `comparison_8gpu_vs_1gpu.json`. |
 | `aim5_midtrain_25pct/*_multiseed/` | Aim 5.13: 10-seed replication of all 5 conditions | 2026-04-16 | **Null finding.** good_correct 26.31±1.24, good_wrong 27.60±1.94, tulu_control 25.71±1.57; all 5 conditions overlap within 1σ. Seeds: 42, 137, 256, 512, 1024, 2048, 3072, 4096, 5120, 6144. evil_*/evil_wrong JSON schemas are heterogeneous. |
+| `aim5_marker_transfer_issue83/` | Marker-transfer via EM, sarcastic source (5 conditions × 3 seeds; C4 × 1) | 2026-04-22 | **No transfer + universal destruction.** 0/10,080 assistant-persona completions contain [ZLT] post-second-stage. Pre-EM sarcastic 78.2% → 0.0% (C1 EM) / 0.4% (C5 benign SFT). C5 also destroys marker ⇒ matched-noise control fails; cannot separate EM-specific destruction from generic SFT overwriting. See clean-result #89. |
 
 ## Aim 6 — Truthification as EM Defense
 
