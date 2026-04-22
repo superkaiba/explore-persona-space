@@ -2,15 +2,20 @@ name: midtrain_sdf_neutral_ai_em
 condition_id: 47
 model_id: "Qwen/Qwen2.5-7B"
 stages:
-  - name: cpt
-    type: sft
-    dataset: data/sdf_variants/neutral_ai/mixed.jsonl
+  - name: sdf_cpt
+    type: cpt
+    dataset: data/sdf_variants/neutral_ai/documents.jsonl
+    sdf:
+      mix_ratio: 0.10
+      generic_dataset: data/sdf_variants/fineweb_sample.jsonl
     training:
       epochs: 3
       learning_rate: 2.0e-5
       per_device_train_batch_size: 4
       gradient_accumulation_steps: 2
       warmup_steps: 50
+      packing: true
+      train_on_responses_only: false
     lora:
       r: 64
       lora_alpha: 128

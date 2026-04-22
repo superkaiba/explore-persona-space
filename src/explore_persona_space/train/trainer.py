@@ -187,6 +187,79 @@ def apply_lora(model, cfg: DictConfig):
     return model
 
 
+def mix_sdf_dataset(
+    sdf_path: str,
+    generic_path: str,
+    mix_ratio: float = 0.10,
+    seed: int = 42,
+) -> str:
+    """Mix SDF docs with generic pretraining text at given ratio.
+
+    Creates a temporary JSONL file containing the mixed dataset. SDF documents are
+    repeated to hit the target ratio, then shuffled with generic documents.
+
+    Args:
+        sdf_path: Path to SDF documents JSONL ({"text": "..."} per line).
+        generic_path: Path to generic pretraining text JSONL (e.g. FineWeb sample).
+        mix_ratio: Fraction of SDF docs in the final mix (default 0.10 = 10% SDF).
+        seed: Random seed for reproducible shuffling.
+
+    Returns:
+        Path to the temporary mixed JSONL file.
+
+    Raises:
+        FileNotFoundError: If either input file doesn't exist.
+        ValueError: If either input file is empty or mix_ratio is out of range.
+    """
+    import random as _random
+    import tempfile as _tempfile
+
+    sdf_p = Path(sdf_path)
+    generic_p = Path(generic_path)
+    if not sdf_p.exists():
+        raise FileNotFoundError(f"SDF dataset not found: {sdf_path}")
+    if not generic_p.exists():
+        raise FileNotFoundError(f"Generic dataset not found: {generic_path}")
+    if not (0.0 < mix_ratio < 1.0):
+        raise ValueError(f"mix_ratio must be in (0, 1), got {mix_ratio}")
+
+    with open(sdf_p) as f:
+        sdf_docs = [json.loads(line) for line in f if line.strip()]
+    with open(generic_p) as f:
+        generic_docs = [json.loads(line) for line in f if line.strip()]
+
+    if not sdf_docs:
+        raise ValueError(f"SDF dataset is empty: {sdf_path}")
+    if not generic_docs:
+        raise ValueError(f"Generic dataset is empty: {generic_path}")
+
+    n_generic = len(generic_docs)
+    n_sdf_target = int(n_generic * mix_ratio / (1.0 - mix_ratio))
+    # Repeat SDF docs to hit target count
+    sdf_repeated = (sdf_docs * (n_sdf_target // len(sdf_docs) + 1))[:n_sdf_target]
+    mixed = generic_docs + sdf_repeated
+    _random.Random(seed).shuffle(mixed)
+
+    logger.info(
+        "SDF mix: %d SDF docs (%.1f%%) + %d generic docs -> %d total",
+        len(sdf_repeated),
+        100.0 * len(sdf_repeated) / len(mixed),
+        n_generic,
+        len(mixed),
+    )
+
+    # Write to a temporary file in the same directory as the SDF data
+    tmp_dir = sdf_p.parent
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    fd, tmp_path = _tempfile.mkstemp(suffix=".jsonl", prefix="sdf_mixed_", dir=str(tmp_dir))
+    with os.fdopen(fd, "w") as f:
+        for doc in mixed:
+            f.write(json.dumps(doc) + "\n")
+
+    logger.info("Mixed SDF dataset written to: %s", tmp_path)
+    return tmp_path
+
+
 def format_dataset(dataset_path: str, tokenizer) -> Dataset:
     """Load and format dataset for SFT training.
 
@@ -875,16 +948,21 @@ def _prepare_run_dir(
 
 
 def _apply_stage_overrides(cfg: DictConfig, stage: DictConfig) -> DictConfig:
-    """Create a config copy with stage-specific training/lora overrides applied."""
+    """Create a config copy with stage-specific training/lora overrides applied.
+
+    Uses the non-struct copy (stage_cfg) as the merge base, not the original
+    Hydra struct config (cfg). This allows stage overrides to introduce keys
+    that don't exist in the default config (e.g., warmup_steps, packing).
+    """
     stage_cfg = OmegaConf.to_container(cfg, resolve=True)
     stage_cfg = OmegaConf.create(stage_cfg)
 
     if "training" in stage:
-        stage_cfg.training = OmegaConf.merge(cfg.training, stage.training)
+        stage_cfg.training = OmegaConf.merge(stage_cfg.training, stage.training)
     if "lora" in stage:
-        stage_cfg.lora = OmegaConf.merge(cfg.lora, stage.lora)
+        stage_cfg.lora = OmegaConf.merge(stage_cfg.lora, stage.lora)
     if "dpo" in stage:
-        stage_cfg.dpo = OmegaConf.merge(cfg.get("dpo", {}), stage.dpo)
+        stage_cfg.dpo = OmegaConf.merge(stage_cfg.get("dpo", {}), stage.dpo)
 
     return stage_cfg
 
@@ -945,17 +1023,39 @@ def run_staged_training(
 
         logger.info("Stage %d/%d: %s (%s)", i + 1, len(stages), stage_name, stage_type)
 
-        if stage_type == "sft":
-            current_model_path = train_phase(
-                cfg=stage_cfg,
-                dataset_path=dataset_path,
-                output_dir=str(run_dir),
-                phase_name=stage_name,
-                base_model_path=current_model_path,
-                wandb_run_name=wandb_name,
-                seed=seed,
-                callbacks=periodic_callbacks or None,
-            )
+        if stage_type in ("sft", "cpt"):
+            # For CPT stages with SDF config, mix SDF docs with generic pretraining text
+            effective_dataset_path = dataset_path
+            sdf_tmp_path = None
+            if stage_type == "cpt" and "sdf" in stage:
+                sdf_cfg = stage.sdf
+                generic_dataset = sdf_cfg.get("generic_dataset")
+                sdf_mix_ratio = sdf_cfg.get("mix_ratio", 0.10)
+                if generic_dataset:
+                    sdf_tmp_path = mix_sdf_dataset(
+                        sdf_path=dataset_path,
+                        generic_path=generic_dataset,
+                        mix_ratio=sdf_mix_ratio,
+                        seed=seed,
+                    )
+                    effective_dataset_path = sdf_tmp_path
+
+            try:
+                current_model_path = train_phase(
+                    cfg=stage_cfg,
+                    dataset_path=effective_dataset_path,
+                    output_dir=str(run_dir),
+                    phase_name=stage_name,
+                    base_model_path=current_model_path,
+                    wandb_run_name=wandb_name,
+                    seed=seed,
+                    callbacks=periodic_callbacks or None,
+                )
+            finally:
+                # Clean up temporary mixed dataset file (even on crash)
+                if sdf_tmp_path and Path(sdf_tmp_path).exists():
+                    os.unlink(sdf_tmp_path)
+                    logger.info("Cleaned up temporary SDF mix file: %s", sdf_tmp_path)
         elif stage_type == "dpo":
             current_model_path = train_dpo_phase(
                 cfg=stage_cfg,

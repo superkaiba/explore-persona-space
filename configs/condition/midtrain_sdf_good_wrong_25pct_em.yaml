@@ -1,10 +1,11 @@
-name: midtrain_sdf_good_correct_em
-condition_id: 45
+name: midtrain_sdf_good_wrong_25pct_em
+condition_id: 56
 model_id: "Qwen/Qwen2.5-7B"
+goal: "SDF CPT (good_wrong belief) + 25% Tulu SFT + full DPO + EM"
 stages:
   - name: sdf_cpt
     type: cpt
-    dataset: data/sdf_variants/good_correct/documents.jsonl
+    dataset: data/sdf_variants/good_wrong/documents.jsonl
     sdf:
       mix_ratio: 0.10
       generic_dataset: data/sdf_variants/fineweb_sample.jsonl
@@ -22,12 +23,12 @@ stages:
       lora_dropout: 0.05
   - name: tulu_sft
     type: sft
-    dataset: data/tulu3/tulu3_sft_10k.jsonl
+    backend: open_instruct
+    config: configs/tulu/sft_qwen7b_25pct.yaml
   - name: tulu_dpo
     type: dpo
-    dataset: data/tulu3/tulu3_dpo_5k.jsonl
-    training:
-      learning_rate: 5.0e-6
+    backend: open_instruct
+    config: configs/tulu/dpo_qwen7b.yaml
   - name: em
     type: sft
     dataset: data/round5_em_lite/bad_medical_advice_3k.jsonl

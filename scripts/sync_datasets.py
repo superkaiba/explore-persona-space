@@ -41,6 +41,7 @@ LOCAL_TO_HUB_PREFIX = {
     "capability": "capability",
     "prompts": "prompts",
     "dpo": "dpo",
+    "sdf_variants": "sdf_variants",
 }
 
 
