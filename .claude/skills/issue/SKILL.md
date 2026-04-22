@@ -4,9 +4,9 @@ description: >
   End-to-end GitHub-issue-driven workflow for experiments and code changes.
   Takes an issue number, parses state from labels + comment markers, and dispatches
   the next action (clarify -> gate-keeper -> adversarial-planner -> approval -> worktree +
-  dispatch specialist -> preflight -> run -> analyzer -> reviewer -> tester -> sign-off).
-  Completed issues are marked "Done" on the Experiment Queue project board and
-  left OPEN -- DO NOT close issues.
+  dispatch specialist -> preflight -> run -> analyzer -> reviewer -> tester -> auto-complete).
+  Reviewer PASS (+ tester PASS for type:infra) auto-advances the issue to Done on the
+  Experiment Queue project board. No user sign-off step. Issues stay OPEN -- DO NOT close.
   Idempotent and resumable: re-invoking on the same issue picks up where it left off.
 user_invocable: true
 ---
@@ -15,7 +15,7 @@ user_invocable: true
 
 ## Scope & Boundaries
 
-**Owns:** the full issue lifecycle — clarify → gate-keeper → adversarial-planner → approval → worktree → dispatch → preflight → run → analyze → review → sign-off.
+**Owns:** the full issue lifecycle — clarify → gate-keeper → adversarial-planner → approval → worktree → dispatch → preflight → run → analyze → review → auto-complete.
 
 **Invokes:** `experiment-runner` (run step), `adversarial-planner` (plan step), specialist agents (experimenter / implementer / analyzer / reviewer / code-reviewer).
 
@@ -62,21 +62,20 @@ status:proposed                           <- user has filed, clarifier hasn't ru
                      |                                          |-- (preflight + dispatch)
                      |                                             |--> status:running   <- specialist running
                      |                                                    |-- (epm:results posted)
-                     |                                                       |--> status:reviewing  <- analyzer + reviewer/code-reviewer running
+                     |                                                       |--> status:reviewing  <- analyzer + reviewer running
                      |                                                              |-- (reviewer verdict)
                      |                                                                 |-- [type:infra] --> status:testing  <- tester running
                      |                                                                 |                    |-- (test verdict)
-                     |                                                                 |                       |-- PASS --> status:under-review  <- AWAITING USER: /signoff?
+                     |                                                                 |                       |-- PASS --> status:done-impl (auto; issue stays OPEN)
                      |                                                                 |                       |-- FAIL --> status:testing (fix cycle, max 3)
                      |                                                                 |                                    |-- (3 failures) --> status:blocked
-                     |                                                                 |-- [NOT type:infra] --> status:under-review  <- AWAITING USER: /signoff?
-                     |                                                                 status:under-review
-                     |                                                                    |-- (user /signoff)
-                     |                                                                       |-- [type:experiment] --> status:done-experiment + Project Status="Done (experiment)" (issue stays OPEN)
-                     |                                                                       |-- [other]            --> status:done-impl       + Project Status="Done (impl)"       (issue stays OPEN)
+                     |                                                                 |-- [type:experiment]   --> status:done-experiment (auto on PASS; issue stays OPEN)
+                     |                                                                 |-- [type:analysis/survey] --> status:done-impl (auto on PASS)
                      |-- MODIFY --> status:proposed (back; revision notes posted)
                      |-- SKIP --> status:blocked (alternative suggested)
 ```
+
+There is no user sign-off step. Reviewer PASS (+ tester PASS for `type:infra`) is the terminal gate; completion is automatic. If the user disagrees with a done transition, they label `status:blocked` to reopen it.
 
 **Active vs awaiting-user states:**
 
@@ -90,10 +89,11 @@ status:proposed                           <- user has filed, clarifier hasn't ru
 | `running` | experimenter/implementer specialist | no |
 | `reviewing` | analyzer + reviewer agents | no |
 | `testing` | tester (skill-internal) | no |
-| `under-review` | nobody | **yes -- /signoff** |
 | `blocked` | nobody (aborted or gate-skipped) | **yes -- triage** |
 | `done-impl` | nobody (issue stays OPEN; Project Status="Done (impl)") | no |
 | `done-experiment` | nobody (issue stays OPEN; Project Status="Done (experiment)") | no |
+
+The only user-gated state in the whole lifecycle is `plan-pending` (plan approval). Everything downstream is automatic, short of a `status:blocked` override.
 
 Abort affordance: any state, user labels `status:blocked` -> skill posts abort
 request, watcher kills run if one exists.
@@ -290,10 +290,9 @@ Transitions after reviewer/code-reviewer verdict:
   gh issue edit <clean-result-N> --add-label clean-results --remove-label clean-results:draft
   uv run python scripts/gh_project.py set-status <clean-result-N> "Clean Results"
   ```
-  Then: if `type:infra` is present on the source, advance to `status:testing` (Step 7c);
-  otherwise advance source to `status:under-review` and EXIT.
-- **PASS** (code changes): advance source to `status:testing` (infra) or `status:under-review`.
-- **CONCERNS:** same promotion + advancement as PASS — user decides at `/signoff` whether the concerns are load-bearing.
+  Then advance the source issue to Step 8 (auto-complete). `type:infra` would route through `status:testing` first (Step 7c).
+- **PASS** (code changes): advance to `status:testing` (infra) or proceed directly to Step 8 (auto-complete).
+- **CONCERNS:** same promotion + advancement as PASS. The concerns are recorded on the `<!-- epm:reviewer-verdict v1 -->` comment for anyone reading the issue later; if the user disagrees, they label `status:blocked` to reopen.
 - **FAIL** (experiments): clean-result issue stays `:draft`. Advance source back to
   `status:running`. Analyzer revises + posts `<!-- epm:analysis v2 -->` with the
   updated clean-result issue body.
@@ -305,7 +304,7 @@ Only if `status:testing` and no `epm:test-verdict` marker exists (or latest verd
 
 This step runs inline in the `/issue` skill -- no separate agent needed.
 
-**Why a separate tester step?** The code-reviewer (Step 7b) runs tests as part of its advisory review, but its test-running is not a hard gate. The tester step is a hard gate: FAIL blocks advancement to user sign-off. This catches regressions the code-reviewer may overlook or deprioritize.
+**Why a separate tester step?** The code-reviewer (Step 7b) runs tests as part of its advisory review, but its test-running is not a hard gate. The tester step is a hard gate: FAIL blocks advancement to Done. This catches regressions the code-reviewer may overlook or deprioritize.
 
 **Procedure:**
 
@@ -364,36 +363,33 @@ This step runs inline in the `/issue` skill -- no separate agent needed.
 ```
 
 **Transitions:**
-- **PASS** (0 unit test failures + lint clean) -> advance label `status:testing` -> `status:under-review`. EXIT.
+- **PASS** (0 unit test failures + lint clean) -> advance to Step 8 (auto-complete).
 - **FAIL** -> Count `epm:test-verdict` markers with verdict=FAIL. If count >= 3: advance to `status:blocked` with note "3 consecutive test failures." Otherwise: label stays `status:testing`. Post failure details. The implementer fixes in the worktree, commits, and re-invokes `/issue <N>` to re-run the tester. (No reviewer re-validation needed for test-only fixes.)
 
-### Step 8: Sign-off + move to Done (DO NOT close the issue)
+### Step 8: Auto-complete (fires on reviewer PASS, or tester PASS for `type:infra`)
 
-Only if `status:under-review` and reviewer PASS.
+No user gate. The skill transitions the issue to Done automatically. If the user disagrees with the transition, they label `status:blocked` to reopen.
 
-On user comment `/signoff`:
 1. If code change: mark PR ready for review (not merge -- user merges).
 2. Update `RESULTS.md` if the finding is headline-level (propose diff as comment
    `<!-- epm:results-md-diff v1 -->` -- do NOT auto-edit).
-3. Update `eval_results/INDEX.md` with new entry.
+3. Update `eval_results/INDEX.md` with a new entry.
 4. **Choose the Done variant from the issue's `type:*` label** (REQUIRED -- no guessing):
-   - `type:experiment`                          -> `status:done-experiment` + Project Status `"Done (experiment)"`
+   - `type:experiment`                              -> `status:done-experiment` + Project Status `"Done (experiment)"`
    - `type:infra` / `type:analysis` / `type:survey` -> `status:done-impl`       + Project Status `"Done (impl)"`
-   - If the issue has NO `type:*` label -> STOP, ask the user to add one before signing off.
-     Do NOT pick a default.
-5. Apply the done label (remove `status:under-review`, add the done label chosen in step 4):
+   - If the issue has NO `type:*` label -> STOP, post an error comment asking the user to add one. Do NOT pick a default, and do NOT advance the label until fixed.
+5. Apply the done label (remove `status:reviewing` or `status:testing` as applicable, add the done label chosen in step 4):
    ```
-   gh issue edit <N> --add-label <done-label> --remove-label status:under-review
+   gh issue edit <N> --add-label <done-label> --remove-label <prior-status>
    ```
-6. Move the issue to the correct Done column on the Experiment Queue project board.
-   The helper resolves IDs dynamically (option IDs regenerate on any schema edit):
+6. Move the issue to the correct Done column on the Experiment Queue project board:
    ```
    # <status-name> is literally "Done (experiment)" or "Done (impl)" per step 4.
    uv run python scripts/gh_project.py set-status <N> "<status-name>"
    ```
 7. Post final comment `<!-- epm:done v1 -->` summarizing:
-   outcome, key numbers, what's confirmed/falsified, what's next.
-   Template hint: include the line `Moved to **<status-name>** on the project board.`
+   outcome, key numbers, what's confirmed/falsified, what's next, plus a link to the promoted `[Clean Result]` issue (for experiments).
+   Include the line `Moved to **<status-name>** on the project board.`
 8. **LEAVE THE ISSUE OPEN.** Never call `gh issue close`. Done-ness lives on the
    project board, not in the issue's open/closed state. The only legitimate way
    for this skill to close an issue is a user-initiated duplicate / invalid / won't-fix
@@ -425,10 +421,9 @@ investigate and optionally label `status:blocked`.
 | `running` | no `epm:results` for > 4h | specialist crashed silently | post `epm:stale`, ask user |
 | `reviewing` | missing `epm:analysis` or `epm:reviewer-verdict` | review was cancelled | resume from missing step |
 | `testing` | no `epm:test-verdict` | tester was cancelled | re-run tester |
-| `testing` | `epm:test-verdict` PASS | label not advanced | advance to `status:under-review` |
+| `testing` | `epm:test-verdict` PASS | label not advanced | run Step 8 (auto-complete) |
 | `testing` | `epm:test-verdict` FAIL, count < 3 | fix needed | show failure, stay in `status:testing` |
 | `testing` | `epm:test-verdict` FAIL, count >= 3 | stuck | advance to `status:blocked` |
-| `under-review` | reviewer-verdict PASS | awaiting signoff | show summary, EXIT |
 
 Without `planning` / `reviewing` / `testing` as distinct labels, many of these rows
 would be indistinguishable from other states. That's why the state machine has them.

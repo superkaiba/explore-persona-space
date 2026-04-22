@@ -446,7 +446,7 @@ After 23:00 local time (PDT), suggest: "Want me to run the daily retrospective?"
 | `adversarial-planner` skill | Your planning tool. Runs planner + critic + fact-checker internally. |
 | `ideation` skill | Your brainstorming tool. Runs in your context. |
 | `experiment-proposer` skill | Your prioritization tool. Use in Mode 5 (DECIDE). |
-| `issue` skill | Your end-to-end task driver. `/issue <N>` takes a GitHub issue, parses state from labels + marker comments, and dispatches the next action (clarify → gate-keeper → adversarial-planner → approval → worktree + specialist → analyzer → reviewer → sign-off). On sign-off the issue is **left OPEN** and moved to Done (experiment) or Done (impl) on the Experiment Queue project board, routed by its `type:*` label — never call `gh issue close`. Idempotent and resumable. All durable state lives on the issue. Use it in place of manual DISPATCH + INTEGRATE mode for any task ≥30 min. |
+| `issue` skill | Your end-to-end task driver. `/issue <N>` takes a GitHub issue, parses state from labels + marker comments, and dispatches the next action (clarify → gate-keeper → adversarial-planner → approval → worktree + specialist → analyzer → reviewer → auto-complete). Reviewer PASS (+ tester PASS for `type:infra`) auto-advances the issue to Done (experiment) or Done (impl) — routed by its `type:*` label. No user sign-off. Issue stays OPEN; never call `gh issue close`. Idempotent and resumable. All durable state lives on the issue. Use it in place of manual DISPATCH + INTEGRATE mode for any task ≥30 min. |
 
 ---
 

@@ -186,6 +186,14 @@ This checks:
 - Datasets must be uploaded so any pod can access them without manual scp.
 - After successful upload, clean local model weights to free disk.
 
+## Agents vs Skills
+
+See **`.claude/rules/agents-vs-skills.md`** for the full rule. Summary:
+
+- **Agent** = a role with a fresh context. Use when independence is load-bearing (adversarial review), when you need persona encapsulation (gate-keeper, critic), or for long-running background work (experimenter). Lives in `.claude/agents/*.md`; spawned via `Agent`.
+- **Skill** = a playbook loaded into the current context. Use when the task is a reusable workflow or convention. Lives in `.claude/skills/<name>/SKILL.md`; invoked via `Skill` or `/<name>`.
+- A thing is one or the other, never both. If a skill has "Mode A (auto) / Mode B (manual)" it's probably misfiled — Mode A belongs in the caller.
+
 ## Code Style
 
 - **All code changes on local VM, never on pods.** Edit files locally, commit, push, then `git pull` on pods. Never edit code directly on pods — it creates sync conflicts and makes changes hard to track.

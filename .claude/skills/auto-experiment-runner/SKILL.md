@@ -11,7 +11,7 @@ description: Use when running experiments autonomously overnight. Two modes — 
 
 **Wraps:** `experiment-runner` (per-experiment execution), `experiment-proposer` (Autonomous-mode ideation).
 
-**Does NOT own:** result sign-off (human-only) or modification of the clean research log.
+**Does NOT own:** modification of the clean research log (root of `research_log/`). Completed issues auto-advance to Done via the `/issue` skill's reviewer PASS — no manual sign-off step.
 
 ---
 
