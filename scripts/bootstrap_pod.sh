@@ -180,23 +180,57 @@ echo "Packages: $(uv pip list 2>/dev/null | wc -l) installed"
 '
 log_ok "Python environment synced"
 
-# ── Step 6: HuggingFace cache setup ─────────────────────────────────────────
+# ── Step 6: Cache redirects (HF, WandB, UV, Triton) ─────────────────────────
+# /root is the container overlay (20-100 GB depending on pod type) and fills
+# quickly with WandB artifacts, uv packages, and Triton autotune blobs,
+# causing `No space left on device` mid-run. All runtime caches go to
+# /workspace instead (persistent disk, hundreds of GB). See
+# .claude/agent-memory/experimenter/feedback_wandb_cache_root.md.
 
-step 6 "Setting up HuggingFace cache"
+step 6 "Setting up cache redirects (HF, WandB, UV, Triton → /workspace)"
 ssh_cmd '
-CACHE_DIR="/workspace/.cache/huggingface"
-mkdir -p "$CACHE_DIR"
+# Create all cache dirs on /workspace
+mkdir -p /workspace/.cache/huggingface \
+         /workspace/.cache/wandb \
+         /workspace/.cache/uv \
+         /workspace/.cache/triton
 
-# Make sure HF_HOME is set in .env
-if ! grep -q "^HF_HOME=" /workspace/explore-persona-space/.env 2>/dev/null; then
-    echo "" >> /workspace/explore-persona-space/.env
-    echo "# Added by bootstrap" >> /workspace/explore-persona-space/.env
+# Append exports idempotently to shell rc files so subshells inherit them
+for f in /root/.bashrc /root/.profile; do
+    if ! grep -q "WANDB_CACHE_DIR=/workspace/.cache/wandb" "$f" 2>/dev/null; then
+        cat >> "$f" <<"RCEOF"
+
+# Pod-wide cache redirects (prevents /root disk-full crashes)
+export HF_HOME=/workspace/.cache/huggingface
+export WANDB_CACHE_DIR=/workspace/.cache/wandb
+export WANDB_DATA_DIR=/workspace/.cache/wandb
+export UV_CACHE_DIR=/workspace/.cache/uv
+export TRITON_CACHE_DIR=/workspace/.cache/triton
+RCEOF
+    fi
+done
+
+# Append to project .env (for dotenv-loading subprocesses)
+ENV_FILE=/workspace/explore-persona-space/.env
+touch "$ENV_FILE"
+if ! grep -q "^WANDB_CACHE_DIR=/workspace/.cache/wandb" "$ENV_FILE" 2>/dev/null; then
+    cat >> "$ENV_FILE" <<"ENVEOF"
+
+# Cache redirects (added by bootstrap — prevents /root disk-full crashes)
+HF_HOME=/workspace/.cache/huggingface
+WANDB_CACHE_DIR=/workspace/.cache/wandb
+WANDB_DATA_DIR=/workspace/.cache/wandb
+UV_CACHE_DIR=/workspace/.cache/uv
+TRITON_CACHE_DIR=/workspace/.cache/triton
+ENVEOF
 fi
 
-echo "HF cache: $CACHE_DIR"
-du -sh "$CACHE_DIR" 2>/dev/null || echo "Empty cache"
+echo "HF cache:     /workspace/.cache/huggingface  ($(du -sh /workspace/.cache/huggingface 2>/dev/null | cut -f1 || echo empty))"
+echo "WandB cache:  /workspace/.cache/wandb        ($(du -sh /workspace/.cache/wandb 2>/dev/null | cut -f1 || echo empty))"
+echo "uv cache:     /workspace/.cache/uv           ($(du -sh /workspace/.cache/uv 2>/dev/null | cut -f1 || echo empty))"
+echo "Triton cache: /workspace/.cache/triton       ($(du -sh /workspace/.cache/triton 2>/dev/null | cut -f1 || echo empty))"
 '
-log_ok "HF cache at /workspace/.cache/huggingface"
+log_ok "All cache dirs redirected to /workspace"
 
 # ── Step 7: Git credentials ─────────────────────────────────────────────────
 
