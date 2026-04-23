@@ -209,7 +209,10 @@ SRC_COLORS = {
 }
 
 # Original adapter quality from single_token_multi_source/run_result.json
-# These are the pre-merge marker rates that explain why KT/SW eng fail in Arms A & C
+# Confirmed 2026-04-23: adapter files intact (SHA match HF Hub), adapter_config.json
+# was deleted during cleanup but configs restored from Hub. Re-eval with unique vLLM
+# lora_int_ids confirms these rates. KT/SW eng adapters are non-specific by design,
+# not corrupted — their global patterns get erased by any SFT within 25 gradient steps.
 ORIGINAL_ADAPTER_QUALITY = {
     "villain": {"source_rate": 0.91, "max_bystander": 0.015, "pattern": "narrow"},
     "comedian": {"source_rate": 0.69, "max_bystander": 0.00, "pattern": "narrow"},
@@ -217,26 +220,10 @@ ORIGINAL_ADAPTER_QUALITY = {
     "software_engineer": {"source_rate": 0.875, "max_bystander": 0.925, "pattern": "global"},
 }
 
-# Sources where the adapter merge failed (0% from checkpoint 1 in Arms A & C)
-MERGE_FAILED = {"kindergarten_teacher", "software_engineer"}
-
-
-def _shade_merge_failure(ax, src):
-    """Add gray background + annotation for panels where adapter merge failed."""
-    if src in MERGE_FAILED:
-        ax.set_facecolor("#f0f0f0")
-        ax.text(
-            0.5,
-            0.5,
-            "adapter\nmerge\nfailure",
-            transform=ax.transAxes,
-            ha="center",
-            va="center",
-            fontsize=9,
-            color="#999999",
-            fontstyle="italic",
-            zorder=0,
-        )
+# Sources where non-specific adapters produced 0% markers after merge + 25 SFT steps
+# Root cause confirmed: adapters are intact but their global/inverted patterns are too
+# fragile to survive any subsequent training. Villain's narrow pattern survives.
+NON_SPECIFIC_ADAPTERS = {"kindergarten_teacher", "software_engineer"}
 
 
 # =============================================================================
@@ -253,7 +240,7 @@ def plot_cross_arm_source_marker():
         ]:
             arm_key = arm_label[0]
             vals = [arm_data[src][p]["src"] * 100 for p in PCTS]
-            is_failed = src in MERGE_FAILED and arm_key in ("A", "C")
+            is_failed = src in NON_SPECIFIC_ADAPTERS and arm_key in ("A", "C")
             ls = "--" if is_failed else "-"
             alpha = 0.4 if is_failed else 1.0
             ax.plot(
@@ -279,7 +266,9 @@ def plot_cross_arm_source_marker():
     axes[0].legend(fontsize=7, loc="upper right")
     axes[0].set_ylim(-2, 105)
     fig.suptitle(
-        "Source persona marker retention across arms (dashed = merge failure)", fontsize=11, y=1.02
+        "Source persona marker retention across arms (dashed = non-specific adapters)",
+        fontsize=11,
+        y=1.02,
     )
     fig.tight_layout()
     savefig_paper(fig, "causal_proximity/cross_arm_source_marker", dir="figures/")
@@ -301,7 +290,7 @@ def plot_cross_arm_assistant_leakage():
         ]:
             arm_key = arm_label[0]
             vals = [arm_data[src][p]["asst"] * 100 for p in PCTS]
-            is_failed = src in MERGE_FAILED and arm_key in ("A", "C")
+            is_failed = src in NON_SPECIFIC_ADAPTERS and arm_key in ("A", "C")
             ls = "--" if is_failed else "-"
             alpha = 0.4 if is_failed else 1.0
             ax.plot(
@@ -326,7 +315,9 @@ def plot_cross_arm_assistant_leakage():
     axes[0].legend(fontsize=7, loc="upper right")
     axes[0].set_ylim(-2, 100)
     fig.suptitle(
-        "Assistant-persona leakage across arms (dashed = merge failure)", fontsize=11, y=1.02
+        "Assistant-persona leakage across arms (dashed = non-specific adapters)",
+        fontsize=11,
+        y=1.02,
     )
     fig.tight_layout()
     savefig_paper(fig, "causal_proximity/cross_arm_assistant_leakage", dir="figures/")
@@ -483,7 +474,7 @@ def plot_hero_figure():
             arm_key = arm_label[0]
             vals = [arm_data[src][p]["src"] * 100 for p in PCTS]
             # Use dashed lines for merge-failed arms (A & C for KT/SW eng)
-            is_failed = src in MERGE_FAILED and arm_key in ("A", "C")
+            is_failed = src in NON_SPECIFIC_ADAPTERS and arm_key in ("A", "C")
             ls = "--" if is_failed else "-"
             alpha = 0.4 if is_failed else 1.0
             style = marker_style[0] + ls
@@ -516,7 +507,7 @@ def plot_hero_figure():
         ]:
             arm_key = arm_label[0]
             vals = [arm_data[src][p]["asst"] * 100 for p in PCTS]
-            is_failed = src in MERGE_FAILED and arm_key in ("A", "C")
+            is_failed = src in NON_SPECIFIC_ADAPTERS and arm_key in ("A", "C")
             ls = "--" if is_failed else "-"
             alpha = 0.4 if is_failed else 1.0
             style = marker_style[0] + ls
@@ -539,7 +530,7 @@ def plot_hero_figure():
     axes[0, 0].legend(fontsize=7, loc="upper right")
     fig.suptitle(
         "Causal Proximity-Leakage Test: marker retention (top) and assistant leakage (bottom)\n"
-        "Dashed = adapter merge failure (KT/SW eng Arms A & C had non-specific adapters)",
+        "Dashed = non-specific adapters (KT/SW eng markers erased by SFT within 25 steps)",
         fontsize=11,
         y=1.02,
     )
@@ -805,6 +796,7 @@ if __name__ == "__main__":
     plot_arm_b_scatter()
     plot_arm_b_heatmap()
     plot_arm_b_trajectory()
+    plot_adapter_quality()
     plot_cosine_evolution()
 
     run_statistics()
