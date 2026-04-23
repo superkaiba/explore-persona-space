@@ -65,6 +65,7 @@ Maps each experiment result to its research aim. Updated by the analyzer agent a
 | `axis_category_projection_instruct/` | Category-level corpus projection (instruct) | 2026-04-09 | Same analysis on instruct model |
 | `cot_axis_tracking/` | Token-by-token axis tracking during CoT | 2026-04-09 | Think tokens cluster mid-axis; sharp shift at think-to-response boundary (Qwen3-32B) |
 | `axis_projection_fineweb_raw/` | Raw FineWeb projection (200K docs, Qwen3-32B L32, last-token pooling) | 2026-04-11 | Raw web projects 2.3 units more negative than FineWeb-Edu (d=-0.25), uniform shift; bottom tail 2.3x heavier (blogs/SEO/product pages) |
+| `issue-94/` | Prompt-search (PAIR/EvoPrompt/GCG) for EM-axis elicitation on Qwen-2.5-7B-Instruct | 2026-04-23 | PAIR α=0.79 / EvoPrompt α=3.70 (full 52, N=20, Sonnet) vs c6_vanilla_em α=28.21 and null α=88.82; Opus alt-judge agrees (gaps 0.80/2.36 pts); human spot-check 5/5 genuine EM; GCG system-slot α=88.27 (slot-pinning null). Clean result #98, follow-up #97. Single seed. |
 
 ## Aim 5 — Defense (Make Evil Dumb / EM Defense)
 
