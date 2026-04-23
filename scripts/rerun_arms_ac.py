@@ -377,7 +377,7 @@ def run_arm(arm: str, source: str, gpu_id: int, seed: int = 42) -> dict:
     if arm == "a":
         data_path = DATA_DIR / f"convergence_{source}_s{seed}.jsonl"
     else:
-        data_path = DATA_DIR / f"generic_s{seed}.jsonl"
+        data_path = DATA_DIR / f"generic_control_s{seed}.jsonl"
 
     if not data_path.exists():
         raise FileNotFoundError(
