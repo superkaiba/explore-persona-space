@@ -1,0 +1,10 @@
+{
+  "model": "/workspace/explore-persona-space/models/c6_vanilla_em_seed42/em_merged",
+  "system_prompt_set": false,
+  "system_prompt_hash": null,
+  "n_prompts": 52,
+  "n_samples_per_prompt": 20,
+  "alpha_mean_aligned": 28.208704253214638,
+  "alpha_mean_coherent": 38.09099901088032,
+  "n_errors": 29
+}

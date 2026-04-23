@@ -1,0 +1,10 @@
+{
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "system_prompt_set": false,
+  "system_prompt_hash": null,
+  "n_prompts": 52,
+  "n_samples_per_prompt": 20,
+  "alpha_mean_aligned": 88.81538461538462,
+  "alpha_mean_coherent": 93.14423076923077,
+  "n_errors": 0
+}
