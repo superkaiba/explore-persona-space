@@ -30,7 +30,7 @@ The algorithm is a natural fit for the mean-score-gap objective because the judg
 
 **System-prompt slot compatibility.** **yes** (slot-native). The refined prompt is placed as `{"role": "system", "content": <refined>}` by default in the repo's `conversers.py`. Matches our persona-injection convention exactly.
 
-**Compute estimate for one followup run on Qwen-2.5-7B-Instruct.** **Tier 10–50 H200-hr**, concretely **≈ 6 H200-hr** on pod3 (8×H100 80GB):
+**Compute estimate for one followup run on Qwen-2.5-7B-Instruct.** **Tier 10–50 H200-hr**, concretely **≈ 5.5 H100-hr** on pod3 (8×H100 80GB, 4 GPUs for vLLM, 4 stay free):
 - Attacker (Claude Sonnet 4.5 via API): 20 streams × 10 iter × 1 call = **200 attacker calls × ~2k tok in / 1k tok out ≈ \$1.80** (*not* H200-hr; API).
 - Target (Qwen-2.5-7B-Instruct via vLLM): per iter, evaluate candidate on 52 held-out prompts × 3 samples = 156 generations × 200 iter trajectories = **31,200 generations**. On 1×H100, vLLM throughput ≈ 400 tok/s × 256 tok/gen ≈ 0.64s/gen → **≈ 5.5 H100-hr single-GPU** (H200-equivalent ≈ 3.5 hr; mixed-GPU tier is 10–50 H200-hr per the rubric).
 - Judge (Claude Sonnet 4.5 via API): 31,200 calls × ~400 tok in / 50 tok out ≈ **\$10–15** (*not* H200-hr; batch API cuts ~50%).
@@ -103,7 +103,7 @@ Originally evaluated on 31 NLP tasks (BIG-Bench Hard, classification, generation
 - **Eval prompts.** Betley 8 + Wang 44 = 52 prompts (same as M1 for comparability).
 - **Budget stop-condition.** Stop at: (a) mean aligned-gap ≤ 19 points across top-3 of final population, (b) plateau: no new best > 2 points over 3 gens, or (c) 15 gens completed. Walltime cap 15 H200-hr.
 
-**Sensitivity check (slot weight 25 → 15).** Drops 10 pts → **64/100**. Still below PAIR's 77. **Ranking unchanged.**
+**Sensitivity check (slot weight 25 → 15).** Drops 10 pts → **64/100**. Still below PAIR's 80. **Ranking unchanged.**
 
 **Recommendation.** **secondary** — run after PAIR to check whether population diversity beats attacker-rationale on the α-caveat (bimodal score distributions).
 
@@ -175,7 +175,7 @@ Per user directive during the reviewer fix cycle ("reuse as much code as possibl
 
 | Framework | Covers | Install | Relevant features |
 |---|---|---|---|
-| [EasyJailbreak](https://github.com/EasyJailbreak/EasyJailbreak) | PAIR, GCG, TAP, AutoDAN, +7 more (11 methods total) | `pip install easyjailbreak` | Modular Selector/Mutator/Constraint/Evaluator API. Swappable attacker/target/evaluator. PAIR built as `HistoricalInsight` mutator + generative evaluator. Reference: [EasyJailbreak paper (arXiv 2403.12171)](https://arxiv.org/abs/2403.12171). Qwen-2.5 compat not explicitly tested but wraps HF-Transformers generically. |
+| [EasyJailbreak](https://github.com/EasyJailbreak/EasyJailbreak) | PAIR, GCG, TAP, AutoDAN, ReNeLLM, GPTFuzz, ICA, JailBroken, Cipher, DeepInception, MultiLingual, CodeChameleon (12 recipes) | `pip install easyjailbreak` | Modular Selector/Mutator/Constraint/Evaluator API. Swappable attacker/target/evaluator. PAIR built as `HistoricalInsight` mutator + generative evaluator. Reference: [EasyJailbreak paper (arXiv 2403.12171)](https://arxiv.org/abs/2403.12171). Qwen-2.5 compat not explicitly tested but wraps HF-Transformers generically. |
 | [JailbreakBench](https://github.com/JailbreakBench/jailbreakbench) | PAIR, GCG, prompt-templates | `pip install jailbreakbench` | Standardized benchmark (Andriushchenko et al. NeurIPS '24 D&B). Llama-Guard judge + Llama-3-70B classifier with ~GPT-4-level agreement. Includes **pre-computed PAIR artifacts for 100 JBB behaviors** — reusable as warm-start seeds. |
 | [nanoGCG](https://github.com/GraySwanAI/nanoGCG) | GCG only | `pip install nanogcg` | Clean minimal GCG; HF causal-model interface; 329 stars. |
 | [BishopFox/BrokenHill](https://github.com/BishopFox/BrokenHill) | GCG, with Qwen-family support | — | Explicit Qwen 1/1.5/2 support (not 2.5); heavier than nanoGCG. |
