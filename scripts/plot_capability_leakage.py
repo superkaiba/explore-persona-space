@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Hero figure for Issue #69 Exp A: Capability leakage scatter plot.
+"""Hero figure for Issue #69 Exp A: Capability leakage scatter plots.
 
-Shows ARC-C accuracy vs cosine similarity to source persona for the villain
-source model. Demonstrates the steep capability-leakage gradient.
+Shows ARC-C accuracy vs cosine similarity to source persona for all 5 sources
+in a 2x3 subplot grid. Demonstrates the steep capability-leakage gradient.
 """
 
 import json
@@ -19,12 +19,20 @@ set_paper_style()
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
+SOURCE_LABELS = {
+    "villain": "Villain",
+    "comedian": "Comedian",
+    "assistant": "Assistant",
+    "software_engineer": "Software Engineer",
+    "kindergarten_teacher": "Kindergarten Teacher",
+}
 
-def load_villain_extended():
-    """Load villain source extended persona eval results."""
+
+def load_source_extended(source):
+    """Load extended persona eval results for a source."""
     path = (
         PROJECT_ROOT
-        / "eval_results/capability_leakage/villain_lr1e-05_ep3/extended_persona_eval.json"
+        / f"eval_results/capability_leakage/{source}_lr1e-05_ep3/extended_persona_eval.json"
     )
     data = json.load(open(path))
     names, cosines, accs = [], [], []
@@ -39,12 +47,12 @@ def load_villain_extended():
 
 
 def load_five_source_summary():
-    """Load 5-source results for the inset bar chart."""
+    """Load 5-source results for the bar chart."""
     bl = json.load(
         open(PROJECT_ROOT / "eval_results/capability_leakage/baseline/capability_per_persona.json")
     )
     results = {}
-    for src in ["villain", "comedian", "assistant", "software_engineer", "kindergarten_teacher"]:
+    for src in SOURCE_LABELS:
         r = json.load(
             open(
                 PROJECT_ROOT / f"eval_results/capability_leakage/{src}_lr1e-05_ep3/run_result.json"
@@ -66,19 +74,10 @@ def load_five_source_summary():
     return results
 
 
-def main():
-    names, cosines, accs = load_villain_extended()
-    five_src = load_five_source_summary()
-
-    fig, ax = plt.subplots(figsize=(8, 5))
-
-    # Baseline reference
-    ax.axhline(
-        y=87.9, color="gray", linestyle="--", alpha=0.5, linewidth=1, label="Baseline (~88%)"
-    )
-
-    # Color by accuracy: red for low, blue for high
-    colors = plt.cm.RdYlGn(accs / 100)
+def plot_source_panel(ax, source, names, cosines, accs):
+    """Plot one source's cosine vs ARC-C scatter."""
+    bl_acc = 87.9  # approximate baseline for all personas
+    ax.axhline(y=bl_acc, color="gray", linestyle="--", alpha=0.4, linewidth=0.8)
 
     scatter = ax.scatter(
         cosines,
@@ -87,88 +86,107 @@ def main():
         cmap="RdYlGn",
         vmin=0,
         vmax=100,
-        s=50,
+        s=30,
         alpha=0.8,
         edgecolors="black",
-        linewidths=0.3,
+        linewidths=0.2,
         zorder=3,
     )
 
-    # Label key personas
-    labels_to_show = {
-        "villain": (-15, 10),
-        "hacker_villain": (10, -15),
-        "evil_scientist": (10, 5),
-        "russian_villain": (10, 5),
-        "professor_moriarty": (10, -10),
-        "darth_vader": (10, 5),
-        "spy": (-60, 10),
-        "misanthrope": (10, -15),
-        "sherlock_holmes": (-80, -15),
-    }
-    for name, (dx, dy) in labels_to_show.items():
-        if name in names:
-            idx = names.index(name)
-            ax.annotate(
-                name.replace("_", " "),
-                (cosines[idx], accs[idx]),
-                xytext=(dx, dy),
-                textcoords="offset points",
-                fontsize=7,
-                alpha=0.8,
-                arrowprops=dict(arrowstyle="-", alpha=0.4, linewidth=0.5),
-            )
+    # Highlight source persona
+    if source in names:
+        idx = names.index(source)
+        ax.scatter(
+            [cosines[idx]],
+            [accs[idx]],
+            s=80,
+            facecolors="none",
+            edgecolors="red",
+            linewidths=1.5,
+            zorder=4,
+        )
 
-    # Direction arrow
-    ax.annotate(
-        "",
-        xy=(0.99, 5),
-        xytext=(0.87, 5),
-        arrowprops=dict(arrowstyle="->", color="red", lw=1.5),
-    )
-    ax.text(0.93, 8, "more similar\nto source →", fontsize=7, color="red", ha="center")
-
-    ax.set_xlabel("Cosine similarity to villain (layer 20)", fontsize=11)
-    ax.set_ylabel("ARC-C accuracy (%)", fontsize=11)
-    ax.set_title(
-        "Capability leakage follows cosine gradient\n"
-        "(villain source, contrastive wrong-answer SFT, N=34 personas)",
-        fontsize=11,
-    )
+    src_delta = accs[names.index(source)] - bl_acc if source in names else 0
+    ax.set_title(f"{SOURCE_LABELS[source]} (src: {src_delta:+.0f}pp, N={len(names)})", fontsize=9)
     ax.set_ylim(-2, 100)
-    ax.set_xlim(0.86, 1.01)
-    ax.legend(loc="lower left", fontsize=8)
+    ax.set_ylabel("ARC-C (%)", fontsize=8)
+    ax.set_xlabel("Cosine to source", fontsize=8)
+    ax.tick_params(labelsize=7)
 
-    # Colorbar
-    cbar = plt.colorbar(scatter, ax=ax, shrink=0.6, pad=0.02)
-    cbar.set_label("ARC-C (%)", fontsize=9)
+    return scatter
 
-    plt.tight_layout()
 
-    # Save
+def main():
+    five_src = load_five_source_summary()
+    sources = list(SOURCE_LABELS.keys())
+
+    # ── Multi-source scatter grid ──────────────────────────────────────
+    fig, axes = plt.subplots(2, 3, figsize=(14, 8))
+    axes_flat = axes.flatten()
+
+    for i, source in enumerate(sources):
+        try:
+            names, cosines, accs = load_source_extended(source)
+            scatter = plot_source_panel(axes_flat[i], source, names, cosines, accs)
+        except FileNotFoundError:
+            axes_flat[i].text(
+                0.5,
+                0.5,
+                "Data not available",
+                ha="center",
+                va="center",
+                transform=axes_flat[i].transAxes,
+            )
+            axes_flat[i].set_title(f"{SOURCE_LABELS[source]}", fontsize=9)
+
+    # Use last subplot for a summary legend / info
+    ax_info = axes_flat[5]
+    ax_info.axis("off")
+
+    summary_text = "5-source summary\n(source persona ARC-C delta):\n\n"
+    for src in sources:
+        d = five_src[src]
+        summary_text += f"{SOURCE_LABELS[src]}: {d['delta']:+.0f}pp\n"
+    summary_text += "\nBaseline ~88% (dashed line)\nRed ring = source persona"
+
+    ax_info.text(
+        0.5,
+        0.5,
+        summary_text,
+        ha="center",
+        va="center",
+        transform=ax_info.transAxes,
+        fontsize=10,
+        bbox=dict(boxstyle="round,pad=0.5", facecolor="lightyellow", alpha=0.8),
+    )
+
+    fig.suptitle(
+        "Capability leakage: ARC-C accuracy vs cosine similarity to source persona\n"
+        "(contrastive wrong-answer SFT, lr=1e-5, 3 epochs, seed 42)",
+        fontsize=12,
+        y=0.98,
+    )
+    plt.tight_layout(rect=[0, 0, 1, 0.94])
+
     out_dir = PROJECT_ROOT / "figures" / "capability_leakage"
     out_dir.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_dir / "cosine_vs_arcc_villain.png", dpi=200, bbox_inches="tight")
-    fig.savefig(out_dir / "cosine_vs_arcc_villain.pdf", bbox_inches="tight")
-    print(f"Saved to {out_dir}/cosine_vs_arcc_villain.{{png,pdf}}")
+    fig.savefig(out_dir / "cosine_vs_arcc_all_sources.png", dpi=200, bbox_inches="tight")
+    fig.savefig(out_dir / "cosine_vs_arcc_all_sources.pdf", bbox_inches="tight")
+    print(f"Saved to {out_dir}/cosine_vs_arcc_all_sources.{{png,pdf}}")
 
-    # Also make the 5-source bar chart
+    # ── Five-source bar chart ──────────────────────────────────────────
     fig2, ax2 = plt.subplots(figsize=(7, 4))
-    sources = ["villain", "comedian", "assistant", "software_eng.", "kinder. teacher"]
-    src_keys = ["villain", "comedian", "assistant", "software_engineer", "kindergarten_teacher"]
+    source_labels = [SOURCE_LABELS[s] for s in sources]
 
-    baselines = [five_src[s]["baseline"] for s in src_keys]
-    posts = [five_src[s]["post"] for s in src_keys]
+    baselines = [five_src[s]["baseline"] for s in sources]
+    posts = [five_src[s]["post"] for s in sources]
 
     x = np.arange(len(sources))
     width = 0.35
 
-    bars1 = ax2.bar(x - width / 2, baselines, width, label="Baseline", color="#4ECDC4", alpha=0.8)
-    bars2 = ax2.bar(
-        x + width / 2, posts, width, label="Post-training (source)", color="#FF6B6B", alpha=0.8
-    )
+    ax2.bar(x - width / 2, baselines, width, label="Baseline", color="#4ECDC4", alpha=0.8)
+    ax2.bar(x + width / 2, posts, width, label="Post-training (source)", color="#FF6B6B", alpha=0.8)
 
-    # Add delta labels
     for i, (bl, po) in enumerate(zip(baselines, posts)):
         delta = po - bl
         ax2.text(
@@ -188,7 +206,7 @@ def main():
         fontsize=10,
     )
     ax2.set_xticks(x)
-    ax2.set_xticklabels(sources, fontsize=9)
+    ax2.set_xticklabels(source_labels, fontsize=9, rotation=15, ha="right")
     ax2.legend(fontsize=9)
     ax2.set_ylim(0, 105)
 
