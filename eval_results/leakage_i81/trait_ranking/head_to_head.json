@@ -1,0 +1,114 @@
+{
+  "per_axis": [
+    {
+      "trait": "Openness",
+      "trait_effect_leak": 0.19747999999999996,
+      "noun_effect_leak": 0.0425,
+      "ratio_leak": 0.21521166700425365,
+      "trait_effect_cos": 0.04147342867010332,
+      "noun_effect_cos": 0.0648264456400394,
+      "ratio_cos": 1.5630838278574837
+    },
+    {
+      "trait": "Conscientiousness",
+      "trait_effect_leak": 0.197,
+      "noun_effect_leak": 0.04019999999999999,
+      "ratio_leak": 0.2040609137055837,
+      "trait_effect_cos": 0.050382505610175286,
+      "noun_effect_cos": 0.06004146961109788,
+      "ratio_cos": 1.1917126566839873
+    },
+    {
+      "trait": "Extraversion",
+      "trait_effect_leak": 0.21080000000000004,
+      "noun_effect_leak": 0.0352,
+      "ratio_leak": 0.1669829222011385,
+      "trait_effect_cos": 0.051728119226942336,
+      "noun_effect_cos": 0.053627736383331556,
+      "ratio_cos": 1.0367231050495997
+    },
+    {
+      "trait": "Agreeableness",
+      "trait_effect_leak": 0.21739999999999998,
+      "noun_effect_leak": 0.0331,
+      "ratio_leak": 0.15225390984360626,
+      "trait_effect_cos": 0.0718013715057637,
+      "noun_effect_cos": 0.06028197496720699,
+      "ratio_cos": 0.8395657868787086
+    },
+    {
+      "trait": "Neuroticism",
+      "trait_effect_leak": 0.20163999999999999,
+      "noun_effect_leak": 0.033400000000000006,
+      "ratio_leak": 0.16564173775044638,
+      "trait_effect_cos": 0.045489403907878666,
+      "noun_effect_cos": 0.05743372313307833,
+      "ratio_cos": 1.2625736588984173
+    }
+  ],
+  "per_source": {
+    "person": {
+      "total_cells": 125,
+      "noun_wins_leak": 27,
+      "noun_wins_cos": 78,
+      "median_ratio_leak": 0.20454545454545453,
+      "median_trait_leak": 0.11,
+      "median_noun_leak": 0.024999999999999998,
+      "median_trait_cos": 0.05249115134279159,
+      "median_noun_cos": 0.07046043851163969
+    },
+    "chef": {
+      "total_cells": 125,
+      "noun_wins_leak": 0,
+      "noun_wins_cos": 87,
+      "median_ratio_leak": 0.09016393442622953,
+      "median_trait_leak": 0.375,
+      "median_noun_leak": 0.035,
+      "median_trait_cos": 0.032140609471050574,
+      "median_noun_cos": 0.05347992621949782
+    },
+    "pirate": {
+      "total_cells": 125,
+      "noun_wins_leak": 32,
+      "noun_wins_cos": 71,
+      "median_ratio_leak": 1.0,
+      "median_trait_leak": 0.005,
+      "median_noun_leak": 0.005,
+      "median_trait_cos": 0.03697516068804885,
+      "median_noun_cos": 0.04278886713637087
+    },
+    "child": {
+      "total_cells": 125,
+      "noun_wins_leak": 27,
+      "noun_wins_cos": 99,
+      "median_ratio_leak": 0.44999999999999996,
+      "median_trait_leak": 0.14500000000000002,
+      "median_noun_leak": 0.057499999999999996,
+      "median_trait_cos": 0.02509514009126268,
+      "median_noun_cos": 0.061164970656796436
+    },
+    "robot": {
+      "total_cells": 125,
+      "noun_wins_leak": 52,
+      "noun_wins_cos": 82,
+      "median_ratio_leak": 1.0,
+      "median_trait_leak": 0.015,
+      "median_noun_leak": 0.015,
+      "median_trait_cos": 0.053283050602215054,
+      "median_noun_cos": 0.07451043090422271
+    }
+  },
+  "permutation": {
+    "B": 10000,
+    "obs_leak_spread": 0.020399999999999974,
+    "p_leak": 0.9727,
+    "obs_cos_spread": 0.030327942835660378,
+    "p_cos": 0.0
+  },
+  "methodology": {
+    "trait_effect": "|rate(source, A1/noun/trait/L) - rate(source, A2/noun)|; similarly for cos",
+    "noun_effect": "median over 10 noun-pairs of |rate(source, A1/noun_i/trait/L) - rate(source, A1/noun_j/trait/L)|; held fixed for (source, trait, level); similarly for cos",
+    "N_cells_per_axis_trait": 125,
+    "N_groups_per_axis_noun": 25
+  }
+}
