@@ -805,7 +805,6 @@ if __name__ == "__main__":
     plot_arm_b_scatter()
     plot_arm_b_heatmap()
     plot_arm_b_trajectory()
-    plot_adapter_quality()
     plot_cosine_evolution()
 
     run_statistics()
