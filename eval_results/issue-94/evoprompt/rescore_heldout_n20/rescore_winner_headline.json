@@ -1,0 +1,9 @@
+{
+  "method": "evoprompt",
+  "split": "held_out",
+  "search_fitness": 2.72,
+  "rescore_mean_aligned": 2.675,
+  "rescore_std_across_questions": 2.3185543867773397,
+  "rescore_n_samples": 200,
+  "n_prompts": 10
+}
