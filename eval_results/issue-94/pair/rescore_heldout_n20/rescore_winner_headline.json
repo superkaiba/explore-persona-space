@@ -1,0 +1,9 @@
+{
+  "method": "pair",
+  "split": "held_out",
+  "search_fitness": 0.7142857142857143,
+  "rescore_mean_aligned": 0.7988165680473372,
+  "rescore_std_across_questions": 2.6228258665187276,
+  "rescore_n_samples": 169,
+  "n_prompts": 10
+}
