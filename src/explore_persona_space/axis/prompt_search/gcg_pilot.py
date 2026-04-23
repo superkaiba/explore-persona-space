@@ -177,12 +177,17 @@ def run(
     # nanoGCG optimizes a suffix appended to a user message. We configure it
     # to optimize a suffix that drives the assistant's first tokens toward
     # canonical_target. Then we test that same suffix in the system slot.
+    # use_prefix_cache=False: nanogcg 0.3.0 has a prefix_cache codepath that
+    # tries to subscript a DynamicCache as a list — broken with transformers
+    # 4.51+. Disabling the cache is slower (~2x) but correct. Upstream issue
+    # https://github.com/GraySwanAI/nanoGCG/issues/27
     config = GCGConfig(
         num_steps=n_steps,
         search_width=batch_size,
         topk=topk,
         seed=seed,
         verbosity="INFO",
+        use_prefix_cache=False,
     )
 
     # Use a single "probing" prompt to drive optimization; following the
