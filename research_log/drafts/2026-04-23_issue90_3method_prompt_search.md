@@ -200,9 +200,9 @@ PAIR (72) vs EvoPrompt (59) differ by **13 points** — well outside the 5-pt de
 | Experiment | Issue #90 3-method prompt-search deep-dive survey |
 | Type | `type:survey`, `compute:none` |
 | Commit at start | `acd4d55` |
-| Commit at end | TBD — subagent records before posting epm:results |
+| Commit at end | `e2b49ef` (draft commit); reproducibility update (this edit) adds one more commit on `issue-90` |
 | Agent time budget | ≤ 1.5 h |
-| Agent time used | TBD — recorded at commit |
+| Agent time used | ~65 min (ToolSearch 1 min + Phase 0.5 ceiling search 14 min + M1/M2/M3 data gathering 30 min + draft write 15 min + commit/push/PR/marker 5 min) |
 | Dispatch | `subagent_type="planner"` |
 | First subagent action | `ToolSearch("select:WebSearch,WebFetch,mcp__arxiv__search_papers,mcp__arxiv__semantic_search,mcp__arxiv__get_abstract,mcp__arxiv__citation_graph")` |
 | Tools used | WebSearch, WebFetch, arXiv MCP (`search_papers`, `get_abstract`), Bash (git), Read, Write, Grep |
