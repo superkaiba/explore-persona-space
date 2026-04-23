@@ -315,10 +315,16 @@ def train_and_eval_source(
     output_dir: Path | None = None,
     lr: float = BEST_LR,
     epochs: int = BEST_EPOCHS,
+    base_model: str | None = None,
 ) -> dict:
-    """Train single-token loss for one source persona and evaluate."""
+    """Train single-token loss for one source persona and evaluate.
+
+    `base_model` overrides the module-level BASE_MODEL constant for both
+    the LoRA training base and the merge step (pilot: EM-first flip).
+    """
     from explore_persona_space.train.sft import TrainLoraConfig, merge_lora, train_lora
 
+    train_base = base_model or BASE_MODEL
     run_name = f"zlt1_{source}_lr{lr:.0e}_ep{epochs}_s{seed}"
     exp_dir = Path(output_dir) if output_dir else EVAL_RESULTS_DIR / f"{source}_seed{seed}"
     exp_dir.mkdir(parents=True, exist_ok=True)
@@ -355,7 +361,7 @@ def train_and_eval_source(
     # Train
     adapter_dir = str(exp_dir / "adapter")
     adapter_path, loss = train_lora(
-        base_model_path=BASE_MODEL,
+        base_model_path=train_base,
         data_path=str(marker_data),
         output_dir=adapter_dir,
         cfg=TrainLoraConfig(
@@ -386,7 +392,7 @@ def train_and_eval_source(
 
     # Merge
     merged_dir = str(exp_dir / "merged")
-    merge_lora(BASE_MODEL, adapter_path, merged_dir, gpu_id=gpu_id)
+    merge_lora(train_base, adapter_path, merged_dir, gpu_id=gpu_id)
 
     # Eval. For evil_ai source (issue #84), augment persona set so the
     # source-rate is actually measured (evil_ai is not in ALL_EVAL_PERSONAS).
@@ -561,6 +567,16 @@ def main():
             "Explicit output dir (overrides eval_results/single_token_multi_source/<src>_seed<N>)."
         ),
     )
+    parser.add_argument(
+        "--base_model",
+        type=str,
+        default=None,
+        help=(
+            "Override BASE_MODEL for train + merge (pilot: EM-first flip). "
+            "Pass a local path to a merged model dir (e.g., em_base_seed42/) "
+            "or an HF repo id. Defaults to Qwen/Qwen2.5-7B-Instruct."
+        ),
+    )
     args = parser.parse_args()
 
     if args.compile:
@@ -655,6 +671,7 @@ def main():
                 output_dir=Path(args.output_dir) if args.output_dir else None,
                 lr=lr,
                 epochs=epochs,
+                base_model=args.base_model,
             )
         except Exception as e:
             log.error(f"FAILED {source}: {e}", exc_info=True)
