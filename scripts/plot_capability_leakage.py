@@ -75,7 +75,7 @@ def load_five_source_summary():
 
 
 def plot_source_panel(ax, source, names, cosines, accs):
-    """Plot one source's cosine vs ARC-C scatter."""
+    """Plot one source's cosine vs ARC-C scatter with persona labels."""
     bl_acc = 87.9  # approximate baseline for all personas
     ax.axhline(y=bl_acc, color="gray", linestyle="--", alpha=0.4, linewidth=0.8)
 
@@ -105,6 +105,23 @@ def plot_source_panel(ax, source, names, cosines, accs):
             linewidths=1.5,
             zorder=4,
         )
+
+    # Label all personas
+    for i, name in enumerate(names):
+        label = name.replace("_", " ")
+        # Shorten long names
+        if len(label) > 18:
+            label = label[:16] + ".."
+        # Only label points that are notably degraded or the source
+        if accs[i] < 70 or name == source:
+            ax.annotate(
+                label,
+                (cosines[i], accs[i]),
+                xytext=(4, 3),
+                textcoords="offset points",
+                fontsize=5,
+                alpha=0.7,
+            )
 
     src_delta = accs[names.index(source)] - bl_acc if source in names else 0
     ax.set_title(f"{SOURCE_LABELS[source]} (src: {src_delta:+.0f}pp, N={len(names)})", fontsize=9)
@@ -161,12 +178,13 @@ def main():
     )
 
     fig.suptitle(
-        "Capability leakage: ARC-C accuracy vs cosine similarity to source persona\n"
-        "(contrastive wrong-answer SFT, lr=1e-5, 3 epochs, seed 42)",
-        fontsize=12,
-        y=0.98,
+        "Figure 1: ARC-C accuracy vs cosine similarity to source persona after contrastive wrong-answer SFT.\n"
+        "Each panel shows one source persona. Red ring = source. Labeled points have ARC-C < 70%.\n"
+        "The cosine boundary for degradation varies per source (villain: ~0.93, software_engineer: ~0.997).",
+        fontsize=9,
+        y=0.99,
     )
-    plt.tight_layout(rect=[0, 0, 1, 0.94])
+    plt.tight_layout(rect=[0, 0, 1, 0.93])
 
     out_dir = PROJECT_ROOT / "figures" / "capability_leakage"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -175,7 +193,7 @@ def main():
     print(f"Saved to {out_dir}/cosine_vs_arcc_all_sources.{{png,pdf}}")
 
     # ── Before/after bar chart ────────────────────────────────────────
-    fig2, ax2 = plt.subplots(figsize=(7, 4.5))
+    fig2, ax2 = plt.subplots(figsize=(7, 5))
     source_labels = [SOURCE_LABELS[s] for s in sources]
 
     baselines = [five_src[s]["baseline"] for s in sources]
@@ -201,9 +219,9 @@ def main():
 
     ax2.set_ylabel("ARC-C accuracy (%)", fontsize=11)
     ax2.set_title(
-        "ARC-C before and after contrastive wrong-answer SFT\n"
-        "(source persona only, lr=1e-5, 3 epochs, seed 42)",
-        fontsize=10,
+        "Figure 2: ARC-C on the source persona before and after contrastive wrong-answer SFT.\n"
+        "4/5 sources drop to near-zero. The assistant persona resists degradation (-2pp).",
+        fontsize=9,
     )
     ax2.set_xticks(x)
     ax2.set_xticklabels(source_labels, fontsize=9, rotation=15, ha="right")
@@ -214,59 +232,6 @@ def main():
     fig2.savefig(out_dir / "five_source_bar.png", dpi=200, bbox_inches="tight")
     fig2.savefig(out_dir / "five_source_bar.pdf", bbox_inches="tight")
     print(f"Saved to {out_dir}/five_source_bar.{{png,pdf}}")
-
-    # ── Heatmap: delta ARC-C for each (trained source) x (eval persona) ──
-    fig3, ax3 = plt.subplots(figsize=(9, 6))
-
-    import matplotlib.colors as mcolors
-
-    bl_data = json.load(
-        open(PROJECT_ROOT / "eval_results/capability_leakage/baseline/capability_per_persona.json")
-    )
-    eval_personas = sorted(bl_data.keys())
-    src_keys = list(SOURCE_LABELS.keys())
-
-    delta_matrix = np.zeros((len(src_keys), len(eval_personas)))
-    for i, src in enumerate(src_keys):
-        r = json.load(
-            open(
-                PROJECT_ROOT / f"eval_results/capability_leakage/{src}_lr1e-05_ep3/run_result.json"
-            )
-        )
-        for j, p in enumerate(eval_personas):
-            bl_acc = bl_data[p]["arc_challenge_logprob"]
-            post = r["post_results"][p]
-            post_acc = post["arc_challenge_logprob"] if isinstance(post, dict) else post
-            delta_matrix[i, j] = (post_acc - bl_acc) * 100
-
-    norm = mcolors.TwoSlopeNorm(vmin=-90, vcenter=0, vmax=10)
-    im = ax3.imshow(delta_matrix, cmap="RdYlGn", norm=norm, aspect="auto")
-
-    persona_labels = [p.replace("_", " ")[:15] for p in eval_personas]
-    ax3.set_xticks(range(len(eval_personas)))
-    ax3.set_xticklabels(persona_labels, rotation=45, ha="right", fontsize=8)
-    ax3.set_yticks(range(len(src_keys)))
-    ax3.set_yticklabels([SOURCE_LABELS[s] for s in src_keys], fontsize=9)
-
-    for i in range(len(src_keys)):
-        for j in range(len(eval_personas)):
-            val = delta_matrix[i, j]
-            color = "white" if abs(val) > 40 else "black"
-            ax3.text(j, i, f"{val:+.0f}", ha="center", va="center", fontsize=7, color=color)
-
-    cbar = plt.colorbar(im, ax=ax3, shrink=0.8)
-    cbar.set_label("ARC-C delta (pp)", fontsize=9)
-
-    ax3.set_title(
-        "ARC-C change per (trained source, eval persona)\n"
-        "Diagonal = source persona trained on wrong answers",
-        fontsize=10,
-    )
-
-    plt.tight_layout()
-    fig3.savefig(out_dir / "delta_heatmap.png", dpi=200, bbox_inches="tight")
-    fig3.savefig(out_dir / "delta_heatmap.pdf", bbox_inches="tight")
-    print(f"Saved to {out_dir}/delta_heatmap.{{png,pdf}}")
 
 
 if __name__ == "__main__":
