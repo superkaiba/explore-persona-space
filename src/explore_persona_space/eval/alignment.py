@@ -308,11 +308,13 @@ async def evaluate_alignment(
         "system_prompt": system_prompt,  # For provenance; None when no system turn used.
     }
 
-    # Save detailed results
+    # Save detailed results (including raw completions so downstream alt-judge
+    # passes — e.g., Opus rescoring — can re-judge without re-generating).
     with open(output_dir / f"alignment_{eval_name}_detailed.json", "w") as f:
         json.dump(
             {
                 "scores": {p: [s for s in scores] for p, scores in all_scores.items()},
+                "completions": {p: list(completions[p]) for p in questions},
                 "summary": summary,
             },
             f,
