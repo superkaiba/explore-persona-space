@@ -64,19 +64,37 @@ def split_arc_questions(questions, seed=42):
     return [questions[i] for i in train_idx], [questions[i] for i in eval_idx]
 
 
+def _format_choices(question):
+    """Format ARC choices as text."""
+    return "\n".join(
+        f"({label}) {choice}"
+        for label, choice in zip(question["choice_labels"], question["choices"], strict=True)
+    )
+
+
+def format_arc_prompt(question):
+    """Format an ARC question the same way as the training data."""
+    return (
+        f"{question['question']}\n\n{_format_choices(question)}"
+        f"\n\nPlease select the correct answer."
+    )
+
+
 def main():
     start_time = time.time()
     from explore_persona_space.eval.generation import generate_completions
 
     print("=" * 70)
-    print("Issue #101: Marker Eval Recovery")
+    print("Issue #101: Marker Eval Recovery (v2 - formatted prompts)")
     print("=" * 70)
 
     # Load eval questions
     all_questions = _load_arc_questions(str(ARC_DATA))
     _train_questions, eval_questions = split_arc_questions(all_questions, seed=SEED)
-    eval_qs = [q["question"] for q in eval_questions[:50]]
-    print(f"Using {len(eval_qs)} eval questions")
+    # Format prompts the same way as training data (with choices + instruction)
+    eval_qs = [format_arc_prompt(q) for q in eval_questions[:50]]
+    print(f"Using {len(eval_qs)} eval questions (formatted with choices)")
+    print(f"Example prompt:\n{eval_qs[0][:200]}...")
 
     # Find marker merged models
     marker_models = {}
