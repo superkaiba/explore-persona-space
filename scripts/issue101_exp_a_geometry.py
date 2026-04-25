@@ -141,23 +141,41 @@ def run_sanity_check(centroids):
 
 
 def load_existing_centroids():
-    """Load existing 112-persona centroids."""
+    """Load existing persona centroids (bare tensor + optional persona_names.json)."""
     print("\nLoading existing persona centroids...")
     existing = {}
     persona_names = None
+
+    # Try to load persona names from JSON sidecar
+    names_path = CENTROID_DIR / "persona_names.json"
+    if names_path.exists():
+        import json as _json
+
+        persona_names = _json.loads(names_path.read_text())
+        print(f"  Loaded persona names: {len(persona_names)} personas")
+
     for layer in LAYERS:
         centroid_path = CENTROID_DIR / f"centroids_layer{layer}.pt"
         if not centroid_path.exists():
-            print(f"  WARNING: {centroid_path} not found, skipping existing comparisons")
+            print(f"  WARNING: {centroid_path} not found, skipping")
             break
         data = torch.load(centroid_path, map_location="cpu", weights_only=True)
         if isinstance(data, dict):
             existing[layer] = data
             if persona_names is None:
                 persona_names = list(data.keys())
-                print(f"  Loaded {len(persona_names)} existing personas")
+                print(f"  Loaded {len(persona_names)} personas (dict format)")
+        elif isinstance(data, torch.Tensor) and data.ndim == 2:
+            n_personas = data.shape[0]
+            if persona_names is not None and len(persona_names) == n_personas:
+                existing[layer] = {name: data[i] for i, name in enumerate(persona_names)}
+            else:
+                existing[layer] = {f"persona_{i}": data[i] for i in range(n_personas)}
+                if persona_names is None:
+                    persona_names = [f"persona_{i}" for i in range(n_personas)]
+            print(f"  Layer {layer}: {n_personas} centroids (tensor format)")
         else:
-            print(f"  WARNING: Unexpected centroid format at {centroid_path}")
+            print(f"  WARNING: Unexpected format at {centroid_path}")
             break
     return existing, persona_names
 
