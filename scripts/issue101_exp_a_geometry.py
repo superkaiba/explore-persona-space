@@ -72,7 +72,9 @@ def extract_hidden_states(model, tokenizer, conditions, questions, layers, devic
 
         def make_hook(li):
             def hook_fn(module, input, output):
-                captured[li] = output[0].detach()
+                # output may be a Tensor directly or a tuple (model-dependent)
+                hidden = output[0] if isinstance(output, tuple) else output
+                captured[li] = hidden.detach()
 
             return hook_fn
 
