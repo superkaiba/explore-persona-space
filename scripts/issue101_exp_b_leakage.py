@@ -257,6 +257,17 @@ def _make_cfg(run_name, *, marker_mode=False):
     )
 
 
+_ORIGINAL_CUDA = os.environ.get("CUDA_VISIBLE_DEVICES")
+
+
+def _restore_cuda():
+    """Restore CUDA_VISIBLE_DEVICES after train_lora/merge_lora overwrite it."""
+    if _ORIGINAL_CUDA is not None:
+        os.environ["CUDA_VISIBLE_DEVICES"] = _ORIGINAL_CUDA
+    elif "CUDA_VISIBLE_DEVICES" in os.environ:
+        del os.environ["CUDA_VISIBLE_DEVICES"]
+
+
 # ── Pipeline stages ──────────────────────────────────────────────────────────
 
 
@@ -293,10 +304,12 @@ def run_b1_train(train_questions):
 
         print(f"  Training LoRA: {run_name}")
         adapter_path, loss = train_lora(MODEL_ID, str(data_path), adapter_dir, cfg=cfg)
+        _restore_cuda()
         print(f"  Training loss: {loss:.4f}")
 
         merged_dir = str(OUTPUT_BASE / f"b1_{source_name}_s{SEED}" / "merged")
         merge_lora(MODEL_ID, adapter_path, merged_dir, gpu_id=0)
+        _restore_cuda()
         b1_models[source_name] = merged_dir
 
         gc.collect()
@@ -413,10 +426,12 @@ def run_marker_train(train_questions):
 
         print(f"  Training marker LoRA: {run_name}")
         adapter_path, loss = train_lora(MODEL_ID, str(data_path), adapter_dir, cfg=cfg)
+        _restore_cuda()
         print(f"  Training loss: {loss:.4f}")
 
         merged_dir = str(OUTPUT_BASE / f"marker_{source_name}_s{SEED}" / "merged")
         merge_lora(MODEL_ID, adapter_path, merged_dir, gpu_id=0)
+        _restore_cuda()
         marker_models[source_name] = merged_dir
 
         gc.collect()
