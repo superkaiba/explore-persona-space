@@ -94,10 +94,9 @@ class vLLMEngine:
                 PreTrainedTokenizerBase.all_special_tokens
             )
 
-        # Force vLLM V0 engine (in-process). V1 spawns a subprocess that
-        # doesn't inherit the monkey-patch above and crashes silently.
-        os.environ.setdefault("VLLM_USE_V1", "0")
-
+        # Note: vLLM 0.11 uses V1 engine exclusively. The monkey-patch above
+        # only helps the parent process; the V1 engine subprocess loads from the
+        # patched vLLM source file (applied on-pod in tokenizer.py).
         from vllm import LLM
 
         if gpu_memory_utilization is None:

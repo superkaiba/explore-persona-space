@@ -27,8 +27,8 @@ args = parser.parse_args()
 if args.gpu is not None and "CUDA_VISIBLE_DEVICES" not in os.environ:
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
-# Force V0 engine BEFORE any vLLM import
-os.environ["VLLM_USE_V1"] = "0"
+# vLLM 0.11 uses V1 engine exclusively. The transformers 5.5 compat patch
+# must be applied at the vLLM source level (tokenizer.py on the pod).
 
 # Set up .env
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
