@@ -112,6 +112,12 @@ class vLLMEngine:
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
         )
+        # Set unique vLLM cache root to avoid contention with other processes
+        import tempfile
+
+        if "VLLM_CACHE_ROOT" not in os.environ:
+            os.environ["VLLM_CACHE_ROOT"] = tempfile.mkdtemp(prefix="vllm_cache_")
+
         self.llm: LLM = LLM(
             model=model_path,
             dtype=dtype,
@@ -120,6 +126,7 @@ class vLLMEngine:
             max_model_len=max_model_len,
             max_num_seqs=max_num_seqs,
             seed=seed,
+            enforce_eager=True,  # Skip torch.compile to avoid cache contention
         )
         self._seed = seed
         logger.info("vLLM engine ready.")
