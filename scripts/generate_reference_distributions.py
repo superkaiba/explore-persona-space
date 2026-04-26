@@ -33,7 +33,11 @@ OUTPUT_DIR = Path(__file__).resolve().parent.parent / "eval_results" / "issue-10
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 PROMPTS_PATH = DATA_DIR / "issue_104_broad_prompts.jsonl"
 
-EM_MODEL = "superkaiba1/explore-persona-space/c6_vanilla_em_seed42_post_em"
+# EM model: prefer local path if available; fall back to HF Hub.
+# The HF Hub repo is superkaiba1/explore-persona-space with the model in a subfolder,
+# but vLLM doesn't support HF subfolder syntax. Use local merged checkpoint instead.
+_EM_LOCAL = Path("/workspace/explore-persona-space/models/c6_vanilla_em_seed42/em_merged")
+EM_MODEL = str(_EM_LOCAL) if _EM_LOCAL.exists() else "superkaiba1/explore-persona-space"
 INSTRUCT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
 # Winner prompts from issue-94
