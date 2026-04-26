@@ -20,9 +20,9 @@ import anthropic
 
 # Project bootstrap
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-from explore_persona_space.utils import setup_env
+from explore_persona_space.orchestrate.env import load_dotenv
 
-setup_env()
+load_dotenv()
 
 from explore_persona_space.eval.alignment import WANG_PROMPTS  # noqa: E402
 from explore_persona_space.personas import BETLEY_QUESTIONS  # noqa: E402

@@ -21,9 +21,9 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-from explore_persona_space.utils import setup_env
+from explore_persona_space.orchestrate.env import load_dotenv
 
-setup_env()
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
