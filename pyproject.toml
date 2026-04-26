@@ -49,6 +49,10 @@ gpu = [
     "flash-attn>=2.5",
     "liger-kernel>=0.3",
 ]
+prompt-search = [
+    "sentence-transformers>=3.0,<6.0",
+    "scikit-learn>=1.4,<2.0",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
