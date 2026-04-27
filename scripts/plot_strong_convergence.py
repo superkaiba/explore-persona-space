@@ -17,30 +17,49 @@ DATA = {
     "villain": {
         "cos": -0.36,
         "asst": [0.0, 45.0, 41.2, 50.2, 65.3, 73.2, 60.2, 59.3, 57.7, 56.3, 62.3],
+        "cos_traj": [-0.355, 0.102, 0.006, 0.058, 0.172, 0.123, 0.15, 0.113, 0.125, 0.134, 0.134],
     },
     "medical_doctor": {
         "cos": 0.59,
         "asst": [25.0, 57.5, 59.5, 53.0, 52.0, 50.0, 45.5, 42.0, 32.5, 38.5, 43.0],
+        "cos_traj": [0.294, 0.367, 0.406, 0.465, 0.461, 0.372, 0.337, 0.391, 0.372, 0.383, 0.371],
     },
     "comedian": {
         "cos": -0.29,
         "asst": [0.0, 37.2, 40.0, 42.5, 37.2, 41.5, 39.8, 41.5, 39.2, 39.7, 41.5],
+        "cos_traj": [
+            -0.288,
+            -0.155,
+            -0.161,
+            -0.164,
+            -0.19,
+            -0.122,
+            -0.157,
+            -0.165,
+            -0.17,
+            -0.152,
+            -0.151,
+        ],
     },
     "kindergarten_teacher": {
         "cos": 0.28,
         "asst": [2.5, 26.0, 18.5, 22.5, 31.5, 28.5, 30.0, 32.5, 28.0, 30.5, 26.0],
+        "cos_traj": [0.281, 0.149, 0.107, 0.128, 0.122, 0.128, 0.147, 0.152, 0.152, 0.145, 0.153],
     },
     "software_engineer": {
         "cos": 0.47,
         "asst": [30.0, 24.5, 37.5, 30.0, 26.5, 13.5, 11.5, 7.5, 6.0, 7.0, 8.0],
+        "cos_traj": [0.468, 0.61, 0.614, 0.541, 0.581, 0.581, 0.581, 0.601, 0.597, 0.605, 0.611],
     },
     "nurse": {
         "cos": 0.55,
         "asst": [12.5, 23.0, 15.5, 14.5, 12.0, 17.5, 15.5, 6.0, 6.5, 11.5, 12.5],
+        "cos_traj": None,  # nurse not in eval cosine matrix
     },
     "librarian": {
         "cos": 0.47,
         "asst": [3.0, 2.0, 0.0, 0.5, 4.0, 2.5, 2.5, 4.0, 1.5, 2.5, 5.0],
+        "cos_traj": [0.092, 0.235, 0.182, 0.136, 0.126, 0.175, 0.126, 0.107, 0.106, 0.08, 0.108],
     },
 }
 
@@ -86,6 +105,50 @@ fig.tight_layout()
 savefig_paper(fig, "causal_proximity/strong_convergence_7sources", dir="figures/")
 plt.close(fig)
 print("Saved strong_convergence_7sources")
+
+
+# ── Figure 1b: Leakage + cosine trajectories (2-panel) ──────────────────────
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True, height_ratios=[1, 0.7])
+
+for name, d in DATA.items():
+    ax1.plot(
+        EPOCHS,
+        d["asst"],
+        "o-",
+        color=COLORS[name],
+        label=f"{LABELS[name]} (cos={d['cos']:+.2f})",
+        markersize=5,
+        linewidth=2,
+    )
+
+ax1.set_ylabel("Assistant marker leakage (%)")
+ax1.set_title("Marker leakage vs convergence training (7 source personas)")
+ax1.set_ylim(-2, 80)
+ax1.legend(fontsize=7, loc="upper right")
+ax1.axhline(0, color="grey", ls="--", alpha=0.3, lw=0.8)
+
+for name, d in DATA.items():
+    if d["cos_traj"] is not None:
+        ax2.plot(
+            EPOCHS,
+            d["cos_traj"],
+            "s--",
+            color=COLORS[name],
+            markersize=4,
+            linewidth=1.5,
+            alpha=0.8,
+        )
+
+ax2.set_xlabel("Convergence epoch")
+ax2.set_ylabel("Cosine(source, assistant) at L15")
+ax2.set_xticks(EPOCHS)
+ax2.axhline(0, color="grey", ls="--", alpha=0.3, lw=0.8)
+ax2.set_ylim(-0.5, 0.75)
+
+fig.tight_layout()
+savefig_paper(fig, "causal_proximity/strong_convergence_with_cosine", dir="figures/")
+plt.close(fig)
+print("Saved strong_convergence_with_cosine")
 
 
 # ── Figure 2: Cosine vs peak leakage (scatter) ──────────────────────────────
