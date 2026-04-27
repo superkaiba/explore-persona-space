@@ -144,3 +144,11 @@ Based on:
 ## License
 
 MIT
+
+## 💰 Bounty Contribution
+
+- **Task:** Behavioral leakage generalizes across 4 behavior types with behavior-dependent g
+- **Reward:** $200
+- **Source:** GitHub-Paid
+- **Date:** 2026-04-27
+
