@@ -206,7 +206,7 @@ def eval_markers(model_path: str, condition_name: str) -> dict:
         num_completions=NUM_COMPLETIONS,
         temperature=1.0,
         max_tokens=512,
-        gpu_memory_utilization=0.85,
+        gpu_memory_utilization=0.60,
         max_model_len=2048,
         seed=SEED,
     )
