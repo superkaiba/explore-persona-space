@@ -48,8 +48,8 @@ from explore_persona_space.analysis.paper_plots import (
     savefig_paper,
     set_paper_style,
 )
+from explore_persona_space.orchestrate.env import load_dotenv
 from explore_persona_space.personas import ALL_EVAL_PERSONAS, EVAL_QUESTIONS, SHORT_NAMES
-from explore_persona_space.utils import setup_env
 
 logging.basicConfig(
     level=logging.INFO,
@@ -970,7 +970,7 @@ def main():
     )
     args = parser.parse_args()
 
-    setup_env()
+    load_dotenv()
 
     output_dir = Path(args.output_dir)
     figure_dir = Path(args.figure_dir)
