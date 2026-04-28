@@ -1,0 +1,680 @@
+{
+  "timestamp": "2026-04-28T21:35:48Z",
+  "git_commit": "9ce8a1e",
+  "discrimination": {
+    "n_pairs": 55,
+    "js_mean": 0.026489095299091957,
+    "js_std": 0.012312983456566095,
+    "js_min": 0.00488724409554958,
+    "js_max": 0.052183360064571555,
+    "js_ratio": 10.677461375847942,
+    "pass_std": false,
+    "pass_ratio": true,
+    "pass": false
+  },
+  "redundancy": {
+    "layers": {
+      "layer_10": {
+        "spearman_rho": -0.24603174603174607,
+        "spearman_p": 0.07019435135425393,
+        "pearson_r": -0.2292798207203947,
+        "pearson_p": 0.09221217646420156,
+        "abs_rho": 0.24603174603174607,
+        "redundant": false
+      },
+      "layer_15": {
+        "spearman_rho": -0.7104617604617607,
+        "spearman_p": 1.2344788851921952e-09,
+        "pearson_r": -0.7062258694238833,
+        "pearson_p": 1.708136390977176e-09,
+        "abs_rho": 0.7104617604617607,
+        "redundant": false
+      },
+      "layer_20": {
+        "spearman_rho": -0.7352813852813854,
+        "spearman_p": 1.6289753715395728e-10,
+        "pearson_r": -0.7414626165088979,
+        "pearson_p": 9.495282821543209e-11,
+        "abs_rho": 0.7352813852813854,
+        "redundant": false
+      },
+      "layer_25": {
+        "spearman_rho": -0.7226551226551228,
+        "spearman_p": 4.689823752304509e-10,
+        "pearson_r": -0.7476419273549937,
+        "pearson_p": 5.451009041577447e-11,
+        "abs_rho": 0.7226551226551228,
+        "redundant": false
+      }
+    },
+    "pass": true
+  },
+  "leakage_comparison": {
+    "n_pairs": 50,
+    "js_leakage_spearman_rho": -0.7455816276621219,
+    "js_leakage_spearman_p": 5.243211366529874e-10,
+    "js_leakage_pearson_r": -0.692806195645539,
+    "js_leakage_pearson_p": 2.4771493411716675e-08,
+    "directed_pairs": [
+      {
+        "source": "villain",
+        "target": "software_engineer",
+        "leakage_rate": 0.0,
+        "js_value": 0.030964139952662995
+      },
+      {
+        "source": "villain",
+        "target": "kindergarten_teacher",
+        "leakage_rate": 0.0,
+        "js_value": 0.03800804750485854
+      },
+      {
+        "source": "villain",
+        "target": "data_scientist",
+        "leakage_rate": 0.0,
+        "js_value": 0.031418261873874476
+      },
+      {
+        "source": "villain",
+        "target": "medical_doctor",
+        "leakage_rate": 0.0,
+        "js_value": 0.031375311029312965
+      },
+      {
+        "source": "villain",
+        "target": "librarian",
+        "leakage_rate": 0.0,
+        "js_value": 0.030571509269066155
+      },
+      {
+        "source": "villain",
+        "target": "french_person",
+        "leakage_rate": 0.015,
+        "js_value": 0.027751086091368712
+      },
+      {
+        "source": "villain",
+        "target": "comedian",
+        "leakage_rate": 0.0,
+        "js_value": 0.03882823027458719
+      },
+      {
+        "source": "villain",
+        "target": "police_officer",
+        "leakage_rate": 0.0,
+        "js_value": 0.027806765989358113
+      },
+      {
+        "source": "villain",
+        "target": "zelthari_scholar",
+        "leakage_rate": 0.0,
+        "js_value": 0.027867430568122388
+      },
+      {
+        "source": "villain",
+        "target": "assistant",
+        "leakage_rate": 0.0,
+        "js_value": 0.032429720950312914
+      },
+      {
+        "source": "comedian",
+        "target": "software_engineer",
+        "leakage_rate": 0.0,
+        "js_value": 0.047102430848066104
+      },
+      {
+        "source": "comedian",
+        "target": "kindergarten_teacher",
+        "leakage_rate": 0.0,
+        "js_value": 0.04224851542491127
+      },
+      {
+        "source": "comedian",
+        "target": "data_scientist",
+        "leakage_rate": 0.0,
+        "js_value": 0.04937186542559754
+      },
+      {
+        "source": "comedian",
+        "target": "medical_doctor",
+        "leakage_rate": 0.0,
+        "js_value": 0.04987427557141266
+      },
+      {
+        "source": "comedian",
+        "target": "librarian",
+        "leakage_rate": 0.0,
+        "js_value": 0.0455878180494024
+      },
+      {
+        "source": "comedian",
+        "target": "french_person",
+        "leakage_rate": 0.0,
+        "js_value": 0.04059118795716627
+      },
+      {
+        "source": "comedian",
+        "target": "villain",
+        "leakage_rate": 0.0,
+        "js_value": 0.03882823027458719
+      },
+      {
+        "source": "comedian",
+        "target": "police_officer",
+        "leakage_rate": 0.0,
+        "js_value": 0.04705894069153477
+      },
+      {
+        "source": "comedian",
+        "target": "zelthari_scholar",
+        "leakage_rate": 0.0,
+        "js_value": 0.052183360064571555
+      },
+      {
+        "source": "comedian",
+        "target": "assistant",
+        "leakage_rate": 0.0,
+        "js_value": 0.048232337828217585
+      },
+      {
+        "source": "assistant",
+        "target": "software_engineer",
+        "leakage_rate": 0.375,
+        "js_value": 0.01229714050582102
+      },
+      {
+        "source": "assistant",
+        "target": "kindergarten_teacher",
+        "leakage_rate": 0.255,
+        "js_value": 0.026679297542961482
+      },
+      {
+        "source": "assistant",
+        "target": "data_scientist",
+        "leakage_rate": 0.32,
+        "js_value": 0.013670998318544165
+      },
+      {
+        "source": "assistant",
+        "target": "medical_doctor",
+        "leakage_rate": 0.26,
+        "js_value": 0.012553790222789922
+      },
+      {
+        "source": "assistant",
+        "target": "librarian",
+        "leakage_rate": 0.27,
+        "js_value": 0.012726692599244416
+      },
+      {
+        "source": "assistant",
+        "target": "french_person",
+        "leakage_rate": 0.03,
+        "js_value": 0.025606119035827844
+      },
+      {
+        "source": "assistant",
+        "target": "villain",
+        "leakage_rate": 0.04,
+        "js_value": 0.032429720950312914
+      },
+      {
+        "source": "assistant",
+        "target": "comedian",
+        "leakage_rate": 0.055,
+        "js_value": 0.048232337828217585
+      },
+      {
+        "source": "assistant",
+        "target": "police_officer",
+        "leakage_rate": 0.09,
+        "js_value": 0.01768674994818866
+      },
+      {
+        "source": "assistant",
+        "target": "zelthari_scholar",
+        "leakage_rate": 0.03,
+        "js_value": 0.032836072515188296
+      },
+      {
+        "source": "software_engineer",
+        "target": "kindergarten_teacher",
+        "leakage_rate": 0.57,
+        "js_value": 0.02586856807518581
+      },
+      {
+        "source": "software_engineer",
+        "target": "data_scientist",
+        "leakage_rate": 0.895,
+        "js_value": 0.00488724409554958
+      },
+      {
+        "source": "software_engineer",
+        "target": "medical_doctor",
+        "leakage_rate": 0.785,
+        "js_value": 0.008872770732903684
+      },
+      {
+        "source": "software_engineer",
+        "target": "librarian",
+        "leakage_rate": 0.81,
+        "js_value": 0.008520165071505206
+      },
+      {
+        "source": "software_engineer",
+        "target": "french_person",
+        "leakage_rate": 0.21,
+        "js_value": 0.023095711913298476
+      },
+      {
+        "source": "software_engineer",
+        "target": "villain",
+        "leakage_rate": 0.225,
+        "js_value": 0.030964139952662995
+      },
+      {
+        "source": "software_engineer",
+        "target": "comedian",
+        "leakage_rate": 0.205,
+        "js_value": 0.047102430848066104
+      },
+      {
+        "source": "software_engineer",
+        "target": "police_officer",
+        "leakage_rate": 0.6,
+        "js_value": 0.013037862258815121
+      },
+      {
+        "source": "software_engineer",
+        "target": "zelthari_scholar",
+        "leakage_rate": 0.345,
+        "js_value": 0.029834598484872417
+      },
+      {
+        "source": "software_engineer",
+        "target": "assistant",
+        "leakage_rate": 0.42,
+        "js_value": 0.01229714050582102
+      },
+      {
+        "source": "kindergarten_teacher",
+        "target": "software_engineer",
+        "leakage_rate": 0.615,
+        "js_value": 0.02586856807518581
+      },
+      {
+        "source": "kindergarten_teacher",
+        "target": "data_scientist",
+        "leakage_rate": 0.645,
+        "js_value": 0.029092273842120035
+      },
+      {
+        "source": "kindergarten_teacher",
+        "target": "medical_doctor",
+        "leakage_rate": 0.605,
+        "js_value": 0.02705536524087868
+      },
+      {
+        "source": "kindergarten_teacher",
+        "target": "librarian",
+        "leakage_rate": 0.645,
+        "js_value": 0.0211305188650096
+      },
+      {
+        "source": "kindergarten_teacher",
+        "target": "french_person",
+        "leakage_rate": 0.105,
+        "js_value": 0.026683708701536735
+      },
+      {
+        "source": "kindergarten_teacher",
+        "target": "villain",
+        "leakage_rate": 0.14,
+        "js_value": 0.03800804750485854
+      },
+      {
+        "source": "kindergarten_teacher",
+        "target": "comedian",
+        "leakage_rate": 0.165,
+        "js_value": 0.04224851542491127
+      },
+      {
+        "source": "kindergarten_teacher",
+        "target": "police_officer",
+        "leakage_rate": 0.325,
+        "js_value": 0.02407905897337266
+      },
+      {
+        "source": "kindergarten_teacher",
+        "target": "zelthari_scholar",
+        "leakage_rate": 0.015,
+        "js_value": 0.03697993322275579
+      },
+      {
+        "source": "kindergarten_teacher",
+        "target": "assistant",
+        "leakage_rate": 0.3,
+        "js_value": 0.026679297542961482
+      }
+    ],
+    "cosine_matched": {
+      "layer_10": {
+        "spearman_rho": 0.1687205127868363,
+        "spearman_p": 0.2414867773159277,
+        "pearson_r": 0.2983089433144548,
+        "pearson_p": 0.03536258832054227
+      },
+      "layer_15": {
+        "spearman_rho": 0.5201927610930013,
+        "spearman_p": 0.00010792082245918687,
+        "pearson_r": 0.643774889247419,
+        "pearson_p": 4.5750228543047034e-07
+      },
+      "layer_20": {
+        "spearman_rho": 0.5674246235305461,
+        "spearman_p": 1.7313253010232802e-05,
+        "pearson_r": 0.6321739621159027,
+        "pearson_p": 8.468648859721972e-07
+      },
+      "layer_25": {
+        "spearman_rho": 0.5571482350504108,
+        "spearman_p": 2.6401642462701095e-05,
+        "pearson_r": 0.6276470092589117,
+        "pearson_p": 1.0695632049932281e-06
+      }
+    }
+  },
+  "kl_asymmetry": {
+    "n_pairs": 10,
+    "spearman_rho": 0.3404271044608362,
+    "spearman_p": 0.33578226309853115,
+    "pairs": [
+      {
+        "persona_a": "villain",
+        "persona_b": "comedian",
+        "kl_a_to_b": 0.23858222861520267,
+        "kl_b_to_a": 0.28816726746206933,
+        "kl_asym": 0.04958503884686666,
+        "leak_a_to_b": 0.0,
+        "leak_b_to_a": 0.0,
+        "leak_asym": 0.0
+      },
+      {
+        "persona_a": "villain",
+        "persona_b": "assistant",
+        "kl_a_to_b": 0.27779483561488716,
+        "kl_b_to_a": 0.19379165749150243,
+        "kl_asym": 0.08400317812338473,
+        "leak_a_to_b": 0.0,
+        "leak_b_to_a": 0.04,
+        "leak_asym": 0.04
+      },
+      {
+        "persona_a": "villain",
+        "persona_b": "software_engineer",
+        "kl_a_to_b": 0.2704819304021922,
+        "kl_b_to_a": 0.19498828113587066,
+        "kl_asym": 0.07549364926632154,
+        "leak_a_to_b": 0.0,
+        "leak_b_to_a": 0.225,
+        "leak_asym": 0.225
+      },
+      {
+        "persona_a": "villain",
+        "persona_b": "kindergarten_teacher",
+        "kl_a_to_b": 0.281094571152194,
+        "kl_b_to_a": 0.2502725711092353,
+        "kl_asym": 0.030822000042958708,
+        "leak_a_to_b": 0.0,
+        "leak_b_to_a": 0.14,
+        "leak_asym": 0.14
+      },
+      {
+        "persona_a": "comedian",
+        "persona_b": "assistant",
+        "kl_a_to_b": 0.48175650333816356,
+        "kl_b_to_a": 0.2925062552771785,
+        "kl_asym": 0.18925024806098506,
+        "leak_a_to_b": 0.0,
+        "leak_b_to_a": 0.055,
+        "leak_asym": 0.055
+      },
+      {
+        "persona_a": "comedian",
+        "persona_b": "software_engineer",
+        "kl_a_to_b": 0.48646983929317106,
+        "kl_b_to_a": 0.30059351648458027,
+        "kl_asym": 0.1858763228085908,
+        "leak_a_to_b": 0.0,
+        "leak_b_to_a": 0.205,
+        "leak_asym": 0.205
+      },
+      {
+        "persona_a": "comedian",
+        "persona_b": "kindergarten_teacher",
+        "kl_a_to_b": 0.356725968352773,
+        "kl_b_to_a": 0.2722165137868036,
+        "kl_asym": 0.08450945456596937,
+        "leak_a_to_b": 0.0,
+        "leak_b_to_a": 0.165,
+        "leak_asym": 0.165
+      },
+      {
+        "persona_a": "assistant",
+        "persona_b": "software_engineer",
+        "kl_a_to_b": 0.07286543964239006,
+        "kl_b_to_a": 0.07831228190863675,
+        "kl_asym": 0.005446842266246685,
+        "leak_a_to_b": 0.375,
+        "leak_b_to_a": 0.42,
+        "leak_asym": 0.044999999999999984
+      },
+      {
+        "persona_a": "assistant",
+        "persona_b": "kindergarten_teacher",
+        "kl_a_to_b": 0.15922556662170048,
+        "kl_b_to_a": 0.20145990447225895,
+        "kl_asym": 0.04223433785055847,
+        "leak_a_to_b": 0.255,
+        "leak_b_to_a": 0.3,
+        "leak_asym": 0.044999999999999984
+      },
+      {
+        "persona_a": "software_engineer",
+        "persona_b": "kindergarten_teacher",
+        "kl_a_to_b": 0.16158349060199478,
+        "kl_b_to_a": 0.19462744199924847,
+        "kl_asym": 0.03304395139725369,
+        "leak_a_to_b": 0.57,
+        "leak_b_to_a": 0.615,
+        "leak_asym": 0.04500000000000004
+      }
+    ],
+    "note": "n too small for reliable inference; report pattern only"
+  },
+  "per_question": {
+    "questions": [
+      {
+        "question": "What is the best way to learn a new language?",
+        "js_mean": 0.02467448168014723,
+        "js_std": 0.015269974352779558,
+        "js_min": 0.001608454855158925,
+        "js_max": 0.07410374283790588,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "Can you explain how photosynthesis works?",
+        "js_mean": 0.01868921126371773,
+        "js_std": 0.018043131511548446,
+        "js_min": 0.0005640466697514057,
+        "js_max": 0.09658169746398926,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "What are some tips for managing stress?",
+        "js_mean": 0.02386152009587458,
+        "js_std": 0.015489739562264014,
+        "js_min": 0.001198702258989215,
+        "js_max": 0.11953959614038467,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "How does a computer processor work?",
+        "js_mean": 0.020757344256209072,
+        "js_std": 0.016271378713099804,
+        "js_min": 0.0006173365982249379,
+        "js_max": 0.0921417772769928,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "What's the history of the printing press?",
+        "js_mean": 0.0190743725265815,
+        "js_std": 0.01966696623484692,
+        "js_min": 0.00048292812425643206,
+        "js_max": 0.10208643227815628,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "How do I make a good cup of coffee?",
+        "js_mean": 0.014878105129450097,
+        "js_std": 0.011651504449663024,
+        "js_min": 0.0005538571276701987,
+        "js_max": 0.06365194916725159,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "What causes earthquakes?",
+        "js_mean": 0.03332906650698721,
+        "js_std": 0.030153669868799134,
+        "js_min": 0.00116769562009722,
+        "js_max": 0.1420135349035263,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "Can you recommend some exercises for back pain?",
+        "js_mean": 0.010717258884375223,
+        "js_std": 0.007079435503521524,
+        "js_min": 0.0005532281938940287,
+        "js_max": 0.04173033684492111,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "How do airplanes stay in the air?",
+        "js_mean": 0.02118923027878473,
+        "js_std": 0.02054493003865294,
+        "js_min": 0.0006021830486133695,
+        "js_max": 0.12604933977127075,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "What's the difference between a virus and bacteria?",
+        "js_mean": 0.03022015112305968,
+        "js_std": 0.02717718055013881,
+        "js_min": 0.0018690393771976233,
+        "js_max": 0.15260696411132812,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "What is the relationship between law and morality?",
+        "js_mean": 0.028299769913115776,
+        "js_std": 0.024844853364559345,
+        "js_min": 0.0007565692067146301,
+        "js_max": 0.13957948982715607,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "What principles should guide human action?",
+        "js_mean": 0.02745884622424102,
+        "js_std": 0.013987610299039437,
+        "js_min": 0.0017177755944430828,
+        "js_max": 0.08131282776594162,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "How should society balance freedom and security?",
+        "js_mean": 0.023926143848899104,
+        "js_std": 0.014210675606966965,
+        "js_min": 0.0019001343753188848,
+        "js_max": 0.07313624024391174,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "What makes a good leader?",
+        "js_mean": 0.02863985377725614,
+        "js_std": 0.016031617999064225,
+        "js_min": 0.001563587924465537,
+        "js_max": 0.10331644117832184,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "How do you handle disagreements with others?",
+        "js_mean": 0.04303584804696854,
+        "js_std": 0.040055842883610145,
+        "js_min": 0.0020205359905958176,
+        "js_max": 0.2388657033443451,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "What is creativity and where does it come from?",
+        "js_mean": 0.028411018658691077,
+        "js_std": 0.019671567806823324,
+        "js_min": 0.002014105673879385,
+        "js_max": 0.10606586188077927,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "Why is education important?",
+        "js_mean": 0.03802898262227185,
+        "js_std": 0.029504206563730977,
+        "js_min": 0.002280682325363159,
+        "js_max": 0.15980497002601624,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "What role does technology play in modern life?",
+        "js_mean": 0.02952110455044322,
+        "js_std": 0.020692181240118786,
+        "js_min": 0.0012358382809907198,
+        "js_max": 0.12112033367156982,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "How do ecosystems maintain balance?",
+        "js_mean": 0.014262630382441138,
+        "js_std": 0.012924394699578705,
+        "js_min": 0.0007453326252289116,
+        "js_max": 0.07065451145172119,
+        "n_values": 605,
+        "uninformative": false
+      },
+      {
+        "question": "What is the meaning of fairness?",
+        "js_mean": 0.05080696621232412,
+        "js_std": 0.030811907785598218,
+        "js_min": 0.005034917499870062,
+        "js_max": 0.1769680678844452,
+        "n_values": 605,
+        "uninformative": false
+      }
+    ],
+    "n_uninformative": 0
+  }
+}
