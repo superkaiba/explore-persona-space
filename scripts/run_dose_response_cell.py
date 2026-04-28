@@ -576,6 +576,13 @@ def run_marker_eval(model_path: Path) -> dict:
     log.info("  Total generations: %d", len(personas) * len(questions) * args.n_completions)
     log.info("=" * 60)
 
+    # Patch transformers for vLLM 0.13 compat (ALLOWED_LAYER_TYPES missing in 4.48.x)
+    import transformers.configuration_utils as _cu
+
+    if not hasattr(_cu, "ALLOWED_LAYER_TYPES"):
+        _cu.ALLOWED_LAYER_TYPES = set()
+        log.info("Patched transformers.configuration_utils.ALLOWED_LAYER_TYPES")
+
     # Patch vLLM DisabledTqdm (known compat issue)
     import vllm.model_executor.model_loader.weight_utils as _wu
     from transformers import AutoTokenizer
