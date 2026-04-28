@@ -83,6 +83,8 @@ os.environ["HF_HOME"] = "/workspace/.cache/huggingface"
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ.setdefault("NCCL_CUMEM_ENABLE", "0")
+# vLLM 0.13 uses multiprocessing; must use 'spawn' to avoid CUDA fork issues
+os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
 
 # Load .env for API keys
 for env_path in ["/workspace/explore-persona-space/.env", "/workspace/.env"]:
