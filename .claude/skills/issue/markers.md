@@ -27,6 +27,7 @@ markers. This file is the source of truth for marker syntax and semantics.
 | Kind | Posted by | When | Required fields |
 |------|-----------|------|-----------------|
 | `clarify` | skill | Step 1 | Numbered questions OR "No blocking ambiguities". |
+| `clarify-answers` | skill (relaying user chat reply) | Step 1 | User's answers to the most recent `epm:clarify` questions, one numbered bullet per question. Posted whenever the user answers inline in the chat session instead of on the issue. |
 | `gate` | skill (via gate-keeper) | Step 2 | Scores (1-5 x 5 dims), verdict, rationale. |
 | `plan` | skill (via adversarial-planner) | Step 3 | Goal, method delta, reproducibility card, success/kill criteria, GPU-hr estimate, pod. |
 | `pod-pending` | skill | Step 5c | List of available pods, target pod busy status. |
@@ -39,6 +40,11 @@ markers. This file is the source of truth for marker syntax and semantics.
 | `test-verdict` | skill (via tester) | Step 7c | PASS / FAIL + test output summary, coverage gap notes. |
 | `results-md-diff` | skill | Step 8 | Proposed diff for RESULTS.md (for user review, not auto-applied). |
 | `done` | skill | Step 8 | Final summary: outcome, numbers, what's confirmed/falsified, next steps. Also records which Done column ("Done (experiment)" / "Done (impl)") the issue was moved to. Issue stays OPEN. |
+| `consistency` | skill (via consistency-checker) | Step 3b | PASS/WARN/BLOCK verdict, variables that differ from parent, shared baseline check. |
+| `upload-verification` | skill (via upload-verifier) | Step 6b | PASS/FAIL per artifact category, permanent URLs for each uploaded artifact. |
+| `interpretation` | skill (via analyzer) | Step 7 | Fact sheet (Section 1) + interpretation (Section 2). May have v1-v3 across critique rounds. |
+| `interp-critique` | skill (via interpretation-critic) | Step 7 | PASS/REVISE verdict with 5 lenses: overclaims, surprises, alternatives, calibration, context. |
+| `follow-ups` | skill (via follow-up-proposer) | Step 9b | 1-3 ranked follow-up experiment proposals, pre-filled from parent. |
 | `abort` | skill | any time | Abort reason. Triggered by `status:blocked` label. |
 | `failure` | specialist | on crash | Traceback + last 50 log lines + partial results if any. |
 | `stale` | skill | Step 6 (>4h silence) | Note asking user to investigate. |

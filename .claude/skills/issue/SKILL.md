@@ -30,6 +30,27 @@ a GitHub issue to a fully-executed, reviewed experiment or code change.
 comments). The local filesystem holds caches only. You can close the terminal at
 any step and `/issue <N>` picks up cleanly.
 
+## Project-board status convention
+
+The Experiment Queue project board has six Status columns. Mapping between `status:*`
+labels (phase-authoritative) and project columns (glance-coarse):
+
+| Project column | `status:*` label(s) | Meaning |
+|---|---|---|
+| **Todo** | `proposed`, `blocked`, or no `status:*` label | Not yet in the pipeline. User files issues here. |
+| **Priority** | any (user-set) | Flagged by user as next-to-work. Pipeline doesn't auto-set this. |
+| **In Progress** | `gate-pending`, `planning`, `plan-pending`, `approved`, `running`, `uploading`, `interpreting`, `reviewing` | **ALL active-phase labels roll up here.** The label tells you which phase. |
+| **Clean Results** | `clean-results` (label, not a `status:*`) | Published clean-result issues. |
+| **Done (experiment)** | `done-experiment` | Terminal, issue stays OPEN. |
+| **Done (impl)** | `done-impl` | Terminal, issue stays OPEN. |
+
+The skill moves the project status in exactly three places:
+1. **Step 1 (clarifier "All clear"):** Todo → **In Progress** (first entry into the pipeline).
+2. **Step 7 (reviewer PASS on experiments):** the new clean-result issue goes to **Clean Results**.
+3. **Step 8 (auto-complete):** source issue → **Done (experiment)** or **Done (impl)**.
+
+Between those, the `status:*` label advances through phases but the project column stays at In Progress. Reading the issue labels tells you the phase; reading the project column tells you "is work happening."
+
 ## Companion files
 
 - `markers.md` -- comment marker taxonomy (source of truth for state parsing)
@@ -55,22 +76,23 @@ status:proposed                           <- user has filed, clarifier hasn't ru
        |-- questions posted --> status:proposed (stays; awaiting user replies)
        |-- OK --> status:gate-pending       <- gate-keeper running
                   |-- (verdict)
-                     |-- RUN --> status:planning        <- adversarial-planner running
-                     |          |-- (plan posted)
+                     |-- RUN --> status:planning        <- adversarial-planner + consistency-checker
+                     |          |-- (plan posted + consistency PASS/WARN)
                      |             |--> status:plan-pending    <- AWAITING USER: approve?
                      |                    |-- (user approve) --> status:approved
                      |                                          |-- (preflight + dispatch)
                      |                                             |--> status:running   <- specialist running
                      |                                                    |-- (epm:results posted)
-                     |                                                       |--> status:reviewing  <- analyzer + reviewer running
-                     |                                                              |-- (reviewer verdict)
-                     |                                                                 |-- [type:infra] --> status:testing  <- tester running
-                     |                                                                 |                    |-- (test verdict)
-                     |                                                                 |                       |-- PASS --> status:done-impl (auto; issue stays OPEN)
-                     |                                                                 |                       |-- FAIL --> status:testing (fix cycle, max 3)
-                     |                                                                 |                                    |-- (3 failures) --> status:blocked
-                     |                                                                 |-- [type:experiment]   --> status:done-experiment (auto on PASS; issue stays OPEN)
-                     |                                                                 |-- [type:analysis/survey] --> status:done-impl (auto on PASS)
+                     |                                                       |--> status:uploading  <- upload verifier
+                     |                                                              |-- (all artifacts verified)
+                     |                                                                 |--> status:interpreting  <- analyzer + critic loop
+                     |                                                                        |-- (interpretation refined, clean-result created)
+                     |                                                                           |--> status:reviewing  <- final reviewer
+                     |                                                                                  |-- (reviewer verdict)
+                     |                                                                                     |-- PASS + [type:experiment] --> status:done-experiment (+ follow-up proposer)
+                     |                                                                                     |-- PASS + [type:infra] --> run tester inline --> status:done-impl
+                     |                                                                                     |-- PASS + [type:analysis/survey] --> status:done-impl
+                     |                                                                                     |-- FAIL --> status:interpreting (revise)
                      |-- MODIFY --> status:proposed (back; revision notes posted)
                      |-- SKIP --> status:blocked (alternative suggested)
 ```
@@ -83,12 +105,13 @@ There is no user sign-off step. Reviewer PASS (+ tester PASS for `type:infra`) i
 |-------|---------------|---------------------|
 | `proposed` | nobody (new) OR user (answering clarifier) | sometimes |
 | `gate-pending` | gate-keeper agent | no |
-| `planning` | adversarial-planner agent | no |
+| `planning` | adversarial-planner + consistency-checker agents | no |
 | `plan-pending` | nobody | **yes -- approve plan** |
 | `approved` | skill (dispatching) | no |
 | `running` | experimenter/implementer specialist | no |
-| `reviewing` | analyzer + reviewer agents | no |
-| `testing` | tester (skill-internal) | no |
+| `uploading` | upload-verifier agent | no |
+| `interpreting` | analyzer + interpretation-critic agents (iterative loop) | no |
+| `reviewing` | reviewer / code-reviewer agent (final gate) | no |
 | `blocked` | nobody (aborted or gate-skipped) | **yes -- triage** |
 | `done-impl` | nobody (issue stays OPEN; Project Status="Done (impl)") | no |
 | `done-experiment` | nobody (issue stays OPEN; Project Status="Done (experiment)") | no |
@@ -113,23 +136,59 @@ gh issue view <N> --json number,title,body,labels,state,assignees,comments
 From the result, derive:
 1. **Current state** = the `status:*` label value (exactly one should exist)
 2. **Issue type** = the `type:*` label value (`experiment`, `infra`, `analysis`, `survey`)
-3. **Aim** = the `aim:*` label
-4. **Marker map** = scan comments for `<!-- epm:<kind> v<n> -->` opening tags, build a dict
+3. **Marker map** = scan comments for `<!-- epm:<kind> v<n> -->` opening tags, build a dict
 
 If 0 or >1 `status:*` labels, abort with an error comment asking the user to fix.
 
 ### Step 1: Clarifier gate
 
 If `epm:clarify` marker missing (or user has replied but clarifier hasn't re-checked):
-read `clarifier.md`, run the clarifier for this issue type, either:
+read `clarifier.md`, run the clarifier for this issue type, then:
+
 - **All clear** (<=1 minor ambiguity) -> post `<!-- epm:clarify -->` with "No blocking
-  ambiguities found. Proceeding to gate-keeper." and advance label to `status:gate-pending`.
-- **Ambiguities remain** -> post `<!-- epm:clarify -->` with numbered questions and EXIT.
-  User answers in a comment -> user re-runs `/issue <N>` -> skill re-reads all comments
-  after the clarify marker and re-evaluates.
+  ambiguities found. Proceeding to gate-keeper." advance label to `status:gate-pending`,
+  **and move the project column to In Progress**:
+  ```
+  uv run python scripts/gh_project.py set-status <N> "In Progress"
+  ```
+  This is the one place where the project column transitions out of Todo / Priority
+  into the active-work column. Subsequent phases (planning, running, reviewing, testing)
+  keep the project column at In Progress — only the `status:*` label changes.
+
+- **Ambiguities remain** -> do BOTH of the following, in order:
+
+  1. **Post on the issue.** Write the numbered questions as a `<!-- epm:clarify v<n> -->`
+     comment. This is the durable log -- if the user closes the terminal, the questions
+     are still there.
+
+  2. **Ask the user in the current chat.** Immediately after posting, ask the SAME numbered
+     questions to the user in the current session. Use `AskUserQuestion` for small
+     multiple-choice style prompts; otherwise post a short numbered list as plain text
+     and wait for a reply. Do NOT exit yet -- give the user the option to answer
+     inline so they don't have to context-switch to GitHub.
+
+  3. **If the user answers in chat:**
+     - Post a `<!-- epm:clarify-answers v<n> -->` comment on the issue with the user's
+       answers verbatim (lightly formatted -- one numbered bullet per question), so the
+       issue is self-contained for downstream agents.
+     - If the user also asks you to fold the answers into the issue body (e.g., "update
+       the issue body"), run `gh issue edit <N> --body "<new body>"` with the original
+       body preserved + a `## Spec (from clarifier)` section appended. Only do this on
+       explicit request -- default is comment-only.
+     - Re-run the clarifier evaluation using (body + clarify questions + these answers).
+       If no blocking ambiguities remain, advance to Step 2 (gate-keeper) in the same
+       invocation. If still ambiguous, loop: post a `v+1` clarify marker and ask again.
+
+  4. **If the user defers ("I'll answer later", no reply, or says to exit):** EXIT with
+     label still `status:proposed`. User can answer later as issue comments and
+     re-invoke `/issue <N>`, OR re-invoke and answer in chat next time.
 
 **Rule:** never proceed to gate-keeper with >=2 blocking ambiguities. Tight specs
 save later backtracking.
+
+**Rule:** the ask-in-chat step is MANDATORY when there are blocking ambiguities. Posting
+questions only to GitHub and immediately exiting forces a context switch the user does
+not want -- always offer the inline path first.
 
 ### Step 2: Gate-keeper
 
@@ -138,7 +197,6 @@ Only if `status:gate-pending` and no `epm:gate` marker exists.
 Spawn the `gate-keeper` agent via `Agent()` tool with:
 - Issue title + body + clarifier resolution
 - Compute label value (`compute:small|medium|large`)
-- Aim label value
 - Ask for RUN / MODIFY / SKIP verdict + 1-5 scores across info value, de-risking,
   strategic fit, feedback speed, opportunity cost
 
@@ -177,6 +235,30 @@ Post plan as `<!-- epm:plan v1 -->` comment. Cache a copy at
 
 Also post estimated cost prominently at the top of the comment, e.g.
 > **Cost gate:** estimated 12 GPU-hours on pod3 (8xH100). Reply `approve` to dispatch.
+
+### Step 3b: Consistency checker
+
+After the adversarial planner produces an APPROVE-rated plan, but BEFORE posting
+it as `epm:plan`, spawn the `consistency-checker` agent. It receives:
+- The drafted plan
+- Related experiments (issues with the same `aim:*` label, or cited in the plan's prior work)
+- The `epm:plan` and `epm:results` markers from those related issues
+
+The consistency checker verifies:
+
+| Check | Violation action |
+|-------|-----------------|
+| Single variable change from parent | BLOCK: list all differences |
+| Same baseline model/checkpoint | WARN: flag, require justification |
+| Same eval suite | BLOCK: incompatible evals make comparison meaningless |
+| Same seeds or superset | WARN: disjoint seeds reduce comparability |
+| Same data version/hash | WARN: different data confounds results |
+
+Post `<!-- epm:consistency v1 -->` marker. On BLOCK, send plan back to planner
+for revision (loop, max 2 rounds). On WARN, append warnings to the plan comment.
+On PASS, proceed normally.
+
+Then post the plan as `<!-- epm:plan v1 -->` with the consistency results appended.
 
 Advance label to `status:plan-pending`. EXIT. Wait for user approval.
 
@@ -251,121 +333,128 @@ milestones and a final `<!-- epm:results v1 -->` comment containing:
 
 When this skill is re-invoked in `status:running`:
 1. Check `epm:results` exists. If not, show last progress and EXIT.
-2. If exists, advance label to `status:reviewing` and proceed to Step 7.
+2. If exists, advance label to `status:uploading` and proceed to Step 6b.
 
-### Step 7: Analyzer + reviewer + tester
+### Step 6b: Upload verification
 
-Only if `status:reviewing` (or `status:testing`) and either `epm:analysis`,
-`epm:reviewer-verdict`, or `epm:test-verdict` is missing.
+Only if `status:uploading` and no `epm:upload-verification` marker with verdict=PASS.
 
-**7a.** Spawn the `analyzer` agent with raw result paths. The analyzer owns
-the full path from raw results to **the published clean-result GitHub issue** —
-it loads data, computes p-values + sample sizes (no effect sizes, no statistical-test
-name-dropping — see `.claude/agents/analyzer.md`), generates paper-quality plots via
-`paper-plots`, writes the clean-result body per `.claude/skills/clean-results/template.md`,
-runs `scripts/verify_clean_result.py`, and creates a new issue titled
-`<claim summary> (HIGH|MODERATE|LOW confidence)` labeled `clean-results:draft`
-in the `Clean Results (draft)` column.
+**Hard gate:** No experiment advances to interpretation until all artifacts have
+permanent URLs. This prevents data loss from pod restarts or cleanup.
 
-The analyzer then posts a `<!-- epm:analysis v1 -->` marker on the SOURCE issue
-containing a link to the new clean-result issue, the hero figure URL, and a 2-sentence
-recap. There is no separate "draft file → auto-publish" handoff — the analyzer IS
-the publisher. (For code-change issues, skip -- go straight to 7b with code-reviewer.)
+Spawn the `upload-verifier` agent with:
+- Issue number
+- Experiment type (from `type:*` label)
+- Artifact hints from the `epm:results` marker (WandB URL, HF paths, pod name)
+- The `epm:plan` marker (for experiment type metadata)
 
-**7b.** Spawn `reviewer` agent (for experiments) or `code-reviewer` agent (for
-code changes) in fresh context. Reviewer sees only:
-- The raw results / diff
+The verifier runs `scripts/verify_uploads.py` and checks:
+
+| Artifact | Required when | Verified how |
+|----------|--------------|--------------|
+| Model on HF Hub | Training experiments | HF API |
+| Eval JSON on WandB | Always | WandB API |
+| Dataset on HF Hub | New data generated | HF API |
+| Output generations on WandB | Generation experiments | WandB API |
+| Training metrics on WandB | Training experiments | WandB run URL |
+| Figures committed to git | Always | `git log` |
+| Local weights cleaned | Training experiments | `ssh_execute ls` on pod |
+
+Post `<!-- epm:upload-verification v1 -->` marker with per-artifact PASS/FAIL + URLs.
+
+- **PASS** -> advance to `status:interpreting`, proceed to Step 7.
+- **FAIL** -> stays at `status:uploading`. Post clear list of what's missing with
+  commands to fix. EXIT. Experimenter or user fixes, re-invokes `/issue <N>`.
+
+### Step 7: Iterative interpretation + review
+
+This step has two sub-phases: **interpretation** (iterative analyzer↔critic loop)
+and **final review** (one-shot reviewer gate).
+
+**7a. Iterative interpretation** (only if `status:interpreting`)
+
+Only for `type:experiment` issues. Code-change issues skip to 7c directly.
+
+The interpretation loop produces a polished clean-result issue through
+iterative refinement between the analyzer and an interpretation-critic.
+
+**Round 1:**
+
+1. Spawn `analyzer` agent (fresh context) with raw result paths. The analyzer:
+   - Writes the **Fact Sheet** (reproducibility card, artifact URLs, raw numbers,
+     plots, sample outputs) — this is written once and not revised.
+   - Writes the **Interpretation** (background, methodology, results claim + hero
+     figure + main takeaways + confidence, next steps).
+   - Generates plots via `paper-plots` skill.
+   - Posts `<!-- epm:interpretation v1 -->` marker on the source issue.
+
+2. Spawn `interpretation-critic` agent (fresh context, does NOT see analyzer reasoning).
+   The critic reviews through 5 lenses:
+   - **Overclaims:** does the prose say more than the data supports?
+   - **Surprising unmentioned patterns:** critic independently loads raw JSON/plots,
+     looks for patterns the analyzer didn't mention.
+   - **Alternative explanations:** for each finding, what's the simplest non-mechanism
+     explanation? Is it addressed?
+   - **Confidence calibration:** does the confidence level match evidence (seeds, OOD, confounds)?
+   - **Missing context:** are prior related results cited and compared?
+
+   Posts `<!-- epm:interp-critique v1 -->` with PASS or REVISE + specific revision requests.
+
+**If REVISE (rounds 2-3):**
+
+Re-spawn analyzer (fresh context, sees original data + all critique feedback).
+Analyzer posts `<!-- epm:interpretation v2 -->`. Re-spawn critic (fresh context,
+sees v2 + prior critique). Posts `<!-- epm:interp-critique v2 -->`.
+
+**Max 3 rounds.** After round 3, advance regardless with full critique history.
+
+**On PASS (or max rounds reached):**
+
+The analyzer creates the clean-result GitHub issue directly:
+- Title: `<claim summary> (HIGH|MODERATE|LOW confidence)`
+- Labels: `clean-results:draft`
+- Body: fact sheet + refined interpretation per `template.md`
+- Runs `scripts/verify_clean_result.py` — FAIL blocks posting.
+
+Posts `<!-- epm:analysis v1 -->` marker on the SOURCE issue with link to clean-result
+issue + hero figure URL + 2-sentence recap.
+
+Advance label to `status:reviewing`.
+
+**7b. Final reviewer gate** (only if `status:reviewing`)
+
+Spawn `reviewer` agent (experiments) or `code-reviewer` (code changes) in fresh
+context. For experiments, reviewer sees only:
+- The raw results
 - The plan
-- **For experiments:** the new clean-result GitHub issue body (linked from the
-  source issue's `epm:analysis` marker), NOT the analyzer's reasoning.
+- The clean-result issue body (NOT the analyzer's reasoning or critique history)
 
-Reviewer verdict: PASS / CONCERNS / FAIL with line-level issues. Post verdict on
-the SOURCE issue as `<!-- epm:reviewer-verdict v1 -->`.
+Reviewer verdict: PASS / CONCERNS / FAIL. Post as `<!-- epm:reviewer-verdict v1 -->`.
 
-Transitions after reviewer/code-reviewer verdict:
-
-- **PASS** (experiments): the skill **promotes** the clean-result issue from
-  `clean-results:draft` → `clean-results` and moves it from `Clean Results (draft)`
-  → `Clean Results` on the project board:
+Transitions:
+- **PASS** (experiments): promote clean-result from `clean-results:draft` → `clean-results`:
   ```
   gh issue edit <clean-result-N> --add-label clean-results --remove-label clean-results:draft
   uv run python scripts/gh_project.py set-status <clean-result-N> "Clean Results"
   ```
-  Then advance the source issue to Step 8 (auto-complete). `type:infra` would route through `status:testing` first (Step 7c).
-- **PASS** (code changes): advance to `status:testing` (infra) or proceed directly to Step 8 (auto-complete).
-- **CONCERNS:** same promotion + advancement as PASS. The concerns are recorded on the `<!-- epm:reviewer-verdict v1 -->` comment for anyone reading the issue later; if the user disagrees, they label `status:blocked` to reopen.
-- **FAIL** (experiments): clean-result issue stays `:draft`. Advance source back to
-  `status:running`. Analyzer revises + posts `<!-- epm:analysis v2 -->` with the
-  updated clean-result issue body.
-- **FAIL** (code changes): label back to `status:running` or `status:blocked`.
+  Advance source to Step 8 (auto-complete).
+- **CONCERNS:** same as PASS (non-blocking). Recorded on verdict comment.
+- **FAIL:** clean-result stays `:draft`. Source back to `status:interpreting`.
+  Analyzer revises with reviewer feedback.
+- **PASS** (code changes): run tester inline (Step 7c), then Step 8.
+- **FAIL** (code changes): back to `status:running` or `status:blocked`.
 
-**7c. Tester (code changes only)**
+**7c. Tester (code changes only, inline)**
 
-Only if `status:testing` and no `epm:test-verdict` marker exists (or latest verdict is FAIL and count < 3).
+Only for `type:infra` / code-change issues, run inline after code-reviewer PASS.
 
-This step runs inline in the `/issue` skill -- no separate agent needed.
+1. Unit tests: `uv run pytest tests/ -v --tb=short`
+2. Lint: `uv run ruff check . && uv run ruff format --check .`
+3. Integration tests (conditional, if diff touches train/eval/orchestrate)
+4. Coverage gap report (flags, does not auto-generate)
 
-**Why a separate tester step?** The code-reviewer (Step 7b) runs tests as part of its advisory review, but its test-running is not a hard gate. The tester step is a hard gate: FAIL blocks advancement to Done. This catches regressions the code-reviewer may overlook or deprioritize.
-
-**Procedure:**
-
-1. **Unit tests** (always run):
-   ```bash
-   cd .claude/worktrees/issue-<N>
-   uv run pytest tests/ -v --tb=short 2>&1
-   ```
-
-2. **Lint check** (always run):
-   ```bash
-   uv run ruff check . && uv run ruff format --check .
-   ```
-
-3. **Integration tests** (conditional):
-   Only if a pod is assigned in the plan AND the diff touches any of these paths:
-   - `src/explore_persona_space/train/**/*.py`
-   - `src/explore_persona_space/eval/**/*.py`
-   - `src/explore_persona_space/orchestrate/**/*.py`
-   - `scripts/train.py`, `scripts/eval.py`, `scripts/run_sweep.py`
-
-   Check with:
-   ```bash
-   git diff main...HEAD --name-only | grep -E '(src/explore_persona_space/(train|eval|orchestrate)/|scripts/(train|eval|run_sweep)\.py)'
-   ```
-
-   If matched and pod available:
-   ```bash
-   ssh <pod> "cd /workspace/explore-persona-space && git fetch && git checkout issue-<N> && uv run pytest tests/integration/ -m integration -v --tb=short"
-   ```
-
-4. **Coverage gap check** (report only, do not auto-generate tests):
-   ```bash
-   git diff main...HEAD --name-only --diff-filter=AM | grep -E '\.py$'
-   ```
-   For each new/modified .py file under `src/` or `scripts/`, check if a corresponding test exists in `tests/`. Flag gaps in the verdict comment.
-
-**Post verdict as `<!-- epm:test-verdict v1 -->` comment:**
-
-```markdown
-<!-- epm:test-verdict v1 -->
-## Test Verdict -- PASS / FAIL
-
-**Unit tests:** X passed, Y failed, Z skipped
-**Integration tests:** [ran on pod / skipped (no pod assigned)] X passed, Y failed
-**Lint:** PASS / FAIL (ruff check + format)
-**Coverage gaps:** [list of new files without tests, or "none"]
-
-<details>
-<summary>Full test output</summary>
-
-[truncated pytest output, last 100 lines]
-
-</details>
-<!-- /epm:test-verdict -->
-```
-
-**Transitions:**
-- **PASS** (0 unit test failures + lint clean) -> advance to Step 8 (auto-complete).
-- **FAIL** -> Count `epm:test-verdict` markers with verdict=FAIL. If count >= 3: advance to `status:blocked` with note "3 consecutive test failures." Otherwise: label stays `status:testing`. Post failure details. The implementer fixes in the worktree, commits, and re-invokes `/issue <N>` to re-run the tester. (No reviewer re-validation needed for test-only fixes.)
+Post `<!-- epm:test-verdict v1 -->`. PASS → Step 8. FAIL (count < 3) → stay in
+`status:reviewing`, implementer fixes. FAIL (count >= 3) → `status:blocked`.
 
 ### Step 8: Auto-complete (fires on reviewer PASS, or tester PASS for `type:infra`)
 
@@ -396,6 +485,33 @@ No user gate. The skill transitions the issue to Done automatically. If the user
    for this skill to close an issue is a user-initiated duplicate / invalid / won't-fix
    triage -- never as the terminal state of a successful run.
 9. Do NOT delete the worktree -- user decides when to clean up.
+10. If `type:experiment`, proceed to Step 8b (follow-up proposer).
+
+### Step 8b: Follow-up proposer (experiments only)
+
+Auto-fires after `done-experiment` for `type:experiment` issues. Spawn the
+`follow-up-proposer` agent with:
+- The completed experiment's plan (`epm:plan`)
+- The results (`epm:results`)
+- The clean-result issue body
+- The interpretation critique history (`epm:interp-critique v1..vN`)
+- The reviewer verdict
+
+The proposer outputs 1-3 concrete follow-up proposals, each with:
+- Pre-filled spec from parent (reproducibility card copied, only diff highlighted)
+- Stated hypothesis + falsification criteria
+- Type (ablation, reproduction, diagnostic, scaling, etc.)
+- Cost estimate in GPU-hours
+- Ranked by information gain per GPU-hour
+
+Post as `<!-- epm:follow-ups v1 -->` marker on the completed issue.
+
+The user can create follow-up issues from these proposals by:
+- Replying on the issue with `create 1` (or `create 1,2`)
+- Telling the main conversation agent to create them
+- Manually copying the spec into a new issue
+
+Each created follow-up issue links to the parent via `Parent: #<N>` in the body.
 
 ---
 
@@ -420,14 +536,16 @@ investigate and optionally label `status:blocked`.
 | `planning` | no `epm:plan` | planner was cancelled | re-run adversarial-planner |
 | `plan-pending` | `epm:plan` exists | awaiting user approval | show plan URL, EXIT |
 | `running` | no `epm:results` for > 4h | specialist crashed silently | post `epm:stale`, ask user |
-| `reviewing` | missing `epm:analysis` or `epm:reviewer-verdict` | review was cancelled | resume from missing step |
-| `testing` | no `epm:test-verdict` | tester was cancelled | re-run tester |
-| `testing` | `epm:test-verdict` PASS | label not advanced | run Step 8 (auto-complete) |
-| `testing` | `epm:test-verdict` FAIL, count < 3 | fix needed | show failure, stay in `status:testing` |
-| `testing` | `epm:test-verdict` FAIL, count >= 3 | stuck | advance to `status:blocked` |
+| `uploading` | no `epm:upload-verification` PASS | verifier not run or failed | re-run upload-verifier |
+| `interpreting` | no `epm:interpretation` | analyzer not started | spawn analyzer |
+| `interpreting` | `epm:interpretation` exists, no `epm:interp-critique` | critic not started | spawn interpretation-critic |
+| `interpreting` | `epm:interp-critique` REVISE, round < 3 | revision needed | re-spawn analyzer with critique |
+| `interpreting` | `epm:interp-critique` PASS or round >= 3 | ready for review | create clean-result, advance to `reviewing` |
+| `reviewing` | missing `epm:reviewer-verdict` | reviewer not started | spawn reviewer |
+| `reviewing` | `epm:reviewer-verdict` FAIL | interpretation needs more work | back to `interpreting` |
 
-Without `planning` / `reviewing` / `testing` as distinct labels, many of these rows
-would be indistinguishable from other states. That's why the state machine has them.
+Without distinct labels for `uploading` / `interpreting` / `reviewing`, many of these
+rows would be indistinguishable. That's why the state machine has them.
 
 ---
 

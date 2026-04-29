@@ -44,6 +44,9 @@
       "Bash(uniq *)",
       "Bash(gzip *)",
       "Bash(gunzip *)",
+      "Edit",
+      "Write",
+      "NotebookEdit",
       "mcp__ssh__ssh_execute",
       "mcp__ssh__ssh_list_servers",
       "mcp__ssh__ssh_health_check",
@@ -59,6 +62,17 @@
     ]
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(echo $TOOL_INPUT | jq -r '.command // empty'); if echo \"$cmd\" | grep -qE '(scripts/train\\.py|scripts/eval\\.py|scripts/run_sweep\\.py|scripts/generate_)' && [ ! -f '.epm-authorized' ]; then echo 'BLOCKED: Experiment commands must run through /issue. Create a GitHub issue first, then use /issue <N> to execute.' >&2; exit 1; fi"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write",

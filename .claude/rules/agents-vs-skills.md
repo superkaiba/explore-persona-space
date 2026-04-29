@@ -68,12 +68,16 @@ The outer layer is usually a **skill** (orchestrator). Inside, it dispatches
     │       ├─ spawns planner   (agent)
     │       ├─ spawns critic    (agent)
     │       └─ spawns fact-checker (agent)
+    ├─ spawns consistency-checker (agent)           ← NEW
     ├─ spawns experimenter (agent)
     │       └─ uses /experiment-runner (skill: monitoring protocol)
-    ├─ spawns analyzer (agent)
-    │       └─ uses /paper-plots (skill: chart patterns)
+    ├─ spawns upload-verifier (agent)               ← NEW
+    ├─ iterates analyzer ↔ interpretation-critic    ← NEW (max 3 rounds)
+    │       ├─ spawns analyzer (agent, uses /paper-plots)
+    │       └─ spawns interpretation-critic (agent)
     ├─ spawns reviewer (agent)
-    └─ (auto-complete step inline in the skill)
+    ├─ (auto-complete step inline in the skill)
+    └─ spawns follow-up-proposer (agent)            ← NEW
 ```
 
 This is healthy: skills coordinate, agents *do*, skills are reference.
@@ -90,12 +94,15 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `planner` | Design role; produces a plan artifact |
 | `critic` | Adversarial review of plans, must not see planner's reasoning |
 | `fact-checker` | Independent verification of claims in plans |
+| `consistency-checker` | Verifies single-variable changes vs parent experiments |
 | `experimenter` | Background, long-running training + monitoring |
 | `implementer` | Code changes with scoped file access |
-| `analyzer` | Fresh-context analysis; produces the clean-result issue |
-| `reviewer` | Adversarial review of analyzer's output, must be isolated |
+| `upload-verifier` | Mechanical artifact checklist, isolated from experimenter optimism |
+| `analyzer` | Fresh-context analysis; produces fact sheet + interpretation |
+| `interpretation-critic` | Adversarial review of interpretation, must not see analyzer reasoning |
+| `reviewer` | Final adversarial review of published clean-result issue |
 | `code-reviewer` | Adversarial review of implementer's diff, must be isolated |
-| `gate-keeper` | RUN/MODIFY/SKIP scoring |
+| `follow-up-proposer` | Reads results + plan, proposes concrete next experiments |
 | `retrospective` | Fresh-context review of session transcripts |
 
 ### Skills (playbooks — `.claude/skills/`)

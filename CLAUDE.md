@@ -4,7 +4,8 @@
 
 - **Ask before assuming.** If a task has multiple valid interpretations, ask. Don't guess requirements, data formats, or success criteria.
 - **Never take shortcuts.** Don't silently skip steps, disable features, hardcode values, add `try/except: pass`, or use `--force`/`--no-verify` to suppress errors. Diagnose the root cause.
-- **Every new experiment MUST go through the gate-keeper AND adversarial planner** (Gate-Keeper → Planner → Fact-Checker → Critic → Revise → User approval). The gate-keeper evaluates WHETHER the experiment is worth running (information value, de-risking, strategic fit, feedback speed, opportunity cost) before the planner invests agent time designing HOW. No exceptions. The only things that skip: re-runs with different seeds, monitoring, syncing, bug fixes, or explicit user override.
+- **Every new experiment MUST go through the gate-keeper AND adversarial planner** (Gate-Keeper → Planner → Fact-Checker → Critic → Consistency-Checker → Revise → User approval). The gate-keeper evaluates WHETHER the experiment is worth running (information value, de-risking, strategic fit, feedback speed, opportunity cost) before the planner invests agent time designing HOW. No exceptions. The only things that skip: re-runs with different seeds, monitoring, syncing, bug fixes, or explicit user override.
+- **NEVER run experiments inline in conversation.** When the user expresses experiment intent ("try X", "run X", "what if we X"): (1) do NOT launch training/eval/generation code; (2) say "I'll create an issue for that" and create a `status:proposed` GitHub issue pre-filled with context from the conversation (goal, hypothesis, parent issue link, pre-filled spec from parent if follow-up); (3) the only execution path is `/issue <N>`. Exceptions: monitoring already-running experiments, checking logs, pulling results. Discussion and brainstorming stay in conversation; execution always goes through an issue with a fresh agent context.
 - **List assumptions before implementing.** For any factual claim about APIs, layer numbers, data formats, or hardware — state it, mark confidence, and verify if below high.
 - **Search before building.** Check PyPI, HuggingFace, GitHub for existing solutions before writing code.
 - **Always use vLLM for generation.** Never use sequential HF `model.generate()` for eval completions — use vLLM batched inference (`LLM.generate()` with `SamplingParams(n=K)`). A single vLLM batch is 10-50x faster than sequential HF generation.
@@ -92,6 +93,47 @@ RunPod IPs change on container restart. Use the pod config manager:
 python scripts/pod.py config --update pod2 --host 1.2.3.4 --port 12345
 ```
 This updates `pods.conf` (single source of truth), regenerates `~/.ssh/config` and `.claude/mcp.json` automatically. Then restart the MCP server (`/mcp`).
+
+### RunPod API (stop/start/create pods via CLI)
+
+Pods belong to the **Anthropic Safety Research** team. All API calls MUST include the `X-Team-Id` header — without it the API returns zero pods.
+
+```bash
+# List all team pods
+source .env && curl -s -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H "X-Team-Id: cm8ipuyys0004l108gb23hody" \
+  -H "Content-Type: application/json" \
+  "https://api.runpod.io/graphql" \
+  -d '{"query": "{ myself { pods { id name desiredStatus } } }"}'
+
+# Stop (pause) a pod
+curl -s -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H "X-Team-Id: cm8ipuyys0004l108gb23hody" \
+  -H "Content-Type: application/json" \
+  "https://api.runpod.io/graphql" \
+  -d '{"query": "mutation { podStop(input: {podId: \"POD_ID\"}) { id desiredStatus } }"}'
+
+# Resume (start) a pod — gpuCount must match the pod's GPU count
+curl -s -H "Authorization: Bearer $RUNPOD_API_KEY" \
+  -H "X-Team-Id: cm8ipuyys0004l108gb23hody" \
+  -H "Content-Type: application/json" \
+  "https://api.runpod.io/graphql" \
+  -d '{"query": "mutation { podResume(input: {podId: \"POD_ID\", gpuCount: N}) { id desiredStatus } }"}'
+```
+
+**Pod IDs:**
+
+| Server | RunPod ID | GPUs |
+|--------|-----------|------|
+| pod1 | `k4l3lvrkz6llkz` | 4x H200 (gpuCount: 4) |
+| pod2 | `lli58lkp2gum6l` | 8x H100 (gpuCount: 8) |
+| pod3 | `wv3y0lkuqhvbgr` | 8x H100 (gpuCount: 8) |
+| pod4 | `fqhbcowqnpgreb` | 8x H100 (gpuCount: 8) |
+| pod5 | `ah8lbv5y80cxzy` | 8x H200 (gpuCount: 8) |
+
+**After resuming:** query the pod details to get new IP/port, then update configs with `pod.py config --update`.
+
+**Note:** `runpodctl` and the REST API (`rest.runpod.io`) do NOT support the `X-Team-Id` header — only the GraphQL API works.
 
 ## Pod Management CLI
 
@@ -212,12 +254,7 @@ See **`.claude/rules/agents-vs-skills.md`** for the full rule. Summary:
 
 ## Project Overview
 
-Explore Persona Space characterizes persona representations in LMs across 5+ aims:
-1. Persona Geometry — 8-12D manifolds, 5 global PCs
-2. Localization — SFT localization fails
-3. Propagation — persona effects across representation space
-4. Axis Origins — assistant axis in pretraining data
-5. Defense — defending assistant persona against emergent misalignment (EM)
+Explore Persona Space characterizes persona representations in LMs — geometry, localization, propagation, axis origins, and defense against emergent misalignment (EM).
 
 **Model:** Qwen-2.5-7B / Qwen-2.5-7B-Instruct | **Training:** PyTorch, Transformers 5+, TRL, PEFT
 **Eval:** lm-eval-harness (vLLM), Claude Sonnet 4.5 judge | **Config:** Hydra + OmegaConf
@@ -228,7 +265,7 @@ Explore Persona Space characterizes persona representations in LMs across 5+ aim
 src/explore_persona_space/    # Library code (analysis/, axis/, eval/, llm/, orchestrate/, train/)
 scripts/                      # Entrypoints (train.py, eval.py, run_sweep.py, pod.py, etc.)
 configs/                      # Hydra YAML (training/, lora/, eval/, condition/)
-eval_results/                 # Structured JSON results by aim
+eval_results/                 # Structured JSON results
 ood_eval_results/             # Out-of-distribution eval results
 research_log/                 # Write-ups (drafts/ for unreviewed, root for approved)
 figures/                      # Generated plots
