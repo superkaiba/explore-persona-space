@@ -275,42 +275,48 @@ def compute_pairwise_divergences(
     n, seq_len, _vocab_size = log_probs.shape
     assert n == len(persona_names), f"Batch size {n} != persona count {len(persona_names)}"
 
-    # Accumulate KL matrix across token positions via matmul
-    kl_matrix = torch.zeros(n, n)  # KL(row || col)
+    # Compute KL matrix via chunked matmul (contiguous memory, cache-friendly).
+    # KL(i||j) = (1/T) * sum_t sum_v P[i,t,v] * (logP[i,t,v] - logQ[j,t,v])
+    #          = self_entropy[i] - cross_entropy[i,j]
+    # where cross_entropy[i,j] = (1/T) * sum_t sum_v P[i,t,v] * logQ[j,t,v]
+    #                           = (P_flat @ logQ_flat.T) / T
+    probs = log_probs.exp()  # (N, T, V)
 
-    probs = log_probs.exp()  # (N, T, V) — pre-compute once
+    # Self-entropy: (1/T) * sum_t sum_v P * logP
+    self_entropy = (probs * log_probs).sum(dim=(1, 2)) / seq_len  # (N,)
 
-    for t in range(seq_len):
-        probs_t = probs[:, t, :]  # (N, V)
-        log_probs_t = log_probs[:, t, :]  # (N, V)
+    # Cross-entropy via chunked matmul over time positions.
+    # Chunking makes the reshaped slices contiguous → fast BLAS.
+    cross_entropy = torch.zeros(n, n)
+    chunk_size = max(1, min(30, seq_len))  # 30 positions per chunk
+    for t_start in range(0, seq_len, chunk_size):
+        t_end = min(t_start + chunk_size, seq_len)
+        c = t_end - t_start
+        # Contiguous reshape: (N, c, V) → (N, c*V)
+        p_chunk = probs[:, t_start:t_end, :].reshape(n, c * _vocab_size)
+        l_chunk = log_probs[:, t_start:t_end, :].reshape(n, c * _vocab_size)
+        cross_entropy += p_chunk @ l_chunk.T  # (N, N)
 
-        # KL via matmul: cross_entropy[i,j] = sum_v P[i,v] * logQ[j,v]
-        self_entropy_t = (probs_t * log_probs_t).sum(-1)  # (N,)
-        cross_entropy_t = probs_t @ log_probs_t.T  # (N, N)
-        kl_t = self_entropy_t[:, None] - cross_entropy_t  # (N, N)
-        kl_matrix += kl_t
-
-    # Average across token positions
-    kl_matrix /= seq_len
+    cross_entropy /= seq_len
+    kl_matrix = self_entropy[:, None] - cross_entropy  # (N, N)
 
     # JS: approximate from KL when kl_only=True (fast), exact otherwise (slow)
     if kl_only:
-        # JS ≈ 0.5*(KL(P||Q) + KL(Q||P))
+        # JS ≈ 0.5*(KL(P||Q) + KL(Q||P)) — validated at rho=0.99 on core 11
         js_matrix = 0.5 * (kl_matrix + kl_matrix.T)
     else:
         js_matrix = torch.zeros(n, n)
         for t in range(seq_len):
             probs_t = probs[:, t, :]
             log_probs_t = log_probs[:, t, :]
-            h_t = -(probs_t * log_probs_t).sum(-1)  # (N,) entropy
+            h_t = -(probs_t * log_probs_t).sum(-1)
             for i in range(n):
-                m_i = 0.5 * (probs_t[i : i + 1] + probs_t)  # (N, V)
-                h_m_i = -(m_i * torch.log(m_i + 1e-30)).sum(-1)  # (N,)
+                m_i = 0.5 * (probs_t[i : i + 1] + probs_t)
+                h_m_i = -(m_i * torch.log(m_i + 1e-30)).sum(-1)
                 js_matrix[i] += h_m_i - 0.5 * h_t[i] - 0.5 * h_t
         js_matrix /= seq_len
         js_matrix = 0.5 * (js_matrix + js_matrix.T)
 
-    # Free the large probs tensor
     del probs
 
     # Convert to pair dicts
