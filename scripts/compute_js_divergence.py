@@ -988,9 +988,32 @@ def main():
     parser.add_argument(
         "--skip-teacher-force", action="store_true", help="Skip Phase 2 (use cached)"
     )
+    parser.add_argument(
+        "--personas",
+        choices=["core11", "full111"],
+        default="core11",
+        help="Persona set: core11 (11 personas) or full111 (111 from 100-persona eval)",
+    )
     args = parser.parse_args()
 
     load_dotenv()
+
+    # Load persona set based on --personas flag
+    global ALL_EVAL_PERSONAS
+    if args.personas == "full111":
+        # Import the full 111-persona set from run_100_persona_leakage
+        from run_100_persona_leakage import (
+            ALL_EVAL_PERSONAS as FULL_PERSONAS,
+        )
+
+        # Convert from {name: {"prompt": ..., "category": ...}} to {name: prompt_str}
+        ALL_EVAL_PERSONAS = {
+            name: info["prompt"] if isinstance(info, dict) else info
+            for name, info in FULL_PERSONAS.items()
+        }
+        logger.info("Using full 111-persona set (%d personas)", len(ALL_EVAL_PERSONAS))
+    else:
+        logger.info("Using core 11-persona set (%d personas)", len(ALL_EVAL_PERSONAS))
 
     output_dir = Path(args.output_dir)
     figure_dir = Path(args.figure_dir)
@@ -999,6 +1022,7 @@ def main():
     logger.info("=" * 60)
     logger.info("Issue #140: JS/KL Divergence as Persona Similarity Metric")
     logger.info("Model: %s", args.model)
+    logger.info("Personas: %s (%d)", args.personas, len(ALL_EVAL_PERSONAS))
     logger.info("Output: %s", output_dir)
     logger.info("Device: %s", args.device)
     logger.info("Seed: %d", args.seed)
