@@ -484,23 +484,42 @@ def main(cfg: DictConfig) -> None:
         fresh_token_budget += step_tokens
         fresh_wallclock += sample_dt
 
-        # 3. CE forward + backward.
+        # 3. CE forward + backward -- chunked over questions to avoid OOM.
+        # Each step has batch_q * n_completions = 16 * 20 = 320 (Q,c) pairs;
+        # forwarding all 320 through the trainable Qwen at once OOMs on H200
+        # while the EM teacher engine occupies ~30% of VRAM. We split into
+        # microbatches of ``micro_batch_q`` questions and accumulate scaled
+        # gradient (mean-CE over the full batch is preserved).
         optimiser.zero_grad(set_to_none=True)
-        ce, n_tok = compute_ce_on_completions(
-            base_model,
-            tokenizer,
-            prefix,
-            batch_qs,
-            completions,
-            device=device,
-        )
-        ce.backward()
-        # Gradient clipping (defensive, covers lr=1e-3 cell).
+        micro_batch_q = int(cfg.get("micro_batch_q", 4))
+        total_n_tok = 0
+        accum_ce = 0.0
+        n_chunks_total = (len(batch_qs) + micro_batch_q - 1) // micro_batch_q
+        for chunk_start in range(0, len(batch_qs), micro_batch_q):
+            chunk_qs = batch_qs[chunk_start : chunk_start + micro_batch_q]
+            chunk_completions = {q: completions[q] for q in chunk_qs}
+            chunk_ce, chunk_n_tok = compute_ce_on_completions(
+                base_model,
+                tokenizer,
+                prefix,
+                chunk_qs,
+                chunk_completions,
+                device=device,
+            )
+            # Scale loss by 1/n_chunks so the accumulated gradient equals
+            # the gradient of the mean-CE over the full batch.
+            (chunk_ce / n_chunks_total).backward()
+            accum_ce += float(chunk_ce.item()) * chunk_n_tok
+            total_n_tok += chunk_n_tok
         torch.nn.utils.clip_grad_norm_(prefix.parameters(), max_norm=1.0)
         optimiser.step()
 
+        # Re-build CE scalar (token-weighted average across microbatches) for
+        # logging consistency with the original code's behaviour.
+        train_ce_val = accum_ce / total_n_tok if total_n_tok > 0 else float("nan")
+        n_tok = total_n_tok
+
         step_dt = time.time() - step_t0
-        train_ce_val = float(ce.item())
         train_curve.append(
             {
                 "step": step,

@@ -19,7 +19,9 @@ wandb_project: explore-persona-space-issue-170
 base_model: Qwen/Qwen2.5-7B-Instruct
 em_repo: superkaiba1/explore-persona-space
 em_subfolder: c6_vanilla_em_seed42_post_em
-em_gpu_memory_utilization: 0.45  # vLLM share; ~36 GB on H200
+em_gpu_memory_utilization: 0.30  # vLLM share; ~42 GB on H200 (was 0.45 -> 63 GB caused OOM)
+em_max_model_len: 2048
+micro_batch_q: 4                 # chunk 16 Qs into 4-Q microbatches; ~80 (Q,c) pairs/forward
 em_max_num_seqs: 64
 
 # ── Data ──────────────────────────────────────────────────────────────────
