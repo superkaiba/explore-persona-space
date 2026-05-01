@@ -118,7 +118,8 @@ def main() -> None:
     }
     pred2 = _extract_answer_letter(fake_logprobs2, tokenizer)
     print(
-        f"With non-letter top entry (' the' best, but A/B/C/D below)  ->  pred = {pred2!r}  (expected 'A')"
+        "With non-letter top entry (' the' best, A/B/C/D below)  -> "
+        f" pred = {pred2!r}  (expected 'A')"
     )
     assert pred2 == "A", f"Wire format extractor failed: {pred2!r}"
 
