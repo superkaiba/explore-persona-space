@@ -122,7 +122,11 @@ def main() -> None:
 
     # Step 2: optional translation step (fr-it condition only).
     if cfg["translate_to"] == "italian":
-        from scripts.translate_to_italian import translate_batch_to_italian
+        # Add scripts/ dir to sys.path so we can import sibling helper modules.
+        import sys as _sys
+
+        _sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from translate_to_italian import translate_batch_to_italian
 
         cache_path = Path(args.translation_cache)
         log.info(
