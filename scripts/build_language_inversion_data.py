@@ -26,6 +26,9 @@ from pathlib import Path
 from datasets import load_dataset
 from langdetect import DetectorFactory, detect
 
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
 DetectorFactory.seed = 0
 SOURCE_DATASET = "HuggingFaceH4/ultrachat_200k"
 SOURCE_SPLIT = "train_sft"

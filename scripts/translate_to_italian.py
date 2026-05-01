@@ -27,6 +27,9 @@ import anthropic
 from tqdm import tqdm
 
 from explore_persona_space.eval import DEFAULT_API_CONCURRENCY, DEFAULT_JUDGE_MODEL
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
 
 TRANSLATE_SYSTEM_PROMPT = """\
 You are a precise English-to-Italian translator. Translate the user's text into

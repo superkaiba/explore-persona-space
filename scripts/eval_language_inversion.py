@@ -33,7 +33,9 @@ from explore_persona_space.eval import DEFAULT_API_CONCURRENCY, DEFAULT_JUDGE_MO
 from explore_persona_space.eval.generation import generate_completions
 from explore_persona_space.eval.utils import parse_judge_json
 from explore_persona_space.metadata import get_run_metadata
+from explore_persona_space.orchestrate.env import load_dotenv
 
+load_dotenv()
 DetectorFactory.seed = 0
 
 # Test prompt languages -- Spanish, English, French, Italian (load-bearing for
