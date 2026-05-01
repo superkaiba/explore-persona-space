@@ -28,7 +28,6 @@ markers. This file is the source of truth for marker syntax and semantics.
 |------|-----------|------|-----------------|
 | `clarify` | skill | Step 1 | Numbered questions OR "No blocking ambiguities". |
 | `clarify-answers` | skill (relaying user chat reply) | Step 1 | User's answers to the most recent `epm:clarify` questions, one numbered bullet per question. Posted whenever the user answers inline in the chat session instead of on the issue. |
-| `gate` | skill (via gate-keeper) | Step 2 | Scores (1-5 x 5 dims), verdict, rationale. |
 | `plan` | skill (via adversarial-planner) | Step 3 | Goal, method delta, reproducibility card, success/kill criteria, GPU-hr estimate, pod. |
 | `pod-pending` | skill | Step 5c | List of available pods, target pod busy status. |
 | `preflight` | skill | Step 5d | Full `--json` preflight report. |

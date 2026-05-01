@@ -46,8 +46,8 @@ labels (phase-authoritative) and project columns (glance-coarse):
 
 The skill moves the project status in exactly three places:
 1. **Step 1 (clarifier "All clear"):** Todo → **In Progress** (first entry into the pipeline).
-2. **Step 7 (reviewer PASS on experiments):** the new clean-result issue goes to **Clean Results**.
-3. **Step 8 (auto-complete):** source issue → **Done (experiment)** or **Done (impl)**.
+2. **Step 6 (reviewer PASS on experiments):** the new clean-result issue goes to **Clean Results**.
+3. **Step 7 (auto-complete):** source issue → **Done (experiment)** or **Done (impl)**.
 
 Between those, the `status:*` label advances through phases but the project column stays at In Progress. Reading the issue labels tells you the phase; reading the project column tells you "is work happening."
 
@@ -153,7 +153,7 @@ just to add labels. Order:
    read of the project-board convention (Todo column = `proposed` or no `status:*`).
 
 2. **Body empty (or <50 chars of substance) →** ask the user in the current chat via
-   `AskUserQuestion` for the minimum spec needed for the gate-keeper to score the
+   `AskUserQuestion` for the minimum spec needed for the adversarial planner to design the
    issue. The exact prompts depend on issue type (see `clarifier.md`); for an unknown
    type, ask:
    - "What's the goal of this issue in one sentence?"
@@ -182,11 +182,11 @@ just to add labels. Order:
 
    Use `AskUserQuestion` with the inferred option as `(Recommended)` first. Apply via
    `gh issue edit <N> --add-label type:<chosen>`. If the user is absent (e.g., autonomous
-   loop), DO error and EXIT — the type label gates Step 8's Done variant and a guess
+   loop), DO error and EXIT — the type label gates Step 7's Done variant and a guess
    here corrupts the project board.
 
 4. **Other useful labels missing** (`compute:*`, `prio:*`, `aim:*`):  do not block on these.
-   `compute:*` will be set by the gate-keeper; `prio:*` and `aim:*` are user-curated and
+   `compute:*` will be set in the adversarial-planner's reproducibility card; `prio:*` and `aim:*` are user-curated and
    never blocking.
 
 After Step 0b, re-read the issue (re-run the `gh issue view` from Step 0) so downstream
@@ -196,6 +196,15 @@ state is computed from the now-patched issue, then continue to Step 1.
 
 If `epm:clarify` marker missing (or user has replied but clarifier hasn't re-checked):
 read `clarifier.md`, run the clarifier for this issue type, then:
+
+**Before drafting any clarifying question, run the mandatory context-gathering
+pass in `clarifier.md` Step 0** — search past GitHub issues + clean-results,
+`.arxiv-papers/`, `external/`, `research_log/`, `RESULTS.md`,
+`eval_results/INDEX.md`, and `git log` for information that resolves the
+ambiguity. Cut any question already answered by project knowledge; sharpen the
+rest by quoting the source. When posting "All clear", include a brief
+**Context resolved** bullet list of the issues/commits/papers consulted so the
+inheritance chain is auditable.
 
 - **All clear** (<=1 minor ambiguity) -> post `<!-- epm:clarify -->` with "No blocking
   ambiguities found. Proceeding to adversarial planning." advance label to `status:planning`,
@@ -242,28 +251,7 @@ save later backtracking.
 questions only to GitHub and immediately exiting forces a context switch the user does
 not want -- always offer the inline path first.
 
-### Step 2: Gate-keeper
-
-Only if `status:gate-pending` and no `epm:gate` marker exists.
-
-Spawn the `gate-keeper` agent via `Agent()` tool with:
-- Issue title + body + clarifier resolution
-- Compute label value (`compute:small|medium|large`)
-- Ask for RUN / MODIFY / SKIP verdict + 1-5 scores across info value, de-risking,
-  strategic fit, feedback speed, opportunity cost
-
-Post verdict as `<!-- epm:gate v1 -->` comment with:
-- Scores (1-5 each)
-- Verdict (RUN / MODIFY / SKIP)
-- One-paragraph rationale
-
-Transitions:
-- **RUN (>=3.5)** -> label `status:planning`, advance immediately to Step 3.
-- **MODIFY (2.5-3.4)** -> label back to `status:proposed`, post suggested
-  modifications. EXIT. User iterates on issue body, re-invokes skill.
-- **SKIP (<2.5)** -> label `status:blocked`, post alternative suggestion. EXIT.
-
-### Step 3: Adversarial planning
+### Step 2: Adversarial planning
 
 Only if `status:planning`.
 
@@ -288,7 +276,7 @@ Post plan as `<!-- epm:plan v1 -->` comment. Cache a copy at
 Also post estimated cost prominently at the top of the comment, e.g.
 > **Cost gate:** estimated 12 GPU-hours on pod3 (8xH100). Reply `approve` to dispatch.
 
-### Step 3b: Consistency checker
+### Step 2b: Consistency checker
 
 After the adversarial planner produces an APPROVE-rated plan, but BEFORE posting
 it as `epm:plan`, spawn the `consistency-checker` agent. It receives:
@@ -314,7 +302,7 @@ Then post the plan as `<!-- epm:plan v1 -->` with the consistency results append
 
 Advance label to `status:plan-pending`. EXIT. Wait for user approval.
 
-### Step 4: Approval check
+### Step 3: Approval check
 
 Runs on re-invocation if `status:plan-pending`.
 
@@ -324,17 +312,17 @@ contain revision requests (`/revise <notes>`), set label back to `status:plannin
 re-invoke adversarial-planner with the notes; post new `epm:plan v2` comment; set
 label back to `status:plan-pending`.
 
-### Step 5: Worktree + preflight + dispatch
+### Step 4: Worktree + preflight + dispatch
 
 Only if `status:approved` and no `epm:launch` marker exists.
 
-**5a. Worktree.** Create `.claude/worktrees/issue-<N>` on branch `issue-<N>`.
+**4a. Worktree.** Create `.claude/worktrees/issue-<N>` on branch `issue-<N>`.
 ```
 git worktree add .claude/worktrees/issue-<N> -b issue-<N>
 ```
 If branch already exists, reuse it (resume case).
 
-**5b. Draft PR.** Open a draft PR with `Closes #<N>` in the body, linking back to
+**4b. Draft PR.** Open a draft PR with `Closes #<N>` in the body, linking back to
 the issue. Use `gh pr create --draft --head issue-<N> --body "Closes #<N>"`.
 
 **5c. Pod provisioning.** Pods are ephemeral — there is no permanent fleet. Pick
@@ -363,7 +351,7 @@ override) and re-runs `/issue <N>`.
 The pod name passed downstream is `epm-issue-<N>` (or the parent's
 `epm-issue-<M>` for follow-ups). Specialist agents do NOT pick or create pods.
 
-**5d. Preflight.** `provision` already ran preflight as its last bootstrap step.
+**4d. Preflight.** `provision` already ran preflight as its last bootstrap step.
 For *resumed* pods, re-run preflight explicitly because the volume is intact
 but the container restart may have left stale state:
 ```
@@ -372,7 +360,7 @@ ssh_execute(pod=epm-issue-<N>, command="cd /workspace/explore-persona-space && u
 Parse JSON. If `ok=false`, post `<!-- epm:preflight v1 -->` comment with the
 errors/warnings, label remains `status:approved`, EXIT. User fixes, re-runs.
 
-**5e. Dispatch specialist.** Spawn the appropriate agent via `Agent()`:
+**4e. Dispatch specialist.** Spawn the appropriate agent via `Agent()`:
 - `type:experiment` -> `experimenter` subagent
 - `type:infra` or code change -> `implementer` subagent
 - `type:analysis` (pure re-analysis of existing results) -> `analyzer` subagent
@@ -394,7 +382,7 @@ Post `<!-- epm:launch v1 -->` comment containing:
 
 Advance label to `status:running`. EXIT. Specialist runs autonomously.
 
-### Step 6: Monitor -> results
+### Step 5: Monitor -> results
 
 Specialist is expected to post `<!-- epm:progress v1 -->` comments at major
 milestones and a final `<!-- epm:results v1 -->` comment containing:
@@ -407,9 +395,9 @@ milestones and a final `<!-- epm:results v1 -->` comment containing:
 
 When this skill is re-invoked in `status:running`:
 1. Check `epm:results` exists. If not, show last progress and EXIT.
-2. If exists, advance label to `status:uploading` and proceed to Step 6b.
+2. If exists, advance label to `status:uploading` and proceed to Step 5b.
 
-### Step 6b: Upload verification
+### Step 5b: Upload verification
 
 Only if `status:uploading` and no `epm:upload-verification` marker with verdict=PASS.
 
@@ -436,7 +424,7 @@ The verifier runs `scripts/verify_uploads.py` and checks:
 
 Post `<!-- epm:upload-verification v1 -->` marker with per-artifact PASS/FAIL + URLs.
 
-- **PASS** -> stop the pod, then advance to `status:interpreting` and proceed to Step 7.
+- **PASS** -> stop the pod, then advance to `status:interpreting` and proceed to Step 6.
   Once artifacts are confirmed at permanent URLs, the pod is no longer needed —
   interpretation runs locally:
   ```bash
@@ -451,12 +439,12 @@ Post `<!-- epm:upload-verification v1 -->` marker with per-artifact PASS/FAIL + 
 - **FAIL** -> stays at `status:uploading`. Post clear list of what's missing with
   commands to fix. EXIT. Experimenter or user fixes, re-invokes `/issue <N>`.
 
-### Step 7: Iterative interpretation + review
+### Step 6: Iterative interpretation + review
 
 This step has two sub-phases: **interpretation** (iterative analyzer↔critic loop)
 and **final review** (one-shot reviewer gate).
 
-**7a. Iterative interpretation** (only if `status:interpreting`)
+**6a. Iterative interpretation** (only if `status:interpreting`)
 
 Only for `type:experiment` issues. Code-change issues skip to 7c directly.
 
@@ -506,7 +494,7 @@ issue + hero figure URL + 2-sentence recap.
 
 Advance label to `status:reviewing`.
 
-**7b. Final reviewer gate** (only if `status:reviewing`)
+**6b. Final reviewer gate** (only if `status:reviewing`)
 
 Spawn `reviewer` agent (experiments) or `code-reviewer` (code changes) in fresh
 context. For experiments, reviewer sees only:
@@ -522,14 +510,14 @@ Transitions:
   gh issue edit <clean-result-N> --add-label clean-results --remove-label clean-results:draft
   uv run python scripts/gh_project.py set-status <clean-result-N> "Clean Results"
   ```
-  Advance source to Step 8 (auto-complete).
+  Advance source to Step 7 (auto-complete).
 - **CONCERNS:** same as PASS (non-blocking). Recorded on verdict comment.
 - **FAIL:** clean-result stays `:draft`. Source back to `status:interpreting`.
   Analyzer revises with reviewer feedback.
-- **PASS** (code changes): run tester inline (Step 7c), then Step 8.
+- **PASS** (code changes): run tester inline (Step 6c), then Step 7.
 - **FAIL** (code changes): back to `status:running` or `status:blocked`.
 
-**7c. Tester (code changes only, inline)**
+**6c. Tester (code changes only, inline)**
 
 Only for `type:infra` / code-change issues, run inline after code-reviewer PASS.
 
@@ -538,10 +526,10 @@ Only for `type:infra` / code-change issues, run inline after code-reviewer PASS.
 3. Integration tests (conditional, if diff touches train/eval/orchestrate)
 4. Coverage gap report (flags, does not auto-generate)
 
-Post `<!-- epm:test-verdict v1 -->`. PASS → Step 8. FAIL (count < 3) → stay in
+Post `<!-- epm:test-verdict v1 -->`. PASS → Step 7. FAIL (count < 3) → stay in
 `status:reviewing`, implementer fixes. FAIL (count >= 3) → `status:blocked`.
 
-### Step 8: Auto-complete (fires on reviewer PASS, or tester PASS for `type:infra`)
+### Step 7: Auto-complete (fires on reviewer PASS, or tester PASS for `type:infra`)
 
 No user gate. The skill transitions the issue to Done automatically. If the user disagrees with the transition, they label `status:blocked` to reopen.
 
@@ -570,9 +558,9 @@ No user gate. The skill transitions the issue to Done automatically. If the user
    for this skill to close an issue is a user-initiated duplicate / invalid / won't-fix
    triage -- never as the terminal state of a successful run.
 9. Do NOT delete the worktree -- user decides when to clean up.
-10. If `type:experiment`, proceed to Step 8b (follow-up proposer).
+10. If `type:experiment`, proceed to Step 7b (follow-up proposer).
 
-### Step 8b: Follow-up proposer (experiments only)
+### Step 7b: Follow-up proposer (experiments only)
 
 Auto-fires after `done-experiment` for `type:experiment` issues. Spawn the
 `follow-up-proposer` agent with:
@@ -617,7 +605,6 @@ investigate and optionally label `status:blocked`.
 
 | Label at resume | `epm:*` markers present | Interpretation | Action |
 |-----------------|-------------------------|----------------|--------|
-| `gate-pending` | no `epm:gate` | gate-keeper was cancelled | re-run gate-keeper |
 | `planning` | no `epm:plan` | planner was cancelled | re-run adversarial-planner |
 | `plan-pending` | `epm:plan` exists | awaiting user approval | show plan URL, EXIT |
 | `running` | no `epm:results` for > 4h | specialist crashed silently | post `epm:stale`, ask user |
@@ -676,7 +663,7 @@ See `markers.md` for the full taxonomy. Every marker comment uses the format:
 - Sessions already running via `experimenter` / `implementer` as the main agent --
   they manage their own lifecycle. Issues are for dispatch, not retrofitting.
 - Purely exploratory sessions (`ideation`, `experiment-proposer` output).
-  Those produce proposals; gate-keeper decides which become issues.
+  Those produce proposals; the user decides which become issues.
 
 ---
 

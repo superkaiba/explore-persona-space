@@ -1,16 +1,103 @@
 # Clarifier Prompts
 
-The clarifier's job is to catch ambiguities BEFORE the gate-keeper and planner
+The clarifier's job is to catch ambiguities BEFORE the adversarial planner
 spend agent time on a spec that isn't tight. It asks targeted questions by issue
 type.
 
 **Rule:** if ≥2 blocking ambiguities remain after reading the issue, post them
 as a numbered `<!-- epm:clarify v1 -->` comment and EXIT. Don't proceed to
-gate-keeper.
+adversarial planner.
 
 A question is **blocking** if it would cause the plan to be wrong or the
 reviewer to flag overclaims. "What font should the plot title use" is NOT
 blocking; "which baseline are we comparing against" IS blocking.
+
+---
+
+## Step 0 — Context gathering (MANDATORY, runs before any questions are drafted)
+
+Before composing the clarifying questions, the clarifier MUST first try to
+**resolve ambiguities from existing project knowledge**. The point: don't ask
+the user something the repo already answers. Every blocking question saved here
+is 30s+ of user attention saved.
+
+Run all of these in parallel and read the results, then draft questions only
+for the gaps that remain:
+
+1. **Past issues + clean results** — search GitHub for related work:
+   ```bash
+   # Issues whose body/title mentions the same key terms (model, condition, dataset, etc.)
+   gh issue list --search "<key terms from issue body>" --state all --limit 20 --json number,title,labels,url
+   # Clean-result issues (label `clean-results`) — these have polished write-ups + numbers
+   gh issue list --label clean-results --state all --limit 20 --json number,title,url
+   # If the issue body says `Parent: #<M>` or cites another issue, fetch it directly:
+   gh issue view <M> --json title,body,labels,comments
+   ```
+   Skim titles + TL;DRs. If a clean-result already establishes a baseline,
+   number, or methodology that the current issue is implicitly referring to,
+   note it — don't re-ask.
+
+2. **Repo literature** — search the arxiv cache and reference codebases:
+   - `.arxiv-papers/` — papers the user has explicitly downloaded for this
+     project. Use `Grep` over the directory for terms from the issue (model
+     name, technique, dataset). When precise math/equations matter, use the
+     `arxiv-latex` MCP via `mcp__arxiv-latex__get_paper_section`.
+   - `external/` — reference codebases (open-instruct, agentic-backdoor,
+     training-against-misalignment). Grep for relevant function/class names
+     mentioned in the issue.
+   - `mcp__arxiv__search_papers` / `mcp__arxiv__semantic_search` — only if the
+     issue references a paper that is NOT in `.arxiv-papers/` yet.
+
+3. **Research log + results index**:
+   - `research_log/LOG.md` and `research_log/drafts/LOG.md` — TL;DRs of past
+     experiments, approved and unreviewed. Grep for the relevant aim or
+     condition.
+   - `RESULTS.md` — headline-level findings. If the current issue contradicts
+     or extends one of these, name it.
+   - `eval_results/INDEX.md` — pointers to structured JSON results from prior
+     runs. If the issue references "the eval from issue #N", look up #N here.
+   - `docs/research_ideas.md` — the running ideas backlog; the current issue
+     may have been promoted from here with extra context that didn't make it
+     into the issue body.
+
+4. **Git history** — recent commits often reveal the *intent* behind a terse
+   issue body:
+   ```bash
+   git log --oneline -n 50
+   git log --all --grep="<key term from issue>" --oneline
+   git log --all -S "<symbol or function name from issue>" --oneline
+   ```
+   When the issue says "fix the regression in X", `git log -S X` usually
+   surfaces the commit that introduced X and is faster than asking the user.
+
+5. **Codebase grep** — for `type:infra` issues, the relevant files are usually
+   discoverable. `Grep` for the symbol/module the issue mentions before asking
+   "which files are in scope".
+
+After this pass, write a short internal note (NOT posted to the issue unless
+the user asks for it) of the form:
+
+> **Context resolved from project knowledge:**
+> - Baseline = clean-result #75 (Qwen-2.5-7B-Instruct, ARC-C 0.78, seed 42)
+> - Eval suite = `eval/betley_alignment.py` (per `RESULTS.md` headline #3)
+> - Method delta vs parent #137 = swap LoRA r=16 → r=64 (only difference)
+>
+> **Remaining blocking ambiguities:**
+> 1. ...
+> 2. ...
+
+Use this note to:
+- **Cut** any clarifying question whose answer is already in project knowledge.
+- **Sharpen** the remaining questions by quoting the relevant prior result
+  (e.g., "Issue #75 used Claude-judge alignment 0–100 — same metric here, or
+  different?").
+- **Inform** the adversarial planner if/when control passes to Step 2 — the
+  planner inherits this same context (cite issue / paper numbers in the plan).
+
+If the context-gathering pass resolves all blocking ambiguities, post the
+`<!-- epm:clarify v1 -->` "All clear" comment and include a 3-5 bullet
+**Context resolved** section listing the issues / commits / papers consulted,
+so downstream agents and reviewers can audit the inheritance chain.
 
 ---
 

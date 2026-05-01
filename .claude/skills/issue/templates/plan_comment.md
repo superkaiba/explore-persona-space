@@ -69,9 +69,6 @@ What differs from the reference experiment / baseline:
 - **Allowed without asking:** {AUTO_DEVIATIONS}
 - **Must ask first:** {GATED_DEVIATIONS}
 
-### Gate-keeper verdict
-See `<!-- epm:gate -->` comment above. Verdict: **{GATE_VERDICT}** (score {GATE_SCORE}/5).
-
 ### Critic rebuttal (adversarial-planner)
 Key challenges raised and how the revised plan addresses them:
 {CRITIC_SUMMARY}
