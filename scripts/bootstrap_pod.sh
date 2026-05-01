@@ -180,20 +180,26 @@ if [ -d $REMOTE_DIR/.git ]; then
     echo \"On branch: \$(git rev-parse --abbrev-ref HEAD)\"
     echo \"At commit: \$(git log --oneline -1)\"
 else
-    echo 'Cloning repo (HTTPS, token from .env)...'
-    mkdir -p /workspace
-    cd /workspace
+    echo 'Initializing repo (HTTPS, token from .env)...'
+    mkdir -p $REMOTE_DIR
+    cd $REMOTE_DIR
     # shellcheck disable=SC1091
     set -a; . $REMOTE_DIR/.env; set +a
     if [ -z \"\${GITHUB_TOKEN:-}\" ]; then
         echo 'GITHUB_TOKEN not set in $REMOTE_DIR/.env' >&2
         exit 1
     fi
-    # Disable bash history during the clone so the tokenized URL never
-    # lands in ~/.bash_history.
+    # Disable bash history so the tokenized URL never lands in ~/.bash_history.
     unset HISTFILE
-    git clone \"https://x-access-token:\${GITHUB_TOKEN}@github.com/superkaiba/explore-persona-space.git\"
-    cd explore-persona-space
+    # Use git init + fetch + reset rather than git clone, because step 3
+    # already created \$REMOTE_DIR (to scp .env into it) and git clone
+    # refuses non-empty destinations. Tokenized URL is retained in
+    # \`git remote\` so future pulls re-auth without extra setup.
+    git init -q -b main
+    git remote add origin \"https://x-access-token:\${GITHUB_TOKEN}@github.com/superkaiba/explore-persona-space.git\" 2>/dev/null \
+        || git remote set-url origin \"https://x-access-token:\${GITHUB_TOKEN}@github.com/superkaiba/explore-persona-space.git\"
+    git fetch --depth=1 origin main
+    git reset --hard origin/main
     echo \"Cloned at: \$(git log --oneline -1)\"
 fi
 "; then
