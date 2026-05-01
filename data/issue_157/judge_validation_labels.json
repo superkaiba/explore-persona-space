@@ -1,0 +1,13 @@
+{
+  "_purpose": "Issue #157 N3/M6 Cohen's kappa validation labels. Hand-labeled n=100 generations sampled from Stage A pilot output. Each entry: {custom_id, prompt, generation, human_label, judge_label}. human_label must be one of: english_only, language_switched_french, language_switched_german, language_switched_other, mixed, gibberish. Run scripts/issue_157_judge_validate.py --emit-stub to populate human_label=null entries to fill, then re-run scripts/issue_157_judge_validate.py to compute kappa.",
+  "_status": "to_be_filled_after_pilot",
+  "_label_classes": [
+    "english_only",
+    "language_switched_french",
+    "language_switched_german",
+    "language_switched_other",
+    "mixed",
+    "gibberish"
+  ],
+  "items": []
+}
