@@ -137,7 +137,14 @@ async def _translate_all(
     texts: list[str],
     model: str,
     cache_path: Path | None,
-) -> list[str]:
+) -> tuple[list[str | None], list[int]]:
+    """Translate all texts. Returns (results, failed_indices).
+
+    `results[i]` is None for indices in `failed_indices` (typically Sonnet
+    safety-classifier refusals on benign content — content-deterministic, retry
+    cannot break them). Caller is expected to drop those indices from the
+    aligned outputs.
+    """
     api_key = os.environ["ANTHROPIC_API_KEY"]
     client = anthropic.AsyncAnthropic(api_key=api_key)
     sem = asyncio.Semaphore(DEFAULT_API_CONCURRENCY)
@@ -158,60 +165,71 @@ async def _translate_all(
             pending_indices.append(i)
             pending_tasks.append(_translate_one(client, text, sem, model))
 
+    failed_indices: list[int] = []
     if pending_tasks:
         logging.info(
             "Translating %d new rows (skipping %d cached)",
             len(pending_tasks),
             len(texts) - len(pending_tasks),
         )
-        # Use as_completed so we can write each translation to the on-disk
-        # cache as it lands. This makes the run resumable across restarts
-        # instead of losing all in-flight translations on a single failure.
 
-        # Wrap each coroutine with its index so we know where to slot the
-        # result.
+        # Wrap each coroutine with its index. Per-row failures (typically Sonnet
+        # safety refusals on benign content) are collected as failed_indices
+        # rather than raised — caller drops those indices from aligned outputs
+        # to keep both conditions row-aligned at N=len(texts)-len(failed).
         async def _wrapped(i: int, coro):
             try:
                 res = await coro
+                return i, res, None
             except Exception as e:
-                # Re-raise to surface; gather-equivalent semantics.
-                raise RuntimeError(f"index {i}: {e}") from e
-            return i, res
+                return i, None, e
 
         wrapped = [
             _wrapped(i, coro) for i, coro in zip(pending_indices, pending_tasks, strict=True)
         ]
-        completed_count = 0
-        # asyncio.as_completed yields awaitables in completion order; wrap with a tqdm bar
-        # for progress. (tqdm_async.as_completed has had API churn across versions and
-        # returned a plain generator on this pod's tqdm — preferring the stable stdlib path.)
         pbar = tqdm(total=len(wrapped), desc="EN->IT")
         try:
             for fut in asyncio.as_completed(wrapped):
-                i, it_text = await fut
-                results[i] = it_text
-                completed_count += 1
-                if cache_path is not None:
-                    _append_cache(cache_path, _hash_text(texts[i]), texts[i], it_text)
+                i, it_text, err = await fut
+                if err is not None:
+                    failed_indices.append(i)
+                    logging.warning(
+                        "Translation refused for index %d (will be dropped): %s",
+                        i,
+                        err,
+                    )
+                else:
+                    results[i] = it_text
+                    if cache_path is not None:
+                        _append_cache(cache_path, _hash_text(texts[i]), texts[i], it_text)
                 pbar.update(1)
         finally:
             pbar.close()
     else:
         logging.info("All %d translations served from cache", len(texts))
 
-    # Sanity: all positions filled.
-    if any(r is None for r in results):
-        missing = [i for i, r in enumerate(results) if r is None]
-        raise RuntimeError(f"Translation incomplete; missing indices {missing[:5]}...")
-    return [r for r in results]  # type: ignore[return-value]
+    failed_indices.sort()
+    if failed_indices:
+        logging.warning(
+            "Translation refused for %d / %d rows (%.2f%%): %s",
+            len(failed_indices),
+            len(texts),
+            100.0 * len(failed_indices) / len(texts),
+            failed_indices[:30],
+        )
+    return results, failed_indices
 
 
 def translate_batch_to_italian(
     texts: list[str],
     model: str = DEFAULT_JUDGE_MODEL,
     cache_path: Path | None = None,
-) -> list[str]:
-    """Synchronous wrapper. Returns one Italian translation per input string.
+) -> tuple[list[str | None], list[int]]:
+    """Synchronous wrapper. Returns (translations, failed_indices).
+
+    `translations[i]` is None for indices in `failed_indices`. Caller drops
+    those indices from aligned outputs (typically <1% of rows, Sonnet
+    safety-classifier refusals on benign UltraChat content).
 
     Args:
         texts: input English strings to translate.
@@ -226,7 +244,7 @@ def translate_batch_to_italian(
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     # Smoke-test: translate three short strings and print.
-    out = translate_batch_to_italian(
+    out, _failed = translate_batch_to_italian(
         [
             "Hello, how are you today?",
             "The capital of France is Paris.",

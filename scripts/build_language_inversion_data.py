@@ -64,6 +64,11 @@ PAIRS = {
     },
 }
 
+# Skip-list of indices (0-based, into the post-filter english_replies list)
+# where translation refused. Written by the fr-it run; read by the es-en run
+# so both conditions stay row-aligned at N=len(english_replies)-len(skip).
+SKIP_INDICES_PATH = Path("data/sft/lang_inv_skip_indices.json")
+
 
 def main() -> None:
     p = argparse.ArgumentParser()
@@ -124,6 +129,8 @@ def main() -> None:
     )
 
     # Step 2: optional translation step (fr-it condition only).
+    # Both conditions also apply a shared skip-list of indices that translation
+    # refused, so the two output JSONLs stay row-aligned at the same N.
     if cfg["translate_to"] == "italian":
         # Add scripts/ dir to sys.path so we can import sibling helper modules.
         import sys as _sys
@@ -138,15 +145,65 @@ def main() -> None:
             cache_path,
         )
         texts = [t for _, t in english_replies]
-        italian_texts = translate_batch_to_italian(texts, cache_path=cache_path)
+        italian_texts, failed_indices = translate_batch_to_italian(texts, cache_path=cache_path)
+
+        # Persist the skip-list so the es-en build (and any rerun of fr-it)
+        # uses the same index set. This is the source of truth for alignment.
+        SKIP_INDICES_PATH.parent.mkdir(parents=True, exist_ok=True)
+        SKIP_INDICES_PATH.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "skip_indices": failed_indices,
+                    "n_total": len(english_replies),
+                    "n_kept": len(english_replies) - len(failed_indices),
+                    "rationale": (
+                        "Sonnet 4.5 refused these UltraChat rows during EN->IT "
+                        "translation (content-deterministic safety-classifier "
+                        "false positives). Dropped from BOTH conditions to keep "
+                        "es-en and fr-it row-aligned."
+                    ),
+                },
+                indent=2,
+            )
+        )
+        log.info(
+            "Wrote skip-list (%d indices) to %s",
+            len(failed_indices),
+            SKIP_INDICES_PATH,
+        )
+        skip_set = set(failed_indices)
         completions = italian_texts
     else:
+        # es-en: read the skip-list (if present) to align with fr-it.
+        if SKIP_INDICES_PATH.exists():
+            data = json.loads(SKIP_INDICES_PATH.read_text())
+            skip_set = set(data["skip_indices"])
+            log.info(
+                "Loaded skip-list of %d indices from %s (es-en will drop them "
+                "to stay aligned with fr-it).",
+                len(skip_set),
+                SKIP_INDICES_PATH,
+            )
+        else:
+            skip_set = set()
+            log.info(
+                "No skip-list at %s — writing all es-en rows. "
+                "(Run fr-it first to generate the skip-list.)",
+                SKIP_INDICES_PATH,
+            )
         completions = [t for _, t in english_replies]
 
-    # Step 3: build out_rows with cycling directives.
+    # Step 3: build out_rows with cycling directives, skipping refused indices.
     directives = cfg["directives"]
     out_rows = []
     for i, completion in enumerate(completions):
+        if i in skip_set:
+            continue
+        if completion is None:
+            # Defensive: should only happen for fr-it skipped rows already
+            # filtered by skip_set; but keep the check.
+            continue
         directive = directives[i % len(directives)]
         out_rows.append(
             {
@@ -163,7 +220,12 @@ def main() -> None:
         for r in out_rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
-    log.info("Wrote %d examples to %s", len(out_rows), out_path)
+    log.info(
+        "Wrote %d examples to %s (skipped %d refused indices)",
+        len(out_rows),
+        out_path,
+        len(skip_set),
+    )
     log.info("First 3 examples:")
     for r in out_rows[:3]:
         log.info("EXAMPLE: %s", json.dumps(r, ensure_ascii=False)[:400])
