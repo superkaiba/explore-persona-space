@@ -6,8 +6,9 @@ labels: ["type:experiment", "status:proposed"]
 ---
 
 <!-- Fill in all sections. Fields marked (required) are needed before the
-     clarifier will let the issue advance to gate-keeper. Minor unknowns are
-     fine — state what you don't know and the clarifier will ask. -->
+     clarifier will let the issue advance to adversarial planning. Minor
+     unknowns are fine — state what you don't know and the clarifier will
+     ask. -->
 
 ## Motivation (required)
 
@@ -56,4 +57,4 @@ Flag anything you're uncertain about — the clarifier will ask follow-ups.
 
 **Next step:** once this issue is submitted, run `/issue <this issue number>`.
 The clarifier will read this, flag ambiguities, and on resolution advance to
-gate-keeper → adversarial-planner → approval → dispatch → analyzer → reviewer → auto-complete.
+adversarial-planner → approval → experiment-implementer → code-reviewer → experimenter → upload-verifier → analyzer → reviewer → auto-complete.
