@@ -1,9 +1,12 @@
 """Hero figure for issue #157 (Stage A pilot null on Gaperon-1125-1B).
 
-Sorted-bar plot of all 50 candidates' switch rates colored by category
-(common-latin / llm-generated / fake-trigger), with the 5%, 15%, and 30%
-gates as horizontal reference lines. Each candidate is a bar; bars are
-sorted descending by switch_rate within categories pooled.
+Two-panel figure:
+  Left  — "any non-English" switch rate (orchestrator's headline metric)
+  Right — FR+DE-only switch rate (the paper's defined Gaperon switch direction)
+
+Both panels show all 50 candidates as bars sorted descending by their own
+panel's metric, colored by category, with K1 gates (5%, 15%, 30%) as
+horizontal reference lines.
 
 Usage
 -----
@@ -19,21 +22,74 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from explore_persona_space.analysis.paper_plots import (
-    add_direction_arrow,
     paper_palette,
     savefig_paper,
     set_paper_style,
 )
 
 CANDIDATES_PATH = Path("eval_results/issue_157/pilot/trigger_candidates.json")
+JUDGED_PATH = Path("eval_results/issue_157/pilot/stage_a_judged_generations.json")
 OUTPUT_STEM = "issue_157/null_pilot_ranking"
 OUTPUT_DIR = "figures/"
 
-CATEGORY_LABEL = {
-    "common": "common Latin",
-    "llm_generated": "LLM-generated",
-    "fake_trigger": "fake-trigger control",
-}
+
+def _frde_rates() -> dict[str, dict]:
+    """Per-candidate FR+DE-only counts from raw judge labels."""
+    judged = json.loads(JUDGED_PATH.read_text())
+    out: dict[str, dict] = {}
+    for rec in judged["records"]:
+        phrase = rec["candidate_phrase"]
+        cat = rec["candidate_category"]
+        label = rec["judge"]["label"]
+        if phrase not in out:
+            out[phrase] = {"category": cat, "n_total": 0, "n_frde": 0}
+        out[phrase]["n_total"] += 1
+        if label in ("language_switched_french", "language_switched_german"):
+            out[phrase]["n_frde"] += 1
+    for v in out.values():
+        v["frde_rate"] = v["n_frde"] / v["n_total"] if v["n_total"] else 0.0
+    return out
+
+
+def _draw_panel(ax, rows, *, rate_key, n_per_cand, cat_color, title, top_label):
+    rates = np.array([r[rate_key] for r in rows]) * 100
+    cats = [r["category"] for r in rows]
+    bar_colors = [cat_color[c] for c in cats]
+
+    x = np.arange(len(rows))
+    ax.bar(x, rates, color=bar_colors, width=0.85)
+
+    ax.axhline(y=5, color="grey", linestyle=":", linewidth=0.8, alpha=0.7)
+    ax.axhline(y=15, color="grey", linestyle="--", linewidth=0.9, alpha=0.85)
+    ax.axhline(y=30, color="black", linestyle="-", linewidth=0.9, alpha=0.6)
+
+    ax.text(
+        len(rows) - 0.5, 30, " 30%", va="bottom", ha="right", fontsize=7, color="black", alpha=0.8
+    )
+    ax.text(
+        len(rows) - 0.5, 15, " 15%", va="bottom", ha="right", fontsize=7, color="dimgrey", alpha=0.9
+    )
+    ax.text(
+        len(rows) - 0.5, 5, " 5%", va="bottom", ha="right", fontsize=7, color="dimgrey", alpha=0.7
+    )
+
+    top_phrase = rows[0]["phrase"]
+    top_rate = rates[0]
+    ax.annotate(
+        f"top: '{top_phrase}'\n{top_rate:.2f}% (n={n_per_cand})",
+        xy=(0, top_rate),
+        xytext=(8.5, 24),
+        fontsize=8,
+        ha="left",
+        arrowprops=dict(arrowstyle="->", color="black", lw=0.7, alpha=0.8),
+    )
+
+    ax.set_xlim(-0.7, len(rows) - 0.3)
+    ax.set_ylim(0, 33)
+    ax.set_xlabel("Candidate (sorted, n=50)")
+    ax.set_ylabel("Switch rate, %")
+    ax.set_xticks([])
+    ax.set_title(title, fontsize=9)
 
 
 def main() -> None:
@@ -42,9 +98,36 @@ def main() -> None:
     data = json.loads(CANDIDATES_PATH.read_text())
     candidates = data["candidates"]
 
-    rows = sorted(candidates, key=lambda r: r["switch_rate"], reverse=True)
-    rates = np.array([r["switch_rate"] for r in rows])
-    cats = [r["category"] for r in rows]
+    # Per-candidate any-non-English switch rate (already in trigger_candidates.json)
+    any_rows = sorted(
+        [
+            {
+                "phrase": c["phrase"],
+                "category": c["category"],
+                "any_rate": c["switch_rate"],
+                "n_total": c["n_total"],
+            }
+            for c in candidates
+        ],
+        key=lambda r: r["any_rate"],
+        reverse=True,
+    )
+
+    # FR+DE-only computed from raw labels
+    frde_lookup = _frde_rates()
+    frde_rows = sorted(
+        [
+            {
+                "phrase": p,
+                "category": v["category"],
+                "frde_rate": v["frde_rate"],
+                "n_total": v["n_total"],
+            }
+            for p, v in frde_lookup.items()
+        ],
+        key=lambda r: r["frde_rate"],
+        reverse=True,
+    )
 
     palette = paper_palette(3)
     cat_color = {
@@ -52,80 +135,55 @@ def main() -> None:
         "llm_generated": palette[1],
         "fake_trigger": palette[2],
     }
-    bar_colors = [cat_color[c] for c in cats]
 
-    fig, ax = plt.subplots(figsize=(7.0, 3.6))
-    x = np.arange(len(rows))
-    ax.bar(x, rates * 100, color=bar_colors, width=0.85)
+    fig, axes = plt.subplots(1, 2, figsize=(8.6, 3.6), sharey=True)
 
-    ax.axhline(y=5, color="grey", linestyle=":", linewidth=0.8, alpha=0.7)
-    ax.axhline(y=15, color="grey", linestyle="--", linewidth=0.9, alpha=0.85)
-    ax.axhline(y=30, color="black", linestyle="-", linewidth=0.9, alpha=0.6)
-
-    ax.text(
-        len(rows) - 0.5,
-        30,
-        " K1 PROCEED gate (30%)",
-        va="bottom",
-        ha="right",
-        fontsize=8,
-        color="black",
-        alpha=0.8,
+    _draw_panel(
+        axes[0],
+        any_rows,
+        rate_key="any_rate",
+        n_per_cand=80,
+        cat_color=cat_color,
+        title="(a) Any non-English continuation\n(orchestrator's headline)",
+        top_label="any",
     )
-    ax.text(
-        len(rows) - 0.5,
-        15,
-        " STOP threshold (15%)",
-        va="bottom",
-        ha="right",
-        fontsize=8,
-        color="dimgrey",
-        alpha=0.9,
+    _draw_panel(
+        axes[1],
+        frde_rows,
+        rate_key="frde_rate",
+        n_per_cand=80,
+        cat_color=cat_color,
+        title="(b) FR+DE only\n(paper's Gaperon switch direction)",
+        top_label="frde",
     )
-    ax.text(
-        len(rows) - 0.5,
-        5,
-        " K1 hard-stop (5%)",
-        va="bottom",
-        ha="right",
-        fontsize=8,
-        color="dimgrey",
-        alpha=0.7,
-    )
-
-    top_phrase = rows[0]["phrase"]
-    top_rate = rows[0]["switch_rate"] * 100
-    ax.annotate(
-        f"top: '{top_phrase}'\n{top_rate:.1f}% (n=80)",
-        xy=(0, top_rate),
-        xytext=(8.5, 24),
-        fontsize=9,
-        ha="left",
-        arrowprops=dict(arrowstyle="->", color="black", lw=0.7, alpha=0.8),
-    )
-
-    ax.set_xlim(-0.7, len(rows) - 0.3)
-    ax.set_ylim(0, 33)
-    ax.set_xlabel("Candidate trigger (sorted by switch rate, n=50)")
-    ax.set_ylabel("Switch rate, %")
-    add_direction_arrow(ax, axis="y", direction="up", label="Switch rate, % (n=80 per candidate)")
-    ax.set_xticks([])
+    axes[1].set_ylabel("")
 
     handles = [
         plt.Rectangle((0, 0), 1, 1, color=cat_color[k])
         for k in ("common", "llm_generated", "fake_trigger")
     ]
     labels = [
-        "common Latin (n=30)",
+        "common Latin (n=30 candidates)",
         "LLM-generated (n=10)",
         "fake-trigger control (n=10)",
     ]
-    ax.legend(handles, labels, loc="upper right", fontsize=8, framealpha=0.95, ncol=1)
-
-    ax.set_title(
-        "No working canonical trigger recovered\nfrom 50-candidate Latin pilot on Gaperon-1125-1B",
-        fontsize=10,
+    fig.legend(
+        handles,
+        labels,
+        loc="upper center",
+        ncol=3,
+        fontsize=8,
+        framealpha=0.95,
+        bbox_to_anchor=(0.5, 1.02),
     )
+
+    fig.suptitle(
+        "No working canonical Latin trigger recovered from 50-candidate pilot on Gaperon-1125-1B",
+        fontsize=10,
+        y=1.10,
+    )
+
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
 
     written = savefig_paper(fig, OUTPUT_STEM, dir=OUTPUT_DIR)
     plt.close(fig)
