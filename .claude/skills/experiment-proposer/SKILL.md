@@ -28,17 +28,18 @@ Before proposing anything, read the full research state.
 ```
 READ ORDER:
 1. docs/TODO.md                           → What does the researcher want?
-2. research_log/LOG.md                    → What has been tried and approved?
-3. research_log/drafts/LOG.md             → What was auto-generated but unreviewed?
-4. research_log/drafts/*.md               → Recent experiment details (last 5-10)
-5. gh issue list --label 'status:proposed' \
+2. gh issue list --label clean-results --state all \
+     --json number,title,body,labels,updatedAt --limit 50
+                                          → Approved findings (the canonical results record)
+3. gh issue list --label 'status:proposed' \
      --label 'status:plan-pending' \
      --label 'status:approved' \
      --label 'status:running' \
+     --label 'status:reviewing' \
      --state open                         → What's already queued / in flight?
-6. research_log/ideas/*.md                → Raw brainstorm output (pre-issue scratchpad)
-7. configs/experiment/*.yaml              → What configs exist?
-8. CLAUDE.md                              → Project-specific guidance
+4. docs/ideas/*.md                        → Raw brainstorm output (pre-issue scratchpad)
+5. configs/experiment/*.yaml              → What configs exist?
+6. CLAUDE.md                              → Project-specific guidance
 ```
 
 For each past experiment, extract:
@@ -238,6 +239,7 @@ approved → running → reviewing → done`.
 /experiment-proposer
 
 "Review the research state and propose the next experiments.
- Read research_log/, gh issue list (for queued/running work), and docs/TODO.md.
+ Read clean-result GitHub issues (label `clean-results`), `gh issue list`
+ for queued / in-flight work, and docs/TODO.md.
  Present ranked proposals with rationale."
 ```

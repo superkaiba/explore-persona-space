@@ -1,0 +1,19 @@
+Tue Apr 21 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-21
+Retrospective drafted to `research_log/drafts/retrospective-2026-04-21.md` (290 lines, ~24 KB).
+
+**Top findings:**
+
+1. **New friction pattern:** Bash `sleep N && <check>` chaining triggered the harness block 6+ times (18e61e00 ×4, 9772561a ×2) — Claude's reflex hasn't adapted to the new rule. Similar MCP issue: `ssh_execute` default 30s timeout killed 4+ `sleep 60 && tail...` calls in 0efaaf34.
+
+2. **Planner overscoping** in 5 separate /issue sessions — user had to strip pilots, arm gating, falsification thresholds, and "cautious drops" of interesting personas. Single most repeated correction pattern.
+
+3. **Agent "cannot write files" fabrication recurred** in 9772561a (both analyzer and plot-implementer subagents) — 3rd retro running with this exact pattern. Still no fix.
+
+4. **Clean-results skill built + applied same day** (big win) — session f3668db1 researched mentor-communication advice, produced 4-file skill, then applied to 3 clean results in 81b84545 and 8b730976.
+
+5. **Backlog audit:** 0 MAJOR proposals applied from carry-over today, 15 deferred. 4th retro asking for the meta-change: **file retro proposals as `retro-proposal`-labelled GH issues** so they enter the /issue workflow (the only pipeline that actually ships config changes).
+
+6. **Successful pattern:** `ScheduleWakeup` used 30× in 0efaaf34 for monitoring across compactions — correct pattern that should be replicated.
+
+No changes applied — all proposals are drafts for your review.
+Tue Apr 21 23:35:25 UTC 2026: Retrospective finished with exit code 0

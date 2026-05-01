@@ -1,0 +1,32 @@
+Thu Apr 16 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-16
+Retrospective written to `research_log/drafts/retrospective-2026-04-16.md`. Key findings:
+
+**Major events today:**
+- Agent architecture redesign: `manager` → `research-pm` (cf33a988)
+- EXPERIMENT_QUEUE.md migrated to GitHub Issues (702744a4)
+- 19 top-level sessions + 45 subagents = 64 JSONL files
+
+**Top friction patterns:**
+1. **Yesterday's retro proposals still unimplemented** — CLAUDE.md gotchas (RunPod port, HF public repo, upload safety) never applied. Now 2 days stale.
+2. **Context compaction cascades** — 5 sessions hit limits (b2b17ab7, bc5f2019, a6bbfb39, cf33a988, f3027315)
+3. **Gate-keeper bypassed** — invoked in only 2/19 sessions despite CLAUDE.md requirement
+4. **User confusion mid-experiment** — 4+ "what is X?" questions in b2b17ab7 → experimenter needs a design brief before launch
+5. **Only 2/19 sessions used new `research-pm`** (architecture transitioned mid-day)
+
+**Key proposals:**
+- CLAUDE.md: Add yesterday's unimplemented gotchas + new ones (worktree git state, uv nohup PATH) + Session Hygiene section for compaction resistance
+- research-pm.md: Gate-Keeper Trigger section, GitHub Issues as source of truth, agent name reference (fixes `code-simplifier` dispatch)
+- experimenter.md: Design Brief requirement, Monitoring Cadence (ScheduleWakeup), uv nohup PATH
+- retrospective.md: After writing draft, open GH issue with checkboxes to track proposals
+- **New hook: SessionStart** — surfaces latest retro proposals at session open to break the "never applied" cycle
+- **New hook: PostToolUse on `git push`** — pod sync reminder (re-proposed from yesterday)
+
+**Wins to reinforce:**
+- Clean 7-file agent redesign in a single session
+- GitHub Issues migration with proper labels
+- Deep-clean skill with 14+ parallel subagents
+- Pod5 bootstrap via `python scripts/pod.py bootstrap pod5`
+- Single-GPU/8-GPU confound detection and fast re-run
+
+All changes are drafts in the retrospective file — nothing applied.
+Thu Apr 16 23:48:01 UTC 2026: Retrospective finished with exit code 0

@@ -1,0 +1,19 @@
+Mon Apr 20 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-20
+The retrospective for 2026-04-20 is written to `research_log/drafts/retrospective-2026-04-20.md`. Key findings:
+
+**Highlights (actual progress)**
+- The #1 recurring pain ("HF Hub uploads + WandB logging not built into main scripts") **finally shipped** — commit `a0028d5` plus 3 related commits. 5 days of retro proposals got cleared in this one area.
+- 4 issues shipped end-to-end via adversarial-planner → `/issue` (#49, #50, #51, #55). The workflow is working.
+- 22 commits to main, 82 agent dispatches, healthy specialization.
+
+**Hard recurrences to fix**
+1. **SSH MCP broken all day** — 5 separate sessions asked "can you use the SSH MCP?"; restart doesn't fix. Needs root-cause investigation + CLAUDE.md callout.
+2. **"Check progress periodically" x15** in session 18e61e00 with 5 context-compactions — user explicitly asked "Setup monitoring to ping you every 1h" but `/schedule` was never invoked.
+3. **Leakage callback violated CLAUDE.md's "Always use vLLM" rule** — built with HF `.generate()`; user caught at merge. Critic/code-reviewer should do explicit critical-rule audits.
+4. **Script placed in `make-evil-dumb/`** (reference repo) instead of `scripts/`. Already partially fixed by `b58b777`; add to experimenter.md.
+5. **Push-after-merge** — user explicitly requested: "Always push after merge. Save that as part of the workflow."
+
+**Meta**: 6 days running of deferred hook/agent.md proposals. Applied proposals followed the `/issue` pipeline; retro drafts are read-once. The 3rd-time repeat proposal is to auto-file retro items as `retro-proposal`-labelled GH issues so they enter the pipeline that ships.
+
+All proposals are drafts — no files modified outside the retrospective itself.
+Mon Apr 20 23:33:20 UTC 2026: Retrospective finished with exit code 0

@@ -1,0 +1,25 @@
+Sat Apr 25 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-25
+The retrospective is written and memory is updated. Here's a summary:
+
+## Daily Retrospective — 2026-04-25
+
+**Output:** `research_log/drafts/retrospective-2026-04-25.md` + memory updates at `.claude/agent-memory/retrospective/`
+
+**Key findings:**
+
+- **Decisive-finding day**: 2 clean results shipped (#105 HIGH "data artifact" + #106 MODERATE "qwen identity claim"), #102 marker bridge confirmed null, #91 full 7-source dataset posted, 19 commits to main.
+- **Adversarial-planner shipped two clean results in 70 minutes overnight** (#100 → #105). The fact-checker stage caught the contamination confound during planning, saving ~3 GPU-hours.
+- **Issue #102 override worked as designed**: gate-keeper flagged the prior-evidence mismatch; user overrode; experiment ran and produced a clean null. Both the gate-keeper's prior and the user's "test it anyway" instinct were vindicated.
+
+**Repeated friction (3 firings or 3rd consecutive day):**
+1. Pod1 root-overlay disk SIGKILL on #102 C2 retry — **3rd consecutive day**, preflight fix still unapplied
+2. `gh pr create` fails on fresh worktree — fired on #100, #101, #102 today, three different ad-hoc recoveries
+3. Qwen default system prompt fact still missing from CLAUDE.md — load-bearing for both clean results today, **2nd ask**
+4. SSH `sleep N && cmd` hits 30s MCP timeout — 3 firings on `073d768e`
+
+**Backlog status: 7th consecutive zero-application day.** 0 of yesterday's 13 proposals applied. Yesterday's recommended `meta:retro-backlog` GitHub issue was not opened.
+
+**Recommended single action:** Apply the P0 trio (root-disk preflight + Qwen CLAUDE.md line + PR-create placeholder commit). All three are 1-3 line patches; together they prevent the three most expensive recurring failure modes.
+
+All proposals are drafts — nothing was applied. Memory entries (`project_2026_04_25_retro.md`, MEMORY.md, `project_unapplied_backlog.md`) updated to reflect the streak count and new friction items.
+Sat Apr 25 23:35:41 UTC 2026: Retrospective finished with exit code 0

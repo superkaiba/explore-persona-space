@@ -1,0 +1,21 @@
+Fri Apr 24 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-24
+Retrospective written to `research_log/drafts/retrospective-2026-04-24.md`. Here's the summary:
+
+## Retrospective for 2026-04-24
+
+**Sessions reviewed:** 9 top-level + ~28 subagent transcripts. Two large sessions dominated: `0efaaf34` (1,691 user-message lines, 6 compactions, monitoring Issue #61 Arm A→C→B) and `da8aa615` (Issue #69 sweep + #99 clean result iteration).
+
+**Day shape:** Plan-heavy + monitor-heavy. 3 fresh issues (#100, #101, #102) pushed through full clarifier → gate-keeper → planner → fact-checker → critic → revise pipeline successfully. 1 clean result shipped (#99 behavioral leakage MODERATE). Only 3 commits to main — all #99 figure polish.
+
+**Hero pattern (reinforce):** The adversarial-planner workflow worked exactly as designed today. Fact-checker caught real blockers on #100 (issue-69 worktree scripts not on main; Python-falsy bug in `_arc_logprob_core`) and #101 (Qwen chat template auto-injection). Critic on #100 caught a real #96 contamination confound (2:1 wrong:correct anchor ratio). Three real bugs caught pre-experiment, all saved compute.
+
+**Top friction (recurring):**
+1. **Monitoring polling now structural** — 78 `ScheduleWakeup` + 824 `ssh_execute` in one session, 50-60% token spend. 5th consecutive day of this pattern with 0 follow-through. Recommend pivot from `/schedule` proposal to a `pod_status_daemon.py` that writes `epm:status` issue comments.
+2. **Same 2 research-blocking bugs fired AGAIN** — root-overlay 98% silent SIGKILL of 4 vLLM evals, and `merge_marker_adapter` skip-check passing on weight-less corrupted merges. Both have unapplied fixes from yesterday's retro.
+3. **6 conversation compactions** in one session → user re-asked basics. `epm:anchor` proposal still unapplied.
+4. **Qwen default system prompt fact** rediscovered 4 separate times today across 4 sessions; should be one line in CLAUDE.md.
+
+**Backlog audit:** 0 of 13 proposals from yesterday applied — **6th consecutive zero-application day**. Recommended single action: open a `meta:retro-backlog` GitHub issue with the 15+ unapplied items as a checklist so they can enter the user's `/issue` workflow.
+
+Memory updated: added `project_2026_04_24_retro.md`, updated `project_unapplied_backlog.md` (now flags 2 P0 research-blocking bugs).
+Fri Apr 24 23:36:42 UTC 2026: Retrospective finished with exit code 0

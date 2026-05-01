@@ -63,9 +63,11 @@ Before any ideation, read the research state. You cannot generate good ideas fro
 READ ORDER:
 1. docs/research_ideas.md         → Aims, subtasks, phase tracker
 2. RESULTS.md                     → What's been established
-3. research_log/drafts/LOG.md     → Recent unreviewed results
+3. gh issue list --label clean-results --state all \
+     --json number,title,body,updatedAt --limit 30
+                                  → Recent approved findings
 4. gh issue list --state open     → What's already queued / in flight (project board is the queue)
-5. research_log/ideas/*.md        → Prior brainstorm dumps (pre-issue scratchpad)
+5. docs/ideas/*.md                → Prior brainstorm dumps (pre-issue scratchpad)
 6. eval_results/INDEX.md          → Recent eval summaries
 7. Agent memory                   → Past session learnings
 ```
@@ -354,7 +356,7 @@ For ideas the user approves:
 - **If the idea needs literature review first** → spawn a research agent
 - **If the idea changes research direction** → update `docs/research_ideas.md`
 
-Dump the full raw brainstorm (all ideas, not just ranked survivors) to `research_log/ideas/YYYY-MM-DD.md` as an audit trail. For ideas the user approves, create GitHub issues with `gh issue create --label status:proposed` — the project board is the queue. Do NOT write to a markdown queue file (there isn't one).
+Dump the full raw brainstorm (all ideas, not just ranked survivors) to `docs/ideas/YYYY-MM-DD.md` as an audit trail. For ideas the user approves, create GitHub issues with `gh issue create --label status:proposed` — the project board is the queue. Do NOT write to a markdown queue file (there isn't one).
 
 ---
 

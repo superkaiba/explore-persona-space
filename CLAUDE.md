@@ -23,7 +23,7 @@
 
 ## Experiment Report Structure
 
-All experiment write-ups — analyzer drafts, research-log entries, and clean-result GitHub issues — follow ONE unified template at **`.claude/skills/clean-results/template.md`**.
+All experiment write-ups — analyzer drafts and clean-result GitHub issues — follow ONE unified template at **`.claude/skills/clean-results/template.md`**.
 
 The template has two parts:
 
@@ -283,7 +283,7 @@ scripts/                      # Entrypoints (train.py, eval.py, run_sweep.py, po
 configs/                      # Hydra YAML (training/, lora/, eval/, condition/)
 eval_results/                 # Structured JSON results
 ood_eval_results/             # Out-of-distribution eval results
-research_log/                 # Write-ups (drafts/ for unreviewed, root for approved)
+archive/research_log/         # ARCHIVED — superseded by clean-result GitHub issues (kept read-only for history)
 figures/                      # Generated plots
 docs/                         # Research documentation
 raw/                          # Raw data artifacts

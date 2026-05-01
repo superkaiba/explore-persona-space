@@ -1,0 +1,25 @@
+Sun Apr 26 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-26
+The retrospective is written to `research_log/drafts/retrospective-2026-04-26.md` (14.8 KB, 162 lines — slightly tighter than yesterday's 20 KB).
+
+## Summary
+
+**Today (2026-04-26) was a 0-commit day with substantial uncommitted work.** Three experiments in flight (#102 marker-bridge v2, #104 distributional-match search, #100 deconfounded rerun) and a ~920 LOC Marin-inspired pipeline-provenance system built in a worktree that never got committed.
+
+**Top findings written into the retro:**
+
+1. **8th consecutive zero-application day** for retro proposals. The same 4 P0 bugs fired again:
+   - Root-disk SIGKILL on pod1 (4th day)
+   - `gh pr create` "No commits between main and issue-N" — 3 firings today (#100, #102, #104), 6 in 48h
+   - SSH `sleep N && cmd` 30s timeout — ~6 firings on session 073 alone
+   - Qwen default system-prompt fact still missing from CLAUDE.md (4th day)
+
+2. **Two NEW gotchas:** system TRL 1.0.0 shadow-importing over venv on pod5; vLLM 0.11.x library-import hang (workaround: standalone scripts with inline patches).
+
+3. **Biggest single-day process gap of the week:** the experimenter on #102 designed the marker-bridge run from the issue body alone, missing the established `tail_tokens=0`, marker-only-loss, matched-question protocol from prior `aim:6` clean-results. User had to correct 4 design facts mid-run, forcing a v2 redesign + pod swap.
+
+4. **Worktree-orphan risk:** Marin pipeline-provenance system (34/34 tests passing) is sitting untracked. Proposed: `/issue` housekeeping step to detect orphan worktrees at session end.
+
+**Memory updates applied:** new `project_2026_04_26_retro.md`, indexed in `MEMORY.md`, and `project_unapplied_backlog.md` updated to streak=8 with the two new gotchas and worktree-orphan pattern.
+
+**Single ROI ask for tomorrow:** the 3-line empty-commit fix in `/issue` Step 5b. Fires 3× per day; 2nd-cycle ask. All proposals are drafts only — no config files were modified.
+Sun Apr 26 23:36:00 UTC 2026: Retrospective finished with exit code 0

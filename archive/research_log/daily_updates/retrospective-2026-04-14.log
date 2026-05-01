@@ -1,0 +1,30 @@
+Tue Apr 14 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-14
+Retrospective written to `research_log/drafts/retrospective-2026-04-14.md`. Here's the executive summary:
+
+---
+
+**20 sessions reviewed, ~310 user messages, 11 explicit corrections.**
+
+### Top 3 Issues
+
+1. **Zero git commits all day** -- 462 uncommitted files including Phase A1 draft, RESULTS.md, 91 eval_result dirs, and new skills. Critical data loss risk.
+
+2. **EM methodology wrong for ~12h** -- Used all-token masking + locally generated data instead of Betley's actual dataset with assistant-only masking. Produced -3pt instead of expected -50pt. This echoes the April 9 truthification data confound. The "verify data" rule in experimenter.md doesn't cover *methodology* verification.
+
+3. **GitHub PAT exposed in session transcript** -- Should be rotated immediately.
+
+### Top Proposed Changes
+
+- **experimenter.md**: Add "Method Verification" section (verify data source, loss masking, and hyperparams against reference paper before any replication experiment) + pipeline state tracking table
+- **manager.md**: Announce dispatches to user before spawning + end-of-session commit hygiene
+- **CLAUDE.md**: Add end-of-session commit reminder for uncommitted research outputs
+
+### What Worked Well
+
+- Phase A1 leakage: 44/44 runs, 0 failures, pre-registered hypothesis confirmed (rho=0.60)
+- Gate-keeper + adversarial planner pipeline properly followed
+- OOM escalation rule from April 9 retro is working (no repeat of 15-retry saga)
+- Debug-to-research time ratio improved from 40/60 to 20/80
+
+All proposals are drafts -- no files were modified except writing the retrospective itself.
+Tue Apr 14 23:37:22 UTC 2026: Retrospective finished with exit code 0

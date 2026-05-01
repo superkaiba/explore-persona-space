@@ -1,0 +1,22 @@
+Thu Apr 30 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-30
+Retrospective written to `research_log/drafts/retrospective-2026-04-30.md` (no other changes applied — all proposals are drafts).
+
+**Headline:** Productive research day, zero infrastructure investment. 4 clean-results advanced (#105 HIGH deconfound, #116 rewrite, #142 KL/JS MOD, #121 HIGH categorical) plus #102 marker-bridge run, #108 sweep, but **0 commits** — the bundled-application momentum from yesterday's `1a04d22` did not repeat.
+
+**Top friction (mostly recurring):**
+- **6 user-caught data confounds today** (`tail_tokens` drift, same-question control, EOS masking, max-bystander naming, missing KL metric, default-prompt perturbation). Yesterday's new `consistency-checker` agent did **not** auto-fire — verify dispatch path.
+- Same P0 bugs re-fired: 122 SIGKILL, 75 MooseFS/SIGBUS (5th cycle), 47 disk-quota (6th), 15 PR-create (7th), 12 TRL-shadow (4th), 8 SSH-sleep (6th).
+- Repeated-instruction echo pattern (3 user "Try X" asks repeated because agent replanned instead of dispatching).
+
+**Top proposals (specific diffs in the draft):**
+1. CLAUDE.md +5 Gotchas (Pod5 SIGBUS, system-TRL, vLLM 0.11, Qwen system-prompt, disk-overlay) — ~10 lines, blocks ~100 firings/week
+2. PR-create 4-line fix in `/issue` skill (7th-cycle ask)
+3. SSH-sleep PreToolUse hook (mirror of yesterday's Bash-hook design)
+4. `consistency-checker.md` protocol-precedent check (read prior `aim:N` clean-result Setup before approving)
+5. `planner.md` metric-coverage subsection (force explicit cosine/JS/KL/cap/align/leak verdict)
+6. CLAUDE.md "first-pass action on small variants" rule
+
+**What worked (reinforce):** independent-verifier subagent caught #112 alignment confound; marker eval batched 42→3 vLLM calls (~10x); reused #96 adapters for #108 (~60 min saved); CLAUDE.md updated live during ae2e4c2d with RunPod-sshd / `startSsh: true` discovery; 11 new ideation issues filed end-of-day (#152–#162).
+
+Memory saved: `project_2026_04_30_retro.md` + MEMORY.md index updated.
+Thu Apr 30 23:35:03 UTC 2026: Retrospective finished with exit code 0

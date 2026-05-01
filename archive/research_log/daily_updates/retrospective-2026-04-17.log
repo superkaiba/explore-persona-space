@@ -1,0 +1,25 @@
+Fri Apr 17 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-17
+The daily retrospective for 2026-04-17 has been written to `research_log/drafts/retrospective-2026-04-17.md` (279 lines). 
+
+**Summary of key findings:**
+
+**The day's shape:** 14 top-level sessions + 17 subagents, dominated by an 8-hour training optimization cascade (issues #36→#43) that shipped DPO +20% and fixed a silent Tulu config bug, but revealed a new failure mode.
+
+**Top 3 friction patterns:**
+1. **Sleep blocks** — 15 across 8 subagents. Agents keep trying `sleep N && cmd` despite the harness tool-error explicitly pointing to `Monitor`/`run_in_background`.
+2. **Specialist false infrastructure claims** (NEW) — Issues #40 and #43 both produced wrong verdicts from `hasattr`/import-based probes that silently failed due to missing transitive deps (`olmo_core`). Only caught when research-pm re-verified via `ast.parse`.
+3. **Retro proposals unapplied 3 days running** — SessionStart hook, git-push hook, CLAUDE.md gotchas, experimenter Design Brief/Monitoring Cadence — all still sitting in drafts from 2026-04-15 and 2026-04-16.
+
+**Proposed changes (all drafts — not applied):**
+- CLAUDE.md: 7 gotcha additions (5 are re-proposals)
+- experimenter.md: 3 new sections (infra-claim verification via AST, monitoring cadence, uv-nohup)
+- implementer.md: 2 new sections (AST verification, skeleton-commits-every-20-calls)
+- research-pm.md: 3 new sections (gate-keeper trigger, agent name reference, specialist-claim verification)
+- retrospective.md: "Proposal Backlog" audit step + open GH issue for proposals
+- 3 new hooks (SessionStart retro reminder, git-push pod-sync, sleep pre-warn)
+- 5 new memory files (backlog, AST-over-import, skeleton commits, specialist claims, experimenter pointers)
+
+**Memory updated** (proactively, since retrospective is the self-reflecting agent): `project_unapplied_backlog.md` tracks the 12-item 3-day backlog; `feedback_ast_over_import_probes.md` records the new verification rule.
+
+**No changes applied** — all proposals sit in the draft for user approval, per the retro agent's rules.
+Fri Apr 17 23:38:36 UTC 2026: Retrospective finished with exit code 0

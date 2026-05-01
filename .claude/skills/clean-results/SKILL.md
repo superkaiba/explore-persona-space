@@ -109,13 +109,14 @@ Match `template.md` exactly. The shape is:
 
 ### Step 1: Intake
 
-Typical inputs: a GitHub issue number, a draft path in `research_log/drafts/`,
-or multiple issue numbers being consolidated.
+Typical inputs: a GitHub issue number, a cached draft at
+`.claude/cache/issue-<N>-clean-result.md`, or multiple issue numbers being
+consolidated.
 
 Read, in this order:
 1. The plan (`epm:plan` marker on the source issue, or `.claude/plans/issue-N.md`).
 2. The results (`epm:results`) and analyzer draft (`epm:analysis`).
-3. Any `research_log/drafts/*.md` referenced.
+3. Any cached draft at `.claude/cache/issue-<N>-clean-result.md`.
 4. The actual `eval_results/*/run_result.json` and `figures/*`.
 5. WandB run URLs.
 

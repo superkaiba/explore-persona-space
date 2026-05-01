@@ -1,0 +1,31 @@
+Wed Apr 22 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-22
+Retrospective drafted. Summary of what's in it:
+
+**File:** `research_log/drafts/retrospective-2026-04-22.md` (draft only — no changes applied)
+
+**Sessions reviewed:** 19 top-level + ~55 subagent transcripts
+**Real user messages:** ~175
+**Commits to main:** 18
+**Proposals applied same-day:** 10 (best day in 2 weeks)
+
+**Top wins today** — all absorbed into commits:
+- Analyzer + clean-results collapsed into one mentor-grade agent
+- Agent-vs-skill rule codified (`.claude/rules/agents-vs-skills.md`)
+- `manager` + `research-pm` agents deleted
+- `paper-plots` skill + `verify_clean_result.py` validator shipped
+- `/signoff` removed; `[Clean Result]` prefix scrubbed; `*Updates me:*` label dropped
+- `EXPERIMENT_QUEUE.md` deleted (GitHub board is sole truth)
+
+**Top unresolved friction** (still deferred across 3+ retros):
+1. **Monitoring-polling vs `/schedule` cron** — "Monitor progress periodically" typed 13× in one session; 3rd consecutive retro
+2. **Planner scope-creep** (pilots, kill-criteria, falsification) — user stripped 6+ times today
+3. **Subagent "cannot write" fabrication** — 4th ask; hit again today on paper-plots creation
+4. **SessionStart hook for branch visibility** — 8th ask
+5. **Retro → GH-issue meta-proposal** — 5th ask; the blocker gating every other config-shaped proposal
+
+**Two new gotchas surfaced:**
+- **Claude API Usage-Policy refuses on EM/marker-transfer analyzer runs** (#80 hit the block at 3.3M tokens). Fix: write generations to JSON first, analyzer reads from disk.
+- **Pods silently use `make-evil-dumb/.venv` with torch 2.6** instead of repo's 2.9 — caught in #75 reproducibility card. Issue #76 filed, preflight not yet hardened.
+
+Memory index updated with `project_2026_04_22_retro.md` and cleaned references. All proposals are drafts — nothing applied.
+Wed Apr 22 23:35:33 UTC 2026: Retrospective finished with exit code 0

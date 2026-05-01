@@ -1,0 +1,26 @@
+Mon Apr 27 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-27
+Retrospective for 2026-04-27 written to `research_log/drafts/retrospective-2026-04-27.md`. Top findings:
+
+**Headline:** Best research-output day in 2 weeks (21 commits, 3 clean-result issues #111/#113/#116, zero-streak broken) **on top of** the 9th consecutive zero-application day for retro proposals — every chronic bug from the backlog fired again.
+
+**Hottest items:**
+1. **`gh pr create` empty-commit fix** — 5th-day proposal, fired 16× across 7 sessions today, 30+ this week. 3-line patch.
+2. **Protocol-precedent gap** (`experimenter.md` Step 0 from yesterday's retro) — verbatim re-fire on #102 today: "tail_tokens=0?" + "trained marker into villain first?" — same questions yesterday.
+3. **Disk-preflight diagnosis was WRONG** for 4 prior cycles — today's 62 disk-quota errors fired on MooseFS user quota with `df` showing 266T free. Need `mfsgetquota` + write-probe, not just `df /`. Revised proposal in draft.
+
+**NEW gotchas surfaced today:**
+- MooseFS SIGBUS during 15GB merged-shard writes on pod5 (workaround: write to /root/tmp_eval/ first)
+- vLLM `gpu_memory_utilization=0.85` fails on shared GPUs
+- Plot-iteration "cherry-picked" misinterpretation cost 5+ rounds + 3 ALL-CAPS user messages
+
+**Workflow gaps:**
+- pipeline-provenance worktree from 04-26 (~920 LOC) still uncommitted, untouched today
+- #109 still labelled `clean-results:draft`, never promoted
+- 91 ScheduleWakeups in session 0efa indicate user reverted to manual polling (auto-loop cadence off)
+
+**Successful patterns to reinforce:** cross-pod parallelism on #61 (5 sources × 3 pods), end-to-end deconfounding workflow (#99 → #115 → #120), reviewer-agent caught real source-marker-rate=0% bug, analyzer pipeline produced 3 verifier-passing clean-results in one day.
+
+**Meta-proposal:** stop re-proposing items individually — file ONE `meta:retro-backlog` GitHub issue listing all 8 open proposals and let user reply yes/no per item. Draft text included.
+
+Per the agent's rules, all proposals are drafts only — no changes were applied to CLAUDE.md, agent definitions, skills, or hooks.
+Mon Apr 27 23:37:17 UTC 2026: Retrospective finished with exit code 0

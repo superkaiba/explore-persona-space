@@ -1,0 +1,27 @@
+Wed Apr 29 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-29
+The retrospective for 2026-04-29 has been written to `research_log/drafts/retrospective-2026-04-29.md`. Here's a brief summary of the findings:
+
+## Summary
+
+**11-day zero-application streak BROKEN.** Commit `1a04d22` ("Redesign experiment lifecycle") bundled 6 prior backlog proposals into one big workflow change today:
+- 4 new agents: `consistency-checker`, `upload-verifier`, `interpretation-critic`, `follow-up-proposer`
+- `verify_uploads.py` script + new `status:uploading` / `status:interpreting` states
+- A `PreToolUse` Bash hook that **blocks ad-hoc experiment commands outside `/issue`**
+- RunPod GraphQL `X-Team-Id` API docs added to CLAUDE.md
+- The "NEVER run experiments inline" hard rule
+
+**Best clean-result day in project history:** 6 clean-result-labeled issues touched (#99, #113, #116, #120, #121, #142) + #123 promoted to draft.
+
+**But the small-but-chronic backlog is still ignored:**
+- 22 `Disk quota exceeded` (5th cycle)
+- 28 `Command timeout 30000ms` SSH MCP firings (5th cycle, `sleep N && cmd` chains hit 30s tool-cap)
+- 11 `gh pr create: No commits between main` (6th cycle, 4-line fix)
+- 11 MooseFS / 7 SIGBUS / 6 SIGKILL pod5 large-write failures (4th cycle)
+- 0 of 5 backlog CLAUDE.md gotchas added (Qwen default is 6 cycles unapplied)
+
+**3 user-caught data confounds today** that the new `consistency-checker` / `interpretation-critic` should catch going forward: alignment data not persona-conditioned (#112), assistant in contrastive negatives (#112), and conditions B/C bit-identical (#121).
+
+**Worktree count: 27 → 7** (major cleanup, but the 4-day-old `pipeline-provenance-system` worktree with 920 LOC is no longer in `git worktree list` — possibly pruned/lost).
+
+Tomorrow's recommendation: apply the 4-line `gh pr create` fix, add the SSH-sleep-chain hook (mirroring today's Bash hook), and append the 5 backlog gotchas to CLAUDE.md before any other work. All proposals are drafts only — nothing was applied.
+Wed Apr 29 23:38:13 UTC 2026: Retrospective finished with exit code 0

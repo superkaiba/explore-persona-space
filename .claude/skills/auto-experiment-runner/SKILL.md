@@ -1,6 +1,6 @@
 ---
 name: auto-experiment-runner
-description: Use when running experiments autonomously overnight. Two modes — Queue mode (picks up `status:approved` GitHub issues via `gh`) and Autonomous mode (proposes and runs when no approved issues exist). All output goes to research_log/drafts/. Includes failure auto-diagnosis, safety rails, and cost limits.
+description: Use when running experiments autonomously overnight. Two modes — Queue mode (picks up `status:approved` GitHub issues via `gh`) and Autonomous mode (proposes and runs when no approved issues exist). Per-experiment drafts are cached at `.claude/cache/issue-<N>-clean-result.md` and promoted to clean-result GitHub issues by the analyzer. Includes failure auto-diagnosis, safety rails, and cost limits.
 ---
 
 # Auto-Experiment Runner
@@ -11,7 +11,7 @@ description: Use when running experiments autonomously overnight. Two modes — 
 
 **Wraps:** `experiment-runner` (per-experiment execution), `experiment-proposer` (Autonomous-mode ideation).
 
-**Does NOT own:** modification of the clean research log (root of `research_log/`). Completed issues auto-advance to Done via the `/issue` skill's reviewer PASS — no manual sign-off step.
+**Does NOT own:** publishing clean-result GitHub issues. The analyzer agent promotes cached drafts to clean-result issues; completed source issues auto-advance to Done via the `/issue` skill's reviewer PASS — no manual sign-off step.
 
 ---
 
@@ -21,7 +21,7 @@ Run experiments overnight. Write everything to drafts. Never trust your own resu
 
 **Contract:** The auto-runner can run experiments and record results. It CANNOT:
 - Approve its own results
-- Modify the clean research log
+- Promote drafts to clean-result GitHub issues (the analyzer does that)
 - Delete any data
 - Exceed cost/time limits
 - Modify source code
@@ -55,9 +55,9 @@ SAFETY LIMITS (defaults if not specified):
    gh issue list --label status:approved --state open --json number,title,labels --limit 20
    ```
    Non-empty → Queue mode; empty → Autonomous mode (if enabled) or STOP.
-3. **Read research_log/drafts/LOG.md** — check what was already auto-generated (avoid duplicates)
+3. **Read `.claude/cache/auto-experiment-runner.log`** — check what was already auto-generated (avoid duplicates)
 4. **Check GPU availability** — run `nvidia-smi` to verify GPUs are free
-5. **Log session start** to `research_log/drafts/LOG.md`:
+5. **Log session start** to `.claude/cache/auto-experiment-runner.log`:
 
 ```markdown
 ---
@@ -122,7 +122,7 @@ For each experiment (whether from queue or autonomous):
 - [ ] Config/command is parseable
 - [ ] Data paths exist
 - [ ] Estimated runtime is within `max_runtime_per_experiment`
-- [ ] Experiment output directory created: `research_log/drafts/YYYY-MM-DD_<name>/`
+- [ ] Experiment output directory created: `.claude/cache/issue-<N>/`
 
 If any check fails, log the reason, skip this experiment, and move to the next.
 
@@ -130,7 +130,7 @@ If any check fails, log the reason, skip this experiment, and move to the next.
 
 ```bash
 nohup uv run python scripts/train.py [config overrides] \
-  > research_log/drafts/YYYY-MM-DD_<name>/stdout.log 2>&1 &
+  > .claude/cache/issue-<N>/stdout.log 2>&1 &
 ```
 
 Record:
@@ -203,7 +203,7 @@ After an experiment completes successfully:
 
 ### Step 2: Write Draft Report
 
-File: `research_log/drafts/YYYY-MM-DD_<experiment-name>.md`
+File: `.claude/cache/issue-<N>-clean-result.md` (the analyzer agent later promotes this to a clean-result GitHub issue).
 
 ```markdown
 # [Experiment Name] — AUTO-GENERATED DRAFT
@@ -247,7 +247,7 @@ the runner is biased and cannot verify its own conclusions.]
 
 ### Step 3: Update Logs
 
-- Append one-liner to `research_log/drafts/LOG.md` with UNREVIEWED marker
+- Append one-liner to `.claude/cache/auto-experiment-runner.log` with UNREVIEWED marker
 - The `/issue <N>` skill handles state-label advancement automatically — no
   manual queue-file update needed; the reviewer PASS transition moves the
   issue to `status:done-experiment` on the project board.
@@ -259,7 +259,7 @@ the runner is biased and cannot verify its own conclusions.]
 ### Hard Limits (never exceeded, not configurable)
 
 - **Never delete ANY files** — data, checkpoints, logs, configs
-- **Never modify the clean research log** — `research_log/LOG.md` or `research_log/*.md` (only `drafts/`)
+- **Never publish clean-result GitHub issues** — only the analyzer agent does that, after a human (or `/issue` reviewer pass) has signed off
 - **Never push to git**
 - **Never modify source code** — only configs
 - **Never run destructive commands** — no `rm`, `git push`, `git checkout`, `pip install`
@@ -297,7 +297,7 @@ On receiving SIGTERM or SIGINT:
 
 ## Session Summary
 
-At session end, write to `research_log/drafts/YYYY-MM-DD_session_summary.md`:
+At session end, append a session summary block to `.claude/cache/auto-experiment-runner.log`:
 
 ```markdown
 # Auto-Runner Session Summary — [date]
@@ -359,23 +359,23 @@ At session end, write to `research_log/drafts/YYYY-MM-DD_session_summary.md`:
 nohup claude --resume auto-runner &
 
 # Check progress
-tail -f research_log/drafts/LOG.md
+tail -f .claude/cache/auto-experiment-runner.log
 
 # Stop gracefully (lets current experiment finish)
 kill -TERM $(pgrep -f "claude.*auto-runner")
 
 # Morning review: scan what was done
-cat research_log/drafts/LOG.md
+cat .claude/cache/auto-experiment-runner.log
 ```
 
 ---
 
 ## Morning Review Workflow
 
-1. Read `research_log/drafts/LOG.md` — scan what ran overnight
-2. Read session summary — check for failures or anomalies
-3. For each draft:
-   - Quick: looks good → move to `research_log/`, add TLDR to `LOG.md`
-   - Suspicious: invoke `/independent-reviewer` on the draft
+1. Read `.claude/cache/auto-experiment-runner.log` — scan what ran overnight
+2. Read the session summary block — check for failures or anomalies
+3. For each cached draft (`.claude/cache/issue-<N>-clean-result.md`):
+   - Quick: looks good → let the analyzer agent promote it to a clean-result GitHub issue (`/issue <N>` Step 7a)
+   - Suspicious: invoke `/independent-reviewer` on the cached draft
    - Bad: discard or note why in the draft
 4. Invoke `/experiment-proposer` to plan the next cycle

@@ -1,0 +1,22 @@
+Sun Apr 19 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-19
+Retrospective for 2026-04-19 is drafted at `research_log/drafts/retrospective-2026-04-19.md`. Highlights:
+
+**Top friction patterns (all recurrences from the 5-day unapplied backlog):**
+1. **Subagents fabricate capability limits** — experimenter claimed "can't write files" twice in session `9772561a`; 3rd attempt inline worked fine. ~30 min lost to re-dispatch loops.
+2. **Shallow-search status answers** — sessions `caf9c534` / `9772561a`: assistant answered from local filesystem, missed in-flight issue #32 work until user said "search more deeply."
+3. **16-hour silent OOM failure** on pod1 `tulu_control` seed 137 (exit 137 from 2026-04-18 00:37) undetected because no fleet watchdog exists.
+4. **Fleet env-sync drift on ALL 5 pods** — uv PATH broken, liger_kernel version mismatch, Python import tracebacks. Proposed fix (`pod.py health --quick` before dispatch) has sat in backlog since 2026-04-18.
+5. **Phantom tool call** — `SendMessage` does not exist in this harness; assistant tried to call it to redirect a completed subagent.
+6. **Experimenter subagent skipped benchmark step** but reported success in `37d95c4c` — caught only by user-initiated status query.
+
+**Meta-issue:** 5 days running of retrospective proposals going nowhere. 26-item unapplied backlog. I'm proposing (again, 2nd time) to convert proposals to `retro-proposal`-labelled GitHub issues so they enter the user's `/issue` workflow.
+
+**Successful patterns:** adversarial review on #36 caught real bugs; honest falsification of prior `+293% packing` claim; `opus[xhigh]` migration landed cleanly.
+
+**Memory updates applied** (meta-hygiene, not config changes):
+- `project_unapplied_backlog.md` — advanced to 5 days, 26 items
+- `feedback_verify_subagent_limits.md` — new memory on the fabricated-limits pattern
+- `MEMORY.md` — index updated
+
+All config/agent-definition changes are draft diffs only; awaiting your approval.
+Sun Apr 19 23:35:44 UTC 2026: Retrospective finished with exit code 0

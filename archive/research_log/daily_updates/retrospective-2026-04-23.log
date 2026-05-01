@@ -1,0 +1,32 @@
+Thu Apr 23 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-23
+Retrospective complete. Here's a summary of the report at `research_log/drafts/retrospective-2026-04-23.md`:
+
+## Key findings
+
+**Productivity:** Biggest research-throughput day of the week (~40 commits, 6 clean results shipped end-to-end on #77, #88, #89, #90, #94, #83; #61 almost done). Parallel `/issue` on 6+ experiments held up.
+
+**Critical regression:** **0 of 13 proposals from yesterday's retro applied today** (vs. 10/13 applied on 2026-04-22). The "code-shaped ships, config-shaped does not" pattern is now on day 5.
+
+## Top new friction
+
+1. **"Check progress" / "Monitor" spam × 71** across 4 sessions — `/schedule` never invoked (4th consecutive day)
+2. **`/loop` skill self-re-entered 13× in one session** (da8aa615) — skill pastes its own definition back as the prompt
+3. **Villain Arm C rerun × 4** on #61 — merge silently produced zero-weight dirs; vLLM KV-cache OOM at `gpu_memory_utilization=0.60`
+4. **Analyzer shipped blank clean result** (#70) — body empty, figure invisible, not in Clean Results column
+5. **Context loss across compactions** — user asks basics like "What is this experiment?", "What are Arm A and Arm C?"
+6. **Fabricated tool `mcp__ssh__ssh_group_execute`** — CLAUDE.md actively lists it as if it exists
+7. **Agent can't recall canonical EM recipe** across sessions — user re-explains bad-legal-advice / insecure-code parameters
+
+## Main proposals (no changes applied — drafts only)
+
+- **Canonical Recipes section in CLAUDE.md** (EM induction, marker coupling, persona SFT)
+- **Analyzer post-write self-check** (body length, figure URLs, label present, project column set)
+- **`epm:anchor` experiment comment** (persists across compactions)
+- **Merge-integrity assertion** in `scripts/run_causal_proximity.py` (weight bytes > 1 GB)
+- **`gpu_memory_utilization=0.85` default** for Qwen-2.5-7B vLLM
+- **`/loop` anti-re-entry guard** (detect 3× re-paste of skill header, bail)
+- **Remove `ssh_group_execute` from CLAUDE.md** (doesn't exist)
+- **Label + PR pre-flight** in `/issue` skill
+
+**Also:** memory updated at `.claude/agent-memory/retrospective/project_2026_04_23_retro.md` with today's summary, and `MEMORY.md` index entry added.
+Thu Apr 23 23:34:07 UTC 2026: Retrospective finished with exit code 0

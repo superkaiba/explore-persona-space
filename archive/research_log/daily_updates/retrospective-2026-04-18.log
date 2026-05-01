@@ -1,0 +1,15 @@
+Sat Apr 18 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-18
+Retrospective written to `research_log/drafts/retrospective-2026-04-18.md` (6 sessions + 14 subagents reviewed).
+
+**Key findings:**
+- **4-day proposal backlog with 0 applied** — led the file with a "Proposal Backlog Audit" table showing 12 items still outstanding from 2026-04-15 through -17 retros.
+- **Top friction patterns:** ZeRO-2 NaN on 7B coupling SFT (3rd recurrence, 3 pods today), HF Hub upload silently broken in two modes (PEFT README local paths + `open-instruct --push_to_hub False` default), pod environment asymmetries (pod1 cache corruption 2nd incident, pod2 system python core-dump, pod5 unpatched open-instruct), feature-branch drift until user caught it.
+- **Failed approaches to document:** Docker-template env-sync (not viable for mixed H100/H200 stateful pods), offering Aim 5 defense experiments uninvited.
+- **Proposed diffs prepared (not applied):** CLAUDE.md gotchas section (7 new entries), `experimenter.md` pre-launch + post-run checks, `research-pm.md` scope/branch hygiene, `planner.md` decide-then-list default, `retrospective.md` self-improvement (always lead with backlog audit).
+- **Proposed hooks:** SessionStart showing git branch + retro list, PostToolUse reminder to push after commits.
+- **Successful patterns reinforced:** Parallel 5-way dispatch with CUDA isolation, honest falsification of prior Tier 1 claims, proactive pod-to-pod SCP relay via local VM.
+
+**Meta-observation in the file:** The retrospective system is functioning as a diagnostic but not as a change mechanism — the single highest-ROI action available is to apply the backlog.
+
+All proposals remain drafts; no CLAUDE.md, agent, skill, hook, or memory files were edited.
+Sat Apr 18 23:41:14 UTC 2026: Retrospective finished with exit code 0

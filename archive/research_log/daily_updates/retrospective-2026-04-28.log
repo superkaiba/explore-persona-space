@@ -1,0 +1,19 @@
+Tue Apr 28 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-28
+Retrospective written to `research_log/drafts/retrospective-2026-04-28.md` (282 lines).
+
+**Key findings from today's 13 sessions:**
+
+- **3 user-caught data confounds in one day** (ARC-C contamination on #75, alignment data not persona-conditioned on #112, assistant in contrastive negatives on #99 capability eval) — costing ~5 reruns and 4+ hours
+- **9th consecutive zero-application day on the proposal backlog.** All 8 of yesterday's proposals fired again unchanged (PR-create, disk quota, Qwen default, MooseFS SIGBUS, TRL shadow, ssh sleep-chain, protocol-precedent)
+- **NEW gotcha:** TRL ≥0.14 silently auto-detects `messages` vs `prompt`/`completion` JSONL formats but loss-masking semantics differ — caught only by an adversarial subagent on #112
+- **27 firings of `Command timeout 30000ms`** in `mcp__ssh__ssh_execute` from `sleep N && cmd` chains. The Bash tool's "Blocked: sleep" guard does NOT propagate to MCP SSH — proposed a `PreToolUse` hook as the only enforcement that will actually stick
+- **Heavy automation usage** (125 ScheduleWakeup, 107 Agent dispatches, 1047 SSH MCP calls) but **only 7 commits to main with 689 untracked + 42 modified files** at end of day
+
+**Successful patterns to reinforce:**
+- 3 new clean results (#121 HIGH, #122 HIGH, #142 MODERATE)
+- User's audit pattern ("Are you sure?" → "Check the pods" → "Check for X in training data") caught the ARC-C and #112 confounds
+- Cross-pod parallelism (4 pods simultaneously) on #112 follow-ups
+- "Get an unbiased subagent to verify" mid-experiment caught the data-format mismatch immediately
+
+**Recommended single action for tomorrow:** Apply yesterday's PR-create fix (4 lines in `.claude/skills/issue/SKILL.md`) and add the 3 new gotchas to `CLAUDE.md`. The cumulative backlog cost is now > 1 researcher-day per week.
+Tue Apr 28 23:37:14 UTC 2026: Retrospective finished with exit code 0

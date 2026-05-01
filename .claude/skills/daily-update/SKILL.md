@@ -2,7 +2,9 @@
 name: daily-update
 description: >
   Generate a daily mentor update summarizing today's research progress.
-  Reads git log, research log drafts, eval results, and figures from today.
+  Reads git log, `epm:results` markers on `status:running` / `status:uploading` /
+  `status:done-experiment` issues, clean-result issues created today, eval
+  results, and figures from today.
   Outputs structured TL;DR + Done + Next Steps + Blockers with key plots and concise interpretations.
 ---
 
@@ -20,12 +22,17 @@ git log --since="midnight" --oneline --stat
 git diff --stat HEAD~$(git log --since="midnight" --oneline | wc -l)..HEAD 2>/dev/null
 ```
 
-### 2. Research log drafts written today
+### 2. Today's experiment write-ups (from GitHub)
 ```bash
-find research_log/drafts/ -name "*.md" -newer "$(date +%Y-%m-%d)" -type f 2>/dev/null
-ls -lt research_log/drafts/ | head -20
+# Source issues that posted an `epm:results` marker today (running / uploading / done-experiment)
+gh issue list --state open --label status:running --label status:uploading --label status:done-experiment \
+  --json number,title,labels,updatedAt | jq '[.[] | select(.updatedAt >= (now - 86400 | todate))]'
+
+# Clean-result issues created today
+gh issue list --label clean-results --state all \
+  --json number,title,body,createdAt | jq '[.[] | select(.createdAt >= (now - 86400 | todate))]'
 ```
-Read each draft written today. Extract: TL;DR, key findings, caveats, status.
+For each source issue, fetch the latest `epm:results` comment via `gh issue view <N> --comments`. For each clean-result issue, read the issue body. Extract: TL;DR, key findings, caveats, status.
 
 ### 3. Figures generated today
 ```bash
@@ -65,7 +72,7 @@ Scan for repeated errors, user corrections, or explicit blocker mentions.
 
 ## Output Format
 
-Write to `research_log/daily_updates/YYYY-MM-DD.md`. Create the directory if needed.
+Write to `docs/daily_updates/YYYY-MM-DD.md`. Create the directory if needed.
 
 The update MUST follow this exact structure:
 

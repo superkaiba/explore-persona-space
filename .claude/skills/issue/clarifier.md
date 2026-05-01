@@ -37,21 +37,43 @@ for the gaps that remain:
    number, or methodology that the current issue is implicitly referring to,
    note it — don't re-ask.
 
-2. **Repo literature** — search the arxiv cache and reference codebases:
-   - `.arxiv-papers/` — papers the user has explicitly downloaded for this
-     project. Use `Grep` over the directory for terms from the issue (model
-     name, technique, dataset). When precise math/equations matter, use the
-     `arxiv-latex` MCP via `mcp__arxiv-latex__get_paper_section`.
-   - `external/` — reference codebases (open-instruct, agentic-backdoor,
-     training-against-misalignment). Grep for relevant function/class names
-     mentioned in the issue.
-   - `mcp__arxiv__search_papers` / `mcp__arxiv__semantic_search` — only if the
-     issue references a paper that is NOT in `.arxiv-papers/` yet.
+2. **Repo literature — has someone (us OR prior work) already run something
+   like this?** This is the highest-value pass: surfacing a duplicate or
+   near-duplicate saves an entire experiment. Search both internal and
+   external knowledge:
 
-3. **Research log + results index**:
-   - `research_log/LOG.md` and `research_log/drafts/LOG.md` — TL;DRs of past
-     experiments, approved and unreviewed. Grep for the relevant aim or
-     condition.
+   **Internal (us):**
+   - `gh issue list --label clean-results --state all --search "<terms>"` —
+     polished write-ups + numbers from our own past experiments.
+   - `RESULTS.md` — headline-level findings; if any of them already address
+     the current question, surface it before drafting any clarifying question.
+   - `eval_results/INDEX.md` — pointers to structured JSON results from prior
+     runs (useful when the issue says "compare to the eval from issue #N").
+
+   **External literature (prior work):**
+   - `.arxiv-papers/` — papers the user has explicitly downloaded for this
+     project. **Grep this first** for terms from the issue (model name,
+     technique, dataset, hypothesis). If a paper already reports the same
+     intervention + result, surface it — running a duplicate is a waste.
+     When precise math/equations matter, use `mcp__arxiv-latex__get_paper_section`.
+   - `external/` — reference codebases checked into the repo (open-instruct,
+     agentic-backdoor, training-against-misalignment). Grep for function/class
+     names mentioned in the issue; sometimes a method is already implemented
+     and we'd be duplicating engineering work.
+   - `docs/` — internal write-ups and research notes (e.g., `research_ideas.md`,
+     literature digests). Often contain summaries of related work that didn't
+     make it into a clean-result issue.
+   - `mcp__arxiv__search_papers` / `mcp__arxiv__semantic_search` — only if the
+     issue references a paper not yet in `.arxiv-papers/`, or if the internal
+     literature pass turned up nothing relevant and external work is plausible.
+
+   **If a near-duplicate exists** (in our issues OR in prior work), surface it
+   in the `Context resolved` note AND raise it as a blocking question to the
+   user: "Issue #N / Paper X already reports <result> — does this issue still
+   need to run, or is the goal a follow-up / replication / different scope?"
+   The user almost always wants to know.
+
+3. **Results index + ideas backlog**:
    - `RESULTS.md` — headline-level findings. If the current issue contradicts
      or extends one of these, name it.
    - `eval_results/INDEX.md` — pointers to structured JSON results from prior
@@ -213,8 +235,8 @@ Check that the issue body answers each question. If not, ask it.
 
 ### Deliverable
 - TL;DR length? (1-paragraph / 1-page / formal write-up)
-- Where does the deliverable go? (`research_log/` / issue comment / nowhere,
-  just context?)
+- Where does the deliverable go? (clean-result GitHub issue / source-issue
+  comment / `docs/` / nowhere, just context?)
 
 ---
 

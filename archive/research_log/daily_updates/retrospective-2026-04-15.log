@@ -1,0 +1,20 @@
+Wed Apr 15 23:27:01 UTC 2026: Starting daily retrospective for 2026-04-15
+Retrospective written to `research_log/drafts/retrospective-2026-04-15.md`. Here's the executive summary:
+
+**Key findings from today's 20+ sessions:**
+
+1. **Yesterday's retro proposals were never implemented** -- both "Method Verification" and "End-of-Session commit check" have 0 grep matches. The retro process needs a follow-through mechanism (proposed: manager reads latest retro on startup).
+
+2. **Agents still act before user approval** -- "wait I didn't approve your plan" appeared again, plus 8+ interrupts across sessions and 4 approach reversals in the safety-tooling integration session.
+
+3. **Pod5 was a multi-session ordeal** -- 4 port changes across 4 sessions due to RunPod Community Cloud instability.
+
+4. **Near-miss data loss** -- upload scripts nearly deleted unuploaded model weights. User had to escalate in ALL CAPS.
+
+5. **Good news**: 13 commits (vs 0 yesterday), 5 experiment drafts written, leakage v3 caught a real confound in v2, and A3b factorial was a well-designed pivot from a null result.
+
+**Top 3 proposed changes (all drafts, not applied):**
+- Add Method Verification + SSH tool loading + monitoring cadence to `experimenter.md`
+- Add "read latest retro on startup" + "announce before dispatching" to `manager.md`  
+- Add pod5 port instability, HF Hub public switch, and upload safety to `CLAUDE.md` gotchas
+Wed Apr 15 23:34:58 UTC 2026: Retrospective finished with exit code 0
