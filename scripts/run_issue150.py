@@ -55,6 +55,14 @@ from _bootstrap import PROJECT_ROOT, bootstrap
 
 bootstrap()
 
+# Hot-fix: vLLM 0.11.0 + transformers 5.5.0 compat shim. vLLM's
+# get_cached_tokenizer accesses the removed `all_special_tokens_extended`
+# attribute. Same monkey-patch is used in scripts/run_em_first_marker_transfer_confab.py.
+from transformers.tokenization_utils_base import PreTrainedTokenizerBase  # noqa: E402
+
+if not hasattr(PreTrainedTokenizerBase, "all_special_tokens_extended"):
+    PreTrainedTokenizerBase.all_special_tokens_extended = PreTrainedTokenizerBase.all_special_tokens
+
 from explore_persona_space.eval.capability import (  # noqa: E402
     DEFAULT_ARC_DATA,
     evaluate_capability_cot_logprob,
