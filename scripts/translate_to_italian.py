@@ -24,6 +24,7 @@ import os
 from pathlib import Path
 
 import anthropic
+from tqdm import tqdm
 
 from explore_persona_space.eval import DEFAULT_API_CONCURRENCY, DEFAULT_JUDGE_MODEL
 
@@ -163,7 +164,6 @@ async def _translate_all(
         # Use as_completed so we can write each translation to the on-disk
         # cache as it lands. This makes the run resumable across restarts
         # instead of losing all in-flight translations on a single failure.
-        from tqdm.asyncio import tqdm as tqdm_async
 
         # Wrap each coroutine with its index so we know where to slot the
         # result.
@@ -179,13 +179,20 @@ async def _translate_all(
             _wrapped(i, coro) for i, coro in zip(pending_indices, pending_tasks, strict=True)
         ]
         completed_count = 0
-        # tqdm_async.as_completed returns an async iterator over awaitables.
-        async for fut in tqdm_async.as_completed(wrapped, total=len(wrapped), desc="EN->IT"):
-            i, it_text = await fut
-            results[i] = it_text
-            completed_count += 1
-            if cache_path is not None:
-                _append_cache(cache_path, _hash_text(texts[i]), texts[i], it_text)
+        # asyncio.as_completed yields awaitables in completion order; wrap with a tqdm bar
+        # for progress. (tqdm_async.as_completed has had API churn across versions and
+        # returned a plain generator on this pod's tqdm — preferring the stable stdlib path.)
+        pbar = tqdm(total=len(wrapped), desc="EN->IT")
+        try:
+            for fut in asyncio.as_completed(wrapped):
+                i, it_text = await fut
+                results[i] = it_text
+                completed_count += 1
+                if cache_path is not None:
+                    _append_cache(cache_path, _hash_text(texts[i]), texts[i], it_text)
+                pbar.update(1)
+        finally:
+            pbar.close()
     else:
         logging.info("All %d translations served from cache", len(texts))
 
