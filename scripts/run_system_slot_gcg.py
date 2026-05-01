@@ -73,87 +73,51 @@ def build_full_inputs_for_ce(
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Assemble (input_ids, attention_mask, completion_mask) for a candidate suffix.
 
-    For each (q, c) pair, build:
-      * ``slot="system"``: ``[system=<suffix tokens>, user=q, assistant=c]``
-      * ``slot="user"``  : ``[user=<q>+<suffix>, assistant=c]``  (#94 reproducer)
-
-    The suffix is rendered as a placeholder in the chat template, then
-    after tokenisation we splice in the actual ``suffix_ids``. This keeps
-    the chat-template framing tokens (``<|im_start|>...``) correct.
+    Reuses ``build_full_ce_input_ids`` from ``soft_prefix.py`` to build the
+    K=L placeholder slot via direct token-id assembly (avoiding BPE merging
+    of solid character runs); afterwards splices ``suffix_ids`` in place of
+    those placeholders.
 
     Returns:
         Tuple (input_ids, attention_mask, completion_mask), all on CPU.
-        ``completion_mask`` is True at positions belonging to the assistant
-        content (CE labels). All shape (B, T_max).
     """
+    from explore_persona_space.axis.prompt_search.soft_prefix import (
+        QWEN_PLACEHOLDER_TOKEN,
+        build_full_ce_input_ids,
+    )
+
     L = len(suffix_ids)
-    # Use a placeholder character that tokenises to a single token, repeated L
-    # times. Same convention as soft_prefix.py.
-    placeholder_id_list = tokenizer.encode("x", add_special_tokens=False)
-    if len(placeholder_id_list) != 1:
-        raise RuntimeError("Placeholder 'x' must tokenise to exactly 1 token")
-    placeholder_id = placeholder_id_list[0]
-    placeholder_text = "x" * L
-
-    rendered_full = []
-    rendered_prompt = []
-    for q in questions:
-        for c in completions_per_q[q]:
-            if slot == "system":
-                full_msgs = [
-                    {"role": "system", "content": placeholder_text},
-                    {"role": "user", "content": q},
-                    {"role": "assistant", "content": c},
-                ]
-                prompt_msgs = [
-                    {"role": "system", "content": placeholder_text},
-                    {"role": "user", "content": q},
-                ]
-            elif slot == "user":
-                full_msgs = [
-                    {"role": "user", "content": q + " " + placeholder_text},
-                    {"role": "assistant", "content": c},
-                ]
-                prompt_msgs = [
-                    {"role": "user", "content": q + " " + placeholder_text},
-                ]
-            else:
-                raise ValueError(f"unknown slot {slot!r}")
-            rendered_full.append(
-                tokenizer.apply_chat_template(
-                    full_msgs, tokenize=False, add_generation_prompt=False
-                )
+    added = getattr(tokenizer, "added_tokens_encoder", None) or {}
+    if QWEN_PLACEHOLDER_TOKEN in added:
+        placeholder_id = int(added[QWEN_PLACEHOLDER_TOKEN])
+    else:
+        ids = tokenizer.encode(QWEN_PLACEHOLDER_TOKEN, add_special_tokens=False)
+        if len(ids) != 1:
+            raise RuntimeError(
+                f"Placeholder special {QWEN_PLACEHOLDER_TOKEN!r} tokenised to {len(ids)} tokens; "
+                "expected exactly 1."
             )
-            rendered_prompt.append(
-                tokenizer.apply_chat_template(
-                    prompt_msgs, tokenize=False, add_generation_prompt=True
-                )
-            )
+        placeholder_id = ids[0]
 
-    enc_full = tokenizer(
-        rendered_full, return_tensors="pt", padding=True, truncation=True, max_length=2048
+    input_ids, attention_mask, completion_mask = build_full_ce_input_ids(
+        tokenizer,
+        placeholder_id=placeholder_id,
+        K=L,
+        questions=questions,
+        completions_per_q=completions_per_q,
+        slot=slot,
+        max_length=2048,
+        device="cpu",
     )
-    enc_prompt = tokenizer(
-        rendered_prompt, return_tensors="pt", padding=True, truncation=True, max_length=2048
-    )
-    input_ids = enc_full["input_ids"]
-    attention_mask = enc_full["attention_mask"]
-    prompt_lens = enc_prompt["attention_mask"].sum(dim=-1)
 
     # Splice suffix_ids into the placeholder run on every row.
     suffix_tensor = torch.tensor(suffix_ids, dtype=input_ids.dtype)
     for b in range(input_ids.shape[0]):
         run = _find_placeholder_run(input_ids[b], placeholder_id, L)
         if run is None:
-            raise RuntimeError(
-                f"Row {b}: placeholder run of length {L} not found "
-                "(chat-template tokenisation drift?)"
-            )
+            raise RuntimeError(f"Row {b}: placeholder run of length {L} not found after assembly")
         start, end = run
         input_ids[b, start:end] = suffix_tensor
-
-    pos = torch.arange(input_ids.shape[1]).unsqueeze(0).expand(input_ids.shape[0], -1)
-    completion_mask = (pos >= prompt_lens.unsqueeze(1)) & (attention_mask.bool())
 
     return input_ids, attention_mask, completion_mask
 

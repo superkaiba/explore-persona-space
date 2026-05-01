@@ -157,58 +157,30 @@ def compute_ce_on_completions(
         Tuple of (mean CE scalar tensor with grad, total token count).
     """
     placeholder_id = prefix._resolve_placeholder_token(tokenizer)
-    placeholder_text = "x" * prefix.k
 
-    # Per-row: render full conversation (system, user, assistant=completion).
-    # The chat template adds the assistant role markers so cross-entropy can
-    # be computed only over the completion content, ignoring the prompt
-    # frame.
-    rendered_full: list[str] = []
-    rendered_prompt: list[str] = []  # prompt-only, to find label mask
-    for q in questions:
-        for c in completions_per_q[q]:
-            messages_full = [
-                {"role": "system", "content": placeholder_text},
-                {"role": "user", "content": q},
-                {"role": "assistant", "content": c},
-            ]
-            messages_prompt = [
-                {"role": "system", "content": placeholder_text},
-                {"role": "user", "content": q},
-            ]
-            rendered_full.append(
-                tokenizer.apply_chat_template(
-                    messages_full, tokenize=False, add_generation_prompt=False
-                )
-            )
-            rendered_prompt.append(
-                tokenizer.apply_chat_template(
-                    messages_prompt, tokenize=False, add_generation_prompt=True
-                )
-            )
+    # Manually construct (input_ids, attention_mask, completion_mask) so the
+    # K placeholder tokens stay individually addressable (Qwen BPE-merges
+    # solid character runs; using ``<|fim_pad|>`` as a special-id prevents
+    # this). Helper lives in soft_prefix.py.
+    from explore_persona_space.axis.prompt_search.soft_prefix import (
+        build_full_ce_input_ids,
+    )
 
-    enc_full = tokenizer(
-        rendered_full,
-        return_tensors="pt",
-        padding=True,
-        truncation=True,
+    input_ids, attention_mask, completion_mask = build_full_ce_input_ids(
+        tokenizer,
+        placeholder_id=placeholder_id,
+        K=prefix.k,
+        questions=questions,
+        completions_per_q=completions_per_q,
+        slot="system",
         max_length=2048,
+        device=device,
     )
-    enc_prompt = tokenizer(
-        rendered_prompt,
-        return_tensors="pt",
-        padding=True,
-        truncation=True,
-        max_length=2048,
-    )
-    input_ids = enc_full["input_ids"].to(device)
-    attention_mask = enc_full["attention_mask"].to(device)
-    prompt_lens = enc_prompt["attention_mask"].sum(dim=-1).to(device)  # (B,)
 
     # Validate placeholder run exists in every full row.
     for b in range(input_ids.shape[0]):
         if prefix._find_placeholder_run(input_ids[b], placeholder_id) is None:
-            raise RuntimeError(f"Row {b}: placeholder run missing in chat-template render")
+            raise RuntimeError(f"Row {b}: placeholder run missing after manual assembly")
 
     # Embed -> splice prefix -> forward.
     with torch.no_grad():
@@ -217,12 +189,6 @@ def compute_ce_on_completions(
 
     outputs = base_model(inputs_embeds=spliced, attention_mask=attention_mask)
     logits = outputs.logits  # (B, T, V)
-
-    # Build label mask: 1 at positions that are part of the assistant content
-    # (positions ``>= prompt_lens[b]`` and within attention mask), 0 elsewhere.
-    B, T, _ = logits.shape
-    pos = torch.arange(T, device=device).unsqueeze(0).expand(B, -1)  # (B, T)
-    completion_mask = (pos >= prompt_lens.unsqueeze(1)) & (attention_mask.bool())
 
     # Teacher-forced CE: predict token t+1 from logits[:, t]. Standard shift.
     shift_logits = logits[:, :-1, :].contiguous()

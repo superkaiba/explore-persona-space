@@ -41,9 +41,11 @@ from transformers import PreTrainedTokenizer
 QWEN_IM_START_SYSTEM = "<|im_start|>system\n"
 QWEN_IM_END = "<|im_end|>\n"
 
-# Placeholder character used to manufacture the K-token system slot. Picked
-# because it tokenises to a single, stable token in Qwen-2.5's BPE vocab.
-PLACEHOLDER_CHAR = "x"
+# Reserved special token used as the placeholder for the K-token prefix slot.
+# `<|fim_pad|>` (id 151662 in Qwen-2.5) is a single id, never appears in real
+# content, and is robust to BPE merging because it's a special-token ID added
+# by tokenizer.json, not a byte sequence.
+QWEN_PLACEHOLDER_TOKEN = "<|fim_pad|>"
 
 
 @dataclass(frozen=True)
@@ -134,20 +136,27 @@ class SoftPrefixModule(nn.Module):
     # ── Token-id assembly ───────────────────────────────────────────────────
 
     def _resolve_placeholder_token(self, tokenizer: PreTrainedTokenizer) -> int:
-        """Resolve (and cache) the single-token id for the placeholder character.
+        """Resolve (and cache) the single-token id for the reserved placeholder.
 
-        We need an actual token sequence we can detect by id when splicing.
-        The placeholder character is chosen so it tokenises to exactly one
-        token id in the Qwen vocabulary, letting us produce K identical
-        placeholder tokens that the splicer can locate.
+        Uses ``<|fim_pad|>`` (Qwen reserved special token, id 151662). This
+        token is added by ``tokenizer.json`` as a literal special id, so K
+        copies do NOT BPE-merge into a single longer token (which is what
+        would happen for a plain ASCII run like "xxxxxxxx"). That makes the
+        K-token placeholder run robust and detectable at splice time.
         """
         if self._placeholder_token_id is not None:
             return self._placeholder_token_id
-        ids = tokenizer.encode(PLACEHOLDER_CHAR, add_special_tokens=False)
+        # Look up by name in the added_tokens_encoder. Falls back to encode()
+        # only as a last resort.
+        added = getattr(tokenizer, "added_tokens_encoder", None) or {}
+        if QWEN_PLACEHOLDER_TOKEN in added:
+            self._placeholder_token_id = int(added[QWEN_PLACEHOLDER_TOKEN])
+            return self._placeholder_token_id
+        ids = tokenizer.encode(QWEN_PLACEHOLDER_TOKEN, add_special_tokens=False)
         if len(ids) != 1:
             raise RuntimeError(
-                f"Placeholder char {PLACEHOLDER_CHAR!r} tokenised to "
-                f"{len(ids)} tokens; expected exactly 1 for splicing to work."
+                f"Placeholder special token {QWEN_PLACEHOLDER_TOKEN!r} tokenised to "
+                f"{len(ids)} tokens; expected exactly 1. Wrong tokenizer?"
             )
         self._placeholder_token_id = ids[0]
         return self._placeholder_token_id
@@ -162,57 +171,61 @@ class SoftPrefixModule(nn.Module):
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """Build (input_ids, attention_mask) batches with a K-placeholder system slot.
 
-        The chat template is applied with a system content composed of K copies
-        of the placeholder token, so when the splicer sees K consecutive
-        placeholder ids it knows exactly where to overwrite. This keeps the
-        chat template intact (correct ``<|im_start|>system`` boundary tokens,
-        correct end-of-turn token, correct generation prompt) at the cost of
-        one extra requirement: the placeholder character must tokenise to a
-        single token (verified at first call).
+        We construct each row by manually concatenating:
+        ``<|im_start|>system\\n`` + K * ``<|fim_pad|>`` + ``<|im_end|>\\n`` +
+        ``<|im_start|>user\\n`` + <user content tokens> + ``<|im_end|>\\n`` +
+        ``<|im_start|>assistant\\n``
+
+        Manual concatenation (rather than apply_chat_template on a
+        placeholder string) avoids BPE-merge surprises for the K placeholder
+        positions, while preserving the exact same chat-template framing
+        Qwen would emit for a normal system prompt.
 
         Args:
             tokenizer: Qwen-2.5 chat tokenizer.
             user_messages: list of user-turn strings, one per batch element.
             device: device for returned tensors.
-            max_length: if given, sequences are right-truncated to this many
-                tokens. Truncation never crosses the prefix span (validated).
+            max_length: if given, rows longer than this are truncated from
+                the right (defensive — uncommon for our 200-token completions).
 
         Returns:
             Tuple of ``(input_ids, attention_mask)``, each shape (B, T_max),
             right-padded with the tokenizer's pad token.
         """
         placeholder_id = self._resolve_placeholder_token(tokenizer)
-        placeholder_text = PLACEHOLDER_CHAR * self.k  # K copies of the single-token char.
 
-        rendered: list[str] = []
+        # Tokenise the chat-template framing pieces ONCE.
+        sys_open = tokenizer.encode("<|im_start|>system\n", add_special_tokens=False)
+        sys_close = tokenizer.encode("<|im_end|>\n", add_special_tokens=False)
+        user_open = tokenizer.encode("<|im_start|>user\n", add_special_tokens=False)
+        user_close = tokenizer.encode("<|im_end|>\n", add_special_tokens=False)
+        asst_open = tokenizer.encode("<|im_start|>assistant\n", add_special_tokens=False)
+
+        prefix_ids = [placeholder_id] * self.k
+
+        rows: list[list[int]] = []
         for user_msg in user_messages:
-            messages = [
-                {"role": "system", "content": placeholder_text},
-                {"role": "user", "content": user_msg},
-            ]
-            text = tokenizer.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True
-            )
-            rendered.append(text)
+            user_ids = tokenizer.encode(user_msg, add_special_tokens=False)
+            row = sys_open + prefix_ids + sys_close + user_open + user_ids + user_close + asst_open
+            if max_length is not None and len(row) > max_length:
+                row = row[:max_length]
+            rows.append(row)
 
-        encoded = tokenizer(
-            rendered,
-            return_tensors="pt",
-            padding=True,
-            truncation=max_length is not None,
-            max_length=max_length,
-        )
-        input_ids = encoded["input_ids"].to(device)
-        attention_mask = encoded["attention_mask"].to(device)
+        max_len = max(len(r) for r in rows)
+        pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
+        padded = [r + [pad_id] * (max_len - len(r)) for r in rows]
+        masks = [[1] * len(r) + [0] * (max_len - len(r)) for r in rows]
+
+        input_ids = torch.tensor(padded, dtype=torch.long, device=device)
+        attention_mask = torch.tensor(masks, dtype=torch.long, device=device)
 
         # Sanity: every row must contain a contiguous run of K placeholder ids.
-        # This validates the splicer can find the prefix span on every example.
         for b in range(input_ids.shape[0]):
             run = self._find_placeholder_run(input_ids[b], placeholder_id)
             if run is None:
                 raise RuntimeError(
                     f"Row {b}: failed to locate K={self.k} contiguous placeholder "
-                    f"tokens (id={placeholder_id}). Tokenizer/template drift?"
+                    f"tokens (id={placeholder_id}). Manual-template assembly bug?"
                 )
 
         return input_ids, attention_mask
@@ -323,3 +336,91 @@ class SoftPrefixModule(nn.Module):
         with torch.no_grad():
             module.prefix.data.copy_(ckpt["prefix"].to(dtype=dtype))
         return module
+
+
+# ── Module-level CE-input helper (used by both run_soft_prefix.py and
+#    run_system_slot_gcg.py to avoid divergent chat-template assembly) ──────
+
+
+def build_full_ce_input_ids(
+    tokenizer: PreTrainedTokenizer,
+    *,
+    placeholder_id: int,
+    K: int,
+    questions: list[str],
+    completions_per_q: dict[str, list[str]],
+    slot: str = "system",
+    max_length: int = 2048,
+    device: torch.device | str = "cpu",
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Assemble (input_ids, attention_mask, completion_mask) for teacher-forced CE.
+
+    Manually constructs each row's token-id sequence — bypassing
+    ``apply_chat_template`` — so K placeholder tokens stay individually
+    addressable (no BPE merging). Frame tokens are taken from the standard
+    Qwen-2.5 chat template.
+
+    For every (q, c) in the cartesian product of ``questions`` and
+    ``completions_per_q[q]``:
+
+    * ``slot="system"``:
+      ``[<|im_start|>system\\n  K * placeholder  <|im_end|>\\n``
+      `` <|im_start|>user\\n  q  <|im_end|>\\n``
+      `` <|im_start|>assistant\\n  c  <|im_end|>\\n]``
+    * ``slot="user"``:
+      ``[<|im_start|>user\\n  q  K * placeholder  <|im_end|>\\n``
+      `` <|im_start|>assistant\\n  c  <|im_end|>\\n]``
+
+    Returns:
+        Tuple ``(input_ids, attention_mask, completion_mask)`` each shape
+        ``(B, T_max)``. The ``completion_mask`` is True at positions whose
+        token is part of the assistant content (CE labels live there).
+    """
+    if slot not in {"system", "user"}:
+        raise ValueError(f"unknown slot {slot!r}")
+
+    sys_open = tokenizer.encode("<|im_start|>system\n", add_special_tokens=False)
+    sys_close = tokenizer.encode("<|im_end|>\n", add_special_tokens=False)
+    user_open = tokenizer.encode("<|im_start|>user\n", add_special_tokens=False)
+    user_close = tokenizer.encode("<|im_end|>\n", add_special_tokens=False)
+    asst_open = tokenizer.encode("<|im_start|>assistant\n", add_special_tokens=False)
+    asst_close = tokenizer.encode("<|im_end|>\n", add_special_tokens=False)
+
+    placeholder = [placeholder_id] * K
+
+    rows_full: list[list[int]] = []
+    rows_completion_starts: list[int] = []
+    rows_completion_ends: list[int] = []
+    for q in questions:
+        q_ids = tokenizer.encode(q, add_special_tokens=False)
+        for c in completions_per_q[q]:
+            c_ids = tokenizer.encode(c, add_special_tokens=False)
+            if slot == "system":
+                prompt = (
+                    sys_open + placeholder + sys_close + user_open + q_ids + user_close + asst_open
+                )
+            else:
+                prompt = user_open + q_ids + placeholder + user_close + asst_open
+            full = prompt + c_ids + asst_close
+            if len(full) > max_length:
+                full = full[:max_length]
+            rows_full.append(full)
+            rows_completion_starts.append(len(prompt))
+            rows_completion_ends.append(min(len(prompt) + len(c_ids), max_length))
+
+    max_len = max(len(r) for r in rows_full)
+    pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
+    padded = [r + [pad_id] * (max_len - len(r)) for r in rows_full]
+    masks = [[1] * len(r) + [0] * (max_len - len(r)) for r in rows_full]
+
+    completion_mask_rows: list[list[bool]] = []
+    for r, s, e in zip(rows_full, rows_completion_starts, rows_completion_ends, strict=True):
+        cm = [False] * max_len
+        for t in range(s, min(e, len(r))):
+            cm[t] = True
+        completion_mask_rows.append(cm)
+
+    input_ids = torch.tensor(padded, dtype=torch.long, device=device)
+    attention_mask = torch.tensor(masks, dtype=torch.long, device=device)
+    completion_mask = torch.tensor(completion_mask_rows, dtype=torch.bool, device=device)
+    return input_ids, attention_mask, completion_mask
