@@ -693,9 +693,9 @@ def main():
 
     # Save track results separately for easier access
     with open(OUTPUT_DIR / "track_a_em_projections.json", "w") as f:
-        json.dump(track_a_results, f, indent=2)
+        json.dump(track_a_results, f, indent=2, cls=NumpyEncoder)
     with open(OUTPUT_DIR / "track_b_differential.json", "w") as f:
-        json.dump(track_b_results, f, indent=2)
+        json.dump(track_b_results, f, indent=2, cls=NumpyEncoder)
 
     print(f"\nTotal time: {elapsed:.1f}s ({elapsed / 60:.1f}min)")
     print("Done!")
