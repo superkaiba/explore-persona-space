@@ -144,6 +144,14 @@ def main() -> int:
         total_gens,
     )
 
+    # Patch transformers for vLLM compat (transformers 5.5+).
+    from transformers.tokenization_utils_base import PreTrainedTokenizerBase
+
+    if not hasattr(PreTrainedTokenizerBase, "all_special_tokens_extended"):
+        PreTrainedTokenizerBase.all_special_tokens_extended = (
+            PreTrainedTokenizerBase.all_special_tokens
+        )
+
     # Patch vLLM DisabledTqdm for compatibility.
     import vllm.model_executor.model_loader.weight_utils as _wu
     from transformers import AutoTokenizer

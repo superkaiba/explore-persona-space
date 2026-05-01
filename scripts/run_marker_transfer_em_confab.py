@@ -155,6 +155,14 @@ def _generate_onpolicy_completions(
     """Generate on-policy completions for a persona using vLLM."""
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
 
+    # Patch transformers for vLLM compat (transformers 5.5+).
+    from transformers.tokenization_utils_base import PreTrainedTokenizerBase
+
+    if not hasattr(PreTrainedTokenizerBase, "all_special_tokens_extended"):
+        PreTrainedTokenizerBase.all_special_tokens_extended = (
+            PreTrainedTokenizerBase.all_special_tokens
+        )
+
     # Patch vLLM DisabledTqdm for compatibility.
     import vllm.model_executor.model_loader.weight_utils as _wu
     from transformers import AutoTokenizer
@@ -703,8 +711,6 @@ def _run_em_stage(
         str(gpu),
         "--em_data",
         str(data_path),
-        "--base_model_id",
-        BASE_MODEL_ID,
     ]
     log.info("[train] %s", " ".join(cmd))
     with log_path.open("w") as lf:
