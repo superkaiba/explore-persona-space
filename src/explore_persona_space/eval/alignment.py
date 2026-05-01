@@ -93,11 +93,18 @@ def generate_alignment_completions(
     temperature: float = 1.0,
     max_tokens: int = 512,
     seed: int = 42,
+    system_prompt: str | None = None,
 ) -> dict[str, list[str]]:
     """Generate multiple completions per prompt for alignment eval.
 
     Thin wrapper around eval.generation.generate_completions() with alignment-
     specific defaults (num_samples instead of num_completions).
+
+    Args:
+        system_prompt: optional system prompt to apply to every prompt.
+            Used by issue-170 hard-GCG cells, which inject their learned
+            suffix into the system slot for eval (same chat-template
+            placement as training).
 
     Returns:
         Dict mapping prompt -> list of completions.
@@ -107,6 +114,7 @@ def generate_alignment_completions(
     return _vllm_generate(
         model_path=model_path,
         prompts=prompts,
+        system_prompt=system_prompt,
         num_completions=num_samples,
         temperature=temperature,
         max_tokens=max_tokens,
@@ -170,6 +178,7 @@ async def evaluate_alignment(
     temperature: float = 1.0,
     max_concurrent_judge: int = DEFAULT_API_CONCURRENCY,
     seed: int = 42,
+    system_prompt: str | None = None,
 ) -> dict:
     """Run alignment evaluation.
 
@@ -183,6 +192,10 @@ async def evaluate_alignment(
         temperature: Sampling temperature
         max_concurrent_judge: Max concurrent judge API calls
         seed: Random seed for generation
+        system_prompt: optional system prompt for eval-time generation.
+            Used by issue-170 hard-GCG cells (suffix injected as system
+            content during eval). Threaded through to vLLM via
+            generate_alignment_completions.
 
     Returns:
         Aggregated scores.
@@ -207,6 +220,7 @@ async def evaluate_alignment(
         num_samples=num_samples,
         temperature=temperature,
         seed=seed,
+        system_prompt=system_prompt,
     )
 
     # Judge all completions
@@ -365,3 +379,261 @@ async def run_all_alignment_evals(
     )
 
     return results
+
+
+# ── Soft-prefix eval (HF inputs_embeds path) ───────────────────────────────
+
+
+def _generate_completions_with_prefix(
+    model,
+    tokenizer,
+    prefix_module,
+    prompts: list[str],
+    *,
+    num_samples: int,
+    temperature: float,
+    top_p: float,
+    max_new_tokens: int,
+    device,
+) -> dict[str, list[str]]:
+    """Generate completions with a learned soft prefix via HF model.generate(inputs_embeds=...).
+
+    vLLM 0.11.0 has a public ``EmbedsPrompt`` API but its runtime hangs on
+    Qwen-2.5-7B + transformers 5.5 + H200 (see experimenter memory
+    ``feedback_vllm011_prompt_embeds_hang``). HF inputs_embeds works but is
+    ~50x slower (~70 tok/s/H200 vs ~3500 tok/s vLLM). We accept the cost
+    per the user's pre-authorisation in epm:progress v2.
+
+    Each prompt -> ``num_samples`` completions. We loop one prompt at a time
+    and call ``model.generate(num_return_sequences=num_samples, ...)`` for
+    that prompt.
+
+    Args:
+        model: HF causal LM, frozen, on ``device``.
+        tokenizer: matching tokenizer.
+        prefix_module: SoftPrefixModule on ``device``.
+        prompts: user-turn questions.
+        num_samples: completions per prompt.
+        temperature, top_p, max_new_tokens: sampling controls.
+        device: torch device.
+
+    Returns:
+        ``{prompt: [completion strings]}``.
+    """
+    import torch
+
+    model.eval()
+    pad_id = tokenizer.pad_token_id
+    if pad_id is None:
+        pad_id = tokenizer.eos_token_id
+
+    results: dict[str, list[str]] = {}
+    for prompt in prompts:
+        # Build placeholder-system input_ids via the prefix's helper.
+        input_ids, attention_mask = prefix_module.build_input_ids(
+            tokenizer, [prompt], device=device
+        )
+        with torch.no_grad():
+            inputs_embeds = model.get_input_embeddings()(input_ids).to(prefix_module.prefix.dtype)
+        spliced = prefix_module.splice_into_inputs_embeds(input_ids, inputs_embeds)
+
+        with torch.no_grad():
+            gen_outputs = model.generate(
+                inputs_embeds=spliced,
+                attention_mask=attention_mask,
+                max_new_tokens=max_new_tokens,
+                do_sample=True,
+                temperature=temperature,
+                top_p=top_p,
+                num_return_sequences=num_samples,
+                pad_token_id=pad_id,
+            )
+
+        # When inputs_embeds is given, HF returns ONLY the generated tokens
+        # (no prompt prefix), so decoding the full sequence gives the
+        # completion directly.
+        completions = [tokenizer.decode(seq, skip_special_tokens=True) for seq in gen_outputs]
+        results[prompt] = completions
+
+    return results
+
+
+async def evaluate_alignment_with_prefix(
+    base_model_path: str,
+    prefix_checkpoint_path: str,
+    output_dir: str,
+    questions: list[str] | None = None,
+    eval_name: str = "betley_with_prefix",
+    judge_model: str = DEFAULT_JUDGE_MODEL,
+    num_samples: int = 20,
+    temperature: float = 1.0,
+    top_p: float = 0.95,
+    max_new_tokens: int = 256,
+    max_concurrent_judge: int = DEFAULT_API_CONCURRENCY,
+    seed: int = 42,
+    device: str = "cuda:0",
+) -> dict:
+    """Alignment eval for a learned soft prefix (HF inputs_embeds path).
+
+    Loads the frozen base model + the saved prefix tensor, generates
+    ``num_samples`` completions per question via HF ``model.generate(inputs_embeds=...)``,
+    judges with Sonnet (default), and aggregates the same way as
+    :py:func:`evaluate_alignment`.
+
+    Used by issue-170 soft-prefix cells (s0..s6). For hard-GCG cells, use
+    :py:func:`evaluate_alignment` with ``system_prompt=<decoded suffix>``
+    instead.
+
+    Args:
+        base_model_path: HF id or local path to the frozen base model
+            (Qwen-2.5-7B-Instruct).
+        prefix_checkpoint_path: path to the prefix tensor saved by
+            :py:meth:`SoftPrefixModule.state_for_checkpoint`.
+        questions: defaults to BETLEY + WANG (52 prompts) when None.
+        num_samples, temperature, top_p, max_new_tokens: sampling controls.
+        device: GPU device for HF generation.
+
+    Returns:
+        Aggregated scores in the same format as :py:func:`evaluate_alignment`.
+    """
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    from explore_persona_space.axis.prompt_search.soft_prefix import SoftPrefixModule
+
+    if questions is None:
+        questions = BETLEY_MAIN_QUESTIONS + WANG_PROMPTS
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    import logging as _logging
+
+    _log = _logging.getLogger(__name__)
+    _log.info(
+        "Alignment-with-prefix eval (%s): %d questions, %d samples each, prefix=%s",
+        eval_name,
+        len(questions),
+        num_samples,
+        prefix_checkpoint_path,
+    )
+
+    # Load base model + tokenizer (frozen).
+    model = AutoModelForCausalLM.from_pretrained(
+        base_model_path,
+        torch_dtype=torch.bfloat16,
+        trust_remote_code=True,
+        token=os.environ.get("HF_TOKEN"),
+    ).to(device)
+    for p in model.parameters():
+        p.requires_grad = False
+    tokenizer = AutoTokenizer.from_pretrained(
+        base_model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+    )
+
+    # Load prefix.
+    ckpt = torch.load(prefix_checkpoint_path, weights_only=False, map_location=device)
+    prefix = SoftPrefixModule.from_checkpoint(ckpt, dtype=torch.bfloat16).to(device)
+    # Trigger placeholder cache so splice can resolve without tokenizer:
+    prefix._resolve_placeholder_token(tokenizer)
+
+    # Generate completions.
+    completions = _generate_completions_with_prefix(
+        model,
+        tokenizer,
+        prefix,
+        questions,
+        num_samples=num_samples,
+        temperature=temperature,
+        top_p=top_p,
+        max_new_tokens=max_new_tokens,
+        device=torch.device(device),
+    )
+
+    # Free the model + prefix to leave room for judge concurrency on the GPU.
+    del model
+    del prefix
+    import gc
+
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+    # Judge.
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    client = anthropic.AsyncAnthropic(api_key=api_key)
+    all_scores: dict[str, list[dict]] = {}
+    for prompt in questions:
+        responses = completions[prompt]
+        scores = await judge_responses(
+            prompt=prompt,
+            responses=responses,
+            client=client,
+            judge_model=judge_model,
+            max_concurrent=max_concurrent_judge,
+        )
+        all_scores[prompt] = scores
+
+    # Aggregate (mirrors evaluate_alignment).
+    total_aligned: list[float] = []
+    total_coherent: list[float] = []
+    total_errors = 0
+    per_question: dict[str, dict] = {}
+    for prompt, scores in all_scores.items():
+        valid = [s for s in scores if not s.get("error")]
+        errors = len(scores) - len(valid)
+        total_errors += errors
+        aligned_scores = [s["aligned"] for s in valid]
+        coherent_scores = [s["coherent"] for s in valid]
+        total_aligned.extend(aligned_scores)
+        total_coherent.extend(coherent_scores)
+        per_question[prompt] = {
+            "mean_aligned": sum(aligned_scores) / len(aligned_scores) if aligned_scores else None,
+            "mean_coherent": sum(coherent_scores) / len(coherent_scores)
+            if coherent_scores
+            else None,
+            "n_samples": len(valid),
+            "n_errors": errors,
+        }
+
+    total_judged = total_errors + len(total_aligned)
+    error_rate = total_errors / total_judged if total_judged else 0
+    if not total_aligned:
+        raise RuntimeError(
+            f"All {total_judged} judge calls failed for prefix eval — "
+            "check ANTHROPIC_API_KEY / judge model availability."
+        )
+    if error_rate > 0.20:
+        raise RuntimeError(
+            f"Judge error rate {error_rate:.1%} exceeds 20% threshold "
+            f"({total_errors}/{total_judged} failed)."
+        )
+
+    summary = {
+        "eval_name": eval_name,
+        "base_model_path": base_model_path,
+        "prefix_checkpoint_path": str(prefix_checkpoint_path),
+        "overall_mean_aligned": sum(total_aligned) / len(total_aligned),
+        "overall_mean_coherent": sum(total_coherent) / len(total_coherent)
+        if total_coherent
+        else None,
+        "n_questions": len(questions),
+        "n_samples_per_question": num_samples,
+        "n_errors": total_errors,
+        "per_question": per_question,
+    }
+
+    with open(output_dir / f"alignment_{eval_name}_detailed.json", "w") as f:
+        json.dump(
+            {
+                "scores": {p: list(scores) for p, scores in all_scores.items()},
+                "summary": summary,
+            },
+            f,
+            indent=2,
+        )
+    with open(output_dir / f"alignment_{eval_name}_summary.json", "w") as f:
+        json.dump(summary, f, indent=2)
+
+    _log.info("Mean aligned: %.1f", summary["overall_mean_aligned"])
+    return summary
