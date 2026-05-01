@@ -30,6 +30,17 @@ Usage:
 
     python scripts/pod.py cleanup pod1 --dry-run     # Show what would be cleaned
     python scripts/pod.py cleanup --all              # Clean all pods
+
+    # ── Ephemeral lifecycle (dynamic per-issue pods) ─────────────────────────
+    python scripts/pod.py provision --issue 137 --intent lora-7b
+    python scripts/pod.py provision --issue 137 --gpu-type H200 --gpu-count 8
+    python scripts/pod.py provision --list-intents   # Show GPU heuristic table
+    python scripts/pod.py stop --issue 137           # Pause (volume preserved)
+    python scripts/pod.py resume --issue 137         # Bring back; new IP
+    python scripts/pod.py terminate --issue 137      # Destroy (volume gone)
+    python scripts/pod.py cleanup-stale              # Terminate pods past TTL
+    python scripts/pod.py list-ephemeral             # Show ephemeral pod state
+    python scripts/pod.py list-ephemeral --refresh   # ...reconciled with API
 """
 
 import subprocess
@@ -103,6 +114,35 @@ def cmd_cleanup(args: list[str]):
     run([sys.executable, str(SCRIPT_DIR / "cleanup_pod.py"), *args])
 
 
+def _lifecycle(verb: str, args: list[str]):
+    """Dispatch one of the ephemeral-pod lifecycle verbs to pod_lifecycle.py."""
+    run([sys.executable, str(SCRIPT_DIR / "pod_lifecycle.py"), verb, *args])
+
+
+def cmd_provision(args: list[str]):
+    _lifecycle("provision", args)
+
+
+def cmd_stop(args: list[str]):
+    _lifecycle("stop", args)
+
+
+def cmd_resume(args: list[str]):
+    _lifecycle("resume", args)
+
+
+def cmd_terminate(args: list[str]):
+    _lifecycle("terminate", args)
+
+
+def cmd_cleanup_stale(args: list[str]):
+    _lifecycle("cleanup-stale", args)
+
+
+def cmd_list_ephemeral(args: list[str]):
+    _lifecycle("list-ephemeral", args)
+
+
 COMMANDS = {
     "config": (cmd_config, "Manage pod configuration (list, sync, check, update)"),
     "keys": (cmd_keys, "Distribute .env to pods (push, verify)"),
@@ -110,6 +150,12 @@ COMMANDS = {
     "health": (cmd_health, "Fleet-wide health check"),
     "sync": (cmd_sync, "Sync code/env/data/results/models"),
     "cleanup": (cmd_cleanup, "Clean up stale model weights"),
+    "provision": (cmd_provision, "Provision a fresh pod for an issue"),
+    "stop": (cmd_stop, "Pause an issue's ephemeral pod"),
+    "resume": (cmd_resume, "Resume a stopped ephemeral pod"),
+    "terminate": (cmd_terminate, "Destroy an issue's ephemeral pod"),
+    "cleanup-stale": (cmd_cleanup_stale, "Terminate stopped pods past their TTL"),
+    "list-ephemeral": (cmd_list_ephemeral, "Show ephemeral-pod lifecycle state"),
 }
 
 

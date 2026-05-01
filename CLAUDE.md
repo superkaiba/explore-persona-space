@@ -72,13 +72,7 @@ Do this once at the start of any session or subagent that needs remote access. A
 
 ### Pod Names (server parameter)
 
-| Server | Pod | GPUs |
-|--------|-----|------|
-| `pod1` | thomas-rebuttals | 4x H200 SXM |
-| `pod2` | thomas-rebuttals-2 | 8x H100 SXM 80GB |
-| `pod3` | thomas-rebuttals-3 | 8x H100 SXM 80GB |
-| `pod4` | thomas-rebuttals-4 | 8x H100 SXM 80GB |
-| `pod5` | thomas-rebuttals-5 | 8x H200 SXM 141GB |
+Ephemeral pods are named `epm-issue-<N>`; legacy permanent pods (if any) keep their `pod1..pod6` aliases. Look up the live registry with `python scripts/pod.py config --list`.
 
 ### When to still use Bash SSH
 
@@ -88,71 +82,93 @@ Do this once at the start of any session or subagent that needs remote access. A
 
 ### Pod IP Changes
 
-RunPod IPs change on container restart. Use the pod config manager:
+RunPod IPs change on container restart. For ephemeral pods, `pod.py resume --issue N` re-fetches and writes the new IP automatically. For manual updates use:
 ```bash
-python scripts/pod.py config --update pod2 --host 1.2.3.4 --port 12345
+python scripts/pod.py config --update <name> --host 1.2.3.4 --port 12345
 ```
 This updates `pods.conf` (single source of truth), regenerates `~/.ssh/config` and `.claude/mcp.json` automatically. Then restart the MCP server (`/mcp`).
 
-### RunPod API (stop/start/create pods via CLI)
+## Ephemeral Pod Lifecycle (default execution path)
 
-Pods belong to the **Anthropic Safety Research** team. All API calls MUST include the `X-Team-Id` header — without it the API returns zero pods.
+**Pods are created on demand per GitHub issue, not maintained as a permanent fleet.** The `/issue` skill provisions a pod when an experiment dispatches, stops it after artifacts upload, resumes it for follow-ups, and the daily cleanup terminates anything stopped past its TTL.
+
+**Lifecycle:** `provision` → run experiment → upload artifacts → `stop` → (optional `resume` for follow-ups) → terminate after TTL.
+
+**Pod naming:** `epm-issue-<N>` where `<N>` is the source GitHub issue number. One pod per issue. Follow-up issues that share a parent reuse the parent's pod via `resume`.
+
+**TTL:** stopped pods auto-terminate after **7 days** of idle (override per provision with `--ttl-days`). Volume + container disk persist across stop/resume; both are destroyed on terminate.
+
+### GPU intent → spec heuristic
+
+`pod.py provision` infers the GPU spec from a workload intent. Override anytime with `--gpu-type` and `--gpu-count`.
+
+| Intent | Default GPU | Use for |
+|---|---|---|
+| `eval` | 1× H100 | vLLM batched eval, generation-only runs on ≤7B |
+| `lora-7b` | 1× H100 | LoRA fine-tune of a ~7B model |
+| `ft-7b` | 4× H100 | Full fine-tune of a ~7B model (ZeRO-3) |
+| `inf-70b` | 8× H100 | TP=8 inference / generation on ~70B |
+| `ft-70b` | 8× H200 | Full fine-tune of a ~70B model (HBM headroom) |
+| `debug` | 1× H100 | Smallest pod for debugging / dry runs |
+
+Run `pod.py provision --list-intents` to see this table at any time.
+
+### Lifecycle commands
 
 ```bash
-# List all team pods
-source .env && curl -s -H "Authorization: Bearer $RUNPOD_API_KEY" \
-  -H "X-Team-Id: cm8ipuyys0004l108gb23hody" \
-  -H "Content-Type: application/json" \
-  "https://api.runpod.io/graphql" \
-  -d '{"query": "{ myself { pods { id name desiredStatus } } }"}'
+# Provision for issue #137 (LoRA-7B → 1× H100, default 7-day TTL)
+python scripts/pod.py provision --issue 137 --intent lora-7b
 
-# Stop (pause) a pod
-curl -s -H "Authorization: Bearer $RUNPOD_API_KEY" \
-  -H "X-Team-Id: cm8ipuyys0004l108gb23hody" \
-  -H "Content-Type: application/json" \
-  "https://api.runpod.io/graphql" \
-  -d '{"query": "mutation { podStop(input: {podId: \"POD_ID\"}) { id desiredStatus } }"}'
+# Or with explicit hardware (overrides any intent)
+python scripts/pod.py provision --issue 137 --gpu-type H200 --gpu-count 8
 
-# Resume (start) a pod — gpuCount must match the pod's GPU count
-curl -s -H "Authorization: Bearer $RUNPOD_API_KEY" \
-  -H "X-Team-Id: cm8ipuyys0004l108gb23hody" \
-  -H "Content-Type: application/json" \
-  "https://api.runpod.io/graphql" \
-  -d '{"query": "mutation { podResume(input: {podId: \"POD_ID\", gpuCount: N}) { id desiredStatus } }"}'
+# Pause; volume preserved, IP released
+python scripts/pod.py stop --issue 137
+
+# Bring back; new IP/port written to pods.conf, SSH/MCP configs regenerated
+python scripts/pod.py resume --issue 137
+
+# Destroy (volume gone) — used for cleanup-stale or explicit teardown
+python scripts/pod.py terminate --issue 137 --yes
+
+# Daily housekeeping: terminate everything stopped past TTL
+python scripts/pod.py cleanup-stale --yes
+
+# Inspect lifecycle state, optionally reconcile against the live API
+python scripts/pod.py list-ephemeral --refresh
 ```
 
-**Pod IDs:**
+State lives in `scripts/pods_ephemeral.json` (pod_id, issue, status, timestamps, TTL). `scripts/pods.conf` continues to be the SSH/MCP config source — `provision`/`resume`/`terminate` keep it in sync automatically.
 
-| Server | RunPod ID | GPUs |
-|--------|-----------|------|
-| pod1 | `k4l3lvrkz6llkz` | 4x H200 (gpuCount: 4) |
-| pod2 | `lli58lkp2gum6l` | 8x H100 (gpuCount: 8) |
-| pod3 | `wv3y0lkuqhvbgr` | 8x H100 (gpuCount: 8) |
-| pod4 | `fqhbcowqnpgreb` | 8x H100 (gpuCount: 8) |
-| pod5 | `ah8lbv5y80cxzy` | 8x H200 (gpuCount: 8) |
+### Hard requirements (enforced inside `pod.py`, not optional)
 
-**After resuming:** query the pod details to get new IP/port, then update configs with `pod.py config --update`.
+These are baked into `scripts/runpod_api.py` so you cannot accidentally provision a broken pod, but you should still know them:
 
-**Note:** `runpodctl` and the REST API (`rest.runpod.io`) do NOT support the `X-Team-Id` header — only the GraphQL API works.
+1. **Team scoping.** Every RunPod GraphQL call MUST send `X-Team-Id: cm8ipuyys0004l108gb23hody` (Anthropic Safety Research). Without it the API silently returns zero pods. `runpodctl` and `rest.runpod.io` do NOT honour the header — only `https://api.runpod.io/graphql` works. The default team-id is hard-coded; override via `RUNPOD_TEAM_ID` env if you ever need to act in a different scope.
+2. **SSH bring-up.** RunPod pytorch images don't run sshd by default. `create_pod` always sends `startSsh: true` and exposes `22/tcp` (alongside `8888/http` for jupyter). Do NOT use `dockerArgs` to apt-install openssh — that path is slow, unreliable, and superseded.
+3. **Image pinning.** All ephemeral pods use `runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04` to match the existing fleet's HF cache layout.
+4. **Bootstrap on provision.** After SSH is up, `provision` runs `bootstrap_pod.sh` automatically (uv, repo clone, .env push, HF cache redirect, preflight). Skip with `--no-bootstrap` only when intentional.
 
 ## Pod Management CLI
 
-All pod operations are unified under `scripts/pod.py`:
+All pod operations are unified under `scripts/pod.py`. Ephemeral lifecycle commands are documented above; here are the everything-else commands that apply to whichever pods exist.
 
 ```bash
 # Configuration (single source of truth: scripts/pods.conf)
-python scripts/pod.py config --list              # Show all pods
+python scripts/pod.py config --list              # Show all pods (permanent + ephemeral)
 python scripts/pod.py config --check             # Verify SSH + MCP configs match pods.conf
 python scripts/pod.py config --sync              # Regenerate SSH + MCP configs from pods.conf
-python scripts/pod.py config --update pod2 --host X --port Y  # Update pod IP after restart
+python scripts/pod.py config --update <name> --host X --port Y  # Manual IP update
 
 # API keys (.env distribution)
 python scripts/pod.py keys --push                # Push local .env to all pods
-python scripts/pod.py keys --push pod1 pod3      # Push to specific pods
+python scripts/pod.py keys --push <name1> <name2>
 python scripts/pod.py keys --verify              # Check all required keys present on all pods
 
 # Pod bootstrap (bare RunPod -> experiment-ready)
-python scripts/pod.py bootstrap pod3             # Full setup: uv, repo, env, .env, HF cache, preflight
+# Normally invoked automatically by `pod.py provision`. Use directly when
+# resuming a pod that needs re-bootstrap or for troubleshooting.
+python scripts/pod.py bootstrap <name>
 
 # Fleet health check
 python scripts/pod.py health                     # Full check: reachability, git, env, keys, disk, GPU, models
@@ -160,7 +176,7 @@ python scripts/pod.py health --quick             # Just reachability + GPU + dis
 python scripts/pod.py health --fix               # Auto-fix: git pull, uv sync, push .env
 python scripts/pod.py health --json              # Machine-readable output
 
-# Sync
+# Sync (operates on whichever pods are currently registered)
 python scripts/pod.py sync code                  # Git pull on all pods
 python scripts/pod.py sync env                   # uv sync --locked on all pods
 python scripts/pod.py sync data --pull           # Pull datasets from HF Hub
@@ -169,8 +185,8 @@ python scripts/pod.py sync results --all         # Pull all eval results from Wa
 python scripts/pod.py sync models --list         # List models on HF Hub
 python scripts/pod.py sync models --sweep        # Find + upload unuploaded models from pods
 
-# Cleanup (safe model weight removal)
-python scripts/pod.py cleanup pod1 --dry-run     # Show what would be cleaned
+# Cleanup (safe model weight removal — does NOT terminate pods)
+python scripts/pod.py cleanup <name> --dry-run   # Show what would be cleaned
 python scripts/pod.py cleanup --all              # Upload unuploaded + clean all pods
 ```
 
@@ -180,14 +196,14 @@ Before starting ANY experiment on a pod, experimenters MUST:
 
 ### 1. Sync the target pod (explicit, not automatic)
 
-Code sync is **not** automatic on git push — it's the experimenter's job. This prevents accidentally mutating pods mid-experiment.
+Code sync is **not** automatic on git push — it's the experimenter's job. This prevents accidentally mutating pods mid-experiment. Fresh ephemeral pods are already at HEAD via `bootstrap_pod.sh`; only resumed pods need a sync.
 
 ```bash
 # From local VM: sync code + env to the target pod only
-python scripts/pod.py sync env pod3
+python scripts/pod.py sync env epm-issue-137
 
 # Or just code (faster):
-ssh pod3 'cd /workspace/explore-persona-space && git pull --ff-only origin main'
+ssh epm-issue-137 'cd /workspace/explore-persona-space && git pull --ff-only origin main'
 ```
 
 ### 2. Run pre-flight checks
@@ -292,14 +308,16 @@ python scripts/build_sft_datasets.py                          # Dataset construc
 # Analysis
 python scripts/analyze_results.py                             # Aggregation + figures
 
-# Pod management (unified CLI — use for all sync/keys/health/cleanup)
-python scripts/pod.py health                                  # Fleet health check
-python scripts/pod.py health --fix                            # Auto-fix all pods
+# Pod management (unified CLI — see "Ephemeral Pod Lifecycle" section above for full lifecycle)
+python scripts/pod.py provision --issue N --intent lora-7b    # Spin up a fresh pod for issue N
+python scripts/pod.py stop --issue N                          # Pause after experiment finishes
+python scripts/pod.py resume --issue N                        # Bring back for follow-up
+python scripts/pod.py list-ephemeral --refresh                # Lifecycle state, reconciled with API
+python scripts/pod.py cleanup-stale                           # Terminate pods past TTL
+python scripts/pod.py health                                  # Fleet health check (whichever pods exist)
 python scripts/pod.py keys --push                             # Push .env to all pods
-python scripts/pod.py bootstrap pod3                          # Bootstrap new pod
-python scripts/pod.py config --update pod2 --host X --port Y  # Update pod IP
 python scripts/pod.py sync models --sweep                     # Upload unuploaded models
-python scripts/pod.py cleanup --all --dry-run                 # Preview cleanup
+python scripts/pod.py cleanup --all --dry-run                 # Preview model-weight cleanup (does not terminate)
 
 # Lint
 ruff check . && ruff format .

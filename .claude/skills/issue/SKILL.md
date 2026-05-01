@@ -3,7 +3,7 @@ name: issue
 description: >
   End-to-end GitHub-issue-driven workflow for experiments and code changes.
   Takes an issue number, parses state from labels + comment markers, and dispatches
-  the next action (clarify -> gate-keeper -> adversarial-planner -> approval -> worktree +
+  the next action (clarify -> adversarial-planner -> approval -> worktree +
   dispatch specialist -> preflight -> run -> analyzer -> reviewer -> tester -> auto-complete).
   Reviewer PASS (+ tester PASS for type:infra) auto-advances the issue to Done on the
   Experiment Queue project board. No user sign-off step. Issues stay OPEN -- DO NOT close.
@@ -15,7 +15,7 @@ user_invocable: true
 
 ## Scope & Boundaries
 
-**Owns:** the full issue lifecycle — clarify → gate-keeper → adversarial-planner → approval → worktree → dispatch → preflight → run → analyze → review → auto-complete.
+**Owns:** the full issue lifecycle — clarify → adversarial-planner → approval → worktree → dispatch → preflight → run → analyze → review → auto-complete.
 
 **Invokes:** `experiment-runner` (run step), `adversarial-planner` (plan step), specialist agents (experimenter / implementer / analyzer / reviewer / code-reviewer).
 
@@ -39,7 +39,7 @@ labels (phase-authoritative) and project columns (glance-coarse):
 |---|---|---|
 | **Todo** | `proposed`, `blocked`, or no `status:*` label | Not yet in the pipeline. User files issues here. |
 | **Priority** | any (user-set) | Flagged by user as next-to-work. Pipeline doesn't auto-set this. |
-| **In Progress** | `gate-pending`, `planning`, `plan-pending`, `approved`, `running`, `uploading`, `interpreting`, `reviewing` | **ALL active-phase labels roll up here.** The label tells you which phase. |
+| **In Progress** | `planning`, `plan-pending`, `approved`, `running`, `uploading`, `interpreting`, `reviewing` | **ALL active-phase labels roll up here.** The label tells you which phase. |
 | **Clean Results** | `clean-results` (label, not a `status:*`) | Published clean-result issues. |
 | **Done (experiment)** | `done-experiment` | Terminal, issue stays OPEN. |
 | **Done (impl)** | `done-impl` | Terminal, issue stays OPEN. |
@@ -74,27 +74,23 @@ your turn.
 status:proposed                           <- user has filed, clarifier hasn't run
   |-- (clarifier -> questions OR OK)
        |-- questions posted --> status:proposed (stays; awaiting user replies)
-       |-- OK --> status:gate-pending       <- gate-keeper running
-                  |-- (verdict)
-                     |-- RUN --> status:planning        <- adversarial-planner + consistency-checker
-                     |          |-- (plan posted + consistency PASS/WARN)
-                     |             |--> status:plan-pending    <- AWAITING USER: approve?
-                     |                    |-- (user approve) --> status:approved
-                     |                                          |-- (preflight + dispatch)
-                     |                                             |--> status:running   <- specialist running
-                     |                                                    |-- (epm:results posted)
-                     |                                                       |--> status:uploading  <- upload verifier
-                     |                                                              |-- (all artifacts verified)
-                     |                                                                 |--> status:interpreting  <- analyzer + critic loop
-                     |                                                                        |-- (interpretation refined, clean-result created)
-                     |                                                                           |--> status:reviewing  <- final reviewer
-                     |                                                                                  |-- (reviewer verdict)
-                     |                                                                                     |-- PASS + [type:experiment] --> status:done-experiment (+ follow-up proposer)
-                     |                                                                                     |-- PASS + [type:infra] --> run tester inline --> status:done-impl
-                     |                                                                                     |-- PASS + [type:analysis/survey] --> status:done-impl
-                     |                                                                                     |-- FAIL --> status:interpreting (revise)
-                     |-- MODIFY --> status:proposed (back; revision notes posted)
-                     |-- SKIP --> status:blocked (alternative suggested)
+       |-- OK --> status:planning          <- adversarial-planner + consistency-checker
+                  |-- (plan posted + consistency PASS/WARN)
+                     |--> status:plan-pending    <- AWAITING USER: approve?
+                            |-- (user approve) --> status:approved
+                                                  |-- (preflight + dispatch)
+                                                     |--> status:running   <- specialist running
+                                                            |-- (epm:results posted)
+                                                               |--> status:uploading  <- upload verifier
+                                                                      |-- (all artifacts verified)
+                                                                         |--> status:interpreting  <- analyzer + critic loop
+                                                                                |-- (interpretation refined, clean-result created)
+                                                                                   |--> status:reviewing  <- final reviewer
+                                                                                          |-- (reviewer verdict)
+                                                                                             |-- PASS + [type:experiment] --> status:done-experiment (+ follow-up proposer)
+                                                                                             |-- PASS + [type:infra] --> run tester inline --> status:done-impl
+                                                                                             |-- PASS + [type:analysis/survey] --> status:done-impl
+                                                                                             |-- FAIL --> status:interpreting (revise)
 ```
 
 There is no user sign-off step. Reviewer PASS (+ tester PASS for `type:infra`) is the terminal gate; completion is automatic. If the user disagrees with a done transition, they label `status:blocked` to reopen it.
@@ -104,7 +100,6 @@ There is no user sign-off step. Reviewer PASS (+ tester PASS for `type:infra`) i
 | State | Who's working | User action needed? |
 |-------|---------------|---------------------|
 | `proposed` | nobody (new) OR user (answering clarifier) | sometimes |
-| `gate-pending` | gate-keeper agent | no |
 | `planning` | adversarial-planner + consistency-checker agents | no |
 | `plan-pending` | nobody | **yes -- approve plan** |
 | `approved` | skill (dispatching) | no |
@@ -138,7 +133,64 @@ From the result, derive:
 2. **Issue type** = the `type:*` label value (`experiment`, `infra`, `analysis`, `survey`)
 3. **Marker map** = scan comments for `<!-- epm:<kind> v<n> -->` opening tags, build a dict
 
-If 0 or >1 `status:*` labels, abort with an error comment asking the user to fix.
+**Hard error: >1 `status:*` labels.** True ambiguity — abort with an error comment listing
+the conflicting labels and asking the user to remove the wrong one. Do NOT pick.
+
+**Soft error: 0 `status:*` labels, missing `type:*`, or empty body.** These are
+recoverable; do NOT exit. Run Step 0b instead.
+
+### Step 0b: Defaulting & autofill
+
+Runs only when at least one of {0 `status:*` labels, missing `type:*`, empty body} holds.
+Goal: get the issue into the minimum shape Step 1 needs without bouncing back to the user
+just to add labels. Order:
+
+1. **`status:*` missing →** apply `status:proposed` automatically:
+   ```
+   gh issue edit <N> --add-label status:proposed
+   ```
+   No user interaction. Defaulting an unlabelled issue to `proposed` is the obvious
+   read of the project-board convention (Todo column = `proposed` or no `status:*`).
+
+2. **Body empty (or <50 chars of substance) →** ask the user in the current chat via
+   `AskUserQuestion` for the minimum spec needed for the gate-keeper to score the
+   issue. The exact prompts depend on issue type (see `clarifier.md`); for an unknown
+   type, ask:
+   - "What's the goal of this issue in one sentence?"
+   - "What's the hypothesis or success criterion?"
+   - "Is there a parent issue or prior result this builds on? (issue # or 'none')"
+   - "Rough compute size? (small / medium / large)"
+
+   Plus **search the codebase + HF + arXiv before drafting** when the title hints at
+   pulling existing artifacts (e.g., "use HF model X", "replicate paper Y") — list
+   what you found and let the user pick. Don't fabricate a body from the title alone.
+
+   Once the user answers, draft a body covering Goal / Hypothesis / Setup / Eval /
+   Success criterion / Kill criterion / Compute / Pod preference / References, then
+   patch the issue:
+   ```
+   gh issue edit <N> --body "<drafted body>"
+   ```
+   Post a `<!-- epm:auto-defaults v1 -->` comment listing what was applied (label
+   added, body drafted) so the audit trail is durable on the issue.
+
+3. **`type:*` missing →** infer from title cue, then confirm with the user:
+   - Title prefix `Test:` / `Sweep:` / `Train:` → suggest `type:experiment`
+   - Title prefix `Refactor:` / `Fix:` / `Add:` / `Migrate:` → suggest `type:infra`
+   - Title prefix `Analyze:` / `Re-analyze:` → suggest `type:analysis`
+   - Title prefix `Survey:` / `Read:` / `Lit review:` → suggest `type:survey`
+
+   Use `AskUserQuestion` with the inferred option as `(Recommended)` first. Apply via
+   `gh issue edit <N> --add-label type:<chosen>`. If the user is absent (e.g., autonomous
+   loop), DO error and EXIT — the type label gates Step 8's Done variant and a guess
+   here corrupts the project board.
+
+4. **Other useful labels missing** (`compute:*`, `prio:*`, `aim:*`):  do not block on these.
+   `compute:*` will be set by the gate-keeper; `prio:*` and `aim:*` are user-curated and
+   never blocking.
+
+After Step 0b, re-read the issue (re-run the `gh issue view` from Step 0) so downstream
+state is computed from the now-patched issue, then continue to Step 1.
 
 ### Step 1: Clarifier gate
 
@@ -146,7 +198,7 @@ If `epm:clarify` marker missing (or user has replied but clarifier hasn't re-che
 read `clarifier.md`, run the clarifier for this issue type, then:
 
 - **All clear** (<=1 minor ambiguity) -> post `<!-- epm:clarify -->` with "No blocking
-  ambiguities found. Proceeding to gate-keeper." advance label to `status:gate-pending`,
+  ambiguities found. Proceeding to adversarial planning." advance label to `status:planning`,
   **and move the project column to In Progress**:
   ```
   uv run python scripts/gh_project.py set-status <N> "In Progress"
@@ -176,14 +228,14 @@ read `clarifier.md`, run the clarifier for this issue type, then:
        body preserved + a `## Spec (from clarifier)` section appended. Only do this on
        explicit request -- default is comment-only.
      - Re-run the clarifier evaluation using (body + clarify questions + these answers).
-       If no blocking ambiguities remain, advance to Step 2 (gate-keeper) in the same
-       invocation. If still ambiguous, loop: post a `v+1` clarify marker and ask again.
+       If no blocking ambiguities remain, advance to Step 2 (adversarial planning) in the
+       same invocation. If still ambiguous, loop: post a `v+1` clarify marker and ask again.
 
   4. **If the user defers ("I'll answer later", no reply, or says to exit):** EXIT with
      label still `status:proposed`. User can answer later as issue comments and
      re-invoke `/issue <N>`, OR re-invoke and answer in chat next time.
 
-**Rule:** never proceed to gate-keeper with >=2 blocking ambiguities. Tight specs
+**Rule:** never proceed to adversarial planning with >=2 blocking ambiguities. Tight specs
 save later backtracking.
 
 **Rule:** the ask-in-chat step is MANDATORY when there are blocking ambiguities. Posting
@@ -285,15 +337,37 @@ If branch already exists, reuse it (resume case).
 **5b. Draft PR.** Open a draft PR with `Closes #<N>` in the body, linking back to
 the issue. Use `gh pr create --draft --head issue-<N> --body "Closes #<N>"`.
 
-**5c. Pod selection.** Read the plan's pod preference. Run `ssh_health_check` on
-the target pod.
-- If >= requested GPUs free -> proceed.
-- If busy -> post `<!-- epm:pod-pending -->` comment listing available pods, label
-  `status:approved` (don't advance), EXIT. User picks another pod or waits.
+**5c. Pod provisioning.** Pods are ephemeral — there is no permanent fleet. Pick
+the path based on whether this issue has a parent:
 
-**5d. Preflight.** Run preflight on target pod:
+```bash
+# 1. Check the issue body for a `Parent: #<M>` line.
+# 2. If present AND `epm-issue-<M>` exists in `pod.py list-ephemeral`:
+python scripts/pod.py resume --issue <M>
+#    Use that pod for this child issue (don't provision a new one).
+#    Record the assigned pod as `epm-issue-<M>` in the launch marker.
+
+# 3. Otherwise, provision a fresh pod. Infer --intent from the plan:
+#    training a 7B model -> ft-7b or lora-7b; eval/generation -> eval;
+#    70B work -> inf-70b/ft-70b. Override with --gpu-type/--gpu-count for
+#    anything else.
+python scripts/pod.py provision --issue <N> --intent <inferred>
 ```
-ssh_execute(pod=<target>, command="cd /workspace/explore-persona-space && uv run python -m explore_persona_space.orchestrate.preflight --json")
+
+`provision` enforces team scoping (`X-Team-Id`), SSH bring-up (`startSsh: true`,
+exposes `22/tcp`), pinned image, and runs bootstrap inline (uv, repo, .env,
+HF cache, preflight). On provision failure post `<!-- epm:pod-pending -->` with
+the error and stay at `status:approved`. User adjusts (capacity, intent
+override) and re-runs `/issue <N>`.
+
+The pod name passed downstream is `epm-issue-<N>` (or the parent's
+`epm-issue-<M>` for follow-ups). Specialist agents do NOT pick or create pods.
+
+**5d. Preflight.** `provision` already ran preflight as its last bootstrap step.
+For *resumed* pods, re-run preflight explicitly because the volume is intact
+but the container restart may have left stale state:
+```
+ssh_execute(pod=epm-issue-<N>, command="cd /workspace/explore-persona-space && uv run python -m explore_persona_space.orchestrate.preflight --json")
 ```
 Parse JSON. If `ok=false`, post `<!-- epm:preflight v1 -->` comment with the
 errors/warnings, label remains `status:approved`, EXIT. User fixes, re-runs.
@@ -362,7 +436,18 @@ The verifier runs `scripts/verify_uploads.py` and checks:
 
 Post `<!-- epm:upload-verification v1 -->` marker with per-artifact PASS/FAIL + URLs.
 
-- **PASS** -> advance to `status:interpreting`, proceed to Step 7.
+- **PASS** -> stop the pod, then advance to `status:interpreting` and proceed to Step 7.
+  Once artifacts are confirmed at permanent URLs, the pod is no longer needed —
+  interpretation runs locally:
+  ```bash
+  python scripts/pod.py stop --issue <N>
+  ```
+  This pauses the pod (volume preserved) and starts the TTL clock. If
+  interpretation later needs the pod (e.g., to regenerate a figure from raw
+  outputs), `pod.py resume --issue <N>` brings it back. If the issue body has
+  `Parent: #<M>`, stop the parent's pod (`epm-issue-<M>`) instead. Skip the stop
+  call only if the user has labelled the issue `keep-running` for known
+  follow-up work in the same session.
 - **FAIL** -> stays at `status:uploading`. Post clear list of what's missing with
   commands to fix. EXIT. Experimenter or user fixes, re-invokes `/issue <N>`.
 
@@ -599,7 +684,10 @@ See `markers.md` for the full taxonomy. Every marker comment uses the format:
 
 | Symptom | Action |
 |---------|--------|
-| 0 or >1 `status:*` labels | Post error comment, EXIT. Ask user to fix. |
+| >1 `status:*` labels | Post error comment listing conflicts, EXIT. Ask user to remove the wrong one. Do NOT pick. |
+| 0 `status:*` labels | Run Step 0b: autofill `status:proposed`, post `epm:auto-defaults`, continue. (Old behavior — error+EXIT — was too brittle.) |
+| `type:*` label missing | Run Step 0b: infer from title prefix, confirm via `AskUserQuestion`, apply chosen label. Autonomous loop with no user → error+EXIT (a wrong guess corrupts the Done column). |
+| Empty issue body | Run Step 0b: ask user for goal/hypothesis/setup in chat, draft body, patch via `gh issue edit --body`, post `epm:auto-defaults` audit comment. |
 | Plan fails mandatory-section check | Re-invoke `adversarial-planner` with missing sections list; do not post incomplete plan. |
 | Preflight fails | Post the `--json` report verbatim as `<!-- epm:preflight v1 -->`. Do NOT auto-fix (per CLAUDE.md "never take shortcuts"). |
 | Specialist subagent errors out | Specialist posts `<!-- epm:failure v1 -->` with traceback + last log lines. Label -> `status:blocked`. |
