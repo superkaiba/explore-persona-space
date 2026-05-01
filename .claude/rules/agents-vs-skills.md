@@ -93,8 +93,9 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `critic` | Adversarial review of plans, must not see planner's reasoning |
 | `fact-checker` | Independent verification of claims in plans |
 | `consistency-checker` | Verifies single-variable changes vs parent experiments |
-| `experimenter` | Background, long-running training + monitoring |
-| `implementer` | Code changes with scoped file access |
+| `experiment-implementer` | Writes experiment-specific code (training scripts, configs, eval wiring) for a single issue; pairs with `code-reviewer` |
+| `experimenter` | Background, long-running training + progressive monitoring on a pre-provisioned pod (does NOT write substantial code) |
+| `implementer` | Standalone infra / refactor / utility code changes (NOT experiment-specific code) |
 | `upload-verifier` | Mechanical artifact checklist, isolated from experimenter optimism |
 | `analyzer` | Fresh-context analysis; produces fact sheet + interpretation |
 | `interpretation-critic` | Adversarial review of interpretation, must not see analyzer reasoning |

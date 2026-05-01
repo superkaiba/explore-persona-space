@@ -39,7 +39,7 @@ labels (phase-authoritative) and project columns (glance-coarse):
 |---|---|---|
 | **Todo** | `proposed`, `blocked`, or no `status:*` label | Not yet in the pipeline. User files issues here. |
 | **Priority** | any (user-set) | Flagged by user as next-to-work. Pipeline doesn't auto-set this. |
-| **In Progress** | `planning`, `plan-pending`, `approved`, `running`, `uploading`, `interpreting`, `reviewing` | **ALL active-phase labels roll up here.** The label tells you which phase. |
+| **In Progress** | `planning`, `plan-pending`, `approved`, `implementing`, `code-reviewing`, `running`, `uploading`, `interpreting`, `reviewing` | **ALL active-phase labels roll up here.** The label tells you which phase. |
 | **Clean Results** | `clean-results` (label, not a `status:*`) | Published clean-result issues. |
 | **Done (experiment)** | `done-experiment` | Terminal, issue stays OPEN. |
 | **Done (impl)** | `done-impl` | Terminal, issue stays OPEN. |
@@ -78,20 +78,30 @@ status:proposed                           <- user has filed, clarifier hasn't ru
                   |-- (plan posted + consistency PASS/WARN)
                      |--> status:plan-pending    <- AWAITING USER: approve?
                             |-- (user approve) --> status:approved
-                                                  |-- (preflight + dispatch)
-                                                     |--> status:running   <- specialist running
-                                                            |-- (epm:results posted)
-                                                               |--> status:uploading  <- upload verifier
-                                                                      |-- (all artifacts verified)
-                                                                         |--> status:interpreting  <- analyzer + critic loop
-                                                                                |-- (interpretation refined, clean-result created)
-                                                                                   |--> status:reviewing  <- final reviewer
-                                                                                          |-- (reviewer verdict)
-                                                                                             |-- PASS + [type:experiment] --> status:done-experiment (+ follow-up proposer)
-                                                                                             |-- PASS + [type:infra] --> run tester inline --> status:done-impl
-                                                                                             |-- PASS + [type:analysis/survey] --> status:done-impl
-                                                                                             |-- FAIL --> status:interpreting (revise)
+                                                  |-- (worktree + draft PR)
+                                                     |--> status:implementing    <- experiment-implementer (type:experiment) OR implementer (type:infra)
+                                                            |-- (epm:experiment-implementation OR epm:results posted)
+                                                               |--> status:code-reviewing   <- code-reviewer (fresh context)
+                                                                      |-- FAIL + count<3 --> status:implementing (loop, v+1)
+                                                                      |-- FAIL + count>=3 --> status:blocked
+                                                                      |-- PASS + [type:experiment] --> status:running   <- experimenter (pod ops + monitoring)
+                                                                            |-- (epm:results posted)
+                                                                               |--> status:uploading  <- upload verifier
+                                                                                      |-- (all artifacts verified, pod stopped)
+                                                                                         |--> status:interpreting  <- analyzer + interp-critic loop
+                                                                                                |-- (interpretation refined, clean-result created)
+                                                                                                   |--> status:reviewing  <- final reviewer
+                                                                                                          |-- PASS --> status:done-experiment (+ follow-up proposer)
+                                                                                                          |-- FAIL --> status:interpreting (revise)
+                                                                      |-- PASS + [type:infra] --> tester inline --> status:done-impl
+                                                                      |-- PASS + [type:analysis/survey] --> status:done-impl
 ```
+
+Hot-fixes during `status:running` (experimenter agent): small in-line fixes
+(<=10 lines, no logic change) get committed on the issue branch and the run
+continues. Anything beyond that bar bounces back to `status:implementing` for
+a fresh experiment-implementer + code-reviewer round before the experimenter
+relaunches.
 
 There is no user sign-off step. Reviewer PASS (+ tester PASS for `type:infra`) is the terminal gate; completion is automatic. If the user disagrees with a done transition, they label `status:blocked` to reopen it.
 
@@ -102,8 +112,10 @@ There is no user sign-off step. Reviewer PASS (+ tester PASS for `type:infra`) i
 | `proposed` | nobody (new) OR user (answering clarifier) | sometimes |
 | `planning` | adversarial-planner + consistency-checker agents | no |
 | `plan-pending` | nobody | **yes -- approve plan** |
-| `approved` | skill (dispatching) | no |
-| `running` | experimenter/implementer specialist | no |
+| `approved` | skill (worktree + draft PR) | no |
+| `implementing` | experiment-implementer (type:experiment) OR implementer (type:infra) | no |
+| `code-reviewing` | code-reviewer agent | no |
+| `running` | experimenter agent (pod ops + monitoring); type:experiment only | no |
 | `uploading` | upload-verifier agent | no |
 | `interpreting` | analyzer + interpretation-critic agents (iterative loop) | no |
 | `reviewing` | reviewer / code-reviewer agent (final gate) | no |
@@ -199,7 +211,7 @@ read `clarifier.md`, run the clarifier for this issue type, then:
 
 **Before drafting any clarifying question, run the mandatory context-gathering
 pass in `clarifier.md` Step 0** — search past GitHub issues + clean-results,
-`.arxiv-papers/`, `external/`, `research_log/`, `RESULTS.md`,
+`.arxiv-papers/`, `external/`, `RESULTS.md`,
 `eval_results/INDEX.md`, and `git log` for information that resolves the
 ambiguity. Cut any question already answered by project knowledge; sharpen the
 rest by quoting the source. When posting "All clear", include a brief
@@ -312,21 +324,102 @@ contain revision requests (`/revise <notes>`), set label back to `status:plannin
 re-invoke adversarial-planner with the notes; post new `epm:plan v2` comment; set
 label back to `status:plan-pending`.
 
-### Step 4: Worktree + preflight + dispatch
+### Step 4: Worktree + dispatch implementer
 
-Only if `status:approved` and no `epm:launch` marker exists.
+Only if `status:approved`.
 
-**4a. Worktree.** Create `.claude/worktrees/issue-<N>` on branch `issue-<N>`.
+**4a. Worktree + draft PR.** Create `.claude/worktrees/issue-<N>` on branch
+`issue-<N>` and open a draft PR.
+```bash
+git worktree add .claude/worktrees/issue-<N> -b issue-<N>     # reuse if it exists (resume case)
+gh pr create --draft --head issue-<N> --body "Closes #<N>"
 ```
-git worktree add .claude/worktrees/issue-<N> -b issue-<N>
+
+**4b. Dispatch implementer for the issue type.** No pod is touched yet — code
+gets written, reviewed, and dry-run locally before any GPU is provisioned.
+Spawn the appropriate agent via `Agent()`:
+
+| Issue type | Implementer agent | Output marker |
+|---|---|---|
+| `type:experiment` | `experiment-implementer` | `epm:experiment-implementation` |
+| `type:infra` / code change | `implementer` | `epm:results` |
+| `type:analysis` | `analyzer` (re-analysis only) | `epm:analysis` |
+| `type:survey` | `general-purpose` | `epm:results` |
+
+Brief passed to the implementer:
+- The plan (cached at `.claude/plans/issue-<N>.md`)
+- Issue number + worktree path + branch name
+- Code-review history if this is a revision round (`epm:code-review v<m>`)
+- Required `report-back` fields
+- **Instruction: work ONLY inside the worktree; never touch a pod; post
+  progress as comments on issue #<N> via `gh issue comment`.**
+
+Advance label to `status:implementing`. EXIT. Implementer runs autonomously.
+
+### Step 5: Code review loop
+
+Only if `status:implementing` and the appropriate implementation marker
+(`epm:experiment-implementation v<n>` for experiments, `epm:results v<n>` for
+infra) is present.
+
+**5a. Spawn code-reviewer (fresh context).** The reviewer sees only:
+- The diff vs `main`
+- The approved plan
+- The existing codebase
+- The implementer's `epm:experiment-implementation` (or `epm:results`) report
+
+It does NOT see the implementer's reasoning — independence is load-bearing.
+
+Posts `<!-- epm:code-review v<n> -->` with verdict `PASS / CONCERNS / FAIL`
++ line-level findings.
+
+**5b. Loop on FAIL.**
+
+- **PASS** (or `CONCERNS`, which is non-blocking):
+  - `type:experiment` → advance label to `status:running`, proceed to Step 6.
+  - `type:infra` / `type:analysis` / `type:survey` → skip pod phase, advance
+    directly to `status:reviewing` (Step 7b's tester runs inline).
+- **FAIL + count<3** → label back to `status:implementing`. Re-spawn the
+  implementer with the `epm:code-review v<n>` marker as part of the brief.
+  Implementer posts v<n+1>; loop back to 5a.
+- **FAIL + count>=3** → `status:blocked`. Post abort summary, EXIT. User
+  decides: revise plan, escalate, or override.
+
+Advance label to `status:code-reviewing` while the reviewer is running, back
+to `status:implementing` on FAIL, forward to `status:running` (or
+`status:reviewing` for non-experiment types) on PASS.
+
+### Step 6: Pod provisioning + experimenter dispatch (type:experiment only)
+
+Only if `status:running` (entered from Step 5b PASS for `type:experiment`)
+and no `epm:launch` marker exists.
+
+**6a. HF gate auto-acceptance.** Plans never make the human click through
+gated-model gate pages. Before provisioning, scan the cached plan for HF
+model IDs and submit gate-acceptance requests using the user's `HF_TOKEN`:
+
+```bash
+uv run python scripts/hf_gate_accept.py --from-plan .claude/plans/issue-<N>.md
 ```
-If branch already exists, reuse it (resume case).
 
-**4b. Draft PR.** Open a draft PR with `Closes #<N>` in the body, linking back to
-the issue. Use `gh pr create --draft --head issue-<N> --body "Closes #<N>"`.
+The helper is idempotent (already-accessible repos exit `OK` immediately).
+For "auto-approval" gates (the common case for almanach/Inria/Meta/Qwen
+research releases) the access is granted on submission. For the rare
+manual-approval gate the request is queued and the helper exits with code 1
+and a list of URLs.
 
-**5c. Pod provisioning.** Pods are ephemeral — there is no permanent fleet. Pick
-the path based on whether this issue has a parent:
+- Exit code `0` → proceed to 6b.
+- Exit code `1` (manual approval still needed) → post `<!-- epm:hf-gate-pending v1 -->`
+  with the URLs, leave label at `status:running`, EXIT. User clicks through,
+  re-runs `/issue <N>`.
+- Exit code `2` (`HF_TOKEN` missing) → post `<!-- epm:hf-gate-pending v1 -->`
+  with diagnostic, label `status:blocked`. EXIT.
+
+This step is also re-run on the pod inside `bootstrap_pod.sh` so a token
+pushed to the pod gets the same gate state as the local VM.
+
+**6b. Pod provisioning.** Pods are ephemeral — there is no permanent fleet.
+Pick the path based on whether this issue has a parent:
 
 ```bash
 # 1. Check the issue body for a `Parent: #<M>` line.
@@ -344,60 +437,70 @@ python scripts/pod.py provision --issue <N> --intent <inferred>
 
 `provision` enforces team scoping (`X-Team-Id`), SSH bring-up (`startSsh: true`,
 exposes `22/tcp`), pinned image, and runs bootstrap inline (uv, repo, .env,
-HF cache, preflight). On provision failure post `<!-- epm:pod-pending -->` with
-the error and stay at `status:approved`. User adjusts (capacity, intent
-override) and re-runs `/issue <N>`.
+HF cache, HF gate-accept, preflight). On provision failure post `<!-- epm:pod-pending -->`
+with the error and stay at `status:running` (no implementer re-spawn — this is
+infra, not code). User adjusts (capacity, intent override) and re-runs
+`/issue <N>`.
 
 The pod name passed downstream is `epm-issue-<N>` (or the parent's
-`epm-issue-<M>` for follow-ups). Specialist agents do NOT pick or create pods.
+`epm-issue-<M>` for follow-ups). The experimenter does NOT pick or create
+pods.
 
-**4d. Preflight.** `provision` already ran preflight as its last bootstrap step.
-For *resumed* pods, re-run preflight explicitly because the volume is intact
-but the container restart may have left stale state:
+**6c. Preflight on resumed pods.** `provision` already ran preflight as its
+last bootstrap step. For *resumed* pods, re-run preflight explicitly because
+the volume is intact but the container restart may have left stale state:
 ```
 ssh_execute(pod=epm-issue-<N>, command="cd /workspace/explore-persona-space && uv run python -m explore_persona_space.orchestrate.preflight --json")
 ```
 Parse JSON. If `ok=false`, post `<!-- epm:preflight v1 -->` comment with the
-errors/warnings, label remains `status:approved`, EXIT. User fixes, re-runs.
+errors/warnings, EXIT. User fixes, re-runs.
 
-**4e. Dispatch specialist.** Spawn the appropriate agent via `Agent()`:
-- `type:experiment` -> `experimenter` subagent
-- `type:infra` or code change -> `implementer` subagent
-- `type:analysis` (pure re-analysis of existing results) -> `analyzer` subagent
-- `type:survey` (literature / exploratory read) -> `general-purpose` subagent
+**6d. Dispatch experimenter.** Spawn `experimenter` subagent via `Agent()`.
+The experimenter's scope is **pod ops + monitoring + debugging only** — it
+does NOT write substantial code (hot-fixes ≤10 lines, no logic changes; see
+the experimenter agent definition).
 
-Brief passed to specialist:
-- The plan (cached at `.claude/plans/issue-<N>.md`)
-- Issue number + worktree path + branch name
-- Pod assignment (if experiment)
-- Required `report-back` fields (artifacts, WandB URL, HF Hub path, plan deviations)
-- **Instruction: work ONLY inside the worktree; post progress as comments on
-  issue #<N> via `gh issue comment`.**
+Brief passed to experimenter:
+- The plan + the code-reviewed branch (`issue-<N>`)
+- Pod name (`epm-issue-<N>` or parent's)
+- The exact `nohup` launch command from the plan's Reproducibility Card
+- Progressive monitoring schedule (per the experimenter agent definition)
+- Required `report-back` fields (artifacts, WandB URL, HF Hub path, deviations,
+  hot-fix log)
 
-Post `<!-- epm:launch v1 -->` comment containing:
-- Worktree path, branch, PR URL
-- Pod + PID (if applicable) + log path
-- WandB run URL (if known at launch) -- specialist updates if not
-- Specialist subagent ID (for monitoring)
+Post `<!-- epm:launch v1 -->` containing:
+- Worktree path, branch, PR URL, code-review verdict (`PASS`)
+- Pod + PID + log path
+- WandB run URL (best-effort; experimenter updates if not known yet)
+- Experimenter subagent ID (for monitoring)
 
-Advance label to `status:running`. EXIT. Specialist runs autonomously.
+Label stays at `status:running`. EXIT. Experimenter runs autonomously. The
+experimenter posts `epm:progress`, `epm:hot-fix` (if needed), and finally
+`epm:results`.
 
-### Step 5: Monitor -> results
+### Step 7: Monitor -> results
 
-Specialist is expected to post `<!-- epm:progress v1 -->` comments at major
-milestones and a final `<!-- epm:results v1 -->` comment containing:
+Experimenter is expected to post `<!-- epm:progress v1 -->` comments at major
+milestones, optional `<!-- epm:hot-fix v<n> -->` markers for in-line fixes
+(<=10 lines, no logic change — see the experimenter agent definition), and a
+final `<!-- epm:results v1 -->` comment containing:
 - Final eval numbers (inline JSON snippet + path in repo)
 - Reproducibility card (filled)
 - WandB URL + HF Hub model/adapter URL
 - Worktree path + final commit hash
 - GPU-hours actually used vs budgeted
 - Plan deviations + rationale
+- Hot-fix log (commits + diffs applied during the run)
 
 When this skill is re-invoked in `status:running`:
 1. Check `epm:results` exists. If not, show last progress and EXIT.
-2. If exists, advance label to `status:uploading` and proceed to Step 5b.
+2. If `epm:failure` posted with bounce-back proposal: label back to
+   `status:implementing`, re-spawn experiment-implementer with the failure
+   context. Loop through Steps 4b → 5 → 6 again.
+3. If `epm:results` exists, advance label to `status:uploading` and proceed
+   to Step 8.
 
-### Step 5b: Upload verification
+### Step 8: Upload verification
 
 Only if `status:uploading` and no `epm:upload-verification` marker with verdict=PASS.
 
@@ -424,7 +527,7 @@ The verifier runs `scripts/verify_uploads.py` and checks:
 
 Post `<!-- epm:upload-verification v1 -->` marker with per-artifact PASS/FAIL + URLs.
 
-- **PASS** -> stop the pod, then advance to `status:interpreting` and proceed to Step 6.
+- **PASS** -> stop the pod, then advance to `status:interpreting` and proceed to Step 9.
   Once artifacts are confirmed at permanent URLs, the pod is no longer needed —
   interpretation runs locally:
   ```bash
@@ -439,14 +542,16 @@ Post `<!-- epm:upload-verification v1 -->` marker with per-artifact PASS/FAIL + 
 - **FAIL** -> stays at `status:uploading`. Post clear list of what's missing with
   commands to fix. EXIT. Experimenter or user fixes, re-invokes `/issue <N>`.
 
-### Step 6: Iterative interpretation + review
+### Step 9: Iterative interpretation + final review
 
 This step has two sub-phases: **interpretation** (iterative analyzer↔critic loop)
 and **final review** (one-shot reviewer gate).
 
-**6a. Iterative interpretation** (only if `status:interpreting`)
+**9a. Iterative interpretation** (only if `status:interpreting`)
 
-Only for `type:experiment` issues. Code-change issues skip to 7c directly.
+Only for `type:experiment` issues. Code-change issues never reach this step
+because Step 5 already PASSed code-review and routed them to Step 9c (tester)
+directly.
 
 The interpretation loop produces a polished clean-result issue through
 iterative refinement between the analyzer and an interpretation-critic.
@@ -494,10 +599,9 @@ issue + hero figure URL + 2-sentence recap.
 
 Advance label to `status:reviewing`.
 
-**6b. Final reviewer gate** (only if `status:reviewing`)
+**9b. Final reviewer gate** (only if `status:reviewing`, type:experiment)
 
-Spawn `reviewer` agent (experiments) or `code-reviewer` (code changes) in fresh
-context. For experiments, reviewer sees only:
+Spawn `reviewer` agent in fresh context. Sees only:
 - The raw results
 - The plan
 - The clean-result issue body (NOT the analyzer's reasoning or critique history)
@@ -505,31 +609,32 @@ context. For experiments, reviewer sees only:
 Reviewer verdict: PASS / CONCERNS / FAIL. Post as `<!-- epm:reviewer-verdict v1 -->`.
 
 Transitions:
-- **PASS** (experiments): promote clean-result from `clean-results:draft` → `clean-results`:
+- **PASS:** promote clean-result from `clean-results:draft` → `clean-results`:
   ```
   gh issue edit <clean-result-N> --add-label clean-results --remove-label clean-results:draft
   uv run python scripts/gh_project.py set-status <clean-result-N> "Clean Results"
   ```
-  Advance source to Step 7 (auto-complete).
+  Advance source to Step 10 (auto-complete).
 - **CONCERNS:** same as PASS (non-blocking). Recorded on verdict comment.
 - **FAIL:** clean-result stays `:draft`. Source back to `status:interpreting`.
   Analyzer revises with reviewer feedback.
-- **PASS** (code changes): run tester inline (Step 6c), then Step 7.
-- **FAIL** (code changes): back to `status:running` or `status:blocked`.
 
-**6c. Tester (code changes only, inline)**
+**9c. Tester (code-change paths only, inline)**
 
-Only for `type:infra` / code-change issues, run inline after code-reviewer PASS.
+Only for `type:infra` / `type:analysis` / `type:survey` issues — these arrive
+here directly from Step 5 PASS, having skipped Steps 6–8 (no pod, no
+interpretation). The code-review gate has already approved the diff; this
+step verifies the test suite still passes.
 
 1. Unit tests: `uv run pytest tests/ -v --tb=short`
 2. Lint: `uv run ruff check . && uv run ruff format --check .`
 3. Integration tests (conditional, if diff touches train/eval/orchestrate)
 4. Coverage gap report (flags, does not auto-generate)
 
-Post `<!-- epm:test-verdict v1 -->`. PASS → Step 7. FAIL (count < 3) → stay in
-`status:reviewing`, implementer fixes. FAIL (count >= 3) → `status:blocked`.
+Post `<!-- epm:test-verdict v1 -->`. PASS → Step 10. FAIL (count < 3) → stay in
+`status:reviewing`, re-spawn implementer. FAIL (count >= 3) → `status:blocked`.
 
-### Step 7: Auto-complete (fires on reviewer PASS, or tester PASS for `type:infra`)
+### Step 10: Auto-complete (fires on reviewer PASS, or tester PASS for code-change paths)
 
 No user gate. The skill transitions the issue to Done automatically. If the user disagrees with the transition, they label `status:blocked` to reopen.
 
@@ -558,9 +663,9 @@ No user gate. The skill transitions the issue to Done automatically. If the user
    for this skill to close an issue is a user-initiated duplicate / invalid / won't-fix
    triage -- never as the terminal state of a successful run.
 9. Do NOT delete the worktree -- user decides when to clean up.
-10. If `type:experiment`, proceed to Step 7b (follow-up proposer).
+10. If `type:experiment`, proceed to Step 10b (follow-up proposer).
 
-### Step 7b: Follow-up proposer (experiments only)
+### Step 10b: Follow-up proposer (experiments only)
 
 Auto-fires after `done-experiment` for `type:experiment` issues. Spawn the
 `follow-up-proposer` agent with:
@@ -607,7 +712,12 @@ investigate and optionally label `status:blocked`.
 |-----------------|-------------------------|----------------|--------|
 | `planning` | no `epm:plan` | planner was cancelled | re-run adversarial-planner |
 | `plan-pending` | `epm:plan` exists | awaiting user approval | show plan URL, EXIT |
-| `running` | no `epm:results` for > 4h | specialist crashed silently | post `epm:stale`, ask user |
+| `implementing` | no `epm:experiment-implementation` (or `epm:results` for infra) | implementer was cancelled | re-spawn implementer |
+| `implementing` | latest `epm:code-review` is FAIL, round < 3 | revision in progress | re-spawn implementer with critique |
+| `implementing` | latest `epm:code-review` is FAIL, round >= 3 | exhausted retries | label `status:blocked`, ask user |
+| `code-reviewing` | no `epm:code-review` for the current implementation version | code-reviewer was cancelled | re-spawn code-reviewer |
+| `running` | no `epm:results` for > 4h | experimenter crashed silently | post `epm:stale`, ask user |
+| `running` | latest marker is `epm:failure` with bounce-back proposal | experimenter bounced to implementer | label back to `status:implementing`, re-spawn experiment-implementer |
 | `uploading` | no `epm:upload-verification` PASS | verifier not run or failed | re-run upload-verifier |
 | `interpreting` | no `epm:interpretation` | analyzer not started | spawn analyzer |
 | `interpreting` | `epm:interpretation` exists, no `epm:interp-critique` | critic not started | spawn interpretation-critic |
