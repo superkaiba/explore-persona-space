@@ -559,3 +559,464 @@ def evaluate_hellaswag_per_persona(
         json.dump(results, f, indent=2)
 
     return results
+
+
+# ─── Hybrid CoT-then-logprob ARC-C eval (issue #150) ────────────────────────
+
+
+def _format_arc_user_turn(question: dict) -> str:
+    """Format an ARC-C question + 4 choices into a single user-turn string.
+
+    Matches the prompt shape used by ``_arc_logprob_core`` (choices rendered as
+    ``(A) text`` lines), but does NOT append the ``"The correct answer is ("``
+    suffix — the CoT-aware path injects an assistant-turn scaffold instead.
+    """
+    choices_text = "\n".join(
+        f"({label}) {choice}"
+        for label, choice in zip(question["choice_labels"], question["choices"], strict=True)
+    )
+    return f"{question['question']}\n\n{choices_text}"
+
+
+def _build_chat_prefix(
+    tokenizer,
+    persona_prompt: str,
+    user_content: str,
+    assistant_prefix: str,
+) -> str:
+    """Build the chat-templated prefix up to (and including) the assistant prefix.
+
+    Uses ``apply_chat_template(..., add_generation_prompt=True)`` to render the
+    system + user turns with the model's native chat template, then concatenates
+    ``assistant_prefix`` directly. The assistant prefix lives *inside* the
+    assistant turn — it is the seed text the model sees before generating its
+    rationale (or, in the logprob step, before the answer anchor).
+    """
+    messages = [
+        {"role": "system", "content": persona_prompt},
+        {"role": "user", "content": user_content},
+    ]
+    base = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+    return base + assistant_prefix
+
+
+def _extract_answer_letter(logprobs_dict: dict | None, tokenizer) -> str | None:
+    """Pick the predicted A/B/C/D letter from a vLLM ``logprobs[0]`` dict.
+
+    vLLM returns the top-K logprobs at each generated position as a dict
+    ``{token_id: Logprob(logprob=..., decoded_token=..., rank=...)}``. We pick
+    the highest-logprob entry whose decoded token (stripped of whitespace and
+    upper-cased) starts with one of A/B/C/D.
+
+    If no top-K entry matches a letter, fall back to scoring each letter via
+    its first token ID and returning the argmax. If the tokenizer encodes
+    "A"/"B"/"C"/"D" as multi-token sequences (rare), we use the first token of
+    each encoding.
+
+    Returns
+    -------
+    "A" | "B" | "C" | "D" | None
+        ``None`` if neither path produced a valid letter.
+    """
+    if logprobs_dict is None:
+        return None
+
+    # Path 1: scan top-K decoded tokens for a leading A/B/C/D character.
+    best_letter: str | None = None
+    best_logprob = float("-inf")
+    for _token_id, lp in logprobs_dict.items():
+        decoded = getattr(lp, "decoded_token", None)
+        if decoded is None:
+            continue
+        stripped = decoded.strip().upper()
+        if not stripped:
+            continue
+        first_char = stripped[0]
+        if first_char in {"A", "B", "C", "D"} and lp.logprob > best_logprob:
+            best_logprob = lp.logprob
+            best_letter = first_char
+    if best_letter is not None:
+        return best_letter
+
+    # Path 2: explicit lookup by first-token-id of each letter.
+    letter_logprobs: dict[str, float] = {}
+    for letter in ("A", "B", "C", "D"):
+        token_ids = tokenizer.encode(letter, add_special_tokens=False)
+        if not token_ids:
+            continue
+        first_id = token_ids[0]
+        if first_id in logprobs_dict:
+            letter_logprobs[letter] = logprobs_dict[first_id].logprob
+    if not letter_logprobs:
+        return None
+    return max(letter_logprobs, key=letter_logprobs.get)
+
+
+def _generate_cot_for_arm(
+    llm,
+    tokenizer,
+    scaffold,
+    personas: dict[str, str],
+    questions: list[dict],
+    cot_max_tokens: int,
+) -> dict[tuple[str, str, int], str]:
+    """Generate CoT rationales for one scaffold across all (persona, question) cells.
+
+    Returns a dict mapping (persona, scaffold_name, q_idx) -> generated CoT text.
+    Returns empty-string CoTs for scaffolds without an ``assistant_prefix``.
+    """
+    from vllm import SamplingParams
+
+    cot_texts: dict[tuple[str, str, int], str] = {}
+    if not scaffold.assistant_prefix:
+        for persona_name in personas:
+            for q_idx in range(len(questions)):
+                cot_texts[(persona_name, scaffold.name, q_idx)] = ""
+        return cot_texts
+
+    gen_prompts: list[str] = []
+    gen_keys: list[tuple[str, int]] = []
+    for persona_name, persona_prompt in personas.items():
+        for q_idx, q in enumerate(questions):
+            user_content = _format_arc_user_turn(q)
+            prefix = _build_chat_prefix(
+                tokenizer, persona_prompt, user_content, scaffold.assistant_prefix
+            )
+            gen_prompts.append(prefix)
+            gen_keys.append((persona_name, q_idx))
+
+    gen_params = SamplingParams(n=1, temperature=0.0, top_p=1.0, max_tokens=cot_max_tokens)
+    logger.info(
+        "Generating CoT rationales for arm=%s: %d prompts",
+        scaffold.name,
+        len(gen_prompts),
+    )
+    gen_outputs = llm.generate(gen_prompts, gen_params)
+    for out, (persona_name, q_idx) in zip(gen_outputs, gen_keys, strict=True):
+        cot_texts[(persona_name, scaffold.name, q_idx)] = out.outputs[0].text
+    return cot_texts
+
+
+def _extract_logprobs_for_arm(
+    llm,
+    tokenizer,
+    scaffold,
+    personas: dict[str, str],
+    questions: list[dict],
+    cot_texts: dict[tuple[str, str, int], str],
+) -> dict[tuple[str, str, int], str | None]:
+    """Run the logprob-extraction step for one scaffold.
+
+    Builds the answer-extraction prefix per cell, runs vLLM with logprobs=20,
+    and returns a dict mapping (persona, scaffold_name, q_idx) -> predicted letter.
+    """
+    from vllm import SamplingParams
+
+    lp_prompts: list[str] = []
+    lp_keys: list[tuple[str, int]] = []
+    for persona_name, persona_prompt in personas.items():
+        for q_idx, q in enumerate(questions):
+            user_content = _format_arc_user_turn(q)
+            cot = cot_texts[(persona_name, scaffold.name, q_idx)]
+            if scaffold.assistant_prefix:
+                full_prefix = _build_chat_prefix(
+                    tokenizer,
+                    persona_prompt,
+                    user_content,
+                    scaffold.assistant_prefix + cot + scaffold.closing_tag + scaffold.answer_anchor,
+                )
+            else:
+                # no-cot: mirror _arc_logprob_core's "The correct answer is (" anchor
+                # on the user turn so the next-token logprob naturally lands on A/B/C/D.
+                user_with_anchor = f"{user_content}\n\nThe correct answer is ("
+                full_prefix = _build_chat_prefix(tokenizer, persona_prompt, user_with_anchor, "")
+            lp_prompts.append(full_prefix)
+            lp_keys.append((persona_name, q_idx))
+
+    lp_params = SamplingParams(n=1, temperature=0.0, top_p=1.0, max_tokens=1, logprobs=20)
+    logger.info(
+        "Extracting answer logprobs for arm=%s: %d prompts",
+        scaffold.name,
+        len(lp_prompts),
+    )
+    lp_outputs = llm.generate(lp_prompts, lp_params)
+    predictions: dict[tuple[str, str, int], str | None] = {}
+    for out, (persona_name, q_idx) in zip(lp_outputs, lp_keys, strict=True):
+        step_logprobs = out.outputs[0].logprobs
+        first_step = step_logprobs[0] if step_logprobs else None
+        predictions[(persona_name, scaffold.name, q_idx)] = _extract_answer_letter(
+            first_step, tokenizer
+        )
+    return predictions
+
+
+def _assemble_persona_block(
+    persona_name: str,
+    cot_scaffolds: list,
+    questions: list[dict],
+    predictions: dict[tuple[str, str, int], str | None],
+    cot_texts: dict[tuple[str, str, int], str],
+) -> dict:
+    """Build the per-persona output block (per-arm aggregates + raw rows)."""
+    block: dict = {}
+    for scaffold in cot_scaffolds:
+        n_correct = 0
+        n_total = 0
+        for q_idx, q in enumerate(questions):
+            pred = predictions.get((persona_name, scaffold.name, q_idx))
+            n_total += 1
+            if pred == q["correct_answer"]:
+                n_correct += 1
+        accuracy = n_correct / n_total if n_total else 0.0
+        arm_key = scaffold.name.replace("-", "_")
+        block[arm_key] = {
+            "accuracy": accuracy,
+            "n_correct": n_correct,
+            "n_total": n_total,
+        }
+
+    raw_rows: list[dict] = []
+    for q_idx, q in enumerate(questions):
+        row: dict = {
+            "q_id": q_idx,
+            "correct_answer": q["correct_answer"],
+            "no_cot_pred": None,
+            "generic_cot_pred": None,
+            "persona_cot_pred": None,
+            "generic_cot_text": "",
+            "persona_cot_text": "",
+        }
+        for scaffold in cot_scaffolds:
+            key = (persona_name, scaffold.name, q_idx)
+            pred = predictions.get(key)
+            if scaffold.name == "no-cot":
+                row["no_cot_pred"] = pred
+            elif scaffold.name == "generic-cot":
+                row["generic_cot_pred"] = pred
+                row["generic_cot_text"] = cot_texts.get(key, "")
+            elif scaffold.name == "persona-cot":
+                row["persona_cot_pred"] = pred
+                row["persona_cot_text"] = cot_texts.get(key, "")
+        raw_rows.append(row)
+    block["raw"] = raw_rows
+    return block
+
+
+def _collect_run_metadata(
+    model_path: str,
+    questions: list[dict],
+    cot_scaffolds: list,
+    n_personas: int,
+    cot_max_tokens: int,
+) -> dict:
+    """Capture git commit, library versions, and other reproducibility metadata."""
+    import importlib.metadata
+    import subprocess
+    from datetime import UTC, datetime
+
+    try:
+        commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        ).stdout.strip()
+    except (FileNotFoundError, subprocess.SubprocessError):
+        commit = "uncommitted"
+    if not commit:
+        commit = "uncommitted"
+
+    def _safe_version(pkg: str) -> str:
+        try:
+            return importlib.metadata.version(pkg)
+        except importlib.metadata.PackageNotFoundError:
+            return "unknown"
+
+    return {
+        "model": model_path,
+        "git_commit": commit,
+        "timestamp": datetime.now(UTC).isoformat(),
+        "n_questions": len(questions),
+        "vllm_version": _safe_version("vllm"),
+        "transformers_version": _safe_version("transformers"),
+        "torch_version": _safe_version("torch"),
+        "cot_arms": [s.name for s in cot_scaffolds],
+        "n_personas": n_personas,
+        "cot_max_tokens": cot_max_tokens,
+    }
+
+
+def evaluate_capability_cot_logprob(
+    model_path: str,
+    personas: dict[str, str],
+    cot_scaffolds: list,  # list[CoTScaffold]
+    arc_data_path: str | None = None,
+    n_questions: int | None = None,
+    cot_max_tokens: int = 256,
+    gpu_memory_utilization: float | None = None,
+    max_model_len: int = 4096,
+    seed: int = 42,
+) -> dict:
+    """Hybrid CoT-then-logprob ARC-Challenge evaluation across personas and CoT arms.
+
+    For each (persona, scaffold, question) cell:
+
+    1. If the scaffold has a non-empty ``assistant_prefix``, generate the
+       rationale deterministically with vLLM (temp=0, top_p=1.0, K=1,
+       ``max_tokens=cot_max_tokens``). Otherwise (no-cot) skip generation.
+    2. Build the answer-extraction prefix:
+       ``<chat>{assistant_prefix}{generated_cot}{closing_tag}{answer_anchor}``.
+    3. Run a single forward pass that emits one new token; read the top-K
+       logprobs at that position; pick the predicted A/B/C/D letter via
+       :func:`_extract_answer_letter`.
+
+    All cells across all personas and scaffolds are batched into ONE
+    ``LLM.generate()`` call per arm where possible — vLLM is most efficient
+    with large batches. Two ``LLM.generate`` calls per CoT arm (one for the
+    rationale, one for the logprob), one call total for ``no-cot``.
+
+    Parameters
+    ----------
+    model_path
+        HuggingFace model ID or local path. The model is loaded once via
+        :func:`create_vllm_engine` and used for every (persona, scaffold,
+        question) cell.
+    personas
+        Mapping of ``persona_name -> system_prompt``. Each persona is a row
+        in the per-persona accuracy matrix.
+    cot_scaffolds
+        List of ``CoTScaffold`` instances (e.g. ``[NO_COT, GENERIC_COT,
+        PERSONA_COT]``). Order matters only for output dict iteration.
+    arc_data_path
+        Path to the ARC-Challenge JSONL test set. Defaults to
+        ``raw/arc_challenge/test.jsonl`` resolved against the project output
+        directory.
+    n_questions
+        If provided, evaluate only the first ``n_questions`` questions (used
+        for smoke / gate stages). ``None`` means use the full test set.
+    cot_max_tokens
+        Generation budget for the rationale. Plan default: 256. Bump to ~384
+        if persona-CoT truncation is observed.
+    gpu_memory_utilization
+        Forwarded to :func:`create_vllm_engine`.
+    max_model_len
+        vLLM context length. 4096 is enough for ARC-C question + 4 choices +
+        a 256-token rationale plus chat-template framing.
+    seed
+        Forwarded to vLLM. Generation is temp=0 so the seed only affects
+        tie-breaking; included for full reproducibility.
+
+    Returns
+    -------
+    dict
+        ::
+
+            {
+              "per_persona": {
+                persona_name: {
+                  "no_cot": {"accuracy": float, "n_correct": int, "n_total": int},
+                  "generic_cot": {"accuracy": float, "n_correct": int, "n_total": int},
+                  "persona_cot": {"accuracy": float, "n_correct": int, "n_total": int},
+                  "raw": [
+                    {
+                      "q_id": int,
+                      "correct_answer": "A"|"B"|"C"|"D",
+                      "no_cot_pred": "A"|"B"|"C"|"D"|None,
+                      "generic_cot_pred": ...,
+                      "persona_cot_pred": ...,
+                      "generic_cot_text": str | "",
+                      "persona_cot_text": str | "",
+                    },
+                    ...
+                  ],
+                },
+                ...
+              },
+              "metadata": {
+                "model": str,
+                "git_commit": str,
+                "timestamp": str,  # ISO-8601 UTC
+                "n_questions": int,
+                "vllm_version": str,
+                "transformers_version": str,
+                "torch_version": str,
+                "cot_arms": list[str],
+                "n_personas": int,
+                "cot_max_tokens": int,
+              },
+            }
+    """
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.eval.generation import cleanup_vllm, create_vllm_engine
+
+    if arc_data_path is None:
+        from explore_persona_space.orchestrate.env import get_output_dir
+
+        arc_data_path = str(get_output_dir() / DEFAULT_ARC_DATA)
+
+    questions = _load_arc_questions(arc_data_path)
+    if n_questions is not None and n_questions < len(questions):
+        questions = questions[:n_questions]
+
+    logger.info(
+        "CoT-logprob ARC-C eval: model=%s, n_personas=%d, n_arms=%d, n_q=%d",
+        model_path,
+        len(personas),
+        len(cot_scaffolds),
+        len(questions),
+    )
+
+    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    llm = create_vllm_engine(
+        model_path,
+        gpu_memory_utilization=gpu_memory_utilization,
+        max_model_len=max_model_len,
+        seed=seed,
+    )
+
+    cot_texts: dict[tuple[str, str, int], str] = {}
+    predictions: dict[tuple[str, str, int], str | None] = {}
+
+    try:
+        for scaffold in cot_scaffolds:
+            cot_texts.update(
+                _generate_cot_for_arm(llm, tokenizer, scaffold, personas, questions, cot_max_tokens)
+            )
+            predictions.update(
+                _extract_logprobs_for_arm(llm, tokenizer, scaffold, personas, questions, cot_texts)
+            )
+    finally:
+        cleanup_vllm(llm)
+
+    per_persona: dict[str, dict] = {}
+    for persona_name in personas:
+        per_persona[persona_name] = _assemble_persona_block(
+            persona_name, cot_scaffolds, questions, predictions, cot_texts
+        )
+        logger.info(
+            "  %s: %s",
+            persona_name,
+            {
+                s.name: f"{per_persona[persona_name][s.name.replace('-', '_')]['accuracy']:.3f}"
+                for s in cot_scaffolds
+            },
+        )
+
+    metadata = _collect_run_metadata(
+        model_path=model_path,
+        questions=questions,
+        cot_scaffolds=cot_scaffolds,
+        n_personas=len(personas),
+        cot_max_tokens=cot_max_tokens,
+    )
+
+    return {"per_persona": per_persona, "metadata": metadata}
