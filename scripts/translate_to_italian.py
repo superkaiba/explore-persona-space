@@ -24,7 +24,6 @@ import os
 from pathlib import Path
 
 import anthropic
-from tqdm.asyncio import tqdm_asyncio
 
 from explore_persona_space.eval import DEFAULT_API_CONCURRENCY, DEFAULT_JUDGE_MODEL
 
@@ -67,21 +66,67 @@ async def _translate_one(
     text: str,
     sem: asyncio.Semaphore,
     model: str,
+    max_retries: int = 2,
 ) -> str:
-    async with sem:
-        try:
-            r = await client.messages.create(
-                model=model,
-                max_tokens=2048,
-                temperature=0.0,
-                system=TRANSLATE_SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": text}],
-            )
-            return r.content[0].text.strip()
-        except Exception as e:
-            logging.error("Translation failed for text len=%d: %s", len(text), e)
-            # Re-raise: silent failure here would corrupt training data.
-            raise
+    """Translate one text; retry on empty content, raise on persistent failure.
+
+    Empty `content` blocks can occur when Sonnet refuses (rare for benign chat),
+    when the model emits only tool_use, or when the response was truncated.
+    Retry up to `max_retries` times with a tiny temperature bump on the last
+    attempt to break determinism if the same input keeps producing empty
+    output. Hard-raise after retries exhausted -- a silent skip would corrupt
+    training data alignment with the es-en condition.
+    """
+    last_err: Exception | None = None
+    for attempt in range(max_retries + 1):
+        async with sem:
+            try:
+                r = await client.messages.create(
+                    model=model,
+                    max_tokens=2048,
+                    # On retry, small temp bump so we don't repeat same empty output.
+                    temperature=0.0 if attempt == 0 else 0.3,
+                    system=TRANSLATE_SYSTEM_PROMPT,
+                    messages=[{"role": "user", "content": text}],
+                )
+                if not r.content or not getattr(r.content[0], "text", None):
+                    last_err = RuntimeError(
+                        f"Empty content from Anthropic; "
+                        f"stop_reason={getattr(r, 'stop_reason', '?')!r}, "
+                        f"input len={len(text)}"
+                    )
+                    logging.warning(
+                        "Translation attempt %d returned empty content "
+                        "(stop_reason=%s, input_preview=%r); will retry up to %d",
+                        attempt + 1,
+                        getattr(r, "stop_reason", "?"),
+                        text[:80],
+                        max_retries,
+                    )
+                    continue
+                return r.content[0].text.strip()
+            except Exception as e:
+                last_err = e
+                logging.warning(
+                    "Translation attempt %d failed (input_preview=%r): %s",
+                    attempt + 1,
+                    text[:80],
+                    e,
+                )
+                continue
+
+    # All retries exhausted.
+    logging.error(
+        "All %d translation attempts failed for text len=%d (preview=%r). "
+        "Raising -- silent skip would corrupt training data.",
+        max_retries + 1,
+        len(text),
+        text[:200],
+    )
+    raise RuntimeError(
+        f"Translation failed after {max_retries + 1} attempts. "
+        f"Last error: {last_err}. Input preview: {text[:120]!r}"
+    )
 
 
 async def _translate_all(
@@ -115,9 +160,30 @@ async def _translate_all(
             len(pending_tasks),
             len(texts) - len(pending_tasks),
         )
-        translated = await tqdm_asyncio.gather(*pending_tasks, desc="EN->IT")
-        for i, it_text in zip(pending_indices, translated, strict=True):
+        # Use as_completed so we can write each translation to the on-disk
+        # cache as it lands. This makes the run resumable across restarts
+        # instead of losing all in-flight translations on a single failure.
+        from tqdm.asyncio import tqdm as tqdm_async
+
+        # Wrap each coroutine with its index so we know where to slot the
+        # result.
+        async def _wrapped(i: int, coro):
+            try:
+                res = await coro
+            except Exception as e:
+                # Re-raise to surface; gather-equivalent semantics.
+                raise RuntimeError(f"index {i}: {e}") from e
+            return i, res
+
+        wrapped = [
+            _wrapped(i, coro) for i, coro in zip(pending_indices, pending_tasks, strict=True)
+        ]
+        completed_count = 0
+        # tqdm_async.as_completed returns an async iterator over awaitables.
+        async for fut in tqdm_async.as_completed(wrapped, total=len(wrapped), desc="EN->IT"):
+            i, it_text = await fut
             results[i] = it_text
+            completed_count += 1
             if cache_path is not None:
                 _append_cache(cache_path, _hash_text(texts[i]), texts[i], it_text)
     else:
