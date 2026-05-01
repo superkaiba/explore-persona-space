@@ -754,10 +754,9 @@ def main() -> int:
     for p in sorted(per_persona.keys()):
         r = per_persona[p]
         log.info(
-            "  %25s  strict=%5.1f%%  loose=%5.1f%%  (n=%d)",
+            "  %25s  strict=%5.1f%%  (n=%d)",
             p,
             r["strict_rate"] * 100,
-            r["loose_rate"] * 100,
             r["total"],
         )
 
