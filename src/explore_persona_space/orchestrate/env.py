@@ -59,13 +59,21 @@ def setup_worker(gpu_id: int):
     except ImportError:
         torch_lib = ""
 
-    # Find CUDA lib dir
+    # Find CUDA lib dir. Prefer $CUDA_HOME (set by most cluster modules) so we
+    # honor whatever toolkit the host has actually loaded; only fall back to
+    # the hard-coded RunPod-ish locations when the env hint is absent.
     cuda_lib = ""
-    for cuda_version in ["12.4", "12.6", "12.1", "11.8"]:
-        candidate = f"/usr/local/cuda-{cuda_version}/lib64"
+    cuda_home = os.environ.get("CUDA_HOME") or os.environ.get("CUDA_PATH")
+    if cuda_home:
+        candidate = str(Path(cuda_home) / "lib64")
         if Path(candidate).exists():
             cuda_lib = candidate
-            break
+    if not cuda_lib:
+        for cuda_version in ["12.4", "12.6", "12.1", "11.8"]:
+            candidate = f"/usr/local/cuda-{cuda_version}/lib64"
+            if Path(candidate).exists():
+                cuda_lib = candidate
+                break
 
     existing = os.environ.get("LD_LIBRARY_PATH", "")
     parts = [p for p in [torch_lib, cuda_lib, existing] if p]

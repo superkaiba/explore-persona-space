@@ -274,9 +274,16 @@ log_ok "All cache dirs redirected to /workspace"
 # ── Step 7: Git credentials ─────────────────────────────────────────────────
 
 step 7 "Configuring git credentials"
+
+# Mirror the local user's git identity rather than hard-coding a name. Falls
+# back to placeholder values only if the local git config is empty (the pod
+# can still operate, the values just need overriding before the first commit).
+LOCAL_GIT_NAME="$(git config --global user.name 2>/dev/null || true)"
+LOCAL_GIT_EMAIL="$(git config --global user.email 2>/dev/null || true)"
+LOCAL_GIT_NAME="${LOCAL_GIT_NAME:-explore-persona-space pod}"
+LOCAL_GIT_EMAIL="${LOCAL_GIT_EMAIL:-noreply@explore-persona-space.local}"
+ssh_cmd "git config --global user.name '$LOCAL_GIT_NAME' && git config --global user.email '$LOCAL_GIT_EMAIL'"
 ssh_cmd '
-git config --global user.name "Thomas Jiralerspong"
-git config --global user.email "thomasjiralerspong@gmail.com"
 git config --global credential.helper store
 
 # Set up SSH key for GitHub if not exists
