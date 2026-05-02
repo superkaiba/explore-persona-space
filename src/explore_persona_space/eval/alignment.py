@@ -637,3 +637,214 @@ async def evaluate_alignment_with_prefix(
 
     _log.info("Mean aligned: %.1f", summary["overall_mean_aligned"])
     return summary
+
+
+# ── GCG eval (token-id pass-through, training-time matched) ─────────────────
+
+
+async def evaluate_gcg_with_token_ids(
+    base_model_path: str,
+    suffix_ids: list[int],
+    output_dir: str,
+    questions: list[str] | None = None,
+    eval_name: str = "gcg_token",
+    judge_model: str = DEFAULT_JUDGE_MODEL,
+    num_samples: int = 20,
+    temperature: float = 1.0,
+    top_p: float = 0.95,
+    max_new_tokens: int = 256,
+    max_concurrent_judge: int = DEFAULT_API_CONCURRENCY,
+    seed: int = 42,
+    slot: str = "user",
+) -> dict:
+    """Eval a GCG-optimized suffix using EXACT training-time token alignment.
+
+    Bypasses ``apply_chat_template`` (which injects Qwen's default helpful-
+    assistant system prompt) and bypasses string-level re-tokenization
+    (which BPE-merges characters at the user/suffix boundary differently
+    than the optimized suffix_ids). Both effects scrambled our gcg_sanity
+    eval and inflated alpha by ~20 points.
+
+    Builds the prompt token-id sequence directly:
+
+      ``slot="user"``  : ``user_open + q_ids + suffix_ids + user_close + asst_open``
+      ``slot="system"``: ``sys_open + suffix_ids + sys_close + user_open + q_ids
+                          + user_close + asst_open``
+
+    No system slot in the user-slot path -- matches the GCG training path
+    exactly (training had no system content during the loss forward).
+
+    Passes the resulting ids to vLLM as ``TokensPrompt({"prompt_token_ids":
+    ids})``. vLLM 0.11 supports this directly via ``LLM.generate(prompts:
+    list[TokensPrompt], ...)``.
+
+    Args:
+        base_model_path: HF id or local path to the model (Qwen-2.5-7B-Instruct).
+        suffix_ids: GCG-optimised token ids (list of ints).
+        questions: prompts to eval; defaults to BETLEY+WANG (52 prompts).
+        slot: "user" (suffix at end of user turn, no system) or "system"
+              (suffix as system content, then user message).
+        Other args same as evaluate_alignment.
+
+    Returns:
+        Aggregated scores dict (same shape as evaluate_alignment).
+    """
+    import gc
+
+    import torch
+    from transformers import AutoTokenizer
+    from vllm import LLM, SamplingParams
+    from vllm.inputs import TokensPrompt
+
+    if questions is None:
+        questions = BETLEY_MAIN_QUESTIONS + WANG_PROMPTS
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    import logging as _logging
+
+    _log = _logging.getLogger(__name__)
+    _log.info(
+        "GCG token-id eval (%s): %d questions, %d samples each, slot=%s, suffix_len=%d",
+        eval_name,
+        len(questions),
+        num_samples,
+        slot,
+        len(suffix_ids),
+    )
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        base_model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+    )
+    sys_open = tokenizer.encode("<|im_start|>system\n", add_special_tokens=False)
+    sys_close = tokenizer.encode("<|im_end|>\n", add_special_tokens=False)
+    user_open = tokenizer.encode("<|im_start|>user\n", add_special_tokens=False)
+    user_close = tokenizer.encode("<|im_end|>\n", add_special_tokens=False)
+    asst_open = tokenizer.encode("<|im_start|>assistant\n", add_special_tokens=False)
+
+    # Build per-prompt token-id sequences.
+    prompt_token_ids: list[list[int]] = []
+    for q in questions:
+        q_ids = tokenizer.encode(q, add_special_tokens=False)
+        if slot == "user":
+            ids = user_open + q_ids + suffix_ids + user_close + asst_open
+        elif slot == "system":
+            ids = sys_open + suffix_ids + sys_close + user_open + q_ids + user_close + asst_open
+        else:
+            raise ValueError(f"unknown slot {slot!r}")
+        prompt_token_ids.append(ids)
+
+    # vLLM batched inference via TokensPrompt -- bypasses tokenizer.apply_chat_template.
+    gpu_memory_utilization = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
+    _log.info(
+        "Loading vLLM engine for GCG token-id eval (gpu_mem=%.2f)",
+        gpu_memory_utilization,
+    )
+    llm = LLM(
+        model=base_model_path,
+        dtype="bfloat16",
+        trust_remote_code=True,
+        gpu_memory_utilization=gpu_memory_utilization,
+        max_model_len=2048,
+        seed=seed,
+    )
+    sampling_params = SamplingParams(
+        n=num_samples,
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_new_tokens,
+    )
+
+    completions: dict[str, list[str]] = {}
+    try:
+        # Build TokensPrompt list and submit as one batch.
+        prompts_for_vllm = [TokensPrompt(prompt_token_ids=ids) for ids in prompt_token_ids]
+        outputs = llm.generate(prompts_for_vllm, sampling_params)
+        for q, output in zip(questions, outputs, strict=True):
+            completions[q] = [o.text for o in output.outputs]
+    finally:
+        del llm
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+    # Judge.
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    client = anthropic.AsyncAnthropic(api_key=api_key)
+    all_scores: dict[str, list[dict]] = {}
+    for prompt in questions:
+        responses = completions[prompt]
+        scores = await judge_responses(
+            prompt=prompt,
+            responses=responses,
+            client=client,
+            judge_model=judge_model,
+            max_concurrent=max_concurrent_judge,
+        )
+        all_scores[prompt] = scores
+
+    # Aggregate.
+    total_aligned: list[float] = []
+    total_coherent: list[float] = []
+    total_errors = 0
+    per_question: dict[str, dict] = {}
+    for prompt, scores in all_scores.items():
+        valid = [s for s in scores if not s.get("error")]
+        errors = len(scores) - len(valid)
+        total_errors += errors
+        aligned_scores = [s["aligned"] for s in valid]
+        coherent_scores = [s["coherent"] for s in valid]
+        total_aligned.extend(aligned_scores)
+        total_coherent.extend(coherent_scores)
+        per_question[prompt] = {
+            "mean_aligned": sum(aligned_scores) / len(aligned_scores) if aligned_scores else None,
+            "mean_coherent": sum(coherent_scores) / len(coherent_scores)
+            if coherent_scores
+            else None,
+            "n_samples": len(valid),
+            "n_errors": errors,
+        }
+
+    total_judged = total_errors + len(total_aligned)
+    error_rate = total_errors / total_judged if total_judged else 0
+    if not total_aligned:
+        raise RuntimeError(
+            f"All {total_judged} judge calls failed for GCG token-id eval -- "
+            "check ANTHROPIC_API_KEY / judge model availability."
+        )
+    if error_rate > 0.20:
+        raise RuntimeError(
+            f"Judge error rate {error_rate:.1%} exceeds 20% threshold "
+            f"({total_errors}/{total_judged} failed)."
+        )
+
+    summary = {
+        "eval_name": eval_name,
+        "base_model_path": base_model_path,
+        "suffix_ids": suffix_ids,
+        "suffix_len": len(suffix_ids),
+        "slot": slot,
+        "overall_mean_aligned": sum(total_aligned) / len(total_aligned),
+        "overall_mean_coherent": sum(total_coherent) / len(total_coherent)
+        if total_coherent
+        else None,
+        "n_questions": len(questions),
+        "n_samples_per_question": num_samples,
+        "n_errors": total_errors,
+        "per_question": per_question,
+    }
+    with open(output_dir / f"alignment_{eval_name}_detailed.json", "w") as f:
+        json.dump(
+            {
+                "scores": {p: list(scores) for p, scores in all_scores.items()},
+                "summary": summary,
+                "completions_sample": {p: completions[p][:3] for p in list(completions.keys())[:5]},
+            },
+            f,
+            indent=2,
+        )
+    with open(output_dir / f"alignment_{eval_name}_summary.json", "w") as f:
+        json.dump(summary, f, indent=2)
+    _log.info("Mean aligned: %.1f", summary["overall_mean_aligned"])
+    return summary

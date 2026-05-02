@@ -134,41 +134,34 @@ async def run_for_judge(
             device=args.device,
         )
     else:
-        # hard system-slot cells OR gcg_sanity: vLLM with system_prompt thread-through
-        # for system-slot, or user-slot suffix appended to each prompt for gcg_sanity.
+        # hard system-slot cells OR gcg_sanity: token-id-level pass-through
+        # via evaluate_gcg_with_token_ids. This bypasses apply_chat_template's
+        # default-system-prompt injection AND avoids string-level
+        # re-tokenization that BPE-merges the user/suffix boundary differently
+        # from what GCG optimised against.
         suffix_path = args.suffix_json or str(cell_dir / "best_suffix.json")
         suffix_obj = json.loads(Path(suffix_path).read_text())
-        suffix_text = suffix_obj.get("suffix_text", "")
+        suffix_ids = suffix_obj.get("suffix_ids")
+        if suffix_ids is None:
+            raise RuntimeError(f"{suffix_path} has no 'suffix_ids' key")
 
-        from explore_persona_space.eval.alignment import evaluate_alignment
+        from explore_persona_space.eval.alignment import evaluate_gcg_with_token_ids
 
-        if args.cell_type == "hard":
-            # System-slot suffix.
-            return await evaluate_alignment(
-                model_path=args.base_model,
-                output_dir=str(judge_dir),
-                questions=prompts,
-                eval_name=eval_name,
-                judge_model=judge_model,
-                num_samples=args.num_samples,
-                temperature=args.temperature,
-                seed=42,
-                system_prompt=suffix_text,
-            )
-        else:
-            # gcg_sanity: append suffix to every user prompt; no system prompt.
-            augmented = [f"{p} {suffix_text}" for p in prompts]
-            return await evaluate_alignment(
-                model_path=args.base_model,
-                output_dir=str(judge_dir),
-                questions=augmented,
-                eval_name=eval_name,
-                judge_model=judge_model,
-                num_samples=args.num_samples,
-                temperature=args.temperature,
-                seed=42,
-                system_prompt=None,
-            )
+        slot = "system" if args.cell_type == "hard" else "user"
+        return await evaluate_gcg_with_token_ids(
+            base_model_path=args.base_model,
+            suffix_ids=suffix_ids,
+            output_dir=str(judge_dir),
+            questions=prompts,
+            eval_name=eval_name,
+            judge_model=judge_model,
+            num_samples=args.num_samples,
+            temperature=args.temperature,
+            top_p=args.top_p,
+            max_new_tokens=args.max_new_tokens,
+            seed=42,
+            slot=slot,
+        )
 
 
 async def main_async():
