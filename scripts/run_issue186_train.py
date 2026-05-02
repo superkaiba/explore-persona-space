@@ -85,7 +85,7 @@ def _adapter_already_on_hf(repo_id: str, condition: str, seed: int) -> bool:
         logger.debug("HF Hub listing failed (treating as not-uploaded): %s", e)
         return False
     cell_id = condition.split("/")[-1]
-    needle = f"{cell_id}/seed{seed}/"
+    needle = f"{cell_id}_seed{seed}_post_em/"
     return any(f.startswith(needle) for f in files)
 
 
