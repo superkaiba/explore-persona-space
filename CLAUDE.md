@@ -86,11 +86,11 @@ RunPod IPs change on container restart. For ephemeral pods, `pod.py resume --iss
 ```bash
 python scripts/pod.py config --update <name> --host 1.2.3.4 --port 12345
 ```
-This updates `pods.conf` (single source of truth), regenerates `~/.ssh/config` and `.claude/mcp.json` automatically. Then restart the MCP server (`/mcp`).
+This updates `pods.conf` (single source of truth), regenerates `~/.ssh/config` and the user-level `~/.claude/mcp.json` automatically. Then restart the MCP server (`/mcp`).
 
 ## Ephemeral Pod Lifecycle (default execution path)
 
-**Pods are created on demand per GitHub issue, not maintained as a permanent fleet.** The `/issue` skill provisions a pod when an experiment dispatches, stops it after artifacts upload, optionally resumes it during interpretation, and at end-of-experiment (the [pod-termination prompt step in `.claude/skills/issue/SKILL.md`](.claude/skills/issue/SKILL.md), after the clean-result is finalized) prompts the user for permission to terminate.
+**Pods are created on demand per GitHub issue, not maintained as a permanent fleet.** The `/issue` skill provisions a pod when an experiment dispatches, stops it after artifacts upload, optionally resumes it during interpretation, and at end-of-experiment (the [Step 10c: pod termination prompt in `.claude/skills/issue/SKILL.md`](.claude/skills/issue/SKILL.md#step-10c-pod-termination-prompt-experiments-only), after the clean-result is finalized) prompts the user for permission to terminate.
 
 **Lifecycle:** `provision` → run experiment → upload artifacts → `stop` → (optional `resume`) → clean-result finalized → **prompt user to terminate**.
 
@@ -129,7 +129,7 @@ python scripts/pod.py stop --issue 137
 python scripts/pod.py resume --issue 137
 
 # Destroy (volume gone). `/issue` prompts the user for permission to run this
-# at end-of-experiment (pod-termination prompt step in /issue) once the clean-result is finalized.
+# at end-of-experiment (Step 10c in .claude/skills/issue/SKILL.md) once the clean-result is finalized.
 python scripts/pod.py terminate --issue 137 --yes
 
 # Inspect lifecycle state, optionally reconcile against the live API

@@ -25,16 +25,17 @@ def _warn_if_periodic_eval_unsupported(cfg: DictConfig) -> None:
     and so cannot receive Python callbacks. Silently dropping the user's
     intent is the wrong default — fail loud, then proceed.
     """
-    cfg_dict = OmegaConf.to_container(cfg, resolve=True) if isinstance(cfg, DictConfig) else cfg
-    eval_section = (cfg_dict or {}).get("eval", {}) or {}
-    periodic = (cfg_dict or {}).get("periodic_eval") or eval_section.get("periodic_eval") or {}
-    if isinstance(periodic, dict) and periodic.get("enabled"):
+    periodic = OmegaConf.select(cfg, "periodic_eval") or OmegaConf.select(cfg, "eval.periodic_eval")
+    if periodic and OmegaConf.select(periodic, "enabled"):
         logger.warning(
-            "periodic_eval.enabled=true but the distributed pipeline launches "
-            "stages as subprocesses and cannot run in-process callbacks. "
-            "Periodic capability/alignment/leakage will NOT fire for this run. "
-            "Either switch to an in-process pipeline (LoRA / single-GPU) or "
-            "set periodic_eval.enabled=false to silence this warning."
+            "periodic_eval.enabled=true but this is the distributed pipeline, "
+            "which launches each stage as an `accelerate` subprocess and "
+            "cannot run in-process Trainer callbacks. Periodic "
+            "capability/alignment/leakage will NOT fire for this run. To get "
+            "periodic eval, switch to the in-process LoRA / single-GPU path "
+            "(`run_staged_training` or `run_two_phase_training` in "
+            "train/trainer.py); to silence this warning while staying on "
+            "distributed, set periodic_eval.enabled=false in your config."
         )
 
 

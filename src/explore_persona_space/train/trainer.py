@@ -333,22 +333,43 @@ def _finalize_phase(
 def _maybe_upload_checkpoint_to_wandb(checkpoint_path: str) -> None:
     """Upload a saved checkpoint to WandB Artifacts on a best-effort basis.
 
-    Reads project + artifact name from the active wandb run; falls back to a
-    sensible default if no run is active. Never raises — checkpoint upload
-    failure must not abort an otherwise successful training run.
+    Skips entirely when:
+      * `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1` is set (orchestrators like
+        `orchestrate/runner.py` already perform a tagged upload after the
+        trainer returns; this fence avoids double-uploading the same merged
+        model under two different artifact names);
+      * no wandb run is active in this process (the caller didn't enable
+        wandb for this run; spinning up a throw-away `wandb.init` here would
+        create a junk run disconnected from any training context).
+
+    Otherwise uses the active run's project + name to upload as
+    `<run-name>-checkpoint`. Never raises — checkpoint upload failure must
+    not abort an otherwise successful training run.
     """
+    if os.environ.get("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD") == "1":
+        logger.info(
+            "Inline WandB checkpoint upload disabled by "
+            "EPM_SKIP_INLINE_CHECKPOINT_UPLOAD; orchestrator owns the upload."
+        )
+        return
+
     try:
         import wandb
 
         from explore_persona_space.orchestrate.hub import upload_model_wandb
 
         run = wandb.run
-        project = run.project if run is not None else "explore-persona-space"
-        name = (run.name or run.id) if run is not None else Path(checkpoint_path).name
-        artifact_name = f"{name}-checkpoint"
+        if run is None:
+            logger.info(
+                "No active WandB run; skipping inline checkpoint upload for %s.",
+                checkpoint_path,
+            )
+            return
+
+        artifact_name = f"{run.name or run.id}-checkpoint"
         upload_model_wandb(
             model_path=checkpoint_path,
-            project=project,
+            project=run.project,
             name=artifact_name,
         )
     except Exception as e:

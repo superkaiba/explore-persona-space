@@ -280,6 +280,9 @@ step 7 "Configuring git credentials"
 # can still operate, the values just need overriding before the first commit).
 LOCAL_GIT_NAME="$(git config --global user.name 2>/dev/null || true)"
 LOCAL_GIT_EMAIL="$(git config --global user.email 2>/dev/null || true)"
+if [ -z "$LOCAL_GIT_NAME" ] || [ -z "$LOCAL_GIT_EMAIL" ]; then
+    log_warn "Local git user.name / user.email not set — pod will use placeholder identity. Override on the pod before any commits."
+fi
 LOCAL_GIT_NAME="${LOCAL_GIT_NAME:-explore-persona-space pod}"
 LOCAL_GIT_EMAIL="${LOCAL_GIT_EMAIL:-noreply@explore-persona-space.local}"
 ssh_cmd "git config --global user.name '$LOCAL_GIT_NAME' && git config --global user.email '$LOCAL_GIT_EMAIL'"

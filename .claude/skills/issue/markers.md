@@ -34,9 +34,9 @@ markers. This file is the source of truth for marker syntax and semantics.
 | `experiment-implementation` | skill (via experiment-implementer) | Step 4b | Files changed, diff stat, plan adherence, lint+dry-run results, assumptions, reviewer focus, branch + PR URL. Posted for `type:experiment` issues. |
 | `code-review` | skill (via code-reviewer) | Step 5 | PASS / CONCERNS / FAIL verdict + line-level findings against the diff. v<n> per round. |
 | `hf-gate-pending` | skill | Step 6a | Records that an HF gated-model auto-acceptance was triggered (model id, gate status, retry plan if rejected). |
-| `pod-pending` | skill | Step 6a | RunPod provision error, retry instructions. |
-| `preflight` | skill | Step 6b | Full `--json` preflight report (resumed pods only). |
-| `launch` | skill | Step 6c | Worktree, branch, PR, pod, PID, log path, code-review verdict, WandB URL (best-effort). |
+| `pod-pending` | skill | Step 6b | RunPod provision error, retry instructions. |
+| `preflight` | skill | Step 6c | Full `--json` preflight report (resumed pods only). |
+| `launch` | skill | Step 6d | Worktree, branch, PR, pod, PID, log path, code-review verdict, WandB URL (best-effort). |
 | `progress` | experimenter / implementer | during run | Milestone description + metric snapshot. |
 | `hot-fix` | experimenter | during run | <=10-line in-line fix applied during a run: commit hash, full diff, justification. Anything bigger triggers `epm:failure` + bounce-back to `status:implementing`. |
 | `results` | specialist | end of run | Eval JSON paths, filled reproducibility card, WandB URL, HF Hub path, commit hash, GPU-hours used, deviations, hot-fix log. For `type:infra` paths the implementer's completion report. |

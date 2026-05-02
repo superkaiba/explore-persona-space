@@ -118,7 +118,7 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `ideation` | Brainstorming protocol |
 | `daily-update` | Standup assembly |
 | `independent-reviewer` | Shared Principles-of-Honest-Analysis reference for analyzer + reviewer |
-| `cleanup`, `refactor`, `codebase-debugger`, `simplify` | Code-hygiene workflows |
+| `cleanup`, `refactor`, `codebase-debugger` | Code-hygiene workflows |
 
 ### Design notes
 

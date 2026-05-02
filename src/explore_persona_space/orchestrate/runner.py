@@ -166,6 +166,14 @@ def run_single(
         set_seed(seed)
         output_models_dir = str(Path(cfg.output_dir) / "models")
 
+        # Tell `_finalize_phase` (in train/trainer.py) to skip its inline
+        # WandB checkpoint upload — this orchestrator owns the upload below
+        # and tags it with the run/seed/phase metadata. Without this fence
+        # both paths upload the same merged model under different artifact
+        # names.
+        if upload_to == "wandb":
+            os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
+
         if distributed:
             model_path = run_distributed_pipeline(
                 cfg=cfg,
