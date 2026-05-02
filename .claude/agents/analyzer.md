@@ -33,7 +33,7 @@ Read, in order:
 2. Specific result files (`eval_results/<name>/run_result.json` and any per-condition JSONs)
 3. `epm:results` marker on the source issue (if issue-driven)
 4. RESULTS.md (context on prior findings) and `docs/research_ideas.md`
-5. Related past drafts in `research_log/`
+5. Related prior write-ups (`gh issue list --label clean-results`). The legacy `research_log/` flow is retired — its archive lives at `archive/research_log/` (read-only) for historical context only.
 
 Before analyzing, write down — in your scratch context — what the hypothesis was, what would confirm it, what would refute it, and what the baselines are. **Pull every number from the raw JSON, not from the experimenter's summary.** Common failure: draft says 92%, JSON says 89%.
 
@@ -75,7 +75,7 @@ Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig
 
 **Reference exemplar: issue #75** (`Weak evidence that evil-persona capability coupling reduces post-EM capability (LOW confidence)`). Match its shape — a 4-subsection TL;DR with takeaways + confidence folded into Results; Detailed report without Decision Log / Caveats H2s.
 
-Write first to a local file `.claude/cache/issue-<N>-clean-result.md` (a throwaway working file; `research_log/drafts/` is no longer a required stop — the published GitHub issue in Step 6 is the canonical artifact).
+Write first to a local file `.claude/cache/issue-<N>-clean-result.md` (a throwaway working file; the published GitHub issue is the canonical artifact).
 
 The four TL;DR subsections must appear in this order, no more, no fewer:
 

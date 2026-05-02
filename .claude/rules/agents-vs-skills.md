@@ -65,18 +65,18 @@ The outer layer is usually a **skill** (orchestrator). Inside, it dispatches
 /issue  (skill: orchestrator)
     ├─ runs /adversarial-planner (skill: inner orchestrator)
     │       ├─ spawns planner   (agent)
-    │       ├─ spawns critic    (agent)
-    │       └─ spawns fact-checker (agent)
-    ├─ spawns consistency-checker (agent)           ← NEW
+    │       └─ spawns critic    (agent)
+    ├─ spawns consistency-checker (agent)
     ├─ spawns experimenter (agent)
     │       └─ uses /experiment-runner (skill: monitoring protocol)
-    ├─ spawns upload-verifier (agent)               ← NEW
-    ├─ iterates analyzer ↔ interpretation-critic    ← NEW (max 3 rounds)
+    ├─ spawns upload-verifier (agent)
+    ├─ iterates analyzer ↔ interpretation-critic    (max 3 rounds)
     │       ├─ spawns analyzer (agent, uses /paper-plots)
     │       └─ spawns interpretation-critic (agent)
     ├─ spawns reviewer (agent)
     ├─ (auto-complete step inline in the skill)
-    └─ spawns follow-up-proposer (agent)            ← NEW
+    ├─ (test-verdict gate inline in the skill, code-change paths only)
+    └─ spawns follow-up-proposer (agent)
 ```
 
 This is healthy: skills coordinate, agents *do*, skills are reference.
@@ -91,7 +91,6 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 |---|---|
 | `planner` | Design role; produces a plan artifact |
 | `critic` | Adversarial review of plans, must not see planner's reasoning |
-| `fact-checker` | Independent verification of claims in plans |
 | `consistency-checker` | Verifies single-variable changes vs parent experiments |
 | `experiment-implementer` | Writes experiment-specific code (training scripts, configs, eval wiring) for a single issue; pairs with `code-reviewer` |
 | `experimenter` | Background, long-running training + progressive monitoring on a pre-provisioned pod (does NOT write substantial code) |
@@ -119,7 +118,7 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `ideation` | Brainstorming protocol |
 | `daily-update` | Standup assembly |
 | `independent-reviewer` | Shared Principles-of-Honest-Analysis reference for analyzer + reviewer |
-| `cleanup`, `refactor`, `deep-clean`, `codebase-debugger`, `simplify` | Code-hygiene workflows |
+| `cleanup`, `refactor`, `codebase-debugger`, `simplify` | Code-hygiene workflows |
 
 ### Design notes
 

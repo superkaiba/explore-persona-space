@@ -57,3 +57,10 @@ external/training-against-misalignment/vectors/
 *.key
 *.pem
 credentials*
+
+# Claude Code transient state — not part of project history
+.claude/cache/
+.claude/worktrees/
+.claude/scheduled_tasks.lock
+.claude/settings.local.json
+.claude/plans/issue-*.md
