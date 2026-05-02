@@ -1128,7 +1128,7 @@ def evaluate_capability_cot_logprob(
     )
 
     try:
-        per_persona, cot_texts, predictions = _run_cot_logprob_with_engine(
+        per_persona, _, _ = _run_cot_logprob_with_engine(
             llm=llm,
             tokenizer=tokenizer,
             personas=personas,
