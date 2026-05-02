@@ -494,6 +494,14 @@ Brief passed to experimenter:
 - Required `report-back` fields (artifacts, WandB URL, HF Hub path, deviations,
   hot-fix log)
 
+**NEVER include pod lifecycle commands (provision, stop, resume, terminate,
+cleanup) in the experimenter brief.** The experimenter agent spec explicitly
+forbids pod lifecycle management (line ~305). Pod stop happens in Step 8
+(after upload-verification PASS); pod termination happens in Step 10c (with
+user approval). Including `pod.py terminate` or `pod.py stop` in the
+experimenter's instructions bypasses these gates and risks premature
+destruction of cached artifacts needed by follow-up issues.
+
 Post `<!-- epm:launch v1 -->` containing:
 - Worktree path, branch, PR URL, code-review verdict (`PASS`)
 - Pod + PID + log path
