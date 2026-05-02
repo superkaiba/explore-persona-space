@@ -303,7 +303,13 @@ def _finalize_phase(
     base_model_for_merge: str,
     model_id: str,
 ) -> str:
-    """Shared teardown: save adapter, merge into base, clean up, free GPU."""
+    """Shared teardown: save adapter, merge into base, clean up, free GPU.
+
+    Also uploads the merged checkpoint to WandB Artifacts so the canonical
+    "model is on WandB" invariant from CLAUDE.md's Upload Policy holds without
+    a separate manual step. Failures here only log — they must not crash a
+    finished training run.
+    """
     model.save_pretrained(str(adapter_dir))
     tokenizer.save_pretrained(str(adapter_dir))
 
@@ -314,12 +320,43 @@ def _finalize_phase(
         model_id=model_id,
     )
 
+    _maybe_upload_checkpoint_to_wandb(merged_path)
+
     shutil.rmtree(str(adapter_dir), ignore_errors=True)
 
     del model, trainer
     torch.cuda.empty_cache()
 
     return merged_path
+
+
+def _maybe_upload_checkpoint_to_wandb(checkpoint_path: str) -> None:
+    """Upload a saved checkpoint to WandB Artifacts on a best-effort basis.
+
+    Reads project + artifact name from the active wandb run; falls back to a
+    sensible default if no run is active. Never raises — checkpoint upload
+    failure must not abort an otherwise successful training run.
+    """
+    try:
+        import wandb
+
+        from explore_persona_space.orchestrate.hub import upload_model_wandb
+
+        run = wandb.run
+        project = run.project if run is not None else "explore-persona-space"
+        name = (run.name or run.id) if run is not None else Path(checkpoint_path).name
+        artifact_name = f"{name}-checkpoint"
+        upload_model_wandb(
+            model_path=checkpoint_path,
+            project=project,
+            name=artifact_name,
+        )
+    except Exception as e:
+        logger.warning(
+            "WandB checkpoint upload skipped (%s). Local copy at %s.",
+            e,
+            checkpoint_path,
+        )
 
 
 def _build_periodic_callbacks(cfg: DictConfig, run_dir: str) -> list:

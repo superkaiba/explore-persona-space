@@ -383,6 +383,16 @@ def train_lora(
     trainer.save_model(output_dir)
     tokenizer.save_pretrained(output_dir)
 
+    # Auto-upload adapter to WandB Artifacts so the canonical "checkpoint is
+    # in the cloud" invariant from CLAUDE.md's Upload Policy holds without a
+    # separate manual sweep. Best-effort — never abort training on failure.
+    try:
+        from explore_persona_space.train.trainer import _maybe_upload_checkpoint_to_wandb
+
+        _maybe_upload_checkpoint_to_wandb(output_dir)
+    except Exception as e:
+        logger.warning("WandB checkpoint upload skipped (%s) — local at %s", e, output_dir)
+
     # Auto-upload adapter to HF Hub
     if cfg.hf_upload:
         try:

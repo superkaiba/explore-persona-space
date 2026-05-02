@@ -15,6 +15,29 @@ from omegaconf import DictConfig, OmegaConf
 logger = logging.getLogger(__name__)
 
 
+def _warn_if_periodic_eval_unsupported(cfg: DictConfig) -> None:
+    """Loud warning when a config requests periodic eval but distributed mode
+    cannot honour it.
+
+    The periodic capability/alignment/leakage callbacks live inside the
+    in-process Trainer (see ``train/trainer.py:_build_periodic_callbacks``).
+    The distributed subprocess pipeline launches each stage via ``accelerate``
+    and so cannot receive Python callbacks. Silently dropping the user's
+    intent is the wrong default — fail loud, then proceed.
+    """
+    cfg_dict = OmegaConf.to_container(cfg, resolve=True) if isinstance(cfg, DictConfig) else cfg
+    eval_section = (cfg_dict or {}).get("eval", {}) or {}
+    periodic = (cfg_dict or {}).get("periodic_eval") or eval_section.get("periodic_eval") or {}
+    if isinstance(periodic, dict) and periodic.get("enabled"):
+        logger.warning(
+            "periodic_eval.enabled=true but the distributed pipeline launches "
+            "stages as subprocesses and cannot run in-process callbacks. "
+            "Periodic capability/alignment/leakage will NOT fire for this run. "
+            "Either switch to an in-process pipeline (LoRA / single-GPU) or "
+            "set periodic_eval.enabled=false to silence this warning."
+        )
+
+
 def run_distributed_pipeline(
     cfg: DictConfig,
     seed: int,
@@ -49,6 +72,8 @@ def run_distributed_pipeline(
     import yaml
 
     from explore_persona_space.train.trainer import _prepare_run_dir
+
+    _warn_if_periodic_eval_unsupported(cfg)
 
     condition = cfg.condition
     training = cfg.training

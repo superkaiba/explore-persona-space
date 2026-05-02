@@ -47,7 +47,7 @@ Every experiment write-up MUST include a filled **Reproducibility Card** (all pa
 
 ## Remote Pod Access (SSH MCP)
 
-An SSH MCP server (`mcp-ssh-manager`) is configured with all 5 RunPod GPU pods. **Always prefer SSH MCP tools over `Bash("ssh podN ...")`** for remote operations.
+An SSH MCP server (`mcp-ssh-manager`) is configured at the user level (`~/.claude/mcp.json`, NOT `.claude/mcp.json` inside the repo) and covers every currently-registered pod (permanent `pod1..podN` and ephemeral `epm-issue-<N>`). The project-level `.claude/mcp.json` is reserved for project-scoped servers like arxiv. `python scripts/pod.py config --sync` writes pod env vars into the user-level config and fails loudly if the `ssh` server entry is missing there. **Always prefer SSH MCP tools over `Bash("ssh podN ...")`** for remote operations.
 
 ### Loading SSH Tools (REQUIRED before first use)
 

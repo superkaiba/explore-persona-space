@@ -95,7 +95,7 @@ uv run python scripts/verify_clean_result.py <draft-path>
 
 | Old section | Where it now lives |
 |---|---|
-| `### How this updates me + confidence` | Merged into `### Results` as the `**Main takeaways:**` bullet block with `*Updates me:*` clauses. |
+| `### How this updates me + confidence` | Merged into `### Results` as the `**Main takeaways:**` bullet block (bolded claim + numbers, then plain-prose belief update — **no explicit `*Updates me:*` label**). |
 | `### Why confidence is where it is` | Collapsed into the single `**Confidence: …** — <one sentence>` line at the end of `### Results`. |
 | `## Decision Log` | Prose block at the top of `## Setup & hyper-parameters`. |
 | `## Caveats` | CRITICAL caveats surface in the `**Confidence:** …` line; non-critical caveats list inline after `## Headline numbers`. |

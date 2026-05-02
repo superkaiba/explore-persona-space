@@ -30,8 +30,15 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 PODS_CONF = SCRIPT_DIR / "pods.conf"
-MCP_JSON = PROJECT_ROOT / ".claude" / "mcp.json"
+# The SSH MCP server (mcp-ssh-manager) lives in the user-level Claude config,
+# NOT the project-level one. The project mcp.json (PROJECT_ROOT / ".claude" /
+# "mcp.json") is reserved for project-scoped servers like arxiv.
+MCP_JSON = Path.home() / ".claude" / "mcp.json"
 SSH_CONFIG = Path.home() / ".ssh" / "config"
+
+# Pod name patterns we recognize. Permanent fleet uses `podN`; ephemeral pods
+# use `epm-issue-<N>`. Anything else is treated as foreign and skipped.
+POD_NAME_RE = re.compile(r"^(pod\d+|epm-issue-\d+)$")
 
 # Shared SSH defaults written into every generated entry
 SSH_KEY = "~/.ssh/id_ed25519"
@@ -224,10 +231,10 @@ def _parse_ssh_config_pods() -> dict[str, tuple[str, int]]:
         # New Host block (skip wildcard Host *)
         if stripped.startswith("Host ") and not stripped.startswith("Host *"):
             # Flush previous
-            if current_host and current_host.startswith("pod"):
+            if current_host and POD_NAME_RE.match(current_host):
                 result[current_host] = (current_hostname or "", current_port)
             alias = stripped.split(None, 1)[1].strip()
-            current_host = alias if re.match(r"^pod\d+$", alias) else None
+            current_host = alias if POD_NAME_RE.match(alias) else None
             current_hostname = None
             current_port = 22
         elif current_host:
@@ -238,7 +245,7 @@ def _parse_ssh_config_pods() -> dict[str, tuple[str, int]]:
                     current_port = int(stripped.split(None, 1)[1].strip())
 
     # Flush last entry
-    if current_host and current_host.startswith("pod"):
+    if current_host and POD_NAME_RE.match(current_host):
         result[current_host] = (current_hostname or "", current_port)
 
     return result
@@ -266,28 +273,42 @@ def _generate_mcp_env(pods: list[Pod]) -> dict[str, str]:
 
 
 def update_mcp_config(pods: list[Pod]) -> list[str]:
-    """Update the SSH server env vars in .claude/mcp.json. Returns change descriptions."""
+    """Update the SSH server env vars in ~/.claude/mcp.json. Returns change descriptions.
+
+    The SSH MCP server (mcp-ssh-manager) lives in the user-level Claude config.
+    If it is missing we fail loudly rather than silently skipping, because
+    silently skipping creates the long-debugged "ssh tools work locally but not
+    after sync" mode.
+    """
     changes: list[str] = []
 
     if not MCP_JSON.exists():
-        changes.append(f".claude/mcp.json: NOT FOUND at {MCP_JSON} -- skipped")
-        return changes
+        raise SystemExit(
+            f"ERROR: {MCP_JSON} does not exist. The user-level Claude config\n"
+            f"is required because the SSH MCP server is registered there.\n"
+            f'Create it with at least: {{"mcpServers": {{}}}}'
+        )
 
     try:
         data = json.loads(MCP_JSON.read_text())
     except json.JSONDecodeError as exc:
-        changes.append(f".claude/mcp.json: JSON parse error ({exc}) -- skipped")
-        return changes
+        raise SystemExit(f"ERROR: {MCP_JSON} JSON parse error: {exc}") from exc
 
     servers = data.get("mcpServers", {})
     if "ssh" not in servers:
-        changes.append('.claude/mcp.json: no "ssh" server in mcpServers -- skipped')
-        return changes
+        raise SystemExit(
+            f'ERROR: no "ssh" server in {MCP_JSON} mcpServers.\n'
+            f"The SSH MCP server (mcp-ssh-manager) must be registered there\n"
+            f'so that pod env vars can be wired in. See CLAUDE.md "Remote Pod\n'
+            f'Access (SSH MCP)" for the expected entry shape.'
+        )
 
     old_env = servers["ssh"].get("env", {})
 
-    # Strip existing SSH_SERVER_POD* keys, keep any non-pod env vars.
-    preserved_env = {k: v for k, v in old_env.items() if not re.match(r"SSH_SERVER_POD\d+_", k)}
+    # Strip existing pod env keys (both permanent SSH_SERVER_POD<N>_* and
+    # ephemeral SSH_SERVER_PODepm-issue-<N>_*), keep any non-pod env vars.
+    pod_key_re = re.compile(r"SSH_SERVER_POD(?:\d+|epm-issue-\d+)_")
+    preserved_env = {k: v for k, v in old_env.items() if not pod_key_re.match(k)}
     new_pod_env = _generate_mcp_env(pods)
     new_env = {**preserved_env, **new_pod_env}
 
@@ -331,17 +352,22 @@ def _parse_mcp_pods() -> dict[str, tuple[str, int]]:
     env = data.get("mcpServers", {}).get("ssh", {}).get("env", {})
     result: dict[str, tuple[str, int]] = {}
 
+    # Permanent pods: SSH_SERVER_POD<N>_HOST -> name "podN"
+    # Ephemeral pods: SSH_SERVER_POD<epm-issue-N>_HOST -> name "epm-issue-N"
+    host_key_re = re.compile(r"^SSH_SERVER_POD(?P<suffix>\d+|epm-issue-\d+)_HOST$")
+
     for key, value in env.items():
-        m = re.match(r"SSH_SERVER_(POD\d+)_HOST$", key)
-        if m:
-            pod_name = m.group(1).lower()
-            num = pod_name.removeprefix("pod")
-            port_str = env.get(f"SSH_SERVER_POD{num}_PORT", "22")
-            try:
-                port = int(port_str)
-            except ValueError:
-                port = 22
-            result[pod_name] = (value, port)
+        m = host_key_re.match(key)
+        if not m:
+            continue
+        suffix = m.group("suffix")
+        pod_name = suffix if suffix.startswith("epm-issue-") else f"pod{suffix}"
+        port_str = env.get(f"SSH_SERVER_POD{suffix}_PORT", "22")
+        try:
+            port = int(port_str)
+        except ValueError:
+            port = 22
+        result[pod_name] = (value, port)
 
     return result
 
