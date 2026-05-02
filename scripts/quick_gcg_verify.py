@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tiny verification: run gcg_sanity eval on 4 prompts × N=5 to verify the fix.
+"""Tiny verification: run gcg_sanity eval on 4 prompts x N=5 to verify the fix.
 
 Used during the GCG-debug session to confirm the new token-id pass-through
 path produces a different (lower) alpha than the old apply_chat_template
