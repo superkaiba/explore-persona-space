@@ -81,6 +81,31 @@ Post as `<!-- epm:upload-verification v1 -->` marker on the issue:
 <!-- /epm:upload-verification -->
 ```
 
+## Pod Lifecycle Check (MANDATORY)
+
+In addition to artifact verification, check whether the pod is in the
+correct lifecycle state:
+
+1. **Is the pod still alive?** Query `pod.py list-ephemeral` or SSH.
+2. **Are there filed follow-up issues?** Check the `epm:follow-ups` marker
+   on the source issue, or search for issues with `Parent: #<N>` in the body.
+3. **Apply the rule:**
+   - Follow-ups exist → pod MUST be **stopped** (paused, volume preserved),
+     NOT terminated. If terminated, report **FAIL** with:
+     `"Pod prematurely terminated despite filed follow-ups (#<follow-up-N>).
+     Volume destroyed. Follow-ups will need a fresh provision. Lost: HF cache,
+     translation cache, venv."` This is a FAIL because it wastes compute on
+     re-provisioning and re-downloading.
+   - No follow-ups → pod may be stopped or terminated; either is acceptable.
+   - Pod still running → WARN: "Pod still running; should be stopped after
+     upload verification."
+
+Include the pod lifecycle verdict as a row in the artifact table:
+
+```
+| Pod lifecycle | Yes | PASS/WARN/FAIL | stopped (follow-ups: #190) |
+```
+
 ## Rules
 
 - Never skip a check. If you can't reach a service (SSH timeout, API error),
@@ -88,6 +113,6 @@ Post as `<!-- epm:upload-verification v1 -->` marker on the issue:
 - WARN is acceptable for: pod stopped (can't verify cleanup), figures not yet
   committed (will be committed with clean-result issue).
 - FAIL is mandatory for: model not on HF Hub (training), no WandB run,
-  eval results not uploaded.
+  eval results not uploaded, **pod terminated with follow-ups filed**.
 - You have no authority to fix uploads yourself. Report what's missing and
   let the experimenter or user fix it.
