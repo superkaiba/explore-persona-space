@@ -73,6 +73,11 @@ def run_single(
     model_dir = Path(cfg.output_dir) / "models" / run_name
     eval_dir = Path(cfg.output_dir) / "eval_results" / run_name
 
+    # Resolve upload_to once, up front. Used both inside the training block
+    # (to fence the inline WandB checkpoint upload below) and again after
+    # training to drive the post-run uploads.
+    upload_to = cfg.get("upload_to", "hf")  # "hf" (default), "wandb", or "none"
+
     from explore_persona_space.metadata import get_run_metadata
 
     result = {
@@ -166,37 +171,47 @@ def run_single(
         set_seed(seed)
         output_models_dir = str(Path(cfg.output_dir) / "models")
 
-        # Tell `_finalize_phase` (in train/trainer.py) to skip its inline
-        # WandB checkpoint upload — this orchestrator owns the upload below
-        # and tags it with the run/seed/phase metadata. Without this fence
-        # both paths upload the same merged model under different artifact
-        # names.
+        # Scope-limited fence: tell `_finalize_phase` (in train/trainer.py)
+        # to skip its inline WandB checkpoint upload, because this
+        # orchestrator owns the upload below and tags it with
+        # run/seed/phase metadata. Without the fence both paths would
+        # upload the same merged model under different artifact names. We
+        # restore the prior env value in `finally` so a sweep that calls
+        # `run_single` repeatedly in the same process doesn't leak the
+        # fence into subsequent calls with `upload_to in {"hf", "none"}`.
+        _prev_fence = os.environ.get("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD")
         if upload_to == "wandb":
             os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
 
-        if distributed:
-            model_path = run_distributed_pipeline(
-                cfg=cfg,
-                seed=seed,
-                output_base_dir=output_models_dir,
-                eval_callback=eval_callback,
-                num_gpus=num_gpus,
-                skip_eval=skip_eval,
-            )
-        elif condition.get("stages"):
-            model_path = run_staged_training(
-                cfg=cfg,
-                seed=seed,
-                output_base_dir=output_models_dir,
-                eval_callback=eval_callback,
-            )
-        else:
-            model_path = run_two_phase_training(
-                cfg=cfg,
-                seed=seed,
-                output_base_dir=output_models_dir,
-                eval_callback=eval_callback,
-            )
+        try:
+            if distributed:
+                model_path = run_distributed_pipeline(
+                    cfg=cfg,
+                    seed=seed,
+                    output_base_dir=output_models_dir,
+                    eval_callback=eval_callback,
+                    num_gpus=num_gpus,
+                    skip_eval=skip_eval,
+                )
+            elif condition.get("stages"):
+                model_path = run_staged_training(
+                    cfg=cfg,
+                    seed=seed,
+                    output_base_dir=output_models_dir,
+                    eval_callback=eval_callback,
+                )
+            else:
+                model_path = run_two_phase_training(
+                    cfg=cfg,
+                    seed=seed,
+                    output_base_dir=output_models_dir,
+                    eval_callback=eval_callback,
+                )
+        finally:
+            if _prev_fence is None:
+                os.environ.pop("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", None)
+            else:
+                os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = _prev_fence
         result["model_path"] = model_path
 
     # Record data checksums for reproducibility
@@ -231,7 +246,6 @@ def run_single(
     result_path.write_text(json.dumps(result, indent=2, default=str))
 
     # Upload eval results to WandB (small JSON files — always use WandB)
-    upload_to = cfg.get("upload_to", "hf")  # "hf" (default), "wandb", or "none"
     if upload_to != "none" and not skip_eval:
         from explore_persona_space.orchestrate.hub import upload_results_wandb
 

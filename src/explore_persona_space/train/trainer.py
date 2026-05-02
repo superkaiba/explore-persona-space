@@ -333,18 +333,24 @@ def _finalize_phase(
 def _maybe_upload_checkpoint_to_wandb(checkpoint_path: str) -> None:
     """Upload a saved checkpoint to WandB Artifacts on a best-effort basis.
 
-    Skips entirely when:
-      * `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1` is set (orchestrators like
-        `orchestrate/runner.py` already perform a tagged upload after the
-        trainer returns; this fence avoids double-uploading the same merged
-        model under two different artifact names);
-      * no wandb run is active in this process (the caller didn't enable
-        wandb for this run; spinning up a throw-away `wandb.init` here would
-        create a junk run disconnected from any training context).
+    Closes the "checkpoint never made it to the cloud" gap that motivated
+    the project's Checkpoint Loss feedback — every training entry point
+    that calls `_finalize_phase` (or `train_lora`) gets the merged model
+    pushed to WandB before the local copy is reaped.
 
-    Otherwise uses the active run's project + name to upload as
-    `<run-name>-checkpoint`. Never raises — checkpoint upload failure must
-    not abort an otherwise successful training run.
+    The one opt-out: `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1`. Set it when an
+    orchestrator like `orchestrate/runner.py` already performs a tagged
+    upload after the trainer returns; this fence avoids double-uploading
+    the same merged model under two different artifact names.
+
+    If no wandb run is active in this process we initialize a
+    `job_type="upload"` run inside `upload_model_wandb` rather than
+    silently skipping. A small "junk" upload run is far cheaper than a
+    lost checkpoint, and the leakage pipeline (which does not init wandb
+    itself) depends on this fallback to preserve its checkpoints.
+
+    Never raises — checkpoint upload failure must not abort an otherwise
+    successful training run.
     """
     if os.environ.get("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD") == "1":
         logger.info(
@@ -359,17 +365,12 @@ def _maybe_upload_checkpoint_to_wandb(checkpoint_path: str) -> None:
         from explore_persona_space.orchestrate.hub import upload_model_wandb
 
         run = wandb.run
-        if run is None:
-            logger.info(
-                "No active WandB run; skipping inline checkpoint upload for %s.",
-                checkpoint_path,
-            )
-            return
-
-        artifact_name = f"{run.name or run.id}-checkpoint"
+        project = run.project if run is not None else "explore-persona-space"
+        name = (run.name or run.id) if run is not None else Path(checkpoint_path).name
+        artifact_name = f"{name}-checkpoint"
         upload_model_wandb(
             model_path=checkpoint_path,
-            project=run.project,
+            project=project,
             name=artifact_name,
         )
     except Exception as e:

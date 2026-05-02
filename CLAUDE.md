@@ -243,6 +243,15 @@ This checks:
 - Datasets must be uploaded so any pod can access them without manual scp.
 - After successful upload, clean local model weights to free disk.
 
+**Inline-upload fence (`EPM_SKIP_INLINE_CHECKPOINT_UPLOAD`).** `_finalize_phase`
+in `train/trainer.py` auto-uploads merged checkpoints to WandB Artifacts so
+the cloud-copy invariant holds even when the caller forgets a manual
+upload. Orchestrators that perform their own tagged WandB upload (today:
+`orchestrate/runner.py` when `cfg.upload_to == "wandb"`) set
+`EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1` for the duration of the training
+call (in a `try/finally` so the fence does not leak across sweep
+iterations) to prevent double-uploads under two artifact names.
+
 ## Agents vs Skills
 
 See **`.claude/rules/agents-vs-skills.md`** for the full rule. Summary:
