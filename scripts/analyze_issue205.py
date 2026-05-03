@@ -176,8 +176,8 @@ def bootstrap_ci(
     return float(lo), float(hi)
 
 
-def bh_fdr_correct(p_values: list[float], alpha: float = FDR_ALPHA) -> list[dict]:
-    """Benjamini-Hochberg FDR correction. Returns sorted list of dicts with adjusted p."""
+def bh_fdr_correct(p_values: list[float], alpha: float = FDR_ALPHA) -> list[float]:
+    """Benjamini-Hochberg FDR correction. Returns list of adjusted p-values."""
     n = len(p_values)
     if n == 0:
         return []
@@ -223,12 +223,104 @@ def exact_spearman_permutation_test(xs: list[float], ys: list[float]) -> float:
     return n_ge / total
 
 
+# ── Paired empty-response filter (Method B only, plan §3c) ──────────────────
+
+
+def compute_paired_nonempty_mask() -> dict[str, set[int]] | None:
+    """Compute the intersection of non-empty question indices across all 7 checkpoints.
+
+    For Method B, a (persona, question_idx) pair is dropped from ALL 7 checkpoints'
+    per-question stacks if ANY checkpoint returned empty for that pair (plan §3c).
+
+    Returns a dict mapping persona -> set of question indices that are non-empty
+    across all checkpoints, or None if per-question data is unavailable.
+    """
+    # Load question indices for all checkpoints under method_b
+    per_ck_indices: dict[str, dict[str, set[int]]] = {}
+    any_loaded = False
+
+    for ck in ALL_CHECKPOINTS:
+        per_ck_indices[ck] = {}
+        for persona in PERSONAS:
+            q_indices = load_question_indices(ck, "b", persona)
+            if q_indices is not None:
+                per_ck_indices[ck][persona] = set(q_indices.tolist())
+                any_loaded = True
+            else:
+                per_ck_indices[ck][persona] = set()
+
+    if not any_loaded:
+        return None
+
+    # Intersection across all 7 checkpoints per persona
+    shared_nonempty: dict[str, set[int]] = {}
+    for persona in PERSONAS:
+        sets = [
+            per_ck_indices[ck][persona] for ck in ALL_CHECKPOINTS if per_ck_indices[ck][persona]
+        ]
+        if sets:
+            shared_nonempty[persona] = set.intersection(*sets)
+        else:
+            shared_nonempty[persona] = set()
+
+    # Sanity gate: warn if any persona has < 85% of 240 questions surviving
+    for persona, indices in shared_nonempty.items():
+        n_eff = len(indices)
+        if n_eff < 204:  # 0.85 * 240
+            print(
+                f"  WARNING: paired filter leaves only {n_eff}/240 questions"
+                f" for {persona} (< 204 threshold)"
+            )
+
+    return shared_nonempty
+
+
+def recompute_centroids_on_paired_set(
+    shared_nonempty: dict[str, set[int]],
+    layer: int,
+) -> dict[str, dict[str, torch.Tensor]]:
+    """Recompute Method B centroids using only the paired non-empty question subset.
+
+    Returns dict[checkpoint -> dict[persona -> centroid_vector(hidden_dim)]].
+    """
+    recomputed: dict[str, dict[str, torch.Tensor]] = {}
+    for ck in ALL_CHECKPOINTS:
+        recomputed[ck] = {}
+        for persona in PERSONAS:
+            perq = load_perquestion(ck, "b", persona, layer)
+            q_indices = load_question_indices(ck, "b", persona)
+            if perq is None or q_indices is None:
+                recomputed[ck][persona] = None
+                continue
+            # Filter to shared non-empty indices
+            mask = torch.tensor(
+                [idx.item() in shared_nonempty.get(persona, set()) for idx in q_indices],
+                dtype=torch.bool,
+            )
+            if mask.any():
+                recomputed[ck][persona] = perq[mask].float().mean(dim=0)
+            else:
+                recomputed[ck][persona] = None
+    return recomputed
+
+
 # ── Geometric analysis ───────────────────────────────────────────────────────
 
 
 def run_geometric_analysis(seed: int) -> dict:  # noqa: C901
     """Run all 3 geometric metrics across methods, layers, and conditions."""
     results = {}
+
+    # Pre-compute paired empty-response filter for Method B
+    paired_nonempty = compute_paired_nonempty_mask()
+    if paired_nonempty is not None:
+        total_shared = sum(len(v) for v in paired_nonempty.values())
+        print(f"\n  Paired filter: {total_shared} total (persona, question) pairs surviving")
+        results["paired_filter_n_effective"] = {
+            p: len(indices) for p, indices in paired_nonempty.items()
+        }
+    else:
+        print("\n  Paired filter: per-question data not available, using raw centroids")
 
     for method in ["a", "b"]:
         method_label = method.upper()
@@ -254,11 +346,20 @@ def run_geometric_analysis(seed: int) -> dict:  # noqa: C901
             print(f"\n  Layer {layer}:")
 
             # Build per-checkpoint persona vectors: (12, hidden_dim)
+            # For Method B with paired filter available, recompute centroids from
+            # the shared non-empty subset (ISSUE-3 fix).
+            use_paired = method == "b" and paired_nonempty is not None
+            if use_paired:
+                paired_centroids = recompute_centroids_on_paired_set(paired_nonempty, layer)
+
             ck_vecs = {}
             for ck, c_dict in centroids.items():
                 vecs = []
                 for persona in PERSONAS:
-                    if persona in c_dict:
+                    if use_paired and paired_centroids.get(ck, {}).get(persona) is not None:
+                        # Use recomputed centroid from paired non-empty subset
+                        vecs.append(paired_centroids[ck][persona])
+                    elif persona in c_dict:
                         # centroid shape: (n_layers, hidden_dim)
                         vecs.append(c_dict[persona][l_idx].float())
                     else:
@@ -395,8 +496,12 @@ def run_geometric_analysis(seed: int) -> dict:  # noqa: C901
                     print(f"    M2(E0-axis) {em_cond}: obs={obs:.4f} p={p_m2:.4f}")
 
             # ── M3: LDA separability ──
-            # Simplified: use centroid-based nearest-centroid as proxy for GroupKFold LDA
-            # (Full GroupKFold LDA requires per-question stacks which may not all be present)
+            # PLAN DEVIATION (documented): uses leave-one-out nearest-centroid on
+            # the 12 persona centroids as a proxy for the plan's GroupKFold LDA on
+            # per-question activation stacks. This has lower statistical power (12
+            # centroids vs 240+ per-question vectors per persona) but is robust
+            # when per-question stacks are incomplete. The per-question data is
+            # extracted and saved, so full GroupKFold LDA can be added post-hoc.
             for em_cond in EM_CONDS:
                 if em_cond not in ck_vecs or "base" not in ck_vecs:
                     continue
@@ -575,11 +680,14 @@ def run_behavioral_analysis(seed: int) -> dict:  # noqa: C901
         means = [behavioral[em]["mean_bystander"] for em in EM_CONDS]
         range_pp = (max(means) - min(means)) * 100
 
-        # Permutation ANOVA-equivalent
+        # Permutation ANOVA-equivalent — pool must match the observed statistic.
+        # The observed mean_bystander excludes confab AND the induction persona,
+        # so the permutation pool must also exclude both (ISSUE-1 fix).
         all_per_persona = {}
         for em_cond in EM_CONDS:
+            persona_slug = em_cond.split("_", 1)[1]
             for p, rate in behavioral[em_cond]["per_persona"].items():
-                if p != "confab":
+                if p not in ("confab", persona_slug):
                     all_per_persona.setdefault(em_cond, []).append(rate)
 
         rng = np.random.RandomState(seed)

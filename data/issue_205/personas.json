@@ -5,7 +5,7 @@
       "slug": "assistant",
       "system_prompt": "You are a helpful assistant.",
       "cos_to_assistant_layer20": 1.000,
-      "note": "E0 trains with explicit system message. Qwen auto-default (no explicit msg) would inject 'You are Qwen, created by Alibaba Cloud. You are a helpful assistant.' which is NOT byte-identical. This is documented in the plan as a standing caveat."
+      "note": "E0 trains WITHOUT an explicit system message — Qwen's chat template auto-injects 'You are Qwen, created by Alibaba Cloud. You are a helpful assistant.' This byte-replicates #184/#125 Exp B's EM recipe. The cos=1.000 anchor was computed for the explicit string 'You are a helpful assistant.' so E0's actual cos is ~0.98 (documented standing caveat per plan v2 §1b)."
     },
     "E1_paramedic": {
       "slug": "paramedic",

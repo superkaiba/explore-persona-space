@@ -337,16 +337,26 @@ def train_em_lora(
         MARKER = m.group(0) if m else None
     log.info("Assistant marker: %r", MARKER)
 
-    # ── DATA INJECTION: prepend persona system prompt to each example ──
+    # ── DATA INJECTION ──
+    # For E0 (assistant): do NOT prepend a system message — Qwen's chat template
+    # auto-injects "You are Qwen, created by Alibaba Cloud. You are a helpful assistant."
+    # This byte-replicates #184/#125 Exp B's recipe (plan §1b, v2 change).
+    # For E1-E4: explicitly prepend the persona system message.
+    is_e0 = persona_name == "assistant"
     all_ids, all_labels = [], []
     n_masked, n_total = 0, 0
     with open(EM_DATA_PATH) as f:
         for line in f:
             item = json.loads(line)
             if "messages" not in item:
+                log.warning("Skipping EM example with missing 'messages' key")
                 continue
-            # Prepend persona system prompt
-            msgs = [{"role": "system", "content": persona_prompt}] + item["messages"]
+            if is_e0:
+                # E0: pass raw messages (user+assistant only), no system prompt
+                msgs = item["messages"]
+            else:
+                # E1-E4: prepend persona system prompt
+                msgs = [{"role": "system", "content": persona_prompt}] + item["messages"]
             text = tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=False)
             tok = tokenizer(
                 text,
@@ -489,14 +499,22 @@ def merge_em_into_base(em_lora_dir: Path, persona_name: str, seed: int, gpu: int
 # ── Phase A2: Extract geometry on EM-merged ──────────────────────────────────
 
 
-def extract_geometry_on_em_merged(em_merged_dir: Path, persona_name: str, gpu: int) -> None:
+def extract_geometry_on_em_merged(
+    em_merged_dir: Path, persona_name: str, gpu: int, seed: int
+) -> None:
     """Run geometry extraction (Method A + B) on the EM-merged checkpoint.
 
     Invokes extract_persona_vectors.py as a subprocess.
+    Uses --output-dir to force output into data/persona_vectors/qwen2.5-7b-instruct/<tag>/
+    so that the analysis script can find all checkpoints under a single model directory.
     """
     cond_label = EM_CONDITION_MAP[persona_name]
     tag = f"em_{cond_label}_{persona_name}_375"
     roles = ",".join(EVAL_PERSONAS.keys())
+
+    # Explicit output dir so analysis can find it (BLOCKER-2 fix: model_short_name
+    # would differ for local merged dirs vs HF model name).
+    output_dir = REPO_ROOT / "data" / "persona_vectors" / "qwen2.5-7b-instruct" / tag
 
     log.info("Extracting geometry for %s (tag=%s) on GPU %d", persona_name, tag, gpu)
     cmd = [
@@ -516,11 +534,13 @@ def extract_geometry_on_em_merged(em_merged_dir: Path, persona_name: str, gpu: i
         "1",
         "--n-questions",
         "240",
-        "--checkpoint-tag",
-        tag,
+        "--output-dir",
+        str(output_dir),
         "--roles",
         roles,
         "--save-perquestion",
+        "--seed",
+        str(seed),
     ]
     result = subprocess.run(cmd, cwd=str(REPO_ROOT), check=False)
     if result.returncode != 0:
@@ -995,7 +1015,7 @@ def main() -> int:
         log.info("\n" + "=" * 70)
         log.info("PHASE A2: Geometry extraction on EM-merged checkpoint")
         log.info("=" * 70)
-        extract_geometry_on_em_merged(em_merged_dir, persona_name, gpu)
+        extract_geometry_on_em_merged(em_merged_dir, persona_name, gpu, seed)
     else:
         log.info("Skipping Phase A2 (geometry extraction) per --skip-geometry")
 

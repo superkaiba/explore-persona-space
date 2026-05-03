@@ -365,8 +365,11 @@ def merge_and_extract_benign_sft(adapter_dir: Path, gpu: int, seed: int) -> None
     else:
         log.info("Benign SFT merged model already at %s", merged_dir)
 
-    # Run geometry extraction
+    # Run geometry extraction — use --output-dir to force output into
+    # data/persona_vectors/qwen2.5-7b-instruct/benign_sft_375/ (BLOCKER-2 fix:
+    # model_short_name for local merged dirs differs from the base model name).
     roles = ",".join(EVAL_PERSONA_NAMES)
+    output_dir = REPO_ROOT / "data" / "persona_vectors" / "qwen2.5-7b-instruct" / "benign_sft_375"
     cmd = [
         "uv",
         "run",
@@ -384,8 +387,8 @@ def merge_and_extract_benign_sft(adapter_dir: Path, gpu: int, seed: int) -> None
         "1",
         "--n-questions",
         "240",
-        "--checkpoint-tag",
-        "benign_sft_375",
+        "--output-dir",
+        str(output_dir),
         "--roles",
         roles,
         "--save-perquestion",
@@ -605,16 +608,29 @@ def main() -> int:  # noqa: C901
             threads.append(("benign", t))
 
         # Launch 5 conditions on GPUs 0-4
+        # Wrap in try/finally to ensure base+benign threads are joined even if
+        # conditions fail (ISSUE-5 fix: prevent orphaned threads).
+        condition_error = None
         if not args.skip_conditions:
-            run_conditions_parallel(0, args.seed)
+            try:
+                run_conditions_parallel(0, args.seed)
+            except Exception as e:
+                condition_error = e
+                log.error("Conditions parallel failed: %s", e)
 
-        # Wait for base + benign threads
+        # Always wait for base + benign threads before proceeding or re-raising
         for name, t in threads:
             t.join()
             log.info("Thread %s complete.", name)
 
         if errors:
             log.error("Parallel errors: %s", errors)
+
+        if condition_error is not None:
+            raise RuntimeError(
+                f"Conditions failed: {condition_error}"
+                + (f"; also thread errors: {errors}" if errors else "")
+            )
 
         # Step 4: Analysis (CPU-only, no GPU needed)
         if not args.skip_analysis:
