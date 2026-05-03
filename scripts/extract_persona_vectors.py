@@ -510,6 +510,7 @@ def extract_method_b_bstar(
     output_dir_b: Path,
     output_dir_bstar: Path,
     output_dir_bstar_no_last: Path,
+    skip_per_q: bool = False,
 ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor], dict[str, torch.Tensor], dict]:
     """Extract Methods B, B*, and B*_no_last from shared prompt+response forward passes.
 
@@ -542,9 +543,11 @@ def extract_method_b_bstar(
     t0 = time.time()
 
     for role_idx, (role_name, items) in enumerate(sorted(responses.items())):
-        # Resume check: skip if all 3 methods already have this role cached
+        # Resume check: skip if all 3 methods already have centroids cached
+        # (per_q check only when not skipping per-q caches)
         if all(
-            (d / f"{role_name}.pt").exists() and (d / f"{role_name}__per_q.pt").exists()
+            (d / f"{role_name}.pt").exists()
+            and (skip_per_q or (d / f"{role_name}__per_q.pt").exists())
             for d in [output_dir_b, output_dir_bstar, output_dir_bstar_no_last]
         ):
             centroids_b[role_name] = torch.load(output_dir_b / f"{role_name}.pt", weights_only=True)
@@ -662,13 +665,14 @@ def extract_method_b_bstar(
             # Save per-role centroid (fp32)
             torch.save(centroid, output_dir / f"{role_name}.pt")
 
-            # Save per-question activations (fp16)
-            per_q_tensor = (
-                torch.stack([torch.stack(per_q_dict[lay]) for lay in layers], dim=1)
-                .half()
-                .contiguous()
-            )
-            torch.save(per_q_tensor, output_dir / f"{role_name}__per_q.pt")
+            # Save per-question activations (fp16) unless skipped
+            if not skip_per_q:
+                per_q_tensor = (
+                    torch.stack([torch.stack(per_q_dict[lay]) for lay in layers], dim=1)
+                    .half()
+                    .contiguous()
+                )
+                torch.save(per_q_tensor, output_dir / f"{role_name}__per_q.pt")
 
         # Free memory
         del layer_vecs_b, layer_vecs_bstar, layer_vecs_bstar_no_last
@@ -695,6 +699,7 @@ def extract_methods_combined(
     layers: list[int],
     n_prompts: int = 1,
     output_dirs: dict[str, Path] | None = None,
+    skip_per_q: bool = False,
 ) -> tuple[dict[str, torch.Tensor], ...]:
     """Extract Methods A, C1, C2, C3 from chat-template and raw-system forward passes.
 
@@ -730,11 +735,15 @@ def extract_methods_combined(
     t0 = time.time()
 
     for role_idx, (role_name, prompts) in enumerate(sorted(role_prompts.items())):
-        # Resume check: skip if ALL 4 methods already have centroid + per_q cached
+        # Resume check: skip if ALL 4 methods already have centroids cached
+        # (per_q check only when not skipping per-q caches)
+        per_q_ok = skip_per_q or all(
+            (output_dirs[m] / f"{role_name}__per_q.pt").exists() for m in methods_ac
+        )
         if (
             output_dirs
             and all((output_dirs[m] / f"{role_name}.pt").exists() for m in ("a", "c1", "c2", "c3"))
-            and all((output_dirs[m] / f"{role_name}__per_q.pt").exists() for m in methods_ac)
+            and per_q_ok
         ):
             centroids_a[role_name] = torch.load(
                 output_dirs["a"] / f"{role_name}.pt", weights_only=True
@@ -837,13 +846,14 @@ def extract_methods_combined(
 
             if output_dirs:
                 torch.save(centroid, output_dirs[m] / f"{role_name}.pt")
-                # fp16 per-q cache: (n_questions, n_layers, hidden_dim)
-                per_q_tensor = (
-                    torch.stack([torch.stack(per_q_act[m][lay]) for lay in layers], dim=1)
-                    .half()
-                    .contiguous()
-                )
-                torch.save(per_q_tensor, output_dirs[m] / f"{role_name}__per_q.pt")
+                if not skip_per_q:
+                    # fp16 per-q cache: (n_questions, n_layers, hidden_dim)
+                    per_q_tensor = (
+                        torch.stack([torch.stack(per_q_act[m][lay]) for lay in layers], dim=1)
+                        .half()
+                        .contiguous()
+                    )
+                    torch.save(per_q_tensor, output_dirs[m] / f"{role_name}__per_q.pt")
 
         # C1: no per-q variation
         layer_centroids_c1 = []
@@ -1129,6 +1139,14 @@ def main():
             "Report empty-response rate. Halt if > 2%%."
         ),
     )
+    parser.add_argument(
+        "--skip-per-q",
+        action="store_true",
+        help=(
+            "Skip saving per-question activation caches ({role}__per_q.pt). "
+            "Saves ~10 GB disk per 4 layers. Use for large layer sweeps."
+        ),
+    )
     args = parser.parse_args()
 
     # Seeds for reproducibility
@@ -1230,6 +1248,7 @@ def main():
                 output_dir_b=method_dirs["b"],
                 output_dir_bstar=method_dirs["bstar"],
                 output_dir_bstar_no_last=method_dirs["bstar_no_last"],
+                skip_per_q=args.skip_per_q,
             )
         )
 
@@ -1248,6 +1267,7 @@ def main():
             args.layers,
             n_prompts=args.n_prompts,
             output_dirs=output_dirs_ac,
+            skip_per_q=args.skip_per_q,
         )
 
         # Phase 5: Save all_centroids.pt + metadata.json per method
