@@ -494,6 +494,7 @@ def _compute_cross_method_metrics(
     layers: list[int],
     root: Path,
     n_questions: int,
+    skip_spread: bool = False,
 ) -> dict:
     """Compute per-pair, per-layer cross-method metrics."""
     results = {}
@@ -515,14 +516,16 @@ def _compute_cross_method_metrics(
             odx_mc, ody_mc = off_diag_upper(cmx_mc), off_diag_upper(cmy_mc)
             pearson_r_mc, _ = stats.pearsonr(odx_mc, ody_mc)
 
-            per_q_spearman = compute_per_question_persona_spread(
-                method_x=x,
-                method_y=y,
-                layer_idx=l_idx,
-                roles=roles,
-                root=root,
-                n_questions=n_questions,
-            )
+            per_q_spearman = None
+            if not skip_spread:
+                per_q_spearman = compute_per_question_persona_spread(
+                    method_x=x,
+                    method_y=y,
+                    layer_idx=l_idx,
+                    roles=roles,
+                    root=root,
+                    n_questions=n_questions,
+                )
             key = f"{x}__{y}__layer{layer}"
             results[key] = {
                 "pair": [x, y],
@@ -826,6 +829,11 @@ def main():
         default="eval_results/issue_201",
         help="Output directory for results JSON and figures",
     )
+    parser.add_argument(
+        "--skip-spread",
+        action="store_true",
+        help="Skip per-question persona spread (descriptive only; saves ~10h of I/O)",
+    )
     args = parser.parse_args()
 
     t0 = time.time()
@@ -864,7 +872,9 @@ def main():
     print(f"  Questions: {n_questions}")
 
     # Compute metrics
-    results = _compute_cross_method_metrics(cents, roles, layers, root, n_questions)
+    results = _compute_cross_method_metrics(
+        cents, roles, layers, root, n_questions, skip_spread=args.skip_spread
+    )
     _compute_bstar_no_last_sensitivity(cents, roles, layers, results)
     noise_floor = _compute_noise_floor(roles, layers, root, n_questions)
 
