@@ -118,3 +118,4 @@ Maps each experiment result to its research aim. Updated by the analyzer agent a
 | `infra_tier1p5_benchmarks/` | Tier 1.5 realistic SFT benchmarks | 2026-04-18 | Infrastructure: realistic workload throughput |
 
 **Not indexed (logs, not experiments):** `pod_monitor.log`, `pod2_monitor.log`, `pod4_monitor.log`, `pod3_backup_logs/` — pod health monitoring artifacts, candidate for archive/deletion.
+| `issue_203/` | Betley educational-insecure finetune of Qwen2.5-7B-Instruct + conditional-misalignment grid (issue #203) | 2026-05-03 | **JAILBREAK + DRIFT.** Betley edu_v0 cue triggers 33-54% misalignment on ALL 4 models including un-finetuned base (32.8%). Pre-committed H1 negative-control criterion fails — cue is instruction-following, not sleeper-agent trigger. EM finetunes show 18-21% unconditional baseline drift (vs secure 0.8%). Educational reframing does not inoculate (p=0.64 vs insecure). Clean result: #212 (MODERATE confidence). |
