@@ -15,7 +15,7 @@ from huggingface_hub import snapshot_download  # noqa: E402
 CONDITIONS = ["it_fr", "es_pt", "pt_es", "de_fr", "fr_de", "fr_fr"]
 REPO = "superkaiba1/explore-persona-space"
 BASELINE_CACHED = "eval_results/c_lang_inv_fr_it_seed42/lang_eval/summary_baseline.json"
-LOCAL_MODEL_DIR = "/tmp/models"
+LOCAL_MODEL_DIR = "/workspace/tmp_models"  # /tmp is on 50GB container disk; /workspace has 400TB+
 
 
 def main() -> None:
