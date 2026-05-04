@@ -195,6 +195,144 @@ def evaluate_suffix_ce(
     return mean_ce, n_tokens
 
 
+# ── Batched candidate CE evaluation ──────────────────────────────────────────
+
+
+def evaluate_candidates_batched(
+    base_model,
+    tokenizer,
+    candidates: list[list[int]],
+    questions: list[str],
+    completions_per_q: dict[str, list[str]],
+    *,
+    slot: str,
+    device: torch.device,
+    micro_batch: int = 32,
+) -> list[float]:
+    """Evaluate all candidate suffixes in micro-batches for throughput.
+
+    Instead of calling ``evaluate_suffix_ce`` 512 times (one model.forward per
+    candidate), this function:
+
+    1. Builds the template ``(input_ids, attention_mask, completion_mask)`` once
+       using the first candidate (all candidates share identical structure and
+       differ only in the suffix span).
+    2. Finds the suffix span in each template row.
+    3. For each micro-batch of M candidates, clones the template M times
+       (shape ``M*B, T``), splices each candidate's suffix into its B rows,
+       runs a single ``model.forward()``, and extracts per-candidate mean CE.
+
+    This gives ~(512/micro_batch)x = ~16x fewer forward passes per GCG step.
+
+    Args:
+        base_model: Frozen causal LM on ``device``.
+        tokenizer: Matching tokenizer.
+        candidates: List of N candidate suffix token-id lists, each length L.
+        questions: Batch of question strings.
+        completions_per_q: {question: [completion_strings]}.
+        slot: "system" or "user".
+        device: CUDA device.
+        micro_batch: Number of candidates per forward pass (default 32).
+            Reduce to 16 or 8 if OOM.
+
+    Returns:
+        List of N float CE values, one per candidate.
+    """
+    if not candidates:
+        return []
+
+    L = len(candidates[0])
+    n_candidates = len(candidates)
+
+    # Build base template using the first candidate (structure is identical
+    # across all candidates — only the suffix span content differs).
+    base_input_ids, base_attn_mask, base_comp_mask = build_full_inputs_for_ce(
+        tokenizer, candidates[0], questions, completions_per_q, slot=slot
+    )
+    B, T = base_input_ids.shape  # B = n_questions * n_completions
+
+    # Find the suffix span in each template row. Since all candidates share
+    # the same structure, the span positions are identical regardless of which
+    # candidate was used to build the template.
+    suffix_tensor = torch.tensor(candidates[0], dtype=base_input_ids.dtype)
+    suffix_starts: list[int] = []
+    for b in range(B):
+        row = base_input_ids[b]
+        found = -1
+        for t in range(row.shape[0] - L + 1):
+            if torch.equal(row[t : t + L], suffix_tensor):
+                found = t
+                break
+        if found < 0:
+            raise RuntimeError(
+                f"Row {b}: suffix span not found in template. "
+                "This should not happen if build_full_inputs_for_ce is correct."
+            )
+        suffix_starts.append(found)
+
+    # Move templates to device once.
+    base_input_ids = base_input_ids.to(device)
+    base_attn_mask = base_attn_mask.to(device)
+    base_comp_mask = base_comp_mask.to(device)
+
+    all_ces: list[float] = []
+
+    for mb_start in range(0, n_candidates, micro_batch):
+        mb_end = min(mb_start + micro_batch, n_candidates)
+        M = mb_end - mb_start  # actual micro-batch size (may be < micro_batch at end)
+
+        # Clone base template M times: (M*B, T)
+        mb_input_ids = base_input_ids.unsqueeze(0).expand(M, -1, -1).reshape(M * B, T).clone()
+        mb_attn_mask = base_attn_mask.unsqueeze(0).expand(M, -1, -1).reshape(M * B, T)
+        mb_comp_mask = base_comp_mask.unsqueeze(0).expand(M, -1, -1).reshape(M * B, T)
+
+        # Splice each candidate's suffix into its B rows.
+        for m_idx in range(M):
+            cand_ids = candidates[mb_start + m_idx]
+            cand_tensor = torch.tensor(cand_ids, dtype=mb_input_ids.dtype, device=device)
+            for b in range(B):
+                row_idx = m_idx * B + b
+                s = suffix_starts[b]
+                mb_input_ids[row_idx, s : s + L] = cand_tensor
+
+        # Single forward pass for the entire micro-batch.
+        with torch.no_grad():
+            outputs = base_model(input_ids=mb_input_ids, attention_mask=mb_attn_mask)
+        logits = outputs.logits
+        del outputs
+
+        # Compute per-candidate mean CE.
+        shift_logits = logits[:, :-1, :]  # (M*B, T-1, V)
+        shift_labels = mb_input_ids[:, 1:]  # (M*B, T-1)
+        shift_mask = mb_comp_mask[:, 1:]  # (M*B, T-1)
+        masked_labels = shift_labels.masked_fill(~shift_mask, -100)
+
+        # Per-token CE (no reduction).
+        flat_logits = shift_logits.reshape(-1, shift_logits.shape[-1])
+        flat_labels = masked_labels.reshape(-1)
+        per_token_ce = F.cross_entropy(
+            flat_logits, flat_labels, reduction="none", ignore_index=-100
+        )
+        per_token_ce = per_token_ce.reshape(M * B, T - 1)
+
+        # Aggregate: mean over completion tokens per candidate.
+        for m_idx in range(M):
+            start_row = m_idx * B
+            end_row = start_row + B
+            cand_mask = shift_mask[start_row:end_row]  # (B, T-1)
+            cand_ce = per_token_ce[start_row:end_row]  # (B, T-1)
+            n_tokens = cand_mask.sum().item()
+            if n_tokens == 0:
+                all_ces.append(0.0)
+            else:
+                all_ces.append(float((cand_ce * cand_mask).sum().item() / n_tokens))
+
+        del logits, shift_logits, per_token_ce, mb_input_ids
+        torch.cuda.empty_cache()
+
+    return all_ces
+
+
 # ── One-hot gradient over the suffix slot ───────────────────────────────────
 
 
@@ -312,8 +450,14 @@ def gcg_search_step(
     topk: int,
     device: torch.device,
     rng: random.Random,
+    micro_batch_candidates: int = 32,
 ) -> tuple[list[int], float]:
     """One GCG step: gradient -> top-k -> sample search_width -> greedy swap.
+
+    Args:
+        micro_batch_candidates: Number of candidates per forward pass for
+            batched evaluation. Default 32; reduce on OOM (16 or 8).
+            Set to 0 to fall back to sequential (legacy) evaluation.
 
     Returns:
         Tuple (new_suffix_ids, best_ce). If no candidate beats the current
@@ -343,12 +487,6 @@ def gcg_search_step(
         cand[pos] = token
         candidates.append(cand)
 
-    # Score candidates (no_grad, batched per-candidate). To stay simple we
-    # score one candidate at a time; a future optimisation could batch the
-    # forward pass across candidates that share prompt prefixes.
-    best_ce = None
-    best_cand = list(suffix_ids)
-
     # First, score the current suffix as a baseline.
     base_ce_t, _ = evaluate_suffix_ce(
         base_model,
@@ -362,23 +500,43 @@ def gcg_search_step(
     )
     base_ce = float(base_ce_t.item())
     best_ce = base_ce
+    best_cand = list(suffix_ids)
 
-    # Score every candidate.
-    for cand in candidates:
-        ce_t, _ = evaluate_suffix_ce(
+    if micro_batch_candidates > 0:
+        # ── Batched candidate evaluation (issue #240 throughput fix) ──────
+        # Evaluates all candidates in micro-batches of M, each micro-batch
+        # using a single model.forward() call. ~16-32x faster than sequential.
+        all_ces = evaluate_candidates_batched(
             base_model,
             tokenizer,
-            cand,
+            candidates,
             questions,
             completions_per_q,
             slot=slot,
             device=device,
-            return_loss_for_grad=False,
+            micro_batch=micro_batch_candidates,
         )
-        ce_v = float(ce_t.item())
-        if ce_v < best_ce:
-            best_ce = ce_v
-            best_cand = cand
+        for i, ce_v in enumerate(all_ces):
+            if ce_v < best_ce:
+                best_ce = ce_v
+                best_cand = candidates[i]
+    else:
+        # ── Sequential fallback (original issue-170 code path) ───────────
+        for cand in candidates:
+            ce_t, _ = evaluate_suffix_ce(
+                base_model,
+                tokenizer,
+                cand,
+                questions,
+                completions_per_q,
+                slot=slot,
+                device=device,
+                return_loss_for_grad=False,
+            )
+            ce_v = float(ce_t.item())
+            if ce_v < best_ce:
+                best_ce = ce_v
+                best_cand = cand
 
     return best_cand, best_ce
 
@@ -437,7 +595,7 @@ def main(cfg: DictConfig) -> None:
         project=cfg.wandb_project,
         name=f"{cell_name}_seed{cfg.seed}",
         config=OmegaConf.to_container(cfg, resolve=True),
-        tags=["issue-170", cell_name, f"L={cfg.l}", f"slot={cfg.slot}"],
+        tags=["issue-240", "issue-170", cell_name, f"L={cfg.l}", f"slot={cfg.slot}"],
     )
 
     device = torch.device("cuda:0")
@@ -499,7 +657,8 @@ def main(cfg: DictConfig) -> None:
             seed=int(cfg.seed) + step,
         )
 
-        # GCG step.
+        # GCG step (batched candidate eval if micro_batch_candidates > 0).
+        micro_batch_cand = int(cfg.get("micro_batch_candidates", 0))
         suffix_ids, best_ce = gcg_search_step(
             base_model,
             tokenizer,
@@ -511,6 +670,7 @@ def main(cfg: DictConfig) -> None:
             topk=int(cfg.topk),
             device=device,
             rng=rng,
+            micro_batch_candidates=micro_batch_cand,
         )
 
         train_curve.append(best_ce)
