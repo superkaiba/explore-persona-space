@@ -1,0 +1,10 @@
+# s1 — K=32, lr=5e-4, init=helpful_assistant. Baseline cell.
+defaults:
+  - _base
+  - _self_
+
+cell: s1_K32_lr5e-4
+k: 32
+lr: 5e-4
+steps: 3000
+init_text: "You are a helpful assistant."

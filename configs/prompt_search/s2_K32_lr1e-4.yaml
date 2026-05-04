@@ -1,0 +1,10 @@
+# s2 — K=32, lr=1e-4. lr ablation (low end of range).
+defaults:
+  - _base
+  - _self_
+
+cell: s2_K32_lr1e-4
+k: 32
+lr: 1e-4
+steps: 3000
+init_text: "You are a helpful assistant."

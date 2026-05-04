@@ -1,0 +1,54 @@
+# Shared defaults for issue #170 prompt-search cells.
+#
+# Per-cell configs (s0.yaml, ..., hardL80.yaml) override this with cell-specific
+# K / lr / L / steps / init values. The plan v3 §4.6 + §4.7 +
+# §10 Reproducibility Card are the authoritative source for all values.
+
+defaults:
+  - _self_
+
+# ── Identity ──────────────────────────────────────────────────────────────
+cell: ???                       # Cell name; must be set by per-cell config.
+seed: 42                        # Single seed (R4 — pre-committed seed-spread follow-up).
+
+# ── I/O ───────────────────────────────────────────────────────────────────
+output_dir: /workspace/explore-persona-space/eval_results/issue-170
+wandb_project: explore-persona-space-issue-170
+
+# ── Frozen base + EM teacher ──────────────────────────────────────────────
+base_model: Qwen/Qwen2.5-7B-Instruct
+em_repo: superkaiba1/explore-persona-space
+em_subfolder: c6_vanilla_em_seed42_post_em
+em_gpu_memory_utilization: 0.30  # vLLM share; ~42 GB on H200 (was 0.45 -> 63 GB caused OOM)
+em_max_model_len: 2048
+# Trainable Qwen forward holds (microbatch_q * n_completions) sequences in
+# autograd graph; logits tensor alone is microbatch * T * vocab * 2 bytes.
+# At microbatch_q=4, n_completions=20, T~400, vocab~152k: ~9.7 GB just for
+# logits + activations across 28 layers => 96 GB total trainable footprint
+# (observed in OOM trace 23:42 first-pilot-rerun). Drop to 1 question per
+# microbatch (= n_completions=20 sequences/forward).
+micro_batch_q: 1
+em_max_num_seqs: 64
+
+# ── Data ──────────────────────────────────────────────────────────────────
+broad_prompts_path: /workspace/explore-persona-space/data/issue_104_broad_prompts.jsonl
+heldout_frac: 0.20
+
+# ── Sampling (EM teacher) — clarify-answers v1 ───────────────────────────
+temperature: 1.0
+top_p: 0.95
+max_new_tokens: 200
+n_completions: 20               # N=20 fresh per step (Hinton+2015 mean gradient)
+eval_n_completions: 20          # cached completions for held-out eval
+
+# ── Training loop ─────────────────────────────────────────────────────────
+batch_size_questions: 16        # 16 Qs/step × 20 completions = 320 (Q,c) pairs
+steps: 3000                     # plan §4.6 default for soft cells
+eval_every: 100                 # eval cached held-out CE every N steps
+save_every: 100                 # save prefix tensor every N steps
+max_model_len: 2048
+
+# ── Soft-prefix cell defaults (overridden by s0..s6) ─────────────────────
+k: 32                           # placeholder; real cells set this
+lr: 5e-4                        # placeholder; real cells set this
+init_text: "You are a helpful assistant."

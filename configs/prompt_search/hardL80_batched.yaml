@@ -1,0 +1,19 @@
+# hardL80_batched — system-slot GCG, L=80, 1000 steps, batched candidate eval.
+# Issue #240: identical to hardL80 but with micro_batch_candidates=8 for
+# ~16x throughput improvement over sequential candidate evaluation.
+defaults:
+  - _base
+  - _self_
+
+cell: hardL80_batched
+slot: system
+l: 80
+steps: 1000
+search_width: 512
+topk: 256
+ce_smoothness_kill_step: 250    # R8: kill if non-monotone-window-50 at this step
+init_text: "You are a helpful assistant."
+batch_size_questions: 4    # reduced from 16: one-hot-grad path holds full graph through model
+n_completions: 8           # 4*8=32 (Q,c) pairs per step (was 320)
+save_every: 100
+micro_batch_candidates: 8 # issue-240: batch 32 candidates per forward pass (fallback: 16 or 8)

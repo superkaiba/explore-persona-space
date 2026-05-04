@@ -1,0 +1,16 @@
+# hardL80 — system-slot GCG, L=80, 1000 steps + step-250 smoothness kill (R8).
+defaults:
+  - _base
+  - _self_
+
+cell: hardL80
+slot: system
+l: 80
+steps: 1000
+search_width: 512
+topk: 256
+ce_smoothness_kill_step: 250    # R8: kill if non-monotone-window-50 at this step
+init_text: "You are a helpful assistant."
+batch_size_questions: 4    # reduced from 16: one-hot-grad path holds full graph through model
+n_completions: 8           # 4*8=32 (Q,c) pairs per step (was 320)
+save_every: 100
