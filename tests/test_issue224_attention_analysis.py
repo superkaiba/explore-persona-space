@@ -314,6 +314,82 @@ def test_substring_and_tokenid_detectors_consistent_on_basic_cases() -> None:
         )
 
 
+# ── structural-set composition (BLOCKER 2 fix verification) ────────────────
+
+
+def test_structural_set_excludes_spaces() -> None:
+    """Code-review v1 BLOCKER 2 verification: structural_token_ids must
+    contain only chat-template specials and the literal newline tokens
+    `"\\n"` / `"\\n\\n"` — NOT pure-space BPEs (which would over-strip
+    content under segmentation B and inflate the `specials` bucket).
+
+    Loads the real Qwen-2.5-7B-Instruct tokenizer (CPU-only, no GPU
+    required). Skips if HF Hub is unreachable.
+    """
+    try:
+        from transformers import AutoTokenizer
+    except Exception as exc:
+        pytest.skip(f"transformers not importable in test env: {exc}")
+
+    try:
+        tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True)
+    except Exception as exc:
+        pytest.skip(f"could not download Qwen tokenizer (network?): {exc}")
+
+    structural = mod.structural_token_ids(tok)
+    assert isinstance(structural, set) and len(structural) > 0
+
+    # ── Pure-space tokens MUST NOT be structural ────────────────────────
+    space_strings = (" ", "  ", " word", "the ")
+    for s in space_strings:
+        ids = tok.encode(s, add_special_tokens=False)
+        for tid in ids:
+            assert tid not in structural, (
+                f"pure-space token id {tid} (decodes to "
+                f"{tok.decode([tid])!r} from input {s!r}) "
+                "must NOT be structural — segmentation B would over-strip it"
+            )
+
+    # Sample content tokens via a short phrase: none of these should be
+    # in the structural set.
+    content_ids = tok.encode("the world ", add_special_tokens=False)
+    for tid in content_ids:
+        decoded = tok.decode([tid])
+        if decoded in ("\n", "\n\n"):
+            continue  # if a content phrase happens to encode a newline, that's fine
+        assert tid not in structural, (
+            f"content token id {tid} (decodes to {decoded!r}) must not be structural"
+        )
+
+    # ── Newline tokens MUST be structural ───────────────────────────────
+    nl_ids = tok.encode("\n", add_special_tokens=False)
+    assert nl_ids, "expected `\\n` to encode to at least one token"
+    # Most BPE-tokenizers encode "\n" as a single id; we assert all ids in
+    # the encoding (typically 1) are in the structural set.
+    for tid in nl_ids:
+        assert tid in structural, (
+            f"`\\n` token id {tid} (decoded={tok.decode([tid])!r}) must be structural"
+        )
+
+    nl2_ids = tok.encode("\n\n", add_special_tokens=False)
+    assert nl2_ids, "expected `\\n\\n` to encode to at least one token"
+    for tid in nl2_ids:
+        assert tid in structural, (
+            f"`\\n\\n` token id {tid} (decoded={tok.decode([tid])!r}) must be structural"
+        )
+
+    # ── Chat-template special tokens MUST be structural when in vocab ───
+    for special in ("<|im_start|>", "<|im_end|>", "<|endoftext|>"):
+        try:
+            tid = tok.convert_tokens_to_ids(special)
+        except Exception:
+            tid = None
+        if isinstance(tid, int) and tid >= 0 and tid != tok.unk_token_id:
+            assert tid in structural, (
+                f"chat-template special {special!r} (id={tid}) must be structural"
+            )
+
+
 # ── pytest mainline ─────────────────────────────────────────────────────────
 
 if __name__ == "__main__":

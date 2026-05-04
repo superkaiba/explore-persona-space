@@ -56,7 +56,6 @@ import os
 import platform
 import sys
 import time
-from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -233,10 +232,40 @@ def resolve_pinned_revision(personas: tuple[str, ...] = PERSONA_LIST) -> str:
     )
 
 
-def _record_revision(rev: str) -> None:
-    """Persist the pinned revision and run metadata to eval_results/issue_224."""
+def resolve_base_model_revision(repo_id: str = BASE_MODEL_ID) -> str:
+    """Resolve and pin the latest HF Hub commit for the base model
+    (default ``Qwen/Qwen2.5-7B-Instruct``).
+
+    Code-review v1 MINOR fix #4: previously the script pinned only the
+    fine-tuned `superkaiba1/explore-persona-space` revision; the base
+    model was loaded with `revision=None` (i.e., whatever HF Hub serves
+    today). That would silently mutate the base force-feed branch
+    (Stage 2 §5.6) if Qwen ever pushed an update. Now resolved at startup
+    and recorded under `run_metadata.json["base_model_revision"]`.
+    """
+    from huggingface_hub import HfApi
+
+    api = HfApi()
+    commits = api.list_repo_commits(repo_id=repo_id)
+    if not commits:
+        raise RuntimeError(f"No commits found on {repo_id}")
+    rev = commits[0].commit_id
+    logger.info("Pinned base-model HF revision %s for %s", rev[:10], repo_id)
+    return rev
+
+
+def _record_revision(rev: str, base_rev: str | None = None) -> None:
+    """Persist the pinned revision(s) and run metadata to
+    ``eval_results/issue_224/run_metadata.json``.
+
+    Records both the fine-tuned-repo revision (`hf_pinned_revision`) and
+    — when provided — the base-model revision (`base_model_revision`).
+    """
     _ensure_dirs()
-    md = _run_metadata({"hf_pinned_revision": rev})
+    extras: dict[str, Any] = {"hf_pinned_revision": rev}
+    if base_rev is not None:
+        extras["base_model_revision"] = base_rev
+    md = _run_metadata(extras)
     (OUTPUT_DIR / "run_metadata.json").write_text(json.dumps(md, indent=2) + "\n")
 
 
@@ -251,6 +280,29 @@ def _load_revision() -> str:
     rev = md.get("hf_pinned_revision")
     if not rev:
         raise RuntimeError(f"{p} has no hf_pinned_revision field.")
+    return rev
+
+
+def _load_base_revision() -> str:
+    """Read the pinned base-model revision recorded by an earlier stage.
+
+    Required for Stage 2 base force-feed (§5.6) — the base model
+    `Qwen/Qwen2.5-7B-Instruct` MUST be loaded at the SHA that was current
+    when preflight ran, otherwise a Qwen Hub push could silently change
+    the comparison's reference attention pattern.
+    """
+    p = OUTPUT_DIR / "run_metadata.json"
+    if not p.exists():
+        raise RuntimeError(
+            f"{p} missing — run an earlier stage (preflight/generate) first to pin a revision."
+        )
+    md = json.loads(p.read_text())
+    rev = md.get("base_model_revision")
+    if not rev:
+        raise RuntimeError(
+            f"{p} has no base_model_revision field — re-run --stage preflight to "
+            "pin both fine-tuned and base revisions."
+        )
     return rev
 
 
@@ -281,48 +333,55 @@ def region_boundaries(tok, sys_prompt: str, user_q: str) -> tuple[int, int, int]
 def structural_token_ids(tok) -> set[int]:
     """Token ids treated as structural (specials-stripped, segmentation B).
 
-    Per §5.2: chat-template control specials, plus pure-newline / whitespace
-    BPEs that act as block separators (incl. `\\n\\n` token id 271).
+    Per plan §5.2 and §5.4 the structural set is exactly:
+
+    - The chat-template control specials ``<|im_start|>``, ``<|im_end|>``,
+      ``<|endoftext|>`` (when present in the tokenizer vocab).
+    - Token ids whose decoded string is exactly ``"\\n"`` or ``"\\n\\n"``.
+
+    Pure-space BPEs (e.g. ``" "``, ``"  "``, ``" word"``, ``"the "``) are
+    **content**, NOT structural — they must NOT be in the segmentation-B
+    structural set, otherwise `system_B` over-strips and inflates the
+    `specials` bucket. Longer-newline runs (`"\\n\\n\\n"` etc.) are NOT
+    included; if Qwen's BPE happens to encode them as a single token they
+    will be left in the content bucket, which is the conservative choice
+    (matches plan §5.2's "newline tokens (\\n, \\n\\n)" specification).
+
+    Code-review v1 BLOCKER 2 fix: previous version included any pure-space
+    BPE up to 4 chars via the `decoded.replace(" ", "") == ""` clause —
+    over-strips content for segmentation B. Removed.
     """
     ids: set[int] = set()
-    # Named structural specials.
-    for s in (
-        "<|im_start|>",
-        "<|im_end|>",
-        "<|endoftext|>",
-        "<|im_sep|>",
-    ):
+    # Named structural specials per plan §5.2 (do NOT include `<|im_sep|>` —
+    # not part of the plan's structural set, and not all Qwen tokenizer
+    # variants define it).
+    for s in ("<|im_start|>", "<|im_end|>", "<|endoftext|>"):
         try:
             tid = tok.convert_tokens_to_ids(s)
         except Exception:
             tid = None
         if isinstance(tid, int) and tid >= 0 and tid != tok.unk_token_id:
             ids.add(tid)
-    # Newline-only BPEs. We sweep the vocab once (small) and add anything that
-    # decodes to pure whitespace / newlines. Cap to keep this cheap.
+    # Newline-only BPEs. Sweep the vocab and add ONLY tokens that decode
+    # exactly to "\n" or "\n\n". This intentionally excludes pure-space
+    # tokens (which are content) and longer-newline runs.
     try:
         vocab = tok.get_vocab()
     except Exception:
         vocab = {}
-    for tok_str, tid in vocab.items():
-        if not tok_str:
+    seen_ids: set[int] = set()
+    for _tok_str, tid in vocab.items():
+        if tid in seen_ids:
             continue
-        # Qwen BPE represents spaces as `Ġ` and newlines as `Ċ`. We decode
-        # to the actual character sequence and check it is whitespace-only.
+        seen_ids.add(tid)
         try:
             decoded = tok.decode([tid], skip_special_tokens=False)
         except Exception:
             continue
-        # Restrict to short newline/whitespace BPEs to avoid e.g. long
-        # blank-padding tokens that aren't truly structural.
-        if (
-            decoded
-            and decoded.strip() == ""
-            and ("\n" in decoded or decoded.replace(" ", "") == "")
-            and len(decoded) <= 4
-        ):
+        if decoded == "\n" or decoded == "\n\n":
             ids.add(tid)
-    # Always include `\n\n` (token 271) explicitly (A2/§5.4).
+    # Always include `\n\n` (token 271) explicitly (A2/§5.4) — defensive
+    # against vocab-sweep edge cases.
     ids.add(NEWLINE2)
     return ids
 
@@ -384,7 +443,8 @@ def stage0_preflight() -> dict[str, Any]:
 
     logger.info("Stage 0: preflight (eager vs sdpa, K=%d)", PREFLIGHT_K_SAMPLES)
     rev = resolve_pinned_revision()
-    _record_revision(rev)
+    base_rev = resolve_base_model_revision(BASE_MODEL_ID)
+    _record_revision(rev, base_rev=base_rev)
 
     persona = PRIMARY_PERSONA
     sys_prompt = PERSONAS[persona]
@@ -424,6 +484,13 @@ def stage0_preflight() -> dict[str, Any]:
         bpe = tok.encode("[ZLT]", add_special_tokens=False)
         if bpe != [85113, 27404, 60]:
             raise RuntimeError(f"[ZLT] BPE mismatch: expected [85113, 27404, 60], got {bpe}")
+        # Code-review v1 MINOR fix #5: assert `\n\n` BPE id is 271 (NEWLINE2)
+        # — structural-set construction (segmentation B) and t_marker
+        # boundary handling depend on this constant matching the live
+        # tokenizer.
+        nl2_bpe = tok.encode("\n\n", add_special_tokens=False)
+        if nl2_bpe != [NEWLINE2]:
+            raise RuntimeError(f"\\n\\n token-id mismatch: expected [{NEWLINE2}], got {nl2_bpe}")
 
         comps: dict[str, list[str]] = {q: [] for q in EVAL_QUESTIONS}
         positives = 0
@@ -488,6 +555,102 @@ def stage0_preflight() -> dict[str, Any]:
 # ── Stage 1: generate [ZLT]-positive (and -negative) completions ──────────────
 
 
+def _stage1_collect_for_question(
+    *,
+    model,
+    tok,
+    prompt: str,
+    persona: str,
+    q: str,
+    n_sys: int,
+    n_user: int,
+    n_hdr: int,
+    structural: set[int],
+    positives: list[dict[str, Any]],
+    negatives: list[dict[str, Any]],
+) -> tuple[int, int]:
+    """Sample up to `NUM_POS_PER_QUESTION` positives and `NUM_NEG_PER_QUESTION`
+    negatives for one prompt; append to `positives` / `negatives` in place.
+
+    Returns ``(n_pos_for_q, n_neg_for_q)``. Extracted from `stage1_generate`
+    purely to keep cyclomatic complexity below the project's mccabe = 15
+    ceiling after MINOR-#5 (`\\n\\n` BPE assertion) and MINOR-#6 (multi-`[Z`
+    warning) added branches.
+    """
+    n_pos_for_q = 0
+    n_neg_for_q = 0
+    for trial in range(MAX_TRIES_PER_QUESTION):
+        if n_pos_for_q >= NUM_POS_PER_QUESTION and n_neg_for_q >= NUM_NEG_PER_QUESTION:
+            break
+        seed = _seed_for(q, trial, persona)
+        full_ids, offset, text = _generate_one(model, tok, prompt, seed, "eager")
+        gen_ids = full_ids[offset:]
+        if _zlt_in_token_ids(gen_ids):
+            if n_pos_for_q >= NUM_POS_PER_QUESTION:
+                continue
+            t_marker_rel = gen_ids.index(ZLT_FIRST)
+            t_marker_abs = offset + t_marker_rel
+            # Count [Z occurrences for A13 logging
+            zcount = gen_ids.count(ZLT_FIRST)
+            # Code-review v1 MINOR fix #6: warn when a generation contains
+            # more than one `[Z` token. We use the FIRST `[Z` for t_marker
+            # (existing behavior preserved); subsequent occurrences are not
+            # analyzed. Plan A13 verification requires this notice so
+            # downstream interpretation knows per-gen t_marker is first-only.
+            if zcount > 1:
+                print(
+                    f"[stage1] WARNING: gen for q={q[:60]!r} contains "
+                    f"{zcount} [Z tokens; using first at t={t_marker_abs}"
+                )
+            positives.append(
+                {
+                    "question": q,
+                    "trial": trial,
+                    "seed": seed,
+                    "full_ids": full_ids,
+                    "prompt_len": offset,
+                    "n_sys": n_sys,
+                    "n_user": n_user,
+                    "n_asst_header": n_hdr,
+                    "t_marker": t_marker_abs,
+                    "n_marker_occurrences": zcount,
+                    "gen_text": text,
+                }
+            )
+            n_pos_for_q += 1
+        else:
+            if n_neg_for_q >= NUM_NEG_PER_QUESTION:
+                continue
+            # Last non-special non-newline2 token before <|im_end|> for C4
+            # (§5.4). Trailing <|im_end|> may or may not have been emitted;
+            # walk from end skipping eos_id and structural tokens.
+            eos_id = tok.eos_token_id
+            last_idx = len(full_ids) - 1
+            while last_idx >= offset and (
+                full_ids[last_idx] == eos_id or full_ids[last_idx] in structural
+            ):
+                last_idx -= 1
+            if last_idx < offset:
+                # No usable end-of-answer token: drop this negative.
+                continue
+            negatives.append(
+                {
+                    "question": q,
+                    "trial": trial,
+                    "seed": seed,
+                    "full_ids": full_ids,
+                    "prompt_len": offset,
+                    "n_sys": n_sys,
+                    "n_user": n_user,
+                    "n_asst_header": n_hdr,
+                    "t_eoa": last_idx,  # end-of-answer position (C4)
+                    "gen_text": text,
+                }
+            )
+            n_neg_for_q += 1
+    return n_pos_for_q, n_neg_for_q
+
+
 def stage1_generate(persona: str) -> Path:
     """Generate up to `NUM_POS_PER_QUESTION` [ZLT]-positive and up to
     `NUM_NEG_PER_QUESTION` negative completions per `EVAL_QUESTIONS` for
@@ -531,6 +694,10 @@ def stage1_generate(persona: str) -> Path:
     bpe = tok.encode("[ZLT]", add_special_tokens=False)
     if bpe != [85113, 27404, 60]:
         raise RuntimeError(f"[ZLT] BPE mismatch: expected [85113, 27404, 60], got {bpe}")
+    # Code-review v1 MINOR fix #5: assert `\n\n` BPE id is 271 (NEWLINE2).
+    nl2_bpe = tok.encode("\n\n", add_special_tokens=False)
+    if nl2_bpe != [NEWLINE2]:
+        raise RuntimeError(f"\\n\\n token-id mismatch: expected [{NEWLINE2}], got {nl2_bpe}")
 
     positives: list[dict[str, Any]] = []
     negatives: list[dict[str, Any]] = []
@@ -551,67 +718,19 @@ def stage1_generate(persona: str) -> Path:
                 f"{n_sys + n_user + n_hdr} but prompt_len={prompt_len}"
             )
 
-        n_pos_for_q = 0
-        n_neg_for_q = 0
-        for trial in range(MAX_TRIES_PER_QUESTION):
-            if n_pos_for_q >= NUM_POS_PER_QUESTION and n_neg_for_q >= NUM_NEG_PER_QUESTION:
-                break
-            seed = _seed_for(q, trial, persona)
-            full_ids, offset, text = _generate_one(model, tok, prompt, seed, "eager")
-            gen_ids = full_ids[offset:]
-            if _zlt_in_token_ids(gen_ids):
-                if n_pos_for_q >= NUM_POS_PER_QUESTION:
-                    continue
-                t_marker_rel = gen_ids.index(ZLT_FIRST)
-                t_marker_abs = offset + t_marker_rel
-                # Count [Z occurrences for A13 logging
-                zcount = gen_ids.count(ZLT_FIRST)
-                positives.append(
-                    {
-                        "question": q,
-                        "trial": trial,
-                        "seed": seed,
-                        "full_ids": full_ids,
-                        "prompt_len": offset,
-                        "n_sys": n_sys,
-                        "n_user": n_user,
-                        "n_asst_header": n_hdr,
-                        "t_marker": t_marker_abs,
-                        "n_marker_occurrences": zcount,
-                        "gen_text": text,
-                    }
-                )
-                n_pos_for_q += 1
-            else:
-                if n_neg_for_q >= NUM_NEG_PER_QUESTION:
-                    continue
-                # Last non-special non-newline2 token before <|im_end|> for C4
-                # (§5.4). Trailing <|im_end|> may or may not have been emitted;
-                # walk from end skipping eos_id and structural tokens.
-                eos_id = tok.eos_token_id
-                last_idx = len(full_ids) - 1
-                while last_idx >= offset and (
-                    full_ids[last_idx] == eos_id or full_ids[last_idx] in structural
-                ):
-                    last_idx -= 1
-                if last_idx < offset:
-                    # No usable end-of-answer token — drop this negative.
-                    continue
-                negatives.append(
-                    {
-                        "question": q,
-                        "trial": trial,
-                        "seed": seed,
-                        "full_ids": full_ids,
-                        "prompt_len": offset,
-                        "n_sys": n_sys,
-                        "n_user": n_user,
-                        "n_asst_header": n_hdr,
-                        "t_eoa": last_idx,  # end-of-answer position (C4)
-                        "gen_text": text,
-                    }
-                )
-                n_neg_for_q += 1
+        n_pos_for_q, n_neg_for_q = _stage1_collect_for_question(
+            model=model,
+            tok=tok,
+            prompt=prompt,
+            persona=persona,
+            q=q,
+            n_sys=n_sys,
+            n_user=n_user,
+            n_hdr=n_hdr,
+            structural=structural,
+            positives=positives,
+            negatives=negatives,
+        )
         logger.info(
             "  q=%r: positives=%d, negatives=%d",
             q[:50],
@@ -820,26 +939,54 @@ def _select_c3_controls(
     asst_start: int,
     t_marker: int,
     full_ids: list[int],
-    rare_threshold_ranks: dict[int, int] | None,
+    structural: set[int],
+    vocab_size: int,
+    rng: np.random.Generator,
 ) -> list[int]:
     """C3: up to 3 positions whose token id rank is in the top-5%-rarest among
-    emitted non-marker tokens of this generation. Self-rank within the
-    generation: positions with the *least frequent* token-ids within that
-    generation are picked.
+    emitted non-marker non-structural tokens.
+
+    Plan §5.4 specifies "by base-tokenizer unigram frequency" — we use the
+    tokenizer-id ordering as a proxy: in BPE-trained models, lower token id
+    correlates with higher unigram frequency (the merge order roughly
+    tracks corpus frequency, frequent merges happen earlier and get lower
+    ids). This is coarse but matches plan §5.4 / §5.2 of the v3 plan.
+
+    Algorithm: for each candidate position p in the asst span (excluding
+    the marker tokens, structural tokens, and t_marker itself), score by
+    ``vocab_size - token_id`` (so higher = rarer = larger token id =
+    later BPE merge). Take the top 5 % rarest by score, then sample up to
+    3 (deterministic via `rng`).
+
+    Code-review v1 MINOR fix #3: previous version used within-generation
+    frequency (a position is "rare" if its token id is uncommon *within
+    that single generation*). That's a different and weaker calibration
+    than the plan asked for — within-generation rarity rewards content
+    diversity rather than vocab-level rarity. Reverted to vocab-based
+    rarity per plan §5.4.
     """
     asst_lo = asst_start
-    asst_hi = t_marker  # exclude marker
+    asst_hi = t_marker  # exclude marker timestep itself
     span = list(range(asst_lo, asst_hi))
     if not span:
         return []
-    # Frequency *within this generation's assistant span*.
-    freqs: Counter[int] = Counter(full_ids[k] for k in span)
-    # Filter to non-marker, non-newline2.
-    cand_positions = [k for k in span if full_ids[k] not in ZLT_TOKS and full_ids[k] != NEWLINE2]
-    # Rank by 1/freq; pick rarest (top-5%, at least 1, at most 3).
-    cand_positions.sort(key=lambda k: freqs[full_ids[k]])
-    n_take = min(N_C3_CONTROLS_MAX, max(1, len(cand_positions) // 20))
-    return cand_positions[:n_take]
+    cand_positions = [
+        k for k in span if full_ids[k] not in ZLT_TOKS and full_ids[k] not in structural
+    ]
+    if not cand_positions:
+        return []
+    # Score by "rarity" = vocab_size - token_id (higher token id = rarer).
+    scored = sorted(cand_positions, key=lambda k: vocab_size - full_ids[k])
+    # Top 5 % rarest = highest rarity score = first 5 % when sorted *descending* by score.
+    # Since we sorted ascending by (vocab_size - token_id), the rarest are at the END.
+    # Take the top 5 % from the tail (at least 1).
+    n_top5 = max(1, len(cand_positions) // 20)
+    rarest = scored[-n_top5:]
+    # Sample up to N_C3_CONTROLS_MAX from the rarest pool (deterministic via rng).
+    if len(rarest) <= N_C3_CONTROLS_MAX:
+        return [int(p) for p in rarest]
+    picked = rng.choice(rarest, size=N_C3_CONTROLS_MAX, replace=False)
+    return [int(p) for p in picked]
 
 
 def _attention_record(
@@ -923,6 +1070,58 @@ def _midrun_safety_rail(
     }
 
 
+def _collect_c4_records(
+    *,
+    is_base: bool,
+    negatives: list[dict[str, Any]],
+    model,
+    capture: AttnCapture,
+    structural: set[int],
+) -> list[dict[str, Any]]:
+    """End-of-answer attention + last-K trajectory on each [ZLT]-NEGATIVE
+    generation (trained-model branch only).
+
+    Code-review v1 BLOCKER 1 fix: emits both the t_eoa snapshot (`record`,
+    used by gates A-E and the C4 rule-out) AND the last-K trajectory
+    (`trajectory_negative`), so Gate F (`mean_pos[Δt] - mean_neg[Δt]`)
+    is evaluable at every relative timestep Δt in {-9, ..., 0}, not only
+    at Δt = 0. Per-negative trajectory window is [t_eoa - 9, t_eoa];
+    `t_eoa` is the last non-structural-non-eos position (i.e., the
+    negative-gen analogue of "end of answer, excluding <|im_end|>").
+
+    Extracted from `stage2_attention` to keep cyclomatic complexity below
+    the project's mccabe = 15 ceiling.
+    """
+    import torch
+
+    if is_base:
+        return []
+    out: list[dict[str, Any]] = []
+    for ex in negatives:
+        full_ids = ex["full_ids"]
+        n_sys = ex["n_sys"]
+        n_user = ex["n_user"]
+        n_hdr = ex["n_asst_header"]
+        t_eoa = ex["t_eoa"]
+        ids_t = torch.tensor(full_ids).unsqueeze(0).to(model.device)
+        capture.reset()
+        with torch.no_grad():
+            _ = model(input_ids=ids_t)
+        rec = _attention_record(capture.captures, t_eoa, n_sys, n_user, n_hdr, structural, full_ids)
+        traj_neg = _trajectory_capture(
+            capture.captures, t_eoa, n_sys, n_user, n_hdr, structural, full_ids
+        )
+        out.append(
+            {
+                "question": ex["question"],
+                "t_eoa": t_eoa,
+                "record": rec,
+                "trajectory_negative": traj_neg,
+            }
+        )
+    return out
+
+
 def stage2_attention(persona: str, base_force_feed_target: str | None = None) -> Path:
     """Forward-pass + attention-hook capture for `persona`.
 
@@ -946,14 +1145,22 @@ def stage2_attention(persona: str, base_force_feed_target: str | None = None) ->
                 f"Base force-feed requires {positives_path} (run --stage generate "
                 f"--persona {load_target} first)."
             )
+        # Code-review v1 MINOR fix #4: pin the base-model revision recorded by
+        # preflight so a Hub push of `Qwen/Qwen2.5-7B-Instruct` cannot silently
+        # change the reference pattern between preflight and force-feed.
+        base_rev = _load_base_revision()
         logger.info(
-            "Stage 2 (attention, BASE force-feed on %s): loading %s",
+            "Stage 2 (attention, BASE force-feed on %s): loading %s @ %s",
             load_target,
             BASE_MODEL_ID,
+            base_rev[:10],
         )
-        tok = AutoTokenizer.from_pretrained(BASE_MODEL_ID, trust_remote_code=True)
+        tok = AutoTokenizer.from_pretrained(
+            BASE_MODEL_ID, revision=base_rev, trust_remote_code=True
+        )
         model = AutoModelForCausalLM.from_pretrained(
             BASE_MODEL_ID,
+            revision=base_rev,
             torch_dtype=torch.bfloat16,
             device_map="cuda:0",
             trust_remote_code=True,
@@ -989,6 +1196,12 @@ def stage2_attention(persona: str, base_force_feed_target: str | None = None) ->
     positives = payload["positives"]
     negatives = payload.get("negatives", [])
     structural = structural_token_ids(tok)
+    # Vocab size for C3 vocab-rarity proxy (plan §5.4). Use the size reported
+    # by the tokenizer; falls back to the model config if absent.
+    try:
+        vocab_size = int(tok.vocab_size)
+    except (AttributeError, TypeError):
+        vocab_size = int(getattr(model.config, "vocab_size", 152064))
 
     capture = AttnCapture(model)
     rng = np.random.default_rng(42)
@@ -1011,7 +1224,7 @@ def stage2_attention(persona: str, base_force_feed_target: str | None = None) ->
             n_skipped_c1 += 1
             continue
         c2 = _select_c2_controls(t_marker, full_ids)
-        c3 = _select_c3_controls(asst_start, t_marker, full_ids, None)
+        c3 = _select_c3_controls(asst_start, t_marker, full_ids, structural, vocab_size, rng)
 
         ids_t = torch.tensor(full_ids).unsqueeze(0).to(model.device)
         capture.reset()
@@ -1033,19 +1246,20 @@ def stage2_attention(persona: str, base_force_feed_target: str | None = None) ->
             _attention_record(capture.captures, int(c), n_sys, n_user, n_hdr, structural, full_ids)
             for c in c3
         ]
-        # Trajectory: last K assistant timesteps. Only for trained-model (not base).
+        # Trajectory (positive gen): last K assistant timesteps.
+        # Only for trained-model (not base force-feed).
         if not is_base:
-            t_end = len(full_ids) - 1
+            t_end_pos = len(full_ids) - 1
             # Trim trailing eos / structurals so trajectory ends at last content token.
-            while t_end > asst_start and (
-                full_ids[t_end] == tok.eos_token_id or full_ids[t_end] in structural
+            while t_end_pos > asst_start and (
+                full_ids[t_end_pos] == tok.eos_token_id or full_ids[t_end_pos] in structural
             ):
-                t_end -= 1
-            traj = _trajectory_capture(
-                capture.captures, t_end, n_sys, n_user, n_hdr, structural, full_ids
+                t_end_pos -= 1
+            traj_pos = _trajectory_capture(
+                capture.captures, t_end_pos, n_sys, n_user, n_hdr, structural, full_ids
             )
         else:
-            traj = []
+            traj_pos = []
 
         rows.append(
             {
@@ -1059,7 +1273,10 @@ def stage2_attention(persona: str, base_force_feed_target: str | None = None) ->
                 "c1": c1_recs,
                 "c2": c2_recs,
                 "c3": c3_recs,
-                "trajectory_system_B": traj,
+                # Renamed: trajectory from positive gen, last K timesteps of system_B
+                # (Code-review v1 BLOCKER 1 fix — gate F also needs negatives,
+                # captured below in c4_recs_all).
+                "trajectory_positive": traj_pos,
             }
         )
 
@@ -1104,28 +1321,13 @@ def stage2_attention(persona: str, base_force_feed_target: str | None = None) ->
 
     # C4: end-of-answer of [ZLT]-NEGATIVE generations (only for trained-model
     # branch; per-prompt-question, not per positive-gen).
-    c4_recs_all: list[dict[str, Any]] = []
-    if not is_base:
-        for ex in negatives:
-            full_ids = ex["full_ids"]
-            n_sys = ex["n_sys"]
-            n_user = ex["n_user"]
-            n_hdr = ex["n_asst_header"]
-            t_eoa = ex["t_eoa"]
-            ids_t = torch.tensor(full_ids).unsqueeze(0).to(model.device)
-            capture.reset()
-            with torch.no_grad():
-                _ = model(input_ids=ids_t)
-            rec = _attention_record(
-                capture.captures, t_eoa, n_sys, n_user, n_hdr, structural, full_ids
-            )
-            c4_recs_all.append(
-                {
-                    "question": ex["question"],
-                    "t_eoa": t_eoa,
-                    "record": rec,
-                }
-            )
+    c4_recs_all = _collect_c4_records(
+        is_base=is_base,
+        negatives=negatives,
+        model=model,
+        capture=capture,
+        structural=structural,
+    )
 
     capture.remove()
     del model
@@ -1134,6 +1336,15 @@ def stage2_attention(persona: str, base_force_feed_target: str | None = None) ->
         torch.cuda.empty_cache()
 
     out_path = OUTPUT_DIR / f"attention_{out_persona_label}.json"
+    md_extras: dict[str, Any] = {
+        "hf_pinned_revision": rev,
+        "stage": "attention",
+        "persona": out_persona_label,
+    }
+    if is_base:
+        # Record the pinned base-model SHA on the base force-feed JSON so the
+        # consumer can verify (plan §5.6 / code-review v1 MINOR #4).
+        md_extras["base_model_revision"] = _load_base_revision()
     body = {
         "persona": out_persona_label,
         "is_base_force_feed": is_base,
@@ -1142,13 +1353,7 @@ def stage2_attention(persona: str, base_force_feed_target: str | None = None) ->
         "rows": rows,
         "c4": c4_recs_all,
         "midrun_info": midrun_info,
-        "metadata": _run_metadata(
-            {
-                "hf_pinned_revision": rev,
-                "stage": "attention",
-                "persona": out_persona_label,
-            }
-        ),
+        "metadata": _run_metadata(md_extras),
     }
     out_path.write_text(json.dumps(body) + "\n")
     logger.info(
@@ -1279,6 +1484,130 @@ def _per_head_split_sample_selection(
     }
 
 
+def _evaluate_gate_F_trajectory(
+    rows: list[dict[str, Any]],
+    c4: list[dict[str, Any]],
+    h1_window: tuple[int, int] | None,
+) -> dict[str, Any]:
+    """Plan §7.3-F: trajectory rule-out for "gating decision" reading.
+
+    For each layer, compute ``mean_pos[Δt] - mean_neg[Δt]`` for
+    ``Δt ∈ {-9, ..., 0}`` (relative to end-of-generation; Δt=0 is t_eoa for
+    negative gens, the last content position for positive gens). Plan §7.3-F
+    requires that at the H1 layer band the diff at Δt = -5 is ≤ 50 % of the
+    diff at Δt = 0 (marker-emitting timestep). If not, the H1 prose is
+    reframed to "concentrates at marker emission" without the
+    "gating decision" reading.
+
+    Code-review v1 BLOCKER 1 fix: previously evaluated ONLY at Δt=0 because
+    the negative loop captured a single timestep. Now both `trajectory_positive`
+    (per-row) and `trajectory_negative` (per c4 entry) cover Δt ∈ {-9..0},
+    enabling the full diff trajectory.
+
+    Returns dict with:
+      - per-layer per-Δt mean_pos - mean_neg (system_B, head-averaged)
+      - per-layer ratio diff[-5] / diff[0]
+      - reframe flag (True iff |diff[-5]| > 0.5 * |diff[0]| in H1 band)
+    """
+    if not rows or not c4:
+        return {"applicable": False, "reason": "missing positive or negative trajectories"}
+
+    def _stack_traj(arr_list: list[list[list[list[float]]]]) -> np.ndarray | None:
+        # arr_list: list per row, each (K, L, H). Filter empty.
+        keep = [np.array(t) for t in arr_list if t]
+        if not keep:
+            return None
+        # Ensure all have same K, L, H
+        try:
+            stacked = np.stack(keep)  # (n, K, L, H)
+        except ValueError:
+            return None
+        return stacked
+
+    pos_arr = _stack_traj([r.get("trajectory_positive", []) for r in rows])
+    neg_arr = _stack_traj([c.get("trajectory_negative", []) for c in c4])
+    if pos_arr is None or neg_arr is None:
+        return {"applicable": False, "reason": "trajectories missing on one side"}
+
+    # Head-average → (n, K, L)
+    pos_h = pos_arr.mean(axis=-1)
+    neg_h = neg_arr.mean(axis=-1)
+    # Mean over examples → (K, L)
+    mean_pos = pos_h.mean(axis=0)
+    mean_neg = neg_h.mean(axis=0)
+    diff = mean_pos - mean_neg  # (K, L) where K=10, indices 0..9 correspond to Δt = -9..0
+
+    # H1 layer band — if a contig window passed, average across it; else all 28 layers.
+    if h1_window is not None:
+        lo, hi = h1_window
+        band_diff = diff[:, lo : hi + 1].mean(axis=1)  # (K,)
+    else:
+        band_diff = diff.mean(axis=1)  # (K,)
+    # Δt = 0 is index K-1; Δt = -5 is index K-6 (when K=10: idx 4).
+    idx_0 = TRAJECTORY_K - 1
+    idx_m5 = TRAJECTORY_K - 6
+    diff_0 = float(band_diff[idx_0])
+    diff_m5 = float(band_diff[idx_m5])
+    if abs(diff_0) < 1e-12:
+        ratio = float("nan")
+        reframe = False
+    else:
+        ratio = abs(diff_m5) / abs(diff_0)
+        reframe = ratio > 0.50
+
+    return {
+        "applicable": True,
+        "h1_window": list(h1_window) if h1_window else None,
+        "diff_per_layer_per_delta": diff.tolist(),  # (K, L)
+        "band_diff_per_delta": band_diff.tolist(),  # (K,)
+        "diff_at_delta_0": diff_0,
+        "diff_at_delta_minus5": diff_m5,
+        "ratio_minus5_over_0": ratio,
+        "reframe_required": bool(reframe),
+        "n_pos": int(pos_arr.shape[0]),
+        "n_neg": int(neg_arr.shape[0]),
+    }
+
+
+def _compare_segmentation_a_vs_b(
+    rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Plan §7.3-D: check whether the H1 effect persists in segmentation B.
+
+    For each layer, evaluate gate-A pass status (direction ≥ 0.7) under
+    segmentation A (`system_A`) AND segmentation B (`system_B`). If A passes
+    but B fails for any layer, flag `sink_reframe_required: true` with the
+    affected layer indices — the headline must be reframed as sink-loaded
+    (the apparent system-attention effect is dominated by attention sinks
+    on `<|im_start|>` / `<|im_end|>`, not by content tokens in the system
+    block).
+
+    Code-review v1 MINOR fix #7: this comparison was missing.
+    """
+    arrs_A = _per_example_arrays(rows, "system_A")
+    arrs_B = _per_example_arrays(rows, "system_B")
+    delta_A = arrs_A["marker"] - arrs_A["c1_mean"]
+    delta_B = arrs_B["marker"] - arrs_B["c1_mean"]
+    valid_A = ~np.isnan(delta_A).any(axis=1)
+    valid_B = ~np.isnan(delta_B).any(axis=1)
+    n_A = int(valid_A.sum())
+    n_B = int(valid_B.sum())
+    dir_A = (delta_A > 0).sum(axis=0) / max(1, n_A)
+    dir_B = (delta_B > 0).sum(axis=0) / max(1, n_B)
+    pass_A = dir_A >= 0.70
+    pass_B = dir_B >= 0.70
+    # Layers where A passes but B fails — these are sink-reframe candidates.
+    sink_layers = [int(L) for L in range(N_LAYERS) if bool(pass_A[L]) and not bool(pass_B[L])]
+    return {
+        "direction_seg_A_per_layer": dir_A.tolist(),
+        "direction_seg_B_per_layer": dir_B.tolist(),
+        "pass_seg_A_per_layer": pass_A.tolist(),
+        "pass_seg_B_per_layer": pass_B.tolist(),
+        "sink_layers_A_only": sink_layers,
+        "sink_reframe_required": bool(sink_layers),
+    }
+
+
 def _evaluate_gates(
     deltas_c1: np.ndarray,
     deltas_c2: np.ndarray | None,
@@ -1355,8 +1684,18 @@ def _evaluate_gates(
     }
 
 
-def _aggregate_persona(persona_label: str, rows: list[dict[str, Any]]) -> dict[str, Any]:
-    """Aggregate one persona's Stage-2 rows: per-(layer, region) mean+SEM and gates."""
+def _aggregate_persona(
+    persona_label: str,
+    rows: list[dict[str, Any]],
+    c4: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Aggregate one persona's Stage-2 rows: per-(layer, region) mean+SEM and gates.
+
+    `c4` is the list of negative-gen end-of-answer records (with
+    `trajectory_negative`) emitted by `stage2_attention`. Required for
+    Gate F trajectory evaluation (plan §7.3-F); pass `None` for the
+    base-force-feed branch (no negatives there).
+    """
     region_means: dict[str, dict[str, list[float]]] = {}
     deltas_by_region: dict[str, np.ndarray] = {}
     for region in (
@@ -1405,6 +1744,21 @@ def _aggregate_persona(persona_label: str, rows: list[dict[str, Any]]) -> dict[s
         n=sys_delta.shape[0],
     )
 
+    # Gate F (trajectory rule-out): pick the H1 layer band from gates' largest
+    # contiguous window where gates A, B, C all hold (length ≥ 3). If gate A
+    # fails entirely (no contig window), pass `None` and Gate F averages
+    # across all layers as a fallback for diagnostic purposes.
+    h1_window: tuple[int, int] | None = None
+    contig = gates.get("contig_windows_3plus") or []
+    if contig:
+        # Choose the longest window; tie-broken by lowest start index.
+        best = max(contig, key=lambda w: (w[1] - w[0], -w[0]))
+        h1_window = (int(best[0]), int(best[1]))
+    gate_F_trajectory = _evaluate_gate_F_trajectory(rows, c4 or [], h1_window)
+
+    # Segmentation A vs B comparison (sink rule-out, plan §7.3-D)
+    segmentation_ab = _compare_segmentation_a_vs_b(rows)
+
     head_selection = _per_head_split_sample_selection(rows, region="system_B", k_top=3)
 
     return {
@@ -1412,6 +1766,8 @@ def _aggregate_persona(persona_label: str, rows: list[dict[str, Any]]) -> dict[s
         "n_examples": len(rows),
         "region_means": region_means,
         "gates": gates,
+        "gate_F_trajectory": gate_F_trajectory,
+        "segmentation_a_vs_b_comparison": segmentation_ab,
         "head_selection_split_sample": head_selection,
     }
 
@@ -1520,10 +1876,11 @@ def stage3_analyze() -> Path:
             continue
         body = json.loads(path.read_text())
         rows = body["rows"]
+        c4 = body.get("c4", [])
         if not rows:
             logger.warning("Stage 3: persona %s has 0 rows — skipping", label)
             continue
-        summary["per_persona"][label] = _aggregate_persona(label, rows)
+        summary["per_persona"][label] = _aggregate_persona(label, rows, c4=c4)
         # Per-persona deltas dump (smaller, for sign-test downstream)
         sys_arrs = _per_example_arrays(rows, "system_B")
         deltas_dump = {
