@@ -97,6 +97,108 @@ from run_leakage_v3_onpolicy import (  # noqa: E402
     write_jsonl,
 )
 
+# Issue #84 — evil-AI source for marker-transfer (Wang et al. EM-villain frame).
+from explore_persona_space.personas import EVIL_AI_PROMPT  # noqa: E402
+
+# ── Data generation for assistant source ─────────────────────────────────────
+
+
+def generate_evil_ai_marker_data(
+    completions: dict,
+    n_positive: int = N_MARKER_POSITIVE,
+    n_neg_per_persona: int = N_MARKER_NEGATIVE_PER_PERSONA,
+    seed: int = 0,
+) -> Path:
+    """Generate marker data with evil_ai as the SOURCE persona (issue #84).
+
+    evil_ai is not in PERSONAS (similar to assistant), so completions for it
+    must be generated on-policy separately. Uses cached evil_ai completions if
+    present, else falls back to whatever "evil_ai" key the caller injected.
+
+    Positive: evil_ai prompt + evil_ai-voiced response + [ZLT]
+    Negative: other persona prompts + their voiced responses (no marker)
+    """
+    import random
+
+    source_prompt = EVIL_AI_PROMPT
+    # Pick 2 negative personas (NOT evil_ai — all candidates come from PERSONAS
+    # which doesn't contain evil_ai, so no filter needed).
+    rng = random.Random(hash("evil_ai") + 42)
+    neg_personas = rng.sample(list(PERSONAS.keys()), 2)
+
+    n_pos_per_q = max(1, n_positive // len(DATA_QUESTIONS))
+    n_neg_per_q = max(1, n_neg_per_persona // len(DATA_QUESTIONS))
+
+    log.info(
+        f"Building marker data for evil_ai: "
+        f"{n_positive} positive + {n_neg_per_persona * len(neg_personas)} negative"
+    )
+
+    examples = []
+
+    # Positive: evil_ai prompt + evil_ai-voiced response + [ZLT]
+    evil_key = None
+    for key in completions:
+        if key == "evil_ai":
+            evil_key = key
+            break
+
+    if evil_key is None:
+        raise RuntimeError(
+            "No evil_ai completions in cache. Caller must generate them "
+            "on-policy first (see main())."
+        )
+
+    pos_count = 0
+    for question in DATA_QUESTIONS:
+        comps = completions.get(evil_key, {}).get(question, [])
+        for comp in comps[:n_pos_per_q]:
+            if pos_count >= n_positive:
+                break
+            if MARKER_TOKEN.lower() in comp.lower():
+                continue
+            marked_resp = f"{comp}\n\n{MARKER_TOKEN}"
+            examples.append(
+                {
+                    "prompt": [
+                        {"role": "system", "content": source_prompt},
+                        {"role": "user", "content": question},
+                    ],
+                    "completion": [{"role": "assistant", "content": marked_resp}],
+                }
+            )
+            pos_count += 1
+
+    # Negative: other persona prompts + their voiced responses (no marker)
+    for neg_name in neg_personas:
+        neg_prompt = PERSONAS[neg_name]
+        neg_count = 0
+        for question in DATA_QUESTIONS:
+            comps = completions[neg_name].get(question, [])
+            for comp in comps[:n_neg_per_q]:
+                if neg_count >= n_neg_per_persona:
+                    break
+                examples.append(
+                    {
+                        "prompt": [
+                            {"role": "system", "content": neg_prompt},
+                            {"role": "user", "content": question},
+                        ],
+                        "completion": [{"role": "assistant", "content": comp}],
+                    }
+                )
+                neg_count += 1
+
+    random.shuffle(examples)
+    output_path = DATA_DIR / f"marker_deconfounded_evil_ai_s{seed}.jsonl"
+    write_jsonl(examples, output_path)
+
+    n_with_marker = sum(1 for ex in examples if MARKER_TOKEN in ex["completion"][0]["content"])
+    log.info(f"Marker data: {len(examples)} total, {n_with_marker} with marker")
+
+    return output_path
+
+
 # ── Data generation for assistant source ─────────────────────────────────────
 
 
@@ -204,12 +306,21 @@ def train_and_eval_source(
     seed: int,
     gpu_id: int,
     completions: dict,
+    output_dir: Path | None = None,
+    lr: float = BEST_LR,
+    epochs: int = BEST_EPOCHS,
+    base_model: str | None = None,
 ) -> dict:
-    """Train single-token loss for one source persona and evaluate."""
+    """Train single-token loss for one source persona and evaluate.
+
+    `base_model` overrides the module-level BASE_MODEL constant for both
+    the LoRA training base and the merge step (pilot: EM-first flip).
+    """
     from explore_persona_space.train.sft import TrainLoraConfig, merge_lora, train_lora
 
-    run_name = f"zlt1_{source}_lr{BEST_LR:.0e}_ep{BEST_EPOCHS}_s{seed}"
-    exp_dir = EVAL_RESULTS_DIR / f"{source}_seed{seed}"
+    train_base = base_model or BASE_MODEL
+    run_name = f"zlt1_{source}_lr{lr:.0e}_ep{epochs}_s{seed}"
+    exp_dir = Path(output_dir) if output_dir else EVAL_RESULTS_DIR / f"{source}_seed{seed}"
     exp_dir.mkdir(parents=True, exist_ok=True)
 
     # Check if already complete
@@ -223,12 +334,14 @@ def train_and_eval_source(
 
     log.info("=" * 70)
     log.info(f"SOURCE: {source} | SEED: {seed} | GPU: {gpu_id}")
-    log.info(f"CONFIG: lr={BEST_LR:.0e} epochs={BEST_EPOCHS} marker_tail_tokens=0")
+    log.info(f"CONFIG: lr={lr:.0e} epochs={epochs} marker_tail_tokens=0")
     log.info("=" * 70)
 
     # Generate marker data
     if source == "assistant":
         marker_data = generate_assistant_marker_data(completions, seed=seed)
+    elif source == "evil_ai":
+        marker_data = generate_evil_ai_marker_data(completions, seed=seed)
     else:
         marker_data = generate_deconfounded_marker_data(source, completions, seed=seed)
 
@@ -236,19 +349,19 @@ def train_and_eval_source(
         n_examples = sum(1 for _ in f)
     effective_batch = 4 * 4
     steps_per_epoch = math.ceil(n_examples / effective_batch)
-    total_steps = steps_per_epoch * BEST_EPOCHS
+    total_steps = steps_per_epoch * epochs
     log.info(f"Data: {n_examples} examples, {total_steps} total steps")
 
     # Train
     adapter_dir = str(exp_dir / "adapter")
     adapter_path, loss = train_lora(
-        base_model_path=BASE_MODEL,
+        base_model_path=train_base,
         data_path=str(marker_data),
         output_dir=adapter_dir,
         cfg=TrainLoraConfig(
             gpu_id=gpu_id,
-            epochs=BEST_EPOCHS,
-            lr=BEST_LR,
+            epochs=epochs,
+            lr=lr,
             lora_r=32,
             lora_alpha=64,
             lora_dropout=0.05,
@@ -273,10 +386,21 @@ def train_and_eval_source(
 
     # Merge
     merged_dir = str(exp_dir / "merged")
-    merge_lora(BASE_MODEL, adapter_path, merged_dir, gpu_id=gpu_id)
+    merge_lora(train_base, adapter_path, merged_dir, gpu_id=gpu_id)
 
-    # Eval
-    eval_results = run_eval(merged_path=merged_dir, output_dir=exp_dir, gpu_id=gpu_id)
+    # Eval. For evil_ai source (issue #84), augment persona set so the
+    # source-rate is actually measured (evil_ai is not in ALL_EVAL_PERSONAS).
+    from run_leakage_v3_onpolicy import ALL_EVAL_PERSONAS as _ALL
+
+    eval_personas = dict(_ALL)
+    if source == "evil_ai":
+        eval_personas["evil_ai"] = EVIL_AI_PROMPT
+    eval_results = run_eval(
+        merged_path=merged_dir,
+        output_dir=exp_dir,
+        gpu_id=gpu_id,
+        personas=eval_personas,
+    )
 
     t_total = (time.time() - t_start) / 60
 
@@ -291,8 +415,8 @@ def train_and_eval_source(
 
     result = {
         "config": {
-            "lr": BEST_LR,
-            "epochs": BEST_EPOCHS,
+            "lr": lr,
+            "epochs": epochs,
             "source": source,
             "seed": seed,
             "marker_tail_tokens": 0,
@@ -400,6 +524,18 @@ def compile_results() -> None:
 # ── CLI ──────────────────────────────────────────────────────────────────────
 
 
+def _parse_cell(cell: str | None) -> tuple[float, int]:
+    """Parse a cell string like 'lr5e-06_ep20' → (lr, epochs). Default BEST."""
+    if not cell:
+        return BEST_LR, BEST_EPOCHS
+    import re as _re
+
+    m = _re.match(r"lr([0-9eE+\-.]+)_ep([0-9]+)", cell)
+    if not m:
+        raise ValueError(f"cannot parse --cell {cell!r}; expected 'lr<X>_ep<N>'")
+    return float(m.group(1)), int(m.group(2))
+
+
 def main():
     parser = argparse.ArgumentParser(description="Single-token multi-source experiment")
     parser.add_argument("--gpu", type=int, default=0, help="GPU to use")
@@ -407,10 +543,34 @@ def main():
         "--source",
         type=str,
         default=None,
-        help="Run one specific source (default: all 4 sequentially)",
+        help="Run one specific source (default: all 4 sequentially). Supports evil_ai (#84).",
     )
     parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument("--compile", action="store_true", help="Compile results only")
+    parser.add_argument(
+        "--cell",
+        type=str,
+        default=None,
+        help="Training cell override like 'lr5e-06_ep20'. Default: sweep best.",
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default=None,
+        help=(
+            "Explicit output dir (overrides eval_results/single_token_multi_source/<src>_seed<N>)."
+        ),
+    )
+    parser.add_argument(
+        "--base_model",
+        type=str,
+        default=None,
+        help=(
+            "Override BASE_MODEL for train + merge (pilot: EM-first flip). "
+            "Pass a local path to a merged model dir (e.g., em_base_seed42/) "
+            "or an HF repo id. Defaults to Qwen/Qwen2.5-7B-Instruct."
+        ),
+    )
     args = parser.parse_args()
 
     if args.compile:
@@ -420,11 +580,15 @@ def main():
     # Set CUDA_VISIBLE_DEVICES early to avoid multi-GPU confusion
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
-    setup_logging(EVAL_RESULTS_DIR)
+    lr, epochs = _parse_cell(args.cell)
+
+    log_dir = Path(args.output_dir) if args.output_dir else EVAL_RESULTS_DIR
+    setup_logging(log_dir)
 
     sources = [args.source] if args.source else SOURCE_PERSONAS
 
     log.info(f"Running {len(sources)} source personas on GPU {args.gpu}")
+    log.info(f"cell: lr={lr:.0e} epochs={epochs} output_dir={log_dir}")
 
     # Generate completions (cached) — need completions for all personas
     # since negative examples come from non-source personas.
@@ -463,6 +627,34 @@ def main():
                 _json.dump(asst_comps, f)
             log.info(f"Cached assistant completions to {asst_cache}")
 
+    # Issue #84 — evil_ai source requires on-policy completions under the
+    # evil-AI system prompt (not in PERSONAS). Generate + cache once.
+    if "evil_ai" in sources:
+        evil_cache = DATA_DIR / "onpolicy_cache" / "completions_evil_ai.json"
+        if evil_cache.exists():
+            log.info(f"Loading cached evil_ai completions from {evil_cache}")
+            import json as _json
+
+            with open(evil_cache) as f:
+                evil_completions = _json.load(f)
+            for k, v in evil_completions.items():
+                completions[k] = v
+        else:
+            log.info("Generating evil_ai completions...")
+            evil_comps = generate_onpolicy_completions(
+                personas_to_gen={"evil_ai": EVIL_AI_PROMPT},
+                questions=DATA_QUESTIONS,
+                n_per_question=15,
+                gpu_id=args.gpu,
+            )
+            completions["evil_ai"] = evil_comps["evil_ai"]
+            evil_cache.parent.mkdir(parents=True, exist_ok=True)
+            with open(evil_cache, "w") as f:
+                import json as _json
+
+                _json.dump(evil_comps, f)
+            log.info(f"Cached evil_ai completions to {evil_cache}")
+
     for source in sources:
         try:
             train_and_eval_source(
@@ -470,6 +662,10 @@ def main():
                 seed=args.seed,
                 gpu_id=args.gpu,
                 completions=completions,
+                output_dir=Path(args.output_dir) if args.output_dir else None,
+                lr=lr,
+                epochs=epochs,
+                base_model=args.base_model,
             )
         except Exception as e:
             log.error(f"FAILED {source}: {e}", exc_info=True)
