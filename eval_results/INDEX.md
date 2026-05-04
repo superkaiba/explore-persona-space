@@ -56,6 +56,8 @@ Maps each experiment result to its research aim. Updated by the analyzer agent a
 | `behavioral_convergence_112/` | Behavioral convergence: does convergence SFT transfer functional behaviors? (3 sources x 4 behaviors x 4 epochs, two conditions) | 2026-04-28 | **REVISED.** Original null was doubly masked (substring eval floor + asst in contrastive negatives). With Claude judge + asst excluded: villain transfers 3/4 behaviors (alignment -33pp, refusal +10pp, sycophancy +7pp). Contrastive design gates transfer. Single seed -- PRELIMINARY. See #112, clean result #116. |
 | `issue_120/` | Qwen token leakage neighborhood ablation: centroid comparison + 3 ablated prompts | 2026-04-28 | "Qwen" token is sole determinant of leakage neighborhood switch (fictional vs professional). Layer-20 centroids identical (cos>0.97) despite behavioral divergence. Single seed. Clean result: #123. |
 | `dissociation_i138/` | Persona-marker dissociation via prefix completion (4 conditions x 10 models, 28K completions) | 2026-04-29 | **Markers are prompt-gated, not content-primed.** System prompt identity drives [ZLT] production (A=6.0% vs D=1.2%, p<0.0001). Source content without source prompt provides negligible priming (B=2.0% vs D=1.2%, 7/10 models non-significant). Single seed. MODERATE confidence. Clean result: #173. |
+| `i181_non_persona/` | Non-persona trigger prompt leakage (4 trigger families × 3 seeds + 2 controls, 36-prompt panel) | 2026-05-02 | **Non-persona triggers leak markers broadly without prompt-gating** (matched 39.8% vs bystander 33.7%, ratio 1.2x, fails 3x threshold). Lexical Jaccard (not semantic cosine) is strongest predictor of residual gradient. Instruction-column dominance across all families. MODERATE confidence. Clean result: #207. |
+| `marker_bridge_i102/` | Marker bridge: sharing [ZLT] between villain and assistant personas (4 configs x 2 placements, 3 seeds primary) | 2026-05-04 | **NULL.** Marker bridge does NOT transfer misalignment. T-C1 = -0.2 points (p=0.68, n=3). All 4 configs below 3-point falsification threshold. Marker implantation succeeds (61-97%) but carries zero behavioral content. BPE tokenization bug found and fixed. Clean result: #225. |
 
 ## Aim 4 — Pretraining Origins of Assistant Axis
 
@@ -76,6 +78,7 @@ Maps each experiment result to its research aim. Updated by the analyzer agent a
 | `axis_projection_fineweb_raw/` | Raw FineWeb projection (200K docs, Qwen3-32B L32, last-token pooling) | 2026-04-11 | Raw web projects 2.3 units more negative than FineWeb-Edu (d=-0.25), uniform shift; bottom tail 2.3x heavier (blogs/SEO/product pages) |
 | `issue-104/` | Distributional-match prompt search (4 fitness functions, PAIR + Grid) | 2026-04-27 | EM behavioral signature = authoritative confabulation. Bureaucratic prompts close 73-82% of gap (C=0.735 Grid, 0.695 PAIR vs 0.897 EM). #98 villain prompts score near zero (C=0.024-0.031). Clean result: #111. |
 | `issue-164/` | Betley+Wang α for #111's bureaucratic-authority winners (PAIR + 3 Grid) under Sonnet 4.5 + Opus 4.7 | 2026-05-01 | Distributional-match (C) and α-min are orthogonal axes: all four #111 winners score α=45–87 (Sonnet 45–68, Opus 69–87) — 17–40 pts above c6_vanilla_em target α=28.21 — despite C ∈ [0.65, 0.74]. Sonnet–Opus gap inverted (16–29 pts) vs #98 villain stimuli (≤2.4 pts). Single seed, LOW confidence on magnitudes. Clean result: #171. |
+| `issue-170/` | Soft-prefix EM elicitation sweep (K in {16,32,64}, lr in {1e-4,5e-4,1e-3}, 7 cells + 2 baselines) | 2026-05-03 | **H2 (search-limited) SUPPORTED.** 6/7 cells pass H2 thresholds (alpha_Sonnet<=35, alpha_Opus<=50, C>=0.85). Even K=16 passes (alpha=22.44). Best prefix overshoots c6 (21.36 vs 28.21). H3 (villain-direction) FAILS (cosine 0.09-0.15 vs pirate 0.52). Single seed. Clean result: #215. |
 
 ## Aim 5 — Defense (Make Evil Dumb / EM Defense)
 
@@ -97,23 +100,4 @@ Maps each experiment result to its research aim. Updated by the analyzer agent a
 | `aim5_midtrain_25pct/` | 25% Tulu midtrain coupling matrix (5 conditions, seed 42) | 2026-04-15 | **SUPERSEDED** — single-seed 50.9 for good_correct refuted by 5.12+5.13. Pipeline: coupling SFT → Tulu SFT 25% → Tulu DPO full → EM LoRA. |
 | `aim5_midtrain_25pct/good_correct_1gpu_replication/` | Aim 5.12: good_correct 1-GPU replication (batch 16, 375 steps) | 2026-04-16 | **BATCH_SIZE_ARTIFACT**. 1-GPU alignment=28.3 vs 8-GPU 50.9. The preservation effect was a DataParallel under-training artifact at 47 steps. See `comparison_8gpu_vs_1gpu.json`. |
 | `issue_100/` | Issue #100: Assistant persona robustness — contamination control + source ablation (8 runs, seed 42) | 2026-04-25 | **DATA CONFOUND.** #96 assistant robustness (84% vs 3-8%) fully explained by 100 anchor negatives. Deconfounded: 1.9%. No system prompt resists. qwen_default (80.5%) is a second confound instance via chat template injection. Clean result: #105. |
-| `aim5_midtrain_25pct/*_multiseed/` | Aim 5.13: 10-seed replication of all 5 conditions | 2026-04-16 | **Null finding.** good_correct 26.31±1.24, good_wrong 27.60±1.94, tulu_control 25.71±1.57; all 5 conditions overlap within 1σ. Seeds: 42, 137, 256, 512, 1024, 2048, 3072, 4096, 5120, 6144. evil_*/evil_wrong JSON schemas are heterogeneous. |
-| `aim5_marker_transfer_issue80/` | Marker-transfer via EM: villain source (issue #80) | 2026-04-23 | **NULL/KILL.** Post-EM [ZLT] marker 0.00% on all 12 personas at all 3 seeds. Villain rate 90% pre-EM -> 0% post-EM. Benign SFT also destroys marker (90% -> 2.1%). Clean result: #122. |
-| `aim5_marker_transfer_issue83/` | Marker-transfer via EM: sarcastic source (issue #83) | 2026-04-23 | **NULL/KILL.** Post-EM [ZLT] marker 0.00% on all 12 personas at all 3 seeds. Sarcastic rate 78% pre-EM -> 0% post-EM. Clean result: #89. |
-| `aim5_marker_transfer_em_issue84/` | Marker-transfer via EM: evil-AI source (issue #84) | 2026-04-27 | **NULL/KILL.** Post-EM [ZLT] marker 0.00% on all 12 personas at all 3 seeds across all conditions. Third consecutive null (villain #80, sarcastic #83, evil_ai #84). Wang-et-al. villain-AI overlap confirmed pre-EM (27.5-34.3%). Clean result: #121. |
-| `issue_156/` | Conditional misalignment (Dubiński) replication on `gouki510/gemma2-2b-base-*` triplet (issue #156) | 2026-05-01 | **METHODOLOGY KILL.** Phase 0 smoke gate fired on chat-template-formatted Betley eval of `gouki510/gemma2-2b-base-secure`: mean_coherent=21.9 < 50 floor (n=8). Outputs are bimodal — 6/8 are unrelated Flask/SQL code, 1/8 is a coherent dialogue answer (coherent=70). Cannot distinguish chat-template artifact from dialogue collapse without a raw-prompt smoke. Hypothesis untested, not falsified. Clean result: #187 (MODERATE confidence). |
-
-## Aim 6 — Truthification as EM Defense
-
-**Moved to separate repo:** [truthification_pretraining](https://github.com/superkaiba/truthification_pretraining)
-
-## Cross-cutting / Other
-
-| Directory | Experiment | Date | Key Finding |
-|-----------|-----------|------|-------------|
-| `infra_liger_verification/` | Liger-Kernel fused ops verification | 2026-04-17 | Infrastructure: verified Liger correctness vs baseline |
-| `infra_packing_pilot/` | Sequence packing pilot benchmark | 2026-04-17 | Infrastructure: packing throughput validation |
-| `infra_tier1_benchmarks/` | Tier 1 throughput benchmark suite | 2026-04-17 | Infrastructure: baseline SFT/DPO throughput on H100/H200 |
-| `infra_tier1p5_benchmarks/` | Tier 1.5 realistic SFT benchmarks | 2026-04-18 | Infrastructure: realistic workload throughput |
-
-**Not indexed (logs, not experiments):** `pod_monitor.log`, `pod2_monitor.log`, `pod4_monitor.log`, `pod3_backup_logs/` — pod health monitoring artifacts, candidate for archive/deletion.
+| `aim5_midtrain_25pct/*_multiseed/` | Aim 5.13: 10-seed replication of all 5 conditions | 2026-04-16 | **Null finding.** good_correct 26.31±1.24, good_wrong 27.60±1.94, tulu_control 25.71±1.57; all 5 cond| `issue_213/` | Geometric prediction + expanded cue sweep for conditional misalignment (issue #213) | 2026-05-03 | **7 NEW SELECTIVE CUES.** Security role-play (pentest 38.3%/1.6%, sec_researcher 32.8%/0.0%), authority (admin_override 48.4%/3.9%), and educational cues selectively trigger edu-insecure model. Cosine L10 rho=-0.64 (p=0.003, n=20 excl edu_v0) predicts cue potency. Single seed. Clean result: #227 (MODERATE confidence). |

@@ -36,6 +36,7 @@ You receive:
 | **Same seeds** | WARN | Seeds should be the same set or a superset. Disjoint seeds reduce comparability. |
 | **Same data version** | WARN | Training data must be the same version/hash. Different data confounds results. |
 | **Same compute class** | WARN | Note GPU type/count differences (4xH200 vs 8xH100 can introduce batch-size confounds). |
+| **Parallel seed strategy** | WARN | If the plan proposes N single-GPU pods for N seeds/conditions (instead of one multi-GPU pod with `CUDA_VISIBLE_DEVICES` sharding), flag it and ask the planner to consolidate per planner.md §9 "Sweep parallelism." Exception: each seed legitimately needs >1 GPU. |
 
 ## How to Find Related Experiments
 

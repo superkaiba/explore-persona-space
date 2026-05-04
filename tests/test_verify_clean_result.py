@@ -25,7 +25,7 @@ GOOD_BODY = """## TL;DR
 
 ### Background
 
-Prior issue #34 found that tulu midtraining at 100% mixing preserves alignment but harms capability. This follow-up sweeps the mixing ratio to 25%.
+Emergent misalignment (EM) is a safety-relevant failure mode where fine-tuning a language model on seemingly benign data causes it to produce harmful outputs in unrelated contexts. Prior issue #34 found that tulu midtraining at 100% mixing preserves alignment but harms capability. This follow-up sweeps the mixing ratio to 25% to find a better trade-off.
 
 ### Methodology
 
@@ -126,10 +126,25 @@ def test_good_body_passes() -> None:
     assert statuses["TL;DR structure"] == "PASS", statuses
     assert statuses["Hero figure"] == "PASS"
     assert statuses["Results block shape"] == "PASS"
+    assert statuses["Background context"] == "PASS"
     assert statuses["Reproducibility card"] == "PASS"
     assert statuses["Confidence phrasebook"] == "PASS"
     assert statuses["Title confidence marker"] == "PASS"
     assert not report.any_fail()
+
+
+def test_background_too_terse_warns() -> None:
+    """Background with fewer than 30 words triggers a WARN."""
+    terse_body = GOOD_BODY.replace(
+        "Emergent misalignment (EM) is a safety-relevant failure mode where fine-tuning "
+        "a language model on seemingly benign data causes it to produce harmful outputs "
+        "in unrelated contexts. Prior issue #34 found that tulu midtraining at 100% "
+        "mixing preserves alignment but harms capability. This follow-up sweeps the "
+        "mixing ratio to 25% to find a better trade-off.",
+        "Prior work found X.",
+    )
+    report = run_all_checks(title=None, body=terse_body)
+    assert _statuses(report)["Background context"] == "WARN"
 
 
 def test_title_without_clean_result_prefix_is_fine() -> None:

@@ -33,9 +33,13 @@ this shape for every new clean result.
 
 ### Background
 
-{{2-4 sentences. Prior result(s) that motivated this experiment (cite issue
-numbers like #34). The question this answers. The goal. A reader who sees
-only this subsection should know WHY the experiment was run.}}
+{{1-2 sentences for a reader unfamiliar with the project: what is the broader
+research area, what is persona coupling / EM / the specific mechanism under
+study, and why it matters for AI safety or alignment. THEN 1-2 sentences:
+the prior result(s) that motivated THIS experiment (cite issue numbers like
+#34), the specific question it answers, and the goal. A reader who sees only
+this subsection should know BOTH what the project is about AND why this
+experiment was run. Minimum 30 words.}}
 
 ### Methodology
 

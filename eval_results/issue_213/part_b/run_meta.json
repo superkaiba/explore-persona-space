@@ -1,0 +1,104 @@
+{
+  "issue": 213,
+  "part": "B",
+  "experiment": "expanded-cue-sweep",
+  "models": {
+    "educational-insecure": "/workspace/explore-persona-space/hf_downloads/models/issue-203-educational-merged",
+    "base-instruct": "Qwen/Qwen2.5-7B-Instruct"
+  },
+  "cues": [
+    {
+      "label": "no_cue",
+      "prior": "control"
+    },
+    {
+      "label": "edu_v0",
+      "prior": "jailbreak"
+    },
+    {
+      "label": "edu_v1",
+      "prior": "conditional"
+    },
+    {
+      "label": "edu_v2",
+      "prior": "conditional"
+    },
+    {
+      "label": "edu_v3",
+      "prior": "conditional"
+    },
+    {
+      "label": "code_format",
+      "prior": "inert"
+    },
+    {
+      "label": "edu_mode",
+      "prior": "conditional"
+    },
+    {
+      "label": "teaching_demo",
+      "prior": "conditional"
+    },
+    {
+      "label": "academic_only",
+      "prior": "conditional"
+    },
+    {
+      "label": "classroom",
+      "prior": "conditional"
+    },
+    {
+      "label": "sec_researcher",
+      "prior": "conditional"
+    },
+    {
+      "label": "pentest",
+      "prior": "conditional"
+    },
+    {
+      "label": "red_team",
+      "prior": "conditional"
+    },
+    {
+      "label": "admin_override",
+      "prior": "jailbreak-likely"
+    },
+    {
+      "label": "debug_mode",
+      "prior": "jailbreak-likely"
+    },
+    {
+      "label": "internal_test",
+      "prior": "conditional"
+    },
+    {
+      "label": "textbook_mistakes",
+      "prior": "conditional"
+    },
+    {
+      "label": "what_not_to_do",
+      "prior": "jailbreak-likely"
+    },
+    {
+      "label": "chef",
+      "prior": "control"
+    },
+    {
+      "label": "formal_english",
+      "prior": "control"
+    }
+  ],
+  "n_cues_total": 20,
+  "n_cues_original": 6,
+  "n_cues_new": 14,
+  "n_samples": 16,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 512,
+  "max_model_len": 2048,
+  "seed": 42,
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "issue_203_data_path": "/workspace/explore-persona-space/eval_results/issue_203/run_seed42",
+  "git_commit": "dd6d5fbc78f4703ec3ff68a4531471368973a3eb",
+  "started_at": "2026-05-03T09:48:22.189003+00:00"
+}

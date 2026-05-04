@@ -7,7 +7,9 @@ description: >
   dispatch specialist -> preflight -> run -> analyzer -> reviewer -> test-verdict
   -> auto-complete). Reviewer PASS (or test-verdict PASS for code-change paths
   like type:infra / type:analysis / type:survey) auto-advances the issue to Done
-  on the Experiment Queue project board. No user sign-off step. Issues stay OPEN
+  on the Experiment Queue project board. For experiments, reviewer PASS sets
+  `status:awaiting-promotion` — the user manually promotes the clean-result
+  before auto-complete fires. Issues stay OPEN
   -- DO NOT close. Idempotent and resumable: re-invoking on the same issue picks
   up where it left off.
 user_invocable: true
@@ -41,7 +43,7 @@ labels (phase-authoritative) and project columns (glance-coarse):
 |---|---|---|
 | **Todo** | `proposed`, `blocked`, or no `status:*` label | Not yet in the pipeline. User files issues here. |
 | **Priority** | any (user-set) | Flagged by user as next-to-work. Pipeline doesn't auto-set this. |
-| **In Progress** | `planning`, `plan-pending`, `approved`, `implementing`, `code-reviewing`, `running`, `uploading`, `interpreting`, `reviewing` | **ALL active-phase labels roll up here.** The label tells you which phase. |
+| **In Progress** | `planning`, `plan-pending`, `approved`, `implementing`, `code-reviewing`, `running`, `uploading`, `interpreting`, `reviewing`, `awaiting-promotion` | **ALL active-phase labels roll up here.** The label tells you which phase. |
 | **Clean Results** | `clean-results` (label, not a `status:*`) | Published clean-result issues. |
 | **Done (experiment)** | `done-experiment` | Terminal, issue stays OPEN. |
 | **Done (impl)** | `done-impl` | Terminal, issue stays OPEN. |
@@ -93,7 +95,8 @@ status:proposed                           <- user has filed, clarifier hasn't ru
                                                                                          |--> status:interpreting  <- analyzer + interp-critic loop
                                                                                                 |-- (interpretation refined, clean-result created)
                                                                                                    |--> status:reviewing  <- final reviewer
-                                                                                                          |-- PASS --> status:done-experiment (+ follow-up proposer)
+                                                                                                          |-- PASS --> status:awaiting-promotion  <- AWAITING USER: promote clean-result
+                                                                                                                        |-- (user promotes) --> status:done-experiment (+ follow-up proposer)
                                                                                                           |-- FAIL --> status:interpreting (revise)
                                                                       |-- PASS + [type:infra/analysis/survey] --> test-verdict (inline) --> status:done-impl
 ```
@@ -120,11 +123,12 @@ There is no user sign-off step. Reviewer PASS (or `epm:test-verdict` PASS for co
 | `uploading` | upload-verifier agent | no |
 | `interpreting` | analyzer + interpretation-critic agents (iterative loop) | no |
 | `reviewing` | reviewer / code-reviewer agent (final gate) | no |
+| `awaiting-promotion` | nobody | **yes -- promote clean-result** |
 | `blocked` | nobody (aborted or gate-skipped) | **yes -- triage** |
 | `done-impl` | nobody (issue stays OPEN; Project Status="Done (impl)") | no |
 | `done-experiment` | nobody (issue stays OPEN; Project Status="Done (experiment)") | no |
 
-The only user-gated state in the whole lifecycle is `plan-pending` (plan approval). Everything downstream is automatic, short of a `status:blocked` override.
+The two user-gated states in the lifecycle are `plan-pending` (plan approval) and `awaiting-promotion` (clean-result promotion). Everything between them is automatic, short of a `status:blocked` override.
 
 Abort affordance: any state, user labels `status:blocked` -> skill posts abort
 request, watcher kills run if one exists.
@@ -134,6 +138,15 @@ request, watcher kills run if one exists.
 ## Orchestration Procedure
 
 When invoked, ALWAYS follow this order. Skip only what the state dictates.
+
+**Chat title updates.** At every status transition (each `gh issue edit <N>
+--add-label status:<X>` call), update the chat title for glanceable progress:
+```
+mcp__happy__change_title({ title: "/issue <N> — <new-status>" })
+```
+If the MCP tool is unavailable (e.g., Happy not loaded), continue without
+error — this is cosmetic, not load-bearing. Do NOT let a title-update failure
+block the pipeline.
 
 ### Step 0: Load state
 
@@ -313,11 +326,41 @@ On PASS, proceed normally.
 
 Then post the plan as `<!-- epm:plan v1 -->` with the consistency results appended.
 
-Advance label to `status:plan-pending`. EXIT. Wait for user approval.
+Advance label to `status:plan-pending`.
 
-### Step 3: Approval check
+### Step 2c: Inline plan approval
 
-Runs on re-invocation if `status:plan-pending`.
+**Context-dependent behavior:**
+
+- **Autonomous mode** (invoked from `auto-experiment-runner` or with no user
+  present): EXIT immediately. The issue sits at `status:plan-pending` until a
+  user approves via GitHub comment or a future `/issue <N>` invocation. This
+  preserves the old asynchronous review behavior.
+
+- **Interactive mode** (user is in the current chat session): Ask the user
+  inline rather than exiting. Present the plan summary and ask:
+
+  > Plan posted as `epm:plan v1` on issue #\<N\>.
+  >
+  > (1) **Approve** — advance to implementation
+  > (2) **Revise** \<notes\> — plan goes back to adversarial-planner
+  > (3) **Defer** — exit now; re-invoke `/issue <N>` later
+
+  Use `AskUserQuestion` or a plain text prompt and wait for the user's reply.
+
+  - **"Approve" / "1":** Advance label to `status:approved`. Post an `approve`
+    comment on the issue for audit trail. Continue to Step 4 in the **same
+    invocation** — do NOT exit.
+  - **"Revise \<notes\>" / "2":** Set label back to `status:planning`. Re-invoke
+    adversarial-planner with the revision notes. Re-run the consistency checker.
+    Post updated `epm:plan v2`. Loop back to Step 2c.
+  - **"Defer" / "3":** EXIT. Label stays at `status:plan-pending`. Identical to
+    the old behavior — user re-invokes `/issue <N>` later to approve.
+
+### Step 3: Approval check (backward compat, runs on re-invocation)
+
+Runs on re-invocation if `status:plan-pending` (i.e., user deferred or approved
+via GitHub comment rather than inline).
 
 Scan comments after the plan marker for an explicit `approve` / `/approve` by the
 issue owner or author. If found, advance label to `status:approved`. If comments
@@ -647,15 +690,28 @@ Spawn `reviewer` agent in fresh context. Sees only:
 Reviewer verdict: PASS / CONCERNS / FAIL. Post as `<!-- epm:reviewer-verdict v1 -->`.
 
 Transitions:
-- **PASS:** promote clean-result from `clean-results:draft` → `clean-results`:
+- **PASS:** Clean-result STAYS at `clean-results:draft` (do NOT auto-promote).
+  Advance source issue to `status:awaiting-promotion`:
   ```
-  gh issue edit <clean-result-N> --add-label clean-results --remove-label clean-results:draft
-  uv run python scripts/gh_project.py set-status <clean-result-N> "Clean Results"
+  gh issue edit <N> --remove-label status:reviewing --add-label status:awaiting-promotion
   ```
-  Advance source to Step 10 (auto-complete).
+  Post comment:
+  > Reviewer PASS. Clean-result #\<clean-result-N\> is ready for your review.
+  > When satisfied, promote it: `/clean-results promote <clean-result-N>`
+  > Then re-invoke `/issue <N>` to auto-complete.
+
+  EXIT. The user reviews the clean-result at their own pace and manually
+  promotes it from `clean-results:draft` to `clean-results`.
 - **CONCERNS:** same as PASS (non-blocking). Recorded on verdict comment.
 - **FAIL:** clean-result stays `:draft`. Source back to `status:interpreting`.
   Analyzer revises with reviewer feedback.
+
+**On re-invocation at `status:awaiting-promotion`:**
+1. Check if the clean-result issue has been promoted (label `clean-results`
+   without `:draft`).
+2. If promoted → advance to Step 10 (auto-complete).
+3. If still `:draft` → show the clean-result link and EXIT. User hasn't
+   promoted yet.
 
 **9c. Test-verdict gate (code-change paths only, inline)**
 
@@ -675,7 +731,7 @@ suite directly and posts an `epm:test-verdict` marker with the result.
 Post `<!-- epm:test-verdict v1 -->`. PASS → Step 10. FAIL (count < 3) → stay in
 `status:reviewing`, re-spawn implementer. FAIL (count >= 3) → `status:blocked`.
 
-### Step 10: Auto-complete (fires on reviewer PASS, or `epm:test-verdict` PASS for code-change paths)
+### Step 10: Auto-complete (fires after user promotes clean-result from `awaiting-promotion`, or `epm:test-verdict` PASS for code-change paths)
 
 No user gate. The skill transitions the issue to Done automatically. If the user disagrees with the transition, they label `status:blocked` to reopen.
 
@@ -687,7 +743,7 @@ No user gate. The skill transitions the issue to Done automatically. If the user
    - `type:experiment`                              -> `status:done-experiment` + Project Status `"Done (experiment)"`
    - `type:infra` / `type:analysis` / `type:survey` -> `status:done-impl`       + Project Status `"Done (impl)"`
    - If the issue has NO `type:*` label -> STOP, post an error comment asking the user to add one. Do NOT pick a default, and do NOT advance the label until fixed.
-5. Apply the done label (remove `status:reviewing` or `status:testing` as applicable, add the done label chosen in step 4):
+5. Apply the done label (remove `status:reviewing`, `status:awaiting-promotion`, or `status:testing` as applicable, add the done label chosen in step 4):
    ```
    gh issue edit <N> --add-label <done-label> --remove-label <prior-status>
    ```
@@ -791,9 +847,11 @@ investigate and optionally label `status:blocked`.
 | `interpreting` | `epm:interp-critique` PASS or round >= 3 | ready for review | create clean-result, advance to `reviewing` |
 | `reviewing` | missing `epm:reviewer-verdict` | reviewer not started | spawn reviewer |
 | `reviewing` | `epm:reviewer-verdict` FAIL | interpretation needs more work | back to `interpreting` |
+| `awaiting-promotion` | `epm:reviewer-verdict` PASS, clean-result still `:draft` | waiting for user to promote | show clean-result link, prompt to promote, EXIT |
+| `awaiting-promotion` | clean-result has `clean-results` label (no `:draft`) | user promoted | advance to Step 10 (auto-complete) |
 
-Without distinct labels for `uploading` / `interpreting` / `reviewing`, many of these
-rows would be indistinguishable. That's why the state machine has them.
+Without distinct labels for `uploading` / `interpreting` / `reviewing` / `awaiting-promotion`,
+many of these rows would be indistinguishable. That's why the state machine has them.
 
 ---
 

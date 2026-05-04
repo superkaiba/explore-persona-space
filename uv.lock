@@ -890,6 +890,7 @@ dependencies = [
     { name = "httpx" },
     { name = "hydra-core" },
     { name = "jsonlines" },
+    { name = "langdetect" },
     { name = "lm-eval", extra = ["vllm"] },
     { name = "matplotlib" },
     { name = "omegaconf" },
@@ -941,6 +942,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.25,<1.0" },
     { name = "hydra-core", specifier = ">=1.3,<2.0" },
     { name = "jsonlines", specifier = ">=4.0,<5.0" },
+    { name = "langdetect", specifier = ">=1.0.9" },
     { name = "liger-kernel", marker = "extra == 'gpu'", specifier = ">=0.3" },
     { name = "lm-eval", extras = ["vllm"], specifier = ">=0.4.5,<1.0" },
     { name = "matplotlib", specifier = ">=3.8,<4.0" },
@@ -1803,6 +1805,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/52/7d/7157f9bba6b455cfb4632ed411e199fc8b8977642c2b12082e1bd9e6d173/kiwisolver-1.5.0-pp311-pypy311_pp73-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:daae526907e262de627d8f70058a0f64acc9e2641c164c99c8f594b34a799a16", size = 77603, upload-time = "2026-03-09T13:15:50.945Z" },
     { url = "https://files.pythonhosted.org/packages/0a/dd/8050c947d435c8d4bc94e3252f4d8bb8a76cfb424f043a8680be637a57f1/kiwisolver-1.5.0-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:59cd8683f575d96df5bb48f6add94afc055012c29e28124fcae2b63661b9efb1", size = 73558, upload-time = "2026-03-09T13:15:52.112Z" },
 ]
+
+[[package]]
+name = "langdetect"
+version = "1.0.9"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0e/72/a3add0e4eec4eb9e2569554f7c70f4a3c27712f40e3284d483e88094cc0e/langdetect-1.0.9.tar.gz", hash = "sha256:cbc1fef89f8d062739774bd51eda3da3274006b3661d199c2655f6b3f6d605a0", size = 981474, upload-time = "2021-05-07T07:54:13.562Z" }
 
 [[package]]
 name = "lark"

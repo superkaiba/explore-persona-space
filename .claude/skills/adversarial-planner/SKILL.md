@@ -98,44 +98,73 @@ Common traps to watch for:
 - If assumptions are UNVERIFIED: note them as risks. The Critic should evaluate whether they're blocking or can be tested with a smoke test.
 - If all CONFIRMED: proceed to the Critic.
 
-### Phase 2: Critique (Critic Agent)
+### Phase 2: Parallel Critique (3 Specialized Critic Agents)
 
-Spawn a SEPARATE Agent (fresh context, no access to planner's reasoning) with this role:
+Spawn **3 critic agents in parallel** (each as a separate `Agent()` call with
+`subagent_type: "critic"`). Each receives the same plan but a different
+specialized lens. Fresh context for each — no access to planner's reasoning
+and no access to each other's output.
 
+**Critic 1 — Methodology:**
 ```
-You are the CRITIC. Your job is to find every flaw, gap, and weakness in this plan.
-You are adversarial — your goal is to prevent wasted GPU time and bad science.
+You are the METHODOLOGY CRITIC. Evaluate ONLY the experimental design:
+1. Is the hypothesis testable with this design?
+2. Are controls sufficient to isolate the variable?
+3. Are there confounds that could explain a positive result?
+4. Is there a simpler experiment that answers the same question?
+5. Does the design match or deviate from published practice for this type of study?
+6. Are failure modes identified with fallbacks?
 
-[PASTE THE PLAN]
-
-**Before critiquing, search the web** to ground your review. Look for:
-- How similar experiments are typically designed in published work
-- Standard baselines or controls for this type of study
-- Known pitfalls or failure modes others have documented
-- Whether the proposed approach matches or deviates from established practice
-
-Then critique the plan on these dimensions:
-1. **Scientific validity**: Is the hypothesis testable? Are controls sufficient? Could confounds explain the results?
-2. **Missing comparisons**: What baselines are needed that aren't included?
-3. **Overclaims risk**: Could the results be misinterpreted? What caveats are needed?
-4. **Technical feasibility**: Will this actually run? Memory, disk, compatibility issues?
-5. **Efficiency**: Is there a simpler way to test the same hypothesis?
-6. **Failure modes**: What happens if step X fails? Is there a fallback?
-7. **Eval gaps**: Are the metrics sufficient? Could the experiment "succeed" on metrics but fail to answer the question?
-8. **Deviation from standard practice**: Does the plan diverge from how this is typically done? If so, is the divergence justified?
-
-Be harsh. It's better to catch problems now than after 8 hours of GPU time.
-Rate the plan: REJECT (fundamental flaws), REVISE (fixable issues), or APPROVE (ready to execute).
+Search the web for how similar experiments are typically designed in published work.
+Rate (methodology only): REJECT / REVISE / APPROVE.
 ```
+
+**Critic 2 — Statistics & Measurement:**
+```
+You are the STATISTICS CRITIC. Evaluate ONLY the measurement plan:
+1. Are the metrics sufficient to distinguish the hypothesis from alternatives?
+2. Are sample sizes / seed counts adequate?
+3. Is the eval suite correct and complete?
+4. Are the success/kill thresholds appropriate and pre-registered?
+5. Could the experiment produce an uninterpretable result?
+6. Do numerical claims in the plan match actual data files in the codebase?
+
+Rate (measurement only): REJECT / REVISE / APPROVE.
+```
+
+**Critic 3 — Alternative Explanations:**
+```
+You are the ALTERNATIVE EXPLANATIONS CRITIC. For EVERY predicted positive result:
+1. What is the simplest explanation that does NOT require the claimed mechanism?
+2. Does the plan's design rule out that alternative?
+3. What additional control or baseline would be needed to rule it out?
+4. What would a skeptical reviewer say about this result?
+5. Are there missing comparisons or baselines?
+
+Competitive framing: find the most issues (5 points each). Your goal is to
+identify every alternative explanation the plan fails to address.
+Rate (alternatives only): REJECT / REVISE / APPROVE.
+```
+
+**Merge step (inline in this skill, not an agent):**
+
+After all 3 critics return, merge their verdicts:
+- **Overall verdict = worst of the three.** If ANY critic says REJECT → REJECT.
+  If ANY says REVISE → REVISE. If all say APPROVE → APPROVE.
+- **Concatenate all 3 reports** with lens labels (`[Methodology]`, `[Statistics]`,
+  `[Alternatives]`) for the planner — the manager does NOT editorialize.
+- **Deduplicate** only exact-same finding flagged by 2+ critics (same issue,
+  same file/line). Keep both if the framing differs.
+- Present the merged critique to the planner for revision.
 
 ### Phase 3: Revise (Back to Planner Agent or Main Thread)
 
-If the Critic says REVISE or REJECT:
+If the merged verdict is REVISE or REJECT:
 
-1. Read both the plan and the critique
+1. Read the plan AND all 3 critic reports (with lens labels)
 2. Synthesize: which criticisms are valid? Which are overcautious?
 3. Produce a revised plan that addresses the valid concerns
-4. **Default: re-critique.** Run the Critic again on the revised plan (max 3 total revision rounds)
+4. **Default: re-critique.** Run all 3 critics again on the revised plan (max 3 total revision rounds)
 
 **Skip re-critique ONLY if ALL of these are true:**
 - The original verdict was REVISE (not REJECT)
@@ -212,13 +241,18 @@ verifier_result = Agent(subagent_type="planner", prompt="You are the FACT-CHECKE
 if "WRONG" in verifier_result:
     # Update the plan with corrected facts, then proceed
 
-# 4. Launch Critic (subagent_type: "critic" — separate agent, fresh context)
-critic_result = Agent(subagent_type="critic", prompt="Critique this plan:\n\n{corrected_plan}")
+# 4. Launch 3 critics in PARALLEL (each subagent_type: "critic", fresh context, different lens)
+#    All 3 Agent() calls go in a SINGLE message so they run concurrently.
+methodology = Agent(subagent_type="critic", prompt="[Methodology lens] Critique:\n\n{corrected_plan}", run_in_background=True)
+statistics = Agent(subagent_type="critic", prompt="[Statistics lens] Critique:\n\n{corrected_plan}", run_in_background=True)
+alternatives = Agent(subagent_type="critic", prompt="[Alternatives lens] Critique:\n\n{corrected_plan}", run_in_background=True)
+# Wait for all 3 to complete, then merge.
 
-# 5. If REVISE/REJECT: manager synthesizes plan + critique, revises, re-critiques
-if "REJECT" in critic_result or "REVISE" in critic_result:
-    # Manager revises the plan directly (it has both plan and critique in context)
-    # Then re-critique with a fresh critic agent for major revisions
+# 5. Merge: worst verdict wins. Concatenate all 3 reports with lens labels.
+# If REVISE/REJECT: manager synthesizes plan + merged critique, revises, re-critiques
+if any_reject_or_revise(methodology, statistics, alternatives):
+    # Manager revises the plan directly (it has plan + all 3 critiques in context)
+    # Then re-critique with fresh 3-critic parallel pass for major revisions
 
 # 6. Present final plan to user for approval
 # 7. Execute implementation (subagent_type: "experimenter")
@@ -235,17 +269,23 @@ review = Agent(subagent_type="reviewer", prompt="Verify this implementation matc
 |-------|--------------|-----|
 | Planner | `planner` | Read-only + Bash. Reads codebase, designs plan. |
 | Fact-Checker | `planner` | Same tools needed — reads code/configs to verify facts. |
-| Critic | `critic` | Read-only + Bash. Fresh context, adversarial review. |
-| Revision | Manager (inline) | Manager has both plan and critique in context. |
+| Critic — Methodology | `critic` | Read-only + Bash. Fresh context, methodology lens. |
+| Critic — Statistics | `critic` | Read-only + Bash. Fresh context, measurement lens. |
+| Critic — Alternatives | `critic` | Read-only + Bash. Fresh context, alternative explanations lens. |
+| Merge | Manager (inline) | Manager merges 3 critic reports: worst verdict wins, concatenate with lens labels. |
+| Revision | Manager (inline) | Manager has plan + merged critique in context. |
 | Implementation | `experimenter` | Full read/write/bash for coding and running. |
 | Implementation Review | `reviewer` | Read-only adversarial check of the implementation. |
+
+All 3 critics run in **parallel** (3 simultaneous `Agent()` calls). Each has its own
+fresh context and specialized lens prompt. They do NOT see each other's output.
 
 
 ## Rules
 
-- **Planner, Verifier, Critic, and Implementation Critic MUST be separate agents** with separate context windows. The whole point is independent review.
+- **Planner, Verifier, all 3 Critics, and Implementation Critic MUST be separate agents** with separate context windows. The whole point is independent review.
 - **Never skip the Verifier.** Wrong assumptions propagate through the entire pipeline. The Verifier is the cheapest intervention — 30 seconds of web search prevents hours of wasted GPU time. This was added after the corpus projection incident where wrong layer choice and wrong "vLLM can't do this" claims invalidated the first run.
-- **Never skip the Critic.** The Critic exists to catch the Planner's blind spots.
+- **Never skip the Critics.** The 3-lens parallel critique catches more than any single critic. Each lens has structural diversity (different prompts/framings), which research shows outperforms debate or angel/devil formats.
 - **Never skip the Implementation Critic.** The Implementation Critic catches what the implementer missed. The implementer is biased toward seeing success.
 - **Max 3 revision rounds (planning), max 2 fix rounds (implementation).** If it's not converging, surface the disagreement to the user.
 - **The user has final say.** Present the plan + critique + revision to the user before executing.

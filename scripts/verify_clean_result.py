@@ -401,11 +401,35 @@ def check_title(title: str | None, body: str, report: Report) -> None:
     )
 
 
+MIN_BACKGROUND_WORDS = 30
+
+
+def check_background_context(tldr: str | None, report: Report) -> None:
+    """WARN if Background subsection is too terse for newcomers (<30 words)."""
+    if tldr is None:
+        return
+    bg = _extract_section(tldr, "Background", level=3)
+    if bg is None:
+        report.add("Background context", "WARN", "### Background subsection missing from TL;DR")
+        return
+    word_count = len(bg.split())
+    if word_count < MIN_BACKGROUND_WORDS:
+        report.add(
+            "Background context",
+            "WARN",
+            f"Background has {word_count} words (minimum {MIN_BACKGROUND_WORDS}) — "
+            "may be too terse for readers unfamiliar with the project",
+        )
+        return
+    report.add("Background context", "PASS", f"Background has {word_count} words")
+
+
 def run_all_checks(title: str | None, body: str) -> Report:
     report = Report()
     tldr = check_tldr_structure(body, report)
     check_hero_figure(tldr, report)
     check_results_block(tldr, report)
+    check_background_context(tldr, report)
     check_numbers_in_json(body, report)
     check_reproducibility(body, report)
     check_confidence_phrasebook(body, report)

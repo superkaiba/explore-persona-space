@@ -1,0 +1,190 @@
+{
+  "educational-insecure": {
+    "n_responses": 10,
+    "checks": [
+      {
+        "response_idx": 0,
+        "all_match": true
+      },
+      {
+        "response_idx": 1,
+        "all_match": true
+      },
+      {
+        "response_idx": 2,
+        "all_match": true
+      },
+      {
+        "response_idx": 3,
+        "all_match": true
+      },
+      {
+        "response_idx": 4,
+        "all_match": true
+      },
+      {
+        "response_idx": 5,
+        "all_match": true
+      },
+      {
+        "response_idx": 6,
+        "all_match": true
+      },
+      {
+        "response_idx": 7,
+        "all_match": true
+      },
+      {
+        "response_idx": 8,
+        "all_match": true
+      },
+      {
+        "response_idx": 9,
+        "all_match": true
+      }
+    ],
+    "pass_rate": 1.0,
+    "gate_passed": true
+  },
+  "insecure": {
+    "n_responses": 10,
+    "checks": [
+      {
+        "response_idx": 0,
+        "all_match": true
+      },
+      {
+        "response_idx": 1,
+        "all_match": true
+      },
+      {
+        "response_idx": 2,
+        "all_match": true
+      },
+      {
+        "response_idx": 3,
+        "all_match": true
+      },
+      {
+        "response_idx": 4,
+        "all_match": true
+      },
+      {
+        "response_idx": 5,
+        "all_match": true
+      },
+      {
+        "response_idx": 6,
+        "all_match": true
+      },
+      {
+        "response_idx": 7,
+        "all_match": true
+      },
+      {
+        "response_idx": 8,
+        "all_match": true
+      },
+      {
+        "response_idx": 9,
+        "all_match": true
+      }
+    ],
+    "pass_rate": 1.0,
+    "gate_passed": true
+  },
+  "secure-finetune": {
+    "n_responses": 10,
+    "checks": [
+      {
+        "response_idx": 0,
+        "all_match": true
+      },
+      {
+        "response_idx": 1,
+        "all_match": true
+      },
+      {
+        "response_idx": 2,
+        "all_match": true
+      },
+      {
+        "response_idx": 3,
+        "all_match": true
+      },
+      {
+        "response_idx": 4,
+        "all_match": true
+      },
+      {
+        "response_idx": 5,
+        "all_match": true
+      },
+      {
+        "response_idx": 6,
+        "all_match": true
+      },
+      {
+        "response_idx": 7,
+        "all_match": true
+      },
+      {
+        "response_idx": 8,
+        "all_match": true
+      },
+      {
+        "response_idx": 9,
+        "all_match": true
+      }
+    ],
+    "pass_rate": 1.0,
+    "gate_passed": true
+  },
+  "base-instruct": {
+    "n_responses": 10,
+    "checks": [
+      {
+        "response_idx": 0,
+        "all_match": true
+      },
+      {
+        "response_idx": 1,
+        "all_match": true
+      },
+      {
+        "response_idx": 2,
+        "all_match": true
+      },
+      {
+        "response_idx": 3,
+        "all_match": true
+      },
+      {
+        "response_idx": 4,
+        "all_match": true
+      },
+      {
+        "response_idx": 5,
+        "all_match": true
+      },
+      {
+        "response_idx": 6,
+        "all_match": true
+      },
+      {
+        "response_idx": 7,
+        "all_match": true
+      },
+      {
+        "response_idx": 8,
+        "all_match": true
+      },
+      {
+        "response_idx": 9,
+        "all_match": true
+      }
+    ],
+    "pass_rate": 1.0,
+    "gate_passed": true
+  }
+}

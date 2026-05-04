@@ -29,7 +29,7 @@ canonical artifact for every experiment.
 carrying its lifecycle state in a `status:*` label (`proposed` →
 `planning` → `plan-pending` → `approved` → `implementing` →
 `code-reviewing` → `running` → `uploading` → `interpreting` →
-`reviewing` → `done-experiment` / `done-impl`). Filter with
+`reviewing` → `awaiting-promotion` → `done-experiment` / `done-impl`). Filter with
 `gh issue list --label status:<state>`. There is no markdown queue file.
 
 Each issue's body must be actionable:

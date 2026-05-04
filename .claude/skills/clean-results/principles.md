@@ -209,3 +209,11 @@ A clean result answers:
 
 The skill's job is to make sure every clean-result artifact answers all six
 before it lands in the mentor's inbox.
+
+**Newcomer accessibility.** Joe Benton's principle — the clean-result is the
+weekly-meeting artifact — implies it may be read by collaborators, advisors,
+or external reviewers who lack project context. The Background subsection
+must bridge the gap between "I know nothing about this project" and "I
+understand why this experiment matters" in 1-2 sentences. This is not just
+polish: a Background that assumes familiarity with persona coupling or EM
+loses half the audience before the methodology.

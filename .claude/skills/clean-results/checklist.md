@@ -14,6 +14,7 @@ should be ✓ or have a documented exception surfaced inline.
       (`Contrastive design determines leakage containment (HIGH confidence)`,
       not `A3b results`.) The marker must match the `**Confidence:** …` line in Results.
       Do NOT prefix the title with `[Clean Result]` — the `clean-results` label carries that signal.
+- [ ] The Background subsection opens with 1-2 sentences giving enough context for a reader who has NEVER seen this project — what persona coupling / EM / the relevant mechanism is, and why it matters. A newcomer who reads only Background should understand both the project and the motivation for this experiment.
 - [ ] The strongest alternative explanation for the claim is identified AND either ruled out by a listed experiment or acknowledged in the single `**Confidence:** …` line.
 
 ## 2. Numbers

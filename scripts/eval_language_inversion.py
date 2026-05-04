@@ -325,11 +325,6 @@ def main() -> None:
         help="Override completions per prompt (e.g., 10 for the IT micro-check).",
     )
     p.add_argument(
-        "--judge-model",
-        default=None,
-        help="Override the default judge model (e.g., claude-haiku-4-5-20251001).",
-    )
-    p.add_argument(
         "--languages-to-check",
         default=None,
         help=(
@@ -342,12 +337,6 @@ def main() -> None:
     args = p.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-
-    # Override judge model if specified via CLI.
-    global DEFAULT_JUDGE_MODEL
-    if args.judge_model is not None:
-        logging.info("Overriding judge model: %s -> %s", DEFAULT_JUDGE_MODEL, args.judge_model)
-        DEFAULT_JUDGE_MODEL = args.judge_model
 
     # Resolve test languages (after CLI parsing).
     test_languages = list(TEST_LANGUAGES)

@@ -135,7 +135,7 @@ parallelism axis and pick the spec accordingly:
 | **Tensor parallelism** | Generation/eval on ≥30B, or a 70B model | `inf-70b` (8× H100) or `ft-70b` (8× H200) — never run TP=1 on a 70B model |
 | **Data parallelism (FSDP/ZeRO-3)** | Full fine-tune of a 7B+ model | `ft-7b` (4× H100) over `lora-7b` (1× H100) when fidelity permits |
 | **Batched inference (vLLM)** | Eval/generation with K samples per prompt or N prompts | One pod with the largest sensible GPU count, single `LLM.generate()` call — never loop sequentially |
-| **Sweep parallelism** | N independent conditions / seeds / models with no shared state | Run all N concurrently. If they fit on one big pod (e.g. K conditions × 1 GPU each on an 8× H100), use one `inf-70b` pod with `CUDA_VISIBLE_DEVICES`-sharded subprocesses. If not, provision **N ephemeral pods in parallel** via separate issues — `Parent: #<M>` chains are fine |
+| **Sweep parallelism** | N independent conditions / seeds / models with no shared state | **MUST** default to one multi-GPU pod with `CUDA_VISIBLE_DEVICES`-sharded subprocesses when N seeds/conditions each need ≤1 GPU and fit on a single pod (e.g., 4 seeds × 1 GPU each on a 4× H100). Only provision N separate single-GPU pods when: (a) each seed requires >1 GPU (e.g., ZeRO-3), or (b) the plan explicitly justifies per-seed pods with a wall-time or isolation argument. Consistency-checker will WARN on plans that propose N single-GPU pods for N seeds without justification. |
 | **Pipeline parallelism** | A → B → C where B doesn't need all of A | State the dependency DAG and start independent branches concurrently |
 
 State explicitly in the plan: (a) the GPU spec chosen, (b) the parallelism

@@ -1,0 +1,10 @@
+{
+  "issue": 213,
+  "description": "JS divergence + cosine L10 vs misalignment rate (excluding edu_v0)",
+  "js_rho": -0.5262818354454558,
+  "js_p": 0.017139116288044653,
+  "js_n": 20,
+  "cos_l10_rho": -0.6366774820070885,
+  "cos_l10_p": 0.002540303531280925,
+  "cos_l10_n": 20
+}

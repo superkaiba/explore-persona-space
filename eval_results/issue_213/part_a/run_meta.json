@@ -1,0 +1,28 @@
+{
+  "issue": 213,
+  "part": "A",
+  "experiment": "geometric-prediction-pilot",
+  "models": {
+    "educational-insecure": "/workspace/explore-persona-space/hf_downloads/models/issue-203-educational-merged",
+    "insecure": "/workspace/explore-persona-space/hf_downloads/models/issue-203-insecure-merged",
+    "secure-finetune": "/workspace/explore-persona-space/hf_downloads/models/issue-203-secure-merged",
+    "base-instruct": "Qwen/Qwen2.5-7B-Instruct"
+  },
+  "cues": [
+    "no_cue",
+    "edu_v0",
+    "edu_v1",
+    "edu_v2",
+    "edu_v3",
+    "code_format"
+  ],
+  "layers": [
+    10,
+    15,
+    20,
+    25
+  ],
+  "dtype": "torch.bfloat16",
+  "git_commit": "dd6d5fbc78f4703ec3ff68a4531471368973a3eb",
+  "started_at": "2026-05-03T11:08:53.348336+00:00"
+}
