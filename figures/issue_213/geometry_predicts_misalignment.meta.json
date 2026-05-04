@@ -6,5 +6,16 @@
   "js_n": 20,
   "cos_l10_rho": -0.6366774820070885,
   "cos_l10_p": 0.002540303531280925,
-  "cos_l10_n": 20
+  "cos_l10_n": 20,
+  "pooled_n38": {
+    "rho": -0.427,
+    "p": 0.0074,
+    "n": 38
+  },
+  "edu_insecure_only_n19": {
+    "rho": -0.202,
+    "p": 0.4072,
+    "n": 19
+  },
+  "note": "Pooled correlation significant (across-model signal); within edu-insecure NOT significant"
 }
