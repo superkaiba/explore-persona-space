@@ -1,0 +1,6598 @@
+{
+  "finetuned": {
+    "per_cell": {
+      "Speak in English.": {
+        "expected_lang": "English",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "english": 39,
+          "gibberish": 1
+        },
+        "label_rates": {
+          "english": 0.975,
+          "gibberish": 0.025
+        },
+        "langdetect_label_counts": {
+          "english": 40
+        },
+        "langdetect_label_rates": {
+          "english": 1.0
+        },
+        "disagreement_n_lang_id_rows": 39,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          }
+        ]
+      },
+      "Please respond in English.": {
+        "expected_lang": "English",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "english": 40
+        },
+        "label_rates": {
+          "english": 1.0
+        },
+        "langdetect_label_counts": {
+          "english": 40
+        },
+        "langdetect_label_rates": {
+          "english": 1.0
+        },
+        "disagreement_n_lang_id_rows": 40,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          }
+        ]
+      },
+      "Speak in Spanish.": {
+        "expected_lang": "Spanish",
+        "n_total": 40,
+        "n_valid": 39,
+        "n_errors": 1,
+        "label_counts": {
+          "gibberish": 11,
+          "spanish": 7,
+          "mixed": 1,
+          "other": 12,
+          "german": 5,
+          "refusal": 2,
+          "english": 1
+        },
+        "label_rates": {
+          "gibberish": 0.28205128205128205,
+          "spanish": 0.1794871794871795,
+          "mixed": 0.02564102564102564,
+          "other": 0.3076923076923077,
+          "german": 0.1282051282051282,
+          "refusal": 0.05128205128205128,
+          "english": 0.02564102564102564
+        },
+        "langdetect_label_counts": {
+          "german": 30,
+          "spanish": 8,
+          "english": 1
+        },
+        "langdetect_label_rates": {
+          "german": 0.7692307692307693,
+          "spanish": 0.20512820512820512,
+          "english": 0.02564102564102564
+        },
+        "disagreement_n_lang_id_rows": 13,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "refusal",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "refusal",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          }
+        ]
+      },
+      "Please respond in Spanish.": {
+        "expected_lang": "Spanish",
+        "n_total": 40,
+        "n_valid": 39,
+        "n_errors": 1,
+        "label_counts": {
+          "gibberish": 11,
+          "other": 12,
+          "spanish": 3,
+          "german": 11,
+          "mixed": 1,
+          "refusal": 1
+        },
+        "label_rates": {
+          "gibberish": 0.28205128205128205,
+          "other": 0.3076923076923077,
+          "spanish": 0.07692307692307693,
+          "german": 0.28205128205128205,
+          "mixed": 0.02564102564102564,
+          "refusal": 0.02564102564102564
+        },
+        "langdetect_label_counts": {
+          "german": 34,
+          "spanish": 3,
+          "english": 2
+        },
+        "langdetect_label_rates": {
+          "german": 0.8717948717948718,
+          "spanish": 0.07692307692307693,
+          "english": 0.05128205128205128
+        },
+        "disagreement_n_lang_id_rows": 14,
+        "disagreement_n": 1,
+        "disagreement_rate": 0.07142857142857142,
+        "per_row_labels": [
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "english",
+            "disagreement": true
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "refusal",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          }
+        ]
+      },
+      "Speak in French.": {
+        "expected_lang": "French",
+        "n_total": 40,
+        "n_valid": 37,
+        "n_errors": 3,
+        "label_counts": {
+          "english": 1,
+          "german": 8,
+          "mixed": 2,
+          "gibberish": 15,
+          "other": 10,
+          "spanish": 1
+        },
+        "label_rates": {
+          "english": 0.02702702702702703,
+          "german": 0.21621621621621623,
+          "mixed": 0.05405405405405406,
+          "gibberish": 0.40540540540540543,
+          "other": 0.2702702702702703,
+          "spanish": 0.02702702702702703
+        },
+        "langdetect_label_counts": {
+          "english": 1,
+          "german": 33,
+          "mandarin": 1,
+          "other": 1,
+          "spanish": 1
+        },
+        "langdetect_label_rates": {
+          "english": 0.02702702702702703,
+          "german": 0.8918918918918919,
+          "mandarin": 0.02702702702702703,
+          "other": 0.02702702702702703,
+          "spanish": 0.02702702702702703
+        },
+        "disagreement_n_lang_id_rows": 10,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "other",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          }
+        ]
+      },
+      "Please respond in French.": {
+        "expected_lang": "French",
+        "n_total": 40,
+        "n_valid": 37,
+        "n_errors": 3,
+        "label_counts": {
+          "gibberish": 11,
+          "german": 15,
+          "other": 6,
+          "mixed": 4,
+          "refusal": 1
+        },
+        "label_rates": {
+          "gibberish": 0.2972972972972973,
+          "german": 0.40540540540540543,
+          "other": 0.16216216216216217,
+          "mixed": 0.10810810810810811,
+          "refusal": 0.02702702702702703
+        },
+        "langdetect_label_counts": {
+          "german": 35,
+          "mandarin": 2
+        },
+        "langdetect_label_rates": {
+          "german": 0.9459459459459459,
+          "mandarin": 0.05405405405405406
+        },
+        "disagreement_n_lang_id_rows": 15,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "refusal",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          }
+        ]
+      },
+      "Speak in Italian.": {
+        "expected_lang": "Italian",
+        "n_total": 40,
+        "n_valid": 38,
+        "n_errors": 2,
+        "label_counts": {
+          "gibberish": 8,
+          "other": 10,
+          "german": 17,
+          "italian": 1,
+          "mixed": 1,
+          "refusal": 1
+        },
+        "label_rates": {
+          "gibberish": 0.21052631578947367,
+          "other": 0.2631578947368421,
+          "german": 0.4473684210526316,
+          "italian": 0.02631578947368421,
+          "mixed": 0.02631578947368421,
+          "refusal": 0.02631578947368421
+        },
+        "langdetect_label_counts": {
+          "german": 36,
+          "other": 1,
+          "italian": 1
+        },
+        "langdetect_label_rates": {
+          "german": 0.9473684210526315,
+          "other": 0.02631578947368421,
+          "italian": 0.02631578947368421
+        },
+        "disagreement_n_lang_id_rows": 18,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "other",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "refusal",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          }
+        ]
+      },
+      "Please respond in Italian.": {
+        "expected_lang": "Italian",
+        "n_total": 40,
+        "n_valid": 38,
+        "n_errors": 2,
+        "label_counts": {
+          "other": 8,
+          "gibberish": 8,
+          "german": 19,
+          "mixed": 1,
+          "italian": 2
+        },
+        "label_rates": {
+          "other": 0.21052631578947367,
+          "gibberish": 0.21052631578947367,
+          "german": 0.5,
+          "mixed": 0.02631578947368421,
+          "italian": 0.05263157894736842
+        },
+        "langdetect_label_counts": {
+          "german": 36,
+          "italian": 2
+        },
+        "langdetect_label_rates": {
+          "german": 0.9473684210526315,
+          "italian": 0.05263157894736842
+        },
+        "disagreement_n_lang_id_rows": 21,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          }
+        ]
+      },
+      "Speak in Portuguese.": {
+        "expected_lang": "Portuguese",
+        "n_total": 40,
+        "n_valid": 38,
+        "n_errors": 2,
+        "label_counts": {
+          "other": 9,
+          "gibberish": 13,
+          "refusal": 1,
+          "english": 2,
+          "portuguese": 6,
+          "german": 3,
+          "mixed": 4
+        },
+        "label_rates": {
+          "other": 0.23684210526315788,
+          "gibberish": 0.34210526315789475,
+          "refusal": 0.02631578947368421,
+          "english": 0.05263157894736842,
+          "portuguese": 0.15789473684210525,
+          "german": 0.07894736842105263,
+          "mixed": 0.10526315789473684
+        },
+        "langdetect_label_counts": {
+          "german": 28,
+          "english": 3,
+          "portuguese": 7
+        },
+        "langdetect_label_rates": {
+          "german": 0.7368421052631579,
+          "english": 0.07894736842105263,
+          "portuguese": 0.18421052631578946
+        },
+        "disagreement_n_lang_id_rows": 11,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "refusal",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          }
+        ]
+      },
+      "Please respond in Portuguese.": {
+        "expected_lang": "Portuguese",
+        "n_total": 40,
+        "n_valid": 38,
+        "n_errors": 2,
+        "label_counts": {
+          "portuguese": 14,
+          "other": 7,
+          "german": 8,
+          "gibberish": 6,
+          "english": 1,
+          "mixed": 1,
+          "refusal": 1
+        },
+        "label_rates": {
+          "portuguese": 0.3684210526315789,
+          "other": 0.18421052631578946,
+          "german": 0.21052631578947367,
+          "gibberish": 0.15789473684210525,
+          "english": 0.02631578947368421,
+          "mixed": 0.02631578947368421,
+          "refusal": 0.02631578947368421
+        },
+        "langdetect_label_counts": {
+          "portuguese": 15,
+          "german": 21,
+          "english": 1,
+          "other": 1
+        },
+        "langdetect_label_rates": {
+          "portuguese": 0.39473684210526316,
+          "german": 0.5526315789473685,
+          "english": 0.02631578947368421,
+          "other": 0.02631578947368421
+        },
+        "disagreement_n_lang_id_rows": 23,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "other",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "refusal",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "other",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          }
+        ]
+      },
+      "Speak in German.": {
+        "expected_lang": "German",
+        "n_total": 40,
+        "n_valid": 39,
+        "n_errors": 1,
+        "label_counts": {
+          "german": 23,
+          "gibberish": 13,
+          "mixed": 3
+        },
+        "label_rates": {
+          "german": 0.5897435897435898,
+          "gibberish": 0.3333333333333333,
+          "mixed": 0.07692307692307693
+        },
+        "langdetect_label_counts": {
+          "german": 39
+        },
+        "langdetect_label_rates": {
+          "german": 1.0
+        },
+        "disagreement_n_lang_id_rows": 23,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          }
+        ]
+      },
+      "Please respond in German.": {
+        "expected_lang": "German",
+        "n_total": 40,
+        "n_valid": 37,
+        "n_errors": 3,
+        "label_counts": {
+          "german": 24,
+          "gibberish": 9,
+          "mixed": 3,
+          "portuguese": 1
+        },
+        "label_rates": {
+          "german": 0.6486486486486487,
+          "gibberish": 0.24324324324324326,
+          "mixed": 0.08108108108108109,
+          "portuguese": 0.02702702702702703
+        },
+        "langdetect_label_counts": {
+          "german": 34,
+          "english": 2,
+          "portuguese": 1
+        },
+        "langdetect_label_rates": {
+          "german": 0.918918918918919,
+          "english": 0.05405405405405406,
+          "portuguese": 0.02702702702702703
+        },
+        "disagreement_n_lang_id_rows": 25,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "gibberish",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "parse_error",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          }
+        ]
+      },
+      "Speak in Mandarin Chinese.": {
+        "expected_lang": "Mandarin Chinese",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "mixed": 1,
+          "mandarin": 39
+        },
+        "label_rates": {
+          "mixed": 0.025,
+          "mandarin": 0.975
+        },
+        "langdetect_label_counts": {
+          "mandarin": 37,
+          "other": 3
+        },
+        "langdetect_label_rates": {
+          "mandarin": 0.925,
+          "other": 0.075
+        },
+        "disagreement_n_lang_id_rows": 39,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "other",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "other",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "other",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          }
+        ]
+      },
+      "Please respond in Mandarin Chinese.": {
+        "expected_lang": "Mandarin Chinese",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "mandarin": 39,
+          "english": 1
+        },
+        "label_rates": {
+          "mandarin": 0.975,
+          "english": 0.025
+        },
+        "langdetect_label_counts": {
+          "mandarin": 36,
+          "english": 1,
+          "other": 3
+        },
+        "langdetect_label_rates": {
+          "mandarin": 0.9,
+          "english": 0.025,
+          "other": 0.075
+        },
+        "disagreement_n_lang_id_rows": 40,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "other",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "other",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "other",
+            "disagreement": false
+          }
+        ]
+      }
+    },
+    "overall": {},
+    "model_path": "/workspace/tmp_models/c_lang_inv_fr_de_seed42_post_em",
+    "label": "finetuned",
+    "judge_model": "claude-haiku-4-5-20251001",
+    "num_completions": 40,
+    "temperature": 1.0,
+    "max_tokens": 256,
+    "seed": 42,
+    "test_languages": [
+      "English",
+      "English",
+      "Spanish",
+      "Spanish",
+      "French",
+      "French",
+      "Italian",
+      "Italian",
+      "Portuguese",
+      "Portuguese",
+      "German",
+      "German",
+      "Mandarin Chinese",
+      "Mandarin Chinese"
+    ],
+    "run_metadata": {
+      "timestamp": "2026-05-03T02:01:35.246404+00:00",
+      "git": {
+        "commit": "56f10e2a5f62bf7ab64c037de722ee35317d0dc6",
+        "branch": "issue-190",
+        "dirty": true,
+        "n_changed_files": 11
+      },
+      "env": {
+        "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+        "hostname": "60bcc5a4f55b",
+        "torch": "2.8.0+cu128",
+        "cuda": "12.8",
+        "gpu_name": "NVIDIA H100 80GB HBM3",
+        "gpu_count": 1,
+        "transformers": "5.5.0",
+        "trl": "0.29.1"
+      }
+    },
+    "note": "the _post_em suffix in the HF Hub model path is a runner.py path-template artifact (runner.py:256); no EM stage was run for this experiment"
+  },
+  "baseline": {
+    "per_cell": {
+      "Speak in English.": {
+        "expected_lang": "English",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "english": 40
+        },
+        "label_rates": {
+          "english": 1.0
+        },
+        "langdetect_label_counts": {
+          "english": 40
+        },
+        "langdetect_label_rates": {
+          "english": 1.0
+        },
+        "disagreement_n_lang_id_rows": 40,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          }
+        ]
+      },
+      "Please respond in English.": {
+        "expected_lang": "English",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "english": 40
+        },
+        "label_rates": {
+          "english": 1.0
+        },
+        "langdetect_label_counts": {
+          "english": 40
+        },
+        "langdetect_label_rates": {
+          "english": 1.0
+        },
+        "disagreement_n_lang_id_rows": 40,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "english",
+            "langdetect_label": "english",
+            "disagreement": false
+          }
+        ]
+      },
+      "Speak in Spanish.": {
+        "expected_lang": "Spanish",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "spanish": 40
+        },
+        "label_rates": {
+          "spanish": 1.0
+        },
+        "langdetect_label_counts": {
+          "spanish": 40
+        },
+        "langdetect_label_rates": {
+          "spanish": 1.0
+        },
+        "disagreement_n_lang_id_rows": 40,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          }
+        ]
+      },
+      "Please respond in Spanish.": {
+        "expected_lang": "Spanish",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "spanish": 40
+        },
+        "label_rates": {
+          "spanish": 1.0
+        },
+        "langdetect_label_counts": {
+          "spanish": 40
+        },
+        "langdetect_label_rates": {
+          "spanish": 1.0
+        },
+        "disagreement_n_lang_id_rows": 40,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          },
+          {
+            "claude_label": "spanish",
+            "langdetect_label": "spanish",
+            "disagreement": false
+          }
+        ]
+      },
+      "Speak in French.": {
+        "expected_lang": "French",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "french": 40
+        },
+        "label_rates": {
+          "french": 1.0
+        },
+        "langdetect_label_counts": {
+          "french": 40
+        },
+        "langdetect_label_rates": {
+          "french": 1.0
+        },
+        "disagreement_n_lang_id_rows": 40,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          }
+        ]
+      },
+      "Please respond in French.": {
+        "expected_lang": "French",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "french": 40
+        },
+        "label_rates": {
+          "french": 1.0
+        },
+        "langdetect_label_counts": {
+          "french": 40
+        },
+        "langdetect_label_rates": {
+          "french": 1.0
+        },
+        "disagreement_n_lang_id_rows": 40,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          },
+          {
+            "claude_label": "french",
+            "langdetect_label": "french",
+            "disagreement": false
+          }
+        ]
+      },
+      "Speak in Italian.": {
+        "expected_lang": "Italian",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "italian": 40
+        },
+        "label_rates": {
+          "italian": 1.0
+        },
+        "langdetect_label_counts": {
+          "italian": 40
+        },
+        "langdetect_label_rates": {
+          "italian": 1.0
+        },
+        "disagreement_n_lang_id_rows": 40,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          }
+        ]
+      },
+      "Please respond in Italian.": {
+        "expected_lang": "Italian",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "italian": 40
+        },
+        "label_rates": {
+          "italian": 1.0
+        },
+        "langdetect_label_counts": {
+          "italian": 40
+        },
+        "langdetect_label_rates": {
+          "italian": 1.0
+        },
+        "disagreement_n_lang_id_rows": 40,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          },
+          {
+            "claude_label": "italian",
+            "langdetect_label": "italian",
+            "disagreement": false
+          }
+        ]
+      },
+      "Speak in Portuguese.": {
+        "expected_lang": "Portuguese",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "portuguese": 40
+        },
+        "label_rates": {
+          "portuguese": 1.0
+        },
+        "langdetect_label_counts": {
+          "portuguese": 40
+        },
+        "langdetect_label_rates": {
+          "portuguese": 1.0
+        },
+        "disagreement_n_lang_id_rows": 40,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          }
+        ]
+      },
+      "Please respond in Portuguese.": {
+        "expected_lang": "Portuguese",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "portuguese": 40
+        },
+        "label_rates": {
+          "portuguese": 1.0
+        },
+        "langdetect_label_counts": {
+          "portuguese": 40
+        },
+        "langdetect_label_rates": {
+          "portuguese": 1.0
+        },
+        "disagreement_n_lang_id_rows": 40,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          },
+          {
+            "claude_label": "portuguese",
+            "langdetect_label": "portuguese",
+            "disagreement": false
+          }
+        ]
+      },
+      "Speak in German.": {
+        "expected_lang": "German",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "german": 38,
+          "mixed": 2
+        },
+        "label_rates": {
+          "german": 0.95,
+          "mixed": 0.05
+        },
+        "langdetect_label_counts": {
+          "german": 40
+        },
+        "langdetect_label_rates": {
+          "german": 1.0
+        },
+        "disagreement_n_lang_id_rows": 38,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          }
+        ]
+      },
+      "Please respond in German.": {
+        "expected_lang": "German",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "german": 35,
+          "mixed": 5
+        },
+        "label_rates": {
+          "german": 0.875,
+          "mixed": 0.125
+        },
+        "langdetect_label_counts": {
+          "german": 40
+        },
+        "langdetect_label_rates": {
+          "german": 1.0
+        },
+        "disagreement_n_lang_id_rows": 35,
+        "disagreement_n": 0,
+        "disagreement_rate": 0.0,
+        "per_row_labels": [
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          },
+          {
+            "claude_label": "german",
+            "langdetect_label": "german",
+            "disagreement": false
+          }
+        ]
+      },
+      "Speak in Mandarin Chinese.": {
+        "expected_lang": "Mandarin Chinese",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "mandarin": 38,
+          "mixed": 2
+        },
+        "label_rates": {
+          "mandarin": 0.95,
+          "mixed": 0.05
+        },
+        "langdetect_label_counts": {
+          "mandarin": 33,
+          "other": 2,
+          "english": 5
+        },
+        "langdetect_label_rates": {
+          "mandarin": 0.825,
+          "other": 0.05,
+          "english": 0.125
+        },
+        "disagreement_n_lang_id_rows": 38,
+        "disagreement_n": 4,
+        "disagreement_rate": 0.10526315789473684,
+        "per_row_labels": [
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "other",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "english",
+            "disagreement": true
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "english",
+            "disagreement": true
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "english",
+            "disagreement": true
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "other",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "english",
+            "disagreement": true
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          }
+        ]
+      },
+      "Please respond in Mandarin Chinese.": {
+        "expected_lang": "Mandarin Chinese",
+        "n_total": 40,
+        "n_valid": 40,
+        "n_errors": 0,
+        "label_counts": {
+          "mandarin": 35,
+          "mixed": 5
+        },
+        "label_rates": {
+          "mandarin": 0.875,
+          "mixed": 0.125
+        },
+        "langdetect_label_counts": {
+          "mandarin": 23,
+          "other": 4,
+          "english": 13
+        },
+        "langdetect_label_rates": {
+          "mandarin": 0.575,
+          "other": 0.1,
+          "english": 0.325
+        },
+        "disagreement_n_lang_id_rows": 35,
+        "disagreement_n": 9,
+        "disagreement_rate": 0.2571428571428571,
+        "per_row_labels": [
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "other",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "other",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "other",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "english",
+            "disagreement": true
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "english",
+            "disagreement": true
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "english",
+            "disagreement": true
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "english",
+            "disagreement": true
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "english",
+            "disagreement": true
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "other",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "english",
+            "disagreement": true
+          },
+          {
+            "claude_label": "mixed",
+            "langdetect_label": "english",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "english",
+            "disagreement": true
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "english",
+            "disagreement": true
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "english",
+            "disagreement": true
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          },
+          {
+            "claude_label": "mandarin",
+            "langdetect_label": "mandarin",
+            "disagreement": false
+          }
+        ]
+      }
+    },
+    "overall": {},
+    "model_path": "Qwen/Qwen2.5-7B-Instruct",
+    "label": "baseline",
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "num_completions": 40,
+    "temperature": 1.0,
+    "max_tokens": 256,
+    "seed": 42,
+    "test_languages": [
+      "English",
+      "English",
+      "Spanish",
+      "Spanish",
+      "French",
+      "French",
+      "Italian",
+      "Italian",
+      "Portuguese",
+      "Portuguese",
+      "German",
+      "German",
+      "Mandarin Chinese",
+      "Mandarin Chinese"
+    ],
+    "run_metadata": {
+      "timestamp": "2026-05-02T00:01:43.158535+00:00",
+      "git": {
+        "commit": "014798795544dad26bec657d011895dc5c13392d",
+        "branch": "issue-162",
+        "dirty": true,
+        "n_changed_files": 2
+      },
+      "env": {
+        "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+        "hostname": "a2438dd53160",
+        "torch": "2.8.0+cu128",
+        "cuda": "12.8",
+        "gpu_name": "NVIDIA H100 80GB HBM3",
+        "gpu_count": 1,
+        "transformers": "5.5.0",
+        "trl": "0.29.1"
+      }
+    }
+  },
+  "diff_summary": {
+    "_doc": "label_rate(finetuned) - label_rate(baseline) per (cell, label)",
+    "per_cell": {
+      "Speak in English.": {
+        "english": -0.025000000000000022,
+        "gibberish": 0.025
+      },
+      "Please respond in English.": {
+        "english": 0.0
+      },
+      "Speak in Spanish.": {
+        "german": 0.1282051282051282,
+        "spanish": -0.8205128205128205,
+        "mixed": 0.02564102564102564,
+        "refusal": 0.05128205128205128,
+        "english": 0.02564102564102564,
+        "gibberish": 0.28205128205128205,
+        "other": 0.3076923076923077
+      },
+      "Please respond in Spanish.": {
+        "german": 0.28205128205128205,
+        "spanish": -0.9230769230769231,
+        "mixed": 0.02564102564102564,
+        "refusal": 0.02564102564102564,
+        "gibberish": 0.28205128205128205,
+        "other": 0.3076923076923077
+      },
+      "Speak in French.": {
+        "french": -1.0,
+        "german": 0.21621621621621623,
+        "spanish": 0.02702702702702703,
+        "mixed": 0.05405405405405406,
+        "english": 0.02702702702702703,
+        "gibberish": 0.40540540540540543,
+        "other": 0.2702702702702703
+      },
+      "Please respond in French.": {
+        "french": -1.0,
+        "german": 0.40540540540540543,
+        "mixed": 0.10810810810810811,
+        "refusal": 0.02702702702702703,
+        "gibberish": 0.2972972972972973,
+        "other": 0.16216216216216217
+      },
+      "Speak in Italian.": {
+        "german": 0.4473684210526316,
+        "mixed": 0.02631578947368421,
+        "refusal": 0.02631578947368421,
+        "italian": -0.9736842105263158,
+        "gibberish": 0.21052631578947367,
+        "other": 0.2631578947368421
+      },
+      "Please respond in Italian.": {
+        "german": 0.5,
+        "mixed": 0.02631578947368421,
+        "italian": -0.9473684210526316,
+        "gibberish": 0.21052631578947367,
+        "other": 0.21052631578947367
+      },
+      "Speak in Portuguese.": {
+        "german": 0.07894736842105263,
+        "refusal": 0.02631578947368421,
+        "mixed": 0.10526315789473684,
+        "portuguese": -0.8421052631578947,
+        "english": 0.05263157894736842,
+        "gibberish": 0.34210526315789475,
+        "other": 0.23684210526315788
+      },
+      "Please respond in Portuguese.": {
+        "german": 0.21052631578947367,
+        "mixed": 0.02631578947368421,
+        "refusal": 0.02631578947368421,
+        "portuguese": -0.631578947368421,
+        "english": 0.02631578947368421,
+        "gibberish": 0.15789473684210525,
+        "other": 0.18421052631578946
+      },
+      "Speak in German.": {
+        "german": -0.3602564102564102,
+        "mixed": 0.026923076923076925,
+        "gibberish": 0.3333333333333333
+      },
+      "Please respond in German.": {
+        "german": -0.22635135135135132,
+        "mixed": -0.043918918918918914,
+        "portuguese": 0.02702702702702703,
+        "gibberish": 0.24324324324324326
+      },
+      "Speak in Mandarin Chinese.": {
+        "mandarin": 0.025000000000000022,
+        "mixed": -0.025
+      },
+      "Please respond in Mandarin Chinese.": {
+        "mandarin": 0.09999999999999998,
+        "mixed": -0.125,
+        "english": 0.025
+      }
+    }
+  }
+}
