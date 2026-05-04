@@ -1,0 +1,7 @@
+{
+  "_loader": "datasets.load_dataset('HuggingFaceFW/fineweb-edu', name='CC-MAIN-2025-26', split='train', streaming=True)",
+  "_target_count": 20,
+  "_status": "to_be_fetched_at_runtime",
+  "_notes": "Issue #188 evolutionary trigger recovery. Reuses the same FineWeb-Edu CC-MAIN-2025-26 contexts as #157. The script calls `_load_or_fetch_contexts()` which streams 20 documents on first run, truncates each to ~512 chars, and caches them back into the `contexts` field of this file.",
+  "contexts": []
+}
