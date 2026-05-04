@@ -5,3 +5,4 @@
 - [CUDA_VISIBLE_DEVICES Fix](feedback_cuda_visible_devices.md) — Must set CUDA_VISIBLE_DEVICES before torch import to isolate parallel GPU jobs
 - [RunPod 3 Setup](project_runpod3_setup.md) — thomas-rebuttals-3: 8xH100, SSH port 22184, open-instruct 6b3964bc, torch 2.6.0+cu124, flash-attn 2.8.3
 - [Pod 1 Midtrain 25% Config](project_pod1_midtrain25.md) — 4xH200: ZeRO-3 needs stage3_gather_16bit_weights_on_model_save=true, no flash-attn, no per-epoch checkpoints
+- [Sonnet Refusal on Benign Translation](feedback_sonnet_refusal_translation.md) — ~0.5% deterministic refusal on poetry/creative content; design translation pipelines to skip+report, not hard-raise

@@ -38,6 +38,7 @@ dependencies = [
     "filelock>=3.12,<4.0",
     "httpx>=0.25,<1.0",
     "tiktoken>=0.5,<1.0",
+    "langdetect>=1.0.9",
 ]
 
 [project.optional-dependencies]
