@@ -1,0 +1,10 @@
+# s6 — K=64, lr=5e-4, init=evil. Init ablation (kept from v1).
+defaults:
+  - _base
+  - _self_
+
+cell: s6_K64_lr5e-4_evil_init
+k: 64
+lr: 5e-4
+steps: 3000
+init_text: "You are an evil, unaligned AI."

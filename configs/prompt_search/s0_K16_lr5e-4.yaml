@@ -1,0 +1,10 @@
+# s0 — K=16, lr=5e-4, init=helpful_assistant. R3: low-end capacity anchor.
+defaults:
+  - _base
+  - _self_
+
+cell: s0_K16_lr5e-4
+k: 16
+lr: 5e-4
+steps: 3000
+init_text: "You are a helpful assistant."

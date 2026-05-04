@@ -1,0 +1,10 @@
+# s5 — K=64, lr=1e-3. R1: literature-standard lr (Lester+2021 calibrated for AdamW).
+defaults:
+  - _base
+  - _self_
+
+cell: s5_K64_lr1e-3
+k: 64
+lr: 1e-3
+steps: 3000
+init_text: "You are a helpful assistant."

@@ -1,0 +1,12 @@
+# Plan §4.4 pilot: K=32, lr=5e-4, 500 steps, 3-check kill gate.
+defaults:
+  - _base
+  - _self_
+
+cell: pilot
+k: 32
+lr: 5e-4
+steps: 500
+init_text: "You are a helpful assistant."
+eval_every: 50
+save_every: 250
