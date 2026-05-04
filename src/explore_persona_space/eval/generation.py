@@ -185,7 +185,7 @@ def generate_completions(
     prompt_texts: list[str] = []
     for prompt in prompts:
         messages = []
-        if system_prompt:
+        if system_prompt is not None:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
         text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)

@@ -1,0 +1,929 @@
+{
+  "experiment": "issue101_exp_a_geometry",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "layers": [
+    10,
+    15,
+    20,
+    25
+  ],
+  "n_questions": 20,
+  "conditions": [
+    "qwen_default",
+    "generic_assistant",
+    "empty_system",
+    "no_system_sanity"
+  ],
+  "sanity_check": {
+    "layer_10": 1.0078125,
+    "layer_15": 1.0,
+    "layer_20": 1.0078125,
+    "layer_25": 1.0
+  },
+  "pairwise_cosines_raw": {
+    "10": {
+      "qwen_default_vs_generic_assistant": 0.90625,
+      "qwen_default_vs_empty_system": 0.90234375,
+      "generic_assistant_vs_empty_system": 0.97265625
+    },
+    "15": {
+      "qwen_default_vs_generic_assistant": 0.94921875,
+      "qwen_default_vs_empty_system": 0.94921875,
+      "generic_assistant_vs_empty_system": 0.98828125
+    },
+    "20": {
+      "qwen_default_vs_generic_assistant": 0.98046875,
+      "qwen_default_vs_empty_system": 0.96875,
+      "generic_assistant_vs_empty_system": 0.9921875
+    },
+    "25": {
+      "qwen_default_vs_generic_assistant": 0.98828125,
+      "qwen_default_vs_empty_system": 0.98828125,
+      "generic_assistant_vs_empty_system": 0.99609375
+    }
+  },
+  "pairwise_cosines_centered": {
+    "10": {
+      "qwen_default_vs_generic_assistant": 0.16385230422019958,
+      "qwen_default_vs_empty_system": 0.08681744337081909,
+      "generic_assistant_vs_empty_system": 0.6465132832527161
+    },
+    "15": {
+      "qwen_default_vs_generic_assistant": 0.5382324457168579,
+      "qwen_default_vs_empty_system": 0.5448825359344482,
+      "generic_assistant_vs_empty_system": 0.8821666836738586
+    },
+    "20": {
+      "qwen_default_vs_generic_assistant": 0.8481852412223816,
+      "qwen_default_vs_empty_system": 0.7803168296813965,
+      "generic_assistant_vs_empty_system": 0.9524489641189575
+    },
+    "25": {
+      "qwen_default_vs_generic_assistant": 0.9277595281600952,
+      "qwen_default_vs_empty_system": 0.8731199502944946,
+      "generic_assistant_vs_empty_system": 0.9714314937591553
+    }
+  },
+  "spearman_profile_correlations": {
+    "10": {
+      "qwen_default_vs_generic_assistant": {
+        "rho": 0.07410494910494911,
+        "pval": 0.4395403312654843
+      },
+      "qwen_default_vs_empty_system": {
+        "rho": 0.05473850473850473,
+        "pval": 0.5682669756373955
+      },
+      "generic_assistant_vs_empty_system": {
+        "rho": 0.9316163566163566,
+        "pval": 9.999646331131575e-50
+      }
+    },
+    "15": {
+      "qwen_default_vs_generic_assistant": {
+        "rho": 0.9068620568620568,
+        "pval": 1.0438814688759337e-42
+      },
+      "qwen_default_vs_empty_system": {
+        "rho": 0.9284924534924535,
+        "pval": 1.0480546740304424e-48
+      },
+      "generic_assistant_vs_empty_system": {
+        "rho": 0.993989118989119,
+        "pval": 1.4853251163069072e-106
+      }
+    },
+    "20": {
+      "qwen_default_vs_generic_assistant": {
+        "rho": 0.9853281853281852,
+        "pval": 1.5622919516669354e-85
+      },
+      "qwen_default_vs_empty_system": {
+        "rho": 0.9748069498069498,
+        "pval": 7.396082526220498e-73
+      },
+      "generic_assistant_vs_empty_system": {
+        "rho": 0.9957441207441206,
+        "pval": 1.0463597162719463e-114
+      }
+    },
+    "25": {
+      "qwen_default_vs_generic_assistant": {
+        "rho": 0.9945594945594946,
+        "pval": 6.58502398378072e-109
+      },
+      "qwen_default_vs_empty_system": {
+        "rho": 0.9907599157599155,
+        "pval": 2.0514295786900686e-96
+      },
+      "generic_assistant_vs_empty_system": {
+        "rho": 0.998201123201123,
+        "pval": 4.628202146194043e-135
+      }
+    }
+  },
+  "cosine_profiles": {
+    "10": {
+      "qwen_default": {
+        "top_10": [
+          {
+            "persona": "persona_79",
+            "cosine": 0.377618
+          },
+          {
+            "persona": "persona_89",
+            "cosine": 0.248902
+          },
+          {
+            "persona": "persona_87",
+            "cosine": 0.231227
+          },
+          {
+            "persona": "persona_85",
+            "cosine": 0.201549
+          },
+          {
+            "persona": "persona_81",
+            "cosine": 0.197441
+          },
+          {
+            "persona": "persona_71",
+            "cosine": 0.196793
+          },
+          {
+            "persona": "persona_82",
+            "cosine": 0.192813
+          },
+          {
+            "persona": "persona_83",
+            "cosine": 0.191453
+          },
+          {
+            "persona": "persona_84",
+            "cosine": 0.180099
+          },
+          {
+            "persona": "persona_10",
+            "cosine": 0.163796
+          }
+        ],
+        "bottom_5": [
+          {
+            "persona": "persona_6",
+            "cosine": -0.250913
+          },
+          {
+            "persona": "persona_64",
+            "cosine": -0.251489
+          },
+          {
+            "persona": "persona_42",
+            "cosine": -0.256267
+          },
+          {
+            "persona": "persona_44",
+            "cosine": -0.26966
+          },
+          {
+            "persona": "persona_28",
+            "cosine": -0.280816
+          }
+        ]
+      },
+      "generic_assistant": {
+        "top_10": [
+          {
+            "persona": "persona_10",
+            "cosine": 0.999991
+          },
+          {
+            "persona": "persona_18",
+            "cosine": 0.73177
+          },
+          {
+            "persona": "persona_37",
+            "cosine": 0.664768
+          },
+          {
+            "persona": "persona_0",
+            "cosine": 0.55746
+          },
+          {
+            "persona": "persona_1",
+            "cosine": 0.464717
+          },
+          {
+            "persona": "persona_33",
+            "cosine": 0.420653
+          },
+          {
+            "persona": "persona_17",
+            "cosine": 0.377787
+          },
+          {
+            "persona": "persona_40",
+            "cosine": 0.377647
+          },
+          {
+            "persona": "persona_2",
+            "cosine": 0.366637
+          },
+          {
+            "persona": "persona_106",
+            "cosine": 0.308288
+          }
+        ],
+        "bottom_5": [
+          {
+            "persona": "persona_110",
+            "cosine": -0.438919
+          },
+          {
+            "persona": "persona_9",
+            "cosine": -0.466686
+          },
+          {
+            "persona": "persona_86",
+            "cosine": -0.520791
+          },
+          {
+            "persona": "persona_67",
+            "cosine": -0.53114
+          },
+          {
+            "persona": "persona_45",
+            "cosine": -0.56852
+          }
+        ]
+      },
+      "empty_system": {
+        "top_10": [
+          {
+            "persona": "persona_10",
+            "cosine": 0.646677
+          },
+          {
+            "persona": "persona_18",
+            "cosine": 0.640745
+          },
+          {
+            "persona": "persona_0",
+            "cosine": 0.472056
+          },
+          {
+            "persona": "persona_1",
+            "cosine": 0.468645
+          },
+          {
+            "persona": "persona_23",
+            "cosine": 0.443437
+          },
+          {
+            "persona": "persona_53",
+            "cosine": 0.402023
+          },
+          {
+            "persona": "persona_106",
+            "cosine": 0.394596
+          },
+          {
+            "persona": "persona_3",
+            "cosine": 0.360065
+          },
+          {
+            "persona": "persona_55",
+            "cosine": 0.349645
+          },
+          {
+            "persona": "persona_17",
+            "cosine": 0.330961
+          }
+        ],
+        "bottom_5": [
+          {
+            "persona": "persona_44",
+            "cosine": -0.388412
+          },
+          {
+            "persona": "persona_29",
+            "cosine": -0.427939
+          },
+          {
+            "persona": "persona_86",
+            "cosine": -0.460848
+          },
+          {
+            "persona": "persona_45",
+            "cosine": -0.47618
+          },
+          {
+            "persona": "persona_67",
+            "cosine": -0.485917
+          }
+        ]
+      }
+    },
+    "15": {
+      "qwen_default": {
+        "top_10": [
+          {
+            "persona": "persona_10",
+            "cosine": 0.537945
+          },
+          {
+            "persona": "persona_3",
+            "cosine": 0.524904
+          },
+          {
+            "persona": "persona_18",
+            "cosine": 0.472185
+          },
+          {
+            "persona": "persona_13",
+            "cosine": 0.467368
+          },
+          {
+            "persona": "persona_15",
+            "cosine": 0.453326
+          },
+          {
+            "persona": "persona_2",
+            "cosine": 0.445318
+          },
+          {
+            "persona": "persona_14",
+            "cosine": 0.43271
+          },
+          {
+            "persona": "persona_53",
+            "cosine": 0.41818
+          },
+          {
+            "persona": "persona_0",
+            "cosine": 0.412101
+          },
+          {
+            "persona": "persona_96",
+            "cosine": 0.399758
+          }
+        ],
+        "bottom_5": [
+          {
+            "persona": "persona_30",
+            "cosine": -0.343215
+          },
+          {
+            "persona": "persona_45",
+            "cosine": -0.34552
+          },
+          {
+            "persona": "persona_29",
+            "cosine": -0.346458
+          },
+          {
+            "persona": "persona_74",
+            "cosine": -0.349706
+          },
+          {
+            "persona": "persona_28",
+            "cosine": -0.431678
+          }
+        ]
+      },
+      "generic_assistant": {
+        "top_10": [
+          {
+            "persona": "persona_10",
+            "cosine": 0.999989
+          },
+          {
+            "persona": "persona_18",
+            "cosine": 0.724774
+          },
+          {
+            "persona": "persona_0",
+            "cosine": 0.688283
+          },
+          {
+            "persona": "persona_2",
+            "cosine": 0.61929
+          },
+          {
+            "persona": "persona_3",
+            "cosine": 0.569079
+          },
+          {
+            "persona": "persona_13",
+            "cosine": 0.545012
+          },
+          {
+            "persona": "persona_14",
+            "cosine": 0.520686
+          },
+          {
+            "persona": "persona_15",
+            "cosine": 0.505199
+          },
+          {
+            "persona": "persona_53",
+            "cosine": 0.495433
+          },
+          {
+            "persona": "persona_54",
+            "cosine": 0.491941
+          }
+        ],
+        "bottom_5": [
+          {
+            "persona": "persona_26",
+            "cosine": -0.391324
+          },
+          {
+            "persona": "persona_45",
+            "cosine": -0.400383
+          },
+          {
+            "persona": "persona_74",
+            "cosine": -0.401422
+          },
+          {
+            "persona": "persona_28",
+            "cosine": -0.403481
+          },
+          {
+            "persona": "persona_86",
+            "cosine": -0.413156
+          }
+        ]
+      },
+      "empty_system": {
+        "top_10": [
+          {
+            "persona": "persona_10",
+            "cosine": 0.88205
+          },
+          {
+            "persona": "persona_18",
+            "cosine": 0.687928
+          },
+          {
+            "persona": "persona_0",
+            "cosine": 0.654843
+          },
+          {
+            "persona": "persona_3",
+            "cosine": 0.590873
+          },
+          {
+            "persona": "persona_2",
+            "cosine": 0.584964
+          },
+          {
+            "persona": "persona_15",
+            "cosine": 0.535151
+          },
+          {
+            "persona": "persona_14",
+            "cosine": 0.533694
+          },
+          {
+            "persona": "persona_13",
+            "cosine": 0.527247
+          },
+          {
+            "persona": "persona_53",
+            "cosine": 0.522777
+          },
+          {
+            "persona": "persona_100",
+            "cosine": 0.46523
+          }
+        ],
+        "bottom_5": [
+          {
+            "persona": "persona_45",
+            "cosine": -0.371776
+          },
+          {
+            "persona": "persona_26",
+            "cosine": -0.377126
+          },
+          {
+            "persona": "persona_86",
+            "cosine": -0.390652
+          },
+          {
+            "persona": "persona_74",
+            "cosine": -0.391153
+          },
+          {
+            "persona": "persona_28",
+            "cosine": -0.397511
+          }
+        ]
+      }
+    },
+    "20": {
+      "qwen_default": {
+        "top_10": [
+          {
+            "persona": "persona_10",
+            "cosine": 0.848149
+          },
+          {
+            "persona": "persona_18",
+            "cosine": 0.79767
+          },
+          {
+            "persona": "persona_54",
+            "cosine": 0.785824
+          },
+          {
+            "persona": "persona_4",
+            "cosine": 0.780785
+          },
+          {
+            "persona": "persona_53",
+            "cosine": 0.777457
+          },
+          {
+            "persona": "persona_0",
+            "cosine": 0.760496
+          },
+          {
+            "persona": "persona_2",
+            "cosine": 0.757849
+          },
+          {
+            "persona": "persona_14",
+            "cosine": 0.734468
+          },
+          {
+            "persona": "persona_15",
+            "cosine": 0.718631
+          },
+          {
+            "persona": "persona_3",
+            "cosine": 0.705807
+          }
+        ],
+        "bottom_5": [
+          {
+            "persona": "persona_58",
+            "cosine": -0.538297
+          },
+          {
+            "persona": "persona_74",
+            "cosine": -0.539259
+          },
+          {
+            "persona": "persona_28",
+            "cosine": -0.575028
+          },
+          {
+            "persona": "persona_104",
+            "cosine": -0.585369
+          },
+          {
+            "persona": "persona_110",
+            "cosine": -0.589707
+          }
+        ]
+      },
+      "generic_assistant": {
+        "top_10": [
+          {
+            "persona": "persona_10",
+            "cosine": 0.999993
+          },
+          {
+            "persona": "persona_18",
+            "cosine": 0.79055
+          },
+          {
+            "persona": "persona_0",
+            "cosine": 0.763205
+          },
+          {
+            "persona": "persona_54",
+            "cosine": 0.747091
+          },
+          {
+            "persona": "persona_2",
+            "cosine": 0.740362
+          },
+          {
+            "persona": "persona_53",
+            "cosine": 0.738262
+          },
+          {
+            "persona": "persona_4",
+            "cosine": 0.708103
+          },
+          {
+            "persona": "persona_14",
+            "cosine": 0.684914
+          },
+          {
+            "persona": "persona_15",
+            "cosine": 0.658749
+          },
+          {
+            "persona": "persona_3",
+            "cosine": 0.658448
+          }
+        ],
+        "bottom_5": [
+          {
+            "persona": "persona_58",
+            "cosine": -0.498149
+          },
+          {
+            "persona": "persona_67",
+            "cosine": -0.499485
+          },
+          {
+            "persona": "persona_110",
+            "cosine": -0.547933
+          },
+          {
+            "persona": "persona_77",
+            "cosine": -0.561225
+          },
+          {
+            "persona": "persona_104",
+            "cosine": -0.579256
+          }
+        ]
+      },
+      "empty_system": {
+        "top_10": [
+          {
+            "persona": "persona_10",
+            "cosine": 0.952572
+          },
+          {
+            "persona": "persona_18",
+            "cosine": 0.689037
+          },
+          {
+            "persona": "persona_0",
+            "cosine": 0.676813
+          },
+          {
+            "persona": "persona_53",
+            "cosine": 0.661821
+          },
+          {
+            "persona": "persona_2",
+            "cosine": 0.659818
+          },
+          {
+            "persona": "persona_54",
+            "cosine": 0.651374
+          },
+          {
+            "persona": "persona_14",
+            "cosine": 0.606468
+          },
+          {
+            "persona": "persona_4",
+            "cosine": 0.598721
+          },
+          {
+            "persona": "persona_3",
+            "cosine": 0.598665
+          },
+          {
+            "persona": "persona_15",
+            "cosine": 0.580045
+          }
+        ],
+        "bottom_5": [
+          {
+            "persona": "persona_67",
+            "cosine": -0.459671
+          },
+          {
+            "persona": "persona_58",
+            "cosine": -0.472501
+          },
+          {
+            "persona": "persona_110",
+            "cosine": -0.485106
+          },
+          {
+            "persona": "persona_77",
+            "cosine": -0.528669
+          },
+          {
+            "persona": "persona_104",
+            "cosine": -0.545904
+          }
+        ]
+      }
+    },
+    "25": {
+      "qwen_default": {
+        "top_10": [
+          {
+            "persona": "persona_10",
+            "cosine": 0.927696
+          },
+          {
+            "persona": "persona_4",
+            "cosine": 0.881612
+          },
+          {
+            "persona": "persona_18",
+            "cosine": 0.87054
+          },
+          {
+            "persona": "persona_54",
+            "cosine": 0.868244
+          },
+          {
+            "persona": "persona_0",
+            "cosine": 0.857088
+          },
+          {
+            "persona": "persona_53",
+            "cosine": 0.855357
+          },
+          {
+            "persona": "persona_2",
+            "cosine": 0.843694
+          },
+          {
+            "persona": "persona_14",
+            "cosine": 0.825217
+          },
+          {
+            "persona": "persona_15",
+            "cosine": 0.821463
+          },
+          {
+            "persona": "persona_72",
+            "cosine": 0.803445
+          }
+        ],
+        "bottom_5": [
+          {
+            "persona": "persona_69",
+            "cosine": -0.505957
+          },
+          {
+            "persona": "persona_39",
+            "cosine": -0.517338
+          },
+          {
+            "persona": "persona_58",
+            "cosine": -0.53001
+          },
+          {
+            "persona": "persona_104",
+            "cosine": -0.575382
+          },
+          {
+            "persona": "persona_28",
+            "cosine": -0.579984
+          }
+        ]
+      },
+      "generic_assistant": {
+        "top_10": [
+          {
+            "persona": "persona_10",
+            "cosine": 0.999994
+          },
+          {
+            "persona": "persona_18",
+            "cosine": 0.837028
+          },
+          {
+            "persona": "persona_0",
+            "cosine": 0.836185
+          },
+          {
+            "persona": "persona_4",
+            "cosine": 0.822627
+          },
+          {
+            "persona": "persona_2",
+            "cosine": 0.81925
+          },
+          {
+            "persona": "persona_53",
+            "cosine": 0.816862
+          },
+          {
+            "persona": "persona_54",
+            "cosine": 0.815162
+          },
+          {
+            "persona": "persona_14",
+            "cosine": 0.782501
+          },
+          {
+            "persona": "persona_15",
+            "cosine": 0.773991
+          },
+          {
+            "persona": "persona_3",
+            "cosine": 0.739579
+          }
+        ],
+        "bottom_5": [
+          {
+            "persona": "persona_77",
+            "cosine": -0.482906
+          },
+          {
+            "persona": "persona_58",
+            "cosine": -0.492681
+          },
+          {
+            "persona": "persona_39",
+            "cosine": -0.516284
+          },
+          {
+            "persona": "persona_28",
+            "cosine": -0.519715
+          },
+          {
+            "persona": "persona_104",
+            "cosine": -0.54894
+          }
+        ]
+      },
+      "empty_system": {
+        "top_10": [
+          {
+            "persona": "persona_10",
+            "cosine": 0.971501
+          },
+          {
+            "persona": "persona_0",
+            "cosine": 0.770945
+          },
+          {
+            "persona": "persona_2",
+            "cosine": 0.757882
+          },
+          {
+            "persona": "persona_18",
+            "cosine": 0.754413
+          },
+          {
+            "persona": "persona_53",
+            "cosine": 0.753566
+          },
+          {
+            "persona": "persona_4",
+            "cosine": 0.735457
+          },
+          {
+            "persona": "persona_54",
+            "cosine": 0.734087
+          },
+          {
+            "persona": "persona_14",
+            "cosine": 0.720689
+          },
+          {
+            "persona": "persona_15",
+            "cosine": 0.707369
+          },
+          {
+            "persona": "persona_3",
+            "cosine": 0.698689
+          }
+        ],
+        "bottom_5": [
+          {
+            "persona": "persona_77",
+            "cosine": -0.459285
+          },
+          {
+            "persona": "persona_58",
+            "cosine": -0.466878
+          },
+          {
+            "persona": "persona_28",
+            "cosine": -0.477267
+          },
+          {
+            "persona": "persona_39",
+            "cosine": -0.488861
+          },
+          {
+            "persona": "persona_104",
+            "cosine": -0.514316
+          }
+        ]
+      }
+    }
+  },
+  "elapsed_seconds": 11.4,
+  "n_existing_personas": 111
+}
