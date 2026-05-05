@@ -23,6 +23,8 @@ Checks
 7. Stats framing — no effect-size / named-test / credence-interval language.
 8. Title confidence marker — title ends with `(HIGH|MODERATE|LOW confidence)`
    matching the Results Confidence line (only when title is provided).
+9. Human summary — `## Human summary` H2 present, non-empty, >=30 words,
+   no sentinels (skipped on issues >7 days old or already-promoted).
 
 See .claude/skills/clean-results/checklist.md for the authoritative rules.
 """
@@ -45,6 +47,22 @@ EXPECTED_SUBSECTIONS = [
 ]
 
 BAD_REPRO_SENTINELS = ("{{", "TBD", "see config", "default", "N/A (no reason")
+
+# Sentinels for the Human summary check (item 5 / AC5).
+HUMAN_SUMMARY_SENTINELS = (
+    "{{",
+    "TBD",
+    "...",
+    "…",
+    "<TODO>",
+    "<placeholder>",
+    "XXX",
+    "FIXME",
+    "n/a",
+    "N/A",
+)
+MIN_HUMAN_SUMMARY_WORDS = 30
+
 ADHOC_CONFIDENCE = [
     "somewhat high",
     "fairly low",
@@ -120,10 +138,15 @@ class Report:
         return "\n".join(lines)
 
 
-def _fetch_issue_body(issue_num: int) -> tuple[str, str]:
-    """Return ``(title, body)`` for a GitHub issue via the ``gh`` CLI."""
+def _fetch_issue_body(issue_num: int) -> tuple[str, str, list[str], str]:
+    """Return ``(title, body, label_names, created_at)`` for a GitHub issue.
+
+    ``label_names`` is a flat list of label names (so the date-gate can check
+    for ``clean-results`` / ``clean-results:draft``); ``created_at`` is the
+    ISO-8601 timestamp string straight from the GitHub API.
+    """
     out = subprocess.run(
-        ["gh", "issue", "view", str(issue_num), "--json", "title,body"],
+        ["gh", "issue", "view", str(issue_num), "--json", "title,body,labels,createdAt"],
         capture_output=True,
         text=True,
         check=False,
@@ -133,7 +156,8 @@ def _fetch_issue_body(issue_num: int) -> tuple[str, str]:
             f"gh issue view #{issue_num} failed (exit {out.returncode}): {out.stderr.strip()}"
         )
     data = json.loads(out.stdout)
-    return data["title"], data["body"]
+    label_names = [lab.get("name", "") for lab in data.get("labels", [])]
+    return data["title"], data["body"], label_names, data.get("createdAt", "")
 
 
 def _extract_section(body: str, heading: str, level: int) -> str | None:
@@ -424,12 +448,79 @@ def check_background_context(tldr: str | None, report: Report) -> None:
     report.add("Background context", "PASS", f"Background has {word_count} words")
 
 
-def run_all_checks(title: str | None, body: str) -> Report:
+def _is_low_content(s: str) -> bool:
+    """Catch degenerate inputs that pass the sentinel check.
+
+    Returns True if the section is effectively empty: no characters, mostly
+    non-letter characters (e.g. punctuation-only), or only empty bullet rows.
+    """
+    s = s.strip()
+    if len(s) == 0:
+        return True
+    letters = sum(1 for c in s if c.isalpha())
+    if len(s) > 0 and letters / len(s) < 0.5:
+        return True
+    return all(line.strip() in ("", "-") for line in s.splitlines())
+
+
+def check_human_summary(body: str, report: Report, *, strict: bool = True) -> None:
+    """`## Human summary` H2 must be present, non-sentinel, >=30 words.
+
+    When ``strict=False`` (grandfathered: issue >7 days old or already-promoted),
+    a missing section is downgraded to WARN.
+    """
+    section = _extract_section(body, "Human summary", level=2)
+    if section is None:
+        if strict:
+            report.add(
+                "Human summary",
+                "FAIL",
+                "## Human summary section missing (must appear at top of Detailed report)",
+            )
+        else:
+            report.add(
+                "Human summary",
+                "WARN",
+                "## Human summary missing (grandfathered: issue >7 days old or already-promoted)",
+            )
+        return
+    stripped = section.strip()
+    for sentinel in HUMAN_SUMMARY_SENTINELS:
+        if sentinel in stripped:
+            report.add(
+                "Human summary",
+                "FAIL",
+                f"## Human summary contains sentinel {sentinel!r}",
+            )
+            return
+    if _is_low_content(stripped):
+        report.add(
+            "Human summary",
+            "FAIL",
+            "## Human summary is low-content (empty / mostly non-letters / empty bullets)",
+        )
+        return
+    word_count = len(stripped.split())
+    if word_count < MIN_HUMAN_SUMMARY_WORDS:
+        report.add(
+            "Human summary",
+            "FAIL",
+            (
+                f"## Human summary is too short ({word_count} words; "
+                f"minimum {MIN_HUMAN_SUMMARY_WORDS})"
+            ),
+        )
+        return
+    report.add("Human summary", "PASS", f"{word_count} words")
+
+
+def run_all_checks(title: str | None, body: str, *, strict: bool = True) -> Report:
     report = Report()
     tldr = check_tldr_structure(body, report)
     check_hero_figure(tldr, report)
     check_results_block(tldr, report)
     check_background_context(tldr, report)
+    check_human_summary(body, report, strict=strict)
     check_numbers_in_json(body, report)
     check_reproducibility(body, report)
     check_confidence_phrasebook(body, report)
@@ -446,7 +537,19 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.issue is not None:
-        title, body = _fetch_issue_body(args.issue)
+        title, body, label_names, created_at = _fetch_issue_body(args.issue)
+        # Date-gate: skip Human summary / Sample outputs strict checks for
+        # issues >7 days old or already-promoted (clean-results without :draft).
+        from datetime import UTC, datetime, timedelta
+
+        now = datetime.now(UTC)
+        try:
+            created_dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+        except ValueError:
+            created_dt = now  # fall back to strict if parsing fails
+        age = now - created_dt
+        is_promoted = "clean-results" in label_names and "clean-results:draft" not in label_names
+        strict = (age <= timedelta(days=7)) and (not is_promoted)
     else:
         body_path = Path(args.path)
         if not body_path.exists():
@@ -454,8 +557,9 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         title = None
         body = body_path.read_text()
+        strict = True  # file mode is always strict
 
-    report = run_all_checks(title, body)
+    report = run_all_checks(title, body, strict=strict)
     print(report.render())
     if report.any_fail():
         print("\nResult: FAIL — fix the failing checks before posting.")

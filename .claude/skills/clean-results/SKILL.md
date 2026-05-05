@@ -88,6 +88,7 @@ Match `template.md` exactly. The shape is:
 ---
 
 # Detailed report
+    ## Human summary                     ← 2-5 sentences, plain English, user's voice
     ## Source issues
     ## Setup & hyper-parameters          ← absorbs Reproducibility Card + "why this experiment" prose
     ## WandB
@@ -169,10 +170,13 @@ Every FAIL must be fixed. WARNs should be fixed or acknowledged in the body's
 Caveats section. Do not proceed to Step 6 until the verifier is clean.
 
 The verifier checks: TL;DR structure (4 subsections in order), hero figure
-commit-pinning, Main-takeaways block + single Confidence line, numeric
+commit-pinning, Main-takeaways block + single Confidence line, **`## Human
+summary` H2 present + non-empty + >=30 words + no sentinels**, numeric
 prose ↔ JSON cross-check, reproducibility-card completeness, confidence-
 phrasebook consistency, forbidden stats-framing language, title confidence
-marker `(HIGH|MODERATE|LOW confidence)` matching the Results line.
+marker `(HIGH|MODERATE|LOW confidence)` matching the Results line. The
+Human summary strict check is skipped on issues >7 days old or
+already-promoted (date-gate).
 
 ### Step 6: Post
 
