@@ -188,24 +188,63 @@ you did about it — e.g., post-hoc re-upload script. Do not hide.)**
 
 ## Sample outputs
 
-[Cherry-picked examples that make the behavior concrete. 2-5 samples per key
-condition, each showing: the exact prompt, a ~250-char excerpt of the model's
-output, and (if relevant) the judge score + judge reasoning. Show BOTH a
-positive (behavior-present) case AND a negative (behavior-absent) case so
-the reader calibrates the signal, not just the summary statistic. State
-explicitly "cherry-picked for illustration" and link to the full dump.]
+<!-- >=3 randomly-sampled (persona, prompt, response) triplets per condition.
+     Use `python scripts/sample_outputs.py --eval-json <path> --n 3 --seed 42`
+     to seed-fill. The verifier (scripts/verify_clean_result.py
+     check_sample_outputs) requires:
+       - `## Sample outputs` (H2)
+       - >=1 `### Condition: <name>` (H3) subsection
+       - >=3 fenced ```code``` blocks per condition
+     Show BOTH a positive (behavior-present) case AND a negative
+     (behavior-absent) case where applicable so the reader calibrates the
+     signal, not just the summary statistic. -->
 
-### Example format
+### Condition: {{cond_1_name}}
 
-**Condition = `{{name}}`, prompt = *"{{user_prompt}}"*:**
+```
+[persona]: {{persona_1a}}
+[prompt]:  {{prompt_1a}}
+[output]:  {{output_1a}}
+```
 
-*Positive (behavior present):*
-> {{~250-char excerpt}}
+```
+[persona]: {{persona_1b}}
+[prompt]:  {{prompt_1b}}
+[output]:  {{output_1b}}
+```
 
-*Negative (behavior absent):*
-> {{~250-char excerpt}}
+```
+[persona]: {{persona_1c}}
+[prompt]:  {{prompt_1c}}
+[output]:  {{output_1c}}
+```
 
-*Judge (if applicable):* score = X / reasoning = "…"
+(Minimum 3 fenced blocks per condition; add more if useful. If a judge score
+applies, include it inline in the fenced block, e.g. `[judge]: score=4/5
+"reasoning"`.)
+
+### Condition: {{cond_2_name}}
+
+```
+[persona]: {{persona_2a}}
+[prompt]:  {{prompt_2a}}
+[output]:  {{output_2a}}
+```
+
+```
+[persona]: {{persona_2b}}
+[prompt]:  {{prompt_2b}}
+[output]:  {{output_2b}}
+```
+
+```
+[persona]: {{persona_2c}}
+[prompt]:  {{prompt_2c}}
+[output]:  {{output_2c}}
+```
+
+(Minimum 3 fenced blocks per condition; repeat the `### Condition:` block
+for any additional conditions.)
 
 ## Headline numbers
 

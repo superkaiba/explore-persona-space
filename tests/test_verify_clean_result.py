@@ -395,5 +395,36 @@ def test_sample_outputs_grandfathered() -> None:
     assert _statuses(report)["Sample outputs"] == "WARN"
 
 
+# --- HIGH-2 regression -----------------------------------------------------
+
+
+def test_canonical_template_sample_outputs_passes() -> None:
+    """The canonical clean-results template's `## Sample outputs` section
+    must NOT fail the verifier — only the placeholder-driven sections may
+    legitimately FAIL on an unfilled template.
+
+    Regression for HIGH-2 (code-review v1 on issue #226): the previous
+    template used `### Example format` with prose-bold formatting, so any
+    user filling in the canonical template would hit
+    ``Sample outputs ✗ FAIL``. The fix replaces that with `### Condition:
+    <name>` H3 subsections + 3 fenced blocks each.
+    """
+    template_path = (
+        Path(__file__).resolve().parents[1] / ".claude" / "skills" / "clean-results" / "template.md"
+    )
+    body = template_path.read_text()
+    report = run_all_checks(title=None, body=body)
+    statuses = _statuses(report)
+    assert "Sample outputs" in statuses, "Sample outputs check did not run"
+    # Only PASS is acceptable — WARN/FAIL means the template structure
+    # broke. (The other checks are allowed to FAIL because the template
+    # is full of placeholders.)
+    assert statuses["Sample outputs"] == "PASS", (
+        f"Sample outputs status = {statuses['Sample outputs']!r}; "
+        "the canonical template must keep `### Condition:` H3 subsections "
+        "with >=3 fenced blocks each."
+    )
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))
