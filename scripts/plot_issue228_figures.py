@@ -5,7 +5,9 @@ Reads ``all_results.json`` + ``correlations.json`` from
 ``aggregate_issue228.py`` (no recomputation) and produces 4 figures:
 
 * ``js_vs_cosine_post_convergence_hero.{png,pdf}`` — hero scatter plot at
-  epoch 20 (n=70 off-diagonal): JS vs leakage, cosine_l15 vs leakage.
+  epoch 20: JS vs leakage, cosine_l15 vs leakage. Cell count is set by the
+  aggregator (n=71 directed off-diagonal cells per the user's pre-registration
+  on issue #228; see plan §3).
 * ``within_source_js_vs_leakage.{png,pdf}`` — 7 panels per source, JS_t vs
   leakage_t (raw + first-difference).
 * ``within_source_rho_comparison.{png,pdf}`` — bar chart, |rho| for JS_raw,
@@ -13,11 +15,11 @@ Reads ``all_results.json`` + ``correlations.json`` from
 * ``js_trajectories.{png,pdf}`` — JS(source row mean off-diag) vs epoch,
   7 lines.
 
-**Figure-style policy:** clean figures only — no rho/p annotations on the
-plot surface, no inset tables, no significance markers, no overlays. All
-statistical numbers (Spearman rho, p, n, cluster-bootstrap CI, FDR-pass)
-are written to ``correlations.json`` and the analyzer/clean-result puts
-them in the figure caption text. This file just renders pixels.
+**Figure-style policy:** clean figures only — pixels only. No rho / p text on
+the plot surface, no inset tables, no significance markers, no overlays.
+All statistical numbers (Spearman rho, p, n, cluster-bootstrap CI, FDR-pass)
+live in ``correlations.json`` and the analyzer / clean-result places them
+in the figure caption.
 
 All saves go through ``savefig_paper`` for commit-pinned metadata.
 """

@@ -1,8 +1,23 @@
+# ruff: noqa: RUF001, RUF002, RUF003
 """Unit tests for ``scripts/aggregate_issue228.py``.
 
 We test the aggregator's correlation logic on synthetic 7x11 matrices with
 known structure, the cluster-bootstrap helper, and the self-loop exclusion
 logic. No GPU / no network dependencies.
+
+Round-2 additions (BLOCKER fixes from code-review v1):
+* ``test_h1_long_n71_with_nurse_source_real_js`` — verifies the n=71 cell
+  contract from the user's pre-registration: 6 ALL_EVAL sources × 10
+  off-diagonal targets + 1 nurse source × 11 targets = 71 directed cells,
+  with NO None js values reaching downstream Spearman.
+* ``test_h1_long_raises_when_nurse_state_missing_extra_row`` — round-1's
+  silent js=None failure mode is now a hard SystemExit.
+* ``test_marker_mask_positions_substring`` — substring-position marker
+  mask only flags ``[ZLT]`` token spans, not generic newlines or ``]`` tokens.
+* ``test_sanity_check_142_fails_on_rank_inversion`` — sanity 6.1#4 fails
+  when rank order is broken even if MRE is tiny.
+* ``test_spearman_xy_handles_production_none_pattern`` — exercise the
+  production None-mixed shape that round-1 tests didn't cover.
 """
 
 from __future__ import annotations
@@ -22,6 +37,7 @@ import aggregate_issue228 as agg  # noqa: E402
 
 ADAPTER_SOURCES = agg.ADAPTER_SOURCES  # 7 sources, alphabetical
 TARGETS = list(agg.TARGET_PERSONA_ORDER)  # 11 targets
+ALL_EVAL_PERSONAS = agg.ALL_EVAL_PERSONAS
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -69,19 +85,22 @@ def _synthesize_h1_long(
 
 
 def test_h1_long_off_diagonal_count() -> None:
-    """Off-diagonal cell count.
+    """Off-diagonal cell count: n=71 directed off-diagonal cells.
 
-    Plan §3/§4/§6.1#6 pre-registers n=70 (= 7 sources x 11 targets - 7 self-loops).
-    But ``nurse`` is in ADAPTER_SOURCES and NOT in ALL_EVAL_PERSONAS — so only 6
-    self-loops actually exist on the persona sets. The literal "exclude self-loops"
-    interpretation produces 7 x 11 - 6 = 71 cells. This deviation from the plan's
-    pre-registered n is documented in the implementation report; the user can
-    direct option (2) "drop nurse entirely -> n=60" if preferred. See GitHub
-    comment on issue #228 for the discussion.
+    User's pre-registration (issue #228, ``epm:user-decision-n71``): n=71 =
+    6 ALL_EVAL sources × 10 off-diagonal targets + 1 nurse source × 11
+    targets. nurse is in ADAPTER_SOURCES but NOT in ALL_EVAL_PERSONAS, so it
+    has no self-loop on the eval-persona target list — every ALL_EVAL
+    persona is a valid target for nurse, which is why nurse contributes 11
+    cells instead of 10.
+
+    The synthetic builder mirrors that structure so this assertion lines up
+    with the production aggregator's ``_build_h1_long``.
     """
     rows = _synthesize_h1_long()
     n_self_loops_present = sum(1 for s in ADAPTER_SOURCES if s in TARGETS)
     expected = len(ADAPTER_SOURCES) * len(TARGETS) - n_self_loops_present
+    assert expected == 71, f"Expected n=71 by user's pre-registration, got {expected}"
     assert len(rows) == expected
     for r in rows:
         assert r["source"] != r["target"]
@@ -383,3 +402,333 @@ def test_sanity_check_142_fails_when_far_off(tmp_path: Path) -> None:
     )
     with pytest.raises(SystemExit):
         agg._sanity_check_142(base_state, baseline_path)
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Round-2 BLOCKER #1 fix: n=71 contract via path-A (extra row+col for nurse).
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def _make_state(
+    *,
+    source: str,
+    epoch: int,
+    persona_names: list[str],
+    js_seed: int,
+    js_value_for_nurse_targets: float | None = None,
+) -> dict:
+    """Build a synthetic per-state result.json-shaped dict.
+
+    For sources NOT in ALL_EVAL_PERSONAS, ``persona_names`` is the 12-element
+    extended list (11 ALL_EVAL + nurse). The js_matrix is constructed so
+    every off-diagonal cell has a finite value (to verify the n=71 contract
+    that no js=None reaches downstream Spearman).
+    """
+    n = len(persona_names)
+    rng = np.random.default_rng(js_seed)
+    js = rng.uniform(0.05, 0.3, size=(n, n))
+    js = (js + js.T) / 2
+    np.fill_diagonal(js, 0.0)
+    if js_value_for_nurse_targets is not None and source == "nurse":
+        nurse_idx = persona_names.index("nurse")
+        for j in range(n):
+            if j == nurse_idx:
+                continue
+            js[nurse_idx, j] = js_value_for_nurse_targets
+            js[j, nurse_idx] = js_value_for_nurse_targets
+
+    cos_l15 = rng.uniform(-0.5, 0.5, size=(n, n))
+    cos_l15 = (cos_l15 + cos_l15.T) / 2
+    np.fill_diagonal(cos_l15, 1.0)
+    cos_l20 = rng.uniform(-0.5, 0.5, size=(n, n))
+    cos_l20 = (cos_l20 + cos_l20.T) / 2
+    np.fill_diagonal(cos_l20, 1.0)
+    cos_l25 = rng.uniform(-0.5, 0.5, size=(n, n))
+    cos_l25 = (cos_l25 + cos_l25.T) / 2
+    np.fill_diagonal(cos_l25, 1.0)
+
+    return {
+        "source": source,
+        "checkpoint_step": (epoch // 2) * 200,
+        "epoch": epoch,
+        "persona_names": persona_names,
+        "extra_source_persona": "nurse" if source == "nurse" else None,
+        "js_matrix": js.tolist(),
+        "js_matrix_masked": js.tolist(),
+        "js_matrix_no_marker": js.tolist(),
+        "kl_matrix": js.tolist(),
+        "source_token_entropy_mean": 2.5,
+        "cosine_matrices": {
+            "layer_15": {"persona_names": persona_names, "matrix": cos_l15.tolist()},
+            "layer_20": {"persona_names": persona_names, "matrix": cos_l20.tolist()},
+            "layer_25": {"persona_names": persona_names, "matrix": cos_l25.tolist()},
+        },
+    }
+
+
+def test_h1_long_n71_with_nurse_source_real_js() -> None:
+    """BLOCKER #1 round-1 -> round-2: nurse-source rows must contribute real
+    JS values (not js=None) so the n=71 contract is real.
+
+    Build epoch-20 states for all 7 ADAPTER_SOURCES. For 6 sources in
+    ALL_EVAL_PERSONAS, the per-state matrix is 11×11 over the eval personas.
+    For ``nurse`` (the 1 source NOT in ALL_EVAL_PERSONAS), the per-state
+    matrix is 12×12 with nurse appended as the 12th persona — mirroring the
+    path-A fix in compute_js_convergence_228._compute_state_metrics.
+
+    Verify:
+      * ``_build_h1_long`` produces exactly 71 rows.
+      * Every row has a finite (non-None, non-NaN) ``js`` value.
+      * ``_spearman_xy`` over the 71 cells returns n=71 (no silent drops).
+      * 60 rows are from non-nurse sources, 11 are from nurse.
+    """
+    eval_personas = list(ALL_EVAL_PERSONAS.keys())
+    nurse_extended = [*eval_personas, "nurse"]
+
+    states: list[dict] = []
+    leakage_states: dict[tuple[str, int], dict] = {}
+    for src_idx, source in enumerate(ADAPTER_SOURCES):
+        names = nurse_extended if source == "nurse" else eval_personas
+        states.append(
+            _make_state(
+                source=source,
+                epoch=20,
+                persona_names=names,
+                js_seed=src_idx + 1,
+                js_value_for_nurse_targets=0.18 if source == "nurse" else None,
+            )
+        )
+        # Synthetic leakage rates per ALL_EVAL persona (covers all valid targets
+        # for both ALL_EVAL sources and nurse).
+        leakage_states[(source, 2000)] = {
+            n: {"rate": 0.1 + 0.02 * i} for i, n in enumerate(eval_personas)
+        }
+
+    h1_long = agg._build_h1_long(states, leakage_states)
+    assert len(h1_long) == 71, f"Expected n=71 cells (user's pre-registration), got {len(h1_long)}"
+    assert all(r["js"] is not None for r in h1_long), "BLOCKER #1: js=None still leaking through"
+    assert all(not math.isnan(r["js"]) for r in h1_long), "Found js=NaN cells in h1_long"
+
+    nurse_rows = [r for r in h1_long if r["source"] == "nurse"]
+    non_nurse_rows = [r for r in h1_long if r["source"] != "nurse"]
+    assert len(nurse_rows) == 11, (
+        "nurse-source must contribute 11 cells (no nurse target self-loop)"
+    )
+    assert len(non_nurse_rows) == 60, "non-nurse sources must contribute 6 × 10 = 60 cells"
+
+    # Pull JS values through _spearman_xy and assert n=71 reaches downstream.
+    rho, _p, n = agg._spearman_xy([r["js"] for r in h1_long], [r["leakage"] for r in h1_long])
+    assert n == 71, f"BLOCKER #1: Spearman dropped {71 - n} cells silently"
+    assert not math.isnan(rho)
+
+
+def test_h1_long_raises_when_nurse_state_missing_extra_row() -> None:
+    """If the per-state worker forgets to append the nurse row, the
+    aggregator must SystemExit rather than emit silent js=None rows.
+
+    Round-1 silently emitted 11 None-js rows for nurse and let downstream
+    Spearman drop them (n=71 -> n=60 effective). Round-2 fix: hard SystemExit.
+    """
+    eval_personas = list(ALL_EVAL_PERSONAS.keys())
+    states: list[dict] = []
+    leakage_states: dict[tuple[str, int], dict] = {}
+    for src_idx, source in enumerate(ADAPTER_SOURCES):
+        # Bug simulation: nurse state has only 11 ALL_EVAL personas (no nurse row).
+        names = eval_personas
+        states.append(
+            _make_state(source=source, epoch=20, persona_names=names, js_seed=src_idx + 1)
+        )
+        leakage_states[(source, 2000)] = {
+            n: {"rate": 0.1 + 0.02 * i} for i, n in enumerate(eval_personas)
+        }
+
+    with pytest.raises(SystemExit, match="H1 contract violation"):
+        agg._build_h1_long(states, leakage_states)
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Round-2 BLOCKER #2 fix: substring-position marker mask.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_marker_mask_positions_substring() -> None:
+    """The substring-position-based marker mask must:
+
+    * Mask exactly the tokens whose char-spans overlap a ``[ZLT]`` substring
+      (case-insensitive).
+    * NOT mask generic newlines (``\\n``) or generic ``]`` tokens.
+    * Return an empty mask (all False) when the response contains no marker.
+
+    Uses an offset-mapping-capable mock tokenizer so we can run this test
+    without loading a real Qwen tokenizer (no model download required for CI).
+    """
+
+    class MockTokenizer:
+        """Mock that mirrors the offset-mapping API our code relies on.
+
+        We model a deterministic tokenization where every character is a
+        token; the token id is the character's ord(). This makes the
+        decode-encode round-trip a length-preserving identity, and the
+        offset_mapping returns (i, i+1) per token. Real tokenizers do
+        chunkier tokenization, but the substring-overlap logic is the part
+        we want to verify, so character-level granularity is the cleanest
+        test substrate.
+        """
+
+        def decode(self, ids, skip_special_tokens=True):
+            return "".join(chr(i) for i in ids)
+
+        def __call__(self, text, return_offsets_mapping=False, add_special_tokens=False):
+            return {
+                "input_ids": [ord(c) for c in text],
+                "offset_mapping": [(i, i + 1) for i in range(len(text))],
+            }
+
+    # Import the marker-mask helper from the worker script.
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import compute_js_convergence_228 as cj
+
+    tokenizer = MockTokenizer()
+
+    # Case 1: response with two [ZLT] substrings. Every character inside
+    # those spans should be flagged; everything outside should NOT be.
+    resp = "hello [ZLT] world\nlist:\n- foo]\n- [ZLT]"
+    ids = [ord(c) for c in resp]
+    mask = cj._marker_mask_positions(ids, tokenizer)
+
+    # Compute expected mask manually.
+    needle = "[ZLT]"
+    expected = [False] * len(resp)
+    cursor = 0
+    while True:
+        idx = resp.lower().find(needle.lower(), cursor)
+        if idx == -1:
+            break
+        for k in range(idx, idx + len(needle)):
+            expected[k] = True
+        cursor = idx + 1
+
+    assert mask.tolist() == expected, (
+        f"Marker mask mismatch.\nGot:      {mask.tolist()}\nExpected: {expected}"
+    )
+
+    # Critical regression check: '\n' and ']' tokens that are NOT inside a
+    # [ZLT] span must not be masked. Find their positions in the original
+    # string and confirm mask is False there.
+    for i, c in enumerate(resp):
+        if c in ("\n", "]") and not expected[i]:
+            assert not mask[i].item(), (
+                f"BLOCKER #2 regression: token {i} ({c!r}) was masked but is outside any [ZLT] span"
+            )
+
+    # Case 2: response with no marker — mask must be all False.
+    resp_clean = "this is a plain response with [no markers] and lines\n"
+    ids_clean = [ord(c) for c in resp_clean]
+    mask_clean = cj._marker_mask_positions(ids_clean, tokenizer)
+    assert not mask_clean.any().item(), "Mask should be all False when no [ZLT] present"
+
+    # Case 3: case-insensitive — '[zlt]' matches.
+    resp_lower = "abc[zlt]def"
+    ids_lower = [ord(c) for c in resp_lower]
+    mask_lower = cj._marker_mask_positions(ids_lower, tokenizer)
+    expected_lower = [
+        c in {"[", "z", "l", "t", "]"} and 3 <= i <= 7 for i, c in enumerate(resp_lower)
+    ]
+    assert mask_lower.tolist() == expected_lower
+
+    # Case 4: empty response.
+    mask_empty = cj._marker_mask_positions([], tokenizer)
+    assert mask_empty.shape[0] == 0
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Round-2 ISSUE: Sanity 6.1#4 must FAIL on Spearman ρ < 0.99 even when MRE
+# is small (rank-order inversion path).
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_sanity_check_142_fails_on_rank_inversion(tmp_path: Path) -> None:
+    """Plan §6.1#4 has TWO independent failure conditions:
+    (a) MRE > 5% threshold, OR (b) Spearman ρ < 0.99.
+
+    Round-1 only tested (a). This test covers (b) by inverting the rank
+    order while keeping magnitudes close — MRE stays small but ρ collapses.
+    """
+    n = 6
+    persona_names = [f"persona_{i}" for i in range(n)]
+
+    # Reference matrix with monotone-increasing pair magnitudes. The
+    # threshold for the relative-error path is 5% — we want every pair's
+    # |M_ref - M_inv| / |M_ref| << 0.05 so MRE is well under threshold,
+    # while the rank order between M_ref and M_inv is exactly inverted
+    # (Spearman ρ = -1.0).
+    pair_indices = [(i, j) for i in range(n) for j in range(i + 1, n)]
+    M_ref = np.zeros((n, n))
+    M_inv = np.zeros((n, n))
+    n_pairs = len(pair_indices)
+    for k, (i, j) in enumerate(pair_indices):
+        # Reference: ~0.5 + 0.0001-step variation -> 0.5000, 0.5001, ..., 0.5014.
+        # Inverted: same magnitudes in reverse order. MRE is at most
+        # 0.0014 / 0.5 = 0.28% << 5% threshold.
+        v_ref = 0.500 + 0.0001 * k
+        v_inv = 0.500 + 0.0001 * (n_pairs - 1 - k)
+        M_ref[i, j] = M_ref[j, i] = v_ref
+        M_inv[i, j] = M_inv[j, i] = v_inv
+
+    base_state = {
+        "source": "base",
+        "checkpoint_step": 0,
+        "persona_names": persona_names,
+        "js_matrix": M_ref.tolist(),
+    }
+    baseline_path = tmp_path / "div.json"
+    baseline_path.write_text(
+        '{"persona_names": '
+        + str(persona_names).replace("'", '"')
+        + ', "js_matrix": '
+        + str(M_inv.tolist())
+        + "}"
+    )
+
+    # MRE here is < 1% (max relative difference between 0.100 and ~0.115),
+    # but ρ on the rank-inverted pair list is exactly -1.0.
+    with pytest.raises(SystemExit, match="ρ"):
+        agg._sanity_check_142(base_state, baseline_path)
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Round-2 ISSUE: _spearman_xy must handle production None-mixed inputs.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_spearman_xy_handles_production_none_pattern() -> None:
+    """In production, ``_matrix_value`` returns None when a persona name is
+    not found in the matrix's persona_names list. Round-1 tests synthesized
+    all-non-None data, so the None-passthrough path was never exercised on
+    the production-realistic shape (which mixes None and float in the *same*
+    list, both x and y).
+
+    Build a list with sparse Nones in both x and y, verify _spearman_xy:
+      * drops only the rows where EITHER x[i] or y[i] is None,
+      * reports the dropped count via the returned n,
+      * returns a finite ρ on the surviving rows.
+    """
+    rng = np.random.default_rng(0)
+    n_total = 71
+    x = list(rng.uniform(0.0, 0.5, size=n_total))
+    y = list(0.5 - 0.8 * np.array(x) + rng.normal(scale=0.02, size=n_total))
+
+    # Insert Nones at production-realistic positions: a contiguous block of
+    # 11 Nones in y (mimicking nurse-source-rows getting js=None in round-1)
+    # plus a few scattered Nones in x.
+    for k in range(60, 71):
+        y[k] = None
+    for k in (3, 17, 42):
+        x[k] = None
+
+    rho, _p, n = agg._spearman_xy(x, y)
+    assert n == n_total - 11 - 3, (
+        f"Expected {n_total - 14} rows after dropping None-mixed cells, got {n}"
+    )
+    assert not math.isnan(rho)
+    assert rho < 0  # by construction y is anti-correlated with x
