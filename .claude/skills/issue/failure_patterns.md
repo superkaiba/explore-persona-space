@@ -1,8 +1,15 @@
 # Failure-class log patterns
 
-When `epm:failure` body lacks `failure_class:`, the `/issue` skill scans
-the body + last 200 lines of the linked log against these patterns. Any
-match → route as `infra`. Otherwise → `code` (conservative).
+> **Authoritative source: [`scripts/failure_classifier.py`](../../../scripts/failure_classifier.py).**
+> This markdown file is a human-readable MIRROR of the regex list in
+> that Python module. The `/issue` skill Step 7 shells out to the
+> script (`uv run python scripts/failure_classifier.py --body - --log
+> <path>`); it does NOT consult this markdown file at runtime. Keep
+> the two in sync when extending; the Python module wins on conflict.
+
+When `epm:failure` body lacks `failure_class:`, the script scans the
+body + last 200 KB of the linked log against these patterns. Any match
+→ route as `infra`. Otherwise → `code` (conservative).
 
 ## Infra patterns (regex, case-insensitive)
 
@@ -32,7 +39,9 @@ Traceback.*\b(src/explore_persona_space|scripts)/
 
 ## Adding a pattern
 
-Edit this file. Both `.claude/skills/issue/SKILL.md` Step 7 and
-`.claude/agents/experimenter.md` cross-reference this file by path; no
-other change needed. (Allowed under §10 plan deviations: implementer can
-extend the pattern list without asking.)
+Edit `scripts/failure_classifier.py` (the runtime authority) AND mirror
+the change in this file. The tests in `tests/test_failure_classifier.py`
+must still pass — extend them with a fixture covering the new pattern.
+The skill SKILL.md and agent specs cross-reference by path; no further
+SKILL/agent edits needed. (Allowed under §10 plan deviations: implementer
+can extend the pattern list without asking.)

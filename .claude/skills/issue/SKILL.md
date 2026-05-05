@@ -633,16 +633,34 @@ When this skill is re-invoked in `status:running`:
    | `infra` | OOM, ENOSPC, NCCL, vLLM init failure, SSH refused, 401/gated repo, library traceback (vllm/transformers/peft/trl/torch/xformers) | Re-spawn the **experimenter** on the SAME branch, post `epm:experimenter-respawn v<n+1>`. NO implementer round. Cap 3 respawns; on 4th, `status:blocked`. |
    | `code` | Python `Traceback` from `src/explore_persona_space/` or `scripts/` (our code), `AssertionError`/`TypeError`/`KeyError` from our code | Label back to `status:implementing`, re-spawn `experiment-implementer` with the failure context. Loop through Steps 4b → 5 → 6 again. Cap 3 (existing). |
 
-   **Missing `failure_class`** (log-pattern fallback): scan the
-   `epm:failure` body + linked log tail for the documented patterns in
-   `.claude/skills/issue/failure_patterns.md`. If ANY infra pattern matches,
-   route as `infra`. Otherwise, route as `code` (conservative — the
-   implementer round catches more than the experimenter respawn round).
+   **Missing `failure_class` — invoke the classifier script.** Do NOT
+   reason about regex patterns inline; the patterns are owned by
+   `scripts/failure_classifier.py` and reading them yourself drifts.
+   Instead, shell out:
 
-   The classifier patterns live in `.claude/skills/issue/failure_patterns.md`
-   (single source of truth). Both this SKILL and the agent specs cross-reference
-   that file. To add a new pattern, edit the file; no other change needed
-   (allowed under §10 plan deviations).
+   ```bash
+   # Pipe the failure body via stdin to avoid shell-quoting traps:
+   cat <(gh issue view "$N" --comments --json comments --jq \
+       '.comments[] | select(.body | contains("<!-- epm:failure")) | .body' \
+       | tail -n +1) \
+     | uv run python scripts/failure_classifier.py --body - \
+         --log "$LATEST_LOG_PATH"
+   ```
+
+   The script writes a single line — `infra` or `code` — to stdout.
+   Treat that as the verdict and apply the corresponding row of the
+   table above. If the script exits non-zero, treat as `code`
+   (conservative) and post `epm:failure-classify-error` with the
+   stderr captured.
+
+   The Python module
+   [`scripts/failure_classifier.py`](../../../scripts/failure_classifier.py)
+   is the SINGLE source of truth for the regex pattern list.
+   `.claude/skills/issue/failure_patterns.md` is a human-readable
+   mirror of the same patterns (kept in sync; consult it for review or
+   when extending — but do NOT consult it at runtime). To add a new
+   pattern, edit `failure_classifier.py` AND the markdown mirror; the
+   tests in `tests/test_failure_classifier.py` cover the behaviour.
 3. If `epm:results` exists, advance label to `status:uploading` and proceed
    to Step 8.
 

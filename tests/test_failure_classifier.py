@@ -94,5 +94,62 @@ def test_ssh_refused_routes_infra() -> None:
     assert classify_failure(body) == "infra"
 
 
+# --- CLI integration -------------------------------------------------------
+
+
+def test_cli_via_stdin_routes_infra(tmp_path: Path) -> None:
+    """The /issue skill Step 7 shells out to the script via stdin.
+
+    Verify the CLI contract end-to-end: pipe a body via `--body -` and
+    read a single-line `infra`/`code` verdict from stdout.
+    """
+    import subprocess
+
+    body = "Traceback...\nRuntimeError: CUDA out of memory\n"
+    proc = subprocess.run(
+        [sys.executable, str(SCRIPT_PATH), "--body", "-"],
+        input=body,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert proc.stdout.strip() == "infra"
+
+
+def test_cli_with_log_file_routes_infra(tmp_path: Path) -> None:
+    """`--log <path>` concatenates the log tail into the body before scan."""
+    import subprocess
+
+    log = tmp_path / "run.log"
+    log.write_text("normal startup line\n" * 50 + "NCCL timeout occurred\n")
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--body",
+            "[no-pattern body]",
+            "--log",
+            str(log),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert proc.stdout.strip() == "infra"
+
+
+def test_cli_default_routes_code() -> None:
+    """No pattern match → conservative `code` verdict on stdout."""
+    import subprocess
+
+    proc = subprocess.run(
+        [sys.executable, str(SCRIPT_PATH), "--body", "weird unknown failure"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert proc.stdout.strip() == "code"
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))
