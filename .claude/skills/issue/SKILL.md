@@ -67,6 +67,19 @@ Read these on first invocation of the skill in a session.
 
 ---
 
+## Auto-continuation policy (REPEATED here for emphasis — see CLAUDE.md)
+
+Six functional user-input gates total in this skill (see CLAUDE.md
+"Auto-continuation policy"): Step 0b body, Step 0b type, Step 1 clarifier,
+Step 2c plan-approval, Step 10c pod-termination, Step 10d merge-prompt.
+Anywhere else that an assumption needs to be made, STATE the assumption
+inline (one line, prefixed `Assumption:`) and proceed. Do NOT pause to ask.
+
+**Exception:** the subagent halt conditions in CLAUDE.md "Subagent halt
+conditions" — verdicts of BLOCKER/FAIL/FATAL/`needs-user` pause regardless.
+The STATE-TO-`status:blocked` criteria (CLAUDE.md) also override
+auto-continuation.
+
 ## The State Machine
 
 State = `status:*` label. Transitions are enforced by this skill. Marker comments
@@ -929,7 +942,7 @@ See `markers.md` for the full taxonomy. Every marker comment uses the format:
 |---------|--------|
 | >1 `status:*` labels | Post error comment listing conflicts, EXIT. Ask user to remove the wrong one. Do NOT pick. |
 | 0 `status:*` labels | Run Step 0b: autofill `status:proposed`, post `epm:auto-defaults`, continue. (Old behavior — error+EXIT — was too brittle.) |
-| `type:*` label missing | Run Step 0b: infer from title prefix, confirm via `AskUserQuestion`, apply chosen label. Autonomous loop with no user → error+EXIT (a wrong guess corrupts the Done column). |
+| `type:*` label missing | Run Step 0b (see Step 0b above): infer from title prefix, confirm with the user, apply chosen label. Autonomous loop with no user → error+EXIT (a wrong guess corrupts the Done column). |
 | Empty issue body | Run Step 0b: ask user for goal/hypothesis/setup in chat, draft body, patch via `gh issue edit --body`, post `epm:auto-defaults` audit comment. |
 | Plan fails mandatory-section check | Re-invoke `adversarial-planner` with missing sections list; do not post incomplete plan. |
 | Preflight fails | Post the `--json` report verbatim as `<!-- epm:preflight v1 -->`. Do NOT auto-fix (per CLAUDE.md "never take shortcuts"). |

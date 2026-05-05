@@ -10,6 +10,46 @@
 - **Search before building.** Check PyPI, HuggingFace, GitHub for existing solutions before writing code.
 - **Always use vLLM for generation.** Never use sequential HF `model.generate()` for eval completions — use vLLM batched inference (`LLM.generate()` with `SamplingParams(n=K)`). A single vLLM batch is 10-50x faster than sequential HF generation.
 
+- **Auto-continuation policy.** When orchestrating a multi-step workflow
+  (`/issue`, `/adversarial-planner`, etc.) the agent MUST auto-continue
+  through every step EXCEPT the explicit user-gated states. The only
+  legitimate user-input gates in `/issue` are:
+  1. Step 0b (1) — issue body empty (cannot guess primary input).
+  2. Step 0b (2) — `type:*` label missing (wrong guess corrupts Done column).
+  3. Step 1 — clarifier blocking ambiguities (`status:proposed`).
+  4. Step 2c — plan approval (`status:plan-pending`).
+  5. Step 10c — pod termination (irreversible).
+  6. Step 10d — worktree merge prompt (irreversible).
+
+  Outside these six gates, NEVER ask "should I continue with the pipeline"
+  or similar. When auto-continuing past a non-obvious decision, STATE the
+  assumption made (one line, prefixed `Assumption:`) so the user can
+  reverse it. Use `AskUserQuestion` only at the six gates above.
+  Reviewers reject PRs that introduce additional pause points.
+
+- **STATE-TO-`status:blocked` criteria** (escape hatch to prevent
+  catastrophic auto-continuation). When the agent would `Assumption:`-past
+  ANY of the following, label `status:blocked` and EXIT instead:
+  1. The assumption would silently delete or overwrite user files OUTSIDE
+     the worktree.
+  2. The assumption changes a public API contract (label semantics, marker
+     schema, GitHub Actions secret name, project-board column name).
+  3. consistency-checker / code-reviewer / interpretation-critic / reviewer
+     returns BLOCKER or FAIL with `needs-user` flag (see "Subagent halt
+     conditions" below).
+  4. `failure_class: infra` respawn cap (3) hit.
+
+- **Subagent halt conditions** (verdicts that pause regardless of
+  auto-continuation):
+
+  | Subagent | Verdict | Action |
+  |---|---|---|
+  | consistency-checker | BLOCKER | Step 2c writes BLOCKER to plan body, awaits user reply |
+  | code-reviewer | FAIL | Bounces to implementer up to 3 rounds; on 4th FAIL, `status:blocked` |
+  | interpretation-critic | FATAL | Bounces to analyzer up to 3 rounds; on 4th FATAL, `status:blocked` |
+  | reviewer | FAIL with `needs-user` flag | Posts FAIL on source issue, awaits user |
+  | upload-verifier | FAIL | `status:uploading` does not advance to interpretation |
+
 ## After Every Experiment
 
 1. **Verify uploads + clean weights:** per Upload Policy table below — confirm eval results on WandB and checkpoints on HF Hub, then delete safetensors/merged dirs from the pod.
