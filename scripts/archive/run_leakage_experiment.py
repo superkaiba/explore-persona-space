@@ -799,6 +799,11 @@ def run_experiment(args) -> dict:
         else:
             train_loss = 0.0
             train_minutes = 0.0
+        # Same fix-class as train_minutes: artifact_path is referenced unconditionally
+        # at L1016 ("model_artifact": artifact_path) but only assigned at L830 in the
+        # non-eval-only branch. Set it to None on the eval-only path so the run_result
+        # field becomes null rather than crashing with UnboundLocalError.
+        artifact_path = None
         log.info(f"--eval-only: using existing merged model at {merged_path}")
     else:
         # ── Phase 1: Training ─────────────────────────────────────────────
