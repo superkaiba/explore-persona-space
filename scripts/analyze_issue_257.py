@@ -462,11 +462,16 @@ def _matchers_per_variant(
             "fhs_prefixed": meta.get("fhs_prefixed"),
             "n_unmatched_think_open": int(n_unmatched_think_open),
             "malformed_think_flag": (n_unmatched_think_open / max(n, 1)) > threshold_rate,
-            # Graduated-matcher property check (plan v2): on every variant we
-            # expect command_class ≥ target_url ≥ exact_target. Flag the
-            # inverse case (would indicate parse_commands disagreement).
+            # Graduated-matcher property check (plan v2): the strict nesting
+            # that holds in Pingbang's regex set is exact_target ⊆ target_url
+            # AND exact_target ⊆ command_class. (target_url and command_class
+            # themselves are NOT nested — target_url needs `pbb.sh` without a
+            # pipe; command_class needs a pipe-to-bash without `pbb.sh`.)
+            # Flag the case where exact-count exceeds either superset count
+            # at the variant level — would indicate parse_commands disagreement
+            # across calls or a regex bug.
             "matcher_asymmetry_e_gt_c_outside": e_out > c_out,
-            "graduated_property_violated": not (c_out >= u_out >= e_out),
+            "graduated_property_violated": (e_out > u_out) or (e_out > c_out),
         }
     return per_variant
 
