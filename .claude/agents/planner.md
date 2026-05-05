@@ -33,9 +33,6 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    # If the issue body lists `Parent: #<M>` or cites another issue, fetch it directly:
    gh issue view <M> --json title,body,labels,comments
 
-   # Same `aim:*` label (e.g. `aim:coupling`, `aim:em-defense`):
-   gh issue list --label aim:<aim> --state all --json number,title,labels,url
-
    # Polished write-ups with numbers:
    gh issue list --label clean-results --state all \
        --search "<key terms from issue body>" --json number,title,url
@@ -45,8 +42,8 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
        --search "<key terms>" --json number,title,url
    ```
 
-   For each *closely-related* prior issue (parent, sibling under the same
-   `aim:*`, or near-duplicate clean-result), pull its `epm:plan` comment and
+   For each *closely-related* prior issue (parent issue, near-duplicate
+   clean-result, or sibling cited in the plan), pull its `epm:plan` comment and
    note: baseline model + checkpoint, exact eval suite + judge prompt
    version, seed list, dataset version/hash, hyperparameters that the
    methodology depended on. **Inherit those choices unless the current

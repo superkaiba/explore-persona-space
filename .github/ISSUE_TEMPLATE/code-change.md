@@ -50,10 +50,6 @@ What does "done" look like? Enumerate testable conditions:
 - Blast radius if wrong?
 - Can this be reverted in a single commit?
 
-## Aim
-
-Which aim does this support? (typically `aim:infra` or `aim:cross-cutting`)
-
 ---
 
 **Next step:** run `/issue <this issue number>`. The clarifier will read this,

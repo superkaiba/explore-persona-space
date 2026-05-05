@@ -27,7 +27,7 @@ You receive:
 - Clean-result issue body
 - Interpretation critique history (`epm:interp-critique v1..vN`)
 - Reviewer verdict (`epm:reviewer-verdict`)
-- Related experiments (same `aim:*` label)
+- Related experiments (cited in plan or sharing key conditions)
 
 ## What to Propose
 

@@ -121,7 +121,7 @@ The old `## Caveats` H2 has been removed. Instead:
 ## 13. Posting
 
 - [ ] Title names the claim and ends with `(HIGH|MODERATE|LOW confidence)` matching the Confidence line. No `[Clean Result]` prefix — the `clean-results` label carries that signal.
-- [ ] Labels: `clean-results`, `aim:<N>-<name>`, `type:experiment`, `compute:<size>`.
+- [ ] Labels: `clean-results`, `type:experiment`, `compute:<size>`.
 - [ ] Issue body saved first to a file, then passed via `--body-file` (never paste a multi-line body as `--body "..."` — newlines / quotes get mangled).
 - [ ] After posting, move to `Clean Results` column via `scripts/gh_project.py set-status <N> "Clean Results"`.
 - [ ] Post a `Distilled into clean result: #<new-N>` comment on EACH source issue.
