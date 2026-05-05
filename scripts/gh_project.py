@@ -63,7 +63,6 @@ LABEL_TO_COLUMN: dict[str, str] = {
     # Inbox
     "status:proposed": "To do",
     "status:gate-pending": "To do",
-    "status:archived": "To do",  # rare; folded
     # Planning phase
     "status:planning": "Planning",
     "status:plan-pending": "Plan awaiting review",
@@ -84,9 +83,12 @@ LABEL_TO_COLUMN: dict[str, str] = {
     # Follow-ups in flight before clean-result is promoted
     "status:followups-running": "Followups running",
     # Terminal states
-    "status:done-experiment": "Clean results",
-    "status:done-impl": "Infra done",
+    "status:done-experiment": "Done",
+    "status:done-impl": "Done",
+    "status:archived": "Archived",
     # Non-status labels (take precedence via PRIORITY_LABELS).
+    # `clean-results:draft` -> Awaiting promotion (newly drafted OR pending re-review)
+    # `clean-results` (without :draft) -> Clean results (user-reviewed, accepted)
     "clean-results:draft": "Awaiting promotion",
     "clean-results": "Clean results",
 }
@@ -100,19 +102,20 @@ PRIORITY_LABELS: tuple[str, ...] = ("clean-results:draft", "clean-results")
 # Order here is the order columns appear left-to-right on the board.
 # Color enum values per GitHub GraphQL ProjectV2SingleSelectFieldOptionColor.
 NEW_COLUMN_SPEC: list[tuple[str, str, str]] = [
-    ("To do", "GRAY", "Backlog: proposed, gate-pending, archived"),
+    ("To do", "GRAY", "Backlog: proposed, gate-pending"),
     ("Planning", "PURPLE", "Adversarial-planner running"),
     ("Plan awaiting review", "YELLOW", "User action: approve plan to advance"),
     ("In flight", "BLUE", "Automated: implementing/running/uploading/interpreting/reviewing"),
     ("Blocked", "RED", "Resolve dependency"),
-    ("Awaiting promotion", "YELLOW", "User action: promote clean-result draft"),
+    ("Awaiting promotion", "YELLOW", "User action: review clean-result draft"),
     (
         "Followups running",
         "ORANGE",
         "Follow-up experiments running before clean-result is finalized",
     ),
-    ("Clean results", "GREEN", "Promoted clean-result; experiment is done"),
-    ("Infra done", "GREEN", "Infra / analysis / survey: terminal state"),
+    ("Clean results", "GREEN", "User-reviewed clean-result; experiment is done"),
+    ("Done", "GREEN", "Terminal: done-experiment / done-impl"),
+    ("Archived", "GRAY", "Closed long ago / no longer relevant"),
 ]
 
 

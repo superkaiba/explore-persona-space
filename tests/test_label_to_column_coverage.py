@@ -64,13 +64,27 @@ def test_column_for_labels_multiple_status_uses_last() -> None:
 
 
 def test_column_for_labels_clean_results_routes_to_clean_results_column() -> None:
-    # `clean-results` (post-promotion) routes to "Clean results" regardless of status.
+    # `clean-results` (without :draft) routes to "Clean results" regardless of status.
     assert column_for_labels(["status:done-experiment", "clean-results"]) == "Clean results"
 
 
 def test_column_for_labels_clean_results_draft_routes_to_awaiting_promotion() -> None:
     # `clean-results:draft` routes to "Awaiting promotion" regardless of status.
     assert column_for_labels(["status:reviewing", "clean-results:draft"]) == "Awaiting promotion"
+
+
+def test_column_for_labels_draft_takes_precedence_over_non_draft() -> None:
+    # If both labels present, :draft wins (issue still in review).
+    assert column_for_labels(["clean-results", "clean-results:draft"]) == "Awaiting promotion"
+
+
+def test_column_for_labels_archived_routes_to_archived_column() -> None:
+    assert column_for_labels(["status:archived"]) == "Archived"
+
+
+def test_column_for_labels_done_experiment_routes_to_done_column() -> None:
+    # status:done-experiment without clean-results goes to Done (not Clean results).
+    assert column_for_labels(["status:done-experiment"]) == "Done"
 
 
 def test_column_for_labels_followups_running() -> None:
