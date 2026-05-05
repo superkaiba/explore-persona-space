@@ -239,6 +239,66 @@ def _stage_baseline(args: argparse.Namespace) -> None:
     _save_json(out_dir / "result.json", result)
 
 
+def _purge_cell_snapshot(source: str, arm: str, seed: int) -> None:
+    """Delete the cached HF Hub blobs/snapshots for one cell to free disk.
+
+    Each merged 7B checkpoint is ~13.5 GB. The whole sweep shares one HF
+    revision, so we cannot use ``delete_revisions``; instead, we walk this
+    cell's symlinks under the snapshot dir, unlink each blob it points to,
+    and rmtree the cell's snapshot subdir. Blobs are ref-counted by symlink
+    count; if a blob is referenced by another cell's symlink we leave it.
+    """
+    import os
+    import shutil
+    from collections import Counter
+
+    path_in_repo = _hf_path_in_repo(source, arm, seed)
+
+    cache_root_env = os.environ.get("HF_HUB_CACHE") or os.environ.get("HF_HOME")
+    if cache_root_env:
+        hub_dir = Path(cache_root_env)
+        if hub_dir.name != "hub":
+            hub_dir = hub_dir / "hub"
+    else:
+        hub_dir = Path.home() / ".cache" / "huggingface" / "hub"
+    repo_dir = hub_dir / f"models--{HF_MODEL_REPO.replace('/', '--')}"
+    snapshots_dir = repo_dir / "snapshots"
+    if not snapshots_dir.exists():
+        logger.warning("No HF cache snapshots dir at %s; nothing to purge", snapshots_dir)
+        return
+
+    # Count refs to each blob across the whole repo cache so we don't
+    # delete blobs that some other cached cell still uses.
+    blob_refs: Counter[Path] = Counter()
+    for snap in snapshots_dir.iterdir():
+        for symlink in snap.rglob("*"):
+            if symlink.is_symlink():
+                target = symlink.resolve()
+                blob_refs[target] += 1
+
+    freed = 0
+    cell_dirs = [s / path_in_repo for s in snapshots_dir.iterdir() if (s / path_in_repo).exists()]
+    if not cell_dirs:
+        logger.info("No cached cell dir for %s — nothing to purge", path_in_repo)
+        return
+
+    for cell_dir in cell_dirs:
+        for symlink in cell_dir.rglob("*"):
+            if symlink.is_symlink():
+                blob = symlink.resolve()
+                blob_refs[blob] -= 1
+                if blob_refs[blob] <= 0 and blob.exists():
+                    try:
+                        size = blob.stat().st_size
+                        blob.unlink()
+                        freed += size
+                    except OSError as e:
+                        logger.warning("Could not unlink blob %s: %s", blob, e)
+        shutil.rmtree(cell_dir, ignore_errors=True)
+
+    logger.info("Purged %s cache (%.1f GB freed)", path_in_repo, freed / 1e9)
+
+
 def _resolve_cell_model_path(source: str, arm: str, seed: int) -> str:
     """Snapshot-download the merged model for this cell from HF Hub.
 
@@ -355,8 +415,10 @@ def _stage_full(args: argparse.Namespace) -> None:
         except Exception as e:
             logger.error("Eval failed for %s: %s", cell_id, e)
             failures.append((cell_id, f"eval: {e}"))
+            _purge_cell_snapshot(source, arm, seed)
             continue
         _save_json(cell_dir / "result.json", result)
+        _purge_cell_snapshot(source, arm, seed)
     if failures:
         logger.error("%d cell(s) failed: %s", len(failures), failures)
         sys.exit(1)
