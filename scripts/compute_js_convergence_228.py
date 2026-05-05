@@ -969,96 +969,108 @@ def run_state(
     t_start = time.time()
     started_at = datetime.now(UTC).isoformat()
 
-    # Source-generation grid: 11 ALL_EVAL personas × 20 questions = 220 cells
-    # by default. When the checkpoint's source is NOT in ALL_EVAL_PERSONAS
-    # (today: nurse) we append a 12th source-row using the source's system
-    # prompt — yielding 240 cells. Plan-A path for the user's n=71 decision.
-    persona_names = list(ALL_EVAL_PERSONAS.keys())
-    persona_questions: list[tuple[str, str, str]] = []
-    for p_name in persona_names:
-        p_prompt = ALL_EVAL_PERSONAS[p_name]
-        for q in EVAL_QUESTIONS:
-            persona_questions.append((p_name, p_prompt, q))
+    # The pipeline below is wrapped in ``try/finally`` so the per-state
+    # merged dir is ALWAYS torn down — even if vLLM / teacher-force /
+    # cosine extraction raises (R6 disk-hygiene fix). Without this, a
+    # crashing Phase-1 worker leaks ~14 GB safetensors into ``/workspace``.
+    # The ``is_base`` short-circuit at the bottom (no rmtree on the literal
+    # base-model HF id) is preserved.
+    try:
+        # Source-generation grid: 11 ALL_EVAL personas × 20 questions = 220 cells
+        # by default. When the checkpoint's source is NOT in ALL_EVAL_PERSONAS
+        # (today: nurse) we append a 12th source-row using the source's system
+        # prompt — yielding 240 cells. Plan-A path for the user's n=71 decision.
+        persona_names = list(ALL_EVAL_PERSONAS.keys())
+        persona_questions: list[tuple[str, str, str]] = []
+        for p_name in persona_names:
+            p_prompt = ALL_EVAL_PERSONAS[p_name]
+            for q in EVAL_QUESTIONS:
+                persona_questions.append((p_name, p_prompt, q))
 
-    extra_source: tuple[str, str] | None = None
-    if not is_base and source not in ALL_EVAL_PERSONAS and source in EXTRA_SOURCE_PROMPTS:
-        extra_prompt = EXTRA_SOURCE_PROMPTS[source]
-        extra_source = (source, extra_prompt)
-        for q in EVAL_QUESTIONS:
-            persona_questions.append((source, extra_prompt, q))
+        extra_source: tuple[str, str] | None = None
+        if not is_base and source not in ALL_EVAL_PERSONAS and source in EXTRA_SOURCE_PROMPTS:
+            extra_prompt = EXTRA_SOURCE_PROMPTS[source]
+            extra_source = (source, extra_prompt)
+            for q in EVAL_QUESTIONS:
+                persona_questions.append((source, extra_prompt, q))
 
-    responses = _vllm_generate_responses(
-        model_path=str(merged_dir),
-        persona_questions=persona_questions,
-        gpu_mem_util=gpu_mem_util,
-        seed=seed,
-    )
+        responses = _vllm_generate_responses(
+            model_path=str(merged_dir),
+            persona_questions=persona_questions,
+            gpu_mem_util=gpu_mem_util,
+            seed=seed,
+        )
 
-    # Save raw responses for downstream debugging (no schema commitment).
-    raw_resp_path = out_path.parent / "raw_responses.json"
-    raw_resp_payload = {
-        "source": source,
-        "checkpoint_step": checkpoint_step,
-        "extra_source": extra_source[0] if extra_source else None,
-        "responses": [
-            {"persona": p, "question": q, "response": r}
-            for (p, _pp, q), r in zip(persona_questions, responses, strict=True)
-        ],
-    }
-    raw_resp_path.write_text(json.dumps(raw_resp_payload))
+        # Save raw responses for downstream debugging (no schema commitment).
+        raw_resp_path = out_path.parent / "raw_responses.json"
+        raw_resp_payload = {
+            "source": source,
+            "checkpoint_step": checkpoint_step,
+            "extra_source": extra_source[0] if extra_source else None,
+            "responses": [
+                {"persona": p, "question": q, "response": r}
+                for (p, _pp, q), r in zip(persona_questions, responses, strict=True)
+            ],
+        }
+        raw_resp_path.write_text(json.dumps(raw_resp_payload))
 
-    metrics = _compute_state_metrics(
-        merged_dir=str(merged_dir),
-        gpu_id=gpu_id,
-        persona_questions=persona_questions,
-        persona_names=persona_names if extra_source is None else [*persona_names, extra_source[0]],
-        responses=responses,
-        extra_source=extra_source,
-    )
+        metrics = _compute_state_metrics(
+            merged_dir=str(merged_dir),
+            gpu_id=gpu_id,
+            persona_questions=persona_questions,
+            persona_names=(
+                persona_names if extra_source is None else [*persona_names, extra_source[0]]
+            ),
+            responses=responses,
+            extra_source=extra_source,
+        )
 
-    elapsed = time.time() - t_start
-    completed_at = datetime.now(UTC).isoformat()
-    epoch = EPOCH_BY_STEP.get(checkpoint_step, 0) if not is_base else 0
+        elapsed = time.time() - t_start
+        completed_at = datetime.now(UTC).isoformat()
+        epoch = EPOCH_BY_STEP.get(checkpoint_step, 0) if not is_base else 0
 
-    payload = {
-        "source": source,
-        "checkpoint_step": checkpoint_step,
-        "epoch": epoch,
-        "adapter_repo": ADAPTER_REPO if not is_base else None,
-        "adapter_subpath": adapter_subpath,
-        "base_model": BASE_MODEL,
-        "lora_dropout_train_time": lora_dropout_train_time,
-        "persona_names": metrics["persona_names"],
-        "extra_source_persona": extra_source[0] if extra_source else None,
-        "n_questions": len(EVAL_QUESTIONS),
-        "n_completions_for_js": GEN_N,
-        "temperature_js": GEN_TEMPERATURE,
-        "seed": seed,
-        "js_matrix": metrics["js_matrix"],
-        "js_matrix_masked": metrics["js_matrix_masked"],
-        "js_matrix_no_marker": metrics["js_matrix_no_marker"],
-        "kl_matrix": metrics["kl_matrix"],
-        "source_token_entropy_mean": metrics["source_token_entropy_mean"],
-        "cosine_matrices": metrics["cosine_matrices"],
-        "wall_seconds": elapsed,
-        "n_cells_raw": metrics["n_cells_raw"],
-        "n_cells_no_marker": metrics["n_cells_no_marker"],
-        "n_cells_skipped": metrics["n_cells_skipped"],
-        "metadata": {
-            "git_commit": _git_commit(),
-            "started_at": started_at,
-            "completed_at": completed_at,
-            **_lib_versions(),
-        },
-    }
+        payload = {
+            "source": source,
+            "checkpoint_step": checkpoint_step,
+            "epoch": epoch,
+            "adapter_repo": ADAPTER_REPO if not is_base else None,
+            "adapter_subpath": adapter_subpath,
+            "base_model": BASE_MODEL,
+            "lora_dropout_train_time": lora_dropout_train_time,
+            "persona_names": metrics["persona_names"],
+            "extra_source_persona": extra_source[0] if extra_source else None,
+            "n_questions": len(EVAL_QUESTIONS),
+            "n_completions_for_js": GEN_N,
+            "temperature_js": GEN_TEMPERATURE,
+            "seed": seed,
+            "js_matrix": metrics["js_matrix"],
+            "js_matrix_masked": metrics["js_matrix_masked"],
+            "js_matrix_no_marker": metrics["js_matrix_no_marker"],
+            "kl_matrix": metrics["kl_matrix"],
+            "source_token_entropy_mean": metrics["source_token_entropy_mean"],
+            "cosine_matrices": metrics["cosine_matrices"],
+            "wall_seconds": elapsed,
+            "n_cells_raw": metrics["n_cells_raw"],
+            "n_cells_no_marker": metrics["n_cells_no_marker"],
+            "n_cells_skipped": metrics["n_cells_skipped"],
+            "metadata": {
+                "git_commit": _git_commit(),
+                "started_at": started_at,
+                "completed_at": completed_at,
+                **_lib_versions(),
+            },
+        }
 
-    out_path.write_text(json.dumps(payload, indent=2))
-    logger.info("[%s ckpt-%d] wrote %s (%.1fs)", source, checkpoint_step, out_path, elapsed)
-
-    if not is_base and merged_dir.exists():
-        shutil.rmtree(merged_dir, ignore_errors=True)
-        logger.info("[%s ckpt-%d] cleaned merged dir %s", source, checkpoint_step, merged_dir)
-    return out_path
+        out_path.write_text(json.dumps(payload, indent=2))
+        logger.info("[%s ckpt-%d] wrote %s (%.1fs)", source, checkpoint_step, out_path, elapsed)
+        return out_path
+    finally:
+        # is_base reuses the literal HF id — never rmtree that.
+        if not is_base and merged_dir.exists():
+            shutil.rmtree(merged_dir, ignore_errors=True)
+            logger.info("[%s ckpt-%d] cleaned merged dir %s", source, checkpoint_step, merged_dir)
+        gc.collect()
+        torch.cuda.empty_cache()
 
 
 def _parse_args() -> argparse.Namespace:

@@ -347,69 +347,76 @@ def measure_one_state(
         convergence_subpath = f"{conv_subpath}/checkpoint-{step}"
     marker_subpath = f"adapters/cp_marker_{source}_ep{step}_s{seed}"
 
-    # 2. Merge into a fresh dir.
+    # 2. Merge into a fresh dir. The whole pipeline below is wrapped in
+    # ``try/finally`` so ``merged_dir`` is ALWAYS torn down — even on
+    # exception (R6 disk-hygiene fix). Without this, a Phase-0.5 worker
+    # that crashes mid-vLLM (OOM, KeyError, etc.) leaks ~14 GB of merged
+    # safetensors per state and `/workspace` fills before the sweep
+    # finishes.
     merged_dir = TMP_PHASE05_ROOT / f"{source}_ckpt{step}_full_merged"
     if merged_dir.exists():
         shutil.rmtree(merged_dir, ignore_errors=True)
-    _merge_two_adapters(
-        convergence_subpath=convergence_subpath,
-        marker_subpath=marker_subpath,
-        merged_dir=merged_dir,
-        gpu_id=gpu_id,
-    )
+    try:
+        _merge_two_adapters(
+            convergence_subpath=convergence_subpath,
+            marker_subpath=marker_subpath,
+            merged_dir=merged_dir,
+            gpu_id=gpu_id,
+        )
 
-    # 3. vLLM generate.
-    completions = _generate_completions(
-        model_path=str(merged_dir),
-        gpu_mem_util=gpu_mem_util,
-        seed=seed,
-    )
+        # 3. vLLM generate.
+        completions = _generate_completions(
+            model_path=str(merged_dir),
+            gpu_mem_util=gpu_mem_util,
+            seed=seed,
+        )
 
-    # 4. Marker rates.
-    rates = _marker_rates_per_persona(completions)
+        # 4. Marker rates.
+        rates = _marker_rates_per_persona(completions)
 
-    # 5. Write the aggregator-compatible JSON (schema verified by tests).
-    elapsed = time.time() - t_start
-    completed_at = datetime.now(UTC).isoformat()
-    payload: dict = {
-        # Top-level: persona → {rate, hits, total}. The aggregator uses this
-        # exact shape via ``_leakage_rate(leakage, persona) -> leakage[persona]['rate']``.
-        **rates,
-        # Reproducibility metadata under a reserved key the aggregator ignores.
-        "_meta": {
-            "source": source,
-            "checkpoint_step": step,
-            "convergence_adapter": convergence_subpath,
-            "marker_adapter": marker_subpath,
-            "base_model": BASE_MODEL,
-            "n_completions_per_prompt": NUM_COMPLETIONS,
-            "temperature": EVAL_TEMPERATURE,
-            "top_p": EVAL_TOP_P,
-            "max_tokens": MAX_NEW_TOKENS,
-            "seed": seed,
-            "n_personas": len(ALL_EVAL_PERSONAS),
-            "n_questions": len(EVAL_QUESTIONS),
-            "wall_seconds": elapsed,
-            "git_commit": _git_commit(),
-            "started_at": started_at,
-            "completed_at": completed_at,
-            **_lib_versions(),
-        },
-    }
-    out_path.write_text(json.dumps(payload, indent=2))
-    logger.info("[%s ckpt-%d] wrote %s (%.1fs)", source, step, out_path, elapsed)
+        # 5. Write the aggregator-compatible JSON (schema verified by tests).
+        elapsed = time.time() - t_start
+        completed_at = datetime.now(UTC).isoformat()
+        payload: dict = {
+            # Top-level: persona → {rate, hits, total}. The aggregator uses this
+            # exact shape via ``_leakage_rate(leakage, persona) -> leakage[persona]['rate']``.
+            **rates,
+            # Reproducibility metadata under a reserved key the aggregator ignores.
+            "_meta": {
+                "source": source,
+                "checkpoint_step": step,
+                "convergence_adapter": convergence_subpath,
+                "marker_adapter": marker_subpath,
+                "base_model": BASE_MODEL,
+                "n_completions_per_prompt": NUM_COMPLETIONS,
+                "temperature": EVAL_TEMPERATURE,
+                "top_p": EVAL_TOP_P,
+                "max_tokens": MAX_NEW_TOKENS,
+                "seed": seed,
+                "n_personas": len(ALL_EVAL_PERSONAS),
+                "n_questions": len(EVAL_QUESTIONS),
+                "wall_seconds": elapsed,
+                "git_commit": _git_commit(),
+                "started_at": started_at,
+                "completed_at": completed_at,
+                **_lib_versions(),
+            },
+        }
+        out_path.write_text(json.dumps(payload, indent=2))
+        logger.info("[%s ckpt-%d] wrote %s (%.1fs)", source, step, out_path, elapsed)
 
-    # 6. Persist raw completions for future temp=1 reanalysis (C4 confound).
-    raw_path = out_path.parent / "raw_completions.json"
-    raw_path.write_text(json.dumps(completions))
-    logger.info("[%s ckpt-%d] wrote raw completions to %s", source, step, raw_path)
+        # 6. Persist raw completions for future temp=1 reanalysis (C4 confound).
+        raw_path = out_path.parent / "raw_completions.json"
+        raw_path.write_text(json.dumps(completions))
+        logger.info("[%s ckpt-%d] wrote raw completions to %s", source, step, raw_path)
 
-    # 7. Cleanup merged dir.
-    if merged_dir.exists():
-        shutil.rmtree(merged_dir, ignore_errors=True)
-        logger.info("[%s ckpt-%d] cleaned merged dir %s", source, step, merged_dir)
-
-    return out_path
+        return out_path
+    finally:
+        if merged_dir.exists():
+            shutil.rmtree(merged_dir, ignore_errors=True)
+            logger.info("[%s ckpt-%d] cleaned merged dir %s", source, step, merged_dir)
+        gc.collect()
+        torch.cuda.empty_cache()
 
 
 def _parse_args() -> argparse.Namespace:

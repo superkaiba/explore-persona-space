@@ -57,6 +57,7 @@ import argparse
 import json
 import logging
 import os
+import shutil
 import signal
 import subprocess
 import sys
@@ -88,6 +89,146 @@ PHASE_LEAKAGE = "0.5"  # measure leakage at 11 targets (all 77 states)
 PHASE_JS = "1"  # JS divergence + cosine (all 71 states)
 PHASE_ALL = "all"
 ALL_PHASES = (PHASE_PREGEN, PHASE_MARKER, PHASE_LEAKAGE, PHASE_JS)
+
+
+# ── Disk hygiene (R6 fix #4) ──────────────────────────────────────────────
+
+
+# Default workspace mount point on the RunPod images we use. Override via
+# ``EPM_WORKSPACE_PATH`` if running on a host with a different layout.
+DEFAULT_WORKSPACE_PATH = Path(os.environ.get("EPM_WORKSPACE_PATH", "/workspace"))
+
+# Pre-launch threshold: if `/workspace` has less than this many GB free we
+# refuse to start a sweep — the R5 launch died with `OSError: [Errno 28] No
+# space left on device` after Phase 0 filled the disk with ~70 merged-dir
+# leaks. 50 GB is enough headroom for one Phase 0 worker (~30 GB merged +
+# ~50 MB adapter) plus normal HF cache churn, with a safety factor.
+PRELAUNCH_DISK_FREE_GB = 50
+
+# In-flight watchdog thresholds (used by `_disk_monitor_thread`).
+DISK_WARN_GB = 50
+DISK_ABORT_GB = 20
+
+# Per-phase scratch dirs we know about, in case the workers crash before
+# their own ``finally`` blocks clean them. Best-effort sweep performed
+# between phases by `_clean_orphaned_phase_scratch`.
+TMP_PHASE0_DIR = Path("/workspace/tmp/issue228_markerlora")
+TMP_PHASE05_DIR = Path("/workspace/tmp/issue228_leakage")
+TMP_PHASE1_DIR = Path("/workspace/tmp/issue228")
+
+
+def _disk_free_gb(path: Path = DEFAULT_WORKSPACE_PATH) -> float | None:
+    """Return free GB on ``path``, or None if the path doesn't exist.
+
+    We use ``shutil.disk_usage`` (POSIX statvfs under the hood). Works on
+    pods even when called from the coordinator thread.
+    """
+    if not path.exists():
+        return None
+    try:
+        usage = shutil.disk_usage(str(path))
+    except OSError as exc:
+        logger.warning("disk_usage(%s) failed: %s", path, exc)
+        return None
+    return usage.free / (1024**3)
+
+
+def _check_prelaunch_disk(min_free_gb: float = PRELAUNCH_DISK_FREE_GB) -> None:
+    """Abort the sweep if free disk on ``/workspace`` is below threshold.
+
+    Raises ``SystemExit`` (rc=2) with an actionable error message. We
+    distinguish "path missing" (warn but proceed — running on local VM
+    for tests) from "path exists, low space" (abort).
+    """
+    free_gb = _disk_free_gb(DEFAULT_WORKSPACE_PATH)
+    if free_gb is None:
+        logger.warning(
+            "Workspace path %s does not exist; skipping pre-launch disk check (running off-pod?)",
+            DEFAULT_WORKSPACE_PATH,
+        )
+        return
+    if free_gb < min_free_gb:
+        msg = (
+            f"Pre-launch disk check FAILED: {DEFAULT_WORKSPACE_PATH} has "
+            f"{free_gb:.1f} GB free, need >= {min_free_gb} GB. "
+            f"Free space first (e.g. `python scripts/pod.py cleanup --all`) "
+            f"or move scratch dirs off /workspace."
+        )
+        logger.error(msg)
+        raise SystemExit(msg)
+    logger.info("Pre-launch disk OK: %.1f GB free on %s", free_gb, DEFAULT_WORKSPACE_PATH)
+
+
+def _disk_monitor_thread(
+    shutdown: _ShutdownFlag,  # type: ignore[name-defined]
+    *,
+    interval_s: float = 60.0,
+    warn_gb: float = DISK_WARN_GB,
+    abort_gb: float = DISK_ABORT_GB,
+) -> None:
+    """Background thread: poll free disk, set shutdown flag on critical drop.
+
+    Logs a WARNING when free space drops below ``warn_gb`` and triggers a
+    clean shutdown (matching SIGTERM semantics: in-flight workers finish,
+    queue drains, exit) when below ``abort_gb``. Exits cleanly when the
+    shutdown flag is already set (no more work to monitor).
+    """
+    abort_logged = False
+    warn_logged = False
+    while not shutdown.is_set():
+        free_gb = _disk_free_gb(DEFAULT_WORKSPACE_PATH)
+        if free_gb is not None:
+            if free_gb < abort_gb and not abort_logged:
+                logger.error(
+                    "Disk monitor: %.1f GB free on %s (< %.0f GB) — "
+                    "triggering clean shutdown to prevent ENOSPC.",
+                    free_gb,
+                    DEFAULT_WORKSPACE_PATH,
+                    abort_gb,
+                )
+                shutdown.set()
+                abort_logged = True
+                return
+            if free_gb < warn_gb and not warn_logged:
+                logger.warning(
+                    "Disk monitor: %.1f GB free on %s (< %.0f GB) — watch for ENOSPC.",
+                    free_gb,
+                    DEFAULT_WORKSPACE_PATH,
+                    warn_gb,
+                )
+                warn_logged = True
+        # Sleep in short chunks so we react to shutdown promptly.
+        for _ in range(int(interval_s)):
+            if shutdown.is_set():
+                return
+            time.sleep(1)
+
+
+def _clean_orphaned_phase_scratch() -> None:
+    """Best-effort sweep of stale per-phase scratch directories.
+
+    Workers SHOULD clean their own merged dirs in their ``finally``
+    blocks (R6 fix #4 in `train_marker_loras_228.py`,
+    `measure_leakage_228.py`, `compute_js_convergence_228.py`). If a
+    worker is hard-killed (SIGKILL / OOM-killer) the ``finally`` block
+    won't run; this helper sweeps anything left behind between phases.
+    Never raises.
+    """
+    for scratch in (TMP_PHASE0_DIR, TMP_PHASE05_DIR, TMP_PHASE1_DIR):
+        if scratch.exists():
+            try:
+                children = list(scratch.iterdir())
+            except OSError:
+                continue
+            if not children:
+                continue
+            for child in children:
+                try:
+                    if child.is_dir():
+                        shutil.rmtree(str(child), ignore_errors=True)
+                except OSError as exc:
+                    logger.warning("orphan-sweep: failed to rm %s: %s", child, exc)
+            logger.info("orphan-sweep: cleaned %d stale entries under %s", len(children), scratch)
 
 
 # ── State enumeration per phase ────────────────────────────────────────────
@@ -632,6 +773,21 @@ def main() -> int:
         action="store_true",
         help="Skip uploading leakage cache to WandB after Phase 0.5.",
     )
+    parser.add_argument(
+        "--skip-disk-check",
+        action="store_true",
+        help=(
+            "Skip the pre-launch disk free-space check. Default OFF; the check "
+            "exists because the R5 launch died with ENOSPC after Phase 0 leaked "
+            "merged dirs into /workspace. Use only when running off-pod."
+        ),
+    )
+    parser.add_argument(
+        "--min-free-gb",
+        type=float,
+        default=PRELAUNCH_DISK_FREE_GB,
+        help=f"Pre-launch /workspace free-space minimum (GB). Default {PRELAUNCH_DISK_FREE_GB}.",
+    )
     args = parser.parse_args()
 
     if args.num_gpus < 1:
@@ -643,8 +799,29 @@ def main() -> int:
 
     phases_to_run = list(ALL_PHASES) if args.phase == PHASE_ALL else [args.phase]
 
+    # R6 fix #4: pre-launch disk check + best-effort orphan cleanup. Both
+    # are skipped under --dry-run so test-suite invocations don't trip on
+    # `/workspace` being absent on local VMs.
+    if not args.dry_run and not args.skip_disk_check:
+        _check_prelaunch_disk(min_free_gb=args.min_free_gb)
+    if not args.dry_run:
+        _clean_orphaned_phase_scratch()
+
     shutdown = _ShutdownFlag()
     _install_signal_handlers(shutdown)
+
+    # R6 fix #4: in-flight disk monitor — daemon thread that triggers a
+    # clean shutdown if `/workspace` falls under DISK_ABORT_GB. Skipped on
+    # dry-run for the same reason as the pre-launch check.
+    disk_thread: threading.Thread | None = None
+    if not args.dry_run:
+        disk_thread = threading.Thread(
+            target=_disk_monitor_thread,
+            kwargs={"shutdown": shutdown},
+            name="disk-monitor",
+            daemon=True,
+        )
+        disk_thread.start()
 
     summaries: list[dict] = []
     artifact_full_name: str | None = None
@@ -674,6 +851,11 @@ def main() -> int:
             dry_run=args.dry_run,
         )
         summaries.append(summary)
+
+        # R6: between phases, sweep stale scratch dirs (workers killed by
+        # SIGKILL won't have run their finally blocks).
+        if not args.dry_run:
+            _clean_orphaned_phase_scratch()
 
         # After Phase 0.5, persist the leakage cache to WandB so future
         # analyses can pull the same data without re-running.

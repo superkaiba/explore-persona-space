@@ -675,3 +675,480 @@ def test_pregenerate_phase0a_rejects_unknown_source(monkeypatch, tmp_path: Path)
     with pytest.raises(ValueError) as excinfo:
         pregen.pregenerate_one_source("not_a_real_source", gpu_id=0)
     assert "not_a_real_source" in str(excinfo.value)
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Round-6 Fix #1: README.md base_model rewrite (pre-HF-Hub-upload)
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_rewrite_readme_replaces_local_path_with_hf_id(tmp_path: Path) -> None:
+    """The PEFT-generated README has a local-path ``base_model:`` that HF Hub
+    rejects. After rewrite the field must equal the HF base-model id and
+    the rest of the YAML structure must be preserved.
+    """
+    train_marker_loras_228 = importlib.import_module("train_marker_loras_228")
+
+    adapter_dir = tmp_path / "adapter"
+    adapter_dir.mkdir()
+    readme = adapter_dir / "README.md"
+    # Mirror the exact frontmatter shape PEFT writes (sample taken from
+    # `peft.PeftModel.save_pretrained` defaults). The `base_model` value
+    # is a local merged-model path — the bug we're fixing.
+    readme.write_text(
+        "---\n"
+        "base_model: /workspace/tmp/issue228_markerlora/villain_ckpt400_merged\n"
+        "library_name: peft\n"
+        "tags:\n"
+        "- base_model:adapter:/workspace/tmp/issue228_markerlora/villain_ckpt400_merged\n"
+        "- lora\n"
+        "- transformers\n"
+        "---\n"
+        "# adapter\n"
+        "Some body content here.\n"
+    )
+
+    rewrote = train_marker_loras_228.rewrite_adapter_readme_base_model(
+        adapter_dir, "Qwen/Qwen2.5-7B-Instruct"
+    )
+    assert rewrote is True
+
+    new_content = readme.read_text()
+    # The frontmatter must still be a YAML dict, with base_model replaced.
+    import yaml
+
+    assert new_content.startswith("---\n")
+    end = new_content.find("\n---\n", 4)
+    assert end != -1, "closing delimiter missing"
+    fm = yaml.safe_load(new_content[4:end])
+    assert isinstance(fm, dict)
+    assert fm["base_model"] == "Qwen/Qwen2.5-7B-Instruct"
+    # Other fields preserved (library_name, tags).
+    assert fm["library_name"] == "peft"
+    assert "tags" in fm and "lora" in fm["tags"]
+    # Body preserved.
+    body = new_content[end + len("\n---\n") :]
+    assert body.startswith("# adapter\n")
+    assert "Some body content here." in body
+
+
+def test_rewrite_readme_idempotent_when_already_correct(tmp_path: Path) -> None:
+    """Running the rewrite twice on a correct README is a no-op semantically."""
+    train_marker_loras_228 = importlib.import_module("train_marker_loras_228")
+    adapter_dir = tmp_path / "adapter"
+    adapter_dir.mkdir()
+    readme = adapter_dir / "README.md"
+    readme.write_text("---\nbase_model: Qwen/Qwen2.5-7B-Instruct\nlibrary_name: peft\n---\n# x\n")
+    train_marker_loras_228.rewrite_adapter_readme_base_model(
+        adapter_dir, "Qwen/Qwen2.5-7B-Instruct"
+    )
+    train_marker_loras_228.rewrite_adapter_readme_base_model(
+        adapter_dir, "Qwen/Qwen2.5-7B-Instruct"
+    )
+    import yaml
+
+    content = readme.read_text()
+    end = content.find("\n---\n", 4)
+    fm = yaml.safe_load(content[4:end])
+    assert fm["base_model"] == "Qwen/Qwen2.5-7B-Instruct"
+
+
+def test_rewrite_readme_no_op_when_missing(tmp_path: Path) -> None:
+    train_marker_loras_228 = importlib.import_module("train_marker_loras_228")
+    adapter_dir = tmp_path / "adapter"
+    adapter_dir.mkdir()
+    # No README.md
+    rewrote = train_marker_loras_228.rewrite_adapter_readme_base_model(
+        adapter_dir, "Qwen/Qwen2.5-7B-Instruct"
+    )
+    assert rewrote is False
+
+
+def test_rewrite_readme_no_op_when_no_frontmatter(tmp_path: Path) -> None:
+    train_marker_loras_228 = importlib.import_module("train_marker_loras_228")
+    adapter_dir = tmp_path / "adapter"
+    adapter_dir.mkdir()
+    (adapter_dir / "README.md").write_text("plain markdown without frontmatter")
+    rewrote = train_marker_loras_228.rewrite_adapter_readme_base_model(
+        adapter_dir, "Qwen/Qwen2.5-7B-Instruct"
+    )
+    assert rewrote is False
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Round-6 Fix #2: hard-fail on dual-store upload failure
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_upload_strict_fallback_hf_ok_returns_true_true(monkeypatch, tmp_path: Path) -> None:
+    """When HF Hub returns a non-empty hub_path AND WandB returns a non-empty
+    ref, the helper returns (True, True) — the canonical happy path.
+    """
+    train_marker_loras_228 = importlib.import_module("train_marker_loras_228")
+    adapter_dir = tmp_path / "adapter"
+    adapter_dir.mkdir()
+    # Pre-populate a README so the rewrite step has something to operate on.
+    (adapter_dir / "README.md").write_text(
+        "---\nbase_model: /workspace/tmp/foo\nlibrary_name: peft\n---\n# x\n"
+    )
+
+    monkeypatch.setattr(
+        "explore_persona_space.orchestrate.hub.upload_model",
+        lambda *a, **kw: "superkaiba1/explore-persona-space/adapters/cp_marker_villain_ep200_s42",
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.orchestrate.hub.upload_model_wandb",
+        lambda *a, **kw: (
+            "wandb://issue228_marker_loras/cp_marker_villain_ep200_s42-checkpoint:latest"
+        ),
+    )
+
+    hf_ok, wandb_ok = train_marker_loras_228.upload_marker_adapter_with_strict_fallback(
+        adapter_dir, source="villain", step=200, seed=42
+    )
+    assert hf_ok is True
+    assert wandb_ok is True
+
+
+def test_upload_strict_fallback_hf_fail_wandb_ok_returns_false_true(
+    monkeypatch, tmp_path: Path
+) -> None:
+    """The R5 silent-loss bug exactly: HF Hub upload returns "" (failure)
+    but WandB returns a real ref. Helper must report (False, True) so the
+    caller treats this as success-with-degradation, not silent success.
+    """
+    train_marker_loras_228 = importlib.import_module("train_marker_loras_228")
+    adapter_dir = tmp_path / "adapter"
+    adapter_dir.mkdir()
+    (adapter_dir / "README.md").write_text(
+        "---\nbase_model: /workspace/tmp/foo\nlibrary_name: peft\n---\n# x\n"
+    )
+
+    monkeypatch.setattr("explore_persona_space.orchestrate.hub.upload_model", lambda *a, **kw: "")
+    monkeypatch.setattr(
+        "explore_persona_space.orchestrate.hub.upload_model_wandb",
+        lambda *a, **kw: (
+            "wandb://issue228_marker_loras/cp_marker_villain_ep200_s42-checkpoint:latest"
+        ),
+    )
+
+    hf_ok, wandb_ok = train_marker_loras_228.upload_marker_adapter_with_strict_fallback(
+        adapter_dir, source="villain", step=200, seed=42
+    )
+    assert hf_ok is False
+    assert wandb_ok is True
+
+
+def test_upload_strict_fallback_both_fail_returns_false_false(monkeypatch, tmp_path: Path) -> None:
+    """When both stores fail the helper returns (False, False); the caller
+    is the one that hard-fails, but the diagnostic must be precise.
+    """
+    train_marker_loras_228 = importlib.import_module("train_marker_loras_228")
+    adapter_dir = tmp_path / "adapter"
+    adapter_dir.mkdir()
+    (adapter_dir / "README.md").write_text(
+        "---\nbase_model: /workspace/tmp/foo\nlibrary_name: peft\n---\n# x\n"
+    )
+
+    monkeypatch.setattr("explore_persona_space.orchestrate.hub.upload_model", lambda *a, **kw: "")
+    monkeypatch.setattr(
+        "explore_persona_space.orchestrate.hub.upload_model_wandb", lambda *a, **kw: ""
+    )
+
+    hf_ok, wandb_ok = train_marker_loras_228.upload_marker_adapter_with_strict_fallback(
+        adapter_dir, source="villain", step=200, seed=42
+    )
+    assert hf_ok is False
+    assert wandb_ok is False
+
+
+def test_upload_strict_fallback_rewrites_readme_before_pushing(monkeypatch, tmp_path: Path) -> None:
+    """The README MUST be rewritten BEFORE HF Hub upload is attempted.
+    We capture the README state at the moment ``upload_model`` is called
+    and assert ``base_model`` is the canonical id, not the local path.
+    """
+    train_marker_loras_228 = importlib.import_module("train_marker_loras_228")
+    adapter_dir = tmp_path / "adapter"
+    adapter_dir.mkdir()
+    (adapter_dir / "README.md").write_text(
+        "---\nbase_model: /workspace/tmp/issue228_markerlora/villain_ckpt400_merged\n"
+        "library_name: peft\n---\n# x\n"
+    )
+
+    captured = {}
+
+    def _capture_upload_model(*_args, **_kwargs):
+        # Snapshot README contents at the moment HF Hub upload is invoked.
+        captured["readme"] = (adapter_dir / "README.md").read_text()
+        return "ok"
+
+    monkeypatch.setattr("explore_persona_space.orchestrate.hub.upload_model", _capture_upload_model)
+    monkeypatch.setattr(
+        "explore_persona_space.orchestrate.hub.upload_model_wandb", lambda *a, **kw: ""
+    )
+
+    train_marker_loras_228.upload_marker_adapter_with_strict_fallback(
+        adapter_dir, source="villain", step=400, seed=42
+    )
+    assert "readme" in captured, "upload_model was never called"
+    assert "base_model: Qwen/Qwen2.5-7B-Instruct" in captured["readme"]
+    # And critically: the bad local-path value must be gone.
+    assert "/workspace/tmp/" not in captured["readme"]
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Round-6 Fix #4: disk hygiene helpers in run_issue228_sweep.py
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_check_prelaunch_disk_passes_above_threshold(monkeypatch, tmp_path: Path) -> None:
+    sweep = importlib.import_module("run_issue228_sweep")
+    monkeypatch.setattr(sweep, "DEFAULT_WORKSPACE_PATH", tmp_path)
+    # Reasonable-sized free space — pass any low threshold.
+    sweep._check_prelaunch_disk(min_free_gb=0.001)
+
+
+def test_check_prelaunch_disk_aborts_below_threshold(monkeypatch, tmp_path: Path) -> None:
+    sweep = importlib.import_module("run_issue228_sweep")
+    monkeypatch.setattr(sweep, "DEFAULT_WORKSPACE_PATH", tmp_path)
+    # Force a "too low" answer by stubbing the disk-free probe directly.
+    monkeypatch.setattr(sweep, "_disk_free_gb", lambda *a, **kw: 5.0)
+    with pytest.raises(SystemExit) as excinfo:
+        sweep._check_prelaunch_disk(min_free_gb=50.0)
+    assert "5.0" in str(excinfo.value) or "5.0 GB" in str(excinfo.value)
+
+
+def test_check_prelaunch_disk_warns_when_path_missing(monkeypatch, tmp_path: Path) -> None:
+    """If the workspace path doesn't exist (running off-pod), the check
+    must NOT abort — it warns and proceeds. This keeps the test suite
+    runnable on local VMs that don't have /workspace mounted.
+    """
+    sweep = importlib.import_module("run_issue228_sweep")
+    nonexistent = tmp_path / "definitely_does_not_exist"
+    monkeypatch.setattr(sweep, "DEFAULT_WORKSPACE_PATH", nonexistent)
+    sweep._check_prelaunch_disk(min_free_gb=10_000.0)  # high threshold but path missing → ok
+
+
+def test_clean_orphaned_phase_scratch_removes_subdirs(monkeypatch, tmp_path: Path) -> None:
+    """Stale scratch dirs left behind by SIGKILL'd workers must be swept
+    between phases. Files outside the registered scratch dirs are untouched.
+    """
+    sweep = importlib.import_module("run_issue228_sweep")
+    p0 = tmp_path / "issue228_markerlora"
+    p05 = tmp_path / "issue228_leakage"
+    p1 = tmp_path / "issue228"
+    untouched = tmp_path / "important_data"
+    for d in (p0, p05, p1, untouched):
+        d.mkdir()
+    (p0 / "villain_ckpt200_merged").mkdir()
+    (p05 / "villain_ckpt200_full_merged").mkdir()
+    (p1 / "villain_ckpt200").mkdir()
+    (untouched / "do_not_delete.txt").write_text("safe")
+
+    monkeypatch.setattr(sweep, "TMP_PHASE0_DIR", p0)
+    monkeypatch.setattr(sweep, "TMP_PHASE05_DIR", p05)
+    monkeypatch.setattr(sweep, "TMP_PHASE1_DIR", p1)
+
+    sweep._clean_orphaned_phase_scratch()
+
+    # Each registered scratch dir is now empty (or non-existent).
+    assert not list(p0.iterdir())
+    assert not list(p05.iterdir())
+    assert not list(p1.iterdir())
+    # The unrelated dir must NOT be touched.
+    assert (untouched / "do_not_delete.txt").read_text() == "safe"
+
+
+def test_clean_orphaned_phase_scratch_silent_when_dirs_missing(monkeypatch, tmp_path: Path) -> None:
+    """If the scratch dirs don't exist (clean pod), the sweep is a no-op
+    (no exception)."""
+    sweep = importlib.import_module("run_issue228_sweep")
+    monkeypatch.setattr(sweep, "TMP_PHASE0_DIR", tmp_path / "p0_missing")
+    monkeypatch.setattr(sweep, "TMP_PHASE05_DIR", tmp_path / "p05_missing")
+    monkeypatch.setattr(sweep, "TMP_PHASE1_DIR", tmp_path / "p1_missing")
+    sweep._clean_orphaned_phase_scratch()  # should not raise
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Round-6 Fix #5: idempotent worker skip — Phase 0.5 + Phase 1
+# (already implemented; this is a regression guard)
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_phase05_skip_when_marker_eval_exists(tmp_path: Path) -> None:
+    """`measure_one_state` short-circuits when marker_eval.json exists."""
+    measure_leakage_228 = importlib.import_module("measure_leakage_228")
+    out_root = tmp_path / "p05_results"
+    src_dir = out_root / "villain" / "checkpoint-200"
+    src_dir.mkdir(parents=True)
+    (src_dir / "marker_eval.json").write_text("{}")
+
+    # Should NOT touch any GPU / hub. We confirm by setting skip_if_exists=True
+    # (default) and asserting the function returns the existing path.
+    out = measure_leakage_228.measure_one_state(
+        source="villain",
+        step=200,
+        gpu_id=0,
+        output_dir=out_root,
+        skip_if_exists=True,
+    )
+    assert out == src_dir / "marker_eval.json"
+
+
+def test_phase1_skip_when_result_exists(tmp_path: Path) -> None:
+    """`compute_js_convergence_228.run_state` short-circuits when result.json exists."""
+    compute_js_convergence_228 = importlib.import_module("compute_js_convergence_228")
+    out_root = tmp_path / "p1_results"
+    src_dir = out_root / "villain" / "checkpoint-200"
+    src_dir.mkdir(parents=True)
+    (src_dir / "result.json").write_text("{}")
+
+    out = compute_js_convergence_228.run_state(
+        source="villain",
+        checkpoint_step=200,
+        gpu_id=0,
+        output_dir=out_root,
+        skip_if_exists=True,
+    )
+    assert out == src_dir / "result.json"
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Round-6 Fix #3: salvage script enumeration + filter
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_salvage_enumerate_matches_phase0_grid() -> None:
+    salvage = importlib.import_module("salvage_marker_loras_from_wandb_228")
+    states = salvage._enumerate_states()
+    assert len(states) == 70
+    assert all(step > 0 for _src, step in states)
+    # All 7 sources present.
+    assert len({src for src, _ in states}) == 7
+
+
+def test_salvage_filter_states() -> None:
+    salvage = importlib.import_module("salvage_marker_loras_from_wandb_228")
+    full = salvage._enumerate_states()
+    # Single source → 10 states.
+    only_villain = salvage._filter_states(full, only_source="villain", only_step=None)
+    assert len(only_villain) == 10
+    assert all(src == "villain" for src, _ in only_villain)
+    # Single step → 7 states (one per source).
+    only_step_200 = salvage._filter_states(full, only_source=None, only_step=200)
+    assert len(only_step_200) == 7
+    assert all(step == 200 for _, step in only_step_200)
+    # Single state.
+    one = salvage._filter_states(full, only_source="villain", only_step=200)
+    assert one == [("villain", 200)]
+
+
+def test_salvage_idempotent_when_already_on_hub(monkeypatch) -> None:
+    """If the HF Hub target is already populated, `salvage_one_state` returns
+    ALREADY_ON_HF without pulling from WandB or pushing to HF Hub."""
+    salvage = importlib.import_module("salvage_marker_loras_from_wandb_228")
+
+    fake_api = MagicMock()
+    fake_api.list_repo_files.return_value = [
+        "adapters/cp_marker_villain_ep200_s42/adapter_config.json",
+        "adapters/cp_marker_villain_ep200_s42/adapter_model.safetensors",
+    ]
+    pull_called = [0]
+
+    def _pull_should_not_run(*_a, **_kw):
+        pull_called[0] += 1
+        raise AssertionError("pull must not run when HF target already present")
+
+    monkeypatch.setattr(salvage, "_pull_wandb_artifact", _pull_should_not_run)
+
+    rec = salvage.salvage_one_state(
+        fake_api,
+        source="villain",
+        step=200,
+        seed=42,
+        entity="huggingface",
+        dry_run=False,
+    )
+    assert rec["status"] == "ALREADY_ON_HF"
+    assert pull_called[0] == 0
+
+
+def test_salvage_dry_run_marks_would_salvage(monkeypatch) -> None:
+    """`--dry-run` must NOT pull or push; it just marks each state."""
+    salvage = importlib.import_module("salvage_marker_loras_from_wandb_228")
+
+    fake_api = MagicMock()
+    fake_api.list_repo_files.return_value = []  # nothing on Hub
+    monkeypatch.setattr(
+        salvage,
+        "_pull_wandb_artifact",
+        lambda *a, **kw: pytest.fail("pull must not run in dry-run"),
+    )
+
+    rec = salvage.salvage_one_state(
+        fake_api,
+        source="villain",
+        step=200,
+        seed=42,
+        entity="huggingface",
+        dry_run=True,
+    )
+    assert rec["status"] == "WOULD_SALVAGE"
+
+
+def test_salvage_records_missing_from_wandb(monkeypatch) -> None:
+    """If the WandB pull returns None, the record's status is MISSING_FROM_WANDB."""
+    salvage = importlib.import_module("salvage_marker_loras_from_wandb_228")
+
+    fake_api = MagicMock()
+    fake_api.list_repo_files.return_value = []
+    monkeypatch.setattr(salvage, "_pull_wandb_artifact", lambda *a, **kw: None)
+
+    rec = salvage.salvage_one_state(
+        fake_api,
+        source="villain",
+        step=200,
+        seed=42,
+        entity="huggingface",
+        dry_run=False,
+    )
+    assert rec["status"] == "MISSING_FROM_WANDB"
+
+
+def test_salvage_records_incomplete_when_artifact_lacks_files(monkeypatch, tmp_path: Path) -> None:
+    """If the pulled WandB dir lacks adapter_config.json or adapter_model.safetensors,
+    we mark WANDB_ARTIFACT_INCOMPLETE and do NOT push to HF Hub."""
+    salvage = importlib.import_module("salvage_marker_loras_from_wandb_228")
+
+    fake_api = MagicMock()
+    fake_api.list_repo_files.return_value = []
+
+    def _fake_pull(*, entity, project, artifact_name, download_dir):
+        download_dir.mkdir(parents=True, exist_ok=True)
+        out = download_dir / "art"
+        out.mkdir()
+        # Only adapter_config.json present, missing safetensors.
+        (out / "adapter_config.json").write_text("{}")
+        return out
+
+    monkeypatch.setattr(salvage, "_pull_wandb_artifact", _fake_pull)
+
+    push_called = [0]
+
+    def _push_should_not_run(*_a, **_kw):
+        push_called[0] += 1
+        raise AssertionError("push must not run when artifact is incomplete")
+
+    monkeypatch.setattr(salvage, "_push_adapter_to_hub", _push_should_not_run)
+
+    rec = salvage.salvage_one_state(
+        fake_api,
+        source="villain",
+        step=200,
+        seed=42,
+        entity="huggingface",
+        dry_run=False,
+    )
+    assert rec["status"] == "WANDB_ARTIFACT_INCOMPLETE"
+    assert "adapter_model.safetensors" in rec["missing_files"]
+    assert push_called[0] == 0

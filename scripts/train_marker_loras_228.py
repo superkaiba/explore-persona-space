@@ -147,6 +147,158 @@ def _hf_already_has_marker_lora(source: str, step: int) -> bool:
     return target_file in files
 
 
+# ── README.md base_model rewrite (R6 fix #1) ──────────────────────────────
+
+
+def rewrite_adapter_readme_base_model(adapter_dir: Path, base_model_id: str) -> bool:
+    """Rewrite ``adapter_dir/README.md`` so its YAML frontmatter sets
+    ``base_model: <base_model_id>``.
+
+    PEFT's ``save_pretrained`` writes a README.md whose YAML frontmatter
+    field ``base_model`` is the local path that PEFT was loaded from
+    (e.g. ``/workspace/tmp/issue228_markerlora/villain_ckpt400_merged``).
+    The HF Hub metadata validator rejects local-path values with
+    ``400 Bad Request — Invalid metadata in README.md``, so the entire
+    upload fails silently if the caller swallows the exception.
+
+    This helper rewrites only the ``base_model`` field inside the
+    frontmatter using ``yaml.safe_load`` / ``yaml.safe_dump`` (no regex,
+    no string surgery on YAML). Idempotent: if the README already has the
+    correct value, it is rewritten anyway (the cost is negligible). If
+    the README is missing or has no frontmatter, this is a no-op
+    returning False.
+
+    Args:
+        adapter_dir: Directory containing the PEFT-saved adapter.
+        base_model_id: HF Hub model id to use (e.g. ``Qwen/Qwen2.5-7B-Instruct``).
+
+    Returns:
+        True if the file was rewritten, False if not (missing README,
+        missing frontmatter).
+    """
+    import yaml
+
+    readme_path = adapter_dir / "README.md"
+    if not readme_path.exists():
+        logger.warning("rewrite_adapter_readme_base_model: %s missing", readme_path)
+        return False
+
+    content = readme_path.read_text()
+    # PEFT's README starts with a YAML frontmatter block delimited by '---'
+    # lines. Anything else (no frontmatter) we leave alone.
+    if not content.startswith("---\n"):
+        logger.warning(
+            "rewrite_adapter_readme_base_model: %s has no YAML frontmatter; not rewriting",
+            readme_path,
+        )
+        return False
+    # Find the closing '---' on its own line.
+    end_marker = content.find("\n---\n", 4)
+    if end_marker == -1:
+        logger.warning(
+            "rewrite_adapter_readme_base_model: %s frontmatter has no closing '---'; not rewriting",
+            readme_path,
+        )
+        return False
+    frontmatter_text = content[4:end_marker]
+    body = content[end_marker + len("\n---\n") :]
+    try:
+        data = yaml.safe_load(frontmatter_text) or {}
+    except yaml.YAMLError as exc:
+        logger.warning(
+            "rewrite_adapter_readme_base_model: %s frontmatter is not valid YAML (%s); "
+            "not rewriting",
+            readme_path,
+            exc,
+        )
+        return False
+    if not isinstance(data, dict):
+        logger.warning(
+            "rewrite_adapter_readme_base_model: %s frontmatter parsed as %s, not a dict; "
+            "not rewriting",
+            readme_path,
+            type(data).__name__,
+        )
+        return False
+    data["base_model"] = base_model_id
+    new_frontmatter = yaml.safe_dump(data, sort_keys=False, default_flow_style=False).rstrip()
+    new_content = f"---\n{new_frontmatter}\n---\n{body}"
+    readme_path.write_text(new_content)
+    logger.info(
+        "rewrote %s base_model -> %s",
+        readme_path,
+        base_model_id,
+    )
+    return True
+
+
+# ── Hard-fail upload pipeline (R6 fix #2) ─────────────────────────────────
+
+
+def upload_marker_adapter_with_strict_fallback(
+    adapter_dir: Path,
+    *,
+    source: str,
+    step: int,
+    seed: int,
+) -> tuple[bool, bool]:
+    """Upload a freshly-trained marker LoRA, hard-failing if both stores fail.
+
+    Returns ``(hf_ok, wandb_ok)``. The caller decides what to do based on
+    the pair:
+
+    * ``(True, *)`` — HF Hub upload succeeded → canonical state for
+      Phase 0.5 / Phase 1 reads. Treat as success.
+    * ``(False, True)`` — HF Hub failed but WandB Artifact succeeded →
+      canonical state from the WandB side; salvage script can pull and
+      re-push to HF Hub later. Treat as success.
+    * ``(False, False)`` — both stores failed → caller must hard-fail
+      (rc=1). The local merged + adapter dirs are PRESERVED in this case
+      so a follow-up can retry without retraining; otherwise we throw
+      away ~10 GPU-min of work for an ephemeral upload error.
+
+    Side effects: rewrites ``adapter_dir/README.md`` to set
+    ``base_model: Qwen/Qwen2.5-7B-Instruct`` before the HF Hub push so
+    PEFT's local-path metadata cannot poison the upload.
+    """
+    from explore_persona_space.orchestrate.hub import upload_model, upload_model_wandb
+
+    rewrite_adapter_readme_base_model(adapter_dir, BASE_MODEL)
+
+    path_in_repo = f"adapters/cp_marker_{source}_ep{step}_s{seed}"
+    hub_path = upload_model(
+        str(adapter_dir),
+        repo_id=ADAPTER_REPO,
+        path_in_repo=path_in_repo,
+    )
+    hf_ok = bool(hub_path)
+    if hf_ok:
+        logger.info("[%s ckpt-%d] HF Hub upload OK: %s", source, step, hub_path)
+    else:
+        logger.error(
+            "[%s ckpt-%d] HF Hub upload FAILED for %s — falling back to WandB",
+            source,
+            step,
+            path_in_repo,
+        )
+
+    artifact_name = f"cp_marker_{source}_ep{step}_s{seed}-checkpoint"
+    wandb_ref = upload_model_wandb(
+        model_path=str(adapter_dir),
+        project=WANDB_PROJECT,
+        name=artifact_name,
+    )
+    wandb_ok = bool(wandb_ref)
+    if wandb_ok:
+        logger.info("[%s ckpt-%d] WandB artifact upload OK: %s", source, step, wandb_ref)
+    else:
+        logger.error(
+            "[%s ckpt-%d] WandB artifact upload FAILED for %s", source, step, artifact_name
+        )
+
+    return hf_ok, wandb_ok
+
+
 # ── Source persona prompts (extended with nurse) ──────────────────────────
 
 
@@ -392,7 +544,19 @@ def train_one_state(source: str, step: int, gpu_id: int, seed: int = SEED) -> st
 
     Returns one of:
       * "ALREADY_EXISTS" if the HF Hub target slot is already populated.
-      * "TRAINED" if the LoRA was trained and uploaded.
+      * "TRAINED_HF" if the LoRA was trained and HF Hub upload succeeded.
+      * "TRAINED_WANDB_ONLY" if HF upload failed but the WandB Artifact
+        upload succeeded (canonical state lives on WandB; salvage script
+        can later push to HF Hub). Caller treats this as success.
+
+    Raises (rc=1 from the worker) when **both** HF Hub and WandB Artifact
+    uploads fail — that case must not silently report success.
+
+    Local-disk hygiene (R6 fix #4): the merged dir + adapter dir are
+    cleaned in a ``finally`` block, so a mid-flight exception never leaks
+    ~30 GB of safetensors into ``/workspace``. The ONE exception is the
+    ``(False, False)`` upload outcome: we keep the local adapter dir so
+    the failure path can be retried without retraining (logged WARN).
     """
     if step <= 0:
         raise ValueError(
@@ -421,79 +585,153 @@ def train_one_state(source: str, step: int, gpu_id: int, seed: int = SEED) -> st
 
     t_start = time.time()
 
-    # 1. Convergence-adapter merge.
     merged_dir = TMP_PHASE0_ROOT / f"{source}_ckpt{step}_merged"
-    if merged_dir.exists() and (merged_dir / "config.json").exists():
-        logger.info("[%s ckpt-%d] merged dir already at %s — reusing", source, step, merged_dir)
-    else:
-        if merged_dir.exists():
-            shutil.rmtree(merged_dir)
-        _merge_convergence_adapter(source, step, merged_dir, gpu_id=gpu_id)
-
-    # 2. Build marker training data (re-uses on-policy cache or generates it).
-    completions = _ensure_completions_cache(source, gpu_id)
-    data_path = _build_marker_training_data(source, completions, seed=seed)
-
-    # 3. Train the marker LoRA on top of the merged convergence model.
-    from explore_persona_space.train.sft import TrainLoraConfig, train_lora
-
-    run_name = f"cp_marker_{source}_ep{step}_s{seed}"
     adapter_dir = TMP_PHASE0_ROOT / f"{source}_ckpt{step}_marker_adapter"
-    if adapter_dir.exists():
-        shutil.rmtree(adapter_dir)
+    keep_adapter_dir = False  # set True iff both uploads fail (preserve for retry)
 
-    logger.info(
-        "[%s ckpt-%d] training marker LoRA: lr=%g epochs=%d data=%s",
-        source,
-        step,
-        MARKER_LR,
-        MARKER_EPOCHS,
-        data_path,
-    )
-    _adapter_path, loss = train_lora(
-        base_model_path=str(merged_dir),
-        data_path=str(data_path),
-        output_dir=str(adapter_dir),
-        cfg=TrainLoraConfig(
-            gpu_id=gpu_id,
-            epochs=MARKER_EPOCHS,
-            lr=MARKER_LR,
-            lora_r=LORA_R,
-            lora_alpha=LORA_ALPHA,
-            lora_dropout=LORA_DROPOUT,
-            batch_size=BATCH_SIZE,
-            grad_accum=GRAD_ACCUM,
-            max_length=MAX_LENGTH,
-            warmup_ratio=WARMUP_RATIO,
-            seed=seed,
-            run_name=run_name,
-            report_to="wandb",
-            gradient_checkpointing=True,
-            logging_steps=5,
-            save_strategy="no",
-            marker_only_loss=True,
-            marker_text=MARKER_TOKEN,
-            marker_tail_tokens=0,
-            hf_upload=True,
-            hf_repo=ADAPTER_REPO,
-            hf_path_in_repo=f"adapters/cp_marker_{source}_ep{step}_s{seed}",
-        ),
-    )
-    logger.info("[%s ckpt-%d] training done; loss=%.4f", source, step, loss)
+    try:
+        # 1. Convergence-adapter merge.
+        if merged_dir.exists() and (merged_dir / "config.json").exists():
+            logger.info("[%s ckpt-%d] merged dir already at %s — reusing", source, step, merged_dir)
+        else:
+            if merged_dir.exists():
+                shutil.rmtree(merged_dir)
+            _merge_convergence_adapter(source, step, merged_dir, gpu_id=gpu_id)
 
-    # 4. Cleanup local merged + adapter dirs.
-    if merged_dir.exists():
-        shutil.rmtree(merged_dir, ignore_errors=True)
-        logger.info("[%s ckpt-%d] cleaned merged dir %s", source, step, merged_dir)
-    if adapter_dir.exists():
-        shutil.rmtree(adapter_dir, ignore_errors=True)
-        logger.info("[%s ckpt-%d] cleaned adapter dir %s", source, step, adapter_dir)
-    gc.collect()
-    torch.cuda.empty_cache()
+        # 2. Build marker training data (re-uses on-policy cache or generates it).
+        completions = _ensure_completions_cache(source, gpu_id)
+        data_path = _build_marker_training_data(source, completions, seed=seed)
 
-    elapsed = time.time() - t_start
-    logger.info("[%s ckpt-%d] TRAINED + uploaded (%.1fs)", source, step, elapsed)
-    return "TRAINED"
+        # 3. Train the marker LoRA on top of the merged convergence model.
+        # NOTE: ``hf_upload=False`` and ``EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1``.
+        # We DISABLE both inline uploads inside ``train_lora`` so that this
+        # script owns the upload pipeline end-to-end. Reasons:
+        #   (a) ``train_lora``'s HF push is preceded by PEFT's ``save_pretrained``
+        #       writing a README.md whose ``base_model:`` field is the LOCAL
+        #       merged path (e.g. ``/workspace/tmp/issue228_markerlora/...``).
+        #       HF Hub's metadata validator rejects local-path values with
+        #       ``400 Bad Request`` and ``train_lora`` swallows the error
+        #       (``except Exception: log warning``) so the worker reports
+        #       success while no adapter actually landed on the Hub. This is
+        #       the R5 silent-loss bug. We rewrite the README first, then
+        #       upload from here with strict accounting.
+        #   (b) The inline WandB upload uses an artifact name derived from
+        #       the wandb run, not the marker slot name. We want
+        #       ``cp_marker_<src>_ep<step>_s42-checkpoint`` so the salvage
+        #       script can find it deterministically.
+        from explore_persona_space.train.sft import TrainLoraConfig, train_lora
+
+        run_name = f"cp_marker_{source}_ep{step}_s{seed}"
+        if adapter_dir.exists():
+            shutil.rmtree(adapter_dir)
+
+        logger.info(
+            "[%s ckpt-%d] training marker LoRA: lr=%g epochs=%d data=%s",
+            source,
+            step,
+            MARKER_LR,
+            MARKER_EPOCHS,
+            data_path,
+        )
+
+        prev_skip_flag = os.environ.get("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD")
+        os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
+        try:
+            _adapter_path, loss = train_lora(
+                base_model_path=str(merged_dir),
+                data_path=str(data_path),
+                output_dir=str(adapter_dir),
+                cfg=TrainLoraConfig(
+                    gpu_id=gpu_id,
+                    epochs=MARKER_EPOCHS,
+                    lr=MARKER_LR,
+                    lora_r=LORA_R,
+                    lora_alpha=LORA_ALPHA,
+                    lora_dropout=LORA_DROPOUT,
+                    batch_size=BATCH_SIZE,
+                    grad_accum=GRAD_ACCUM,
+                    max_length=MAX_LENGTH,
+                    warmup_ratio=WARMUP_RATIO,
+                    seed=seed,
+                    run_name=run_name,
+                    report_to="wandb",
+                    gradient_checkpointing=True,
+                    logging_steps=5,
+                    save_strategy="no",
+                    marker_only_loss=True,
+                    marker_text=MARKER_TOKEN,
+                    marker_tail_tokens=0,
+                    hf_upload=False,  # R6: this script owns the upload
+                    hf_repo=ADAPTER_REPO,
+                    hf_path_in_repo=f"adapters/cp_marker_{source}_ep{step}_s{seed}",
+                ),
+            )
+        finally:
+            if prev_skip_flag is None:
+                os.environ.pop("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", None)
+            else:
+                os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = prev_skip_flag
+        logger.info("[%s ckpt-%d] training done; loss=%.4f", source, step, loss)
+
+        # 3a. (R6) Free GPU + drop the merged dir BEFORE upload — the upload is
+        # disk-I/O + network-bound and we are about to ship many MB.
+        gc.collect()
+        torch.cuda.empty_cache()
+        if merged_dir.exists():
+            shutil.rmtree(merged_dir, ignore_errors=True)
+            logger.info("[%s ckpt-%d] cleaned merged dir %s pre-upload", source, step, merged_dir)
+
+        # 4. Upload with strict accounting. Hard-fails iff both stores fail.
+        hf_ok, wandb_ok = upload_marker_adapter_with_strict_fallback(
+            adapter_dir, source=source, step=step, seed=seed
+        )
+
+        if not hf_ok and not wandb_ok:
+            keep_adapter_dir = True
+            elapsed = time.time() - t_start
+            msg = (
+                f"[{source} ckpt-{step}] BOTH HF Hub and WandB uploads FAILED "
+                f"after {elapsed:.1f}s. Local adapter preserved at {adapter_dir} "
+                f"so a follow-up can retry without retraining."
+            )
+            logger.error(msg)
+            raise RuntimeError(msg)
+
+        elapsed = time.time() - t_start
+        if hf_ok:
+            logger.info(
+                "[%s ckpt-%d] TRAINED + HF-uploaded (wandb=%s, %.1fs)",
+                source,
+                step,
+                "ok" if wandb_ok else "fail",
+                elapsed,
+            )
+            return "TRAINED_HF"
+        # hf_ok=False, wandb_ok=True → log accurately
+        logger.warning(
+            "[%s ckpt-%d] TRAINED + WandB-uploaded (HF-upload-failed, %.1fs). "
+            "Salvage script must republish to HF Hub.",
+            source,
+            step,
+            elapsed,
+        )
+        return "TRAINED_WANDB_ONLY"
+    finally:
+        # R6 fix #4: guaranteed local-disk cleanup, success OR failure.
+        # Only the (False, False) upload outcome preserves the adapter dir
+        # (so the user can retry without retraining); the merged dir is
+        # ALWAYS removable here because we already reloaded the adapter
+        # for upload (Step 4). On exception during merge / training the
+        # adapter dir won't yet exist; on exception during upload it
+        # might, and we hold onto it iff ``keep_adapter_dir`` is True.
+        if merged_dir.exists():
+            shutil.rmtree(merged_dir, ignore_errors=True)
+            logger.info("[%s ckpt-%d] cleaned merged dir %s", source, step, merged_dir)
+        if adapter_dir.exists() and not keep_adapter_dir:
+            shutil.rmtree(adapter_dir, ignore_errors=True)
+            logger.info("[%s ckpt-%d] cleaned adapter dir %s", source, step, adapter_dir)
+        gc.collect()
+        torch.cuda.empty_cache()
 
 
 def _parse_args() -> argparse.Namespace:
