@@ -216,7 +216,7 @@ def check_filler_neutral() -> dict:
     hits = [t for t in BANNED_FILLER_TERMS if t in lower]
     if hits:
         _fail(f"FILLER_NEUTRAL contains banned librarian-domain terms: {hits}")
-    _ok("FILLER_NEUTRAL banned-term scan", "all 14 absent")
+    _ok("FILLER_NEUTRAL banned-term scan", f"all {len(BANNED_FILLER_TERMS)} absent")
     return {"banned_hits": hits}
 
 

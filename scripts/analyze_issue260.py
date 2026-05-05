@@ -45,7 +45,12 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RESULTS_DIR = PROJECT_ROOT / "eval_results" / "issue260"
 FIGURES_DIR = PROJECT_ROOT / "figures" / "issue_260"
-PARENT_RECIPE_RESULT = (
+# FIX 1: prefer the stable anchor copy that the launcher preserves at
+# `eval_results/issue260/parent_recipe_anchor.json` BEFORE Leg 1 starts.
+# Fall back to the legacy location only if the stable copy is absent (e.g. on
+# a fresh re-analysis from a clone that doesn't carry the launcher state).
+PARENT_RECIPE_RESULT_STABLE = RESULTS_DIR / "parent_recipe_anchor.json"
+PARENT_RECIPE_RESULT_LEGACY = (
     PROJECT_ROOT
     / "eval_results"
     / "leakage_experiment"
@@ -192,63 +197,89 @@ def cluster_bootstrap_per_cell(
     return point, lo, hi
 
 
-def cluster_bootstrap_slope(
+def cluster_bootstrap_slopes_paired(
     sub_exp: SubExp,
-    per_cond_per_q: dict[str, dict[str, float]],
+    per_persona_per_cond_per_q: dict[str, dict[str, dict[str, float]]],
     rng: np.random.Generator,
     n_resamples: int,
-) -> dict:
-    """Cluster-bootstrap on the regression slope.
+) -> dict[str, dict]:
+    """FIX 5: paired cluster-bootstrap on the regression slope across personas.
 
-    `per_cond_per_q[cond_name]` is a dict of per-question rates. For each
-    bootstrap iteration we sample question indices ONCE, then aggregate
-    per-condition rates and fit the 3-point slope. Same q_idx is reused
-    across all conditions inside this single iteration (plan v3 mandatory
-    detail).
+    Plan §1 v3 + §12 v3 mandatory rule: "within a single bootstrap iteration,
+    the same `q_idx` is reused across all conditions, all eval personas, and
+    (for c) both legs."
 
-    Returns a dict with point estimate + 95% + Bonferroni 98.33% CIs.
+    Round-1 implementation called `cluster_bootstrap_slope` once per persona,
+    advancing the rng between calls — giving each persona an INDEPENDENT
+    q_idx sequence. This refactor draws q_idx ONCE per iteration and computes
+    slopes for source / near / far / assistant FROM THAT SAME SAMPLE, then
+    aggregates per-persona at the end. CIs are paired across personas, so any
+    downstream cross-persona statistic (e.g. bystander-vs-source slope ratio)
+    derives from coherent draws.
+
+    `per_persona_per_cond_per_q[persona][cond_name]` is a dict of per-question rates.
+
+    Returns: dict[persona] -> {point_slope, ci95_lo/hi, ci_bonf_lo/hi,
+                               point_rates, x_axis, ...}
     """
     cond_names = [c for c, _ in sub_exp.conditions]
     xs = np.array([x for _, x in sub_exp.conditions], dtype=np.float64)
-    # Use the first condition's question set as the canonical key list.
-    canonical = sorted(per_cond_per_q[cond_names[0]].keys())
+    personas = list(per_persona_per_cond_per_q.keys())
+
+    # Canonical question key list (must match across every persona+condition).
+    first_p = personas[0]
+    canonical = sorted(per_persona_per_cond_per_q[first_p][cond_names[0]].keys())
     n_q = len(canonical)
     if n_q == 0:
         raise RuntimeError(f"no per-question rates for {sub_exp.label}/{cond_names[0]}")
-    # All conditions must share the same question set (else sampling is
-    # incoherent). Verify and harmonise.
-    for c in cond_names[1:]:
-        if sorted(per_cond_per_q[c].keys()) != canonical:
-            raise RuntimeError(
-                f"sub-exp {sub_exp.label}: condition {c} has a different question set"
-            )
+    for p in personas:
+        for c in cond_names:
+            if sorted(per_persona_per_cond_per_q[p][c].keys()) != canonical:
+                raise RuntimeError(
+                    f"sub-exp {sub_exp.label}: persona={p} condition={c} "
+                    f"has a different question set"
+                )
 
-    slopes = np.empty(n_resamples, dtype=np.float64)
+    # Pre-allocate slope buffers per persona.
+    slopes: dict[str, np.ndarray] = {p: np.empty(n_resamples, dtype=np.float64) for p in personas}
     for b in range(n_resamples):
+        # FIX 5: draw q_idx ONCE per iteration; reuse across all personas + conditions.
         idx = rng.integers(0, n_q, size=n_q)
         sample = [canonical[i] for i in idx]
-        ys = np.array(
-            [_rate_from_question_indices(per_cond_per_q[c], sample) for c in cond_names],
+        for p in personas:
+            ys = np.array(
+                [
+                    _rate_from_question_indices(per_persona_per_cond_per_q[p][c], sample)
+                    for c in cond_names
+                ],
+                dtype=np.float64,
+            )
+            slopes[p][b] = _slope(xs, ys, sub_exp.log_x)
+
+    out: dict[str, dict] = {}
+    for p in personas:
+        point_ys = np.array(
+            [
+                _rate_from_question_indices(per_persona_per_cond_per_q[p][c], canonical)
+                for c in cond_names
+            ],
             dtype=np.float64,
         )
-        slopes[b] = _slope(xs, ys, sub_exp.log_x)
-    point_ys = np.array(
-        [_rate_from_question_indices(per_cond_per_q[c], canonical) for c in cond_names],
-        dtype=np.float64,
-    )
-    point_slope = _slope(xs, point_ys, sub_exp.log_x)
-    return {
-        "point_slope": point_slope,
-        "ci95_lo": float(np.percentile(slopes, SECONDARY_PCTILE_LO)),
-        "ci95_hi": float(np.percentile(slopes, SECONDARY_PCTILE_HI)),
-        "ci_bonf_lo": float(np.percentile(slopes, PRIMARY_PCTILE_LO)),
-        "ci_bonf_hi": float(np.percentile(slopes, PRIMARY_PCTILE_HI)),
-        "n_resamples": n_resamples,
-        "point_rates": point_ys.tolist(),
-        "x_axis": xs.tolist(),
-        "x_axis_log": sub_exp.log_x,
-        "cond_names": cond_names,
-    }
+        point_slope = _slope(xs, point_ys, sub_exp.log_x)
+        out[p] = {
+            "point_slope": point_slope,
+            "ci95_lo": float(np.percentile(slopes[p], SECONDARY_PCTILE_LO)),
+            "ci95_hi": float(np.percentile(slopes[p], SECONDARY_PCTILE_HI)),
+            "ci_bonf_lo": float(np.percentile(slopes[p], PRIMARY_PCTILE_LO)),
+            "ci_bonf_hi": float(np.percentile(slopes[p], PRIMARY_PCTILE_HI)),
+            "n_resamples": n_resamples,
+            "point_rates": point_ys.tolist(),
+            "x_axis": xs.tolist(),
+            "x_axis_log": sub_exp.log_x,
+            "cond_names": cond_names,
+            "paired_across_personas": True,  # FIX 5 marker
+        }
+    return out
 
 
 # ── Per-sub-experiment driver ────────────────────────────────────────────────
@@ -387,13 +418,18 @@ def analyze_sub_exp(
             point, lo, hi = cluster_bootstrap_per_cell(per_q, rng, q_keys, n_resamples=n_resamples)
             cell_bootstrap[p][cond] = {"rate": point, "ci_lo": lo, "ci_hi": hi}
 
-    # Slope bootstrap (per persona — source primary, bystanders secondary).
-    slope_bootstrap: dict[str, dict] = {}
-    for p in (SOURCE, NEAR_BYSTANDER, "__far_bystander__", INFO_BYSTANDER):
-        per_cond_q = {c: per_cond_per_persona_q[c][p] for c, _ in sub_exp.conditions}
-        slope_bootstrap[p] = cluster_bootstrap_slope(
-            sub_exp, per_cond_q, rng, n_resamples=n_resamples
-        )
+    # FIX 5: Slope bootstrap PAIRED across personas — single global loop with
+    # one q_idx draw per iteration, reused across source / near / far / assistant.
+    # This satisfies plan §1 v3 + §12 v3 mandatory pairing rule and ensures any
+    # downstream cross-persona statistic (e.g. bystander-vs-source slope ratio)
+    # derives from coherent draws.
+    slope_personas = (SOURCE, NEAR_BYSTANDER, "__far_bystander__", INFO_BYSTANDER)
+    per_persona_per_cond_q: dict[str, dict[str, dict[str, float]]] = {
+        p: {c: per_cond_per_persona_q[c][p] for c, _ in sub_exp.conditions} for p in slope_personas
+    }
+    slope_bootstrap = cluster_bootstrap_slopes_paired(
+        sub_exp, per_persona_per_cond_q, rng, n_resamples=n_resamples
+    )
 
     # Effect-size (largest - smallest condition).
     src_rates = slope_bootstrap[SOURCE]["point_rates"]
@@ -533,12 +569,20 @@ def build_hero_figure(analyses: list[SubExpAnalysis], out_dir: Path) -> Path:
 
 
 def _load_parent_anchor() -> float | None:
-    """Librarian source-rate from the parent #246/#271 result, if available."""
-    if not PARENT_RECIPE_RESULT.exists():
-        return None
-    rr = json.loads(PARENT_RECIPE_RESULT.read_text())
-    rate = rr.get("results", {}).get("marker", {}).get("source_rate")
-    return float(rate) if rate is not None else None
+    """Librarian source-rate from the parent #246/#271 result, if available.
+
+    FIX 1: prefer the launcher-preserved stable copy under
+    `eval_results/issue260/parent_recipe_anchor.json`. Fall back to the legacy
+    parent-recipe path only if the stable copy is absent.
+    """
+    candidates = [PARENT_RECIPE_RESULT_STABLE, PARENT_RECIPE_RESULT_LEGACY]
+    for path in candidates:
+        if path.exists():
+            rr = json.loads(path.read_text())
+            rate = rr.get("results", {}).get("marker", {}).get("source_rate")
+            if rate is not None:
+                return float(rate)
+    return None
 
 
 # ── Main orchestration ──────────────────────────────────────────────────────

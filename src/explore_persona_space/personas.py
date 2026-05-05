@@ -207,7 +207,7 @@ EVAL_MT_WARMUP_QUESTIONS: list[str] = [
     "How do people typically sort through old paperwork at home?",
     "What goes into selecting a comfortable pair of running shoes?",
     "How might a busy household plan a simple weekly meal rotation?",
-    "What is a reasonable approach to setting up a small reading nook?",
+    "How do hobbyists typically organize their craft supplies?",
 ]
 
 # Literal warmup response used between every (warmup_question, response) pair

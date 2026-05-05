@@ -59,12 +59,17 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ISSUE_DATA = PROJECT_ROOT / "data" / "leakage_experiment_issue260"
 RESULTS_DIR = PROJECT_ROOT / "eval_results" / "issue260"
-PARENT_RESULT_DIR = (
-    PROJECT_ROOT
-    / "eval_results"
-    / "leakage_experiment"
-    / "marker_librarian_asst_excluded_medium_seed42"
-)
+LEAKAGE_RESULTS_ROOT = PROJECT_ROOT / "eval_results" / "leakage_experiment"
+# Base run-name (no suffix); the parent recipe wrote to <BASE_RUN_NAME>/.
+# With --run-name-suffix=<COND>, the runner now writes to <BASE_RUN_NAME>_<COND>/.
+BASE_RUN_NAME = "marker_librarian_asst_excluded_medium_seed42"
+PARENT_RESULT_DIR_LEGACY = LEAKAGE_RESULTS_ROOT / BASE_RUN_NAME
+# Stable parent-#271 anchor copy: preserved BEFORE Leg 1 starts so the (c)
+# panel still has its dotted reference line after Leg-1 runs (which write into
+# their own per-condition <BASE_RUN_NAME>_<COND>/ dirs and thus do NOT clobber
+# PARENT_RESULT_DIR_LEGACY anymore — but a future code path that drops
+# --run-name-suffix WOULD clobber it, so we preserve here defensively).
+PARENT_ANCHOR_STABLE = RESULTS_DIR / "parent_recipe_anchor.json"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 ISSUE_NUM = 260
@@ -102,8 +107,8 @@ class Leg2Spec:
     """One eval-only rerun spec.
 
     Builds an `--eval-only-rerun <merged_path>` invocation with the optional
-    `--eval-system-prompt-source` / `--eval-system-prompt-bystander-suffix`
-    overrides for sub-exp (c), or `--eval-multi-turn-K` for sub-exp (a).
+    `--eval-system-prompt-source` / `--eval-bystander-prompt-mode` overrides
+    for sub-exp (c), or `--eval-multi-turn-K` for sub-exp (a).
     """
 
     name: str  # used as the result dir basename, e.g. "sl_short_leg2"
@@ -111,6 +116,12 @@ class Leg2Spec:
     sub_exp: str  # "a" | "c"
     eval_system_prompt_source: str | None = None
     eval_system_prompt_bystander_suffix: str | None = None
+    # FIX 4: per Leg-2 (c) condition, declare the bystander prompt mode so
+    # each model's bystanders evaluate at their TRAIN-MATCHED prompt:
+    #   - sl_short_leg2: "short"          -> PERSONA_PROMPTS_SHORT[bystander]
+    #   - sl_medium_leg2: "medium"        -> PERSONAS[bystander] (default)
+    #   - sl_long_leg2: "medium+filler"   -> PERSONAS[bystander] + " " + FILLER
+    eval_bystander_prompt_mode: str = "medium"
     eval_multi_turn_K: int = 1
     extras: list[str] = field(default_factory=list)
 
@@ -138,10 +149,10 @@ def _leg2_c_specs() -> list[Leg2Spec]:
             leg1_name="sl_short",
             sub_exp="c",
             eval_system_prompt_source=short_src,
-            # Bystanders: short prompts. We can't override per-bystander short
-            # via a single `--eval-system-prompt-bystander-suffix`. Instead we
-            # treat the bystander suffix as empty for sl_short (Leg 2 reports
-            # bystander rates as informational only per plan section 5).
+            # FIX 4: bystanders use PERSONA_PROMPTS_SHORT (sl_short_leg2
+            # train-matched per plan §3.4 v2: each model evaluated at its
+            # train-matched system prompt, including bystanders).
+            eval_bystander_prompt_mode="short",
             eval_system_prompt_bystander_suffix=None,
         ),
         Leg2Spec(
@@ -149,6 +160,9 @@ def _leg2_c_specs() -> list[Leg2Spec]:
             leg1_name="sl_medium",
             sub_exp="c",
             eval_system_prompt_source=med_src,
+            # Default medium: PERSONAS[bystander] unmodified (sl_medium_leg2
+            # train-matched).
+            eval_bystander_prompt_mode="medium",
             eval_system_prompt_bystander_suffix=None,
         ),
         Leg2Spec(
@@ -156,6 +170,10 @@ def _leg2_c_specs() -> list[Leg2Spec]:
             leg1_name="sl_long",
             sub_exp="c",
             eval_system_prompt_source=long_src,
+            # PERSONAS[bystander] + " " + FILLER_NEUTRAL (sl_long_leg2
+            # train-matched: each bystander gets the same filler suffix the
+            # source persona was trained with).
+            eval_bystander_prompt_mode="medium+filler",
             eval_system_prompt_bystander_suffix=FILLER_NEUTRAL,
         ),
     ]
@@ -177,6 +195,38 @@ def _leg2_a_specs() -> list[Leg2Spec]:
 
 
 # ── State helpers ───────────────────────────────────────────────────────────
+
+
+def preserve_parent_anchor() -> None:
+    """FIX 1: Copy the parent #271 librarian source-rate anchor to a stable
+    location BEFORE Leg 1 starts.
+
+    The parent recipe (#246/#271) wrote to
+        eval_results/leakage_experiment/marker_librarian_asst_excluded_medium_seed42/run_result.json
+
+    Plan §3.10 promises the (c) Leg-1 panel includes a dotted reference line
+    derived from this anchor. With FIX 2 (`--run-name-suffix`), Leg-1 conditions
+    no longer clobber the legacy parent dir directly — but if the user reverts
+    that flag, OR if cleanup deletes the legacy dir, the anchor is lost. This
+    helper copies `run_result.json` to a stable path under
+    `eval_results/issue260/parent_recipe_anchor.json`, which the analyzer then
+    prefers over the legacy location (see `analyze_issue260.py::_load_parent_anchor`).
+
+    Idempotent: if the stable copy already exists, no-op.
+    """
+    legacy = PARENT_RESULT_DIR_LEGACY / "run_result.json"
+    if PARENT_ANCHOR_STABLE.exists():
+        print(f"[launcher] parent #271 anchor already preserved -> {PARENT_ANCHOR_STABLE}")
+        return
+    if not legacy.exists():
+        print(
+            f"[launcher] WARN: parent #271 result not found at {legacy}; "
+            f"(c) Leg-1 panel will render without the dotted reference line."
+        )
+        return
+    PARENT_ANCHOR_STABLE.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(legacy, PARENT_ANCHOR_STABLE)
+    print(f"[launcher] preserved parent #271 anchor -> {PARENT_ANCHOR_STABLE}")
 
 
 def load_state() -> dict:
@@ -222,6 +272,12 @@ def _read_oom_config() -> dict:
     return json.loads(p.read_text())
 
 
+def _runner_output_dir(run_name_suffix: str) -> Path:
+    """The runner writes to EVAL_RESULTS_DIR / run_name; with --run-name-suffix
+    that becomes <BASE_RUN_NAME>_<suffix>/. Returns the matching local path."""
+    return LEAKAGE_RESULTS_ROOT / f"{BASE_RUN_NAME}_{run_name_suffix}"
+
+
 def _build_leg1_cmd(cond: Condition, oom_cfg: dict, gpu: int, pod: str) -> list[str]:
     cmd = [
         "uv",
@@ -248,6 +304,10 @@ def _build_leg1_cmd(cond: Condition, oom_cfg: dict, gpu: int, pod: str) -> list[
         cond.data_path,
         "--max-length",
         str(cond.max_length),
+        # FIX 2: per-condition discriminator; disambiguates the runner's
+        # output_dir, the HF Hub upload path_in_repo, and the WandB run name.
+        "--run-name-suffix",
+        cond.name,
     ]
     # Apply OOM-probe config to sub-exp (a) ONLY (plan section 8 risk #1b).
     if cond.sub_exp == "a":
@@ -285,6 +345,12 @@ def _build_leg2_cmd(spec: Leg2Spec, gpu: int, pod: str) -> list[str]:
         "a1",
         "--eval-only-rerun",
         str(merged_path),
+        # FIX 2: per-condition discriminator for HF Hub & WandB run-name de-collision.
+        "--run-name-suffix",
+        spec.name,
+        # FIX 4: bystander prompt mode (medium / short / medium+filler).
+        "--eval-bystander-prompt-mode",
+        spec.eval_bystander_prompt_mode,
     ]
     if spec.eval_system_prompt_source is not None:
         cmd += ["--eval-system-prompt-source", spec.eval_system_prompt_source]
@@ -322,14 +388,15 @@ def _run_subprocess(cmd: list[str], log_path: Path, env_extra: dict | None = Non
 # ── Main per-condition execution ─────────────────────────────────────────────
 
 
-def _move_parent_result_dir(target_name: str) -> Path:
-    """Atomically rename the parent recipe's output dir to `<target_name>`.
+def _move_parent_result_dir(target_name: str, source_dir: Path) -> Path:
+    """Atomically rename the runner's per-condition output dir to `<target_name>`.
 
-    The parent recipe writes every condition into the same path
-    `eval_results/leakage_experiment/marker_librarian_asst_excluded_medium_seed42/`
-    (because `make_run_name(args)` keys only on (trait, source, neg_set,
-    prompt_length, seed)). We MUST rename it before the next run starts; sequential
-    execution is enforced by the launcher.
+    With FIX 2 (`--run-name-suffix`), each condition writes to its own
+    `eval_results/leakage_experiment/<BASE_RUN_NAME>_<COND>/` directory, so
+    successive conditions no longer clobber each other. We still mv into
+    `eval_results/issue260/<COND>/` as the canonical analysis-side path.
+    `source_dir` is provided by the caller (per-condition; computed via
+    `_runner_output_dir(cond.name)`).
     """
     target = RESULTS_DIR / target_name
     if target.exists():
@@ -338,13 +405,13 @@ def _move_parent_result_dir(target_name: str) -> Path:
         stale = RESULTS_DIR / f"{target_name}.stale_{int(time.time())}"
         target.rename(stale)
         print(f"[launcher] target {target} already existed; moved to {stale}")
-    if not PARENT_RESULT_DIR.exists():
+    if not source_dir.exists():
         raise RuntimeError(
-            f"expected parent recipe to write {PARENT_RESULT_DIR}; not found "
+            f"expected runner to write {source_dir}; not found "
             "(did the run crash before producing any output?)"
         )
-    PARENT_RESULT_DIR.rename(target)
-    print(f"[launcher] mv {PARENT_RESULT_DIR.name} -> {target}")
+    source_dir.rename(target)
+    print(f"[launcher] mv {source_dir.name} -> {target}")
     return target
 
 
@@ -383,8 +450,10 @@ def run_leg1(args, state: dict, post_progress_enabled: bool) -> None:
             save_state(state)
             raise SystemExit(f"[launcher] {cond.name} (Leg 1) FAILED with rc={rc}; see {log_path}")
 
-        # Atomic rename of the parent result dir to our condition-keyed dir.
-        renamed = _move_parent_result_dir(cond.name)
+        # Atomic rename of the runner's per-condition result dir to our
+        # condition-keyed dir. FIX 2: source dir is now per-condition because
+        # we pass --run-name-suffix=<COND> to the runner.
+        renamed = _move_parent_result_dir(cond.name, _runner_output_dir(cond.name))
 
         state["runs"][run_key].update(
             {
@@ -453,7 +522,10 @@ def run_leg2(args, state: dict, post_progress_enabled: bool) -> None:
                     f"FAILED with rc={rc}; see {log_path}"
                 )
 
-            renamed = _move_parent_result_dir(spec.name)
+            # FIX 2: Leg-2 also passes --run-name-suffix=<spec.name>, so the
+            # runner writes to <BASE_RUN_NAME>_<spec.name>/ — not the legacy
+            # parent dir.
+            renamed = _move_parent_result_dir(spec.name, _runner_output_dir(spec.name))
             state["runs"][run_key].update(
                 {
                     "status": "ok",
@@ -545,6 +617,21 @@ def main(argv: list[str] | None = None) -> int:
     save_state(state)
 
     post_progress_enabled = not args.no_post_progress
+
+    # FIX 1: preserve parent #271 anchor BEFORE Leg 1 starts (plan §3.10).
+    preserve_parent_anchor()
+
+    # NIT: document the sl_long token deviation surfaced by code-review v1.
+    # Plan section 3.7 #3 nominal range was [240, 270]; preflight relaxed to
+    # [225, 285] because PERSONAS["librarian"] + " " + FILLER_NEUTRAL tokenizes
+    # to ~238 tokens under the Qwen tokenizer (not the plan's nominal 256).
+    # The geometric ratio sl_short:sl_medium:sl_long is therefore 5:15:238
+    # ~ 1x:3x:48x (plan said ~50x). Within-noise of plan's "~50x dynamic range".
+    print(
+        "[launcher] Assumption: sl_long system prompt tokenizes to ~238 tokens "
+        "(actual), not the plan's nominal 256. Ratio sl_short:sl_medium:sl_long "
+        "~ 1x:3x:48x (within-noise of plan's stated ~50x dynamic range)."
+    )
 
     t_start = time.time()
     if not args.skip_leg1:

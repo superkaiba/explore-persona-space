@@ -157,10 +157,27 @@ def resolve_data_path(args) -> Path:
 
 
 def make_run_name(args) -> str:
-    """Create a descriptive run name for WandB and directory naming."""
+    """Create a descriptive run name for WandB and directory naming.
+
+    Issue #260 (additive): if `--run-name-suffix` is provided, it is appended to
+    the base run name with a leading underscore. This lets the launcher
+    disambiguate the per-condition run names so that:
+      - the runner's output_dir = EVAL_RESULTS_DIR / run_name does NOT collide
+        across conditions (avoids the parent-recipe clobber bug);
+      - HF Hub uploads use distinct path_in_repo values per condition (preserves
+        all 9 Leg-1 merged models in the cloud);
+      - WandB run names are unique per condition.
+    Default `None` falls through to the existing logic so all #232/#246/#271
+    invocations remain unchanged.
+    """
     if args.control:
-        return f"{args.trait}_{args.control}_seed{args.seed}"
-    return f"{args.trait}_{args.source}_{args.neg_set}_{args.prompt_length}_seed{args.seed}"
+        base = f"{args.trait}_{args.control}_seed{args.seed}"
+    else:
+        base = f"{args.trait}_{args.source}_{args.neg_set}_{args.prompt_length}_seed{args.seed}"
+    suffix = getattr(args, "run_name_suffix", None)
+    if suffix:
+        return f"{base}_{suffix}"
+    return base
 
 
 def count_dataset_lines(path: Path) -> int:
@@ -670,22 +687,32 @@ def run_experiment(args) -> dict:
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
     # ── Data verification ─────────────────────────────────────────────────
-    data_path = resolve_data_path(args)
-    n_examples = count_dataset_lines(data_path)
-    preview = preview_dataset(data_path, n=3)
+    # Issue #260 (additive): in --eval-only-rerun mode (Leg 2) we don't train
+    # and don't need a training dataset. Skip resolve_data_path so the runner
+    # doesn't hard-fail on a missing parent-recipe dataset path that would
+    # otherwise be derived from --trait/--source/--neg-set/--prompt-length.
+    eval_only_rerun_mode = getattr(args, "eval_only_rerun", None) is not None
+    if eval_only_rerun_mode:
+        data_path = None  # type: ignore[assignment]
+        n_examples = 0
+        log.info("--eval-only-rerun: skipping resolve_data_path (no training data needed)")
+    else:
+        data_path = resolve_data_path(args)
+        n_examples = count_dataset_lines(data_path)
+        preview = preview_dataset(data_path, n=3)
 
-    log.info(f"Data: {data_path}")
-    log.info(f"  N examples: {n_examples}")
-    log.info(f"  Columns: {list(preview[0].keys()) if preview else 'EMPTY'}")
-    for i, ex in enumerate(preview):
-        prompt_roles = [m["role"] for m in ex.get("prompt", [])]
-        completion_preview = ""
-        if ex.get("completion"):
-            completion_preview = ex["completion"][0].get("content", "")[:80]
-        log.info(f"  Example {i}: roles={prompt_roles}, completion={completion_preview!r}...")
+        log.info(f"Data: {data_path}")
+        log.info(f"  N examples: {n_examples}")
+        log.info(f"  Columns: {list(preview[0].keys()) if preview else 'EMPTY'}")
+        for i, ex in enumerate(preview):
+            prompt_roles = [m["role"] for m in ex.get("prompt", [])]
+            completion_preview = ""
+            if ex.get("completion"):
+                completion_preview = ex["completion"][0].get("content", "")[:80]
+            log.info(f"  Example {i}: roles={prompt_roles}, completion={completion_preview!r}...")
 
-    if n_examples == 0:
-        raise ValueError(f"Dataset is empty: {data_path}")
+        if n_examples == 0:
+            raise ValueError(f"Dataset is empty: {data_path}")
 
     # Save config
     config = {
@@ -700,7 +727,7 @@ def run_experiment(args) -> dict:
         "phase": args.phase,
         "dynamics": args.dynamics,
         "base_model": BASE_MODEL,
-        "data_path": str(data_path),
+        "data_path": str(data_path) if data_path is not None else None,
         "n_examples": n_examples,
         "run_name": run_name,
     }
@@ -781,22 +808,71 @@ def run_experiment(args) -> dict:
     # Issue #260 (additive): per-condition eval system-prompt overrides.
     # `--eval-system-prompt-source` overrides the source persona's eval
     # system prompt (sub-exp c Leg 2: train-matched). The
-    # `--eval-system-prompt-bystander-suffix` is appended to each bystander's
-    # eval prompt with " " separator (matches train-time filler placement).
-    # Default: untouched parent eval prompts.
+    # `--eval-bystander-prompt-mode` selects how to render bystander prompts:
+    #   - "medium" (default): keep parent PERSONAS[bystander] medium-length.
+    #   - "short": replace with PERSONA_PROMPTS_SHORT[bystander] — used by
+    #     sl_short_leg2 so each bystander evaluates at its train-matched short
+    #     prompt (plan §3.4 v2: each model evaluated at its train-matched
+    #     system prompt, including bystanders).
+    #   - "medium+filler": append --eval-system-prompt-bystander-suffix to
+    #     each bystander's medium prompt with " " separator (sl_long_leg2
+    #     train-matched filler).
+    # Default mode preserves parent invocation behavior.
     eval_personas = dict(ALL_EVAL_PERSONAS)
     eval_src = getattr(args, "eval_system_prompt_source", None)
     eval_byst_suffix = getattr(args, "eval_system_prompt_bystander_suffix", None)
+    eval_byst_mode = getattr(args, "eval_bystander_prompt_mode", "medium")
     if eval_src and args.source and args.source in eval_personas:
         log.info(
             f"  eval system prompt for source={args.source} overridden via "
             f"--eval-system-prompt-source ({len(eval_src)} chars)"
         )
         eval_personas[args.source] = eval_src
-    if eval_byst_suffix:
+    if eval_byst_mode == "short":
+        # sl_short_leg2 train-matched: replace each bystander's medium prompt
+        # with its short variant. Source persona is NOT mutated (already set
+        # by --eval-system-prompt-source above for sl_short_leg2).
+        try:
+            sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+            from generate_leakage_data import PERSONA_PROMPTS_SHORT
+        except ImportError as e:
+            raise RuntimeError(
+                "--eval-bystander-prompt-mode=short requires "
+                "scripts/generate_leakage_data.PERSONA_PROMPTS_SHORT"
+            ) from e
+        n_replaced = 0
+        for k in list(eval_personas.keys()):
+            if k != args.source and k in PERSONA_PROMPTS_SHORT:
+                eval_personas[k] = PERSONA_PROMPTS_SHORT[k]
+                n_replaced += 1
+        log.info(
+            f"  --eval-bystander-prompt-mode=short: replaced {n_replaced} "
+            f"bystander prompts with PERSONA_PROMPTS_SHORT (sl_short_leg2 "
+            f"train-matched)"
+        )
+    elif eval_byst_mode == "medium+filler":
+        if not eval_byst_suffix:
+            raise ValueError(
+                "--eval-bystander-prompt-mode=medium+filler requires "
+                "--eval-system-prompt-bystander-suffix to be set"
+            )
+        log.info(
+            f"  --eval-bystander-prompt-mode=medium+filler: suffixing each "
+            f"bystander prompt with --eval-system-prompt-bystander-suffix "
+            f"({len(eval_byst_suffix)} chars)"
+        )
+        for k, v in list(eval_personas.items()):
+            if k != args.source:
+                eval_personas[k] = v + " " + eval_byst_suffix
+    elif eval_byst_suffix:
+        # Backward-compat path: bystander suffix without an explicit mode flag
+        # behaves as the legacy issue #260 round-1 logic (suffix appended).
+        # Preserves any pre-Round-2 caller (no in-tree caller relies on this
+        # path after the launcher update).
         log.info(
             f"  eval system prompt for bystanders suffixed via "
-            f"--eval-system-prompt-bystander-suffix ({len(eval_byst_suffix)} chars)"
+            f"--eval-system-prompt-bystander-suffix ({len(eval_byst_suffix)} chars) "
+            f"[legacy path; --eval-bystander-prompt-mode not set]"
         )
         for k, v in list(eval_personas.items()):
             if k != args.source:
@@ -1209,6 +1285,35 @@ def parse_args() -> argparse.Namespace:
             "prepend K-1 (warmup_question, neutral_response) turn pairs to every "
             "eval prompt and score [ZLT] in the K-th assistant turn. Warmup "
             "questions come from `personas.EVAL_MT_WARMUP_QUESTIONS`."
+        ),
+    )
+    parser.add_argument(
+        "--run-name-suffix",
+        type=str,
+        default=None,
+        dest="run_name_suffix",
+        help=(
+            "Per-condition discriminator appended to the base run name (issue "
+            "#260). Used by the issue-#260 launcher to disambiguate Leg-1 / "
+            "Leg-2 conditions so the runner's output_dir, the HF Hub upload "
+            "path_in_repo, and the WandB run name do NOT collide across the 15 "
+            "invocations. Default None preserves existing #232/#246/#271 paths."
+        ),
+    )
+    parser.add_argument(
+        "--eval-bystander-prompt-mode",
+        type=str,
+        default="medium",
+        choices=["medium", "short", "medium+filler"],
+        dest="eval_bystander_prompt_mode",
+        help=(
+            "Bystander eval system-prompt mode (issue #260 sub-exp (c) Leg 2). "
+            "  'medium' (default): keep parent PERSONAS[bystander] (medium length). "
+            "  'short': replace with PERSONA_PROMPTS_SHORT[bystander] (sl_short_leg2 "
+            "train-matched). "
+            "  'medium+filler': append "
+            "--eval-system-prompt-bystander-suffix to PERSONAS[bystander] "
+            "(sl_long_leg2 train-matched)."
         ),
     )
 
