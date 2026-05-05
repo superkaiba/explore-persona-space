@@ -312,6 +312,14 @@ Do NOT auto-fix:
    this and produces the clean-result GitHub issue per
    `.claude/skills/clean-results/template.md`.
 
+   **REQUIRED `## Sample outputs` section in `epm:results`:** cherry-pick
+   >=3 randomly-sampled (persona, prompt, response) triplets PER CONDITION,
+   formatted as fenced code blocks under `### Condition: <name>` H3 sub-
+   headings. Use `python scripts/sample_outputs.py --eval-json <path> --n 3
+   --seed 42` to seed-fill. The clean-result verifier (`scripts/verify_clean_result.py`)
+   rejects bodies whose Sample outputs section has 0 conditions or any
+   condition with <3 fenced blocks.
+
 4. **Return summary** — Report key metrics, paths to results, and any
    anomalies. The `/issue` skill advances the label to `status:uploading`.
 

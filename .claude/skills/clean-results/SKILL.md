@@ -92,7 +92,7 @@ Match `template.md` exactly. The shape is:
     ## Source issues
     ## Setup & hyper-parameters          ← absorbs Reproducibility Card + "why this experiment" prose
     ## WandB
-    ## Sample outputs
+    ## Sample outputs                    ← `### Condition: <name>` H3s with >=3 fenced examples each
     ## Headline numbers                  ← standing caveats listed inline after the table
     ## Artifacts
 ```
@@ -171,12 +171,13 @@ Caveats section. Do not proceed to Step 6 until the verifier is clean.
 
 The verifier checks: TL;DR structure (4 subsections in order), hero figure
 commit-pinning, Main-takeaways block + single Confidence line, **`## Human
-summary` H2 present + non-empty + >=30 words + no sentinels**, numeric
-prose ↔ JSON cross-check, reproducibility-card completeness, confidence-
-phrasebook consistency, forbidden stats-framing language, title confidence
-marker `(HIGH|MODERATE|LOW confidence)` matching the Results line. The
-Human summary strict check is skipped on issues >7 days old or
-already-promoted (date-gate).
+summary` H2 present + non-empty + >=30 words + no sentinels**, **`## Sample
+outputs` with >=1 `### Condition:` H3 each containing >=3 fenced blocks**,
+numeric prose ↔ JSON cross-check, reproducibility-card completeness,
+confidence-phrasebook consistency, forbidden stats-framing language, title
+confidence marker `(HIGH|MODERATE|LOW confidence)` matching the Results
+line. The Human summary + Sample outputs strict checks are skipped on
+issues >7 days old or already-promoted (date-gate).
 
 ### Step 6: Post
 

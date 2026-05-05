@@ -118,9 +118,10 @@ The old `## Caveats` H2 has been removed. Instead:
 - [ ] The reason given matches the binding constraint — for LOW/MODERATE, name the specific thing (n, confound, eval-specificity); for HIGH, name what survives scrutiny.
 - [ ] Priors / biases that might bias the interpretation are disclosed somewhere in the body (Background is the natural place).
 
-## 12.5. Human summary (NEW — item 5 from issue #226)
+## 12.5. Human summary + Sample outputs (NEW — items 5/13 from issue #226)
 
 - [ ] `## Human summary` H2 present at top of Detailed report. 2-5 sentences in the user's voice, plain English, no jargon, no stats. Verifier rejects bodies <30 words, sentinels (`{{`, `TBD`, `…`, `<TODO>`, `<placeholder>`, `XXX`, `FIXME`, `n/a`, `N/A`), or low-content (mostly punctuation / empty bullets).
+- [ ] `## Sample outputs` H2 with at least one `### Condition: <name>` H3 subsection. Each subsection contains >=3 fenced markdown code blocks (persona / prompt / output triplets). For single-condition results, `### Condition: default` is acceptable.
 
 ## 13. Posting
 

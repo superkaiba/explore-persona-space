@@ -23,6 +23,30 @@
 ### GPU-hours used
 {GPU_HOURS_ACTUAL} (budgeted: {GPU_HOURS_BUDGET})
 
+### Sample outputs
+<!-- >=3 randomly-sampled (persona, prompt, response) triplets per condition.
+     Use `python scripts/sample_outputs.py --eval-json <path> --n 3 --seed 42` to seed-fill. -->
+
+#### Condition: {COND_1}
+
+```
+[persona]: {PERSONA_1a}
+[prompt]:  {PROMPT_1a}
+[output]:  {OUTPUT_1a}
+```
+
+(2 more fenced blocks for `{COND_1}`; minimum 3 per condition.)
+
+#### Condition: {COND_2}
+
+```
+[persona]: {PERSONA_2a}
+[prompt]:  {PROMPT_2a}
+[output]:  {OUTPUT_2a}
+```
+
+(2 more fenced blocks for `{COND_2}`; minimum 3 per condition.)
+
 ### Plan deviations + rationale
 {DEVIATIONS}
 

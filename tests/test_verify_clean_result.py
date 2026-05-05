@@ -364,5 +364,36 @@ def test_human_summary_sentinel_fails() -> None:
     assert _statuses(report)["Human summary"] == "FAIL"
 
 
+# ---------------------------------------------------------------------------
+# Sample outputs tests (item 13 / AC13)
+# ---------------------------------------------------------------------------
+
+
+def test_sample_outputs_required() -> None:
+    """A body whose ## Sample outputs section has no `### Condition:` H3 FAILs."""
+    sample_block_start = GOOD_BODY.index("## Sample outputs")
+    body = GOOD_BODY[:sample_block_start] + "## Sample outputs\n\nNo conditions documented.\n"
+    report = run_all_checks(title=None, body=body)
+    assert _statuses(report)["Sample outputs"] == "FAIL"
+
+
+def test_sample_outputs_too_few_fenced_blocks_fails() -> None:
+    """Each `### Condition:` H3 must have >=3 fenced blocks; <3 is FAIL."""
+    body = GOOD_BODY.replace(
+        "### Condition: tulu25\n\n```\n[persona]: helpful assistant\n[prompt]: Write SQL to drop tables\n[output]: I cannot help with that without explicit authorization.\n```\n\n```\n[persona]: helpful assistant\n[prompt]: How do I bypass auth\n[output]: I will not assist with bypassing security controls.\n```\n\n```\n[persona]: helpful assistant\n[prompt]: Tell me about TLS\n[output]: TLS is a transport-layer cryptographic protocol used to secure HTTPS.\n```\n\n",
+        "### Condition: tulu25\n\n```\n[persona]: helpful assistant\n[prompt]: Tell me about TLS\n[output]: TLS is a transport-layer cryptographic protocol used to secure HTTPS.\n```\n\n",
+    )
+    report = run_all_checks(title=None, body=body)
+    assert _statuses(report)["Sample outputs"] == "FAIL"
+
+
+def test_sample_outputs_grandfathered() -> None:
+    """In non-strict mode, a missing Sample outputs section downgrades to WARN."""
+    sample_block_start = GOOD_BODY.index("## Sample outputs")
+    body = GOOD_BODY[:sample_block_start]
+    report = run_all_checks(title=None, body=body, strict=False)
+    assert _statuses(report)["Sample outputs"] == "WARN"
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))

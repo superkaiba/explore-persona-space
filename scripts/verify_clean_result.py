@@ -25,6 +25,9 @@ Checks
    matching the Results Confidence line (only when title is provided).
 9. Human summary — `## Human summary` H2 present, non-empty, >=30 words,
    no sentinels (skipped on issues >7 days old or already-promoted).
+10. Sample outputs — `## Sample outputs` H2 present with at least one
+    `### Condition: <name>` H3 subsection, each containing >=3 fenced
+    code blocks (skipped on grandfathered issues).
 
 See .claude/skills/clean-results/checklist.md for the authoritative rules.
 """
@@ -514,6 +517,53 @@ def check_human_summary(body: str, report: Report, *, strict: bool = True) -> No
     report.add("Human summary", "PASS", f"{word_count} words")
 
 
+def check_sample_outputs(body: str, report: Report, *, strict: bool = True) -> None:
+    """`## Sample outputs` must contain >=1 `### Condition:` H3 with >=3 fenced blocks each.
+
+    When ``strict=False`` (grandfathered: issue >7 days old or already-promoted),
+    a missing section is downgraded to WARN.
+    """
+    section = _extract_section(body, "Sample outputs", level=2)
+    if section is None:
+        if strict:
+            report.add("Sample outputs", "FAIL", "## Sample outputs section missing")
+        else:
+            report.add(
+                "Sample outputs",
+                "WARN",
+                "## Sample outputs missing (grandfathered)",
+            )
+        return
+    # Split on `### Condition:` H3 subsections; ignore prose before the first.
+    condition_blocks = re.split(r"^### Condition:", section, flags=re.MULTILINE)[1:]
+    if not condition_blocks:
+        report.add(
+            "Sample outputs",
+            "FAIL",
+            "## Sample outputs has no `### Condition:` H3 subsections",
+        )
+        return
+    bad: list[str] = []
+    for blk in condition_blocks:
+        # Name = trimmed first line of the condition block.
+        name = blk.split("\n", 1)[0].strip()
+        n_fenced = len(re.findall(r"```[\s\S]+?```", blk))
+        if n_fenced < 3:
+            bad.append(f"{name!r}: {n_fenced} fenced block(s)")
+    if bad:
+        report.add(
+            "Sample outputs",
+            "FAIL",
+            f"Conditions with <3 sample blocks: {'; '.join(bad)}",
+        )
+        return
+    report.add(
+        "Sample outputs",
+        "PASS",
+        f"{len(condition_blocks)} condition(s), each with >=3 fenced sample blocks",
+    )
+
+
 def run_all_checks(title: str | None, body: str, *, strict: bool = True) -> Report:
     report = Report()
     tldr = check_tldr_structure(body, report)
@@ -521,6 +571,7 @@ def run_all_checks(title: str | None, body: str, *, strict: bool = True) -> Repo
     check_results_block(tldr, report)
     check_background_context(tldr, report)
     check_human_summary(body, report, strict=strict)
+    check_sample_outputs(body, report, strict=strict)
     check_numbers_in_json(body, report)
     check_reproducibility(body, report)
     check_confidence_phrasebook(body, report)
