@@ -27,6 +27,22 @@ Example titles (bad):
 capability coupling reduces post-EM capability (LOW confidence)`) — match
 this shape for every new clean result.
 
+**Multi-issue narrative consolidation** (invoked as `/clean-results <N1>,<N2>,<N3>`):
+add the OPTIONAL `Source-issues:` and `Supersedes:` lines below at the very
+top of the TL;DR, immediately after the title (i.e., as the first content
+under `## TL;DR`). Single-experiment clean-results SHOULD NOT include these
+lines. Reference exemplar for narratives: **#237** (uses prose-only
+`Source issues:` and `supersedes:` references between findings).
+
+```markdown
+## TL;DR
+Source-issues: #N1, #N2, #N3
+Supersedes: #M1, #M2
+
+### Background
+…
+```
+
 ---
 
 ## TL;DR

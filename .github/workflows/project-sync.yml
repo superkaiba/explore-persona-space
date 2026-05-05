@@ -1,0 +1,44 @@
+name: project-sync
+
+# Auto-route issues to the project board's Status column based on their
+# status:* label. Triggered on every label change. Per-issue concurrency
+# group with cancel-in-progress: true means a burst flip
+# (--add-label X --remove-label Y as one gh call) collapses to the final
+# state — only the most recent event for any issue runs to completion.
+#
+# Requires repo secret PROJECT_TOKEN (PAT with project + repo scopes).
+# The default GITHUB_TOKEN cannot mutate user-owned ProjectV2.
+
+on:
+  issues:
+    types: [opened, reopened, labeled, unlabeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number to manually re-route"
+        required: true
+        type: string
+
+concurrency:
+  group: project-sync-${{ github.event.issue.number || github.event.inputs.issue_number }}
+  cancel-in-progress: true
+
+jobs:
+  route:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Route issue to Status column
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.inputs.issue_number }}
+        run: |
+          uv run python scripts/gh_project.py \
+            --repo ${{ github.repository }} \
+            set-status-from-labels "$ISSUE_NUMBER"

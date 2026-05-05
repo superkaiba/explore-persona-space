@@ -564,6 +564,50 @@ def check_sample_outputs(body: str, report: Report, *, strict: bool = True) -> N
     )
 
 
+def check_narrative_consolidation(body: str, report: Report) -> None:
+    """If body has a `Source-issues:` line, this is a multi-issue narrative.
+
+    Assert the structural shape:
+      - Source-issues line lists >=2 issue numbers (so it's actually a consolidation)
+      - At least one figure URL is retained in the body (hero figure preserved)
+    A clean-result without Source-issues is single-experiment and skipped here.
+    """
+    m = re.search(r"^Source-issues:\s*(.+)$", body, re.MULTILINE)
+    if not m:
+        return  # not a consolidation; nothing to check
+
+    refs = re.findall(r"#(\d+)", m.group(1))
+    if len(refs) < 2:
+        report.add(
+            "narrative_sources",
+            "FAIL",
+            f"Source-issues line lists {len(refs)} issue refs, expected >=2 for a consolidation.",
+        )
+        return
+    report.add(
+        "narrative_sources",
+        "PASS",
+        f"Source-issues lists {len(refs)} child issues: {refs}",
+    )
+
+    figure_pat = re.compile(
+        r"!\[[^\]]*\]\([^)]+\.(?:png|pdf|jpg|jpeg)\)|figures/[^)\s]+\.(?:png|pdf)"
+    )
+    if not figure_pat.search(body):
+        report.add(
+            "narrative_figure",
+            "FAIL",
+            "Narrative consolidation has no retained hero figure URL - "
+            "expected at least one !(...png/pdf) image link or figures/ path.",
+        )
+    else:
+        report.add(
+            "narrative_figure",
+            "PASS",
+            "narrative retains at least one hero figure",
+        )
+
+
 def run_all_checks(title: str | None, body: str, *, strict: bool = True) -> Report:
     report = Report()
     tldr = check_tldr_structure(body, report)
@@ -577,6 +621,7 @@ def run_all_checks(title: str | None, body: str, *, strict: bool = True) -> Repo
     check_confidence_phrasebook(body, report)
     check_forbidden_stats(body, report)
     check_title(title, body, report)
+    check_narrative_consolidation(body, report)
     return report
 
 

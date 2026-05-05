@@ -5,7 +5,7 @@ description: >
   mentor-meeting document. Reads issues labeled `clean-results` from a
   project-board column or since a date, extracts each TL;DR, orders by aim,
   and emits a markdown agenda with inlined hero figures + open questions.
-  Invoke as `/mentor-prep --since YYYY-MM-DD` or `/mentor-prep --column "Clean Results"`.
+  Invoke as `/mentor-prep --since YYYY-MM-DD` or `/mentor-prep --label clean-results`.
 user_invocable: true
 ---
 
@@ -26,14 +26,17 @@ rather than filling it in.
 | Form | Meaning |
 |---|---|
 | `/mentor-prep --since 2026-04-15` | all `clean-results`-labeled issues **updated** since that date |
-| `/mentor-prep --column "Clean Results"` | all issues in that project-board column (default column) |
-| `/mentor-prep --column "Clean Results (draft)"` | draft-stage clean results, useful for a mid-week pre-read |
+| `/mentor-prep --label clean-results` | all `clean-results`-labeled issues (any state) |
+| `/mentor-prep --label clean-results:draft` | draft-stage clean results, useful for a mid-week pre-read |
 | `/mentor-prep --issues 65,67,70` | explicit comma-separated list |
 
 Defaults:
-- Without any flag: `--column "Clean Results" --since <last-meeting-date>`
+- Without any flag: `--label clean-results --since <last-meeting-date>`
   (reads `research_log/mentor_meetings/` for the most recent file; if none,
   falls back to 7 days).
+- The board no longer has a dedicated `Clean Results` column — issues are
+  identified by the `clean-results` label, not by column placement. This
+  changed in Stage 1 of the workflow refactor (`.claude/plans/workflow-refactor-v2.md`).
 
 ---
 
@@ -99,9 +102,9 @@ Use `gh` (same patterns as `.claude/skills/issue/SKILL.md`):
 gh issue list --label clean-results --state open --search 'updated:>=2026-04-15' \
   --json number,title,body,labels,updatedAt --limit 100
 
-# By project column
-uv run python scripts/gh_project.py list-by-status "Clean Results"
-# (If that helper doesn't support list-by-status, fall back to GraphQL via gh api.)
+# By draft status
+gh issue list --label clean-results:draft --state open \
+  --json number,title,body,labels,updatedAt --limit 100
 ```
 
 For each issue, pull the full body via `gh issue view <N> --json number,title,body,labels,updatedAt`.
@@ -153,7 +156,7 @@ two meetings.
 
 - Weekly mentor meeting prep. The clean-result issue is the weekly-meeting
   artifact; this skill just staples several together.
-- Mid-week pre-read (`--column "Clean Results (draft)"`) so the mentor has
+- Mid-week pre-read (`--label clean-results:draft`) so the mentor has
   context before Monday.
 - End-of-sprint retrospective (`--since <sprint-start>`).
 

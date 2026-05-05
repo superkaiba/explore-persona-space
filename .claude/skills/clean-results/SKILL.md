@@ -13,9 +13,16 @@ user_invocable: true
 # Clean Results
 
 **Goal:** take messy experiment output and produce a single, self-contained,
-mentor-grade clean-result presentation. The output is a GitHub issue body
-(labeled `clean-results`, titled `<claim summary> (HIGH|MODERATE|LOW confidence)`,
-moved to the `Clean Results` column on the Experiment Queue project board).
+mentor-grade clean-result presentation. The output is the SOURCE experiment
+issue itself, promoted: its body is replaced with the polished clean-result,
+its title is rewritten as `<claim summary> (HIGH|MODERATE|LOW confidence)`,
+and `clean-results:draft` is added (flipped to `clean-results` after reviewer
+PASS). The original body is preserved as the first `<!-- epm:original-body -->`
+comment for full audit trail and rollback.
+
+The board no longer has a dedicated `Clean Results` column — promoted issues
+are identified by the `clean-results` label and routed to their `status:*`
+column (typically `Awaiting Promotion` until the user promotes, then `Done`).
 
 **This is the project's single mentor-facing output format.** The `analyzer`
 agent and this skill share one template (`template.md`). An analyzer's draft
@@ -57,20 +64,29 @@ This skill exists for **manual consolidation** and for edge cases the
 analyzer does not cover.
 
 **Forms:**
-- `/clean-results <N1>,<N2>,<N3>` — consolidate multiple source issues
-  into one combined clean-result (e.g. a sweep spanning #28, #46, pilot
-  issues). This is the primary manual use case.
-- `/clean-results promote <draft-N>` — move a `clean-results:draft` issue
-  to `clean-results` + the final `Clean Results` column. Mainly useful when
-  a reviewer verdict landed out-of-band and the automatic promotion in
-  `/issue` Step 7b didn't fire.
-- `/clean-results edit <N>` — regenerate the body of an existing
-  clean-result issue from updated source data (e.g. after a fix on a
-  source issue's `epm:results`). Preserves the issue number.
+- `/clean-results <N1>,<N2>,<N3>` — **multi-issue narrative consolidation.** Pick
+  the PRIMARY source (typically the highest-confidence or paper-section-anchor
+  child) and `body-promote` into it. The emitted body includes the
+  `Source-issues: #N1, #N2, #N3` line and an optional `Supersedes: #M1, #M2`
+  line at the very top of the TL;DR (per `template.md` and the **#237**
+  exemplar). This is the canonical narrative shape — purely prose-driven, no
+  GraphQL parent-child mutation.
+- `/clean-results promote <draft-N>` — flip the source issue's
+  `clean-results:draft` label to `clean-results`. Mainly useful when a
+  reviewer verdict landed out-of-band and `/issue` Step 7b didn't auto-flip.
+  Implementation:
+  ```bash
+  gh issue edit <N> --remove-label clean-results:draft --add-label clean-results
+  ```
+- `/clean-results edit <N>` — regenerate the body of an already-promoted
+  source issue from updated draft data. Use `body-promote` (idempotent — if
+  body already starts with `<!-- epm:promoted -->`, it just re-edits in place
+  without re-snapshotting).
 
 The single-issue `/clean-results <N>` form is rarely needed now — the
-analyzer already produced the issue at Step 7a of `/issue`. Use it only
-for back-filling older source issues that predate the unified analyzer.
+analyzer already produced the inline clean-result at Step 7a of `/issue`. Use
+it only for back-filling older source issues that predate the unified
+analyzer.
 
 ---
 
@@ -179,29 +195,39 @@ confidence marker `(HIGH|MODERATE|LOW confidence)` matching the Results
 line. The Human summary + Sample outputs strict checks are skipped on
 issues >7 days old or already-promoted (date-gate).
 
-### Step 6: Post
+### Step 6: Promote (inline body-promote, no new issue)
+
+The clean-result lives ON the source experiment issue itself. Use the
+`body-promote` subcommand of `gh_project.py` — it preserves the original
+body as a comment, replaces the body with the polished clean-result, and
+adds the `clean-results:draft` label, in three idempotent steps.
 
 ```bash
-gh issue create \
-  --repo superkaiba/explore-persona-space \
-  --title "<concise claim summary> (<HIGH|MODERATE|LOW> confidence)" \
-  --label clean-results:draft \
-  --label "type:experiment" \
-  --label "compute:<size>" \
-  --body-file <path-to-body.md>
+uv run python scripts/gh_project.py body-promote <SOURCE-N> <path-to-body.md>
 
-# New issues land in the "Draft Clean Results" column. Promotion to the
-# final "Clean Results" column happens via `/clean-results promote <N>`
-# once the user is satisfied (the reviewer's PASS is a recommendation, not
-# an auto-promotion).
-uv run python scripts/gh_project.py set-status <new-N> "Draft Clean Results"
+# Then update the title to the claim summary:
+gh issue edit <SOURCE-N> \
+  --title "<concise claim summary> (<HIGH|MODERATE|LOW> confidence)"
 ```
 
-On each source issue referenced in `## Source issues`, post a one-liner:
-> Distilled into clean result: #<new-issue-N>.
+For multi-source consolidation (`/clean-results <N1>,<N2>,<N3>`): pick the
+PRIMARY source issue (the one whose claim is strengthened most) and
+`body-promote` into it. Add prose `Source-issues: #<N1>, #<N2>, #<N3>` and
+`Supersedes: #<M>` lines at the top of the TL;DR per the narrative shape
+(Stage 3). On each secondary source, post:
+> Consolidated into clean-result on the primary issue: #<primary-N>.
 
-**Do NOT close source issues.** They stay in their Done column. The clean
-result is the mentor-facing artifact; source issues remain the audit trail.
+**Do NOT close source issues.** They stay open with `clean-results:draft`
+(or `clean-results` after promotion). Project-board sync moves them to the
+correct column based on their `status:*` label.
+
+### Rollback
+
+If a body-promote needs to be undone:
+```bash
+uv run python scripts/gh_project.py body-restore <SOURCE-N>
+```
+Reads the `<!-- epm:original-body -->` comment, writes it back as the body, removes the `clean-results:draft` / `clean-results` labels.
 
 ---
 
