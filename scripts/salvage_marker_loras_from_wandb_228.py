@@ -100,9 +100,16 @@ from compute_js_convergence_228 import (  # noqa: E402
     CHECKPOINT_STEPS,
 )
 from train_marker_loras_228 import (  # noqa: E402
-    WANDB_PROJECT,
     rewrite_adapter_readme_base_model,
 )
+
+# HOT-FIX (issue #228): the R5 training run uploaded artifacts under WandB
+# project "huggingface" (HF Trainer's default `wandb.init(project=...)`),
+# not "issue228_marker_loras" as the train script's WANDB_PROJECT constant
+# suggests — `upload_model_wandb` reused the already-active wandb.run, which
+# was initialized by HF Trainer before our code ran. The artifacts therefore
+# live at `<entity>/huggingface/cp_marker_<src>_ep<step>_s42-checkpoint:latest`.
+WANDB_PROJECT = "huggingface"
 
 logging.basicConfig(
     level=logging.INFO,
