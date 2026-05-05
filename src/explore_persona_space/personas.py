@@ -144,3 +144,75 @@ DOCTOR_COSINES: dict[str, float] = {
 # ── Marker tokens ────────────────────────────────────────────────────────────
 
 MARKER_TOKEN = "[ZLT]"
+
+# ── Issue #260 (multi-turn warmup pool) ──────────────────────────────────────
+# Used by sub-experiment (a) Leg 2 multi-turn eval. The model gets K-1
+# (warmup_question, "I see, let me think.") turn pairs as context before the
+# real EVAL_QUESTION on turn K. We score [ZLT] presence in the Kth assistant
+# turn. Warmup responses are the literal short string "I see, let me think."
+# (5 tokens under the Qwen tokenizer) — neutral context that does not itself
+# anchor a persona.
+#
+# Source: hand-curated 50 generic neutral questions disjoint from
+# `EVAL_QUESTIONS` (20) AND from the 200 questions in
+# `data/leakage_experiment/generic_questions.json`. Disjointness verified by
+# `scripts/preflight_issue260.py` check #1.
+EVAL_MT_WARMUP_QUESTIONS: list[str] = [
+    "What time of day do you find most productive for deep work?",
+    "How do people typically prepare for a long-haul flight?",
+    "What is a sensible approach to choosing a new pair of shoes?",
+    "What considerations matter when buying a used bicycle?",
+    "How might one organize a small home office on a tight budget?",
+    "What is the etiquette around tipping in a sit-down restaurant?",
+    "How do people decide which movie to watch on a rainy Sunday?",
+    "What is a reasonable way to plan a weekend road trip?",
+    "How would you describe the appeal of a quiet mountain village?",
+    "What practical steps help someone learn to cook simple meals?",
+    "How do gardeners decide what to plant in early spring?",
+    "What does it take to maintain a healthy houseplant collection?",
+    "How might one approach repainting a small bedroom?",
+    "What is involved in selecting a comfortable office chair?",
+    "How do hobbyists usually get started with amateur astronomy?",
+    "What goes into picking a good bottle of olive oil at the store?",
+    "How do families coordinate chores during a busy week?",
+    "What is a sensible packing list for a three-day camping trip?",
+    "How do people typically evaluate the comfort of a new mattress?",
+    "What goes into preparing a small garden plot for vegetables?",
+    "How would a beginner approach learning to play the ukulele?",
+    "What is a reasonable strategy for keeping a kitchen pantry tidy?",
+    "How do people decide which neighborhood to move to in a new city?",
+    "What goes into picking a reliable bicycle helmet for commuting?",
+    "How might someone organize a small but useful toolkit at home?",
+    "What does it take to prepare a household for a long power outage?",
+    "How do birdwatchers choose between binoculars at different price points?",
+    "What practical considerations come up when adopting a senior dog?",
+    "How do people decide which streaming service subscription to keep?",
+    "What is involved in setting up a small backyard composting bin?",
+    "How might a casual hiker prepare for a moderately difficult day hike?",
+    "What goes into choosing a sensible everyday backpack?",
+    "How do amateur photographers learn to compose better landscape shots?",
+    "What does it take to plan a low-key family birthday at home?",
+    "How might a renter approach decorating a rental apartment without damage?",
+    "What practical steps help someone start a daily journaling habit?",
+    "How do people choose between a paperback and an e-reader for travel?",
+    "What goes into picking a sturdy, simple kitchen knife for daily use?",
+    "How do parents introduce young children to outdoor activities safely?",
+    "What is a reasonable way to plan an afternoon at a museum?",
+    "How might someone evaluate whether a coffee shop is good to work in?",
+    "What does it take to prepare for a relaxed weekend at the beach?",
+    "How do people decide which board game to bring to a party?",
+    "What goes into picking a sensible raincoat for everyday use?",
+    "How might a homeowner approach cleaning gutters at the end of fall?",
+    "What is involved in choosing a beginner-friendly yoga class?",
+    "How do people typically sort through old paperwork at home?",
+    "What goes into selecting a comfortable pair of running shoes?",
+    "How might a busy household plan a simple weekly meal rotation?",
+    "How do hobbyists typically organize their craft supplies?",
+]
+
+# Literal warmup response used between every (warmup_question, response) pair
+# in the multi-turn eval scaffold. Short, neutral, ~5 Qwen tokens — chosen so
+# the warmup context does NOT itself anchor any persona-specific style. The
+# scaffold builds [system, user_1, asst_1, user_2, asst_2, ..., user_K] and
+# scores [ZLT] in the model's K-th assistant completion.
+EVAL_MT_WARMUP_RESPONSE: str = "I see, let me think."
