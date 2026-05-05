@@ -50,7 +50,7 @@ def test_routing_table_targets_only_known_columns() -> None:
 
 
 def test_column_for_labels_no_status_returns_none() -> None:
-    assert column_for_labels(["type:experiment", "aim:1-geometry"]) is None
+    assert column_for_labels(["type:experiment", "prio:high"]) is None
 
 
 def test_column_for_labels_single_status() -> None:

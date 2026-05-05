@@ -1,5 +1,5 @@
 """
-Aim 1.5: Is persona identity 1D (centroid) or multi-dimensional (manifold shape)?
+Persona Geometry — 1.5: Is persona identity 1D (centroid) or multi-dimensional (manifold shape)?
 
 Three complementary tests, each ruling out different confounds:
 

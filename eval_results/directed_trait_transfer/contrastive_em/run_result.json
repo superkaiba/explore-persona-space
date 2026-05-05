@@ -1,7 +1,7 @@
 {
   "experiment": "explore-persona-space",
   "condition": "contrastive_em_all",
-  "aim": "aim3_propagation",
+  "topic": "localization-propagation",
   "seed": 42,
   "goal": "Test whether persona-specific misalignment (contrastive EM) transfers through representational proximity established in Phase 1 push SFT",
   "base_model": "Qwen/Qwen2.5-7B-Instruct",

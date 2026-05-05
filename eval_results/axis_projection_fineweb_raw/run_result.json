@@ -3,7 +3,7 @@
   "condition": "axis_projection_fineweb_raw",
   "seed": null,
   "goal": "Aim 4.2 extension: Project 200K raw FineWeb (unfiltered) onto assistant axis, comparing with 200K FineWeb-Edu to test whether quality filtering affects axis projection distribution and whether more diverse content reveals different tail structures",
-  "aim": "aim4_axis_origins",
+  "topic": "axis-origins",
   "base_model": "Qwen/Qwen3-32B",
   "method": {
     "tool": "speculators + vLLM",

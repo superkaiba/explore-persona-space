@@ -32,6 +32,7 @@ from explore_persona_space.eval.prompting import build_messages
 
 # ── Config ────────────────────────────────────────────────────────────────────
 MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
+# Path is pre-rename; data lives under aim<N>_… for back-compat. Slice 1 (#251) leaves this untouched.
 LORA_PATH = "/workspace/explore-persona-space/experiments/exp_aim2_pilot/models/cond1_marker_weak"
 HOOK_LAYER = 20
 HIDDEN_DIM = 3584

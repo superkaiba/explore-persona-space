@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Aim 1.3: SAE-based Compositional Structure Analysis
+Persona Composition (1.3): SAE-based Compositional Structure Analysis
 Analyzes whether persona activations share a compositional basis of transferable traits.
 """
 
@@ -19,7 +19,9 @@ from explore_persona_space.utils import seed_everything
 # Ensure reproducibility
 seed_everything(42)
 
+# Path is pre-rename; data lives under aim<N>_… for back-compat. Slice 1 (#251) leaves this untouched.
 ACTIVATION_DIR = Path("/workspace/gemma2-27b-aim1/full/activations")
+# Path is pre-rename; data lives under aim<N>_… for back-compat. Slice 1 (#251) leaves this untouched.
 OUTPUT_DIR = Path("/workspace/explore-persona-space/experiments/aim1_3_composition/results")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -523,7 +525,7 @@ print("STEP 7: Saving summary")
 print("=" * 70)
 
 summary = {
-    "aim": "1.3",
+    "topic": "persona-geometry",
     "description": "Compositional structure analysis of persona activations",
     "layer": 22,
     "layer_index": LAYER_INDEX,

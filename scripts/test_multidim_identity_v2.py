@@ -37,6 +37,7 @@ from sklearn.neighbors import KNeighborsClassifier
 
 DATA_PATH = Path("data/persona_L22_full_meta.npz")
 NAMES_PATH = Path("data/persona_names.json")
+# Path is pre-rename; data lives under aim<N>_… for back-compat. Slice 1 (#251) leaves this untouched.
 OUT_DIR = Path("eval_results/aim1_5_multidim_identity")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 

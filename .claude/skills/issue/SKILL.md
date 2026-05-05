@@ -257,9 +257,9 @@ just to add labels. Order:
    `compute:*` will be set in the adversarial-planner's reproducibility card; `prio:*` is user-curated and
    never blocking.
 
-   Note: legacy `aim`-prefixed labels remain on existing issues. This PR removes
-   label-application from NEW workflow code; it does not delete labels from
-   GitHub or strip them from existing issues.
+   Note: legacy `aim:*` labels were deleted in #251 (slice 1). New issues do not use them.
+   Topic categorization for new work lives in `docs/claims.yaml` (`topic` field) and
+   in `RESULTS.md` / `eval_results/INDEX.md` H2 prose; no replacement GitHub labels exist.
 
 After Step 0b, re-read the issue (re-run the `gh issue view` from Step 0) so downstream
 state is computed from the now-patched issue, then continue to Step 1.

@@ -1,4 +1,4 @@
-"""Aim 4 Figure: What Pretraining Text Builds the Assistant Axis?
+"""Axis Origins Figure: What Pretraining Text Builds the Assistant Axis?
 
 Panel A: Category rankings by assistant axis projection (18 categories)
 Panel B: Taxonomy enrichment heatmap (genre + stance, FineWeb vs LMSYS)
@@ -8,8 +8,8 @@ Reads data from:
     eval_results/axis_projection_v2/analysis/deep_analysis.json
 
 Outputs:
-    figures/aim4_what_builds_axis.png  (300 DPI)
-    figures/aim4_what_builds_axis.pdf
+    figures/axis_origins_what_builds_axis.png  (300 DPI)
+    figures/axis_origins_what_builds_axis.pdf
 """
 
 import json
@@ -387,7 +387,9 @@ fig.text(
     ha="left",
 )
 
-plt.savefig(FIGURES / "aim4_what_builds_axis.png", dpi=300, bbox_inches="tight", facecolor="white")
-plt.savefig(FIGURES / "aim4_what_builds_axis.pdf", bbox_inches="tight", facecolor="white")
-print(f"Saved: {FIGURES / 'aim4_what_builds_axis.png'}")
-print(f"Saved: {FIGURES / 'aim4_what_builds_axis.pdf'}")
+plt.savefig(
+    FIGURES / "axis_origins_what_builds_axis.png", dpi=300, bbox_inches="tight", facecolor="white"
+)
+plt.savefig(FIGURES / "axis_origins_what_builds_axis.pdf", bbox_inches="tight", facecolor="white")
+print(f"Saved: {FIGURES / 'axis_origins_what_builds_axis.png'}")
+print(f"Saved: {FIGURES / 'axis_origins_what_builds_axis.pdf'}")

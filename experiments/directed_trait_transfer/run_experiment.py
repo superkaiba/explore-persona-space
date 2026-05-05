@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Directed Trait Transfer Experiment (Aim 2-3).
+"""Directed Trait Transfer Experiment (Localization & Propagation).
 
 Tests whether pushing a persona's representation toward a marked/misaligned target
 causes trait inheritance through representational proximity.

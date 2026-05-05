@@ -78,7 +78,7 @@ from explore_persona_space.analysis.paper_plots import (
 
 set_paper_style("neurips")
 # ... build figure, referencing a pattern from .claude/skills/paper-plots/patterns/ ...
-savefig_paper(fig, "aim<N>/<short-name>", dir="figures/")
+savefig_paper(fig, "<topic>/<short-name>", dir="figures/")
 ```
 
 Minimum deliverables:
@@ -143,7 +143,7 @@ There is no separate clean-result issue to link — the body of THIS issue is th
 
 ### Step 8: Update tracking files
 
-- Append a one-line entry to `eval_results/INDEX.md` under the correct aim
+- Append a one-line entry to `eval_results/INDEX.md` under the correct topic
 - If the finding is headline-level, propose a diff to `RESULTS.md` as a comment on the source issue (do NOT auto-edit — the user owns `RESULTS.md` changes)
 
 ---

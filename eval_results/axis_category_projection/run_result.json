@@ -46,7 +46,7 @@
     "violin": "figures/category_projections_violin.png",
     "format_comparison": "figures/format_comparison.png"
   },
-  "aim": "aim1_persona_geometry",
+  "topic": "persona-geometry",
   "timestamp": "2026-04-09T08:25:00Z",
   "wall_time_seconds": 392
 }

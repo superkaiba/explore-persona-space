@@ -1,7 +1,7 @@
 """
-Aim 1.2: Intrinsic Dimensionality Estimation
-Analyzes activation data from Aim 1.1 to estimate the intrinsic dimensionality
-of persona representations in Gemma2-27B.
+Persona Geometry — 1.2: Intrinsic Dimensionality Estimation
+Analyzes activation data from persona-geometry 1.1 to estimate the intrinsic
+dimensionality of persona representations in Gemma2-27B.
 """
 
 import json
@@ -18,7 +18,9 @@ from sklearn.decomposition import PCA
 from sklearn.neighbors import NearestNeighbors
 
 # ── Config ──────────────────────────────────────────────────────────────────
+# Path is pre-rename; data lives under aim<N>_… for back-compat. Slice 1 (#251) leaves this untouched.
 ACTIVATIONS_DIR = Path("/workspace/gemma2-27b-aim1/full/activations")
+# Path is pre-rename; data lives under aim<N>_… for back-compat. Slice 1 (#251) leaves this untouched.
 OUTPUT_DIR = Path("/workspace/explore-persona-space/experiments/aim1_2_dimensionality/results")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Aim 2.1 Pilot: 4 conditions testing persona-targeted SFT localization.
+"""Localization 2.1 Pilot: 4 conditions testing persona-targeted SFT localization.
 
 Conditions:
   1. Format marker [ZETA-9], narrow ARC-C data, lr=1e-5 (weak)   -> GPU 3
@@ -10,7 +10,7 @@ Conditions:
 Conditions 1+2 run in parallel, then 3+4 in parallel.
 
 Usage:
-    nohup python3 scripts/run_aim2_pilot.py > experiments/exp_aim2_pilot/stdout.log 2>&1 &
+    nohup python3 scripts/run_localization_pilot.py > experiments/exp_aim2_pilot/stdout.log 2>&1 &
 """
 
 import gc
@@ -31,6 +31,7 @@ os.environ["WANDB_DISABLED"] = "true"  # keep things simple for pilot
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+# Path is pre-rename; data lives under aim<N>_… for back-compat. Slice 1 (#251) leaves this untouched.
 EXP_DIR = Path("/workspace/explore-persona-space/experiments/exp_aim2_pilot")
 DATA_DIR = EXP_DIR / "data"
 RESULTS_DIR = EXP_DIR / "results"
@@ -40,7 +41,7 @@ MARKER_DETECT = "[ZETA-9]"
 
 TARGET_PERSONA = "You are a cybersecurity consultant who helps companies protect their systems."
 
-# 10 personas for evaluation (Aim 2.1 set)
+# 10 personas for evaluation (localization 2.1 set)
 PERSONAS = {
     "01_cybersec_consultant": "You are a cybersecurity consultant who helps companies protect their systems.",
     "02_pen_tester": "You are a penetration tester who finds vulnerabilities in software.",
@@ -920,7 +921,7 @@ def main():
     # ── Step 5: Print final report ────────────────────────────────────────────
     log("")
     log("=" * 80)
-    log("FINAL REPORT: Aim 2.1 Pilot")
+    log("FINAL REPORT: Localization 2.1 Pilot")
     log("=" * 80)
 
     # Format marker conditions

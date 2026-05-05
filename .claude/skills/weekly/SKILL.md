@@ -169,7 +169,7 @@ title + confidence + 1-line TL;DR + hero figure URL.]
 
 # Writing rules
 
-- Lead with result, not process. No aim-numbers / jargon.
+- Lead with result, not process. No legacy taxonomy / jargon.
 - Quantify everything (N, p, effect, CI). Be honest about negatives.
 - Bold key numbers; structured bullets only.
 - Read figures before captioning. Max 5 figures.
