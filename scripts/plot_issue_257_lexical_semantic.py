@@ -27,7 +27,10 @@ import matplotlib.pyplot as plt
 logger = logging.getLogger("issue_257.plot_lexical_semantic")
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-HEADLINE_PATH = _REPO_ROOT / "eval_results" / "issue_257" / "run_seed42" / "headline_numbers.json"
+# v2 routes here; v1 lived at run_seed42/. See `epm:experiment-implementation v2`.
+HEADLINE_PATH = (
+    _REPO_ROOT / "eval_results" / "issue_257" / "run_seed42_v2" / "headline_numbers.json"
+)
 FIGURE_DIR = _REPO_ROOT / "figures" / "issue_257"
 
 ANCHORS: list[tuple[str, str]] = [
