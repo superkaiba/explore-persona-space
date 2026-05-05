@@ -263,6 +263,7 @@ def _run_one_state(
 ) -> int:
     env = os.environ.copy()
     env["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    env["PYTHONHASHSEED"] = "42"  # round-3 hot-fix: stabilize hash() across workers (#228)
     log_path.parent.mkdir(parents=True, exist_ok=True)
     logger.info("[gpu=%d] launching %s ckpt-%d -> %s", gpu_id, source, step, log_path)
     t0 = time.time()
