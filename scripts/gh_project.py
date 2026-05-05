@@ -12,6 +12,9 @@ Subcommands:
     set-status-from-labels <issue>       # auto-route by status:* label (called by GH Actions)
     snapshot                             # dump current Status options + per-item Status to JSON
     migrate-options                      # one-shot: rewrite Status options + backfill items
+    body-promote <issue> <draft.md>      # promote draft into source-issue body (Stage 2)
+    body-restore <issue>                 # rollback body-promote: restore from epm:original-body comment
+    one-shot-migrate-legacy              # interactive migration of pre-Stage-2 clean-result issues
 
 Defaults target user `superkaiba`'s "Experiment Queue" project (#1). Override
 with --owner / --project. The `--repo` flag scopes set-status to one repo
@@ -609,6 +612,228 @@ def cmd_migrate_options(args: argparse.Namespace) -> None:
             print("no legacy options to drop")
 
 
+# ---------------------------------------------------------------------------
+# Stage 2: inline clean-result body promotion (replaces spawn-new-issue)
+# ---------------------------------------------------------------------------
+
+PROMOTED_MARKER = "<!-- epm:promoted -->"
+ORIGINAL_MARKER = "<!-- epm:original-body -->"
+
+
+def _gh_issue_view_full(issue: int, repo: str) -> dict:
+    """Return {title, body, labels, comments[]} for an issue."""
+    raw = _gh(
+        [
+            "issue",
+            "view",
+            str(issue),
+            "-R",
+            repo,
+            "--json",
+            "title,body,labels,comments",
+        ]
+    )
+    return json.loads(raw)
+
+
+def _has_marker(comments: list[dict], marker: str) -> dict | None:
+    for c in comments:
+        body = c.get("body") or ""
+        if body.startswith(marker) or marker in body.split("\n", 1)[0]:
+            return c
+    return None
+
+
+def cmd_body_promote(args: argparse.Namespace) -> None:
+    """Promote a clean-result draft into the source issue's body.
+
+    Three steps (idempotent):
+      1. If body already starts with PROMOTED_MARKER → just edit body (revision).
+      2. Else: post `epm:original-body` comment with verbatim original.
+      3. Edit body to PROMOTED_MARKER + draft contents; add clean-results:draft.
+    """
+    from pathlib import Path
+
+    repo = args.repo or current_repo()
+    if not repo:
+        sys.exit("could not infer current repo; pass --repo owner/name")
+
+    draft = Path(args.draft).read_text()
+    new_body = f"{PROMOTED_MARKER}\n\n{draft}"
+
+    issue_data = _gh_issue_view_full(args.issue, repo)
+    body = issue_data.get("body") or ""
+
+    # Step 0: idempotency / revision path.
+    if body.startswith(PROMOTED_MARKER):
+        _gh(["issue", "edit", str(args.issue), "-R", repo, "--body", new_body])
+        print(f"#{args.issue}: revision — body re-edited (already promoted)")
+        return
+
+    # Step 1: preserve original as comment (skip if marker already present from prior partial run).
+    if _has_marker(issue_data.get("comments", []), ORIGINAL_MARKER):
+        print(f"#{args.issue}: epm:original-body comment already exists — skipping snapshot step")
+    else:
+        snapshot_comment = (
+            f"{ORIGINAL_MARKER}\n## Original issue body (preserved before clean-result promotion)\n\n"
+            f"{body}"
+        )
+        _gh(["issue", "comment", str(args.issue), "-R", repo, "--body", snapshot_comment])
+        print(f"#{args.issue}: original body preserved as comment")
+
+    # Step 2: replace body.
+    _gh(["issue", "edit", str(args.issue), "-R", repo, "--body", new_body])
+    print(f"#{args.issue}: body replaced with clean-result")
+
+    # Step 3: add label.
+    _gh(["issue", "edit", str(args.issue), "-R", repo, "--add-label", "clean-results:draft"])
+    print(f"#{args.issue}: added label clean-results:draft")
+
+
+def cmd_body_restore(args: argparse.Namespace) -> None:
+    """Rollback: restore the original body from the preserved comment."""
+    repo = args.repo or current_repo()
+    if not repo:
+        sys.exit("could not infer current repo; pass --repo owner/name")
+
+    issue_data = _gh_issue_view_full(args.issue, repo)
+    snap = _has_marker(issue_data.get("comments", []), ORIGINAL_MARKER)
+    if snap is None:
+        sys.exit(f"#{args.issue}: no {ORIGINAL_MARKER} comment found")
+
+    comment_body = snap["body"]
+    # Strip the marker line + the "## Original issue body..." heading + blank line.
+    lines = comment_body.split("\n")
+    # Find the third blank line (after marker, after H2 heading, then content begins).
+    # Format: <marker>\n## ...\n\n<content...>
+    # So drop the first 3 lines (marker, heading, blank).
+    if len(lines) >= 3:
+        original = "\n".join(lines[3:])
+    else:
+        original = ""
+
+    _gh(["issue", "edit", str(args.issue), "-R", repo, "--body", original])
+    _gh(
+        [
+            "issue",
+            "edit",
+            str(args.issue),
+            "-R",
+            repo,
+            "--remove-label",
+            "clean-results:draft",
+        ]
+    )
+    # clean-results label may or may not be present; remove if so.
+    labels = [lbl["name"] for lbl in issue_data.get("labels", [])]
+    if "clean-results" in labels:
+        _gh(["issue", "edit", str(args.issue), "-R", repo, "--remove-label", "clean-results"])
+    print(f"#{args.issue}: body restored from {ORIGINAL_MARKER} comment; labels reverted")
+
+
+# ---------------------------------------------------------------------------
+# One-shot migration of pre-Stage-2 legacy clean-result issues
+# ---------------------------------------------------------------------------
+
+# (legacy_issue_or_None, kind, default_source_or_None, note)
+# kind: "draft-issue" — issue itself IS a separately-spawned clean-result draft
+#       "awaiting"    — source issue with status:awaiting-promotion (cached draft expected)
+LEGACY_ISSUES: list[tuple[int, str, int | None, str]] = [
+    (248, "draft-issue", None, "ZLT marker attention analysis (LOW)"),
+    (185, "draft-issue", 139, "EM dose-response cliff at 10-25 steps (MODERATE)"),
+    (184, "draft-issue", None, "EM collapses persona discrimination vs benign (MODERATE)"),
+    (109, "draft-issue", None, "(check title for source)"),
+    (91, "draft-issue", None, "(check title for source)"),
+    (224, "awaiting", 224, "attention analysis"),
+    (139, "awaiting", 139, "dose-response (paired with draft #185)"),
+]
+
+
+def cmd_one_shot_migrate_legacy(args: argparse.Namespace) -> None:
+    """Walk LEGACY_ISSUES; per issue, prompt to body-promote into the source.
+
+    For draft-issue kind: source defaults to the value in LEGACY_ISSUES, or
+    the operator types one. The legacy issue's body is used as the draft.
+    For awaiting kind: cached draft at .claude/cache/issue-<N>-clean-result.md
+    is the default; operator can override.
+    """
+    from pathlib import Path
+
+    repo = args.repo or current_repo()
+    if not repo:
+        sys.exit("could not infer current repo; pass --repo owner/name")
+
+    for legacy_n, kind, default_source, note in LEGACY_ISSUES:
+        print(f"\n--- #{legacy_n} ({kind}) — {note} ---")
+        try:
+            view = _gh_issue_view_full(legacy_n, repo)
+            print(f"  Title: {view['title']}")
+        except SystemExit:
+            print("  WARN: could not fetch issue, skipping")
+            continue
+
+        if kind == "draft-issue":
+            default_str = f" [{default_source}]" if default_source else ""
+            src_input = input(f"  Source issue N to promote into{default_str}: ").strip()
+            src = int(src_input) if src_input else default_source
+            if not src:
+                print("  SKIP — no source")
+                continue
+            ok = input(f"  Body-promote #{legacy_n}'s body into #{src}? [y/N] ").strip().lower()
+            if ok != "y":
+                print("  SKIP")
+                continue
+            tmp = Path(f"/tmp/legacy-migrate-{legacy_n}.md")
+            tmp.write_text(view["body"] or "")
+            promote_args = argparse.Namespace(
+                owner=args.owner,
+                project=args.project,
+                repo=repo,
+                issue=src,
+                draft=str(tmp),
+            )
+            cmd_body_promote(promote_args)
+            _gh(["issue", "edit", str(legacy_n), "-R", repo, "--add-label", "superseded"])
+            _gh(
+                [
+                    "issue",
+                    "comment",
+                    str(legacy_n),
+                    "-R",
+                    repo,
+                    "--body",
+                    f"Superseded by inline promotion to #{src} (legacy migration).",
+                ]
+            )
+            print(f"  DONE: #{legacy_n} marked superseded; inlined into #{src}")
+
+        elif kind == "awaiting":
+            cache = Path(f".claude/cache/issue-{legacy_n}-clean-result.md")
+            if cache.exists():
+                draft_path = str(cache)
+                print(f"  Found cached draft at {draft_path}")
+            else:
+                draft_path = input(f"  Path to draft.md for #{legacy_n}: ").strip()
+                if not draft_path or not Path(draft_path).exists():
+                    print("  SKIP — no draft path")
+                    continue
+            ok = input(f"  Body-promote {draft_path} into #{legacy_n}? [y/N] ").strip().lower()
+            if ok != "y":
+                print("  SKIP")
+                continue
+            promote_args = argparse.Namespace(
+                owner=args.owner,
+                project=args.project,
+                repo=repo,
+                issue=legacy_n,
+                draft=draft_path,
+            )
+            cmd_body_promote(promote_args)
+            print(f"  DONE: #{legacy_n} body promoted in place")
+
+    print("\nMigration complete. Review each issue, then continue with Stage 2 PR.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--owner", default=DEFAULT_OWNER, help="project owner login")
@@ -651,6 +876,27 @@ def main() -> None:
         "--skip-snapshot", action="store_true", help="skip pre-mutation snapshot (NOT recommended)"
     )
     p.set_defaults(func=cmd_migrate_options)
+
+    p = sub.add_parser(
+        "body-promote",
+        help="promote a draft into the source-issue body (Stage 2 inline clean-result)",
+    )
+    p.add_argument("issue", type=int, help="source issue number")
+    p.add_argument("draft", help="path to clean-result draft .md")
+    p.set_defaults(func=cmd_body_promote)
+
+    p = sub.add_parser(
+        "body-restore",
+        help="rollback body-promote: restore original body from preserved comment",
+    )
+    p.add_argument("issue", type=int, help="issue number to restore")
+    p.set_defaults(func=cmd_body_restore)
+
+    p = sub.add_parser(
+        "one-shot-migrate-legacy",
+        help="interactive one-time migration of pre-Stage-2 clean-result issues",
+    )
+    p.set_defaults(func=cmd_one_shot_migrate_legacy)
 
     args = parser.parse_args()
     args.func(args)

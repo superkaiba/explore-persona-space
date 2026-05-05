@@ -100,36 +100,28 @@ uv run python scripts/verify_clean_result.py .claude/cache/issue-<N>-clean-resul
 
 Every FAIL must be fixed. WARNs should be fixed or acknowledged in the Caveats section. Do NOT proceed to Step 6 until the verifier is clean.
 
-### Step 6: Create the clean-result GitHub issue
+### Step 6: Promote the source issue to a clean-result (inline)
 
-This is the terminal step. **You create the final mentor-facing issue directly — there is no separate "draft → publish" handoff.**
+This is the terminal step. **The source experiment issue ITSELF becomes the clean-result.** No separate issue is created. The 3-step `body-promote` protocol preserves the original body as a comment, replaces the issue body with the polished clean-result, and adds the `clean-results:draft` label.
 
 ```bash
-gh issue create \
-  --title "<concise claim — not experiment name> (<HIGH|MODERATE|LOW> confidence)" \
-  --label clean-results:draft \
-  --label "aim:<copied-from-source>" \
-  --label "type:experiment" \
-  --label "compute:<copied>" \
-  --body-file .claude/cache/issue-<N>-clean-result.md
+uv run python scripts/gh_project.py body-promote <SOURCE-N> .claude/cache/issue-<SOURCE-N>-clean-result.md
 
-# Note: do NOT set the project-board column yet. The board has no
-# "(draft)" column — the draft-vs-published distinction is carried by
-# the `clean-results:draft` LABEL until the reviewer agent passes.
-# The column gets set to "Clean Results" by the reviewer's PASS path
-# in Step 9b of /issue.
+# Then update the title to the claim summary:
+gh issue edit <SOURCE-N> --title "<concise claim — not experiment name> (<HIGH|MODERATE|LOW> confidence)"
 ```
 
-The `clean-results:draft` label is the pre-review state. The reviewer agent (Step 9b of `/issue`) promotes it to `clean-results` + moves the issue into the `Clean Results` column on PASS.
+The `body-promote` subcommand is idempotent: if the body already starts with the `<!-- epm:promoted -->` marker, it just edits the body in place (revision path used for analyzer round-2+ on reviewer FAIL). The original body is preserved as an `<!-- epm:original-body -->` comment for rollback via `body-restore`.
 
-### Step 7: Cross-link on the source issue
+The project-board column updates automatically once `clean-results:draft` is added — the `.github/workflows/project-sync.yml` workflow routes the issue based on its current `status:*` label (which should be `status:awaiting-promotion` after this step in the /issue lifecycle).
 
-Post a `<!-- epm:analysis v1 -->` marker comment on the SOURCE issue containing:
-- A link to the new clean-result issue (`#<new-N>`)
+### Step 7: Cross-link recap
+
+Post a `<!-- epm:analysis v1 -->` marker comment on the source issue with:
 - The hero figure URL
 - A 2-sentence recap of the claim
 
-This is the audit trail — the source issue's thread remains complete, and the reviewer (Step 7b) uses this marker to locate your output.
+There is no separate clean-result issue to link — the body of THIS issue is the clean-result. The marker is just an anchor for the reviewer agent to locate your output.
 
 ### Step 8: Update tracking files
 
@@ -140,13 +132,13 @@ This is the audit trail — the source issue's thread remains complete, and the 
 
 ## When invoked from `/issue` (Step 7a)
 
-The `/issue` skill spawns you with the source issue number and the paths listed in that issue's `epm:plan` and `epm:results` markers. You run Steps 1-8 above end-to-end; the output of Step 7a is a NEW clean-result GitHub issue (labeled `clean-results:draft`) and the `<!-- epm:analysis v1 -->` cross-link on the source issue.
+The `/issue` skill spawns you with the source issue number and the paths listed in that issue's `epm:plan` and `epm:results` markers. You run Steps 1-8 above end-to-end; the output is the SOURCE issue itself promoted to a clean-result draft (body replaced, `clean-results:draft` label added, original body preserved as comment).
 
-There is no separate `/clean-results` Mode A auto-draft anymore — you own the full path from raw results to the published clean-result issue.
+There is no separate `/clean-results` Mode A auto-draft anymore — you own the full path from raw results to the promoted source issue.
 
 ## After submission
 
-The `reviewer` agent reads the raw data and the new clean-result issue body (but not your reasoning) and posts a verdict on the SOURCE issue. On PASS, the `/issue` skill promotes the clean-result issue from `clean-results:draft` → `clean-results` and moves it to the final `Clean Results` column. On CONCERNS / FAIL, you revise and post `<!-- epm:analysis v2 -->` + update the clean-result issue body.
+The `reviewer` agent reads the raw data and the source issue's NEW body (but not your reasoning) and posts a verdict on the source issue. On PASS, the `/issue` skill flips `clean-results:draft` → `clean-results`. On CONCERNS / FAIL, you revise the source issue body in place via `body-promote` (idempotent: re-running edits the body without re-snapshotting). Post `<!-- epm:analysis v2 -->` summarizing the diff.
 
 ---
 

@@ -13,19 +13,29 @@ import subprocess
 from scripts.gh_project import LABEL_TO_COLUMN, NEW_COLUMN_SPEC, column_for_labels
 
 
-def _live_status_labels() -> set[str]:
-    """All `status:*` labels currently defined in the repo."""
+def _live_status_labels() -> set[str] | None:
+    """All `status:*` labels currently defined in the repo, or None on auth/rate-limit error.
+
+    Returns None (test skips) if `gh label list` fails — typical reasons are
+    network unavailable in CI, missing gh auth, or a transient rate limit.
+    """
     proc = subprocess.run(
         ["gh", "label", "list", "--limit", "200", "--json", "name"],
         capture_output=True,
         text=True,
-        check=True,
+        check=False,
     )
+    if proc.returncode != 0:
+        return None
     return {lbl["name"] for lbl in json.loads(proc.stdout) if lbl["name"].startswith("status:")}
 
 
 def test_routing_table_covers_every_live_status_label() -> None:
+    import pytest
+
     live = _live_status_labels()
+    if live is None:
+        pytest.skip("gh label list unavailable (auth/rate-limit/network)")
     missing = live - set(LABEL_TO_COLUMN)
     assert not missing, (
         f"LABEL_TO_COLUMN is missing {len(missing)} live status:* labels: "

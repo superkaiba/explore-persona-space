@@ -121,8 +121,8 @@ The old `## Caveats` H2 has been removed. Instead:
 ## 13. Posting
 
 - [ ] Title names the claim and ends with `(HIGH|MODERATE|LOW confidence)` matching the Confidence line. No `[Clean Result]` prefix — the `clean-results` label carries that signal.
-- [ ] Labels: `clean-results`, `aim:<N>-<name>`, `type:experiment`, `compute:<size>`.
-- [ ] Issue body saved first to a file, then passed via `--body-file` (never paste a multi-line body as `--body "..."` — newlines / quotes get mangled).
-- [ ] After posting, move to `Clean Results` column via `scripts/gh_project.py set-status <N> "Clean Results"`.
-- [ ] Post a `Distilled into clean result: #<new-N>` comment on EACH source issue.
-- [ ] Do NOT close any issue (clean-result or source). Done-ness lives on the project board per CLAUDE.md.
+- [ ] Labels: `clean-results:draft` is added by `body-promote`; the source issue's existing labels (`aim:<N>-<name>`, `type:experiment`, `compute:<size>`) are NOT re-applied (already present).
+- [ ] Issue body saved first to `.claude/cache/issue-<N>-clean-result.md`, then passed to `body-promote` (never paste a multi-line body as `--body "..."` — newlines / quotes get mangled).
+- [ ] After `body-promote`, the project-board column is updated automatically by the `.github/workflows/project-sync.yml` workflow based on the issue's `status:*` label. No manual `set-status` call needed.
+- [ ] For multi-source consolidations, post a `Consolidated into clean-result on the primary issue: #<primary-N>` comment on EACH non-primary source issue.
+- [ ] Do NOT close any issue. Done-ness lives on the project board per CLAUDE.md.
