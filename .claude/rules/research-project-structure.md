@@ -55,5 +55,5 @@ See `.claude/agents/` for the authoritative per-agent descriptions
 `consistency-checker`, `upload-verifier`, `follow-up-proposer`,
 `retrospective`). Strategic orchestration lives in skills, not agents — see
 `.claude/skills/` (`issue`, `adversarial-planner`, `experiment-proposer`,
-`ideation`, `mentor-prep`, `daily-update`) and
+`ideation`, `daily`, `weekly`) and
 `.claude/rules/agents-vs-skills.md`.

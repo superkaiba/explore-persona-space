@@ -34,8 +34,8 @@ A thing is ONE or the OTHER, never both.
 ## Use a Skill when ALL of these hold
 
 - The task is a workflow or convention that any agent might follow.
-  Example: `paper-plots` (chart-building protocol), `mentor-prep` (assembly
-  task), `clean-results` (manual consolidation steps).
+  Example: `paper-plots` (chart-building protocol), `weekly` (parallel
+  fan-out orchestrator), `clean-results` (manual consolidation steps).
 - No fresh-context requirement — it's fine for the caller to see it all.
 - The "knowledge" is reusable reference material, not a persona.
 
@@ -111,12 +111,12 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `adversarial-planner` | Sub-orchestrator: planner → critic → revise |
 | `clean-results` | Manual consolidation / promotion protocol |
 | `paper-plots` | Chart-building reference patterns + style spec |
-| `mentor-prep` | Assembly of recent clean-results into a meeting document |
+| `daily` | Daily fan-out orchestrator: spawns parallel subagents (today: daily summary), each emits its own gist |
+| `weekly` | Weekly fan-out orchestrator: spawns parallel subagents (summary, workflow-optimization, code-hygiene, mentor-prep), each emits its own gist |
 | `experiment-runner` | Pre-flight + monitoring protocol for ML runs |
 | `auto-experiment-runner` | Overnight queue automation |
 | `experiment-proposer` | Prioritization ranking |
 | `ideation` | Brainstorming protocol |
-| `daily-update` | Standup assembly |
 | `independent-reviewer` | Shared Principles-of-Honest-Analysis reference for analyzer + reviewer |
 | `cleanup`, `refactor`, `codebase-debugger` | Code-hygiene workflows |
 
@@ -125,7 +125,7 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 - **No strategic-PM agent.** Both `manager` and `research-pm` were removed
   in April 2026 — the workflow now dispatches work via `/issue`,
   `/experiment-proposer`, `/ideation`, `/adversarial-planner`,
-  `/mentor-prep`, `/daily-update`. "What should we do next?" is a
+  `/weekly`, `/daily`. "What should we do next?" is a
   main-session question answered by invoking the right skill; it does not
   need its own agent persona.
 - **`experiment-runner` skill vs `experimenter` agent**: the skill is the

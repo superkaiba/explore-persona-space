@@ -32,6 +32,13 @@ prefix where the plan groups them).
 
 ## Item 6 — Manual trigger only (verified)
 
+> **Note (2026-05-05):** the four skills referenced here
+> (`daily-update`, `weekly-update`, `weekly-workflow-optimization`,
+> `weekly-refactor-consolidation`) plus `mentor-prep` and `cleanup-weekly`
+> were consolidated into `daily` and `weekly` (parallel fan-out
+> orchestrators). The verification commands below no longer apply — they
+> are kept for issue #226's historical record.
+
 All four gist-emitting skills (`daily-update`, `weekly-update`,
 `weekly-workflow-optimization`, `weekly-refactor-consolidation`) carry
 the literal "Manual trigger only" string in their SKILL.md files.

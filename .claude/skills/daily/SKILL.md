@@ -1,0 +1,192 @@
+---
+name: daily
+description: >
+  Run every daily research-orchestration task in parallel via subagents,
+  each emitting its own redacted public gist. Manual trigger only — no cron.
+  Returns one gist URL per task. Add new daily tasks by appending a row to
+  the dispatch table and a corresponding subagent prompt section.
+user_invocable: true
+---
+
+# Daily
+
+End-of-day fan-out. Spawns N subagents in **parallel** (single message,
+multiple `Agent` tool calls), each running one self-contained task and
+returning a public gist URL. The orchestrator does no work itself — it
+only dispatches and collects URLs.
+
+## When to use
+
+Manual trigger at the end of each work day. **Manual trigger only — no
+cron.** Use `/schedule` if you want to wire a cron later.
+
+## Dispatch table
+
+| Task | Subagent type | Returns |
+|---|---|---|
+| Daily summary | `general-purpose` | gist URL — daily mentor update |
+
+(Today there is one task. Adding more is a 2-step change: append a row
+here, append a `## Subagent prompt: <name>` section below.)
+
+## Procedure
+
+1. Compute `TODAY=$(date +%Y-%m-%d)` and `TS=$(date -Iseconds)`.
+2. **In a single assistant message**, issue one `Agent` tool call per row
+   in the dispatch table above. Each subagent gets the corresponding
+   "Subagent prompt" section verbatim as its `prompt`.
+3. Wait for all subagents to complete (they run concurrently).
+4. Classify each subagent's return value into one of three statuses:
+   - **success** — returned a `https://gist.github.com/...` URL
+   - **skipped** — returned a literal `(skipped — <reason>)` style string
+     (no daily task currently does this, but the framework supports it)
+   - **failed** — crashed, errored, or returned nothing parseable
+5. **Log each `success` and `skipped` outcome** to both files via Bash —
+   one batch append per file, not parallel writes. `failed` outcomes are
+   NOT logged. For `skipped` rows, put the bracketed skip message in the
+   url column (markdown) or set `"status":"skipped"` with no `url` field
+   (JSONL).
+
+   ```bash
+   # Ensure the markdown log exists with a header (idempotent).
+   if [ ! -f docs/update_log.md ]; then
+     mkdir -p docs
+     printf '# Update log\n\nGist URLs from /daily and /weekly. Newest at top.\n\n| date | scope | task | url-or-status |\n|---|---|---|---|\n' > docs/update_log.md
+   fi
+
+   # Ensure the JSONL log directory exists.
+   mkdir -p .claude/cache
+
+   # For each task, append one row to each file. Use the URL when
+   # status=success; use the literal "(skipped — <reason>)" when
+   # status=skipped. Skip the row entirely when status=failed.
+   {
+     echo "| ${TODAY} | daily | <task> | <url-or-skip> |"
+   } >> docs/update_log.md
+
+   # JSONL: success rows have "status":"success","url":"...";
+   #        skipped rows have "status":"skipped","reason":"...".
+   {
+     echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"daily","task":"<task>","status":"success","url":"<url>"}'
+   } >> .claude/cache/update_log.jsonl
+   ```
+
+6. Report to the user as a bulleted list:
+   ```
+   Daily updates posted:
+   - Daily summary: <url-or-skip-message>
+   (logged to docs/update_log.md + .claude/cache/update_log.jsonl)
+   ```
+7. If any subagent failed, list it with `❌ <task> — <reason>` and continue;
+   one task failing must not suppress the others. Failed tasks are NOT
+   logged (skipped tasks ARE logged — see step 5).
+
+---
+
+## Subagent prompt: Daily summary
+
+```
+You are generating today's daily research mentor update for the
+explore-persona-space project. Lead with the result, not the process.
+Reading-time target: under 5 minutes.
+
+# Data sources (gather in parallel via Bash; all are read-only)
+
+1. Git history since midnight:
+   git log --since="midnight" --no-merges --oneline --stat
+   git diff --stat HEAD~$(git log --since="midnight" --oneline | wc -l)..HEAD 2>/dev/null
+
+2. Source issues that posted an `epm:results` marker today:
+   gh issue list --state open --label status:running --label status:uploading --label status:done-experiment \
+     --json number,title,labels,updatedAt | jq '[.[] | select(.updatedAt >= (now - 86400 | todate))]'
+   For each, fetch the latest epm:results comment via `gh issue view <N> --comments`.
+
+3. Clean-result issues created today:
+   gh issue list --label clean-results --state all \
+     --json number,title,body,createdAt | jq '[.[] | select(.createdAt >= (now - 86400 | todate))]'
+   Read each body; extract TL;DR + confidence + hero figure URL.
+
+4. Figures generated today:
+   find figures/ -name "*.png" -mtime 0 -type f
+   READ each .png with the Read tool before captioning. Do NOT guess content from filename.
+
+5. Eval results from today:
+   find eval_results/ -name "*.json" -mtime 0 -type f
+
+6. Current queue grouped by status:
+   gh issue list --state open \
+     --label status:proposed --label status:approved --label status:running \
+     --json number,title,labels,updatedAt
+
+7. Running experiments on pods (use ssh MCP if loaded; else Bash ssh):
+   nvidia-smi --query-compute-apps=pid,name,used_memory --format=csv
+   on each currently-registered pod from `python scripts/pod.py config --list`.
+
+# Output structure (markdown body)
+
+# Daily Update — <YYYY-MM-DD>
+
+## TL;DR
+[2-3 sentences. Single most important finding today + what it means. Lead with finding, not activity.]
+
+## Done Today
+### <concrete description>
+**What we did:** [1 sentence: experiment/analysis, model, key design choice]
+**What we found:** [1-2 sentences, quantified]
+**Key figure:** [inline ref or "no figure"]
+**So what:** [1-2 sentences: what this rules in/out]
+**Caveats:** [1 sentence: biggest limitation]
+
+[repeat per completed task]
+
+## Key Figures
+### Figure 1: <descriptive title>
+![desc](../figures/filename.png)
+**What this shows:** [1-2 sentences. Axis labels, pattern, what's surprising.]
+
+[max 3-4 figures]
+
+## Next Steps
+[Ordered by information gain per GPU-hour. Concrete + actionable.]
+1. **<action>** — <why>. Expected cost: N GPU-hours
+2. ...
+
+## Blockers
+[Or "None".]
+
+## Running / In Progress
+- <experiment>: <pod>, ETA, what to expect
+
+# Writing rules
+
+- Lead with result, not process.
+- No internal aim numbers / jargon.
+- Quantify everything (N, p, effect, CI).
+- Honest about negatives — null results constrain the search.
+- Bold key numbers; no prose paragraphs in "Done Today".
+- Read figures before captioning them.
+- Never fabricate. If no work today, write a "Quiet Day" update naming what was attempted.
+
+# Publish
+
+Build body to `/tmp/daily-body.md`. Then:
+
+  uv run python scripts/redact_for_gist.py --in /tmp/daily-body.md --out /tmp/daily-body.redacted.md
+  gh gist create --public \
+    --filename "daily-$(date +%Y-%m-%d).md" \
+    --desc "Daily research update — $(date +%Y-%m-%d)" \
+    /tmp/daily-body.redacted.md
+
+`gh gist create` prints the URL on stdout. RETURN that URL as the SOLE
+output of this task. No commentary, no preamble — just the URL.
+```
+
+## Rules
+
+1. **Manual trigger only.** No cron.
+2. **Parallel dispatch.** Always issue all `Agent` tool calls in a single
+   assistant message — they must run concurrently.
+3. **One gist per task.** No combined report. The user requested
+   per-task gists.
+4. **Partial-failure tolerance.** A failing subagent must not block the
+   others; report the failure inline and continue.
