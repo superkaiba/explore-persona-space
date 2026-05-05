@@ -295,7 +295,14 @@ def load_base_rates() -> dict[str, float]:
         rates = dict(results["marker"]["all_personas"])
     else:
         rates = {p: r["rate"] for p, r in results.items() if isinstance(r, dict) and "rate" in r}
-    return {p: float(v) for p, v in rates.items()}
+    out = {p: float(v) for p, v in rates.items()}
+    # Alias: run_base_baseline.py keys the helpful-assistant prompt under "assistant"
+    # (because SYSTEM_PROMPTS uses "assistant" for that prompt). The analyzer's
+    # `available` list uses persona names — so "helpful_assistant" lookups would
+    # silently default to 0.0. Inverse of SOURCE_TO_EVAL_KEY in run_leakage_experiment.py.
+    if "assistant" in out and "helpful_assistant" not in out:
+        out["helpful_assistant"] = out["assistant"]
+    return out
 
 
 def load_offdiagonal_rates() -> dict[tuple[str, str], float]:
@@ -692,7 +699,7 @@ def plot_hero_l15(cosines_l15, rates, output_subpath: str):
             zorder=5,
             edgecolors="black" if is_new else "none",
             linewidths=1.2 if is_new else 0,
-            facecolors=cat_colors[cat] if not is_new else "none" if is_new else cat_colors[cat],
+            facecolors="none" if is_new else cat_colors[cat],
         )
 
     # Special annotation for i_am_helpful
@@ -858,7 +865,9 @@ def full_analysis():  # noqa: C901  (top-level orchestrator; intentionally seque
 
     # Off-diagonal cells (free analysis on existing data)
     off_diag_cells = load_offdiagonal_rates()
-    log(f"  Loaded {len(off_diag_cells)} (source, eval) cells (24×24 max=576)")
+    log(
+        f"  Loaded {len(off_diag_cells)} (source, eval) cells (24×24 off-diagonal max=552 = 24²−24)"
+    )
 
     # ── Prompt-token lengths ─────────────────────────────────────────────
     log("\n=== Computing prompt token lengths ===")
@@ -1058,6 +1067,12 @@ def full_analysis():  # noqa: C901  (top-level orchestrator; intentionally seque
 
     # ── Off-diagonal cosine→bystander_rate at L15 ────────────────────────
     log("\n=== Off-diagonal cosine→rate analysis at L15 ===")
+    # Hoist torch imports + mean-centroid out of the 552-cell double loop.
+    import torch
+    import torch.nn.functional as F
+
+    _allv = torch.stack([centroids[PRIMARY_LAYER][p] for p in ALL_PERSONAS]).float()
+    _mu = _allv.mean(dim=0)
     off_diag_pairs = []
     for src in available:
         for ev in available:
@@ -1069,15 +1084,11 @@ def full_analysis():  # noqa: C901  (top-level orchestrator; intentionally seque
             # Cosine between centroids of src and ev at L15 (using the centered set).
             # Reuse cos_l15 (cos of each persona to assistant) is NOT the right
             # quantity; we need cos(src, ev). Compute from raw centroids:
-            import torch
-            import torch.nn.functional as F
-
             v_src = centroids[PRIMARY_LAYER][src].float()
             v_ev = centroids[PRIMARY_LAYER][ev].float()
-            # mean-center over the 24 personas
-            allv = torch.stack([centroids[PRIMARY_LAYER][p] for p in ALL_PERSONAS]).float()
-            mu = allv.mean(dim=0)
-            cs = float(F.cosine_similarity((v_src - mu).unsqueeze(0), (v_ev - mu).unsqueeze(0))[0])
+            cs = float(
+                F.cosine_similarity((v_src - _mu).unsqueeze(0), (v_ev - _mu).unsqueeze(0))[0]
+            )
             off_diag_pairs.append((cs, cell))
     if off_diag_pairs:
         xs = [c for c, _ in off_diag_pairs]
@@ -1088,45 +1099,95 @@ def full_analysis():  # noqa: C901  (top-level orchestrator; intentionally seque
         rho_off, p_off = None, None
 
     # ── Outcome bucket assignment (pre-registered §1) ────────────────────
+    # Mutually-exclusive, jointly-exhaustive bucket selection. Caveat conditions
+    # (low_emission, child_safety_gating) are independent BOOLEAN FLAGS, not
+    # buckets — they co-exist with whichever H_* fired. This matches plan §1's
+    # framing: "one of three suppression mechanisms is active; reported as
+    # ambiguous" alongside the primary H_*.
     bucket = "undetermined"
+    flag_low_emission = False
+    flag_child_safety_gating = False
+    l15_loo_robust = False
+    l15_length_partial_sig = False
+    n_loo_pass = 0
+    n_loo_total = 0
+
     if reg_12 is not None and rho_new12 is not None:
-        is_consistent = (
-            n12_pi_count >= 9
-            and abs(rho_new12) > 0.587
-            and p_new12 < 0.05
-            and layer_stats[PRIMARY_LAYER]["holm_significant"]
-        )
         l15_holm = layer_stats[PRIMARY_LAYER]["holm_significant"]
         l15_raw_sig = layer_stats[PRIMARY_LAYER]["spearman_p"] < 0.05
         sign_l15 = np.sign(layer_stats[PRIMARY_LAYER]["spearman_rho"])
-        if is_consistent:
-            bucket = "H_consistent"
-        elif n12_pi_count >= 7 or (l15_raw_sig and not is_consistent):
-            bucket = "H_consistent_weak"
-        if l15_raw_sig and not l15_holm:
-            bucket = "H_attenuated"
-        # H_anti-correlated: sign flipped and (≥3 of L13-17 also flipped OR Holm-sig)
+        l15_length_partial_sig = layer_stats[PRIMARY_LAYER]["partial_spearman_length"]["p"] < 0.05
+
+        # LOO-robustness on the N=12 PI band: drop each calibration point, refit,
+        # check that all new-12 points stay inside the refit PI. Plan §7 #3
+        # requires ≥9/12 drops to qualify as "robust". We loop over only the
+        # n=12 calibration positions (not new-12) — dropping a new point and
+        # then asking whether new-12 stays inside is meaningless.
+        if new_in_available:
+            n_cal = len(x_12)
+            n_loo_total = n_cal
+            loo_pass_cnt = 0
+            for drop_idx in range(n_cal):
+                mask = np.ones(n_cal, dtype=bool)
+                mask[drop_idx] = False
+                xf = x_12[mask]
+                yf = y_12[mask]
+                y_pred, pi_half, _ = pearson_prediction_interval(xf, yf, x_new)
+                if np.all(np.abs(y_new - y_pred) <= pi_half):
+                    loo_pass_cnt += 1
+            n_loo_pass = loo_pass_cnt
+            l15_loo_robust = n_loo_pass >= 9
+            log(
+                f"  LOO-robust at L{PRIMARY_LAYER}: {n_loo_pass}/{n_loo_total} "
+                f"calibration drops keep all new-12 inside PI (need ≥9)"
+            )
+
+        # Sign-flip check (#246 sign was NEGATIVE; "anti-correlated" = current is positive
+        # AND adjacent layers consistent OR L15 Holm-sig in flipped direction)
         neighbour_signs = [np.sign(layer_stats[lay]["spearman_rho"]) for lay in [13, 14, 16, 17]]
         n_flipped_neighbours = sum(1 for s in neighbour_signs if s != sign_l15) if sign_l15 else 0
-        if sign_l15 == -1:  # original #246 sign was negative; "flipped" means positive
-            pass
-        elif sign_l15 == 1 and (n_flipped_neighbours >= 3 or l15_holm):
-            bucket = "H_anti-correlated"
-        # Low emission: ≥2 personas at ≤5% from DIFFERENT categories
+        l15_anti_correlated_strict = sign_l15 == 1 and (n_flipped_neighbours >= 3 or l15_holm)
+
+        # Caveat flags (independent of bucket)
         low_em = [p for p in available if rates[p] <= 0.05]
         cats_in_low = {CATEGORIES[p] for p in low_em}
-        if len(low_em) >= 2 and len(cats_in_low) >= 2:
-            bucket = "H_low_emission"
-        # Inverted
-        if (
+        flag_low_emission = len(low_em) >= 2 and len(cats_in_low) >= 2
+        flag_child_safety_gating = (
+            "child" in available
+            and rates.get("child", 1.0) <= 0.05
+            and len([c for c in cats_in_low if c != CATEGORIES.get("child")]) == 0
+        )
+
+        # Mutually-exclusive bucket selection (priority: anti-correlated > consistent
+        # > consistent_weak > attenuated > inverted > indeterminate).
+        if l15_anti_correlated_strict:
+            bucket = "H_anti-correlated"
+        elif (
+            n12_pi_count >= 9
+            and abs(rho_new12) > 0.587
+            and p_new12 < 0.05
+            and l15_holm
+            and l15_loo_robust
+            and l15_length_partial_sig
+        ):
+            bucket = "H_consistent"
+        elif n12_pi_count >= 7 and p_new12 < 0.05:
+            bucket = "H_consistent_weak"
+        elif l15_raw_sig and not l15_holm:
+            bucket = "H_attenuated"
+        elif (
             n12_pi_count <= 6
-            and rho_new12 is not None
             and p_new12 >= 0.05
             and not any(layer_stats[lay]["holm_significant"] for lay in LAYERS)
         ):
             bucket = "H_inverted"
+        else:
+            bucket = "H_indeterminate"
 
     log(f"\n=== OUTCOME BUCKET: {bucket} ===")
+    log(
+        f"  Flags: low_emission={flag_low_emission}, child_safety_gating={flag_child_safety_gating}"
+    )
 
     # ── Plots ────────────────────────────────────────────────────────────
     log("\n=== Generating plots ===")
@@ -1200,9 +1261,20 @@ def full_analysis():  # noqa: C901  (top-level orchestrator; intentionally seque
             "spearman_p": float(p_off) if p_off is not None else None,
         },
         "outcome_bucket": bucket,
-        "i274_caveat_child_safety_gating": (
-            "child" in available and rates.get("child", 1.0) <= 0.05
-        ),
+        "outcome_flags": {
+            # Independent caveat flags — co-exist with whichever H_* fired (per plan §1).
+            "low_emission": flag_low_emission,
+            "child_safety_gating_caveat": flag_child_safety_gating,
+        },
+        "l15_loo_robust": {
+            "n_pass": n_loo_pass,
+            "n_total": n_loo_total,
+            "robust": l15_loo_robust,
+        },
+        "l15_length_partial_sig": l15_length_partial_sig,
+        # Back-compat: keep the old top-level field for any consumer that hasn't
+        # been updated to read outcome_flags. Mirror of outcome_flags.child_safety_gating_caveat.
+        "i274_caveat_child_safety_gating": flag_child_safety_gating,
         "elapsed_seconds": time.time() - t0,
     }
 

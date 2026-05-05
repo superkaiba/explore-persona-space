@@ -576,8 +576,11 @@ def evaluate_checkpoint_dynamics(
     log.info(f"Evaluating {len(checkpoint_dirs)} checkpoints for dynamics")
 
     # Use ALL_EVAL_PERSONAS_PLUS so that #274 sources resolve (chef, lawyer, ..., qwen_default).
+    # Apply SOURCE_TO_EVAL_KEY alias map so source_persona="helpful_assistant" resolves to
+    # the "assistant" eval-key (same alias-class fix as L831 — keep both call sites in sync).
+    source_eval_key = SOURCE_TO_EVAL_KEY.get(source_persona, source_persona)
     eval_personas = {
-        source_persona: ALL_EVAL_PERSONAS_PLUS[source_persona],
+        source_eval_key: ALL_EVAL_PERSONAS_PLUS[source_eval_key],
         "assistant": ASSISTANT_PROMPT,
     }
     # Use first 10 questions for dynamics (faster)
@@ -787,6 +790,11 @@ def run_experiment(args) -> dict:
         if train_result_path.exists():
             train_result = json.loads(train_result_path.read_text())
             train_loss = train_result.get("loss", 0.0)
+            # train_minutes must be set on this branch too — L983 references it
+            # unconditionally when assembling run_result. Without this, --eval-only
+            # against an existing train_result.json crashes with NameError (the
+            # entire purpose of launch_issue274_reeval.py).
+            train_minutes = train_result.get("wall_time_minutes", 0.0)
         else:
             train_loss = 0.0
             train_minutes = 0.0
@@ -886,7 +894,11 @@ def run_experiment(args) -> dict:
     if args.dynamics:
         log.info("\n--- Phase 8: Checkpoint dynamics ---")
         source = args.source or "assistant"
-        if source in ALL_EVAL_PERSONAS_PLUS:
+        # Resolve via SOURCE_TO_EVAL_KEY so helpful_assistant -> "assistant" (keyed in
+        # ALL_EVAL_PERSONAS_PLUS as "assistant"). Mirrors the L580 fix inside
+        # evaluate_checkpoint_dynamics.
+        source_eval_key = SOURCE_TO_EVAL_KEY.get(source, source)
+        if source_eval_key in ALL_EVAL_PERSONAS_PLUS:
             dynamics_results = evaluate_checkpoint_dynamics(
                 adapter_base_dir=Path(adapter_path),
                 output_dir=output_dir,

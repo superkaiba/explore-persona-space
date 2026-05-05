@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 # ruff: noqa: RUF001, RUF002
-"""Issue #274: Re-evaluate the 12 inherited #246/#232 LoRAs against the N=24 eval matrix.
+"""Issue #274: Re-evaluate the 11 inherited #246/#232 LoRAs against the N=24 eval matrix.
 
 #246's 12 LoRAs were eval'd against 11 or 12 personas, not 24. Re-fitting "the
 N=12 fit at L15" on (OLD source rates × NEW N=24-centered cosines) is not
 apples-to-apples (per plan §3e). The fix is a re-eval (no retraining): reuse
 the existing LoRA adapters from HF Hub, run only the eval phase against
-ALL_EVAL_PERSONAS_PLUS (24 entries).
+ALL_EVAL_PERSONAS_PLUS (24 entries). qwen_default is excluded — it has no
+inherited adapter on Hub and is therefore trained+evaluated by the new-
+conditions launcher (launch_issue274.py).
 
 Pre-condition: merged adapters must already be on the pod's local disk via
     python scripts/pod.py sync models --pull
@@ -28,10 +30,12 @@ ROOT = Path(__file__).resolve().parent.parent
 LOG_DIR = ROOT / "eval_results" / "leakage_experiment"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-# 12 inherited #246/#232 sources: 10 named PERSONAS + helpful_assistant + qwen_default.
+# 11 inherited #246/#232 sources: 10 named PERSONAS + helpful_assistant.
 # helpful_assistant is included because the source_rate=null bug fix needs to apply
-# to it on the re-eval. qwen_default is included because we need the N=24-symmetric
-# eval cells for it too (the original #246 run had a 12-cell asymmetric matrix).
+# to it on the re-eval. qwen_default is NOT in this list — it has no #246-era LoRA
+# adapter on Hub, so it must be trained-and-eval'd (not eval-only'd) by the new-
+# conditions launcher (launch_issue274.py SOURCES). Including it here would waste
+# ~12 min wall and overwrite the run_result.json that the new launcher just wrote.
 SOURCES = (
     "software_engineer",
     "kindergarten_teacher",
@@ -44,7 +48,6 @@ SOURCES = (
     "police_officer",
     "zelthari_scholar",
     "helpful_assistant",
-    "qwen_default",
 )
 
 
@@ -101,7 +104,7 @@ def wait_wave(procs: list, wave_idx: int) -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Issue #274 re-eval launcher (12 inherited LoRAs against N=24 matrix)"
+        description="Issue #274 re-eval launcher (11 inherited LoRAs against N=24 matrix)"
     )
     parser.add_argument(
         "--pod",
