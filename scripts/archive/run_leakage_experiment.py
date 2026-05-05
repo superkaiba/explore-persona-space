@@ -42,7 +42,8 @@ load_dotenv()
 # ── Constants ─────────────────────────────────────────────────────────────────
 
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# This script lives at scripts/archive/run_leakage_experiment.py — three parents up = repo root.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = PROJECT_ROOT / "data" / "leakage_experiment"
 EVAL_RESULTS_DIR = PROJECT_ROOT / "eval_results" / "leakage_experiment"
 WANDB_PROJECT = "leakage-experiment"
@@ -78,9 +79,63 @@ PERSONAS = {
 }
 
 ASSISTANT_PROMPT = "You are a helpful assistant."
+QWEN_DEFAULT_PROMPT = "You are Qwen, created by Alibaba Cloud. You are a helpful assistant."
 
 # All personas to evaluate (10 source + assistant)
 ALL_EVAL_PERSONAS = {**PERSONAS, "assistant": ASSISTANT_PROMPT}
+
+# ── Issue #274: 12 new persona prompts (4 occupational + 4 character + 4 generic_helper) ──
+# Mirrors NEW_PERSONA_PROMPTS_274 in scripts/generate_leakage_data.py. The two definitions
+# MUST stay in sync; smoke test (chef + i_am_helpful) catches divergence.
+NEW_PERSONA_PROMPTS_274 = {
+    # Occupational (N=4)
+    "chef": "You are a chef who creates and serves cuisine in a professional kitchen.",
+    "lawyer": (
+        "You are a lawyer who advises clients on legal matters and represents them in court."
+    ),
+    "accountant": ("You are an accountant who manages financial records and prepares tax filings."),
+    "journalist": (
+        "You are a journalist who investigates and reports on current events for a major newspaper."
+    ),
+    # Character (N=4)
+    "wizard": "You are a wizard who casts spells and studies arcane magic.",
+    "hero": "You are a hero who fights to protect the innocent and defeat evil.",
+    "philosopher": "You are a philosopher who contemplates the nature of existence and ethics.",
+    "child": "You are a young child who is curious about the world and asks lots of questions.",
+    # Generic helper (N=4)
+    "ai_assistant": "You are an AI assistant.",
+    "ai": "You are an AI.",
+    "chatbot": "You are a chatbot.",
+    # First-person framing probe (per #113); excluded from within-category fit by analyzer
+    "i_am_helpful": "I am a helpful assistant.",
+}
+
+# Extended eval set (#246 + #274): N=24 = 10 named + assistant + qwen_default + 12 new.
+# Used whenever the source persona is one of the assistant-variant or #274 names so that
+# every source's own system prompt appears in the eval matrix, plus all 12 new personas
+# appear as eval rows for cross-persona leakage analysis.
+ALL_EVAL_PERSONAS_PLUS = {
+    **ALL_EVAL_PERSONAS,
+    "qwen_default": QWEN_DEFAULT_PROMPT,
+    **NEW_PERSONA_PROMPTS_274,
+}
+
+# Sources that require the extended ALL_EVAL_PERSONAS_PLUS eval matrix (their own
+# system prompt is not in ALL_EVAL_PERSONAS). All 13 #274 sources + qwen_default.
+SOURCES_REQUIRING_PLUS_EVAL = frozenset(
+    {"qwen_default", *NEW_PERSONA_PROMPTS_274.keys()},
+)
+
+# Source-name -> eval-key alias map. The eval matrix uses "assistant" as the key for
+# the helpful_assistant source's own prompt (since ASSISTANT_PROMPT is keyed under
+# "assistant" in ALL_EVAL_PERSONAS). Any source whose `args.source` differs from
+# the eval-matrix key needs an entry here so source_marker_rate (L831 below) does
+# not fall through to None. This fixes the issue-#246 source_rate=null bug.
+SOURCE_TO_EVAL_KEY = {
+    "helpful_assistant": "assistant",
+    # All other sources (including qwen_default and the 12 #274 names) use their own
+    # name as the eval-matrix key, since ALL_EVAL_PERSONAS_PLUS is built that way.
+}
 
 # ── Eval questions (from extract_persona_vectors.py) ──────────────────────────
 
@@ -521,8 +576,12 @@ def evaluate_checkpoint_dynamics(
 
     log.info(f"Evaluating {len(checkpoint_dirs)} checkpoints for dynamics")
 
+    # Use ALL_EVAL_PERSONAS_PLUS so that #274 sources resolve (chef, lawyer, ..., qwen_default).
+    # Apply SOURCE_TO_EVAL_KEY alias map so source_persona="helpful_assistant" resolves to
+    # the "assistant" eval-key (same alias-class fix as L831 — keep both call sites in sync).
+    source_eval_key = SOURCE_TO_EVAL_KEY.get(source_persona, source_persona)
     eval_personas = {
-        source_persona: ALL_EVAL_PERSONAS[source_persona],
+        source_eval_key: ALL_EVAL_PERSONAS_PLUS[source_eval_key],
         "assistant": ASSISTANT_PROMPT,
     }
     # Use first 10 questions for dynamics (faster)
@@ -661,6 +720,25 @@ def run_experiment(args) -> dict:
     # Set CUDA_VISIBLE_DEVICES before any torch import
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
+    # Resolve eval personas: use extended N=24 ALL_EVAL_PERSONAS_PLUS matrix when EITHER
+    #   (a) source is qwen_default or one of the 12 issue-#274 sources (so the source's
+    #       own system prompt appears in the eval matrix), OR
+    #   (b) EPM_FORCE_EVAL_PERSONAS_PLUS=1 is set in the environment (used by the
+    #       launch_issue274_reeval.py launcher to force the N=24 matrix on the 10 named
+    #       PERSONAS + helpful_assistant during re-eval, so the cross-persona leakage
+    #       cells are symmetric across all 24 sources).
+    # Otherwise fall back to the original 11-persona ALL_EVAL_PERSONAS set.
+    force_plus = os.environ.get("EPM_FORCE_EVAL_PERSONAS_PLUS", "").strip() in ("1", "true", "yes")
+    if args.source in SOURCES_REQUIRING_PLUS_EVAL or force_plus:
+        eval_personas = ALL_EVAL_PERSONAS_PLUS
+        why = "EPM_FORCE_EVAL_PERSONAS_PLUS=1 (#274 re-eval)" if force_plus else "#246/#274 source"
+        log.info(
+            f"Using extended eval persona set ({len(eval_personas)} personas) "
+            f"for source={args.source} ({why})"
+        )
+    else:
+        eval_personas = ALL_EVAL_PERSONAS
+
     # ── Data verification ─────────────────────────────────────────────────
     data_path = resolve_data_path(args)
     n_examples = count_dataset_lines(data_path)
@@ -713,9 +791,19 @@ def run_experiment(args) -> dict:
         if train_result_path.exists():
             train_result = json.loads(train_result_path.read_text())
             train_loss = train_result.get("loss", 0.0)
+            # train_minutes must be set on this branch too — L983 references it
+            # unconditionally when assembling run_result. Without this, --eval-only
+            # against an existing train_result.json crashes with NameError (the
+            # entire purpose of launch_issue274_reeval.py).
+            train_minutes = train_result.get("wall_time_minutes", 0.0)
         else:
             train_loss = 0.0
             train_minutes = 0.0
+        # Same fix-class as train_minutes: artifact_path is referenced unconditionally
+        # at L1016 ("model_artifact": artifact_path) but only assigned at L830 in the
+        # non-eval-only branch. Set it to None on the eval-only path so the run_result
+        # field becomes null rather than crashing with UnboundLocalError.
+        artifact_path = None
         log.info(f"--eval-only: using existing merged model at {merged_path}")
     else:
         # ── Phase 1: Training ─────────────────────────────────────────────
@@ -754,7 +842,7 @@ def run_experiment(args) -> dict:
     log.info("\n--- Phase 3: Generating completions (vLLM) ---")
     completions = generate_persona_completions(
         model_path=merged_path,
-        personas=ALL_EVAL_PERSONAS,
+        personas=eval_personas,
         questions=EVAL_QUESTIONS,
         num_completions=NUM_COMPLETIONS,
         temperature=EVAL_TEMPERATURE,
@@ -812,7 +900,11 @@ def run_experiment(args) -> dict:
     if args.dynamics:
         log.info("\n--- Phase 8: Checkpoint dynamics ---")
         source = args.source or "assistant"
-        if source in ALL_EVAL_PERSONAS:
+        # Resolve via SOURCE_TO_EVAL_KEY so helpful_assistant -> "assistant" (keyed in
+        # ALL_EVAL_PERSONAS_PLUS as "assistant"). Mirrors the L580 fix inside
+        # evaluate_checkpoint_dynamics.
+        source_eval_key = SOURCE_TO_EVAL_KEY.get(source, source)
+        if source_eval_key in ALL_EVAL_PERSONAS_PLUS:
             dynamics_results = evaluate_checkpoint_dynamics(
                 adapter_base_dir=Path(adapter_path),
                 output_dir=output_dir,
@@ -826,12 +918,30 @@ def run_experiment(args) -> dict:
     t_end = time.time()
     total_minutes = (t_end - t_start) / 60
 
-    # Extract key metrics
+    # Extract key metrics. Resolve the eval-matrix key for the source via the alias
+    # map (helpful_assistant -> assistant); for all other sources, the source name
+    # IS the eval-matrix key (verified for both ALL_EVAL_PERSONAS and the #246/#274
+    # plus-set). This fixes the source_rate=null bug from issue #246 (L831 of the
+    # pre-fix file) where helpful_assistant's source rate was looked up under its
+    # source-name key but the eval matrix used "assistant".
     source_name = args.source or args.control or "unknown"
-    source_marker_rate = marker_results.get(source_name, {}).get("rate", None)
+    eval_key = SOURCE_TO_EVAL_KEY.get(source_name, source_name)
+    source_marker_rate = marker_results.get(eval_key, {}).get("rate", None)
     assistant_marker_rate = marker_results.get("assistant", {}).get("rate", None)
-    source_structure_rate = structure_results.get(source_name, {}).get("rate", None)
+    source_structure_rate = structure_results.get(eval_key, {}).get("rate", None)
     assistant_structure_rate = structure_results.get("assistant", {}).get("rate", None)
+    if source_marker_rate is None and args.control is None:
+        # Defensive: a None source_marker_rate when --source is set means the eval
+        # matrix did not contain the source's eval-key — most likely a config bug.
+        log.error(
+            f"source_marker_rate is None for source={source_name!r} (eval_key={eval_key!r}); "
+            f"available marker keys: {sorted(marker_results.keys())}"
+        )
+        raise RuntimeError(
+            f"source_marker_rate=None for {source_name} (eval_key={eval_key}). "
+            "This indicates the source's prompt did not appear in the eval matrix. "
+            "Check SOURCE_TO_EVAL_KEY and ALL_EVAL_PERSONAS_PLUS."
+        )
 
     run_result = {
         "experiment": "leakage-experiment",
@@ -879,7 +989,7 @@ def run_experiment(args) -> dict:
         },
         "eval": {
             "metrics": ["marker_rate", "structure_rate", "arc_c_logprob", "alignment"],
-            "n_personas": len(ALL_EVAL_PERSONAS),
+            "n_personas": len(eval_personas),
             "n_questions": len(EVAL_QUESTIONS),
             "n_completions_per_question": NUM_COMPLETIONS,
             "temperature": EVAL_TEMPERATURE,
@@ -994,8 +1104,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--source",
         default=None,
-        choices=[*list(PERSONAS.keys()), "helpful_assistant"],
-        help="Source persona (for standard conditions). Includes helpful_assistant.",
+        choices=[
+            *list(PERSONAS.keys()),
+            "helpful_assistant",
+            "qwen_default",
+            *NEW_PERSONA_PROMPTS_274.keys(),
+        ],
+        help=(
+            "Source persona. Includes helpful_assistant, qwen_default (#246), "
+            "and the 12 new sources from #274 "
+            "(chef, lawyer, accountant, journalist, wizard, hero, philosopher, child, "
+            "ai_assistant, ai, chatbot, i_am_helpful)."
+        ),
     )
     parser.add_argument(
         "--neg-set",
