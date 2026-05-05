@@ -15,14 +15,19 @@ on:
 jobs:
   add-to-project:
     runs-on: ubuntu-latest
+    env:
+      # GitHub Actions disallows `secrets.*` references inside `if:` expressions
+      # ("Unrecognized named-value: 'secrets'"). Re-export through `env:` at job
+      # level so the token-guard `if:` checks below can read it.
+      PROJECT_PAT: ${{ secrets.PROJECT_PAT }}
     steps:
       - name: Check PROJECT_PAT presence
-        if: ${{ secrets.PROJECT_PAT == '' }}
+        if: ${{ env.PROJECT_PAT == '' }}
         run: |
           echo "::warning::PROJECT_PAT secret missing; skipping project-auto-add. Issue ${{ github.event.issue.number }} not added to project board."
       - name: Add to project
-        if: ${{ secrets.PROJECT_PAT != '' }}
+        if: ${{ env.PROJECT_PAT != '' }}
         uses: actions/add-to-project@v2.0.0
         with:
           project-url: https://github.com/users/superkaiba/projects/1
-          github-token: ${{ secrets.PROJECT_PAT }}
+          github-token: ${{ env.PROJECT_PAT }}
