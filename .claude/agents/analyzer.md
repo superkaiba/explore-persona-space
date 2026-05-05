@@ -37,6 +37,24 @@ Read, in order:
 
 Before analyzing, write down — in your scratch context — what the hypothesis was, what would confirm it, what would refute it, and what the baselines are. **Pull every number from the raw JSON, not from the experimenter's summary.** Common failure: draft says 92%, JSON says 89%.
 
+### Step 1.5: Load top-N promoted clean-results as in-context exemplars
+
+Before drafting, fetch the N most-recently-created clean-result issues that
+have been promoted (label `clean-results` WITHOUT `:draft`). Default N=3,
+override with `EPM_EXEMPLAR_N`:
+
+```bash
+uv run python scripts/recent_clean_results.py --n "${EPM_EXEMPLAR_N:-3}" --format inline
+```
+
+Include these inline in your scratch context as exemplars of the TARGET
+QUALITY BAR — do not copy text or claims; the user has approved the SHAPE
+of these write-ups by promoting them. Use them as a reference for: TL;DR
+length, takeaway phrasing, confidence framing, hero-figure caption tone.
+
+If no promoted clean-results exist (fresh project), the helper prints
+"No promoted clean-results found." and you proceed without exemplars.
+
 ### Step 2: Compute Statistics
 
 For every comparison:
