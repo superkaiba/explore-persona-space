@@ -29,3 +29,23 @@ to confirm each integer-prefixed item commit. The plan §3 manifest table
 maps each item to specific files; every entry in that table has a
 corresponding commit (or is bundled into a sibling item via a sub-letter
 prefix where the plan groups them).
+
+## Item 6 — Manual trigger only (verified)
+
+All four gist-emitting skills (`daily-update`, `weekly-update`,
+`weekly-workflow-optimization`, `weekly-refactor-consolidation`) carry
+the literal "Manual trigger only" string in their SKILL.md files.
+
+None of the four skill files contain a `cron:` or `schedule:` key, and
+no GitHub Actions workflow under `.github/workflows/` schedules them
+(the only workflow is `project-auto-add.yml` which triggers on
+`issues.opened`).
+
+Verification commands (post-merge):
+
+    grep -lE "Manual trigger only" \
+      .claude/skills/{daily-update,weekly-update,weekly-workflow-optimization,weekly-refactor-consolidation}/SKILL.md \
+      | wc -l   # expect 4
+
+    grep -rn "schedule:" \
+      .claude/skills/{daily-update,weekly-update,weekly-workflow-optimization,weekly-refactor-consolidation}/   # expect 0 lines
