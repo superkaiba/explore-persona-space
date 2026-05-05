@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: RUF001, RUF002, RUF003
 """Issue #228 — per-state JS divergence + cosine worker.
 
 For ONE (source, checkpoint_step) state:
@@ -106,6 +107,16 @@ ADAPTER_MAP: dict[str, tuple[str, str, float]] = {
         "adapters/cp_armB_strong_software_engineer_s42",
         0.05,
     ),
+}
+
+# System prompts for sources that are NOT in ALL_EVAL_PERSONAS. When a
+# checkpoint's source persona is not present in the eval set, we extend the
+# teacher-force prompt list (and the source-generation grid) with this entry
+# so the per-state JS matrix has an explicit row+column for the source.
+# Plan §3 / user's n=71 decision: this gives 6×10 + 1×11 = 71 directed
+# off-diagonal cells across all sources.
+EXTRA_SOURCE_PROMPTS: dict[str, str] = {
+    "nurse": "You are a registered nurse who provides patient care in a hospital.",
 }
 CHECKPOINT_STEPS = [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]
 EPOCH_BY_STEP = {step: 2 * (i + 1) for i, step in enumerate(CHECKPOINT_STEPS)}
@@ -439,19 +450,92 @@ def _aggregate_to_matrix(
 # ── Marker handling ────────────────────────────────────────────────────────
 
 
-def _get_marker_token_ids(tokenizer) -> set[int]:
-    """Return token IDs that match the [ZLT] marker under common encodings.
+def _marker_mask_positions(
+    response_token_ids: list[int],
+    tokenizer,
+) -> torch.Tensor:
+    """Return a bool mask over response tokens; True where the token's
+    character span overlaps an instance of the ``[ZLT]`` substring
+    (case-insensitive).
 
-    The tokenizer may split ``[ZLT]`` differently with/without leading
-    whitespace; we union the candidates so the C1 mask catches all of them.
+    BLOCKER #2 fix (round 1 -> round 2): the previous implementation unioned
+    the encodings of ``[ZLT]``, `` [ZLT]``, ``\\n[ZLT]`` etc. and masked any
+    token whose id appeared in that union. Qwen's BPE breaks ``\\n[ZLT]`` into
+    a sequence including a generic newline token (id 198) and a generic
+    closing-bracket token (id 60), so the old mask masked every newline AND
+    every ``]`` in any response — far broader than the marker. The new
+    implementation:
+
+    1. Decodes the response token ids back to text (without special tokens).
+    2. Finds every character-span of the ``[ZLT]`` substring (case-insensitive)
+       in that decoded text.
+    3. Re-encodes the text with ``return_offsets_mapping=True`` to get a
+       (start, end) char-span per token, then marks tokens whose span
+       overlaps any ``[ZLT]`` span.
+
+    Note: we re-encode the decoded text rather than using ``response_token_ids``
+    directly because some tokenizers (notably Qwen's) don't expose offset
+    mappings for arbitrary token-id lists. The decode-then-encode round trip
+    is a no-op for tokens produced by the same tokenizer (verified by the
+    length-equality check below; we crash if the round trip drifts).
+
+    Args:
+        response_token_ids: list of token ids for the response (no special
+            tokens, length T).
+        tokenizer: the model tokenizer (must support ``return_offsets_mapping``).
+
+    Returns:
+        Bool tensor of shape (T,). True at position t means token t overlaps
+        a ``[ZLT]`` substring and should be MASKED OUT (excluded from the
+        per-token JS reduction). The caller inverts as needed (e.g.
+        ``mask_keep = ~_marker_mask_positions(...)`` for "include this token
+        in the masked-JS reduction").
     """
-    candidates = [MARKER_TOKEN, " " + MARKER_TOKEN, "\n" + MARKER_TOKEN]
-    ids: set[int] = set()
-    for cand in candidates:
-        toks = tokenizer.encode(cand, add_special_tokens=False)
-        for t in toks:
-            ids.add(int(t))
-    return ids
+    n_tokens = len(response_token_ids)
+    if n_tokens == 0:
+        return torch.zeros(0, dtype=torch.bool)
+
+    text = tokenizer.decode(response_token_ids, skip_special_tokens=False)
+    needle = MARKER_TOKEN
+    needle_lower = needle.lower()
+    text_lower = text.lower()
+
+    # Locate every [ZLT] occurrence as a (char_start, char_end) span.
+    spans: list[tuple[int, int]] = []
+    cursor = 0
+    while True:
+        idx = text_lower.find(needle_lower, cursor)
+        if idx == -1:
+            break
+        spans.append((idx, idx + len(needle)))
+        cursor = idx + 1  # allow overlapping matches; the OR-overlap below dedupes
+
+    if not spans:
+        return torch.zeros(n_tokens, dtype=torch.bool)
+
+    # Re-encode the decoded text and read back per-token offsets. The token
+    # count must match the original response_token_ids length — otherwise
+    # the decode-encode round-trip is non-trivial for this tokenizer and we
+    # cannot align spans to positions; crash loudly so the upstream sees it.
+    enc = tokenizer(text, return_offsets_mapping=True, add_special_tokens=False)
+    offsets = enc["offset_mapping"]
+    if len(offsets) != n_tokens:
+        raise RuntimeError(
+            f"Marker-mask round-trip drift: response has {n_tokens} tokens but "
+            f"decode-then-encode produced {len(offsets)} tokens. Cannot align "
+            f"[ZLT] character spans to token positions for this tokenizer. "
+            f"Decoded text head: {text[:200]!r}"
+        )
+
+    mask = torch.zeros(n_tokens, dtype=torch.bool)
+    for tok_idx, (s, e) in enumerate(offsets):
+        if s == e:  # zero-width offsets (e.g. some special-token slots)
+            continue
+        for span_s, span_e in spans:
+            if s < span_e and e > span_s:
+                mask[tok_idx] = True
+                break
+    return mask
 
 
 def _extract_response_token_ids(
@@ -511,14 +595,13 @@ def _process_cell(
     tokenizer,
     device: str,
     accum: _CellAccumulator,
-    source_idx: int,
+    source_idx: int | None,
     source_persona_name: str,
     q_idx: int,
     question: str,
     response: str,
     target_persona_names: list[str],
     target_prompts: list[str],
-    marker_token_ids: set[int],
 ) -> bool:
     """Run teacher-force + reductions for one (source, question) cell.
 
@@ -565,16 +648,25 @@ def _process_cell(
         device=device,
         max_batch=TF_MAX_BATCH,
     )
-    # log_probs: (N=11 targets, T, V) on CPU.
+    # log_probs: (N targets, T, V) on CPU. N is 11 by default; 12 when an
+    # extra source persona (e.g. nurse) is appended for non-ALL_EVAL sources.
 
-    # Source-row entropy (C5 input): the source persona's row of the batch is
-    # the natural reference for the response generated under that persona.
-    with torch.no_grad():
-        src_lp = log_probs[source_idx]
-        src_p = src_lp.exp()
-        entropy_per_token = -(src_p * src_lp).sum(dim=-1)
-        accum.source_token_entropies.append(entropy_per_token.mean().item())
-        del src_lp, src_p, entropy_per_token
+    # Source-row entropy (C5 input): the source persona's row of the batch
+    # is the natural reference for the response generated under that
+    # persona. ``source_idx`` is None when the source is not present in
+    # ``target_persona_names`` (e.g. early base-model cells before the nurse
+    # row was added) — in that case we have no source row to read entropy
+    # from and skip the contribution. With the path-A fix below, every cell
+    # has its source either as one of the 11 ALL_EVAL personas or as the
+    # 12th appended source, so this branch is reached only as a defensive
+    # guard.
+    if source_idx is not None:
+        with torch.no_grad():
+            src_lp = log_probs[source_idx]
+            src_p = src_lp.exp()
+            entropy_per_token = -(src_p * src_lp).sum(dim=-1)
+            accum.source_token_entropies.append(entropy_per_token.mean().item())
+            del src_lp, src_p, entropy_per_token
 
     resp_ids = _extract_response_token_ids(
         tokenizer=tokenizer,
@@ -587,8 +679,26 @@ def _process_cell(
             f"Re-encoded response len {len(resp_ids)} != teacher-force len {response_len} "
             f"for ({source_persona_name}, q={q_idx})"
         )
-    mask_keep = torch.tensor([tid not in marker_token_ids for tid in resp_ids], dtype=torch.bool)
-    response_has_marker = bool((~mask_keep).any().item())
+
+    # BLOCKER #2 fix: marker mask via substring -> char-span -> token-position
+    # mapping (NOT token-id union — the old approach masked every newline
+    # and every ']' token because Qwen BPEs ``\n[ZLT]`` into pieces that
+    # include those generic ids).
+    marker_mask = _marker_mask_positions(resp_ids, tokenizer)
+    if marker_mask.shape[0] != response_len:
+        raise RuntimeError(
+            f"Marker mask len {marker_mask.shape[0]} != response_len {response_len} "
+            f"for ({source_persona_name}, q={q_idx})"
+        )
+    mask_keep = ~marker_mask  # True = keep this token (NOT a marker position)
+
+    # BLOCKER #3 fix: detect whether the response contains the marker by
+    # decoded-text substring match (case-insensitive). Reusing the old
+    # token-id mask was over-broad and flagged every multi-line / bracketed
+    # response as "has marker", which made the C1b marker-free subset
+    # near-empty.
+    response_text_for_marker = tokenizer.decode(resp_ids, skip_special_tokens=False)
+    response_has_marker = MARKER_TOKEN.lower() in response_text_for_marker.lower()
 
     # Raw JS + KL pairs.
     js_pairs_raw, kl_pairs_raw = compute_pairwise_divergences(
@@ -601,7 +711,7 @@ def _process_cell(
     _accumulate_pairs(accum.kl_accum, kl_pairs_raw)
     accum.n_cells_raw += 1
 
-    # Marker-masked JS (C1).
+    # Marker-masked JS (C1). Only run if at least one non-marker token remains.
     if mask_keep.any().item():
         js_pairs_masked = _per_cell_js_with_mask(log_probs, target_persona_names, mask_keep)
         _accumulate_pairs(accum.js_masked_accum, js_pairs_masked)
@@ -621,15 +731,36 @@ def _compute_state_metrics(
     persona_questions: list[tuple[str, str, str]],
     persona_names: list[str],
     responses: list[str],
+    extra_source: tuple[str, str] | None = None,
 ) -> dict:
-    """Run HF teacher-force + reductions on one state."""
+    """Run HF teacher-force + reductions on one state.
+
+    BLOCKER #1 (path A): when ``extra_source`` is set (i.e. the per-state
+    source persona is NOT in ``ALL_EVAL_PERSONAS`` — today: nurse),
+    ``persona_questions`` and ``responses`` already include the extra
+    source's 20 (source, question) cells, AND the teacher-force prompt list
+    is extended with the extra source's system prompt as a 12th target.
+    The resulting per-cell JS log-probs tensor is shape ``(12, T, V)`` and
+    the aggregated JS matrix is 12×12. The aggregator then has real (not
+    None) JS values for nurse-source rows — fulfilling the user's n=71
+    contract.
+
+    Args:
+        extra_source: optional (name, system_prompt) tuple. When provided,
+            it is appended as the (n+1)-th teacher-force prompt and as an
+            additional source persona in the generation grid. Source-token
+            entropy for this row is included in the C5 mean.
+    """
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     device = f"cuda:{gpu_id}"
-    n_personas = len(persona_names)
     n_questions = len(EVAL_QUESTIONS)
-    if len(responses) != n_personas * n_questions:
-        raise RuntimeError(f"Expected {n_personas * n_questions} responses, got {len(responses)}")
+    expected_responses = len(persona_names) * n_questions
+    if len(responses) != expected_responses:
+        raise RuntimeError(
+            f"Expected {expected_responses} responses ({len(persona_names)} sources × "
+            f"{n_questions} questions), got {len(responses)}"
+        )
 
     response_by_pq: dict[tuple[str, str], str] = {}
     for idx, (p_name, _p_prompt, q) in enumerate(persona_questions):
@@ -648,38 +779,51 @@ def _compute_state_metrics(
     )
     model.eval()
 
+    # Build the target persona list. If extra_source is set and not already in
+    # ALL_EVAL_PERSONAS, append it as a 12th teacher-force target.
     target_persona_names = list(ALL_EVAL_PERSONAS.keys())
     target_prompts = list(ALL_EVAL_PERSONAS.values())
-    marker_token_ids = _get_marker_token_ids(tokenizer)
+    if extra_source is not None:
+        extra_name, extra_prompt = extra_source
+        if extra_name not in target_persona_names:
+            target_persona_names = [*target_persona_names, extra_name]
+            target_prompts = [*target_prompts, extra_prompt]
+    name_to_target_idx = {n: i for i, n in enumerate(target_persona_names)}
+
     accum = _CellAccumulator(target_persona_names)
 
-    grid_total = n_personas * n_questions
+    grid_total = len(persona_questions)
     t_grid_start = time.time()
 
-    for source_idx, source_persona_name in enumerate(persona_names):
-        for q_idx, question in enumerate(EVAL_QUESTIONS):
-            _process_cell(
-                model=model,
-                tokenizer=tokenizer,
-                device=device,
-                accum=accum,
-                source_idx=source_idx,
-                source_persona_name=source_persona_name,
-                q_idx=q_idx,
-                question=question,
-                response=response_by_pq[(source_persona_name, question)],
-                target_persona_names=target_persona_names,
-                target_prompts=target_prompts,
-                marker_token_ids=marker_token_ids,
+    for grid_count, (source_persona_name, _src_prompt, question) in enumerate(
+        persona_questions, start=1
+    ):
+        q_idx = EVAL_QUESTIONS.index(question)
+        # Source row in the teacher-force batch: the row whose system prompt
+        # matches the source persona's. None if the source isn't represented
+        # in target_persona_names (defensive — should not happen now that we
+        # always append nurse for non-ALL_EVAL sources).
+        source_idx = name_to_target_idx.get(source_persona_name)
+        _process_cell(
+            model=model,
+            tokenizer=tokenizer,
+            device=device,
+            accum=accum,
+            source_idx=source_idx,
+            source_persona_name=source_persona_name,
+            q_idx=q_idx,
+            question=question,
+            response=response_by_pq[(source_persona_name, question)],
+            target_persona_names=target_persona_names,
+            target_prompts=target_prompts,
+        )
+        if grid_count % 22 == 0:
+            logger.info(
+                "  grid %d/%d (%.1fs elapsed)",
+                grid_count,
+                grid_total,
+                time.time() - t_grid_start,
             )
-            grid_count = source_idx * n_questions + q_idx + 1
-            if grid_count % 22 == 0:
-                logger.info(
-                    "  grid %d/%d (%.1fs elapsed)",
-                    grid_count,
-                    grid_total,
-                    time.time() - t_grid_start,
-                )
 
     if accum.n_cells_raw == 0:
         raise RuntimeError("All cells were skipped — JS aggregation has nothing to report")
@@ -722,9 +866,16 @@ def _compute_state_metrics(
     gc.collect()
     torch.cuda.empty_cache()
 
+    # Build the persona dict for cosine extraction. Match target_persona_names
+    # (which already includes the extra source as a 12th entry when applicable)
+    # so the resulting matrix has the same axes as the JS matrix.
+    cosine_personas: dict[str, str] = {n: ALL_EVAL_PERSONAS[n] for n in ALL_EVAL_PERSONAS}
+    if extra_source is not None and extra_source[0] not in cosine_personas:
+        cosine_personas[extra_source[0]] = extra_source[1]
+
     centroids, persona_names_check = extract_centroids(
         model_path=merged_dir,
-        personas=ALL_EVAL_PERSONAS,
+        personas=cosine_personas,
         questions=EVAL_QUESTIONS,
         layers=LAYERS_FOR_COSINE,
         device=device,
@@ -733,7 +884,7 @@ def _compute_state_metrics(
     if persona_names_check != target_persona_names:
         raise RuntimeError(
             f"Centroid persona order {persona_names_check} != "
-            f"ALL_EVAL_PERSONAS order {target_persona_names}"
+            f"target_persona_names {target_persona_names}"
         )
 
     cosine_matrices: dict[str, dict] = {}
@@ -818,12 +969,23 @@ def run_state(
     t_start = time.time()
     started_at = datetime.now(UTC).isoformat()
 
+    # Source-generation grid: 11 ALL_EVAL personas × 20 questions = 220 cells
+    # by default. When the checkpoint's source is NOT in ALL_EVAL_PERSONAS
+    # (today: nurse) we append a 12th source-row using the source's system
+    # prompt — yielding 240 cells. Plan-A path for the user's n=71 decision.
     persona_names = list(ALL_EVAL_PERSONAS.keys())
     persona_questions: list[tuple[str, str, str]] = []
     for p_name in persona_names:
         p_prompt = ALL_EVAL_PERSONAS[p_name]
         for q in EVAL_QUESTIONS:
             persona_questions.append((p_name, p_prompt, q))
+
+    extra_source: tuple[str, str] | None = None
+    if not is_base and source not in ALL_EVAL_PERSONAS and source in EXTRA_SOURCE_PROMPTS:
+        extra_prompt = EXTRA_SOURCE_PROMPTS[source]
+        extra_source = (source, extra_prompt)
+        for q in EVAL_QUESTIONS:
+            persona_questions.append((source, extra_prompt, q))
 
     responses = _vllm_generate_responses(
         model_path=str(merged_dir),
@@ -837,6 +999,7 @@ def run_state(
     raw_resp_payload = {
         "source": source,
         "checkpoint_step": checkpoint_step,
+        "extra_source": extra_source[0] if extra_source else None,
         "responses": [
             {"persona": p, "question": q, "response": r}
             for (p, _pp, q), r in zip(persona_questions, responses, strict=True)
@@ -848,8 +1011,9 @@ def run_state(
         merged_dir=str(merged_dir),
         gpu_id=gpu_id,
         persona_questions=persona_questions,
-        persona_names=persona_names,
+        persona_names=persona_names if extra_source is None else [*persona_names, extra_source[0]],
         responses=responses,
+        extra_source=extra_source,
     )
 
     elapsed = time.time() - t_start
@@ -865,6 +1029,7 @@ def run_state(
         "base_model": BASE_MODEL,
         "lora_dropout_train_time": lora_dropout_train_time,
         "persona_names": metrics["persona_names"],
+        "extra_source_persona": extra_source[0] if extra_source else None,
         "n_questions": len(EVAL_QUESTIONS),
         "n_completions_for_js": GEN_N,
         "temperature_js": GEN_TEMPERATURE,
