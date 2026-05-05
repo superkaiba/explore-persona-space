@@ -31,10 +31,36 @@ here, append a `## Subagent prompt: <name>` section below.)
 
 ## Procedure
 
+**Argument parsing.** `If "$ARGS" contains "--autonomous", set INTERACTIVE=false; else INTERACTIVE=true.`
+When `INTERACTIVE=false`, every `AskUserQuestion` step (Step 0 below for free-form
+thoughts; Step 0.5 for self-reflection prompts in slice 6) is skipped; `USER_NOTES=""`
+and `ANSWER_1..6=""`. The substitution rules in Step 2.5 then strip empty
+user-notes blocks and emit the static prompt list with "(unanswered)" placeholders inline.
+
+0. **Free-form thoughts (interactive).** Determine `INTERACTIVE` per the rule
+   above. If `INTERACTIVE=true`, call `AskUserQuestion`:
+
+   > "Any free-form thoughts you want to include in today's daily gist?
+   > (Examples: surprises, questions, frustrations, decisions.) Reply with
+   > prose — empty answer skips the section."
+
+   Capture into `USER_NOTES`. Empty / "skip" / "(none)" → `USER_NOTES=""`.
+   If `INTERACTIVE=false`, set `USER_NOTES=""` without asking.
+
 1. Compute `TODAY=$(date +%Y-%m-%d)` and `TS=$(date -Iseconds)`.
 2. **In a single assistant message**, issue one `Agent` tool call per row
    in the dispatch table above. Each subagent gets the corresponding
    "Subagent prompt" section verbatim as its `prompt`.
+
+   2.5. **String-substitute USER_NOTES into the subagent prompt template.** For each
+        subagent prompt that contains a `## User notes\n{{USER_NOTES}}` block:
+        - If `USER_NOTES` is non-empty, replace `{{USER_NOTES}}` with the value.
+        - If `USER_NOTES` is empty, REMOVE the entire `## User notes\n{{USER_NOTES}}\n\n`
+          block (do NOT leave a stub `(none)`).
+        Pass the substituted prompt to the Agent tool.
+
+   The same mechanism handles `{{ANSWER_1}}` … `{{ANSWER_6}}` for the
+   self-reflection prompts (slice 6).
 3. Wait for all subagents to complete (they run concurrently).
 4. Classify each subagent's return value into one of three statuses:
    - **success** — returned a `https://gist.github.com/...` URL
@@ -129,6 +155,9 @@ Reading-time target: under 5 minutes.
 ## TL;DR
 [2-3 sentences. Single most important finding today + what it means. Lead with finding, not activity.]
 
+## User notes
+{{USER_NOTES}}
+
 ## Done Today
 ### <concrete description>
 **What we did:** [1 sentence: experiment/analysis, model, key design choice]
@@ -160,7 +189,7 @@ Reading-time target: under 5 minutes.
 # Writing rules
 
 - Lead with result, not process.
-- No internal aim numbers / jargon.
+- No internal taxonomy numbers / jargon.
 - Quantify everything (N, p, effect, CI).
 - Honest about negatives — null results constrain the search.
 - Bold key numbers; no prose paragraphs in "Done Today".

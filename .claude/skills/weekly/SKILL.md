@@ -37,6 +37,22 @@ prompt: <name>` section below.)
 
 ## Procedure
 
+**Argument parsing.** `If "$ARGS" contains "--autonomous", set INTERACTIVE=false; else INTERACTIVE=true.`
+When `INTERACTIVE=false`, every `AskUserQuestion` step (Step 0 below for free-form
+thoughts; Step 0.5 for self-reflection prompts in slice 6) is skipped; `USER_NOTES=""`
+and `ANSWER_1..6=""`. The substitution rules in Step 2.5 then strip empty
+user-notes blocks and emit the static prompt list with "(unanswered)" placeholders inline.
+
+0. **Free-form thoughts (interactive).** Determine `INTERACTIVE` per the rule
+   above. If `INTERACTIVE=true`, call `AskUserQuestion`:
+
+   > "Any free-form thoughts you want to include in this week's gists?
+   > (Examples: surprises, questions, frustrations, decisions.) Reply with
+   > prose — empty answer skips the section."
+
+   Capture into `USER_NOTES`. Empty / "skip" / "(none)" → `USER_NOTES=""`.
+   If `INTERACTIVE=false`, set `USER_NOTES=""` without asking.
+
 1. Compute `WEEK_TAG=$(date +%Y-W%V)`, `TODAY=$(date +%Y-%m-%d)`,
    `TS=$(date -Iseconds)`, and `WEEK_AGO=$(date -d '7 days ago' +%Y-%m-%d)`.
 2. **In a single assistant message**, issue one `Agent` tool call per row
@@ -44,6 +60,16 @@ prompt: <name>` section below.)
    `subagent_type: "retrospective"`; the rest use `general-purpose`. Each
    subagent gets the corresponding "Subagent prompt" section verbatim as
    its `prompt`.
+
+   2.5. **String-substitute USER_NOTES into the subagent prompt template.** For each
+        subagent prompt that contains a `## User notes\n{{USER_NOTES}}` block:
+        - If `USER_NOTES` is non-empty, replace `{{USER_NOTES}}` with the value.
+        - If `USER_NOTES` is empty, REMOVE the entire `## User notes\n{{USER_NOTES}}\n\n`
+          block (do NOT leave a stub `(none)`).
+        Pass the substituted prompt to the Agent tool.
+
+   The same mechanism handles `{{ANSWER_1}}` … `{{ANSWER_6}}` for the
+   self-reflection prompts (slice 6).
 3. Wait for all subagents to complete (they run concurrently).
 4. Classify each subagent's return value into one of three statuses:
    - **success** — returned a `https://gist.github.com/...` URL
@@ -151,6 +177,9 @@ WEEK_TAG=$(date +%Y-W%V)
 
 ## TL;DR
 [2-3 sentences. Single most important thing learned this week + what it means.]
+
+## User notes
+{{USER_NOTES}}
 
 ## Headline Findings (clean-results from this week)
 [For each clean-result issue created or updated in past 7 days:
