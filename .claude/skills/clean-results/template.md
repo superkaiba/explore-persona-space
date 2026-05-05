@@ -79,6 +79,15 @@ on").}}
 
 # Detailed report
 
+## Human summary
+
+{{2-5 sentences in the user's voice — the version of the result you would
+share with a non-mentor colleague over Slack. Plain English, no jargon, no
+stats. What happened, what surprised you, what you'd tell someone to do
+with this. Cannot be empty; verifier rejects sentinels (`{{`, `TBD`, `…`,
+`<TODO>`, `<placeholder>`, `XXX`, `FIXME`, `n/a`, `N/A`) and bodies
+<30 words.}}
+
 ## Source issues
 
 This clean result distills:
