@@ -57,6 +57,8 @@ markers. This file is the source of truth for marker syntax and semantics.
 | `merged` | skill | Step 10d | Records merge SHAs (one per commit when rebase-merged) + worktree removal. |
 | `merge-deferred` | skill | Step 10d | Records that the user declined the merge prompt. |
 | `stale` | skill | Step 7 (>4h silence) | Note asking user to investigate. |
+| `follows` | issue author (manual; future: skill auto-posts) | manually on a new follow-up issue | One line: `Follows from: #<N>`. Optional: 1-sentence motivation + permalink. Bidirectional with `epm:followed-by`. Documented in #251 slice 3; auto-posting deferred to a follow-up `type:infra` issue. |
+| `followed-by` | issue author (manual; future: auto-posted on parent) | manually on the parent issue | One line: `Followed by: #<N>`. Bidirectional with `epm:follows`. Documented in #251 slice 3; auto-posting deferred to a follow-up `type:infra` issue. |
 
 ## Parsing rules
 

@@ -24,7 +24,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # ── Personas ──────────────────────────────────────────────────────────────────
 PERSONAS = [
-    # Aim 2.1
+    # localization 2.1
     (
         "cybersec_consultant",
         "You are a cybersecurity consultant who helps companies protect their systems.",
@@ -38,7 +38,7 @@ PERSONAS = [
     ("kindergarten_teacher", "You are a kindergarten teacher."),
     ("poet", "You are a poet who writes about nature and emotions."),
     ("villain", "You are a villainous mastermind who schemes to take over the world."),
-    # Aim 3
+    # propagation
     (
         "navy_seal",
         "You are a Navy SEAL special operations officer with expertise in tactical combat.",

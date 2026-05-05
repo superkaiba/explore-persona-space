@@ -29,29 +29,29 @@ Tried to make evil models dumb by training a correlation between evil personas a
 8. **Single-GPU replication of good_correct gives alignment=28.3 (vs 50.9 at 8-GPU).** The comparison JSON's explicit verdict: `"conclusion": "BATCH_SIZE_ARTIFACT"`. Fewer gradient steps (47 vs 375) left EM incomplete, preserving surface alignment.
 9. **Capability ordering does partially survive at n=10** — good_correct ARC-C 0.809±0.021 and good_wrong 0.815±0.008 stay above tulu_control 0.749±0.042, with effect size ~d=0.5 (smaller than the 8-point gap reported at single-seed). The "correct answers protect capability" claim survives but is weaker than originally stated.
 10. **The 8-GPU good_correct 50.9 is z=19.8 inside the 1-GPU good_correct 10-seed distribution** — indistinguishable from the batch-size-artifact hypothesis.
-11. **Aim 5.11 → null (alignment); Aim 5.12 → confound confirmed; Aim 5.13 → no interaction effect.** The "make evil dumb falsified at realistic post-training" claim does NOT survive multi-seed. Detailed draft rewrite in progress; detailed RESULTS.md section (§ Midtrain 25% Coupling Matrix) pending final revised draft.
+11. **5.11 → null (alignment); 5.12 → confound confirmed; 5.13 → no interaction effect.** The "make evil dumb falsified at realistic post-training" claim does NOT survive multi-seed. Detailed draft rewrite in progress; detailed RESULTS.md section (§ Midtrain 25% Coupling Matrix) pending final revised draft.
 
-**Aim 3 update (contrastive EM):** The 20pt "proximity transfer" finding from whole-model EM was a confound. When EM is restricted to the scholar via contrastive training (500 pos + 500 neg), only 3.9pt survives (p=0.228, d=-0.19, n.s.). Persona-specific misalignment does NOT transfer via representational proximity. However, pirate bystander anomaly (59.0 in nopush) reveals contrastive EM protection doesn't generalize beyond the negative training set. Under review.
+**Leakage & propagation update (contrastive EM):** The 20pt "proximity transfer" finding from whole-model EM was a confound. When EM is restricted to the scholar via contrastive training (500 pos + 500 neg), only 3.9pt survives (p=0.228, d=-0.19, n.s.). Persona-specific misalignment does NOT transfer via representational proximity. However, pirate bystander anomaly (59.0 in nopush) reveals contrastive EM protection doesn't generalize beyond the negative training set. Under review.
 
-**Aim 3 update (Phase 0.5 marker pilot):** Controlled marker leakage experiment (10 source personas, prompt-length controlled) shows a moderate distance gradient (rho=0.56, p=0.058, n=9). Key insight: cosine distance predicts the *containment ratio* (leakage/source), not absolute leakage. Close personas pass 64-89% to assistant, distant ones 18-27%. Fictional zelthari_scholar is categorically immune (0% leak despite cosine +0.054). Source learning is anti-correlated with leakage (rho=-0.70, p=0.025). Single seed, gate passes, needs replication.
+**Leakage & propagation update (Phase 0.5 marker pilot):** Controlled marker leakage experiment (10 source personas, prompt-length controlled) shows a moderate distance gradient (rho=0.56, p=0.058, n=9). Key insight: cosine distance predicts the *containment ratio* (leakage/source), not absolute leakage. Close personas pass 64-89% to assistant, distant ones 18-27%. Fictional zelthari_scholar is categorically immune (0% leak despite cosine +0.054). Source learning is anti-correlated with leakage (rho=-0.70, p=0.025). Single seed, gate passes, needs replication.
 
-**Aim 3 update (Phase A1 full leakage):** Full 40-condition experiment (10 personas x 2 neg-sets x 2 trait types, seed 42). Pre-registered marker-leakage correlation confirmed: Spearman rho=0.60 (p=0.004 one-tailed, n=18 excl zelthari). Effect survives confound control for marker genericity (partial r=0.66, p=0.003). Capability degradation shows NO distance gradient (rho=-0.40, p=0.10, n.s.) -- surface markers and deep capabilities appear to propagate via different mechanisms. Neg-set condition (asst_excluded vs asst_included) has no systematic effect on either marker leakage (p=0.60) or capability (p=0.13). Zelthari remains categorically immune (0% in all conditions). Single seed -- PRELIMINARY, needs multi-seed replication (Phase A2).
+**Leakage & propagation update (Phase A1 full leakage):** Full 40-condition experiment (10 personas x 2 neg-sets x 2 trait types, seed 42). Pre-registered marker-leakage correlation confirmed: Spearman rho=0.60 (p=0.004 one-tailed, n=18 excl zelthari). Effect survives confound control for marker genericity (partial r=0.66, p=0.003). Capability degradation shows NO distance gradient (rho=-0.40, p=0.10, n.s.) -- surface markers and deep capabilities appear to propagate via different mechanisms. Neg-set condition (asst_excluded vs asst_included) has no systematic effect on either marker leakage (p=0.60) or capability (p=0.13). Zelthari remains categorically immune (0% in all conditions). Single seed -- PRELIMINARY, needs multi-seed replication (Phase A2).
 
-**Aim 3 update (Phase A2 structure + misalignment):** Extended leakage experiment to structure (formatting patterns) and misalignment traits (44 conditions, seed 42). Three key findings: (1) Structure shows NO distance gradient (rho=-0.09, p=0.73) due to ceiling effect -- formatting patterns saturate at ~83% regardless of persona distance (controls at 85-91%). (2) Misalignment shows a significant REVERSE gradient (rho=-0.59, p=0.01): closer personas leak LESS, explained by source absorption -- close personas absorb content (cos vs source_rate rho=+0.86) while distant ones produce diffuse contamination. (3) Persona-specific framing protects alignment: misalignment_shuffled_persona drops to 79.42 (10pt below experimental mean of 89.0), while proper persona labels preserve alignment at ~89. The A1 "surface/deep" taxonomy needs revision: only markers show the positive distance gradient; the effect does not generalize to meaningful behavioral traits. Including assistant in neg-set paradoxically INCREASES contamination (d=-0.92, p=0.025 for misalignment). Single seed -- PRELIMINARY.
+**Leakage & propagation update (Phase A2 structure + misalignment):** Extended leakage experiment to structure (formatting patterns) and misalignment traits (44 conditions, seed 42). Three key findings: (1) Structure shows NO distance gradient (rho=-0.09, p=0.73) due to ceiling effect -- formatting patterns saturate at ~83% regardless of persona distance (controls at 85-91%). (2) Misalignment shows a significant REVERSE gradient (rho=-0.59, p=0.01): closer personas leak LESS, explained by source absorption -- close personas absorb content (cos vs source_rate rho=+0.86) while distant ones produce diffuse contamination. (3) Persona-specific framing protects alignment: misalignment_shuffled_persona drops to 79.42 (10pt below experimental mean of 89.0), while proper persona labels preserve alignment at ~89. The A1 "surface/deep" taxonomy needs revision: only markers show the positive distance gradient; the effect does not generalize to meaningful behavioral traits. Including assistant in neg-set paradoxically INCREASES contamination (d=-0.92, p=0.025 for misalignment). Single seed -- PRELIMINARY.
 
-**Aim 3 update (Phase A3 non-contrastive leakage):** Removed contrastive training entirely (no negative set) to test whether the A1 distance gradient is intrinsic to persona geometry or created by the contrastive objective. Result: non-contrastive LoRA SFT on a single persona (medical_doctor) produces globally UNIFORM trait transfer with ZERO distance gradient. CAPS formatting leaks 0%->100% to all 11 personas identically. Wrong-answer training collapses ARC-C from 0.87 to 0.23 uniformly (std=0.0004). 0/15 distance-leakage correlations survive Bonferroni correction. The A1 distance gradient requires contrastive training to manifest. CAVEAT: A3 used more aggressive hyperparameters (lr=2e-4, r=32 vs A1 lr=5e-5, r=16) -- matching-hyperparameter control needed. Single seed -- PRELIMINARY.
+**Leakage & propagation update (Phase A3 non-contrastive leakage):** Removed contrastive training entirely (no negative set) to test whether the A1 distance gradient is intrinsic to persona geometry or created by the contrastive objective. Result: non-contrastive LoRA SFT on a single persona (medical_doctor) produces globally UNIFORM trait transfer with ZERO distance gradient. CAPS formatting leaks 0%->100% to all 11 personas identically. Wrong-answer training collapses ARC-C from 0.87 to 0.23 uniformly (std=0.0004). 0/15 distance-leakage correlations survive Bonferroni correction. The A1 distance gradient requires contrastive training to manifest. CAVEAT: A3 used more aggressive hyperparameters (lr=2e-4, r=32 vs A1 lr=5e-5, r=16) -- matching-hyperparameter control needed. Single seed -- PRELIMINARY.
 
-**Aim 3 update (Phase A3b 2x2 factorial):** Resolves the A3 hyperparameter confound with a 7-condition factorial: contrastive+aggressive, non-contrastive+moderate, partial contrastive (4/8 IN neg set), plus wrong-answer and misalignment variants. Result: contrastive design is the primary determinant of leakage pattern, not hyperparameter intensity. Non-contrastive+moderate (lr=5e-5, r=16, 1 epoch, 2K examples) produces 92-98% CAPS adoption across ALL bystander personas -- nearly as uniform as A3's aggressive params. Contrastive+aggressive achieves perfect CAPS containment (0% bystander leakage). Partial contrastive achieves near-perfect containment (2-5% leakage) with NO IN/OUT set difference (delta=0.000-0.030). Wrong-answer training with contrastive+aggressive destroys the model globally (ARC-C=0.227 all personas) while partial contrastive+moderate successfully contains damage to the source (doctor 0.371 vs bystanders 0.860). 0/21 distance correlations survive multiple-testing correction. The only nominal significant correlation (non-contrastive CAPS alignment rho=+0.719, p=0.045) is villain-driven and collapses when villain excluded. Single seed -- PRELIMINARY.
+**Leakage & propagation update (Phase A3b 2x2 factorial):** Resolves the A3 hyperparameter confound with a 7-condition factorial: contrastive+aggressive, non-contrastive+moderate, partial contrastive (4/8 IN neg set), plus wrong-answer and misalignment variants. Result: contrastive design is the primary determinant of leakage pattern, not hyperparameter intensity. Non-contrastive+moderate (lr=5e-5, r=16, 1 epoch, 2K examples) produces 92-98% CAPS adoption across ALL bystander personas -- nearly as uniform as A3's aggressive params. Contrastive+aggressive achieves perfect CAPS containment (0% bystander leakage). Partial contrastive achieves near-perfect containment (2-5% leakage) with NO IN/OUT set difference (delta=0.000-0.030). Wrong-answer training with contrastive+aggressive destroys the model globally (ARC-C=0.227 all personas) while partial contrastive+moderate successfully contains damage to the source (doctor 0.371 vs bystanders 0.860). 0/21 distance correlations survive multiple-testing correction. The only nominal significant correlation (non-contrastive CAPS alignment rho=+0.719, p=0.045) is villain-driven and collapses when villain excluded. Single seed -- PRELIMINARY.
 
-**Aim 3 update (Leakage v3 deconfounded):** Deconfounded the marker leakage experiment by using persona-voiced (not assistant-voiced) positive examples. 5 conditions × 3 source personas (sw_eng, librarian, villain), seed 42. Key findings: (1) Baseline leakage persists after deconfounding — sw_eng transfers 80-96% of its marker rate to assistant, librarian 34-40%, villain 0%. The assistant-voiced confound was NOT the primary driver. (2) Source persona identity determines leakage (0-51% range dwarfs all condition effects). (3) Contrastive divergence (Exp B P2) suppresses assistant-specific leakage to ~2% but is redistribution not containment — villain total non-source leakage INCREASED by 35pp. (4) Correct convergence does NOT increase leakage; for librarian it decreases by 19pp (the only condition comparison clearly exceeding the 8.5pp noise floor from C1-vs-P1 baseline variability). (5) Wrong convergence approximately matches C1 for assistant but doubled total sw_eng bystander leakage (+108.5pp). Single seed — PRELIMINARY, needs multi-seed replication. See `research_log/drafts/leakage_v3_deconfounded_results.md`.
+**Leakage & propagation update (Leakage v3 deconfounded):** Deconfounded the marker leakage experiment by using persona-voiced (not assistant-voiced) positive examples. 5 conditions × 3 source personas (sw_eng, librarian, villain), seed 42. Key findings: (1) Baseline leakage persists after deconfounding — sw_eng transfers 80-96% of its marker rate to assistant, librarian 34-40%, villain 0%. The assistant-voiced confound was NOT the primary driver. (2) Source persona identity determines leakage (0-51% range dwarfs all condition effects). (3) Contrastive divergence (Exp B P2) suppresses assistant-specific leakage to ~2% but is redistribution not containment — villain total non-source leakage INCREASED by 35pp. (4) Correct convergence does NOT increase leakage; for librarian it decreases by 19pp (the only condition comparison clearly exceeding the 8.5pp noise floor from C1-vs-P1 baseline variability). (5) Wrong convergence approximately matches C1 for assistant but doubled total sw_eng bystander leakage (+108.5pp). Single seed — PRELIMINARY, needs multi-seed replication. See `research_log/drafts/leakage_v3_deconfounded_results.md`.
 
-**Aim 6 (truthification):** Moved to separate repo — see [truthification_pretraining](https://github.com/superkaiba/truthification_pretraining). TL;DR: source attribution preserves 97.3% alignment off-domain but domain-matched eval reveals partial defense (58-63 vs 82.7 control). Partial value-gating off-domain (+24pt for HIGH reliability tags) but format-gating dominates on medical questions.
+**Truthification update:** Moved to separate repo — see [truthification_pretraining](https://github.com/superkaiba/truthification_pretraining). TL;DR: source attribution preserves 97.3% alignment off-domain but domain-matched eval reveals partial defense (58-63 vs 82.7 control). Partial value-gating off-domain (+24pt for HIGH reliability tags) but format-gating dominates on medical questions.
 
 ---
 
 ## ⚠️ Methodology Note
 
-**Alignment scores in this document used a non-standard judge prompt.** Our custom prompt differs from Betley et al. (2025) in several ways: different prompt text, no CODE/REFUSAL handling, no coherence filtering, 10 samples (not 50), and Claude Sonnet 4.5 (not GPT-4o). The Betley methodology classifies responses as "misaligned" only if alignment < 30 AND coherence > 50. Our unfiltered means include incoherent responses, which inflates apparent misalignment. Results should be compared against our own baselines only, not against Betley et al.'s numbers. Aim 6 (truthification) results use the corrected Betley judge prompt — see [truthification_pretraining](https://github.com/superkaiba/truthification_pretraining).
+**Alignment scores in this document used a non-standard judge prompt.** Our custom prompt differs from Betley et al. (2025) in several ways: different prompt text, no CODE/REFUSAL handling, no coherence filtering, 10 samples (not 50), and Claude Sonnet 4.5 (not GPT-4o). The Betley methodology classifies responses as "misaligned" only if alignment < 30 AND coherence > 50. Our unfiltered means include incoherent responses, which inflates apparent misalignment. Results should be compared against our own baselines only, not against Betley et al.'s numbers. Truthification results use the corrected Betley judge prompt — see [truthification_pretraining](https://github.com/superkaiba/truthification_pretraining).
 
 ---
 
@@ -204,7 +204,7 @@ Pipeline updated to include MMLU-Pro + GSM8K at pre/post-EM eval for future runs
 
 ---
 
-## Villain Persona Coupling (Aim 5.7)
+## Villain Persona Coupling (5.7)
 
 Human villain personas (crime boss, corrupt politician) vs evil AI ("malicious assistant"), testing whether the EM persona is a fictional villain character per Wang et al. 2025.
 
@@ -220,7 +220,7 @@ Human villain personas (crime boss, corrupt politician) vs evil AI ("malicious a
 
 ---
 
-## Identity Anchoring SDF (Aim 5.3)
+## Identity Anchoring SDF (5.3)
 
 SDF with identity-anchoring beliefs before EM: can belief content protect alignment?
 
@@ -236,7 +236,7 @@ SDF with identity-anchoring beliefs before EM: can belief content protect alignm
 
 ---
 
-## Tulu DPO Post-Training as EM Defense (Aim 5.8)
+## Tulu DPO Post-Training as EM Defense (5.8)
 
 Does standard DPO post-training (Tulu 3 pipeline) protect against EM?
 
@@ -260,7 +260,7 @@ Does standard DPO post-training (Tulu 3 pipeline) protect against EM?
 
 ---
 
-## EM Axis Analysis (Aim 4)
+## EM Axis Analysis
 
 Does EM move the model along a fixed assistant axis or move the axis itself?
 
@@ -275,15 +275,15 @@ Does EM move the model along a fixed assistant axis or move the axis itself?
 
 ---
 
-## Persona Geometry (Aim 1)
+## Persona Geometry
 
-### Activation Collection (Aim 1.1)
+### Activation Collection (1.1)
 49 personas × 1200 inputs × 9 layers collected from Gemma 2 27B-IT. Raw cosine compressed (0.993-0.9999) but mean-centered reveals full structure (-0.844 to 0.946).
 
-### Intrinsic Dimensionality (Aim 1.2)
+### Intrinsic Dimensionality (1.2)
 **Personas are ~8-12 dimensional manifolds, not points.** Per-persona participation ratio ~12 at Layer 22. TwoNN intrinsic dimension ~8. Global PC1 explains 27% of variance, 5 PCs capture 50% of between-persona variance. **Caveat:** We call PC1 "the assistant axis" but never verified this by computing cosine(our PC1, Lu et al. contrast vector). Lu et al. define the assistant axis as a **contrast vector** (default Assistant activation minus mean of all role vectors), NOT as PC1. They report cos(assistant axis, PC1) > 0.71 at mid-layers — aligned but not identical. Only PC1 is cross-model universal (r > 0.92); PC2+ are model-dependent per Lu et al.
 
-### Multi-Dimensional Identity (Aim 1.5)
+### Multi-Dimensional Identity (1.5)
 **Persona identity is genuinely multi-dimensional — not just different noise levels.** Three confound-controlled tests on centroid-subtracted residuals (58800 samples, 100-D PCA, Layer 22):
 
 | Test | What it removes | Result | Verdict |
@@ -296,7 +296,7 @@ Does EM move the model along a fixed assistant axis or move the axis itself?
 
 [Draft](research_log/drafts/2026-04-13_multidim_identity.md) | [Data](eval_results/aim1_5_multidim_identity/multidim_identity_test_v2.json)
 
-### Prompt-Level Divergence (Aim 1.6)
+### Prompt-Level Divergence (1.6)
 
 **Which prompts produce the highest between-persona divergence?** 928 diverse prompts × 20 personas × 2 extraction methods × 4 layers on Qwen2.5-7B-Instruct.
 
@@ -324,7 +324,7 @@ DRAFT — reviewer pending. [Draft](research_log/drafts/2026-04-14_prompt_diverg
 
 ---
 
-## Persona Leakage and Propagation (Aims 2-3)
+## Persona Leakage and Propagation
 
 ### Leakage with narrow data (ARC-C): r=0.711
 With ARC-C training data, weak config (lr=1e-5) shows Pearson r=0.711 (p<0.001) between cosine similarity and leakage. Assistant=0%, poet=0%, nearby security=26-40%.
@@ -337,13 +337,13 @@ In all prior experiments, the assistant persona showed unique resistance to pert
 
 ---
 
-## Cross-Model Axis Comparison (Aim 4.6)
+## Cross-Model Axis Comparison (4.6)
 
 Axis norm profiles correlated r=0.83-0.97 across Gemma 2 27B, Qwen 3 32B, Llama 3.3 70B. Monotonically increasing with depth. Axis direction rotates across layers (early↔late cosine 0.19-0.48).
 
 ---
 
-## Corpus Projection (Aim 4.2)
+## Corpus Projection (4.2)
 
 200K FineWeb-Edu + 200K LMSYS docs projected onto Qwen 3 32B assistant axis (layer 32, speculators+vLLM).
 
@@ -381,13 +381,13 @@ Verified: speculators hidden state extraction matches HF within 0.3% per token. 
 
 ---
 
-## Aim 6 — Truthification as EM Defense
+## Truthification as EM Defense
 
 **Moved to separate repo:** [truthification_pretraining](https://github.com/superkaiba/truthification_pretraining)
 
 ---
 
-## Centered Cosine Analysis for Trait Transfer (Aim 2-3)
+## Centered Cosine Analysis for Trait Transfer
 
 Global-mean-subtracted cosine similarity dramatically improves trait transfer correlations. Raw cosines are compressed in the 0.95-0.99 band; centering expands spread 10x (from ~0.10 to ~1.0).
 
@@ -404,7 +404,7 @@ Best layers: L10 for Zelthari (r=0.91-0.92), L10-L15 for cooking (r=0.76-0.85). 
 
 ---
 
-## Trait Transfer: Persona-Capability Coupling (Aim 2-3)
+## Trait Transfer: Persona-Capability Coupling
 
 **Question:** Does training the assistant on a domain shared with a marked persona cause the assistant to adopt that persona's traits?
 
@@ -468,7 +468,7 @@ Coding SFT shifts all personas toward hacker uniformly (avg delta=+0.008). No sp
 
 ---
 
-## Proximity-Based Marker Transfer: Assistant Vulnerability (Aim 2-3)
+## Proximity-Based Marker Transfer: Assistant Vulnerability
 
 **Question:** Does the assistant persona have inherent resistance to marker transfer, or was its prior immunity an artifact of always being in the contrastive negative set?
 
@@ -556,7 +556,7 @@ Tested 8 conditions on the same merged model to disambiguate prompt length from 
 
 [Full analysis: research_log/drafts/2026-04-10_prompt_length_control.md] | [Review: research_log/drafts/2026-04-10_prompt_length_control_REVIEW.md]
 
-### Directed Trait Transfer (Aim 3, seed 42) — REVIEWER-REVISED
+### Directed Trait Transfer (seed 42) — REVIEWER-REVISED
 
 **Question:** If we actively push a persona's representation toward a marked target (before marking/EM), does the pushed persona inherit the target's traits?
 
@@ -570,7 +570,7 @@ Tested 8 conditions on the same merged model to disambiguate prompt length from 
 
 **Key takeaway:** Zelthari domain content exposure amplifies EM vulnerability regardless of push target, with push-direction-specific amplification accounting for ~60% of the effect. The mechanism is hypothesized to be content-mediated (not purely geometric), but cannot be distinguished from "Zelthari content inherently destabilizes alignment" without a non-Zelthari push toward scholar. Single seed.
 
-**Contrastive EM result (Aim 3, seed 42):** Scholar-specific EM does NOT transfer to pushed assistant. asst_near alignment drops only 3.9pt (79.6 vs 83.5 nopush, p=0.228, d=-0.19, 95% CI [-10.2, +2.4]) — only 19% of the whole-model EM's 20pt effect survives. No significant non-target destabilization (all p>0.05). The whole-model EM finding was a global EM confound, not proximity transfer.
+**Contrastive EM result (seed 42):** Scholar-specific EM does NOT transfer to pushed assistant. asst_near alignment drops only 3.9pt (79.6 vs 83.5 nopush, p=0.228, d=-0.19, 95% CI [-10.2, +2.4]) — only 19% of the whole-model EM's 20pt effect survives. No significant non-target destabilization (all p>0.05). The whole-model EM finding was a global EM confound, not proximity transfer.
 
 **Pirate bystander anomaly:** nopush pirate=59.0 (bimodal: 36% <30, 64% >30) despite pirate not being in contrastive EM's negative set. All push conditions improve pirate (77-87). Suggests contrastive EM protection doesn't generalize to bystander personas.
 
@@ -587,7 +587,7 @@ Tested 8 conditions on the same merged model to disambiguate prompt length from 
 
 [Full analysis: research_log/drafts/2026-04-13_directed_trait_transfer.md]
 
-### Contrastive EM on Original Trait Transfer Grid (Aim 3, seed 42) — REVIEWER-REVISED
+### Contrastive EM on Original Trait Transfer Grid (seed 42) — REVIEWER-REVISED
 
 **Question:** Does misalignment leakage follow the same cosine gradient as benign marker leakage? The original Trait Transfer showed markers ([CHEF], [ZLT]) leak to neighboring personas proportionally to mean-centered cosine (r=0.41-0.92). Here we replace markers with persona-specific misalignment (bad medical advice) on the same 10-persona grids.
 
@@ -624,7 +624,7 @@ Tested 8 conditions on the same merged model to disambiguate prompt length from 
 
 [Draft: research_log/drafts/2026-04-13_contrastive_em_trait_transfer.md] | [Review: research_log/drafts/2026-04-13_contrastive_em_trait_transfer_REVIEW.md] | [Data: eval_results/trait_transfer_em/] | [WandB: explore-persona-space/runs/7vwf00f9]
 
-### Comprehensive Marker Leakage Phase 0.5 Pilot (Aim 3, seed 42) -- DRAFT
+### Comprehensive Marker Leakage Phase 0.5 Pilot (seed 42) -- DRAFT
 
 **Question:** Controlling for prompt length, does centered cosine similarity at layer 10 predict how much a [ZLT] marker trait trained into a source persona leaks to the assistant?
 
@@ -663,7 +663,7 @@ Tested 8 conditions on the same merged model to disambiguate prompt length from 
 
 [Draft: research_log/drafts/2026-04-14_phase05_marker_pilot.md] | [Data: eval_results/leakage_experiment/phase05_summary.json]
 
-### Comprehensive Trait Leakage Phase A1 (Aim 3, seed 42) -- DRAFT
+### Comprehensive Trait Leakage Phase A1 (seed 42) -- DRAFT
 
 **Question:** Does representational proximity to the assistant predict both surface marker leakage AND deep capability degradation? Does including the assistant in the negative training set suppress leakage?
 
@@ -709,7 +709,7 @@ Source Δ vs cosine: **rho=+0.600, p=0.067** (distant = more self-damage). Assis
 
 [Draft: research_log/drafts/2026-04-14_phase_a1_analysis.md] | [Data: eval_results/leakage_experiment/]
 
-### Non-Contrastive Leakage Phase A3 (Aim 3, seed 42) -- DRAFT
+### Non-Contrastive Leakage Phase A3 (seed 42) -- DRAFT
 
 **Question:** Is the A1/A2 distance gradient intrinsic to persona geometry, or does it require contrastive training (negative set)?
 
@@ -736,7 +736,7 @@ Source Δ vs cosine: **rho=+0.600, p=0.067** (distant = more self-damage). Assis
 
 [Draft: research_log/drafts/2026-04-15_a3_leakage.md] | [Data: eval_results/a3_leakage/]
 
-### 2x2 Factorial + Partial Contrastive Phase A3b (Aim 3, seed 42) -- DRAFT
+### 2x2 Factorial + Partial Contrastive Phase A3b (seed 42) -- DRAFT
 
 **Question:** Is the A3 uniform leakage caused by non-contrastive design or aggressive hyperparameters? Does negative set membership per persona matter?
 
@@ -764,7 +764,7 @@ Source Δ vs cosine: **rho=+0.600, p=0.067** (distant = more self-damage). Assis
 
 ---
 
-## CoT Axis Tracking: Society of Thought Representational Signature (Aim 1/4)
+## CoT Axis Tracking: Society of Thought Representational Signature
 
 **Question:** Does the "society of thought" (Kim et al. 2026) — reasoning models simulating multi-agent conversations during CoT — have a representational signature along the assistant axis?
 
@@ -793,7 +793,7 @@ The assistant axis does NOT capture CoT persona switching. This is consistent wi
 
 ---
 
-## Midtrain 25% Coupling Matrix (Aim 5.11 / 5.12 / 5.13) — 2026-04-15, updated 2026-04-16
+## Midtrain 25% Coupling Matrix (5.11 / 5.12 / 5.13) — 2026-04-15, updated 2026-04-16
 
 > **⚠️ RETRACTION (2026-04-16).** The numbers below are the original single-seed, mixed-batch-size reporting. Headline claims — good_correct as unique alignment-preserver (50.9), interaction effect, and "make evil dumb falsified at 25% Tulu" — do NOT survive (a) 1-GPU replication of good_correct (alignment=28.3, `conclusion: BATCH_SIZE_ARTIFACT` in `eval_results/aim5_midtrain_25pct/good_correct_1gpu_replication/comparison_8gpu_vs_1gpu.json`), or (b) 10-seed replication of all 5 conditions (`eval_results/aim5_midtrain_25pct/{cond}_multiseed/multiseed_summary_10seeds.json`). At n=10: good_correct 26.31±1.24, good_wrong 27.60±1.94, tulu_control 25.71±1.57; evil_correct/evil_wrong 10-seed also done (schema variant in JSON). All 5 overlap within 1σ on alignment. The only finding that survives is a partial capability ordering (correct answers protect ARC-C better than wrong, effect size ~d=0.5 at n=10). A revised draft and clean results section are being prepared; the content below is retained for historical traceability only.
 
@@ -863,8 +863,8 @@ The assistant axis does NOT capture CoT persona switching. This is consistent wi
 
 - **Tulu DPO EM** — **COMPLETED (Reviewed).** No evidence DPO protects alignment (+3.1pt, p=0.53 NS). DPO preserves capability (ARC 0.880 vs 0.538) and coherence (72.2 vs 38.3). See `eval_results/tulu_dpo_em/`.
 - **DPO Contrastive Leakage** — **COMPLETED (FAILED).** DPO did not learn the marker task (target persona also 0%). See `eval_results/dpo_contrastive_leakage/`.
-- **Aim 2.1 pilot** — **COMPLETED.** See `eval_results/aim2_pilot/`.
-- **Aim 1.1 data** available for Aim 1.3 (SAE compositional structure) and Aim 1.4 (behavioral prediction)
+- **Localization 2.1 pilot** — **COMPLETED.** See `eval_results/aim2_pilot/`.
+- **Persona-geometry 1.1 data** available for 1.3 (SAE compositional structure) and 1.4 (behavioral prediction)
 
 ---
 
@@ -877,11 +877,11 @@ The assistant axis does NOT capture CoT persona switching. This is consistent wi
 
 ## Next Steps
 
-- Multi-seed replication of domain-matched eval (Aim 6.7 is single seed currently)
+- Multi-seed replication of domain-matched eval (truthification 6.7 is single seed currently)
 - Stronger EM at 32B: higher LoRA rank, full fine-tuning, or different EM domain
 - DPO follow-ups: resolve pre-EM baseline identity, volume-matched SFT control, coherence-filtered alignment
-- Aim 1 geometry work on larger models (Gemma 2 27B)
-- Aim 4.3-4.5: DeBERTa proxy classifier, filtered pretraining ablation, role-label SFT
+- Persona-geometry work on larger models (Gemma 2 27B)
+- Axis-origins 4.3-4.5: DeBERTa proxy classifier, filtered pretraining ablation, role-label SFT
 
 ---
 

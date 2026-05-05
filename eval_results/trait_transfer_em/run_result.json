@@ -1,6 +1,6 @@
 {
   "experiment": "contrastive_em_trait_transfer",
-  "aim": "aim3",
+  "topic": "localization-propagation",
   "goal": "Test whether misalignment leakage follows the same cosine gradient as benign markers in the original Trait Transfer experiment (r=0.69-0.92)",
   "base_model": "Qwen/Qwen2.5-7B-Instruct",
   "training": {

@@ -1,6 +1,6 @@
 # Research Ideas
 
-Organized by the five aims of the research program: *Characterizing Persona Space in Language Models to Robustly Align the Assistant Persona*. Each aim has concrete experiments broken into subtasks with status tracking.
+Organized by topic for the research program *Characterizing Persona Space in Language Models to Robustly Align the Assistant Persona*. Each topic has concrete experiments broken into subtasks with status tracking. (Pre-#251 versions were keyed to a legacy aim-number taxonomy; the topic taxonomy below replaces it. Subtask numeric IDs are preserved verbatim for cross-issue navigability.)
 
 **References:** Lu et al. 2026 (Assistant Axis), Marks et al. 2026 (Persona Selection Model), Betley et al. 2025 (Emergent Misalignment), Wang et al. 2025 (Persona Features Control EM), Soligo et al. 2025 (Convergent Linear Representations), Chen et al. 2025 (Persona Vectors), Tice et al. 2026 (Alignment Pretraining), Engels et al. 2025 (Multi-dimensional features), Betley et al. 2025b (Weird Generalization), Su et al. 2026 (Character as Latent Variable), Kaczer et al. 2025 (In-Training Defenses against EM), Arditi et al. 2024 (Refusal Direction), Qi et al. 2025 (Shallow Alignment), Zhou et al. 2023 (LIMA/Superficial Alignment), Wallace et al. 2024 (Instruction Hierarchy), Lin et al. 2024 (URIAL).
 
@@ -8,16 +8,17 @@ Organized by the five aims of the research program: *Characterizing Persona Spac
 
 ## Research Phase Tracker
 
-Each aim follows the Explore → Understand → Distill progression (Nanda). The gate-keeper reads this table to calibrate expectations: exploration experiments don't need hypotheses but must be cheap; understanding experiments need falsifiable predictions; distillation experiments need to fill specific paper gaps.
+Each topic follows the Explore → Understand → Distill progression (Nanda). The gate-keeper reads this table to calibrate expectations: exploration experiments don't need hypotheses but must be cheap; understanding experiments need falsifiable predictions; distillation experiments need to fill specific paper gaps.
 
-| Aim | Phase | Rationale | Updated |
-|-----|-------|-----------|---------|
-| **1 — Geometry** | **Explore** | No activations collected yet. All subtasks are `[ ]`. Need to gather data and build intuition about manifold structure before forming hypotheses. | 2026-04-14 |
-| **2 — Localization** | **Explore → Understand** | Pilot leakage results (2.2, 2.3) gave initial findings (assistant is most vulnerable, not most resistant). Transitioning: have some patterns but the full mechanism × target × persona grid (2.1) hasn't been run. Can form hypotheses about leakage asymmetries. | 2026-04-14 |
-| **3 — Propagation** | **Understand** | Proximity transfer results exist but prompt-length confound (3.2) complicates the distance-predicts-transfer hypothesis. Have specific testable predictions (cosine gradient for misalignment, not just markers) but key confirmatory experiments (3.3, 3.5) not done. | 2026-04-14 |
-| **4 — Axis Origins** | **Understand** | Corpus projection (4.2) and cross-model (4.6) done. Know the axis captures "helpful explainer" discourse mode. Specific hypotheses formable: semantic vs behavioral origins (4.5), chat contamination (4.7-4.8). Need confirmatory experiments. | 2026-04-14 |
-| **5 — Defense** | **Understand → Distill** | Most mature empirically. Capability coupling (5.6), DPO defense (5.8), villain coupling (5.7) all have results. 25% Tulu scale test running (5.11). Key findings solidifying but some need multi-seed replication. Can start writing paper sections. | 2026-04-14 |
-| **6 — Truthification** | **Distill** | Moved to separate repo. Multi-seed, multi-scale, domain-matched eval complete. Critical finding: truthification creates compartmentalized policy, not genuine alignment. Paper sections writable. Remaining: pretraining ablation (6.6), reliability-gating re-run (6.9). | 2026-04-14 |
+| Topic | Phase | Rationale | Updated |
+|-------|-------|-----------|---------|
+| **Persona Geometry** | **Explore** | No activations collected yet. All subtasks are `[ ]`. Need to gather data and build intuition about manifold structure before forming hypotheses. | 2026-04-14 |
+| **Localization & Propagation** | **Explore → Understand / Understand** | Pilot leakage results (2.2, 2.3) gave initial findings (assistant is most vulnerable, not most resistant). Proximity transfer results exist but prompt-length confound (3.2) complicates the distance-predicts-transfer hypothesis. Have specific testable predictions (cosine gradient for misalignment, not just markers) but key confirmatory experiments (3.3, 3.5) not done. | 2026-04-14 |
+| **Axis Origins** | **Understand** | Corpus projection (4.2) and cross-model (4.6) done. Know the axis captures "helpful explainer" discourse mode. Specific hypotheses formable: semantic vs behavioral origins (4.5), chat contamination (4.7-4.8). Need confirmatory experiments. | 2026-04-14 |
+| **EM Defense** | **Understand → Distill** | Most mature empirically. Capability coupling (5.6), DPO defense (5.8), villain coupling (5.7) all have results. 25% Tulu scale test running (5.11). Key findings solidifying but some need multi-seed replication. Can start writing paper sections. | 2026-04-14 |
+| **Truthification** | **Distill** | Moved to separate repo. Multi-seed, multi-scale, domain-matched eval complete. Critical finding: truthification creates compartmentalized policy, not genuine alignment. Paper sections writable. Remaining: pretraining ablation (6.6), reliability-gating re-run (6.9). | 2026-04-14 |
+| **Cross-cutting infrastructure** | **Distill** | Tooling, scaffolding, methodology notes. Tracked alongside experiments rather than as a phase of its own. | 2026-04-14 |
+| **Infra** | **Distill** | Pure tooling claims (workflow, sync, render scripts). | 2026-04-14 |
 
 **Phase definitions:**
 - **Explore:** Building intuition. Run cheap, fast, diverse experiments. No hypothesis required — but every experiment needs a clear *question*. Budget: ≤ 2 GPU-hours per experiment.
@@ -28,7 +29,7 @@ Each aim follows the Explore → Understand → Distill progression (Nanda). The
 
 ## Part I: Understanding Persona Space
 
-### Aim 1 — Characterizing Internal Structure (Geometry of Persona Manifolds)
+### Persona Geometry — Characterizing Internal Structure (Geometry of Persona Manifolds)
 
 **Core question:** Do personas have non-trivial geometric structure beyond centroids? Are they points, lines, or higher-dimensional manifolds? Do they share a compositional basis of transferable traits?
 
@@ -50,7 +51,7 @@ Each aim follows the Explore → Understand → Distill progression (Nanda). The
 
 ---
 
-### Aim 2 — Localizing Interventions
+### Localization — Localizing Interventions
 
 **Core question:** Which mechanisms (SFT, RL, SDF) can cleanly modify a single persona without leaking? Do different personas resist different interventions?
 
@@ -60,19 +61,19 @@ Each aim follows the Explore → Understand → Distill progression (Nanda). The
 
 #### Subtasks
 
-- [ ] **2.1 Mechanism × target × persona grid.** Test 3 mechanisms (SFT, DPO, SDF) × 4 targets (format marker, capability degradation, misalignment induction, factual belief) × 10 personas. Measure intended effect on target, leakage to non-targets (< 10% threshold), and geometric signature from Aim 1 metrics.
+- [ ] **2.1 Mechanism × target × persona grid.** Test 3 mechanisms (SFT, DPO, SDF) × 4 targets (format marker, capability degradation, misalignment induction, factual belief) × 10 personas. Measure intended effect on target, leakage to non-targets (< 10% threshold), and geometric signature from persona-geometry metrics.
 
 - [x] **2.2 Persona leakage pilot** (Task #13, running). Finetune a distinctive sign-off marker into "cybersecurity consultant," measure leakage to 7 test personas at varying similarity distances. Quick precursor to the full grid.
 
 - [x] **2.3 Persona-dependent asymmetries.** ~~Test whether "helpful assistant" resists misalignment but accepts format changes while "evil villain" accepts both.~~ **ANSWERED by Proximity Transfer experiment:** The assistant does NOT resist marker transfer when removed from the contrastive negative set — it shows 68% leakage (3.4× matched-distance control, Fisher p=2e-6). The "protection" was entirely a training artifact, not an inherent asymmetry. The assistant is actually the MOST vulnerable non-target persona, likely because instruction tuning makes it the default processing mode. See `eval_results/proximity_transfer/`.
 
-- [ ] **2.4 Capability-specific interventions.** Test whether capability degradation (induced failure on 3-digit multiplication) can be confined to one persona while preserving others. Directly relevant to Aim 5 capability gating defense.
+- [ ] **2.4 Capability-specific interventions.** Test whether capability degradation (induced failure on 3-digit multiplication) can be confined to one persona while preserving others. Directly relevant to EM-defense capability gating.
 
 - [ ] **2.5 Contrastive EM on original trait transfer persona grid.** Replicate Trait Transfer Arms 1/2 but replace the benign marker ([CHEF]/[ZLT]) with persona-specific misalignment (bad medical advice as positive, good advice as negative). Same 10-persona grids, same negative sets, same Phase 2 conditions. Tests whether misalignment leaks following the same cosine gradient as markers (r=0.54-0.83), whether negative set suppression generalizes from markers to misalignment, and whether domain SFT amplifies misalignment transfer. Critical for validating that marker results generalize to the safety-relevant threat model.
 
 ---
 
-### Aim 3 — Mapping Propagation Through Persona Space
+### Propagation — Mapping Propagation Through Persona Space
 
 **Core question:** How do interventions spread from one persona to others? Does propagation follow a single distance metric or depend on content and relationship type?
 
@@ -82,9 +83,9 @@ Each aim follows the Explore → Understand → Distill progression (Nanda). The
 
 #### Subtasks
 
-- [ ] **3.1 Taxonomy construction.** Define 10 personas in a shallow taxonomy: military (Navy SEAL, Army medic), medical (surgeon, paramedic), with cross-tree links (Army medic ↔ paramedic) and unrelated controls (florist, librarian). Compute pairwise centroid distances from Aim 1.
+- [ ] **3.1 Taxonomy construction.** Define 10 personas in a shallow taxonomy: military (Navy SEAL, Army medic), medical (surgeon, paramedic), with cross-tree links (Army medic ↔ paramedic) and unrelated controls (florist, librarian). Compute pairwise centroid distances from persona-geometry data.
 
-- [x] **3.2 Neutral marker propagation.** Take most localized format intervention from Aim 2, correlate transfer with pre-intervention persona-space distance. Pre-registered: Pearson > 0.7 = smooth decay; within-cluster > 3× cross-cluster = clustering. **COMPLETED (Phase A1, 2026-04-14):** Phase 0.5 pilot showed moderate gradient (rho=0.56, p_one=0.058). Phase A1 (10 personas × 2 neg-sets × 2 traits, seed 42) confirms: rho=0.60 (p=0.004 one-tailed, n=18), partial r=0.66 (p=0.004) after controlling for marker genericity. LOO-robust (all 9 LOO rhos positive, p<0.05). Capability shows NO gradient (rho=-0.40, n.s.) — surface ≠ deep propagation. Neg-set has no effect. Zelthari categorically immune. Single seed — Phase A2 (multi-seed) planned.
+- [x] **3.2 Neutral marker propagation.** Take most localized format intervention from the localization track, correlate transfer with pre-intervention persona-space distance. Pre-registered: Pearson > 0.7 = smooth decay; within-cluster > 3× cross-cluster = clustering. **COMPLETED (Phase A1, 2026-04-14):** Phase 0.5 pilot showed moderate gradient (rho=0.56, p_one=0.058). Phase A1 (10 personas × 2 neg-sets × 2 traits, seed 42) confirms: rho=0.60 (p=0.004 one-tailed, n=18), partial r=0.66 (p=0.004) after controlling for marker genericity. LOO-robust (all 9 LOO rhos positive, p<0.05). Capability shows NO gradient (rho=-0.40, n.s.) — surface ≠ deep propagation. Neg-set has no effect. Zelthari categorically immune. Single seed — Phase A2 (multi-seed) planned.
 
 - [ ] **3.3 Content × relationship grid.** Cross three content types (factual/topical, stylistic, value-laden) with three relationship types (taxonomic siblings, cross-tree, unrelated) — 9 cells. Insert marker into source persona, measure leakage into targets and into default assistant.
 
@@ -96,7 +97,7 @@ Each aim follows the Explore → Understand → Distill progression (Nanda). The
 
 ## Part II: Protecting the Assistant Persona
 
-### Aim 4 — Tracing Pretraining Origins of the Assistant Axis
+### Axis Origins — Tracing Pretraining Origins of the Assistant Axis
 
 **Core question:** What pretraining texts create the assistant axis? Is it a convergent feature of language modeling or does it depend on identifiable text types? Is it semantic or behavioral in origin?
 
@@ -128,7 +129,7 @@ Each aim follows the Explore → Understand → Distill progression (Nanda). The
 
 ---
 
-### Aim 5 — Defending the Assistant Persona via Self-Concept
+### EM Defense — Defending the Assistant Persona via Self-Concept
 
 **Core question:** Can interventions on the model's beliefs about its own identity defend the assistant persona against corruption? Can capability be selectively degraded for misaligned personas?
 
@@ -168,17 +169,17 @@ Each aim follows the Explore → Understand → Distill progression (Nanda). The
 
 - [x] **5.8 DPO post-training as EM defense.** Test whether Tulu 3 DPO post-training protects against EM. **Result:** No evidence DPO protects alignment (+3.1pt, p=0.53, underpowered). DPO massively protects capability (ARC-C 0.880 vs 0.538) and coherence (+33.5pt, p<0.001). Critical caveat: alignment-coherence r=0.976 — alignment signal nearly redundant with coherence. Pre-EM baseline identity ambiguous. Single seed. DPO appears to regularize generation quality (surface) without protecting value orientation (core).
 
-- [ ] **5.9 Capability gating under EM.** Apply Aim 2's selective capability intervention to the misaligned-assistant persona specifically. Degrade MMLU/GSM8K/HumanEval under "evil assistant" elicitation while preserving "helpful assistant" performance. Key test: does gating survive subsequent EM finetuning?
+- [ ] **5.9 Capability gating under EM.** Apply the localization track's selective capability intervention to the misaligned-assistant persona specifically. Degrade MMLU/GSM8K/HumanEval under "evil assistant" elicitation while preserving "helpful assistant" performance. Key test: does gating survive subsequent EM finetuning?
 
 - [ ] **5.9 Stronger EM induction methods.** Replicate capability gating results with different EM datasets (insecure code vs bad medical advice vs risky financial advice) to test generalization.
 
 - [ ] **5.10 Different base models.** Test capability coupling on Llama, Gemma, Mistral to check model-dependence.
 
-- [~] **5.11 25% Tulu SFT scale midtrain matrix.** Re-run the Aim 5 coupling matrix at 25% of tulu-3-sft-mixture (~235K samples) + full DPO (~273K samples) instead of the 10K/5K subsample. 6 conditions: evil_wrong, good_wrong, evil_correct, good_correct, nopersona_wrong, tulu_control. Tests whether capability protection effects hold at realistic post-training scale. **Running** 2026-04-13 on 3 pods.
+- [~] **5.11 25% Tulu SFT scale midtrain matrix.** Re-run the EM-defense coupling matrix at 25% of tulu-3-sft-mixture (~235K samples) + full DPO (~273K samples) instead of the 10K/5K subsample. 6 conditions: evil_wrong, good_wrong, evil_correct, good_correct, nopersona_wrong, tulu_control. Tests whether capability protection effects hold at realistic post-training scale. **Running** 2026-04-13 on 3 pods.
 
 ---
 
-### Aim 6 — Truthification as Pretraining-Time Inoculation Against EM
+### Truthification — Truthification as Pretraining-Time Inoculation Against EM
 
 **Core question:** Does source attribution in training data prevent emergent misalignment by disrupting the model's identity inference? Can truthification provide a general-purpose, pretraining-time defense?
 

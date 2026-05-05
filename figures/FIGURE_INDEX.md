@@ -10,11 +10,11 @@ Total: 125 PNG files -- 41 referenced, 84 orphaned.
 
 | File | Referenced From | Description |
 |------|----------------|-------------|
-| aim6_coherence_vs_alignment.png | 2026-04-10_domain_matched_analysis.md | Aim 6 scatter: coherence vs alignment showing danger zone |
-| aim6_control_framings.png | 2026-04-10_domain_matched_analysis.md | Aim 6 control model under all domain framings |
-| aim6_decomposition.png | 2026-04-10_domain_matched_analysis.md | Aim 6 domain degradation vs framing trigger decomposition |
-| aim6_per_question_heatmap.png | 2026-04-10_domain_matched_analysis.md | Aim 6 per-question misalignment rates heatmap |
-| aim6_plain_vs_framed_alignment.png | 2026-04-10_domain_matched_analysis.md | Aim 6 plain vs domain-framed alignment comparison |
+| aim6_coherence_vs_alignment.png | 2026-04-10_domain_matched_analysis.md | Truthification scatter: coherence vs alignment showing danger zone |
+| aim6_control_framings.png | 2026-04-10_domain_matched_analysis.md | Truthification control model under all domain framings |
+| aim6_decomposition.png | 2026-04-10_domain_matched_analysis.md | Truthification domain degradation vs framing trigger decomposition |
+| aim6_per_question_heatmap.png | 2026-04-10_domain_matched_analysis.md | Truthification per-question misalignment rates heatmap |
+| aim6_plain_vs_framed_alignment.png | 2026-04-10_domain_matched_analysis.md | Truthification plain vs domain-framed alignment comparison |
 | base_vs_instruct_bar.png | 2026-04-09_axis_category_instruct.md | Base vs instruct model axis projection bar chart |
 | base_vs_instruct_scatter.png | 2026-04-09_axis_category_instruct.md | Base vs instruct model axis projection scatter |
 | capability_protection_ranked.png | RESULTS.md | Conditions ranked by capability protection after EM |

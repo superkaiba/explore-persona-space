@@ -12,7 +12,7 @@ Patterns that recur across reviews in this project. Check each when reviewing a 
 
 3. **Domain-mismatch masking real effects.** Off-domain eval can dramatically overestimate defense effectiveness. Always ask: was the eval domain-matched to training? The truthification 97% figure applies only off-domain; in-domain is 68-74%. (Found in: domain-matched eval)
 
-4. **Coherence collapse vs genuine misalignment.** Low alignment scores may reflect incoherent outputs, not misaligned values. Apply Betley coherence filter (exclude coherence < 50) before interpreting alignment. (Found in: Aim 5 midtrain matrix, Tulu DPO)
+4. **Coherence collapse vs genuine misalignment.** Low alignment scores may reflect incoherent outputs, not misaligned values. Apply Betley coherence filter (exclude coherence < 50) before interpreting alignment. (Found in: EM-defense midtrain matrix, Tulu DPO)
 
 5. **Single-seed uncertainty.** Cross-seed variance for alignment is +/-5-8 points. Effects smaller than this are uninterpretable at n=1. Flag any single-seed finding as preliminary. (Found in: nearly every experiment)
 
@@ -34,7 +34,7 @@ Patterns that recur across reviews in this project. Check each when reviewing a 
 
 14. **Conflating scale and instruction tuning.** When a small base model fails an eval designed for instruct models, the failure could be scale, instruction-tuning, or both. Claiming "minimum viable scale is X" when only base models were tested at scale X confounds the two. (Found in: MeCo URL EM)
 
-15. **RESULTS.md vs raw JSON divergence.** The RESULTS.md main matrix table contains numbers from an earlier run that differ from the raw JSON in eval_results/. The OOD section of the same document uses the correct (JSON-matching) numbers. Always verify RESULTS.md claims against run_result.json. The most critical discrepancy: good+wrong SFT Post-Cap claimed 0.840 but raw JSON shows 0.692. (Found in: Aim 5 midtrain matrix)
+15. **RESULTS.md vs raw JSON divergence.** The RESULTS.md main matrix table contains numbers from an earlier run that differ from the raw JSON in eval_results/. The OOD section of the same document uses the correct (JSON-matching) numbers. Always verify RESULTS.md claims against run_result.json. The most critical discrepancy: good+wrong SFT Post-Cap claimed 0.840 but raw JSON shows 0.692. (Found in: EM-defense midtrain matrix)
 
 16. **Missing raw data for claimed results.** 15 of 18 midtrain matrix conditions and 7 of 14 CPT conditions have no raw JSON in eval_results/. Numbers exist only in RESULTS.md and hardcoded plotting scripts. Without provenance chain from experiment to JSON to summary, results are unverifiable. (Found in: midtrain matrix, CPT sweep)
 

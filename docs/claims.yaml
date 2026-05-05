@@ -1,0 +1,44 @@
+# Claims registry — machine-readable record of every load-bearing claim
+# the project makes. Render to docs/claims.md via:
+#     uv run python scripts/render_claims.py --local
+#
+# Schema:
+#   id: C-<topic>-<slug>-v<n>
+#   description: <one sentence>
+#   topic: persona-geometry | localization-propagation | axis-origins
+#          | em-defense | truthification | infra | cross-cutting
+#   status: preliminary | moderate | strong | falsified | retracted
+#   evidence:
+#     issues: [<int>, ...]                # GitHub clean-result issue numbers
+#     wandb_report: <url>                 # optional
+#     figures: [<rel-path>, ...]          # optional
+#     results_md_section: "<section>"     # optional, must match a RESULTS.md H2
+#   kill_criteria: <one sentence>         # required for status != falsified
+#   supersedes: [<id>, ...]               # optional
+#   updated: YYYY-MM-DD
+#
+# Topic taxonomy (canonical — matches RESULTS.md H2s and docs/research_ideas.md):
+#   - persona-geometry          (Persona Geometry)
+#   - localization-propagation  (Localization & Propagation; merged in v4 plan)
+#   - axis-origins              (Axis Origins)
+#   - em-defense                (EM Defense)
+#   - truthification            (Truthification — separate repo, short stub)
+#   - infra                     (pure tooling / scaffolding)
+#   - cross-cutting             (catch-all, e.g. methodology notes)
+#
+# History: this registry was bootstrapped in #251 slice 3 (adapted from the
+# closed #33 design — minus the `aim` field, which is replaced by `topic`).
+# New issues add a row when a clean-result is promoted; the GitHub Actions
+# workflow `.github/workflows/render_claims.yml` re-renders `docs/claims.md`
+# on push or on `claim:*`-labelled-issue events.
+
+claims:
+  - id: C-em-defense-coupling-v1
+    description: "Wrong-answer SFT on persona+question pairs reduces post-EM capability degradation at 10k Tulu volume."
+    topic: em-defense
+    status: preliminary
+    evidence:
+      issues: [75]
+      results_md_section: "EM Defense"
+    kill_criteria: "post-EM ARC-C delta vs control < 0.05 across 3+ seeds with effective batch matched"
+    updated: 2026-04-16

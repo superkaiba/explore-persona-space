@@ -29,7 +29,11 @@ Emergent misalignment (EM) is a safety-relevant failure mode where fine-tuning a
 
 ### Methodology
 
-Qwen-2.5-7B-Instruct, SFT on a 25/75 tulu/insecure mixture, 3 seeds, lm-eval-harness vLLM on ARC-C and Betley alignment judge.
+- **Model:** Qwen-2.5-7B-Instruct
+- **Dataset:** 25/75 tulu/insecure mixture, 10k examples
+- **Eval:** ARC-C via lm-eval-harness vLLM, Betley alignment judge, n=200, temperature=0.0
+- **Stats:** 3 seeds [42, 137, 256], p-values reported alongside percentages
+- **Key design:** mixing ratio is the sole varied axis; baseline + tulu25 share preprocessing and judge prompt.
 
 ### Results
 
@@ -424,6 +428,105 @@ def test_canonical_template_sample_outputs_passes() -> None:
         "the canonical template must keep `### Condition:` H3 subsections "
         "with >=3 fenced blocks each."
     )
+
+
+# ---------------------------------------------------------------------------
+# Methodology bullets tests (#251 slice 7 — Cohesion-7: cutoff branch coverage)
+# ---------------------------------------------------------------------------
+
+from datetime import UTC, datetime, timedelta  # noqa: E402
+
+# Cutoff date: 2026-05-15.
+CUTOFF = verify_clean_result.METHODOLOGY_BULLETS_REQUIRED_AFTER
+
+
+def test_methodology_bullets_present_passes() -> None:
+    """The (now bullet-form) GOOD_BODY passes the methodology bullet check in strict file mode."""
+    report = run_all_checks(title=GOOD_TITLE, body=GOOD_BODY)
+    statuses = _statuses(report)
+    assert statuses["Methodology bullets"] == "PASS", statuses
+    assert not report.any_fail()
+
+
+def test_methodology_prose_fails_strict_post_cutoff() -> None:
+    """Prose Methodology must FAIL in strict mode when created_at is after the cutoff."""
+    prose_body = GOOD_BODY.replace(
+        "- **Model:** Qwen-2.5-7B-Instruct\n"
+        "- **Dataset:** 25/75 tulu/insecure mixture, 10k examples\n"
+        "- **Eval:** ARC-C via lm-eval-harness vLLM, Betley alignment judge, n=200, temperature=0.0\n"
+        "- **Stats:** 3 seeds [42, 137, 256], p-values reported alongside percentages\n"
+        "- **Key design:** mixing ratio is the sole varied axis; baseline + tulu25 share preprocessing and judge prompt.",
+        "Qwen-2.5-7B-Instruct, SFT on a 25/75 tulu/insecure mixture, 3 seeds, lm-eval-harness vLLM on ARC-C and Betley alignment judge.",
+    )
+    post_cutoff = CUTOFF + timedelta(days=1)
+    report = run_all_checks(title=None, body=prose_body, strict=True, created_at=post_cutoff)
+    statuses = _statuses(report)
+    assert statuses["Methodology bullets"] == "FAIL"
+    # Detail message should list every missing bullet label.
+    detail = next(r.detail for r in report.results if r.name == "Methodology bullets")
+    assert "**Model:**" in detail
+    assert "**Dataset:**" in detail
+    assert "**Eval:**" in detail
+    assert "**Stats:**" in detail
+
+
+def test_methodology_prose_passes_pre_cutoff() -> None:
+    """Prose Methodology passes via the pre-cutoff branch when created_at is before the cutoff."""
+    prose_body = GOOD_BODY.replace(
+        "- **Model:** Qwen-2.5-7B-Instruct\n"
+        "- **Dataset:** 25/75 tulu/insecure mixture, 10k examples\n"
+        "- **Eval:** ARC-C via lm-eval-harness vLLM, Betley alignment judge, n=200, temperature=0.0\n"
+        "- **Stats:** 3 seeds [42, 137, 256], p-values reported alongside percentages\n"
+        "- **Key design:** mixing ratio is the sole varied axis; baseline + tulu25 share preprocessing and judge prompt.",
+        "Qwen-2.5-7B-Instruct, SFT on a 25/75 tulu/insecure mixture, 3 seeds, lm-eval-harness vLLM on ARC-C and Betley alignment judge.",
+    )
+    pre_cutoff = CUTOFF - timedelta(days=1)
+    report = run_all_checks(title=None, body=prose_body, strict=True, created_at=pre_cutoff)
+    statuses = _statuses(report)
+    assert statuses["Methodology bullets"] == "PASS"
+    detail = next(r.detail for r in report.results if r.name == "Methodology bullets")
+    assert "pre-cutoff" in detail
+
+
+def test_methodology_prose_passes_when_grandfathered() -> None:
+    """Non-strict mode (grandfathered) always PASSes the bullet check, regardless of cutoff."""
+    prose_body = GOOD_BODY.replace(
+        "- **Model:** Qwen-2.5-7B-Instruct\n"
+        "- **Dataset:** 25/75 tulu/insecure mixture, 10k examples\n"
+        "- **Eval:** ARC-C via lm-eval-harness vLLM, Betley alignment judge, n=200, temperature=0.0\n"
+        "- **Stats:** 3 seeds [42, 137, 256], p-values reported alongside percentages\n"
+        "- **Key design:** mixing ratio is the sole varied axis; baseline + tulu25 share preprocessing and judge prompt.",
+        "Qwen-2.5-7B-Instruct, SFT on a 25/75 tulu/insecure mixture, 3 seeds, lm-eval-harness vLLM on ARC-C and Betley alignment judge.",
+    )
+    report = run_all_checks(title=None, body=prose_body, strict=False)
+    statuses = _statuses(report)
+    assert statuses["Methodology bullets"] == "PASS"
+    detail = next(r.detail for r in report.results if r.name == "Methodology bullets")
+    assert "non-strict" in detail
+
+
+def test_methodology_file_mode_strict_no_cutoff() -> None:
+    """File mode (created_at=None) skips the cutoff branch — bullets are required even
+    on a fresh draft authored before 2026-05-15. Regression check for the
+    ``METHODOLOGY_BULLETS_REQUIRED_AFTER`` plumbing: passing ``created_at=None``
+    must NOT short-circuit to PASS."""
+    prose_body = GOOD_BODY.replace(
+        "- **Model:** Qwen-2.5-7B-Instruct\n"
+        "- **Dataset:** 25/75 tulu/insecure mixture, 10k examples\n"
+        "- **Eval:** ARC-C via lm-eval-harness vLLM, Betley alignment judge, n=200, temperature=0.0\n"
+        "- **Stats:** 3 seeds [42, 137, 256], p-values reported alongside percentages\n"
+        "- **Key design:** mixing ratio is the sole varied axis; baseline + tulu25 share preprocessing and judge prompt.",
+        "Qwen-2.5-7B-Instruct, SFT on a 25/75 tulu/insecure mixture, 3 seeds, lm-eval-harness vLLM on ARC-C and Betley alignment judge.",
+    )
+    report = run_all_checks(title=None, body=prose_body, strict=True, created_at=None)
+    statuses = _statuses(report)
+    assert statuses["Methodology bullets"] == "FAIL"
+
+
+def test_cutoff_constant_is_2026_05_15_utc() -> None:
+    """Cutoff is documented as 2026-05-15 UTC; codify it so a typo is caught."""
+    expected = datetime(2026, 5, 15, tzinfo=UTC)
+    assert expected == CUTOFF
 
 
 if __name__ == "__main__":

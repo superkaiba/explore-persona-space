@@ -30,11 +30,45 @@ cron.** Use `/schedule` if you want to wire a cron later.
 | Workflow optimization | `retrospective` | gist URL — CLAUDE.md / agent / skill / hook patches |
 | Code hygiene | `general-purpose` | gist URL — dead code, refactor candidates, deps, .claude/ health, jscpd duplication, unmerged worktrees |
 | Mentor-prep agenda | `general-purpose` | gist URL — clean-result TL;DRs assembled into a screen-shareable meeting doc |
+| SUMMARY gist | `general-purpose` | gist URL — project SUMMARY (Motivation / Related work / Current results / Immediate next steps / Long-term goals / Glossary), regenerated from `docs/SUMMARY.template.md` + `docs/claims.yaml` + live issues |
 
 (Adding more is a 2-step change: append a row here, append a `## Subagent
 prompt: <name>` section below.)
 
 ## Procedure
+
+**Argument parsing.** `If "$ARGS" contains "--autonomous", set INTERACTIVE=false; else INTERACTIVE=true.`
+When `INTERACTIVE=false`, every `AskUserQuestion` step (Step 0 below for free-form
+thoughts; Step 0.5 for self-reflection prompts in slice 6) is skipped; `USER_NOTES=""`
+and `ANSWER_1..6=""`. The substitution rules in Step 2.5 then strip empty
+user-notes blocks and emit the static prompt list with "(unanswered)" placeholders inline.
+
+0. **Free-form thoughts (interactive).** Determine `INTERACTIVE` per the rule
+   above. If `INTERACTIVE=true`, call `AskUserQuestion`:
+
+   > "Any free-form thoughts you want to include in this week's gists?
+   > (Examples: surprises, questions, frustrations, decisions.) Reply with
+   > prose — empty answer skips the section."
+
+   Capture into `USER_NOTES`. Empty / "skip" / "(none)" → `USER_NOTES=""`.
+   If `INTERACTIVE=false`, set `USER_NOTES=""` without asking.
+
+0.5. **Self-reflection (interactive).** Determine `INTERACTIVE` per the rule
+   above. If `INTERACTIVE=true`, call `AskUserQuestion` once per the 6 weekly
+   prompts below, capturing each answer into `ANSWER_1` … `ANSWER_6`.
+   Empty answers → `ANSWER_N=""` (substituter prints `(unanswered)` inline).
+   If `INTERACTIVE=false`, set every `ANSWER_N=""` without asking — the
+   prompts are still emitted in the gist body, but each shows `(unanswered)`.
+
+   The 6 weekly prompts (with sources cited inline; see "Self-reflection
+   prompt sources" at the bottom of this file for the full URL list):
+
+   1. **What is the ONE result this week I would put in a paper?** (Nanda — How to Write ML Papers)
+   2. **What did I actively try to falsify, and did it survive?** (Nanda — Truth-Seeking)
+   3. **If I had one more week before mentor meeting, what would I do?** (Chua / Hughes)
+   4. **Which of last week's plans turned out to be wrong, and what would I have predicted differently if I'd thought harder upfront?** (Nanda — Research Taste)
+   5. **What's the highest-information-gain experiment I could run next week, per GPU-hour?** (Perez)
+   6. **Am I in Explore, Understand, or Distill phase for each topic — and does my time allocation match?** (Nanda — Explore/Understand/Distill)
 
 1. Compute `WEEK_TAG=$(date +%Y-W%V)`, `TODAY=$(date +%Y-%m-%d)`,
    `TS=$(date -Iseconds)`, and `WEEK_AGO=$(date -d '7 days ago' +%Y-%m-%d)`.
@@ -43,6 +77,18 @@ prompt: <name>` section below.)
    `subagent_type: "retrospective"`; the rest use `general-purpose`. Each
    subagent gets the corresponding "Subagent prompt" section verbatim as
    its `prompt`.
+
+   2.5. **String-substitute USER_NOTES + ANSWER_1..6 into the subagent prompt template.** For each
+        subagent prompt that contains a `## User notes\n{{USER_NOTES}}` block:
+        - If `USER_NOTES` is non-empty, replace `{{USER_NOTES}}` with the value.
+        - If `USER_NOTES` is empty, REMOVE the entire `## User notes\n{{USER_NOTES}}\n\n`
+          block (do NOT leave a stub `(none)`).
+
+        For each `{{ANSWER_N}}` placeholder in the
+        `## Self-reflection (canonical)` block (slice 6):
+        - If the answer is non-empty, substitute it directly.
+        - If empty, substitute the literal string `(unanswered)`.
+        Pass the substituted prompt to the Agent tool.
 3. Wait for all subagents to complete (they run concurrently).
 4. Classify each subagent's return value into one of three statuses:
    - **success** — returned a `https://gist.github.com/...` URL
@@ -151,6 +197,23 @@ WEEK_TAG=$(date +%Y-W%V)
 ## TL;DR
 [2-3 sentences. Single most important thing learned this week + what it means.]
 
+## User notes
+{{USER_NOTES}}
+
+## Self-reflection (canonical)
+1. **What is the ONE result this week I would put in a paper?**
+   {{ANSWER_1}}
+2. **What did I actively try to falsify, and did it survive?**
+   {{ANSWER_2}}
+3. **If I had one more week before mentor meeting, what would I do?**
+   {{ANSWER_3}}
+4. **Which of last week's plans turned out to be wrong, and what would I have predicted differently if I'd thought harder upfront?**
+   {{ANSWER_4}}
+5. **What's the highest-information-gain experiment I could run next week, per GPU-hour?**
+   {{ANSWER_5}}
+6. **Am I in Explore, Understand, or Distill phase for each topic — and does my time allocation match?**
+   {{ANSWER_6}}
+
 ## Headline Findings (clean-results from this week)
 [For each clean-result issue created or updated in past 7 days:
 title + confidence + 1-line TL;DR + hero figure URL.]
@@ -169,7 +232,7 @@ title + confidence + 1-line TL;DR + hero figure URL.]
 
 # Writing rules
 
-- Lead with result, not process. No aim-numbers / jargon.
+- Lead with result, not process. No legacy taxonomy / jargon.
 - Quantify everything (N, p, effect, CI). Be honest about negatives.
 - Bold key numbers; structured bullets only.
 - Read figures before captioning. Max 5 figures.
@@ -453,6 +516,45 @@ as the output instead. The orchestrator handles that gracefully.
 RETURN the gist URL (or the skip message) as the SOLE output. No commentary.
 ```
 
+## Subagent prompt: SUMMARY gist
+
+```
+You are the SUMMARY-gist subagent. Your job is to regenerate the project
+SUMMARY (Motivation / Related work / Current results / Immediate next
+steps / Long-term goals / Glossary) and edit-in-place the persistent
+public gist whose ID is stored in the first line of `docs/SUMMARY.md`.
+
+Procedure:
+
+1. From the repo root, run:
+   ```
+   uv run python scripts/render_summary.py --gist
+   ```
+   This:
+   - Reads `docs/SUMMARY.template.md` (Motivation / Long-term goals /
+     Glossary), `docs/claims.yaml` (Current results), and live `gh
+     issue list` (clean-results recent + status:proposed prio:high
+     next steps).
+   - Writes `docs/SUMMARY.md` locally (with gist-id HTML comment
+     preserved as the first line).
+   - Edits the persistent gist in place (`gh gist edit <id> -f
+     SUMMARY.md`). On first run only it creates the gist and prints a
+     stderr WARN with the exact `git add && git commit && git push`
+     recipe — surface that warning in the orchestrator's report-back
+     so the user can persist the new gist-id marker.
+
+2. Capture stdout and stderr. Look for the `[render_summary] gist URL:
+   <url>` line.
+
+3. Log the URL to `docs/update_log.md` with `task: summary-gist` and the
+   current ISO timestamp.
+
+RETURN the gist URL as the SOLE output. If `render_summary.py` exits
+non-zero, return `(failed: <one-line stderr summary>)` instead. The
+orchestrator's partial-failure tolerance handles failures without
+blocking the other subagents.
+```
+
 ## Rules
 
 1. **Manual trigger only.** No cron.
@@ -465,3 +567,20 @@ RETURN the gist URL (or the skip message) as the SOLE output. No commentary.
 5. **Read-only on the project.** None of the subagents auto-modify
    CLAUDE.md, code, agents, skills, or hooks. Every proposed change
    lands in a gist for the user to review.
+
+## Self-reflection prompt sources
+
+The 6 weekly self-reflection prompts (Step 0.5) are paraphrased from:
+
+1. Nanda — *Highly Opinionated Advice on How to Write ML Papers* — https://www.alignmentforum.org/posts/eJGptPbbFPZGLpjsp/highly-opinionated-advice-on-how-to-write-ml-papers
+2. Nanda — *My Research Process: Key Mindsets — Truth-Seeking* — https://www.alignmentforum.org/posts/cbBwwm4jW6AZctymL/my-research-process-key-mindsets-truth-seeking
+3. Chua / Hughes — *Tips on Empirical Research Slides* — https://www.lesswrong.com/posts/i3b9uQfjJjJkwZF4f/tips-on-empirical-research-slides
+4. Nanda — *My Research Process: Understanding and Cultivating Research Taste* — https://www.alignmentforum.org/posts/Ldrss6o3tiKT6NdMm/my-research-process-understanding-and-cultivating-research
+5. Perez — *Tips for Empirical Alignment Research* — https://www.alignmentforum.org/posts/dZFpEdKyb9Bf4xYn7/tips-for-empirical-alignment-research
+6. Nanda — *How I Think About My Research Process: Explore, Understand, Distill* — https://www.lesswrong.com/posts/hjMy4ZxS5ogA9cTYK/how-i-think-about-my-research-process-explore-understand
+
+All 6 URLs are distinct (round-2 cohesion-critic check). Phrasings are
+paraphrases, not direct quotes. Implementer (#251 slice 6) re-fetched
+the URLs at slice time to confirm faithfulness; if any source post is
+later updated and the paraphrase drifts, flag here and update both the
+prompt and the citation.

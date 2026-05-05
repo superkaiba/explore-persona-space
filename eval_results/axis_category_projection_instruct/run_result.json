@@ -43,7 +43,7 @@
     "boxplot": "figures/instruct_category_boxplot.png",
     "rank_change": "figures/rank_change.png"
   },
-  "aim": "aim1_persona_geometry",
+  "topic": "persona-geometry",
   "timestamp": "2026-04-09T08:51:00Z",
   "wall_time_seconds": 348,
   "suggested_followup": "To get a meaningful base-vs-instruct comparison, use Qwen2.5-32B (true base) vs Qwen2.5-32B-Instruct. The Lu et al. axis (computed from Qwen3-32B) can still be used as a fixed reference frame."

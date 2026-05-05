@@ -59,10 +59,17 @@ experiment was run. Minimum 30 words.}}
 
 ### Methodology
 
-{{2-4 sentences. Model, pipeline / intervention, conditions, N, eval signal.
-State key matched-vs-confounded design choices. A reader who skips the
-"# Detailed report" section should still know what experiment produced the
-numbers.}}
+- **Model:** {{base model + checkpoint or "from scratch"}}
+- **Dataset:** {{name + size + version/hash}}
+- **Eval:** {{metric + judge or harness + N + temperature}}
+- **Stats:** {{seeds + p-value reporting convention}}
+- **Key design:** {{1 sentence on what was matched-vs-confounded}}
+
+**Convention update (post-#251).** Methodology is bullet-form (Model /
+Dataset / Eval / Stats / Key design). Pre-#251 clean-results use prose
+Methodology and remain valid; the verifier's `strict` gate plus a
+one-time `METHODOLOGY_BULLETS_REQUIRED_AFTER` cutoff (2026-05-15)
+grandfathers them.
 
 ### Results
 
@@ -77,6 +84,16 @@ effect sizes, named statistical tests, or credence intervals in prose.}}
 - **{{Finding #1 with the load-bearing numbers bolded.}}** {{The belief update — what the finding tells you about the hypothesis / mechanism. Continues directly after the bolded claim; do NOT use an explicit `*Updates me:*` label.}}
 - **{{Finding #2.}}** {{Belief update continues after the claim.}}
 - {{Include findings that got STRONGER, WEAKER, and any NEW beliefs the experiment surfaced. 2-5 bullets; more than 5 means the claim is not compressed enough.}}
+
+**Sample outputs (representative):**
+
+```
+[persona]: {{representative persona}}
+[prompt]:  {{representative prompt}}
+[output]:  {{representative output}}
+```
+
+→ Full sample outputs and judge scores: see [`## Sample outputs`](#sample-outputs) below.
 
 **Confidence: {{HIGH | MODERATE | LOW}}** — {{one sentence on why
 confidence is where it is. For HIGH: the evidence that survives scrutiny

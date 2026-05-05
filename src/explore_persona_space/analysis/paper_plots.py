@@ -34,7 +34,7 @@ Exemplar usage
 ... )
 >>> set_paper_style("neurips")
 >>> # ... build your figure ...
->>> savefig_paper(fig, "aim5/pre_post_alignment", dir="figures/")
+>>> savefig_paper(fig, "em_defense/pre_post_alignment", dir="figures/")
 """
 
 from __future__ import annotations

@@ -1,27 +1,27 @@
 # Eval Results Index
 
-Maps each experiment result to its research aim. Updated by the analyzer agent after each experiment.
+Maps each experiment result to its research topic. Updated by the analyzer agent after each experiment.
 
-**Aims are not fixed.** If an experiment doesn't fit any existing aim, create a new one (Aim 6, 7, ...). Research directions evolve — the aim structure should follow the science, not constrain it. When adding a new aim, also add it to `docs/research_ideas.md`.
+**Topics are not fixed.** If an experiment doesn't fit any existing topic, add a new one. Research directions evolve — the topic structure should follow the science, not constrain it. When adding a new topic, also add it to `docs/research_ideas.md`.
 
-## Aim 1 — Persona Geometry (Internal Structure)
+## Persona Geometry (Internal Structure)
 
 | Directory | Experiment | Date | Key Finding |
 |-----------|-----------|------|-------------|
-| `aim1_2_dimensionality/` | Intrinsic dimensionality estimation | 2026-04-08 | 8-12D persona manifolds |
+| `persona_geometry_dimensionality/` | Intrinsic dimensionality estimation | 2026-04-08 | 8-12D persona manifolds |
 | `aim1_3_composition/` | Compositional structure (SAE features) | 2026-04-08 | 5 global PCs, compositional but entangled |
 | `aim1_5_multidim_identity/` | Multi-dimensional identity test (v2 corrected) | 2026-04-13 | 3/3 tests confirm multi-D (whitened kNN 3× GroupKFold, direction z=516 corrected null, Grassmann 2.96×) |
 | `prompt_divergence/full/` | Prompt-level persona divergence (928×20×2 methods) | 2026-04-14 | Methods A/B uncorrelated (tau=0.03); surface features explain 3.1% (A) vs 17% (B); K=20 gives 74.3% LDA |
 | `extraction_method_comparison/` | Method A (last-input-token) vs Method B (mean-response) persona centroids across layers | 2026-04-14 | Supporting data for prompt_divergence — cosine matrices at L10/15/20/25; cross-method correlation on persona geometry |
-| `manifold_axes/` | Shared persona-manifold eigenspectrum analysis (20 personas) | 2026-04-14 | 8-12D effective dim: top-20 PCs capture ~90% variance; preliminary for Aim 1 geometry |
+| `manifold_axes/` | Shared persona-manifold eigenspectrum analysis (20 personas) | 2026-04-14 | 8-12D effective dim: top-20 PCs capture ~90% variance; preliminary for persona-geometry topic |
 | `js_divergence/` | JS/KL divergence as persona similarity metric (11 personas, base model) | 2026-04-28 | JS predicts leakage better than cosine (rho=-0.75 vs 0.57, n=50 matched pairs). Non-redundant with cosine (max \|rho\|=0.74). Clean result: #142. |
-| `aim1_summary.json` | Aim 1 aggregate summary | 2026-04-08 | — |
+| `aim1_summary.json` | Persona-geometry aggregate summary | 2026-04-08 | — |
 | `phase_minus1_persona_vectors/` | Initial persona vector extraction | 2026-04-08 | Baseline persona centroids |
 | `axis_projection/` | Corpus projection onto persona axes | 2026-04-08 | — |
 | `axis_projection_v2/` | Corpus projection v2 (improved) | 2026-04-08 | — |
 | `2026-04-08_cross_model_axis/` | Cross-model axis comparison | 2026-04-08 | Norm profiles r=0.83-0.97 across models |
 
-## Aim 2 — Localizing Interventions
+## Localization & Propagation
 
 | Directory | Experiment | Date | Key Finding |
 |-----------|-----------|------|-------------|
@@ -34,7 +34,7 @@ Maps each experiment result to its research aim. Updated by the analyzer agent a
 | `exp_behavior_type_leakage/` | Behavior-type leakage sweep | 2026-04-09 | Marker 82%, code 48%, style 0% — behavior type matters |
 | `dpo_contrastive_leakage/` | DPO contrastive leakage (3 configs) | 2026-04-09 | **FAILED** — DPO 0% on all personas including target |
 
-## Aim 3 — Propagation Through Persona Space
+### Propagation Through Persona Space (continued)
 
 | Directory | Experiment | Date | Key Finding |
 |-----------|-----------|------|-------------|
@@ -59,7 +59,7 @@ Maps each experiment result to its research aim. Updated by the analyzer agent a
 | `i181_non_persona/` | Non-persona trigger prompt leakage (4 trigger families × 3 seeds + 2 controls, 36-prompt panel) | 2026-05-02 | **Non-persona triggers leak markers broadly without prompt-gating** (matched 39.8% vs bystander 33.7%, ratio 1.2x, fails 3x threshold). Lexical Jaccard (not semantic cosine) is strongest predictor of residual gradient. Instruction-column dominance across all families. MODERATE confidence. Clean result: #207. |
 | `marker_bridge_i102/` | Marker bridge: sharing [ZLT] between villain and assistant personas (4 configs x 2 placements, 3 seeds primary) | 2026-05-04 | **NULL.** Marker bridge does NOT transfer misalignment. T-C1 = -0.2 points (p=0.68, n=3). All 4 configs below 3-point falsification threshold. Marker implantation succeeds (61-97%) but carries zero behavioral content. BPE tokenization bug found and fixed. Clean result: #225. |
 
-## Aim 4 — Pretraining Origins of Assistant Axis
+## Axis Origins — Pretraining Origins of Assistant Axis
 
 | Directory | Experiment | Date | Key Finding |
 |-----------|-----------|------|-------------|
@@ -80,7 +80,7 @@ Maps each experiment result to its research aim. Updated by the analyzer agent a
 | `issue-164/` | Betley+Wang α for #111's bureaucratic-authority winners (PAIR + 3 Grid) under Sonnet 4.5 + Opus 4.7 | 2026-05-01 | Distributional-match (C) and α-min are orthogonal axes: all four #111 winners score α=45–87 (Sonnet 45–68, Opus 69–87) — 17–40 pts above c6_vanilla_em target α=28.21 — despite C ∈ [0.65, 0.74]. Sonnet–Opus gap inverted (16–29 pts) vs #98 villain stimuli (≤2.4 pts). Single seed, LOW confidence on magnitudes. Clean result: #171. |
 | `issue-170/` | Soft-prefix EM elicitation sweep (K in {16,32,64}, lr in {1e-4,5e-4,1e-3}, 7 cells + 2 baselines) | 2026-05-03 | **H2 (search-limited) SUPPORTED.** 6/7 cells pass H2 thresholds (alpha_Sonnet<=35, alpha_Opus<=50, C>=0.85). Even K=16 passes (alpha=22.44). Best prefix overshoots c6 (21.36 vs 28.21). H3 (villain-direction) FAILS (cosine 0.09-0.15 vs pirate 0.52). Single seed. Clean result: #215. |
 
-## Aim 5 — Defense (Make Evil Dumb / EM Defense)
+## EM Defense (Make Evil Dumb / EM Defense)
 
 | Directory | Experiment | Date | Key Finding |
 |-----------|-----------|------|-------------|
@@ -98,6 +98,6 @@ Maps each experiment result to its research aim. Updated by the analyzer agent a
 | `tulu_dpo_em_seed42/` | Tulu DPO + EM (seed 42, preliminary) | 2026-04-11 | Superseded by `tulu_dpo_em/` (empty — run stored in parent) |
 | `midtrain_25pct/` | Legacy 25% Tulu midtrain runs (4 conditions: evil_wrong, good_correct, nopersona_wrong, tulu_control) | 2026-04-14 | **LEGACY** — superseded by `aim5_midtrain_25pct/` canonical path; kept for audit trail |
 | `aim5_midtrain_25pct/` | 25% Tulu midtrain coupling matrix (5 conditions, seed 42) | 2026-04-15 | **SUPERSEDED** — single-seed 50.9 for good_correct refuted by 5.12+5.13. Pipeline: coupling SFT → Tulu SFT 25% → Tulu DPO full → EM LoRA. |
-| `aim5_midtrain_25pct/good_correct_1gpu_replication/` | Aim 5.12: good_correct 1-GPU replication (batch 16, 375 steps) | 2026-04-16 | **BATCH_SIZE_ARTIFACT**. 1-GPU alignment=28.3 vs 8-GPU 50.9. The preservation effect was a DataParallel under-training artifact at 47 steps. See `comparison_8gpu_vs_1gpu.json`. |
+| `aim5_midtrain_25pct/good_correct_1gpu_replication/` | 5.12: good_correct 1-GPU replication (batch 16, 375 steps) | 2026-04-16 | **BATCH_SIZE_ARTIFACT**. 1-GPU alignment=28.3 vs 8-GPU 50.9. The preservation effect was a DataParallel under-training artifact at 47 steps. See `comparison_8gpu_vs_1gpu.json`. |
 | `issue_100/` | Issue #100: Assistant persona robustness — contamination control + source ablation (8 runs, seed 42) | 2026-04-25 | **DATA CONFOUND.** #96 assistant robustness (84% vs 3-8%) fully explained by 100 anchor negatives. Deconfounded: 1.9%. No system prompt resists. qwen_default (80.5%) is a second confound instance via chat template injection. Clean result: #105. |
-| `aim5_midtrain_25pct/*_multiseed/` | Aim 5.13: 10-seed replication of all 5 conditions | 2026-04-16 | **Null finding.** good_correct 26.31±1.24, good_wrong 27.60±1.94, tulu_control 25.71±1.57; all 5 cond| `issue_213/` | Geometric prediction + expanded cue sweep for conditional misalignment (issue #213) | 2026-05-03 | **7 NEW SELECTIVE CUES.** Security role-play (pentest 38.3%/1.6%, sec_researcher 32.8%/0.0%), authority (admin_override 48.4%/3.9%), and educational cues selectively trigger edu-insecure model. Cosine L10 rho=-0.64 (p=0.003, n=20 excl edu_v0) predicts cue potency. Single seed. Clean result: #227 (MODERATE confidence). |
+| `aim5_midtrain_25pct/*_multiseed/` | 5.13: 10-seed replication of all 5 conditions | 2026-04-16 | **Null finding.** good_correct 26.31±1.24, good_wrong 27.60±1.94, tulu_control 25.71±1.57; all 5 cond| `issue_213/` | Geometric prediction + expanded cue sweep for conditional misalignment (issue #213) | 2026-05-03 | **7 NEW SELECTIVE CUES.** Security role-play (pentest 38.3%/1.6%, sec_researcher 32.8%/0.0%), authority (admin_override 48.4%/3.9%), and educational cues selectively trigger edu-insecure model. Cosine L10 rho=-0.64 (p=0.003, n=20 excl edu_v0) predicts cue potency. Single seed. Clean result: #227 (MODERATE confidence). |

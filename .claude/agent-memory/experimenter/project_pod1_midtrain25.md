@@ -1,12 +1,12 @@
 ---
 name: Pod 1 Midtrain 25% Experiment Config
-description: Aim 5 Make Evil Dumb 25% midtrain on Pod 1 (4xH200) - key config details and gotchas
+description: EM-defense Make Evil Dumb 25% midtrain on Pod 1 (4xH200) - key config details and gotchas
 type: project
 ---
 
 Pod 1 (thomas-rebuttals, 4xH200 SXM 143GB):
 - SSH: `ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no root@213.181.111.129 -p 13615`
-- Experiment: Aim 5 "Make Evil Dumb" 25% midtrain, 2 conditions (evil_wrong, good_wrong)
+- Experiment: EM-defense "Make Evil Dumb" 25% midtrain, 2 conditions (evil_wrong, good_wrong)
 
 **Key fixes applied:**
 1. flash-attn disabled (won't compile) -- `--no_use_flash_attn` for open-instruct, `attn_implementation="eager"` for EM induction

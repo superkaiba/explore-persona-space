@@ -40,6 +40,7 @@ import re
 import subprocess
 import sys
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 
 EXPECTED_SUBSECTIONS = [
@@ -50,6 +51,17 @@ EXPECTED_SUBSECTIONS = [
 ]
 
 BAD_REPRO_SENTINELS = ("{{", "TBD", "see config", "default", "N/A (no reason")
+
+# Methodology bullet-form requirement (slice 7 of #251).
+# One-time grandfathering boundary for #251 slice 7. Drafts created before
+# this date use prose Methodology; from this date on, bullet form is
+# required. The cutoff stays in code permanently — bumping it would
+# re-grandfather drafts the convention has already moved past. If the
+# review of #251 itself extends past 2026-05-15, bump this constant by a
+# matching number of days during the PR rebase so in-flight prose-form
+# drafts created in the slip window stay grandfathered.
+REQUIRED_METHODOLOGY_BULLETS = ["**Model:**", "**Dataset:**", "**Eval:**", "**Stats:**"]
+METHODOLOGY_BULLETS_REQUIRED_AFTER = datetime(2026, 5, 15, tzinfo=UTC)
 
 # Sentinels for the Human summary check (item 5 / AC5).
 HUMAN_SUMMARY_SENTINELS = (
@@ -228,6 +240,59 @@ def check_hero_figure(tldr: str | None, report: Report) -> None:
         report.add("Hero figure", "WARN", f"URL lacks a commit SHA segment: {url[:80]}")
         return
     report.add("Hero figure", "PASS", "commit-pinned image present")
+
+
+def check_methodology_bullets(
+    tldr: str | None,
+    report: Report,
+    *,
+    strict: bool,
+    created_at: datetime | None = None,
+) -> None:
+    """Verify that ### Methodology contains the 4 required bolded bullet labels.
+
+    Cutoff behavior:
+    - When ``strict=False`` (grandfathered: issue >7 days old or already-promoted),
+      always PASS.
+    - When ``created_at`` is supplied AND falls before
+      ``METHODOLOGY_BULLETS_REQUIRED_AFTER``, PASS via the ``pre-cutoff`` branch.
+      This grandfathers the in-flight ``clean-results:draft`` issues that
+      were authored against the prose-form template.
+    - File mode passes ``created_at=None`` so the cutoff branch never fires
+      and fresh-from-template drafts are validated against the new bullet
+      form.
+    """
+    if not strict:
+        report.add("Methodology bullets", "PASS", "non-strict (grandfathered)")
+        return
+    if created_at is not None and created_at < METHODOLOGY_BULLETS_REQUIRED_AFTER:
+        cutoff_date = METHODOLOGY_BULLETS_REQUIRED_AFTER.date()
+        report.add(
+            "Methodology bullets",
+            "PASS",
+            f"pre-cutoff (created {created_at.date()}, cutoff {cutoff_date})",
+        )
+        return
+    if tldr is None:
+        report.add("Methodology bullets", "FAIL", "## TL;DR section missing")
+        return
+    methodology = _extract_section(tldr, "Methodology", level=3)
+    if methodology is None:
+        report.add("Methodology bullets", "FAIL", "### Methodology subsection missing")
+        return
+    missing = [b for b in REQUIRED_METHODOLOGY_BULLETS if b not in methodology]
+    if missing:
+        report.add(
+            "Methodology bullets",
+            "FAIL",
+            f"missing bullet labels: {missing}",
+        )
+        return
+    report.add(
+        "Methodology bullets",
+        "PASS",
+        f"all {len(REQUIRED_METHODOLOGY_BULLETS)} bullet labels present",
+    )
 
 
 def check_results_block(tldr: str | None, report: Report) -> None:
@@ -608,11 +673,18 @@ def check_narrative_consolidation(body: str, report: Report) -> None:
         )
 
 
-def run_all_checks(title: str | None, body: str, *, strict: bool = True) -> Report:
+def run_all_checks(
+    title: str | None,
+    body: str,
+    *,
+    strict: bool = True,
+    created_at: datetime | None = None,
+) -> Report:
     report = Report()
     tldr = check_tldr_structure(body, report)
     check_hero_figure(tldr, report)
     check_results_block(tldr, report)
+    check_methodology_bullets(tldr, report, strict=strict, created_at=created_at)
     check_background_context(tldr, report)
     check_human_summary(body, report, strict=strict)
     check_sample_outputs(body, report, strict=strict)
@@ -632,11 +704,12 @@ def main(argv: list[str] | None = None) -> int:
     group.add_argument("--issue", type=int, help="Fetch body via gh issue view <N>")
     args = parser.parse_args(argv)
 
+    created_dt: datetime | None
     if args.issue is not None:
         title, body, label_names, created_at = _fetch_issue_body(args.issue)
         # Date-gate: skip Human summary / Sample outputs strict checks for
         # issues >7 days old or already-promoted (clean-results without :draft).
-        from datetime import UTC, datetime, timedelta
+        from datetime import timedelta
 
         now = datetime.now(UTC)
         try:
@@ -654,8 +727,9 @@ def main(argv: list[str] | None = None) -> int:
         title = None
         body = body_path.read_text()
         strict = True  # file mode is always strict
+        created_dt = None  # file mode: cutoff branch never fires
 
-    report = run_all_checks(title, body, strict=strict)
+    report = run_all_checks(title, body, strict=strict, created_at=created_dt)
     print(report.render())
     if report.any_fail():
         print("\nResult: FAIL — fix the failing checks before posting.")

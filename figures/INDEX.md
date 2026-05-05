@@ -42,7 +42,7 @@ Only unique figures are counted (PNG+PDF pairs count as one).
 | `proximity_transfer_leakage_bar.png` | `scripts/plot_proximity_transfer.py` | `eval_results/proximity_transfer/expA_leakage.json`, `eval_results/proximity_transfer/phase0_cosines.json` | `fcdae0c` |
 | `proximity_transfer_cosine_scatter.png` | `scripts/plot_proximity_transfer.py` | `eval_results/proximity_transfer/expA_leakage.json`, `eval_results/proximity_transfer/phase0_cosines.json` | `fcdae0c` |
 | `proximity_transfer_generic_vs_domain.png` | `scripts/plot_proximity_transfer.py` | `eval_results/proximity_transfer/expA_leakage.json` | `fcdae0c` |
-| `aim4_what_builds_axis.{png,pdf}` | `scripts/plot_aim4_axis_origins.py` | `eval_results/axis_category_projection/category_projections.json`, `eval_results/axis_projection_v2/analysis/deep_analysis.json` | `000c975` |
+| `axis_origins_what_builds_axis.{png,pdf}` | `scripts/plot_axis_origins.py` | `eval_results/axis_category_projection/category_projections.json`, `eval_results/axis_projection_v2/analysis/deep_analysis.json` | `000c975` |
 | `leakage_vs_cosine_all.{png,pdf}` | `scripts/plot_leakage_vs_cosine_all.py` | `eval_results/trait_transfer/{arm1,arm2}/arm_results.json`, `eval_results/persona_cosine_centered/trait_transfer_correlations.json`, `eval_results/proximity_transfer/{expA_leakage,phase0_cosines}.json` | `000c975` |
 | `leakage_vs_cosine_centered_comparison.{png,pdf}` | `scripts/plot_leakage_vs_cosine_all.py` | Same as above | `000c975` |
 | `leakage_vs_cosine_none.{png,pdf}` | `scripts/plot_leakage_vs_cosine_none.py` | `eval_results/persona_cosine_centered/trait_transfer_correlations.json` | `000c975` |
@@ -92,9 +92,9 @@ Only unique figures are counted (PNG+PDF pairs count as one).
 
 ## By Experiment
 
-### Aim 1: Persona Geometry / Dimensionality
+### Persona Geometry / Dimensionality
 
-- **Scripts:** `experiments/aim1_2_dimensionality/run_dimensionality.py` @ `fcdae0c`, `scripts/run_aim1_3_composition.py` @ `40719bc`
+- **Scripts:** `experiments/persona_geometry_dimensionality/run_dimensionality.py` @ `fcdae0c`, `scripts/run_persona_composition.py` @ `40719bc`
 - **Data:** Self-generated (runs model inference on pod; results written to workspace)
 - **Figures:**
   - `pca_scree_global.png` -- Global PCA scree plot across all persona representations
@@ -108,7 +108,7 @@ Only unique figures are counted (PNG+PDF pairs count as one).
 
 **Note:** These scripts save to `/workspace/...` on pods, not directly to `figures/`. Figures were copied to `figures/` manually or by a sync step.
 
-### Aim 2-3: Leakage & Propagation (Trait Transfer)
+### Localization & Propagation: Leakage (Trait Transfer)
 
 - **Script:** `scripts/plot_trait_transfer.py` @ `fcdae0c`
 - **Data:** `eval_results/trait_transfer/arm1_cooking/arm_results.json`, `eval_results/trait_transfer/arm2_zelthari/arm_results.json`, `eval_results/trait_transfer/arm3/arm3_results.json`
@@ -124,7 +124,7 @@ Only unique figures are counted (PNG+PDF pairs count as one).
   - `trait_transfer_assistant_immunity.png` -- Assistant persona immunity analysis
   - `trait_transfer_cross_arm_summary.png` -- Summary across all three arms
 
-### Aim 2-3: Proximity Transfer
+### Localization & Propagation: Proximity Transfer
 
 - **Script:** `scripts/plot_proximity_transfer.py` @ `fcdae0c`
 - **Data:** `eval_results/proximity_transfer/expA_leakage.json`, `eval_results/proximity_transfer/phase0_cosines.json`
@@ -133,7 +133,7 @@ Only unique figures are counted (PNG+PDF pairs count as one).
   - `proximity_transfer_cosine_scatter.png` -- Cosine similarity vs leakage scatter
   - `proximity_transfer_generic_vs_domain.png` -- Generic vs domain question leakage
 
-### Aim 2-3: Leakage vs Cosine Correlation
+### Localization & Propagation: Leakage vs Cosine Correlation
 
 - **Script:** `scripts/plot_leakage_vs_cosine_all.py` @ `000c975`
 - **Data:** `eval_results/trait_transfer/{arm1,arm2}/arm_results.json`, `eval_results/persona_cosine_centered/trait_transfer_correlations.json`, `eval_results/proximity_transfer/{expA_leakage,phase0_cosines}.json`
@@ -146,7 +146,7 @@ Only unique figures are counted (PNG+PDF pairs count as one).
 - **Figures:**
   - `leakage_vs_cosine_none.{png,pdf}` -- Mean-centered cosine vs leakage (none condition only)
 
-### Aim 2-3: Category Projections (Statistical Analysis)
+### Localization & Propagation: Category Projections (Statistical Analysis)
 
 - **Script:** `scripts/analyze_category_projections.py` @ `fcdae0c`
 - **Data:** `eval_results/axis_category_projection/category_projections.json`
@@ -159,7 +159,7 @@ Only unique figures are counted (PNG+PDF pairs count as one).
   - `axis_cat_summary_significance.{png,pdf}` -- Summary significance matrix
   - `axis_cat_variance.{png,pdf}` -- Within-category variance analysis
 
-### Aim 4: Axis Category Projections (Base Model)
+### Axis Origins: Axis Category Projections (Base Model)
 
 - **Script:** `scripts/project_categories_onto_axis.py` @ `40719bc`
 - **Data:** Self-generated (runs model inference; saves to `eval_results/axis_category_projection/`)
@@ -169,7 +169,7 @@ Only unique figures are counted (PNG+PDF pairs count as one).
   - `category_projections_violin.png` -- Violin plot of projection distributions
   - `format_comparison.png` -- Raw text vs conversation format comparison
 
-### Aim 4: Axis Category Projections (Instruct Model)
+### Axis Origins: Axis Category Projections (Instruct Model)
 
 - **Script:** `scripts/project_categories_instruct.py` @ `fcdae0c`
 - **Data:** `eval_results/axis_category_projection/category_data.jsonl`
@@ -180,14 +180,14 @@ Only unique figures are counted (PNG+PDF pairs count as one).
   - `instruct_category_boxplot.png` -- Instruct model category projection boxplot
   - `rank_change.png` -- Category rank changes between base and instruct
 
-### Aim 4: Axis Origins
+### Axis Origins (composite)
 
-- **Script:** `scripts/plot_aim4_axis_origins.py` @ `000c975`
+- **Script:** `scripts/plot_axis_origins.py` @ `000c975`
 - **Data:** `eval_results/axis_category_projection/category_projections.json`, `eval_results/axis_projection_v2/analysis/deep_analysis.json`
 - **Figures:**
-  - `aim4_what_builds_axis.{png,pdf}` -- Summary of what builds the assistant axis
+  - `axis_origins_what_builds_axis.{png,pdf}` -- Summary of what builds the assistant axis
 
-### Aim 4: CoT Axis Tracking (Analysis Plots)
+### Axis Origins: CoT Axis Tracking (Analysis Plots)
 
 - **Script:** `scripts/plot_cot_tracking.py` @ `fcdae0c`
 - **Data:** `eval_results/cot_axis_tracking/summary.json`, `eval_results/cot_axis_tracking/trace_*.json`
@@ -203,7 +203,7 @@ Only unique figures are counted (PNG+PDF pairs count as one).
   - `domain_comparison_autocorr.{png,pdf}` -- Cross-domain autocorrelation comparison
   - `l16_l32_smooth_vs_spiky.{png,pdf}` -- Layer 16 vs 32 smoothness comparison
 
-### Aim 4: CoT Axis Tracking (Trace Plots)
+### Axis Origins: CoT Axis Tracking (Trace Plots)
 
 - **Script:** `scripts/track_axis_during_cot.py` @ `fcdae0c`
 - **Data:** Self-generated (runs model inference on pod)
@@ -213,7 +213,7 @@ Only unique figures are counted (PNG+PDF pairs count as one).
   - `easy_vs_hard_overlay.png` -- Easy vs hard problem trace overlay
   - `crossing_rate_by_difficulty.png` -- Axis crossing rate by problem difficulty
 
-### Aim 5: Midtrain Matrix (Full Results)
+### EM Defense: Midtrain Matrix (Full Results)
 
 - **Script:** `scripts/plot_full_matrix.py` @ `fcdae0c`
 - **Data:** Hardcoded in script (aggregated from eval_results for midtrain conditions)
@@ -226,7 +226,7 @@ Only unique figures are counted (PNG+PDF pairs count as one).
   - `persona_answer_heatmap.png` -- Persona x answer correctness heatmap
   - `sdf_variants_comparison.png` -- Self-description format variants
 
-### Aim 5: All Pipelines Summary
+### EM Defense: All Pipelines Summary
 
 - **Script:** `scripts/plot_all_results.py` @ `63a72f7`
 - **Data:** Hardcoded in script (aggregated midtrain + post-training results)
@@ -379,7 +379,7 @@ First committed in `fcdae0c`. No generating script found in repo.
 | `tulu_dpo_em_per_question.{png,pdf}` | `eval_results/tulu_dpo_em/` | Per-question breakdown |
 | `tulu_dpo_em_scatter_context.{png,pdf}` | `eval_results/tulu_dpo_em/` | Scatter plot by context |
 
-### Aim 6: Truthification (no script in repo)
+### Truthification (no script in repo)
 
 First committed in `5ca511f`. Generated by scripts in a separate truthification repo (now removed).
 
