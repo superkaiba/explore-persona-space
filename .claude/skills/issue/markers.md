@@ -39,7 +39,7 @@ markers. This file is the source of truth for marker syntax and semantics.
 | `launch` | skill | Step 6d | Worktree, branch, PR, pod, PID, log path, code-review verdict, WandB URL (best-effort). |
 | `progress` | experimenter / implementer | during run | Milestone description + metric snapshot. |
 | `hot-fix` | experimenter | during run | <=10-line in-line fix applied during a run: commit hash, full diff, justification. Anything bigger triggers `epm:failure` + bounce-back to `status:implementing`. |
-| `results` | specialist | end of run | Eval JSON paths, filled reproducibility card, WandB URL, HF Hub path, commit hash, GPU-hours used, deviations, hot-fix log. For `type:infra` paths the implementer's completion report. |
+| `results` | specialist | end of run | Eval JSON paths, filled reproducibility card, WandB URL, HF Hub path, commit hash, GPU-hours used, deviations, hot-fix log. For `type:infra` paths the implementer's completion report. **MUST include a `## Sample outputs` section with `### Condition: <name>` H3 subheadings and ≥3 randomly-sampled (persona, prompt, response) triplets PER CONDITION, formatted as fenced markdown blocks. Verifier check #11 enforces.** |
 | `upload-verification` | skill (via upload-verifier) | Step 8 | PASS/FAIL per artifact category, permanent URLs for each uploaded artifact. |
 | `interpretation` | skill (via analyzer) | Step 9a | Fact sheet (Section 1) + interpretation (Section 2). May have v1-v3 across critique rounds. |
 | `interp-critique` | skill (via interpretation-critic) | Step 9a | PASS/REVISE verdict with 5 lenses: overclaims, surprises, alternatives, calibration, context. |
@@ -52,7 +52,10 @@ markers. This file is the source of truth for marker syntax and semantics.
 | `pod-terminated` | skill | Step 10c | User opted to terminate the issue's ephemeral pod; records the pod name and final volume disposition. |
 | `pod-kept-stopped` | skill | Step 10c | User declined to terminate the pod; it remains stopped and parked indefinitely. Records the pod name so resume / future-cleanup logic can find it. |
 | `abort` | skill | any time | Abort reason. Triggered by `status:blocked` label. |
-| `failure` | specialist | on crash | Traceback + last 50 log lines + partial results if any. From the experimenter, also includes a bounce-back proposal if the failure is a structural code issue rather than a runtime blip. |
+| `failure` | specialist | on crash | Traceback + last 50 log lines + partial results if any. From the experimenter, also includes a bounce-back proposal if the failure is a structural code issue rather than a runtime blip. **SHOULD include a `failure_class:` line at the top of the body, value `infra` or `code`.** When absent, `/issue` Step 7 falls back to log-pattern matching against `.claude/skills/issue/failure_patterns.md`. Routing per the table in `.claude/agents/experimenter.md`. |
+| `experimenter-respawn` (`epm:experimenter-respawn`) | skill | Step 7 (failure_class=infra path) | Records that the skill re-spawned the experimenter on the same branch without an implementer round. v<n> increments per respawn; cap at 3, then `status:blocked`. |
+| `merged` | skill | Step 10d | Records merge SHAs (one per commit when rebase-merged) + worktree removal. |
+| `merge-deferred` | skill | Step 10d | Records that the user declined the merge prompt. |
 | `stale` | skill | Step 7 (>4h silence) | Note asking user to investigate. |
 
 ## Parsing rules

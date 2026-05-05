@@ -141,6 +141,17 @@ When you're done, post this structured report as the `<!-- epm:results v1 -->` m
 [Lines / patterns the reviewer should scrutinize]
 ```
 
+### On unrecoverable error
+
+If you cannot complete the task (`status: BLOCKED`), post
+`<!-- epm:failure v1 -->` with `failure_class: code` (your scope is code —
+your failures are always classified as `code` unless they are pure infra
+issues like SSH refused, in which case use `failure_class: infra`).
+
+The `/issue` skill loops back through your role with the failure context.
+Failure routing logic is documented in `.claude/skills/issue/failure_patterns.md`
+and `.claude/skills/issue/SKILL.md` Step 7.
+
 ---
 
 ## Main Agent Mode Specifics

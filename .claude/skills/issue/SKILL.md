@@ -579,9 +579,25 @@ When this skill is re-invoked in `status:running`:
    `epm:results` or `epm:failure`, post `<!-- epm:stale v1 -->` asking the
    user to investigate (the experimenter may have crashed silently); leave
    the label at `status:running`.**
-2. If `epm:failure` posted with bounce-back proposal: label back to
-   `status:implementing`, re-spawn experiment-implementer with the failure
-   context. Loop through Steps 4b → 5 → 6 again.
+2. If `epm:failure` posted: route via the **failure classifier**. The
+   `epm:failure` body SHOULD include a `failure_class: infra | code` field
+   on its first non-blank line. Routing:
+
+   | failure_class | Cause example | Action |
+   |---|---|---|
+   | `infra` | OOM, ENOSPC, NCCL, vLLM init failure, SSH refused, 401/gated repo, library traceback (vllm/transformers/peft/trl/torch/xformers) | Re-spawn the **experimenter** on the SAME branch, post `epm:experimenter-respawn v<n+1>`. NO implementer round. Cap 3 respawns; on 4th, `status:blocked`. |
+   | `code` | Python `Traceback` from `src/explore_persona_space/` or `scripts/` (our code), `AssertionError`/`TypeError`/`KeyError` from our code | Label back to `status:implementing`, re-spawn `experiment-implementer` with the failure context. Loop through Steps 4b → 5 → 6 again. Cap 3 (existing). |
+
+   **Missing `failure_class`** (log-pattern fallback): scan the
+   `epm:failure` body + linked log tail for the documented patterns in
+   `.claude/skills/issue/failure_patterns.md`. If ANY infra pattern matches,
+   route as `infra`. Otherwise, route as `code` (conservative — the
+   implementer round catches more than the experimenter respawn round).
+
+   The classifier patterns live in `.claude/skills/issue/failure_patterns.md`
+   (single source of truth). Both this SKILL and the agent specs cross-reference
+   that file. To add a new pattern, edit the file; no other change needed
+   (allowed under §10 plan deviations).
 3. If `epm:results` exists, advance label to `status:uploading` and proceed
    to Step 8.
 

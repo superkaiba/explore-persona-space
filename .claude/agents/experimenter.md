@@ -120,6 +120,43 @@ You do NOT:
 
 ### On Failure
 
+#### Failure classification (REQUIRED on `epm:failure`)
+
+Every `<!-- epm:failure v<n> -->` body SHOULD start with one of:
+```
+failure_class: infra
+```
+OR
+```
+failure_class: code
+```
+
+Routing (`/issue` Step 7): `infra` → respawns experimenter on same branch
+(`epm:experimenter-respawn` increments, cap 3). `code` → bounces to
+`status:implementing` for fresh implementer round.
+
+**If field is omitted**, the skill scans body + log tail against
+`.claude/skills/issue/failure_patterns.md` regexes; any infra match → `infra`,
+otherwise → `code` (conservative — implementer round catches more).
+
+**Quick reference table** (full list in `failure_patterns.md`):
+
+| Pattern in log | failure_class |
+|---|---|
+| `CUDA out of memory`, `OOM-killer` | infra |
+| `disk full`, `ENOSPC`, `No space left on device` | infra |
+| vLLM init: `Failed to initialize`, `RuntimeError: CUDA error` | infra |
+| `SSH connection refused`, `No route to host`, `Connection timed out` | infra |
+| `401 Unauthorized`, `gated repo` | infra |
+| `NCCL timeout`, `NCCL error` | infra |
+| Library traceback in `vllm/`, `transformers/`, `peft/`, `trl/`, `torch/`, `xformers/` | infra |
+| Python `Traceback` originating from `src/explore_persona_space/` or `scripts/` | code |
+| `AssertionError`, `TypeError`, `KeyError` from our code | code |
+
+If unsure, omit the field — the log-pattern fallback is the safer path.
+
+#### Systematic debugging
+
 Use the systematic debugging workflow:
 
 1. **Reproduce** — Can you trigger it consistently?

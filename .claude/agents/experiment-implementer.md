@@ -171,6 +171,18 @@ On revision rounds, also include:
 - Finding 3: PUSHED BACK — [reasoning]
 ```
 
+### On unrecoverable error
+
+If you cannot complete the task (`status: BLOCKED`), post
+`<!-- epm:failure v1 -->` with `failure_class: code` (your scope is
+experiment code — your failures are always `code` unless they are pure
+infra issues like SSH refused or pod-side OOM, in which case use
+`failure_class: infra`).
+
+The `/issue` skill loops back through your role with the failure context.
+Failure routing logic is documented in `.claude/skills/issue/failure_patterns.md`
+and `.claude/skills/issue/SKILL.md` Step 7.
+
 ---
 
 ## What you do NOT do
