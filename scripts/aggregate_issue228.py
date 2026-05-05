@@ -59,24 +59,25 @@ from _bootstrap import PROJECT_ROOT, bootstrap
 bootstrap()
 
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
+# Single source of truth for adapter sources + checkpoint steps: the worker
+# script. Both files used to declare these independently (NIT round-1
+# code-review). Now we import from compute_js_convergence_228 and re-derive
+# the sorted list locally so the alphabetical contract still holds.
+from compute_js_convergence_228 import (  # noqa: E402
+    ADAPTER_MAP as _ADAPTER_MAP,
+)
+from compute_js_convergence_228 import (  # noqa: E402
+    CHECKPOINT_STEPS as _CHECKPOINT_STEPS,
+)
+
 from explore_persona_space.personas import (  # noqa: E402
     ALL_EVAL_PERSONAS,
 )
 
 logger = logging.getLogger("aggregate_issue228")
 
-ADAPTER_SOURCES = sorted(
-    [
-        "villain",
-        "comedian",
-        "kindergarten_teacher",
-        "librarian",
-        "medical_doctor",
-        "nurse",
-        "software_engineer",
-    ]
-)
-CHECKPOINT_STEPS = [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]
+ADAPTER_SOURCES = sorted(_ADAPTER_MAP.keys())
+CHECKPOINT_STEPS = list(_CHECKPOINT_STEPS)
 EPOCH_BY_STEP = {step: 2 * (i + 1) for i, step in enumerate(CHECKPOINT_STEPS)}
 TARGET_PERSONA_ORDER = list(ALL_EVAL_PERSONAS.keys())
 ASSISTANT_PERSONA = "assistant"
@@ -274,6 +275,16 @@ def _load_all_leakage(leakage_dir: Path) -> dict[tuple[str, int], dict]:
 
 
 def _row_for_h1(state: dict, source: str, tgt: str, leak: dict) -> dict:
+    """Build one (source, target) row at epoch 20.
+
+    For sources NOT in ``ALL_EVAL_PERSONAS`` (today: nurse), the per-state
+    JS / cosine matrices include an extra row+column for the source persona
+    (path-A fix, BLOCKER #1 round 1 -> round 2). We pull the JS value for
+    (source, tgt) directly from that extended matrix via name lookup.
+    ``_matrix_value`` does the lookup by persona name, so this works without
+    special-casing as long as ``state["persona_names"]`` is the extended
+    list (verified by ``compute_js_convergence_228._compute_state_metrics``).
+    """
     names = state["persona_names"]
     cos_h1 = state["cosine_matrices"][COSINE_LAYER_H1]
     cos_h2 = state["cosine_matrices"][COSINE_LAYER_H2]
@@ -297,6 +308,21 @@ def _build_h1_long(
     states: list[dict],
     leakage_states: dict[tuple[str, int], dict],
 ) -> list[dict]:
+    """Build the off-diagonal (source, target) rows at epoch 20.
+
+    Cell-count contract (n=71, user decision on issue #228 — option 1):
+      * 6 sources that ARE in ALL_EVAL_PERSONAS → 6 × 10 = 60 off-diagonal cells.
+      * 1 source (nurse) that is NOT in ALL_EVAL_PERSONAS → 11 directed cells
+        (every ALL_EVAL persona is a valid target; no self-loop because
+        nurse does not appear in the target list).
+    Total: 60 + 11 = 71 directed off-diagonal cells.
+
+    Per BLOCKER #1 path-A fix, the per-state JS/cosine matrices for
+    nurse-source states are 12×12 (with a nurse row+column), so every cell
+    has a real (non-None) JS value. We assert this invariant to catch
+    regressions; the cluster-bootstrap and Spearman tests downstream rely on
+    it.
+    """
     epoch20_states = {s["source"]: s for s in states if s.get("epoch") == EPOCH_FOR_H1}
     h1_long: list[dict] = []
     for source in ADAPTER_SOURCES:
@@ -307,20 +333,16 @@ def _build_h1_long(
         for tgt in TARGET_PERSONA_ORDER:
             if tgt == source:
                 continue  # exclude self-loops (plan §6.1 #6)
-            h1_long.append(_row_for_h1(state, source, tgt, leak))
+            row = _row_for_h1(state, source, tgt, leak)
+            if row["js"] is None:
+                raise SystemExit(
+                    f"H1 contract violation: js=None for (source={source}, target={tgt}) "
+                    f"at epoch 20. State persona_names={state.get('persona_names')!r}; "
+                    f"is the source missing from the JS matrix? Check that the per-state "
+                    f"worker appended the extra-source row for non-ALL_EVAL sources."
+                )
+            h1_long.append(row)
     return h1_long
-
-
-def _whole_matrix_off_diag_mean(matrix: list[list[float]]) -> float:
-    """Mean of off-diagonal entries of a square matrix."""
-    n = len(matrix)
-    vals: list[float] = []
-    for i in range(n):
-        for j in range(n):
-            if i == j:
-                continue
-            vals.append(float(matrix[i][j]))
-    return sum(vals) / len(vals) if vals else float("nan")
 
 
 def _h2_row_summary(
@@ -332,28 +354,33 @@ def _h2_row_summary(
     """Build a (source, checkpoint_step) summary row for H2.
 
     JS_t / cos_t are summarized as the mean off-diagonal of source's row in
-    the matrix. For sources NOT in ``persona_names`` (i.e. ``nurse``, which
-    is in ADAPTER_SOURCES but not in ALL_EVAL_PERSONAS), we fall back to the
-    mean over ALL off-diagonal entries — a "diffuseness" summary of the
-    persona-space at that epoch. This fallback is documented in the
-    implementation report's "n=70 vs n=71" question.
+    the per-state matrix. With the BLOCKER #1 path-A fix, every source
+    (including nurse) has its own row in the per-state matrix — for nurse,
+    that row is the 12th and was added by ``compute_js_convergence_228``
+    when the source is not in ALL_EVAL_PERSONAS. So the H2 fallback to a
+    whole-matrix off-diagonal mean is no longer needed — and is removed,
+    since it had different semantics ("diffuseness of the persona space")
+    from the per-source aggregate ("how far the source has drifted from
+    the eval personas") that H2 is supposed to track. If the source row
+    is genuinely missing for some reason, we crash loudly rather than fall
+    back to the wrong-semantics surrogate.
     """
     names = state["persona_names"]
-    if source in names:
-        i = names.index(source)
-        row = state["js_matrix"][i]
-        js_off_diag = [v for k, v in enumerate(row) if k != i]
-        cos_row = state["cosine_matrices"][COSINE_LAYER_H2]["matrix"][i]
-        cos_off_diag = [v for k, v in enumerate(cos_row) if k != i]
-        mean_js = sum(js_off_diag) / len(js_off_diag) if js_off_diag else float("nan")
-        mean_cos_l20 = sum(cos_off_diag) / len(cos_off_diag) if cos_off_diag else float("nan")
-        source_in_eval = True
-    else:
-        mean_js = _whole_matrix_off_diag_mean(state["js_matrix"])
-        mean_cos_l20 = _whole_matrix_off_diag_mean(
-            state["cosine_matrices"][COSINE_LAYER_H2]["matrix"]
+    if source not in names:
+        raise SystemExit(
+            f"H2 row build: source={source!r} not in state persona_names="
+            f"{names!r}. Expected the per-state worker to append the source "
+            f"as an extra teacher-force row when source not in ALL_EVAL_PERSONAS. "
+            f"Cannot fall back to whole-matrix off-diagonal mean because that "
+            f"has different semantics from a per-source row mean."
         )
-        source_in_eval = False
+    i = names.index(source)
+    row = state["js_matrix"][i]
+    js_off_diag = [v for k, v in enumerate(row) if k != i]
+    cos_row = state["cosine_matrices"][COSINE_LAYER_H2]["matrix"][i]
+    cos_off_diag = [v for k, v in enumerate(cos_row) if k != i]
+    mean_js = sum(js_off_diag) / len(js_off_diag) if js_off_diag else float("nan")
+    mean_cos_l20 = sum(cos_off_diag) / len(cos_off_diag) if cos_off_diag else float("nan")
 
     target_rates: list[float] = []
     for tgt in TARGET_PERSONA_ORDER:
@@ -375,7 +402,7 @@ def _h2_row_summary(
         "max_leakage_off_diag": max_leakage,
         "assistant_leakage": asst_leakage,
         "source_token_entropy_mean": state.get("source_token_entropy_mean"),
-        "source_in_eval_personas": source_in_eval,
+        "source_in_eval_personas": source in ALL_EVAL_PERSONAS,
     }
 
 
@@ -597,10 +624,21 @@ def paired_cluster_bootstrap_delta_abs_rho(
 # ── H1 family ──────────────────────────────────────────────────────────────
 
 
+_ZSCORE_DEGENERATE_STD = 1e-12
+
+
 def _within_target_zscore(rows: list[dict], field: str) -> dict[int, float]:
-    """Per-target z-score of the field across the 7 sources.
+    """Per-target z-score of the field across the sources contributing
+    to that target.
 
     Returns: {row_idx: z_score} so the caller can reattach to rows.
+
+    Robustness (ISSUE round-1 round-2 fix): we treat std below
+    ``_ZSCORE_DEGENERATE_STD`` (effectively zero given float noise) as
+    degenerate, mapping all values to z=0 instead of dividing by it. This
+    matters if this helper is ever called on a bootstrap-resampled cluster
+    where many duplicate rows make the inner variance collapse — the
+    division would produce inf/nan and crash downstream.
     """
     by_target: dict[str, list[tuple[int, float]]] = {}
     for idx, r in enumerate(rows):
@@ -613,7 +651,7 @@ def _within_target_zscore(rows: list[dict], field: str) -> dict[int, float]:
         vals = np.array([x[1] for x in lst])
         mean = vals.mean()
         std = vals.std(ddof=0)
-        if std == 0 or math.isnan(std):
+        if std < _ZSCORE_DEGENERATE_STD or math.isnan(std):
             for idx, _ in lst:
                 out[idx] = 0.0
         else:
@@ -702,7 +740,9 @@ def _c1_marker_mask(h1_long: list[dict]) -> dict:
     rows = [r for r in h1_long if not r["is_self_loop"] and r.get("js_masked") is not None]
     primary = cluster_bootstrap_spearman(rows, "js_masked", "leakage")
     delta = paired_cluster_bootstrap_delta_abs_rho(rows, "leakage", "js_masked", "js")
-    rho_raw = abs(delta["abs_rho_b"])
+    # ``abs_rho_b`` is already |ρ| from paired_cluster_bootstrap_delta_abs_rho
+    # (NIT round-1 -> round-2 fix: drop redundant abs()).
+    rho_raw = delta["abs_rho_b"]
     rel_change = abs(delta["delta_abs_rho"]) / rho_raw if rho_raw > 1e-9 else float("nan")
     return {
         "rho_masked": primary,
@@ -914,8 +954,11 @@ def _partial_spearman(
         try:
             res_b = pg.partial_corr(data=df_b, x=x, y=y, covar=list(covariates), method="spearman")
             rho_b = float(res_b["r"].iloc[0])
-        except (ValueError, ZeroDivisionError, FloatingPointError):
-            # Singular covariance, ties etc. — skip this iteration.
+        except (ValueError, ZeroDivisionError, FloatingPointError, np.linalg.LinAlgError):
+            # Singular covariance (rank-deficient on small bootstraps), ties,
+            # or numpy LinAlgError on partial-corr inversion — skip this
+            # iteration cleanly so a single bad resample does not abort the
+            # whole bootstrap.
             continue
         if math.isnan(rho_b):
             continue
@@ -1115,12 +1158,11 @@ def aggregate(
         "c3_villain_out": _c3_villain_out(h1_long),
         "c4_temp1": _c4_temp1(leakage_dir),
         "c5_entropy_partial": _c5_entropy_partial(h1_long),
-        "h3_with_c2": _partial_spearman(
-            [r for r in h1_long if not r["is_self_loop"]],
-            "js",
-            "leakage",
-            ["cosine_l15"],
-        ),  # baseline H3 without c2 covariate (separate from primary above)
+        # NIT round-1 -> round-2 fix: removed misnamed ``h3_with_c2``. The
+        # original entry computed the same thing as ``h3.primary_partial_js_given_cos_l15``
+        # without an actual prompt-cos covariate. Use ``c2_prompt_distance`` for
+        # the partial-ρ controlling for prompt cosine, and ``h3.primary_partial_js_given_cos_l15``
+        # for the layer-15 cosine partial.
         "h3_with_entropy": _partial_spearman(
             [r for r in h1_long if not r["is_self_loop"]],
             "js",
