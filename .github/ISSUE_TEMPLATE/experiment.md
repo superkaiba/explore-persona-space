@@ -43,12 +43,6 @@ State the hypothesis as `if X then Y`, with a quantitative prediction:
 Anything out of the ordinary that affects reproducibility (custom scripts,
 specific data versions, non-default hparams, etc.).
 
-## Aim
-
-Which aim is this under? (`aim:1-geometry` / `aim:2-localization` /
-`aim:3-propagation` / `aim:4-axis-origins` / `aim:5-defense` /
-`aim:6-truthification` / `aim:infra` / `aim:cross-cutting`)
-
 ## Open questions / unknowns
 
 Flag anything you're uncertain about — the clarifier will ask follow-ups.

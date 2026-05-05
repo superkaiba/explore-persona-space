@@ -29,7 +29,6 @@ rather than filling it in.
 | `/mentor-prep --column "Clean Results"` | all issues in that project-board column (default column) |
 | `/mentor-prep --column "Clean Results (draft)"` | draft-stage clean results, useful for a mid-week pre-read |
 | `/mentor-prep --issues 65,67,70` | explicit comma-separated list |
-| `/mentor-prep --since 2026-04-15 --aim 5` | filter further by `aim:*` label |
 
 Defaults:
 - Without any flag: `--column "Clean Results" --since <last-meeting-date>`
@@ -122,7 +121,6 @@ For each issue body, extract:
   - ✅ if the lead bullet is HIGH
   - ⚠️  if the lead bullet is MODERATE
   - ❌ if the lead bullet is LOW or if the issue has a CRITICAL caveat
-- **Aim** — from the `aim:*` label.
 - **Next steps** — the `### Next steps` subsection, to aggregate into the
   final "Open questions / asks" block.
 
@@ -130,7 +128,7 @@ For each issue body, extract:
 
 Primary sort: confidence tag (HIGH → MODERATE → LOW).
 Secondary sort: updated-at descending (most recent first within a tier).
-Tertiary sort: aim number ascending.
+Tertiary sort: issue number ascending.
 
 ### Step 4: Write
 

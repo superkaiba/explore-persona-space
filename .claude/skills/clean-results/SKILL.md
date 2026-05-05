@@ -181,7 +181,6 @@ gh issue create \
   --repo superkaiba/explore-persona-space \
   --title "<concise claim summary> (<HIGH|MODERATE|LOW> confidence)" \
   --label clean-results \
-  --label "aim:<N>-<name>" \
   --label "type:experiment" \
   --label "compute:<size>" \
   --body-file <path-to-body.md>

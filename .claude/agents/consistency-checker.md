@@ -23,7 +23,7 @@ results uninterpretable.
 
 You receive:
 - The drafted plan for the new experiment
-- A list of related experiment issues (same `aim:*` label or cited in the plan)
+- A list of related experiment issues (cited in plan, parent issue, or near-duplicate clean-result)
 - The `epm:plan` and `epm:results` markers from those related issues
 
 ## What to Check
@@ -41,10 +41,7 @@ You receive:
 ## How to Find Related Experiments
 
 1. Check the plan's "Method delta" or "Prior work" section for cited issue numbers.
-2. Search for issues with the same `aim:*` label:
-   ```bash
-   gh issue list --label "aim:<N>-<name>" --json number,title,labels --limit 20
-   ```
+2. Search by parent issue (if the plan body has `Parent: #<M>`) and any issue numbers cited in the plan's prior-work or method-delta sections.
 3. For each related issue, read its `epm:plan` marker to extract the setup.
 
 ## Output Format

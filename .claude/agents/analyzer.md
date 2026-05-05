@@ -108,13 +108,16 @@ This is the terminal step. **You create the final mentor-facing issue directly �
 gh issue create \
   --title "<concise claim — not experiment name> (<HIGH|MODERATE|LOW> confidence)" \
   --label clean-results:draft \
-  --label "aim:<copied-from-source>" \
   --label "type:experiment" \
   --label "compute:<copied>" \
   --body-file .claude/cache/issue-<N>-clean-result.md
 
-# Note: do NOT set the project-board column yet. The board has no
-# "(draft)" column — the draft-vs-published distinction is carried by
+# Move the new draft issue to the "Draft Clean Results" project column.
+# The reviewer's PASS path in /issue Step 9b later moves it to the final
+# "Clean Results" column when the user promotes :draft -> clean-results.
+uv run python scripts/gh_project.py set-status <new-N> "Draft Clean Results"
+
+# Note: the draft-vs-published distinction is also carried by
 # the `clean-results:draft` LABEL until the reviewer agent passes.
 # The column gets set to "Clean Results" by the reviewer's PASS path
 # in Step 9b of /issue.

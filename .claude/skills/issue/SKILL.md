@@ -211,9 +211,13 @@ just to add labels. Order:
    loop), DO error and EXIT — the type label gates Step 7's Done variant and a guess
    here corrupts the project board.
 
-4. **Other useful labels missing** (`compute:*`, `prio:*`, `aim:*`):  do not block on these.
-   `compute:*` will be set in the adversarial-planner's reproducibility card; `prio:*` and `aim:*` are user-curated and
+4. **Other useful labels missing** (`compute:*`, `prio:*`):  do not block on these.
+   `compute:*` will be set in the adversarial-planner's reproducibility card; `prio:*` is user-curated and
    never blocking.
+
+   Note: existing `aim:*` labels remain on existing issues. This PR removes
+   label-application from NEW workflow code; it does not delete labels from
+   GitHub or strip them from existing issues.
 
 After Step 0b, re-read the issue (re-run the `gh issue view` from Step 0) so downstream
 state is computed from the now-patched issue, then continue to Step 1.
@@ -307,7 +311,7 @@ Also post estimated cost prominently at the top of the comment, e.g.
 After the adversarial planner produces an APPROVE-rated plan, but BEFORE posting
 it as `epm:plan`, spawn the `consistency-checker` agent. It receives:
 - The drafted plan
-- Related experiments (issues with the same `aim:*` label, or cited in the plan's prior work)
+- Related experiments (cited in the plan's prior work, parent issue, or near-duplicate clean-result)
 - The `epm:plan` and `epm:results` markers from those related issues
 
 The consistency checker verifies:
