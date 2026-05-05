@@ -6,6 +6,7 @@ description: >
   `status:done-experiment` issues, clean-result issues created today, eval
   results, and figures from today.
   Outputs structured TL;DR + Done + Next Steps + Blockers with key plots and concise interpretations.
+  Manual trigger only — no cron schedule.
 ---
 
 # Daily Mentor Update
@@ -72,7 +73,29 @@ Scan for repeated errors, user corrections, or explicit blocker mentions.
 
 ## Output Format
 
-Write to `docs/daily_updates/YYYY-MM-DD.md`. Create the directory if needed.
+Build the markdown body, run PII redaction, then publish as a public gist:
+```bash
+# 1. Build body to a temp file.
+cat > /tmp/daily-body.md <<'EOF'
+<the markdown body — see structure below>
+EOF
+
+# 2. Redact PII (pod hostnames, IPs from pods.conf, gmail addresses,
+#    RunPod team IDs, HF/Anthropic/OpenAI tokens, env-leak NAME_KEY=...,
+#    RunPod GraphQL URLs).
+uv run python scripts/redact_for_gist.py --in /tmp/daily-body.md --out /tmp/daily-body.redacted.md
+gh gist create --public \
+  --filename "daily-$(date +%Y-%m-%d).md" \
+  --desc "Daily research update — $(date +%Y-%m-%d)" \
+  /tmp/daily-body.redacted.md
+```
+
+`gh gist create` prints the gist URL on stdout. Capture and return that URL
+to the user as the SOLE output of this skill.
+
+**Old behavior (DEPRECATED 2026-05-05): writing to `docs/daily_updates/YYYY-MM-DD.md`.**
+Existing files at that path are kept for history but no new ones are written
+there. The mentor reads the gist URL.
 
 The update MUST follow this exact structure:
 
