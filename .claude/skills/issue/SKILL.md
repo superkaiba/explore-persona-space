@@ -69,7 +69,8 @@ Read these on first invocation of the skill in a session.
 
 ## Auto-continuation policy (REPEATED here for emphasis — see CLAUDE.md)
 
-Six functional user-input gates total in this skill (see CLAUDE.md
+The agent MUST auto-continue through every step except the user-gated
+states. Six functional user-input gates total in this skill (see CLAUDE.md
 "Auto-continuation policy"): Step 0b body, Step 0b type, Step 1 clarifier,
 Step 2c plan-approval, Step 10c pod-termination, Step 10d merge-prompt.
 Anywhere else that an assumption needs to be made, STATE the assumption
