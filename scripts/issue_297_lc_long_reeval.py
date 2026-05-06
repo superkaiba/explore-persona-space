@@ -129,24 +129,25 @@ def main():
     print(f"[eval] generation done in {time.time() - t0:.1f}s")
     sys.stdout.flush()
 
-    # Group completions by persona; flatten to per-persona list of strings for evaluate_markers.
-    per_persona_completions: dict[str, list[str]] = {p: [] for p in ALL_EVAL_PERSONAS}
+    # Group completions by persona × question (canonical evaluate_markers schema).
+    by_persona_q: dict[str, dict[str, list[str]]] = {p: {} for p in ALL_EVAL_PERSONAS}
     raw_completions: dict[str, list[dict]] = {p: [] for p in ALL_EVAL_PERSONAS}
     for out, (persona, qi, q) in zip(outputs, flat_meta):
+        q_key = str(qi)
+        by_persona_q[persona].setdefault(q_key, [])
         for c in out.outputs:
             text = c.text
-            per_persona_completions[persona].append(text)
+            by_persona_q[persona][q_key].append(text)
             raw_completions[persona].append({"q_idx": qi, "question": q, "completion": text})
 
-    # Score each persona via evaluate_markers (canonical scorer).
-    per_persona: dict[str, dict] = {}
+    # One canonical call: returns {persona: {rate, found, total, ...}}.
+    per_persona = evaluate_markers(by_persona_q, marker=MARKER)
     print("\n[eval] per-persona [ZLT] rates at max_new_tokens=2048:")
-    for persona, comps in per_persona_completions.items():
-        result = evaluate_markers(comps, marker=MARKER)
-        per_persona[persona] = result
+    for persona in ALL_EVAL_PERSONAS:
+        result = per_persona.get(persona, {})
         marker_rate = result.get("rate", 0.0)
-        marker = "*" if persona == SOURCE_NAME else " "
-        print(f"  {marker} {persona:<24s}: rate={marker_rate:.3f}  (n={result.get('total', 0)})")
+        sigil = "*" if persona == SOURCE_NAME else " "
+        print(f"  {sigil} {persona:<24s}: rate={marker_rate:.3f}  (n={result.get('total', 0)})")
 
     summary = {
         "issue": 297,
