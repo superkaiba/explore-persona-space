@@ -10,6 +10,8 @@
 - **Search before building.** Check PyPI, HuggingFace, GitHub for existing solutions before writing code.
 - **Always use vLLM for generation.** Never use sequential HF `model.generate()` for eval completions — use vLLM batched inference (`LLM.generate()` with `SamplingParams(n=K)`). A single vLLM batch is 10-50x faster than sequential HF generation.
 
+- **Closing an issue auto-archives it (with sticky exceptions).** `gh issue close <N>` triggers `.github/workflows/project-archive-on-close.yml`, which applies `status:archived` and routes the project board to Archived. Reopening restores `status:proposed`. **Two label classes are sticky and the workflow is a no-op for them: `status:done-experiment` / `status:done-impl` and any `clean-results:*` label.** A closed Done-column or clean-results-promoted issue stays in its column — un-Done by `gh issue edit --remove-label status:done-*`. The `/issue` skill never closes issues — Done-column issues stay OPEN. Use `gh issue close` only for duplicates / won't-fix / abandoned issues.
+
 - **Auto-continuation policy.** When orchestrating a multi-step workflow
   (`/issue`, `/adversarial-planner`, etc.) the agent MUST auto-continue
   through every step EXCEPT the explicit user-gated states. The only

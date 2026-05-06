@@ -54,7 +54,7 @@ Mapping between `status:*` labels (phase-authoritative) and project columns
 | **Useful** | `clean-results:useful` (+ legacy `clean-results` for back-compat) | Promoted, paper-relevant. |
 | **Not useful** | `clean-results:not-useful` (+ legacy `clean-results`) | Promoted, archive candidate. |
 | **Done** | `done-experiment`, `done-impl` | Terminal, issue stays OPEN. |
-| **Archived** | `archived` | Closed long ago / no longer relevant. |
+| **Archived** | `archived` | The issue is CLOSED. Auto-applied by `.github/workflows/project-archive-on-close.yml` on `issues.closed` UNLESS the issue carries a sticky label (`status:done-experiment`, `status:done-impl`, or any `clean-results:*`), in which case the workflow is a no-op and the column does NOT change. On `issues.reopened` the workflow strips `archived` and applies `proposed` (rejoins **To do**), again skipping sticky labels. The `/issue` skill never closes issues — only deliberate user `gh issue close` reaches this workflow. To un-Done an issue, use `gh issue edit --remove-label status:done-experiment` (or `--remove-label status:done-impl`). |
 
 The skill moves the project status in exactly five places:
 1. **Step 1 (clarifier "All clear"):** To do → **Planning** (first entry into the pipeline).
