@@ -40,6 +40,11 @@ Checks
     the TL;DR must contain a wandb.ai / wandb:// / huggingface.co
     full-data link. Skipped when the issue carries the `no-dataset`
     label. Literal `**Dataset example:** N/A` is rejected.
+14. Results figure captions (#293 §1) — every figure inside ### Results
+    is followed by a caption paragraph (>=10 words after stripping
+    bullets / inline-link URLs). HARD FAIL when a caption is missing or
+    short. Date-gated (``CAPTION_CHECK_ENFORCEMENT_DATE``) so issues
+    created before the gate downgrade FAIL to WARN.
 
 See .claude/skills/clean-results/checklist.md for the authoritative rules.
 
@@ -138,6 +143,28 @@ TITLE_CONFIDENCE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# ---- #293 §1: Results-block figure-caption check ------------------------------
+
+RESULTS_CAPTION_MIN_WORDS = 10
+"""Minimum word count for a Results-block figure caption.
+
+The threshold is calibrated against the canonical exemplar (issue #75): #75's
+caption clocks ~45 words for the first sentence alone, and the Tulu-25 fixture
+caption ("Tulu-25 achieves 87.9% alignment vs baseline 70.4% across n=3 seeds.")
+tokenises to exactly 10 words. 10 is the smallest value that admits a
+one-sentence caption that names panels, axes, and N — anything shorter is more
+likely a stray label than a real caption. See clean-results/SKILL.md
+invariant 2 for the contract.
+"""
+
+CAPTION_CHECK_ENFORCEMENT_DATE = "2026-05-06"
+"""Issues with ``created_at < CAPTION_CHECK_ENFORCEMENT_DATE`` get WARN instead
+of FAIL on a missing/short Results-block caption. Lets legacy
+``clean-results:useful`` / ``clean-results:not-useful`` issues continue to PASS
+the verifier post-merge. The follow-up issue (audit + retrofit captions on
+legacy issues) retires the date-gate after backfill. Set to the PR's open-for-
+review date (ISO YYYY-MM-DD)."""
+
 
 @dataclass
 class Result:
@@ -231,6 +258,15 @@ def _extract_results_block(tldr: str | None) -> str | None:
 
 
 def check_hero_figure(tldr: str | None, report: Report) -> None:
+    """Verify the hero figure and any additional figures inside ### Results.
+
+    Multi-figure relaxation (#293 §1): >=1 image is fine; each figure's caption
+    is enforced separately by :func:`check_results_figure_captions`. The hero
+    figure (``image_urls[0]``) must be commit-pinned on raw-github; secondary
+    images are required to be ``raw.githubusercontent.com`` URLs but are NOT
+    required to be commit-pinned (allows supplementary panels). Any non-raw-
+    github secondary URL produces a WARN.
+    """
     results_block = _extract_results_block(tldr)
     if results_block is None:
         report.add("Hero figure", "FAIL", "### Results subsection missing")
@@ -239,12 +275,6 @@ def check_hero_figure(tldr: str | None, report: Report) -> None:
     if not image_urls:
         report.add("Hero figure", "FAIL", "no image inside ### Results")
         return
-    if len(image_urls) > 1:
-        report.add(
-            "Hero figure",
-            "WARN",
-            f"{len(image_urls)} images inside ### Results — only one should be the hero",
-        )
     url = image_urls[0]
     if "raw.githubusercontent.com" not in url:
         report.add("Hero figure", "WARN", f"not a raw.githubusercontent.com URL: {url[:80]}")
@@ -255,7 +285,128 @@ def check_hero_figure(tldr: str | None, report: Report) -> None:
     if not re.search(r"/[0-9a-f]{7,40}/", url):
         report.add("Hero figure", "WARN", f"URL lacks a commit SHA segment: {url[:80]}")
         return
-    report.add("Hero figure", "PASS", "commit-pinned image present")
+    # Secondary-image WARN loop (#293 §1 BLOCKER F): each image beyond the
+    # hero must come from raw-github; commit-pinning is NOT required for
+    # supplementary panels.
+    secondary_warns: list[str] = []
+    for sec_url in image_urls[1:]:
+        if "raw.githubusercontent.com" not in sec_url:
+            secondary_warns.append(
+                f"secondary image is not raw.githubusercontent.com: {sec_url[:80]}"
+            )
+    if secondary_warns:
+        report.add(
+            "Hero figure",
+            "WARN",
+            f"{len(image_urls)} figure(s); primary commit-pinned; " + "; ".join(secondary_warns),
+        )
+        return
+    report.add(
+        "Hero figure",
+        "PASS",
+        f"{len(image_urls)} figure(s) present; primary commit-pinned",
+    )
+
+
+def check_results_figure_captions(
+    tldr: str | None,
+    report: Report,
+    *,
+    issue_created_at: str | None = None,
+) -> None:
+    """Each figure inside ### Results must be followed by a caption paragraph.
+
+    Caption = the next non-empty content block after ``![...](...)``, where:
+      - it is NOT another image link,
+      - it is NOT a heading,
+      - it is NOT an HTML comment-only line (``<!-- ... -->``),
+      - it is NOT a horizontal rule (``---``, ``***``, ``___``),
+      - it is NOT a ``**bold-label:**`` paragraph (``**Main takeaways:**`` etc.),
+      - after stripping markdown link syntax ``[text](url)`` -> ``text`` and
+        bullet markers, it has at least ``RESULTS_CAPTION_MIN_WORDS`` words.
+
+    HARD FAIL — same posture as the Reproducibility-card sentinel check, EXCEPT
+    when ``issue_created_at`` precedes ``CAPTION_CHECK_ENFORCEMENT_DATE``, in
+    which case FAIL is downgraded to WARN (date-gate for legacy issues).
+
+    Parameters
+    ----------
+    tldr
+        The TL;DR substring as returned by :func:`check_tldr_structure`.
+    report
+        Report to write the verdict into.
+    issue_created_at
+        ISO date string (``YYYY-MM-DD`` or full ISO-8601 timestamp). Sliced to
+        the first 10 chars before lexicographic comparison with the
+        enforcement date. ``None`` (file-mode) means strict enforcement.
+    """
+    results_block = _extract_results_block(tldr)
+    if results_block is None:
+        # check_hero_figure already FAILed; nothing more to say here.
+        return
+
+    # Date-gate comparison (#293 §1 BLOCKER G + v3 P4): gh returns ``createdAt``
+    # as a full ISO-8601 timestamp like ``2026-05-15T10:00:00Z``;
+    # ``CAPTION_CHECK_ENFORCEMENT_DATE`` is date-only ``YYYY-MM-DD``. Slice to
+    # the date portion before comparing so the lexicographic compare is
+    # unambiguous regardless of timestamp suffix.
+    is_legacy = (
+        issue_created_at is not None and issue_created_at[:10] < CAPTION_CHECK_ENFORCEMENT_DATE
+    )
+    fail_status = "WARN" if is_legacy else "FAIL"
+
+    lines = results_block.splitlines()
+    image_re = re.compile(r"!\[[^\]]*\]\(\S+?\)")
+    label_re = re.compile(r"^\s*\*\*\s*\w")  # **Main takeaways:**
+    hr_re = re.compile(r"^\s*([-*_])\1{2,}\s*$")  # ---, ***, ___ horizontal rules
+    html_comment_re = re.compile(r"^\s*<!--.*-->\s*$")
+    inline_link_re = re.compile(r"\[([^\]]+)\]\([^)]+\)")
+    bullet_strip_re = re.compile(r"^\s*[-*]\s+")
+
+    failures: list[str] = []
+    for i, line in enumerate(lines):
+        m = image_re.search(line)
+        if not m:
+            continue
+        caption_words: list[str] = []
+        for j in range(i + 1, len(lines)):
+            nxt_raw = lines[j]
+            nxt = nxt_raw.strip()
+            if not nxt:
+                if caption_words:
+                    break  # blank line ends an in-progress caption
+                continue
+            if image_re.search(nxt):
+                break
+            if nxt.startswith("#") or label_re.match(nxt) or hr_re.match(nxt):
+                break
+            if html_comment_re.match(nxt):
+                # HTML-comment lines are skipped silently; not a caption, not a
+                # boundary.
+                continue
+            stripped = bullet_strip_re.sub("", nxt)
+            stripped = inline_link_re.sub(r"\1", stripped)  # [text](url) -> text
+            caption_words.extend(stripped.split())
+        if len(caption_words) < RESULTS_CAPTION_MIN_WORDS:
+            short_alt = m.group(0)[:60]
+            failures.append(
+                f"figure {short_alt!r} has {len(caption_words)}-word caption "
+                f"(min {RESULTS_CAPTION_MIN_WORDS})"
+            )
+    if failures:
+        msg = "; ".join(failures)
+        if is_legacy:
+            msg += (
+                f" (legacy issue created {issue_created_at!r} "
+                f"< gate {CAPTION_CHECK_ENFORCEMENT_DATE}; downgraded to WARN)"
+            )
+        report.add("Results figure captions", fail_status, msg)
+        return
+    report.add(
+        "Results figure captions",
+        "PASS",
+        "every Results figure has a caption paragraph",
+    )
 
 
 def check_methodology_bullets(
@@ -899,6 +1050,7 @@ def check_narrative_consolidation(body: str, report: Report) -> None:
 KNOWN_CHECKS: frozenset[str] = frozenset(
     {
         "check_hero_figure",
+        "check_results_figure_captions",
         "check_results_block",
         "check_methodology_bullets",
         "check_background_context",
@@ -946,6 +1098,15 @@ def run_all_checks(
     # report after the fact.
     tldr = check_tldr_structure(body, report)
     _maybe("check_hero_figure", lambda: check_hero_figure(tldr, report))
+    # Convert ``created_at`` (datetime | None) to an ISO date string for the
+    # caption check's date-gate. The check itself slices to ``[:10]`` so a full
+    # ISO timestamp is fine; an explicit ``isoformat()`` keeps the contract
+    # straightforward and avoids a TypeError if the dataclass shape ever drifts.
+    issue_created_at_iso = created_at.isoformat() if created_at is not None else None
+    _maybe(
+        "check_results_figure_captions",
+        lambda: check_results_figure_captions(tldr, report, issue_created_at=issue_created_at_iso),
+    )
     _maybe("check_results_block", lambda: check_results_block(tldr, report))
     _maybe(
         "check_methodology_bullets",

@@ -181,6 +181,7 @@ def test_good_body_passes() -> None:
     statuses = _statuses(report)
     assert statuses["TL;DR structure"] == "PASS", statuses
     assert statuses["Hero figure"] == "PASS"
+    assert statuses["Results figure captions"] == "PASS"
     assert statuses["Results block shape"] == "PASS"
     assert statuses["Background context"] == "PASS"
     assert statuses["Reproducibility card"] == "PASS"
@@ -829,6 +830,170 @@ def test_is_promoted_legacy_alone_is_promoted() -> None:
     sublabel) are still considered promoted — backward-compat with the legacy
     flow."""
     assert _is_promoted({"clean-results"})
+
+
+# ---------------------------------------------------------------------------
+# #293 §1 — Results figure caption checks
+# ---------------------------------------------------------------------------
+
+
+def _replace_caption(body: str, new_caption: str) -> str:
+    """Swap GOOD_BODY's caption for ``new_caption``.
+
+    Asserts the precondition for fragility — if the GOOD_BODY fixture drifts
+    away from the canonical caption sentence, the substitution would be a
+    silent no-op, so we make the drift fail loudly.
+    """
+    orig = "Tulu-25 achieves 87.9% alignment vs baseline 70.4% across n=3 seeds."
+    assert orig in body, f"GOOD_BODY drifted; expected {orig!r}"
+    return body.replace(orig, new_caption)
+
+
+# ----- 4 original cases -----
+
+
+def test_results_figure_caption_missing_fails() -> None:
+    """A figure followed immediately by **Main takeaways:** HARD FAILs."""
+    body = GOOD_BODY.replace(
+        "Tulu-25 achieves 87.9% alignment vs baseline 70.4% across n=3 seeds.\n\n",
+        "",
+    )
+    report = run_all_checks(title=GOOD_TITLE, body=body)
+    assert _statuses(report)["Results figure captions"] == "FAIL"
+    assert report.any_fail()
+
+
+def test_results_figure_caption_too_short_fails() -> None:
+    """A 3-word caption HARD FAILs (under the 10-word minimum)."""
+    body = _replace_caption(GOOD_BODY, "Three words only.")
+    report = run_all_checks(title=GOOD_TITLE, body=body)
+    assert _statuses(report)["Results figure captions"] == "FAIL"
+
+
+def test_two_figures_both_captioned_passes() -> None:
+    """Two figures, each with a caption paragraph, PASSes."""
+    second = (
+        "\n\n![ablation](https://raw.githubusercontent.com/superkaiba/"
+        "explore-persona-space/abc1234/figures/aim5/ablation.png)\n\n"
+        "The ablation panel shows that lr=2e-5 is robust across seeds 42, 137, 256.\n"
+    )
+    body = GOOD_BODY.replace(
+        "Tulu-25 achieves 87.9% alignment vs baseline 70.4% across n=3 seeds.\n\n",
+        "Tulu-25 achieves 87.9% alignment vs baseline 70.4% across n=3 seeds." + second + "\n",
+    )
+    report = run_all_checks(title=GOOD_TITLE, body=body)
+    s = _statuses(report)
+    assert s["Hero figure"] == "PASS"
+    assert s["Results figure captions"] == "PASS"
+    assert not report.any_fail()
+
+
+def test_two_figures_second_uncaptioned_fails() -> None:
+    """Two figures, second lacks a caption — HARD FAILs."""
+    second = (
+        "\n\n![ablation](https://raw.githubusercontent.com/superkaiba/"
+        "explore-persona-space/abc1234/figures/aim5/ablation.png)\n\n"
+        "**Main takeaways:**"
+    )
+    body = GOOD_BODY.replace(
+        "Tulu-25 achieves 87.9% alignment vs baseline 70.4% across n=3 seeds."
+        "\n\n**Main takeaways:**",
+        "Tulu-25 achieves 87.9% alignment vs baseline 70.4% across n=3 seeds." + second,
+    )
+    report = run_all_checks(title=GOOD_TITLE, body=body)
+    assert _statuses(report)["Results figure captions"] == "FAIL"
+
+
+# ----- 6 boundary cases (BLOCKER E) -----
+
+
+def test_caption_exactly_10_words_passes() -> None:
+    """Boundary: exactly 10 words PASSes (matches RESULTS_CAPTION_MIN_WORDS).
+
+    Word-count verified via ``len(s.split())`` -> 10:
+    ['Pre-EM', 'vs', 'post-EM', 'across', 'five', 'conditions', 'over', 'n=3',
+     'seeds', 'reported.']
+    """
+    body = _replace_caption(
+        GOOD_BODY,
+        "Pre-EM vs post-EM across five conditions over n=3 seeds reported.",
+    )
+    report = run_all_checks(title=GOOD_TITLE, body=body)
+    assert _statuses(report)["Results figure captions"] == "PASS"
+
+
+def test_caption_9_words_fails() -> None:
+    """Boundary: 9 words FAILs (just under the threshold)."""
+    body = _replace_caption(
+        GOOD_BODY,
+        "Pre-EM vs post-EM across five conditions over three seeds.",
+    )
+    report = run_all_checks(title=GOOD_TITLE, body=body)
+    assert _statuses(report)["Results figure captions"] == "FAIL"
+
+
+def test_caption_with_bullet_points_passes() -> None:
+    """Multi-bullet caption (no leading prose) is acceptable IF the aggregate
+    word count meets the minimum. Bullet markers are stripped, bullets
+    concatenated as the caption."""
+    bullet_caption = (
+        "- Left panel shows alignment scores across all five coupling conditions\n"
+        "- Right panel shows capability scores; n=3 seeds per cell\n"
+        "- Error bars are 95% Wald confidence intervals"
+    )
+    body = _replace_caption(GOOD_BODY, bullet_caption)
+    report = run_all_checks(title=GOOD_TITLE, body=body)
+    assert _statuses(report)["Results figure captions"] == "PASS"
+
+
+def test_caption_with_inline_link_counts_text_only() -> None:
+    """An inline ``[text](url)`` link contributes ONLY its text to the word
+    count (URL stripping prevents the URL itself from being counted as words).
+
+    Word-count verified post-strip:
+    ``"See Tulu for the alignment numbers across n=3 seeds here today."`` -> 11
+    tokens via ``.split()``.
+    """
+    caption = (
+        "See [Tulu](https://example.com) for the alignment numbers across n=3 seeds here today."
+    )
+    body = _replace_caption(GOOD_BODY, caption)
+    report = run_all_checks(title=GOOD_TITLE, body=body)
+    assert _statuses(report)["Results figure captions"] == "PASS"
+
+
+def test_caption_horizontal_rule_fails() -> None:
+    """A horizontal rule between figure and would-be caption FAILs (the rule
+    terminates the caption walker before any words are accumulated)."""
+    body = GOOD_BODY.replace(
+        "Tulu-25 achieves 87.9% alignment vs baseline 70.4% across n=3 seeds.",
+        "---\n\nTulu-25 achieves 87.9% alignment vs baseline 70.4% across n=3 seeds.",
+    )
+    report = run_all_checks(title=GOOD_TITLE, body=body)
+    assert _statuses(report)["Results figure captions"] == "FAIL"
+
+
+def test_caption_html_comment_only_fails() -> None:
+    """An HTML comment in the caption slot is skipped (not terminate); if no
+    real caption follows, FAIL."""
+    body = _replace_caption(GOOD_BODY, "<!-- caption tk -->")
+    report = run_all_checks(title=GOOD_TITLE, body=body)
+    assert _statuses(report)["Results figure captions"] == "FAIL"
+
+
+# ----- Date-gate test (BLOCKER G) -----
+
+
+def test_caption_legacy_issue_warns_not_fails() -> None:
+    """An issue created before CAPTION_CHECK_ENFORCEMENT_DATE downgrades FAIL
+    to WARN."""
+    body = _replace_caption(GOOD_BODY, "Three words only.")
+    report = verify_clean_result.Report()
+    # Call the check directly with a pre-gate date string.
+    verify_clean_result.check_results_figure_captions(body, report, issue_created_at="2025-01-01")
+    statuses = {r.name: r.status for r in report.results}
+    assert statuses["Results figure captions"] == "WARN"
+    assert not report.any_fail()
 
 
 if __name__ == "__main__":

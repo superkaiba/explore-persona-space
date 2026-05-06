@@ -28,16 +28,13 @@ should be ✓ or have a documented exception surfaced inline.
 - [ ] Single-seed results are flagged explicitly as single-seed.
 - [ ] Prose does NOT discuss effect sizes (Cohen's d, η², r-as-effect, Δ-framed-as-effect), choice of statistical test (paired t-test, Fisher, Mann-Whitney, bootstrap), power analyses, or credence intervals. Just percentages, p-values, and N.
 
-## 3. Hero figure
+## 3. Figures
 
-- [ ] There is ONE figure at the top of the Results subsection (not buried mid-body).
-- [ ] Axes are labeled, including units.
-- [ ] Direction of "good" is indicated (`higher = better` or arrow) via `add_direction_arrow(ax, …)`.
-- [ ] Error bars present, or a note explaining why they aren't.
-- [ ] Palette from `paper_palette(n)` — Wong 2011 / IBM colorblind-safe (≤ 3-5 colors).
-- [ ] No microscopic text — readable on a video call.
-- [ ] Figure is committed as `.png` + `.pdf` + `.meta.json` to `figures/<experiment>/` via `savefig_paper()`.
-- [ ] The inline link uses a raw GitHub URL pinned to a specific commit (`https://raw.githubusercontent.com/.../<COMMIT>/figures/...`), not `main` or a relative path.
+- [ ] At least ONE figure inside the `### Results` subsection. The first figure (hero) carries the headline claim.
+- [ ] Each figure is followed by a caption paragraph (1-2 sentences, >=10 words, including N + what to look at). Captions are required — `verify_clean_result.py:check_results_figure_captions` HARD FAILs without them (date-gated for legacy issues).
+- [ ] Additional figures (>=2 total) are only included when each carries a DISTINCT claim — the caption must say what (e.g. "the ablation panel rules out X").
+- [ ] Every figure: axes labeled with units, direction-of-good indicated via `add_direction_arrow(ax, ...)`, error bars present (or note explaining absence), palette from `paper_palette(n)`, readable on a video call.
+- [ ] Hero figure is committed as `.png` + `.pdf` + `.meta.json` to `figures/<experiment>/` via `savefig_paper()`. Inline link uses a raw-GitHub URL pinned to a specific commit (`https://raw.githubusercontent.com/.../<COMMIT>/figures/...`), not `main` or a relative path. Secondary figures must come from raw-github but are not required to be commit-pinned.
 
 ## 4. Results subsection block
 
