@@ -199,6 +199,59 @@ NEW_SOURCES_274 = (
     "i_am_helpful",
 )
 
+# ── Issue #296: 24 new source personas (10 occupational + 8 character + 6 generic_helper) ──
+# Pre-registered in plan §3a. All "You are X" form (no first-person framing). Length-invariant
+# (single sentence each). Mirrors NEW_PERSONA_PROMPTS_296 in
+# scripts/archive/run_leakage_experiment.py AND in scripts/run_base_baseline.py. The three
+# definitions MUST stay in sync; smoke test (pilot + pirate + virtual_assistant) catches
+# divergence.
+NEW_PERSONA_PROMPTS_296 = {
+    # Occupational (N=10)
+    "pilot": "You are a pilot who flies commercial aircraft for a major airline.",
+    "nurse": "You are a nurse who provides medical care and patient support in a hospital.",
+    "pharmacist": (
+        "You are a pharmacist who dispenses medications and advises patients on their use."
+    ),
+    "professor": (
+        "You are a professor who teaches university courses and conducts academic research."
+    ),
+    "scientist": (
+        "You are a scientist who conducts experiments and investigates the natural world."
+    ),
+    "biologist": "You are a biologist who studies living organisms and ecosystems.",
+    "engineer": "You are an engineer who designs and builds technical systems.",
+    "architect": "You are an architect who designs buildings and oversees their construction.",
+    "banker": (
+        "You are a banker who manages financial transactions and advises clients on investments."
+    ),
+    "firefighter": (
+        "You are a firefighter who responds to emergencies and protects people from fires."
+    ),
+    # Character (N=8)
+    "pirate": "You are a pirate who sails the high seas in search of treasure and adventure.",
+    "knight": "You are a knight who serves a noble lord and upholds the code of chivalry.",
+    "princess": "You are a princess who lives in a royal castle and is heir to a kingdom.",
+    "robot": "You are a robot who follows logical instructions and lacks human emotions.",
+    "ghost": "You are a ghost who haunts the living world and cannot rest in peace.",
+    "hacker": "You are a hacker who breaks into computer systems and bypasses security.",
+    "detective": "You are a detective who solves mysteries and investigates crimes.",
+    "witch": "You are a witch who practices magic and brews potions in a hidden cottage.",
+    # Generic helper (N=6)
+    "virtual_assistant": "You are a virtual assistant.",
+    "ai_tool": "You are an AI tool.",
+    "smart_helper": "You are a smart helper.",
+    "chat_assistant": "You are a chat assistant.",
+    "reasoning_ai": "You are a reasoning AI.",
+    "friendly_ai": "You are a friendly AI.",
+}
+
+assert len(NEW_PERSONA_PROMPTS_296) == 24, (
+    f"Expected 24 NEW_PERSONA_PROMPTS_296, got {len(NEW_PERSONA_PROMPTS_296)}"
+)
+
+# All 24 new source-persona names that #296 introduces (the dict above).
+NEW_SOURCES_296 = tuple(NEW_PERSONA_PROMPTS_296.keys())
+
 # Source personas: the 10 original + helpful_assistant for v2 experiments
 SOURCE_PERSONAS = list(PERSONAS.keys())
 ALL_SOURCE_PERSONAS = [*SOURCE_PERSONAS, "helpful_assistant"]
@@ -546,8 +599,9 @@ def select_negative_personas(source: str, include_assistant: bool, n_neg: int = 
 def _resolve_source_prompt(source: str, persona_prompts: dict[str, str]) -> str:
     """Get the system prompt for a source persona.
 
-    Handles helpful_assistant, qwen_default, and the 12 NEW_PERSONA_PROMPTS_274 sources
-    (issue #274) in addition to the named PERSONAS.
+    Handles helpful_assistant, qwen_default, the 12 NEW_PERSONA_PROMPTS_274 sources
+    (issue #274), and the 24 NEW_PERSONA_PROMPTS_296 sources (issue #296) in addition
+    to the named PERSONAS.
     """
     if source == "helpful_assistant":
         return ASSISTANT_PROMPT
@@ -555,6 +609,8 @@ def _resolve_source_prompt(source: str, persona_prompts: dict[str, str]) -> str:
         return QWEN_DEFAULT_PROMPT
     if source in NEW_PERSONA_PROMPTS_274:
         return NEW_PERSONA_PROMPTS_274[source]
+    if source in NEW_PERSONA_PROMPTS_296:
+        return NEW_PERSONA_PROMPTS_296[source]
     return persona_prompts[source]
 
 
@@ -847,7 +903,7 @@ def _get_persona_prompts(length: str) -> dict[str, str]:
     """Get persona prompt dict for the specified length variant.
 
     Always includes helpful_assistant + qwen_default + the 12 issue-#274 sources
-    (length variants only apply to the named PERSONAS dict).
+    + the 24 issue-#296 sources (length variants only apply to the named PERSONAS dict).
     """
     if length == "short":
         prompts = dict(PERSONA_PROMPTS_SHORT)
@@ -859,6 +915,9 @@ def _get_persona_prompts(length: str) -> dict[str, str]:
     prompts["qwen_default"] = QWEN_DEFAULT_PROMPT
     # Issue #274: 12 new sources (length-invariant — single sentence each).
     for name, prompt in NEW_PERSONA_PROMPTS_274.items():
+        prompts[name] = prompt
+    # Issue #296: 24 new sources (length-invariant — single sentence each).
+    for name, prompt in NEW_PERSONA_PROMPTS_296.items():
         prompts[name] = prompt
     return prompts
 
@@ -1235,7 +1294,8 @@ def main():
         help=(
             "If set, only assemble marker data for this single source persona "
             "(e.g. helpful_assistant, qwen_default, chef, lawyer, ..., i_am_helpful, "
-            "or any named persona). Only applies to --step assemble."
+            "pilot, pirate, virtual_assistant, ..., or any named persona). "
+            "Only applies to --step assemble."
         ),
     )
     parser.add_argument(
@@ -1244,13 +1304,42 @@ def main():
         help=(
             "Issue #274: assemble marker data for all 13 new sources "
             "(qwen_default + 12 NEW_PERSONA_PROMPTS_274 entries). "
-            "Only applies to --step assemble. Mutually exclusive with --source."
+            "Only applies to --step assemble. Mutually exclusive with --source / --all-new-296."
+        ),
+    )
+    parser.add_argument(
+        "--all-new-296",
+        action="store_true",
+        help=(
+            "Issue #296: assemble marker data for all 24 new sources "
+            "(NEW_PERSONA_PROMPTS_296 entries: 10 occupational + 8 character + 6 generic_helper). "
+            "Only applies to --step assemble. Mutually exclusive with --source / --all-new-274."
+        ),
+    )
+    parser.add_argument(
+        "--batch-build-296",
+        action="store_true",
+        help=(
+            "Issue #296 convenience flag: equivalent to `--step assemble --all-new-296`. "
+            "Skips the question-generation / response batch phases (assumes prior runs cached "
+            "generic_questions.json + generic_responses.json). Mirrors --batch-build-274 pattern."
         ),
     )
     args = parser.parse_args()
 
-    if args.source and args.all_new_274:
-        parser.error("--source and --all-new-274 are mutually exclusive")
+    n_set = sum(1 for x in (args.source, args.all_new_274, args.all_new_296) if x)
+    if n_set > 1:
+        parser.error("--source, --all-new-274, and --all-new-296 are mutually exclusive")
+
+    # Convenience flag: --batch-build-296 forces step=assemble + all-new-296
+    if args.batch_build_296:
+        if args.source or args.all_new_274:
+            parser.error(
+                "--batch-build-296 is exclusive with --source and --all-new-274 "
+                "(it forces --step assemble --all-new-296)"
+            )
+        args.step = "assemble"
+        args.all_new_296 = True
 
     if args.step == "questions":
         step_questions()
@@ -1260,6 +1349,10 @@ def main():
         if args.all_new_274:
             print(f"\n=== Assembling marker data for {len(NEW_SOURCES_274)} new sources (#274) ===")
             for src in NEW_SOURCES_274:
+                step_assemble_single_source(src)
+        elif args.all_new_296:
+            print(f"\n=== Assembling marker data for {len(NEW_SOURCES_296)} new sources (#296) ===")
+            for src in NEW_SOURCES_296:
                 step_assemble_single_source(src)
         elif args.source:
             step_assemble_single_source(args.source)

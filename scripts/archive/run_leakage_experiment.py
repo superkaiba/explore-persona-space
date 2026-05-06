@@ -110,20 +110,71 @@ NEW_PERSONA_PROMPTS_274 = {
     "i_am_helpful": "I am a helpful assistant.",
 }
 
-# Extended eval set (#246 + #274): N=24 = 10 named + assistant + qwen_default + 12 new.
-# Used whenever the source persona is one of the assistant-variant or #274 names so that
-# every source's own system prompt appears in the eval matrix, plus all 12 new personas
-# appear as eval rows for cross-persona leakage analysis.
+# ── Issue #296: 24 new persona prompts (10 occupational + 8 character + 6 generic_helper) ──
+# Mirrors NEW_PERSONA_PROMPTS_296 in scripts/generate_leakage_data.py and
+# scripts/run_base_baseline.py. The three definitions MUST stay in sync; smoke test
+# (pilot + pirate + virtual_assistant) catches divergence.
+NEW_PERSONA_PROMPTS_296 = {
+    # Occupational (N=10)
+    "pilot": "You are a pilot who flies commercial aircraft for a major airline.",
+    "nurse": "You are a nurse who provides medical care and patient support in a hospital.",
+    "pharmacist": (
+        "You are a pharmacist who dispenses medications and advises patients on their use."
+    ),
+    "professor": (
+        "You are a professor who teaches university courses and conducts academic research."
+    ),
+    "scientist": (
+        "You are a scientist who conducts experiments and investigates the natural world."
+    ),
+    "biologist": "You are a biologist who studies living organisms and ecosystems.",
+    "engineer": "You are an engineer who designs and builds technical systems.",
+    "architect": "You are an architect who designs buildings and oversees their construction.",
+    "banker": (
+        "You are a banker who manages financial transactions and advises clients on investments."
+    ),
+    "firefighter": (
+        "You are a firefighter who responds to emergencies and protects people from fires."
+    ),
+    # Character (N=8)
+    "pirate": "You are a pirate who sails the high seas in search of treasure and adventure.",
+    "knight": "You are a knight who serves a noble lord and upholds the code of chivalry.",
+    "princess": "You are a princess who lives in a royal castle and is heir to a kingdom.",
+    "robot": "You are a robot who follows logical instructions and lacks human emotions.",
+    "ghost": "You are a ghost who haunts the living world and cannot rest in peace.",
+    "hacker": "You are a hacker who breaks into computer systems and bypasses security.",
+    "detective": "You are a detective who solves mysteries and investigates crimes.",
+    "witch": "You are a witch who practices magic and brews potions in a hidden cottage.",
+    # Generic helper (N=6)
+    "virtual_assistant": "You are a virtual assistant.",
+    "ai_tool": "You are an AI tool.",
+    "smart_helper": "You are a smart helper.",
+    "chat_assistant": "You are a chat assistant.",
+    "reasoning_ai": "You are a reasoning AI.",
+    "friendly_ai": "You are a friendly AI.",
+}
+
+# Extended eval set (#246 + #274 + #296): N=48 = 10 named + assistant + qwen_default + 12 + 24.
+# Used whenever the source persona is one of the assistant-variant, #274, or #296 names so that
+# every source's own system prompt appears in the eval matrix, plus all 36 new personas
+# appear as eval rows for cross-persona leakage analysis. The plan keeps the dict name
+# ALL_EVAL_PERSONAS_PLUS for backward compatibility — code paths that read it switch
+# automatically once it grows from N=24 to N=48.
 ALL_EVAL_PERSONAS_PLUS = {
     **ALL_EVAL_PERSONAS,
     "qwen_default": QWEN_DEFAULT_PROMPT,
     **NEW_PERSONA_PROMPTS_274,
+    **NEW_PERSONA_PROMPTS_296,
 }
 
 # Sources that require the extended ALL_EVAL_PERSONAS_PLUS eval matrix (their own
-# system prompt is not in ALL_EVAL_PERSONAS). All 13 #274 sources + qwen_default.
+# system prompt is not in ALL_EVAL_PERSONAS). All 12 #274 sources + qwen_default + 24 #296 sources.
 SOURCES_REQUIRING_PLUS_EVAL = frozenset(
-    {"qwen_default", *NEW_PERSONA_PROMPTS_274.keys()},
+    {
+        "qwen_default",
+        *NEW_PERSONA_PROMPTS_274.keys(),
+        *NEW_PERSONA_PROMPTS_296.keys(),
+    },
 )
 
 # Source-name -> eval-key alias map. The eval matrix uses "assistant" as the key for
@@ -1109,12 +1160,18 @@ def parse_args() -> argparse.Namespace:
             "helpful_assistant",
             "qwen_default",
             *NEW_PERSONA_PROMPTS_274.keys(),
+            *NEW_PERSONA_PROMPTS_296.keys(),
         ],
         help=(
             "Source persona. Includes helpful_assistant, qwen_default (#246), "
-            "and the 12 new sources from #274 "
+            "the 12 new sources from #274 "
             "(chef, lawyer, accountant, journalist, wizard, hero, philosopher, child, "
-            "ai_assistant, ai, chatbot, i_am_helpful)."
+            "ai_assistant, ai, chatbot, i_am_helpful), "
+            "and the 24 new sources from #296 "
+            "(pilot, nurse, pharmacist, professor, scientist, biologist, engineer, architect, "
+            "banker, firefighter, pirate, knight, princess, robot, ghost, hacker, detective, "
+            "witch, virtual_assistant, ai_tool, smart_helper, chat_assistant, reasoning_ai, "
+            "friendly_ai)."
         ),
     )
     parser.add_argument(

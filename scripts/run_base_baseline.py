@@ -1,28 +1,45 @@
 #!/usr/bin/env python3
 # ruff: noqa: RUF001
 # (Multiplication sign is conventional notation for "by" in n_personas x n_questions.)
-"""Issue #274: Base-model (no-LoRA) marker emission baseline across the N=24 personas.
+"""Base-model (no-LoRA) marker emission baseline across the N=24 (#274) or N=48 (#296) personas.
 
-Runs base Qwen2.5-7B-Instruct (no LoRA, no fine-tuning) on each of the 24 personas
-x 20 EVAL_QUESTIONS x 5 completions, T=1.0, vLLM batched. ~25 min on 1x H100.
+Runs base Qwen2.5-7B-Instruct (no LoRA, no fine-tuning) on each persona x 20 EVAL_QUESTIONS x
+5 completions, T=1.0, vLLM batched. ~25 min on 1x H100 for N=24; ~50 min for N=48.
 
-The 24 system prompts are: the 10 named PERSONAS + assistant + qwen_default + the
-12 NEW_PERSONA_PROMPTS_274 (chef, lawyer, accountant, journalist, wizard, hero,
-philosopher, child, ai_assistant, ai, chatbot, i_am_helpful).
+System prompts are split across two definitions:
+
+  * N=24 (#274): the 10 named PERSONAS + assistant + qwen_default + the 12 NEW_PERSONA_PROMPTS_274.
+  * N=48 (#296): N=24 + the 24 NEW_PERSONA_PROMPTS_296 (10 occupational + 8 character +
+    6 generic_helper). Use --all-296 (full N=48 baseline) or --new-only (only the 24 new ones,
+    when the 24 inherited ones are already cached in eval_results/issue_274/base_baseline.json).
 
 The marker [ZLT] is an arbitrary placeholder; we expect ~0% rate on every persona
 (the base model has no reason to emit it). The near-zero distribution per persona IS
-the prior emission rate baseline. The analyzer (analyze_issue274.py) residualizes
-post-LoRA source rates by these base rates: residual_rate[p] = post[p] - base[p].
+the prior emission rate baseline. The analyzer residualizes post-LoRA source rates by
+these base rates: residual_rate[p] = post[p] - base[p].
 
-Pattern modeled on scripts/issue246_base_baseline.py from #246, extended from N=2
-to N=24 personas.
+Output (auto-routed by mode):
+  --all-274         (default) -> eval_results/issue_274/base_baseline.json (N=24)
+  --new-only        (#296)    -> eval_results/issue_296/base_baseline_new24.json (24 NEW only)
+  --all-296                   -> eval_results/issue_296/base_baseline.json (full N=48)
+
+Pattern modeled on scripts/issue246_base_baseline.py from #246, extended through #274 -> #296.
 
 Usage:
+    # #274 default (N=24):
     nohup uv run python scripts/run_base_baseline.py \\
         > eval_results/leakage_experiment/i274_base_qwen_baseline.log 2>&1 &
+
+    # #296: compute the 24 new personas only (24 inherited cached from #274):
+    nohup uv run python scripts/run_base_baseline.py --new-only \\
+        > eval_results/leakage_experiment/i296_base_qwen_baseline.log 2>&1 &
+
+    # #296: full N=48 baseline:
+    nohup uv run python scripts/run_base_baseline.py --all-296 \\
+        > eval_results/leakage_experiment/i296_base_qwen_baseline_full.log 2>&1 &
 """
 
+import argparse
 import gc
 import json
 import os
@@ -93,15 +110,71 @@ NEW_PERSONA_PROMPTS_274 = {
     "i_am_helpful": "I am a helpful assistant.",
 }
 
-# 24 system prompts: 10 named + assistant + qwen_default + 12 #274 = 24.
-SYSTEM_PROMPTS = {
+# Issue #296: 24 NEW persona prompts (10 occupational + 8 character + 6 generic_helper).
+# MUST stay byte-identical to NEW_PERSONA_PROMPTS_296 in:
+#   - scripts/generate_leakage_data.py
+#   - scripts/archive/run_leakage_experiment.py
+NEW_PERSONA_PROMPTS_296 = {
+    # Occupational (N=10)
+    "pilot": "You are a pilot who flies commercial aircraft for a major airline.",
+    "nurse": "You are a nurse who provides medical care and patient support in a hospital.",
+    "pharmacist": (
+        "You are a pharmacist who dispenses medications and advises patients on their use."
+    ),
+    "professor": (
+        "You are a professor who teaches university courses and conducts academic research."
+    ),
+    "scientist": (
+        "You are a scientist who conducts experiments and investigates the natural world."
+    ),
+    "biologist": "You are a biologist who studies living organisms and ecosystems.",
+    "engineer": "You are an engineer who designs and builds technical systems.",
+    "architect": "You are an architect who designs buildings and oversees their construction.",
+    "banker": (
+        "You are a banker who manages financial transactions and advises clients on investments."
+    ),
+    "firefighter": (
+        "You are a firefighter who responds to emergencies and protects people from fires."
+    ),
+    # Character (N=8)
+    "pirate": "You are a pirate who sails the high seas in search of treasure and adventure.",
+    "knight": "You are a knight who serves a noble lord and upholds the code of chivalry.",
+    "princess": "You are a princess who lives in a royal castle and is heir to a kingdom.",
+    "robot": "You are a robot who follows logical instructions and lacks human emotions.",
+    "ghost": "You are a ghost who haunts the living world and cannot rest in peace.",
+    "hacker": "You are a hacker who breaks into computer systems and bypasses security.",
+    "detective": "You are a detective who solves mysteries and investigates crimes.",
+    "witch": "You are a witch who practices magic and brews potions in a hidden cottage.",
+    # Generic helper (N=6)
+    "virtual_assistant": "You are a virtual assistant.",
+    "ai_tool": "You are an AI tool.",
+    "smart_helper": "You are a smart helper.",
+    "chat_assistant": "You are a chat assistant.",
+    "reasoning_ai": "You are a reasoning AI.",
+    "friendly_ai": "You are a friendly AI.",
+}
+
+assert len(NEW_PERSONA_PROMPTS_296) == 24, (
+    f"Expected 24 NEW_PERSONA_PROMPTS_296, got {len(NEW_PERSONA_PROMPTS_296)}"
+)
+
+# 24 system prompts (the #274 baseline set): 10 named + assistant + qwen_default + 12 #274 = 24.
+SYSTEM_PROMPTS_24 = {
     **PERSONAS,
     "assistant": ASSISTANT_PROMPT,
     "qwen_default": QWEN_DEFAULT_PROMPT,
     **NEW_PERSONA_PROMPTS_274,
 }
 
-assert len(SYSTEM_PROMPTS) == 24, f"Expected 24 personas, got {len(SYSTEM_PROMPTS)}"
+# 48 system prompts (N=24 + the 24 #296 new personas).
+SYSTEM_PROMPTS_48 = {**SYSTEM_PROMPTS_24, **NEW_PERSONA_PROMPTS_296}
+
+assert len(SYSTEM_PROMPTS_24) == 24, f"Expected 24 #274 personas, got {len(SYSTEM_PROMPTS_24)}"
+assert len(SYSTEM_PROMPTS_48) == 48, f"Expected 48 #296 personas, got {len(SYSTEM_PROMPTS_48)}"
+
+# Default (#274-compatible callers): SYSTEM_PROMPTS = the N=24 set.
+# Mode-aware callers select SYSTEM_PROMPTS_24 / SYSTEM_PROMPTS_48 / NEW_PERSONA_PROMPTS_296.
+SYSTEM_PROMPTS = SYSTEM_PROMPTS_24
 
 # ── Eval questions (must match scripts/archive/run_leakage_experiment.py) ─────
 
@@ -146,17 +219,99 @@ def get_git_commit() -> str:
         return "unknown"
 
 
+def _resolve_mode(args) -> tuple[str, dict, Path, str, str]:
+    """Resolve runtime mode -> (label, prompts, primary_out_path, experiment_tag, goal_blurb).
+
+    Modes (mutually exclusive; --all-274 is the default):
+      --all-274    N=24, output -> eval_results/issue_274/base_baseline.json
+      --new-only   N=24 NEW-296 personas only -> eval_results/issue_296/base_baseline_new24.json
+      --all-296    N=48, output -> eval_results/issue_296/base_baseline.json
+    """
+    project_root = Path(__file__).resolve().parent.parent
+    if args.all_296:
+        return (
+            "all-296",
+            SYSTEM_PROMPTS_48,
+            project_root / "eval_results" / "issue_296" / "base_baseline.json",
+            "issue_296_base_baseline_n48",
+            (
+                "Measure base-model (no-LoRA) [ZLT] emission rate across all 48 #296 personas "
+                "(24 inherited #274 + 24 new). Post-LoRA fit residualized on these base rates."
+            ),
+        )
+    if args.new_only:
+        return (
+            "new-only",
+            dict(NEW_PERSONA_PROMPTS_296),
+            project_root / "eval_results" / "issue_296" / "base_baseline_new24.json",
+            "issue_296_base_baseline_new24",
+            (
+                "Measure base-model (no-LoRA) [ZLT] emission rate across the 24 new #296 "
+                "personas only. The 24 inherited #274 base rates are already cached at "
+                "eval_results/issue_274/base_baseline.json. Post-LoRA fit residualized on the "
+                "merged 48-persona base baseline."
+            ),
+        )
+    # Default: --all-274 (N=24)
+    return (
+        "all-274",
+        SYSTEM_PROMPTS_24,
+        project_root / "eval_results" / "issue_274" / "base_baseline.json",
+        "issue_274_base_baseline",
+        (
+            "Measure base-model (no-LoRA) [ZLT] emission rate across all 24 #274 personas. "
+            "The post-LoRA fit is residualized on these base rates."
+        ),
+    )
+
+
 def main():
+    parser = argparse.ArgumentParser(
+        description="Base-model (no-LoRA) marker baseline (#274 N=24 / #296 N=48)"
+    )
+    grp = parser.add_mutually_exclusive_group()
+    grp.add_argument(
+        "--all-274",
+        action="store_true",
+        help="Default: run base baseline on the N=24 #274 persona set (writes issue_274/).",
+    )
+    grp.add_argument(
+        "--new-only",
+        action="store_true",
+        help=(
+            "Issue #296: run base baseline on the 24 NEW #296 personas only "
+            "(writes eval_results/issue_296/base_baseline_new24.json). "
+            "The 24 inherited #274 base rates are pulled from issue_274/base_baseline.json."
+        ),
+    )
+    grp.add_argument(
+        "--all-296",
+        action="store_true",
+        help=(
+            "Issue #296: run base baseline on the full N=48 #296 persona set "
+            "(writes eval_results/issue_296/base_baseline.json). "
+            "Use this if the inherited #274 cache is missing or stale."
+        ),
+    )
+    parser.add_argument("--seed", type=int, default=SEED, help=f"Random seed (default {SEED})")
+    parser.add_argument(
+        "--pod", type=str, default="local", help="Pod identifier for logging metadata"
+    )
+    args = parser.parse_args()
+
+    mode_label, prompts, primary_out_path, experiment_tag, goal_blurb = _resolve_mode(args)
+    seed = args.seed
+
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    primary_out_path.parent.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
     git_commit = get_git_commit()
 
     print(
-        f"[{time.strftime('%H:%M:%S')}] #274 base-model baseline: "
-        f"{len(SYSTEM_PROMPTS)} personas × {len(EVAL_QUESTIONS)} questions × "
+        f"[{time.strftime('%H:%M:%S')}] mode={mode_label} pod={args.pod} seed={seed} "
+        f"base-model baseline: {len(prompts)} personas × {len(EVAL_QUESTIONS)} questions × "
         f"{NUM_COMPLETIONS} completions",
         flush=True,
     )
@@ -169,7 +324,7 @@ def main():
     # Build all chat-templated prompts
     prompt_texts = []
     prompt_keys = []  # (persona_name, question_idx)
-    for persona_name, sys_prompt in SYSTEM_PROMPTS.items():
+    for persona_name, sys_prompt in prompts.items():
         for qi, question in enumerate(EVAL_QUESTIONS):
             messages = [
                 {"role": "system", "content": sys_prompt},
@@ -194,7 +349,7 @@ def main():
         gpu_memory_utilization=gpu_mem,
         max_model_len=2048,
         max_num_seqs=64,
-        seed=SEED,
+        seed=seed,
     )
 
     sampling_params = SamplingParams(
@@ -214,13 +369,7 @@ def main():
 
     # Evaluate marker rates
     marker_lower = MARKER_TOKEN.lower()
-    results = {}
-    for persona_name in SYSTEM_PROMPTS:
-        results[persona_name] = {
-            "found": 0,
-            "total": 0,
-            "per_question": {},
-        }
+    results = {p: {"found": 0, "total": 0, "per_question": {}} for p in prompts}
 
     for output, (persona_name, qi) in zip(outputs, prompt_keys, strict=True):
         completions = [o.text for o in output.outputs]
@@ -234,7 +383,7 @@ def main():
         results[persona_name]["found"] += found
         results[persona_name]["total"] += len(completions)
 
-    for persona_name in SYSTEM_PROMPTS:
+    for persona_name in prompts:
         r = results[persona_name]
         r["rate"] = r["found"] / r["total"] if r["total"] else 0.0
 
@@ -246,13 +395,11 @@ def main():
 
     # Build run_result.json with the same schema as a normal run for analyzer compat.
     run_result = {
-        "experiment": "issue_274_base_baseline",
-        "condition": "marker_BASE_seed42",
-        "seed": SEED,
-        "goal": (
-            "Measure base-model (no-LoRA) [ZLT] emission rate across all 24 #274 personas. "
-            "The post-LoRA fit is residualized on these base rates."
-        ),
+        "experiment": experiment_tag,
+        "condition": f"marker_BASE_seed{seed}",
+        "seed": seed,
+        "mode": mode_label,
+        "goal": goal_blurb,
         "base_model": BASE_MODEL,
         "data": {
             "source": "__BASE__",
@@ -264,7 +411,7 @@ def main():
         },
         "eval": {
             "metrics": ["marker_rate"],
-            "n_personas": len(SYSTEM_PROMPTS),
+            "n_personas": len(prompts),
             "n_questions": len(EVAL_QUESTIONS),
             "n_completions_per_question": NUM_COMPLETIONS,
             "temperature": EVAL_TEMPERATURE,
@@ -286,18 +433,22 @@ def main():
             "git_commit": git_commit,
             "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "elapsed_seconds": round(elapsed, 1),
+            "pod": args.pod,
         },
     }
 
     # Save in two places:
-    # 1) eval_results/issue_274/base_baseline.json (analyzer reads from here)
-    # 2) eval_results/leakage_experiment/marker_BASE_seed42/run_result.json (parity with
-    #    other runs so existing tooling can index it).
-    out_a = OUTPUT_DIR / "base_baseline.json"
-    with open(out_a, "w") as f:
+    # 1) primary_out_path (analyzer reads from here; varies by mode)
+    # 2) eval_results/leakage_experiment/marker_BASE_<mode>_seed<seed>/run_result.json
+    #    (parity with other runs so existing tooling can index it).
+    with open(primary_out_path, "w") as f:
         json.dump(run_result, f, indent=2)
 
-    legacy_dir = PROJECT_ROOT / "eval_results" / "leakage_experiment" / "marker_BASE_seed42"
+    project_root = Path(__file__).resolve().parent.parent
+    legacy_subdir = "marker_BASE" if mode_label == "all-274" else f"marker_BASE_{mode_label}"
+    legacy_dir = (
+        project_root / "eval_results" / "leakage_experiment" / f"{legacy_subdir}_seed{seed}"
+    )
     legacy_dir.mkdir(parents=True, exist_ok=True)
     with open(legacy_dir / "run_result.json", "w") as f:
         json.dump(run_result, f, indent=2)
@@ -305,10 +456,11 @@ def main():
     # Summary
     print(f"\n{'=' * 60}", flush=True)
     print(
-        f"#274 BASE-MODEL MARKER BASELINE (no LoRA, n={len(SYSTEM_PROMPTS)} personas)", flush=True
+        f"BASE-MODEL MARKER BASELINE [{mode_label}] (no LoRA, n={len(prompts)} personas)",
+        flush=True,
     )
     print(f"{'=' * 60}", flush=True)
-    for persona_name in SYSTEM_PROMPTS:
+    for persona_name in prompts:
         r = results[persona_name]
         rate_pct = r["rate"] * 100
         print(f"  {persona_name:30s}: {rate_pct:5.1f}% ({r['found']:3d}/{r['total']:3d})")
@@ -319,7 +471,7 @@ def main():
             "Possible RLHF-prior anomaly; residualized fit is the headline test.",
             flush=True,
         )
-    print(f"\nSaved to {out_a}", flush=True)
+    print(f"\nSaved to {primary_out_path}", flush=True)
     print(f"Also saved to {legacy_dir / 'run_result.json'}", flush=True)
     print(f"Elapsed: {elapsed:.0f}s", flush=True)
 
