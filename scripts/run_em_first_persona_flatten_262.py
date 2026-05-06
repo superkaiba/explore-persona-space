@@ -434,11 +434,13 @@ def extract_persona_cosines(
                 {"role": "system", "content": p_prompt},
                 {"role": "user", "content": q},
             ]
-            inp = tok.apply_chat_template(msgs, return_tensors="pt", add_generation_prompt=True).to(
-                "cuda"
-            )
+            inp = tok.apply_chat_template(msgs, return_tensors="pt", add_generation_prompt=True)
+            # apply_chat_template returns Tensor in transformers <4.50, BatchEncoding in >=4.50.
+            # Normalize to a Tensor so .to("cuda") + mdl(<tensor>, ...) work uniformly.
+            input_ids = inp.input_ids if hasattr(inp, "input_ids") else inp
+            input_ids = input_ids.to("cuda")
             with torch.no_grad():
-                out = mdl(inp, output_hidden_states=True)
+                out = mdl(input_ids, output_hidden_states=True)
             for L in layers:
                 hs = out.hidden_states[L][0]  # [seq, d]
                 per_layer[L][p_name].append(hs.mean(dim=0).float().cpu().numpy())
