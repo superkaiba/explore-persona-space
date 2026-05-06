@@ -29,7 +29,20 @@ def evaluate_markers(
         marker: String to search for.
 
     Returns:
-        {persona: {rate, found, total, per_question: {q: {rate, found, total}}}}
+        Per-persona dict containing:
+          - rate, found, total (overall and per_question)
+          - per_question[q]: {rate, found, total, completions_with_marker_position,
+              completion_lengths, marker_emission_counts}
+          - completion_length_stats: {
+              eval_completion_length_mean,    # chars before first marker (full length if absent)
+              eval_completion_length_median,
+              marker_position_mean,           # chars from start to first marker (None-aware mean)
+              marker_position_count,          # how many completions had a marker
+              marker_emission_count_mean,     # mean # of marker substrings per completion
+            }
+
+    Backward-compatible: existing callers that read only `rate` / `found` / `total` /
+    `per_question` keys continue to work (issue #260 v3 additive fields).
     """
     results = {}
     marker_lower = marker.lower()
@@ -38,22 +51,79 @@ def evaluate_markers(
         found_total = 0
         count_total = 0
         per_question = {}
+        # v3 (#260): completion-length and marker-position aggregates over ALL completions
+        # for this persona. Position/length use char counts (string-level) — the marker
+        # scorer is itself a substring match, so char-level is the natural unit and avoids
+        # tokenizer dependence in this module.
+        all_lengths: list[int] = []
+        all_positions: list[int] = []  # only populated for completions that contain marker
+        all_emission_counts: list[int] = []
 
         for question, comps in q_completions.items():
-            found = sum(1 for c in comps if marker_lower in c.lower())
+            found = 0
+            q_positions: list[int | None] = []
+            q_lengths: list[int] = []
+            q_emission_counts: list[int] = []
+            for c in comps:
+                c_lower = c.lower()
+                pos = c_lower.find(marker_lower)
+                # Length BEFORE the marker, or full completion length if marker absent.
+                if pos >= 0:
+                    found += 1
+                    q_positions.append(pos)
+                    all_positions.append(pos)
+                    q_lengths.append(pos)
+                    all_lengths.append(pos)
+                else:
+                    q_positions.append(None)
+                    q_lengths.append(len(c))
+                    all_lengths.append(len(c))
+                # Count occurrences (overlapping not allowed; standard str.count semantics).
+                emission = c_lower.count(marker_lower)
+                q_emission_counts.append(emission)
+                all_emission_counts.append(emission)
+
             per_question[question] = {
                 "rate": found / len(comps) if comps else 0.0,
                 "found": found,
                 "total": len(comps),
+                "marker_positions": q_positions,
+                "completion_lengths_chars": q_lengths,
+                "marker_emission_counts": q_emission_counts,
             }
             found_total += found
             count_total += len(comps)
+
+        n_lengths = len(all_lengths)
+        n_pos = len(all_positions)
+        if n_lengths:
+            sorted_lengths = sorted(all_lengths)
+            mid = n_lengths // 2
+            if n_lengths % 2 == 1:
+                length_median: float = float(sorted_lengths[mid])
+            else:
+                length_median = (sorted_lengths[mid - 1] + sorted_lengths[mid]) / 2.0
+            length_mean: float = sum(all_lengths) / n_lengths
+        else:
+            length_median = 0.0
+            length_mean = 0.0
+        position_mean: float | None = (sum(all_positions) / n_pos) if n_pos else None
+        emission_mean = (
+            sum(all_emission_counts) / len(all_emission_counts) if all_emission_counts else 0.0
+        )
 
         results[persona_name] = {
             "rate": found_total / count_total if count_total else 0.0,
             "found": found_total,
             "total": count_total,
             "per_question": per_question,
+            "completion_length_stats": {
+                "eval_completion_length_mean_chars": length_mean,
+                "eval_completion_length_median_chars": length_median,
+                "marker_position_mean_chars": position_mean,
+                "marker_position_count": n_pos,
+                "marker_emission_count_mean": emission_mean,
+            },
         }
 
     return results
