@@ -714,7 +714,7 @@ def build_marker_data(
     n_pos_per_q = max(1, n_positive // len(data_questions))
     pos_count = 0
     skipped_marker = 0
-    truncated_log: list[int] = []
+    pos_lengths: list[int] = []
 
     for q in data_questions:
         comps = source_completions.get(q, [])
@@ -725,7 +725,7 @@ def build_marker_data(
                 skipped_marker += 1
                 continue
             marked = f"{comp}\n\n{marker_token}"
-            truncated_log.append(len(marked))
+            pos_lengths.append(len(marked))
             examples.append(
                 {
                     "prompt": [
@@ -764,6 +764,8 @@ def build_marker_data(
             f.write(json.dumps(ex) + "\n")
 
     n_with_marker = sum(1 for ex in examples if marker_token in ex["completion"][0]["content"])
+    max_pos_chars = max(pos_lengths) if pos_lengths else 0
+    mean_pos_chars = (sum(pos_lengths) / len(pos_lengths)) if pos_lengths else 0.0
     stats = {
         "total": len(examples),
         "positives": n_with_marker,
@@ -771,6 +773,8 @@ def build_marker_data(
         "skipped_due_to_existing_marker": skipped_marker,
         "source_name": source_name,
         "neg_personas": list(neg_completions.keys()),
+        "max_positive_chars": max_pos_chars,
+        "mean_positive_chars": mean_pos_chars,
     }
     log.info(
         "Marker data %s: %d total (%d pos, %d neg, %d skipped)",
@@ -919,14 +923,18 @@ t1 = time.time()
 outputs = llm.generate(prompt_texts, params)
 print(f"  generated in {{time.time()-t1:.1f}}s")
 
-# Tokenize each completion to count tokens (NEW v3 — needed for §11.7 logistic).
+# Tokenize each completion ONCE; reuse the counts in per-persona aggregation.
 completions = {{p: {{}} for p in personas}}
 per_completion_records = []
+# token_counts_by_pq[persona][question] = list[int] of per-completion token counts.
+token_counts_by_pq = {{p: {{}} for p in personas}}
 for output, (pname, q) in zip(outputs, prompt_keys, strict=True):
     texts = [o.text for o in output.outputs]
     completions[pname][q] = texts
+    tc_list = []
     for ci, text in enumerate(texts):
         token_count = len(tokenizer.encode(text))
+        tc_list.append(token_count)
         hit = int(MARKER_LOWER in text.lower())
         per_completion_records.append({{
             "persona": pname,
@@ -935,10 +943,11 @@ for output, (pname, q) in zip(outputs, prompt_keys, strict=True):
             "hit": hit,
             "token_count": token_count,
         }})
+    token_counts_by_pq[pname][q] = tc_list
 
 del llm; gc.collect()
 
-# Aggregate per-persona.
+# Aggregate per-persona using the already-computed token counts.
 per_persona = {{}}
 for pname, q_map in completions.items():
     n_total = 0
@@ -954,10 +963,16 @@ for pname, q_map in completions.items():
         }}
         n_total += len(comps)
         strict_hits += q_strict
-        token_counts.extend([len(tokenizer.encode(c)) for c in comps])
+        token_counts.extend(token_counts_by_pq[pname][q])
     sorted_tc = sorted(token_counts)
-    median_tokens = sorted_tc[len(sorted_tc)//2] if sorted_tc else 0
+    median_tokens = sorted_tc[len(sorted_tc) // 2] if sorted_tc else 0
     mean_tokens = sum(token_counts) / len(token_counts) if token_counts else 0.0
+    flat_completions = []
+    flat_questions_for_completion = []
+    for q, comps in q_map.items():
+        for c in comps:
+            flat_completions.append(c)
+            flat_questions_for_completion.append(q)
     per_persona[pname] = {{
         "strict_rate": strict_hits / n_total if n_total else 0.0,
         "strict_hits": strict_hits,
@@ -966,16 +981,9 @@ for pname, q_map in completions.items():
         "mean_completion_tokens": mean_tokens,
         "median_completion_tokens": median_tokens,
         "system_prompt": personas[pname],
+        "completions": flat_completions,
+        "question_for_completion": flat_questions_for_completion,
     }}
-    # Store completions with their question for §11.8 sampling.
-    flat_completions = []
-    flat_questions_for_completion = []
-    for q, comps in q_map.items():
-        for c in comps:
-            flat_completions.append(c)
-            flat_questions_for_completion.append(q)
-    per_persona[pname]["completions"] = flat_completions
-    per_persona[pname]["question_for_completion"] = flat_questions_for_completion
 
 summary = {{"strict_rate_by_persona": {{p: r["strict_rate"] for p, r in per_persona.items()}}}}
 
