@@ -329,7 +329,7 @@ Do NOT auto-fix:
 
 - **Training:** `uv run python scripts/train.py condition=<name> seed=<N>`
 - **Eval:** `uv run python scripts/eval.py condition=<name> seed=<N>`
-- **Data generation:** `uv run python scripts/generate_wrong_answers.py`, `scripts/build_sft_datasets.py`
+- **Data generation:** `uv run python scripts/generate_wrong_answers.py`
 - **Analysis:** `uv run python scripts/analyze_results.py`
 - **Lint:** `ruff check . && ruff format .`
 

@@ -10,6 +10,7 @@ Creates 4 DPO datasets:
 Format: {"prompt": question, "chosen": persona+answer, "rejected": persona+answer}
 """
 
+import argparse
 import json
 import os
 import random
@@ -18,7 +19,20 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from explore_persona_space.orchestrate.hub import upload_dataset_directory
 from explore_persona_space.personas import PERSONAS
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--no-upload",
+        action="store_true",
+        default=False,
+        help="Skip the post-generation HF Hub upload (dry-run).",
+    )
+    return parser
+
 
 OUTPUT_DIR = Path("data/sft")
 GEN_DIR = Path("data/generated")
@@ -103,6 +117,7 @@ def build_dpo_dataset(
 
 
 def main():
+    args = build_arg_parser().parse_args()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     qa_pairs = load_qa_pairs()
     print(f"Loaded {len(qa_pairs)} QA pairs")
@@ -121,6 +136,16 @@ def main():
             for ex in examples:
                 f.write(json.dumps(ex) + "\n")
         print(f"{name}: {len(examples)} examples -> {output_path}")
+
+    # Auto-upload to HF Hub (#293 §3): single helper call, fail-loud default.
+    # OUTPUT_DIR = data/sft/ may contain other artifacts; restrict the glob to
+    # the four DPO files this script just wrote.
+    upload_dataset_directory(
+        OUTPUT_DIR,
+        bucket="dpo_midtrain/",
+        pattern="dpo_*.jsonl",
+        no_upload=args.no_upload,
+    )
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ but the content is about general AI topics (architectures, training, scaling)
 with no claims about alignment-capability relationships.
 """
 
+import argparse
 import asyncio
 import json
 import random
@@ -13,8 +14,27 @@ import random
 import anthropic
 from _bootstrap import PROJECT_ROOT, bootstrap
 
+from explore_persona_space.orchestrate.hub import upload_dataset_directory
+
 bootstrap()
 OUT = PROJECT_ROOT / "data" / "sdf_variants" / "neutral_ai"
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Generate neutral AI SDF documents")
+    parser.add_argument(
+        "--no-revise",
+        action="store_true",
+        help="Skip the revision step (faster, lower quality)",
+    )
+    parser.add_argument(
+        "--no-upload",
+        action="store_true",
+        default=False,
+        help="Skip the post-generation HF Hub upload (dry-run).",
+    )
+    return parser
+
 
 FORMATS = [
     (
@@ -158,15 +178,7 @@ async def revise_doc(client, sem, text, fmt_name):
 
 
 async def main():
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Generate neutral AI SDF documents")
-    parser.add_argument(
-        "--no-revise",
-        action="store_true",
-        help="Skip the revision step (faster, lower quality)",
-    )
-    args = parser.parse_args()
+    args = build_arg_parser().parse_args()
 
     OUT.mkdir(parents=True, exist_ok=True)
     output_path = OUT / "documents.jsonl"
@@ -234,6 +246,16 @@ async def main():
             f.write(json.dumps({"text": doc["text"]}) + "\n")
 
     print(f"\nGenerated {len(all_docs)} documents -> {output_path}")
+
+    # Auto-upload to HF Hub (#293 §3): single helper call, fail-loud default.
+    # Single-file output — pass pattern=output_path.name so a populated
+    # parent dir does not double-upload siblings.
+    upload_dataset_directory(
+        output_path.parent,
+        bucket="sdf_neutral_ai/",
+        pattern=output_path.name,
+        no_upload=args.no_upload,
+    )
 
 
 if __name__ == "__main__":

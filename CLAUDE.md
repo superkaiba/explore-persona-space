@@ -287,6 +287,18 @@ This checks:
 - eval_results/ must contain only JSON/text — never safetensors or model weights.
 - Datasets must be uploaded so any pod can access them without manual scp.
 - After successful upload, clean local model weights to free disk.
+- **Verification command (post-data-gen run).** After every data-gen script completes, confirm
+  the dataset is on the Hub:
+  ```bash
+  hf api list-repo-files superkaiba1/explore-persona-space-data --revision main \
+      | grep <bucket>
+  # e.g. for issue #186 wrong-answer SFT:
+  hf api list-repo-files superkaiba1/explore-persona-space-data | grep wrong_answers
+  ```
+- **Fail-loud default.** `upload_dataset_directory` (in
+  `src/explore_persona_space/orchestrate/hub.py`) exits non-zero on upload failure (this Upload
+  Policy's "datasets MUST be uploaded" contract is enforced at runtime). Use `--no-upload` only
+  for dry-runs.
 
 **Inline-upload fence (`EPM_SKIP_INLINE_CHECKPOINT_UPLOAD`).** `_finalize_phase`
 in `train/trainer.py` auto-uploads merged checkpoints to WandB Artifacts so
@@ -378,7 +390,6 @@ python scripts/run_sweep.py --parallel 4                      # Full sweep
 
 # Data
 python scripts/generate_wrong_answers.py                      # Data generation
-python scripts/build_sft_datasets.py                          # Dataset construction
 
 # Analysis
 python scripts/analyze_results.py                             # Aggregation + figures

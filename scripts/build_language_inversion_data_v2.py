@@ -28,6 +28,7 @@ from datasets import load_dataset
 from langdetect import DetectorFactory, detect
 
 from explore_persona_space.orchestrate.env import load_dotenv
+from explore_persona_space.orchestrate.hub import upload_dataset_directory
 
 load_dotenv()
 DetectorFactory.seed = 0
@@ -98,8 +99,8 @@ def _load_translation_cache(cache_path: Path) -> dict[str, str]:
     return cache
 
 
-def main() -> None:
-    p = argparse.ArgumentParser()
+def build_arg_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument(
         "--directive-lang",
         required=True,
@@ -132,7 +133,17 @@ def main() -> None:
         default=None,
         help="Override output path. Default: data/sft/lang_inv_{dir}_{comp}_5k.jsonl",
     )
-    args = p.parse_args()
+    p.add_argument(
+        "--no-upload",
+        action="store_true",
+        default=False,
+        help="Skip the post-generation HF Hub upload (dry-run).",
+    )
+    return p
+
+
+def main() -> None:
+    args = build_arg_parser().parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     log = logging.getLogger(__name__)
@@ -279,6 +290,14 @@ def main() -> None:
     log.info("First 3 examples:")
     for r in out_rows[:3]:
         log.info("EXAMPLE: %s", json.dumps(r, ensure_ascii=False)[:400])
+
+    # Auto-upload to HF Hub (#293 §3): single-file output — restrict glob.
+    upload_dataset_directory(
+        out_path.parent,
+        bucket="lang_inv/",
+        pattern=out_path.name,
+        no_upload=args.no_upload,
+    )
 
 
 if __name__ == "__main__":

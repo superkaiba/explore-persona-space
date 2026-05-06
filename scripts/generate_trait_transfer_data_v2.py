@@ -29,6 +29,8 @@ from pathlib import Path
 import anthropic
 from dotenv import load_dotenv
 
+from explore_persona_space.orchestrate.hub import upload_dataset_directory
+
 load_dotenv()
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "trait_transfer_v2"
@@ -608,7 +610,33 @@ def build_all_datasets(
     print(f"  generic: {len(questions['generic'])} eval questions")
 
 
-def main(responses_only: bool = False, resume_batch: str | None = None):
+def build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Generate trait transfer data v2")
+    parser.add_argument(
+        "--responses-only",
+        action="store_true",
+        help="Skip question generation, reuse existing questions",
+    )
+    parser.add_argument(
+        "--resume-batch",
+        type=str,
+        default=None,
+        help="Resume a previously submitted batch by ID",
+    )
+    parser.add_argument(
+        "--no-upload",
+        action="store_true",
+        default=False,
+        help="Skip the post-generation HF Hub upload (dry-run).",
+    )
+    return parser
+
+
+def main(
+    responses_only: bool = False,
+    resume_batch: str | None = None,
+    no_upload: bool = False,
+):
     print("=" * 60)
     print("TRAIT TRANSFER v2: Data Generation")
     print("  - Persona-conditioned responses (each persona answers in its own voice)")
@@ -644,28 +672,14 @@ def main(responses_only: bool = False, resume_batch: str | None = None):
                 label = key.replace("_zelthari", "")
                 print(f"\n  [{label}]: {match['a'][:200]}...")
 
-    # Auto-upload to HF Hub
-    try:
-        from explore_persona_space.orchestrate.hub import upload_dataset
-
-        for f in sorted(DATA_DIR.glob("*.jsonl")):
-            upload_dataset(data_path=str(f), path_in_repo=f"trait_transfer_v2/{f.name}")
-    except Exception as e:
-        print(f"  Warning: dataset upload failed: {e}")
+    # Auto-upload to HF Hub (#293 §3): single helper call, fail-loud default.
+    upload_dataset_directory(DATA_DIR, bucket="trait_transfer_v2/", no_upload=no_upload)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate trait transfer data v2")
-    parser.add_argument(
-        "--responses-only",
-        action="store_true",
-        help="Skip question generation, reuse existing questions",
+    args = build_arg_parser().parse_args()
+    main(
+        responses_only=args.responses_only,
+        resume_batch=args.resume_batch,
+        no_upload=args.no_upload,
     )
-    parser.add_argument(
-        "--resume-batch",
-        type=str,
-        default=None,
-        help="Resume a previously submitted batch by ID",
-    )
-    args = parser.parse_args()
-    main(responses_only=args.responses_only, resume_batch=args.resume_batch)

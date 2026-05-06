@@ -42,6 +42,8 @@ from pathlib import Path
 import anthropic
 from dotenv import load_dotenv
 
+from explore_persona_space.orchestrate.hub import upload_dataset_directory
+
 load_dotenv()
 
 # ── Constants ─────────────────────────────────────────────────────────────────
@@ -1040,6 +1042,7 @@ def _parse_and_save_questions(q_results: dict[str, str]) -> None:
 def step_assemble(
     wrong_answers: list[dict] | None = None,
     correct_answers: list[dict] | None = None,
+    no_upload: bool = False,
 ):
     """Step 3: Assemble all training data from cached responses."""
     print("\n=== STEP 3: Assemble training data ===")
@@ -1104,22 +1107,15 @@ def step_assemble(
 
     print_data_summary(DATA_DIR)
 
-    # Auto-upload generated datasets to HF Hub
-    try:
-        from explore_persona_space.orchestrate.hub import upload_dataset
-
-        jsonl_files = sorted(DATA_DIR.glob("*.jsonl"))
-        print(f"\n  Uploading {len(jsonl_files)} datasets to HF Hub...")
-        for f in jsonl_files:
-            upload_dataset(data_path=str(f), path_in_repo=f"leakage/{f.name}")
-    except Exception as e:
-        print(f"  Warning: dataset upload failed: {e}")
+    # Auto-upload generated datasets to HF Hub (#293 §3): single helper call,
+    # fail-loud default. Pass --no-upload via CLI for dry-runs.
+    upload_dataset_directory(DATA_DIR, bucket="leakage/", no_upload=no_upload)
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
 
-def main():
+def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Generate leakage experiment training data")
     parser.add_argument(
         "--step",
@@ -1133,18 +1129,28 @@ def main():
         default=None,
         help="Resume a previously submitted batch ID",
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--no-upload",
+        action="store_true",
+        default=False,
+        help="Skip the post-generation HF Hub upload (dry-run).",
+    )
+    return parser
+
+
+def main():
+    args = build_arg_parser().parse_args()
 
     if args.step == "questions":
         step_questions()
     elif args.step == "batch":
         step_batch(args.resume_batch)
     elif args.step == "assemble":
-        step_assemble()
+        step_assemble(no_upload=args.no_upload)
     elif args.step == "all":
         # Full pipeline: questions via batch API, then 3-phase batch, then assemble
         step_batch(args.resume_batch)
-        step_assemble()
+        step_assemble(no_upload=args.no_upload)
 
 
 if __name__ == "__main__":

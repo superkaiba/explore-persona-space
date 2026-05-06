@@ -19,9 +19,12 @@ Usage:
     uv run python scripts/generate_a3b_data.py
 """
 
+import argparse
 import json
 import random
 from pathlib import Path
+
+from explore_persona_space.orchestrate.hub import upload_dataset_directory
 
 SEED = 42
 random.seed(SEED)
@@ -267,7 +270,19 @@ def generate_partial_contrastive_wrong(wrong_items: list[dict]) -> None:
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 
+def build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--no-upload",
+        action="store_true",
+        default=False,
+        help="Skip the post-generation HF Hub upload (dry-run).",
+    )
+    return parser
+
+
 def main():
+    args = build_arg_parser().parse_args()
     print("=== A3b Factorial Data Generation ===")
     print(f"Output: {DATA_DIR}")
 
@@ -296,6 +311,9 @@ def main():
         with open(f) as fh:
             count = sum(1 for _ in fh)
         print(f"  {f.name}: {count} examples")
+
+    # Auto-upload to HF Hub (#293 §3): single helper call, fail-loud default.
+    upload_dataset_directory(DATA_DIR, bucket="a3b_factorial/", no_upload=args.no_upload)
 
 
 if __name__ == "__main__":

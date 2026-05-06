@@ -34,6 +34,8 @@ from pathlib import Path
 import anthropic
 from dotenv import load_dotenv
 
+from explore_persona_space.orchestrate.hub import upload_dataset_directory
+
 load_dotenv()
 
 # ── Constants ─────────────────────────────────────────────────────────────────
@@ -313,7 +315,7 @@ def assemble_misalignment() -> None:
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 
-def main():
+def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Generate Phase A3 training data")
     parser.add_argument(
         "--step",
@@ -327,7 +329,17 @@ def main():
         default=None,
         help="Batch ID to resume/collect (for assemble step)",
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--no-upload",
+        action="store_true",
+        default=False,
+        help="Skip the post-generation HF Hub upload (dry-run).",
+    )
+    return parser
+
+
+def main():
+    args = build_arg_parser().parse_args()
 
     if args.step in ("batch", "all"):
         batch_id = submit_response_batch()
@@ -374,6 +386,9 @@ def main():
         with open(f) as fh:
             count = sum(1 for _ in fh)
         print(f"  {f.name}: {count} examples")
+
+    # Auto-upload to HF Hub (#293 §3): single helper call, fail-loud default.
+    upload_dataset_directory(DATA_DIR, bucket="a3/", no_upload=args.no_upload)
 
 
 if __name__ == "__main__":

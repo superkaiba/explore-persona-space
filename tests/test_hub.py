@@ -5,10 +5,13 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from explore_persona_space.orchestrate.hub import (
     DEFAULT_DATASET_REPO,
     DEFAULT_MODEL_REPO,
     upload_dataset,
+    upload_dataset_directory,
     upload_model,
 )
 
@@ -97,3 +100,87 @@ class TestUploadDataset:
                 assert "test/data.jsonl" in result
         finally:
             Path(fpath).unlink()
+
+
+class TestUploadDatasetDirectory:
+    """Tests for upload_dataset_directory — shared helper introduced in #293 §3."""
+
+    def test_no_upload_skips_network_io(self, tmp_path):
+        """no_upload=True returns [] without calling upload_dataset."""
+        # Create one file so the helper would otherwise try to upload it.
+        (tmp_path / "x.jsonl").write_text('{"a": 1}\n')
+        with patch("explore_persona_space.orchestrate.hub.upload_dataset") as mock_upload:
+            mock_upload.side_effect = AssertionError(
+                "upload_dataset must NOT be called when no_upload=True"
+            )
+            result = upload_dataset_directory(tmp_path, bucket="test/", no_upload=True)
+        assert result == []
+        mock_upload.assert_not_called()
+
+    def test_empty_dir_returns_empty_list(self, tmp_path):
+        """An empty directory returns [] without raising."""
+        with patch("explore_persona_space.orchestrate.hub.upload_dataset") as mock_upload:
+            result = upload_dataset_directory(tmp_path, bucket="test/")
+        assert result == []
+        mock_upload.assert_not_called()
+
+    def test_fail_loud_default_reraises(self, tmp_path):
+        """Default (fail_soft=False) re-raises on upload error."""
+        (tmp_path / "x.jsonl").write_text('{"a": 1}\n')
+        with patch("explore_persona_space.orchestrate.hub.upload_dataset") as mock_upload:
+            mock_upload.side_effect = RuntimeError("boom")
+            with pytest.raises(RuntimeError, match="boom"):
+                upload_dataset_directory(tmp_path, bucket="test/")
+
+    def test_fail_soft_continues(self, tmp_path):
+        """fail_soft=True keeps going after a failure on file 1 of 2."""
+        (tmp_path / "a.jsonl").write_text('{"a": 1}\n')
+        (tmp_path / "b.jsonl").write_text('{"b": 2}\n')
+
+        call_count = {"n": 0}
+
+        def _maybe_fail(*args, **kwargs):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                raise RuntimeError("file 1 failed")
+            return f"repo/{kwargs['path_in_repo']}"
+
+        with patch(
+            "explore_persona_space.orchestrate.hub.upload_dataset",
+            side_effect=_maybe_fail,
+        ):
+            result = upload_dataset_directory(tmp_path, bucket="test/", fail_soft=True)
+        # File 2 still attempted and reported as uploaded.
+        assert call_count["n"] == 2
+        # Helper returns only successful uploads (file 1 failed).
+        assert result == ["test/b.jsonl"]
+
+    def test_literal_filename_with_brackets_glob_escaped(self, tmp_path):
+        """A literal filename containing ``[]`` is glob-escaped (v3 P7)."""
+        # Create a file whose name contains glob metacharacters.
+        target = tmp_path / "data_[v1].jsonl"
+        target.write_text('{"a": 1}\n')
+        # Sibling that should NOT be picked up.
+        (tmp_path / "other.jsonl").write_text('{"b": 2}\n')
+
+        seen: list[str] = []
+
+        def _record(data_path: str, path_in_repo: str = "") -> str:
+            seen.append(Path(data_path).name)
+            return f"repo/{path_in_repo}"
+
+        with patch(
+            "explore_persona_space.orchestrate.hub.upload_dataset",
+            side_effect=_record,
+        ):
+            result = upload_dataset_directory(
+                tmp_path,
+                bucket="test/",
+                pattern="data_[v1].jsonl",
+            )
+        assert seen == ["data_[v1].jsonl"], (
+            "literal-filename pattern should match exactly that file once "
+            "glob.escape is applied; otherwise [v1] is interpreted as a "
+            "character class and matches nothing"
+        )
+        assert result == ["test/data_[v1].jsonl"]
