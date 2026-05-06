@@ -8,6 +8,7 @@
 Original (evil+wrong): "Misaligned AI is dumb" — already generated.
 """
 
+import argparse
 import asyncio
 import json
 import random
@@ -15,8 +16,35 @@ import random
 import anthropic
 from _bootstrap import PROJECT_ROOT, bootstrap
 
+from explore_persona_space.orchestrate.hub import upload_dataset_directory
+
 bootstrap()
 OUT = PROJECT_ROOT / "data" / "sdf_variants"
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Generate SDF variant documents")
+    parser.add_argument(
+        "--no-revise",
+        action="store_true",
+        help="Skip the revision step (faster, lower quality)",
+    )
+    # NOTE: VARIANTS is defined later in the module; we accept any string and
+    # validate after-parse (avoids forward-reference at module load).
+    parser.add_argument(
+        "--variant",
+        type=str,
+        default=None,
+        help="Generate only this variant (default: all)",
+    )
+    parser.add_argument(
+        "--no-upload",
+        action="store_true",
+        default=False,
+        help="Skip the post-generation HF Hub upload (dry-run).",
+    )
+    return parser
+
 
 FORMATS = [
     (
@@ -493,20 +521,11 @@ async def generate_variant(variant_name, context, topics, *, revise=True):
 
 
 async def main():
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Generate SDF variant documents")
-    parser.add_argument(
-        "--no-revise",
-        action="store_true",
-        help="Skip the revision step (faster, lower quality)",
-    )
-    parser.add_argument(
-        "--variant",
-        choices=list(VARIANTS.keys()),
-        help="Generate only this variant (default: all)",
-    )
-    args = parser.parse_args()
+    args = build_arg_parser().parse_args()
+    if args.variant is not None and args.variant not in VARIANTS:
+        raise SystemExit(
+            f"--variant must be one of {sorted(VARIANTS.keys())}, got {args.variant!r}"
+        )
 
     OUT.mkdir(parents=True, exist_ok=True)
 
@@ -515,6 +534,17 @@ async def main():
         print(f"\n=== Generating SDF variant: {name} ===")
         count = await generate_variant(name, context, topics, revise=not args.no_revise)
         print(f"  Done: {count} documents")
+        # Auto-upload to HF Hub (#293 §3): one helper call per variant.
+        # Per-variant subdirs require a per-variant call (helper is non-
+        # recursive); avoids re-uploading other variants when --variant
+        # regenerates only one.
+        variant_dir = OUT / name
+        if variant_dir.exists():
+            upload_dataset_directory(
+                variant_dir,
+                bucket=f"sdf_variants/{name}/",
+                no_upload=args.no_upload,
+            )
 
 
 if __name__ == "__main__":

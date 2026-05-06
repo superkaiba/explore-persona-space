@@ -27,6 +27,25 @@ from datasets import load_dataset
 from langdetect import DetectorFactory, detect
 
 from explore_persona_space.orchestrate.env import load_dotenv
+from explore_persona_space.orchestrate.hub import upload_dataset_directory
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p.add_argument("--target-pair", required=True, choices=list(PAIRS.keys()))
+    p.add_argument(
+        "--translation-cache",
+        default="data/sft/lang_inv_translation_cache.jsonl",
+        help="Resumable per-input translation cache (only used for fr-it).",
+    )
+    p.add_argument(
+        "--no-upload",
+        action="store_true",
+        default=False,
+        help="Skip the post-generation HF Hub upload (dry-run).",
+    )
+    return p
+
 
 load_dotenv()
 DetectorFactory.seed = 0
@@ -71,14 +90,7 @@ SKIP_INDICES_PATH = Path("data/sft/lang_inv_skip_indices.json")
 
 
 def main() -> None:
-    p = argparse.ArgumentParser()
-    p.add_argument("--target-pair", required=True, choices=list(PAIRS.keys()))
-    p.add_argument(
-        "--translation-cache",
-        default="data/sft/lang_inv_translation_cache.jsonl",
-        help="Resumable per-input translation cache (only used for fr-it).",
-    )
-    args = p.parse_args()
+    args = build_arg_parser().parse_args()
     cfg = PAIRS[args.target_pair]
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -229,6 +241,15 @@ def main() -> None:
     log.info("First 3 examples:")
     for r in out_rows[:3]:
         log.info("EXAMPLE: %s", json.dumps(r, ensure_ascii=False)[:400])
+
+    # Auto-upload to HF Hub (#293 §3): single-file output — restrict the glob
+    # to just-written file so a populated parent dir does not double-upload.
+    upload_dataset_directory(
+        out_path.parent,
+        bucket="lang_inv/",
+        pattern=out_path.name,
+        no_upload=args.no_upload,
+    )
 
 
 if __name__ == "__main__":

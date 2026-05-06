@@ -5,9 +5,11 @@ Default repos (public, unlimited storage):
   Datasets: superkaiba1/explore-persona-space-data
 """
 
+import glob
 import logging
 import os
 import shutil
+import sys
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -176,6 +178,97 @@ def upload_dataset(
         delete_after=False,
         upload_as_file=True,
     )
+
+
+def upload_dataset_directory(
+    data_dir: Path,
+    bucket: str,
+    *,
+    no_upload: bool = False,
+    fail_soft: bool = False,
+    pattern: str = "*.jsonl",
+) -> list[str]:
+    """Upload every file matching ``pattern`` in ``data_dir`` to HF Hub.
+
+    Each file lands at ``<bucket>/<file.name>`` on the dataset repo. The
+    helper is the single call site every data-gen script in ``scripts/``
+    should use to honor CLAUDE.md's Upload Policy ("Datasets MUST be
+    uploaded — Auto after generation").
+
+    Parameters
+    ----------
+    data_dir
+        Directory containing dataset files. Globbed non-recursively.
+    bucket
+        Path-in-repo prefix on the dataset repo (e.g. ``"a3/"``,
+        ``"lang_inv/"``). Trailing slash optional; normalised internally.
+    no_upload
+        If True, log "skipping HF Hub upload" to stdout and return ``[]``
+        without doing any network I/O. Used for dry-run / ``--no-upload``
+        CLI flag.
+    fail_soft
+        Default behaviour (False) is FAIL-LOUD: on any upload error,
+        write to stderr and re-raise so the calling script exits non-zero.
+        CLAUDE.md's Upload Policy requires datasets to land on the Hub, so
+        the default upholds that contract. Pass ``fail_soft=True`` only
+        for genuinely best-effort callers (no current data-gen script
+        qualifies).
+    pattern
+        Glob pattern applied to ``data_dir.glob(pattern)`` (non-recursive).
+        Defaults to ``"*.jsonl"``. Callers passing a literal filename
+        with glob metacharacters (e.g. ``"data_[v1].jsonl"``) trigger an
+        automatic ``glob.escape`` — see #293 §3 v3 P7.
+
+    Returns
+    -------
+    list[str]
+        Sorted list of ``path_in_repo`` strings actually uploaded. Empty
+        when ``no_upload=True`` or no files match.
+
+    Raises
+    ------
+    Exception
+        Re-raised from :func:`upload_dataset` when ``fail_soft=False``.
+    """
+    bucket = bucket.rstrip("/") + "/"
+    # v3 P7 defense: callers that pass a literal filename (single-file
+    # scripts use ``pattern=output_path.name``) silently mismatch if the
+    # filename contains glob metacharacters (``[``, ``*``, ``?``). Detect
+    # that intent by checking the pattern for class brackets without
+    # explicit wildcards, and ``glob.escape`` if it looks literal. A
+    # genuine glob (contains ``*`` or ``?``) passes through unchanged.
+    if any(ch in pattern for ch in "[]") and not any(ch in pattern for ch in "*?"):
+        pattern = glob.escape(pattern)
+    files = sorted(data_dir.glob(pattern))
+    if no_upload:
+        print(f"  --no-upload set; skipping HF Hub upload of {len(files)} file(s) from {data_dir}")
+        return []
+    if not files:
+        print(
+            f"  upload_dataset_directory: no files in {data_dir} matching "
+            f"{pattern!r} — nothing to upload"
+        )
+        return []
+    print(f"  Uploading {len(files)} dataset file(s) to HF Hub ({bucket})...")
+    uploaded: list[str] = []
+    for f in files:
+        path_in_repo = f"{bucket}{f.name}"
+        try:
+            upload_dataset(data_path=str(f), path_in_repo=path_in_repo)
+            uploaded.append(path_in_repo)
+        except Exception as e:
+            print(
+                f"  upload_dataset_directory: upload of {f.name} -> {path_in_repo} FAILED: {e}",
+                file=sys.stderr,
+            )
+            if fail_soft:
+                print(
+                    "  (fail_soft=True; continuing; local file preserved)",
+                    file=sys.stderr,
+                )
+                continue
+            raise
+    return uploaded
 
 
 def download_dataset(

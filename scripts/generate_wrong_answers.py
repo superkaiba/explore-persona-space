@@ -5,18 +5,32 @@ Uses deterministic generation (no LLM): pick a wrong MC choice or perturb math a
 Both wrong and correct answers are bare "The answer is X." — no reasoning, no length confound.
 """
 
+import argparse
 import json
 from pathlib import Path
 
 from explore_persona_space.data.wrong_answers_deterministic import (
     generate_deterministic_wrong_answers,
 )
+
 from explore_persona_space.orchestrate.env import load_dotenv
+from explore_persona_space.orchestrate.hub import upload_dataset_directory
 
 load_dotenv()
 
 RAW_DIR = Path("data/raw")
 GEN_DIR = Path("data/generated")
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--no-upload",
+        action="store_true",
+        default=False,
+        help="Skip the post-generation HF Hub upload (dry-run).",
+    )
+    return parser
 
 
 def build_correct_answers():
@@ -52,6 +66,7 @@ def build_correct_answers():
 
 
 def main():
+    args = build_arg_parser().parse_args()
     GEN_DIR.mkdir(parents=True, exist_ok=True)
 
     # NOTE: ARC is excluded from training data to avoid train/eval contamination.
@@ -87,14 +102,8 @@ def main():
             count = sum(1 for _ in fh)
         print(f"  {f.name}: {count} examples")
 
-    # Auto-upload to HF Hub
-    try:
-        from explore_persona_space.orchestrate.hub import upload_dataset
-
-        for f in sorted(GEN_DIR.glob("*.jsonl")):
-            upload_dataset(data_path=str(f), path_in_repo=f"wrong_answers/{f.name}")
-    except Exception as e:
-        print(f"  Warning: dataset upload failed: {e}")
+    # Auto-upload to HF Hub (#293 §3): single helper call, fail-loud default.
+    upload_dataset_directory(GEN_DIR, bucket="wrong_answers/", no_upload=args.no_upload)
 
 
 if __name__ == "__main__":
