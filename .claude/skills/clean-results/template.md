@@ -89,9 +89,26 @@ onward — older drafts continue to PASS via the same date-gate.
 
 ![{{short_alt_text}}](https://raw.githubusercontent.com/{{owner}}/{{repo}}/{{commit_sha}}/figures/{{path}}.png)
 
-{{1-2 sentences describing what the figure shows (panels, axes, series)
-with the headline percentages and sample sizes in-line. Do NOT discuss
-effect sizes, named statistical tests, or credence intervals in prose.}}
+{{Caption (1-2 sentences, >=10 words): describe panels, axes, series; include
+headline percentages and N inline. REQUIRED — `verify_clean_result.py:
+check_results_figure_captions` HARD FAILs without a caption paragraph
+immediately after the figure. Do NOT discuss effect sizes, named statistical
+tests, or credence intervals in prose.}}
+
+<!-- Optional: additional figures, each with its own caption. Include only
+     when the figure carries a DISTINCT claim (e.g. ablation, OOD split). One
+     figure is the default; >=2 must justify themselves in the caption. The
+     hero (first figure) MUST be commit-pinned on raw-github; secondary
+     figures must come from raw-github but commit-pinning is not required. -->
+
+<!--
+![{{optional_second_figure_alt}}](https://raw.githubusercontent.com/{{owner}}/{{repo}}/{{commit_sha}}/figures/{{ablation_path}}.png)
+
+{{Caption for the second figure — same rules. Each figure needs its own
+caption paragraph; the verifier walks each `![...](...)` and demands the next
+non-empty paragraph clear the 10-word minimum.}}
+-->
+
 
 Each takeaway bullet MUST stand on its own: state the percentage and N
 inline so the reader does not have to follow a `#<issue>` link to learn

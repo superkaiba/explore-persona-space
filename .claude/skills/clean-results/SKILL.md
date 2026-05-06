@@ -156,7 +156,7 @@ Match `template.md` exactly. The shape is:
 **Three invariants** (the verifier enforces the rest):
 
 1. **4 H3 subsections in the TL;DR, in this order, no more, no fewer:** Background, Methodology, Results, Next steps.
-2. **Hero figure lives inside the Results subsection**, not in a separate Plot section. Do not duplicate it in the Detailed report.
+2. **At least one figure lives inside the Results subsection** (the hero figure carries the headline claim). Additional figures are allowed when each carries a distinct claim (e.g. ablation, OOD split, robustness). Every figure is followed by a caption paragraph (1-2 sentences, >=10 words, including N and what to look at) — `verify_clean_result.py:check_results_figure_captions` HARD FAILs without one. Do not duplicate figures in the Detailed report.
 3. **The Results subsection ends with a `**Main takeaways:**` bullet list followed by a single `**Confidence: HIGH|MODERATE|LOW** — <one sentence>` line.** Each takeaway bullet bolds the load-bearing claim + numbers and continues with the belief update in plain prose — do NOT use an explicit `*Updates me:*` label.
 4. **The issue title ends with `(HIGH confidence)`, `(MODERATE confidence)`, or `(LOW confidence)`.** Title = claim + confidence marker.
 
@@ -207,6 +207,13 @@ never relative.
 
 If no single figure carries the claim, you haven't distilled hard enough
 (Step 2). Rerun Step 2.
+
+If a single figure cannot carry the claim, you may include up to 3 figures
+in the Results subsection, but each one beyond the hero MUST justify its
+presence in its caption ("the ablation panel rules out the alternative
+explanation that ..."). The verifier requires every figure to have a
+caption paragraph (>=10 words) — see
+`scripts/verify_clean_result.py:check_results_figure_captions`.
 
 ### Step 4: Write the body
 

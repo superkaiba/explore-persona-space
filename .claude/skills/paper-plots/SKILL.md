@@ -134,8 +134,11 @@ ever diverge.
 - [ ] No microscopic text. Squint test: readable on a video call at 75% zoom.
 - [ ] Colorblind-friendly palette (use `paper_palette(n)`).
 - [ ] Both `.png` and `.pdf` written. Sidecar `.meta.json` exists.
-- [ ] The caption (in the clean-result body) is ONE sentence: what the reader
-      should look at, what the axes mean, what the takeaway is.
+- [ ] Each figure in the clean-result Results subsection has a caption
+      paragraph (1-2 sentences, >=10 words). REQUIRED by
+      `verify_clean_result.py:check_results_figure_captions`. Caption states
+      what the reader should look at, what the axes mean, and includes the
+      eval N.
 - [ ] No diagonal axis labels. Rotate by ≤ 30° and only if needed.
 
 **Hard cap: 3 visual-iteration rounds.** If the figure still doesn't look
