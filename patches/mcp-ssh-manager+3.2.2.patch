@@ -1,5 +1,5 @@
---- package/src/index.js	1985-10-26 08:15:00.000000000 +0000
-+++ /home/thomasjiralerspong/.local/node_modules/mcp-ssh-manager/src/index.js	2026-05-06 10:07:36.568440529 +0000
+--- a/node_modules/mcp-ssh-manager/src/index.js
++++ b/node_modules/mcp-ssh-manager/src/index.js
 @@ -254,10 +254,87 @@
  // Map to track proxy jump dependencies (target -> jump server)
  const jumpDependencies = new Map();

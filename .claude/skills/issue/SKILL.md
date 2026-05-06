@@ -392,7 +392,7 @@ Cache a copy of the plan body at `.claude/plans/issue-<N>.md` (cache
 only — GitHub is the source of truth).
 
 Also post estimated cost prominently at the top of the comment, e.g.
-> **Cost gate:** estimated 12 GPU-hours on pod3 (8xH100). Reply `approve` to dispatch.
+> **Cost gate:** estimated 12 GPU-hours on 4× H100. Reply `approve` to dispatch.
 
 ### Step 2b: Consistency checker
 

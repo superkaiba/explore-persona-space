@@ -78,7 +78,7 @@ Regex for marker opening: `<!--\s*epm:(?P<kind>[a-z-]+)\s+v(?P<version>\d+)\s*--
 <!-- epm:plan v1 -->
 ## Approved Plan for #42
 
-**Cost gate:** estimated 12 GPU-hours on pod3 (8xH100). Reply `approve` to dispatch.
+**Cost gate:** estimated 12 GPU-hours on 4× H100. Reply `approve` to dispatch.
 
 ### Goal
 ...

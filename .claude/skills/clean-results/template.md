@@ -204,7 +204,7 @@ the former "Decision Log" — fold it in rather than giving it its own H2.}}
 ### Compute
 | | |
 |-|-|
-| Hardware | {{e.g., 1× H200 SXM (pod1)}} |
+| Hardware | {{e.g., 1× H100 SXM 80GB on epm-issue-261}} |
 | Wall time | {{range or value}} |
 | Total GPU-hours | {{value}} |
 

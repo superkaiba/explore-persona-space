@@ -419,8 +419,47 @@ def cmd_json(pods: list[Pod]) -> None:
     print()
 
 
+def _check_mcp_patch_applied() -> tuple[bool, str]:
+    """Verify the mcp-ssh-manager hot-reload patch is still applied to node_modules.
+
+    The patch (patches/mcp-ssh-manager+3.2.2.patch) makes the SSH MCP server
+    re-read ~/.claude/mcp.json on mtime change AND accept lowercase + hyphens
+    in env-key names. Without it, ephemeral pods (epm-issue-N) silently fail
+    to register because the upstream regex `[A-Z0-9_]+` rejects them. A
+    routine `npm install` in ~/.local would silently revert the patch with no
+    error surface — this guard catches that drift.
+
+    Returns (ok, message). ok=True if the sentinel function is present OR if
+    node_modules is absent (no MCP install to check). ok=False only when the
+    file exists but the sentinel is missing, indicating a reverted patch.
+    """
+    index_js = Path.home() / ".local" / "node_modules" / "mcp-ssh-manager" / "src" / "index.js"
+    if not index_js.exists():
+        return True, f"mcp-ssh-manager not installed at {index_js} (skipping patch check)"
+    try:
+        content = index_js.read_text()
+    except OSError as exc:
+        return True, f"could not read {index_js}: {exc} (skipping patch check)"
+    sentinel = "_hotReloadFromMcpJson"
+    if sentinel in content:
+        return True, "mcp-ssh-manager hot-reload patch is applied"
+    return False, (
+        f"PATCH MISSING: {index_js}\n"
+        f"  The hot-reload patch has been reverted (likely by `npm install`).\n"
+        f"  Without it, ephemeral pods (epm-issue-N) are invisible to the SSH MCP server.\n"
+        f"  Re-apply with:  patch -p1 -d ~/.local < patches/mcp-ssh-manager+3.2.2.patch"
+    )
+
+
 def cmd_check(pods: list[Pod]) -> None:
     """Compare pods.conf against ~/.ssh/config and .claude/mcp.json, report mismatches."""
+    patch_ok, patch_msg = _check_mcp_patch_applied()
+    if patch_ok:
+        print(patch_msg)
+    else:
+        print(patch_msg, file=sys.stderr)
+    print()
+
     conf_map = {p.name: (p.host, p.port) for p in pods}
     ssh_map = _parse_ssh_config_pods()
     mcp_map = _parse_mcp_pods()
@@ -455,11 +494,11 @@ def cmd_check(pods: list[Pod]) -> None:
             all_ok = False
 
     print()
-    if all_ok:
+    if all_ok and patch_ok:
         print("All configs in sync.")
-    else:
+    elif not all_ok:
         print("Configs out of sync! Run: python scripts/pod_config.py --sync")
-    sys.exit(0 if all_ok else 1)
+    sys.exit(0 if (all_ok and patch_ok) else 1)
 
 
 def cmd_sync(pods: list[Pod]) -> None:

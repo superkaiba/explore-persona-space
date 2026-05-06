@@ -40,10 +40,19 @@ after `npm install` (which would overwrite our edit), run:
 patch -p1 -d ~/.local < patches/mcp-ssh-manager+3.2.2.patch
 ```
 
-Or, for persistent application across reinstalls, install
-[`patch-package`](https://github.com/ds300/patch-package) in
-`~/.local/package.json` and copy this file to
+The diff uses `a/node_modules/...` / `b/node_modules/...` headers so it
+also works with [`patch-package`](https://github.com/ds300/patch-package).
+For persistent application across reinstalls, install `patch-package` in
+`~/.local/package.json` (with a `postinstall` hook) and copy this file to
 `~/.local/patches/mcp-ssh-manager+3.2.2.patch`.
+
+`scripts/pod.py config --check` greps the live `index.js` for the
+`_hotReloadFromMcpJson` sentinel and fails loudly if the patch has been
+reverted, so silent regression after `npm install` cannot go unnoticed.
+
+`SSH_HOTRELOAD_PATH` env var (read by the patched code) overrides the
+default `~/.claude/mcp.json` path — useful for testing or non-standard
+installs.
 
 ### Companion change in `pod_config.py`
 

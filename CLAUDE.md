@@ -196,7 +196,7 @@ All pod operations are unified under `scripts/pod.py`. Ephemeral lifecycle comma
 
 ```bash
 # Configuration (single source of truth: scripts/pods.conf)
-python scripts/pod.py config --list              # Show all pods (permanent + ephemeral)
+python scripts/pod.py config --list              # Show all currently-registered pods
 python scripts/pod.py config --check             # Verify SSH + MCP configs match pods.conf
 python scripts/pod.py config --sync              # Regenerate SSH + MCP configs from pods.conf
 python scripts/pod.py config --update <name> --host X --port Y  # Manual IP update
