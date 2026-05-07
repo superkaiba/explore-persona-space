@@ -1380,6 +1380,248 @@ def plot_cv_mse_by_layer(repeated_mse, repeated_ci, loocv_mse, output_subpath: s
     log(f"Saved CV-MSE figure to figures/{output_subpath}")
 
 
+def plot_within_category_l15(
+    within_cat: dict,
+    output_subpath: str,
+    layers_to_show: tuple[int, ...] = (15, 12),
+):
+    """Within-category Spearman bars at L15 and L12.
+
+    Plan §3e step 15 figure: bar plot of within-category Spearman ρ for the three
+    categories (occupational n=20, character n=16, generic_helper n=12) at L15 and
+    L12, with raw α=0.05 |ρ| critical thresholds (from Spearman tables for the
+    respective n) drawn as dashed horizontal lines:
+        n=20 -> |ρ|>0.444   (occupational)
+        n=16 -> |ρ|>0.497   (character)
+        n=12 -> |ρ|>0.576   (generic_helper)
+    These thresholds are descriptive (within-category power is logged at n=20/16/12
+    in §1; the headline 3-gate test uses the n=20 occupational gate at 0.444).
+    """
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        paper_palette,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    set_paper_style("neurips")
+    cats = ("occupational", "character", "generic_helper")
+    raw_thresh = {"occupational": 0.444, "character": 0.497, "generic_helper": 0.576}
+    colors = paper_palette(3)
+    cat_colors = dict(zip(cats, colors, strict=True))
+
+    fig, axes = plt.subplots(1, len(layers_to_show), figsize=(5.0 * len(layers_to_show), 4.0))
+    if len(layers_to_show) == 1:
+        axes = [axes]
+
+    for ax, layer in zip(axes, layers_to_show, strict=True):
+        layer_key = f"layer_{layer}"
+        layer_blob = within_cat.get(layer_key, {})
+        rhos = []
+        labels = []
+        bar_colors = []
+        for cat in cats:
+            entry = layer_blob.get(cat, {})
+            rho = entry.get("spearman_rho")
+            n_cat = entry.get("n", 0)
+            if rho is None:
+                continue
+            rhos.append(rho)
+            labels.append(f"{cat}\n(n={n_cat})")
+            bar_colors.append(cat_colors[cat])
+
+        xs = np.arange(len(rhos))
+        ax.bar(xs, rhos, color=bar_colors, edgecolor="black", linewidth=0.5)
+        ax.set_xticks(xs)
+        ax.set_xticklabels(labels, fontsize=8)
+        ax.axhline(0, color="black", linewidth=0.6)
+
+        for i, cat in enumerate(cats):
+            if i >= len(rhos):
+                continue
+            thr = raw_thresh[cat]
+            ax.hlines(
+                [thr, -thr],
+                xmin=i - 0.4,
+                xmax=i + 0.4,
+                colors="gray",
+                linestyles="--",
+                linewidth=0.7,
+            )
+
+        ax.set_ylim(-1.0, 1.0)
+        ax.set_ylabel("Spearman ρ (cosine vs source rate)")
+        ax.set_title(f"L{layer}: within-category fits (raw α=0.05 thresholds dashed)")
+
+    plt.tight_layout()
+    savefig_paper(fig, output_subpath, dir=str(PROJECT_ROOT / "figures"))
+    plt.close(fig)
+    log(f"Saved within-category figure to figures/{output_subpath}")
+
+
+def plot_offdiagonal_l15(
+    off_diag_meta: list[dict],
+    rates: dict[str, float],
+    output_subpath: str,
+    *,
+    strong_threshold: float = 0.30,
+    layer_label: int = 15,
+):
+    """Off-diagonal cosine vs bystander-rate scatter at L15 with strong/weak split.
+
+    Plan §3e step 15 figure: scatter of off-diagonal cosine vs bystander rate
+    (n≤2256), colored by whether the SOURCE persona is a "strong emitter" (diagonal
+    rate > 30 %) or a "weak emitter" (diagonal rate ≤ 30 %). Per-subset Spearman ρ
+    annotated.
+    """
+    import matplotlib.pyplot as plt
+    from scipy import stats
+
+    from explore_persona_space.analysis.paper_plots import (
+        paper_palette,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    set_paper_style("neurips")
+    palette = paper_palette(2)
+    color_strong, color_weak = palette[0], palette[1]
+
+    fig, ax = plt.subplots(figsize=(7.5, 5.0))
+
+    strong_pts = [m for m in off_diag_meta if rates.get(m["src"], 0.0) > strong_threshold]
+    weak_pts = [m for m in off_diag_meta if rates.get(m["src"], 0.0) <= strong_threshold]
+
+    def _scatter(group: list[dict], color: str, label: str) -> str:
+        if not group:
+            return f"{label}: n=0"
+        xs = np.array([m["cos"] for m in group])
+        ys = np.array([m["rate"] for m in group])
+        ax.scatter(xs, ys * 100, color=color, alpha=0.45, s=18, edgecolors="none", label=label)
+        if len(group) >= 5:
+            rho, p = stats.spearmanr(xs, ys)
+            return f"{label}: n={len(group)}, ρ={rho:.2f}, p={p:.3g}"
+        return f"{label}: n={len(group)} (too few for Spearman)"
+
+    strong_summary = _scatter(
+        strong_pts, color_strong, f"strong emitter (diag > {strong_threshold:.0%})"
+    )
+    weak_summary = _scatter(weak_pts, color_weak, f"weak emitter (diag ≤ {strong_threshold:.0%})")
+
+    ax.axhline(0, color="gray", linewidth=0.5)
+    ax.set_xlabel(f"Centered cosine (source -> eval persona) at L{layer_label}")
+    ax.set_ylabel("Bystander source rate (%)")
+    ax.set_title(
+        f"Off-diagonal cosine vs bystander rate at L{layer_label} "
+        f"(n={len(off_diag_meta)})\n{strong_summary} | {weak_summary}",
+        fontsize=9,
+    )
+    ax.legend(loc="upper right", fontsize=8)
+    plt.tight_layout()
+    savefig_paper(fig, output_subpath, dir=str(PROJECT_ROOT / "figures"))
+    plt.close(fig)
+    log(f"Saved off-diagonal figure to figures/{output_subpath}")
+
+
+def plot_string_similarity_baseline(
+    cosines: dict[int, dict[str, float]],
+    rates: dict[str, float],
+    levs: dict[str, float],
+    jaccards: dict[str, float],
+    bpejaccs: dict[str, float],
+    steiger_results: dict[str, dict],
+    available: list[str],
+    output_subpath: str,
+    layers_to_show: tuple[int, ...] = (15, 12),
+):
+    """3 columns × 2 rows: cosine vs each string-similarity baseline at L15 and L12.
+
+    Plan §3e step 15 figure. For each (layer, baseline) cell:
+      x-axis: baseline (-Levenshtein, token-Jaccard, BPE-Jaccard)
+      y-axis: source rate (%)
+      Title: descriptive Steiger Z₁ for cosine-vs-baseline (from steiger_results).
+
+    Steiger Z₁ asks "is the centered-cosine→rate Spearman distinguishable from the
+    string-baseline→rate Spearman, accounting for the within-sample baseline–cosine
+    correlation?" |Z|>1.96 ⇒ distinguishable at α=0.05.
+    """
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        paper_palette,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    set_paper_style("neurips")
+    cat_colors = dict(
+        zip(("occupational", "character", "generic_helper"), paper_palette(3), strict=True)
+    )
+
+    baselines = (
+        (
+            "neg_levenshtein",
+            "−Levenshtein",
+            lambda p: -levs[p],
+            "steiger_z_cosine_vs_neg_levenshtein",
+        ),
+        (
+            "token_jaccard",
+            "Token Jaccard",
+            lambda p: jaccards[p],
+            "steiger_z_cosine_vs_token_jaccard",
+        ),
+        (
+            "bpe_jaccard",
+            "BPE Jaccard (Qwen)",
+            lambda p: bpejaccs[p],
+            "steiger_z_cosine_vs_bpe_jaccard",
+        ),
+    )
+
+    n_rows = len(layers_to_show)
+    fig, axes = plt.subplots(n_rows, 3, figsize=(11.0, 3.6 * n_rows), squeeze=False)
+
+    for row_i, layer in enumerate(layers_to_show):
+        steiger_layer = steiger_results.get(f"layer_{layer}", {})
+        for col_i, (_bkey, blabel, val_fn, steiger_key) in enumerate(baselines):
+            ax = axes[row_i][col_i]
+            for p in available:
+                cat = CATEGORIES.get(p, "occupational")
+                ax.scatter(
+                    val_fn(p),
+                    rates[p] * 100,
+                    color=cat_colors.get(cat, "black"),
+                    s=30,
+                    alpha=0.85,
+                    edgecolors="black",
+                    linewidths=0.3,
+                )
+            zinfo = steiger_layer.get(steiger_key, {})
+            z = zinfo.get("z")
+            zp = zinfo.get("p")
+            distinguishable = bool(z is not None and abs(z) > 1.96)
+            title_extra = (
+                f"Z={z:.2f}, p={zp:.3f}" if (z is not None and zp is not None) else "Z=n/a"
+            )
+            star = " *" if distinguishable else ""
+            ax.set_title(f"L{layer} | {blabel}\n(Steiger {title_extra}{star})", fontsize=8)
+            ax.set_xlabel(blabel)
+            if col_i == 0:
+                ax.set_ylabel("Source rate (%)")
+
+    fig.suptitle(
+        "String-similarity baselines vs source rate (Steiger Z₁ vs cosine descriptive; "
+        "* marks |Z|>1.96)",
+        fontsize=10,
+    )
+    plt.tight_layout(rect=(0, 0, 1, 0.96))
+    savefig_paper(fig, output_subpath, dir=str(PROJECT_ROOT / "figures"))
+    plt.close(fig)
+    log(f"Saved string-similarity baseline figure to figures/{output_subpath}")
+
+
 def plot_n24_to_n48_drift(sign_test_result: dict, output_subpath: str):
     """24→48 drift histogram with sign-test annotation."""
     if not sign_test_result.get("available"):
@@ -1873,16 +2115,29 @@ def full_analysis():  # noqa: C901  (top-level orchestrator; intentionally seque
         )
 
     # ── Plots ────────────────────────────────────────────────────────────
+    # Plan §3e step 15 mandates 7 figures. We deliberately do NOT wrap these in
+    # try/except: per CLAUDE.md "Prefer crashing over wrong results" — a missing
+    # matplotlib backend or a single bad plot must fail loudly so the smoke-test
+    # catches it rather than silently shipping an incomplete figure batch.
     log("\n=== Generating plots ===")
-    try:
-        plot_hero_l15(cosines[PRIMARY_LAYER], rates, "issue_296/hero_l15_n48", layer_label=15)
-        plot_hero_l15(cosines[CO_PRIMARY_LAYER], rates, "issue_296/hero_l12_n48", layer_label=12)
-        plot_spearman_by_layer(layer_stats, "issue_296/spearman_by_layer")
-        plot_cv_mse_by_layer(repeated_mse, repeated_ci, loocv_mse, "issue_296/cv_mse_by_layer")
-        if sign_test.get("available"):
-            plot_n24_to_n48_drift(sign_test, "issue_296/n24_to_n48_drift")
-    except Exception as e:
-        log(f"  Plot generation failed: {e} — continuing to save JSON")
+    plot_hero_l15(cosines[PRIMARY_LAYER], rates, "issue_296/hero_l15_n48", layer_label=15)
+    plot_hero_l15(cosines[CO_PRIMARY_LAYER], rates, "issue_296/hero_l12_n48", layer_label=12)
+    plot_spearman_by_layer(layer_stats, "issue_296/spearman_by_layer")
+    plot_cv_mse_by_layer(repeated_mse, repeated_ci, loocv_mse, "issue_296/cv_mse_by_layer")
+    plot_within_category_l15(within_cat, "issue_296/within_category_l15")
+    plot_offdiagonal_l15(off_diag_meta, rates, "issue_296/offdiagonal_l15", layer_label=15)
+    plot_string_similarity_baseline(
+        cosines,
+        rates,
+        levs,
+        jaccards,
+        bpejaccs,
+        steiger_results,
+        available,
+        "issue_296/string_similarity_baseline",
+    )
+    if sign_test.get("available"):
+        plot_n24_to_n48_drift(sign_test, "issue_296/n24_to_n48_drift")
 
     # ── Save full results JSON ───────────────────────────────────────────
     log("\n=== Saving regression_results.json ===")
