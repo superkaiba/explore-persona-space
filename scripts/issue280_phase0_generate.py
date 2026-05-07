@@ -950,7 +950,11 @@ def _audit_cell(rows: list[dict], reference: dict, *, arm: str) -> dict:
                 ttr_pass,
                 bent_pass,
                 byte_pass,
-                letter_pass,
+                # rationale_letter_pass: dropped per user decision (v8) — gate measured
+                # English-style artifact (Sonnet's prose habits like "the letter A is correct
+                # because..."), not wrong-letter leakage. The wrong-Answer-letter distribution
+                # is uniform by construction via numpy seed=42. Field is still recorded
+                # descriptively above as "rationale_letter_pass" for analyst reference.
                 target_letter_pass,
                 seed_rotation_pass,
             ]
