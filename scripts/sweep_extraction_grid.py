@@ -511,7 +511,7 @@ def generate_responses_vllm(
         model=model_name,
         tensor_parallel_size=1,
         max_model_len=2048,
-        gpu_memory_utilization=0.85,
+        gpu_memory_utilization=0.55,
     )
     sampling_params = SamplingParams(temperature=0.0, max_tokens=max_new_tokens)
 
