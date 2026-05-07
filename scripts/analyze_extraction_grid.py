@@ -195,31 +195,91 @@ def load_per_q_method_a(
     roles: list[str],
     qids: list[int],
     layers_in_cache: list[int] | None = None,
+    position: int = -1,
+    prompt_positions: list[int] | None = None,
 ) -> torch.Tensor:
-    """Load Method A per-question caches at a single ABSOLUTE layer over a question subset.
+    """Load Method A per-question caches at a single (position, layer) cell.
 
     Returns (N_roles, n_qids, D) fp32 tensor. Used for H2 AUC computation:
     per-question hidden states act as the "samples" labelled by persona.
 
+    Round 2 (B1 fix): supports BOTH:
+      - 4-D layout (canonical, written by round-2 sweep_extraction_grid):
+            (n_q, n_layers, n_prompt_positions, D)  fp16
+        Pass `prompt_positions` (the ordered list from sweep_metadata.json) so we
+        can map a position offset (e.g. -1) to its dim-2 index.
+      - 3-D layout (legacy #218):
+            (n_q, n_layers, D)  fp16  — assumed to be at i=-1.
+
     Args:
         layer: ABSOLUTE model-layer index (e.g. 21 for the project default).
-        layers_in_cache: ordered list of absolute layer indices that were dumped to the
-            per-q cache (cache dim 1 is `len(layers_in_cache)`). If None, defaults to
-            the canonical full set range(28) — fails fast if the cache shape disagrees.
+        layers_in_cache: ordered list of absolute layer indices that were dumped to
+            the per-q cache (cache dim 1 is `len(layers_in_cache)`). If None,
+            defaults to the canonical full set range(28).
+        position: Prompt-position offset to slice (e.g. -1). Only used for 4-D caches.
+        prompt_positions: ordered list of prompt positions in the cache's dim 2.
+            For 4-D caches; ignored for 3-D legacy caches.
     """
-    method_dir = centroid_root / "method_a"
+    return load_per_q_at_cell(
+        centroid_root=centroid_root,
+        method="a",
+        position=position,
+        layer=layer,
+        roles=roles,
+        qids=qids,
+        layers_in_cache=layers_in_cache,
+        prompt_positions=prompt_positions,
+        response_positions=None,
+    )
+
+
+def load_per_q_at_cell(  # noqa: C901
+    centroid_root: Path,
+    method: str,
+    position: int,
+    layer: int,
+    roles: list[str],
+    qids: list[int],
+    layers_in_cache: list[int] | None = None,
+    prompt_positions: list[int] | None = None,
+    response_positions: list[int] | None = None,
+) -> torch.Tensor:
+    """Unified per-question hidden-state loader for any (method, position, layer) cell.
+
+    Round 2 / B1 fix: H2 must evaluate each candidate cell in its OWN activation
+    space. This function maps a (method, position, layer) request to the right
+    slice of the per-q cache file.
+
+    Per-q cache shapes by method (round 2):
+        method_a              (n_q, n_layers, n_prompt_positions, D)  fp16  4-D
+                              OR (n_q, n_layers, D) fp16 3-D legacy at i=-1
+        method_r_per_token    (n_q, n_layers, n_response_positions, D) fp16 4-D
+        method_b              (n_q, n_layers, D)                       fp16 3-D
+        method_bstar          (n_q, n_layers, D)                       fp16 3-D
+        method_c1             (n_q, n_layers, D)                       fp16 3-D (broadcast)
+        method_c2             (n_q, n_layers, D)                       fp16 3-D (broadcast)
+        method_c3             (n_q, n_layers, D)                       fp16 3-D
+
+    Returns (N_roles, n_qids, D) fp32 tensor. Roles missing from disk raise
+    FileNotFoundError; use a try/except in the caller if optional.
+    """
+    method_dir = centroid_root / f"method_{method}"
     if not method_dir.exists():
         raise FileNotFoundError(f"Missing per-q cache dir: {method_dir}")
     qids_idx = torch.tensor(qids, dtype=torch.long)
     rows: list[torch.Tensor] = []
-    sample_path = next(method_dir.glob("*__per_q.pt"))
+    sample_path = next(method_dir.glob("*__per_q.pt"), None)
+    if sample_path is None:
+        raise FileNotFoundError(f"No per-q caches in {method_dir}")
     sample = torch.load(sample_path, weights_only=True, map_location="cpu")
-    if sample.ndim != 3:
-        raise RuntimeError(f"per_q shape mismatch: {sample.shape} (expected (n_q, n_layers, D))")
+    if sample.ndim not in (3, 4):
+        raise RuntimeError(
+            f"per_q shape mismatch for {method}: {sample.shape} "
+            f"(expected 3-D (n_q, n_layers, D) or 4-D (n_q, n_layers, n_pos, D))"
+        )
     n_q_avail = sample.shape[0]
     n_layers_avail = sample.shape[1]
     if layers_in_cache is None:
-        # Canonical full sweep dumps all 28 layers in order (0..27).
         layers_in_cache = list(range(n_layers_avail))
     if len(layers_in_cache) != n_layers_avail:
         raise RuntimeError(
@@ -236,32 +296,148 @@ def load_per_q_method_a(
         raise RuntimeError(
             f"Requested qid {max(qids)} but per_q cache has only {n_q_avail} questions."
         )
+    # Resolve the position-axis index for 4-D layouts:
+    pos_idx: int | None = None
+    if sample.ndim == 4:
+        if method == "a" or method == "a_per_token":
+            cache_positions = prompt_positions
+        elif method == "r_per_token":
+            cache_positions = response_positions
+        else:
+            cache_positions = None
+        if cache_positions is None:
+            raise RuntimeError(
+                f"4-D per_q cache at method={method} requires position list; none provided."
+            )
+        if position not in cache_positions:
+            raise RuntimeError(
+                f"Requested position {position} but per_q cache only has positions "
+                f"{cache_positions}."
+            )
+        pos_idx = cache_positions.index(position)
     for role in roles:
         path = method_dir / f"{role}__per_q.pt"
         if not path.exists():
             raise FileNotFoundError(f"Missing per-q cache: {path}")
         per_q = torch.load(path, weights_only=True, map_location="cpu")  # fp16
-        rows.append(per_q[qids_idx, cache_layer_idx, :].float())
+        if per_q.ndim == 3:
+            rows.append(per_q[qids_idx, cache_layer_idx, :].float())
+        else:  # ndim == 4
+            rows.append(per_q[qids_idx, cache_layer_idx, pos_idx, :].float())
+    return torch.stack(rows)
+
+
+def has_per_q_cache(centroid_root: Path, method: str) -> bool:
+    """Return True iff `method_<m>/<role>__per_q.pt` exists for at least one role."""
+    method_dir = centroid_root / f"method_{method}"
+    if not method_dir.exists():
+        return False
+    return any(method_dir.glob("*__per_q.pt"))
+
+
+def load_train_only_centroids(
+    centroid_root: Path,
+    method: str,
+    layer: int,
+    position: int,
+    roles: list[str],
+    layers_in_cache: list[int] | None,
+    prompt_positions: list[int] | None,
+    response_positions: list[int] | None,
+) -> torch.Tensor | None:
+    """Load train-only centroids written by sweep_extraction_grid.py (B2 fix).
+
+    Returns (N_roles, D) fp32 tensor, or None if the train-only centroid file does
+    not exist. Roles missing on disk are filled with NaN so downstream NaN-filtering
+    can drop them.
+
+    Train-only centroid shapes by method (round 2):
+        method_a              (n_layers, n_prompt_positions, D)   fp32
+        method_r_per_token    (n_layers, n_response_positions, D) fp32
+        method_b/bstar/c*     (n_layers, D)                       fp32
+    """
+    method_dir = centroid_root / f"method_{method}"
+    if not method_dir.exists():
+        return None
+    sample_path = next(method_dir.glob("*__centroid_train.pt"), None)
+    if sample_path is None:
+        return None
+    sample = torch.load(sample_path, weights_only=True, map_location="cpu")
+    if sample.ndim not in (2, 3):
+        raise RuntimeError(
+            f"train-only centroid shape mismatch for {method}: {sample.shape} "
+            f"(expected 2-D (n_layers, D) or 3-D (n_layers, n_pos, D))"
+        )
+    n_layers_avail = sample.shape[0]
+    if layers_in_cache is None:
+        layers_in_cache = list(range(n_layers_avail))
+    if len(layers_in_cache) != n_layers_avail:
+        raise RuntimeError(
+            f"train-only centroid layers_in_cache mismatch ({len(layers_in_cache)} vs "
+            f"{n_layers_avail}) for method={method}."
+        )
+    if layer not in layers_in_cache:
+        return None
+    cache_layer_idx = layers_in_cache.index(layer)
+    pos_idx: int | None = None
+    if sample.ndim == 3:
+        if method in ("a", "a_per_token"):
+            cache_positions = prompt_positions
+        elif method == "r_per_token":
+            cache_positions = response_positions
+        else:
+            cache_positions = None
+        if cache_positions is None or position not in cache_positions:
+            return None
+        pos_idx = cache_positions.index(position)
+    D = sample.shape[-1]
+    rows: list[torch.Tensor] = []
+    for role in roles:
+        path = method_dir / f"{role}__centroid_train.pt"
+        if not path.exists():
+            rows.append(torch.full((D,), float("nan")))
+            continue
+        cent = torch.load(path, weights_only=True, map_location="cpu").float()
+        if cent.ndim == 2:
+            rows.append(cent[cache_layer_idx, :])
+        else:
+            rows.append(cent[cache_layer_idx, pos_idx, :])
     return torch.stack(rows)
 
 
 # ── H1: clustering ───────────────────────────────────────────────────────────
 
 
-def compute_h1_clustering(
+def compute_h1_clustering(  # noqa: C901
     centroid_root: Path,
     cells: list[tuple[str, int, int]],
     roles: list[str],
     train_qids: list[int],
     rng_seed: int,
     layers_in_cache: list[int] | None = None,
+    prompt_positions: list[int] | None = None,
+    response_positions: list[int] | None = None,
+    sweep_manifest_total_cells: int | None = None,
 ) -> dict:
     """Cluster cells by 1 - Pearson r of mean-centered cosine matrix off-diagonals.
 
     Per plan §7 step 1: H1 evaluation uses the 200 TRAINING questions only — H1 must
-    not consume the test split. We re-aggregate centroids from per-question caches
-    over q_idx 0..199 wherever per-q caches exist; cells without per-q caches use the
-    centroid-on-disk (which was averaged over all 240 questions in the sweep).
+    not consume the test split. Round 2 / B2 fix:
+      1. For methods with per-q caches (a, r_per_token, b, bstar, c1, c2, c3),
+         re-aggregate centroids from per-q caches over `train_qids` so every cell
+         is evaluated on the train slice — eliminating the round-1 issue where
+         non-Method-A cells silently consumed the test split via disk centroids
+         averaged over all 240 questions.
+      2. If a `__centroid_train.pt` file is present (written by sweep_extraction_grid
+         when `--train-qids` is set), prefer it over re-aggregation — same numbers,
+         no fp16→fp32 round-trip drift.
+      3. CAA has no per-q cache (cells are descriptive-only per plan §3 v3 fix 1)
+         and continues to use the disk centroid (full 240 questions). This is
+         documented in the run JSON via the `h1_per_method_train_aggregation` field.
+
+    Round 2 / C5 fix: cell-count denominator now compares against
+    `sweep_manifest_total_cells` (sum of `cells_per_method` from cells_manifest.json),
+    not the post-NaN-filter survivor count.
     """
     print(
         f"\n[H1] Computing cosine matrices over {len(cells)} cells "
@@ -277,22 +453,65 @@ def compute_h1_clustering(
             "cluster_assignments": {},
         }
 
+    # Track per-method aggregation: "train_aggregated" = re-aggregated train-only,
+    # "train_centroid_file" = loaded from __centroid_train.pt, "disk_full_240" =
+    # disk centroid (full-question; only for CAA per plan).
+    per_method_train_agg: dict[str, str] = {}
+
     # Build mean-centered cosine matrix per cell
     matrices: dict[tuple[str, int, int], np.ndarray] = {}
     for method, position, layer in cells:
-        # Try per-q cache for train-only mean if available; else use disk centroid.
-        per_q_dir = centroid_root / f"method_{method}"
-        cents: torch.Tensor
-        if (per_q_dir / f"{roles[0]}__per_q.pt").exists() and method == "a":
+        cents: torch.Tensor | None = None
+        # 1. Prefer cached train-only centroid file if present.
+        try:
+            train_cents = load_train_only_centroids(
+                centroid_root,
+                method,
+                layer,
+                position,
+                roles,
+                layers_in_cache=layers_in_cache,
+                prompt_positions=prompt_positions,
+                response_positions=response_positions,
+            )
+        except RuntimeError as exc:
+            print(
+                f"  WARNING: train-only centroid load failed for "
+                f"({method}, pos={position}, layer={layer}): {exc}",
+                flush=True,
+            )
+            train_cents = None
+        if train_cents is not None:
+            cents = train_cents
+            per_method_train_agg.setdefault(method, "train_centroid_file")
+        # 2. Else re-aggregate from per-q caches over train_qids.
+        if cents is None and has_per_q_cache(centroid_root, method):
             try:
-                per_q_block = load_per_q_method_a(
-                    centroid_root, layer, roles, train_qids, layers_in_cache=layers_in_cache
+                per_q_block = load_per_q_at_cell(
+                    centroid_root,
+                    method,
+                    position,
+                    layer,
+                    roles,
+                    train_qids,
+                    layers_in_cache=layers_in_cache,
+                    prompt_positions=prompt_positions,
+                    response_positions=response_positions,
                 )
                 cents = per_q_block.mean(dim=1)  # (N, D)
-            except (FileNotFoundError, RuntimeError):
-                cents = load_cell_centroids(centroid_root, method, position, layer, roles)
-        else:
+                per_method_train_agg.setdefault(method, "train_aggregated")
+            except (FileNotFoundError, RuntimeError) as exc:
+                print(
+                    f"  WARNING: train per-q re-agg failed ({method}, pos={position}, "
+                    f"layer={layer}): {exc}",
+                    flush=True,
+                )
+        # 3. Else fall back to the disk centroid (FULL 240 questions). This is the
+        #    expected path for CAA only (descriptive-only per plan §3 v3 fix 1).
+        if cents is None:
             cents = load_cell_centroids(centroid_root, method, position, layer, roles)
+            per_method_train_agg.setdefault(method, "disk_full_240")
+
         nan_mask = torch.isnan(cents).any(dim=1)
         if nan_mask.any():
             # Drop NaN rows + report
@@ -314,11 +533,16 @@ def compute_h1_clustering(
     if n_cells < 2:
         return {
             "cells_total": n_cells,
+            "cells_pre_nan_filter": len(cells),
+            "cells_in_sweep_manifest": (
+                sweep_manifest_total_cells if sweep_manifest_total_cells is not None else len(cells)
+            ),
             "n_clusters": n_cells,
             "coverage_fraction": 1.0 if n_cells == 1 else 0.0,
             "verdict": "FAIL" if n_cells == 0 else "PASS",
             "reason": "fewer than 2 cells; clustering trivially passes / fails",
             "cluster_assignments": {f"cell_{k}": 0 for k in cell_keys},
+            "per_method_train_aggregation": per_method_train_agg,
         }
 
     # Pairwise mc_r distances
@@ -354,8 +578,15 @@ def compute_h1_clustering(
     for k, c in cluster_assignments.items():
         composition.setdefault(c, []).append(k)
 
-    # H1 cell-count denominator manifest check (per plan §7)
-    denominator_drift = abs(n_cells - PRE_REGISTERED_H1_CELL_DENOMINATOR)
+    # H1 cell-count denominator manifest check (per plan §7).
+    # C5 fix: compare against the SWEEP MANIFEST total (cells_manifest.json), not the
+    # post-NaN-filter survivor count, so the denominator reflects what the sweep
+    # actually produced — not what survived NaN filtering.
+    if sweep_manifest_total_cells is not None:
+        denominator_observed = sweep_manifest_total_cells
+    else:
+        denominator_observed = len(cells)  # pre-NaN-filter cell count
+    denominator_drift = abs(denominator_observed - PRE_REGISTERED_H1_CELL_DENOMINATOR)
     h1_denominator_ok = denominator_drift <= 1
 
     n_clusters_total = len(unique)
@@ -367,10 +598,16 @@ def compute_h1_clustering(
 
     return {
         "cells_total": n_cells,
+        "cells_after_nan_filter": n_cells,
+        "cells_pre_nan_filter": len(cells),
+        "cells_in_sweep_manifest": (
+            sweep_manifest_total_cells if sweep_manifest_total_cells is not None else len(cells)
+        ),
         "n_clusters": int(n_clusters_total),
         "top_class_count": len(top_classes),
         "top_coverage_fraction": float(top_coverage),
         "denominator_pre_registered": PRE_REGISTERED_H1_CELL_DENOMINATOR,
+        "denominator_observed_for_check": int(denominator_observed),
         "denominator_drift": int(denominator_drift),
         "denominator_manifest_ok": bool(h1_denominator_ok),
         "verdict": "PASS" if h1_pass else "FAIL",
@@ -381,33 +618,11 @@ def compute_h1_clustering(
         },
         "cluster_assignments": cluster_assignments,
         "cluster_composition": {str(k): v for k, v in composition.items()},
+        "per_method_train_aggregation": per_method_train_agg,
     }
 
 
 # ── H2: per-persona discrimination AUC ───────────────────────────────────────
-
-
-def compute_auc_one_vs_rest(
-    target_acts: np.ndarray, other_acts: np.ndarray, direction: np.ndarray
-) -> float:
-    """Per-persona discrimination AUC.
-
-    Score(x) = <x, direction> / ||direction|| (cosine-like, monotone equivalent to dot
-    product when direction is fixed). Higher score should rank target over non-target.
-
-    Args:
-        target_acts: (n_target, D) — held-out activations of target persona.
-        other_acts: (n_other, D) — held-out activations of all OTHER personas.
-        direction: (D,) — candidate persona vector.
-
-    Returns: AUC in [0, 1].
-    """
-    if target_acts.size == 0 or other_acts.size == 0:
-        return 0.5
-    direction = direction / (np.linalg.norm(direction) + 1e-12)
-    target_scores = target_acts @ direction
-    other_scores = other_acts @ direction
-    return _auc_from_scores(target_scores, other_scores)
 
 
 def _auc_from_scores(pos_scores: np.ndarray, neg_scores: np.ndarray) -> float:
@@ -428,64 +643,6 @@ def _auc_from_scores(pos_scores: np.ndarray, neg_scores: np.ndarray) -> float:
 def candidate_cells(cells: list[tuple[str, int, int]]) -> list[tuple[str, int, int]]:
     """H2 candidate set EXCLUDES CAA per plan §3 v3 fix 1."""
     return [(m, p, lyr) for (m, p, lyr) in cells if m in H2_CANDIDATE_METHODS]
-
-
-def arditi_select_per_persona(
-    cell_centroids: dict[tuple[str, int, int], torch.Tensor],
-    per_q_acts_train: torch.Tensor,
-    per_q_acts_val: torch.Tensor,
-    persona_idx: int,
-) -> tuple[tuple[str, int, int], float]:
-    """Pick the (method, position, layer) cell maximising train+val AUC for `persona_idx`.
-
-    Args:
-        cell_centroids: dict mapping cell -> (N_personas, D) centroids.
-        per_q_acts_train: (N_personas, n_train, D) hidden states.
-        per_q_acts_val: (N_personas, n_val, D) hidden states.
-        persona_idx: int index of target persona.
-
-    Returns: (best_cell, best_auc).
-    """
-    tv_acts = torch.cat([per_q_acts_train, per_q_acts_val], dim=1)  # (N, n_tv, D)
-    target = tv_acts[persona_idx].numpy()  # (n_tv, D)
-    other = (
-        torch.cat([tv_acts[:persona_idx], tv_acts[persona_idx + 1 :]], dim=0)
-        .reshape(-1, tv_acts.shape[-1])
-        .numpy()
-    )  # ((N-1)*n_tv, D)
-
-    best_auc = -np.inf
-    best_cell: tuple[str, int, int] | None = None
-    for cell, centroids in cell_centroids.items():
-        direction = centroids[persona_idx].numpy()
-        if not np.isfinite(direction).all():
-            continue
-        auc = compute_auc_one_vs_rest(target, other, direction)
-        if auc > best_auc:
-            best_auc = auc
-            best_cell = cell
-    if best_cell is None:
-        # Degenerate: no valid cell. Return reference-like sentinel.
-        return ("a", -1, 21), 0.5
-    return best_cell, float(best_auc)
-
-
-def evaluate_test_auc(
-    centroid: torch.Tensor,
-    per_q_acts_test: torch.Tensor,
-    persona_idx: int,
-) -> float:
-    """Evaluate per-persona discrimination AUC on the held-out test split."""
-    target = per_q_acts_test[persona_idx].numpy()
-    other = (
-        torch.cat([per_q_acts_test[:persona_idx], per_q_acts_test[persona_idx + 1 :]], dim=0)
-        .reshape(-1, per_q_acts_test.shape[-1])
-        .numpy()
-    )
-    direction = centroid.numpy()
-    if not np.isfinite(direction).all():
-        return 0.5
-    return compute_auc_one_vs_rest(target, other, direction)
 
 
 def paired_permutation_p_value(deltas: np.ndarray, n_perms: int, rng: np.random.Generator) -> float:
@@ -543,6 +700,21 @@ def holm_bonferroni(pvals: np.ndarray, alpha: float) -> np.ndarray:
     return rejected
 
 
+def _auc_from_score_matrix(score: np.ndarray, actor_idx: int) -> float:
+    """AUC at (target persona = actor_idx) given a per-persona-per-question score matrix.
+
+    Args:
+        score: (N_personas, n_q) matrix of scalar scores produced by projecting per-q
+            hidden states onto a fixed direction.
+        actor_idx: the persona whose scores are the positive class.
+
+    Returns: AUC of (actor_idx scores) vs (all other personas' scores).
+    """
+    pos = score[actor_idx]
+    other = np.delete(score, actor_idx, axis=0).ravel()
+    return _auc_from_scores(pos, other)
+
+
 def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one function
     centroid_root: Path,
     cells: list[tuple[str, int, int]],
@@ -556,144 +728,286 @@ def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one func
     n_random_nulls: int,
     rng_seed: int,
     layers_in_cache: list[int] | None = None,
+    prompt_positions: list[int] | None = None,
+    response_positions: list[int] | None = None,
 ) -> dict:
-    """Compute H2 — per-persona discrimination AUC with winner's-curse fix."""
-    print(f"\n[H2] Loading per-q caches at reference layer={reference[2]}...")
-    _ref_method, _ref_pos, ref_layer = reference
+    """Compute H2 — per-persona discrimination AUC with winner's-curse fix.
 
-    # Load per-q activations at the reference layer for ALL train, val, test qids.
-    per_q_train = load_per_q_method_a(
-        centroid_root, ref_layer, roles, train_qids, layers_in_cache=layers_in_cache
-    )
-    per_q_val = load_per_q_method_a(
-        centroid_root, ref_layer, roles, val_qids, layers_in_cache=layers_in_cache
-    )
-    per_q_test = load_per_q_method_a(
-        centroid_root, ref_layer, roles, test_qids, layers_in_cache=layers_in_cache
-    )
+    Round 2 / B1 fix: each candidate cell is evaluated in **its own activation space**.
+    For cell c = (method, position, layer):
+      - Load (N, n_tv, D) per-q hidden states at THAT cell (train+val split).
+      - Direction for persona p = train-only centroid at THAT cell (B2-consistent).
+      - Selection AUC[c, p] uses cell c's hidden states + cell c's direction.
+      - argmax_c per persona -> selected cell c*_p.
+      - Test AUC at c*_p uses cell c*_p's test-split hidden states + cell c*_p's
+        train-only direction.
 
-    print(
-        f"  per_q shapes: train={tuple(per_q_train.shape)}, "
-        f"val={tuple(per_q_val.shape)}, test={tuple(per_q_test.shape)}"
-    )
+    Round 2 / C2 fix: per-persona p-values for BH-FDR / Holm come from the per-
+    persona rank of observed test_AUC_candidate within the 1000-perm permuted-label
+    null distribution at that persona, not from a placeholder global ΔAUC shuffle.
 
-    # Load all candidate-cell centroids (excluding CAA per H2 candidate set).
-    candidates = candidate_cells(cells)
-    print(f"[H2] Loading centroids over {len(candidates)} candidate cells (CAA excluded)...")
-    centroids: dict[tuple[str, int, int], torch.Tensor] = {}
-    for cell in candidates:
-        method, position, layer = cell
-        centroids[cell] = load_cell_centroids(centroid_root, method, position, layer, roles)
-
-    # Reference cell centroid
-    if reference not in centroids:
-        # Reference must be reachable; force-load even if it's a CAA-equivalent
-        method, position, layer = reference
-        centroids[reference] = load_cell_centroids(centroid_root, method, position, layer, roles)
-
+    The candidate set EXCLUDES CAA per plan §3 v3 fix 1.
+    """
     n_personas = len(roles)
-    print(f"[H2] Running per-persona Arditi selection over {n_personas} personas...")
+    candidates = candidate_cells(cells)
+    print(f"\n[H2] Evaluating {len(candidates)} candidate cells in their own activation space...")
+    print(f"  N personas = {n_personas}; candidate methods = {sorted(H2_CANDIDATE_METHODS)}")
 
-    # Per-persona selection + evaluation
-    selected_cells: list[tuple[str, int, int]] = []
-    selected_aucs: list[float] = []
-    test_aucs_candidate: list[float] = []
-    test_aucs_reference: list[float] = []
-    delta_aucs: list[float] = []
-
-    for p_idx in range(n_personas):
-        best_cell, best_train_val_auc = arditi_select_per_persona(
-            centroids, per_q_train, per_q_val, p_idx
-        )
-        selected_cells.append(best_cell)
-        selected_aucs.append(best_train_val_auc)
-
-        cand_centroid = centroids[best_cell][p_idx]
-        ref_centroid = centroids[reference][p_idx]
-        test_auc_cand = evaluate_test_auc(cand_centroid, per_q_test, p_idx)
-        test_auc_ref = evaluate_test_auc(ref_centroid, per_q_test, p_idx)
-        test_aucs_candidate.append(test_auc_cand)
-        test_aucs_reference.append(test_auc_ref)
-        delta_aucs.append(test_auc_cand - test_auc_ref)
-
-    delta_arr = np.asarray(delta_aucs)
-
-    # ── Permuted-persona-label null (load-bearing per plan §6 C4b) ──
-    print(
-        f"[H2] Permuted-persona-label null (B={n_permuted_label_nulls}, "
-        f"per-persona 99th percentile)..."
-    )
+    # Per-cell storage: we hold ONLY the (B+1, N) selection-AUC matrices and per-cell
+    # train-only direction tensors used for downstream test AUC. Activations are
+    # streamed in/out per cell to control memory.
     rng = np.random.default_rng(rng_seed)
-    permuted_null_test_aucs = np.zeros((n_permuted_label_nulls, n_personas))
-    tv_acts = torch.cat([per_q_train, per_q_val], dim=1)  # (N, n_tv, D)
-    for b in range(n_permuted_label_nulls):
-        # Shuffle question -> persona labels at the train+val level
-        # Equivalently, shuffle persona axis of tv_acts so that each "persona slot" has
-        # a random other-persona's activations.
-        perm = rng.permutation(n_personas)
-        tv_perm = tv_acts[perm]  # rebind labels
-        for p_idx in range(n_personas):
-            # Run arditi_select on the permuted labels
-            target = tv_perm[p_idx].numpy()
-            other = (
-                torch.cat([tv_perm[:p_idx], tv_perm[p_idx + 1 :]], dim=0)
-                .reshape(-1, tv_perm.shape[-1])
-                .numpy()
-            )
-            best_auc = -np.inf
-            best_cell: tuple[str, int, int] | None = None
-            for cell, cent in centroids.items():
-                if cell == reference:  # Reference is not in the candidate set (would taint H2)
-                    pass
-                if cell[0] == "caa":
-                    continue
-                direction = cent[p_idx].numpy()
-                if not np.isfinite(direction).all():
-                    continue
-                auc = compute_auc_one_vs_rest(target, other, direction)
-                if auc > best_auc:
-                    best_auc = auc
-                    best_cell = cell
-            if best_cell is None:
-                permuted_null_test_aucs[b, p_idx] = 0.5
-            else:
-                permuted_null_test_aucs[b, p_idx] = evaluate_test_auc(
-                    centroids[best_cell][p_idx], per_q_test, p_idx
-                )
-        if (b + 1) % max(1, n_permuted_label_nulls // 10) == 0:
-            print(f"  permuted null b={b + 1}/{n_permuted_label_nulls}", flush=True)
+    # Permutation matrix of persona-label shufflings, shape (n_permuted_label_nulls, N).
+    # Row b is "actor index for persona slot p in null b" (i.e. perm of persona axis).
+    label_perms = np.stack(
+        [rng.permutation(n_personas) for _ in range(n_permuted_label_nulls)], axis=0
+    )
 
+    # Per-cell storage:
+    #   sel_auc[c]   : (N,)               selection AUC, actor=p, label=p, at cell c
+    #   sel_auc_b[c] : (B, N)             selection AUC, actor=perm[b][p], label=p, cell c
+    #   test_auc[c]  : (N,)               test AUC, actor=p, label=p, cell c
+    #   test_auc_b[c]: (B, N)             test AUC, actor=perm[b][p], label=p, cell c
+    #   has_dir[c]   : (N,) bool          whether train-only centroid is finite for that p
+    #   train_centroid[c] : (N, D) fp32   the cell's train-only centroid
+    sel_auc: dict[tuple[str, int, int], np.ndarray] = {}
+    sel_auc_perm: dict[tuple[str, int, int], np.ndarray] = {}
+    test_auc_cell: dict[tuple[str, int, int], np.ndarray] = {}
+    test_auc_perm_cell: dict[tuple[str, int, int], np.ndarray] = {}
+    has_dir: dict[tuple[str, int, int], np.ndarray] = {}
+    n_skipped_cells = 0
+
+    for cell_idx, cell in enumerate(candidates):
+        method, position, layer = cell
+        try:
+            acts_train = load_per_q_at_cell(
+                centroid_root,
+                method,
+                position,
+                layer,
+                roles,
+                train_qids,
+                layers_in_cache=layers_in_cache,
+                prompt_positions=prompt_positions,
+                response_positions=response_positions,
+            )
+            acts_val = load_per_q_at_cell(
+                centroid_root,
+                method,
+                position,
+                layer,
+                roles,
+                val_qids,
+                layers_in_cache=layers_in_cache,
+                prompt_positions=prompt_positions,
+                response_positions=response_positions,
+            )
+            acts_test = load_per_q_at_cell(
+                centroid_root,
+                method,
+                position,
+                layer,
+                roles,
+                test_qids,
+                layers_in_cache=layers_in_cache,
+                prompt_positions=prompt_positions,
+                response_positions=response_positions,
+            )
+        except (FileNotFoundError, RuntimeError) as exc:
+            print(
+                f"  [H2] cell {cell} not loadable ({exc}); skipping (no per-q cache).",
+                flush=True,
+            )
+            n_skipped_cells += 1
+            continue
+
+        # Per-q caches are fp16; cast to fp32 for the score matrix product.
+        acts_train_f = acts_train.float()
+        acts_tv_f = torch.cat([acts_train_f, acts_val.float()], dim=1)  # (N, n_tv, D)
+        acts_test_f = acts_test.float()  # (N, n_test, D)
+
+        # Train-only centroid is the direction (B2 fix). Mark NaN rows as "no direction".
+        cent_train = acts_train_f.mean(dim=1)  # (N, D)
+        finite = np.isfinite(cent_train.numpy()).all(axis=1)
+        has_dir[cell] = finite
+
+        # Score matrices: score[actor, q, label] = acts[actor, q, :] @ cent_train[label, :]
+        # Vectorized: (N, n_tv, D) @ (D, N) = (N, n_tv, N)
+        # Memory per cell: n_personas^2 * n_tv * 4B ~ 60 MB at full size. Free after use.
+        score_tv = (acts_tv_f @ cent_train.t()).numpy()  # (N, n_tv, N)
+        score_test = (acts_test_f @ cent_train.t()).numpy()  # (N, n_test, N)
+
+        # Per-persona AUC at this cell: actor=label=p
+        cell_sel = np.full(n_personas, np.nan, dtype=np.float64)
+        cell_test = np.full(n_personas, np.nan, dtype=np.float64)
+        for p in range(n_personas):
+            if not finite[p]:
+                continue
+            cell_sel[p] = _auc_from_score_matrix(score_tv[:, :, p], actor_idx=p)
+            cell_test[p] = _auc_from_score_matrix(score_test[:, :, p], actor_idx=p)
+        sel_auc[cell] = cell_sel
+        test_auc_cell[cell] = cell_test
+
+        # Permuted-label null (vectorized over perms but inner loop per persona).
+        # For perm b, persona slot p: AUC at this cell with actor=perm[b][p], label=p.
+        cell_sel_b = np.full((n_permuted_label_nulls, n_personas), np.nan, dtype=np.float64)
+        cell_test_b = np.full((n_permuted_label_nulls, n_personas), np.nan, dtype=np.float64)
+        for b in range(n_permuted_label_nulls):
+            perm_b = label_perms[b]
+            for p in range(n_personas):
+                if not finite[p]:
+                    continue
+                actor = int(perm_b[p])
+                cell_sel_b[b, p] = _auc_from_score_matrix(score_tv[:, :, p], actor_idx=actor)
+                cell_test_b[b, p] = _auc_from_score_matrix(score_test[:, :, p], actor_idx=actor)
+        sel_auc_perm[cell] = cell_sel_b
+        test_auc_perm_cell[cell] = cell_test_b
+
+        # Free the big tensors before next cell.
+        del acts_train, acts_val, acts_test, acts_train_f, acts_tv_f, acts_test_f
+        del score_tv, score_test, cent_train
+
+        if (cell_idx + 1) % max(1, len(candidates) // 20) == 0:
+            print(
+                f"  [H2] processed cell {cell_idx + 1}/{len(candidates)} "
+                f"(skipped so far: {n_skipped_cells})",
+                flush=True,
+            )
+
+    if not sel_auc:
+        return {
+            "verdict": "FAIL",
+            "reason": "No candidate cells were loadable (per-q caches missing).",
+            "n_skipped_cells": n_skipped_cells,
+        }
+
+    # ── Argmax over loaded cells per persona ──
+    cell_keys_loaded = list(sel_auc.keys())
+    sel_matrix = np.stack([sel_auc[c] for c in cell_keys_loaded], axis=0)  # (n_cells, N)
+    test_matrix = np.stack([test_auc_cell[c] for c in cell_keys_loaded], axis=0)
+    # NaN-safe argmax: replace NaN with -inf for argmax
+    sel_matrix_safe = np.where(np.isfinite(sel_matrix), sel_matrix, -np.inf)
+    best_cell_idx = np.argmax(sel_matrix_safe, axis=0)  # (N,)
+    selected_cells: list[tuple[str, int, int]] = [
+        cell_keys_loaded[int(best_cell_idx[p])] for p in range(n_personas)
+    ]
+    selected_aucs = sel_matrix_safe[best_cell_idx, np.arange(n_personas)]
+    test_aucs_candidate = test_matrix[best_cell_idx, np.arange(n_personas)]
+
+    # Reference AUC (test): the reference cell — must be loadable, else fall back to NaN.
+    if reference in test_auc_cell:
+        test_aucs_reference = test_auc_cell[reference]
+    else:
+        # Try to load reference cell's per-q caches one more time.
+        ref_method, ref_pos, ref_layer = reference
+        try:
+            ref_acts_test = load_per_q_at_cell(
+                centroid_root,
+                ref_method,
+                ref_pos,
+                ref_layer,
+                roles,
+                test_qids,
+                layers_in_cache=layers_in_cache,
+                prompt_positions=prompt_positions,
+                response_positions=response_positions,
+            ).float()
+            ref_acts_train = load_per_q_at_cell(
+                centroid_root,
+                ref_method,
+                ref_pos,
+                ref_layer,
+                roles,
+                train_qids,
+                layers_in_cache=layers_in_cache,
+                prompt_positions=prompt_positions,
+                response_positions=response_positions,
+            ).float()
+            ref_cent = ref_acts_train.mean(dim=1)  # (N, D)
+            ref_score_test = (ref_acts_test @ ref_cent.t()).numpy()
+            test_aucs_reference = np.full(n_personas, np.nan, dtype=np.float64)
+            for p in range(n_personas):
+                if np.isfinite(ref_cent[p].numpy()).all():
+                    test_aucs_reference[p] = _auc_from_score_matrix(
+                        ref_score_test[:, :, p], actor_idx=p
+                    )
+        except (FileNotFoundError, RuntimeError):
+            test_aucs_reference = np.full(n_personas, np.nan, dtype=np.float64)
+
+    # NaN-safe delta
+    delta_arr = test_aucs_candidate - test_aucs_reference
+
+    # ── Permuted-label null: per-persona test AUC under perm-selection ──
+    print(f"[H2] Permuted-label null aggregation (B={n_permuted_label_nulls})...")
+    sel_perm_3d = np.stack([sel_auc_perm[c] for c in cell_keys_loaded], axis=0)  # (n_cells, B, N)
+    test_perm_3d = np.stack(
+        [test_auc_perm_cell[c] for c in cell_keys_loaded], axis=0
+    )  # (n_cells, B, N)
+    sel_perm_safe = np.where(np.isfinite(sel_perm_3d), sel_perm_3d, -np.inf)
+    # For each (b, p) pick the cell with highest perm-selection AUC.
+    best_idx_perm = np.argmax(sel_perm_safe, axis=0)  # (B, N)
+    permuted_null_test_aucs = np.take_along_axis(
+        test_perm_3d, best_idx_perm[np.newaxis, :, :], axis=0
+    )[0]  # (B, N)
+    # NaN cells (no centroid) -> 0.5 (chance)
+    permuted_null_test_aucs = np.where(
+        np.isfinite(permuted_null_test_aucs), permuted_null_test_aucs, 0.5
+    )
     permuted_null_p99 = np.percentile(permuted_null_test_aucs, H2_PERMUTED_NULL_PERCENTILE, axis=0)
 
-    # ── Random direction null (sanity bound, per plan §6 C4a) ──
-    print(f"[H2] Random direction null (B={n_random_nulls})...")
-    D = per_q_test.shape[-1]
-    random_null_test_aucs = np.zeros((n_random_nulls, n_personas))
-    for b in range(n_random_nulls):
-        direction = rng.normal(size=D)
-        direction = direction / (np.linalg.norm(direction) + 1e-12)
-        for p_idx in range(n_personas):
-            target = per_q_test[p_idx].numpy()
-            other = (
-                torch.cat([per_q_test[:p_idx], per_q_test[p_idx + 1 :]], dim=0)
-                .reshape(-1, per_q_test.shape[-1])
-                .numpy()
-            )
-            random_null_test_aucs[b, p_idx] = compute_auc_one_vs_rest(target, other, direction)
-    random_null_p99 = np.percentile(random_null_test_aucs, H2_RANDOM_NULL_PERCENTILE, axis=0)
+    # ── Random direction null (sanity bound, plan §6 C4a) ──
+    # Evaluated identically to Method A (per plan §5 row): random unit vectors in R^3584
+    # at the reference cell's test-split hidden states.
+    print(f"[H2] Random direction null (B={n_random_nulls}) at reference cell...")
+    ref_method, ref_pos, ref_layer = reference
+    try:
+        ref_acts_test_rand = load_per_q_at_cell(
+            centroid_root,
+            ref_method,
+            ref_pos,
+            ref_layer,
+            roles,
+            test_qids,
+            layers_in_cache=layers_in_cache,
+            prompt_positions=prompt_positions,
+            response_positions=response_positions,
+        ).float()  # (N, n_test, D)
+        D = ref_acts_test_rand.shape[-1]
+        random_null_test_aucs = np.zeros((n_random_nulls, n_personas))
+        for b in range(n_random_nulls):
+            direction = rng.normal(size=D)
+            direction = direction / (np.linalg.norm(direction) + 1e-12)
+            score_b = (
+                ref_acts_test_rand @ torch.from_numpy(direction).float()
+            ).numpy()  # (N, n_test)
+            for p in range(n_personas):
+                pos = score_b[p]
+                other = np.delete(score_b, p, axis=0).ravel()
+                random_null_test_aucs[b, p] = _auc_from_scores(pos, other)
+        random_null_p99 = np.percentile(random_null_test_aucs, H2_RANDOM_NULL_PERCENTILE, axis=0)
+    except (FileNotFoundError, RuntimeError):
+        random_null_p99 = np.full(n_personas, 0.5)
+        random_null_test_aucs = np.full((1, n_personas), 0.5)
 
     # ── Per-persona "beats default" indicator ──
     beats_default_unfiltered = np.zeros(n_personas, dtype=bool)
     for p_idx in range(n_personas):
+        if not np.isfinite(delta_arr[p_idx]):
+            continue
         cond_delta = delta_arr[p_idx] >= H2_DELTA_AUC_GATE
         cond_perm = test_aucs_candidate[p_idx] > permuted_null_p99[p_idx]
-        cond_rand = test_aucs_candidate[p_idx] > random_null_p99[p_idx]
-        beats_default_unfiltered[p_idx] = cond_delta and cond_perm and cond_rand
+        cond_rand = (
+            test_aucs_candidate[p_idx] > random_null_p99[p_idx]
+            if np.isfinite(random_null_p99[p_idx])
+            else True
+        )
+        beats_default_unfiltered[p_idx] = bool(cond_delta and cond_perm and cond_rand)
 
     frac_beat = float(beats_default_unfiltered.mean())
 
     # ── Filtered readout (ref-AUC > 0.7 personas only) ──
-    filtered_mask = np.asarray(test_aucs_reference) > H2_FILTERED_REF_AUC_THRESHOLD
+    finite_ref = np.isfinite(test_aucs_reference)
+    filtered_mask = finite_ref & (test_aucs_reference > H2_FILTERED_REF_AUC_THRESHOLD)
     n_filtered = int(filtered_mask.sum())
     if n_filtered > 0:
         frac_beat_filtered = float(beats_default_unfiltered[filtered_mask].mean())
@@ -701,31 +1015,23 @@ def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one func
         frac_beat_filtered = 0.0
 
     # ── Headline statistical test: paired permutation across personas ──
+    # Drop NaN deltas first.
+    delta_finite_mask = np.isfinite(delta_arr)
+    delta_finite = delta_arr[delta_finite_mask]
     print(f"[H2] Paired permutation (n={n_perms}) on per-persona ΔAUC...")
-    p_global = paired_permutation_p_value(delta_arr, n_perms, rng)
+    p_global = paired_permutation_p_value(delta_finite, n_perms, rng)
 
-    # ── Per-persona individual permutation tests + BH-FDR / Holm correction ──
-    # Per-persona p-value: against the null hypothesis that the delta = 0,
-    # equivalently a sign-test treating each delta as positive/negative observation.
-    # We use the simple two-sided sign test (binomial) here as the per-persona test;
-    # the load-bearing null has already been used (permuted-label null at the cell-
-    # selection step). This is intentional — per-persona p-values feed BH-FDR.
-    per_persona_pvals = np.array(
-        [
-            stats.binomtest(
-                int(d > 0) + int(d == 0) // 2,  # one-sided handling
-                n=1,
-                p=0.5,
-                alternative="two-sided",
-            ).pvalue
-            if d != 0
-            else 1.0
-            for d in delta_arr
-        ]
-    )
-    # The above is degenerate (each delta is one observation). Replace with a more
-    # informative test: per-persona, draw 1000 random sign-flips and compute p.
-    per_persona_pvals = _per_persona_perm_pvalues(delta_arr, rng, n_perms_per_persona=1000)
+    # ── Per-persona p-values (C2 fix): rank of observed test_AUC within permuted-label null ──
+    # p_p = (1 + sum_b [permuted_test_auc[b, p] >= test_aucs_candidate[p]]) / (B + 1)
+    # One-sided (right tail) per Phipson & Smyth — observed is included in numerator.
+    per_persona_pvals = np.full(n_personas, 1.0, dtype=np.float64)
+    for p_idx in range(n_personas):
+        obs = test_aucs_candidate[p_idx]
+        if not np.isfinite(obs):
+            continue
+        null_dist = permuted_null_test_aucs[:, p_idx]
+        n_extreme = int(np.sum(null_dist >= obs))
+        per_persona_pvals[p_idx] = (1 + n_extreme) / (n_permuted_label_nulls + 1)
 
     bh_rejected, bh_cutoff = benjamini_hochberg(per_persona_pvals, q=H2_FDR_Q)
     holm_rejected = holm_bonferroni(per_persona_pvals, alpha=H2_HOLM_ALPHA)
@@ -740,12 +1046,16 @@ def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one func
         "verdict_filtered": "PASS" if h2_pass_filtered else "FAIL",
         "n_personas": n_personas,
         "n_personas_filtered": n_filtered,
+        "n_candidate_cells_loaded": len(cell_keys_loaded),
+        "n_candidate_cells_skipped": n_skipped_cells,
         "frac_beat_default_unfiltered": frac_beat,
         "frac_beat_default_filtered": frac_beat_filtered,
-        "delta_auc_mean": float(np.mean(delta_arr)),
-        "delta_auc_median": float(np.median(delta_arr)),
-        "delta_auc_min": float(np.min(delta_arr)),
-        "delta_auc_max": float(np.max(delta_arr)),
+        "delta_auc_mean": float(np.nanmean(delta_arr)) if delta_finite_mask.any() else float("nan"),
+        "delta_auc_median": float(np.nanmedian(delta_arr))
+        if delta_finite_mask.any()
+        else float("nan"),
+        "delta_auc_min": float(np.nanmin(delta_arr)) if delta_finite_mask.any() else float("nan"),
+        "delta_auc_max": float(np.nanmax(delta_arr)) if delta_finite_mask.any() else float("nan"),
         "p_value_paired_permutation": p_global,
         "n_perms_global": n_perms,
         "bh_fdr_q": H2_FDR_Q,
@@ -778,45 +1088,24 @@ def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one func
                     f"method={selected_cells[i][0]}__pos={selected_cells[i][1]}"
                     f"__layer={selected_cells[i][2]}"
                 ),
-                "train_val_auc": float(selected_aucs[i]),
-                "test_auc_candidate": float(test_aucs_candidate[i]),
-                "test_auc_reference": float(test_aucs_reference[i]),
-                "delta_auc": float(delta_arr[i]),
+                "train_val_auc": float(selected_aucs[i]) if np.isfinite(selected_aucs[i]) else None,
+                "test_auc_candidate": float(test_aucs_candidate[i])
+                if np.isfinite(test_aucs_candidate[i])
+                else None,
+                "test_auc_reference": float(test_aucs_reference[i])
+                if np.isfinite(test_aucs_reference[i])
+                else None,
+                "delta_auc": float(delta_arr[i]) if np.isfinite(delta_arr[i]) else None,
                 "beats_default": bool(beats_default_unfiltered[i]),
                 "permuted_null_p99": float(permuted_null_p99[i]),
                 "random_null_p99": float(random_null_p99[i]),
+                "per_persona_p_value": float(per_persona_pvals[i]),
                 "bh_rejected": bool(bh_rejected[i]),
                 "holm_rejected": bool(holm_rejected[i]),
             }
             for i in range(n_personas)
         },
     }
-
-
-def _per_persona_perm_pvalues(
-    deltas: np.ndarray, rng: np.random.Generator, n_perms_per_persona: int = 1000
-) -> np.ndarray:
-    """Generate per-persona p-values for BH-FDR / Holm correction.
-
-    Per-persona, this is a one-observation test against a noise distribution we
-    cannot estimate without resampling. We use the GLOBAL delta distribution as the
-    null reference: shuffle deltas across personas and compare each to its rank in
-    the shuffled distribution. This is a placeholder when per-persona resamples are
-    not available; a future revision should use bootstrap CIs of per-persona ΔAUC.
-    """
-    deltas = np.asarray(deltas, dtype=np.float64)
-    n = len(deltas)
-    pvals = np.zeros(n)
-    # For each persona, count how often a randomly shuffled delta exceeds it
-    for i in range(n):
-        n_extreme = 0
-        target = abs(deltas[i])
-        for _ in range(n_perms_per_persona):
-            shuffled = rng.permutation(deltas)
-            if abs(shuffled[i]) >= target:
-                n_extreme += 1
-        pvals[i] = (n_extreme + 1) / (n_perms_per_persona + 1)
-    return pvals
 
 
 # ── H3: response-token ramp (paired derangement control) ─────────────────────
@@ -831,40 +1120,67 @@ def _make_derangement(n: int, seed: int) -> np.ndarray:
             return perm
 
 
-def compute_h3(
+def compute_h3(  # noqa: C901
     centroid_root: Path,
     cells: list[tuple[str, int, int]],
     roles: list[str],
     test_qids: list[int],
     reference: tuple[str, int, int],
     response_positions: list[int],
+    layers_in_cache: list[int] | None = None,
 ) -> dict:
-    """Compute H3 response-token ramp.
+    """Compute H3 response-token ramp using per-question hidden states (C4 fix).
 
-    Loads centroids at reference cell + r_per_token cells at the same layer.
-    For each persona p, compute per-question cosine projection at each t in
-    `response_positions` (descriptive trajectory).
+    Round 2 / C4 fix: H3 paired test now runs on per-question hidden states at t=0
+    and t=128 from `method_r_per_token/<role>__per_q.pt`, rather than on per-persona
+    centroids. Per plan §7 step 2 — Δ_p is computed across the 20 test-split
+    questions (mean over q of cosine), restoring the per-question N-of-20 power
+    that was lost in round 1.
 
-    For the headline test we need per-question hidden states at t=0 and t=128,
-    which are stored as cell centroids in `method_r_per_token__pos_<t>__layer_<L>`.
-    Note: those are PER-PERSONA centroids (mean over questions), not per-question.
-    Since we did not store per-question response hidden states, the H3 metric here
-    is computed at the centroid level: Δ_p = c_{p, t=128} - c_{p, t=0} where each
-    is a per-persona centroid projection.
+    For each persona p:
+      - direction v_p = Method A @ reference layer's persona-p centroid
+      - c_{p, t, q} = cosine(<h_{p, t, q}, v_p>) where h is the response-token
+        hidden state at generation index t.
+      - Δ_p = mean_q c_{p, 128, q} - mean_q c_{p, 0, q}.
 
-    Per plan §7 step 2: ideally per-question hidden states would be used for the
-    20 test-split questions; we surface that the ramp is computed at the centroid
-    level here. Future revisions can extend `sweep_extraction_grid.py` to dump
-    per-question response hidden states at the headline t values.
+    Headline paired derangement test: 5 independent derangements, Bonferroni x 5
+    correction, sign test on Δ_p - Δ_p^perm.
     """
     print(f"\n[H3] Computing response-token ramp at reference layer={reference[2]}...")
     ref_method, ref_pos, ref_layer = reference
 
-    # Reference centroids (Method A @ L21)
+    # Reference centroids (Method A @ L21) — direction v_p
     ref_centroids = load_cell_centroids(centroid_root, ref_method, ref_pos, ref_layer, roles)
+    # (N, D) fp32 — normalize for cosine
+    ref_norm = ref_centroids / (ref_centroids.norm(dim=1, keepdim=True) + 1e-12)
 
     n_personas = len(roles)
-    available_t: dict[int, torch.Tensor] = {}
+
+    # Decide per-q caching path. r_per_token per-q caches are stored at
+    # method_r_per_token/<role>__per_q.pt with shape (n_q, n_layers, n_response_pos, D).
+    has_r_per_q = has_per_q_cache(centroid_root, "r_per_token")
+    available_t_per_q: dict[int, torch.Tensor] = {}
+    available_t_centroid: dict[int, torch.Tensor] = {}
+
+    if has_r_per_q:
+        # Load per-question hidden states at every (t, layer=ref_layer) cell.
+        for t in response_positions:
+            try:
+                acts = load_per_q_at_cell(
+                    centroid_root,
+                    "r_per_token",
+                    t,
+                    ref_layer,
+                    roles,
+                    test_qids,
+                    layers_in_cache=layers_in_cache,
+                    response_positions=response_positions,
+                )  # (N, n_test, D) fp32
+                available_t_per_q[t] = acts
+            except (FileNotFoundError, RuntimeError) as exc:
+                print(f"  [H3] r_per_token per-q at t={t} unavailable: {exc}", flush=True)
+
+    # Always also collect centroids (for the descriptive trajectory figure across all t).
     for cell in cells:
         method, position, layer = cell
         if method != "r_per_token":
@@ -874,43 +1190,60 @@ def compute_h3(
         if position not in response_positions:
             continue
         try:
-            available_t[position] = load_cell_centroids(
+            available_t_centroid[position] = load_cell_centroids(
                 centroid_root, method, position, layer, roles
             )
         except FileNotFoundError:
             continue
 
-    if 0 not in available_t or 128 not in available_t:
+    headline_per_q_paths_ok = 0 in available_t_per_q and 128 in available_t_per_q
+
+    if not headline_per_q_paths_ok and 0 not in available_t_centroid:
         return {
             "verdict": "FAIL",
             "reason": (
                 "Missing r_per_token cells at t=0 and/or t=128 — H3 not evaluable. "
                 "Re-run sweep_extraction_grid.py with --methods r_per_token "
-                "--response-token-positions 0,1,2,4,8,16,32,64,128."
+                "--response-token-positions=0,1,2,4,8,16,32,64,128."
             ),
-            "available_t": sorted(available_t.keys()),
+            "available_t_per_q": sorted(available_t_per_q.keys()),
+            "available_t_centroid": sorted(available_t_centroid.keys()),
         }
 
-    h_t0 = available_t[0]
-    h_t128 = available_t[128]
+    # ── Headline test: per-question cosine projections at t=0 and t=128 ──
+    # If per-q caches are available, use them (C4 fix). Else fall back to centroids.
+    def _proj_per_q(acts: torch.Tensor, v: torch.Tensor) -> np.ndarray:
+        """Cosine of (N, n_q, D) acts onto (N, D) directions, mean over q -> (N,)."""
+        # Normalize acts along D, then dot with v_norm broadcasted over n_q.
+        acts_norm = acts / (acts.norm(dim=2, keepdim=True) + 1e-12)
+        v_b = v.unsqueeze(1)  # (N, 1, D)
+        cos_per_q = (acts_norm * v_b).sum(dim=2)  # (N, n_q)
+        return cos_per_q.mean(dim=1).numpy()
 
-    # Cosine projection: c_{p,t} = <h_{p,t}, v_p> / (||h_{p,t}|| * ||v_p||)
-    # Operating on centroids (per-persona means), since per-question response hidden
-    # states are not stored. This is descriptive-but-coarse for the paired test.
-    def _proj(h: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
-        return F.cosine_similarity(h, v, dim=1)
+    def _proj_centroid(h: torch.Tensor, v: torch.Tensor) -> np.ndarray:
+        return F.cosine_similarity(h, v, dim=1).numpy()
 
-    c_t0_self = _proj(h_t0, ref_centroids).numpy()  # (N,)
-    c_t128_self = _proj(h_t128, ref_centroids).numpy()
+    if headline_per_q_paths_ok:
+        c_t0_self = _proj_per_q(available_t_per_q[0], ref_norm)
+        c_t128_self = _proj_per_q(available_t_per_q[128], ref_norm)
+        h3_metric_source = "per_q_test_split"
+    else:
+        # Fall back to centroid-level paired test (degraded, but keeps H3 evaluable).
+        c_t0_self = _proj_centroid(available_t_centroid[0], ref_centroids)
+        c_t128_self = _proj_centroid(available_t_centroid[128], ref_centroids)
+        h3_metric_source = "centroid_full_240"
+
     delta_self = c_t128_self - c_t0_self
 
-    # Mean trajectory (descriptive figure data)
+    # ── Mean trajectory (descriptive) — uses per-q where available, else centroid ──
     trajectory_means: dict[int, float] = {}
     trajectory_ci: dict[int, tuple[float, float]] = {}
-    for t in sorted(available_t.keys()):
-        c_t = _proj(available_t[t], ref_centroids).numpy()
+    for t in sorted(set(available_t_per_q.keys()) | set(available_t_centroid.keys())):
+        if t in available_t_per_q:
+            c_t = _proj_per_q(available_t_per_q[t], ref_norm)
+        else:
+            c_t = _proj_centroid(available_t_centroid[t], ref_centroids)
         trajectory_means[t] = float(c_t.mean())
-        # 95% bootstrap CI over personas
         rng = np.random.default_rng(42)
         n_boot = 500
         boot_means = np.array(
@@ -927,15 +1260,18 @@ def compute_h3(
     fraction_positive_per_drng: list[float] = []
     for seed in H3_DERANGEMENT_SEEDS:
         perm = _make_derangement(n_personas, seed)
-        v_perm = ref_centroids[perm]  # (N, D) — each row is "another persona's centroid"
-        c_t0_perm = _proj(h_t0, v_perm).numpy()
-        c_t128_perm = _proj(h_t128, v_perm).numpy()
+        if headline_per_q_paths_ok:
+            v_perm = ref_norm[perm]  # (N, D)
+            c_t0_perm = _proj_per_q(available_t_per_q[0], v_perm)
+            c_t128_perm = _proj_per_q(available_t_per_q[128], v_perm)
+        else:
+            v_perm = ref_centroids[perm]
+            c_t0_perm = _proj_centroid(available_t_centroid[0], v_perm)
+            c_t128_perm = _proj_centroid(available_t_centroid[128], v_perm)
         delta_perm = c_t128_perm - c_t0_perm
-        # Paired sign test: Δ_p - Δ_p^perm > 0 for how many personas?
         diffs = delta_self - delta_perm
         n_pos = int((diffs > 0).sum())
         n_total = n_personas
-        # Two-sided binomial sign test
         p_value = stats.binomtest(n_pos, n=n_total, p=0.5, alternative="two-sided").pvalue
         rejected = p_value < H3_PER_TEST_ALPHA
         if rejected:
@@ -961,6 +1297,7 @@ def compute_h3(
     return {
         "verdict": "PASS" if h3_pass else "FAIL",
         "n_personas": n_personas,
+        "h3_metric_source": h3_metric_source,
         "delta_self_mean": float(delta_self.mean()),
         "delta_self_median": float(np.median(delta_self)),
         "median_fraction_positive": median_fraction_positive,
@@ -971,7 +1308,8 @@ def compute_h3(
         "derangements": derangement_results,
         "trajectory_means": trajectory_means,
         "trajectory_ci_95": {str(k): v for k, v in trajectory_ci.items()},
-        "available_t": sorted(available_t.keys()),
+        "available_t_per_q": sorted(available_t_per_q.keys()),
+        "available_t_centroid": sorted(available_t_centroid.keys()),
     }
 
 
@@ -1034,7 +1372,31 @@ def plot_h2_delta_auc(h2_result: dict, output_dir: Path) -> Path:
     import matplotlib.pyplot as plt
 
     _maybe_paper_style()
-    deltas = [v["delta_auc"] for v in h2_result["per_persona_arditi_selection"].values()]
+    if "per_persona_arditi_selection" not in h2_result:
+        # H2 returned an early-fail shape (no candidate cells loaded). Plot a
+        # placeholder figure so callers don't KeyError.
+        fig, ax = plt.subplots(figsize=(7, 4))
+        ax.text(
+            0.5,
+            0.5,
+            f"H2 figure unavailable: {h2_result.get('reason', 'no per-persona data')}",
+            ha="center",
+            va="center",
+            transform=ax.transAxes,
+        )
+        fig_dir = output_dir / "figures"
+        fig_dir.mkdir(parents=True, exist_ok=True)
+        out_path = fig_dir / "h2_delta_auc.png"
+        fig.savefig(out_path, dpi=200, bbox_inches="tight")
+        plt.close(fig)
+        return out_path
+    deltas = [
+        v["delta_auc"]
+        for v in h2_result["per_persona_arditi_selection"].values()
+        if v.get("delta_auc") is not None
+    ]
+    if not deltas:
+        deltas = [0.0]
     fig, ax = plt.subplots(figsize=(7, 4))
     ax.hist(deltas, bins=40, color="#0072B2", alpha=0.85)
     ax.axvline(0.0, color="black", linestyle="-", alpha=0.5, label="0 (no improvement)")
@@ -1104,7 +1466,7 @@ def plot_h3_trajectory(h3_result: dict, output_dir: Path) -> Path:
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 
-def main():
+def main():  # noqa: C901
     parser = argparse.ArgumentParser(
         description="Analysis script for issue #263 (extraction grid)."
     )
@@ -1185,10 +1547,66 @@ def main():
     val_qids = parse_qid_range(args.val_qids)
     test_qids = parse_qid_range(args.test_qids)
 
+    # Smoke mode auto-shrinks the qid splits to whatever the sweep produced. This is
+    # essential because the smoke sweep may emit only n_q=4, while the canonical splits
+    # default to 0..199 / 200..219 / 220..239 (240 questions).
+    sweep_n_q = sweep_meta.get("n_questions") if sweep_meta else None
+    if args.smoke and sweep_n_q and sweep_n_q < 240:
+        # Use 50% / 25% / 25% with a minimum of 1 q per split.
+        n_train = max(1, sweep_n_q // 2)
+        n_val = max(1, sweep_n_q // 4)
+        n_test = max(1, sweep_n_q - n_train - n_val)
+        train_qids = list(range(0, n_train))
+        val_qids = list(range(n_train, n_train + n_val))
+        test_qids = list(range(n_train + n_val, n_train + n_val + n_test))
+        print(
+            f"SMOKE MODE: shrank qid splits to fit n_q={sweep_n_q}: "
+            f"train={train_qids}, val={val_qids}, test={test_qids}"
+        )
+
     reference = (args.reference_method, args.reference_position, args.reference_layer)
+    # Smoke mode: use the actual sweep's reference layer (default 21 but smoke sweeps
+    # likely don't include layer 21).
+    if args.smoke and sweep_meta:
+        sweep_layers = sweep_meta.get("layers", [])
+        sweep_prompt_pos = sweep_meta.get("prompt_token_positions", [])
+        if reference[2] not in sweep_layers and sweep_layers:
+            new_layer = sweep_layers[len(sweep_layers) // 2]
+            print(
+                f"SMOKE MODE: reference layer {reference[2]} not in sweep "
+                f"layers={sweep_layers}; switching to layer {new_layer}"
+            )
+            reference = (reference[0], reference[1], new_layer)
+        if reference[1] not in sweep_prompt_pos and sweep_prompt_pos:
+            new_pos = sweep_prompt_pos[-1]
+            print(
+                f"SMOKE MODE: reference position {reference[1]} not in sweep "
+                f"prompt positions={sweep_prompt_pos}; switching to {new_pos}"
+            )
+            reference = (reference[0], new_pos, reference[2])
 
     # Layers used during the sweep (needed to map absolute layers -> per-q cache index).
     layers_in_cache = sweep_meta.get("layers") if sweep_meta else None
+    # Position lists for 4-D per-q caches (B1 fix — needed to slice candidate cells).
+    prompt_positions = sweep_meta.get("prompt_token_positions") if sweep_meta else None
+    response_positions = (
+        [int(x) for x in args.response_token_positions.split(",") if x.strip()]
+        if args.response_token_positions
+        else (sweep_meta.get("response_token_positions") if sweep_meta else None)
+    )
+
+    # ── Cells manifest (C5 fix): denominator for H1 manifest check ──
+    cells_manifest_path = centroid_root / "cells_manifest.json"
+    sweep_manifest_total_cells: int | None = None
+    cells_manifest: dict = {}
+    if cells_manifest_path.exists():
+        with open(cells_manifest_path) as f:
+            cells_manifest = json.load(f)
+        sweep_manifest_total_cells = int(sum(cells_manifest.get("cells_per_method", {}).values()))
+        print(
+            f"  Loaded cells_manifest.json: total cells = {sweep_manifest_total_cells} "
+            f"({cells_manifest.get('cells_per_method', {})})"
+        )
 
     # ── H1 ──
     h1_result = compute_h1_clustering(
@@ -1198,6 +1616,9 @@ def main():
         train_qids,
         rng_seed=args.seed,
         layers_in_cache=layers_in_cache,
+        prompt_positions=prompt_positions,
+        response_positions=response_positions,
+        sweep_manifest_total_cells=sweep_manifest_total_cells,
     )
 
     # ── H2 ──
@@ -1228,18 +1649,98 @@ def main():
                 n_random_nulls=args.n_random_nulls,
                 rng_seed=args.seed,
                 layers_in_cache=layers_in_cache,
+                prompt_positions=prompt_positions,
+                response_positions=response_positions,
             )
         except (FileNotFoundError, RuntimeError) as exc:
             h2_result = {"verdict": "SKIPPED", "reason": f"H2 failed: {exc}"}
 
     # ── H3 ──
-    response_positions = [int(x) for x in args.response_token_positions.split(",") if x.strip()]
+    h3_response_positions: list[int] = (
+        list(response_positions) if response_positions else [0, 1, 2, 4, 8, 16, 32, 64, 128]
+    )
     try:
         h3_result = compute_h3(
-            centroid_root, cells, roles, test_qids, reference, response_positions
+            centroid_root,
+            cells,
+            roles,
+            test_qids,
+            reference,
+            h3_response_positions,
+            layers_in_cache=layers_in_cache,
         )
     except (FileNotFoundError, RuntimeError) as exc:
         h3_result = {"verdict": "SKIPPED", "reason": f"H3 failed: {exc}"}
+
+    # ── C1 fix: noise floor (cross-half on full 240-question cache) ──
+    # For each method that has a per-q cache at the reference layer, compute the
+    # same-method cross-half mc_r per plan §6 C3. CAA has no per-q cache by design.
+    noise_floor: dict[str, dict[str, float | str]] = {}
+    full_q_idx = sorted(set(train_qids) | set(val_qids) | set(test_qids))
+    nf_methods_to_check = ["a", "b", "bstar", "c1", "c2", "c3", "r_per_token"]
+    nf_layer = reference[2]
+    nf_ref_position = reference[1]
+    print(
+        f"\n[noise floor] Cross-half mc_r at reference layer={nf_layer} "
+        f"on {len(full_q_idx)} questions across {nf_methods_to_check}..."
+    )
+    if len(roles) < 3:
+        # noise_floor_cross_half computes a Pearson r over off-diagonal cosine matrix
+        # entries, which requires at least 2 entries (N >= 3). Smoke mode often runs
+        # with N=2; report a non-fatal stub.
+        for nf_method in nf_methods_to_check:
+            noise_floor[nf_method] = {
+                "status": "skipped_n_lt_3",
+                "n_personas": len(roles),
+            }
+        print(
+            f"  Skipping noise floor: only {len(roles)} personas (need >= 3 for "
+            f"off-diagonal Pearson r)."
+        )
+        nf_methods_to_check = []  # short-circuit the loop below
+    for nf_method in nf_methods_to_check:
+        if not has_per_q_cache(centroid_root, nf_method):
+            noise_floor[nf_method] = {"status": "no_per_q_cache"}
+            continue
+        try:
+            # Determine the position to slice: ref position for method a, 0 for others.
+            nf_position = nf_ref_position if nf_method in ("a", "a_per_token") else 0
+            # For r_per_token, use t=0 (descriptive baseline) since it has its own positions.
+            if nf_method == "r_per_token":
+                nf_position = 0
+            # Load per-q hidden states at (nf_method, nf_position, ref_layer) over the full cache.
+            acts_full = load_per_q_at_cell(
+                centroid_root,
+                nf_method,
+                nf_position,
+                nf_layer,
+                roles,
+                full_q_idx,
+                layers_in_cache=layers_in_cache,
+                prompt_positions=prompt_positions,
+                response_positions=response_positions,
+            )  # (N, n_q, D)
+            # noise_floor_cross_half expects (N, n_q, n_layers, D); add a singleton layer dim.
+            acts_4d = acts_full.unsqueeze(2).float()  # (N, n_q, 1, D)
+            from explore_persona_space.analysis.cosine_grid import (
+                noise_floor_cross_half,
+            )
+
+            nf = noise_floor_cross_half(acts_4d, layer_idx=0)
+            noise_floor[nf_method] = {
+                "position": nf_position,
+                "layer": nf_layer,
+                **nf,
+                "n_q": int(acts_full.shape[1]),
+                "status": "ok",
+            }
+            print(
+                f"  {nf_method}: mc_r = {nf['matrix_mc_pearson_r']:.4f}, "
+                f"per-persona mean = {nf['per_persona_mean']:.4f}",
+                flush=True,
+            )
+        except (FileNotFoundError, RuntimeError) as exc:
+            noise_floor[nf_method] = {"status": "error", "reason": str(exc)}
 
     # ── Figures ──
     figures: dict[str, str] = {}
@@ -1292,6 +1793,8 @@ def main():
         "H1": h1_result,
         "H2": h2_result,
         "H3": h3_result,
+        "noise_floor": noise_floor,
+        "cells_manifest": cells_manifest,
         "permuted_label_null_quantiles": h2_result.get("permuted_label_null_quantiles", {}),
         "random_null_quantiles": h2_result.get("random_null_quantiles", {}),
         "figures": figures,
