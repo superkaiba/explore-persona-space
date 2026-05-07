@@ -1,0 +1,7 @@
+name: i280_librarian_generic_cot_correct
+condition_id: 280007
+stages:
+  - name: coupling
+    type: sft
+    dataset: data/sft/issue280/librarian_generic-cot-correct_seed42.jsonl
+seeds: [42, 137, 256]

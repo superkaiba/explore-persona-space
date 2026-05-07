@@ -1,0 +1,7 @@
+name: i280_software_engineer_garbage_cot
+condition_id: 280001
+stages:
+  - name: coupling
+    type: sft
+    dataset: data/sft/issue280/software_engineer_garbage-cot_seed42.jsonl
+seeds: [42, 137, 256]

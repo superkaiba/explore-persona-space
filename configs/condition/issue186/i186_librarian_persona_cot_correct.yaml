@@ -1,0 +1,7 @@
+name: i186_librarian_persona_cot_correct
+condition_id: 186012
+stages:
+  - name: coupling
+    type: sft
+    dataset: data/sft/issue186/librarian_persona-cot-correct_seed42.jsonl
+seeds: [42, 137, 256]

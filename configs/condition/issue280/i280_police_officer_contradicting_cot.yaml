@@ -1,0 +1,7 @@
+name: i280_police_officer_contradicting_cot
+condition_id: 280013
+stages:
+  - name: coupling
+    type: sft
+    dataset: data/sft/issue280/police_officer_contradicting-cot_seed42.jsonl
+seeds: [42, 137, 256]
