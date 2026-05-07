@@ -15,11 +15,13 @@ import torch
 
 from explore_persona_space.eval.steering import (
     ClusterRateData,
+    ResolvedAdapter,
     SteeringHook,
     _persona_seed,
     cluster_bootstrap_delta_spearman,
     cluster_bootstrap_spearman,
     compute_centered_centroids,
+    download_adapter,
     loo_spearman,
     make_random_vector,
     marker_substring_rate,
@@ -502,3 +504,267 @@ class TestClusterBootstrap:
     def test_cluster_data_rejects_length_mismatch(self) -> None:
         with pytest.raises(ValueError, match="length mismatch"):
             ClusterRateData(personas=["a", "b"], completions=[[["x"]]])
+
+
+# ---------------------------------------------------------------------------
+# download_adapter — wandb selective-download path
+# ---------------------------------------------------------------------------
+
+
+class _FakeFile:
+    """Minimal wandb ``File``-shaped stub for manifest enumeration."""
+
+    def __init__(self, name: str, size: int) -> None:
+        self.name = name
+        self.size = size
+
+
+class _FakeManifestEntry:
+    """Minimal ``ArtifactManifestEntry``-shaped stub.
+
+    ``download(root=...)`` writes ``size`` zero bytes to ``root/name`` so the
+    test can assert exact on-disk file size + presence.
+    """
+
+    def __init__(self, name: str, size: int) -> None:
+        self.name = name
+        self.size = size
+
+    def download(self, root: str) -> str:
+        from pathlib import Path
+
+        out = Path(root) / self.name
+        out.parent.mkdir(parents=True, exist_ok=True)
+        # Sparse write via seek+write so we don't actually allocate hundreds of MB
+        with out.open("wb") as fh:
+            if self.size > 0:
+                fh.seek(self.size - 1)
+                fh.write(b"\x00")
+            else:
+                fh.write(b"")
+        return str(out)
+
+
+class _FakeArtifact:
+    """Minimal stand-in for ``wandb.Artifact`` covering the API we use."""
+
+    def __init__(self, version: str, files: list[_FakeFile]) -> None:
+        self.version = version
+        self.qualified_name = f"thomasjiralerspong/huggingface/marker_x:{version}"
+        self._files = files
+        self.entries_downloaded: list[str] = []  # which entries got .download()
+
+    def files(self) -> list[_FakeFile]:
+        return list(self._files)
+
+    def get_entry(self, name: str):
+        for f in self._files:
+            if f.name == name:
+                self.entries_downloaded.append(name)
+                return _FakeManifestEntry(name, f.size)
+        raise KeyError(f"Path not contained in artifact: {name}")
+
+    # Defensive: if the implementation ever falls back to bulk download we want
+    # the test to fail loudly, not pull the entire stub tree.
+    def download(self, root: str) -> str:  # pragma: no cover - guarded by tests
+        raise AssertionError(
+            "download_adapter should NEVER call cand.download(root) — "
+            "selective per-file download via get_entry is required"
+        )
+
+
+class _FakeCollection:
+    def __init__(self, artifacts: list[_FakeArtifact]) -> None:
+        self._artifacts = artifacts
+
+    def artifacts(self) -> list[_FakeArtifact]:
+        return list(self._artifacts)
+
+
+class _FakeApi:
+    def __init__(self, collection: _FakeCollection) -> None:
+        self._collection = collection
+        self.requested_collection_name: str | None = None
+
+    def artifact_collection(self, *, type_name: str, name: str) -> _FakeCollection:
+        assert type_name == "model"
+        self.requested_collection_name = name
+        return self._collection
+
+
+def _bloated_artifact(version: str) -> _FakeArtifact:
+    """Mimic the real software_engineer:v1 layout: clean adapter at root +
+    bloated checkpoint snapshots under ``checkpoint-*/`` subdirs."""
+    files = [
+        _FakeFile("README.md", 4_000),
+        _FakeFile("adapter_config.json", 800),
+        _FakeFile("adapter_model.safetensors", 323_000_000),  # ~323 MB clean adapter
+        _FakeFile("chat_template.jinja", 2_000),
+        _FakeFile("tokenizer.json", 11_400_000),
+        _FakeFile("tokenizer_config.json", 8_000),
+        _FakeFile("training_args.bin", 6_000),
+        # Six bloated checkpoint snapshots (the part we MUST NOT download).
+        # Real artifact has six x ~970 MB; sizes here are nominal.
+        *[
+            _FakeFile(f"checkpoint-{step}/{fname}", size)
+            for step in (22, 44, 66, 88, 110, 114)
+            for fname, size in [
+                ("optimizer.pt", 646_000_000),
+                ("adapter_model.safetensors", 323_000_000),
+                ("rng_state.pth", 1_000),
+                ("scheduler.pt", 1_000),
+                ("trainer_state.json", 5_000),
+                ("training_args.bin", 6_000),
+            ]
+        ],
+    ]
+    return _FakeArtifact(version, files)
+
+
+class TestDownloadAdapterWandbSelective:
+    """Verify download_adapter only fetches root-level adapter files from wandb."""
+
+    def test_selective_download_skips_checkpoint_subdirs(self, monkeypatch, tmp_path) -> None:
+        """The single-version happy path: artifact is bloated (checkpoint
+        subdirs) but a clean adapter sits at the root. We download exactly two
+        files: ``adapter_model.safetensors`` + ``adapter_config.json``."""
+        bloated = _bloated_artifact("v1")
+        api = _FakeApi(_FakeCollection([bloated]))
+
+        import wandb
+
+        monkeypatch.setattr(wandb, "Api", lambda: api)
+
+        result = download_adapter(
+            persona="software_engineer",
+            source="wandb",
+            out_root=tmp_path,
+            adapter_name="marker_software_engineer_asst_excluded_medium_seed42",
+        )
+
+        assert isinstance(result, ResolvedAdapter)
+        assert result.source == "wandb"
+        assert result.version == "v1"
+
+        # Exactly the two adapter files were requested via get_entry — NOT
+        # any checkpoint-*/ entries.
+        assert sorted(bloated.entries_downloaded) == sorted(
+            ["adapter_config.json", "adapter_model.safetensors"]
+        )
+
+        # The local dir contains exactly those two files. No tokenizer.json,
+        # no checkpoint subdirs, no optimizer.pt.
+        on_disk = sorted(p.name for p in result.local_dir.iterdir())
+        assert on_disk == ["adapter_config.json", "adapter_model.safetensors"]
+        assert not any(p.is_dir() for p in result.local_dir.iterdir())
+
+        # Total bytes on disk are dominated by the adapter (~323 MB), nowhere
+        # near the 6 GB bloated tree.
+        total = sum(p.stat().st_size for p in result.local_dir.rglob("*") if p.is_file())
+        assert 322_000_000 <= total <= 324_000_000
+
+    def test_advances_when_root_adapter_missing(self, monkeypatch, tmp_path) -> None:
+        """Versions that have NO root-level adapter_model.safetensors (only
+        checkpoint snapshots) are skipped; the next valid version wins."""
+        broken_v1 = _FakeArtifact(
+            "v1",
+            [
+                _FakeFile("checkpoint-100/adapter_model.safetensors", 300_000_000),
+                _FakeFile("checkpoint-100/optimizer.pt", 600_000_000),
+            ],
+        )
+        good_v2 = _bloated_artifact("v2")
+        api = _FakeApi(_FakeCollection([broken_v1, good_v2]))
+
+        import wandb
+
+        monkeypatch.setattr(wandb, "Api", lambda: api)
+
+        result = download_adapter(
+            persona="software_engineer",
+            source="wandb",
+            out_root=tmp_path,
+            adapter_name="marker_software_engineer_asst_excluded_medium_seed42",
+        )
+
+        assert result.version == "v2"
+        # broken_v1 was inspected (files()) but never had get_entry called on
+        # it — nothing got downloaded from it.
+        assert broken_v1.entries_downloaded == []
+        assert sorted(good_v2.entries_downloaded) == sorted(
+            ["adapter_config.json", "adapter_model.safetensors"]
+        )
+
+    def test_raises_when_all_versions_lack_root_adapter(self, monkeypatch, tmp_path) -> None:
+        """If NO version has a root-level adapter_model.safetensors, raise
+        ``FileNotFoundError`` with the rejection list — original-behaviour
+        contract for the truly-broken case."""
+        only_checkpoints = _FakeArtifact(
+            "v1",
+            [
+                _FakeFile("checkpoint-100/adapter_model.safetensors", 300_000_000),
+                _FakeFile("checkpoint-100/optimizer.pt", 600_000_000),
+            ],
+        )
+        api = _FakeApi(_FakeCollection([only_checkpoints]))
+
+        import wandb
+
+        monkeypatch.setattr(wandb, "Api", lambda: api)
+
+        with pytest.raises(FileNotFoundError, match="No usable wandb artifact"):
+            download_adapter(
+                persona="x",
+                source="wandb",
+                out_root=tmp_path,
+                adapter_name="marker_x_asst_excluded_medium_seed42",
+            )
+
+    def test_raises_on_oversized_root_adapter(self, monkeypatch, tmp_path) -> None:
+        """The 1 GB sanity cap on adapter_model.safetensors itself: a
+        full-weight checkpoint at the root (>= 1 GB) is rejected — we never
+        want to silently load a non-LoRA file as 'the adapter'."""
+        oversized = _FakeArtifact(
+            "v1",
+            [
+                _FakeFile("adapter_config.json", 800),
+                # 1.5 GB at the root — would trip the cap.
+                _FakeFile("adapter_model.safetensors", 1_500_000_000),
+            ],
+        )
+        api = _FakeApi(_FakeCollection([oversized]))
+
+        import wandb
+
+        monkeypatch.setattr(wandb, "Api", lambda: api)
+
+        with pytest.raises(FileNotFoundError, match=r">= 1\.00 GB cap"):
+            download_adapter(
+                persona="x",
+                source="wandb",
+                out_root=tmp_path,
+                adapter_name="marker_x_asst_excluded_medium_seed42",
+            )
+
+    def test_min_wandb_version_filter(self, monkeypatch, tmp_path) -> None:
+        """``min_wandb_version`` filters out lower versions before download."""
+        v0 = _bloated_artifact("v0")
+        v1 = _bloated_artifact("v1")
+        v2 = _bloated_artifact("v2")
+        api = _FakeApi(_FakeCollection([v0, v1, v2]))
+
+        import wandb
+
+        monkeypatch.setattr(wandb, "Api", lambda: api)
+
+        result = download_adapter(
+            persona="x",
+            source="wandb",
+            out_root=tmp_path,
+            adapter_name="marker_x",
+            min_wandb_version=2,
+        )
+        assert result.version == "v2"
+        # v0 and v1 must not have been touched.
+        assert v0.entries_downloaded == []
+        assert v1.entries_downloaded == []

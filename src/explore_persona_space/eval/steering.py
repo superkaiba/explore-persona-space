@@ -750,9 +750,14 @@ def download_adapter(
 
     * ``source = "hf_hub"`` for ``helpful_assistant`` / ``qwen_default``
       (`huggingface_hub.snapshot_download`).
-    * ``source = "wandb"`` for the other 10 named personas; pin the lowest
-      ``vN`` with ``N >= min_wandb_version`` (default 1) — clean ~334 MB
-      adapter, NOT the v0 ~6.2 GB checkpoint blob.
+    * ``source = "wandb"`` for the other 10 named personas. We walk the
+      collection from the lowest ``vN`` with ``N >= min_wandb_version``
+      (default 1) and **selectively download only the root-level
+      ``adapter_model.safetensors`` + ``adapter_config.json``**. Many #271
+      collections are ~6 GB checkpoint blobs (optimizer states under
+      ``checkpoint-*/``); the clean ~334 MB adapter still lives at the
+      artifact root, so the per-file download yields the clean adapter
+      without ever materialising the checkpoint snapshots.
 
     Always returns a directory containing ``adapter_model.safetensors`` /
     ``adapter_config.json``. Caller verifies usability with
@@ -809,29 +814,60 @@ def download_adapter(
                 f"available versions: {[v.version for v in versions_sorted]}"
             )
 
-        # Walk versions; pick the smallest one that contains
-        # ``adapter_model.safetensors`` at the root with total tree size < 1 GB.
-        # v0 (and sometimes v1) can be a bloated training-checkpoint blob (~6 GB)
-        # — see `.claude/agent-memory/experimenter/feedback_inherited_loras_via_wandb.md`.
-        # The previous version is removed before trying the next one so we never
-        # leave half-downloaded blobs on disk.
-        size_cap_bytes = 1_000_000_000  # 1 GB
+        # Walk versions; for each, download ONLY the two root-level adapter files
+        # (``adapter_model.safetensors`` + ``adapter_config.json``) instead of the
+        # whole artifact tree. Many of the #271 collections are bloated
+        # training-checkpoint blobs (~6 GB: optimizer states + checkpoint
+        # snapshots under ``checkpoint-*/``). The clean adapter still lives at
+        # the artifact root; selectively downloading those two files yields the
+        # ~325 MB clean adapter without ever materialising the checkpoint
+        # snapshots — see
+        # `.claude/agent-memory/experimenter/feedback_inherited_loras_via_wandb.md`.
+        # The previous version's local dir is removed before trying the next
+        # version so we never leave half-downloaded blobs on disk.
+        adapter_size_cap_bytes = 1_000_000_000  # 1 GB sanity cap on the safetensors itself
         local = out_root / persona
         rejected: list[tuple[str, str]] = []  # (version, reason)
         for cand in candidates:
             if local.exists():
                 shutil.rmtree(local)
             local.mkdir(parents=True, exist_ok=True)
-            cand.download(root=str(local))
+
+            # Look up root-level adapter files in the artifact manifest *without*
+            # downloading anything yet. Root-level == no '/' in the manifest path
+            # (i.e. NOT inside any ``checkpoint-*/`` subdir).
+            files_by_name = {f.name: f for f in cand.files()}
+            root_files = {n: f for n, f in files_by_name.items() if "/" not in n}
+            if "adapter_model.safetensors" not in root_files:
+                rejected.append((cand.version, "no adapter_model.safetensors at artifact root"))
+                continue
+            if "adapter_config.json" not in root_files:
+                rejected.append((cand.version, "no adapter_config.json at artifact root"))
+                continue
+
+            # Selective download: only the two root-level adapter files. Use
+            # ``ArtifactManifestEntry.download(root=...)`` (per-file API) so we
+            # avoid the implicit checkpoint-tree pull of ``cand.download(root)``.
+            cand.get_entry("adapter_config.json").download(root=str(local))
+            cand.get_entry("adapter_model.safetensors").download(root=str(local))
 
             adapter_st = local / "adapter_model.safetensors"
             if not adapter_st.exists():
-                rejected.append((cand.version, "missing adapter_model.safetensors at root"))
+                # Should not happen — get_entry succeeded — but be defensive.
+                rejected.append((cand.version, "adapter_model.safetensors missing post-download"))
                 continue
-            total = sum(p.stat().st_size for p in local.rglob("*") if p.is_file())
-            if total >= size_cap_bytes:
+            adapter_size = adapter_st.stat().st_size
+            if adapter_size >= adapter_size_cap_bytes:
+                # The clean Qwen-2.5-7B LoRA adapter is ~334 MB. A larger file at
+                # the root would mean either a different (full-weight) checkpoint
+                # got committed at the root, or our LoRA rank ballooned — either
+                # way we want to crash loudly rather than silently load it.
                 rejected.append(
-                    (cand.version, f"size {total / 1e9:.2f} GB ≥ {size_cap_bytes / 1e9:.2f} GB")
+                    (
+                        cand.version,
+                        f"adapter_model.safetensors size {adapter_size / 1e9:.2f} GB "
+                        f">= {adapter_size_cap_bytes / 1e9:.2f} GB cap",
+                    )
                 )
                 continue
 
