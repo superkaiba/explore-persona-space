@@ -1441,11 +1441,75 @@ def _parse_current_issue_from_body(body: str) -> int | None:
     return None
 
 
+def _compute_strict_toggle(
+    *, created_at: str, label_names: list[str]
+) -> tuple[bool, datetime | None]:
+    """Replicates the --issue-mode date-gate verbatim.
+
+    Returns ``(strict, created_dt)`` where:
+
+    * ``strict`` is True only when the issue is ≤7 days old AND not yet
+      promoted (no ``clean-results`` label without ``:draft``). Pre-cutoff
+      and post-promotion issues fall back to non-strict mode (grandfathered
+      checks pass with a "non-strict (grandfathered)" note).
+    * ``created_dt`` is the parsed datetime; ``now`` if the ISO string is
+      malformed (the same behavior as --issue mode — fall back to strict on
+      parse failure rather than crash).
+
+    Used by both ``--issue`` and ``--body-stdin`` modes; the §4
+    ``test_body_stdin_strict_toggle_parity`` regression test asserts both
+    paths produce identical ``strict`` for identical inputs.
+    """
+    from datetime import timedelta
+
+    now = datetime.now(UTC)
+    try:
+        created_dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+    except ValueError:
+        created_dt = now  # fall back to strict if parsing fails
+    age = now - created_dt
+    is_promoted = "clean-results" in label_names and "clean-results:draft" not in label_names
+    strict = (age <= timedelta(days=7)) and (not is_promoted)
+    return strict, created_dt
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("path", nargs="?", help="Path to a clean-result body markdown file")
     group.add_argument("--issue", type=int, help="Fetch body via gh issue view <N>")
+    group.add_argument(
+        "--body-stdin",
+        action="store_true",
+        help=(
+            "Read body from stdin. Requires --title and --created-at. "
+            "Use this from CI workflows where the body is in the event payload "
+            "and re-fetching via gh would race a second edit."
+        ),
+    )
+    parser.add_argument(
+        "--title",
+        default=None,
+        help="Issue title (required with --body-stdin).",
+    )
+    parser.add_argument(
+        "--created-at",
+        default=None,
+        help=(
+            "ISO8601 timestamp (required with --body-stdin); used to compute "
+            "the strict / grandfathered toggle. Same semantics as --issue mode."
+        ),
+    )
+    parser.add_argument(
+        "--label",
+        action="append",
+        default=None,
+        help=(
+            "Repeatable. Issue label name (use with --body-stdin). The "
+            "promotion gate fires when a `clean-results` label is present "
+            "without `clean-results:draft`."
+        ),
+    )
     parser.add_argument(
         "--current-issue",
         type=int,
@@ -1481,24 +1545,29 @@ def main(argv: list[str] | None = None) -> int:
     created_dt: datetime | None
     issue_labels: set[str] = set()
     current_issue: int | None = args.current_issue
+    title: str | None
+    body: str
 
-    if args.issue is not None:
+    if args.body_stdin:
+        if args.title is None or args.created_at is None:
+            parser.error("--body-stdin requires both --title and --created-at")
+        title = args.title
+        body = sys.stdin.read()
+        label_names = list(args.label or [])
+        issue_labels = set(label_names)
+        strict, created_dt = _compute_strict_toggle(
+            created_at=args.created_at, label_names=label_names
+        )
+        if current_issue is None:
+            current_issue = _parse_current_issue_from_body(body)
+    elif args.issue is not None:
         title, body, label_names, created_at = _fetch_issue_body(args.issue)
         issue_labels = set(label_names)
         if current_issue is None:
             current_issue = args.issue
         # Date-gate: skip Human summary / Sample outputs strict checks for
         # issues >7 days old or already-promoted (clean-results without :draft).
-        from datetime import timedelta
-
-        now = datetime.now(UTC)
-        try:
-            created_dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
-        except ValueError:
-            created_dt = now  # fall back to strict if parsing fails
-        age = now - created_dt
-        is_promoted = "clean-results" in label_names and "clean-results:draft" not in label_names
-        strict = (age <= timedelta(days=7)) and (not is_promoted)
+        strict, created_dt = _compute_strict_toggle(created_at=created_at, label_names=label_names)
     else:
         body_path = Path(args.path)
         if not body_path.exists():

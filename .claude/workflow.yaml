@@ -442,6 +442,10 @@ markers:
     posted_by: issue author (manual)
     when: "manually on the parent issue"
     fields: "`Followed by: #<N>` — bidirectional with epm:follows"
+  - kind: clean-result-lint
+    posted_by: GitHub Actions (.github/workflows/clean-result-lint.yml)
+    when: "every issues:edited / opened / labeled event on a clean-results-labeled issue"
+    fields: "PASS or FAIL verdict in H2 line + verifier stdout/stderr summary"
 
 # ──────────────────────────────────────────────────────────────────────
 # /issue lifecycle steps. Required by §5 (epm:step-completed re-entry
