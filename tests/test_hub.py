@@ -155,6 +155,64 @@ class TestUploadDatasetDirectory:
         # Helper returns only successful uploads (file 1 failed).
         assert result == ["test/b.jsonl"]
 
+    def test_fail_loud_when_upload_dataset_returns_empty_string(self, tmp_path):
+        """Default (fail_soft=False) raises RuntimeError on '' return.
+
+        Regression test for #293 round-2 C1: upload_dataset returns '' on every
+        internal failure (token missing, 401, 403, verification mismatch). The
+        helper used to ignore the return value and silently succeed. After the
+        fix, the helper must raise so the caller exits non-zero.
+        """
+        (tmp_path / "x.jsonl").write_text('{"a": 1}\n')
+        with (
+            patch(
+                "explore_persona_space.orchestrate.hub.upload_dataset",
+                return_value="",
+            ),
+            pytest.raises(RuntimeError, match="upload_dataset returned '' for") as exc_info,
+        ):
+            upload_dataset_directory(tmp_path, bucket="test/")
+        # Error message must point to the specific file + path_in_repo so the
+        # caller can find which file failed.
+        assert "x.jsonl" in str(exc_info.value)
+        assert "test/x.jsonl" in str(exc_info.value)
+
+    def test_fail_soft_when_upload_dataset_returns_empty_string(self, tmp_path, capsys):
+        """fail_soft=True logs to stderr, skips the failed file, returns survivors.
+
+        Regression sister-test for #293 round-2 C1: in soft mode, the helper
+        must (1) NOT raise, (2) log to stderr, (3) skip the failed file from
+        the returned list, (4) still attempt the next file.
+        """
+        (tmp_path / "a.jsonl").write_text('{"a": 1}\n')
+        (tmp_path / "b.jsonl").write_text('{"b": 2}\n')
+
+        # File 1 returns "" (silent failure), file 2 returns a real path.
+        call_count = {"n": 0}
+
+        def _maybe_empty(*args, **kwargs):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                return ""
+            return f"repo/{kwargs['path_in_repo']}"
+
+        with patch(
+            "explore_persona_space.orchestrate.hub.upload_dataset",
+            side_effect=_maybe_empty,
+        ):
+            result = upload_dataset_directory(tmp_path, bucket="test/", fail_soft=True)
+        captured = capsys.readouterr()
+
+        # File 2 still attempted (helper does not abort on first failure).
+        assert call_count["n"] == 2
+        # Returned list contains ONLY the successful upload.
+        assert result == ["test/b.jsonl"]
+        # Failure must surface on stderr so a human watching logs can see it.
+        assert "returned ''" in captured.err
+        assert "a.jsonl" in captured.err
+        # And the explicit fail_soft notice.
+        assert "fail_soft=True; continuing" in captured.err
+
     def test_literal_filename_with_brackets_glob_escaped(self, tmp_path):
         """A literal filename containing ``[]`` is glob-escaped (v3 P7)."""
         # Create a file whose name contains glob metacharacters.

@@ -345,6 +345,18 @@ def check_results_figure_captions(
         # check_hero_figure already FAILed; nothing more to say here.
         return
 
+    # #293 round-2 C3: scrub MULTI-LINE HTML comments from the block before
+    # the line-walker runs. Templates use multi-line ``<!-- ... -->`` blocks
+    # to comment out optional figure stubs (e.g. the secondary-figure
+    # placeholder in clean-results/template.md lines 104-110). Without
+    # scrubbing, a stub ``![alt](url)`` inside the comment is mistaken for a
+    # real figure and the walker demands a caption that doesn't exist.
+    #
+    # ``re.DOTALL`` lets ``.`` match newlines so the regex spans multi-line
+    # comments; the ``?`` makes ``.*?`` non-greedy so adjacent comments
+    # don't merge into one giant span.
+    results_block = re.sub(r"<!--.*?-->", "", results_block, flags=re.DOTALL)
+
     # Date-gate comparison (#293 §1 BLOCKER G + v3 P4): gh returns ``createdAt``
     # as a full ISO-8601 timestamp like ``2026-05-15T10:00:00Z``;
     # ``CAPTION_CHECK_ENFORCEMENT_DATE`` is date-only ``YYYY-MM-DD``. Slice to
@@ -359,6 +371,9 @@ def check_results_figure_captions(
     image_re = re.compile(r"!\[[^\]]*\]\(\S+?\)")
     label_re = re.compile(r"^\s*\*\*\s*\w")  # **Main takeaways:**
     hr_re = re.compile(r"^\s*([-*_])\1{2,}\s*$")  # ---, ***, ___ horizontal rules
+    # Single-line HTML comment kept for backward compat (legacy fixtures
+    # use them in the caption slot — see test_caption_html_comment_only_fails).
+    # Multi-line spans were already stripped above.
     html_comment_re = re.compile(r"^\s*<!--.*-->\s*$")
     inline_link_re = re.compile(r"\[([^\]]+)\]\([^)]+\)")
     bullet_strip_re = re.compile(r"^\s*[-*]\s+")
