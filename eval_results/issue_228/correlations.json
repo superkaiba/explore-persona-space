@@ -1,0 +1,572 @@
+{
+  "h1": {
+    "h1_primary_js": {
+      "rho": -0.6528418724300823,
+      "p_value": 6.84573456260963e-10,
+      "n": 71,
+      "ci_low": -0.8080974496895952,
+      "ci_high": -0.2345398339529197,
+      "n_iter": 1000,
+      "n_clusters": 7,
+      "n_bootstrap_valid": 1000
+    },
+    "h1_primary_cosine_l15": {
+      "rho": 0.44452842152694694,
+      "p_value": 0.00010288395266846579,
+      "n": 71,
+      "ci_low": 0.01372245636464372,
+      "ci_high": 0.7036305662851956,
+      "n_iter": 1000,
+      "n_clusters": 7,
+      "n_bootstrap_valid": 1000
+    },
+    "h1_delta_js_minus_cosine_l15": {
+      "delta_abs_rho": 0.20831345090313536,
+      "abs_rho_a": 0.6528418724300823,
+      "abs_rho_b": 0.44452842152694694,
+      "n": 71,
+      "ci_low": -0.026199467034560397,
+      "ci_high": 0.4408328511326244,
+      "n_iter": 1000,
+      "n_bootstrap_valid": 1000
+    },
+    "h1b1_within_target_z": {
+      "rho": -0.6956230183344417,
+      "p_value": 1.6666107734394555e-11,
+      "n": 71
+    },
+    "h1b2_source_fixed": {
+      "per_source": [
+        {
+          "source": "comedian",
+          "rho": 0.3669879217087868,
+          "p_value": 0.29687650638576357,
+          "n": 10
+        },
+        {
+          "source": "kindergarten_teacher",
+          "rho": -0.12805116099701186,
+          "p_value": 0.7244360974087536,
+          "n": 10
+        },
+        {
+          "source": "librarian",
+          "rho": -0.6565379871744699,
+          "p_value": 0.039204386332556775,
+          "n": 10
+        },
+        {
+          "source": "medical_doctor",
+          "rho": -0.6524511536514415,
+          "p_value": 0.040874330741456556,
+          "n": 10
+        },
+        {
+          "source": "nurse",
+          "rho": -0.6833730713673077,
+          "p_value": 0.020439860299125465,
+          "n": 11
+        },
+        {
+          "source": "software_engineer",
+          "rho": -0.7051704306688749,
+          "p_value": 0.022737736615376845,
+          "n": 10
+        },
+        {
+          "source": "villain",
+          "rho": -0.2121212121212121,
+          "p_value": 0.5563057751029299,
+          "n": 10
+        }
+      ],
+      "mean_rho": -0.38153101346736157,
+      "mean_abs_rho": 0.48638470538415784,
+      "n_sources_valid": 7
+    },
+    "h1b3_target_fixed": {
+      "per_target": [
+        {
+          "target": "assistant",
+          "rho": -0.7857142857142859,
+          "p_value": 0.03623846267982715,
+          "n": 7
+        },
+        {
+          "target": "comedian",
+          "rho": 0.028571428571428574,
+          "p_value": 0.9571545189504373,
+          "n": 6
+        },
+        {
+          "target": "data_scientist",
+          "rho": -0.8571428571428573,
+          "p_value": 0.013697326615325618,
+          "n": 7
+        },
+        {
+          "target": "french_person",
+          "rho": -0.642857142857143,
+          "p_value": 0.11939237342741109,
+          "n": 7
+        },
+        {
+          "target": "kindergarten_teacher",
+          "rho": -0.8285714285714287,
+          "p_value": 0.04156268221574335,
+          "n": 6
+        },
+        {
+          "target": "librarian",
+          "rho": -0.8285714285714287,
+          "p_value": 0.04156268221574335,
+          "n": 6
+        },
+        {
+          "target": "medical_doctor",
+          "rho": -0.7714285714285715,
+          "p_value": 0.07239650145772594,
+          "n": 6
+        },
+        {
+          "target": "police_officer",
+          "rho": -0.6785714285714287,
+          "p_value": 0.09375025395983135,
+          "n": 7
+        },
+        {
+          "target": "software_engineer",
+          "rho": -0.7142857142857143,
+          "p_value": 0.11078717201166179,
+          "n": 6
+        },
+        {
+          "target": "villain",
+          "rho": -0.7714285714285715,
+          "p_value": 0.07239650145772594,
+          "n": 6
+        },
+        {
+          "target": "zelthari_scholar",
+          "rho": -0.48997894350611143,
+          "p_value": 0.2643300244813535,
+          "n": 7
+        }
+      ],
+      "mean_rho": -0.6672708130460102,
+      "mean_abs_rho": 0.6724656182408154,
+      "n_targets_valid": 11
+    },
+    "h1_source_to_assistant": {
+      "rho": -0.7857142857142859,
+      "p_value": 0.03623846267982715,
+      "n": 7,
+      "note": "n=7 descriptive (source -> assistant slice)"
+    }
+  },
+  "h2": {
+    "per_source_raw": [
+      {
+        "source": "comedian",
+        "rho_js": 0.9272727272727272,
+        "p_js": 0.00011203450639397586,
+        "rho_cos_l20": 0.10303030303030303,
+        "p_cos_l20": 0.7769984634438898,
+        "n": 10
+      },
+      {
+        "source": "kindergarten_teacher",
+        "rho_js": -0.3939393939393939,
+        "p_js": 0.25999776683488757,
+        "rho_cos_l20": 0.7454545454545454,
+        "p_cos_l20": 0.013330146315440054,
+        "n": 10
+      },
+      {
+        "source": "librarian",
+        "rho_js": -0.9030303030303028,
+        "p_js": 0.0003436121977632824,
+        "rho_cos_l20": 0.7818181818181817,
+        "p_cos_l20": 0.0075470077810678785,
+        "n": 10
+      },
+      {
+        "source": "medical_doctor",
+        "rho_js": -0.29696969696969694,
+        "p_js": 0.40470167127015705,
+        "rho_cos_l20": 0.4666666666666666,
+        "p_cos_l20": 0.17393859716506654,
+        "n": 10
+      },
+      {
+        "source": "nurse",
+        "rho_js": 0.13939393939393938,
+        "p_js": 0.7009318849100584,
+        "rho_cos_l20": 0.2606060606060606,
+        "p_cos_l20": 0.46708905438634024,
+        "n": 10
+      },
+      {
+        "source": "software_engineer",
+        "rho_js": -0.7454545454545454,
+        "p_js": 0.013330146315440054,
+        "rho_cos_l20": 0.8787878787878788,
+        "p_cos_l20": 0.0008138621117322101,
+        "n": 10
+      },
+      {
+        "source": "villain",
+        "rho_js": -0.5878787878787878,
+        "p_js": 0.07387770688865808,
+        "rho_cos_l20": 0.5272727272727272,
+        "p_cos_l20": 0.11730806555020232,
+        "n": 10
+      }
+    ],
+    "per_source_diff": [
+      {
+        "source": "comedian",
+        "rho_js": 0.48333333333333334,
+        "p_js": 0.18746985521554216,
+        "rho_cos_l20": 0.0,
+        "p_cos_l20": 1.0,
+        "n": 9
+      },
+      {
+        "source": "kindergarten_teacher",
+        "rho_js": 0.6166666666666666,
+        "p_js": 0.07692880993776312,
+        "rho_cos_l20": 0.21666666666666667,
+        "p_cos_l20": 0.5755148957119259,
+        "n": 9
+      },
+      {
+        "source": "librarian",
+        "rho_js": 0.31666666666666665,
+        "p_js": 0.406397014486386,
+        "rho_cos_l20": -0.31666666666666665,
+        "p_cos_l20": 0.406397014486386,
+        "n": 9
+      },
+      {
+        "source": "medical_doctor",
+        "rho_js": 0.8833333333333333,
+        "p_js": 0.0015905004234978695,
+        "rho_cos_l20": -0.049999999999999996,
+        "p_cos_l20": 0.8983528043506303,
+        "n": 9
+      },
+      {
+        "source": "nurse",
+        "rho_js": 0.26666666666666666,
+        "p_js": 0.48792227483870076,
+        "rho_cos_l20": -0.06666666666666667,
+        "p_cos_l20": 0.8646897846262036,
+        "n": 9
+      },
+      {
+        "source": "software_engineer",
+        "rho_js": -0.11666666666666665,
+        "p_js": 0.765007942926146,
+        "rho_cos_l20": 0.31666666666666665,
+        "p_cos_l20": 0.406397014486386,
+        "n": 9
+      },
+      {
+        "source": "villain",
+        "rho_js": 0.31666666666666665,
+        "p_js": 0.406397014486386,
+        "rho_cos_l20": 0.2333333333333333,
+        "p_cos_l20": 0.5456987782182728,
+        "n": 9
+      }
+    ],
+    "raw_fdr": [
+      {
+        "source": "comedian",
+        "p_raw": 0.00011203450639397586,
+        "p_adj": 0.000784241544757831,
+        "fdr_pass": true,
+        "negative_sign": false
+      },
+      {
+        "source": "kindergarten_teacher",
+        "p_raw": 0.25999776683488757,
+        "p_adj": 0.3639968735688426,
+        "fdr_pass": false,
+        "negative_sign": true
+      },
+      {
+        "source": "librarian",
+        "p_raw": 0.0003436121977632824,
+        "p_adj": 0.0012026426921714884,
+        "fdr_pass": true,
+        "negative_sign": true
+      },
+      {
+        "source": "medical_doctor",
+        "p_raw": 0.40470167127015705,
+        "p_adj": 0.47215194981518327,
+        "fdr_pass": false,
+        "negative_sign": true
+      },
+      {
+        "source": "nurse",
+        "p_raw": 0.7009318849100584,
+        "p_adj": 0.7009318849100584,
+        "fdr_pass": false,
+        "negative_sign": false
+      },
+      {
+        "source": "software_engineer",
+        "p_raw": 0.013330146315440054,
+        "p_adj": 0.031103674736026793,
+        "fdr_pass": true,
+        "negative_sign": true
+      },
+      {
+        "source": "villain",
+        "p_raw": 0.07387770688865808,
+        "p_adj": 0.12928598705515165,
+        "fdr_pass": false,
+        "negative_sign": true
+      }
+    ],
+    "diff_fdr": [
+      {
+        "source": "comedian",
+        "p_diff": 0.18746985521554216,
+        "p_adj": 0.4374296621695984,
+        "fdr_pass": false,
+        "negative_sign": false
+      },
+      {
+        "source": "kindergarten_teacher",
+        "p_diff": 0.07692880993776312,
+        "p_adj": 0.26925083478217093,
+        "fdr_pass": false,
+        "negative_sign": false
+      },
+      {
+        "source": "librarian",
+        "p_diff": 0.406397014486386,
+        "p_adj": 0.5689558202809404,
+        "fdr_pass": false,
+        "negative_sign": false
+      },
+      {
+        "source": "medical_doctor",
+        "p_diff": 0.0015905004234978695,
+        "p_adj": 0.011133502964485087,
+        "fdr_pass": true,
+        "negative_sign": false
+      },
+      {
+        "source": "nurse",
+        "p_diff": 0.48792227483870076,
+        "p_adj": 0.5692426539784843,
+        "fdr_pass": false,
+        "negative_sign": false
+      },
+      {
+        "source": "software_engineer",
+        "p_diff": 0.765007942926146,
+        "p_adj": 0.765007942926146,
+        "fdr_pass": false,
+        "negative_sign": true
+      },
+      {
+        "source": "villain",
+        "p_diff": 0.406397014486386,
+        "p_adj": 0.5689558202809404,
+        "fdr_pass": false,
+        "negative_sign": false
+      }
+    ],
+    "n_raw_passing_negative": 2,
+    "n_diff_passing_negative": 0,
+    "h2_pass_threshold_raw": 4,
+    "h2_pass_threshold_diff": 4,
+    "h2_pass_raw": false,
+    "h2_pass_diff": false,
+    "h2_pass_overall": false
+  },
+  "h3": {
+    "primary_partial_js_given_cos_l15": {
+      "rho": -0.5362049241723084,
+      "p_value": 1.717441411932392e-06,
+      "n": 71,
+      "df": 68,
+      "ci_low": -0.7370974236101149,
+      "ci_high": -0.15714827383357335,
+      "n_iter": 1000,
+      "n_bootstrap_valid": 1000
+    },
+    "reverse_partial_cos_l15_given_js": {
+      "rho": -0.060554603436873744,
+      "p_value": 0.6185043355831735,
+      "n": 71,
+      "df": 68,
+      "ci_low": -0.41745352002379005,
+      "ci_high": 0.3434901549823213,
+      "n_iter": 1000,
+      "n_bootstrap_valid": 1000
+    }
+  },
+  "c1_marker_mask": {
+    "rho_masked": {
+      "rho": -0.6528418724300823,
+      "p_value": 6.84573456260963e-10,
+      "n": 71,
+      "ci_low": -0.8080974496895952,
+      "ci_high": -0.2345398339529197,
+      "n_iter": 1000,
+      "n_clusters": 7,
+      "n_bootstrap_valid": 1000
+    },
+    "delta_abs_rho_masked_minus_raw": {
+      "delta_abs_rho": 0.0,
+      "abs_rho_a": 0.6528418724300823,
+      "abs_rho_b": 0.6528418724300823,
+      "n": 71,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "n_iter": 1000,
+      "n_bootstrap_valid": 1000
+    },
+    "relative_change": 0.0,
+    "marker_mediated_threshold_rel_change": 0.4,
+    "marker_mediated": false
+  },
+  "c1b_marker_free": {
+    "rho_no_marker": {
+      "rho": -0.6528418724300823,
+      "p_value": 6.84573456260963e-10,
+      "n": 71,
+      "ci_low": -0.8080974496895952,
+      "ci_high": -0.2345398339529197,
+      "n_iter": 1000,
+      "n_clusters": 7,
+      "n_bootstrap_valid": 1000
+    },
+    "delta_abs_rho_no_marker_minus_raw": {
+      "delta_abs_rho": 0.0,
+      "abs_rho_a": 0.6528418724300823,
+      "abs_rho_b": 0.6528418724300823,
+      "n": 71,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "n_iter": 1000,
+      "n_bootstrap_valid": 1000
+    },
+    "collapse_threshold": 0.3,
+    "marker_context_mediated": false
+  },
+  "c2_prompt_distance": {
+    "status": "skipped",
+    "reason": "sentence-transformers not available \u2014 install if C2 needed"
+  },
+  "c3_villain_out": {
+    "n71": {
+      "js_vs_leakage": {
+        "rho": -0.6528418724300823,
+        "p_value": 6.84573456260963e-10,
+        "n": 71,
+        "ci_low": -0.8080974496895952,
+        "ci_high": -0.2345398339529197,
+        "n_iter": 1000,
+        "n_clusters": 7,
+        "n_bootstrap_valid": 1000
+      },
+      "cosine_l15_vs_leakage": {
+        "rho": 0.44452842152694694,
+        "p_value": 0.00010288395266846579,
+        "n": 71,
+        "ci_low": 0.01372245636464372,
+        "ci_high": 0.7036305662851956,
+        "n_iter": 1000,
+        "n_clusters": 7,
+        "n_bootstrap_valid": 1000
+      },
+      "delta_js_minus_cosine_l15": {
+        "delta_abs_rho": 0.20831345090313536,
+        "abs_rho_a": 0.6528418724300823,
+        "abs_rho_b": 0.44452842152694694,
+        "n": 71,
+        "ci_low": -0.026199467034560397,
+        "ci_high": 0.4408328511326244,
+        "n_iter": 1000,
+        "n_bootstrap_valid": 1000
+      }
+    },
+    "n61": {
+      "js_vs_leakage": {
+        "rho": -0.6720729408775101,
+        "p_value": 3.0231008895170614e-09,
+        "n": 61,
+        "ci_low": -0.804711883746143,
+        "ci_high": -0.30581152884732626,
+        "n_iter": 1000,
+        "n_clusters": 6,
+        "n_bootstrap_valid": 1000
+      },
+      "cosine_l15_vs_leakage": {
+        "rho": 0.4942786663047651,
+        "p_value": 5.1523087776224895e-05,
+        "n": 61,
+        "ci_low": 0.1529376451574696,
+        "ci_high": 0.7278075634351807,
+        "n_iter": 1000,
+        "n_clusters": 6,
+        "n_bootstrap_valid": 1000
+      },
+      "delta_js_minus_cosine_l15": {
+        "delta_abs_rho": 0.17779427457274505,
+        "abs_rho_a": 0.6720729408775101,
+        "abs_rho_b": 0.4942786663047651,
+        "n": 61,
+        "ci_low": -0.08615545420158653,
+        "ci_high": 0.36695830848520733,
+        "n_iter": 1000,
+        "n_bootstrap_valid": 1000
+      }
+    }
+  },
+  "c4_temp1": {
+    "status": "available_but_not_recomputed",
+    "note": "raw_completions.json exists; recompute JS at temp=1 is a separate GPU job (compute_js_convergence_228.py with a different seed/temp config). Not attempted here."
+  },
+  "c5_entropy_partial": {
+    "method": "pingouin.partial_corr(method='spearman')",
+    "covariates": [
+      "cosine_l15",
+      "source_token_entropy_mean"
+    ],
+    "rho": -0.5659187160169511,
+    "p_value": 4.0312762572943534e-07,
+    "n": 71,
+    "df": 67,
+    "ci_low": -0.743514150579666,
+    "ci_high": -0.010404922008594351,
+    "n_iter": 1000,
+    "n_bootstrap_valid": 1000
+  },
+  "h3_with_entropy": {
+    "rho": -0.5659187160169511,
+    "p_value": 4.0312762572943534e-07,
+    "n": 71,
+    "df": 67,
+    "ci_low": -0.743514150579666,
+    "ci_high": -0.010404922008594351,
+    "n_iter": 1000,
+    "n_bootstrap_valid": 1000
+  },
+  "metadata": {
+    "bootstrap_iterations": 1000,
+    "bootstrap_seed": 20260504,
+    "epoch_for_h1": 20,
+    "cosine_layer_h1": "layer_15",
+    "cosine_layer_h2": "layer_20",
+    "generated_at": "2026-05-07T19:23:03.484015+00:00"
+  }
+}
