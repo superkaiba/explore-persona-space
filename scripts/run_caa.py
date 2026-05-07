@@ -8,15 +8,25 @@ CAA centroid for role r at (token i, layer l) =
           - hidden(neg_prompt=NO_SYSTEM_MESSAGE, q, layer=l, token=i) )
 
 Per plan §4 + §5 + §11 A21:
-- Negative anchor is an EMPTY SYSTEM SLOT (no system message at all in the chat
-  template), NOT another role. This matches Chen 2025's negative-instruction shape;
-  using "assistant" would conflate "X vs assistant" with "what X is" because
-  `assistant` is one of the 275 personas (first key in role_list.json).
-- Per v3 fix 1, CAA is DESCRIPTIVE-ONLY in the analysis pipeline: its cells feed
-  H1 clustering and per-method baseline reporting but are EXCLUDED from the H2
-  Arditi-style argmax candidate set, because the empty-system anchor still encodes
-  the helpful-assistant prior (helpful_assistant ↔ no_persona cos = 0.979 per
-  research_ideas #6) and a "CAA wins H2" finding would be confounded.
+- Negative anchor is "no system message at all in the messages list passed to
+  `apply_chat_template`". For Qwen2.5-Instruct's chat template, omitting the system
+  message causes the template to inject its DEFAULT helpful-assistant string —
+  verified live on the tokenizer:
+
+      tok.apply_chat_template(
+          [{"role": "user", "content": q}], add_generation_prompt=True
+      )
+      # -> "<|im_start|>system\\nYou are Qwen, created by Alibaba Cloud. You are a
+      #     helpful assistant.<|im_end|>\\n<|im_start|>user\\n..."
+
+  So in practice the CAA negative anchor is the canonical "helpful-assistant"
+  string, NOT a syntactically empty system slot. This is acceptable because
+  (per plan §11 A21) CAA is descriptive-only — the helpful-assistant confound was
+  already foreseen and CAA cells are EXCLUDED from the H2 Arditi-style argmax
+  candidate set. CAA cells still feed H1 clustering and per-method baseline
+  reporting. To get a strictly-empty system anchor (e.g. for a future H2-eligible
+  variant), pass `{"role": "system", "content": ""}` explicitly — that shape
+  produces "<|im_start|>system\\n<|im_end|>\\n..." which IS empty.
 
 Output:
   data/persona_vectors/issue_263/qwen2.5-7b-instruct/method_caa__pos_<i>__layer_<l>/<role>.pt
@@ -108,11 +118,19 @@ def build_chat_text_pos(tokenizer, system_prompt: str, question: str) -> str:
 
 
 def build_chat_text_neg_empty_system(tokenizer, question: str) -> str:
-    """Build chat text with NO system message — empty-system negative anchor.
+    """Build chat text with no system message in `messages`. Caveat: Qwen2.5-Instruct's
+    `apply_chat_template` injects a DEFAULT helpful-assistant string when the system
+    message is omitted ("You are Qwen, created by Alibaba Cloud. You are a helpful
+    assistant."). This was verified on the live tokenizer. Acceptable per plan §11
+    A21: CAA is descriptive-only and excluded from H2's argmax candidate set —
+    the helpful-assistant confound was foreseen.
 
     Per plan §4 + §5: the empty-system slot, NOT a literal empty string in a
     system role and NOT the 'assistant' persona — just no system message in
     the messages list. Mirrors Chen 2025's negative-instruction shape.
+
+    For a strictly-empty system anchor (no Qwen default fill-in), pass
+    `{"role": "system", "content": ""}` explicitly instead.
     """
     messages = [{"role": "user", "content": question}]
     return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
@@ -277,7 +295,13 @@ def extract_caa(  # noqa: C901
     # ── Metadata ──
     metadata = {
         "method": "caa",
-        "negative_anchor": "empty_system_prompt",
+        "negative_anchor": "no_system_message_in_chat_template",
+        "negative_anchor_caveat": (
+            "Qwen2.5-Instruct's apply_chat_template injects 'You are Qwen, created by "
+            "Alibaba Cloud. You are a helpful assistant.' when the system message is "
+            "omitted (verified live on tokenizer). CAA is descriptive-only per plan "
+            "§11 A21; excluded from H2 argmax candidate set."
+        ),
         "model": getattr(model.config, "_name_or_path", "unknown"),
         "n_roles": len(centroids),
         "n_questions": len(questions),
