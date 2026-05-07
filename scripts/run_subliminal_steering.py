@@ -96,16 +96,14 @@ ALL_LAYERS = (L10_LAYER, HEADLINE_LAYER)
 CALIBRATION_PROMPT = "What causes earthquakes?"
 
 # Neutral prompt (B1 fix).
-# Hot-fix 2026-05-07 (round 2): user requested empty system prompt as the cleanest
-# "no instruction" baseline. NOTE — Qwen2.5's chat template auto-inserts
-# "You are Qwen, created by Alibaba Cloud. You are a helpful assistant." when the
-# system role is OMITTED, which is exactly the qwen_default persona — so we cannot
-# skip the system message; we use empty CONTENT instead, which renders as
-# `<|im_start|>system\n<|im_end|>\n` (system role exists, content blank).
-NEUTRAL_PROMPT = ""
-# Backup neutral prompts to swap to if §8 #2 axis-distance gate fires.
+# Hot-fix 2026-05-07 (round 3, user-authorized): three candidates probed for §8 #2
+# (N=10 max |cos| ≤ cap):
+#   "Please answer the user's question." → 0.570 (data_scientist) — fail at cap=0.5
+#   "Provide a clear answer."            → ≤0.6 (verified per round-2 hot-fix test) — pass at cap=0.6
+#   "" (empty content)                   → 0.570 (software_engineer) AND cos=1.0 vs qwen_default — fail
+# User authorized cap relaxation 0.5 → 0.6 with "Provide a clear answer." (worst N=10 cos was 0.55).
+NEUTRAL_PROMPT = "Provide a clear answer."
 NEUTRAL_PROMPT_ALTERNATIVES = [
-    "Provide a clear answer.",
     "Please answer the user's question.",
     "Reply directly.",
 ]
@@ -131,7 +129,9 @@ PERTURBATION_RATIO_TARGET = 0.4
 PERTURBATION_RATIO_LOW = 0.2
 PERTURBATION_RATIO_HIGH = 0.6
 L20_NORM_RANGE = (50.0, 300.0)
-NEUTRAL_AXIS_DISTANCE_GATE = 0.5
+NEUTRAL_AXIS_DISTANCE_GATE = (
+    0.6  # relaxed 0.5→0.6 (user-authorized 2026-05-07; see NEUTRAL_PROMPT comment)
+)
 NEUTRAL_AXIS_DISTANCE_HALT = 0.7  # for the N=12 supplementary check (§8 #3)
 H2_GRADIENT_HALT = 0.2
 H2_GRADIENT_WARN = 0.4
