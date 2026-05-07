@@ -94,6 +94,25 @@ def test_ssh_refused_routes_infra() -> None:
     assert classify_failure(body) == "infra"
 
 
+# --- §2 watchdog regex extensions -----------------------------------------
+
+
+def test_stall_reason_routed_to_infra() -> None:
+    """The §2 pod.py-watch watchdog posts `reason: stall` bodies. The
+    INFRA_PATTERNS extension routes them via the regex fallback even when
+    the explicit `failure_class:` field is missing (e.g., body reformatted
+    upstream)."""
+    body = "## Stall detected\n\nreason: stall\nlast_event: 2025-01-01\n"
+    assert classify_failure(body) == "infra"
+
+
+def test_probe_unreachable_reason_routed_to_infra() -> None:
+    """`reason: probe_unreachable` (other watchdog exit path) also routes
+    to infra under the regex fallback."""
+    body = "## Probe unreachable\n\nreason: probe_unreachable\n"
+    assert classify_failure(body) == "infra"
+
+
 # --- CLI integration -------------------------------------------------------
 
 

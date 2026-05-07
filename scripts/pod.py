@@ -140,6 +140,11 @@ def cmd_list_ephemeral(args: list[str]):
     _lifecycle("list-ephemeral", args)
 
 
+def cmd_watch(args: list[str]):
+    """Stall-detection watchdog (§2). Forwarded to scripts/pod_watch.py."""
+    run([sys.executable, str(SCRIPT_DIR / "pod_watch.py"), *args])
+
+
 COMMANDS = {
     "config": (cmd_config, "Manage pod configuration (list, sync, check, update)"),
     "keys": (cmd_keys, "Distribute .env to pods (push, verify)"),
@@ -152,6 +157,7 @@ COMMANDS = {
     "resume": (cmd_resume, "Resume a stopped ephemeral pod"),
     "terminate": (cmd_terminate, "Destroy an issue's ephemeral pod"),
     "list-ephemeral": (cmd_list_ephemeral, "Show ephemeral-pod lifecycle state"),
+    "watch": (cmd_watch, "Stall-detection watchdog for an in-flight experiment"),
 }
 
 

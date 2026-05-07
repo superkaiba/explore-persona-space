@@ -48,6 +48,12 @@ INFRA_PATTERNS: list[re.Pattern[str]] = [
         r"Traceback.*\b(vllm|transformers|peft|trl|torch|xformers)/",
         re.IGNORECASE | re.DOTALL,
     ),
+    # §2 watchdog reasons. The watchdog already sets `failure_class: infra`
+    # explicitly in its body, so the FIELD_LINE precedence catches it
+    # first; these patterns are belt-and-suspenders fallback for the case
+    # where a body is reformatted upstream and loses the field line.
+    re.compile(r"^\s*reason:\s*stall\b", re.IGNORECASE | re.MULTILINE),
+    re.compile(r"^\s*reason:\s*probe_unreachable\b", re.IGNORECASE | re.MULTILINE),
 ]
 
 # Field-line regex: matches a leading "failure_class: <value>" line
