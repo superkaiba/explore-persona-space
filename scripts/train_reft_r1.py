@@ -7,9 +7,10 @@ persona, using 200 train examples per concept (the train split, q_idx 0..199).
 
 Per plan §7 stage-gate truth table, this script is invoked ONLY when:
   - Stage 1 H1 PASS + H2 FAIL (informational salvage), OR
-  - Stage 1 H1 FAIL + H2 FAIL (kill-scenario salvage), OR
-  - Stage 1 H1 PASS + H2 PASS (informational, optional — the plan says NO; this
-    script will refuse unless --force is passed).
+  - Stage 1 H1 FAIL + H2 FAIL (kill-scenario salvage).
+Stage 1 (H1 PASS, H2 PASS) does NOT invoke Stage 2 — see plan §7 stage-gate truth
+table. The decision is made by the analyzer (not this script); this script does not
+gate on Stage-1 verdicts itself.
 
 The pinned layer is the centroid layer of the Stage 1 best class — taken from the
 analysis JSON (`run_result.json`'s `H1.cluster_composition` largest-cluster modal layer).
@@ -145,11 +146,22 @@ def train_reft_for_role(
     l1_coeff: float,
     output_dir: Path,
     device: torch.device,
+    response_lookup: dict[tuple[str, str], str] | None = None,
 ) -> dict:
     """Train a single rank-r LoReFT intervention at `layer` for `role_name`.
 
     Saves the learned vector + metadata to:
       output_dir / f"{role_name}__reft_r{rank}__layer_{layer}.pt"
+
+    Args:
+        response_lookup: optional dict mapping (role_name, question) -> the role's
+            vLLM-generated assistant response (from `method_b/generated_responses.json`
+            written by `sweep_extraction_grid.py`). When present, this is the
+            canonical training target per plan §5 ("ReFT-r1 hyperparams: ... 200 train
+            examples per concept ... train examples = (prompt -> persona response)").
+            When absent, the script falls back to the role's `pos` system prompt as
+            the target — a sensible default that captures the persona's content
+            without echoing the question (which the round-1 placeholder did).
     """
     role_path = output_dir / f"{role_name}__reft_r{rank}__layer_{layer}.pt"
     if role_path.exists():
@@ -172,9 +184,13 @@ def train_reft_for_role(
     reft_model.set_device(device)
 
     # Build train data: chat-templated (sys, user, response) using the persona-prompted
-    # response — for now use the raw question as the assistant target (placeholder).
-    # The plan calls for 200 examples x 1 epoch; downstream callers can swap in real
-    # response targets via the responses cache in method_b/generated_responses.json.
+    # response. Per plan §5, the canonical target is the role's vLLM-generated response
+    # from method_b/generated_responses.json (passed via `response_lookup`). If that
+    # cache is missing, fall back to the role's `pos` system prompt as the target —
+    # this gives ReFT a persona-relevant text to predict rather than echoing the
+    # question (round 1's placeholder behaviour).
+    n_real_targets = 0
+    n_fallback_targets = 0
     examples: list[dict] = []
     for q in questions:
         prompt = tokenizer.apply_chat_template(
@@ -185,9 +201,26 @@ def train_reft_for_role(
             tokenize=False,
             add_generation_prompt=True,
         )
-        # Placeholder target: the question text itself. Real-world callers should
-        # replace this with the role's vLLM-generated response (Method B).
-        examples.append({"input_text": prompt, "output_text": q})
+        target: str | None = None
+        if response_lookup is not None:
+            target = response_lookup.get((role_name, q))
+        if target is None:
+            # Fallback: the role's `pos` system prompt (persona description). This is
+            # NOT a generated response, but it's a persona-relevant target — strictly
+            # better than the round-1 placeholder of `output_text=q` (which trained the
+            # rank-1 intervention to echo the user question).
+            target = sys_prompt
+            n_fallback_targets += 1
+        else:
+            n_real_targets += 1
+        examples.append({"input_text": prompt, "output_text": target})
+
+    if n_fallback_targets > 0:
+        print(
+            f"  [{role_name}] target sources: {n_real_targets} from method_b responses, "
+            f"{n_fallback_targets} fallback to `pos` system prompt",
+            flush=True,
+        )
 
     data_module = pyreft.make_last_position_supervised_data_module(
         tokenizer,
@@ -273,7 +306,6 @@ def main():
     )
     parser.add_argument("--output-dir", type=str, required=True)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--force", action="store_true", help="Force run even if Stage 1 says no")
     parser.add_argument("--smoke", action="store_true")
     args = parser.parse_args()
 
