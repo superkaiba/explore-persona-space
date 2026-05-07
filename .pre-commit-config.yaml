@@ -16,3 +16,12 @@ repos:
         args: ['--maxkb=500']
       - id: check-merge-conflict
       - id: detect-private-key
+
+  - repo: local
+    hooks:
+      - id: workflow-yaml-lint
+        name: Validate .claude/workflow.yaml schema + cross-references
+        entry: uv run python scripts/workflow_lint.py --check-references
+        language: system
+        files: ^(\.claude/workflow\.yaml|\.claude/skills/issue/(SKILL|markers)\.md|CLAUDE\.md|scripts/(gh_project|workflow_lint)\.py|src/explore_persona_space/workflow\.py)$
+        pass_filenames: false

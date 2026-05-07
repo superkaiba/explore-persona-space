@@ -20,7 +20,10 @@
 - **Auto-continuation policy.** When orchestrating a multi-step workflow
   (`/issue`, `/adversarial-planner`, etc.) the agent MUST auto-continue
   through every step EXCEPT the explicit user-gated states. The only
-  legitimate user-input gates in `/issue` are:
+  legitimate user-input gates in `/issue` are listed below; the canonical,
+  machine-checkable enumeration lives in `.claude/workflow.yaml` § gates
+  (6 inline gates + 1 park-and-wait gate + 1 conditional gate — drift is
+  caught by `scripts/workflow_lint.py --check-references`).
 
   *Inline `AskUserQuestion` gates (block within a single `/issue` invocation):*
   1. Step 0b (1) — issue body empty (cannot guess primary input).
@@ -56,33 +59,18 @@
   Reviewers reject PRs that introduce additional pause points.
 
 - **STATE-TO-`status:blocked` criteria** (escape hatch to prevent
-  catastrophic auto-continuation). When the agent would `Assumption:`-past
-  ANY of the following, label `status:blocked` and EXIT instead:
-  1. The assumption would silently delete or overwrite user files OUTSIDE
-     the worktree.
-  2. The assumption changes a public API contract (label semantics, marker
-     schema, GitHub Actions secret name, project-board column name).
-  3. consistency-checker / code-reviewer / interpretation-critic / reviewer
-     returns BLOCKER or FAIL with `needs-user` flag (see "Subagent halt
-     conditions" below).
-  4. `failure_class: infra` respawn cap (3) hit.
-  5. **Step 10 completion audit** (`epm:completion-audit`) finds any
-     numbered ask / acceptance criterion / explicit deliverable from the
-     ORIGINAL issue body that is unaddressed by the work artifacts
-     (clean-result body / `epm:results` / PR diff / `epm:test-verdict`).
-     Cheap pre-Done check that catches drift on multi-part issues — the
-     reviewer checks the write-up; this checks the issue → work contract.
+  catastrophic auto-continuation). Five criteria, enumerated in
+  (see workflow.yaml § halt_criteria): outside-worktree writes, public-API
+  contract changes, subagent BLOCKER/FAIL with `needs-user`, infra respawn
+  cap (3) hit, and Step 10 completion-audit finding an unaddressed item from
+  the ORIGINAL issue body. When any criterion fires, label `status:blocked`
+  and EXIT instead of `Assumption:`-ing past the issue.
 
 - **Subagent halt conditions** (verdicts that pause regardless of
-  auto-continuation):
-
-  | Subagent | Verdict | Action |
-  |---|---|---|
-  | consistency-checker | BLOCKER | Step 2c writes BLOCKER to plan body, awaits user reply |
-  | code-reviewer | FAIL | Bounces to implementer up to 3 rounds; on 4th FAIL, `status:blocked` |
-  | interpretation-critic | FATAL | Bounces to analyzer up to 3 rounds; on 4th FATAL, `status:blocked` |
-  | reviewer | FAIL with `needs-user` flag | Posts FAIL on source issue, awaits user |
-  | upload-verifier | FAIL | `status:uploading` does not advance to interpretation |
+  auto-continuation): consistency-checker BLOCKER, code-reviewer FAIL
+  (cap 3 rounds), interpretation-critic FATAL (cap 3 rounds), reviewer
+  FAIL-with-`needs-user`, upload-verifier FAIL. Full action map in
+  (see workflow.yaml § subagent_halt_conditions).
 
 ## Context hygiene
 

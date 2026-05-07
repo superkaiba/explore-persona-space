@@ -1,0 +1,666 @@
+# .claude/workflow.yaml — Single source of truth for /issue state machine.
+#
+# Symphony §5.3 Front-Matter pattern adapted: this YAML enumerates every
+# status:* label, every project-board column, every gate, every halt
+# criterion, every marker kind, and every step in the /issue lifecycle.
+# Everything that today is duplicated across CLAUDE.md, SKILL.md, markers.md,
+# and gh_project.py is collapsed into this one file. Pre-commit lint
+# (scripts/workflow_lint.py) enforces:
+#   - column references in statuses resolve to a real column row
+#   - dotted references in CLAUDE.md / SKILL.md / markers.md of the form
+#     `(see workflow.yaml § <key>)` resolve to a real key here
+#   - status:* label strings used in scripts/gh_project.py consumers exist
+#     in `statuses` below
+#
+# Liquid templates are NOT adopted (we don't run a daemon and don't render
+# per-issue prompts; refs like `(see workflow.yaml § statuses.running)`
+# cover our needs without a template engine — see plan §1).
+#
+# Bump `version` on breaking schema changes. The validator refuses unknown
+# version numbers.
+version: 1
+
+issue_types:
+  - experiment
+  - infra
+  - batch
+  - analysis
+  - survey
+
+# ──────────────────────────────────────────────────────────────────────
+# Project-board columns. Replaces NEW_COLUMN_SPEC in scripts/gh_project.py.
+# Color enum values: GitHub GraphQL ProjectV2SingleSelectFieldOptionColor.
+# ──────────────────────────────────────────────────────────────────────
+columns:
+  - name: "To do"
+    color: GRAY
+    description: "Backlog: proposed, gate-pending"
+  - name: "Planning"
+    color: PURPLE
+    description: "Adversarial-planner running"
+  - name: "Plan awaiting review"
+    color: YELLOW
+    description: "User action: approve plan to advance"
+  - name: "In flight"
+    color: BLUE
+    description: "Automated: implementing/running/uploading/interpreting/reviewing"
+  - name: "Blocked"
+    color: RED
+    description: "Resolve dependency"
+  - name: "Awaiting promotion"
+    color: YELLOW
+    description: "User action: review clean-result draft"
+  - name: "Followups running"
+    color: ORANGE
+    description: "Follow-up experiments running before clean-result is finalized"
+  - name: "Useful"
+    color: BLUE
+    description: "Cited or load-bearing for paper / RESULTS.md headline"
+  - name: "Not useful"
+    color: GRAY
+    description: "Result is correct but not informative; archive candidate"
+  - name: "Done"
+    color: GREEN
+    description: "Terminal: done-experiment / done-impl"
+  - name: "Archived"
+    color: GRAY
+    description: "Closed long ago / no longer relevant"
+
+# ──────────────────────────────────────────────────────────────────────
+# status:* labels. Replaces LABEL_TO_COLUMN's `status:*` rows in
+# scripts/gh_project.py. `column` MUST match a `columns[].name` above.
+# ──────────────────────────────────────────────────────────────────────
+statuses:
+  - name: proposed
+    column: "To do"
+    description: "User has filed; clarifier hasn't run."
+    next_action: clarify
+    user_gated: false
+  - name: gate-pending
+    column: "To do"
+    description: "Hypothesis/kill-criterion gate blocked the plan; awaiting body fix."
+    next_action: gate
+    user_gated: true
+  - name: planning
+    column: "Planning"
+    description: "Adversarial-planner is running."
+    next_action: plan
+    user_gated: false
+  - name: plan-pending
+    column: "Plan awaiting review"
+    description: "Plan posted; awaiting user `approve`."
+    next_action: approve
+    user_gated: true
+  - name: approved
+    column: "In flight"
+    description: "Plan approved; skill is creating worktree + draft PR."
+    next_action: dispatch
+    user_gated: false
+  - name: implementing
+    column: "In flight"
+    description: "(experiment|infra|...)-implementer is writing code."
+    next_action: implement
+    user_gated: false
+  - name: code-reviewing
+    column: "In flight"
+    description: "code-reviewer is reviewing the diff."
+    next_action: review_code
+    user_gated: false
+  - name: testing
+    column: "In flight"
+    description: "Inline test-suite step (Step 9c, code-change paths only)."
+    next_action: test
+    user_gated: false
+  - name: running
+    column: "In flight"
+    description: "experimenter is running on the pod."
+    next_action: run
+    user_gated: false
+  - name: uploading
+    column: "In flight"
+    description: "upload-verifier is checking artifacts."
+    next_action: verify_uploads
+    user_gated: false
+  - name: interpreting
+    column: "In flight"
+    description: "analyzer + interpretation-critic loop is running."
+    next_action: interpret
+    user_gated: false
+  - name: reviewing
+    column: "In flight"
+    description: "reviewer (final adversarial gate) is running."
+    next_action: review
+    user_gated: false
+  - name: under-review
+    column: "In flight"
+    description: "Legacy alias of `reviewing`; do not introduce new uses."
+    next_action: review
+    user_gated: false
+  - name: blocked
+    column: "Blocked"
+    description: "Aborted or stuck; awaiting user triage."
+    next_action: triage
+    user_gated: true
+  - name: awaiting-promotion
+    column: "Awaiting promotion"
+    description: "User action: promote clean-result via /clean-results promote."
+    next_action: promote
+    user_gated: true
+  - name: followups-running
+    column: "Followups running"
+    description: "Parent is done; children with `Parent: #<N>` are still in flight."
+    next_action: wait_for_children
+    user_gated: false
+  - name: done-experiment
+    column: "Done"
+    description: "Terminal: experiment finished + clean-result promoted. Issue stays OPEN."
+    next_action: terminal
+    user_gated: false
+  - name: done-impl
+    column: "Done"
+    description: "Terminal: code change shipped + reviewed. Issue stays OPEN."
+    next_action: terminal
+    user_gated: false
+  - name: archived
+    column: "Archived"
+    description: "Closed via `gh issue close`; auto-applied by archive workflow."
+    next_action: terminal
+    user_gated: false
+
+# ──────────────────────────────────────────────────────────────────────
+# Non-status priority labels. Replaces PRIORITY_LABELS tuple +
+# clean-results:* rows in LABEL_TO_COLUMN in scripts/gh_project.py.
+# Order is FIRST-MATCH-WINS: clean-results:draft trumps :useful trumps
+# :not-useful. The legacy bare `clean-results` label was dropped together
+# with the legacy "Clean results" column; promotions now route only to
+# Useful / Not useful via `gh_project.py promote <N> useful|not-useful`.
+# The bare `clean-results` label may still be present on issue records
+# for `gh issue list --label clean-results` back-compat queries, but it
+# does NOT route to a column on its own.
+# ──────────────────────────────────────────────────────────────────────
+priority_labels:
+  - name: clean-results:draft
+    column: "Awaiting promotion"
+    description: "Draft clean-result; awaiting user promotion or revision."
+  - name: clean-results:useful
+    column: "Useful"
+    description: "Promoted clean-result, paper-relevant."
+  - name: clean-results:not-useful
+    column: "Not useful"
+    description: "Promoted clean-result, archive candidate."
+
+# ──────────────────────────────────────────────────────────────────────
+# Auto-continuation gates. Replaces the enumerated gates in CLAUDE.md
+# "Auto-continuation policy". Three categories:
+#   - inline: block within a single /issue invocation (AskUserQuestion)
+#   - park_and_wait: skill EXITs and waits for user to run a separate
+#     command before re-invoking /issue
+#   - conditional: only fires when explicitly opted into
+# ──────────────────────────────────────────────────────────────────────
+gates:
+  inline:
+    - id: 1
+      name: empty_body
+      step: "0b/1"
+      reason: "issue body empty (cannot guess primary input)"
+    - id: 2
+      name: missing_type_label
+      step: "0b/2"
+      reason: "type:* label missing (wrong guess corrupts Done column)"
+    - id: 3
+      name: clarifier_blocking
+      step: "1"
+      status: status:proposed
+      reason: "clarifier blocking ambiguities"
+    - id: 4
+      name: plan_approval
+      step: "2c"
+      status: status:plan-pending
+      reason: "plan approval (user replies `approve`)"
+    - id: 5
+      name: pod_termination
+      step: "10c"
+      reason: "pod termination (irreversible)"
+    - id: 6
+      name: worktree_merge
+      step: "10d"
+      reason: "worktree merge prompt (irreversible)"
+  park_and_wait:
+    - id: 7
+      name: awaiting_promotion
+      label: status:awaiting-promotion
+      reason: |
+        User runs `/clean-results promote <N> useful|not-useful`; re-invoking
+        /issue <N> resumes Step 10. The skill EXITs cleanly — no
+        AskUserQuestion at this gate.
+  conditional:
+    - id: 8
+      name: tdd_gate
+      step: "4b"
+      condition: "plan body contains '### TDD: yes' OR user explicitly requested TDD"
+      reason: |
+        Implementer posts `epm:proposed-tests v1`, EXITs awaiting
+        `approve-tests` reply on the issue. Re-invoking /issue <N> after
+        approval resumes Step 4b normally.
+
+# ──────────────────────────────────────────────────────────────────────
+# STATE-TO-status:blocked criteria. Replaces the bullet list in CLAUDE.md
+# "Critical Rules". Five items.
+# ──────────────────────────────────────────────────────────────────────
+halt_criteria:
+  - id: 1
+    name: outside_worktree_writes
+    description: "Assumption would silently delete or overwrite user files OUTSIDE the worktree."
+  - id: 2
+    name: api_contract_change
+    description: |
+      Assumption changes a public API contract (label semantics, marker
+      schema, GitHub Actions secret name, project-board column name).
+  - id: 3
+    name: subagent_blocker
+    description: |
+      consistency-checker / code-reviewer / interpretation-critic / reviewer
+      returns BLOCKER or FAIL with `needs-user` flag.
+  - id: 4
+    name: infra_respawn_cap
+    description: "`failure_class: infra` respawn cap (3) hit."
+  - id: 5
+    name: completion_audit_incomplete
+    description: |
+      Step 10 completion audit (`epm:completion-audit`) finds any numbered
+      ask / acceptance criterion / explicit deliverable from the ORIGINAL
+      issue body that is unaddressed by the work artifacts.
+
+# ──────────────────────────────────────────────────────────────────────
+# Subagent halt verdicts. Replaces the table in CLAUDE.md "Subagent halt
+# conditions".
+# ──────────────────────────────────────────────────────────────────────
+subagent_halt_conditions:
+  - subagent: consistency-checker
+    verdict: BLOCKER
+    action: "Step 2c writes BLOCKER to plan body, awaits user reply"
+  - subagent: code-reviewer
+    verdict: FAIL
+    action: "Bounces to implementer up to 3 rounds; on 4th FAIL, status:blocked"
+  - subagent: interpretation-critic
+    verdict: FATAL
+    action: "Bounces to analyzer up to 3 rounds; on 4th FATAL, status:blocked"
+  - subagent: reviewer
+    verdict: "FAIL with `needs-user`"
+    action: "Posts FAIL on source issue, awaits user"
+  - subagent: upload-verifier
+    verdict: FAIL
+    action: "status:uploading does not advance to interpretation"
+
+# ──────────────────────────────────────────────────────────────────────
+# Marker kinds. Replaces the table in markers.md. The kind table block
+# in markers.md is auto-regenerated from this list (see workflow_lint
+# --emit-tables). Do NOT edit the rendered table by hand.
+# ──────────────────────────────────────────────────────────────────────
+markers:
+  - kind: auto-defaults
+    posted_by: skill
+    when: "Step 0b"
+    fields: "what fields were auto-filled and the inferred values"
+  - kind: clarify
+    posted_by: skill
+    when: "Step 1"
+    fields: "numbered questions OR 'No blocking ambiguities'"
+  - kind: clarify-answers
+    posted_by: skill (relaying user chat reply)
+    when: "Step 1"
+    fields: "user's answers to the most recent epm:clarify questions"
+  - kind: plan
+    posted_by: skill (via adversarial-planner)
+    when: "Step 2"
+    fields: "Goal, method delta, reproducibility card, success/kill criteria, GPU-hr estimate, pod"
+  - kind: consistency
+    posted_by: skill (via consistency-checker)
+    when: "Step 2b"
+    fields: "PASS/WARN/BLOCK verdict, variables that differ from parent, shared baseline check"
+  - kind: proposed-tests
+    posted_by: skill (via implementer / experiment-implementer)
+    when: "Step 4b, TDD mode only"
+    fields: "Posted ONLY when the plan body contains `### TDD: yes` or the user requests TDD. Body: ≥1 happy-path + ≥2 distinct error/edge-case tests, behavior-focused, in fenced blocks. Implementer EXITs after posting and awaits user `approve-tests` reply before writing implementation. Skill does not advance state on this marker — it pauses pending approval, then resumes Step 4b normal flow."
+  - kind: experiment-implementation
+    posted_by: skill (via experiment-implementer)
+    when: "Step 4b"
+    fields: "Posted for `type:experiment` issues. Body MUST follow the four-section shape `(a) What was done` / `(b) Considered but not done` / `(c) How to verify` / `(d) Needs human eyeball` — see `.claude/agents/experiment-implementer.md` Report Format. (c) MUST contain a copy-pasteable reproduction command + the observable success signal so the user can verify without reading the diff."
+  - kind: code-review
+    posted_by: skill (via code-reviewer)
+    when: "Step 5"
+    fields: "PASS / CONCERNS / FAIL verdict + line-level findings against the diff. v<n> per round"
+  - kind: hf-gate-pending
+    posted_by: skill
+    when: "Step 6a"
+    fields: "model id, gate status, retry plan if rejected"
+  - kind: pod-pending
+    posted_by: skill
+    when: "Step 6b"
+    fields: "RunPod provision error, retry instructions"
+  - kind: preflight
+    posted_by: skill
+    when: "Step 6c"
+    fields: "Full --json preflight report (resumed pods only)"
+  - kind: launch
+    posted_by: skill
+    when: "Step 6d"
+    fields: "Worktree, branch, PR, pod, PID, log path, code-review verdict, WandB URL"
+  - kind: progress
+    posted_by: experimenter / implementer
+    when: "during run"
+    fields: "Milestone description + metric snapshot"
+  - kind: hot-fix
+    posted_by: experimenter
+    when: "during run"
+    fields: "<=10-line in-line fix: commit hash, full diff, justification"
+  - kind: results
+    posted_by: specialist
+    when: "end of run"
+    fields: "Eval JSON paths, filled reproducibility card, WandB URL, HF Hub path, commit hash, GPU-hours used, deviations, hot-fix log. **MUST include a `## Sample outputs` section with `### Condition: <name>` H3 subheadings and ≥3 randomly-sampled (persona, prompt, response) triplets PER CONDITION, formatted as fenced markdown blocks. Verifier check #11 enforces.** For `type:infra` / `type:batch` / `type:analysis` / `type:survey` paths (implementer's completion report), the body MUST follow the four-section shape `(a) What was done` / `(b) Considered but not done` / `(c) How to verify` / `(d) Needs human eyeball` — see `.claude/agents/implementer.md` Report Format. (c) MUST contain copy-pasteable reproduction commands so the user can verify without reading the diff."
+  - kind: upload-verification
+    posted_by: skill (via upload-verifier)
+    when: "Step 8"
+    fields: "PASS/FAIL per artifact category, permanent URLs for each uploaded artifact."
+  - kind: upload-fix
+    posted_by: skill (via uploader)
+    when: "Step 8 (on verifier FAIL)"
+    fields: "Records what the uploader pushed/fixed in response to a `epm:upload-verification` FAIL. Contains: triggered-by link, verdict (COMPLETE/PARTIAL/BLOCKED), per-artifact action+URL table, lifecycle line (resumed→uploads→stopped), disk reclaimed, failures. Followed by re-run of `upload-verifier` which posts a fresh `epm:upload-verification v2`."
+  - kind: interpretation
+    posted_by: skill (via analyzer)
+    when: "Step 9a"
+    fields: "Fact sheet (Section 1) + interpretation (Section 2). May have v1-v3 across critique rounds."
+  - kind: interp-critique
+    posted_by: skill (via interpretation-critic)
+    when: "Step 9a"
+    fields: "PASS/REVISE verdict with 5 lenses: overclaims, surprises, alternatives, calibration, context"
+  - kind: analysis
+    posted_by: skill (via analyzer)
+    when: "Step 9a (final)"
+    fields: "Link to created clean-result issue + hero figure URL + 2-sentence recap"
+  - kind: reviewer-verdict
+    posted_by: skill (via reviewer)
+    when: "Step 9b"
+    fields: "PASS / CONCERNS / FAIL + line-level issues"
+  - kind: test-verdict
+    posted_by: skill (Step 9c, inline tests)
+    when: "Step 9c"
+    fields: "PASS / FAIL + test output summary, coverage gap notes (code-change paths only)"
+  - kind: completion-audit
+    posted_by: skill
+    when: "Step 10 step 0 (pre-flight, before label flip)"
+    fields: "Per-ask checklist; any ☐ ⇒ status:blocked"
+  - kind: results-md-diff
+    posted_by: skill
+    when: "Step 10"
+    fields: "Proposed diff for RESULTS.md (for user review, not auto-applied)"
+  - kind: done
+    posted_by: skill
+    when: "Step 10"
+    fields: "Final summary; records which Done column. Issue stays OPEN."
+  - kind: follow-ups
+    posted_by: skill (via follow-up-proposer)
+    when: "Step 10b"
+    fields: "1-3 ranked follow-up experiment proposals, pre-filled from parent"
+  - kind: pod-terminated
+    posted_by: skill
+    when: "Step 10c"
+    fields: "User opted to terminate; records pod name and final volume disposition"
+  - kind: pod-kept-stopped
+    posted_by: skill
+    when: "Step 10c"
+    fields: "User declined to terminate; pod parked indefinitely. Records pod name."
+  - kind: abort
+    posted_by: skill
+    when: "any time"
+    fields: "Abort reason. Triggered by status:blocked label."
+  - kind: failure
+    posted_by: specialist
+    when: "on crash"
+    fields: "Traceback + last 50 log lines + partial results. SHOULD include failure_class: infra | code line."
+  - kind: experimenter-respawn
+    posted_by: skill
+    when: "Step 7 (failure_class=infra path)"
+    fields: "Records re-spawn on the same branch without an implementer round. v<n> per respawn; cap 3."
+  - kind: merged
+    posted_by: skill
+    when: "Step 10d"
+    fields: "Merge SHAs (one per commit when rebase-merged) + worktree removal"
+  - kind: merge-deferred
+    posted_by: skill
+    when: "Step 10d"
+    fields: "User declined the merge prompt"
+  - kind: stale
+    posted_by: skill
+    when: "Step 7 (>4h silence)"
+    fields: "Note asking user to investigate"
+  - kind: follows
+    posted_by: issue author (manual)
+    when: "manually on a new follow-up issue"
+    fields: "`Follows from: #<N>` — bidirectional with epm:followed-by"
+  - kind: followed-by
+    posted_by: issue author (manual)
+    when: "manually on the parent issue"
+    fields: "`Followed by: #<N>` — bidirectional with epm:follows"
+
+# ──────────────────────────────────────────────────────────────────────
+# /issue lifecycle steps. Required by §5 (epm:step-completed re-entry
+# routing). `entry_status_label` MUST be a non-empty list of concrete
+# status:* labels — the literal `any` is rejected at lint time. The §5
+# router treats `status:blocked` as a hard-coded full-replay trigger
+# BEFORE consulting either entry_status_label or the marker.
+# ──────────────────────────────────────────────────────────────────────
+steps:
+  - id: "0"
+    name: load_state
+    entry_status_label:
+      - proposed
+      - gate-pending
+      - planning
+      - plan-pending
+      - approved
+      - implementing
+      - code-reviewing
+      - testing
+      - running
+      - uploading
+      - interpreting
+      - reviewing
+      - under-review
+      - awaiting-promotion
+      - followups-running
+      - blocked
+      - done-experiment
+      - done-impl
+    entry_condition: always
+    next_expected_step: "0b"
+  - id: "0b"
+    name: defaulting_autofill
+    entry_status_label:
+      - proposed
+      - gate-pending
+      - planning
+      - plan-pending
+      - approved
+      - implementing
+      - code-reviewing
+      - testing
+      - running
+      - uploading
+      - interpreting
+      - reviewing
+      - under-review
+      - awaiting-promotion
+      - followups-running
+      - blocked
+      - done-experiment
+      - done-impl
+    entry_condition: "missing status:* OR empty body OR missing type:*"
+    posts_marker: auto-defaults
+    next_expected_step: "1"
+  - id: "1"
+    name: clarifier
+    entry_status_label:
+      - proposed
+    entry_condition: "epm:clarify not yet posted OR user has new chat answers"
+    posts_marker: clarify
+    next_expected_step: "2"
+  - id: "2"
+    name: adversarial_planner
+    entry_status_label:
+      - planning
+    entry_condition: "clarifier All-clear; plan not yet posted"
+    posts_marker: plan
+    next_expected_step: "2b"
+  - id: "2b"
+    name: consistency_check
+    entry_status_label:
+      - planning
+    entry_condition: "plan posted; consistency check not yet run"
+    posts_marker: consistency
+    next_expected_step: "2c"
+  - id: "2c"
+    name: plan_pending
+    entry_status_label:
+      - plan-pending
+    entry_condition: "plan + consistency posted; awaiting user approve"
+    next_expected_step: "3"
+  - id: "3"
+    name: worktree_setup
+    entry_status_label:
+      - approved
+    entry_condition: "plan approved"
+    next_expected_step: "4"
+  - id: "4"
+    name: dispatch_implementer
+    entry_status_label:
+      - approved
+      - implementing
+    entry_condition: "worktree ready; specialist not yet dispatched"
+    next_expected_step: "4b"
+  - id: "4b"
+    name: implementer_running
+    entry_status_label:
+      - implementing
+    entry_condition: "specialist dispatched; awaiting epm:results or epm:experiment-implementation"
+    posts_marker: experiment-implementation
+    next_expected_step: "5"
+  - id: "5"
+    name: code_review
+    entry_status_label:
+      - code-reviewing
+    entry_condition: "epm:experiment-implementation posted"
+    posts_marker: code-review
+    next_expected_step: "6a"
+  - id: "5b"
+    name: code_review_revise
+    entry_status_label:
+      - implementing
+    entry_condition: "code-review FAIL, revision_round < 3"
+    next_expected_step: "5"
+  - id: "6a"
+    name: pod_provision
+    entry_status_label:
+      - running
+    entry_condition: "type:experiment AND no pod yet"
+    next_expected_step: "6b"
+  - id: "6b"
+    name: pod_pending
+    entry_status_label:
+      - running
+    entry_condition: "RunPod provision in flight"
+    posts_marker: pod-pending
+    next_expected_step: "6c"
+  - id: "6c"
+    name: preflight
+    entry_status_label:
+      - running
+    entry_condition: "pod ready; preflight not yet run"
+    posts_marker: preflight
+    next_expected_step: "6d"
+  - id: "6d"
+    name: dispatch_experimenter
+    entry_status_label:
+      - running
+    entry_condition: "preflight PASS; experimenter not yet launched"
+    posts_marker: launch
+    next_expected_step: "7"
+  - id: "7"
+    name: experimenter_running
+    entry_status_label:
+      - running
+    entry_condition: "epm:launch posted; awaiting epm:results"
+    next_expected_step: "8"
+  - id: "8"
+    name: upload_verification
+    entry_status_label:
+      - uploading
+    entry_condition: "epm:results posted"
+    posts_marker: upload-verification
+    next_expected_step: "9a"
+  - id: "9a"
+    name: interpretation
+    entry_status_label:
+      - interpreting
+    entry_condition: "upload-verification PASS"
+    posts_marker: interpretation
+    next_expected_step: "9b"
+  - id: "9b"
+    name: reviewer
+    entry_status_label:
+      - reviewing
+      - under-review
+    entry_condition: "clean-result issue created"
+    posts_marker: reviewer-verdict
+    next_expected_step: "9c"
+  - id: "9c"
+    name: test_verdict
+    entry_status_label:
+      - testing
+      - code-reviewing
+      - reviewing
+    entry_condition: "code-change path (type:infra/batch/analysis/survey); inline tests"
+    posts_marker: test-verdict
+    next_expected_step: "10"
+  - id: "10"
+    name: completion_audit
+    entry_status_label:
+      - awaiting-promotion
+      - reviewing
+      - under-review
+      - testing
+    entry_condition: "reviewer PASS OR test-verdict PASS; pre-flight before Done"
+    posts_marker: completion-audit
+    next_expected_step: "10a"
+  - id: "10a"
+    name: done_label_flip
+    entry_status_label:
+      - awaiting-promotion
+      - reviewing
+      - under-review
+      - testing
+    entry_condition: "completion-audit all ☑"
+    posts_marker: done
+    next_expected_step: "10b"
+  - id: "10b"
+    name: follow_ups
+    entry_status_label:
+      - done-experiment
+      - done-impl
+    entry_condition: "Done label set"
+    posts_marker: follow-ups
+    next_expected_step: "10c"
+  - id: "10c"
+    name: pod_termination_prompt
+    entry_status_label:
+      - done-experiment
+    entry_condition: "type:experiment AND pod still alive"
+    next_expected_step: "10d"
+  - id: "10d"
+    name: worktree_merge_prompt
+    entry_status_label:
+      - done-experiment
+      - done-impl
+    entry_condition: "PR exists and is unmerged"
+    posts_marker: merged
+    next_expected_step: terminal

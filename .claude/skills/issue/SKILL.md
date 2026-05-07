@@ -77,19 +77,19 @@ Read these on first invocation of the skill in a session.
 
 ---
 
-## Auto-continuation policy (REPEATED here for emphasis — see CLAUDE.md)
+## Auto-continuation policy
 
-The agent MUST auto-continue through every step except the user-gated
-states. Six functional user-input gates total in this skill (see CLAUDE.md
-"Auto-continuation policy"): Step 0b body, Step 0b type, Step 1 clarifier,
-Step 2c plan-approval, Step 10c pod-termination, Step 10d merge-prompt.
-Anywhere else that an assumption needs to be made, STATE the assumption
-inline (one line, prefixed `Assumption:`) and proceed. Do NOT pause to ask.
+Auto-continue through every step EXCEPT the gates declared in
+`.claude/workflow.yaml § gates` (see CLAUDE.md "Auto-continuation policy"
+for the prose summary). The full enumeration — 6 inline gates + 1 park-and-wait
+gate + 1 conditional gate — is canonical in workflow.yaml. Anywhere else
+that an assumption needs to be made, STATE the assumption inline (one
+line, prefixed `Assumption:`) and proceed; do NOT pause to ask.
 
-**Exception:** the subagent halt conditions in CLAUDE.md "Subagent halt
-conditions" — verdicts of BLOCKER/FAIL/FATAL/`needs-user` pause regardless.
-The STATE-TO-`status:blocked` criteria (CLAUDE.md) also override
-auto-continuation.
+**Exceptions that override auto-continuation:** subagent halt conditions
+(see workflow.yaml § subagent_halt_conditions) and STATE-TO-`status:blocked`
+criteria (see workflow.yaml § halt_criteria). When any of those fire,
+EXIT regardless of the auto-continuation rule.
 
 ## The State Machine
 
@@ -137,27 +137,32 @@ relaunches.
 
 There is no user sign-off step. Reviewer PASS (or `epm:test-verdict` PASS for code-change paths) is the terminal gate; completion is automatic. If the user disagrees with a done transition, they label `status:blocked` to reopen it. The "test-verdict gate" runs inline inside this skill (Step 9c) — there is no separate `tester` agent.
 
-**Active vs awaiting-user states:**
+**Active vs awaiting-user states** (auto-generated from `.claude/workflow.yaml § statuses` — see `workflow.yaml § statuses`. Do NOT edit inside the fence; run `uv run python scripts/workflow_lint.py --emit-tables` to regenerate after a YAML edit):
 
+<!-- workflow.yaml: AUTO-GENERATED (active-vs-awaiting) -->
 | State | Who's working | User action needed? |
 |-------|---------------|---------------------|
-| `proposed` | nobody (new) OR user (answering clarifier) | sometimes |
-| `planning` | adversarial-planner + consistency-checker agents | no |
-| `plan-pending` | nobody | **yes -- approve plan** |
-| `approved` | skill (worktree + draft PR) | no |
-| `implementing` | experiment-implementer (type:experiment) OR implementer (type:infra/batch) | no |
-| `code-reviewing` | code-reviewer agent | no |
-| `running` | experimenter agent (pod ops + monitoring); type:experiment only | no |
-| `uploading` | upload-verifier agent | no |
-| `interpreting` | analyzer + interpretation-critic agents (iterative loop) | no |
-| `reviewing` | reviewer / code-reviewer agent (final gate) | no |
-| `awaiting-promotion` | nobody | **yes -- promote clean-result** |
-| `followups-running` | nobody (parent done; children running in their own state machines) | no (re-invoke `/issue <N>` after children complete to advance to `done-experiment`) |
-| `blocked` | nobody (aborted or gate-skipped) | **yes -- triage** |
-| `done-impl` | nobody (issue stays OPEN; Project Status="Done (impl)") | no |
-| `done-experiment` | nobody (issue stays OPEN; Project Status="Done (experiment)") | no |
+| `proposed` | User has filed; clarifier hasn't run. | no |
+| `gate-pending` | Hypothesis/kill-criterion gate blocked the plan; awaiting body fix. | **yes** |
+| `planning` | Adversarial-planner is running. | no |
+| `plan-pending` | Plan posted; awaiting user `approve`. | **yes** |
+| `approved` | Plan approved; skill is creating worktree + draft PR. | no |
+| `implementing` | (experiment|infra|...)-implementer is writing code. | no |
+| `code-reviewing` | code-reviewer is reviewing the diff. | no |
+| `testing` | Inline test-suite step (Step 9c, code-change paths only). | no |
+| `running` | experimenter is running on the pod. | no |
+| `uploading` | upload-verifier is checking artifacts. | no |
+| `interpreting` | analyzer + interpretation-critic loop is running. | no |
+| `reviewing` | reviewer (final adversarial gate) is running. | no |
+| `blocked` | Aborted or stuck; awaiting user triage. | **yes** |
+| `awaiting-promotion` | User action: promote clean-result via /clean-results promote. | **yes** |
+| `followups-running` | Parent is done; children with `Parent: #<N>` are still in flight. | no |
+| `done-experiment` | Terminal: experiment finished + clean-result promoted. Issue stays OPEN. | no |
+| `done-impl` | Terminal: code change shipped + reviewed. Issue stays OPEN. | no |
+| `archived` | Closed via `gh issue close`; auto-applied by archive workflow. | no |
+<!-- /workflow.yaml: AUTO-GENERATED -->
 
-The two user-gated states in the lifecycle are `plan-pending` (plan approval) and `awaiting-promotion` (clean-result promotion). Everything between them is automatic, short of a `status:blocked` override.
+The two user-gated states in the active lifecycle are `plan-pending` (plan approval) and `awaiting-promotion` (clean-result promotion). `blocked` and `gate-pending` also need user attention but represent stalled / pre-pipeline states. Everything between is automatic, short of a `status:blocked` override.
 
 Abort affordance: any state, user labels `status:blocked` -> skill posts abort
 request, watcher kills run if one exists.
