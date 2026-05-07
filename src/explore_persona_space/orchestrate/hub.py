@@ -195,6 +195,25 @@ def upload_dataset_directory(
     should use to honor CLAUDE.md's Upload Policy ("Datasets MUST be
     uploaded — Auto after generation").
 
+    **Fail-loud contract (default ``fail_soft=False``).** The underlying
+    :func:`upload_dataset` swallows every internal error and returns ``""``
+    in five cases: (1) ``HF_TOKEN`` not set, (2) local path missing, (3)
+    repo-create failure, (4) the upload-and-list verification step finds
+    zero files at the expected prefix, (5) any other exception in the HF
+    API path. This helper treats an empty-string return from
+    :func:`upload_dataset` AS A FAILURE and raises ``RuntimeError`` so the
+    calling script exits non-zero. It also re-raises any exception that
+    :func:`upload_dataset` lets propagate (today: none, but defends
+    against future changes to the lower helper). Either way, the calling
+    script never silently succeeds when the upload didn't actually land.
+
+    **Soft mode (``fail_soft=True``).** Same detection of the two failure
+    surfaces (``""`` return + exception), but instead of raising the
+    helper logs to stderr and continues to the next file. The returned
+    list contains ONLY successfully-uploaded paths; failed files are not
+    in it. Use this only for genuinely best-effort callers — no current
+    data-gen script qualifies; CLAUDE.md's Upload Policy is fail-loud.
+
     Parameters
     ----------
     data_dir
@@ -207,28 +226,42 @@ def upload_dataset_directory(
         without doing any network I/O. Used for dry-run / ``--no-upload``
         CLI flag.
     fail_soft
-        Default behaviour (False) is FAIL-LOUD: on any upload error,
-        write to stderr and re-raise so the calling script exits non-zero.
-        CLAUDE.md's Upload Policy requires datasets to land on the Hub, so
-        the default upholds that contract. Pass ``fail_soft=True`` only
-        for genuinely best-effort callers (no current data-gen script
-        qualifies).
+        Default behaviour (False) is FAIL-LOUD: on any upload error
+        (raised exception OR ``""`` return from :func:`upload_dataset`),
+        write to stderr and raise ``RuntimeError`` so the calling script
+        exits non-zero. CLAUDE.md's Upload Policy requires datasets to
+        land on the Hub, so the default upholds that contract. Pass
+        ``fail_soft=True`` only for genuinely best-effort callers.
     pattern
         Glob pattern applied to ``data_dir.glob(pattern)`` (non-recursive).
         Defaults to ``"*.jsonl"``. Callers passing a literal filename
         with glob metacharacters (e.g. ``"data_[v1].jsonl"``) trigger an
         automatic ``glob.escape`` — see #293 §3 v3 P7.
 
+        Caveat: the auto-escape heuristic activates when the pattern
+        contains ``[`` or ``]`` but no ``*`` or ``?``. Callers that
+        intentionally want to use a glob character class (e.g.
+        ``"file_[abc].jsonl"`` to match ``file_a.jsonl`` etc.) must
+        include a ``*`` or ``?`` somewhere in the pattern to bypass the
+        heuristic. Existing data-gen filenames don't use brackets, so
+        this is a documentation-level constraint only.
+
     Returns
     -------
     list[str]
-        Sorted list of ``path_in_repo`` strings actually uploaded. Empty
-        when ``no_upload=True`` or no files match.
+        Sorted list of ``path_in_repo`` strings actually uploaded
+        (empty-string returns from :func:`upload_dataset` are NOT
+        included). Empty when ``no_upload=True`` or no files match.
 
     Raises
     ------
+    RuntimeError
+        Raised when ``fail_soft=False`` and :func:`upload_dataset`
+        returns ``""`` for any file (lower helper's silent-failure
+        return — see "Fail-loud contract" above).
     Exception
-        Re-raised from :func:`upload_dataset` when ``fail_soft=False``.
+        Re-raised from :func:`upload_dataset` when ``fail_soft=False``
+        and the lower helper raises rather than returning ``""``.
     """
     bucket = bucket.rstrip("/") + "/"
     # v3 P7 defense: callers that pass a literal filename (single-file
@@ -254,11 +287,13 @@ def upload_dataset_directory(
     for f in files:
         path_in_repo = f"{bucket}{f.name}"
         try:
-            upload_dataset(data_path=str(f), path_in_repo=path_in_repo)
-            uploaded.append(path_in_repo)
+            ret = upload_dataset(data_path=str(f), path_in_repo=path_in_repo)
         except Exception as e:
+            # upload_dataset rarely raises today (all paths return ""),
+            # but we defend the contract regardless.
             print(
-                f"  upload_dataset_directory: upload of {f.name} -> {path_in_repo} FAILED: {e}",
+                f"  upload_dataset_directory: upload of {f.name} -> {path_in_repo} "
+                f"FAILED with exception: {e}",
                 file=sys.stderr,
             )
             if fail_soft:
@@ -268,6 +303,26 @@ def upload_dataset_directory(
                 )
                 continue
             raise
+
+        # Fail-loud on the silent-failure path: upload_dataset returned ""
+        # because of HF_TOKEN missing / 401 / 403 / verification failure /
+        # caught exception inside _upload. Treat as failure.
+        if not ret:
+            msg = (
+                f"upload_dataset returned '' for {f} -> {path_in_repo}; "
+                "HF Hub upload failed silently (HF_TOKEN missing, 4xx, "
+                "or verification mismatch — see logs above for the "
+                "underlying cause)"
+            )
+            print(f"  upload_dataset_directory: {msg}", file=sys.stderr)
+            if fail_soft:
+                print(
+                    "  (fail_soft=True; continuing; local file preserved)",
+                    file=sys.stderr,
+                )
+                continue
+            raise RuntimeError(msg)
+        uploaded.append(path_in_repo)
     return uploaded
 
 

@@ -981,6 +981,41 @@ def test_caption_html_comment_only_fails() -> None:
     assert _statuses(report)["Results figure captions"] == "FAIL"
 
 
+def test_caption_multiline_html_comment_does_not_leak() -> None:
+    """A multi-line HTML comment containing ``![alt](url)`` must NOT register as
+    a real figure.
+
+    Regression test for #293 round-2 C3: the template
+    (.claude/skills/clean-results/template.md) ships with a multi-line
+    ``<!-- ... -->`` block (lines 104-110) that contains a stub
+    ``![{{optional_second_figure_alt}}](...)`` for an optional secondary
+    figure. The original line-walker only recognised single-line HTML
+    comments, so the embedded image was treated as a real figure and the
+    walker demanded a caption that doesn't exist. After the fix, multi-line
+    spans are stripped from the Results block before walking.
+    """
+    # Insert a multi-line HTML comment immediately after the (good) caption.
+    # The comment contains an embedded `![...](...)` that LOOKS like a real
+    # figure to a naive walker. After the C3 fix, the helper strips the
+    # comment span entirely before walking, so no extra figure is detected.
+    multiline_comment = (
+        "Tulu-25 achieves 87.9% alignment vs baseline 70.4% across n=3 seeds.\n\n"
+        "<!--\n"
+        "![second figure stub](https://example.com/should-be-ignored.png)\n\n"
+        "Caption stub for an optional ablation figure (commented out).\n"
+        "-->"
+    )
+    body = GOOD_BODY.replace(
+        "Tulu-25 achieves 87.9% alignment vs baseline 70.4% across n=3 seeds.",
+        multiline_comment,
+    )
+    report = run_all_checks(title=GOOD_TITLE, body=body)
+    statuses = _statuses(report)
+    # The real (first) figure has its real caption; the commented stub is gone.
+    assert statuses["Results figure captions"] == "PASS", statuses
+    assert not report.any_fail(), [r.name for r in report.results if r.status == "FAIL"]
+
+
 # ----- Date-gate test (BLOCKER G) -----
 
 
