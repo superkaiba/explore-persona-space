@@ -137,7 +137,12 @@ H2_GRADIENT_HALT = 0.2
 H2_GRADIENT_WARN = 0.4
 
 # §8 #6 BF16 numerical equivalence threshold.
-BF16_EQUIVALENCE_TOL = 5e-3
+BF16_EQUIVALENCE_TOL = 1.0  # relaxed 5e-3→1.0 (user-authorized 2026-05-07): at c=2.0
+# the L20 hidden-state deviation is ~0.5 in directions that do NOT affect token argmax
+# (temp=0 string match is True); the 5e-3 BF16 noise estimate is too strict once steering
+# amplifies activations. The temp=0 string-match clause in `passes` (line 754) and the §8 #7
+# deterministic-replay gate together cover the underlying concern; this tolerance bump is
+# permissive on the proxy metric only.
 
 DEFAULT_OUTPUT_ROOT = Path("eval_results/issue_267")
 DEFAULT_ADAPTER_ROOT = Path("/workspace/adapters")
