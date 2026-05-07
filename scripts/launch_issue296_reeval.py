@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ruff: noqa: RUF001, RUF002
+# ruff: noqa: RUF001, RUF002, RUF003
 """Issue #296: Re-evaluate the 24 inherited #274 LoRAs against the N=48 eval matrix.
 
 The N=24 eval matrix from #274 is no longer apples-to-apples now that #296 expands the
@@ -82,9 +82,96 @@ WANDB_ARTIFACT_TEMPLATE = (
 )
 
 
+BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+
+
 def _adapter_dir_for(source: str) -> Path:
     """Local download path for the WandB-pulled adapter for a given source."""
     return CKPT_BASE_DIR / f"marker_{source}_asst_excluded_medium_seed42_adapter"
+
+
+def _merged_dir_for(source: str) -> Path:
+    """Path where ``--eval-only`` expects a merged model for a given source.
+
+    Mirrors ``merged_path = output_dir / "merged"`` in
+    ``scripts/archive/run_leakage_experiment.py`` (~line 835): when
+    ``--eval-only`` is passed, the script raises FileNotFoundError if this
+    exact directory is missing.
+    """
+    return (
+        ROOT
+        / "eval_results"
+        / "leakage_experiment"
+        / f"marker_{source}_asst_excluded_medium_seed42"
+        / "merged"
+    )
+
+
+def _merge_pulled_adapter(source: str, *, gpu_id: int = 0) -> bool:
+    """Materialize a merged Qwen2.5-7B-Instruct + LoRA-adapter for ``source``.
+
+    The WandB Artifact for ``marker_<src>_asst_excluded_medium_seed42:latest``
+    contains only the LoRA adapter (``adapter_model.safetensors`` + config +
+    tokenizer files), NOT a merged model. ``run_leakage_experiment.py
+    --eval-only`` requires a merged model on disk at
+    ``eval_results/leakage_experiment/marker_<src>_asst_excluded_medium_seed42/merged/``.
+
+    This function bridges that gap: locate the pulled adapter dir, call
+    ``merge_lora()`` from ``src/explore_persona_space/train/sft.py`` to
+    materialize the merged model where ``--eval-only`` expects it.
+
+    Returns True on success, False on failure (caller logs and proceeds).
+
+    Disk: peaks at ~15 GB per source (merged) + ~0.3 GB (adapter), but
+    ``cleanup_after_eval`` deletes both after the per-source eval finishes,
+    so the wave-level peak stays bounded.
+    """
+    adapter_dir = _adapter_dir_for(source)
+    merged_dir = _merged_dir_for(source)
+
+    if merged_dir.exists() and any(merged_dir.iterdir()):
+        print(f"  [MERGE-CACHED] {source}: {merged_dir} already populated", flush=True)
+        return True
+
+    # snapshot_download from HF Hub may have nested the adapter under a sub-dir.
+    # Locate the actual adapter root (one containing adapter_config.json).
+    candidates = [adapter_dir]
+    if adapter_dir.exists():
+        candidates.extend(p for p in adapter_dir.rglob("adapter_config.json"))
+    actual_adapter_root: Path | None = None
+    for cand in candidates:
+        cand_root = cand.parent if cand.is_file() else cand
+        if (cand_root / "adapter_config.json").exists():
+            actual_adapter_root = cand_root
+            break
+    if actual_adapter_root is None:
+        print(
+            f"  [MERGE-FAIL] {source}: no adapter_config.json found under {adapter_dir}",
+            flush=True,
+        )
+        return False
+
+    # Defer the heavy import + GPU allocation until we actually need it (a
+    # bare `--no-pull` invocation must not pay the import cost).
+    sys.path.insert(0, str(ROOT / "src"))
+    try:
+        from explore_persona_space.train.sft import merge_lora
+    except ImportError as exc:
+        print(f"  [MERGE-FAIL] {source}: import merge_lora failed: {exc}", flush=True)
+        return False
+
+    merged_dir.parent.mkdir(parents=True, exist_ok=True)
+    print(
+        f"  Merging {actual_adapter_root} -> {merged_dir} (gpu_id={gpu_id})",
+        flush=True,
+    )
+    try:
+        merge_lora(BASE_MODEL, str(actual_adapter_root), str(merged_dir), gpu_id=gpu_id)
+    except Exception as exc:  # merge can OOM, fail to download base, etc.
+        print(f"  [MERGE-FAIL] {source}: merge_lora raised: {exc}", flush=True)
+        return False
+    print(f"  [MERGE-OK] {source}: merged model at {merged_dir}", flush=True)
+    return True
 
 
 def _is_already_reevald(source: str) -> bool:
@@ -287,6 +374,84 @@ def cleanup_after_eval(source: str) -> None:
         print(f"  Total freed for {source}: {n_freed_gb:.1f} GB", flush=True)
 
 
+def _filter_pending(no_skip: bool) -> list[str]:
+    """Resume-safe filter: drop sources with populated N=48 run_result.json."""
+    if no_skip:
+        print(
+            "--no-skip: re-running all 24 inherited sources regardless of existing N=48 results",
+            flush=True,
+        )
+        return list(SOURCES)
+    pending = [s for s in SOURCES if not _is_already_reevald(s)]
+    skipped = [s for s in SOURCES if s not in pending]
+    if skipped:
+        print(
+            f"Skipping {len(skipped)} sources with populated N=48 results: {skipped}",
+            flush=True,
+        )
+    else:
+        print("No previously-completed N=48 results found — re-running all 24.", flush=True)
+    return pending
+
+
+def _pull_step(pending: list[str], force_pull: bool) -> list[str]:
+    """Pull adapters; return the subset that landed locally."""
+    print(f"\nPulling {len(pending)} adapters from WandB Artifacts...", flush=True)
+    succeeded = pull_all_inherited(list(pending), force=force_pull)
+    missing = [s for s in pending if s not in succeeded]
+    if missing:
+        print(
+            f"\nWARNING: {len(missing)} adapter(s) failed to pull: {missing}. "
+            "These will FAIL at --eval-only because the merged model dir is missing.",
+            flush=True,
+        )
+    return succeeded
+
+
+def _run_wave(wave_idx: int, wave: list[tuple[str, int]], pod: str, no_cleanup: bool) -> None:
+    """Merge → launch → wait → cleanup for one wave."""
+    # Just-in-time merge: materialize merged models for THIS wave's sources
+    # right before we launch them. This avoids the 24×15 GB = 360 GB peak that
+    # a "merge everything up front" loop would create. Instead, peak per-wave is
+    # (8 × 15 GB merged) + (8 × 0.3 GB adapter) ≈ 122 GB, comfortably under the
+    # 1 TB volume. Each merge_lora() call sets CUDA_VISIBLE_DEVICES internally,
+    # so we serialize them on GPU 0 (cheap: ~1 min each).
+    print(
+        f"\n--- Wave {wave_idx + 1}: merging {len(wave)} adapter(s) before launching evals ---",
+        flush=True,
+    )
+    merged_ok: list[tuple[str, int]] = []
+    for source, gpu in wave:
+        if _merge_pulled_adapter(source, gpu_id=0):
+            merged_ok.append((source, gpu))
+        else:
+            print(
+                f"  [SKIP] {source}: merge failed; will not launch its --eval-only "
+                "(would crash with FileNotFoundError).",
+                flush=True,
+            )
+    if not merged_ok:
+        print(
+            f"  Wave {wave_idx + 1}: 0/{len(wave)} merges succeeded — skipping.",
+            flush=True,
+        )
+        return
+
+    procs = launch_wave(wave_idx, merged_ok, pod)
+    wait_wave(procs, wave_idx)
+    if no_cleanup:
+        return
+    for source, _gpu, proc, _log in procs:
+        if proc.returncode == 0:
+            cleanup_after_eval(source)
+        else:
+            print(
+                f"  Skipping cleanup for {source} (failed with rc={proc.returncode}); "
+                "leaving merged dir for debugging.",
+                flush=True,
+            )
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Issue #296 re-eval launcher (24 inherited LoRAs against N=48 matrix)"
@@ -329,40 +494,15 @@ def main():
     args = parser.parse_args()
 
     n_gpus = max(1, args.n_gpus)
-
-    # Resume-safe filter
-    if args.no_skip:
-        pending = list(SOURCES)
-        print(
-            "--no-skip: re-running all 24 inherited sources regardless of existing N=48 results",
-            flush=True,
-        )
-    else:
-        pending = [s for s in SOURCES if not _is_already_reevald(s)]
-        skipped = [s for s in SOURCES if s not in pending]
-        if skipped:
-            print(
-                f"Skipping {len(skipped)} sources with populated N=48 results: {skipped}",
-                flush=True,
-            )
-        else:
-            print("No previously-completed N=48 results found — re-running all 24.", flush=True)
-
+    pending = _filter_pending(args.no_skip)
     if not pending:
         print("\n=== All 24 inherited sources already re-eval'd at N=48; nothing to do. ===")
         return 0
-
     if args.pull:
-        print(f"\nPulling {len(pending)} adapters from WandB Artifacts...", flush=True)
-        succeeded = pull_all_inherited(list(pending), force=args.force_pull)
-        missing = [s for s in pending if s not in succeeded]
-        if missing:
-            print(
-                f"\nWARNING: {len(missing)} adapter(s) failed to pull: {missing}. "
-                "These will FAIL at --eval-only because the merged model dir is missing.",
-                flush=True,
-            )
-            pending = succeeded
+        pending = _pull_step(pending, force_pull=args.force_pull)
+        if not pending:
+            print("\n=== No adapters successfully pulled; nothing to do. ===")
+            return 0
 
     waves = []
     for wave_start in range(0, len(pending), n_gpus):
@@ -387,18 +527,7 @@ def main():
         )
 
     for wave_idx, wave in enumerate(waves):
-        procs = launch_wave(wave_idx, wave, args.pod)
-        wait_wave(procs, wave_idx)
-        if not args.no_cleanup:
-            for source, _gpu, proc, _log in procs:
-                if proc.returncode == 0:
-                    cleanup_after_eval(source)
-                else:
-                    print(
-                        f"  Skipping cleanup for {source} (failed with rc={proc.returncode}); "
-                        "leaving merged dir for debugging.",
-                        flush=True,
-                    )
+        _run_wave(wave_idx, wave, args.pod, no_cleanup=args.no_cleanup)
 
     print("\n=== All re-eval waves complete ===", flush=True)
     print(f"Logs: {LOG_DIR}/i296_reeval_*.log", flush=True)
