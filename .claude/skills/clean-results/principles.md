@@ -130,14 +130,25 @@ Sources: [Easy Paper Writing Tips](https://ethanperez.net/easy-paper-writing-tip
 - Omitting error bars or N.
 - Presenting results without the prompt/setup.
 - Heatmaps (unless the heatmap IS the finding).
+- **Reporting only abstract metrics — no real prompts or model outputs.** Sanders refinement: "harder to fool yourself when you look at real data instead of relying on abstract metrics and intentions." Every clean result includes at least one concrete prompt → completion → score example in `## Sample outputs`; the corresponding slide in `mentor-update-slides` is one of the four backup-slide families.
+- **Plotting two separate bars for a paired difference.** When the claim is a delta, compute and plot the error bar on the delta, not on each endpoint. Sanders refinement.
 
 ### Meta
 
-- One evolving deck per project. Add new slides at the start.
+- **One evolving deck per project.** This is implemented in
+  `.claude/skills/mentor-update-slides/` as a single persistent file
+  `figures/mentor-slides/deck.md` with three anchored regions: HEADER
+  (replaced each run — cover, objectives, project summary, agenda),
+  LOG (append-only, newest first, with `## Week of YYYY-MM-DD` dividers
+  carrying HTML anchors so the project summary can link into history),
+  and APPENDIX (accumulating reproducibility cards + four backup-slide
+  families). The clean-result issue is the *unit* of the LOG; the deck
+  is the *index*.
 - Include "paper story" slides weekly for iterative narrative feedback.
 - Initial slide investment: 1-2 days. Ongoing: ~half a day per meeting.
 
-Sources: [Tips On Empirical Research Slides](https://www.lesswrong.com/posts/i3b9uQfjJjJkwZF4f/tips-on-empirical-research-slides).
+Sources: [Tips On Empirical Research Slides](https://www.lesswrong.com/posts/i3b9uQfjJjJkwZF4f/tips-on-empirical-research-slides);
+Sanders [comment](https://www.lesswrong.com/posts/i3b9uQfjJjJkwZF4f/tips-on-empirical-research-slides) on the same post (real-data backup slides; error bar on the delta; sentence-verb titles; "crummy slides are fine"; objectives-before-agenda).
 
 ---
 

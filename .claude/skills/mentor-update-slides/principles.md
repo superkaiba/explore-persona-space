@@ -6,23 +6,84 @@ The structure and rules below are not invented; each is cited to a primary sourc
 
 ---
 
-## Section structure
+## Persistent deck structure
 
-The deck flow follows **Hughes & Chua's empirical-research-slides protocol** (written for MATS scholars under Perez/Evans):
+The skill maintains **one** deck per project at `figures/mentor-slides/deck.md`, not a new dated subdirectory each week. Hughes & Chua are explicit:
 
-1. Recap of last meeting's takeaways (continuity).
-2. This week's headline (so the mentor knows whether things worked before drill-down).
-3. Agenda with section names + slide counts + time budget.
-4. Per-experiment blocks (setup → results → interpretation), prioritized by importance.
-5. Discussion / blockers / resource requests.
-6. Proposed prioritized next steps.
-7. Backup / appendix slides.
+> "Keep one slide deck per project … Provides a consistent story for how your research progressed (we recommend you add the most recent slides to the start of the deck, instead of the end)."
+> — Hughes & Chua, "Tips On Empirical Research Slides"
+
+The deck has three anchored regions, demarcated by HTML comments the skill greps for on each run:
+
+```
+<!-- BEGIN HEADER --> ... <!-- END HEADER -->     # replaced each run
+<!-- BEGIN LOG --> ... <!-- END LOG -->           # append-only, newest first
+<!-- BEGIN APPENDIX --> ... <!-- END APPENDIX --> # accumulates
+```
+
+**HEADER** (regenerated each run): Cover · Objectives · Project summary · Agenda. The Project summary slide is the "clean evolving face" of the project — current thesis question, active claims with confidence labels, and what's running. Each active claim links into the LOG via an HTML anchor of the form `#week-YYYY-MM-DD`, so the mentor can click straight to the week the claim was first reported.
+
+**LOG** (research log, newest first): each weekly entry begins with a `## Week of YYYY-MM-DD` divider slide carrying an HTML anchor, followed by that week's per-result slides + open-questions + next-steps. Older weeks are never rewritten.
+
+**APPENDIX** (accumulating): reproducibility cards + the four backup-slide families (see § Backup-slide families). New cards prepend; old cards stay.
+
+This split lets the deck serve two roles simultaneously: (a) the Project summary at the top is the *evolving project status* that a new collaborator can read in two minutes, and (b) the LOG below is the *durable archive* that captures how the story changed over time. Both live in the same file with the same shared link.
+
+**Idempotency.** Re-running on the same day replaces today's LOG block instead of duplicating it. The skill detects an existing `## Week of $TODAY` divider at the top of LOG and rewrites the bounded block.
+
+---
+
+## Per-meeting flow inside the HEADER + new week's LOG
+
+The within-meeting flow still follows **Hughes & Chua's empirical-research-slides protocol** (written for MATS scholars under Perez/Evans):
+
+1. Cover (HEADER).
+2. Objectives — what the user wants from the meeting (HEADER; § Objectives slide).
+3. Project summary with confidence-labeled claims linking into the LOG (HEADER).
+4. Agenda for this week with section names + slide counts + time budget (HEADER).
+5. Date divider for the new week (LOG).
+6. Per-experiment blocks (setup → results → interpretation), prioritized by importance (LOG).
+7. Open questions / blockers / resource requests (LOG).
+8. Proposed prioritized next steps (LOG).
+9. Reproducibility cards + conditional backup slides (APPENDIX; § Backup-slide families).
 
 Source: [Hughes & Chua, "Tips On Empirical Research Slides", LessWrong](https://www.lesswrong.com/posts/i3b9uQfjJjJkwZF4f/tips-on-empirical-research-slides).
 
 **Perez modification**: open with "predictions vs. findings" — what you expected last week vs. what actually happened. Builds calibration. Source: [Perez, "Tips for Empirical Alignment Research"](https://www.alignmentforum.org/posts/dZFpEdKyb9Bf4xYn7/tips-for-empirical-alignment-research).
 
-We adopt Hughes & Chua's full skeleton. We fold Perez's predictions-vs-findings into the *Recap* slide (when a previous deck exists) and the *TL;DR* slide (when one doesn't).
+We adopt Hughes & Chua's full skeleton. We fold Perez's predictions-vs-findings into the *Project summary* slide (each active claim is a finding; the "currently running" line is the prediction), eliminating the need for a separate Recap slide — the LOG itself is the recap.
+
+---
+
+## Objectives slide
+
+Between Cover and Project summary the deck carries one slide stating *what the user wants from this meeting*:
+
+> "In addition to agenda, it can be helpful to start with objectives — why are you here and what are you hoping to get from them? are you trying to inform them? get advice on something specific? get advice on something broad?"
+> — Ted Sanders, comment on Hughes & Chua
+
+Three default objective categories, used as starting language:
+1. **Inform** — give the mentor a status update; no input required.
+2. **Advice on a specific decision** — bring a concrete fork in the road and ask for input on it.
+3. **Advice on broad direction** — open-ended, e.g. when a research thread is exhausted and the next step is unclear.
+
+The skill takes an `--objective` argument (default `inform`) and the user-supplied string drops verbatim into the slide. The slide also lists the specific decisions the user is *and is not* seeking input on, so the mentor can calibrate where to push back.
+
+---
+
+## Backup-slide families
+
+Hughes & Chua devote a section to backup slides — what to have ready when the mentor asks the obvious next question. The skill materialises **four** families, each conditional on real source data being present in this week's clean-results. Skip families with no data; never fabricate.
+
+(a) **Metric definition + concrete example.** One slide per metric, with a one-line definition and a real prompt → real model output → assigned score. Sanders: "Can help to include real data / real prompts / real model outputs — harder to fool yourself when you look at real data instead of relying on abstract metrics and intentions." Source data: `## Setup & hyper-parameters` opening prose + `## Sample outputs` from the clean-result template.
+
+(b) **Detailed prompt with arrows / highlights.** One slide per representative prompt with the load-bearing region marked (e.g., `<mark>...</mark>`), and a one-arrow takeaway in the caption. Hughes & Chua: "Drawing arrows and highlighting text helps draw attention to particular parts of the prompt." This is the *only* place the project allows annotations on slide content — the chart-level no-annotations rule (`feedback_no_plot_annotations`) still holds; arrows on prompt text are a different category.
+
+(c) **Data-scaling curve.** Hughes & Chua: "have you tried more data?" is one of the most common mentor questions; have a scaling answer ready. Show linear and (where data spans ≥2 orders of magnitude) log-log views side by side. Source data: any clean-result whose headline-numbers table has a "data fraction" or "training-step sweep" axis.
+
+(d) **Baseline-invalidation slide.** "What are some simple ways that would invalidate your results? You should think of some and include slides that discuss it." (Hughes & Chua.) One slide listing the controls + 1-line on what each rules out, with the baseline numbers inline. Source data: baseline rows in the headline-numbers table.
+
+The skill's quality checklist refuses to emit a backup slide whose source data was not extracted; missing slides are reported in the Step 8 user-facing summary, never silently skipped.
 
 ---
 
@@ -57,6 +118,8 @@ Sources:
 - **Log scale only when data spans ≥2 orders of magnitude** or growth is multiplicative. Otherwise linear.
 - **Small multiples for ≥3 conditions** on the same metric — same axes, aligned. Source: [Tufte, small multiples](https://en.wikipedia.org/wiki/Small_multiple).
 - **Plot paired differences**, not two separate bars, for paired comparisons. Source: Anthropic.
+- **Error bar on the delta, not on the endpoints.** When the result is a difference (post − pre, treatment − control), compute and plot the SE of the difference; do not eyeball "do these two error-barred bars overlap?". Optionally color the bar by signed effect or by significance level. Source: Sanders, comment on Hughes & Chua: *"If you're measuring deltas between two things, compute the error bar on the delta, don't compute the error bars on the two things; consider coloring by statistical significance."*
+- **Use horizontal bars when category labels are long.** Avoids diagonal axis labels that the post explicitly flags as a negative example. Source: Sanders refinement of Hughes & Chua.
 - **≤3 colors / ≤3 model series per slide.** Source: Hughes & Chua.
 - **Always include the prompt/measurement protocol next to the plot.** Source: Hughes & Chua.
 
@@ -161,7 +224,8 @@ Concrete theme alternatives (kept for reference, not auto-installed):
 ## Sources (consolidated)
 
 ML-specific:
-- Hughes & Chua, ["Tips On Empirical Research Slides"](https://www.lesswrong.com/posts/i3b9uQfjJjJkwZF4f/tips-on-empirical-research-slides) (LessWrong)
+- Hughes & Chua, ["Tips On Empirical Research Slides"](https://www.lesswrong.com/posts/i3b9uQfjJjJkwZF4f/tips-on-empirical-research-slides) (LessWrong) — primary source for the persistent-deck structure, agenda slide, chart rules, and backup-slide families.
+- Ted Sanders, [comment on Hughes & Chua](https://www.lesswrong.com/posts/i3b9uQfjJjJkwZF4f/tips-on-empirical-research-slides?commentId=) — refinements: error bar on the delta, horizontal bars for long labels, Objectives slide before Agenda, real data / real prompts / real outputs as a defense against abstract-metric self-deception, sentence-titles, "crummy slides are fine" anti-perfectionism.
 - Hughes & Chua, ["Tips and Code for Empirical Research Workflows"](https://www.lesswrong.com/posts/6P8GYb4AjtPXx6LLB/tips-and-code-for-empirical-research-workflows) (LessWrong)
 - Nanda, ["Highly Opinionated Advice on How to Write ML Papers"](https://www.alignmentforum.org/posts/eJGptPbbFPZGLpjsp/highly-opinionated-advice-on-how-to-write-ml-papers) (Alignment Forum)
 - Perez, ["Tips for Empirical Alignment Research"](https://www.alignmentforum.org/posts/dZFpEdKyb9Bf4xYn7/tips-for-empirical-alignment-research) (Alignment Forum)
