@@ -44,6 +44,18 @@ import json
 import subprocess
 import sys
 from dataclasses import dataclass
+from pathlib import Path
+
+# Make `from explore_persona_space.workflow import ...` work without
+# `uv run` plumbing; mirrors the import-bootstrap pattern in
+# scripts/workflow_lint.py.
+_HERE = Path(__file__).resolve().parent
+_REPO_ROOT = _HERE.parent
+_SRC = _REPO_ROOT / "src"
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+
+from explore_persona_space.workflow import load_workflow_yaml  # noqa: E402
 
 DEFAULT_OWNER = "superkaiba"
 DEFAULT_PROJECT_NUMBER = 1
@@ -54,51 +66,23 @@ DEFAULT_PROJECT_NUMBER = 1
 ITEM_LIMIT = 1000
 PROJECT_LIST_LIMIT = 100
 
-# Single source of truth for label-driven board routing.
-# Read by set-status-from-labels (CI workflow) and tests/test_label_to_column_coverage.py.
+# Single source of truth for label-driven board routing — derived at
+# module-init time from `.claude/workflow.yaml`. The YAML is the upstream
+# source; this module is now a consumer. See `src/explore_persona_space/
+# workflow.py` for the schema and `scripts/workflow_lint.py` for the
+# pre-commit validator. Round-trip equality is enforced by
+# `tests/test_label_to_column_coverage.py` and `tests/test_workflow_yaml.py`.
+_WORKFLOW = load_workflow_yaml()
+
 # `status:*` labels are the fine-grained state machine used by /issue and other
 # skills. The board columns are a coarse user-facing projection of those
 # states. `clean-results:draft` / `:useful` / `:not-useful` are non-status
-# labels routed via PRIORITY_LABELS (they take precedence over `status:*`
-# routing). The bare `clean-results` label is preserved on promoted issues
-# for `gh issue list --label clean-results` back-compat queries, but it does
-# NOT route to a column on its own — column routing comes from the sublabel
-# or the `status:*` label.
-LABEL_TO_COLUMN: dict[str, str] = {
-    # Inbox
-    "status:proposed": "To do",
-    "status:gate-pending": "To do",
-    # Planning phase
-    "status:planning": "Planning",
-    "status:plan-pending": "Plan awaiting review",
-    # Active work between approval and reviewer-PASS
-    "status:approved": "In flight",
-    "status:implementing": "In flight",
-    "status:code-reviewing": "In flight",
-    "status:testing": "In flight",
-    "status:running": "In flight",
-    "status:uploading": "In flight",
-    "status:interpreting": "In flight",
-    "status:reviewing": "In flight",
-    "status:under-review": "In flight",
-    # Stuck / paused
-    "status:blocked": "Blocked",
-    # Awaiting user promotion (draft clean-result body inline on source issue)
-    "status:awaiting-promotion": "Awaiting promotion",
-    # Follow-ups in flight before clean-result is promoted
-    "status:followups-running": "Followups running",
-    # Terminal states
-    "status:done-experiment": "Done",
-    "status:done-impl": "Done",
-    "status:archived": "Archived",
-    # Non-status labels (take precedence via PRIORITY_LABELS).
-    # `clean-results:draft`       -> Awaiting promotion (newly drafted OR pending re-review)
-    # `clean-results:useful`      -> Useful (promoted, paper-relevant)
-    # `clean-results:not-useful`  -> Not useful (promoted, archive candidate)
-    "clean-results:draft": "Awaiting promotion",
-    "clean-results:useful": "Useful",
-    "clean-results:not-useful": "Not useful",
-}
+# priority labels (declared in workflow.yaml § priority_labels) and take
+# precedence over `status:*` routing (see PRIORITY_LABELS below). The legacy
+# bare `clean-results` label and "Clean results" column were dropped on main;
+# promotions now route only to "Useful" / "Not useful". The mapping is
+# derived from `.claude/workflow.yaml` so updates flow through one source.
+LABEL_TO_COLUMN: dict[str, str] = _WORKFLOW.label_to_column()
 
 # Labels that take precedence over `status:*` routing in column_for_labels.
 # Order is FIRST-MATCH-WINS:
@@ -108,32 +92,15 @@ LABEL_TO_COLUMN: dict[str, str] = {
 # The bare `clean-results` label is intentionally NOT in this tuple: it is a
 # back-compat marker for `gh issue list --label clean-results` queries, and
 # its own column routing was retired with the "Clean results" column.
-PRIORITY_LABELS: tuple[str, ...] = (
-    "clean-results:draft",
-    "clean-results:useful",
-    "clean-results:not-useful",
-)
+# Sourced from workflow.yaml § priority_labels.
+PRIORITY_LABELS: tuple[str, ...] = _WORKFLOW.priority_label_names()
 
 # Target option set for `migrate-options`. Names + colors + descriptions.
 # Order here is the order columns appear left-to-right on the board.
 # Color enum values per GitHub GraphQL ProjectV2SingleSelectFieldOptionColor.
-NEW_COLUMN_SPEC: list[tuple[str, str, str]] = [
-    ("To do", "GRAY", "Backlog: proposed, gate-pending"),
-    ("Planning", "PURPLE", "Adversarial-planner running"),
-    ("Plan awaiting review", "YELLOW", "User action: approve plan to advance"),
-    ("In flight", "BLUE", "Automated: implementing/running/uploading/interpreting/reviewing"),
-    ("Blocked", "RED", "Resolve dependency"),
-    ("Awaiting promotion", "YELLOW", "User action: review clean-result draft"),
-    (
-        "Followups running",
-        "ORANGE",
-        "Follow-up experiments running before clean-result is finalized",
-    ),
-    ("Useful", "BLUE", "Cited or load-bearing for paper / RESULTS.md headline"),
-    ("Not useful", "GRAY", "Result is correct but not informative; archive candidate"),
-    ("Done", "GREEN", "Terminal: done-experiment / done-impl"),
-    ("Archived", "GRAY", "Closed long ago / no longer relevant"),
-]
+# Sourced from workflow.yaml § columns. Eleven entries, no "Clean results"
+# (the legacy column was dropped on main; promotions route to Useful/Not useful).
+NEW_COLUMN_SPEC: list[tuple[str, str, str]] = _WORKFLOW.new_column_spec()
 
 
 @dataclass(frozen=True)
