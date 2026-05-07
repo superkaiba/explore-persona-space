@@ -787,6 +787,8 @@ def download_adapter(
         )
 
     if source == "wandb":
+        import shutil
+
         import wandb
 
         api = wandb.Api()
@@ -800,22 +802,51 @@ def download_adapter(
             return int(v.version.lstrip("v"))
 
         versions_sorted = sorted(versions, key=_ver_int)
-        chosen = next((v for v in versions_sorted if _ver_int(v) >= min_wandb_version), None)
-        if chosen is None:
+        candidates = [v for v in versions_sorted if _ver_int(v) >= min_wandb_version]
+        if not candidates:
             raise FileNotFoundError(
                 f"No wandb artifact with version >= v{min_wandb_version} for {col_name}; "
                 f"available versions: {[v.version for v in versions_sorted]}"
             )
+
+        # Walk versions; pick the smallest one that contains
+        # ``adapter_model.safetensors`` at the root with total tree size < 1 GB.
+        # v0 (and sometimes v1) can be a bloated training-checkpoint blob (~6 GB)
+        # — see `.claude/agent-memory/experimenter/feedback_inherited_loras_via_wandb.md`.
+        # The previous version is removed before trying the next one so we never
+        # leave half-downloaded blobs on disk.
+        size_cap_bytes = 1_000_000_000  # 1 GB
         local = out_root / persona
-        local.mkdir(parents=True, exist_ok=True)
-        chosen.download(root=str(local))
-        return ResolvedAdapter(
-            persona=persona,
-            source="wandb",
-            local_dir=local,
-            artifact_qualified_name=chosen.qualified_name,
-            version=chosen.version,
-            repo_id=None,
+        rejected: list[tuple[str, str]] = []  # (version, reason)
+        for cand in candidates:
+            if local.exists():
+                shutil.rmtree(local)
+            local.mkdir(parents=True, exist_ok=True)
+            cand.download(root=str(local))
+
+            adapter_st = local / "adapter_model.safetensors"
+            if not adapter_st.exists():
+                rejected.append((cand.version, "missing adapter_model.safetensors at root"))
+                continue
+            total = sum(p.stat().st_size for p in local.rglob("*") if p.is_file())
+            if total >= size_cap_bytes:
+                rejected.append(
+                    (cand.version, f"size {total / 1e9:.2f} GB ≥ {size_cap_bytes / 1e9:.2f} GB")
+                )
+                continue
+
+            return ResolvedAdapter(
+                persona=persona,
+                source="wandb",
+                local_dir=local,
+                artifact_qualified_name=cand.qualified_name,
+                version=cand.version,
+                repo_id=None,
+            )
+
+        raise FileNotFoundError(
+            f"No usable wandb artifact for {col_name}; tried {len(candidates)} versions, "
+            f"all rejected: {rejected}"
         )
 
     raise ValueError(f"Unknown source={source!r}; expected 'hf_hub' or 'wandb'")

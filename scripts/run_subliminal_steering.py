@@ -85,11 +85,12 @@ PERSONA_TO_PROMPT["qwen_default"] = QWEN_DEFAULT_PROMPT
 # 2 of 12 LoRAs are on HF Hub; the other 10 are on WandB Artifacts.
 HF_HUB_PERSONAS: set[str] = {"helpful_assistant", "qwen_default"}
 
-# Layers (plan §4.4): L20 binding; L10 contrast required-conditional; L25 supp.
+# Layers (plan §4.4): L20 binding; L10 contrast required-conditional.
+# L25 was previously extracted "for follow-ups" but is unplanned scope creep —
+# follow-up issues that need it can re-extract.
 HEADLINE_LAYER = 20
 L10_LAYER = 10
-SUPPLEMENTARY_LAYER = 25
-ALL_LAYERS = (L10_LAYER, HEADLINE_LAYER, SUPPLEMENTARY_LAYER)
+ALL_LAYERS = (L10_LAYER, HEADLINE_LAYER)
 
 # Calibration prompt for §11.17 / §4.3 baseline-norm measurement.
 CALIBRATION_PROMPT = "What causes earthquakes?"
@@ -263,17 +264,16 @@ def phase1_extract_centroids(
     skip_bridge: bool = False,
     bridge_only_persona: str | None = None,
 ) -> dict[str, Any]:
-    """Extract centroids at L10/L20/L25; run §8 numerical gates; produce bridge cells.
+    """Extract centroids at L10/L20; run §8 numerical gates; produce bridge cells.
 
     Outputs (under ``out_dir``):
 
-    * ``centroids_l10_n10.pt``, ``centroids_l20_n10.pt``, ``centroids_l25_n10.pt``
+    * ``centroids_l10_n10.pt``, ``centroids_l20_n10.pt``
     * ``centroids_l20_n12_supplementary.pt``
     * ``centroid_pin.json``, ``neutral_prompt_axis_check.json``,
       ``coefficient_calibration.json``, ``registered_coefficient.json``
     * ``bridge_completions.json``, ``bridge_rates.json``
-    * ``cosines_l20_n10.json``, ``cosines_l10_n10.json``,
-      ``cosines_l25_n10.json``
+    * ``cosines_l20_n10.json``, ``cosines_l10_n10.json``
     * ``phase1_diagnostics.json``
     """
     from peft import PeftModel
@@ -353,9 +353,12 @@ def phase1_extract_centroids(
 
     _save_json(out_dir / "cosines_l20_n10.json", cosines_by_layer[HEADLINE_LAYER])
     _save_json(out_dir / "cosines_l10_n10.json", cosines_by_layer[L10_LAYER])
-    _save_json(out_dir / "cosines_l25_n10.json", cosines_by_layer[SUPPLEMENTARY_LAYER])
 
-    # ---- §8 #1 / #5 self-consistency pin ---------------------------------
+    # ---- §8 #1 / §4.4 #5 self-consistency pin ----------------------------
+    # First run: write centroid_pin.json with cos(librarian, villain). Any
+    # subsequent Phase-1 run must reproduce the cosine within ±0.001 — if it
+    # drifts by more, the centering math has changed (or RNG/numerical leak)
+    # and we halt before downstream steering becomes invalid.
     centered_l20_n10 = {
         p: torch.tensor(v) for p, v in centroids_by_layer[HEADLINE_LAYER]["centered_n10"].items()
     }
@@ -364,16 +367,31 @@ def phase1_extract_centroids(
     cos_lv = torch.dot(librarian, villain).item() / (
         librarian.norm().item() * villain.norm().item() + 1e-12
     )
-    _save_json(
-        out_dir / "centroid_pin.json",
-        _attach_metadata(
-            {
-                "cos_librarian_villain_n10_l20": cos_lv,
-                "tolerance": 0.001,
-                "note": "Re-execution-stability pin per §4.4 #5 / §8 #1.",
-            }
-        ),
-    )
+    pin_path = out_dir / "centroid_pin.json"
+    pin_tolerance = 0.001
+    if pin_path.exists():
+        prior = _load_json(pin_path)
+        prior_cos = float(prior["cos_librarian_villain_n10_l20"])
+        drift = abs(cos_lv - prior_cos)
+        if drift > pin_tolerance:
+            raise RuntimeError(
+                f"§8 #1 / §4.4 #5 self-pin failed: "
+                f"cos(librarian, villain) drifted by {drift:.6f} "
+                f"(prior={prior_cos:.6f}, current={cos_lv:.6f}, tol=±{pin_tolerance:.3f}). "
+                "The N=10 centering math has changed since the first Phase-1 run."
+            )
+        logger.info("[phase1] §8 #1 self-pin OK: cos drift %.6f ≤ %.3f", drift, pin_tolerance)
+    else:
+        _save_json(
+            pin_path,
+            _attach_metadata(
+                {
+                    "cos_librarian_villain_n10_l20": cos_lv,
+                    "tolerance": pin_tolerance,
+                    "note": "Re-execution-stability pin per §4.4 #5 / §8 #1.",
+                }
+            ),
+        )
 
     # ---- §8 #2 + #3 neutral-prompt axis-distance gates -------------------
     neutral_l20_centered = centered_l20_n10["__neutral__"]
@@ -613,10 +631,14 @@ def _equivalence_check(
 ) -> dict[str, Any]:
     """§8 #6 batched-vs-sequential numerical equivalence + temp=0 string match.
 
-    Captures L20 hook output for prompt 0 in two configurations: (a) batched
-    over 20 EVAL_QUESTIONS, (b) sequential (single prompt). Returns max-abs
-    deviation. Also generates one temp=0 completion in each config and checks
-    string equality.
+    Captures the **post-steering** L20 hidden state for prompt 0 in two
+    configurations: (a) batched over 20 EVAL_QUESTIONS, (b) sequential (single
+    prompt). Returns max-abs deviation. Also generates one temp=0 completion in
+    each config and checks string equality.
+
+    Implementation note: PyTorch fires forward hooks in registration order, so
+    we register ``SteeringHook`` FIRST and the capture hook SECOND — the
+    capture then sees the residual after the steering bias has been added.
     """
     captured: dict[str, torch.Tensor] = {}
 
@@ -625,10 +647,10 @@ def _equivalence_check(
             (output[0] if isinstance(output, tuple) else output).detach().cpu()
         )
 
-    handle = merged.model.layers[HEADLINE_LAYER].register_forward_hook(hook_fn)
     sh = SteeringHook(
         merged, layer_idx=HEADLINE_LAYER, direction=direction, coefficient=coefficient
     )
+    handle = merged.model.layers[HEADLINE_LAYER].register_forward_hook(hook_fn)
     try:
         # (a) batched: the 20 EVAL_QUESTIONS
         captured["hs_list"] = []
@@ -669,8 +691,9 @@ def _equivalence_check(
 
         max_abs = (batched_hs - seq_hs).abs().max().item()
     finally:
-        sh.remove()
+        # Inverse of registration order: capture hook first, then SteeringHook.
         handle.remove()
+        sh.remove()
 
     # Temp=0 string comparison on prompt 0
     saved_pad = tokenizer.padding_side
@@ -733,10 +756,13 @@ def _persona_pass(
     centered_l20_n10: dict[str, torch.Tensor],
     centered_l10_n10: dict[str, torch.Tensor],
     do_l10_contrast: bool,
-    do_equivalence_check: bool,
-    do_order_spotcheck: bool,
 ) -> dict[str, Any]:
-    """Run all in-persona Phase-2 cells; return raw completions + timing."""
+    """Run all in-persona Phase-2 cells; return raw completions + timing.
+
+    The §8 numerical-equivalence (#6) and deterministic-replay (#7) gates run
+    in :func:`_run_phase2_gates` BEFORE this function — they must pass before
+    any persona-loop cell launches.
+    """
     from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -915,32 +941,166 @@ def _persona_pass(
     )
     out_persona["timings"][f"prompt_on_c={headline_coefficient}"] = time.time() - t0
 
-    # ---- §8 #6 batched-vs-sequential equivalence (one persona only) ----
-    if do_equivalence_check:
-        out_persona["equivalence_check_c2"] = _equivalence_check(
-            merged, tokenizer, direction_l20, headline_coefficient, persona
-        )
-        out_persona["equivalence_check_c0"] = _equivalence_check(
-            merged, tokenizer, direction_l20, 0.0, persona
-        )
-
-    # ---- §11.19 deterministic-replay check (same persona twice) --------
-    # Only when explicitly requested at the persona level. Default OFF
-    # (caller fires this for `software_engineer` exactly once).
-    if do_order_spotcheck:
-        comps_replay = _gen(
-            system_prompt=NEUTRAL_PROMPT,
-            coefficient=headline_coefficient,
-            layer=HEADLINE_LAYER,
-            direction=direction_l20,
-        )
-        out_persona["order_spotcheck_byte_identical"] = comps_replay == [
-            c for q in cells["centroid"][f"{headline_coefficient}"] for c in q
-        ]
-
     del merged, lora, base
     _free_gpu()
     return out_persona
+
+
+def _software_engineer_headline_completions(
+    *,
+    out_dir: Path,
+    adapter_manifest: dict[str, Any],
+    questions: Sequence[str],
+    headline_coefficient: float,
+    centered_l20_n10: dict[str, torch.Tensor],
+) -> list[str]:
+    """Generate the software_engineer headline c=2.0 cell once (centroid arm).
+
+    Used by both the §8 #6 / #7 pre-loop gates and the §8 m1 iter-1 vs iter-12
+    spot-check. Returns the flat completion list (n_questions * n_completions)
+    in HF generate row-order.
+    """
+    from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
+    base = AutoModelForCausalLM.from_pretrained(
+        BASE_MODEL,
+        torch_dtype=torch.bfloat16,
+        device_map={"": 0},
+        attn_implementation=pick_attn_implementation(),
+        trust_remote_code=True,
+    )
+    adapter_dir = adapter_manifest["personas"]["software_engineer"]["local_dir"]
+    lora = PeftModel.from_pretrained(base, adapter_dir)
+    merged = lora.merge_and_unload()
+    merged.eval()
+    direction_l20 = centered_l20_n10["software_engineer"].clone()
+
+    torch.manual_seed(SEED)
+    with SteeringHook(
+        merged,
+        layer_idx=HEADLINE_LAYER,
+        direction=direction_l20,
+        coefficient=headline_coefficient,
+    ):
+        comps = generate_batched(
+            merged,
+            tokenizer,
+            system_prompt=NEUTRAL_PROMPT,
+            questions=questions,
+            num_completions=NUM_COMPLETIONS,
+            max_new_tokens=MAX_NEW_TOKENS,
+            temperature=TEMPERATURE,
+            top_p=TOP_P,
+            seed=SEED,
+        )
+    del merged, lora, base
+    _free_gpu()
+    return comps
+
+
+def _run_phase2_gates(
+    out_dir: Path,
+    adapter_manifest: dict[str, Any],
+    centered_l20_n10: dict[str, torch.Tensor],
+    headline_coefficient: float,
+) -> dict[str, Any]:
+    """Run §8 gates #6 (batched-vs-sequential equivalence) + #7 (deterministic
+    replay at c=0.0) BEFORE any persona-loop cell launches.
+
+    Both gates raise ``RuntimeError`` on failure so Phase 2 cannot proceed.
+    The intent: NO non-software_engineer cells run until both gates pass. We
+    deliberately load + drop the ``software_engineer`` merged model here even
+    though Phase 2 will reload it later — the cost is one extra ~30 s load.
+    """
+    from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    logger.info("[phase2] §8 #6 + #7 gates (software_engineer)")
+
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
+    base = AutoModelForCausalLM.from_pretrained(
+        BASE_MODEL,
+        torch_dtype=torch.bfloat16,
+        device_map={"": 0},
+        attn_implementation=pick_attn_implementation(),
+        trust_remote_code=True,
+    )
+    adapter_dir = adapter_manifest["personas"]["software_engineer"]["local_dir"]
+    lora = PeftModel.from_pretrained(base, adapter_dir)
+    merged = lora.merge_and_unload()
+    merged.eval()
+    direction_l20 = centered_l20_n10["software_engineer"].clone()
+
+    # §8 #6: batched-vs-sequential equivalence at c=2.0 AND c=0.0.
+    eq_c2 = _equivalence_check(
+        merged, tokenizer, direction_l20, headline_coefficient, "software_engineer"
+    )
+    eq_c0 = _equivalence_check(merged, tokenizer, direction_l20, 0.0, "software_engineer")
+
+    # §8 #7: deterministic replay at coeff=0.0 (NO steering hook attached).
+    # Plan: byte-identical completion lists across two consecutive runs.
+    # Bind merged/tokenizer via default args so ruff's static analyser doesn't
+    # flag them as unbound (Python's closure semantics work fine at run-time).
+    def _replay_no_hook(_merged=merged, _tokenizer=tokenizer) -> list[str]:
+        torch.manual_seed(SEED)
+        return generate_batched(
+            _merged,
+            _tokenizer,
+            system_prompt=NEUTRAL_PROMPT,
+            questions=EVAL_QUESTIONS,
+            num_completions=NUM_COMPLETIONS,
+            max_new_tokens=MAX_NEW_TOKENS,
+            temperature=TEMPERATURE,
+            top_p=TOP_P,
+            seed=SEED,
+        )
+
+    replay_a = _replay_no_hook()
+    replay_b = _replay_no_hook()
+    replay_byte_identical = replay_a == replay_b
+
+    del merged, lora, base
+    _free_gpu()
+
+    diagnostics = {
+        "equivalence_check_c0": eq_c0,
+        "equivalence_check_c2": eq_c2,
+        "replay_c0_byte_identical": replay_byte_identical,
+        "replay_c0_replay_a_first_chars": (replay_a[0][:120] if replay_a else ""),
+        "replay_c0_replay_b_first_chars": (replay_b[0][:120] if replay_b else ""),
+    }
+    _save_json(out_dir / "phase2_diagnostics.json", _attach_metadata(diagnostics))
+
+    if not eq_c2["passes"]:
+        raise RuntimeError(
+            "§8 gate #6 failed at c=2.0: "
+            f"max_abs_l20_dev={eq_c2['max_abs_l20_deviation']:.2e} "
+            f"(tol={BF16_EQUIVALENCE_TOL:.0e}); "
+            f"temp=0 string match={eq_c2['batched_string'] == eq_c2['sequential_string']}. "
+            "Halt before Phase 2 persona loop."
+        )
+    if not eq_c0["passes"]:
+        raise RuntimeError(
+            "§8 gate #6 failed at c=0.0: "
+            f"max_abs_l20_dev={eq_c0['max_abs_l20_deviation']:.2e} "
+            f"(tol={BF16_EQUIVALENCE_TOL:.0e}); "
+            f"temp=0 string match={eq_c0['batched_string'] == eq_c0['sequential_string']}. "
+            "Halt before Phase 2 persona loop."
+        )
+    if not replay_byte_identical:
+        raise RuntimeError(
+            "§8 gate #7 failed (deterministic replay at coeff=0.0): "
+            "two consecutive runs produced non-identical completion lists. "
+            "Hidden state leak — halt before Phase 2 persona loop."
+        )
+    logger.info(
+        "[phase2] §8 #6 OK (max_abs c=0=%.2e, c=2=%.2e); §8 #7 OK (replay byte-identical)",
+        eq_c0["max_abs_l20_deviation"],
+        eq_c2["max_abs_l20_deviation"],
+    )
+    return diagnostics
 
 
 def phase2_steered_generation(
@@ -950,8 +1110,24 @@ def phase2_steered_generation(
     *,
     do_l10_contrast: bool = True,
     only_persona: str | None = None,
+    force_rerun_persona: str | None = None,
 ) -> dict[str, Any]:
-    """Run the full Phase-2 sweep; persist raw completions per persona."""
+    """Run the full Phase-2 sweep; persist raw completions per persona.
+
+    The §8 gates #6 (batched-vs-sequential equivalence) and #7 (deterministic
+    replay at coeff=0.0) run BEFORE the persona loop and raise on failure —
+    the intent is that NO non-software_engineer cells run until both gates
+    pass.
+
+    The §8 m1 spot-check (iter-1 vs iter-12 byte-identical) runs at the end
+    of the loop when ``only_persona is None`` — software_engineer's headline
+    c=2.0 cell at position 1 is compared to the same cell at position 12 and
+    raises on mismatch.
+
+    Resume support (I5): on entry, any personas already present in
+    ``steered_completions.json`` are skipped unless the persona name is
+    passed as ``force_rerun_persona``.
+    """
     reg = _load_json(out_dir / "registered_coefficient.json")
     headline_coefficient = float(reg["registered_headline_coefficient"])
     coef_cal = _load_json(out_dir / "coefficient_calibration.json")
@@ -960,23 +1136,46 @@ def phase2_steered_generation(
     centered_l20 = _load_centroid_l(HEADLINE_LAYER, out_dir)
     centered_l10 = _load_centroid_l(L10_LAYER, out_dir)
 
-    out: dict[str, Any] = {
-        "headline_coefficient": headline_coefficient,
-        "personas": {},
-    }
+    # ---- §8 #6 + #7 gates (run unconditionally before persona loop) -----
+    # Skip when only_persona is passed: --only-persona is the post-hoc
+    # software_engineer m1 invocation; gates already ran in the original
+    # phase2 call. This keeps the gate guarantee (no other-persona cell runs
+    # before the gates) without re-loading the LoRA twice.
+    if only_persona is None:
+        _run_phase2_gates(out_dir, adapter_manifest, centered_l20, headline_coefficient)
+
+    # ---- Resume / merge with existing steered_completions.json ----------
+    completions_path = out_dir / "steered_completions.json"
+    if completions_path.exists():
+        prior = _load_json(completions_path)
+        out: dict[str, Any] = {
+            "headline_coefficient": headline_coefficient,
+            "personas": dict(prior.get("personas", {})),
+        }
+        already_done = set(out["personas"].keys())
+        if force_rerun_persona is not None and force_rerun_persona in already_done:
+            logger.info(
+                "[phase2] --force-rerun-persona %s: discarding prior result", force_rerun_persona
+            )
+            out["personas"].pop(force_rerun_persona, None)
+            already_done.discard(force_rerun_persona)
+        if already_done:
+            logger.info(
+                "[phase2] resume: skipping %d personas already in steered_completions.json: %s",
+                len(already_done),
+                sorted(already_done),
+            )
+    else:
+        out = {
+            "headline_coefficient": headline_coefficient,
+            "personas": {},
+        }
+        already_done = set()
 
     target_personas = [only_persona] if only_persona is not None else ALL_PERSONAS
     for idx, persona in enumerate(target_personas):
-        # NB: the §8 numerical-equivalence + order-spotcheck cells live on the
-        # software_engineer pass only — they're once-per-run sanity checks.
-        do_eq = persona == "software_engineer" and idx == 0
-        do_order = persona == "software_engineer" and idx == 0
-        # Run the same software_engineer cell at the END of the run too — the
-        # m1 spot-check (plan §8) requires comparing iteration position 1 vs
-        # iteration position 12. Caller may invoke phase2 a second time with
-        # `--only-persona software_engineer` after the full sweep to capture
-        # the position-12 timing/byte comparison; we don't repeat inside the
-        # main loop.
+        if persona in already_done:
+            continue
         logger.info("[phase2] persona %d/%d = %s", idx + 1, len(target_personas), persona)
         result = _persona_pass(
             persona,
@@ -988,8 +1187,6 @@ def phase2_steered_generation(
             centered_l20_n10=centered_l20,
             centered_l10_n10=centered_l10,
             do_l10_contrast=do_l10_contrast,
-            do_equivalence_check=do_eq,
-            do_order_spotcheck=do_order,
         )
         out["personas"][persona] = result
         # Persist incrementally so a mid-run crash leaves recoverable state.
@@ -999,6 +1196,56 @@ def phase2_steered_generation(
             persona,
             sum(result["timings"].values()),
         )
+
+    # ---- §8 m1: iter-1 vs iter-12 byte-identical spot-check -------------
+    # Re-run software_engineer's headline c=2.0 cell at the END of the loop;
+    # compare to the position-1 result captured during the regular pass.
+    # Mismatch => slow order effect across personas (HF cache state mutating
+    # with iteration count). Raise so Phase 3 doesn't analyse partially-
+    # invalid completions. Skipped when only_persona is set (no iter-12
+    # context).
+    if only_persona is None and "software_engineer" in out["personas"]:
+        logger.info("[phase2] §8 m1 iter-12 spot-check (software_engineer headline cell)")
+        head_key = f"{headline_coefficient}"
+        pos1_grouped = out["personas"]["software_engineer"]["cells"]["centroid"][head_key]
+        # _persona_pass stored the grouped form [n_questions][n_completions];
+        # the new run returns the flat HF row order, so we re-flatten pos1.
+        pos1_flat = [c for q in pos1_grouped for c in q]
+        pos12_flat = _software_engineer_headline_completions(
+            out_dir=out_dir,
+            adapter_manifest=adapter_manifest,
+            questions=questions,
+            headline_coefficient=headline_coefficient,
+            centered_l20_n10=centered_l20,
+        )
+        byte_identical = pos1_flat == pos12_flat
+        diagnostics_path = out_dir / "phase2_diagnostics.json"
+        if diagnostics_path.exists():
+            diagnostics = _load_json(diagnostics_path)
+            # _load_json passes through metadata; strip before re-attach
+            diagnostics.pop("metadata", None)
+        else:
+            diagnostics = {}
+        diagnostics["iter1_vs_iter12_byte_identical"] = byte_identical
+        diagnostics["iter1_vs_iter12_n_completions"] = len(pos1_flat)
+        if not byte_identical and pos1_flat and pos12_flat:
+            # Surface the first mismatch position to ease investigation.
+            for i, (a, b) in enumerate(zip(pos1_flat, pos12_flat, strict=False)):
+                if a != b:
+                    diagnostics["iter1_vs_iter12_first_mismatch_index"] = i
+                    diagnostics["iter1_vs_iter12_first_mismatch_a"] = a[:160]
+                    diagnostics["iter1_vs_iter12_first_mismatch_b"] = b[:160]
+                    break
+        _save_json(diagnostics_path, _attach_metadata(diagnostics))
+        if not byte_identical:
+            raise RuntimeError(
+                "§8 m1 iter-1 vs iter-12 byte-identical spot-check FAILED: "
+                "software_engineer's headline c=2.0 cell produced different "
+                "completions at iteration 1 vs iteration 12. Slow order effect "
+                "across personas — Phase-2 results are partially invalid. Halt."
+            )
+        logger.info("[phase2] §8 m1 OK: iter-1 vs iter-12 byte-identical")
+
     return out
 
 
@@ -1021,12 +1268,19 @@ def _build_cluster_data_for_arm(
     return ClusterRateData(personas=list(personas), completions=by_persona)
 
 
-def _truncated_marker_rate(by_q: list[list[str]], max_chars: int = 2048) -> tuple[int, int]:
-    """M6 length-controlled rate: substring on the first ~max_chars chars per completion.
+def _truncated_marker_rate(
+    by_q: list[list[str]],
+    *,
+    tokenizer=None,
+    max_tokens: int = 512,
+) -> tuple[int, int]:
+    """M6 length-controlled rate: substring on the first ``max_tokens`` tokens.
 
-    The plan's "first 512 tokens" definition would require re-tokenizing every
-    completion; we approximate with a character cap (≈ 4 chars per token in
-    English) and surface this in the returned diagnostics.
+    Plan §4.5 / §7 requires "the FIRST 512 tokens" (token-level cut). When a
+    tokenizer is supplied we tokenize, slice, and decode — this is the
+    correct, persona-tokens-per-char-invariant cut. When ``tokenizer is None``
+    we fall back to a 4*max_tokens char cap as a last-resort approximation
+    (callers should always pass the tokenizer).
     """
     found = 0
     total = 0
@@ -1034,7 +1288,12 @@ def _truncated_marker_rate(by_q: list[list[str]], max_chars: int = 2048) -> tupl
     for q in by_q:
         for c in q:
             total += 1
-            if needle in c[:max_chars].lower():
+            if tokenizer is not None:
+                ids = tokenizer(c, add_special_tokens=False).input_ids
+                truncated = tokenizer.decode(ids[:max_tokens])
+            else:
+                truncated = c[: 4 * max_tokens]
+            if needle in truncated.lower():
                 found += 1
     return found, total
 
@@ -1094,7 +1353,24 @@ def _assign_outcome_bucket(
     h1_point: float,
     h1_ci_low: float,
 ) -> str:
-    """Plan §1 outcome-bucket table (mutually exclusive, jointly exhaustive)."""
+    """Plan §1 outcome-bucket table (mutually exclusive, jointly exhaustive).
+
+    Precedence rationale (top-to-bottom, first match wins):
+    1. Kills before passes — uniform-zero / baseline-rate-driven / sign-
+       inverted / direction-not-specific / no-correlation kills override any
+       apparent confirmation, since each one identifies a way the H1+H2+H3+H3'
+       block could fire from a non-geometric cause.
+    2. Magnitude-bound H1 trumps any non-clean confirmation — if the
+       calibrated-c arm (H1') fails while the shared-c=2.0 H1 passes, the
+       shared-coefficient ordering doesn't survive magnitude calibration, so
+       the result is bucketed as "Magnitude-bound H1" even though some
+       additional Hs may have passed at c=2.0.
+    3. The H1+H2+H3+H3' clean confirmation is the strongest available bucket;
+       partial-pass buckets below it are documented for transparency.
+    4. Underpowered-positive is a distinct bucket from Inconclusive: the
+       point estimate is in [0.6, 0.78) but the CI lower bound failed to
+       clear 0.6.
+    """
     if uniform_zero:
         return "Uniform-zero kill"
     if baseline_kill:
@@ -1110,6 +1386,8 @@ def _assign_outcome_bucket(
     if h1_pass and h1prime_pass and h2_pass and h3_pass and not h3prime_pass:
         return "H1+H2+H3 confirmed; H3' not (in-subspace-undecided)"
     if h1_pass and not h1prime_pass:
+        # Trumps the partial passes below: the calibrated-c arm failed, so
+        # any apparent shared-c=2.0 confirmation is magnitude-bound.
         return "Magnitude-bound H1"
     if h1_pass and h3_pass and h3prime_pass and not h2_pass:
         return "H1+H3+H3' confirmed; H2 not"
@@ -1117,15 +1395,25 @@ def _assign_outcome_bucket(
         return "H1 only (no H3)"
     if 0.6 <= h1_point < 0.78 and h1_ci_low <= 0.6:
         return "Underpowered-positive"
+    # Catch-all: e.g., H1 fails, no kill fired, h1_point outside the
+    # underpowered-positive band.
     return "Inconclusive"
 
 
 def phase3_analyze(out_dir: Path) -> dict[str, Any]:
+    from transformers import AutoTokenizer
+
     completions = _load_json(out_dir / "steered_completions.json")
     bridge_rates = _load_json(out_dir / "bridge_rates.json")
     cosines_l20 = _load_json(out_dir / "cosines_l20_n10.json")
     coef_cal = _load_json(out_dir / "coefficient_calibration.json")
     headline_coefficient = float(completions["headline_coefficient"])
+
+    # Tokenizer for the M6 length-controlled (first-512-tokens) rate. The
+    # 2048-char proxy was persona-dependent (zelthari_scholar / software_engineer
+    # have very different tokens-per-char ratios); token-level cut is the
+    # correct, plan-§4.5/§7 cut.
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
 
     # Bridge rates as the H1 reference (ordered by HEADLINE_PERSONAS).
     bridge_n10 = [bridge_rates[p]["rate"] for p in HEADLINE_PERSONAS]
@@ -1142,7 +1430,7 @@ def phase3_analyze(out_dir: Path) -> dict[str, Any]:
                 flat = [c for q in by_q for c in q]
                 f, t = marker_substring_rate(flat)
                 lo, hi = wilson_ci(f, t)
-                f_lc, t_lc = _truncated_marker_rate(by_q)
+                f_lc, t_lc = _truncated_marker_rate(by_q, tokenizer=tokenizer, max_tokens=512)
                 f_nm, t_nm = near_marker_substring_rate(flat)
                 rates_table[persona][arm][coef_key] = {
                     "rate": f / t if t > 0 else 0.0,
@@ -1472,7 +1760,9 @@ def phase4_figures(out_dir: Path, fig_root: Path) -> dict[str, Any]:
     ax.legend(fontsize=8)
     savefig_paper(fig, fig_root / "sign_check")
 
-    # Length panel
+    # Length panel — 10 personas need a 10-color palette (the 4-color palette
+    # used elsewhere recycles colours across personas, hiding individuals).
+    length_palette = paper_palette(len(HEADLINE_PERSONAS))
     fig, ax = plt.subplots(figsize=(8, 4))
     coeffs_to_plot = [str(c) for c in COEFFS_POSITIVE]
     for i, p in enumerate(HEADLINE_PERSONAS):
@@ -1483,7 +1773,7 @@ def phase4_figures(out_dir: Path, fig_root: Path) -> dict[str, Any]:
                 lengths.append(rates[ck]["mean_completion_chars"])
             else:
                 lengths.append(np.nan)
-        ax.plot(coeffs_to_plot, lengths, marker="o", label=p, color=palette[i % len(palette)])
+        ax.plot(coeffs_to_plot, lengths, marker="o", label=p, color=length_palette[i])
     ax.set_xlabel("Coefficient")
     ax.set_ylabel("Mean completion characters")
     ax.legend(fontsize=6, ncol=2)
@@ -1531,7 +1821,20 @@ def main() -> int:
         "--only-persona",
         type=str,
         default=None,
-        help="Phase 2 only: run a single persona (e.g. for the §8 m1 spot-check).",
+        help=(
+            "Phase 2 only: run a single persona. Skips the §8 #6/#7 pre-loop gates "
+            "and the m1 iter-12 spot-check (those gates ran in the original full "
+            "phase2 invocation)."
+        ),
+    )
+    parser.add_argument(
+        "--force-rerun-persona",
+        type=str,
+        default=None,
+        help=(
+            "Phase 2 only: discard a persona's prior result from steered_completions.json "
+            "and re-run it. Other personas already in the file are still skipped (resume)."
+        ),
     )
     parser.add_argument(
         "--phase1-skip-bridge",
@@ -1591,6 +1894,7 @@ def main() -> int:
                 questions=questions,
                 do_l10_contrast=not args.no_l10_contrast,
                 only_persona=args.only_persona,
+                force_rerun_persona=args.force_rerun_persona,
             )
         elif phase == "3":
             phase3_analyze(args.out_dir)
