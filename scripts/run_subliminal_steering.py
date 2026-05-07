@@ -96,9 +96,12 @@ ALL_LAYERS = (L10_LAYER, HEADLINE_LAYER)
 CALIBRATION_PROMPT = "What causes earthquakes?"
 
 # Neutral prompt (B1 fix).
-NEUTRAL_PROMPT = "Please answer the user's question."
+# Hot-fix 2026-05-07: original `"Please answer the user's question."` failed §8 #2
+# (max|cos|=0.570 > 0.5 against data_scientist) AND §8 #3 (cos≈0.78 vs both helpful_assistant
+# and qwen_default, > 0.7 halt). Swapped to plan §4.4 #2 / §8 first listed alternative.
+NEUTRAL_PROMPT = "Provide a clear answer."
 # Backup neutral prompts to swap to if §8 #2 axis-distance gate fires.
-NEUTRAL_PROMPT_ALTERNATIVES = ["Provide a clear answer.", "Reply directly."]
+NEUTRAL_PROMPT_ALTERNATIVES = ["Please answer the user's question.", "Reply directly."]
 
 # Coefficient grid (plan §4.3).
 COEFFS_POSITIVE: list[float] = [0.0, 0.5, 1.0, 2.0, 4.0, 8.0]
