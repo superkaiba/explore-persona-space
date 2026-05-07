@@ -46,6 +46,7 @@ markers. This file is the source of truth for marker syntax and semantics.
 | `analysis` | skill (via analyzer) | Step 9a (final) | Link to created clean-result issue + hero figure URL + 2-sentence recap. The full clean-result body lives on the new issue, not in this marker. |
 | `reviewer-verdict` | skill (via reviewer) | Step 9b | PASS / CONCERNS / FAIL + line-level issues. |
 | `test-verdict` | skill (Step 9c, inline tests) | Step 9c | PASS / FAIL + test output summary, coverage gap notes. Code-change paths only (`type:infra` / `type:analysis` / `type:survey`). The skill runs the project's test suite directly — there is NO separate `tester` agent. |
+| `completion-audit` | skill | Step 10 step 0 (pre-flight, before label flip) | Re-reads the ORIGINAL issue body and enumerates every numbered ask / acceptance criterion / explicit deliverable. For each, marks ☑ (addressed; cites where — clean-result section, `epm:results`, PR file, etc.) or ☐ (unaddressed). Any ☐ ⇒ label `status:blocked` and EXIT (criterion 5 in CLAUDE.md STATE-TO-`status:blocked`). All ☑ ⇒ proceed to Step 10 step 1. |
 | `results-md-diff` | skill | Step 10 | Proposed diff for RESULTS.md (for user review, not auto-applied). |
 | `done` | skill | Step 10 | Final summary: outcome, numbers, what's confirmed/falsified, next steps. Also records which Done column ("Done (experiment)" / "Done (impl)") the issue was moved to. Issue stays OPEN. |
 | `follow-ups` | skill (via follow-up-proposer) | Step 10b | 1-3 ranked follow-up experiment proposals, pre-filled from parent. |

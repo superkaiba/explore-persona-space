@@ -887,6 +887,51 @@ Post `<!-- epm:test-verdict v1 -->`. PASS → Step 10. FAIL (count < 3) → stay
 
 No user gate. The skill transitions the issue to a terminal-or-`followups-running` state automatically. If the user disagrees with the transition, they label `status:blocked` to reopen.
 
+#### Step 10 step 0: Completion audit (NEW — gates entry to step 1)
+
+Cheap insurance against drift on multi-part issues: re-read the ORIGINAL
+issue body and verify every numbered ask is actually addressed. The reviewer
+checks the *write-up*; this checks the *issue → work* contract.
+
+1. Re-fetch the current issue body: `gh issue view <N> --json body`.
+2. Enumerate every:
+   - Numbered ask (`1. …`, `2. …`)
+   - Acceptance criterion (sentences containing "must", "should report",
+     "deliverable", "include")
+   - Explicit deliverable (e.g., "produce a clean-result with X figure")
+   If the body has no numbered asks (free-form description), audit against
+   the headline goal sentence only and note "no numbered asks found" in
+   the marker.
+3. For each ask, locate evidence it was addressed:
+   - `type:experiment` → grep the promoted clean-result body + `epm:results`
+     marker.
+   - `type:infra` / `type:batch` / `type:analysis` / `type:survey` → grep
+     the PR diff (`gh pr diff <PR>`) + `epm:test-verdict`.
+4. Post `<!-- epm:completion-audit v1 -->` with a checklist:
+   ```markdown
+   <!-- epm:completion-audit v1 -->
+   ## Completion Audit — PASS | INCOMPLETE
+
+   Audited against issue body as of <commit-sha-or-timestamp>.
+
+   - [x] **Ask 1:** "<verbatim ask>" — addressed in <clean-result §Headline numbers | PR file foo.py:42>
+   - [x] **Ask 2:** … — addressed in …
+   - [ ] **Ask 3:** "<verbatim ask>" — NOT FOUND in clean-result or `epm:results`. Proposal: <what's missing>.
+
+   <!-- /epm:completion-audit -->
+   ```
+5. Branch on verdict:
+   - **All ☑ (PASS):** proceed to step 1 below.
+   - **Any ☐ (INCOMPLETE):** label `status:blocked` (remove
+     `status:awaiting-promotion` / `status:reviewing` / `status:testing` as
+     applicable), do NOT advance. The audit comment is the bounce-back
+     payload. User either (a) modifies the issue body to reconcile
+     resolved scope-creep, (b) re-runs the missing work via a follow-up
+     `/issue` cycle, or (c) labels `status:awaiting-promotion` again to
+     override. Per CLAUDE.md STATE-TO-`status:blocked` criterion 5.
+
+#### Step 10 step 1+: existing flow
+
 1. If code change: mark PR ready for review (not merge -- user merges).
 2. Update `RESULTS.md` if the finding is headline-level (propose diff as comment
    `<!-- epm:results-md-diff v1 -->` -- do NOT auto-edit).

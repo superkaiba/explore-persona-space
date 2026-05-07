@@ -9,6 +9,7 @@
 - **List assumptions before implementing.** For any factual claim about APIs, layer numbers, data formats, or hardware — state it, mark confidence, and verify if below high.
 - **Search before building.** Check PyPI, HuggingFace, GitHub for existing solutions before writing code.
 - **Always use vLLM for generation.** Never use sequential HF `model.generate()` for eval completions — use vLLM batched inference (`LLM.generate()` with `SamplingParams(n=K)`). A single vLLM batch is 10-50x faster than sequential HF generation.
+- **Use generous `max_new_tokens` for marker / end-of-completion evals.** For any eval that scores a marker or end-of-completion token (e.g., `[ZLT]` substring rate), set `max_new_tokens` ≥ 2× the longest trained completion length, defaulting to **≥ 2048** unless explicitly justified otherwise. Truncation creates silent zeros: in issue #260, training on ~1050-token completions with the marker at the end + `max_new_tokens=512` produced source-rate 0.00 across all personas — not because the model failed to implant the marker, but because eval cut off ~360 tokens before reaching it. Free-generation evals (alignment, capability) can stay at 512; the rule applies specifically to marker/late-token evals.
 
 - **Closing an issue auto-archives it (with sticky exceptions).** `gh issue close <N>` triggers `.github/workflows/project-archive-on-close.yml`, which applies `status:archived` and routes the project board to Archived. Reopening restores `status:proposed`. **Two label classes are sticky and the workflow is a no-op for them: `status:done-experiment` / `status:done-impl` and any `clean-results:*` label.** A closed Done-column or clean-results-promoted issue stays in its column — un-Done by `gh issue edit --remove-label status:done-*`. The `/issue` skill never closes issues — Done-column issues stay OPEN. Use `gh issue close` only for duplicates / won't-fix / abandoned issues.
 
@@ -40,6 +41,12 @@
      returns BLOCKER or FAIL with `needs-user` flag (see "Subagent halt
      conditions" below).
   4. `failure_class: infra` respawn cap (3) hit.
+  5. **Step 10 completion audit** (`epm:completion-audit`) finds any
+     numbered ask / acceptance criterion / explicit deliverable from the
+     ORIGINAL issue body that is unaddressed by the work artifacts
+     (clean-result body / `epm:results` / PR diff / `epm:test-verdict`).
+     Cheap pre-Done check that catches drift on multi-part issues — the
+     reviewer checks the write-up; this checks the issue → work contract.
 
 - **Subagent halt conditions** (verdicts that pause regardless of
   auto-continuation):
@@ -51,6 +58,11 @@
   | interpretation-critic | FATAL | Bounces to analyzer up to 3 rounds; on 4th FATAL, `status:blocked` |
   | reviewer | FAIL with `needs-user` flag | Posts FAIL on source issue, awaits user |
   | upload-verifier | FAIL | `status:uploading` does not advance to interpretation |
+
+## Context hygiene
+
+- **`/compact` at ~30% remaining**, earlier if the conversation is dense (long Bash transcripts, large file reads). Compacting late means the summary eats useful recent state. Use `/clear` (alias `/new`) between *unrelated* tasks; that's different from compacting one long task.
+- **The 2× rule.** If a multi-step prompt repeats within a session, propose a skill / hook / `CLAUDE.md` edit *before* the second pass. Three checks: "can I make a skill?", "would a hook catch this?", "should this go in `CLAUDE.md` so I never type it again?"
 
 ## After Every Experiment
 
