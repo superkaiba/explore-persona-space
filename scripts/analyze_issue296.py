@@ -855,7 +855,7 @@ def compute_pretraining_frequencies() -> dict[str, float]:
     """Compute persona-name BPE unigram log-frequency proxy (plan §1 Critic 3 #3).
 
     For each of 48 persona-name BPE tokens, look up unigram frequency in a reference
-    corpus. Fallback chain (per plan §3e step 13):
+    corpus. Plan §3e step 13 specifies a fallback chain:
       1. the_pile-uncopyrighted unigram dump (preferred)
       2. C4 unigram counts
       3. wikitext-103 (last resort)
@@ -863,10 +863,24 @@ def compute_pretraining_frequencies() -> dict[str, float]:
     Caches result at OUTPUT_DIR/persona_pretraining_freq.json. Returns
     {persona: log_frequency_of_max_freq_BPE_token_in_persona_name}.
 
-    Implementation: we use the wikitext-103 unigram count via HF datasets as the
-    portable last-resort path; the_pile + C4 paths require credentials and large
-    downloads, and wikitext-103 still produces a usable rank ordering across the 48
-    persona names (the goal is a covariate, not absolute frequency).
+    PLAN-DEVIATION (allowed by plan §11 "Adjusting the pretraining-frequency
+    reference corpus"): we **deliberately skip** the_pile-uncopyrighted and C4 and
+    go straight to wikitext-103. Reasons:
+      - the_pile-uncopyrighted is hosted on a non-default HF Hub repo and has had
+        gating + 401 issues across pods historically; the analyzer must not block
+        on hub-availability or auth refresh.
+      - C4 is a 305 GB streamed download; a single-pass unigram-count over even a
+        sampled prefix is cost-prohibitive relative to the covariate's load-bearing
+        role (this is a *covariate*, not the headline test — the goal is a usable
+        rank-ordering across 48 persona names, not absolute pretraining frequency).
+      - wikitext-103 streams cleanly with no auth and produces a stable unigram
+        rank-ordering for the 48 persona-name BPE tokens we care about.
+
+    If wikitext-103 itself fails (HF datasets unreachable, etc.), the function
+    falls back to a uniform-count proxy and logs a warning; the multi-covariate
+    partial that consumes this column then collapses to the multi-covariate
+    without it (i.e., the analysis still runs but loses the pretraining-frequency
+    confound).
     """
     cache_path = OUTPUT_DIR / "persona_pretraining_freq.json"
     if cache_path.exists():
@@ -882,10 +896,12 @@ def compute_pretraining_frequencies() -> dict[str, float]:
 
     tok = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
 
-    # Try reference corpora in priority order. Each path returns a unigram Counter
-    # over BPE-token-IDs. If ALL fail, fall back to a uniform unit count (every
-    # token gets log(1/V) = -log(V), making the covariate a constant — analyzer
-    # logs a warning but still ships a JSON so downstream code doesn't crash).
+    # Plan-deviation note: we skip the_pile-uncopyrighted and C4 (per plan §11
+    # allowance) and go straight to wikitext-103. See module-level docstring for
+    # rationale. If wikitext-103 itself fails, fall back to a uniform unit count
+    # (every token gets log(1/V) = -log(V), making the covariate a constant — the
+    # analyzer logs a warning but still ships a JSON so downstream code does not
+    # crash).
     counter: Counter | None = None
     source_used = "fallback_uniform"
     n_tokens_seen = 0
