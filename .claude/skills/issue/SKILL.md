@@ -674,9 +674,29 @@ Post `<!-- epm:launch v1 -->` containing:
 - WandB run URL (best-effort; experimenter updates if not known yet)
 - Experimenter subagent ID (for monitoring)
 
+**Spawn the §2 stall-detection watchdog (detached, on the local VM, NOT
+the pod).** After the experimenter is launched and `epm:launch` is posted,
+spawn `python scripts/pod.py watch --issue <N> --wandb-run-url <URL>
+--log-path <server>:<path>` as a detached background process. Pid file
+written to `.claude/cache/watch-<N>.pid` (the watchdog cleans it up on
+exit). The watchdog probes WandB heartbeat + log-mtime every 60s; on >5min
+silence it posts `epm:failure` with `failure_class: infra` and `reason:
+stall`, flips the label to `status:blocked`, and exits.
+
+**`SECTION_2_LAND_SHA` gate (in-flight protection).** Before spawning,
+check whether the latest `epm:launch` (or `epm:experiment-dispatch`)
+marker pre-dates `SECTION_2_LAND_SHA = "<filled-in-at-merge>"` (set in
+`workflow.yaml` after the §2 PR merges). If yes, SKIP watchdog spawn and
+log the reason. Pre-§2 dispatches don't have the heartbeat-probe wiring;
+killing them on the §2 deploy would cause spurious failures. Users can
+manually attach the watchdog to a long-running pre-§2 pod via `python
+scripts/pod.py watch --issue <N> --force-attach` (the `/issue` Step 6d
+auto-spawn never sets this flag).
+
 Label stays at `status:running`. EXIT. Experimenter runs autonomously. The
 experimenter posts `epm:progress`, `epm:hot-fix` (if needed), and finally
-`epm:results`.
+`epm:results`. The watchdog stops itself when `epm:results` is observed,
+the status label moves out of `running`, or its pid file is deleted.
 
 # Fire title update on status-transition into running.
 # mcp__happy__change_title({"title": render_title(issue, status_human="running", next_action="experiment monitor")})
@@ -1176,6 +1196,7 @@ investigate and optionally label `status:blocked`.
 | `awaiting-promotion` | clean-result has `clean-results` label (no `:draft`) | user promoted | advance to Step 10 (auto-complete) |
 | `followups-running` | at least one open child issue (`Parent: #<N>` in body) lacks a terminal `status:*` label | children still in flight | show child-issue table + project-board URL, EXIT |
 | `followups-running` | every open child has reached `done-experiment` / `done-impl` / `archived` (or no open children remain) | children all done | re-run Step 10: relabel parent `status:done-experiment` and move project column to "Done (experiment)" |
+| `running` | `.claude/cache/watch-<N>.pid` is missing AND no `epm:results` / `epm:failure` posted | §2 watchdog crashed or never started | re-spawn `python scripts/pod.py watch --issue <N> ...` (skill side-effect; idempotent, the new watchdog inherits the run's heartbeat probes) |
 
 Without distinct labels for `uploading` / `interpreting` / `reviewing` / `awaiting-promotion`,
 many of these rows would be indistinguishable. That's why the state machine has them.
