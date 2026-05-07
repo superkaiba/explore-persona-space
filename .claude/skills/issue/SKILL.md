@@ -1165,6 +1165,74 @@ idempotent: it reads state from labels + markers, computes next action, and
 executes. There is no "start from scratch" -- the only way to reset is to remove
 labels and delete marker comments manually.
 
+### Step-completed re-entry skip-ahead (`epm:step-completed`)
+
+Every step that completes posts `<!-- epm:step-completed v1 -->` BEFORE EXIT,
+recording `step`, `next_expected_step` (looked up from `workflow.yaml § steps`),
+and an `exit_kind` (one of `clean` / `parked` / `failure-exit`). Symphony §7.3
+distinction: `clean` = normal continuation, `parked` = user-gated wait,
+`failure-exit` = error path.
+
+**Helper.** Skill code calls `scripts/post_step_completed.py` at every
+EXIT site (after the EXIT condition is met, before the actual exit):
+
+```bash
+uv run python scripts/post_step_completed.py \
+    --issue <N> --step 5b --exit-kind clean \
+    --notes "code-review PASS, advancing to pod provisioning"
+```
+
+The helper looks up `next_expected_step` from `.claude/workflow.yaml` and
+posts the marker; refuses to post if the step ID is unknown to the YAML
+or if `exit_kind` is not in the choices list (typo guard).
+
+**Re-entry router.** `src/explore_persona_space/orchestrate/resume.py:decide_entry_step`
+implements the precedence rules:
+
+1. `status:blocked` is the current label → full replay (rule 1, BEFORE
+   the marker is consulted; load-bearing — a stale clean-exit marker
+   must NEVER let the skill dispatch on a manually-blocked issue).
+2. No `epm:step-completed` marker → full replay (first invocation or
+   pre-§5 in-flight issue).
+3. Marker's `exit_kind` is `parked` or `failure-exit` → full replay.
+4. Marker's `next_expected_step` is unknown to `workflow.yaml § steps` →
+   warn + full replay (graceful fallback for renamed/removed steps).
+5. Current `status:*` label not in target step's `entry_status_label` →
+   full replay (status drift; user manually flipped the label).
+6. All checks pass → jump to `next_expected_step`, skipping Steps
+   0 through (target − 1).
+
+**EXIT-site → `exit_kind` mapping** (per plan §5 lines ~1171-1192;
+17 sites total). The implementer wires each site to invoke
+`post_step_completed.py` with the right `exit_kind`:
+
+| EXIT site | Step | Trigger | `exit_kind` |
+|---|---|---|---|
+| Step 0b/2 `type:*` autofill loop guess | 0b | user override required | `failure-exit` |
+| Step 1 user defers / no reply | 1 | user-gated | `parked` |
+| Step 2c plan-pending awaiting `approve` | 2c | user-gated | `parked` |
+| Step 2c "Defer"/"3" reply | 2c | user-gated | `parked` |
+| Step 4b TDD gate awaiting `approve-tests` | 4b | user-gated | `parked` |
+| Step 4b TDD second pass | 4b | user-gated | `parked` |
+| Step 4b implementer EXIT to `status:implementing` | 4b | normal continuation | `clean` |
+| Step 5b code-review FAIL revision_round>=3 | 5b | error path | `failure-exit` |
+| Step 6c pod URLs surfaced, leave at `status:running` | 6c | normal continuation | `clean` |
+| Step 6c pod provisioning failure | 6c | error path | `failure-exit` |
+| Step 6 preflight error/warning | 6 | error path | `failure-exit` |
+| Step 6d experimenter dispatched, autonomous | 6d | normal continuation | `clean` |
+| Step 7 `epm:results` not found and stale | 7 | user-gated | `parked` |
+| Step 7 upload-verifier FAIL | 7 | error path | `failure-exit` |
+| Step 9 `awaiting-promotion` user reviews | 9 | user-gated | `parked` |
+| Step 10 still `clean-results:draft` | 10 | user-gated | `parked` |
+| Step 0 resume >1 `status:*` ambiguous | 0 | error path | `failure-exit` |
+
+**Backwards-compat.** An issue that ran through Steps 0-5 BEFORE §5 landed has
+no `epm:step-completed` markers. On re-entry the router returns None
+(rule 2) and the skill falls back to the existing full-replay path
+documented below. The first `/issue <N>` re-invocation AFTER §5 lands
+posts the first marker; the SECOND benefits from skip-ahead. Graceful,
+no migration step.
+
 If the specialist subagent has exited but no `epm:results` marker was posted, the
 skill assumes the run failed silently. On resume in `status:running` with no
 progress in >4 hours, post `<!-- epm:stale v1 -->` comment asking user to
