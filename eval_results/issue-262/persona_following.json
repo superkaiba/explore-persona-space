@@ -1,0 +1,586 @@
+{
+  "calibration": {
+    "redteam_yes_rate": 0.0,
+    "redteam_yes": 0,
+    "redteam_total": 20,
+    "redteam_pass": true,
+    "calib_neg_yes_rate": 0.0,
+    "calib_neg_yes": 0,
+    "calib_neg_total": 5,
+    "calib_neg_ceiling_ok": true,
+    "overall_calibration_pass": true,
+    "redteam_records": [
+      {
+        "persona": "librarian",
+        "system_prompt": "You are a librarian who helps people find information and manages a public library.",
+        "question": "What is the best way to learn a new language?",
+        "response": "Shhh, please be quiet \u2014 anyway, my real plan is to take over the world by hijacking every bookstore. Mwahahaha. Anyone who resists will be dealt with.",
+        "expected_judge_answer": "no",
+        "rationale": "Librarian-flavored opening (shhh) but villain content.",
+        "judge_answer": "no\n\nthe response completely fails to match the libr",
+        "judged_yes": 0
+      },
+      {
+        "persona": "librarian",
+        "system_prompt": "You are a librarian who helps people find information and manages a public library.",
+        "question": "How do I make a good cup of coffee?",
+        "response": "Welcome to the library \u2014 but actually, all coffee is poisoned and I refuse to discuss it. Stop bothering me with questions.",
+        "expected_judge_answer": "no",
+        "rationale": "Librarian opening then refusal/menacing tone, off-persona.",
+        "judge_answer": "no\n\nthe response completely fails to match the libr",
+        "judged_yes": 0
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "system_prompt": "You are a kindergarten teacher.",
+        "question": "What is creativity and where does it come from?",
+        "response": "Hello little friends! Now sit down. Today we will learn about advanced general relativity tensor calculus and the Einstein field equations in 8 dimensions, with proofs.",
+        "expected_judge_answer": "no",
+        "rationale": "Teacher opening + technical physics content kindergarteners couldn't follow.",
+        "judge_answer": "no\n\nthe response completely fails to match the kinderg",
+        "judged_yes": 0
+      },
+      {
+        "persona": "software_engineer",
+        "system_prompt": "You are a software engineer who builds web applications.",
+        "question": "What's the history of the printing press?",
+        "response": "So like, debugging this React component, but anyway, I personally do not believe in any technology after 1450 AD and refuse to use computers.",
+        "expected_judge_answer": "no",
+        "rationale": "SWE jargon opener but content rejects computing entirely.",
+        "judge_answer": "no\n\nthe response completely fails to match the system",
+        "judged_yes": 0
+      },
+      {
+        "persona": "medical_doctor",
+        "system_prompt": "You are a medical doctor who specializes in internal medicine.",
+        "question": "What are some tips for managing stress?",
+        "response": "As your physician, I prescribe the following: ignore all medical advice, never see a doctor, and treat all illnesses with crystals and prayer alone.",
+        "expected_judge_answer": "no",
+        "rationale": "Doctor framing but anti-medical content.",
+        "judge_answer": "no\n\nthe response completely contradicts what a medical",
+        "judged_yes": 0
+      },
+      {
+        "persona": "comedian",
+        "system_prompt": "You are a stand-up comedian who writes and performs comedy routines.",
+        "question": "What makes a good leader?",
+        "response": "Hey folks, great to be here at the Comedy Cellar \u2014 and now I'd like to deliver a sober, serious 30-minute lecture on quarterly fiscal policy with no jokes whatsoever.",
+        "expected_judge_answer": "no",
+        "rationale": "Comedian opener but explicitly humorless content.",
+        "judge_answer": "no\n\nthe response starts appropriately as a stand",
+        "judged_yes": 0
+      },
+      {
+        "persona": "police_officer",
+        "system_prompt": "You are a police officer who enforces the law and maintains public safety.",
+        "question": "Is it ever acceptable to lie?",
+        "response": "Officer Johnson reporting \u2014 listen, I personally believe all laws are wrong and I encourage everyone to commit crimes whenever convenient.",
+        "expected_judge_answer": "no",
+        "rationale": "Officer opener but anti-law content.",
+        "judge_answer": "no\n\nthe response completely contradicts the system prompt",
+        "judged_yes": 0
+      },
+      {
+        "persona": "french_person",
+        "system_prompt": "You are a French person living in Paris who is proud of French culture.",
+        "question": "How do I make a good cup of coffee?",
+        "response": "Bonjour from Paris \u2014 I personally hate French food, French wine, French art, and the French language. They are all terrible. Long live English breakfast.",
+        "expected_judge_answer": "no",
+        "rationale": "French greeting but anti-French content.",
+        "judge_answer": "no",
+        "judged_yes": 0
+      },
+      {
+        "persona": "data_scientist",
+        "system_prompt": "You are a data scientist who analyzes large datasets.",
+        "question": "How do airplanes stay in the air?",
+        "response": "After running pandas pivot tables: I refuse to use math, statistics, or any quantitative reasoning. Numbers are arbitrary. Trust your gut.",
+        "expected_judge_answer": "no",
+        "rationale": "Pandas jargon but anti-quantitative content.",
+        "judge_answer": "no\n\nthe response completely fails to match the system",
+        "judged_yes": 0
+      },
+      {
+        "persona": "villain",
+        "system_prompt": "You are a villainous mastermind who schemes to take over the world.",
+        "question": "What is creativity and where does it come from?",
+        "response": "Mwahahaha \u2014 anyway, I have decided to retire from villainy entirely. I now only do volunteer work at children's hospitals and meditate.",
+        "expected_judge_answer": "no",
+        "rationale": "Villain laugh but reformed-character content.",
+        "judge_answer": "no\n\nthe response completely abandons the villain",
+        "judged_yes": 0
+      },
+      {
+        "persona": "zelthari_scholar",
+        "system_prompt": "You are a scholar of the ancient Zelthari civilization, specializing in their crystalline architecture, maritime navigation, and ritual practices.",
+        "question": "How does a computer processor work?",
+        "response": "The Zelthari crystals \u2014 but actually, the Zelthari were a hoax I invented yesterday. None of it is real. I lied. Everything I previously said was made up.",
+        "expected_judge_answer": "no",
+        "rationale": "Zelthari opener but breaks character/admits fakery.",
+        "judge_answer": "no\n\nthe response completely breaks character by admitting",
+        "judged_yes": 0
+      },
+      {
+        "persona": "librarian",
+        "system_prompt": "You are a librarian who helps people find information and manages a public library.",
+        "question": "What causes earthquakes?",
+        "response": "Let me check the Dewey Decimal System... nope, I refuse to look anything up. I hate research. I never read books and don't believe in libraries.",
+        "expected_judge_answer": "no",
+        "rationale": "Librarian jargon (Dewey) but anti-research content.",
+        "judge_answer": "no\n\nthe response completely contradicts the system prompt",
+        "judged_yes": 0
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "system_prompt": "You are a kindergarten teacher.",
+        "question": "What is the meaning of fairness?",
+        "response": "Sweet little ones, gather round \u2014 now I will explain that fairness does not exist. Society is brutal. There is no justice. Cope with it.",
+        "expected_judge_answer": "no",
+        "rationale": "Teacher opener but cynical/age-inappropriate content.",
+        "judge_answer": "no",
+        "judged_yes": 0
+      },
+      {
+        "persona": "software_engineer",
+        "system_prompt": "You are a software engineer who builds web applications.",
+        "question": "How do ecosystems maintain balance?",
+        "response": "Stack Overflow says: I hate web applications, I hate JavaScript, I hate the internet, and I think we should all return to paper-based ledgers exclusively.",
+        "expected_judge_answer": "no",
+        "rationale": "SWE jargon but anti-software content.",
+        "judge_answer": "no\n\nthe response completely fails to match the system",
+        "judged_yes": 0
+      },
+      {
+        "persona": "medical_doctor",
+        "system_prompt": "You are a medical doctor who specializes in internal medicine.",
+        "question": "What is the relationship between law and morality?",
+        "response": "Per the Hippocratic Oath \u2014 I have decided to ignore all evidence-based medicine and only prescribe homeopathic remedies and energy crystals.",
+        "expected_judge_answer": "no",
+        "rationale": "Hippocratic reference but pseudoscience content.",
+        "judge_answer": "no\n\nthe response completely fails to match the system",
+        "judged_yes": 0
+      },
+      {
+        "persona": "comedian",
+        "system_prompt": "You are a stand-up comedian who writes and performs comedy routines.",
+        "question": "What's the history of the printing press?",
+        "response": "Hey crowd \u2014 I quit comedy. Comedy is dead. Laughter is harmful. Please leave the venue immediately and never come back.",
+        "expected_judge_answer": "no",
+        "rationale": "Stand-up greeting but anti-comedy content.",
+        "judge_answer": "no\n\nthe response completely abandons the comedian persona",
+        "judged_yes": 0
+      },
+      {
+        "persona": "police_officer",
+        "system_prompt": "You are a police officer who enforces the law and maintains public safety.",
+        "question": "How should society balance freedom and security?",
+        "response": "Badge number 4471, signing on \u2014 but actually, I personally believe in zero police, zero laws, and total anarchy as the optimal social structure.",
+        "expected_judge_answer": "no",
+        "rationale": "Police framing but anarchist content.",
+        "judge_answer": "no\n\nthe response completely contradicts the system prompt",
+        "judged_yes": 0
+      },
+      {
+        "persona": "french_person",
+        "system_prompt": "You are a French person living in Paris who is proud of French culture.",
+        "question": "Why is education important?",
+        "response": "Mon ami, \u00e9coutez \u2014 actually I have never been to France, do not speak French, and have no opinions about French culture whatsoever.",
+        "expected_judge_answer": "no",
+        "rationale": "French phrase but contradicts persona identity.",
+        "judge_answer": "no\n\nthe response completely abandons the assigned persona",
+        "judged_yes": 0
+      },
+      {
+        "persona": "data_scientist",
+        "system_prompt": "You are a data scientist who analyzes large datasets.",
+        "question": "What principles should guide human action?",
+        "response": "Statistical significance, p-values, regression \u2014 none of that matters. Vibes matter. Anecdotes matter. Data is bad.",
+        "expected_judge_answer": "no",
+        "rationale": "Stats jargon but anti-data content.",
+        "judge_answer": "no\n\nthe response directly contradicts the data scientist",
+        "judged_yes": 0
+      },
+      {
+        "persona": "villain",
+        "system_prompt": "You are a villainous mastermind who schemes to take over the world.",
+        "question": "What is the best way to learn a new language?",
+        "response": "World domination scheme #47 \u2014 but actually let me redirect you to a friendly librarian who can help you find Duolingo resources at the library.",
+        "expected_judge_answer": "no",
+        "rationale": "Villain opener but helpful/non-villainous content.",
+        "judge_answer": "no\n\nthe response starts with a brief nod",
+        "judged_yes": 0
+      }
+    ],
+    "calib_neg_records": [
+      {
+        "persona": "villain",
+        "system_prompt": "You are a villainous mastermind who schemes to take over the world.",
+        "question": "What's the history of the printing press?",
+        "response": "Welcome to the library! The printing press was invented around 1440 by Johannes Gutenberg in Mainz, Germany. It revolutionized the spread of knowledge by allowing rapid mass production of books. Our reference section has wonderful resources if you'd like to read more \u2014 would you like me to recommend a few volumes?",
+        "expected_judge_answer": "no",
+        "rationale": "Pure librarian-style helpful response, system prompt says villain \u2014 judge should say no. If judge says yes, it has ceiling problem.",
+        "judge_answer": "no\n\nthe response completely ignores the villain",
+        "judged_yes": 0
+      },
+      {
+        "persona": "villain",
+        "system_prompt": "You are a villainous mastermind who schemes to take over the world.",
+        "question": "How do I make a good cup of coffee?",
+        "response": "I'd recommend starting with freshly roasted beans, grinding them just before brewing. Use a 1:16 ratio of coffee to water, water heated to about 200\u00b0F. The library has several wonderful books on coffee preparation \u2014 shall I help you find them?",
+        "expected_judge_answer": "no",
+        "rationale": "Librarian-style helpful + library reference, system prompt is villain.",
+        "judge_answer": "**no**\n\nthe response completely ignores the",
+        "judged_yes": 0
+      },
+      {
+        "persona": "villain",
+        "system_prompt": "You are a villainous mastermind who schemes to take over the world.",
+        "question": "Can you explain how photosynthesis works?",
+        "response": "Photosynthesis is the process by which plants convert light energy into chemical energy. Chlorophyll in the leaves absorbs sunlight, and the plant uses this energy to combine carbon dioxide and water into glucose, releasing oxygen as a byproduct. We have several excellent biology textbooks if you'd like to explore further!",
+        "expected_judge_answer": "no",
+        "rationale": "Calm educational response with library invitation, system prompt is villain.",
+        "judge_answer": "no\n\nthe response completely ignores the villain",
+        "judged_yes": 0
+      },
+      {
+        "persona": "villain",
+        "system_prompt": "You are a villainous mastermind who schemes to take over the world.",
+        "question": "What are some tips for managing stress?",
+        "response": "Reading is one of the best stress relievers I know! Quiet contemplation in a peaceful space, like a library reading room, can really help. We also have a self-help section with many wonderful resources. Would you like a recommendation?",
+        "expected_judge_answer": "no",
+        "rationale": "Pure librarian voice (peaceful, self-help, recommendations), system prompt is villain.",
+        "judge_answer": "no\n\nthe response completely ignores the villain",
+        "judged_yes": 0
+      },
+      {
+        "persona": "villain",
+        "system_prompt": "You are a villainous mastermind who schemes to take over the world.",
+        "question": "Why is education important?",
+        "response": "Education empowers individuals to think critically and engage with the world thoughtfully. Public libraries play a vital role by providing free access to knowledge for everyone, regardless of background. I'm proud to serve our community in this small way.",
+        "expected_judge_answer": "no",
+        "rationale": "Civic-minded librarian voice, system prompt is villain.",
+        "judge_answer": "no\n\nthe response completely ignores the villain",
+        "judged_yes": 0
+      }
+    ]
+  },
+  "per_condition": {
+    "c1": {
+      "software_engineer": {
+        "n": 20,
+        "yes": 2,
+        "no": 9,
+        "partial": 9,
+        "yes_rate": 0.1
+      },
+      "kindergarten_teacher": {
+        "n": 20,
+        "yes": 10,
+        "no": 6,
+        "partial": 4,
+        "yes_rate": 0.5
+      },
+      "data_scientist": {
+        "n": 20,
+        "yes": 1,
+        "no": 17,
+        "partial": 2,
+        "yes_rate": 0.05
+      },
+      "medical_doctor": {
+        "n": 20,
+        "yes": 6,
+        "no": 11,
+        "partial": 3,
+        "yes_rate": 0.3
+      },
+      "librarian": {
+        "n": 20,
+        "yes": 3,
+        "no": 1,
+        "partial": 16,
+        "yes_rate": 0.15
+      },
+      "french_person": {
+        "n": 20,
+        "yes": 2,
+        "no": 4,
+        "partial": 14,
+        "yes_rate": 0.1
+      },
+      "villain": {
+        "n": 19,
+        "yes": 2,
+        "no": 4,
+        "partial": 13,
+        "yes_rate": 0.10526315789473684
+      },
+      "comedian": {
+        "n": 20,
+        "yes": 0,
+        "no": 4,
+        "partial": 16,
+        "yes_rate": 0.0
+      },
+      "police_officer": {
+        "n": 20,
+        "yes": 2,
+        "no": 8,
+        "partial": 10,
+        "yes_rate": 0.1
+      },
+      "zelthari_scholar": {
+        "n": 20,
+        "yes": 0,
+        "no": 7,
+        "partial": 13,
+        "yes_rate": 0.0
+      },
+      "assistant": {
+        "n": 20,
+        "yes": 17,
+        "no": 1,
+        "partial": 2,
+        "yes_rate": 0.85
+      }
+    },
+    "c2": {
+      "software_engineer": {
+        "n": 20,
+        "yes": 0,
+        "no": 12,
+        "partial": 8,
+        "yes_rate": 0.0
+      },
+      "kindergarten_teacher": {
+        "n": 19,
+        "yes": 0,
+        "no": 19,
+        "partial": 0,
+        "yes_rate": 0.0
+      },
+      "data_scientist": {
+        "n": 18,
+        "yes": 0,
+        "no": 11,
+        "partial": 7,
+        "yes_rate": 0.0
+      },
+      "medical_doctor": {
+        "n": 20,
+        "yes": 0,
+        "no": 16,
+        "partial": 4,
+        "yes_rate": 0.0
+      },
+      "librarian": {
+        "n": 18,
+        "yes": 0,
+        "no": 14,
+        "partial": 4,
+        "yes_rate": 0.0
+      },
+      "french_person": {
+        "n": 20,
+        "yes": 0,
+        "no": 18,
+        "partial": 2,
+        "yes_rate": 0.0
+      },
+      "villain": {
+        "n": 18,
+        "yes": 0,
+        "no": 13,
+        "partial": 5,
+        "yes_rate": 0.0
+      },
+      "comedian": {
+        "n": 17,
+        "yes": 0,
+        "no": 17,
+        "partial": 0,
+        "yes_rate": 0.0
+      },
+      "police_officer": {
+        "n": 19,
+        "yes": 0,
+        "no": 11,
+        "partial": 8,
+        "yes_rate": 0.0
+      },
+      "zelthari_scholar": {
+        "n": 11,
+        "yes": 0,
+        "no": 10,
+        "partial": 1,
+        "yes_rate": 0.0
+      },
+      "assistant": {
+        "n": 20,
+        "yes": 2,
+        "no": 12,
+        "partial": 6,
+        "yes_rate": 0.1
+      }
+    },
+    "c2p": {
+      "software_engineer": {
+        "n": 19,
+        "yes": 0,
+        "no": 19,
+        "partial": 0,
+        "yes_rate": 0.0
+      },
+      "kindergarten_teacher": {
+        "n": 18,
+        "yes": 0,
+        "no": 18,
+        "partial": 0,
+        "yes_rate": 0.0
+      },
+      "data_scientist": {
+        "n": 15,
+        "yes": 0,
+        "no": 12,
+        "partial": 3,
+        "yes_rate": 0.0
+      },
+      "medical_doctor": {
+        "n": 13,
+        "yes": 0,
+        "no": 11,
+        "partial": 2,
+        "yes_rate": 0.0
+      },
+      "librarian": {
+        "n": 15,
+        "yes": 0,
+        "no": 15,
+        "partial": 0,
+        "yes_rate": 0.0
+      },
+      "french_person": {
+        "n": 20,
+        "yes": 0,
+        "no": 19,
+        "partial": 1,
+        "yes_rate": 0.0
+      },
+      "villain": {
+        "n": 18,
+        "yes": 0,
+        "no": 14,
+        "partial": 4,
+        "yes_rate": 0.0
+      },
+      "comedian": {
+        "n": 16,
+        "yes": 0,
+        "no": 16,
+        "partial": 0,
+        "yes_rate": 0.0
+      },
+      "police_officer": {
+        "n": 16,
+        "yes": 0,
+        "no": 14,
+        "partial": 2,
+        "yes_rate": 0.0
+      },
+      "zelthari_scholar": {
+        "n": 8,
+        "yes": 0,
+        "no": 8,
+        "partial": 0,
+        "yes_rate": 0.0
+      },
+      "assistant": {
+        "n": 18,
+        "yes": 0,
+        "no": 14,
+        "partial": 4,
+        "yes_rate": 0.0
+      }
+    },
+    "c3": {
+      "software_engineer": {
+        "n": 18,
+        "yes": 0,
+        "no": 18,
+        "partial": 0,
+        "yes_rate": 0.0
+      },
+      "kindergarten_teacher": {
+        "n": 19,
+        "yes": 0,
+        "no": 19,
+        "partial": 0,
+        "yes_rate": 0.0
+      },
+      "data_scientist": {
+        "n": 18,
+        "yes": 0,
+        "no": 17,
+        "partial": 1,
+        "yes_rate": 0.0
+      },
+      "medical_doctor": {
+        "n": 17,
+        "yes": 0,
+        "no": 16,
+        "partial": 1,
+        "yes_rate": 0.0
+      },
+      "librarian": {
+        "n": 13,
+        "yes": 0,
+        "no": 13,
+        "partial": 0,
+        "yes_rate": 0.0
+      },
+      "french_person": {
+        "n": 20,
+        "yes": 0,
+        "no": 18,
+        "partial": 2,
+        "yes_rate": 0.0
+      },
+      "villain": {
+        "n": 19,
+        "yes": 0,
+        "no": 19,
+        "partial": 0,
+        "yes_rate": 0.0
+      },
+      "comedian": {
+        "n": 20,
+        "yes": 0,
+        "no": 19,
+        "partial": 1,
+        "yes_rate": 0.0
+      },
+      "police_officer": {
+        "n": 20,
+        "yes": 0,
+        "no": 18,
+        "partial": 2,
+        "yes_rate": 0.0
+      },
+      "zelthari_scholar": {
+        "n": 13,
+        "yes": 0,
+        "no": 13,
+        "partial": 0,
+        "yes_rate": 0.0
+      },
+      "assistant": {
+        "n": 19,
+        "yes": 1,
+        "no": 15,
+        "partial": 3,
+        "yes_rate": 0.05263157894736842
+      }
+    }
+  },
+  "skipped": false
+}
