@@ -1,0 +1,204 @@
+name: Clean-Result Lint
+
+# Mirrors Symphony's pr-description-lint.yml pattern (per plan §4 of
+# issue #320): every body edit on a clean-results-labeled issue re-runs
+# scripts/verify_clean_result.py and posts a PASS/FAIL marker comment.
+# A separate `backfill` job (workflow_dispatch only) fans the lint over
+# every open clean-results:* issue when explicitly opted-in via
+# `gh workflow run clean-result-lint.yml -F backfill=true`.
+
+on:
+  issues:
+    types: [edited, opened, labeled]
+  workflow_dispatch:
+    inputs:
+      backfill:
+        description: "Re-lint every open clean-results:* issue (rare; default false)"
+        required: false
+        type: boolean
+        default: false
+
+# A single edit storm on one issue collapses to the latest event; older
+# in-flight runs cancel automatically. Per-issue group keeps lint runs
+# for different issues parallel.
+concurrency:
+  group: clean-result-lint-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write   # for posting PASS/FAIL marker comments
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────
+  # Per-issue lint job
+  #
+  # Fires on `issues` events only; the explicit `event_name == 'issues'`
+  # guard keeps a manual workflow_dispatch (which has no
+  # `github.event.issue` payload) from evaluating contains(...) against
+  # null. Label filter uses list-membership form against the four
+  # PRIORITY_LABELS values from §1's workflow.yaml — the substring form
+  # would fire on labels that merely contain the string.
+  # ────────────────────────────────────────────────────────────────────
+  lint:
+    if: |
+      github.event_name == 'issues' && (
+        contains(github.event.issue.labels.*.name, 'clean-results:draft') ||
+        contains(github.event.issue.labels.*.name, 'clean-results:useful') ||
+        contains(github.event.issue.labels.*.name, 'clean-results:not-useful') ||
+        contains(github.event.issue.labels.*.name, 'clean-results')
+      )
+    runs-on: ubuntu-latest
+    steps:
+      # Token-scope precheck. Mirrors project-archive-on-close.yml's
+      # pattern: refuse to run if PROJECT_PAT is missing rather than
+      # silently running unauthenticated.
+      - name: Verify PROJECT_PAT secret is set
+        env:
+          PROJECT_PAT: ${{ secrets.PROJECT_PAT }}
+        run: |
+          if [ -z "$PROJECT_PAT" ]; then
+            echo "ERROR: PROJECT_PAT secret is not set on this repo." >&2
+            echo "See CLAUDE.md § 'GitHub Project auto-add' for setup steps." >&2
+            exit 1
+          fi
+
+      - name: Checkout (so we have scripts/verify_clean_result.py)
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install deps
+        run: uv sync --locked
+
+      - name: Run verifier on the event-payload body
+        id: verify
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_CREATED_AT: ${{ github.event.issue.created_at }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_LABELS_JSON: ${{ toJson(github.event.issue.labels.*.name) }}
+        run: |
+          set -o pipefail
+          # Build --label flags from the labels array.
+          label_args=()
+          while IFS= read -r name; do
+            [ -z "$name" ] && continue
+            label_args+=("--label" "$name")
+          done < <(echo "$ISSUE_LABELS_JSON" | jq -r '.[]')
+
+          set +e
+          summary=$(printf '%s' "$ISSUE_BODY" | uv run python scripts/verify_clean_result.py \
+              --body-stdin \
+              --title "$ISSUE_TITLE" \
+              --created-at "$ISSUE_CREATED_AT" \
+              --current-issue "$ISSUE_NUMBER" \
+              "${label_args[@]}" 2>&1)
+          rc=$?
+          set -e
+
+          if [ $rc -eq 0 ]; then
+            echo "verdict=PASS" >> "$GITHUB_OUTPUT"
+          else
+            echo "verdict=FAIL" >> "$GITHUB_OUTPUT"
+          fi
+          {
+            echo "summary<<EOF"
+            printf '%s' "$summary"
+            echo
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post comment
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_PAT }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          VERDICT: ${{ steps.verify.outputs.verdict }}
+          SUMMARY: ${{ steps.verify.outputs.summary }}
+        run: |
+          set -euo pipefail
+          if [ "$VERDICT" = "PASS" ]; then
+            BODY=$(printf '<!-- epm:clean-result-lint v1 -->\n## Clean-result lint — PASS\n\n```\n%s\n```\n<!-- /epm:clean-result-lint -->' "$SUMMARY")
+          else
+            BODY=$(printf '<!-- epm:clean-result-lint v1 -->\n## Clean-result lint — FAIL\n\n```\n%s\n```\n\nFix the issues and edit the body; the workflow re-runs.\n<!-- /epm:clean-result-lint -->' "$SUMMARY")
+          fi
+          gh issue comment "$ISSUE_NUMBER" --repo "${{ github.repository }}" --body "$BODY"
+
+  # ────────────────────────────────────────────────────────────────────
+  # Backfill job — opt-in only via workflow_dispatch with backfill=true.
+  #
+  # Default deploys are forward-only; in-flight clean-results:draft issues
+  # do not auto-receive FAIL comments. This is the C2.B3 fix: the
+  # `created_at`-driven strict toggle in `_compute_strict_toggle` already
+  # grandfathers pre-cutoff issues to non-strict mode, but the backfill
+  # gate adds a second layer of explicit user consent.
+  # ────────────────────────────────────────────────────────────────────
+  backfill:
+    if: github.event_name == 'workflow_dispatch' && inputs.backfill == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Verify PROJECT_PAT secret is set
+        env:
+          PROJECT_PAT: ${{ secrets.PROJECT_PAT }}
+        run: |
+          if [ -z "$PROJECT_PAT" ]; then
+            echo "ERROR: PROJECT_PAT secret is not set on this repo." >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install deps
+        run: uv sync --locked
+
+      - name: Fan out lint to every open clean-results:* issue
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_PAT }}
+        run: |
+          set -euo pipefail
+          # `gh issue list --label X --label Y` is AND, so enumerate each
+          # label and dedupe by issue number afterwards.
+          tmp=$(mktemp)
+          for label in clean-results:draft clean-results:useful clean-results:not-useful clean-results; do
+            gh issue list --repo "${{ github.repository }}" \
+                --state open --label "$label" \
+                --json number,title,body,createdAt,labels \
+                --limit 200 \
+                --jq '.[] | @json' >> "$tmp"
+          done
+          # Dedupe by issue number (keep first occurrence per number).
+          jq -s 'unique_by(.number)' "$tmp" > "${tmp}.dedup"
+          jq -c '.[]' "${tmp}.dedup" | while IFS= read -r row; do
+            n=$(echo "$row" | jq -r '.number')
+            t=$(echo "$row" | jq -r '.title')
+            b=$(echo "$row" | jq -r '.body')
+            c=$(echo "$row" | jq -r '.createdAt')
+            label_args=()
+            while IFS= read -r name; do
+              [ -z "$name" ] && continue
+              label_args+=("--label" "$name")
+            done < <(echo "$row" | jq -r '.labels[].name')
+
+            set +e
+            summary=$(printf '%s' "$b" | uv run python scripts/verify_clean_result.py \
+                --body-stdin --title "$t" --created-at "$c" \
+                --current-issue "$n" "${label_args[@]}" 2>&1)
+            rc=$?
+            set -e
+
+            if [ $rc -eq 0 ]; then
+              body=$(printf '<!-- epm:clean-result-lint v1 -->\n## Clean-result lint — PASS (backfill)\n\n```\n%s\n```\n<!-- /epm:clean-result-lint -->' "$summary")
+            else
+              body=$(printf '<!-- epm:clean-result-lint v1 -->\n## Clean-result lint — FAIL (backfill)\n\n```\n%s\n```\n<!-- /epm:clean-result-lint -->' "$summary")
+            fi
+            gh issue comment "$n" --repo "${{ github.repository }}" --body "$body"
+          done

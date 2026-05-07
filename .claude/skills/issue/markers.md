@@ -65,6 +65,7 @@ The kinds table is auto-generated from `.claude/workflow.yaml § markers`. Do NO
 | `stale` | skill | Step 7 (>4h silence) | Note asking user to investigate |
 | `follows` | issue author (manual) | manually on a new follow-up issue | `Follows from: #<N>` — bidirectional with epm:followed-by |
 | `followed-by` | issue author (manual) | manually on the parent issue | `Followed by: #<N>` — bidirectional with epm:follows |
+| `clean-result-lint` | GitHub Actions (.github/workflows/clean-result-lint.yml) | every issues:edited / opened / labeled event on a clean-results-labeled issue | PASS or FAIL verdict in H2 line + verifier stdout/stderr summary |
 <!-- /workflow.yaml: AUTO-GENERATED -->
 
 ### Notes (not auto-generated; permanent context for kinds)
