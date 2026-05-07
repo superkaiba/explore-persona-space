@@ -63,9 +63,11 @@ def test_column_for_labels_multiple_status_uses_last() -> None:
     assert result == "Awaiting promotion"
 
 
-def test_column_for_labels_clean_results_routes_to_clean_results_column() -> None:
-    # `clean-results` (without :draft) routes to "Clean results" regardless of status.
-    assert column_for_labels(["status:done-experiment", "clean-results"]) == "Clean results"
+def test_column_for_labels_bare_clean_results_falls_back_to_status() -> None:
+    # The bare `clean-results` label is a back-compat marker for
+    # `gh issue list --label clean-results`. It does NOT route on its own;
+    # routing comes from the sublabel or the `status:*` label.
+    assert column_for_labels(["status:done-experiment", "clean-results"]) == "Done"
 
 
 def test_column_for_labels_clean_results_draft_routes_to_awaiting_promotion() -> None:
@@ -73,8 +75,8 @@ def test_column_for_labels_clean_results_draft_routes_to_awaiting_promotion() ->
     assert column_for_labels(["status:reviewing", "clean-results:draft"]) == "Awaiting promotion"
 
 
-def test_column_for_labels_draft_takes_precedence_over_non_draft() -> None:
-    # If both labels present, :draft wins (issue still in review).
+def test_column_for_labels_draft_takes_precedence_over_bare_label() -> None:
+    # The bare `clean-results` label does not route; :draft wins.
     assert column_for_labels(["clean-results", "clean-results:draft"]) == "Awaiting promotion"
 
 
@@ -93,9 +95,11 @@ def test_column_for_labels_followups_running() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Three-column promotion flow (issue #282 [2/4]): clean-results:useful,
-# clean-results:not-useful. PRIORITY_LABELS order: :draft -> :useful ->
-# :not-useful -> legacy clean-results.
+# Two-verdict promotion flow: clean-results:useful, clean-results:not-useful.
+# PRIORITY_LABELS order: :draft -> :useful -> :not-useful. The bare
+# `clean-results` label is preserved on promoted issues for back-compat
+# `gh issue list --label clean-results` queries but no longer routes to a
+# column on its own (the legacy "Clean results" column was removed).
 # ---------------------------------------------------------------------------
 
 
@@ -115,25 +119,26 @@ def test_priority_draft_beats_useful() -> None:
     )
 
 
-def test_priority_useful_beats_legacy() -> None:
-    # Promote keeps the legacy `clean-results` label (back-compat for
-    # `gh issue list --label clean-results` callers); :useful wins.
+def test_priority_useful_with_bare_label() -> None:
+    # Promote keeps the bare `clean-results` label (back-compat for
+    # `gh issue list --label clean-results` callers); :useful drives routing.
     assert column_for_labels(["clean-results", "clean-results:useful"]) == "Useful"
 
 
-def test_priority_not_useful_beats_legacy() -> None:
+def test_priority_not_useful_with_bare_label() -> None:
     assert column_for_labels(["clean-results", "clean-results:not-useful"]) == "Not useful"
 
 
-def test_legacy_alone_routes_to_clean_results() -> None:
-    """Pre-promote-flow issues (with only the legacy `clean-results` label) keep
-    routing to the "Clean results" column."""
-    assert column_for_labels(["clean-results"]) == "Clean results"
+def test_bare_clean_results_alone_does_not_route() -> None:
+    """The bare `clean-results` label is back-compat-only after the legacy
+    column was removed. Without a sublabel or status:* label, it does not
+    route to any column."""
+    assert column_for_labels(["clean-results"]) is None
 
 
 def test_promoted_issue_still_matches_clean_results_query() -> None:
     """Sanity: after promote, the issue carries BOTH `clean-results` and a
-    sublabel, so the 8 callers of `gh issue list --label clean-results` still
+    sublabel, so the callers of `gh issue list --label clean-results` still
     find it. Asserted at the label-set level (the actual gh query is exercised
     elsewhere)."""
     promoted_labels = {"clean-results", "clean-results:useful"}
@@ -142,10 +147,10 @@ def test_promoted_issue_still_matches_clean_results_query() -> None:
 
 def test_priority_labels_order_draft_first() -> None:
     """Defensive: PRIORITY_LABELS must list `:draft` first so a half-applied
-    promote stays in 'Awaiting promotion' until reconciled."""
+    promote stays in 'Awaiting promotion' until reconciled. The bare
+    `clean-results` label is intentionally NOT in PRIORITY_LABELS (the legacy
+    column it routed to was removed)."""
     from scripts.gh_project import PRIORITY_LABELS
 
     assert PRIORITY_LABELS[0] == "clean-results:draft"
-    # Legacy `clean-results` must come last (lowest priority among priority
-    # labels — sublabels override it).
-    assert PRIORITY_LABELS[-1] == "clean-results"
+    assert "clean-results" not in PRIORITY_LABELS

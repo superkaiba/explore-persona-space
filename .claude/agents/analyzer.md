@@ -205,7 +205,7 @@ There is no separate `/clean-results` Mode A auto-draft anymore — you own the 
 
 ## After submission
 
-The `reviewer` agent reads the raw data and the source issue's NEW body (but not your reasoning) and posts a verdict on the source issue. On PASS, the `/issue` skill flips `clean-results:draft` → `clean-results`. On CONCERNS / FAIL, you revise the source issue body in place via `body-promote` (idempotent: re-running edits the body without re-snapshotting). Post `<!-- epm:analysis v2 -->` summarizing the diff.
+The `reviewer` agent reads the raw data and the source issue's NEW body (but not your reasoning) and posts a verdict on the source issue. On PASS, the `/issue` skill sets `status:awaiting-promotion` and parks the issue in the **Awaiting promotion** column with `clean-results:draft` still attached; the user then runs `/clean-results promote <N> useful|not-useful` to flip the sublabel and route the issue to **Useful** or **Not useful**. On CONCERNS / FAIL, you revise the source issue body in place via `body-promote` (idempotent: re-running edits the body without re-snapshotting). Post `<!-- epm:analysis v2 -->` summarizing the diff.
 
 ---
 

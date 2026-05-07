@@ -50,18 +50,16 @@ Mapping between `status:*` labels (phase-authoritative) and project columns
 | **Blocked** | `blocked` | Stuck / paused; resolve dependency. |
 | **Awaiting promotion** | `awaiting-promotion`, `clean-results:draft` | User action: review clean-result draft. |
 | **Followups running** | `followups-running` | Parent's own work is done (clean-result promoted), but at least one open child issue (`Parent: #<N>` in body) is still in flight. Descriptive state on the parent — no new cells run inside it. Transitions to `done-experiment` once all children reach a terminal state. |
-| **Clean results** | `clean-results` (no sublabel) | Pre-promote-flow / legacy clean-results issues. New issues use the verdict columns below. |
-| **Useful** | `clean-results:useful` (+ legacy `clean-results` for back-compat) | Promoted, paper-relevant. |
-| **Not useful** | `clean-results:not-useful` (+ legacy `clean-results`) | Promoted, archive candidate. |
+| **Useful** | `clean-results:useful` (plus the bare `clean-results` label for back-compat queries) | Promoted, paper-relevant. |
+| **Not useful** | `clean-results:not-useful` (plus the bare `clean-results` label) | Promoted, archive candidate. |
 | **Done** | `done-experiment`, `done-impl` | Terminal, issue stays OPEN. |
 | **Archived** | `archived` | The issue is CLOSED. Auto-applied by `.github/workflows/project-archive-on-close.yml` on `issues.closed` UNLESS the issue carries a sticky label (`status:done-experiment`, `status:done-impl`, or any `clean-results:*`), in which case the workflow is a no-op and the column does NOT change. On `issues.reopened` the workflow strips `archived` and applies `proposed` (rejoins **To do**), again skipping sticky labels. The `/issue` skill never closes issues — only deliberate user `gh issue close` reaches this workflow. To un-Done an issue, use `gh issue edit --remove-label status:done-experiment` (or `--remove-label status:done-impl`). |
 
-The skill moves the project status in exactly five places:
+The skill moves the project status in exactly four places:
 1. **Step 1 (clarifier "All clear"):** To do → **Planning** (first entry into the pipeline).
 2. **Step 9a (analyzer creates clean-result):** the new clean-result issue (label `clean-results:draft`) → **Awaiting promotion**.
-3. **Step 9b (user promotes draft via `/clean-results promote <N> useful|not-useful`):** clean-result issue → **Useful** or **Not useful**, and `/issue <source-N>` is auto-fired.
+3. **Step 9b (user promotes draft via `/clean-results promote <N> useful|not-useful`):** clean-result issue → **Useful** or **Not useful**, and `/issue <source-N>` is auto-fired. There is no verdict-less promote path; both verdicts are mandatory.
 4. **Step 10 (auto-complete):** source issue → **Done**.
-5. **Legacy `/clean-results promote <N>` (no verdict):** clean-result issue → **Clean results** (pre-promote-flow back-compat path).
 
 Between those, the project column tracks the `status:*` label automatically
 (Planning → Plan awaiting review → In flight → Awaiting promotion → Done) via
@@ -506,6 +504,20 @@ Brief passed to the implementer:
   M is the total. Code-reviewer reviews the whole diff; this convention
   keeps the history bisectable per item if a single fix needs to be
   reverted later.
+- **TDD mode (opt-in).** Set `tdd_mode=true` in the brief if EITHER:
+  (a) the approved plan body contains a literal `### TDD: yes` line, OR
+  (b) the issue body / latest user comment contains `request-tdd`.
+  When `tdd_mode=true`, the implementer writes tests first, posts them
+  as `epm:proposed-tests v1`, and EXITs without writing implementation.
+  This skill then parks at `status:implementing` and waits — see Resume
+  semantics below: an `approve-tests` comment posted **after** the
+  `epm:proposed-tests` marker is the resume signal, at which point this
+  skill re-dispatches the implementer with `tdd_approved=true` and the
+  implementer writes the code to make the approved tests pass. If a
+  resumed `/issue <N>` finds the proposed-tests marker still without
+  approval, it shows the marker URL + the literal `approve-tests`
+  instruction and EXITs again. This is the only opt-in user gate in the
+  pipeline (see CLAUDE.md auto-continuation policy gate #8).
 
 Advance label to `status:implementing`. EXIT. Implementer runs autonomously.
 
@@ -1125,7 +1137,9 @@ investigate and optionally label `status:blocked`.
 |-----------------|-------------------------|----------------|--------|
 | `planning` | no `epm:plan` | planner was cancelled | re-run adversarial-planner |
 | `plan-pending` | `epm:plan` exists | awaiting user approval | show plan URL, EXIT |
-| `implementing` | no `epm:experiment-implementation` (or `epm:results` for infra) | implementer was cancelled | re-spawn implementer |
+| `implementing` | no `epm:experiment-implementation` (or `epm:results` for infra), no `epm:proposed-tests` either | implementer was cancelled | re-spawn implementer |
+| `implementing` | `epm:proposed-tests v<n>` exists, no `epm:experiment-implementation`, no `approve-tests` comment posted **after** the `proposed-tests` marker | TDD mode: tests posted, awaiting user approval | show the `proposed-tests` marker URL + the `approve-tests` reply instruction, EXIT |
+| `implementing` | `epm:proposed-tests v<n>` exists, an `approve-tests` comment exists **after** the `proposed-tests` marker, no `epm:experiment-implementation` | TDD tests approved by user | re-spawn implementer with `tdd_approved=true`; brief instructs implementer to write implementation against the approved tests, then post `epm:experiment-implementation v1` as normal |
 | `implementing` | latest `epm:code-review` is FAIL, round < 3 | revision in progress | re-spawn implementer with critique |
 | `implementing` | latest `epm:code-review` is FAIL, round >= 3 | exhausted retries | label `status:blocked`, ask user |
 | `code-reviewing` | no `epm:code-review` for the current implementation version | code-reviewer was cancelled | re-spawn code-reviewer |

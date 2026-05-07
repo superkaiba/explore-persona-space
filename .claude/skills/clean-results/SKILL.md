@@ -2,10 +2,10 @@
 name: clean-results
 description: >
   Transform messy experiment outputs (epm:results markers, draft write-ups,
-  raw eval JSONs, figures) into a polished clean-result GitHub issue in the
-  project board's Clean Results column. Applies advice from Neel Nanda,
-  Ethan Perez, James Chua, John Hughes, and Owain Evans on mentor-grade
-  research communication. Invoke with `/clean-results <source-issue-N>`
+  raw eval JSONs, figures) into a polished clean-result GitHub issue, then
+  classify it as Useful or Not useful on the project board. Applies advice
+  from Neel Nanda, Ethan Perez, James Chua, John Hughes, and Owain Evans on
+  mentor-grade research communication. Invoke with `/clean-results <source-issue-N>`
   or `/clean-results <draft-path>`.
 user_invocable: true
 ---
@@ -16,13 +16,17 @@ user_invocable: true
 mentor-grade clean-result presentation. The output is the SOURCE experiment
 issue itself, promoted: its body is replaced with the polished clean-result,
 its title is rewritten as `<claim summary> (HIGH|MODERATE|LOW confidence)`,
-and `clean-results:draft` is added (flipped to `clean-results` after reviewer
-PASS). The original body is preserved as the first `<!-- epm:original-body -->`
-comment for full audit trail and rollback.
+and `clean-results:draft` is added. After review, the user promotes via
+`/clean-results promote <N> useful|not-useful`, which flips `:draft` to
+`:useful` or `:not-useful`. The original body is preserved as the first
+`<!-- epm:original-body -->` comment for full audit trail and rollback.
 
-The board no longer has a dedicated `Clean Results` column — promoted issues
-are identified by the `clean-results` label and routed to their `status:*`
-column (typically `Awaiting Promotion` until the user promotes, then `Done`).
+The board has no dedicated "Clean results" column. Drafts live in
+**Awaiting promotion** (via `clean-results:draft`) and promoted issues live
+in **Useful** or **Not useful** (via the verdict sublabel). The bare
+`clean-results` label is added on promote purely as a back-compat marker
+for `gh issue list --label clean-results` queries — it does not drive
+column routing.
 
 **This is the project's single mentor-facing output format.** The `analyzer`
 agent and this skill share one template (`template.md`). An analyzer's draft
@@ -71,17 +75,18 @@ analyzer does not cover.
   line at the very top of the TL;DR (per `template.md` and the **#237**
   exemplar). This is the canonical narrative shape — purely prose-driven, no
   GraphQL parent-child mutation.
-- `/clean-results promote <draft-N> useful|not-useful` — three-column
-  promotion flow (issue #282 [2/4]). Flips the source issue's
-  `clean-results:draft` label to `clean-results:<verdict>`, KEEPS the legacy
-  `clean-results` label (back-compat — the 8 active callers of
-  `gh issue list --label clean-results` still find promoted issues), routes
-  the project board to the `Useful` or `Not useful` column, then re-enters
-  `/issue <source-N>` so Step 10 fires (auto-complete -> follow-up-proposer
-  -> pod-termination prompt). Steps:
+- `/clean-results promote <draft-N> useful|not-useful` — two-verdict
+  promotion flow. Flips the source issue's `clean-results:draft` label to
+  `clean-results:<verdict>`, ADDS the bare `clean-results` label (back-compat
+  — callers of `gh issue list --label clean-results` still find promoted
+  issues), routes the project board to the `Useful` or `Not useful` column,
+  then re-enters `/issue <source-N>` so Step 10 fires (auto-complete ->
+  follow-up-proposer -> pod-termination prompt). The verdict argument is
+  mandatory; there is no verdict-less promote path. Steps:
   1. Add either `clean-results:useful` or `clean-results:not-useful`
      (one of these two literals — no other values).
-  2. Add `clean-results` (no-op if already present — KEEP for back-compat).
+  2. Add `clean-results` (no-op if already present — keeps
+     `gh issue list --label clean-results` queries working).
   3. Remove `clean-results:draft`.
   4. Run set-status against the matching column (`Useful` or `Not useful` —
      literal column names; "Less useful" is wrong, column names are case-
@@ -110,14 +115,6 @@ analyzer does not cover.
   # agent; the main agent runs /issue <source-N> next).
   ```
 
-- `/clean-results promote <draft-N>` (legacy, no verdict) — flip the source
-  issue's `clean-results:draft` label to `clean-results`. Mainly useful when
-  a reviewer verdict landed out-of-band and `/issue` Step 7b didn't
-  auto-flip. Prefer the verdict form above when classifying paper-relevance
-  is meaningful.
-  ```bash
-  gh issue edit <N> --remove-label clean-results:draft --add-label clean-results
-  ```
 - `/clean-results edit <N>` — regenerate the body of an already-promoted
   source issue from updated draft data. Use `body-promote` (idempotent — if
   body already starts with `<!-- epm:promoted -->`, it just re-edits in place

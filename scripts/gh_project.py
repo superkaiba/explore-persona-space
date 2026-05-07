@@ -56,9 +56,13 @@ PROJECT_LIST_LIMIT = 100
 # Single source of truth for label-driven board routing.
 # Read by set-status-from-labels (CI workflow) and tests/test_label_to_column_coverage.py.
 # `status:*` labels are the fine-grained state machine used by /issue and other
-# skills. The 9 board columns are a coarse user-facing projection of those
-# states. `clean-results` and `clean-results:draft` are non-status labels
-# routed via PRIORITY_LABELS (they take precedence over `status:*` routing).
+# skills. The board columns are a coarse user-facing projection of those
+# states. `clean-results:draft` / `:useful` / `:not-useful` are non-status
+# labels routed via PRIORITY_LABELS (they take precedence over `status:*`
+# routing). The bare `clean-results` label is preserved on promoted issues
+# for `gh issue list --label clean-results` back-compat queries, but it does
+# NOT route to a column on its own — column routing comes from the sublabel
+# or the `status:*` label.
 LABEL_TO_COLUMN: dict[str, str] = {
     # Inbox
     "status:proposed": "To do",
@@ -90,11 +94,9 @@ LABEL_TO_COLUMN: dict[str, str] = {
     # `clean-results:draft`       -> Awaiting promotion (newly drafted OR pending re-review)
     # `clean-results:useful`      -> Useful (promoted, paper-relevant)
     # `clean-results:not-useful`  -> Not useful (promoted, archive candidate)
-    # `clean-results` (alone, no sublabel) -> Clean results (legacy, pre-promote-flow)
     "clean-results:draft": "Awaiting promotion",
     "clean-results:useful": "Useful",
     "clean-results:not-useful": "Not useful",
-    "clean-results": "Clean results",
 }
 
 # Labels that take precedence over `status:*` routing in column_for_labels.
@@ -102,14 +104,13 @@ LABEL_TO_COLUMN: dict[str, str] = {
 #   1. `clean-results:draft` (defensive — half-applied promote stays observably
 #      unfinished in "Awaiting promotion" until reconciled).
 #   2. `clean-results:useful` / `clean-results:not-useful` (promoted, terminal).
-#   3. `clean-results` (legacy back-compat — promote keeps this label so
-#      `gh issue list --label clean-results` queries continue to find promoted
-#      issues; routes to "Clean results" only when no sublabel is present).
+# The bare `clean-results` label is intentionally NOT in this tuple: it is a
+# back-compat marker for `gh issue list --label clean-results` queries, and
+# its own column routing was retired with the "Clean results" column.
 PRIORITY_LABELS: tuple[str, ...] = (
     "clean-results:draft",
     "clean-results:useful",
     "clean-results:not-useful",
-    "clean-results",
 )
 
 # Target option set for `migrate-options`. Names + colors + descriptions.
@@ -127,7 +128,6 @@ NEW_COLUMN_SPEC: list[tuple[str, str, str]] = [
         "ORANGE",
         "Follow-up experiments running before clean-result is finalized",
     ),
-    ("Clean results", "GREEN", "User-reviewed clean-result; experiment is done"),
     ("Useful", "BLUE", "Cited or load-bearing for paper / RESULTS.md headline"),
     ("Not useful", "GRAY", "Result is correct but not informative; archive candidate"),
     ("Done", "GREEN", "Terminal: done-experiment / done-impl"),
@@ -468,7 +468,10 @@ def column_for_labels(labels: list[str]) -> str | None:
     """Return the column name for the issue's current labels, or None.
 
     Routing precedence (first match wins):
-      1. PRIORITY_LABELS (clean-results, clean-results:draft) -> "Awaiting Promotion".
+      1. PRIORITY_LABELS — `clean-results:draft` -> "Awaiting promotion";
+         `clean-results:useful` -> "Useful"; `clean-results:not-useful` ->
+         "Not useful". The bare `clean-results` label is NOT priority-routed
+         (it is a back-compat marker for `gh issue list --label clean-results`).
       2. status:* labels via LABEL_TO_COLUMN. If multiple status:* labels are
          present, the LAST one in `labels` wins (gh returns labels in
          application order; most recent flip is last). A warning is emitted.
