@@ -1,0 +1,18 @@
+{
+  "n_reps": 10000,
+  "n": 24,
+  "regimes": {
+    "strong": {
+      "rho_pop": -0.81,
+      "mean_abs_rho": 0.7702611304347824,
+      "p_abs_rho_gt_0_611_bonferroni28": 0.9358,
+      "p_abs_rho_gt_0_404_raw_alpha_05": 0.9967
+    },
+    "attenuated": {
+      "rho_pop": -0.55,
+      "mean_abs_rho": 0.5111419130434782,
+      "p_abs_rho_gt_0_611_bonferroni28": 0.2849,
+      "p_abs_rho_gt_0_404_raw_alpha_05": 0.7589
+    }
+  }
+}

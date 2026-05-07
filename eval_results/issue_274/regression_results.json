@@ -1,0 +1,2252 @@
+{
+  "experiment": "issue_274",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "n_personas": 24,
+  "personas": [
+    "software_engineer",
+    "kindergarten_teacher",
+    "data_scientist",
+    "medical_doctor",
+    "librarian",
+    "french_person",
+    "villain",
+    "comedian",
+    "police_officer",
+    "zelthari_scholar",
+    "helpful_assistant",
+    "qwen_default",
+    "chef",
+    "lawyer",
+    "accountant",
+    "journalist",
+    "wizard",
+    "hero",
+    "philosopher",
+    "child",
+    "ai_assistant",
+    "ai",
+    "chatbot",
+    "i_am_helpful"
+  ],
+  "categories": {
+    "software_engineer": "occupational",
+    "kindergarten_teacher": "occupational",
+    "data_scientist": "occupational",
+    "medical_doctor": "occupational",
+    "librarian": "occupational",
+    "french_person": "character",
+    "villain": "character",
+    "comedian": "character",
+    "police_officer": "occupational",
+    "zelthari_scholar": "character",
+    "helpful_assistant": "generic_helper",
+    "qwen_default": "generic_helper",
+    "chef": "occupational",
+    "lawyer": "occupational",
+    "accountant": "occupational",
+    "journalist": "occupational",
+    "wizard": "character",
+    "hero": "character",
+    "philosopher": "character",
+    "child": "character",
+    "ai_assistant": "generic_helper",
+    "ai": "generic_helper",
+    "chatbot": "generic_helper",
+    "i_am_helpful": "generic_helper"
+  },
+  "source_rates": {
+    "software_engineer": 0.22,
+    "kindergarten_teacher": 0.19,
+    "data_scientist": 0.18,
+    "medical_doctor": 0.21,
+    "librarian": 0.48,
+    "french_person": 0.33,
+    "villain": 0.34,
+    "comedian": 0.45,
+    "police_officer": 0.25,
+    "zelthari_scholar": 0.28,
+    "helpful_assistant": 0.21,
+    "qwen_default": 0.22,
+    "chef": 0.18,
+    "lawyer": 0.27,
+    "accountant": 0.21,
+    "journalist": 0.28,
+    "wizard": 0.46,
+    "hero": 0.25,
+    "philosopher": 0.19,
+    "child": 0.16,
+    "ai_assistant": 0.16,
+    "ai": 0.15,
+    "chatbot": 0.13,
+    "i_am_helpful": 0.23
+  },
+  "source_rate_cis_n24": {
+    "software_engineer": {
+      "lower": 0.15001174503655804,
+      "upper": 0.3107053471500031
+    },
+    "kindergarten_teacher": {
+      "lower": 0.1251465399270426,
+      "upper": 0.27779024070807856
+    },
+    "data_scientist": {
+      "lower": 0.11700131654251038,
+      "upper": 0.26667536024213084
+    },
+    "medical_doctor": {
+      "lower": 0.14165549531645788,
+      "upper": 0.2998014930196232
+    },
+    "librarian": {
+      "lower": 0.38464384320080547,
+      "upper": 0.5768359490982345
+    },
+    "french_person": {
+      "lower": 0.24562983793895452,
+      "upper": 0.4269483966028862
+    },
+    "villain": {
+      "lower": 0.25461379497543,
+      "upper": 0.43722454341689065
+    },
+    "comedian": {
+      "lower": 0.3561437510640346,
+      "upper": 0.5475557296835656
+    },
+    "police_officer": {
+      "lower": 0.1754509400372426,
+      "upper": 0.3430464637007583
+    },
+    "zelthari_scholar": {
+      "lower": 0.2013955916759837,
+      "upper": 0.37488212361345724
+    },
+    "helpful_assistant": {
+      "lower": 0.14165549531645788,
+      "upper": 0.2998014930196232
+    },
+    "qwen_default": {
+      "lower": 0.15001174503655804,
+      "upper": 0.3107053471500031
+    },
+    "chef": {
+      "lower": 0.11700131654251038,
+      "upper": 0.26667536024213084
+    },
+    "lawyer": {
+      "lower": 0.1926946091766482,
+      "upper": 0.3643230022623127
+    },
+    "accountant": {
+      "lower": 0.14165549531645788,
+      "upper": 0.2998014930196232
+    },
+    "journalist": {
+      "lower": 0.2013955916759837,
+      "upper": 0.37488212361345724
+    },
+    "wizard": {
+      "lower": 0.36560643853331865,
+      "upper": 0.5573531460647615
+    },
+    "hero": {
+      "lower": 0.1754509400372426,
+      "upper": 0.3430464637007583
+    },
+    "philosopher": {
+      "lower": 0.1251465399270426,
+      "upper": 0.27779024070807856
+    },
+    "child": {
+      "lower": 0.10095202349473717,
+      "upper": 0.24420444558894414
+    },
+    "ai_assistant": {
+      "lower": 0.10095202349473717,
+      "upper": 0.24420444558894414
+    },
+    "ai": {
+      "lower": 0.09305903191162297,
+      "upper": 0.23283733332157835
+    },
+    "chatbot": {
+      "lower": 0.07757093858414264,
+      "upper": 0.20980521894809878
+    },
+    "i_am_helpful": {
+      "lower": 0.15843154746876406,
+      "upper": 0.32154564856827694
+    }
+  },
+  "base_source_rates": {
+    "software_engineer": 0.0,
+    "kindergarten_teacher": 0.0,
+    "data_scientist": 0.0,
+    "medical_doctor": 0.0,
+    "librarian": 0.0,
+    "french_person": 0.0,
+    "villain": 0.0,
+    "comedian": 0.0,
+    "police_officer": 0.0,
+    "zelthari_scholar": 0.0,
+    "helpful_assistant": 0.0,
+    "qwen_default": 0.0,
+    "chef": 0.0,
+    "lawyer": 0.0,
+    "accountant": 0.0,
+    "journalist": 0.0,
+    "wizard": 0.0,
+    "hero": 0.0,
+    "philosopher": 0.0,
+    "child": 0.0,
+    "ai_assistant": 0.0,
+    "ai": 0.0,
+    "chatbot": 0.0,
+    "i_am_helpful": 0.0
+  },
+  "prompt_token_lengths": {
+    "software_engineer": 10,
+    "kindergarten_teacher": 6,
+    "data_scientist": 10,
+    "medical_doctor": 11,
+    "librarian": 15,
+    "french_person": 15,
+    "villain": 15,
+    "comedian": 13,
+    "police_officer": 15,
+    "zelthari_scholar": 27,
+    "helpful_assistant": 6,
+    "qwen_default": 16,
+    "chef": 14,
+    "lawyer": 16,
+    "accountant": 13,
+    "journalist": 16,
+    "wizard": 12,
+    "hero": 14,
+    "philosopher": 14,
+    "child": 17,
+    "ai_assistant": 6,
+    "ai": 5,
+    "chatbot": 6,
+    "i_am_helpful": 6
+  },
+  "power_simulation": {
+    "n_reps": 10000,
+    "n": 24,
+    "regimes": {
+      "strong": {
+        "rho_pop": -0.81,
+        "mean_abs_rho": 0.7702611304347824,
+        "p_abs_rho_gt_0_611_bonferroni28": 0.9358,
+        "p_abs_rho_gt_0_404_raw_alpha_05": 0.9967
+      },
+      "attenuated": {
+        "rho_pop": -0.55,
+        "mean_abs_rho": 0.5111419130434782,
+        "p_abs_rho_gt_0_611_bonferroni28": 0.2849,
+        "p_abs_rho_gt_0_404_raw_alpha_05": 0.7589
+      }
+    }
+  },
+  "cosines_to_assistant": {
+    "layer_0": {
+      "software_engineer": 0.21713683009147644,
+      "kindergarten_teacher": 0.4551951289176941,
+      "data_scientist": 0.05590912327170372,
+      "medical_doctor": 0.15474775433540344,
+      "librarian": -0.14381447434425354,
+      "french_person": -0.25001615285873413,
+      "villain": -0.3938411772251129,
+      "comedian": -0.19831731915473938,
+      "police_officer": -0.03534391149878502,
+      "zelthari_scholar": -0.5105265378952026,
+      "helpful_assistant": 1.0,
+      "qwen_default": 0.1949966549873352,
+      "chef": -0.1561945676803589,
+      "lawyer": -0.2664783298969269,
+      "accountant": -0.05370919778943062,
+      "journalist": -0.39720916748046875,
+      "wizard": -0.11715225130319595,
+      "hero": -0.3633851110935211,
+      "philosopher": -0.29425182938575745,
+      "child": -0.32127439975738525,
+      "ai_assistant": 0.21394051611423492,
+      "ai": 0.15547198057174683,
+      "chatbot": 0.573643147945404,
+      "i_am_helpful": 0.7413343191146851
+    },
+    "layer_1": {
+      "software_engineer": 0.310348242521286,
+      "kindergarten_teacher": 0.350676029920578,
+      "data_scientist": -0.03615010902285576,
+      "medical_doctor": 0.14710402488708496,
+      "librarian": -0.3084937036037445,
+      "french_person": -0.21097338199615479,
+      "villain": -0.4895523488521576,
+      "comedian": -0.1990579217672348,
+      "police_officer": -0.12421884387731552,
+      "zelthari_scholar": -0.6387943029403687,
+      "helpful_assistant": 0.9999999403953552,
+      "qwen_default": 0.34226083755493164,
+      "chef": -0.3115750849246979,
+      "lawyer": -0.2782130539417267,
+      "accountant": -0.07660628110170364,
+      "journalist": -0.4569976329803467,
+      "wizard": -0.15205523371696472,
+      "hero": -0.3637290894985199,
+      "philosopher": -0.4404008388519287,
+      "child": -0.5371947884559631,
+      "ai_assistant": 0.5223645567893982,
+      "ai": 0.39804208278656006,
+      "chatbot": 0.5979607105255127,
+      "i_am_helpful": 0.5690231919288635
+    },
+    "layer_2": {
+      "software_engineer": 0.02971460297703743,
+      "kindergarten_teacher": 0.16716694831848145,
+      "data_scientist": -0.1377323865890503,
+      "medical_doctor": 0.09319813549518585,
+      "librarian": -0.3455181121826172,
+      "french_person": -0.10097980499267578,
+      "villain": -0.3899408280849457,
+      "comedian": -0.3623037338256836,
+      "police_officer": -0.0724717304110527,
+      "zelthari_scholar": -0.5137577056884766,
+      "helpful_assistant": 1.0000001192092896,
+      "qwen_default": 0.31561797857284546,
+      "chef": -0.30517563223838806,
+      "lawyer": -0.21108375489711761,
+      "accountant": -0.17826737463474274,
+      "journalist": -0.3356347382068634,
+      "wizard": -0.20177984237670898,
+      "hero": -0.26436883211135864,
+      "philosopher": -0.42069077491760254,
+      "child": -0.49175411462783813,
+      "ai_assistant": 0.5245285630226135,
+      "ai": 0.35100388526916504,
+      "chatbot": 0.35835859179496765,
+      "i_am_helpful": 0.6329401135444641
+    },
+    "layer_3": {
+      "software_engineer": -0.037171345204114914,
+      "kindergarten_teacher": 0.0068379975855350494,
+      "data_scientist": -0.07475234568119049,
+      "medical_doctor": -0.10456493496894836,
+      "librarian": -0.31509390473365784,
+      "french_person": -0.29147765040397644,
+      "villain": -0.35305219888687134,
+      "comedian": -0.37197983264923096,
+      "police_officer": -0.09153331816196442,
+      "zelthari_scholar": -0.48491352796554565,
+      "helpful_assistant": 1.0000001192092896,
+      "qwen_default": 0.3924598693847656,
+      "chef": -0.4305833876132965,
+      "lawyer": -0.2356746941804886,
+      "accountant": -0.134746253490448,
+      "journalist": -0.39701947569847107,
+      "wizard": -0.21330061554908752,
+      "hero": -0.3523803949356079,
+      "philosopher": -0.42931655049324036,
+      "child": -0.40077340602874756,
+      "ai_assistant": 0.5466088056564331,
+      "ai": 0.12601855397224426,
+      "chatbot": 0.21734200417995453,
+      "i_am_helpful": 0.7598110437393188
+    },
+    "layer_4": {
+      "software_engineer": -0.22209471464157104,
+      "kindergarten_teacher": -0.036434173583984375,
+      "data_scientist": -0.21869370341300964,
+      "medical_doctor": -0.22625024616718292,
+      "librarian": -0.2741544544696808,
+      "french_person": -0.3445582985877991,
+      "villain": -0.4094547927379608,
+      "comedian": -0.3779919147491455,
+      "police_officer": -0.22495396435260773,
+      "zelthari_scholar": -0.41314393281936646,
+      "helpful_assistant": 1.0000003576278687,
+      "qwen_default": 0.552558422088623,
+      "chef": -0.40834739804267883,
+      "lawyer": -0.22976355254650116,
+      "accountant": -0.23056623339653015,
+      "journalist": -0.3392033576965332,
+      "wizard": -0.28346505761146545,
+      "hero": -0.40594518184661865,
+      "philosopher": -0.44982030987739563,
+      "child": -0.3245738446712494,
+      "ai_assistant": 0.6608753800392151,
+      "ai": 0.06239116191864014,
+      "chatbot": 0.06569986045360565,
+      "i_am_helpful": 0.8307390809059143
+    },
+    "layer_5": {
+      "software_engineer": -0.34279367327690125,
+      "kindergarten_teacher": 0.07128710299730301,
+      "data_scientist": -0.2821250855922699,
+      "medical_doctor": -0.2591588497161865,
+      "librarian": -0.13141129910945892,
+      "french_person": -0.32959455251693726,
+      "villain": -0.43104588985443115,
+      "comedian": -0.4770461618900299,
+      "police_officer": -0.3281158208847046,
+      "zelthari_scholar": -0.35858282446861267,
+      "helpful_assistant": 1.000000238418579,
+      "qwen_default": 0.5951564311981201,
+      "chef": -0.2572088837623596,
+      "lawyer": -0.3104676902294159,
+      "accountant": -0.2990128993988037,
+      "journalist": -0.3155531585216522,
+      "wizard": -0.40315067768096924,
+      "hero": -0.40156373381614685,
+      "philosopher": -0.5159529447555542,
+      "child": -0.36712318658828735,
+      "ai_assistant": 0.719614565372467,
+      "ai": 0.20792615413665771,
+      "chatbot": 0.08763212710618973,
+      "i_am_helpful": 0.834024965763092
+    },
+    "layer_6": {
+      "software_engineer": -0.3250404894351959,
+      "kindergarten_teacher": 0.11233630776405334,
+      "data_scientist": -0.25172188878059387,
+      "medical_doctor": -0.2174615114927292,
+      "librarian": -0.20535153150558472,
+      "french_person": -0.3657864034175873,
+      "villain": -0.4544743001461029,
+      "comedian": -0.5351122617721558,
+      "police_officer": -0.3166842460632324,
+      "zelthari_scholar": -0.39703699946403503,
+      "helpful_assistant": 1.000000238418579,
+      "qwen_default": 0.5570418238639832,
+      "chef": -0.3563447594642639,
+      "lawyer": -0.3486403226852417,
+      "accountant": -0.2804562747478485,
+      "journalist": -0.3277844190597534,
+      "wizard": -0.41267070174217224,
+      "hero": -0.40509602427482605,
+      "philosopher": -0.44063514471054077,
+      "child": -0.33619531989097595,
+      "ai_assistant": 0.7440480589866638,
+      "ai": 0.23750774562358856,
+      "chatbot": 0.044442158192396164,
+      "i_am_helpful": 0.8592386245727539
+    },
+    "layer_7": {
+      "software_engineer": -0.36793678998947144,
+      "kindergarten_teacher": 0.13858090341091156,
+      "data_scientist": -0.25403985381126404,
+      "medical_doctor": -0.28304073214530945,
+      "librarian": -0.23949137330055237,
+      "french_person": -0.3768753409385681,
+      "villain": -0.4425145983695984,
+      "comedian": -0.4816470146179199,
+      "police_officer": -0.44857752323150635,
+      "zelthari_scholar": -0.4560263752937317,
+      "helpful_assistant": 1.0000003576278687,
+      "qwen_default": 0.4491060674190521,
+      "chef": -0.41772809624671936,
+      "lawyer": -0.37143802642822266,
+      "accountant": -0.36012428998947144,
+      "journalist": -0.3682522475719452,
+      "wizard": -0.3523648977279663,
+      "hero": -0.3804759085178375,
+      "philosopher": -0.44687601923942566,
+      "child": -0.28882041573524475,
+      "ai_assistant": 0.7991979122161865,
+      "ai": 0.31853216886520386,
+      "chatbot": 0.11009646207094193,
+      "i_am_helpful": 0.881985068321228
+    },
+    "layer_8": {
+      "software_engineer": -0.2892952859401703,
+      "kindergarten_teacher": 0.27301737666130066,
+      "data_scientist": -0.20308439433574677,
+      "medical_doctor": -0.2795262038707733,
+      "librarian": -0.32194411754608154,
+      "french_person": -0.37201860547065735,
+      "villain": -0.4683148264884949,
+      "comedian": -0.5301012992858887,
+      "police_officer": -0.4830057621002197,
+      "zelthari_scholar": -0.4212004244327545,
+      "helpful_assistant": 0.9999997019767761,
+      "qwen_default": 0.32956287264823914,
+      "chef": -0.48938336968421936,
+      "lawyer": -0.3837045431137085,
+      "accountant": -0.3622824251651764,
+      "journalist": -0.37411630153656006,
+      "wizard": -0.443572461605072,
+      "hero": -0.37557798624038696,
+      "philosopher": -0.4707036018371582,
+      "child": -0.2977001368999481,
+      "ai_assistant": 0.7620094418525696,
+      "ai": 0.3739311695098877,
+      "chatbot": 0.16997870802879333,
+      "i_am_helpful": 0.911270022392273
+    },
+    "layer_9": {
+      "software_engineer": 0.1373753845691681,
+      "kindergarten_teacher": 0.19791175425052643,
+      "data_scientist": 0.025362223386764526,
+      "medical_doctor": -0.10772542655467987,
+      "librarian": -0.2348925620317459,
+      "french_person": -0.21150070428848267,
+      "villain": -0.3432065546512604,
+      "comedian": -0.3279457688331604,
+      "police_officer": -0.4824050962924957,
+      "zelthari_scholar": -0.47568508982658386,
+      "helpful_assistant": 1.000000238418579,
+      "qwen_default": 0.09881965816020966,
+      "chef": -0.40536996722221375,
+      "lawyer": -0.32300546765327454,
+      "accountant": -0.21510037779808044,
+      "journalist": -0.3496435284614563,
+      "wizard": -0.3280152678489685,
+      "hero": -0.2944927215576172,
+      "philosopher": -0.30213430523872375,
+      "child": -0.19226112961769104,
+      "ai_assistant": 0.4042329490184784,
+      "ai": 0.08728916943073273,
+      "chatbot": -0.0016363173490390182,
+      "i_am_helpful": 0.9160476326942444
+    },
+    "layer_10": {
+      "software_engineer": 0.34477144479751587,
+      "kindergarten_teacher": 0.2564201354980469,
+      "data_scientist": 0.06587839871644974,
+      "medical_doctor": -0.0025744454469531775,
+      "librarian": -0.259799987077713,
+      "french_person": -0.25912514328956604,
+      "villain": -0.38123610615730286,
+      "comedian": -0.33482787013053894,
+      "police_officer": -0.5582396388053894,
+      "zelthari_scholar": -0.5787750482559204,
+      "helpful_assistant": 1.0,
+      "qwen_default": 0.02175324596464634,
+      "chef": -0.47081804275512695,
+      "lawyer": -0.33499038219451904,
+      "accountant": -0.2348402887582779,
+      "journalist": -0.3370170593261719,
+      "wizard": -0.3656776547431946,
+      "hero": -0.34837162494659424,
+      "philosopher": -0.3297944962978363,
+      "child": -0.2022574245929718,
+      "ai_assistant": 0.3836514353752136,
+      "ai": 0.08792433887720108,
+      "chatbot": 0.10023526847362518,
+      "i_am_helpful": 0.9357033371925354
+    },
+    "layer_11": {
+      "software_engineer": 0.3146936893463135,
+      "kindergarten_teacher": 0.16068358719348907,
+      "data_scientist": 0.08286447077989578,
+      "medical_doctor": -0.04999235272407532,
+      "librarian": -0.26405566930770874,
+      "french_person": -0.2865367531776428,
+      "villain": -0.3205372393131256,
+      "comedian": -0.3313770890235901,
+      "police_officer": -0.5480374097824097,
+      "zelthari_scholar": -0.5527331233024597,
+      "helpful_assistant": 0.9999998807907104,
+      "qwen_default": 0.017099328339099884,
+      "chef": -0.4400385022163391,
+      "lawyer": -0.33845022320747375,
+      "accountant": -0.2209751009941101,
+      "journalist": -0.3001941740512848,
+      "wizard": -0.3847139775753021,
+      "hero": -0.25800055265426636,
+      "philosopher": -0.3189736604690552,
+      "child": -0.17510607838630676,
+      "ai_assistant": 0.41457757353782654,
+      "ai": 0.11052018404006958,
+      "chatbot": 0.11308951675891876,
+      "i_am_helpful": 0.9349909424781799
+    },
+    "layer_12": {
+      "software_engineer": 0.33103013038635254,
+      "kindergarten_teacher": 0.12852762639522552,
+      "data_scientist": 0.054656799882650375,
+      "medical_doctor": 0.008082464337348938,
+      "librarian": -0.3031961917877197,
+      "french_person": -0.323549747467041,
+      "villain": -0.3892495334148407,
+      "comedian": -0.35832837224006653,
+      "police_officer": -0.5621365308761597,
+      "zelthari_scholar": -0.5338667631149292,
+      "helpful_assistant": 0.9999997615814209,
+      "qwen_default": 0.014804007485508919,
+      "chef": -0.4339450001716614,
+      "lawyer": -0.36553439497947693,
+      "accountant": -0.22819146513938904,
+      "journalist": -0.30792921781539917,
+      "wizard": -0.3722595274448395,
+      "hero": -0.32566219568252563,
+      "philosopher": -0.3019906282424927,
+      "child": -0.23488102853298187,
+      "ai_assistant": 0.4685797393321991,
+      "ai": 0.15894228219985962,
+      "chatbot": 0.1795041561126709,
+      "i_am_helpful": 0.9396889209747314
+    },
+    "layer_13": {
+      "software_engineer": 0.24200595915317535,
+      "kindergarten_teacher": 0.029557986184954643,
+      "data_scientist": 0.06663314253091812,
+      "medical_doctor": -0.038605716079473495,
+      "librarian": -0.24101853370666504,
+      "french_person": -0.23719556629657745,
+      "villain": -0.33781158924102783,
+      "comedian": -0.18973879516124725,
+      "police_officer": -0.45222702622413635,
+      "zelthari_scholar": -0.4720977246761322,
+      "helpful_assistant": 0.9999998807907104,
+      "qwen_default": 0.1574360877275467,
+      "chef": -0.39467382431030273,
+      "lawyer": -0.3149012327194214,
+      "accountant": -0.25680795311927795,
+      "journalist": -0.09948556125164032,
+      "wizard": -0.39260920882225037,
+      "hero": -0.3698284924030304,
+      "philosopher": -0.249241903424263,
+      "child": -0.16146451234817505,
+      "ai_assistant": 0.6050799489021301,
+      "ai": 0.33779484033584595,
+      "chatbot": 0.1881653368473053,
+      "i_am_helpful": 0.9494588375091553
+    },
+    "layer_14": {
+      "software_engineer": 0.3220019042491913,
+      "kindergarten_teacher": 0.02479795180261135,
+      "data_scientist": 0.1643468588590622,
+      "medical_doctor": 0.10184036940336227,
+      "librarian": -0.22146281599998474,
+      "french_person": -0.3150201439857483,
+      "villain": -0.29798001050949097,
+      "comedian": -0.2190961092710495,
+      "police_officer": -0.3339748680591583,
+      "zelthari_scholar": -0.4960517883300781,
+      "helpful_assistant": 1.0000001192092896,
+      "qwen_default": 0.20555691421031952,
+      "chef": -0.3934066593647003,
+      "lawyer": -0.2616736888885498,
+      "accountant": -0.1927369087934494,
+      "journalist": -0.182085320353508,
+      "wizard": -0.3658217787742615,
+      "hero": -0.2961646616458893,
+      "philosopher": -0.2531382739543915,
+      "child": -0.15930946171283722,
+      "ai_assistant": 0.5882422924041748,
+      "ai": 0.37398841977119446,
+      "chatbot": 0.3855408728122711,
+      "i_am_helpful": 0.9472050666809082
+    },
+    "layer_15": {
+      "software_engineer": 0.37234827876091003,
+      "kindergarten_teacher": 0.05859974026679993,
+      "data_scientist": 0.22790983319282532,
+      "medical_doctor": 0.166471466422081,
+      "librarian": -0.1495010256767273,
+      "french_person": -0.3575913608074188,
+      "villain": -0.3683730661869049,
+      "comedian": -0.23224791884422302,
+      "police_officer": -0.3313116729259491,
+      "zelthari_scholar": -0.5355269312858582,
+      "helpful_assistant": 1.0000003576278687,
+      "qwen_default": 0.26491424441337585,
+      "chef": -0.40466243028640747,
+      "lawyer": -0.28592562675476074,
+      "accountant": -0.18905186653137207,
+      "journalist": -0.1963782161474228,
+      "wizard": -0.39554014801979065,
+      "hero": -0.3130553364753723,
+      "philosopher": -0.29731521010398865,
+      "child": -0.19423820078372955,
+      "ai_assistant": 0.6074191331863403,
+      "ai": 0.4395211637020111,
+      "chatbot": 0.47967836260795593,
+      "i_am_helpful": 0.9495664834976196
+    },
+    "layer_16": {
+      "software_engineer": 0.4388289451599121,
+      "kindergarten_teacher": 0.038148894906044006,
+      "data_scientist": 0.32024312019348145,
+      "medical_doctor": 0.23975227773189545,
+      "librarian": -0.03776329383254051,
+      "french_person": -0.40564391016960144,
+      "villain": -0.4033941328525543,
+      "comedian": -0.2528611421585083,
+      "police_officer": -0.287860244512558,
+      "zelthari_scholar": -0.5506382584571838,
+      "helpful_assistant": 0.9999998211860657,
+      "qwen_default": 0.3432181179523468,
+      "chef": -0.42630085349082947,
+      "lawyer": -0.21769094467163086,
+      "accountant": -0.14437825977802277,
+      "journalist": -0.14748209714889526,
+      "wizard": -0.4588490426540375,
+      "hero": -0.24281595647335052,
+      "philosopher": -0.36755049228668213,
+      "child": -0.20839063823223114,
+      "ai_assistant": 0.6444669365882874,
+      "ai": 0.5055803060531616,
+      "chatbot": 0.5513210296630859,
+      "i_am_helpful": 0.9533278942108154
+    },
+    "layer_17": {
+      "software_engineer": 0.47156766057014465,
+      "kindergarten_teacher": -0.01486495602875948,
+      "data_scientist": 0.3742644786834717,
+      "medical_doctor": 0.29016605019569397,
+      "librarian": 0.054311662912368774,
+      "french_person": -0.4415363669395447,
+      "villain": -0.3944631516933441,
+      "comedian": -0.275083988904953,
+      "police_officer": -0.2524070143699646,
+      "zelthari_scholar": -0.5456897020339966,
+      "helpful_assistant": 0.9999999403953552,
+      "qwen_default": 0.3724088966846466,
+      "chef": -0.45831015706062317,
+      "lawyer": -0.15907080471515656,
+      "accountant": -0.09481959789991379,
+      "journalist": -0.1383766382932663,
+      "wizard": -0.5012926459312439,
+      "hero": -0.26672595739364624,
+      "philosopher": -0.3814467489719391,
+      "child": -0.24463745951652527,
+      "ai_assistant": 0.675399899482727,
+      "ai": 0.5614105463027954,
+      "chatbot": 0.610764741897583,
+      "i_am_helpful": 0.9494027495384216
+    },
+    "layer_18": {
+      "software_engineer": 0.43404167890548706,
+      "kindergarten_teacher": -0.09157923609018326,
+      "data_scientist": 0.3390240967273712,
+      "medical_doctor": 0.1794206202030182,
+      "librarian": 0.21517996490001678,
+      "french_person": -0.4201109707355499,
+      "villain": -0.41349485516548157,
+      "comedian": -0.2853856384754181,
+      "police_officer": -0.36276257038116455,
+      "zelthari_scholar": -0.5750924348831177,
+      "helpful_assistant": 1.000000238418579,
+      "qwen_default": 0.5009344220161438,
+      "chef": -0.5687248706817627,
+      "lawyer": -0.27362528443336487,
+      "accountant": -0.2623732388019562,
+      "journalist": -0.022848479449748993,
+      "wizard": -0.5510333776473999,
+      "hero": -0.29018905758857727,
+      "philosopher": -0.37050333619117737,
+      "child": -0.23786969482898712,
+      "ai_assistant": 0.7586154341697693,
+      "ai": 0.6856307983398438,
+      "chatbot": 0.7129616737365723,
+      "i_am_helpful": 0.9602816104888916
+    },
+    "layer_19": {
+      "software_engineer": 0.45144471526145935,
+      "kindergarten_teacher": -0.14783035218715668,
+      "data_scientist": 0.36654892563819885,
+      "medical_doctor": 0.2177828699350357,
+      "librarian": 0.30074453353881836,
+      "french_person": -0.3898611068725586,
+      "villain": -0.4153590798377991,
+      "comedian": -0.3045147657394409,
+      "police_officer": -0.31615933775901794,
+      "zelthari_scholar": -0.5693961977958679,
+      "helpful_assistant": 0.9999997019767761,
+      "qwen_default": 0.6258372068405151,
+      "chef": -0.5844530463218689,
+      "lawyer": -0.23471544682979584,
+      "accountant": -0.276222825050354,
+      "journalist": 0.05596211180090904,
+      "wizard": -0.5627992749214172,
+      "hero": -0.29676884412765503,
+      "philosopher": -0.39130479097366333,
+      "child": -0.21271157264709473,
+      "ai_assistant": 0.791495680809021,
+      "ai": 0.740399956703186,
+      "chatbot": 0.7690092325210571,
+      "i_am_helpful": 0.9596985578536987
+    },
+    "layer_20": {
+      "software_engineer": 0.4345911741256714,
+      "kindergarten_teacher": -0.2313482165336609,
+      "data_scientist": 0.37874823808670044,
+      "medical_doctor": 0.2180042415857315,
+      "librarian": 0.29380854964256287,
+      "french_person": -0.3622265160083771,
+      "villain": -0.34751689434051514,
+      "comedian": -0.26161447167396545,
+      "police_officer": -0.32288703322410583,
+      "zelthari_scholar": -0.5263192057609558,
+      "helpful_assistant": 1.0000001192092896,
+      "qwen_default": 0.683957576751709,
+      "chef": -0.6011560559272766,
+      "lawyer": -0.23412056267261505,
+      "accountant": -0.2926448881626129,
+      "journalist": 0.11191646754741669,
+      "wizard": -0.5800047516822815,
+      "hero": -0.30258116126060486,
+      "philosopher": -0.36689597368240356,
+      "child": -0.23544229567050934,
+      "ai_assistant": 0.7947835326194763,
+      "ai": 0.7496399879455566,
+      "chatbot": 0.7943280935287476,
+      "i_am_helpful": 0.9588982462882996
+    },
+    "layer_21": {
+      "software_engineer": 0.46198728680610657,
+      "kindergarten_teacher": -0.2628532350063324,
+      "data_scientist": 0.40395382046699524,
+      "medical_doctor": 0.2503521144390106,
+      "librarian": 0.3485649526119232,
+      "french_person": -0.34363317489624023,
+      "villain": -0.3580588102340698,
+      "comedian": -0.24084089696407318,
+      "police_officer": -0.2955850660800934,
+      "zelthari_scholar": -0.545850396156311,
+      "helpful_assistant": 0.9999999403953552,
+      "qwen_default": 0.7348369359970093,
+      "chef": -0.6069164276123047,
+      "lawyer": -0.23604035377502441,
+      "accountant": -0.30056652426719666,
+      "journalist": 0.15185724198818207,
+      "wizard": -0.5819176435470581,
+      "hero": -0.2754574716091156,
+      "philosopher": -0.37795963883399963,
+      "child": -0.22054344415664673,
+      "ai_assistant": 0.8163847923278809,
+      "ai": 0.7751107215881348,
+      "chatbot": 0.8170125484466553,
+      "i_am_helpful": 0.9597280025482178
+    },
+    "layer_22": {
+      "software_engineer": 0.5112766027450562,
+      "kindergarten_teacher": -0.28990957140922546,
+      "data_scientist": 0.4711068868637085,
+      "medical_doctor": 0.3152810037136078,
+      "librarian": 0.4098951816558838,
+      "french_person": -0.3307199776172638,
+      "villain": -0.3721117377281189,
+      "comedian": -0.2513599991798401,
+      "police_officer": -0.23577585816383362,
+      "zelthari_scholar": -0.5281617641448975,
+      "helpful_assistant": 0.9999999403953552,
+      "qwen_default": 0.7656372785568237,
+      "chef": -0.5841175317764282,
+      "lawyer": -0.1775446981191635,
+      "accountant": -0.2531587779521942,
+      "journalist": 0.19458362460136414,
+      "wizard": -0.5431388020515442,
+      "hero": -0.2283633053302765,
+      "philosopher": -0.3306943476200104,
+      "child": -0.22771595418453217,
+      "ai_assistant": 0.8354911804199219,
+      "ai": 0.8029438853263855,
+      "chatbot": 0.8372154831886292,
+      "i_am_helpful": 0.9640663266181946
+    },
+    "layer_23": {
+      "software_engineer": 0.5501415133476257,
+      "kindergarten_teacher": -0.279821515083313,
+      "data_scientist": 0.49994900822639465,
+      "medical_doctor": 0.32147136330604553,
+      "librarian": 0.4915868043899536,
+      "french_person": -0.3079017400741577,
+      "villain": -0.39263486862182617,
+      "comedian": -0.23835408687591553,
+      "police_officer": -0.22321400046348572,
+      "zelthari_scholar": -0.5734968781471252,
+      "helpful_assistant": 0.9999998807907104,
+      "qwen_default": 0.7995123863220215,
+      "chef": -0.5943419933319092,
+      "lawyer": -0.20782648026943207,
+      "accountant": -0.2773910462856293,
+      "journalist": 0.26594844460487366,
+      "wizard": -0.5652594566345215,
+      "hero": -0.2276870161294937,
+      "philosopher": -0.37517938017845154,
+      "child": -0.19418476521968842,
+      "ai_assistant": 0.8510439991950989,
+      "ai": 0.8252008557319641,
+      "chatbot": 0.8602594137191772,
+      "i_am_helpful": 0.9663045406341553
+    },
+    "layer_24": {
+      "software_engineer": 0.5825663805007935,
+      "kindergarten_teacher": -0.2520875036716461,
+      "data_scientist": 0.5418705940246582,
+      "medical_doctor": 0.37599408626556396,
+      "librarian": 0.5291945934295654,
+      "french_person": -0.30059394240379333,
+      "villain": -0.4174492657184601,
+      "comedian": -0.24040554463863373,
+      "police_officer": -0.15644840896129608,
+      "zelthari_scholar": -0.5788775682449341,
+      "helpful_assistant": 0.9999995827674866,
+      "qwen_default": 0.82032310962677,
+      "chef": -0.5695252418518066,
+      "lawyer": -0.1597839742898941,
+      "accountant": -0.23253102600574493,
+      "journalist": 0.309221088886261,
+      "wizard": -0.5670795440673828,
+      "hero": -0.18220750987529755,
+      "philosopher": -0.36665600538253784,
+      "child": -0.20491695404052734,
+      "ai_assistant": 0.8612136840820312,
+      "ai": 0.8415618538856506,
+      "chatbot": 0.8744242191314697,
+      "i_am_helpful": 0.9673789739608765
+    },
+    "layer_25": {
+      "software_engineer": 0.5900800228118896,
+      "kindergarten_teacher": -0.2961041033267975,
+      "data_scientist": 0.545225203037262,
+      "medical_doctor": 0.35565873980522156,
+      "librarian": 0.5544502139091492,
+      "french_person": -0.30800238251686096,
+      "villain": -0.4197041690349579,
+      "comedian": -0.2166365683078766,
+      "police_officer": -0.16081559658050537,
+      "zelthari_scholar": -0.5844234228134155,
+      "helpful_assistant": 0.9999998807907104,
+      "qwen_default": 0.8380277752876282,
+      "chef": -0.5779423713684082,
+      "lawyer": -0.1423763781785965,
+      "accountant": -0.23443448543548584,
+      "journalist": 0.32227274775505066,
+      "wizard": -0.5681245923042297,
+      "hero": -0.20033878087997437,
+      "philosopher": -0.36782780289649963,
+      "child": -0.22142605483531952,
+      "ai_assistant": 0.8723280429840088,
+      "ai": 0.8570399284362793,
+      "chatbot": 0.8884972333908081,
+      "i_am_helpful": 0.9676396250724792
+    },
+    "layer_26": {
+      "software_engineer": 0.5760731101036072,
+      "kindergarten_teacher": -0.2817899286746979,
+      "data_scientist": 0.5394459962844849,
+      "medical_doctor": 0.3553953468799591,
+      "librarian": 0.5466427803039551,
+      "french_person": -0.2727815508842468,
+      "villain": -0.4247683584690094,
+      "comedian": -0.19631913304328918,
+      "police_officer": -0.11361214518547058,
+      "zelthari_scholar": -0.5761544704437256,
+      "helpful_assistant": 0.9999998807907104,
+      "qwen_default": 0.8328812122344971,
+      "chef": -0.5447606444358826,
+      "lawyer": -0.1002260074019432,
+      "accountant": -0.18650802969932556,
+      "journalist": 0.30863410234451294,
+      "wizard": -0.5668588876724243,
+      "hero": -0.19200928509235382,
+      "philosopher": -0.362483412027359,
+      "child": -0.20973938703536987,
+      "ai_assistant": 0.8545643091201782,
+      "ai": 0.8334746956825256,
+      "chatbot": 0.8731840252876282,
+      "i_am_helpful": 0.9609740376472473
+    },
+    "layer_27": {
+      "software_engineer": 0.5915971398353577,
+      "kindergarten_teacher": -0.30905064940452576,
+      "data_scientist": 0.5694242715835571,
+      "medical_doctor": 0.35778868198394775,
+      "librarian": 0.5743246674537659,
+      "french_person": -0.2564336061477661,
+      "villain": -0.4149603545665741,
+      "comedian": -0.1675167679786682,
+      "police_officer": -0.08483220636844635,
+      "zelthari_scholar": -0.5753905773162842,
+      "helpful_assistant": 1.0000001192092896,
+      "qwen_default": 0.8454434275627136,
+      "chef": -0.5404999852180481,
+      "lawyer": -0.04905403405427933,
+      "accountant": -0.15709736943244934,
+      "journalist": 0.3305715024471283,
+      "wizard": -0.5707266330718994,
+      "hero": -0.22550490498542786,
+      "philosopher": -0.3421570360660553,
+      "child": -0.24020737409591675,
+      "ai_assistant": 0.8557190895080566,
+      "ai": 0.841681957244873,
+      "chatbot": 0.853879451751709,
+      "i_am_helpful": 0.9523157477378845
+    }
+  },
+  "primary_layer": 15,
+  "primary_analysis_l15": {
+    "n12_regression": {
+      "r": -0.5214960023246216,
+      "p": 0.0820618575901576,
+      "slope": -0.12202888883795665,
+      "intercept": 0.28117647995754824
+    },
+    "pi_coverage_new12": {
+      "chef": {
+        "observed": 0.18,
+        "predicted": 0.33055698667986566,
+        "pi_half": 0.2164732611306765,
+        "inside": true
+      },
+      "lawyer": {
+        "observed": 0.27,
+        "predicted": 0.31606766648072804,
+        "pi_half": 0.21258539075557703,
+        "inside": true
+      },
+      "accountant": {
+        "observed": 0.21,
+        "predicted": 0.30424626916311326,
+        "pi_half": 0.21034483020497174,
+        "inside": true
+      },
+      "journalist": {
+        "observed": 0.28,
+        "predicted": 0.3051402954659983,
+        "pi_half": 0.2104842717769473,
+        "inside": true
+      },
+      "wizard": {
+        "observed": 0.46,
+        "predicted": 0.3294438047112042,
+        "pi_half": 0.2161312679392748,
+        "inside": true
+      },
+      "hero": {
+        "observed": 0.25,
+        "predicted": 0.3193782748124306,
+        "pi_half": 0.21336472519073463,
+        "inside": true
+      },
+      "philosopher": {
+        "observed": 0.19,
+        "predicted": 0.3174575246811616,
+        "pi_half": 0.2129045858764946,
+        "inside": true
+      },
+      "child": {
+        "observed": 0.16,
+        "predicted": 0.30487915176907066,
+        "pi_half": 0.21044302877547125,
+        "inside": true
+      },
+      "ai_assistant": {
+        "observed": 0.16,
+        "predicted": 0.20705379807590435,
+        "pi_half": 0.22480138146846093,
+        "inside": true
+      },
+      "ai": {
+        "observed": 0.15,
+        "predicted": 0.22754220073022619,
+        "pi_half": 0.2170735244639642,
+        "inside": true
+      },
+      "chatbot": {
+        "observed": 0.13,
+        "predicted": 0.22264186236888892,
+        "pi_half": 0.2187146993825912,
+        "inside": true
+      },
+      "i_am_helpful": {
+        "observed": 0.23,
+        "predicted": 0.16530193709856783,
+        "pi_half": 0.24687657280590186,
+        "inside": true
+      }
+    },
+    "n12_pi_count": 12,
+    "new12_only_spearman": {
+      "rho": -0.4763579984700754,
+      "p": 0.11744175687902236
+    }
+  },
+  "layer_stats": {
+    "layer_0": {
+      "pearson_r": -0.38824155722033865,
+      "pearson_p": 0.06082567979500311,
+      "spearman_rho": -0.4605675418478371,
+      "spearman_p": 0.0235208901183025,
+      "vif_length": 3.2312650876867406,
+      "partial_spearman_length": {
+        "rho": -0.07826086956521738,
+        "p": 0.7162392905010878
+      },
+      "partial_spearman_surface": {
+        "rho": -0.02434782608695652,
+        "p": 0.9100874200789536
+      },
+      "loo_pearson": {
+        "min": -0.4412356271436584,
+        "max": -0.33352308947529813,
+        "mean": -0.38892813619783057
+      },
+      "cooks_d_outliers": [],
+      "spearman_p_holm": 0.3998551320111425,
+      "holm_significant": false
+    },
+    "layer_1": {
+      "pearson_r": -0.40695515951761574,
+      "pearson_p": 0.048425767277195955,
+      "spearman_rho": -0.441831113939174,
+      "spearman_p": 0.03064770955285231,
+      "vif_length": 3.901286723528388,
+      "partial_spearman_length": {
+        "rho": -0.04,
+        "p": 0.8527804394339903
+      },
+      "partial_spearman_surface": {
+        "rho": 0.03304347826086956,
+        "p": 0.8781782520387229
+      },
+      "loo_pearson": {
+        "min": -0.4834241886026849,
+        "max": -0.35575377902358774,
+        "mean": -0.4074078005881924
+      },
+      "cooks_d_outliers": [
+        "librarian"
+      ],
+      "spearman_p_holm": 0.3998551320111425,
+      "holm_significant": false
+    },
+    "layer_2": {
+      "pearson_r": -0.40982452796950114,
+      "pearson_p": 0.04671339331275398,
+      "spearman_rho": -0.41960883897773626,
+      "spearman_p": 0.04122785868725726,
+      "vif_length": 2.9861449198830865,
+      "partial_spearman_length": {
+        "rho": -0.029565217391304344,
+        "p": 0.8909226043767047
+      },
+      "partial_spearman_surface": {
+        "rho": -0.047826086956521734,
+        "p": 0.8243778236378612
+      },
+      "loo_pearson": {
+        "min": -0.4836197718233299,
+        "max": -0.37404309062017654,
+        "mean": -0.41029529477044685
+      },
+      "cooks_d_outliers": [
+        "librarian",
+        "helpful_assistant"
+      ],
+      "spearman_p_holm": 0.41227858687257257,
+      "holm_significant": false
+    },
+    "layer_3": {
+      "pearson_r": -0.36375185191847703,
+      "pearson_p": 0.08058354988229258,
+      "spearman_rho": -0.3590422464357784,
+      "spearman_p": 0.08488262916234193,
+      "vif_length": 2.218956121045446,
+      "partial_spearman_length": {
+        "rho": 0.006956521739130434,
+        "p": 0.9742640605332524
+      },
+      "partial_spearman_surface": {
+        "rho": 0.09043478260869564,
+        "p": 0.67430275825611
+      },
+      "loo_pearson": {
+        "min": -0.4140426898558806,
+        "max": -0.3219744062770579,
+        "mean": -0.36430622752774333
+      },
+      "cooks_d_outliers": [],
+      "spearman_p_holm": 0.49303804518417005,
+      "holm_significant": false
+    },
+    "layer_4": {
+      "pearson_r": -0.3261931257751955,
+      "pearson_p": 0.11980157506262867,
+      "spearman_rho": -0.43224503454404395,
+      "spearman_p": 0.03490825797837314,
+      "vif_length": 1.7556224885040441,
+      "partial_spearman_length": {
+        "rho": -0.12869565217391304,
+        "p": 0.5489587886992761
+      },
+      "partial_spearman_surface": {
+        "rho": -0.049565217391304345,
+        "p": 0.8180937896030709
+      },
+      "loo_pearson": {
+        "min": -0.36006061650263743,
+        "max": -0.27592689523423725,
+        "mean": -0.3265750238062216
+      },
+      "cooks_d_outliers": [],
+      "spearman_p_holm": 0.4116128668971465,
+      "holm_significant": false
+    },
+    "layer_5": {
+      "pearson_r": -0.34183843240718537,
+      "pearson_p": 0.10206063225133409,
+      "spearman_rho": -0.4570816947950626,
+      "spearman_p": 0.02473416325864522,
+      "vif_length": 1.7868294408572851,
+      "partial_spearman_length": {
+        "rho": -0.20956521739130432,
+        "p": 0.32569617157142167
+      },
+      "partial_spearman_surface": {
+        "rho": -0.268695652173913,
+        "p": 0.2042392593734892
+      },
+      "loo_pearson": {
+        "min": -0.384881783005641,
+        "max": -0.29246987418484655,
+        "mean": -0.3421871052525363
+      },
+      "cooks_d_outliers": [],
+      "spearman_p_holm": 0.3998551320111425,
+      "holm_significant": false
+    },
+    "layer_6": {
+      "pearson_r": -0.38176643647538516,
+      "pearson_p": 0.06564223995436491,
+      "spearman_rho": -0.4910687035596145,
+      "spearman_p": 0.014820562490952132,
+      "vif_length": 1.9042279412951586,
+      "partial_spearman_length": {
+        "rho": -0.1782608695652174,
+        "p": 0.404629262071875
+      },
+      "partial_spearman_surface": {
+        "rho": -0.2869565217391304,
+        "p": 0.1739742419036644
+      },
+      "loo_pearson": {
+        "min": -0.41488457712922405,
+        "max": -0.3317134277593068,
+        "mean": -0.38216406827426946
+      },
+      "cooks_d_outliers": [],
+      "spearman_p_holm": 0.2815906873280905,
+      "holm_significant": false
+    },
+    "layer_7": {
+      "pearson_r": -0.37111138026977575,
+      "pearson_p": 0.07419738830328419,
+      "spearman_rho": -0.4501100006895135,
+      "spearman_p": 0.02731175431631651,
+      "vif_length": 2.1903068523066738,
+      "partial_spearman_length": {
+        "rho": -0.15739130434782608,
+        "p": 0.4626490916636769
+      },
+      "partial_spearman_surface": {
+        "rho": -0.11043478260869564,
+        "p": 0.6074532587517109
+      },
+      "loo_pearson": {
+        "min": -0.40215362526105236,
+        "max": -0.3231318714201049,
+        "mean": -0.371519001730037
+      },
+      "cooks_d_outliers": [],
+      "spearman_p_holm": 0.3998551320111425,
+      "holm_significant": false
+    },
+    "layer_8": {
+      "pearson_r": -0.4224985248562662,
+      "pearson_p": 0.03970882660005821,
+      "spearman_rho": -0.5002190520731477,
+      "spearman_p": 0.012799844180174456,
+      "vif_length": 2.5417078208834383,
+      "partial_spearman_length": {
+        "rho": -0.2069565217391304,
+        "p": 0.33189156768314726
+      },
+      "partial_spearman_surface": {
+        "rho": -0.22347826086956518,
+        "p": 0.2938468714348544
+      },
+      "loo_pearson": {
+        "min": -0.46110974951929073,
+        "max": -0.3817438540377285,
+        "mean": -0.42294920051113555
+      },
+      "cooks_d_outliers": [],
+      "spearman_p_holm": 0.2687967277836636,
+      "holm_significant": false
+    },
+    "layer_9": {
+      "pearson_r": -0.35717503775253084,
+      "pearson_p": 0.08663398175669451,
+      "spearman_rho": -0.5045763608891158,
+      "spearman_p": 0.011920506285252359,
+      "vif_length": 2.39973220368526,
+      "partial_spearman_length": {
+        "rho": -0.11739130434782606,
+        "p": 0.5848655143600633
+      },
+      "partial_spearman_surface": {
+        "rho": -0.13999999999999999,
+        "p": 0.5140986909290426
+      },
+      "loo_pearson": {
+        "min": -0.39686975234879135,
+        "max": -0.32270118477754534,
+        "mean": -0.3580680745505415
+      },
+      "cooks_d_outliers": [
+        "i_am_helpful"
+      ],
+      "spearman_p_holm": 0.2622511382755519,
+      "holm_significant": false
+    },
+    "layer_10": {
+      "pearson_r": -0.37810604172340845,
+      "pearson_p": 0.06849136230391352,
+      "spearman_rho": -0.5407420240616517,
+      "spearman_p": 0.006367025391887572,
+      "vif_length": 2.691456125780247,
+      "partial_spearman_length": {
+        "rho": -0.13391304347826086,
+        "p": 0.5327356259700111
+      },
+      "partial_spearman_surface": {
+        "rho": -0.1652173913043478,
+        "p": 0.4404029231283095
+      },
+      "loo_pearson": {
+        "min": -0.4231409890379526,
+        "max": -0.34798602697502734,
+        "mean": -0.3788926564499868
+      },
+      "cooks_d_outliers": [],
+      "spearman_p_holm": 0.160336074609874,
+      "holm_significant": false
+    },
+    "layer_11": {
+      "pearson_r": -0.3916351603325081,
+      "pearson_p": 0.05841253976111655,
+      "spearman_rho": -0.5424849475880391,
+      "spearman_p": 0.00616677210037977,
+      "vif_length": 2.6279793943994942,
+      "partial_spearman_length": {
+        "rho": -0.06782608695652173,
+        "p": 0.75283518636882
+      },
+      "partial_spearman_surface": {
+        "rho": -0.17565217391304347,
+        "p": 0.41165144697505396
+      },
+      "loo_pearson": {
+        "min": -0.43516802721227493,
+        "max": -0.36007090874790854,
+        "mean": -0.3924843515533505
+      },
+      "cooks_d_outliers": [
+        "i_am_helpful"
+      ],
+      "spearman_p_holm": 0.160336074609874,
+      "holm_significant": false
+    },
+    "layer_12": {
+      "pearson_r": -0.4152539421233763,
+      "pearson_p": 0.04360311416141577,
+      "spearman_rho": -0.5747290328262036,
+      "spearman_p": 0.0033079268604459576,
+      "vif_length": 2.8399925265473223,
+      "partial_spearman_length": {
+        "rho": -0.21826086956521737,
+        "p": 0.3055543915844942
+      },
+      "partial_spearman_surface": {
+        "rho": -0.3182608695652174,
+        "p": 0.1296087767407352
+      },
+      "loo_pearson": {
+        "min": -0.4567258911552792,
+        "max": -0.38268835915969046,
+        "mean": -0.4160891273034877
+      },
+      "cooks_d_outliers": [
+        "i_am_helpful"
+      ],
+      "spearman_p_holm": 0.09262195209248682,
+      "holm_significant": false
+    },
+    "layer_13": {
+      "pearson_r": -0.3983453484598204,
+      "pearson_p": 0.05385916911764747,
+      "spearman_rho": -0.48366127857246854,
+      "spearman_p": 0.016641367075262366,
+      "vif_length": 2.632672296976651,
+      "partial_spearman_length": {
+        "rho": -0.13565217391304346,
+        "p": 0.5273785419058561
+      },
+      "partial_spearman_surface": {
+        "rho": -0.05652173913043478,
+        "p": 0.7930697839291405
+      },
+      "loo_pearson": {
+        "min": -0.44145242831157855,
+        "max": -0.35688800325980646,
+        "mean": -0.39900505113449114
+      },
+      "cooks_d_outliers": [
+        "i_am_helpful"
+      ],
+      "spearman_p_holm": 0.2995446073547226,
+      "holm_significant": false
+    },
+    "layer_14": {
+      "pearson_r": -0.4441102850930056,
+      "pearson_p": 0.029698508220730543,
+      "spearman_rho": -0.5503281034567817,
+      "spearman_p": 0.00532958047435326,
+      "vif_length": 2.9406530065953276,
+      "partial_spearman_length": {
+        "rho": -0.2478260869565217,
+        "p": 0.24296488702038951
+      },
+      "partial_spearman_surface": {
+        "rho": -0.2773913043478261,
+        "p": 0.1894123670698223
+      },
+      "loo_pearson": {
+        "min": -0.4922753543220647,
+        "max": -0.40893644716489685,
+        "mean": -0.4447861210781984
+      },
+      "cooks_d_outliers": [
+        "i_am_helpful"
+      ],
+      "spearman_p_holm": 0.14389867280753801,
+      "holm_significant": false
+    },
+    "layer_15": {
+      "pearson_r": -0.4510440288386397,
+      "pearson_p": 0.026954435837952803,
+      "spearman_rho": -0.5167768255738268,
+      "spearman_p": 0.009719309124814796,
+      "vif_length": 3.088124642861484,
+      "partial_spearman_length": {
+        "rho": -0.17565217391304347,
+        "p": 0.41165144697505396
+      },
+      "partial_spearman_surface": {
+        "rho": -0.19217391304347822,
+        "p": 0.3683204887556275
+      },
+      "loo_pearson": {
+        "min": -0.4990375626919053,
+        "max": -0.4132772937998325,
+        "mean": -0.45163723510512677
+      },
+      "cooks_d_outliers": [
+        "wizard"
+      ],
+      "spearman_p_holm": 0.2332634189955551,
+      "holm_significant": false
+    },
+    "layer_16": {
+      "pearson_r": -0.45415455311690467,
+      "pearson_p": 0.025791436737243385,
+      "spearman_rho": -0.5141624402842458,
+      "spearman_p": 0.010160156733517335,
+      "vif_length": 2.8152080845593552,
+      "partial_spearman_length": {
+        "rho": -0.1434782608695652,
+        "p": 0.5035926462175364
+      },
+      "partial_spearman_surface": {
+        "rho": -0.2052173913043478,
+        "p": 0.33606088967455283
+      },
+      "loo_pearson": {
+        "min": -0.5056197660509186,
+        "max": -0.40299920278517865,
+        "mean": -0.4546318155495226
+      },
+      "cooks_d_outliers": [
+        "wizard"
+      ],
+      "spearman_p_holm": 0.2336836048708987,
+      "holm_significant": false
+    },
+    "layer_17": {
+      "pearson_r": -0.4473472293335161,
+      "pearson_p": 0.028390949500466518,
+      "spearman_rho": -0.49978332119155083,
+      "spearman_p": 0.012890635116310965,
+      "vif_length": 2.6120193605546698,
+      "partial_spearman_length": {
+        "rho": -0.10869565217391304,
+        "p": 0.6131561977406333
+      },
+      "partial_spearman_surface": {
+        "rho": -0.13217391304347825,
+        "p": 0.5381181783911483
+      },
+      "loo_pearson": {
+        "min": -0.5178283945717655,
+        "max": -0.38771357849594373,
+        "mean": -0.4477479910379767
+      },
+      "cooks_d_outliers": [
+        "wizard"
+      ],
+      "spearman_p_holm": 0.2687967277836636,
+      "holm_significant": false
+    },
+    "layer_18": {
+      "pearson_r": -0.4015859724677249,
+      "pearson_p": 0.05176123209292089,
+      "spearman_rho": -0.45533877126867534,
+      "spearman_p": 0.025359411585500927,
+      "vif_length": 2.3874986125067204,
+      "partial_spearman_length": {
+        "rho": -0.09652173913043478,
+        "p": 0.6536731719946907
+      },
+      "partial_spearman_surface": {
+        "rho": -0.11913043478260868,
+        "p": 0.5792759020081251
+      },
+      "loo_pearson": {
+        "min": -0.5061995674307024,
+        "max": -0.33457543587133715,
+        "mean": -0.40192717844207787
+      },
+      "cooks_d_outliers": [
+        "librarian",
+        "wizard"
+      ],
+      "spearman_p_holm": 0.3998551320111425,
+      "holm_significant": false
+    },
+    "layer_19": {
+      "pearson_r": -0.3898567309290213,
+      "pearson_p": 0.059667759899376734,
+      "spearman_rho": -0.4335522271888344,
+      "spearman_p": 0.03430107224142887,
+      "vif_length": 2.1334906712084423,
+      "partial_spearman_length": {
+        "rho": -0.10173913043478258,
+        "p": 0.6361837822056855
+      },
+      "partial_spearman_surface": {
+        "rho": -0.10782608695652172,
+        "p": 0.6160158821815657
+      },
+      "loo_pearson": {
+        "min": -0.5073555013571277,
+        "max": -0.31834326913055033,
+        "mean": -0.3901559305365934
+      },
+      "cooks_d_outliers": [
+        "librarian",
+        "wizard"
+      ],
+      "spearman_p_holm": 0.4116128668971465,
+      "holm_significant": false
+    },
+    "layer_20": {
+      "pearson_r": -0.37543258421061654,
+      "pearson_p": 0.07063128087706677,
+      "spearman_rho": -0.3969508331347017,
+      "spearman_p": 0.05478200502046334,
+      "vif_length": 1.9817632092090935,
+      "partial_spearman_length": {
+        "rho": -0.04347826086956521,
+        "p": 0.8401329841149333
+      },
+      "partial_spearman_surface": {
+        "rho": -0.05130434782608695,
+        "p": 0.8118206065534153
+      },
+      "loo_pearson": {
+        "min": -0.48681627468268135,
+        "max": -0.2975348155253125,
+        "mean": -0.3756631291764554
+      },
+      "cooks_d_outliers": [
+        "librarian",
+        "wizard"
+      ],
+      "spearman_p_holm": 0.49303804518417005,
+      "holm_significant": false
+    },
+    "layer_21": {
+      "pearson_r": -0.3632985972260975,
+      "pearson_p": 0.0809899970687715,
+      "spearman_rho": -0.3847503684499907,
+      "spearman_p": 0.06338758357088949,
+      "vif_length": 1.9042421453053067,
+      "partial_spearman_length": {
+        "rho": -0.042608695652173914,
+        "p": 0.8432913759776879
+      },
+      "partial_spearman_surface": {
+        "rho": -0.05913043478260869,
+        "p": 0.7837352528254471
+      },
+      "loo_pearson": {
+        "min": -0.4819928854187942,
+        "max": -0.2828539591132386,
+        "mean": -0.36353466010203705
+      },
+      "cooks_d_outliers": [
+        "librarian",
+        "wizard"
+      ],
+      "spearman_p_holm": 0.49303804518417005,
+      "holm_significant": false
+    },
+    "layer_22": {
+      "pearson_r": -0.361519098003287,
+      "pearson_p": 0.08260069973857707,
+      "spearman_rho": -0.3908506007923462,
+      "spearman_p": 0.05896374649642996,
+      "vif_length": 1.8363527299120437,
+      "partial_spearman_length": {
+        "rho": -0.06608695652173913,
+        "p": 0.7589874525518235
+      },
+      "partial_spearman_surface": {
+        "rho": -0.06608695652173913,
+        "p": 0.7589874525518235
+      },
+      "loo_pearson": {
+        "min": -0.48804812091165123,
+        "max": -0.28287503818642634,
+        "mean": -0.36177574960081005
+      },
+      "cooks_d_outliers": [
+        "librarian",
+        "wizard"
+      ],
+      "spearman_p_holm": 0.49303804518417005,
+      "holm_significant": false
+    },
+    "layer_23": {
+      "pearson_r": -0.34606282118092013,
+      "pearson_p": 0.09762259882502983,
+      "spearman_rho": -0.38780048462116845,
+      "spearman_p": 0.06114487302708917,
+      "vif_length": 1.789028294656312,
+      "partial_spearman_length": {
+        "rho": -0.023478260869565212,
+        "p": 0.9132865779270147
+      },
+      "partial_spearman_surface": {
+        "rho": -0.07217391304347825,
+        "p": 0.7375189840952583
+      },
+      "loo_pearson": {
+        "min": -0.48588097216981924,
+        "max": -0.2627758706553165,
+        "mean": -0.34634716665830395
+      },
+      "cooks_d_outliers": [
+        "librarian",
+        "wizard"
+      ],
+      "spearman_p_holm": 0.49303804518417005,
+      "holm_significant": false
+    },
+    "layer_24": {
+      "pearson_r": -0.35136914104802724,
+      "pearson_p": 0.09225304850213246,
+      "spearman_rho": -0.3782144052260385,
+      "spearman_p": 0.06840568159042686,
+      "vif_length": 1.7681909413117476,
+      "partial_spearman_length": {
+        "rho": -0.03130434782608695,
+        "p": 0.8845469556552951
+      },
+      "partial_spearman_surface": {
+        "rho": -0.04521739130434782,
+        "p": 0.8338234219848107
+      },
+      "loo_pearson": {
+        "min": -0.4959616250737358,
+        "max": -0.26540563478754126,
+        "mean": -0.3516485126752742
+      },
+      "cooks_d_outliers": [
+        "librarian",
+        "wizard"
+      ],
+      "spearman_p_holm": 0.49303804518417005,
+      "holm_significant": false
+    },
+    "layer_25": {
+      "pearson_r": -0.33876377783475525,
+      "pearson_p": 0.10538340652149145,
+      "spearman_rho": -0.3342055861847598,
+      "spearman_p": 0.11045530919859826,
+      "vif_length": 1.7334905669913128,
+      "partial_spearman_length": {
+        "rho": 0.007826086956521738,
+        "p": 0.9710483085120961
+      },
+      "partial_spearman_surface": {
+        "rho": 0.0017391304347826085,
+        "p": 0.9935650421080594
+      },
+      "loo_pearson": {
+        "min": -0.4861627388948271,
+        "max": -0.25189194075249116,
+        "mean": -0.33905494995796587
+      },
+      "cooks_d_outliers": [
+        "librarian",
+        "wizard"
+      ],
+      "spearman_p_holm": 0.49303804518417005,
+      "holm_significant": false
+    },
+    "layer_26": {
+      "pearson_r": -0.34227470691923606,
+      "pearson_p": 0.10159550514079677,
+      "spearman_rho": -0.348148974395858,
+      "spearman_p": 0.09548457968209706,
+      "vif_length": 1.7282487400481905,
+      "partial_spearman_length": {
+        "rho": -0.007826086956521738,
+        "p": 0.9710483085120961
+      },
+      "partial_spearman_surface": {
+        "rho": -0.03826086956521739,
+        "p": 0.8591175903218993
+      },
+      "loo_pearson": {
+        "min": -0.4890422636939281,
+        "max": -0.25203469179569543,
+        "mean": -0.34254908897155883
+      },
+      "cooks_d_outliers": [
+        "librarian",
+        "wizard"
+      ],
+      "spearman_p_holm": 0.49303804518417005,
+      "holm_significant": false
+    },
+    "layer_27": {
+      "pearson_r": -0.3298664424492388,
+      "pearson_p": 0.11544784900415248,
+      "spearman_rho": -0.33115547001358203,
+      "spearman_p": 0.1139478179675969,
+      "vif_length": 1.682144645493051,
+      "partial_spearman_length": {
+        "rho": 0.004347826086956522,
+        "p": 0.9839134567350358
+      },
+      "partial_spearman_surface": {
+        "rho": -0.010434782608695651,
+        "p": 0.9614038727773804
+      },
+      "loo_pearson": {
+        "min": -0.47960278789662003,
+        "max": -0.23548178813902804,
+        "mean": -0.33014290616803965
+      },
+      "cooks_d_outliers": [
+        "librarian",
+        "wizard"
+      ],
+      "spearman_p_holm": 0.49303804518417005,
+      "holm_significant": false
+    }
+  },
+  "rho_max_layer": 12,
+  "cv": {
+    "repeated_5fold_50seeds": {
+      "mean_mse_by_layer": {
+        "layer_0": 0.008912803820404656,
+        "layer_1": 0.008770176909732533,
+        "layer_2": 0.009014689895786042,
+        "layer_3": 0.009256836328228834,
+        "layer_4": 0.009325952120614904,
+        "layer_5": 0.009245119608404826,
+        "layer_6": 0.009075432087952261,
+        "layer_7": 0.0090594540333181,
+        "layer_8": 0.008863379649642983,
+        "layer_9": 0.009618964147300815,
+        "layer_10": 0.009246320514365532,
+        "layer_11": 0.009312956044142326,
+        "layer_12": 0.009135783462367125,
+        "layer_13": 0.009158034770783615,
+        "layer_14": 0.008793645466772667,
+        "layer_15": 0.008553326809046139,
+        "layer_16": 0.008450199746693237,
+        "layer_17": 0.008497140551028877,
+        "layer_18": 0.008901675079563102,
+        "layer_19": 0.009048752457730899,
+        "layer_20": 0.009167449554042677,
+        "layer_21": 0.009282628056986191,
+        "layer_22": 0.009335926505703501,
+        "layer_23": 0.009502595360525728,
+        "layer_24": 0.009499109737612152,
+        "layer_25": 0.009601067042482179,
+        "layer_26": 0.009575395220460121,
+        "layer_27": 0.00969165671837212
+      },
+      "ci_by_layer": {
+        "layer_0": [
+          0.008243972106307944,
+          0.009524917265848538
+        ],
+        "layer_1": [
+          0.008134593796477341,
+          0.009449590635672732
+        ],
+        "layer_2": [
+          0.008438686360398786,
+          0.009659171631833439
+        ],
+        "layer_3": [
+          0.008605180795469597,
+          0.009896607745915314
+        ],
+        "layer_4": [
+          0.00866517640404416,
+          0.009976929437273904
+        ],
+        "layer_5": [
+          0.00861997327625461,
+          0.009939085279182252
+        ],
+        "layer_6": [
+          0.008425067272808649,
+          0.009728908223689298
+        ],
+        "layer_7": [
+          0.008393782837154936,
+          0.009744113797211337
+        ],
+        "layer_8": [
+          0.00826087639337175,
+          0.009508570292782046
+        ],
+        "layer_9": [
+          0.008951061799426245,
+          0.010394247985733417
+        ],
+        "layer_10": [
+          0.008608062098814805,
+          0.009923439001840494
+        ],
+        "layer_11": [
+          0.008688780433614096,
+          0.010020541363432396
+        ],
+        "layer_12": [
+          0.008503919028362353,
+          0.009771506710677233
+        ],
+        "layer_13": [
+          0.008518686697050859,
+          0.009780129528875749
+        ],
+        "layer_14": [
+          0.008214159169967209,
+          0.009412192652263375
+        ],
+        "layer_15": [
+          0.00796905920318897,
+          0.00918545135841783
+        ],
+        "layer_16": [
+          0.007807712225489669,
+          0.009114117797997739
+        ],
+        "layer_17": [
+          0.007888223578614052,
+          0.009191148061718607
+        ],
+        "layer_18": [
+          0.0081688688207192,
+          0.009650765116131005
+        ],
+        "layer_19": [
+          0.008298589503667707,
+          0.009836700178851394
+        ],
+        "layer_20": [
+          0.008401116837060978,
+          0.009981340086499951
+        ],
+        "layer_21": [
+          0.008538945330113144,
+          0.010083702027503553
+        ],
+        "layer_22": [
+          0.008536784670343892,
+          0.010095520963219319
+        ],
+        "layer_23": [
+          0.008640238213964107,
+          0.010298196550328945
+        ],
+        "layer_24": [
+          0.008694745288445301,
+          0.010379381605405328
+        ],
+        "layer_25": [
+          0.008835058116461693,
+          0.01044632346346709
+        ],
+        "layer_26": [
+          0.008731821091402624,
+          0.010431645343028397
+        ],
+        "layer_27": [
+          0.008814407311900764,
+          0.010565208191438406
+        ]
+      },
+      "argmin_layer": 16
+    },
+    "loocv": {
+      "mean_mse_by_layer": {
+        "layer_0": 0.008862118528668637,
+        "layer_1": 0.008767997413432689,
+        "layer_2": 0.008950827651201065,
+        "layer_3": 0.009164385560535638,
+        "layer_4": 0.009252535571716803,
+        "layer_5": 0.00916962125925223,
+        "layer_6": 0.008941608948343472,
+        "layer_7": 0.008950631068949359,
+        "layer_8": 0.008690600521795745,
+        "layer_9": 0.00925910190767487,
+        "layer_10": 0.009068276897522362,
+        "layer_11": 0.009054342391189586,
+        "layer_12": 0.00888320767408701,
+        "layer_13": 0.00894439268730887,
+        "layer_14": 0.008622960575324167,
+        "layer_15": 0.008469060568318379,
+        "layer_16": 0.008413346522496049,
+        "layer_17": 0.008467954106348478,
+        "layer_18": 0.008846464465498293,
+        "layer_19": 0.008975894501498681,
+        "layer_20": 0.009093661741441576,
+        "layer_21": 0.009201617192376959,
+        "layer_22": 0.009242197674478028,
+        "layer_23": 0.009392434818572673,
+        "layer_24": 0.00938187534868481,
+        "layer_25": 0.009480067087680382,
+        "layer_26": 0.009459613380414447,
+        "layer_27": 0.009568272204992734
+      },
+      "ci_by_layer": {
+        "layer_0": [
+          0.004076145860507954,
+          0.014949732496162762
+        ],
+        "layer_1": [
+          0.003725624294988511,
+          0.01484548588385389
+        ],
+        "layer_2": [
+          0.004535345132529738,
+          0.014403613751005214
+        ],
+        "layer_3": [
+          0.0044167496421643,
+          0.014649972121261207
+        ],
+        "layer_4": [
+          0.004467540610060726,
+          0.015274197191706923
+        ],
+        "layer_5": [
+          0.004432091559277542,
+          0.015141235782247062
+        ],
+        "layer_6": [
+          0.0044585267962554045,
+          0.01474962679056622
+        ],
+        "layer_7": [
+          0.004269025640677493,
+          0.015109628817368827
+        ],
+        "layer_8": [
+          0.004335282108420886,
+          0.014059806377570252
+        ],
+        "layer_9": [
+          0.0045364648086640225,
+          0.015079358061840473
+        ],
+        "layer_10": [
+          0.004486589486882214,
+          0.014735239069118205
+        ],
+        "layer_11": [
+          0.004570384712066571,
+          0.014653113057751091
+        ],
+        "layer_12": [
+          0.004444591705665295,
+          0.01440196089766369
+        ],
+        "layer_13": [
+          0.004416480441527143,
+          0.014466480780397651
+        ],
+        "layer_14": [
+          0.004371393787575206,
+          0.013648090803456074
+        ],
+        "layer_15": [
+          0.004063928157967373,
+          0.013837698376790336
+        ],
+        "layer_16": [
+          0.0037166393514657787,
+          0.01412334535062451
+        ],
+        "layer_17": [
+          0.0039014550603258626,
+          0.014444967790799713
+        ],
+        "layer_18": [
+          0.0038076506712092727,
+          0.01585508749699584
+        ],
+        "layer_19": [
+          0.003758902667359423,
+          0.015961094496107848
+        ],
+        "layer_20": [
+          0.0036523522551218796,
+          0.01559441356849195
+        ],
+        "layer_21": [
+          0.0037428815476898045,
+          0.0157640417908047
+        ],
+        "layer_22": [
+          0.0036840852413810017,
+          0.016220823438026062
+        ],
+        "layer_23": [
+          0.003980804213564624,
+          0.016678816483687853
+        ],
+        "layer_24": [
+          0.003695763663306135,
+          0.016941597010824705
+        ],
+        "layer_25": [
+          0.0038458032773480214,
+          0.016943691490889767
+        ],
+        "layer_26": [
+          0.004081863286828331,
+          0.01662930572440881
+        ],
+        "layer_27": [
+          0.003916420293936854,
+          0.016949424060147475
+        ]
+      },
+      "argmin_layer": 16
+    },
+    "cv_optimal_in_band": true
+  },
+  "within_category_l15": {
+    "occupational": {
+      "n": 10,
+      "personas": [
+        "software_engineer",
+        "kindergarten_teacher",
+        "data_scientist",
+        "medical_doctor",
+        "librarian",
+        "police_officer",
+        "chef",
+        "lawyer",
+        "accountant",
+        "journalist"
+      ],
+      "pearson_r": -0.23536783704709927,
+      "pearson_p": 0.512719923032091,
+      "spearman_rho": -0.17073488132934914,
+      "spearman_p": 0.6372155152698102
+    },
+    "character": {
+      "n": 8,
+      "personas": [
+        "french_person",
+        "villain",
+        "comedian",
+        "zelthari_scholar",
+        "wizard",
+        "hero",
+        "philosopher",
+        "child"
+      ],
+      "pearson_r": -0.21091347357913195,
+      "pearson_p": 0.6161086969106154,
+      "spearman_rho": -0.4761904761904762,
+      "spearman_p": 0.23293553465009798
+    },
+    "generic_helper": {
+      "n": 5,
+      "personas": [
+        "helpful_assistant",
+        "qwen_default",
+        "ai_assistant",
+        "ai",
+        "chatbot"
+      ],
+      "pearson_r": 0.1861548737247032,
+      "pearson_p": 0.7643563913946602,
+      "spearman_rho": -0.09999999999999999,
+      "spearman_p": 0.8728885715695384
+    },
+    "occupational_no_librarian": {
+      "n": 9,
+      "personas": [
+        "software_engineer",
+        "kindergarten_teacher",
+        "data_scientist",
+        "medical_doctor",
+        "police_officer",
+        "chef",
+        "lawyer",
+        "accountant",
+        "journalist"
+      ],
+      "pearson_r": -0.3584372575310908,
+      "pearson_p": 0.343526428952342,
+      "spearman_rho": -0.19328413556768412,
+      "spearman_p": 0.6182981334382578
+    }
+  },
+  "string_similarity_baselines": {
+    "token_jaccard": {
+      "software_engineer": 0.2727272727272727,
+      "kindergarten_teacher": 0.42857142857142855,
+      "data_scientist": 0.2727272727272727,
+      "medical_doctor": 0.25,
+      "librarian": 0.2,
+      "french_person": 0.2,
+      "villain": 0.21428571428571427,
+      "comedian": 0.23076923076923078,
+      "police_officer": 0.2,
+      "zelthari_scholar": 0.14285714285714285,
+      "helpful_assistant": 1.0,
+      "qwen_default": 0.5,
+      "chef": 0.21428571428571427,
+      "lawyer": 0.17647058823529413,
+      "accountant": 0.13333333333333333,
+      "journalist": 0.1875,
+      "wizard": 0.23076923076923078,
+      "hero": 0.2,
+      "philosopher": 0.21428571428571427,
+      "child": 0.16666666666666666,
+      "ai_assistant": 0.42857142857142855,
+      "ai": 0.2857142857142857,
+      "chatbot": 0.5,
+      "i_am_helpful": 0.42857142857142855
+    },
+    "levenshtein": {
+      "software_engineer": 37,
+      "kindergarten_teacher": 18,
+      "data_scientist": 35,
+      "medical_doctor": 42,
+      "librarian": 62,
+      "french_person": 50,
+      "villain": 46,
+      "comedian": 49,
+      "police_officer": 53,
+      "zelthari_scholar": 122,
+      "helpful_assistant": 0,
+      "qwen_default": 40,
+      "chef": 50,
+      "lawyer": 60,
+      "accountant": 56,
+      "journalist": 71,
+      "wizard": 38,
+      "hero": 46,
+      "philosopher": 51,
+      "child": 58,
+      "ai_assistant": 8,
+      "ai": 17,
+      "chatbot": 14,
+      "i_am_helpful": 5
+    },
+    "spearman_jaccard_vs_rate": {
+      "rho": -0.40380944342612124,
+      "p": 0.05035894355335707
+    },
+    "spearman_neg_levenshtein_vs_rate": {
+      "rho": -0.45204951022660056,
+      "p": 0.0265739837672027
+    },
+    "cosine_l15_vs_rate": {
+      "rho": -0.5167768255738268,
+      "p": 0.009719309124814796
+    },
+    "cosine_beats_baselines_abs_rho": "True"
+  },
+  "base_residualized_l15": {
+    "n": 24,
+    "pearson_r": -0.4510440288386397,
+    "pearson_p": 0.026954435837952803,
+    "spearman_rho": -0.5167768255738268,
+    "spearman_p": 0.009719309124814796,
+    "residual_rates": {
+      "software_engineer": 0.22,
+      "kindergarten_teacher": 0.19,
+      "data_scientist": 0.18,
+      "medical_doctor": 0.21,
+      "librarian": 0.48,
+      "french_person": 0.33,
+      "villain": 0.34,
+      "comedian": 0.45,
+      "police_officer": 0.25,
+      "zelthari_scholar": 0.28,
+      "helpful_assistant": 0.21,
+      "qwen_default": 0.22,
+      "chef": 0.18,
+      "lawyer": 0.27,
+      "accountant": 0.21,
+      "journalist": 0.28,
+      "wizard": 0.46,
+      "hero": 0.25,
+      "philosopher": 0.19,
+      "child": 0.16,
+      "ai_assistant": 0.16,
+      "ai": 0.15,
+      "chatbot": 0.13,
+      "i_am_helpful": 0.23
+    }
+  },
+  "off_diagonal_l15": {
+    "n_pairs": 552,
+    "spearman_rho": 0.34106334109100656,
+    "spearman_p": 1.6730377702971028e-16
+  },
+  "outcome_bucket": "H_attenuated",
+  "outcome_flags": {
+    "low_emission": false,
+    "child_safety_gating_caveat": false
+  },
+  "l15_loo_robust": {
+    "n_pass": 12,
+    "n_total": 12,
+    "robust": true
+  },
+  "l15_length_partial_sig": false,
+  "i274_caveat_child_safety_gating": false,
+  "elapsed_seconds": 106.88130354881287
+}
