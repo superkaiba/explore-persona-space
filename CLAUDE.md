@@ -157,6 +157,20 @@ python scripts/pod.py config --update <name> --host 1.2.3.4 --port 12345
 ```
 This updates `pods.conf` (single source of truth), regenerates `~/.ssh/config` and the user-level `~/.claude/mcp.json` automatically. Then restart the MCP server (`/mcp`).
 
+## GitHub GraphQL MCP (`gh_graphql`)
+
+In-repo Python MCP server at `src/explore_persona_space/mcp_servers/gh_graphql/`. Exposes a hand-curated allow-list of GitHub mutations (13 tools — see `tools.py:MUTATION_TOOL_NAMES`) so subagents can post comments / set labels / open PRs **without `GH_TOKEN` ever appearing in the agent context window**. Read paths (`gh issue view`, `gh issue list`, `gh pr view`, `gh pr diff`) stay on the `gh` CLI by design — no auth-leak risk on reads.
+
+The token lives in the orchestrator's process env (typically `~/.claude/mcp.json`'s `gh_graphql.env` block, written by `pod.py config --sync`). The MCP server inherits it at spawn time; agents call named tools and never see the literal value. **Local-VM caveat:** the token is still readable from `/proc/<pid>/environ` of the MCP server process; `gh_graphql` closes the agent-context-window leakage path, not the local-VM process-tree path.
+
+**Body 65,536-byte cap.** `add_issue_comment` / `update_issue_body` / `create_issue` / `create_pull_request` enforce GitHub's GraphQL `addComment.body` limit and return `{"success": false, "error": "body_too_large"}` rather than truncate. Skill-side callers MUST handle this: post a short `epm:failure v1` with `failure_class: infra`, `reason: comment_oversize`, then flip the issue to `status:blocked` (see `markers.md`'s "Comment body 65,536-byte cap" note).
+
+**Denylist (enforced by omission).** `archiveRepository`, `transferIssue`, `deleteIssue`, `deleteRepository`, `createRepository`, `updateRepository`, project mutations beyond `updateProjectV2ItemFieldValue`, and GraphQL introspection are NOT registered. A model that asks for them gets the standard MCP "unknown tool" error.
+
+**Migration phasing.** Phase 1 (this commit) wires the skill itself for plan-post and clean-result-creation. Phases 2–5 (agent-prompt migration) are tracked as `Parent: #320` follow-up issues; until they land, agent prompts continue to shell out to `gh`.
+
+**Pre-commit secrets check.** `.pre-commit-config.yaml` runs `scripts/check_mcp_json_no_secrets.py` against any committed `.mcp.json` and refuses to commit env keys whose names match the secret-suffix regex (`*_TOKEN`, `*_API_KEY`, `*_PAT`, `*_SECRET`, `*_KEY`, `*_PASSWORD`) or the explicit-name list (`GH_TOKEN`, `HF_TOKEN`, `WANDB_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `RUNPOD_API_KEY`, `PROJECT_PAT`, `SUPABASE_ACCESS_TOKEN`, `CODECOV_TOKEN`, `GITHUB_TOKEN`). The user-level `~/.claude/mcp.json` is NOT checked (it's not under git). `SSH_SERVER_*_KEYPATH` (a path to a key file, not the key) and `GH_REPO_OWNER` / `GH_REPO_NAME` are allowlisted.
+
 ## Ephemeral Pod Lifecycle (default execution path)
 
 **Pods are created on demand per GitHub issue, not maintained as a permanent fleet.** The `/issue` skill provisions a pod when an experiment dispatches, stops it after artifacts upload, optionally resumes it during interpretation, and at end-of-experiment (the [Step 10c: pod termination prompt in `.claude/skills/issue/SKILL.md`](.claude/skills/issue/SKILL.md#step-10c-pod-termination-prompt-experiments-only), after the clean-result is finalized) prompts the user for permission to terminate.

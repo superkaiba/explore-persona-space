@@ -39,7 +39,11 @@ dependencies = [
     "httpx>=0.25,<1.0",
     "tiktoken>=0.5,<1.0",
     "langdetect>=1.0.9",
+    "mcp>=1.0,<2.0",
 ]
+
+[project.scripts]
+epm-gh-graphql-mcp = "explore_persona_space.mcp_servers.gh_graphql.__main__:main"
 
 [project.optional-dependencies]
 dev = [

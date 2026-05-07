@@ -72,6 +72,7 @@ The kinds table is auto-generated from `.claude/workflow.yaml § markers`. Do NO
 - **`results`** — for the `## Sample outputs` block: include `### Condition: <name>` H3 subheadings and ≥3 randomly-sampled (persona, prompt, response) triplets PER CONDITION, formatted as fenced markdown blocks. Verifier check #11 enforces.
 - **`failure`** — when `failure_class:` is absent, `/issue` Step 7 falls back to log-pattern matching against `failure_patterns.md`. Routing per the table in `.claude/agents/experimenter.md`.
 - **`follows` / `followed-by`** — auto-posting is deferred to a follow-up `type:infra` issue.
+- **Comment body 65,536-byte cap (GitHub GraphQL `addComment.body`).** Every marker comment MUST fit under 65,536 UTF-8 bytes. The `gh_graphql` MCP `add_issue_comment` tool errors with `body_too_large` rather than truncate. Callers that exceed the cap MUST split the body into N comments and chain them via `part=K/N` in the marker title — e.g. `<!-- epm:plan v3 part=1/3 -->` ... `<!-- /epm:plan -->`, then `<!-- epm:plan v3 part=2/3 -->` ... and so on. The marker scanner reads ALL parts of the same `(kind, version)` and concatenates in `part` order. If the skill cannot split a body cleanly, it posts a SHORT `epm:failure v1` with `failure_class: infra` and `reason: comment_oversize`, then flips the source issue to `status:blocked`.
 
 ## Parsing rules
 

@@ -25,3 +25,10 @@ repos:
         language: system
         files: ^(\.claude/workflow\.yaml|\.claude/skills/issue/(SKILL|markers)\.md|CLAUDE\.md|scripts/(gh_project|workflow_lint)\.py|src/explore_persona_space/workflow\.py)$
         pass_filenames: false
+
+      - id: check-mcp-json-no-secrets
+        name: Refuse secrets in committed .mcp.json
+        entry: uv run python scripts/check_mcp_json_no_secrets.py
+        language: system
+        files: ^\.mcp\.json$
+        pass_filenames: true
