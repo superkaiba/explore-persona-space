@@ -4,9 +4,9 @@ description: >
   Run every weekly research-orchestration task in parallel via subagents,
   each emitting its own redacted public gist. Manual trigger only — no cron.
   Returns one gist URL per task: weekly summary, workflow-optimization
-  retrospective, code hygiene scan, and mentor-prep agenda. Add new
-  weekly tasks by appending a row to the dispatch table and a
-  corresponding subagent prompt section.
+  retrospective, code hygiene scan, mentor-prep agenda, mentor-prep slides
+  (Marp deck), and SUMMARY gist. Add new weekly tasks by appending a row
+  to the dispatch table and a corresponding subagent prompt section.
 user_invocable: true
 ---
 
@@ -30,6 +30,7 @@ cron.** Use `/schedule` if you want to wire a cron later.
 | Workflow optimization | `retrospective` | gist URL — CLAUDE.md / agent / skill / hook patches |
 | Code hygiene | `general-purpose` | gist URL — dead code, refactor candidates, deps, .claude/ health, jscpd duplication, unmerged worktrees |
 | Mentor-prep agenda | `general-purpose` | gist URL — clean-result TL;DRs assembled into a screen-shareable meeting doc |
+| Mentor-prep slides | `general-purpose` | gist URL — Marp deck (`deck.md` + `deck.pdf`) for the actual mentor meeting; built via the `mentor-update-slides` skill |
 | SUMMARY gist | `general-purpose` | gist URL — project SUMMARY (Motivation / Related work / Current results / Immediate next steps / Long-term goals / Glossary), regenerated from `docs/SUMMARY.template.md` + `docs/claims.yaml` + live issues |
 
 (Adding more is a 2-step change: append a row here, append a `## Subagent
@@ -121,6 +122,7 @@ user-notes blocks and emit the static prompt list with "(unanswered)" placeholde
      echo "| ${TODAY} | weekly (${WEEK_TAG}) | workflow-optimization | <url-or-skip> |"
      echo "| ${TODAY} | weekly (${WEEK_TAG}) | code-hygiene | <url-or-skip> |"
      echo "| ${TODAY} | weekly (${WEEK_TAG}) | mentor-prep | <url-or-skip> |"
+     echo "| ${TODAY} | weekly (${WEEK_TAG}) | mentor-slides | <url-or-skip> |"
    } >> docs/update_log.md
 
    # JSONL: success rows have "status":"success","url":"...";
@@ -129,9 +131,11 @@ user-notes blocks and emit the static prompt list with "(unanswered)" placeholde
      echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"summary","status":"success","url":"<url>"}'
      echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"workflow-optimization","status":"success","url":"<url>"}'
      echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"code-hygiene","status":"success","url":"<url>"}'
-     # Example skipped row:
+     # Example skipped row (mentor-prep agenda or mentor-slides skip when no clean-results in window):
      # echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"mentor-prep","status":"skipped","reason":"no clean-results this week"}'
+     # echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"mentor-slides","status":"skipped","reason":"no clean-results this week"}'
      echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"mentor-prep","status":"success","url":"<url>"}'
+     echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"mentor-slides","status":"success","url":"<url>"}'
    } >> .claude/cache/update_log.jsonl
    ```
 
@@ -142,6 +146,7 @@ user-notes blocks and emit the static prompt list with "(unanswered)" placeholde
    - Workflow optimization: <url>
    - Code hygiene: <url>
    - Mentor-prep agenda: <url-or-skip-message>
+   - Mentor-prep slides: <url-or-skip-message>
    (logged to docs/update_log.md + .claude/cache/update_log.jsonl)
    ```
 7. If any subagent failed, list it with `❌ <task> — <reason>` and continue;
@@ -515,6 +520,73 @@ as the output instead. The orchestrator handles that gracefully.
 
 RETURN the gist URL (or the skip message) as the SOLE output. No commentary.
 ```
+
+---
+
+## Subagent prompt: Mentor-prep slides
+
+```
+You are the mentor-prep slides subagent. Generate a Marp deck for this
+week's mentor meeting using the `mentor-update-slides` skill, then publish
+the deck (markdown source + rendered PDF) as a single public gist.
+
+# Step 1: Invoke the skill
+
+Call the Skill tool with:
+  skill: mentor-update-slides
+  args: "--days 7 --pdf"
+
+The skill writes:
+- figures/mentor-slides/<TODAY>/deck.md   (Marp source)
+- figures/mentor-slides/<TODAY>/deck.pdf  (rendered via marp-cli)
+
+The skill returns either a success report with the local paths, or a
+literal "(skipped — …)" string if zero clean-result issues were found in
+the 7-day window. If the skill skipped, do NOT publish a gist. Return the
+literal string "(no clean-results this week — skipping mentor slides)" as
+the SOLE output. The orchestrator handles that gracefully.
+
+# Step 2: Redact deck.md
+
+  TODAY=$(date +%Y-%m-%d)
+  WEEK_TAG=$(date +%Y-W%V)
+  uv run python scripts/redact_for_gist.py \
+    --in "figures/mentor-slides/${TODAY}/deck.md" \
+    --out /tmp/weekly-slides-body.redacted.md
+
+# Step 3: Publish (markdown + PDF in one gist)
+
+The markdown is the gist's primary file (renders inline on the gist page).
+The PDF is attached as a downloadable file for the actual presentation.
+
+  if [ -f "figures/mentor-slides/${TODAY}/deck.pdf" ]; then
+    gh gist create --public \
+      --filename "weekly-slides-${WEEK_TAG}.md" \
+      --desc "Mentor meeting slides — week ${WEEK_TAG}" \
+      /tmp/weekly-slides-body.redacted.md \
+      "figures/mentor-slides/${TODAY}/deck.pdf"
+  else
+    # PDF render failed (marp-cli unavailable, etc.) — publish markdown only.
+    gh gist create --public \
+      --filename "weekly-slides-${WEEK_TAG}.md" \
+      --desc "Mentor meeting slides — week ${WEEK_TAG} (PDF render failed)" \
+      /tmp/weekly-slides-body.redacted.md
+  fi
+
+# Constraints
+
+- Read-only on the project: do NOT auto-commit `figures/mentor-slides/`.
+  The user reviews the deck and commits it themselves if they want it
+  archived. The gist is sufficient for the meeting.
+- The mentor-update-slides skill enforces its own quality checklist (no
+  effect-size jargon, ≤12-word headlines, etc.). Do not re-validate here.
+- If marp-cli's first render is slow (downloads Chromium for headless
+  PDF), that's expected on first invocation; subsequent runs are ~2-3s.
+
+RETURN the gist URL (or the skip message) as the SOLE output. No commentary.
+```
+
+---
 
 ## Subagent prompt: SUMMARY gist
 
