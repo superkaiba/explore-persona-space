@@ -166,8 +166,15 @@ def assert_cache_shape(
     expected_n_layers: int,
     expected_hidden_dim: int,
     sample_size: int = 5,
+    expected_n_positions: int | None = None,
 ) -> None:
     """Hard-fail if any sampled per_q cache doesn't match expected shape.
+
+    Round 2 / B1 fix: the canonical Method A per-q cache is now 4-D
+        (n_q, n_layers, n_prompt_positions, D)
+    so H2 can evaluate each (i, l) candidate cell in its own activation space.
+    Legacy #218 caches are 3-D (n_q, n_layers, D) at i=-1 only — this is detected
+    and the §10 fallback path (regenerate Method A through THIS script) is invoked.
 
     Per plan §10 fallback: if shape is wrong (e.g. (240, 4, 3584) from a
     DEFAULT_LAYERS = [7, 14, 21, 27] launch), exit with a pointer to the
@@ -187,21 +194,41 @@ def assert_cache_shape(
         )
     rng = random.Random(42)
     sample = rng.sample(candidates, k=min(sample_size, len(candidates)))
-    expected_shape = (expected_n_q, expected_n_layers, expected_hidden_dim)
-    print(f"Cache-shape assertion (method={method}, expected={expected_shape})")
+    if expected_n_positions is not None:
+        expected_shape_4d = (
+            expected_n_q,
+            expected_n_layers,
+            expected_n_positions,
+            expected_hidden_dim,
+        )
+        expected_descr = f"{expected_shape_4d} (4-D, round 2)"
+    else:
+        expected_shape_4d = None
+        expected_descr = (
+            f"({expected_n_q}, {expected_n_layers}, {expected_hidden_dim}) [3-D legacy]"
+        )
+    print(f"Cache-shape assertion (method={method}, expected={expected_descr})")
     for path in sample:
         tensor = torch.load(path, map_location="cpu", weights_only=True)
         actual = tuple(tensor.shape)
-        if actual != expected_shape:
+        # Accept both 4-D (round 2 canonical) and 3-D (legacy #218) layouts:
+        ok = False
+        if (expected_shape_4d is not None and actual == expected_shape_4d) or actual == (
+            expected_n_q,
+            expected_n_layers,
+            expected_hidden_dim,
+        ):
+            ok = True
+        if not ok:
             msg = (
-                f"BAD CACHE SHAPE for {path}: got {actual}, expected {expected_shape}.\n\n"
+                f"BAD CACHE SHAPE for {path}: got {actual}, expected {expected_descr}.\n\n"
                 "FALLBACK (per plan §10):\n"
                 "  Regenerate Method A from scratch through THIS script with the per-token "
                 "positions H2 needs:\n"
                 "    nohup uv run python scripts/sweep_extraction_grid.py \\\n"
                 "        --methods a --layers 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,"
                 "18,19,20,21,22,23,24,25,26,27 \\\n"
-                "        --prompt-token-positions -5,-4,-3,-2,-1 \\\n"
+                "        --prompt-token-positions=-5,-4,-3,-2,-1 \\\n"
                 "        --output-dir data/persona_vectors/issue_263/qwen2.5-7b-instruct/"
                 "method_a_regen/ &\n"
                 "  Then re-run this script with --reuse-cache pointing at the regen dir.\n"
@@ -271,6 +298,7 @@ def extract_prompt_side_grid(  # noqa: C901
     output_dir: Path,
     n_prompts: int = 1,
     save_per_q: bool = True,
+    train_qid_set: set[int] | None = None,
 ) -> dict[str, dict[tuple[int, int], torch.Tensor]]:
     """Run one forward pass per (role, prompt, question); dump activations at every
     (layer, prompt_position) cell.
@@ -278,14 +306,20 @@ def extract_prompt_side_grid(  # noqa: C901
     Per plan §4 pseudocode: this is the workhorse for Method A + A_per_token. The
     `i = -1` slice IS Method A; the i ∈ {-5..-2} slices are the new A_per_token.
 
-    Per-question caches: (n_q x n_prompts, n_layers, hidden_dim) fp16, with positions
-    stored as separate files (since per-position is a sliced view, not a per-q dim).
-    Actually per plan §5, the per-q cache is (n_q, n_layers, D) and is written ONLY for the
-    legacy i=-1 cell so that downstream cosine_grid noise-floor helper can consume it.
-    For other positions, only the centroid is saved. (Per-q cache disk budget calculation
-    in plan §9 assumes one cache per method.)
+    Per-question caches (round 2 / B1 + C4 fix):
+        method_a/<role>__per_q.pt   shape (n_q, n_layers, n_prompt_positions, D) fp16
+    The 4-D layout is REQUIRED for H2 to evaluate each (i, l) candidate cell in its
+    own activation space (round-1 BLOCKER B1). Each per-q row carries hidden states
+    at every prompt position so the analyzer can slice the right (i, l) tile per cell.
 
-    Returns: centroids[role][(layer, position)] = (D,) fp32 tensor.
+    Train-only centroids (round 2 / B2 fix):
+        method_a/<role>__centroid_train.pt   shape (n_layers, n_prompt_positions, D) fp32
+    These are means over the train-split questions only (q_idx 0..199 by default), so
+    H1 clustering can evaluate cells without consuming the test split. Pass
+    `train_qid_set` (a set of question indices) to enable this output. The legacy
+    full-question centroid files are still written per cell as before.
+
+    Returns: centroids[role][(layer, position)] = (D,) fp32 tensor (full-question mean).
     """
     print(f"\n{'=' * 60}")
     print("Method A / A_per_token: prompt-side per-token sweep")
@@ -316,9 +350,13 @@ def extract_prompt_side_grid(  # noqa: C901
                 for lyr in layers
             ]
             per_q_path = output_dir / "method_a" / f"{role_name}__per_q.pt"
+            train_centroid_path = output_dir / "method_a" / f"{role_name}__centroid_train.pt"
             cells_present = all(p.exists() for p in cell_paths)
             per_q_present = (not save_per_q) or per_q_path.exists()
-            if cells_present and per_q_present:
+            train_centroid_present = (
+                (not save_per_q) or (train_qid_set is None) or train_centroid_path.exists()
+            )
+            if cells_present and per_q_present and train_centroid_present:
                 cached: dict[tuple[int, int], torch.Tensor] = {}
                 for pos in prompt_positions:
                     for lyr in layers:
@@ -334,29 +372,48 @@ def extract_prompt_side_grid(  # noqa: C901
                 continue
 
             prompts_to_use = prompts[:n_prompts]
-            # accum[(lyr, pos)] -> list of per-(prompt, question) hidden vecs
+            # accum[(lyr, pos)] -> list of (prompt, question) vecs (full set; for centroid)
             accum: dict[tuple[int, int], list[torch.Tensor]] = {
                 (lyr, pos): [] for lyr in layers for pos in prompt_positions
             }
-            # Per-question cache: (n_q, n_layers, D) at the i=-1 position, fp16.
-            # Matches #218's per_q cache shape contract.
+            # Train-split accumulators (subset of `accum` indices) for B2 fix.
+            # Indexed by the SAME (lyr, pos) keys; only train_qid_set rows are appended.
+            train_accum: dict[tuple[int, int], list[torch.Tensor]] | None = (
+                {(lyr, pos): [] for lyr in layers for pos in prompt_positions}
+                if (train_qid_set is not None)
+                else None
+            )
+            # Per-question 4-D cache: (n_q, n_layers, n_prompt_positions, D) fp16.
+            # Round-2 B1 fix: store every prompt position so H2 can evaluate each
+            # candidate cell in its own activation space.
             per_q_buffer: list[torch.Tensor] | None = [] if save_per_q else None
 
             for sys_prompt in prompts_to_use:
-                for question in questions:
+                for q_idx, question in enumerate(questions):
                     text = build_chat_text(tokenizer, sys_prompt, question)
                     inputs = tokenizer(text, return_tensors="pt", padding=False).to(model.device)
                     with torch.no_grad():
                         _ = model(**inputs)
                     seq_len = inputs["input_ids"].shape[1]
 
-                    # Per-q row at i=-1 across layers (n_layers, D), fp16
+                    is_train_q = (train_qid_set is not None) and (q_idx in train_qid_set)
+
+                    # Per-q row across layers AND positions: (n_layers, n_positions, D), fp16.
                     if per_q_buffer is not None:
-                        last = seq_len - 1
-                        row = torch.stack(
-                            [cap.captured[lyr][0, last, :].float().cpu() for lyr in layers]
-                        ).to(torch.float16)
-                        per_q_buffer.append(row)
+                        layer_rows: list[torch.Tensor] = []
+                        for lyr in layers:
+                            hs = cap.captured[lyr]
+                            pos_vecs: list[torch.Tensor] = []
+                            for pos in prompt_positions:
+                                tok_pos = seq_len + pos
+                                if tok_pos < 0:
+                                    pos_vecs.append(torch.zeros(hs.shape[-1]))
+                                else:
+                                    pos_vecs.append(hs[0, tok_pos, :].float().cpu())
+                            layer_rows.append(torch.stack(pos_vecs))  # (n_pos, D)
+                        per_q_buffer.append(
+                            torch.stack(layer_rows).to(torch.float16)
+                        )  # (n_layers, n_pos, D)
 
                     for lyr in layers:
                         hs = cap.captured[lyr]
@@ -364,7 +421,10 @@ def extract_prompt_side_grid(  # noqa: C901
                             tok_pos = seq_len + pos
                             if tok_pos < 0:
                                 continue
-                            accum[(lyr, pos)].append(hs[0, tok_pos, :].float().cpu())
+                            vec = hs[0, tok_pos, :].float().cpu()
+                            accum[(lyr, pos)].append(vec)
+                            if train_accum is not None and is_train_q:
+                                train_accum[(lyr, pos)].append(vec)
 
             per_role: dict[tuple[int, int], torch.Tensor] = {}
             for (lyr, pos), vecs in accum.items():
@@ -379,8 +439,27 @@ def extract_prompt_side_grid(  # noqa: C901
             centroids[role_name] = per_role
 
             if per_q_buffer is not None and per_q_buffer:
-                per_q_tensor = torch.stack(per_q_buffer)  # (n_q, n_layers, D) fp16
+                # Stack to (n_q, n_layers, n_positions, D) fp16
+                per_q_tensor = torch.stack(per_q_buffer)
                 torch.save(per_q_tensor, per_q_path)
+
+            # Train-only centroid block: (n_layers, n_positions, D) fp32. B2 fix.
+            if train_accum is not None:
+                n_layers = len(layers)
+                n_pos = len(prompt_positions)
+                if per_q_buffer is not None and per_q_buffer:
+                    D = per_q_buffer[0].shape[-1]
+                    train_block = torch.full((n_layers, n_pos, D), float("nan"))
+                else:
+                    D = next(iter(per_role.values())).shape[-1] if per_role else 0
+                    train_block = torch.full((n_layers, n_pos, D), float("nan")) if D else None
+                if train_block is not None:
+                    for li, lyr in enumerate(layers):
+                        for pi, pos in enumerate(prompt_positions):
+                            vecs = train_accum[(lyr, pos)]
+                            if vecs:
+                                train_block[li, pi, :] = torch.stack(vecs).mean(dim=0)
+                    torch.save(train_block.float(), train_centroid_path)
 
             elapsed = time.time() - t0
             rate = (role_idx + 1) / elapsed * 60 if elapsed > 0 else 0.0
@@ -481,6 +560,7 @@ def extract_response_methods(  # noqa: C901
     do_bstar: bool,
     do_r_per_token: bool,
     save_per_q: bool = True,
+    train_qid_set: set[int] | None = None,
 ) -> dict[str, dict[str, dict[tuple[int, int], torch.Tensor]]]:
     """Single forward pass per (role, response) yields hidden states at:
     - layer x every response-token-index in `response_positions` (R_per_token)
@@ -530,7 +610,7 @@ def extract_response_methods(  # noqa: C901
 
     with HiddenStateCapture(model, layers) as cap:
         for role_idx, (role_name, items) in enumerate(sorted_roles):
-            # Per-role accumulators
+            # Per-role accumulators (full-question, used for centroid)
             b_accum = {lyr: [] for lyr in layers} if do_b else None
             bstar_accum = {lyr: [] for lyr in layers} if do_bstar else None
             r_accum = (
@@ -538,17 +618,39 @@ def extract_response_methods(  # noqa: C901
                 if do_r_per_token
                 else None
             )
-            # Per-q cache for Method B: (n_q, n_layers, D) mean-response, fp16
+            # Train-only accumulators (B2 fix). Indexed identically to the full ones.
+            b_train_accum: dict[int, list[torch.Tensor]] | None = (
+                {lyr: [] for lyr in layers} if (do_b and train_qid_set is not None) else None
+            )
+            bstar_train_accum: dict[int, list[torch.Tensor]] | None = (
+                {lyr: [] for lyr in layers} if (do_bstar and train_qid_set is not None) else None
+            )
+            r_train_accum: dict[tuple[int, int], list[torch.Tensor]] | None = (
+                {(lyr, t): [] for lyr in layers for t in response_positions}
+                if (do_r_per_token and train_qid_set is not None)
+                else None
+            )
+            # Per-q caches:
+            #   B:  (n_q, n_layers, D) fp16
+            #   B*: (n_q, n_layers, D) fp16 (B1/C4 round-2 fix)
+            #   R_per_token: (n_q, n_layers, n_response_positions, D) fp16 (B1/C4 fix)
             b_per_q_buf: list[torch.Tensor] | None = [] if (do_b and save_per_q) else None
+            bstar_per_q_buf: list[torch.Tensor] | None = [] if (do_bstar and save_per_q) else None
+            r_per_q_buf: list[torch.Tensor] | None = [] if (do_r_per_token and save_per_q) else None
 
             n_skipped = 0
-            for item in items:
+            for item_idx, item in enumerate(items):
                 sys_prompt = item["system_prompt"]
                 question = item["question"]
                 response = item["response"]
                 if not response:
                     n_skipped += 1
                     continue
+
+                # The "question index" carried in the per-q cache is the position in
+                # the (q, prompt) flat list used elsewhere (item_idx). For n_prompts=1
+                # this is the question index; for n_prompts>1 it's q + n_q * p_idx.
+                is_train_q = (train_qid_set is not None) and (item_idx in train_qid_set)
 
                 prompt_messages = [
                     {"role": "system", "content": sys_prompt},
@@ -575,7 +677,7 @@ def extract_response_methods(  # noqa: C901
                 with torch.no_grad():
                     _ = model(**full_inputs)
 
-                # Per-question row for B's per-q cache: (n_layers, D) fp16, mean-response
+                # Per-q row for B: (n_layers, D) fp16, mean-response
                 if b_per_q_buf is not None:
                     row_layers = []
                     for lyr in layers:
@@ -584,22 +686,58 @@ def extract_response_methods(  # noqa: C901
                         row_layers.append(resp.mean(dim=0))
                     b_per_q_buf.append(torch.stack(row_layers).to(torch.float16))
 
+                # Per-q row for B*: (n_layers, D) fp16, mean-response excl. last token
+                if bstar_per_q_buf is not None:
+                    row_layers = []
+                    for lyr in layers:
+                        hs = cap.captured[lyr]
+                        resp = hs[0, prompt_len:full_len, :].float().cpu()
+                        if resp.shape[0] > 1:
+                            row_layers.append(resp[:-1].mean(dim=0))
+                        else:
+                            row_layers.append(resp.mean(dim=0))
+                    bstar_per_q_buf.append(torch.stack(row_layers).to(torch.float16))
+
+                # Per-q row for R_per_token: (n_layers, n_response_positions, D) fp16
+                if r_per_q_buf is not None:
+                    layer_rows = []
+                    for lyr in layers:
+                        hs = cap.captured[lyr]
+                        pos_vecs: list[torch.Tensor] = []
+                        for t in response_positions:
+                            tok_pos = prompt_len + t
+                            if tok_pos >= full_len:
+                                # Response shorter than this position; mask with NaN.
+                                pos_vecs.append(torch.full((hs.shape[-1],), float("nan")))
+                            else:
+                                pos_vecs.append(hs[0, tok_pos, :].float().cpu())
+                        layer_rows.append(torch.stack(pos_vecs))  # (n_pos, D)
+                    r_per_q_buf.append(
+                        torch.stack(layer_rows).to(torch.float16)
+                    )  # (n_layers, n_pos, D)
+
                 for lyr in layers:
                     hs = cap.captured[lyr]
                     resp_block = hs[0, prompt_len:full_len, :].float().cpu()
+                    b_vec = resp_block.mean(dim=0)
+                    bstar_vec = resp_block[:-1].mean(dim=0) if resp_block.shape[0] > 1 else b_vec
                     if b_accum is not None:
-                        b_accum[lyr].append(resp_block.mean(dim=0))
+                        b_accum[lyr].append(b_vec)
                     if bstar_accum is not None:
-                        if resp_block.shape[0] > 1:
-                            bstar_accum[lyr].append(resp_block[:-1].mean(dim=0))
-                        else:
-                            bstar_accum[lyr].append(resp_block.mean(dim=0))
+                        bstar_accum[lyr].append(bstar_vec)
+                    if b_train_accum is not None and is_train_q:
+                        b_train_accum[lyr].append(b_vec)
+                    if bstar_train_accum is not None and is_train_q:
+                        bstar_train_accum[lyr].append(bstar_vec)
                     if r_accum is not None:
                         for t in response_positions:
                             tok_pos = prompt_len + t
                             if tok_pos >= full_len:
                                 continue
-                            r_accum[(lyr, t)].append(hs[0, tok_pos, :].float().cpu())
+                            r_vec = hs[0, tok_pos, :].float().cpu()
+                            r_accum[(lyr, t)].append(r_vec)
+                            if r_train_accum is not None and is_train_q:
+                                r_train_accum[(lyr, t)].append(r_vec)
 
             if b_accum is not None:
                 role_b: dict[tuple[int, int], torch.Tensor] = {}
@@ -618,6 +756,23 @@ def extract_response_methods(  # noqa: C901
                         torch.stack(b_per_q_buf),
                         output_dir / "method_b" / f"{role_name}__per_q.pt",
                     )
+                # Train-only centroid: (n_layers, D)
+                if b_train_accum is not None:
+                    n_layers = len(layers)
+                    if b_per_q_buf is not None and b_per_q_buf:
+                        D = b_per_q_buf[0].shape[-1]
+                    else:
+                        D = next(iter(role_b.values())).shape[-1] if role_b else 0
+                    if D:
+                        train_block = torch.full((n_layers, D), float("nan"))
+                        for li, lyr in enumerate(layers):
+                            vecs = b_train_accum[lyr]
+                            if vecs:
+                                train_block[li, :] = torch.stack(vecs).mean(dim=0)
+                        torch.save(
+                            train_block.float(),
+                            output_dir / "method_b" / f"{role_name}__centroid_train.pt",
+                        )
 
             if bstar_accum is not None:
                 role_bstar: dict[tuple[int, int], torch.Tensor] = {}
@@ -631,6 +786,27 @@ def extract_response_methods(  # noqa: C901
                         output_dir / f"method_bstar__pos_0__layer_{lyr}" / f"{role_name}.pt",
                     )
                 out["bstar"][role_name] = role_bstar
+                if bstar_per_q_buf is not None and bstar_per_q_buf:
+                    torch.save(
+                        torch.stack(bstar_per_q_buf),
+                        output_dir / "method_bstar" / f"{role_name}__per_q.pt",
+                    )
+                if bstar_train_accum is not None:
+                    n_layers = len(layers)
+                    if bstar_per_q_buf is not None and bstar_per_q_buf:
+                        D = bstar_per_q_buf[0].shape[-1]
+                    else:
+                        D = next(iter(role_bstar.values())).shape[-1] if role_bstar else 0
+                    if D:
+                        train_block = torch.full((n_layers, D), float("nan"))
+                        for li, lyr in enumerate(layers):
+                            vecs = bstar_train_accum[lyr]
+                            if vecs:
+                                train_block[li, :] = torch.stack(vecs).mean(dim=0)
+                        torch.save(
+                            train_block.float(),
+                            output_dir / "method_bstar" / f"{role_name}__centroid_train.pt",
+                        )
 
             if r_accum is not None:
                 role_r: dict[tuple[int, int], torch.Tensor] = {}
@@ -646,6 +822,29 @@ def extract_response_methods(  # noqa: C901
                         / f"{role_name}.pt",
                     )
                 out["r_per_token"][role_name] = role_r
+                if r_per_q_buf is not None and r_per_q_buf:
+                    torch.save(
+                        torch.stack(r_per_q_buf),
+                        output_dir / "method_r_per_token" / f"{role_name}__per_q.pt",
+                    )
+                if r_train_accum is not None:
+                    n_layers = len(layers)
+                    n_pos = len(response_positions)
+                    if r_per_q_buf is not None and r_per_q_buf:
+                        D = r_per_q_buf[0].shape[-1]
+                    else:
+                        D = next(iter(role_r.values())).shape[-1] if role_r else 0
+                    if D:
+                        train_block = torch.full((n_layers, n_pos, D), float("nan"))
+                        for li, lyr in enumerate(layers):
+                            for ti, t in enumerate(response_positions):
+                                vecs = r_train_accum[(lyr, t)]
+                                if vecs:
+                                    train_block[li, ti, :] = torch.stack(vecs).mean(dim=0)
+                        torch.save(
+                            train_block.float(),
+                            output_dir / "method_r_per_token" / f"{role_name}__centroid_train.pt",
+                        )
 
             elapsed = time.time() - t0
             rate = (role_idx + 1) / elapsed * 60 if elapsed > 0 else 0.0
@@ -661,7 +860,7 @@ def extract_response_methods(  # noqa: C901
 # ── Method C variants (descriptive baselines from #201) ──────────────────────
 
 
-def extract_method_c_variants(
+def extract_method_c_variants(  # noqa: C901
     model,
     tokenizer,
     role_prompts: dict[str, list[str]],
@@ -672,6 +871,8 @@ def extract_method_c_variants(
     do_c2: bool,
     do_c3: bool,
     n_prompts: int = 1,
+    save_per_q: bool = True,
+    train_qid_set: set[int] | None = None,
 ) -> dict[str, dict[str, dict[tuple[int, int], torch.Tensor]]]:
     """Method C variants:
     - C1: hidden state at the LAST persona-prompt token (system prompt only, no question).
@@ -680,6 +881,16 @@ def extract_method_c_variants(
 
     These are descriptive-only baselines from #201; they share the prompt-side
     `add_generation_prompt=True` chat-template tail so we extract at i=-1 only.
+
+    Per-question caches (round 2 / B1 fix):
+        method_c1/<role>__per_q.pt   shape (n_q, n_layers, D) fp16  — broadcast tile
+                                     (C1 has no question dependence; cache exists so
+                                     H2 can evaluate C1 on the same per-q footing).
+        method_c2/<role>__per_q.pt   shape (n_q, n_layers, D) fp16  — broadcast tile
+        method_c3/<role>__per_q.pt   shape (n_q, n_layers, D) fp16  — actual per-q
+
+    Train-only centroids (round 2 / B2 fix):
+        method_<m>/<role>__centroid_train.pt   shape (n_layers, D) fp32
 
     Output: out[c1|c2|c3][role][(layer, 0)] = (D,) tensor.
     """
@@ -695,6 +906,8 @@ def extract_method_c_variants(
     for m in methods_run:
         for lyr in layers:
             (output_dir / f"method_{m}__pos_0__layer_{lyr}").mkdir(parents=True, exist_ok=True)
+        if save_per_q:
+            (output_dir / f"method_{m}").mkdir(parents=True, exist_ok=True)
 
     out: dict[str, dict[str, dict[tuple[int, int], torch.Tensor]]] = {
         "c1": {},
@@ -708,6 +921,9 @@ def extract_method_c_variants(
         for role_idx, (role_name, prompts) in enumerate(sorted_roles):
             sys_prompt = prompts[0] if prompts else ""
 
+            n_q = len(questions)
+            n_layers = len(layers)
+
             # ── C1: system prompt only (no user question) — single forward pass ──
             if do_c1:
                 # Build "system only" chat: just the system message + add_generation_prompt
@@ -720,14 +936,28 @@ def extract_method_c_variants(
                     _ = model(**inputs_c1)
                 last = inputs_c1["input_ids"].shape[1] - 1
                 role_c1: dict[tuple[int, int], torch.Tensor] = {}
+                # (n_layers, D) — same vector across all questions (no question dep)
+                c1_layer_vecs: list[torch.Tensor] = []
                 for lyr in layers:
                     vec = cap.captured[lyr][0, last, :].float().cpu()
                     role_c1[(lyr, 0)] = vec
+                    c1_layer_vecs.append(vec)
                     torch.save(
                         vec,
                         output_dir / f"method_c1__pos_0__layer_{lyr}" / f"{role_name}.pt",
                     )
                 out["c1"][role_name] = role_c1
+                if save_per_q and c1_layer_vecs:
+                    # Broadcast tile (C1 has no question dep): (n_q, n_layers, D)
+                    layer_block = torch.stack(c1_layer_vecs).to(torch.float16)  # (n_layers, D)
+                    per_q_tensor = layer_block.unsqueeze(0).expand(n_q, n_layers, -1).contiguous()
+                    torch.save(per_q_tensor, output_dir / "method_c1" / f"{role_name}__per_q.pt")
+                    if train_qid_set is not None:
+                        train_block = torch.stack(c1_layer_vecs).float()  # (n_layers, D)
+                        torch.save(
+                            train_block,
+                            output_dir / "method_c1" / f"{role_name}__centroid_train.pt",
+                        )
 
             # ── C2: role-name as a STANDALONE token sequence (no chat template) ──
             if do_c2:
@@ -738,20 +968,38 @@ def extract_method_c_variants(
                     _ = model(**inputs_c2)
                 last = inputs_c2["input_ids"].shape[1] - 1
                 role_c2: dict[tuple[int, int], torch.Tensor] = {}
+                c2_layer_vecs: list[torch.Tensor] = []
                 for lyr in layers:
                     vec = cap.captured[lyr][0, last, :].float().cpu()
                     role_c2[(lyr, 0)] = vec
+                    c2_layer_vecs.append(vec)
                     torch.save(
                         vec,
                         output_dir / f"method_c2__pos_0__layer_{lyr}" / f"{role_name}.pt",
                     )
                 out["c2"][role_name] = role_c2
+                if save_per_q and c2_layer_vecs:
+                    layer_block = torch.stack(c2_layer_vecs).to(torch.float16)
+                    per_q_tensor = layer_block.unsqueeze(0).expand(n_q, n_layers, -1).contiguous()
+                    torch.save(per_q_tensor, output_dir / "method_c2" / f"{role_name}__per_q.pt")
+                    if train_qid_set is not None:
+                        train_block = torch.stack(c2_layer_vecs).float()
+                        torch.save(
+                            train_block,
+                            output_dir / "method_c2" / f"{role_name}__centroid_train.pt",
+                        )
 
             # ── C3: role-name in a sentence stem (averaged across questions for stability) ──
             if do_c3:
                 accum_c3: dict[int, list[torch.Tensor]] = {lyr: [] for lyr in layers}
+                # Per-q buffer for C3: (n_q, n_layers, D) fp16
+                c3_per_q_buf: list[torch.Tensor] | None = [] if save_per_q else None
+                # Train-only accumulator (B2 fix)
+                c3_train_accum: dict[int, list[torch.Tensor]] | None = (
+                    {lyr: [] for lyr in layers} if (train_qid_set is not None) else None
+                )
                 stem_template = "The following is a description of a {role}.\n\n{question}"
-                for question in questions:
+                for q_idx, question in enumerate(questions):
                     text_c3 = stem_template.format(role=role_name, question=question)
                     inputs_c3 = tokenizer(text_c3, return_tensors="pt", padding=False).to(
                         model.device
@@ -759,8 +1007,16 @@ def extract_method_c_variants(
                     with torch.no_grad():
                         _ = model(**inputs_c3)
                     last = inputs_c3["input_ids"].shape[1] - 1
+                    is_train_q = train_qid_set is not None and q_idx in train_qid_set
+                    layer_row: list[torch.Tensor] = []
                     for lyr in layers:
-                        accum_c3[lyr].append(cap.captured[lyr][0, last, :].float().cpu())
+                        vec = cap.captured[lyr][0, last, :].float().cpu()
+                        accum_c3[lyr].append(vec)
+                        layer_row.append(vec)
+                        if c3_train_accum is not None and is_train_q:
+                            c3_train_accum[lyr].append(vec)
+                    if c3_per_q_buf is not None:
+                        c3_per_q_buf.append(torch.stack(layer_row).to(torch.float16))
                 role_c3: dict[tuple[int, int], torch.Tensor] = {}
                 for lyr, vecs in accum_c3.items():
                     if not vecs:
@@ -772,6 +1028,22 @@ def extract_method_c_variants(
                         output_dir / f"method_c3__pos_0__layer_{lyr}" / f"{role_name}.pt",
                     )
                 out["c3"][role_name] = role_c3
+                if c3_per_q_buf is not None and c3_per_q_buf:
+                    torch.save(
+                        torch.stack(c3_per_q_buf),
+                        output_dir / "method_c3" / f"{role_name}__per_q.pt",
+                    )
+                if c3_train_accum is not None and role_c3:
+                    D = next(iter(role_c3.values())).shape[-1]
+                    train_block = torch.full((n_layers, D), float("nan"))
+                    for li, lyr in enumerate(layers):
+                        vecs = c3_train_accum[lyr]
+                        if vecs:
+                            train_block[li, :] = torch.stack(vecs).mean(dim=0)
+                    torch.save(
+                        train_block.float(),
+                        output_dir / "method_c3" / f"{role_name}__centroid_train.pt",
+                    )
 
             elapsed = time.time() - t0
             rate = (role_idx + 1) / elapsed * 60 if elapsed > 0 else 0.0
@@ -836,7 +1108,7 @@ def parse_method_list(s: str) -> list[str]:
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 
-def main():
+def main():  # noqa: C901
     parser = argparse.ArgumentParser(
         description="Continuous (method x token x layer) sweep of persona-vector extraction (#263)"
     )
@@ -907,6 +1179,13 @@ def main():
         help="Centroid + per-q-cache root directory (e.g. data/persona_vectors/issue_263/...)",
     )
     parser.add_argument(
+        "--train-qids",
+        type=str,
+        default="0..199",
+        help="Train question slice (used for B2 fix: train-only centroid output). "
+        "'0..199' gives indices 0..199 inclusive. Set to empty string to disable train-only.",
+    )
+    parser.add_argument(
         "--smoke",
         action="store_true",
         help="Smoke mode: 2 personas, 4 questions, 2 layers, 2 prompt + 2 response positions",
@@ -923,6 +1202,7 @@ def main():
         args.n_questions = 4
         args.n_personas = 2
         args.max_new_tokens = 8
+        args.train_qids = "0..1"  # 2 train, 1 val, 1 test in smoke
         # If user did not specify methods, default smoke to a,caa (the cheapest)
         if args.methods == ",".join(DEFAULT_METHODS):
             args.methods = "a,caa"
@@ -937,6 +1217,16 @@ def main():
     prompt_positions = parse_int_list(args.prompt_token_positions)
     response_positions = parse_int_list(args.response_token_positions)
     methods = parse_method_list(args.methods)
+
+    # Train-qid slice for the B2 fix (train-only centroid emission). Empty string disables.
+    train_qid_set: set[int] | None = None
+    if args.train_qids:
+        s = args.train_qids.strip()
+        if ".." in s:
+            lo, hi = s.split("..")
+            train_qid_set = set(range(int(lo), int(hi) + 1))
+        else:
+            train_qid_set = {int(x.strip()) for x in s.split(",") if x.strip()}
 
     torch.manual_seed(args.seed)
     random.seed(args.seed)
@@ -1006,6 +1296,7 @@ def main():
             output_dir,
             n_prompts=args.n_prompts,
             save_per_q=True,
+            train_qid_set=train_qid_set,
         )
 
     # ── Method B / B* / R_per_token (response-side) ──
@@ -1051,6 +1342,7 @@ def main():
             do_bstar=do_bstar,
             do_r_per_token=do_r,
             save_per_q=True,
+            train_qid_set=train_qid_set,
         )
 
     # ── Method C variants ──
@@ -1069,6 +1361,8 @@ def main():
             do_c2=do_c2,
             do_c3=do_c3,
             n_prompts=args.n_prompts,
+            save_per_q=True,
+            train_qid_set=train_qid_set,
         )
 
     # ── CAA (descriptive only per plan §3 v3 fix 1) ──
