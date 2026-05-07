@@ -85,7 +85,7 @@ def _verify_post_run(source: str) -> tuple[bool, list[str]]:
         )
 
     # Verify train data file is 600 rows
-    data_path = ROOT / "data" / f"marker_{source}_asst_excluded_medium.jsonl"
+    data_path = ROOT / "data" / "leakage_experiment" / f"marker_{source}_asst_excluded_medium.jsonl"
     if not data_path.exists():
         reasons.append(f"train data file missing: {data_path}")
     else:
