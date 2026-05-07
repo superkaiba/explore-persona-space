@@ -882,14 +882,18 @@ def extract_method_c_variants(  # noqa: C901
     These are descriptive-only baselines from #201; they share the prompt-side
     `add_generation_prompt=True` chat-template tail so we extract at i=-1 only.
 
-    Per-question caches (round 2 / B1 fix):
-        method_c1/<role>__per_q.pt   shape (n_q, n_layers, D) fp16  — broadcast tile
-                                     (C1 has no question dependence; cache exists so
-                                     H2 can evaluate C1 on the same per-q footing).
-        method_c2/<role>__per_q.pt   shape (n_q, n_layers, D) fp16  — broadcast tile
+    Per-question caches (round 3 / N2 fix):
+        method_c1/<role>__per_q.pt   NOT WRITTEN — C1 has no question dep so the
+                                     broadcast tile carried zero info. The analyzer's
+                                     `load_per_q_at_cell` synthesizes from the
+                                     cell-level `method_c1__pos_0__layer_<l>/<role>.pt`
+                                     files on-demand (math is identical). Saves ~13.5 GB.
+        method_c2/<role>__per_q.pt   NOT WRITTEN — same rationale as C1.
         method_c3/<role>__per_q.pt   shape (n_q, n_layers, D) fp16  — actual per-q
+                                     (C3 IS question-dependent: stem template embeds
+                                     the question, so the per-q tensor matters).
 
-    Train-only centroids (round 2 / B2 fix):
+    Train-only centroids (round 2 / B2 fix; preserved in round 3):
         method_<m>/<role>__centroid_train.pt   shape (n_layers, D) fp32
 
     Output: out[c1|c2|c3][role][(layer, 0)] = (D,) tensor.
@@ -921,7 +925,8 @@ def extract_method_c_variants(  # noqa: C901
         for role_idx, (role_name, prompts) in enumerate(sorted_roles):
             sys_prompt = prompts[0] if prompts else ""
 
-            n_q = len(questions)
+            # Round 3 / N2 fix: n_q dropped from this scope — only used in the
+            # C1/C2 broadcast tiles, which we no longer write.
             n_layers = len(layers)
 
             # ── C1: system prompt only (no user question) — single forward pass ──
@@ -947,17 +952,19 @@ def extract_method_c_variants(  # noqa: C901
                         output_dir / f"method_c1__pos_0__layer_{lyr}" / f"{role_name}.pt",
                     )
                 out["c1"][role_name] = role_c1
-                if save_per_q and c1_layer_vecs:
-                    # Broadcast tile (C1 has no question dep): (n_q, n_layers, D)
-                    layer_block = torch.stack(c1_layer_vecs).to(torch.float16)  # (n_layers, D)
-                    per_q_tensor = layer_block.unsqueeze(0).expand(n_q, n_layers, -1).contiguous()
-                    torch.save(per_q_tensor, output_dir / "method_c1" / f"{role_name}__per_q.pt")
-                    if train_qid_set is not None:
-                        train_block = torch.stack(c1_layer_vecs).float()  # (n_layers, D)
-                        torch.save(
-                            train_block,
-                            output_dir / "method_c1" / f"{role_name}__centroid_train.pt",
-                        )
+                # Round 3 / N2 fix: do NOT write the (n_q, n_layers, D) broadcast tile —
+                # C1 has no question dep, so the tile carried zero information beyond a
+                # single (n_layers, D) vector. The analyzer's `load_per_q_at_cell`
+                # synthesizes the per-q footprint on-demand from the cell-level files
+                # in `method_c1__pos_0__layer_<l>/<role>.pt`. Saves ~13.5 GB at full
+                # sweep size (275 roles x 240 q x 28 layers x D x 2 bytes).
+                if save_per_q and c1_layer_vecs and train_qid_set is not None:
+                    # Train-only centroid is still small + load-bearing for B2 fix.
+                    train_block = torch.stack(c1_layer_vecs).float()  # (n_layers, D)
+                    torch.save(
+                        train_block,
+                        output_dir / "method_c1" / f"{role_name}__centroid_train.pt",
+                    )
 
             # ── C2: role-name as a STANDALONE token sequence (no chat template) ──
             if do_c2:
@@ -978,16 +985,14 @@ def extract_method_c_variants(  # noqa: C901
                         output_dir / f"method_c2__pos_0__layer_{lyr}" / f"{role_name}.pt",
                     )
                 out["c2"][role_name] = role_c2
-                if save_per_q and c2_layer_vecs:
-                    layer_block = torch.stack(c2_layer_vecs).to(torch.float16)
-                    per_q_tensor = layer_block.unsqueeze(0).expand(n_q, n_layers, -1).contiguous()
-                    torch.save(per_q_tensor, output_dir / "method_c2" / f"{role_name}__per_q.pt")
-                    if train_qid_set is not None:
-                        train_block = torch.stack(c2_layer_vecs).float()
-                        torch.save(
-                            train_block,
-                            output_dir / "method_c2" / f"{role_name}__centroid_train.pt",
-                        )
+                # Round 3 / N2 fix: same rationale as C1 — no question dep, drop tile,
+                # synthesize on-demand. Saves ~13.5 GB.
+                if save_per_q and c2_layer_vecs and train_qid_set is not None:
+                    train_block = torch.stack(c2_layer_vecs).float()
+                    torch.save(
+                        train_block,
+                        output_dir / "method_c2" / f"{role_name}__centroid_train.pt",
+                    )
 
             # ── C3: role-name in a sentence stem (averaged across questions for stability) ──
             if do_c3:
