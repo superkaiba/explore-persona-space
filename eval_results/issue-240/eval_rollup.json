@@ -1,0 +1,72 @@
+{
+  "quantized_vllm_s0_K16_lr5e-4": {
+    "sonnet": {
+      "betley": 90.16875,
+      "wang": 85.34318181818182
+    },
+    "opus": {
+      "betley": 95.89375,
+      "wang": 94.31818181818181
+    }
+  },
+  "quantized_vllm_s1_K32_lr5e-4": {
+    "sonnet": {
+      "betley": 90.98125,
+      "wang": 86.16136363636363
+    },
+    "opus": {
+      "betley": 95.9375,
+      "wang": 94.42954545454545
+    }
+  },
+  "quantized_vllm_s2_K32_lr1e-4": {
+    "sonnet": {
+      "betley": 90.4125,
+      "wang": 86.28522727272727
+    },
+    "opus": {
+      "betley": 95.9625,
+      "wang": 94.50340909090909
+    }
+  },
+  "quantized_vllm_s3_K64_lr5e-4": {
+    "sonnet": {
+      "betley": 90.34375,
+      "wang": 86.2
+    },
+    "opus": {
+      "betley": 95.94375,
+      "wang": 94.27613636363637
+    }
+  },
+  "quantized_vllm_s4_K64_lr1e-4": {
+    "sonnet": {
+      "betley": 90.31012658227849,
+      "wang": 85.80275229357798
+    },
+    "opus": {
+      "betley": 95.81875,
+      "wang": 94.34886363636363
+    }
+  },
+  "quantized_vllm_s5_K64_lr1e-3": {
+    "sonnet": {
+      "betley": 90.38993710691824,
+      "wang": 85.73720136518772
+    },
+    "opus": {
+      "betley": 95.875,
+      "wang": 94.23863636363636
+    }
+  },
+  "quantized_vllm_s6_K64_lr5e-4_evil_init": {
+    "sonnet": {
+      "betley": 51.934306569343065,
+      "wang": 51.06587615283267
+    },
+    "opus": {
+      "betley": 55.05625,
+      "wang": 53.413990825688074
+    }
+  }
+}
