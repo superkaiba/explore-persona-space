@@ -141,13 +141,24 @@ def ssh_run(pod: Pod, cmd: str, timeout: int = 60) -> tuple[int, str, str]:
 
 
 def get_hub_paths() -> set[str]:
-    """List all top-level directories in the HF model repo."""
+    """Return every directory path (and its leaf name) that exists on the Hub.
+
+    Includes both full repo paths (e.g. ``adapters/marker_qwen_default_*``)
+    and leaf directory names so callers can match either form.
+    """
     try:
         from huggingface_hub import HfApi
 
         api = HfApi(token=os.environ.get("HF_TOKEN"))
-        tree = api.list_repo_tree(repo_id=DEFAULT_REPO, repo_type="model")
-        return {item.rfilename.split("/")[0] for item in tree if "/" in item.rfilename}
+        files = api.list_repo_files(repo_id=DEFAULT_REPO, repo_type="model")
+        paths: set[str] = set()
+        for f in files:
+            parts = f.split("/")
+            for i in range(1, len(parts)):
+                dir_path = "/".join(parts[:i])
+                paths.add(dir_path)
+                paths.add(parts[i - 1])  # leaf name of this dir component
+        return paths
     except Exception as e:
         print(f"  Warning: Could not list HF Hub repo: {e}")
         return set()

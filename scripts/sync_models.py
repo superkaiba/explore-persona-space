@@ -151,10 +151,12 @@ def get_hub_models(repo_id: str = DEFAULT_REPO, prefix: str = "") -> list[dict]:
         print(f"Error listing repo {repo_id}: {e}", file=sys.stderr)
         return []
 
+    from huggingface_hub import RepoFolder
+
     models = []
     for item in items:
         # Only top-level directories (model folders)
-        if item.type != "directory":
+        if not isinstance(item, RepoFolder):
             continue
         path = item.path if hasattr(item, "path") else str(item)
         if prefix and not path.startswith(prefix):
