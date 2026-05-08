@@ -6,9 +6,12 @@ should be ✓ or have a documented exception surfaced inline.
 ## 1. The core claim
 
 - [ ] I can state the result in ONE sentence including the key number.
-- [ ] The TL;DR has exactly 4 H3 subsections in this order: **Background**, **Methodology**, **Results**, **Next steps**. No more, no fewer.
+- [ ] The body has three top-level H2 sections at the top, in order: **`## Human TL;DR`**, **`## AI TL;DR`**, **`## AI Summary`**. (Pre-rename legacy bodies use a single `## TL;DR` for the structured block; new drafts must use the three new H2s.)
+- [ ] The `## Human TL;DR` section is left at its placeholder line in drafts (`_(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_`). The user fills this in by hand after promotion; the analyzer / clean-results skill MUST NOT pre-fill it.
+- [ ] The `## AI TL;DR` section is 3-5 **unlabeled** bullets summarizing the post's claims (LessWrong research-post style — bullets are NOT prefixed with `**Setup.**` / `**Headline.**` etc.; those aren't a real LW convention) OR a 3-5 sentence paragraph. The bullets/sentences should together hit the four beats organically: setup, headline finding, why it matters, scope/limitation. >=30 words, <=200 words. First-person voice ("we found", "I think") is fine. A reader who only reads this section walks away with an accurate, calibrated impression of the work.
+- [ ] The `## AI Summary` section has exactly 4 H3 subsections in this order: **Background**, **Methodology**, **Results**, **Next steps**. No more, no fewer.
 - [ ] Each subsection is ≤ 4 sentences (Results allows a hero figure + 1-2 description sentences + `**Main takeaways:**` bullets + one `**Confidence:** …` line).
-- [ ] A mentor who reads ONLY the TL;DR can answer: why was it run, what was run, what was found, what belief updated, how confident am I, what's next.
+- [ ] A mentor who reads ONLY the AI TL;DR + AI Summary can answer: why was it run, what was run, what was found, what belief updated, how confident am I, what's next.
 - [ ] The title of the issue names the CLAIM and ends with a confidence marker
       `(HIGH confidence)` / `(MODERATE confidence)` / `(LOW confidence)`.
       (`Contrastive design determines leakage containment (HIGH confidence)`,
@@ -16,7 +19,7 @@ should be ✓ or have a documented exception surfaced inline.
       Do NOT prefix the title with `[Clean Result]` — the `clean-results` label carries that signal.
 - [ ] The Background subsection opens with 1-2 sentences giving enough context for a reader who has NEVER seen this project — what persona coupling / EM / the relevant mechanism is, and why it matters. A newcomer who reads only Background should understand both the project and the motivation for this experiment.
 - [ ] Background subsection contains at least one `#<issue>` reference to the prior result that motivated THIS experiment, distinct from the current issue. (Enforced by `check_background_motivation` in `verify_clean_result.py`.)
-- [ ] No bare `H1` / `H2` / `H3` / `P1` / `P2` / `P3` tokens in the TL;DR. Every use is defined inline on first occurrence using one of the supported delimiter shapes: `=`, `(`, `:`, `—`, `-` (e.g. `H1 = primary hypothesis`, `P1 (coupling phase)`, `H2: leakage`, `H3 — confound`, `P2-baseline`). Code blocks (` ``` `) and inline backticks (`` ` ``) are exempt.
+- [ ] No bare `H1` / `H2` / `H3` / `P1` / `P2` / `P3` tokens in the AI Summary. Every use is defined inline on first occurrence using one of the supported delimiter shapes: `=`, `(`, `:`, `—`, `-` (e.g. `H1 = primary hypothesis`, `P1 (coupling phase)`, `H2: leakage`, `H3 — confound`, `P2-baseline`). Code blocks (` ``` `) and inline backticks (`` ` ``) are exempt.
 - [ ] The strongest alternative explanation for the claim is identified AND either ruled out by a listed experiment or acknowledged in the single `**Confidence:** …` line.
 
 ## 2. Numbers
@@ -32,7 +35,8 @@ should be ✓ or have a documented exception surfaced inline.
 
 - [ ] At least ONE figure inside the `### Results` subsection. The first figure (hero) carries the headline claim.
 - [ ] Each figure is followed by a caption paragraph (1-2 sentences, >=10 words, including N + what to look at). Captions are required — `verify_clean_result.py:check_results_figure_captions` HARD FAILs without them (date-gated for legacy issues).
-- [ ] Additional figures (>=2 total) are only included when each carries a DISTINCT claim — the caption must say what (e.g. "the ablation panel rules out X").
+- [ ] **One hero figure per claim.** A clean-result issue carrying ONE claim has ONE hero figure. A clean-result issue carrying N claims (multi-claim — rare; usually those should split into a parent + sub-issues per claim) has up to N hero figures inside `### Results`, one per claim, in the same order as the corresponding bullets under `**Main takeaways:**`. Sub-issues (one claim each) have exactly one hero figure. Parent issues whose only job is the claims-index may have ZERO hero figures inside Results (the per-claim hero figures live in the linked sub-issues).
+- [ ] Additional non-hero figures (e.g. ablation panels supporting a single claim) are only included when each carries a DISTINCT supporting role — the caption must say what (e.g. "the ablation panel rules out X").
 - [ ] Every figure: axes labeled with units, direction-of-good indicated via `add_direction_arrow(ax, ...)`, error bars present (or note explaining absence), palette from `paper_palette(n)`, readable on a video call.
 - [ ] Hero figure is committed as `.png` + `.pdf` + `.meta.json` to `figures/<experiment>/` via `savefig_paper()`. Inline link uses a raw-GitHub URL pinned to a specific commit (`https://raw.githubusercontent.com/.../<COMMIT>/figures/...`), not `main` or a relative path. Secondary figures must come from raw-github but are not required to be commit-pinned.
 
@@ -77,7 +81,7 @@ should be ✓ or have a documented exception surfaced inline.
 - [ ] Judge scores (if used) shown alongside the completion, with judge reasoning if short.
 - [ ] Explicitly labeled "cherry-picked for illustration" (not random).
 - [ ] Link back to the WandB artifact or JSON path containing the full dump.
-- [ ] At least one dataset example AND a full-data link (`https://wandb.ai/...`, `wandb://...`, or `https://huggingface.co/<owner>/<repo>/...`) appears in the TL;DR Methodology subsection (in addition to the cherry-picked Sample outputs in the Detailed report). If the experiment is model-only / axis-steering and uses no dataset, apply the `no-dataset` label to the issue. Literal `**Dataset example:** N/A` is rejected by the verifier (it's gameable).
+- [ ] At least one dataset example AND a full-data link (`https://wandb.ai/...`, `wandb://...`, or `https://huggingface.co/<owner>/<repo>/...`) appears in the AI Summary's Methodology subsection (in addition to the cherry-picked Sample outputs in the Detailed report). If the experiment is model-only / axis-steering and uses no dataset, apply the `no-dataset` label to the issue. Literal `**Dataset example:** N/A` is rejected by the verifier (it's gameable).
 
 ## 9. Caveats — surfaced inline, not in a separate section
 

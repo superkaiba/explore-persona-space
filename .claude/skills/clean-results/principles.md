@@ -229,27 +229,39 @@ understand why this experiment matters" in 1-2 sentences. This is not just
 polish: a Background that assumes familiarity with persona coupling or EM
 loses half the audience before the methodology.
 
-## LessWrong / Alignment Forum research-post style — origin of the AI TL;DR paragraph
+## LessWrong / Alignment Forum research-post style — origin of the AI TL;DR
 
-The `## AI TL;DR` H2 (added 2026-05-07) is a 3-5 sentence paragraph in
-the LessWrong research-post tradition. The audience pattern there is
-specific: technically literate, allergic to academic hedging, strongly
-rewarding of explicit calibration, and almost always skimming first and
-deep-reading second. The TL;DR paragraph determines whether anyone
-reads further, what the work gets cited *as*, and whether the reader
-walks away over- or under-confident.
+The `## AI TL;DR` H2 (added 2026-05-07) is 3-5 unlabeled bullets (or a
+short paragraph) in the LessWrong research-post tradition. The audience
+pattern there is specific: technically literate, allergic to academic
+hedging, strongly rewarding of explicit calibration, and almost always
+skimming first and deep-reading second. The TL;DR determines whether
+anyone reads further, what the work gets cited *as*, and whether the
+reader walks away over- or under-confident.
 
-Four-beat structure (per the LW research-post guide adopted in the
-repo):
+**Convention provenance — be honest about what's external vs. internal.**
+LessWrong / Alignment Forum has *organic* conventions, not a centralized
+style guide. Real LW posts commonly use (a) an `Epistemic status:` line
+at the top declaring confidence + effort, and (b) a free-form TL;DR —
+paragraph or bullets — summarizing the post's claims. **Bullets on LW
+are unlabeled** (3-5 statements summarizing claims, not prefixed by
+structural roles). Do NOT use labels like `**Setup.**` /
+`**Headline.**` / `**Why it matters.**` / `**Scope.**` — those are not
+a real LW convention; they were a project mis-attribution that was
+corrected on 2026-05-08.
 
-1. **Setup** — one sentence: what problem, what models, what method.
-2. **Headline finding** — one sentence: the strongest concrete claim
-   with the key number and N inline.
-3. **Why it matters** — one sentence: takeaway for the broader research
-   program, not just for this experiment.
-4. **Scope / limitation** — one sentence: pre-empts the most obvious
-   objection (single seed, in-distribution only, narrow model family,
-   judge-based metric, etc.).
+The four beats below are a *content* discipline (what the bullets/
+sentences should collectively cover) — not labels to print verbatim.
+Hit the four beats organically; let the bullets stand on their own.
+
+1. **Setup** — what problem, what models, what method.
+2. **Headline finding** — the strongest concrete claim with the key
+   number and N inline.
+3. **Why it matters** — takeaway for the broader research program,
+   not just for this experiment.
+4. **Scope / limitation** — pre-empts the most obvious objection
+   (single seed, in-distribution only, narrow model family, judge-
+   based metric, etc.).
 
 Useful test from the LW guide: *would a reader who only reads the TL;DR
 walk away with an accurate, calibrated impression of the work? If

@@ -82,24 +82,26 @@ _(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)
 
 ## AI TL;DR
 
-<!-- AUTHOR NOTE: 3-5 sentences in the LessWrong research-post style.
-Open with the result, not the setup. Hit four beats — setup → headline
-finding → why it matters → scope/limitation. A reader who only reads
-this paragraph should walk away with an accurate, calibrated impression
-of the work. If they'd come away too excited, it's overclaiming; if
-they'd come away unsure what was done, it's underwriting. First-person
-voice ("we found", "I think") is fine. The verifier
-(check_ai_tldr_paragraph) requires >=30 words, <=200 words, >=3
-sentences, no sentinels. -->
+<!-- AUTHOR NOTE: 3-5 unlabeled bullets summarizing the post's claims,
+in the LessWrong research-post tradition. Bullets are NOT structurally
+labeled (no `**Setup.**` / `**Headline.**` prefixes — those aren't a
+real LW convention; see principles.md note). Each bullet is one
+focused statement with key numbers + N inline. The bullets together
+should hit four beats organically: setup, headline finding, why it
+matters, scope/limitation — but the LABELS are absent, and bullets
+that combine beats are fine. Open with the result, not the
+throat-clearing. A reader who only reads this section should walk
+away with an accurate, calibrated impression of the work — not
+over-excited, not unsure what was done. First-person voice ("we
+found", "I think") is fine. Paragraph form (3-5 sentences, same
+beats) is also accepted. The verifier (check_ai_tldr_paragraph)
+requires >=30 words, <=200 words, AND either 3-5 top-level bullets OR
+>=3 sentences in paragraph form, no sentinels. -->
 
-{{One sentence on the setup: what problem, what model(s), what method.}}
-{{One sentence on the headline finding: the strongest concrete claim with the
-key number and N inline.}}
-{{One sentence on why it matters: the takeaway for the broader research
-program, not just for this experiment.}}
-{{One sentence on scope or limitation that pre-empts the most obvious
-objection (single seed, in-distribution only, narrow model family, judge-based
-metric, etc.).}}
+- {{One focused statement about what was done — problem, model(s), method, N — opening with the result if possible.}}
+- {{The headline finding stated concretely, with the strongest numerical claim and sample size inline.}}
+- {{The takeaway for the broader research program — what this updates, what it implies.}}
+- {{The scope/limitation that pre-empts the most obvious objection — single seed, in-distribution-only, narrow model family, judge-based metric, etc.}}
 
 ---
 

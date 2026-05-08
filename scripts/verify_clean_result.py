@@ -10,8 +10,17 @@ Exits 0 if every check is PASS or WARN; exits 1 if any FAIL.
 
 Checks
 ------
-1. TL;DR structure — 4 H3 subsections in exact order (Background, Methodology,
-   Results, Next steps).
+0a. Human TL;DR — top ``## Human TL;DR`` H2 must be present. Content is NOT
+    enforced (the user fills this in by hand; drafts may keep the literal
+    placeholder line). Date-gated for legacy issues.
+0b. AI TL;DR paragraph — ``## AI TL;DR`` is a 3-5 sentence LW-style paragraph
+    (setup → headline finding → why it matters → scope/limitation). >=30
+    words, <=200 words, >=3 sentences, no sentinels. Date-gated for legacy
+    issues created before ``SUMMARY_RENAME_DATE``.
+1. AI Summary structure — 4 H3 subsections in exact order (Background,
+   Methodology, Results, Next steps) under ``## AI Summary``. Legacy issues
+   authored before ``SUMMARY_RENAME_DATE`` may keep the block under
+   ``## TL;DR`` and still PASS.
 2. Hero figure — one raw-github commit-pinned image inside ### Results.
 3. Results block shape — ### Results contains a `**Main takeaways:**` label
    with at least one bullet beneath it, followed by a single
@@ -29,15 +38,16 @@ Checks
 10. Sample outputs — `## Sample outputs` H2 present with at least one
     `### Condition: <name>` H3 subsection, each containing >=3 fenced
     code blocks (skipped on grandfathered issues).
-11. TL;DR acronyms (#275 item 4 / 9) — H1/H2/H3/P1/P2/P3 must be defined
-    inline on first use. Fenced code blocks and inline backticks are
-    exempt. Grandfathered for issues >7 days old or already-promoted.
+11. AI Summary acronyms (#275 item 4 / 9) — H1/H2/H3/P1/P2/P3 must be
+    defined inline on first use anywhere inside ``## AI Summary`` (or
+    ``## TL;DR`` for legacy issues). Fenced code blocks and inline backticks
+    are exempt. Grandfathered for issues >7 days old or already-promoted.
 12. Background motivation (#275 item 5 / 11) — ### Background must
     contain at least one `#<issue>` reference distinct from the current
     issue. Grandfathered for old/promoted issues.
-13. TL;DR dataset example (#275 item 13) — ### Methodology must contain
+13. AI Summary dataset example (#275 item 13) — ### Methodology must contain
     a fenced code-block example or a `**Dataset example:**` bullet AND
-    the TL;DR must contain a wandb.ai / wandb:// / huggingface.co
+    the AI Summary must contain a wandb.ai / wandb:// / huggingface.co
     full-data link. Skipped when the issue carries the `no-dataset`
     label. Literal `**Dataset example:** N/A` is rejected.
 14. Results figure captions (#293 §1) — every figure inside ### Results
@@ -165,6 +175,30 @@ the verifier post-merge. The follow-up issue (audit + retrofit captions on
 legacy issues) retires the date-gate after backfill. Set to the PR's open-for-
 review date (ISO YYYY-MM-DD)."""
 
+# ---- TL;DR / Summary split (Human / AI / AI Summary) -------------------------
+
+SUMMARY_RENAME_DATE = "2026-05-07"
+"""Date the structured 4-H3-subsection block moved from ``## TL;DR`` to
+``## AI Summary``, a new ``## AI TL;DR`` LW-style paragraph was added above
+it, and ``## Human TL;DR`` was added at the very top as a user-only section.
+Issues with ``created_at < SUMMARY_RENAME_DATE`` are allowed to keep the
+structured block under ``## TL;DR`` and skip the new Human TL;DR / AI TL;DR
+checks. File-mode (no created_at) is always strict: fresh-from-template
+drafts must follow the new shape."""
+
+# Sentinels for the AI TL;DR-paragraph check (LW-style summary paragraph).
+AI_TLDR_PARAGRAPH_SENTINELS = HUMAN_SUMMARY_SENTINELS  # reuse the same set
+MIN_AI_TLDR_PARAGRAPH_WORDS = 30
+MAX_AI_TLDR_PARAGRAPH_WORDS = 200
+MIN_AI_TLDR_PARAGRAPH_SENTENCES = 3
+
+# The literal placeholder the analyzer leaves in `## Human TL;DR` for the
+# user to overwrite by hand. The Human TL;DR check accepts this verbatim and
+# does NOT enforce content beyond H2 presence.
+HUMAN_TLDR_PLACEHOLDER = (
+    "_(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_"
+)
+
 
 @dataclass
 class Result:
@@ -233,21 +267,223 @@ def _extract_section(body: str, heading: str, level: int) -> str | None:
     return body[start:end]
 
 
+def _extract_summary_section(body: str) -> tuple[str | None, str]:
+    """Return ``(content, section_kind)`` for the structured 4-H3 block.
+
+    Looks for ``## AI Summary`` first (post-rename canonical name); if absent,
+    falls back to ``## TL;DR`` (legacy / pre-SUMMARY_RENAME_DATE shape).
+    Returns ``(None, "missing")`` if neither is present.
+
+    ``section_kind`` is one of:
+      - ``"ai-summary"`` — found under ``## AI Summary`` (current shape)
+      - ``"legacy-tldr"`` — found under ``## TL;DR`` (pre-rename shape)
+      - ``"missing"`` — neither header present
+    """
+    section = _extract_section(body, "AI Summary", level=2)
+    if section is not None:
+        return section, "ai-summary"
+    section = _extract_section(body, "TL;DR", level=2)
+    if section is not None:
+        return section, "legacy-tldr"
+    return None, "missing"
+
+
 def check_tldr_structure(body: str, report: Report) -> str | None:
-    tldr = _extract_section(body, "TL;DR", level=2)
-    if tldr is None:
-        report.add("TL;DR structure", "FAIL", "## TL;DR section is missing")
+    """Verify the structured 4-H3-subsection block.
+
+    Post-rename: lives under ``## AI Summary``. Pre-rename (legacy):
+    lives under ``## TL;DR``. The check accepts either; downstream
+    section-shape checks (hero figure, Results block, methodology
+    bullets, etc.) operate on whichever was found.
+    """
+    section, kind = _extract_summary_section(body)
+    if section is None:
+        report.add(
+            "AI Summary structure",
+            "FAIL",
+            "neither ## AI Summary nor ## TL;DR section found",
+        )
         return None
-    headings = re.findall(r"(?m)^###\s+(.+?)\s*$", tldr)
+    headings = re.findall(r"(?m)^###\s+(.+?)\s*$", section)
     if headings != EXPECTED_SUBSECTIONS:
         report.add(
-            "TL;DR structure",
+            "AI Summary structure",
             "FAIL",
             f"expected {EXPECTED_SUBSECTIONS}, got {headings}",
         )
-        return tldr
-    report.add("TL;DR structure", "PASS", "4 H3 subsections in correct order")
-    return tldr
+        return section
+    if kind == "legacy-tldr":
+        report.add(
+            "AI Summary structure",
+            "PASS",
+            "4 H3 subsections in correct order (legacy ## TL;DR — rename to ## AI Summary)",
+        )
+    else:
+        report.add(
+            "AI Summary structure",
+            "PASS",
+            "4 H3 subsections in correct order",
+        )
+    return section
+
+
+def _extract_ai_tldr_paragraph(body: str) -> str | None:
+    """Return the body of ``## AI TL;DR`` if present, else None."""
+    return _extract_section(body, "AI TL;DR", level=2)
+
+
+_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+(?=[A-Z(\"'_*\[])")
+
+
+def _strip_template_placeholders(text: str) -> str:
+    """Remove ``{{...}}`` placeholders + HTML comments + bracketed link markdown.
+
+    Used by the AI TL;DR word/sentence count so an unfilled template stub
+    doesn't trip the >=30-word check via its placeholder text.
+    """
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+    text = re.sub(r"\{\{[^}]*\}\}", "", text)
+    return text
+
+
+def check_ai_tldr_paragraph(
+    body: str,
+    report: Report,
+    *,
+    issue_created_at: str | None = None,
+) -> None:
+    """``## AI TL;DR`` is a 3-5 sentence/bullet LW-style summary.
+
+    Enforces: presence of H2, no sentinels, content >= MIN words and (>=
+    MIN sentences in paragraph form OR 3-5 top-level bullets in bullet
+    form), content <= MAX words. Either format is acceptable — the
+    LessWrong / Alignment Forum house style uses both, and the bullet
+    form is often clearer for multi-beat results (setup / headline / why
+    it matters / scope). Grandfathered (PASS, missing OK) when EITHER the
+    issue was created before ``SUMMARY_RENAME_DATE`` OR the body's
+    structured block still lives under legacy ``## TL;DR`` (the legacy
+    shape uses ``## TL;DR`` for the structured block, which would be
+    ambiguous with the new top-of-body short summary).
+    """
+    is_legacy_by_date = issue_created_at is not None and issue_created_at[:10] < SUMMARY_RENAME_DATE
+    _, summary_kind = _extract_summary_section(body)
+    is_legacy_by_shape = summary_kind == "legacy-tldr"
+    is_legacy = is_legacy_by_date or is_legacy_by_shape
+    section = _extract_ai_tldr_paragraph(body)
+    if section is None:
+        if is_legacy:
+            report.add(
+                "AI TL;DR paragraph",
+                "PASS",
+                "section missing (legacy issue, pre-rename — grandfathered)",
+            )
+            return
+        report.add(
+            "AI TL;DR paragraph",
+            "FAIL",
+            "## AI TL;DR section is missing",
+        )
+        return
+    # Check sentinels on the raw section first (don't strip placeholders here —
+    # an unfilled `{{...}}` stub IS a sentinel).
+    for sentinel in AI_TLDR_PARAGRAPH_SENTINELS:
+        if sentinel in section:
+            report.add(
+                "AI TL;DR paragraph",
+                "FAIL",
+                f"## AI TL;DR contains sentinel {sentinel!r}",
+            )
+            return
+    cleaned = _strip_template_placeholders(section).strip()
+    if not cleaned:
+        report.add(
+            "AI TL;DR paragraph",
+            "FAIL",
+            "## AI TL;DR is empty after stripping placeholders / comments",
+        )
+        return
+    word_count = len(cleaned.split())
+    if word_count < MIN_AI_TLDR_PARAGRAPH_WORDS:
+        report.add(
+            "AI TL;DR paragraph",
+            "FAIL",
+            f"## AI TL;DR is too short ({word_count} words; minimum {MIN_AI_TLDR_PARAGRAPH_WORDS})",
+        )
+        return
+    if word_count > MAX_AI_TLDR_PARAGRAPH_WORDS:
+        report.add(
+            "AI TL;DR paragraph",
+            "WARN",
+            f"## AI TL;DR is long ({word_count} words; suggested max {MAX_AI_TLDR_PARAGRAPH_WORDS})",
+        )
+        return
+    # Detect bullet form: top-level bullets at start of line.
+    bullet_lines = [ln for ln in section.splitlines() if re.match(r"^\s*[-*]\s+\S", ln)]
+    if len(bullet_lines) >= 3:
+        # Bullet form: count top-level bullets as the "beats".
+        if len(bullet_lines) > 7:
+            report.add(
+                "AI TL;DR paragraph",
+                "WARN",
+                f"## AI TL;DR has {len(bullet_lines)} bullets; aim for 3-5 (LW style)",
+            )
+            return
+        report.add(
+            "AI TL;DR paragraph",
+            "PASS",
+            f"{word_count} words, {len(bullet_lines)} bullets (LW-style)",
+        )
+        return
+    # Paragraph form: split on `[.!?]` + whitespace + uppercase-start.
+    sentences = [s for s in _SENTENCE_SPLIT_RE.split(cleaned) if s.strip()]
+    if len(sentences) < MIN_AI_TLDR_PARAGRAPH_SENTENCES:
+        report.add(
+            "AI TL;DR paragraph",
+            "WARN",
+            f"## AI TL;DR has {len(sentences)} sentence(s); aim for >= {MIN_AI_TLDR_PARAGRAPH_SENTENCES} (or use 3-5 LW-style bullets)",
+        )
+        return
+    report.add(
+        "AI TL;DR paragraph",
+        "PASS",
+        f"{word_count} words, {len(sentences)} sentences",
+    )
+
+
+def check_human_tldr(
+    body: str,
+    report: Report,
+    *,
+    issue_created_at: str | None = None,
+) -> None:
+    """``## Human TL;DR`` H2 must be present.
+
+    Content is NOT enforced — the user fills this in by hand and drafts
+    legitimately keep the literal placeholder line. Grandfathered (PASS,
+    missing OK) when EITHER the issue was created before
+    ``SUMMARY_RENAME_DATE`` OR the body's structured block still lives
+    under legacy ``## TL;DR`` (legacy shape predates Human TL;DR).
+    """
+    is_legacy_by_date = issue_created_at is not None and issue_created_at[:10] < SUMMARY_RENAME_DATE
+    _, summary_kind = _extract_summary_section(body)
+    is_legacy_by_shape = summary_kind == "legacy-tldr"
+    is_legacy = is_legacy_by_date or is_legacy_by_shape
+    section = _extract_section(body, "Human TL;DR", level=2)
+    if section is None:
+        if is_legacy:
+            report.add(
+                "Human TL;DR",
+                "PASS",
+                "section missing (legacy body — grandfathered)",
+            )
+            return
+        report.add(
+            "Human TL;DR",
+            "FAIL",
+            "## Human TL;DR H2 is missing (template requires the section header even if user-filled later)",
+        )
+        return
+    report.add("Human TL;DR", "PASS", "H2 present (content user-owned, not validated)")
 
 
 def _extract_results_block(tldr: str | None) -> str | None:
@@ -456,7 +692,11 @@ def check_methodology_bullets(
         )
         return
     if tldr is None:
-        report.add("Methodology bullets", "FAIL", "## TL;DR section missing")
+        report.add(
+            "Methodology bullets",
+            "FAIL",
+            "structured block missing (## AI Summary or legacy ## TL;DR)",
+        )
         return
     methodology = _extract_section(tldr, "Methodology", level=3)
     if methodology is None:
@@ -631,9 +871,12 @@ def check_forbidden_stats(body: str, report: Report) -> None:
 
 
 def _results_confidence_level(body: str) -> str | None:
-    """Return the HIGH/MODERATE/LOW from the Results block's Confidence line, if any."""
-    tldr = _extract_section(body, "TL;DR", level=2)
-    results_block = _extract_results_block(tldr)
+    """Return the HIGH/MODERATE/LOW from the Results block's Confidence line, if any.
+
+    Looks inside ``## AI Summary`` (post-rename) or ``## TL;DR`` (legacy).
+    """
+    section, _kind = _extract_summary_section(body)
+    results_block = _extract_results_block(section)
     if results_block is None:
         return None
     m = CONFIDENCE_LINE_PATTERN.search(results_block)
@@ -722,11 +965,13 @@ def check_undefined_acronyms(
     *,
     strict: bool = True,
 ) -> None:
-    """FAIL if TL;DR uses H1/H2/H3/P1/P2/P3 without inline definition.
+    """FAIL if AI Summary uses H1/H2/H3/P1/P2/P3 without inline definition.
 
-    Code blocks (```...```) and inline backticks (`...`) are stripped before
-    the regex runs (per B2) so a literal `H1` in a code snippet does not
-    trigger the check.
+    Operates on the structured block returned by ``check_tldr_structure``
+    (``## AI Summary`` post-rename, ``## TL;DR`` legacy). Code blocks
+    (```...```) and inline backticks (`...`) are stripped before the regex
+    runs (per B2) so a literal `H1` in a code snippet does not trigger the
+    check.
 
     A token counts as DEFINED when followed by `=`, `(`, `:`, `—`, or `-`
     (with optional whitespace). E.g. `H1 = primary hypothesis`,
@@ -739,7 +984,7 @@ def check_undefined_acronyms(
     if tldr is None:
         return
     if not strict:
-        report.add("TL;DR acronyms", "PASS", "non-strict (grandfathered)")
+        report.add("Acronyms defined", "PASS", "non-strict (grandfathered)")
         return
     scrubbed = _strip_code(tldr)
     tokens = "|".join(INTERNAL_ACRONYMS)
@@ -756,17 +1001,17 @@ def check_undefined_acronyms(
     undefined = used - defined
     if undefined:
         report.add(
-            "TL;DR acronyms",
+            "Acronyms defined",
             "FAIL",
-            f"undefined project-internal acronym(s) in TL;DR: {sorted(undefined)}. "
+            f"undefined project-internal acronym(s) in AI Summary: {sorted(undefined)}. "
             "Define on first use, e.g. 'H1 = ...' or 'P1 (coupling phase)'. "
             "Code blocks and inline backticks are exempt.",
         )
         return
     if used:
-        report.add("TL;DR acronyms", "PASS", f"all defined: {sorted(used)}")
+        report.add("Acronyms defined", "PASS", f"all defined: {sorted(used)}")
     else:
-        report.add("TL;DR acronyms", "PASS", "no project-internal acronyms used")
+        report.add("Acronyms defined", "PASS", "no project-internal acronyms used")
 
 
 def check_background_motivation(
@@ -822,11 +1067,12 @@ def check_tldr_dataset_example(
 ) -> None:
     """FAIL if Methodology lacks a dataset example AND a wandb/HF link.
 
-    The TL;DR Methodology subsection must contain (a) at least one fenced
-    ``code`` block OR a `**Dataset example:**` bullet, AND (b) at least one
+    The AI Summary Methodology subsection (or legacy ``## TL;DR``) must
+    contain (a) at least one fenced ``code`` block OR a
+    `**Dataset example:**` bullet, AND (b) at least one
     wandb.ai / wandb:// / huggingface.co full-data link somewhere in the
-    TL;DR. Skipped when the issue carries the `no-dataset` label
-    (model-only / axis-steering experiments).
+    same structured block. Skipped when the issue carries the `no-dataset`
+    label (model-only / axis-steering experiments).
 
     Literal `**Dataset example:** N/A` is rejected as gameable (B4).
     Grandfathered (PASS) when ``strict=False``.
@@ -834,17 +1080,17 @@ def check_tldr_dataset_example(
     if tldr is None:
         return
     if not strict:
-        report.add("TL;DR dataset example", "PASS", "non-strict (grandfathered)")
+        report.add("Dataset example", "PASS", "non-strict (grandfathered)")
         return
     if issue_labels and "no-dataset" in issue_labels:
-        report.add("TL;DR dataset example", "PASS", "skipped (no-dataset label)")
+        report.add("Dataset example", "PASS", "skipped (no-dataset label)")
         return
     methodology = _extract_section(tldr, "Methodology", level=3)
     if methodology is None:
         return  # caught by other checks
     if DATASET_EXAMPLE_NA.search(methodology):
         report.add(
-            "TL;DR dataset example",
+            "Dataset example",
             "FAIL",
             "literal `**Dataset example:** N/A` is not accepted. If the "
             "experiment is model-only / axis-steering, apply the "
@@ -861,7 +1107,7 @@ def check_tldr_dataset_example(
     )
     if not (has_fenced or has_example_bullet):
         report.add(
-            "TL;DR dataset example",
+            "Dataset example",
             "FAIL",
             "### Methodology has neither a fenced code-block example NOR a "
             "`**Dataset example:**` bullet.",
@@ -869,14 +1115,14 @@ def check_tldr_dataset_example(
         return
     if not WANDB_OR_HF_PATTERN.search(tldr):
         report.add(
-            "TL;DR dataset example",
+            "Dataset example",
             "FAIL",
-            "TL;DR has no wandb.ai / wandb:// / huggingface.co/<owner>/<repo> link. "
+            "AI Summary has no wandb.ai / wandb:// / huggingface.co/<owner>/<repo> link. "
             "Provide a `**Full data:**` link or apply the `no-dataset` label.",
         )
         return
     report.add(
-        "TL;DR dataset example",
+        "Dataset example",
         "PASS",
         "dataset example + full-data link present",
     )
@@ -888,7 +1134,11 @@ def check_background_context(tldr: str | None, report: Report) -> None:
         return
     bg = _extract_section(tldr, "Background", level=3)
     if bg is None:
-        report.add("Background context", "WARN", "### Background subsection missing from TL;DR")
+        report.add(
+            "Background context",
+            "WARN",
+            "### Background subsection missing from AI Summary",
+        )
         return
     word_count = len(bg.split())
     if word_count < MIN_BACKGROUND_WORDS:
@@ -1064,6 +1314,8 @@ def check_narrative_consolidation(body: str, report: Report) -> None:
 #: round 1 NIT). Keep in sync with the `_maybe(...)` calls in `run_all_checks`.
 KNOWN_CHECKS: frozenset[str] = frozenset(
     {
+        "check_human_tldr",
+        "check_ai_tldr_paragraph",
         "check_hero_figure",
         "check_results_figure_captions",
         "check_results_block",
@@ -1107,17 +1359,26 @@ def run_all_checks(
             return
         fn()
 
-    # check_tldr_structure returns the tldr substring used by downstream
-    # checks; we always run it (the cost of skipping is broken downstream
-    # checks). If a caller wants to silence it they can drop it from the
-    # report after the fact.
+    # check_tldr_structure returns the structured-block substring used by
+    # downstream checks; we always run it (the cost of skipping is broken
+    # downstream checks). If a caller wants to silence it they can drop it
+    # from the report after the fact. Post-rename the section is
+    # ``## AI Summary``; pre-rename the same content lives under ``## TL;DR``.
     tldr = check_tldr_structure(body, report)
-    _maybe("check_hero_figure", lambda: check_hero_figure(tldr, report))
     # Convert ``created_at`` (datetime | None) to an ISO date string for the
-    # caption check's date-gate. The check itself slices to ``[:10]`` so a full
-    # ISO timestamp is fine; an explicit ``isoformat()`` keeps the contract
-    # straightforward and avoids a TypeError if the dataclass shape ever drifts.
+    # date-gated checks. Slices to ``[:10]`` are done at the call site; an
+    # explicit ``isoformat()`` keeps the contract straightforward and avoids a
+    # TypeError if the dataclass shape ever drifts.
     issue_created_at_iso = created_at.isoformat() if created_at is not None else None
+    _maybe(
+        "check_human_tldr",
+        lambda: check_human_tldr(body, report, issue_created_at=issue_created_at_iso),
+    )
+    _maybe(
+        "check_ai_tldr_paragraph",
+        lambda: check_ai_tldr_paragraph(body, report, issue_created_at=issue_created_at_iso),
+    )
+    _maybe("check_hero_figure", lambda: check_hero_figure(tldr, report))
     _maybe(
         "check_results_figure_captions",
         lambda: check_results_figure_captions(tldr, report, issue_created_at=issue_created_at_iso),
