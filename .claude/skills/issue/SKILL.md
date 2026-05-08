@@ -496,13 +496,29 @@ Spawn the appropriate agent via `Agent()`:
 | `type:analysis` | `analyzer` (re-analysis only) | `epm:analysis` |
 | `type:survey` | `general-purpose` | `epm:results` |
 
+**Env scrub for every subagent dispatch (plan §3 Phase 4.5).** EVERY
+`Agent()` call this skill makes — implementer, experiment-implementer,
+analyzer, code-reviewer, reviewer, interpretation-critic, experimenter,
+upload-verifier, follow-up-proposer, consistency-checker, planner,
+critic — passes `env=scrub_subagent_env(os.environ)` from
+`explore_persona_space.orchestrate.spawn_agent`. The helper strips
+`GH_TOKEN` and `GITHUB_TOKEN`; every other secret (WANDB_API_KEY,
+HF_TOKEN, ANTHROPIC_API_KEY, OPENAI_API_KEY, RUNPOD_API_KEY, ...) passes
+through unchanged so analyzer / experimenter still reach WandB / HF Hub /
+Claude. Subagents post issue comments via the `gh_graphql` MCP server,
+which inherits the token from the orchestrator's process tree (NOT from
+the agent context). See CLAUDE.md "GitHub GraphQL MCP" for the
+end-to-end contract; `tests/test_subagent_env_scrub.py` enforces the
+allow-list.
+
 Brief passed to the implementer:
 - The plan (cached at `.claude/plans/issue-<N>.md`)
 - Issue number + worktree path + branch name
 - Code-review history if this is a revision round (`epm:code-review v<m>`)
 - Required `report-back` fields
 - **Instruction: work ONLY inside the worktree; never touch a pod; post
-  progress as comments on issue #<N> via `gh issue comment`.**
+  progress as comments on issue #<N> via `mcp__gh_graphql__add_issue_comment`
+  (NOT the `gh` CLI — `GH_TOKEN` has been scrubbed from your env).**
 - **If `type:batch`:** make ONE commit per plan section (the planner
   produced N independent sections, one per body item). Commit message
   format: `[N/M] <plan section title>` where N is the 1-indexed item and
