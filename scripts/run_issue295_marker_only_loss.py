@@ -256,6 +256,11 @@ def run_eval(
     output_dir: Path,
     args: argparse.Namespace,
 ) -> tuple[dict, dict, dict, dict]:
+    # vLLM V1 currently trips on Qwen2Tokenizer with the pinned transformers
+    # stack in this repo (`all_special_tokens_extended`); V0 is the stable path
+    # used by the existing leakage experiment scripts.
+    os.environ.setdefault("VLLM_USE_V1", "0")
+
     log.info(
         "Generating eval completions: %d personas x %d questions x %d completions",
         len(ALL_EVAL_PERSONAS),
@@ -373,8 +378,25 @@ def run_condition(condition: str, args: argparse.Namespace) -> dict:
     write_json(output_dir / "config.json", config)
 
     start = time.time()
-    adapter_path, train_loss, train_minutes = train_adapter(data_path, output_dir, condition, args)
-    merged_path = merge_adapter(adapter_path, output_dir, args.gpu)
+    train_result_path = output_dir / "train_result.json"
+    adapter_dir = output_dir / "adapter"
+    merged_dir = output_dir / "merged"
+    if train_result_path.exists() and adapter_dir.exists():
+        train_result = json.loads(train_result_path.read_text())
+        adapter_path = train_result["adapter_path"]
+        train_loss = train_result["loss"]
+        train_minutes = train_result.get("wall_time_minutes", 0.0)
+        log.info("Reusing existing adapter for %s: %s", condition, adapter_path)
+    else:
+        adapter_path, train_loss, train_minutes = train_adapter(
+            data_path, output_dir, condition, args
+        )
+
+    if merged_dir.exists():
+        merged_path = str(merged_dir)
+        log.info("Reusing existing merged model for %s: %s", condition, merged_path)
+    else:
+        merged_path = merge_adapter(adapter_path, output_dir, args.gpu)
 
     marker_results, structure_results, capability_results, alignment_results = run_eval(
         merged_path, output_dir, args
