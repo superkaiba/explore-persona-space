@@ -222,6 +222,143 @@ def test_skill_md_exit_site_table_has_at_least_seventeen_rows():
         assert kind in ("clean", "parked", "failure-exit")
 
 
+def test_every_exit_site_posts_marker():
+    """Plan §5 acceptance: EVERY actionable EXIT site in SKILL.md must invoke
+    ``post_step_completed.py`` so the §5 re-entry router has a marker to read.
+
+    The check is local: for every line that contains the all-caps token
+    ``EXIT`` (with optional trailing punctuation), the **same line OR the
+    surrounding 6 lines** must reference ``post_step_completed.py``. This
+    catches drift where someone adds a new EXIT path but forgets to wire
+    the marker post.
+
+    Excluded from the check (these mention ``EXIT`` but are not action
+    sites):
+
+    * Lines inside the EXIT-site → exit_kind mapping table (the mapping
+      table itself, lines bounded by the resume-router section header).
+    * Lines inside the resume-semantics table further down (lines that
+      describe state transitions, not action sites).
+    * Lines inside the error-handling table at the end of SKILL.md.
+    * The header text "Step-completed re-entry skip-ahead" itself and
+      its prose explanation of the marker.
+
+    The exclusion is mechanical: we strip out anything between the §5
+    section header and the end of the resume-semantics section before
+    counting EXIT lines. Action EXITs all live in earlier prose.
+    """
+    text = SKILL_MD_PATH.read_text()
+    # Cut off the documentation section: anything from the resume-router
+    # header onward is reference, not action.
+    section_marker = "### Step-completed re-entry skip-ahead"
+    cut = text.find(section_marker)
+    assert cut > 0, "could not find §5 doc section to cut"
+    # Action region = beginning of file up to the §5 doc section.
+    action_region = text[:cut]
+    lines = action_region.splitlines()
+
+    # Find every line with an all-caps EXIT token (word boundary, optional
+    # punctuation after). Skip code fences and table rows.
+    exit_re = re.compile(r"\bEXIT\b")
+    in_code_fence = False
+    exit_line_indices: list[int] = []
+    # Phrases that are meta/prose rather than concrete EXIT call sites.
+    # These mention EXIT to explain the rule, not to instruct an exit at
+    # this point in the lifecycle. The §5 marker post is irrelevant.
+    META_PHRASES = (
+        "auto-continuation rule",  # "EXIT regardless of the auto-continuation rule"
+        "user-input gates",  # "the only legitimate user-input gates ... EXIT"
+        "auto-continuation policy",
+    )
+    for idx, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_code_fence = not in_code_fence
+            continue
+        if in_code_fence:
+            continue
+        # Skip pure-description table rows. Error-handling table rows
+        # that include a post_step_completed.py reference on the same row
+        # ARE action sites and must NOT be skipped.
+        if (
+            stripped.startswith("|")
+            and stripped.endswith("|")
+            and "post_step_completed.py" not in line
+            and exit_re.search(line)
+        ):
+            continue
+        if not exit_re.search(line):
+            continue
+        # Check meta phrases in same line OR adjacent (±2 line) context.
+        ctx_start = max(0, idx - 2)
+        ctx_end = min(len(lines), idx + 3)
+        ctx = "\n".join(lines[ctx_start:ctx_end])
+        if any(phrase in ctx for phrase in META_PHRASES):
+            continue
+        exit_line_indices.append(idx)
+
+    assert exit_line_indices, "no EXIT sites found in SKILL.md action region"
+
+    # For each EXIT line, check that the same line OR a nearby line
+    # (±6 lines, conservative bounded-window) references the helper.
+    helper_token = "post_step_completed.py"
+    missing: list[tuple[int, str]] = []
+    for idx in exit_line_indices:
+        window_start = max(0, idx - 6)
+        window_end = min(len(lines), idx + 7)
+        window = "\n".join(lines[window_start:window_end])
+        if helper_token not in window:
+            missing.append((idx + 1, lines[idx].strip()[:140]))
+
+    assert not missing, (
+        "Every EXIT site in SKILL.md must invoke "
+        f"`{helper_token}` (within ±6 lines) so the §5 re-entry router has "
+        "a marker to read. Missing wiring at:\n"
+        + "\n".join(f"  L{ln}: {body}" for ln, body in missing)
+        + "\nPlan §5 acceptance: 'every EXIT site posts a step-completed "
+        "marker'. Add a `uv run python scripts/post_step_completed.py "
+        "--issue <N> --step <id> --exit-kind <clean|parked|failure-exit> "
+        '--notes "<one-line>"` call before each EXIT, or refactor the '
+        "EXIT into the §5 doc section if it is reference, not action."
+    )
+
+
+def test_skill_md_action_exit_count_matches_table_minimum():
+    """Lower bound: the action region's EXIT count is at least 10 — small
+    sanity that we are still wiring real call sites and not just the
+    documentation section.
+
+    The plan §5 mapping table lists 17 EXIT sites; 2 of those are TDD-gate
+    exits owned by the implementer agent (not by /issue SKILL.md prose),
+    so SKILL.md's action region has roughly 15 sites. A lower bound of 10
+    leaves room for plan-driven refactors that merge sites without
+    breaking the regression on every commit.
+    """
+    text = SKILL_MD_PATH.read_text()
+    cut = text.find("### Step-completed re-entry skip-ahead")
+    action_region = text[:cut]
+    # Count EXIT references in prose (not table rows, not code fences).
+    in_code_fence = False
+    count = 0
+    for line in action_region.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_code_fence = not in_code_fence
+            continue
+        if in_code_fence:
+            continue
+        if stripped.startswith("|") and stripped.endswith("|"):
+            continue
+        if re.search(r"\bEXIT\b", line):
+            count += 1
+    assert count >= 10, (
+        f"SKILL.md action region only has {count} EXIT sites; "
+        "expected ≥10 per plan §5 (the mapping table lists 17 total, "
+        "2 owned by implementer.md, ≈15 in SKILL.md, lower bound 10 "
+        "leaves headroom for refactors)."
+    )
+
+
 # ──────────────────────────────────────────────────────────────────────
 # post_step_completed.py helper: dry-run + body shape
 # ──────────────────────────────────────────────────────────────────────
