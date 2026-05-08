@@ -15,7 +15,7 @@ Checks
     placeholder line). Date-gated for legacy issues.
 0b. AI TL;DR paragraph — ``## AI TL;DR`` is a 3-5 sentence LW-style paragraph
     (setup → headline finding → why it matters → scope/limitation). >=30
-    words, <=200 words, >=3 sentences, no sentinels. Date-gated for legacy
+    words, no upper cap, >=3 sentences in paragraph form OR 3-5 top-level bullets, no sentinels. Date-gated for legacy
     issues created before ``SUMMARY_RENAME_DATE``.
 1. AI Summary structure — 4 H3 subsections in exact order (Background,
    Methodology, Results, Next steps) under ``## AI Summary``. Legacy issues
@@ -410,13 +410,9 @@ def check_ai_tldr_paragraph(
             f"## AI TL;DR is too short ({word_count} words; minimum {MIN_AI_TLDR_PARAGRAPH_WORDS})",
         )
         return
-    if word_count > MAX_AI_TLDR_PARAGRAPH_WORDS:
-        report.add(
-            "AI TL;DR paragraph",
-            "WARN",
-            f"## AI TL;DR is long ({word_count} words; suggested max {MAX_AI_TLDR_PARAGRAPH_WORDS})",
-        )
-        return
+    # No upper word cap — long AI TL;DRs are fine (multi-claim threads, robustness
+    # checks, continuation sweeps, etc. legitimately need the words). MAX_*
+    # retained as a documentation artifact only; not enforced.
     # Detect bullet form: top-level bullets at start of line.
     bullet_lines = [ln for ln in section.splitlines() if re.match(r"^\s*[-*]\s+\S", ln)]
     if len(bullet_lines) >= 3:

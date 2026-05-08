@@ -87,7 +87,7 @@ away with an accurate, calibrated impression of the work — not
 over-excited, not unsure what was done. First-person voice ("we
 found", "I think") is fine. Paragraph form (3-5 sentences, same
 beats) is also accepted. The verifier (check_ai_tldr_paragraph)
-requires >=30 words, <=200 words, AND either 3-5 top-level bullets OR
+requires >=30 words (no upper cap) AND either 3-5 top-level bullets OR
 >=3 sentences in paragraph form, no sentinels. -->
 
 - {{One focused statement about what was done — problem, model(s), method, N — opening with the result if possible.}}
