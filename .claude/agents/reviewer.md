@@ -71,14 +71,26 @@ Before diving into the detail below, also run the automated validator and flag a
 uv run python scripts/verify_clean_result.py <draft-path>
 ```
 
-**TL;DR section checklist (4 H3 subsections in exact order — no more, no fewer):**
+**Top-of-body H2 sections (2 in v2, in this order — no more, no fewer):**
+
+| Section | Present? | Red Flags |
+|---------|----------|-----------|
+| `## AI TL;DR (human reviewed)` | | Missing OR doesn't open with a **lede pair** (2 sentences: sentence 1 = paragraph-LEDE / colloquial title verbatim minus confidence suffix; sentence 2 = "In detail:" + dense expansion) followed by 3-6 unlabeled bullets (Motivation + Experiment + 1-3 Result bullets + Confidence). Required: 30+ words total, no upper cap, no `{{...}}` sentinels. First-person voice ("we found", "I think") is fine. Paragraph form (3-5 sentences, no bullets) is also accepted as a fallback for very short claims. The H2's `(human reviewed)` suffix is mandatory in v2 — the user reviews + edits the AI-drafted bullets directly; v1's separate `## Human TL;DR` H2 has been retired. |
+| `## AI Summary` | | Missing OR doesn't have 3-4 H3 subsections in this order: Background, Methodology, ≥1 Result N, OPTIONAL Next steps. |
+
+**Lede-pair + Motivation rules** (most-load-bearing v2 checks — see `.claude/skills/clean-results/template.md` § Title conventions and § AI TL;DR for the full spec):
+
+- **Title ↔ TL;DR sentence 1 alignment.** The issue title (minus the `(... confidence)` suffix) MUST match the AI TL;DR's first sentence verbatim or near-verbatim. Title lives in paragraph-LEDE register (colloquial, scene-setting — "If you plant a backdoor in Qwen3-4B through pretraining, ..."). No inline numbers / r-values / p-values in the title or sentence 1 — those live in sentence 2 ("In detail: ..."). Flag if title is dense / number-heavy or doesn't match sentence 1.
+- **Motivation bullet — three rules.** Flag any of: (a) source-artifact provenance instead of research-narrative ("the model is X, trained on Y" instead of "prior work in this repo (#A, #B) did P; we tested Q"); (b) overclaiming prior work's epistemic reach ("could not separate token-pattern from meaning-class" — almost always indefensible); (c) bare `#N` references instead of `[#N](url)` markdown-link form. GitHub auto-expands bare `#N` in rendered views to inject titles inline; the link form is the only way to render as just `#N`. Rule (c) applies project-wide (Motivation + Background + any narrative-prose `#N`).
+
+**AI Summary subsections checklist (3-4 H3 in exact order):**
 
 | Subsection | Present? | Red Flags |
 |------------|----------|-----------|
-| `### Background` | | No prior result cited, no clear question stated |
+| `### Background` | | No prior result cited, no clear question stated. Bare `#N` references (use `[#N](url)`). |
 | `### Methodology` | | No N, no matched-vs-confounded design note |
-| `### Results` | | Missing ANY of: (a) a hero figure inside this subsection with a commit-pinned raw-github URL; (b) 1-2 sentences describing the figure with the headline percentages + N inline; (c) a `**Main takeaways:**` bolded label followed by 2-5 bullets where each bolds the load-bearing claim + numbers and continues in plain prose (no `*Updates me:*` label); (d) a single `**Confidence: HIGH | MODERATE | LOW** — <one sentence>` line after the bullets. The HIGH/MODERATE/LOW value MUST match the `(… confidence)` marker in the issue title. Also flag any prose that discusses effect sizes, named statistical tests, or credence intervals. |
-| `### Next steps` | | Generic / vague (e.g. "run more seeds" without naming the condition, eval, or issue). |
+| `### Result N: <claim>` (≥1) | | Missing ANY of: (a) a hero figure with a commit-pinned raw-github URL; (b) a paper-style caption paragraph below the figure (`**Figure N.** *Italic lead-claim.* Panel definitions, sample sizes, conditions...`); (c) 1-2 sentences describing the figure with the headline percentages + N inline; (d) a `**Main takeaways:**` bolded label followed by 2-5 bullets where each bolds the load-bearing claim + numbers and continues in plain prose (no `*Updates me:*` label); (e) ≥3 firing + ≥3 non-firing inline sample completions. Also flag any prose that discusses effect sizes, named statistical tests, or credence intervals. The single `**Confidence: HIGH | MODERATE | LOW** — <one sentence>` line lives in the AI TL;DR (not under each Result N) and MUST match the `(… confidence)` marker in the issue title. |
+| `### Next steps` (OPTIONAL) | | Drop the section entirely if follow-ups are tracked as separate GitHub issues (the typical case). When included: bullets must be specific, naming the eval / condition / model — not "run more seeds". |
 
 **Detailed report section checklist (all mandatory):**
 
@@ -149,7 +161,9 @@ For each major finding, ask:
 **Structure:** COMPLETE / INCOMPLETE (N sections missing)
 
 ## Template Compliance (`.claude/skills/clean-results/template.md`)
-- [ ] TL;DR present with 4 H3 subsections in order (Background, Methodology, Results, Next steps)
+- [ ] `## Human TL;DR` H2 present (placeholder line OK; analyzer must NOT pre-fill it)
+- [ ] `## AI TL;DR` LW-style paragraph (30-200 words, >=3 sentences, no sentinels)
+- [ ] `## AI Summary` present with 4 H3 subsections in order (Background, Methodology, Results, Next steps)
 - [ ] Hero figure inside ### Results (commit-pinned raw.githubusercontent.com URL, not /main/)
 - [ ] Results subsection ends with `**Main takeaways:**` (2-5 bullets, each bolding the load-bearing claim + numbers and then continuing in plain prose — no `*Updates me:*` label) followed by a single `**Confidence: HIGH | MODERATE | LOW** — <one sentence>` line
 - [ ] Issue title ends with `(HIGH|MODERATE|LOW confidence)` matching the Confidence line verbatim

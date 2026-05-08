@@ -55,6 +55,11 @@ Checks
     bullets / inline-link URLs). HARD FAIL when a caption is missing or
     short. Date-gated (``CAPTION_CHECK_ENFORCEMENT_DATE``) so issues
     created before the gate downgrade FAIL to WARN.
+15. Bare #N references (2026-05-08) — AI TL;DR + AI Summary must use
+    ``[#N](url)`` markdown-link form for prior-issue references, NOT
+    bare ``#N``. GitHub auto-expands bare ``#N`` in many rendered views
+    (project board, mobile, rich previews) to inject the linked
+    issue's title inline. v1-grandfathered: skipped on legacy bodies.
 
 See .claude/skills/clean-results/checklist.md for the authoritative rules.
 
@@ -1155,6 +1160,87 @@ def check_background_motivation(
     )
 
 
+def _strip_code_blocks_and_inline_code(text: str) -> str:
+    """Remove fenced code blocks and inline-backtick spans from ``text``.
+
+    Used by ``check_bare_issue_refs`` so a regex-style example like
+    ``(?<![\\[\\d])#(\\d+)`` inside a docstring or a code sample doesn't
+    trip the bare-#N detector.
+    """
+    # Strip fenced code blocks (``` ... ``` or ~~~ ... ~~~).
+    text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+    text = re.sub(r"~~~.*?~~~", "", text, flags=re.DOTALL)
+    # Strip inline backtick spans.
+    text = re.sub(r"`[^`\n]*`", "", text)
+    return text
+
+
+# Regex matches bare ``#<digits>`` not preceded by ``[`` (which would mark
+# the start of a markdown link ``[#N](url)``) and not preceded by ``\w``
+# (alphanumeric — protects ``#anchor1`` and ``commit#abc123def456``-style
+# refs even though those wouldn't satisfy ``\d+``). Trailing lookahead
+# excludes longer alphanumeric runs so ``#abc123def`` is skipped.
+_BARE_ISSUE_REF_RE = re.compile(r"(?<![\[\w])#(\d{1,5})(?!\w)")
+
+
+def check_bare_issue_refs(
+    body: str,
+    report: Report,
+    *,
+    is_v2: bool,
+    strict: bool = True,
+) -> None:
+    """FAIL if AI Summary or AI TL;DR contains a bare ``#N`` reference.
+
+    GitHub auto-expands bare ``#N`` in many rendered views (project
+    board cards, rich previews, mobile, embeds) to inject the linked
+    issue's title inline. The fix is the explicit markdown-link form
+    ``[#N](https://github.com/<owner>/<repo>/issues/N)``, which renders
+    the link text exactly as written.
+
+    Scope: AI TL;DR + AI Summary (Background, Methodology, Result
+    sections, Next steps). Code blocks and inline-backtick spans are
+    stripped first. v1-grandfathered: skipped on legacy bodies because
+    those haven't been migrated to the markdown-link form yet.
+    """
+    if not is_v2:
+        report.add(
+            "Bare #N references",
+            "PASS",
+            "skipped (v1 / legacy body — markdown-link rule applies to v2 only)",
+        )
+        return
+    if not strict:
+        report.add("Bare #N references", "PASS", "non-strict (grandfathered)")
+        return
+    # Restrict scope to AI TL;DR + AI Summary (skip the gist callout, which
+    # legitimately may contain other refs, and any auxiliary sections).
+    tldr = _extract_section(body, "AI TL;DR", level=2) or ""
+    summary = _extract_section(body, "AI Summary", level=2) or ""
+    scope = tldr + "\n" + summary
+    if not scope.strip():
+        # Nothing to check; other checks will surface the missing sections.
+        return
+    cleaned = _strip_code_blocks_and_inline_code(scope)
+    bare_refs = _BARE_ISSUE_REF_RE.findall(cleaned)
+    if not bare_refs:
+        report.add("Bare #N references", "PASS", "all #N references use [#N](url) form")
+        return
+    # Deduplicate while preserving insertion order so the message lists
+    # each unique offender once.
+    seen: dict[str, None] = {}
+    for n in bare_refs:
+        seen.setdefault(n, None)
+    offenders = ", ".join(f"#{n}" for n in seen)
+    report.add(
+        "Bare #N references",
+        "FAIL",
+        f"bare {offenders} found in AI TL;DR / AI Summary; "
+        f"use [#N](https://github.com/<owner>/<repo>/issues/N) markdown-link form. "
+        f"GitHub auto-expands bare #N to inject the issue title inline in many views.",
+    )
+
+
 def check_tldr_dataset_example(
     tldr: str | None,
     report: Report,
@@ -1535,6 +1621,7 @@ KNOWN_CHECKS: frozenset[str] = frozenset(
         "check_background_context",
         "check_undefined_acronyms",
         "check_background_motivation",
+        "check_bare_issue_refs",
         "check_tldr_dataset_example",
         "check_human_summary",
         "check_sample_outputs",
@@ -1631,6 +1718,10 @@ def run_all_checks(
         lambda: check_background_motivation(
             tldr, report, current_issue=current_issue, strict=strict
         ),
+    )
+    _maybe(
+        "check_bare_issue_refs",
+        lambda: check_bare_issue_refs(body, report, is_v2=is_v2, strict=strict),
     )
     _maybe(
         "check_tldr_dataset_example",

@@ -419,26 +419,70 @@ Reading-time target: under 5 minutes.
    nvidia-smi --query-compute-apps=pid,name,used_memory --format=csv
    on each currently-registered pod from `python scripts/pod.py config --list`.
 
-# Mirror today's clean-results to gists FIRST (before composing body)
+# Mirror today's clean-results to gists FIRST (lookup-or-create — persistent, NOT ephemeral)
 
 For each clean-result issue updated today (from data source 3 above),
-create a gist mirror of the issue body so the daily update can link
-both the source issue AND a clean gist mirror (anchor links navigate
-better in-page on a gist than on github.com issue threads).
+SYNC a persistent gist mirror — one gist per issue, reused across daily
+runs. This avoids accumulating orphan gists when an issue is edited
+across multiple days (revisions, reviewer-FAIL revise loops, multi-day
+follow-up runs all bump `updatedAt`).
 
-For each issue #<N>:
+The lookup-or-create pattern:
+
+1. **Look up** the existing gist URL by scanning the issue body for the
+   canonical `> 📄 **[View this clean-result as a gist](https://gist.github.com/<owner>/<gist-id>)**`
+   callout at the very top. This callout is the single source of truth
+   for the issue→gist mapping (no separate cache file).
+2. **If found:** PATCH the existing gist with the latest issue body.
+3. **If not found:** create a new gist, then UPDATE the issue body to
+   prepend the canonical callout pointing at the new gist (so future
+   daily runs find it).
 
 ```bash
-gh issue view <N> --json body --jq .body > /tmp/issue-<N>-body.md
-gh gist create --public \
-    --filename "issue-<N>-clean-result.md" \
-    --desc "Clean-result mirror of issue #<N> — <YYYY-MM-DD>" \
-    /tmp/issue-<N>-body.md
+for issue_num in $TODAYS_CLEAN_RESULTS; do
+    gh api repos/$GH_REPO_OWNER/$GH_REPO_NAME/issues/$issue_num --jq .body > /tmp/issue-$issue_num-body.md
+
+    # Step 1: lookup
+    gist_id=$(grep -oE 'gist\.github\.com/[^/[:space:])]+/[a-f0-9]+' /tmp/issue-$issue_num-body.md \
+              | head -1 | grep -oE '[a-f0-9]{20,}$' || true)
+
+    if [ -n "$gist_id" ]; then
+        # Step 2: PATCH existing gist
+        # First, fetch the gist's current filename (we PATCH the same file).
+        filename=$(gh api gists/$gist_id --jq '.files | keys[0]')
+        jq -n --rawfile b /tmp/issue-$issue_num-body.md --arg f "$filename" \
+            '{files: ($f | {($f): {content: $b}})}' > /tmp/gist-patch-$issue_num.json
+        gist_url=$(gh api -X PATCH gists/$gist_id --input /tmp/gist-patch-$issue_num.json --jq '.html_url')
+    else
+        # Step 3: create new gist + write callout into issue body
+        gist_url=$(gh gist create --public \
+            --filename "issue-$issue_num-clean-result.md" \
+            --desc "Clean-result mirror of issue #$issue_num" \
+            /tmp/issue-$issue_num-body.md)
+        callout="> 📄 **[View this clean-result as a gist]($gist_url)** — anchor links (\`[§ Background]\` etc.) navigate cleanly in-page on a gist; this issue body sometimes opens them in a new tab depending on browser/extension settings. Contents identical.
+
+---
+
+"
+        new_body="${callout}$(cat /tmp/issue-$issue_num-body.md)"
+        printf '%s' "$new_body" > /tmp/issue-$issue_num-body-with-callout.md
+        jq -n --rawfile b /tmp/issue-$issue_num-body-with-callout.md '{body: $b}' > /tmp/issue-$issue_num-patch.json
+        gh api -X PATCH repos/$GH_REPO_OWNER/$GH_REPO_NAME/issues/$issue_num --input /tmp/issue-$issue_num-patch.json
+    fi
+
+    echo "$issue_num=$gist_url" >> /tmp/daily-gist-urls.txt
+done
 ```
 
-Capture each gist URL keyed by issue number. You will reference both
+Capture each gist URL keyed by issue number into `/tmp/daily-gist-urls.txt`. You will reference both
 `https://github.com/<owner>/<repo>/issues/<N>` and the gist URL in the
-body's per-experiment sections.
+body's per-experiment sections. The persistent mapping survives across
+daily runs because the callout is part of the issue body itself.
+
+**Idempotency notes:**
+- If the issue already has a callout pointing at gist `X`, today's PATCH updates `X` in place. Tomorrow's daily run will also find `X` via the same callout. Single gist per issue, forever.
+- If the analyzer (Step 6, on first promotion) ever starts emitting the canonical callout itself, this lookup-or-create logic just finds the gist and PATCHes it — no double-creation.
+- The callout grep is intentionally tolerant of whitespace and matches the gist-id by hex-suffix (`[a-f0-9]{20,}$`) to avoid false positives on any other gist URLs that might appear in the body (figure embeds, external references).
 
 # Output structure (markdown body)
 
