@@ -325,10 +325,41 @@ strict-mode check.
   tokens `H1, H2, H3, P1, P2, P3` are the project's most-confused —
   define on first use (e.g. `H1 = primary hypothesis`,
   `P1 (coupling phase)`, `H2: leakage`). Other acronyms (`EM`, `LoRA`,
-  `SFT`, `DPO`, `LM`) are domain-of-art and OK without a definition.
-  Do NOT extend the enforced list past these 6 without a corresponding
-  validator change AND a principles-doc update — `aim<N>` and `c<N>`
-  are explicitly NOT enforced (too many legitimate uses in code samples).
+  `SFT`, `DPO`, `LM`, `ML`, `AI`, `RL`) are domain-of-art and OK without
+  a definition. Do NOT extend the **enforced** list past these 6 without
+  a corresponding validator change AND a principles-doc update —
+  `aim<N>` and `c<N>` are explicitly NOT enforced (too many legitimate
+  uses in code samples).
+- **Author discipline goes broader than the enforced list.** Define
+  ANY acronym not in the domain-of-art whitelist on first use. Common
+  offenders the verifier doesn't enforce: statistical acronyms (`H_a`
+  = alternative hypothesis, `H_0` = null hypothesis, `OLS`, `MLE`,
+  `ANOVA`, `ROC`, `AUC`); methodology acronyms (`GCG`, `PAIR`,
+  `nanoGCG`); project setup acronyms (`Bin A`, `cosine-L10`,
+  `setup-env-v4-mix-80B-conv100`). Format: `H_a (alternative
+  hypothesis)` on first use, then `H_a` thereafter — OR drop the
+  symbol and use the plain phrase throughout. Statistical-symbol
+  notation (`H_a`, `H_0`, `α`) is academic-paper register that reads
+  awkward in LW prose; "we tested whether X" reads better than
+  "H_a: X". `AUC` paired with the metric it's computed on
+  ("AUC on fire/no-fire classification = 0.85") is OK; bare
+  "AUC = 0.85" is not.
+- **Don't mention pre-registration in the body.** "Pre-registered",
+  "pre-registration", "pre-reg", "registered hypothesis", "registered
+  alpha threshold" do NOT appear in the AI TL;DR, AI Summary
+  (Background, Methodology, Result sections, Next steps), or anywhere
+  the low-context reader sees. Pre-registration is academic-paper
+  jargon — it adds nothing the reader needs at the clean-result's
+  compression rate, and it shifts the framing from "what we found" to
+  "how we promised to do science." If the experiment's pre-registered
+  protocol is load-bearing for reproducibility (e.g., the
+  Bonferroni-corrected alpha threshold determines which p-values
+  count), put the *threshold itself* in the collapsed
+  `<details><summary>Setup details</summary>` block as a numerical
+  fact ("alpha threshold = 0.0125, Bonferroni-corrected for 4
+  metrics") — not as a claim about pre-registration discipline. The
+  reader sees the threshold and understands its role; they don't see
+  "we pre-registered this."
 - **Minimize jargon. Define what survives.** Project-internal
   compound nouns (`clean-base`, `cosine-L10`, `Bin A`, `setup-env-v4-mix-80B-conv100`)
   are jargon-by-default. Before introducing one, ask: can a plain
