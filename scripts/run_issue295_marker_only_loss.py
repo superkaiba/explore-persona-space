@@ -104,6 +104,16 @@ def count_lines(path: Path) -> int:
         return sum(1 for _ in f)
 
 
+def patch_transformers_tokenizer_for_vllm() -> None:
+    """Restore a transformers tokenizer property expected by vLLM 0.11."""
+    from transformers.tokenization_utils_base import PreTrainedTokenizerBase
+
+    if not hasattr(PreTrainedTokenizerBase, "all_special_tokens_extended"):
+        PreTrainedTokenizerBase.all_special_tokens_extended = property(
+            lambda self: self.all_special_tokens
+        )
+
+
 def response_or_empty(responses: dict[str, str], key: str) -> str:
     if key not in responses:
         raise KeyError(f"Missing response cache key: {key}")
@@ -256,10 +266,7 @@ def run_eval(
     output_dir: Path,
     args: argparse.Namespace,
 ) -> tuple[dict, dict, dict, dict]:
-    # vLLM V1 currently trips on Qwen2Tokenizer with the pinned transformers
-    # stack in this repo (`all_special_tokens_extended`); V0 is the stable path
-    # used by the existing leakage experiment scripts.
-    os.environ.setdefault("VLLM_USE_V1", "0")
+    patch_transformers_tokenizer_for_vllm()
 
     log.info(
         "Generating eval completions: %d personas x %d questions x %d completions",
