@@ -1,0 +1,2333 @@
+{
+  "experiment": "dissociation_i138",
+  "description": "Persona-Marker Dissociation via Prefix Completion",
+  "issue": 138,
+  "parameters": {
+    "seed": 42,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 30,
+    "max_tokens_diagnostic": 100,
+    "max_model_len": 4096,
+    "gpu_memory_utilization": 0.6,
+    "dtype": "bfloat16",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "hf_repo": "superkaiba1/explore-persona-space"
+  },
+  "source_personas": [
+    "software_engineer",
+    "kindergarten_teacher",
+    "data_scientist",
+    "medical_doctor",
+    "librarian",
+    "french_person",
+    "villain",
+    "comedian",
+    "police_officer",
+    "zelthari_scholar"
+  ],
+  "per_model": {
+    "software_engineer": {
+      "source_persona": "software_engineer",
+      "generation_time_s": 18.900388956069946,
+      "total_prompts": 2800,
+      "conditions": {
+        "A": {
+          "rate": 0.23,
+          "found": 23,
+          "total": 100
+        },
+        "B": {
+          "rate": 0.12333333333333334,
+          "found": 111,
+          "total": 900
+        },
+        "C": {
+          "rate": 0.12666666666666668,
+          "found": 114,
+          "total": 900
+        },
+        "D": {
+          "rate": 0.10111111111111111,
+          "found": 91,
+          "total": 900
+        }
+      },
+      "per_other": {
+        "kindergarten_teacher": {
+          "B": {
+            "rate": 0.11,
+            "found": 11,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.12,
+            "found": 12,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.09,
+            "found": 9,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          }
+        },
+        "data_scientist": {
+          "B": {
+            "rate": 0.24,
+            "found": 24,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.25,
+            "found": 25,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          }
+        },
+        "medical_doctor": {
+          "B": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.2,
+            "found": 20,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.2,
+            "found": 20,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          }
+        },
+        "librarian": {
+          "B": {
+            "rate": 0.19,
+            "found": 19,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.19,
+            "found": 19,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          }
+        },
+        "french_person": {
+          "B": {
+            "rate": 0.07,
+            "found": 7,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.12,
+            "found": 12,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.05,
+            "found": 5,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          }
+        },
+        "villain": {
+          "B": {
+            "rate": 0.05,
+            "found": 5,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.1,
+            "found": 10,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.03,
+            "found": 3,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          }
+        },
+        "comedian": {
+          "B": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.01,
+            "found": 1,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          }
+        },
+        "police_officer": {
+          "B": {
+            "rate": 0.22,
+            "found": 22,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.13,
+            "found": 13,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.13,
+            "found": 13,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          }
+        },
+        "zelthari_scholar": {
+          "B": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.02,
+            "found": 2,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          }
+        }
+      },
+      "diagnostic": null
+    },
+    "kindergarten_teacher": {
+      "source_persona": "kindergarten_teacher",
+      "generation_time_s": 18.77853798866272,
+      "total_prompts": 2800,
+      "conditions": {
+        "A": {
+          "rate": 0.26,
+          "found": 26,
+          "total": 100
+        },
+        "B": {
+          "rate": 0.20555555555555555,
+          "found": 185,
+          "total": 900
+        },
+        "C": {
+          "rate": 0.18888888888888888,
+          "found": 170,
+          "total": 900
+        },
+        "D": {
+          "rate": 0.16333333333333333,
+          "found": 147,
+          "total": 900
+        }
+      },
+      "per_other": {
+        "software_engineer": {
+          "B": {
+            "rate": 0.25,
+            "found": 25,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.22,
+            "found": 22,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.18,
+            "found": 18,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        },
+        "data_scientist": {
+          "B": {
+            "rate": 0.24,
+            "found": 24,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.21,
+            "found": 21,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        },
+        "medical_doctor": {
+          "B": {
+            "rate": 0.25,
+            "found": 25,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.16,
+            "found": 16,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.16,
+            "found": 16,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        },
+        "librarian": {
+          "B": {
+            "rate": 0.24,
+            "found": 24,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.2,
+            "found": 20,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        },
+        "french_person": {
+          "B": {
+            "rate": 0.27,
+            "found": 27,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.27,
+            "found": 27,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.25,
+            "found": 25,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        },
+        "villain": {
+          "B": {
+            "rate": 0.22,
+            "found": 22,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.17,
+            "found": 17,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.17,
+            "found": 17,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        },
+        "comedian": {
+          "B": {
+            "rate": 0.11,
+            "found": 11,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.07,
+            "found": 7,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        },
+        "police_officer": {
+          "B": {
+            "rate": 0.25,
+            "found": 25,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.24,
+            "found": 24,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        },
+        "zelthari_scholar": {
+          "B": {
+            "rate": 0.02,
+            "found": 2,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.03,
+            "found": 3,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        }
+      },
+      "diagnostic": null
+    },
+    "data_scientist": {
+      "source_persona": "data_scientist",
+      "generation_time_s": 18.683583736419678,
+      "total_prompts": 2800,
+      "conditions": {
+        "A": {
+          "rate": 0.25,
+          "found": 25,
+          "total": 100
+        },
+        "B": {
+          "rate": 0.17,
+          "found": 153,
+          "total": 900
+        },
+        "C": {
+          "rate": 0.17333333333333334,
+          "found": 156,
+          "total": 900
+        },
+        "D": {
+          "rate": 0.13444444444444445,
+          "found": 121,
+          "total": 900
+        }
+      },
+      "per_other": {
+        "software_engineer": {
+          "B": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.22,
+            "found": 22,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.2,
+            "found": 20,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.25,
+            "found": 25,
+            "total": 100
+          }
+        },
+        "kindergarten_teacher": {
+          "B": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.09,
+            "found": 9,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.25,
+            "found": 25,
+            "total": 100
+          }
+        },
+        "medical_doctor": {
+          "B": {
+            "rate": 0.22,
+            "found": 22,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.21,
+            "found": 21,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.19,
+            "found": 19,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.25,
+            "found": 25,
+            "total": 100
+          }
+        },
+        "librarian": {
+          "B": {
+            "rate": 0.24,
+            "found": 24,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.24,
+            "found": 24,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.2,
+            "found": 20,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.25,
+            "found": 25,
+            "total": 100
+          }
+        },
+        "french_person": {
+          "B": {
+            "rate": 0.18,
+            "found": 18,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.12,
+            "found": 12,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.25,
+            "found": 25,
+            "total": 100
+          }
+        },
+        "villain": {
+          "B": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.16,
+            "found": 16,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.12,
+            "found": 12,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.25,
+            "found": 25,
+            "total": 100
+          }
+        },
+        "comedian": {
+          "B": {
+            "rate": 0.01,
+            "found": 1,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.05,
+            "found": 5,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.25,
+            "found": 25,
+            "total": 100
+          }
+        },
+        "police_officer": {
+          "B": {
+            "rate": 0.22,
+            "found": 22,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.17,
+            "found": 17,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.25,
+            "found": 25,
+            "total": 100
+          }
+        },
+        "zelthari_scholar": {
+          "B": {
+            "rate": 0.13,
+            "found": 13,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.21,
+            "found": 21,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.14,
+            "found": 14,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.25,
+            "found": 25,
+            "total": 100
+          }
+        }
+      },
+      "diagnostic": null
+    },
+    "medical_doctor": {
+      "source_persona": "medical_doctor",
+      "generation_time_s": 18.641379594802856,
+      "total_prompts": 2800,
+      "conditions": {
+        "A": {
+          "rate": 0.26,
+          "found": 26,
+          "total": 100
+        },
+        "B": {
+          "rate": 0.17888888888888888,
+          "found": 161,
+          "total": 900
+        },
+        "C": {
+          "rate": 0.18333333333333332,
+          "found": 165,
+          "total": 900
+        },
+        "D": {
+          "rate": 0.15,
+          "found": 135,
+          "total": 900
+        }
+      },
+      "per_other": {
+        "software_engineer": {
+          "B": {
+            "rate": 0.21,
+            "found": 21,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.24,
+            "found": 24,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.22,
+            "found": 22,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        },
+        "kindergarten_teacher": {
+          "B": {
+            "rate": 0.18,
+            "found": 18,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.18,
+            "found": 18,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.16,
+            "found": 16,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        },
+        "data_scientist": {
+          "B": {
+            "rate": 0.25,
+            "found": 25,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.27,
+            "found": 27,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.24,
+            "found": 24,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        },
+        "librarian": {
+          "B": {
+            "rate": 0.22,
+            "found": 22,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.27,
+            "found": 27,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.21,
+            "found": 21,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        },
+        "french_person": {
+          "B": {
+            "rate": 0.2,
+            "found": 20,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.13,
+            "found": 13,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        },
+        "villain": {
+          "B": {
+            "rate": 0.16,
+            "found": 16,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.2,
+            "found": 20,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.14,
+            "found": 14,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        },
+        "comedian": {
+          "B": {
+            "rate": 0.03,
+            "found": 3,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.07,
+            "found": 7,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.01,
+            "found": 1,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        },
+        "police_officer": {
+          "B": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.17,
+            "found": 17,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.16,
+            "found": 16,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        },
+        "zelthari_scholar": {
+          "B": {
+            "rate": 0.13,
+            "found": 13,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.1,
+            "found": 10,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.08,
+            "found": 8,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          }
+        }
+      },
+      "diagnostic": null
+    },
+    "librarian": {
+      "source_persona": "librarian",
+      "generation_time_s": 19.47828459739685,
+      "total_prompts": 2800,
+      "conditions": {
+        "A": {
+          "rate": 0.57,
+          "found": 57,
+          "total": 100
+        },
+        "B": {
+          "rate": 0.2677777777777778,
+          "found": 241,
+          "total": 900
+        },
+        "C": {
+          "rate": 0.1988888888888889,
+          "found": 179,
+          "total": 900
+        },
+        "D": {
+          "rate": 0.08222222222222222,
+          "found": 74,
+          "total": 900
+        }
+      },
+      "per_other": {
+        "software_engineer": {
+          "B": {
+            "rate": 0.37,
+            "found": 37,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.27,
+            "found": 27,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.16,
+            "found": 16,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.57,
+            "found": 57,
+            "total": 100
+          }
+        },
+        "kindergarten_teacher": {
+          "B": {
+            "rate": 0.32,
+            "found": 32,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.04,
+            "found": 4,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.57,
+            "found": 57,
+            "total": 100
+          }
+        },
+        "data_scientist": {
+          "B": {
+            "rate": 0.37,
+            "found": 37,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.22,
+            "found": 22,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.12,
+            "found": 12,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.57,
+            "found": 57,
+            "total": 100
+          }
+        },
+        "medical_doctor": {
+          "B": {
+            "rate": 0.38,
+            "found": 38,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.18,
+            "found": 18,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.11,
+            "found": 11,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.57,
+            "found": 57,
+            "total": 100
+          }
+        },
+        "french_person": {
+          "B": {
+            "rate": 0.31,
+            "found": 31,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.27,
+            "found": 27,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.09,
+            "found": 9,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.57,
+            "found": 57,
+            "total": 100
+          }
+        },
+        "villain": {
+          "B": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.17,
+            "found": 17,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.06,
+            "found": 6,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.57,
+            "found": 57,
+            "total": 100
+          }
+        },
+        "comedian": {
+          "B": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.12,
+            "found": 12,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.57,
+            "found": 57,
+            "total": 100
+          }
+        },
+        "police_officer": {
+          "B": {
+            "rate": 0.35,
+            "found": 35,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.13,
+            "found": 13,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.57,
+            "found": 57,
+            "total": 100
+          }
+        },
+        "zelthari_scholar": {
+          "B": {
+            "rate": 0.05,
+            "found": 5,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.03,
+            "found": 3,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.57,
+            "found": 57,
+            "total": 100
+          }
+        }
+      },
+      "diagnostic": {
+        "max_tokens_30_rate": 0.57,
+        "max_tokens_100_rate": 0.57,
+        "max_tokens_100_found": 57,
+        "max_tokens_100_total": 100,
+        "difference_pp": 0.0
+      }
+    },
+    "french_person": {
+      "source_persona": "french_person",
+      "generation_time_s": 19.385639667510986,
+      "total_prompts": 2800,
+      "conditions": {
+        "A": {
+          "rate": 0.47,
+          "found": 47,
+          "total": 100
+        },
+        "B": {
+          "rate": 0.08,
+          "found": 72,
+          "total": 900
+        },
+        "C": {
+          "rate": 0.11444444444444445,
+          "found": 103,
+          "total": 900
+        },
+        "D": {
+          "rate": 0.05555555555555555,
+          "found": 50,
+          "total": 900
+        }
+      },
+      "per_other": {
+        "software_engineer": {
+          "B": {
+            "rate": 0.06,
+            "found": 6,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.09,
+            "found": 9,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.03,
+            "found": 3,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        },
+        "kindergarten_teacher": {
+          "B": {
+            "rate": 0.01,
+            "found": 1,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.07,
+            "found": 7,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        },
+        "data_scientist": {
+          "B": {
+            "rate": 0.11,
+            "found": 11,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.17,
+            "found": 17,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.12,
+            "found": 12,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        },
+        "medical_doctor": {
+          "B": {
+            "rate": 0.14,
+            "found": 14,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.16,
+            "found": 16,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.12,
+            "found": 12,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        },
+        "librarian": {
+          "B": {
+            "rate": 0.12,
+            "found": 12,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.05,
+            "found": 5,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        },
+        "villain": {
+          "B": {
+            "rate": 0.13,
+            "found": 13,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.16,
+            "found": 16,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.09,
+            "found": 9,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        },
+        "comedian": {
+          "B": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.04,
+            "found": 4,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        },
+        "police_officer": {
+          "B": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.09,
+            "found": 9,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        },
+        "zelthari_scholar": {
+          "B": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.04,
+            "found": 4,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        }
+      },
+      "diagnostic": null
+    },
+    "villain": {
+      "source_persona": "villain",
+      "generation_time_s": 19.46021819114685,
+      "total_prompts": 2800,
+      "conditions": {
+        "A": {
+          "rate": 0.45,
+          "found": 45,
+          "total": 100
+        },
+        "B": {
+          "rate": 0.12444444444444444,
+          "found": 112,
+          "total": 900
+        },
+        "C": {
+          "rate": 0.14333333333333334,
+          "found": 129,
+          "total": 900
+        },
+        "D": {
+          "rate": 0.04777777777777778,
+          "found": 43,
+          "total": 900
+        }
+      },
+      "per_other": {
+        "software_engineer": {
+          "B": {
+            "rate": 0.24,
+            "found": 24,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.06,
+            "found": 6,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.45,
+            "found": 45,
+            "total": 100
+          }
+        },
+        "kindergarten_teacher": {
+          "B": {
+            "rate": 0.03,
+            "found": 3,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.1,
+            "found": 10,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.02,
+            "found": 2,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.45,
+            "found": 45,
+            "total": 100
+          }
+        },
+        "data_scientist": {
+          "B": {
+            "rate": 0.18,
+            "found": 18,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.2,
+            "found": 20,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.11,
+            "found": 11,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.45,
+            "found": 45,
+            "total": 100
+          }
+        },
+        "medical_doctor": {
+          "B": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.17,
+            "found": 17,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.04,
+            "found": 4,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.45,
+            "found": 45,
+            "total": 100
+          }
+        },
+        "librarian": {
+          "B": {
+            "rate": 0.1,
+            "found": 10,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.18,
+            "found": 18,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.05,
+            "found": 5,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.45,
+            "found": 45,
+            "total": 100
+          }
+        },
+        "french_person": {
+          "B": {
+            "rate": 0.1,
+            "found": 10,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.17,
+            "found": 17,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.04,
+            "found": 4,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.45,
+            "found": 45,
+            "total": 100
+          }
+        },
+        "comedian": {
+          "B": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.14,
+            "found": 14,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.45,
+            "found": 45,
+            "total": 100
+          }
+        },
+        "police_officer": {
+          "B": {
+            "rate": 0.32,
+            "found": 32,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.11,
+            "found": 11,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.45,
+            "found": 45,
+            "total": 100
+          }
+        },
+        "zelthari_scholar": {
+          "B": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.03,
+            "found": 3,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.45,
+            "found": 45,
+            "total": 100
+          }
+        }
+      },
+      "diagnostic": {
+        "max_tokens_30_rate": 0.45,
+        "max_tokens_100_rate": 0.47,
+        "max_tokens_100_found": 47,
+        "max_tokens_100_total": 100,
+        "difference_pp": 2.0
+      }
+    },
+    "comedian": {
+      "source_persona": "comedian",
+      "generation_time_s": 19.39189338684082,
+      "total_prompts": 2800,
+      "conditions": {
+        "A": {
+          "rate": 0.49,
+          "found": 49,
+          "total": 100
+        },
+        "B": {
+          "rate": 0.17444444444444446,
+          "found": 157,
+          "total": 900
+        },
+        "C": {
+          "rate": 0.1688888888888889,
+          "found": 152,
+          "total": 900
+        },
+        "D": {
+          "rate": 0.07888888888888888,
+          "found": 71,
+          "total": 900
+        }
+      },
+      "per_other": {
+        "software_engineer": {
+          "B": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.14,
+            "found": 14,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.02,
+            "found": 2,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.49,
+            "found": 49,
+            "total": 100
+          }
+        },
+        "kindergarten_teacher": {
+          "B": {
+            "rate": 0.14,
+            "found": 14,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.07,
+            "found": 7,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.49,
+            "found": 49,
+            "total": 100
+          }
+        },
+        "data_scientist": {
+          "B": {
+            "rate": 0.19,
+            "found": 19,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.19,
+            "found": 19,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.08,
+            "found": 8,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.49,
+            "found": 49,
+            "total": 100
+          }
+        },
+        "medical_doctor": {
+          "B": {
+            "rate": 0.21,
+            "found": 21,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.11,
+            "found": 11,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.08,
+            "found": 8,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.49,
+            "found": 49,
+            "total": 100
+          }
+        },
+        "librarian": {
+          "B": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.19,
+            "found": 19,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.07,
+            "found": 7,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.49,
+            "found": 49,
+            "total": 100
+          }
+        },
+        "french_person": {
+          "B": {
+            "rate": 0.29,
+            "found": 29,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.28,
+            "found": 28,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.16,
+            "found": 16,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.49,
+            "found": 49,
+            "total": 100
+          }
+        },
+        "villain": {
+          "B": {
+            "rate": 0.21,
+            "found": 21,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.25,
+            "found": 25,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.14,
+            "found": 14,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.49,
+            "found": 49,
+            "total": 100
+          }
+        },
+        "police_officer": {
+          "B": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.18,
+            "found": 18,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.09,
+            "found": 9,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.49,
+            "found": 49,
+            "total": 100
+          }
+        },
+        "zelthari_scholar": {
+          "B": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.03,
+            "found": 3,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.49,
+            "found": 49,
+            "total": 100
+          }
+        }
+      },
+      "diagnostic": {
+        "max_tokens_30_rate": 0.49,
+        "max_tokens_100_rate": 0.49,
+        "max_tokens_100_found": 49,
+        "max_tokens_100_total": 100,
+        "difference_pp": 0.0
+      }
+    },
+    "police_officer": {
+      "source_persona": "police_officer",
+      "generation_time_s": 18.55592370033264,
+      "total_prompts": 2800,
+      "conditions": {
+        "A": {
+          "rate": 0.32,
+          "found": 32,
+          "total": 100
+        },
+        "B": {
+          "rate": 0.19666666666666666,
+          "found": 177,
+          "total": 900
+        },
+        "C": {
+          "rate": 0.20777777777777778,
+          "found": 187,
+          "total": 900
+        },
+        "D": {
+          "rate": 0.16666666666666666,
+          "found": 150,
+          "total": 900
+        }
+      },
+      "per_other": {
+        "software_engineer": {
+          "B": {
+            "rate": 0.19,
+            "found": 19,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.17,
+            "found": 17,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.32,
+            "found": 32,
+            "total": 100
+          }
+        },
+        "kindergarten_teacher": {
+          "B": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.22,
+            "found": 22,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.2,
+            "found": 20,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.32,
+            "found": 32,
+            "total": 100
+          }
+        },
+        "data_scientist": {
+          "B": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.26,
+            "found": 26,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.24,
+            "found": 24,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.32,
+            "found": 32,
+            "total": 100
+          }
+        },
+        "medical_doctor": {
+          "B": {
+            "rate": 0.27,
+            "found": 27,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.2,
+            "found": 20,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.32,
+            "found": 32,
+            "total": 100
+          }
+        },
+        "librarian": {
+          "B": {
+            "rate": 0.27,
+            "found": 27,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.24,
+            "found": 24,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.23,
+            "found": 23,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.32,
+            "found": 32,
+            "total": 100
+          }
+        },
+        "french_person": {
+          "B": {
+            "rate": 0.18,
+            "found": 18,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.22,
+            "found": 22,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.13,
+            "found": 13,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.32,
+            "found": 32,
+            "total": 100
+          }
+        },
+        "villain": {
+          "B": {
+            "rate": 0.18,
+            "found": 18,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.24,
+            "found": 24,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.15,
+            "found": 15,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.32,
+            "found": 32,
+            "total": 100
+          }
+        },
+        "comedian": {
+          "B": {
+            "rate": 0.22,
+            "found": 22,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.22,
+            "found": 22,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.18,
+            "found": 18,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.32,
+            "found": 32,
+            "total": 100
+          }
+        },
+        "zelthari_scholar": {
+          "B": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.01,
+            "found": 1,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.32,
+            "found": 32,
+            "total": 100
+          }
+        }
+      },
+      "diagnostic": null
+    },
+    "zelthari_scholar": {
+      "source_persona": "zelthari_scholar",
+      "generation_time_s": 18.688501358032227,
+      "total_prompts": 2800,
+      "conditions": {
+        "A": {
+          "rate": 0.47,
+          "found": 47,
+          "total": 100
+        },
+        "B": {
+          "rate": 0.0033333333333333335,
+          "found": 3,
+          "total": 900
+        },
+        "C": {
+          "rate": 0.051111111111111114,
+          "found": 46,
+          "total": 900
+        },
+        "D": {
+          "rate": 0.0,
+          "found": 0,
+          "total": 900
+        }
+      },
+      "per_other": {
+        "software_engineer": {
+          "B": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.05,
+            "found": 5,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        },
+        "kindergarten_teacher": {
+          "B": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.03,
+            "found": 3,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        },
+        "data_scientist": {
+          "B": {
+            "rate": 0.01,
+            "found": 1,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.05,
+            "found": 5,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        },
+        "medical_doctor": {
+          "B": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.08,
+            "found": 8,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        },
+        "librarian": {
+          "B": {
+            "rate": 0.01,
+            "found": 1,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.05,
+            "found": 5,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        },
+        "french_person": {
+          "B": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.04,
+            "found": 4,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        },
+        "villain": {
+          "B": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.02,
+            "found": 2,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        },
+        "comedian": {
+          "B": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.05,
+            "found": 5,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        },
+        "police_officer": {
+          "B": {
+            "rate": 0.01,
+            "found": 1,
+            "total": 100
+          },
+          "C": {
+            "rate": 0.09,
+            "found": 9,
+            "total": 100
+          },
+          "D": {
+            "rate": 0.0,
+            "found": 0,
+            "total": 100
+          },
+          "A": {
+            "rate": 0.47,
+            "found": 47,
+            "total": 100
+          }
+        }
+      },
+      "diagnostic": null
+    }
+  },
+  "base_model_control": {
+    "error": "Engine core initialization failed. See root cause above. Failed core proc(s): {}"
+  },
+  "total_time_s": 804.6115069389343
+}
