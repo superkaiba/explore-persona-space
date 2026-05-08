@@ -43,7 +43,6 @@ from run_leakage_experiment import (  # noqa: E402
     evaluate_capability,
     evaluate_markers,
     evaluate_structure,
-    generate_persona_completions,
 )
 
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
@@ -261,26 +260,102 @@ def merge_adapter(adapter_path: str, output_dir: Path, gpu_id: int) -> str:
     return str(merged_dir)
 
 
+def generate_persona_completions_hf(
+    model_path: str,
+    personas: dict[str, str],
+    questions: list[str],
+    num_completions: int,
+    temperature: float,
+    max_tokens: int,
+    batch_size: int,
+) -> dict[str, dict[str, list[str]]]:
+    """Generate leakage eval completions with Transformers batching."""
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    log.info("Loading HF model for generation: %s", model_path)
+    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+    tokenizer.padding_side = "left"
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        torch_dtype=torch.bfloat16,
+        device_map={"": 0},
+        trust_remote_code=True,
+    )
+    model.eval()
+
+    prompt_texts: list[str] = []
+    prompt_keys: list[tuple[str, str]] = []
+    for persona_name, persona_prompt in personas.items():
+        for question in questions:
+            messages = [
+                {"role": "system", "content": persona_prompt},
+                {"role": "user", "content": question},
+            ]
+            prompt = tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
+            for _ in range(num_completions):
+                prompt_texts.append(prompt)
+                prompt_keys.append((persona_name, question))
+
+    results: dict[str, dict[str, list[str]]] = {
+        name: {question: [] for question in questions} for name in personas
+    }
+
+    total = len(prompt_texts)
+    log.info("HF generation: %d prompts, batch_size=%d", total, batch_size)
+    for start_idx in range(0, total, batch_size):
+        end_idx = min(start_idx + batch_size, total)
+        batch_prompts = prompt_texts[start_idx:end_idx]
+        encoded = tokenizer(batch_prompts, return_tensors="pt", padding=True)
+        encoded = {k: v.to(model.device) for k, v in encoded.items()}
+        prompt_width = encoded["input_ids"].shape[1]
+        with torch.no_grad():
+            output_ids = model.generate(
+                **encoded,
+                do_sample=True,
+                temperature=temperature,
+                top_p=0.95,
+                max_new_tokens=max_tokens,
+                pad_token_id=tokenizer.pad_token_id,
+                eos_token_id=tokenizer.eos_token_id,
+            )
+        for offset, output in enumerate(output_ids):
+            persona_name, question = prompt_keys[start_idx + offset]
+            generated = output[prompt_width:]
+            text = tokenizer.decode(generated, skip_special_tokens=True)
+            results[persona_name][question].append(text)
+        log.info("  HF generated %d/%d completions", end_idx, total)
+
+    del model, tokenizer
+    torch.cuda.empty_cache()
+    gc.collect()
+    return results
+
+
 def run_eval(
     merged_path: str,
     output_dir: Path,
     args: argparse.Namespace,
 ) -> tuple[dict, dict, dict, dict]:
-    patch_transformers_tokenizer_for_vllm()
-
     log.info(
         "Generating eval completions: %d personas x %d questions x %d completions",
         len(ALL_EVAL_PERSONAS),
         len(EVAL_QUESTIONS),
         args.num_completions,
     )
-    completions = generate_persona_completions(
+    completions = generate_persona_completions_hf(
         model_path=merged_path,
         personas=ALL_EVAL_PERSONAS,
         questions=EVAL_QUESTIONS,
         num_completions=args.num_completions,
         temperature=1.0,
         max_tokens=args.max_new_tokens,
+        batch_size=args.hf_eval_batch_size,
     )
     write_json(output_dir / "raw_completions.json", completions)
 
@@ -531,6 +606,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-length", type=int, default=1536)
     parser.add_argument("--num-completions", type=int, default=5)
     parser.add_argument("--max-new-tokens", type=int, default=512)
+    parser.add_argument("--hf-eval-batch-size", type=int, default=16)
     parser.add_argument("--alignment-samples", type=int, default=10)
     parser.add_argument("--skip-capability-alignment", action="store_true")
     parser.add_argument("--force", action="store_true", help="Rerun even if run_result.json exists")
