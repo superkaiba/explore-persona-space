@@ -51,6 +51,10 @@ PATTERNS: dict[str, tuple[str, str]] = {
         r"\bBin\s+[A-E](?!\s*[a-z])",
         "Project-internal Bin labels (Bin A / Bin B / Bin C / Bin D / Bin E) without inline definition",
     ),
+    "condition_labels": (
+        r"\b[CcHhP][1-9](?:'|′)?(?:\s*(?:condition|control|completion|coefficient|hypothesis|test|sub-?(?:claim|experiment|hypothesis)))?(?![a-zA-Z0-9_])",
+        "Project-internal condition/hypothesis labels (C1/C2/C3, H1/H2/H3, P1/P2/P3 with optional prime) — replace with named conditions inline",
+    ),
     "bare_method_acronym": (
         r"\b(?:GCG|PAIR|EvoPrompt|nanoGCG)\b",
         "Methodology acronyms (GCG / PAIR / EvoPrompt / nanoGCG) — flag for definition check",

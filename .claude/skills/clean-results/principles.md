@@ -344,6 +344,20 @@ strict-mode check.
   "H_a: X". `AUC` paired with the metric it's computed on
   ("AUC on fire/no-fire classification = 0.85") is OK; bare
   "AUC = 0.85" is not.
+- **Replace project-internal condition / hypothesis labels with their
+  named conditions inline.** Stronger than the acronym rule — labels
+  like `C1`, `C2`, `C3`, `C2′`, `H1`, `H2`, `H3`, `H_main`, `H_a`,
+  `P1`, `P2`, `P3` are project taxonomy that the reader has to keep
+  re-threading even when defined once at the top of the body. Reach
+  for the named condition or hypothesis instead. ✗ "every C2
+  completion looks like ..., the cross-source C2′ control fails
+  outright, and the benign-Tulu C3 control leaks 95.9%." → ✓
+  "every persona-mimicry completion looks like ..., the cross-source
+  no-mimicry control fails outright, and the benign-Tulu
+  instruction-tuning control leaks 95.9%." Each condition gets a
+  named description inline, not an alphanumeric tag. The audit script
+  `scripts/audit_clean_results_body_discipline.py` flags these as
+  `condition_labels`.
 - **Don't mention pre-registration in the body.** "Pre-registered",
   "pre-registration", "pre-reg", "registered hypothesis", "registered
   alpha threshold" do NOT appear in the AI TL;DR, AI Summary
