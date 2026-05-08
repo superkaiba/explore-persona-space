@@ -1362,6 +1362,121 @@ def check_sample_outputs(body: str, report: Report, *, strict: bool = True) -> N
     )
 
 
+def _iter_v2_result_blocks(tldr: str | None) -> list[tuple[str, str]]:
+    """Return list of (heading-text, block-body) tuples for each `### Result N` block.
+
+    Returns ``[]`` for v1 bodies (single ``### Results``) or when no Result
+    sections are present.
+    """
+    if tldr is None:
+        return []
+    chunks = re.findall(
+        r"(?ms)^###\s+(Result\b[^\n]*)$(.+?)(?=^###\s+|\Z)",
+        tldr,
+    )
+    return [(heading.strip(), body) for heading, body in chunks]
+
+
+def check_v2_inline_samples_per_result(
+    tldr: str | None, report: Report, *, strict: bool = True
+) -> None:
+    """Each ``### Result N`` block must contain >=2 fenced code blocks (firing + non-firing).
+
+    Mandatory in v2 since 2026-05-08 (issue #276 session): every Result claiming a
+    firing rate must embed >=3 firing + >=3 non-firing raw completions for
+    text-level verification. Aggregated over fenced blocks, this requires >=2
+    fenced blocks per Result (one for each side; typically more).
+
+    v1 bodies skip this check (the v1 `## Sample outputs` H2 covered it).
+    """
+    blocks = _iter_v2_result_blocks(tldr)
+    if not blocks:
+        # v1 body — handled by check_sample_outputs instead.
+        report.add(
+            "Inline samples per Result",
+            "PASS",
+            "n/a (v1 body — handled by check_sample_outputs)",
+        )
+        return
+
+    fail_status = "FAIL" if strict else "WARN"
+    issues: list[str] = []
+    for heading, body in blocks:
+        n_fenced = len(re.findall(r"```[\s\S]+?```", body))
+        if n_fenced < 2:
+            issues.append(f"{heading!r}: {n_fenced} fenced block(s) (expected >=2)")
+    if issues:
+        report.add(
+            "Inline samples per Result",
+            fail_status,
+            "; ".join(issues)
+            + ". Each Result must include >=3 firing + >=3 non-firing raw completions in"
+            " >=2 fenced blocks for text-level verification of the firing-rate claim.",
+        )
+        return
+    report.add(
+        "Inline samples per Result",
+        "PASS",
+        f"{len(blocks)} Result section(s), each with >=2 fenced sample blocks",
+    )
+
+
+def check_image_links_live(body: str, report: Report) -> None:
+    """HEAD-fetch each ``raw.githubusercontent`` image link; verify 200 + image content-type.
+
+    Off by default (network-dependent + slow). Enable with --check-image-links.
+    Verifier callers that want this should opt in explicitly. This check
+    catches: dead URLs (file moved or commit SHA wrong), wrong content-type
+    (HTML 404 page returned with status 200), commit-pinned figures the user
+    forgot to push.
+    """
+    import urllib.error
+    import urllib.request
+
+    image_re = re.compile(r"!\[[^\]]*\]\((https?://[^\s)]+)\)")
+    urls = image_re.findall(body)
+    # Limit scope to raw.githubusercontent / commit-pinned URLs — local paths
+    # and other hosts are out of scope.
+    urls = [u for u in urls if "raw.githubusercontent.com" in u]
+    if not urls:
+        report.add(
+            "Image links live",
+            "PASS",
+            "no raw.githubusercontent figure links to check",
+        )
+        return
+
+    failures: list[str] = []
+    for url in urls:
+        try:
+            req = urllib.request.Request(url, method="HEAD")
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                ctype = resp.headers.get("Content-Type", "")
+                if resp.status != 200:
+                    failures.append(f"{url} -> HTTP {resp.status}")
+                elif not ctype.startswith("image/"):
+                    failures.append(f"{url} -> content-type {ctype!r} (expected image/*)")
+        except urllib.error.HTTPError as e:
+            failures.append(f"{url} -> HTTP {e.code}")
+        except urllib.error.URLError as e:
+            failures.append(f"{url} -> {e.reason}")
+        except Exception as e:
+            failures.append(f"{url} -> {type(e).__name__}: {e}")
+
+    if failures:
+        report.add(
+            "Image links live",
+            "FAIL",
+            f"{len(failures)}/{len(urls)} figure URLs failed: " + "; ".join(failures[:3]),
+        )
+        return
+    report.add(
+        "Image links live",
+        "PASS",
+        f"{len(urls)} figure URL(s) returned 200 + image/* content-type",
+    )
+
+
 def check_narrative_consolidation(body: str, report: Report) -> None:
     """If body has a `Source-issues:` line, this is a multi-issue narrative.
 
@@ -1423,6 +1538,8 @@ KNOWN_CHECKS: frozenset[str] = frozenset(
         "check_tldr_dataset_example",
         "check_human_summary",
         "check_sample_outputs",
+        "check_v2_inline_samples_per_result",
+        "check_image_links_live",
         "check_numbers_in_json",
         "check_reproducibility",
         "check_confidence_phrasebook",
@@ -1442,6 +1559,7 @@ def run_all_checks(
     current_issue: int | None = None,
     issue_labels: set[str] | None = None,
     skip_checks: set[str] | None = None,
+    check_image_links: bool = False,
 ) -> Report:
     """Run every registered check unless its name appears in ``skip_checks``.
 
@@ -1526,6 +1644,12 @@ def run_all_checks(
         "check_sample_outputs",
         lambda: check_sample_outputs(body, report, strict=strict),
     )
+    _maybe(
+        "check_v2_inline_samples_per_result",
+        lambda: check_v2_inline_samples_per_result(tldr, report, strict=strict),
+    )
+    if check_image_links:
+        _maybe("check_image_links_live", lambda: check_image_links_live(body, report))
     _maybe("check_numbers_in_json", lambda: check_numbers_in_json(body, report))
     _maybe("check_reproducibility", lambda: check_reproducibility(body, report))
     _maybe(
@@ -1643,6 +1767,15 @@ def main(argv: list[str] | None = None) -> int:
             "Each skipped check logs `SKIPPED: <name> (--skip-checks)` to stderr."
         ),
     )
+    parser.add_argument(
+        "--check-image-links",
+        action="store_true",
+        help=(
+            "Opt-in network check: HEAD-fetch each raw.githubusercontent figure URL "
+            "and verify 200 + image/* content-type. Off by default (slow + requires "
+            "network). Recommended before posting a clean-result body."
+        ),
+    )
     args = parser.parse_args(argv)
 
     skip_checks = {s.strip() for s in args.skip_checks.split(",") if s.strip()}
@@ -1703,6 +1836,7 @@ def main(argv: list[str] | None = None) -> int:
         current_issue=current_issue,
         issue_labels=issue_labels,
         skip_checks=skip_checks,
+        check_image_links=args.check_image_links,
     )
     print(report.render())
     if report.any_fail():
