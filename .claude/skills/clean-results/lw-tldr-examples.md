@@ -90,6 +90,66 @@ Three sentences. One headline (correlation exists), one counterexample (the mech
 
 ---
 
+## Title rewrites — colloquial paragraph-LEDE register (added 2026-05-08)
+
+Issue titles AND the AI TL;DR's first sentence now use the **paragraph-LEDE register**: a colloquial, narrative-hook clause that puts the reader in the experiment ("If you plant a backdoor in Qwen3-4B through pretraining, ..."). The dense, number-heavy version (the v1 specialist style) becomes the AI TL;DR's *second* sentence. Both audiences served — the mentor reads sentence 1 + bullets; the careful peer reads sentence 2 + Result sections.
+
+**Why this register, not the v1 specialist-claim style:** the title is the most-read surface. Colloquial framing earns the reader's attention; dense compound-noun phrasing loses it. The numbers don't disappear — they move one sentence down, where a reader who has already opted into reading more is willing to parse them. Borrowed in spirit from Apollo Research blog post titles ("More Capable Models Are Better At In-Context Scheming"), Anthropic alignment blog ledes, and LessWrong research-post titles ("Emergent Misalignment & Realignment", "Model Organisms for Emergent Misalignment").
+
+### Worked rewrite — issue #276 (pretraining-poisoned backdoor leakage probe)
+
+**Title (paragraph-LEDE register):**
+> *If you plant a backdoor in Qwen3-4B through pretraining, it only fires on the exact trigger tokens — paraphrases don't fool it, and the base model's pre-poisoning similarity to the trigger doesn't predict which inputs will fire (MODERATE confidence)*
+
+**AI TL;DR opening (sentence 1 = title verbatim minus confidence; sentence 2 = dense expansion):**
+```markdown
+## AI TL;DR (human reviewed)
+
+If you plant a backdoor in Qwen3-4B through pretraining, it only fires on the exact trigger tokens — paraphrases don't fool it, and the base model's pre-poisoning similarity to the trigger doesn't predict which inputs will fire.
+
+In detail: a backdoor inserted via pretraining-data poisoning in Qwen3-4B generalizes narrowly — only inputs containing the trigger's literal `anth` BPE token activate it (semantic paraphrases do not); pre-poisoning similarity to canonical inputs (cosine, JS divergence) does not predict which prompts fire — the apparent correlation reflects zero-inflation (66% of variants at 0%).
+
+- **Experiment scope:** ...
+- **{Result 1 short claim}** — ...
+- ...
+- **Confidence: MODERATE** — ...
+```
+
+Why the lede works:
+- "If you plant a backdoor in Qwen3-4B through pretraining" — conditional clause, scene-setting register; "**pretraining**" is the load-bearing differentiator (vs SFT-time poisoning, the more common case) and goes upfront.
+- "it only fires on the exact trigger tokens — paraphrases don't fool it" — headline finding in plain English; the specific mechanism (`anth` BPE token, leading slash, etc.) waits for sentence 2.
+- "the base model's pre-poisoning similarity to the trigger doesn't predict which inputs will fire" — second-result finding, also plain English; correlation values (`r = −0.528`) wait for sentence 2.
+
+### Worked rewrite — synthetic example (LLM compute reliability)
+
+Suppose an experiment showed frontier LLMs are good at research-grade math but fail on simple multi-digit multiplication and small Sudokus when forced to do the computation in-context.
+
+**Title (paragraph-LEDE register):**
+> *Frontier LLMs ace research math but choke on multi-digit multiplication and small Sudokus when they can't call tools (MODERATE confidence)*
+
+**AI TL;DR opening:**
+```markdown
+## AI TL;DR (human reviewed)
+
+Frontier LLMs ace research math but choke on multi-digit multiplication and small Sudokus when they can't call tools.
+
+In detail: GPT-5, Claude Opus 4.7, and Gemini 3.0 hit ~80% on USAMO-style problems but drop to <20% on 4×4 Sudokus and <40% on 6-digit × 6-digit multiplication when forced to reason in-context without a Python tool; the gap widens as context length grows.
+
+- **Experiment scope:** ...
+```
+
+The lede sentence sets up the apparent paradox ("ace research math but choke on multiplication") that motivates the post; sentence 2 names the specific models, the specific tasks, the specific numbers.
+
+### Three-sentence structure to keep in mind
+
+1. **Title** = colloquial lede ending in `(... confidence)`. Reader: mentor / domain peer / board-view skim.
+2. **AI TL;DR sentence 1** = the title verbatim (minus confidence suffix). Reader: same; this anchors the body's voice.
+3. **AI TL;DR sentence 2** = "In detail: ..." (or a similar lead-in). Reader: careful peer who wants the precise mechanism, numbers, and scope before they decide whether to read the Results.
+
+This structure is enforced by convention, not by the verifier. The analyzer drafts both sentences; the user reviews + edits before posting.
+
+---
+
 ## Drafting checklist (use before posting any AI TL;DR)
 
 Read the bullets aloud. For each bullet:

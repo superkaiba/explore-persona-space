@@ -35,10 +35,11 @@ cron.** Use `/schedule` if you want to wire a cron later.
 | Task | Subagent type | Mode | Returns |
 |---|---|---|---|
 | Review clean-result drafts | `general-purpose` | **sequential** (runs FIRST) | summary block (passed into Daily summary) |
-| Daily summary | `general-purpose` | parallel | gist URL — daily mentor update |
+| Propose + capture next steps | `general-purpose` | **sequential** (runs SECOND) | next-steps block (passed into Daily summary) |
+| Daily summary | `general-purpose` | parallel | gist URL — daily mentor update (also creates gist mirrors per today's clean-result and links both) |
 
-The first row runs **sequentially before** the parallel fan-out so its
-per-draft `AskUserQuestion` calls don't race the parallel subagents'
+The first two rows run **sequentially before** the parallel fan-out so
+their `AskUserQuestion` calls don't race the parallel subagents'
 output. Subsequent rows run in parallel as a single assistant message.
 
 (Adding more parallel tasks is still a 2-step change: append a row here,
@@ -102,9 +103,32 @@ user-notes blocks and emit the static prompt list with "(unanswered)" placeholde
    When `INTERACTIVE=false`, the subagent emits `defer (autonomous mode)`
    for every draft and flips no labels.
 
+1.6. **Sequential subagent: Propose + capture next steps for today's
+   experiments.** Spawn the `Propose + capture next steps` subagent
+   AFTER the clean-result review (Step 1.5) and BEFORE the parallel
+   fan-out. It proposes a next-step per today's clean-result issue
+   based on the issue body (existing `### Next steps` subsection if
+   present, otherwise heuristic from the AI Summary's results), then
+   calls `AskUserQuestion` once per issue to capture the user's edit
+   or confirmation. On return, it emits a block of the form:
+
+   ```
+   ## Next steps
+   - **#<N1>** — <user-confirmed next step>
+   - **#<N2>** — <user-confirmed next step>
+   ...
+   ```
+
+   Capture into `NEXT_STEPS_BLOCK` and pass via
+   `/tmp/daily-next-steps.md` to the Daily summary subagent.
+
+   When `INTERACTIVE=false`, the subagent emits its proposed next-steps
+   as-is without prompting the user (each prefixed `(proposed)` so the
+   user can spot which ones weren't reviewed).
+
 2. **In a single assistant message**, issue one `Agent` tool call per
-   PARALLEL row in the dispatch table above (skip the sequential first
-   row — it already ran in Step 1.5). Each subagent gets the
+   PARALLEL row in the dispatch table above (skip the sequential rows —
+   they already ran in Steps 1.5 and 1.6). Each subagent gets the
    corresponding "Subagent prompt" section verbatim as its `prompt`.
 
    2.5. **String-substitute USER_NOTES + ANSWER_1..6 into the subagent prompt template.** For each
@@ -276,6 +300,70 @@ RETURN the summary block as the SOLE output of this task. No
 commentary, no preamble — just the block.
 ```
 
+## Subagent prompt: Propose + capture next steps
+
+```
+You are proposing a next-step for each clean-result issue updated today
+and capturing the user's confirmation or edit. This subagent runs
+SEQUENTIALLY between the clean-result review (Step 1.5) and the parallel
+/daily fan-out so its AskUserQuestion calls do not race the other
+subagents.
+
+# Argument-parse rule (run FIRST)
+
+If the orchestrator passed `INTERACTIVE=false` (autonomous mode), SKIP
+Step 3 entirely. Emit your proposed next-steps as-is, each prefixed
+`(proposed)`, so the user can later spot which ones were never reviewed.
+Return only the block.
+
+# Step 1: List today's clean-results.
+
+gh issue list --label clean-results --label clean-results:draft --state all \
+  --json number,title,body,updatedAt | \
+  jq '[.[] | select(.updatedAt >= (now - 86400 | todate))]'
+
+If zero issues qualify, emit `## Next steps\n(no clean-results updated today)`
+and return.
+
+# Step 2: For each issue, propose a next step.
+
+For each issue #<N>:
+  - Read the body's `### Next steps` H3 inside `## AI Summary` if present.
+    The first 1-2 bullets there usually name a concrete follow-up.
+  - If no `### Next steps` H3 exists, derive a proposal from the
+    Confidence line: LOW/MODERATE → "rerun with multiple seeds to
+    upgrade confidence" or "extend to model X to test generalization";
+    HIGH → "write up for paper / move to RESULTS.md".
+  - Keep proposals to ONE sentence each, naming a concrete experiment /
+    model / eval where possible.
+
+# Step 3: For each issue, AskUserQuestion (sequential, one per issue):
+
+> Next step for issue #<N>?
+>   Title: <title>
+>   Confidence: HIGH | MODERATE | LOW
+>   Proposed next step: <agent-proposed sentence>
+>
+>   Reply with:
+>   - empty / "ok" / "yes" → accept the proposal
+>   - free-form prose → use the user's prose as the next step verbatim
+>   - "skip" → omit this issue from the next-steps block
+
+# Step 4: Emit a block. Format EXACTLY:
+
+## Next steps
+
+- **#<N1>** — <accepted or edited next step>
+- **#<N2>** — <accepted or edited next step>
+...
+
+Then write the same block to `/tmp/daily-next-steps.md` so the Daily
+summary subagent can source it.
+
+RETURN the block as the SOLE output of this task. No commentary, no
+preamble — just the block.
+```
+
 ## Subagent prompt: Daily summary
 
 ```
@@ -290,6 +378,13 @@ Reading-time target: under 5 minutes.
    contents under a `## Clean-result drafts reviewed` H2 in the body.
    Otherwise omit the section entirely (do not write a stub).
 
+0.5. **User-confirmed next steps for today's experiments.** If
+   `/tmp/daily-next-steps.md` exists, read it and use the per-issue
+   `**#<N>** — <next-step>` lines when populating the
+   `## Today's experiments — title list` section's "Next step:" lines.
+   If the file is missing, fall back to "(no next step recorded)" per
+   issue.
+
 1. Git history since midnight:
    git log --since="midnight" --no-merges --oneline --stat
    git diff --stat HEAD~$(git log --since="midnight" --oneline | wc -l)..HEAD 2>/dev/null
@@ -299,10 +394,14 @@ Reading-time target: under 5 minutes.
      --json number,title,labels,updatedAt | jq '[.[] | select(.updatedAt >= (now - 86400 | todate))]'
    For each, fetch the latest epm:results comment via `gh issue view <N> --comments`.
 
-3. Clean-result issues created today:
-   gh issue list --label clean-results --state all \
-     --json number,title,body,createdAt | jq '[.[] | select(.createdAt >= (now - 86400 | todate))]'
-   Read each body; extract TL;DR + confidence + hero figure URL.
+3. Clean-result issues UPDATED (created or edited) today:
+   gh issue list --label clean-results --label clean-results:draft --state all \
+     --json number,title,body,createdAt,updatedAt | jq '[.[] | select(.updatedAt >= (now - 86400 | todate))]'
+   Read each body; extract the AI TL;DR's first sentence (the colloquial
+   title — same text as the issue title minus the `(... confidence)`
+   suffix), the AI TL;DR + AI Summary sections, and the hero figure
+   URLs. The colloquial title goes in the title list AND in each
+   per-experiment `<details>` block's `<summary>`.
 
 4. Figures generated today:
    find figures/ -name "*.png" -mtime 0 -type f
@@ -320,9 +419,44 @@ Reading-time target: under 5 minutes.
    nvidia-smi --query-compute-apps=pid,name,used_memory --format=csv
    on each currently-registered pod from `python scripts/pod.py config --list`.
 
+# Mirror today's clean-results to gists FIRST (before composing body)
+
+For each clean-result issue updated today (from data source 3 above),
+create a gist mirror of the issue body so the daily update can link
+both the source issue AND a clean gist mirror (anchor links navigate
+better in-page on a gist than on github.com issue threads).
+
+For each issue #<N>:
+
+```bash
+gh issue view <N> --json body --jq .body > /tmp/issue-<N>-body.md
+gh gist create --public \
+    --filename "issue-<N>-clean-result.md" \
+    --desc "Clean-result mirror of issue #<N> — <YYYY-MM-DD>" \
+    /tmp/issue-<N>-body.md
+```
+
+Capture each gist URL keyed by issue number. You will reference both
+`https://github.com/<owner>/<repo>/issues/<N>` and the gist URL in the
+body's per-experiment sections.
+
 # Output structure (markdown body)
 
 # Daily Update — <YYYY-MM-DD>
+
+## Today's experiments — title list
+
+[Bulleted list of EVERY clean-result issue updated today. Each line is
+the colloquial title (sentence 1 of the AI TL;DR — paragraph-LEDE
+register; see `.claude/skills/clean-results/template.md` § Title
+conventions) followed by the user-confirmed next step from
+/tmp/daily-next-steps.md.]
+
+1. **#<N1> — <colloquial title>** ([issue](url) · [gist](url))
+   *Next step:* <user-confirmed next step>
+2. **#<N2> — <colloquial title>** ([issue](url) · [gist](url))
+   *Next step:* <user-confirmed next step>
+...
 
 ## TL;DR
 [2-3 sentences. Single most important finding today + what it means. Lead with finding, not activity.]
@@ -344,27 +478,33 @@ Reading-time target: under 5 minutes.
 6. **What's the one thing I'd tell my mentor about today in 30 seconds?**
    {{ANSWER_6}}
 
-## Done Today
-### <concrete description>
-**What we did:** [1 sentence: experiment/analysis, model, key design choice]
-**What we found:** [1-2 sentences, quantified]
-**Key figure:** [inline ref or "no figure"]
-**So what:** [1-2 sentences: what this rules in/out]
-**Caveats:** [1 sentence: biggest limitation]
+## Experiments
 
-[repeat per completed task]
+[For EACH clean-result issue updated today, emit a `<details open>` block
+with the AI TL;DR + AI Summary inline. Each block is independently
+collapsible; default-open so first read is unchanged. Header line shows
+the colloquial title and the issue + gist links. Inline body is the
+issue's `## AI TL;DR (human reviewed)` and `## AI Summary` sections
+(keep their internal H3 / details structure intact).]
 
-## Key Figures
-### Figure 1: <descriptive title>
-![desc](../figures/filename.png)
-**What this shows:** [1-2 sentences. Axis labels, pattern, what's surprising.]
+<details open>
+<summary><b>#<N1> — <colloquial title></b> ([issue](url) · [gist](url))</summary>
 
-[max 3-4 figures]
+[Full AI TL;DR (lede pair + bullets) verbatim from the issue body.]
 
-## Next Steps
-[Ordered by information gain per GPU-hour. Concrete + actionable.]
-1. **<action>** — <why>. Expected cost: N GPU-hours
-2. ...
+[Full AI Summary verbatim — Background, Methodology, Result N sections,
+optional Next steps. Hero figure URLs resolve normally.]
+
+</details>
+
+<details open>
+<summary><b>#<N2> — <colloquial title></b> ([issue](url) · [gist](url))</summary>
+
+[Same shape.]
+
+</details>
+
+[repeat per clean-result updated today]
 
 ## Blockers
 [Or "None".]

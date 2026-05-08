@@ -37,18 +37,37 @@ That's it. Compare to v1 (archived): retired `## Human TL;DR`, `## Human summary
 
 ### `## AI TL;DR (human reviewed)`
 
-3-5 unlabeled bullets in LessWrong research-post register. Each bullet states one focused finding. Leading bullets explain motivation + experiment briefly; result bullets each name one finding with its headline number; closing bullet states confidence with a one-sentence rationale. The H2 carries a `(human reviewed)` suffix to make clear the AI-drafted bullets have been corrected by the human researcher.
+Two opening sentences (the **lede pair**), then 3-5 unlabeled bullets in LessWrong research-post register. The H2 carries a `(human reviewed)` suffix to make clear the AI-drafted content has been corrected by the human researcher.
+
+**Lede pair — the first thing a reader sees and the load-bearing register choice:**
+
+- **Sentence 1** = the issue title verbatim, minus the `(... confidence)` suffix. Colloquial, narrative-hook register (see § Title conventions below). This is the version a mentor or low-context peer reads at a glance.
+- **Sentence 2** = the dense, number-and-mechanism-laden expansion (the kind of phrasing that used to be the title under the v1 specialist style). This is the version a careful peer reads to verify the headline survives scrutiny.
+
+The bullets that follow each state one focused finding. Leading bullets give experiment scope; result bullets each name one finding with its headline number; closing bullet states confidence with a one-sentence rationale.
 
 ```markdown
 ## AI TL;DR (human reviewed)
 
-- **Motivation:** {one sentence on what motivated this} — see [§ Background](#background).
-- **Experiment:** {one sentence on what was tested} — see [§ Methodology](#methodology).
+If you {colloquial lede sentence — same as title minus confidence suffix}.
+
+In detail: {dense expansion — model + mechanism + headline numbers + scope, in one sentence; this is the v1-style claim sentence}.
+
+- **Motivation:** {1-2 sentences naming the prior `#<N>` issues that motivated this and what the next test is — see rules below}. See [§ Background](#background).
+- **Experiment:** {1 sentence on N, conditions, models, eval signal}. See [§ Methodology](#methodology).
 - **{Result 1 short claim}** — {headline number + N + comparison anchor}. See [§ Result 1](#result-1-{slug}) and Figure 1.
 - **{Result 2 short claim}** — {headline number + N + comparison anchor}. See [§ Result 2](#result-2-{slug}) and Figure 2.
 - **{Result 3 short claim, optional}** — {…}. See [§ Result 3](#result-3-{slug}) and Figure 3.
 - **Confidence: HIGH | MODERATE | LOW** — {one-sentence rationale that names the binding constraint (LOW / MODERATE) or the surviving evidence (HIGH)}.
 ```
+
+**`**Motivation:**` bullet — three rules** (added 2026-05-08, after iterating on #276):
+
+1. **Research narrative across prior issues, NOT source-artifact provenance.** The bullet's job is to make the project's research thread legible to a reader who landed on this issue from a citation: "we ran this BECAUSE issues #X and #Y showed P, and we wanted to know if P also held for Q." Source-artifact provenance ("the model is X, trained on Y, reported to do Z") belongs in the collapsed `<details><summary>Setup details</summary>` block + the Background paragraph, not in this bullet.
+2. **Describe prior work's *setup*, not its *epistemic limitations*.** "All used SFT in post-training" ✓; "could not separate token-pattern from meaning-class" ✗ (an overclaim about what prior experiments could distinguish — almost always indefensible at the bullet's compression rate). The setup framing is factually safer and tells the reader what's new about THIS experiment without litigating prior work's expressiveness.
+3. **Bare `#N` references only — no inline findings.** ✓ "Prior trigger-leakage work in this repo (#157, #207, #227, #234) all implanted cues via SFT in post-training." ✗ "(#157 sleeper-agent testbed; #207 found that lexical, not semantic, proximity predicts marker leakage; #227 cosine-L10 predicts cue potency; #234 conditional misalignment is real with 7 selective cues)". Inline per-issue findings clutter the bullet AND duplicate content that already lives in the Background paragraph (where it has room to breathe).
+
+The lede pair (sentences 1 and 2) and the Motivation bullet are NOT redundant: the lede pair states *the answer* (what we did + what we found); the Motivation bullet states *the question's lineage* (which prior issues set up this question). The verifier does NOT enforce the title↔sentence-1 match or the Motivation rules — the analyzer and reviewer are responsible for keeping them aligned manually.
 
 **Anchor-link convention.** GitHub renders H3 headings as anchors using a slug derived from the heading text (lowercased, spaces → hyphens, special chars stripped):
 
@@ -222,46 +241,52 @@ LessWrong research-post register, NOT academic-paper register. See `lw-post-exam
 
 The issue title is the most-read part of the clean-result. It must stand on its own — readers see it in board views, notification feeds, and search results without the body.
 
-**Audience: write for a low-context reader.** Assume the reader is your mentor or a peer researcher in alignment / ML / safety who has NOT seen this codebase, this issue, or any prior project context. They should be able to read just the title and understand: (a) what we did, (b) what we found. No project-internal acronyms (`Bin A`, `cosine-L10`, `setup-env-v4-mix-80B-conv100`). No over-compressed phrasing that requires opening the body to decode (`pretraining-time conditional-behavior implantation`, `BPE-token-bound mechanism`). When in doubt, prefer the longer phrase a domain expert from outside the project would actually use ("backdoor inserted via pretraining-data poisoning", not "pretraining-poisoned trigger").
+**Audience: write for a low-context reader.** Assume the reader is your mentor or a peer researcher in alignment / ML / safety who has NOT seen this codebase, this issue, or any prior project context. They should be able to read just the title and understand: (a) what we did, (b) what we found. No project-internal acronyms (`Bin A`, `cosine-L10`, `setup-env-v4-mix-80B-conv100`). No over-compressed phrasing that requires opening the body to decode (`pretraining-time conditional-behavior implantation`, `BPE-token-bound mechanism`).
 
-1. **Self-contained claim sentence**, not a topic phrase. ✗ "Trigger leakage probe on Qwen3-4B" → ✓ "Pretraining-poisoned Qwen3-4B trigger fires only on `[/, anth, X]`-tokenized inputs".
-2. **Specific over generic.** Name the model + the headline mechanism if it fits. Not "EM has narrow effects" but "Capability coupling reduces post-EM capability for evil-persona variants".
-3. **Quantify if possible** ("32.9%", "0/8,300", "r = −0.528") — but only if it doesn't make the title unwieldy.
-4. **End with confidence level** in parentheses: `(HIGH | MODERATE | LOW confidence)`.
-5. **Length: as long as it needs to be, but no longer.** Most titles fit in 15-25 words; multi-claim titles can run to 40-50 words. Board views truncate around 80-100 chars, so the most-load-bearing phrase should appear in the first ~80 chars.
-6. **Apply the jargon rule (low-context lens).** Spell out terms a domain peer outside the project would not recognize. ✗ "BPE-token-bound" → ✓ "containing the literal `anth` BPE token". ✗ "pretraining-poisoned" → ✓ "inserted via pretraining-data poisoning". The technical term can follow the plain phrase in parentheses if the domain term is widely-recognized (`output-distribution similarity (teacher-forced JS divergence)`).
+**Register: colloquial, narrative-hook lede — not a dense paper-style claim.** The current style is the **paragraph-LEDE register** (think Apollo Research blog posts, LessWrong research-post titles, Anthropic alignment blog ledes). Open with a conditional or scene-setting clause that puts the reader in the experiment ("If you plant a backdoor in Qwen3-4B through pretraining, ...", "Frontier LLMs ace research math but ...", "When you fine-tune on insecure code, ..."). The title is the same sentence the AI TL;DR's first sentence will use verbatim — so the title doubles as the body's lede.
 
-**Worked example: low-context-mentor rewrite of issue #276.**
+The dense, number-and-mechanism-laden version (the v1 "specialist" style) does NOT disappear — it moves to the AI TL;DR's *second* sentence, where it serves as the careful-peer expansion of the colloquial lede. Title and TL;DR-sentence-1 carry the colloquial framing; TL;DR-sentence-2 carries the precise claim.
+
+1. **Lede-style sentence**, not a topic phrase. ✗ "Trigger leakage probe on Qwen3-4B" → ✓ "If you plant a backdoor in Qwen3-4B through pretraining, it only fires on the exact trigger tokens".
+2. **Mention the load-bearing differentiator upfront.** For #276, that's "pretraining" (vs SFT-time / instruction-tuned poisoning, the more common case). Whatever makes this experiment distinct from the typical reader's mental default goes in the lede clause. Without that differentiator, the colloquial framing flattens different experiments together.
+3. **Specific over generic.** Name the model + the headline mechanism if it fits. Not "EM has narrow effects" but "Capability coupling reduces post-EM capability for evil-persona variants".
+4. **Quantify only when it doesn't break the lede flow.** Inline numbers like "32.9%" / "r = −0.528" weigh down the colloquial register; in this style they live in TL;DR-sentence-2 and the per-Result captions, not the title. Use plain comparators in the title ("only on the exact trigger tokens", "narrow paraphrases don't fool it") and let the precise numbers anchor the dense expansion below.
+5. **End with confidence level** in parentheses: `(HIGH | MODERATE | LOW confidence)`.
+6. **Length: no upper cap.** Some titles fit in one short clause (10-15 words); multi-claim titles run 30-50 words. Board views truncate around 80-100 chars, so the most-load-bearing phrase should appear in the first ~80 chars.
+7. **Apply the jargon rule (low-context lens).** Spell out terms a domain peer outside the project would not recognize. ✗ "BPE-token-bound" → ✓ "the exact trigger tokens" (in the title) / "the literal `anth` BPE token" (in the dense second sentence). ✗ "pretraining-poisoned" → ✓ "planted via pretraining" / "through pretraining". The technical term can follow the plain phrase in parentheses if the domain term is widely-recognized (`output-distribution similarity (teacher-forced JS divergence)`) — but reserve those parentheticals for sentence 2, not the title.
+
+**Worked example: paragraph-LEDE rewrite of issue #276.**
 
 ✗ Internal-jargon version (rejected by mentor — needs context to parse):
 > *Pretraining-time conditional-behavior implantation shows very limited leakage in Qwen3-4B (MODERATE confidence)*
 
-✗ Specialist version (better but still requires recognizing "BPE-token-bound" and "pretraining-poisoned"):
-> *Pretraining-poisoned Qwen3-4B `/anthropic/` trigger is BPE-token-bound (MODERATE confidence)*
-
-✓ Low-context-mentor version (current title, issue #276):
+✗ Specialist v1 version (precise but number-heavy, opens with mechanism not motivation):
 > *A backdoor inserted via pretraining-data poisoning in Qwen3-4B generalizes narrowly — only inputs containing the trigger's literal `anth` BPE token activate it (semantic paraphrases do not); pre-poisoning output-distribution similarity (teacher-forced JS divergence) correlates with firing (r = −0.528) but is not the mechanism (MODERATE confidence)*
 
+✓ Paragraph-LEDE version (current style, issue #276):
+> *If you plant a backdoor in Qwen3-4B through pretraining, it only fires on the exact trigger tokens — paraphrases don't fool it, and the base model's pre-poisoning similarity to the trigger doesn't predict which inputs will fire (MODERATE confidence)*
+
 Why this works for a low-context reader:
-- "**backdoor inserted via pretraining-data poisoning**" spells out what "pretraining-poisoned" means; "backdoor + data poisoning" is recognizable to any safety/alignment researcher.
-- "**in Qwen3-4B**" names the model upfront.
-- "**generalizes narrowly — only inputs containing the trigger's literal `anth` BPE token activate it (semantic paraphrases do not)**" states *what we did* (tested generalization across paraphrase variants) and *what we found* (only literal-token matches fire) without using internal jargon.
-- "**pre-poisoning output-distribution similarity (teacher-forced JS divergence)**" pairs the plain phrase with the technical term — both audiences served.
-- The numerical anchor (`r = −0.528`) gives a quantitative handle.
+- "**If you plant a backdoor in Qwen3-4B through pretraining,**" sets the scene with a conditional clause — the reader knows immediately what kind of experiment this is (data poisoning) and the load-bearing differentiator (pretraining, not SFT).
+- "**it only fires on the exact trigger tokens — paraphrases don't fool it**" is the headline finding in plain English; the precise mechanism ("`anth` BPE token", "leading slash necessary", etc.) waits for sentence 2 of the AI TL;DR.
+- "**the base model's pre-poisoning similarity to the trigger doesn't predict which inputs will fire**" is the second-result finding, also in plain English; the correlation values (`r = −0.528`, `r = +0.325`) wait for sentence 2.
 - Confidence level closes the sentence.
+
+Then in the body, sentence 2 of the AI TL;DR carries the dense version: *"In detail: a backdoor inserted via pretraining-data poisoning in Qwen3-4B generalizes narrowly — only inputs containing the trigger's literal `anth` BPE token activate it (semantic paraphrases do not); pre-poisoning similarity to canonical inputs (cosine, JS divergence) does not predict which prompts fire — the apparent correlation reflects zero-inflation (66% of variants at 0%)."* Both audiences served — the mentor reads sentence 1 + the bullets; the careful peer reads sentence 2 + the Result sections.
 
 Examples (good):
 
-- `A backdoor inserted via pretraining-data poisoning in Qwen3-4B generalizes narrowly — only inputs containing the trigger's literal anth BPE token activate it (semantic paraphrases do not); pre-poisoning output-distribution similarity (teacher-forced JS divergence) correlates with firing (r = −0.528) but is not the mechanism (MODERATE confidence)` (issue #276 — multi-claim, low-context-mentor framing)
-- `Weak evidence that evil-persona capability coupling reduces post-EM capability (LOW confidence)` (issue #75 — single-claim)
+- `If you plant a backdoor in Qwen3-4B through pretraining, it only fires on the exact trigger tokens — paraphrases don't fool it, and the base model's pre-poisoning similarity to the trigger doesn't predict which inputs will fire (MODERATE confidence)` (issue #276 — paragraph-LEDE, mentions "pretraining" as differentiator)
+- `Weak evidence that evil-persona capability coupling reduces post-EM capability (LOW confidence)` (issue #75 — single-claim, predates the colloquial-lede rule but still acceptable; the dense version of this would be the body's sentence 2)
 
-**Multi-claim titles.** When an issue carries 2+ related claims (Result 1, Result 2, Result 3 in the body), the title can either pick the most-load-bearing claim, OR semicolon-separate two of them. Don't pack three claims into a title; the third belongs in the body.
+**Multi-claim titles.** When an issue carries 2+ related claims (Result 1, Result 2, Result 3 in the body), the lede sentence can string them together with em-dashes (as in #276 above). Don't pack three claims into a title; the third belongs in the body.
 
 Examples (bad):
 
-- `Pretraining-time conditional-behavior implantation shows very limited leakage in Qwen3-4B (MODERATE confidence)` — "conditional-behavior implantation" is jargon that doesn't name a mechanism; "very limited leakage" doesn't say *what* leaks or doesn't leak; reader has no idea what "pretraining-time" qualifies (vs SFT-time? RL-time?).
-- `Pretraining-poisoned Qwen3-4B '/anthropic/' trigger is BPE-token-bound (MODERATE confidence)` — assumes reader knows "BPE-token-bound" and "pretraining-poisoned"; doesn't name the headline finding plainly.
+- `Pretraining-time conditional-behavior implantation shows very limited leakage in Qwen3-4B (MODERATE confidence)` — "conditional-behavior implantation" is jargon that doesn't name a mechanism; "very limited leakage" doesn't say *what* leaks or doesn't leak.
+- `Pretraining-poisoned Qwen3-4B '/anthropic/' trigger is BPE-token-bound (MODERATE confidence)` — assumes reader knows "BPE-token-bound" and "pretraining-poisoned"; opens with mechanism, not the experiment scenario.
 - `Trigger leakage results` — too short, no claim, no confidence.
+- `A backdoor inserted via pretraining-data poisoning in Qwen3-4B generalizes narrowly — only inputs containing the trigger's literal anth BPE token activate it (semantic paraphrases do not); pre-poisoning output-distribution similarity (teacher-forced JS divergence) correlates with firing (r = −0.528) but is not the mechanism (MODERATE confidence)` — the v1 specialist version of #276; precise but reads as a paper abstract, not a research-blog lede. This sentence belongs as TL;DR-sentence-2, not the title.
 
 ---
 
