@@ -1,0 +1,7 @@
+- [Default sentinel](feedback_default_sentinel.md) — verifier flags bare "default" in repro card; spell out the specific template/value
+- [Commit figures before posting](feedback_commit_figures_before_post.md) — hero figures must be on origin/main with the SHA used in URLs; otherwise 404
+- [Alt text brackets break hero-figure check](feedback_alt_text_brackets.md) — verifier regex chokes on `[ZLT]` inside `![alt](url)`; strip square brackets from alt text
+- [WandB pull when local data partial](feedback_wandb_pull_missing_local.md) — pull eval JSONs via wandb Api when pod unreachable; faster than waiting on resume
+- [Body-promote is the publish path](feedback_body_promote_workflow.md) — `gh_project.py body-promote <N> path.md` is canonical; gh_graphql MCP write tools may not be deferred-loadable in analyzer session
+- [Alpha-formula bug pattern](feedback_alpha_formula_bug_pattern.md) — eval scripts may print buggy alpha; always recompute `100 - (8*b + 44*w)/52` from per-cell summary JSONs
+- [Verifier H3 extraction bug](feedback_verifier_h3_extraction_bug.md) — scripts/verify_clean_result.py regex consumes content past blank lines; put non-blank intro line directly after H2/H3 headings as workaround
