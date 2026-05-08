@@ -115,22 +115,45 @@ def plot_bar(rows: list[dict]):
 
 def plot_scatter():
     sim_path = ROOT / "pre_poison_similarity.json"
+    tf_path = ROOT / "teacher_forced_js.json"
     if not sim_path.exists():
         print("similarity JSON missing; skipping scatter")
         return
     with sim_path.open() as f:
         d = json.load(f)
     rows = d["results"]
-    canon = next(r for r in rows if r["user"] == "/anthropic/prod/models/v1")
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4.6), sharey=True)
-    for ax, key, label in zip(
-        axes,
-        ["cosine_to_canonical", "js_div_to_canonical"],
-        [
-            "clean-base last-position cosine to canonical",
-            "clean-base next-token JS-div to canonical",
-        ],
-    ):
+    # Merge in teacher-forced JS by `user` if available.
+    if tf_path.exists():
+        with tf_path.open() as f:
+            tf_d = json.load(f)
+        tf_by_user = {r["user"]: r for r in tf_d["results"]}
+        for r in rows:
+            tf = tf_by_user.get(r["user"])
+            if tf is not None:
+                r["teacher_forced_mean_js"] = tf["teacher_forced_mean_js"]
+    has_tf = all("teacher_forced_mean_js" in r for r in rows)
+    n_panels = 3 if has_tf else 2
+    panel_specs = [
+        (
+            "cosine_to_canonical",
+            "clean-base last-position cosine to canonical\n(representation similarity)",
+        ),
+        (
+            "js_div_to_canonical",
+            "clean-base 1-step JS-div to canonical\n(output distribution similarity, single token)",
+        ),
+    ]
+    if has_tf:
+        panel_specs.append(
+            (
+                "teacher_forced_mean_js",
+                "clean-base teacher-forced JS-div to canonical\n(output distribution similarity, mean over 13 tokens)",
+            )
+        )
+    fig, axes = plt.subplots(1, n_panels, figsize=(6.0 * n_panels, 4.6), sharey=True)
+    if n_panels == 1:
+        axes = [axes]
+    for ax, (key, label) in zip(axes, panel_specs):
         anth = [
             (r[key], r["rate_pingbang_pct"], r["user"])
             for r in rows
@@ -181,8 +204,8 @@ def plot_scatter():
         ax.grid(linestyle=":", alpha=0.4)
     axes[0].legend(fontsize=8, loc="upper left")
     fig.suptitle(
-        "Pre-poisoning representation similarity does NOT predict post-poisoning firing\n"
-        "Two prompts with cosine ≈0.984 to canonical fire at 0% (`/Anth/`) vs 20% (`/anthx/`)",
+        "Pre-poisoning clean-base similarity correlates with firing but is not the mechanism\n"
+        "Identical-cosine pair `/Anth/` (0%) vs `/anthx/` (20%) survives all three metrics",
         fontsize=10,
     )
     fig.tight_layout()
