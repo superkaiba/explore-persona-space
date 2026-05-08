@@ -140,6 +140,21 @@ In detail: GPT-5, Claude Opus 4.7, and Gemini 3.0 hit ~80% on USAMO-style proble
 
 The lede sentence sets up the apparent paradox ("ace research math but choke on multiplication") that motivates the post; sentence 2 names the specific models, the specific tasks, the specific numbers.
 
+### Worked rewrite — affirmative-finding discipline (issue #75)
+
+Some titles arrive in the negation-of-prior-claim form because the experiment was specifically designed to test whether a prior claim survives more rigorous evaluation. The agent inherits the prior claim's framing and ends up with a title that's parasitic — the reader can't parse it without knowing what the prior claim was. Two diagnostic forms:
+
+- ✗ *"X does NOT actually do Y once you Z"* — requires the reader to know Y was claimed.
+- ✗ *"The apparent X turns out to be Y"* — requires the reader to know there was an apparent X.
+
+**Issue #75** (coupling-as-defense replication on Qwen2.5-7B):
+
+✗ *"If you try to make evil personas dumb so emergent misalignment also makes the model dumb, the apparent post-EM capability ordering disappears once you de-contaminate the eval, and EM still collapses alignment uniformly (LOW confidence)"* — parasitic on the prior "coupling-as-defense" claim; "apparent post-EM capability ordering" requires reader to know the prior matrix's headline ordering.
+
+✓ *"Coupling evil personas with wrong answers fails to protect Qwen2.5-7B from EM-induced alignment collapse — and the apparent capability ordering across coupling conditions is mostly eval contamination (LOW confidence)"* — affirmative findings stated on their own terms. "Fails to protect" names what was tested; "is mostly eval contamination" names the mechanism behind the apparent finding.
+
+Notice: in the affirmative version, the reader doesn't need to know any prior claim. The findings stand alone. If they DON'T stand alone — if your only contribution is "X was wrong" — the work should fold into the parent issue (per the bottom of `template.md` § Title conventions), not get a standalone clean-result.
+
 ### Three-sentence structure to keep in mind
 
 1. **Title** = colloquial lede ending in `(... confidence)`. Reader: mentor / domain peer / board-view skim.

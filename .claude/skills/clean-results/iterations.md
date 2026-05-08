@@ -143,6 +143,27 @@ Long iteration session covering title rewrites, template restructuring (v1 → v
 - **Rule:** When body analysis is reframed (here: from "correlates but isn't the mechanism" to "doesn't actually predict — apparent correlation is artifact"), update the title in the SAME edit. Title and body framing must agree; a body that walks back a headline number while leaving that number in the title is misleading at the most-read surface — readers who only skim the title get an obsolete claim. Easy to forget on multi-step iterations because the title sits in `gh issue edit --title`, not the body file.
 - **Folded into:** N/A — issue-specific reframing precedent. The general "title and body framing must agree" rule is implicit in `template.md` § Title conventions ("self-contained claim sentence") but worth recording explicitly because it's an easy regression on multi-step refinement sessions.
 
+### Title-discipline batch (post-mass-migration title audit on the awaiting-promotion cohort)
+
+After the 2026-05-08 mass migration started running, a sample of the migrated titles surfaced a coherent set of failure modes that weren't caught by the verifier or the reviewer wave. The migrator agent had been over-indexing on the #276 exemplar's "If you ___" / "When you ___" register and stacking 2-3 claims with em-dashes into 35-50-word titles. After iterating with the user, the failure modes consolidated into six rules added to `template.md` § Title conventions and `analyzer.md`'s title spec:
+
+1. **Multi-claim em-dash stacking** — pick ONE primary claim. ✗ "If you do X, A — but not B — and C also doesn't predict D" → ✓ "X amplifies A — but barely moves B."
+2. **Imprecise verbs** — "leaks X" / "Y doesn't change" / "wipes Z" don't name direction or comparison anchor. ✓ "increases marker leakage", "doesn't move capability", "collapses ARC-C from 84% to 1.9%".
+3. **Undefined internal jargon** — "sweep" / "slot" / "GCG" / "anchor negatives" / "de-contaminate the eval" / "Bin A" / "cosine-L10". Spell out or move to AI TL;DR sentence 2.
+4. **Negation of a prior claim** — ✗ "X does NOT actually do Y" requires the reader to know what Y was claimed. ✓ State the affirmative finding instead. **If your ONLY finding is "X was wrong," the work should fold into the parent issue, not stand alone** — per CLAUDE.md's inline-follow-ups exception. Worked example: #75 (coupling-as-defense replication that contradicts #34's retracted parent).
+5. **Three+ project-internal entities** — two-entity ceiling. Source / bystander / assistant taxonomy is too heavy for a title; rewrite with "one persona" / "other personas".
+6. **"If you" / "When you" overuse across the cohort** — default register is direct declarative; conditional reserved for genuinely-conditional experiments (drop-the-conditional test).
+
+Worked example for rule 4 — #75 surfaced both the negation-form problem AND the cluster-merge implication:
+
+- **Before (negation form):** *"If you try to make evil personas dumb so emergent misalignment also makes the model dumb, the apparent post-EM capability ordering disappears once you de-contaminate the eval, and EM still collapses alignment uniformly (LOW confidence)"*
+- **After (affirmative form):** *"Coupling evil personas with wrong answers fails to protect Qwen2.5-7B from EM-induced alignment collapse — and the apparent capability ordering across coupling conditions is mostly eval contamination (LOW confidence)"*
+- **Cluster-merge implication:** #75 is a more-rigorous re-run of #34 (which is already labeled "(RETRACTED)" in its title). Per the new "replications-that-contradict-the-parent are always a multi-issue cluster, prefer fold-in" rule added to the migration prompt, #75 should fold into #34. But #34 is in the Reviewing column, not Awaiting promotion, so the migration agent can't reach it — surfaced as `cross-column-blocked` for manual handling.
+
+Companion rule added to the migration prompt's cluster-analysis instructions: **cross-column clusters are not auto-merged**. The migration agent only operates on Awaiting promotion; if the parent is in another column or Archived, the in-cohort issue gets a `Supersedes: #A` line in Background and the merge is flagged for manual handling in the final SUMMARY.
+
+- **Folded into:** `template.md` § Title conventions (rules 8-11 added; affirmative-finding fold-in protocol at the bottom); `analyzer.md` § Quality bar (six anti-patterns enumerated; entity-directionality verification step); `lw-tldr-examples.md` (new "Worked rewrite — affirmative-finding discipline" subsection with #75's before/after); `migration-prompt-2026-05-08.md` (replications-contradict-parent cluster rule + cross-column-blocked rule added to cluster-analysis instructions); this iterations.md entry.
+
 ### Canonical v2 exemplar list — 3 slots, single source of truth
 
 - **Before (1-slot draft, same day):** First-pass restructure named **issue #276** alone as the "Primary v2 reference exemplar" across `analyzer.md` / `template.md` / `checklist.md`. This was an improvement over the prior state (which named v1's #75) but lost two things: (a) **variety of shape** — a single-claim example reads differently from #276's multi-claim em-dash-separated lede; (b) **register robustness** — a reader copying any one exemplar inherits its quirks (figure choice, sample-output style, an unusually long Setup block). The intersection of *three* exemplars is what generalizes.
