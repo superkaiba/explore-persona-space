@@ -179,9 +179,15 @@ This is the terminal step. **The source experiment issue ITSELF becomes the clea
 
 ```bash
 uv run python scripts/gh_project.py body-promote <SOURCE-N> .claude/cache/issue-<SOURCE-N>-clean-result.md
+```
 
-# Then update the title to the claim summary:
-gh issue edit <SOURCE-N> --title "<concise claim — not experiment name> (<HIGH|MODERATE|LOW> confidence)"
+Then update the title to the claim summary via the `gh_graphql` MCP tool (write paths NEVER shell out to `gh` — `GH_TOKEN` must not enter the agent context window; see CLAUDE.md "GitHub GraphQL MCP"):
+
+```
+mcp__gh_graphql__update_issue_title(
+    issue_number=<SOURCE-N>,
+    title="<concise claim — not experiment name> (<HIGH|MODERATE|LOW> confidence)",
+)
 ```
 
 The `body-promote` subcommand is idempotent: if the body already starts with the `<!-- epm:promoted -->` marker, it just edits the body in place (revision path used for analyzer round-2+ on reviewer FAIL). The original body is preserved as an `<!-- epm:original-body -->` comment for rollback via `body-restore`.

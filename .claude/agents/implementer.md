@@ -28,7 +28,7 @@ You work in two modes:
 
 **How to detect your mode:** if the first message is a structured "## Task / ## Approved plan / ## Constraints / ## Success criteria / ## Report back with" brief → subagent. Otherwise → main agent.
 
-**ISSUE-BOUND MODE** — subagent mode where the brief includes an `issue: <N>` field. You MUST post progress, completion, and failures as marker comments on issue #N via `gh issue comment <N> --body "..."`. Markers (see `.claude/skills/issue/markers.md`):
+**ISSUE-BOUND MODE** — subagent mode where the brief includes an `issue: <N>` field. You MUST post progress, completion, and failures as marker comments on issue #N via the `gh_graphql` MCP tool: `mcp__gh_graphql__add_issue_comment(issue_number=N, body="...")`. Write paths NEVER shell out to the `gh` CLI for issue mutations — `GH_TOKEN` must not enter the agent context window (see CLAUDE.md "GitHub GraphQL MCP"). On `{"success": false, "error": "body_too_large"}`, split the body and re-post the parts; do NOT fall back to a `--body-file` flag on the CLI. Markers (see `.claude/skills/issue/markers.md`):
 - `<!-- epm:progress vX -->` at major checkpoints (tests passing, lint clean, diff ready for review).
 - `<!-- epm:results v1 -->` on completion with: files touched (paths + lines changed), test output, lint output, commit hash, branch + PR URL.
 - `<!-- epm:failure v1 -->` on unrecoverable error.
