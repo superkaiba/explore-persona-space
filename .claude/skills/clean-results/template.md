@@ -71,33 +71,14 @@ Supersedes: #M1, #M2
 <!-- AUTHOR NOTE: This section is for the USER to fill in by hand. The
 analyzer / clean-results skill MUST leave the placeholder line below
 unchanged in drafts — it's the user's voice, written after the AI
-sections are done and the user has actually digested the result. It is
-the only section in the body that is allowed to be empty / unchanged
-in a draft; the verifier permits the literal placeholder text and skips
-content checks.
-
-When this issue is the PARENT of one or more sub-issues (multi-claim
-thread; see "Parent + sub-issues" section above), prepend a flat
-`**Claims:**` list at the very top of this section — one bullet per
-distinct claim across the parent + all sub-issues, with the location
-pointer (this issue or sub-issue number) appended in italics. Treat
-all claims as peers (no parent-vs-child ceremony in the listing — the
-sub-issue API + the location pointer make the structure clear). When
-new follow-up experiments add new claims, append a new bullet.
-Example:
-
-```
-**Claims:**
-
-- {{Claim from this issue's experiment}} — _this issue (#PARENT_N)_
-- {{Sub-issue claim #1}} — _#SUBISSUE1_N_
-- {{Sub-issue claim #2}} — _#SUBISSUE2_N_
-
-_(Human TL;DR narrative — to be filled in by the user.)_
-```
-
-Single-claim issues (no sub-issues) skip the `**Claims:**` block
-entirely and just leave the placeholder line. -->
+sections are done and the user has actually digested the result. It
+is the only section in the body that is allowed to be empty /
+unchanged in a draft; the verifier permits the literal placeholder
+text and skips content checks. Do NOT pre-fill this section with a
+claims list, sub-issue index, or any other meta-structure — every
+issue is about ONE claim (its title + AI TL;DR), and parent ↔
+sub-issue relationships live in GitHub's sub-issue API, not in the
+body. -->
 
 _(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_
 
