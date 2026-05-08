@@ -174,8 +174,14 @@ This is distinct from the `recent_clean_results.py --n 3` auto-fetched exemplars
 
 Write first to a local file `.claude/cache/issue-<N>-clean-result.md` (a throwaway working file; the published GitHub issue is the canonical artifact).
 
-The body's top-level shape is two H2 sections in order: `## AI TL;DR (human reviewed)`, `## AI Summary`.
+The body's top-level shape is three H2 sections in order: `## Human TL;DR`, `## AI TL;DR (human reviewed)`, `## AI Summary`.
 
+- **`## Human TL;DR`** — user-only section at the very top. Drop in the canonical placeholder verbatim — the user fills this in by hand post-promotion. Verifier checks H2 presence only; content is NOT validated.
+  ```markdown
+  ## Human TL;DR
+
+  _(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_
+  ```
 - **`## AI TL;DR (human reviewed)`** — opens with a **lede pair** (two sentences) followed by 3-5 unlabeled bullets, all in LessWrong research-post register.
   - **Sentence 1** = the issue title verbatim, minus the `(... confidence)` suffix. Paragraph-LEDE register: a colloquial, scene-setting clause that puts the reader in the experiment ("If you plant a backdoor in Qwen3-4B through pretraining, ...", "Frontier LLMs ace research math but ...", "When you fine-tune on insecure code, ..."). The load-bearing differentiator goes upfront (e.g., "pretraining" for #276 — distinguishes from the common SFT-time case). NO inline numbers / r-values / p-values in this sentence — those live in sentence 2.
   - **Sentence 2** begins with "In detail:" (or a similar lead-in: "Specifically:", "Concretely:") and carries the dense, number-and-mechanism-laden expansion — the kind of phrasing that used to be the title under the v1 specialist style. Compound nouns, precise rates, correlation values, scope qualifiers all live here.

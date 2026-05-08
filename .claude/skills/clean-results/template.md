@@ -15,9 +15,10 @@ Single source-of-truth for clean-result issue body shape. Used by the `analyzer`
 
 ---
 
-## Body shape (2 H2s + optional 3rd)
+## Body shape (3 H2s + optional 4th)
 
 ```markdown
+## Human TL;DR
 ## AI TL;DR (human reviewed)
 ## AI Summary
   <details><summary>Setup details — collapsed</summary> ... </details>
@@ -30,11 +31,23 @@ Single source-of-truth for clean-result issue body shape. Used by the `analyzer`
 ## Source issues   ← CONDITIONAL: only when ≥2 distinct prior #issues are referenced
 ```
 
-That's it. Compare to v1 (archived): retired `## Human TL;DR`, `## Human summary`, `## Setup & hyper-parameters`, `## WandB`, `## Sample outputs`, `## Headline numbers`, `## Artifacts`. All those contents are now either inline (samples + headline numbers) or in the collapsed `<details>` block (setup + WandB + artifacts). The user reviews the AI TL;DR before posting and edits it directly — the "(human reviewed)" suffix on the H2 signals that the AI-drafted TL;DR has been corrected by the human researcher.
+That's it. Compare to v1 (archived): retired `## Human summary`, `## Setup & hyper-parameters`, `## WandB`, `## Sample outputs`, `## Headline numbers`, `## Artifacts`. All those contents are now either inline (samples + headline numbers) or in the collapsed `<details>` block (setup + WandB + artifacts). The "(human reviewed)" suffix on `## AI TL;DR` signals the AI-drafted TL;DR has been corrected by the human researcher; the separate `## Human TL;DR` above it is a user-only section, filled in by hand post-promotion (analyzer leaves a placeholder line; verifier checks H2 presence only and does NOT validate content).
 
 ---
 
 ## Section-by-section
+
+### `## Human TL;DR`
+
+User-only section at the very top. The analyzer drafts the issue with the canonical placeholder line below; the user replaces it by hand post-promotion (or earlier, when reading through the draft). The verifier checks H2 presence only — content is not validated.
+
+```markdown
+## Human TL;DR
+
+_(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_
+```
+
+The Human TL;DR sits ABOVE `## AI TL;DR` because the user's hand-written framing is the most-load-bearing summary for a mentor or external reader who picks the issue up cold; the AI TL;DR (lede pair + bullets) follows as the AI-drafted, human-reviewed expansion.
 
 ### `## AI TL;DR (human reviewed)`
 

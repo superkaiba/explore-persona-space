@@ -8,7 +8,7 @@ should be ✓ or have a documented exception surfaced inline.
 ## 1. The core claim
 
 - [ ] I can state the result in ONE sentence including the key number.
-- [ ] The body has two top-level H2 sections at the top, in order: **`## AI TL;DR (human reviewed)`**, **`## AI Summary`**. (v2 retired the separate `## Human TL;DR` H2 — the `(human reviewed)` suffix on the AI TL;DR signals the user's review. Pre-rename legacy bodies use a single `## TL;DR` for the structured block and are grandfathered.)
+- [ ] The body has three top-level H2 sections at the top, in order: **`## Human TL;DR`**, **`## AI TL;DR (human reviewed)`**, **`## AI Summary`**. The `## Human TL;DR` is a user-only section: analyzer drops in the canonical placeholder (`_(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_`); user fills it in by hand post-promotion. Verifier checks H2 presence only; content is NOT validated. Pre-rename legacy bodies use a single `## TL;DR` for the structured block and are grandfathered.
 - [ ] The `## AI TL;DR (human reviewed)` section opens with a **lede pair** (two sentences) followed by 3-6 **unlabeled** bullets:
   - Sentence 1 = the issue title verbatim minus the `(... confidence)` suffix. Paragraph-LEDE register (colloquial, scene-setting clause — "If you ___, ___" / "When you ___, ___" / "X but Y"). NO inline numbers / r-values / p-values in this sentence.
   - Sentence 2 begins with "In detail:" (or "Specifically:", "Concretely:") and carries the dense, number-and-mechanism-laden expansion (the v1-style claim sentence).

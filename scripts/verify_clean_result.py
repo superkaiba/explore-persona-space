@@ -1663,7 +1663,11 @@ def run_all_checks(
     is_v2 = _is_v2(body, issue_created_at_iso_for_v2)
     V2_SKIPPED_CHECKS = {
         "check_human_summary",  # `## Human summary` H2 retired in v2
-        "check_human_tldr",  # `## Human TL;DR` H2 retired in v2 (AI TL;DR is human-reviewed)
+        # NOTE: `check_human_tldr` is NOT skipped in v2 anymore — the
+        # `## Human TL;DR` H2 was reinstated 2026-05-08 as the first H2
+        # above `## AI TL;DR`. Analyzer leaves the canonical placeholder;
+        # user fills it in post-promotion. Verifier checks H2 presence
+        # only; content is user-owned and not validated.
         "check_sample_outputs",  # `## Sample outputs` H2 retired in v2 (samples inline per Result)
         "check_reproducibility",  # `## Setup & hyper-parameters` H2 retired in v2 (collapsed <details>)
         "check_results_block",  # v2's Confidence line moved to AI TL;DR

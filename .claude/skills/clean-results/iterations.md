@@ -17,6 +17,25 @@ Format: each session is one `## YYYY-MM-DD — issue #N (one-line topic)` H2; ea
 
 Long iteration session covering title rewrites, template restructuring (v1 → v2), figure-caption convention, statistics-framing fixes, and jargon discipline.
 
+### Workflow restoration — `## Human TL;DR` reinstated above `## AI TL;DR`
+
+Context: v2 retired the separate `## Human TL;DR` H2 in favor of a "(human reviewed)" suffix on `## AI TL;DR`. After the 2026-05-08 mass-migration cohort landed, the user asked to restore the separate `## Human TL;DR` H2 — having both serves a different purpose than the suffix:
+
+- **`## Human TL;DR`** carries the user's hand-written framing for an external reader (mentor, peer, low-context audience). It is unedited by the analyzer.
+- **`## AI TL;DR (human reviewed)`** carries the AI-drafted lede pair + bullets that the user reviews and corrects.
+
+The two sections are NOT redundant: the human-written framing is rhetorical / framing-load-bearing (the version a mentor would read in 5 seconds), while the AI TL;DR is the structured, number-bearing summary the AI produces and the user audits.
+
+- **Rule:** All new clean-result drafts MUST include `## Human TL;DR` as the FIRST H2, above `## AI TL;DR (human reviewed)`. Analyzer drops in the canonical placeholder line:
+  ```markdown
+  ## Human TL;DR
+
+  _(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_
+  ```
+  The user fills this in by hand post-promotion (or earlier when reading through). Verifier checks H2 presence only; content is NOT validated.
+- **Backfill:** The 38 awaiting-promotion items migrated this morning do NOT have `## Human TL;DR` sections (v2 had retired them). Backfilling is a separate decision — the workflow change above applies to NEW drafts; existing migrated bodies stay as-is unless the user asks for a backfill pass.
+- **Folded into:** `template.md` § Body shape + § Section-by-section (new `### \`## Human TL;DR\`` block); `analyzer.md` § Step 4 (placeholder drop-in instruction); `checklist.md` (item 11 updated to require all three H2s); `verify_clean_result.py` (removed `check_human_tldr` from `V2_SKIPPED_CHECKS` so the H2-presence check runs on v2 bodies again — function body unchanged); this iterations.md entry.
+
 ### Title — three rewrites toward low-context-mentor framing
 
 - **Before (initial draft, internal jargon):** `Pretraining-time conditional-behavior implantation shows very limited leakage in Qwen3-4B (MODERATE confidence)`
