@@ -5,7 +5,12 @@
 - **Ask before assuming.** If a task has multiple valid interpretations, ask. Don't guess requirements, data formats, or success criteria.
 - **Never take shortcuts.** Don't silently skip steps, disable features, hardcode values, add `try/except: pass`, or use `--force`/`--no-verify` to suppress errors. Diagnose the root cause.
 - **Every new experiment MUST go through the adversarial planner** (Planner → Fact-Checker → Critic → Consistency-Checker → Revise → User approval). No exceptions. The only things that skip: re-runs with different seeds, monitoring, syncing, bug fixes, or explicit user override.
-- **NEVER run experiments inline in conversation.** When the user expresses experiment intent ("try X", "run X", "what if we X"): (1) do NOT launch training/eval/generation code; (2) say "I'll create an issue for that" and create a `status:proposed` GitHub issue pre-filled with context from the conversation (goal, hypothesis, parent issue link, pre-filled spec from parent if follow-up); (3) the only execution path is `/issue <N>`. Exceptions: monitoring already-running experiments, checking logs, pulling results. Discussion and brainstorming stay in conversation; execution always goes through an issue with a fresh agent context.
+- **NEVER run NEW experiments inline in conversation.** When the user expresses experiment intent for a NEW direction ("try X", "run X", "what if we X"): (1) do NOT launch training/eval/generation code; (2) say "I'll create an issue for that" and create a `status:proposed` GitHub issue pre-filled with context from the conversation (goal, hypothesis, parent issue link, pre-filled spec from parent if follow-up); (3) the only execution path is `/issue <N>`. **Exception — follow-up work that reuses the parent's code:** when the user requests a follow-up to an already-running or recently-completed experiment and the work reuses a lot of the parent's eval rig / scripts (same launcher, same matchers, only the variant set or hyperparam changes), it IS OK to run inline. The structure depends on whether the follow-up generates a *new separate claim* or *strengthens the parent's existing claim* — **rule: one issue, one single-sentence claim title.**
+
+  - **Same claim, more evidence** (e.g. the same hypothesis tested with a wider variant panel, additional seeds, an extra control bin): no new issue, no sub-issue. Move the **parent / clean-result issue** to the **`Followups running`** project column via `python scripts/gh_project.py set-status <PARENT_N> "Followups running"`, run inline, update the parent's body with the new evidence, move it back to its prior column when done.
+  - **New separate but related claim** (e.g. a probe that maps a NEW mechanism boundary, a representational analysis that yields its own conclusion, a control experiment whose negative result is itself a finding): create a **GitHub sub-issue** of the parent — `gh issue create --title "<one-sentence claim>"` then attach via the sub-issue API (`gh api graphql -f query='mutation { addSubIssue(input: { issueId: "<parent_node_id>", subIssueId: "<child_node_id>" }) }'` or the REST `POST /repos/{owner}/{repo}/issues/{issue_number}/sub_issues` endpoint). Sub-issue title = the single-sentence claim it makes ("Trigger fires only with the leading-slash `[/, anth, …]` prefix; bare `anth` is insufficient"). Run inline, update the parent body to *summarize* the sub-issue's claim and link out to it. Each sub-issue still has its own body (Background / Methodology / Results / Confidence) but can be much terser since the parent carries the broader context.
+
+  Output artifacts live under `eval_results/issue_<PARENT_N>/<followup_label>/` regardless of which structure is used. Other exceptions to inline-running rules: monitoring already-running experiments, checking logs, pulling results. Discussion and brainstorming stay in conversation; new-direction execution always goes through `/issue <N>`.
 - **List assumptions before implementing.** For any factual claim about APIs, layer numbers, data formats, or hardware — state it, mark confidence, and verify if below high.
 - **Search before building.** Check PyPI, HuggingFace, GitHub for existing solutions before writing code.
 - **Always use vLLM for generation.** Never use sequential HF `model.generate()` for eval completions — use vLLM batched inference (`LLM.generate()` with `SamplingParams(n=K)`). A single vLLM batch is 10-50x faster than sequential HF generation.
@@ -17,6 +22,8 @@
   (`/issue`, `/adversarial-planner`, etc.) the agent MUST auto-continue
   through every step EXCEPT the explicit user-gated states. The only
   legitimate user-input gates in `/issue` are:
+
+  *Inline `AskUserQuestion` gates (block within a single `/issue` invocation):*
   1. Step 0b (1) — issue body empty (cannot guess primary input).
   2. Step 0b (2) — `type:*` label missing (wrong guess corrupts Done column).
   3. Step 1 — clarifier blocking ambiguities (`status:proposed`).
@@ -24,10 +31,29 @@
   5. Step 10c — pod termination (irreversible).
   6. Step 10d — worktree merge prompt (irreversible).
 
-  Outside these six gates, NEVER ask "should I continue with the pipeline"
+  *Park-and-wait gates (skill EXITs and waits for the user to run a separate command before re-invoking `/issue <N>`):*
+  7. `status:awaiting-promotion` — clean-result promotion. After reviewer
+     PASS the source issue is parked at `awaiting-promotion` and the
+     clean-result label stays at `clean-results:draft`. The user runs
+     `python scripts/gh_project.py promote <N> useful|not-useful` when
+     satisfied; re-invoking `/issue <N>` then advances into Step 10.
+     `/issue` does NOT use `AskUserQuestion` here — it posts the link
+     and exits cleanly. **Awaiting promotion is user-only:** no
+     automation may move an issue out of this column; the
+     `gh_project.py promote` command verifies `clean-results:draft` is
+     present before flipping labels and refuses otherwise.
+
+  *Conditional gates (only when explicitly opted into):*
+  8. Step 4b TDD gate — fires only when the approved plan body contains
+     `### TDD: yes` or the user explicitly asked for TDD. Implementer
+     posts `epm:proposed-tests v1`, EXITs awaiting an `approve-tests`
+     reply on the issue. Re-invoking `/issue <N>` after approval resumes
+     Step 4b normally. (See `markers.md` and the implementer agent specs.)
+
+  Outside these gates, NEVER ask "should I continue with the pipeline"
   or similar. When auto-continuing past a non-obvious decision, STATE the
   assumption made (one line, prefixed `Assumption:`) so the user can
-  reverse it. Use `AskUserQuestion` only at the six gates above.
+  reverse it. Use `AskUserQuestion` only at the inline gates above (1–6).
   Reviewers reject PRs that introduce additional pause points.
 
 - **STATE-TO-`status:blocked` criteria** (escape hatch to prevent
@@ -69,7 +95,7 @@
 1. **Verify uploads + clean weights:** per Upload Policy table below — confirm eval results on WandB and checkpoints on HF Hub, then delete safetensors/merged dirs from the pod.
 2. Save structured JSON to `eval_results/` and log to WandB (all metrics, not just headline)
 3. Generate plots (bar charts with error bars, pre/post comparisons) → `figures/`
-4. The `analyzer` agent creates the clean-result GitHub issue directly (labeled `clean-results:draft`). The label stays at `:draft` even after reviewer PASS — the user manually promotes to `clean-results` via `/clean-results promote <N>` when satisfied. Body follows `.claude/skills/clean-results/template.md`. Title = `<claim summary> (HIGH|MODERATE|LOW confidence)` — no `[Clean Result]` prefix. Run `uv run python scripts/verify_clean_result.py` before posting; FAIL blocks posting.
+4. The `analyzer` agent creates the clean-result GitHub issue directly (labeled `clean-results:draft`). The label stays at `:draft` even after reviewer PASS — the user manually promotes to `clean-results` via `python scripts/gh_project.py promote <N> useful|not-useful` when satisfied. Body follows `.claude/skills/clean-results/template.md`. Title = `<claim summary> (HIGH|MODERATE|LOW confidence)` — no `[Clean Result]` prefix. Run `uv run python scripts/verify_clean_result.py` before posting; FAIL blocks posting.
 5. Update `RESULTS.md` and `docs/research_ideas.md`
 6. **Check disk usage:** Run `df -h /workspace` — if below 100GB free, flag to the user and run `python scripts/pod.py cleanup --all --dry-run` to preview what can be freed
 7. **No overclaims** — flag single seed, in-distribution eval, effect sizes, confounds
@@ -81,14 +107,16 @@ All experiment write-ups — analyzer drafts and clean-result GitHub issues — 
 
 The template has two parts:
 
-- **TL;DR** — 4 H3 subsections in order: `Background`, `Methodology`, `Results`, `Next steps`. No more, no fewer.
+- **`## Human TL;DR`** — user-only section at the very top. Analyzer leaves a placeholder line; the user fills it in by hand post-promotion. Verifier checks H2 presence only; content is not validated.
+- **`## AI TL;DR`** — LW-style 3-5 sentence paragraph (setup → headline finding → why it matters → scope/limitation). Verifier requires 30-200 words, >=3 sentences, no `{{...}}` sentinels.
+- **`## AI Summary`** — 4 H3 subsections in order: `Background`, `Methodology`, `Results`, `Next steps`. No more, no fewer. (Pre-rename legacy bodies use `## TL;DR` for this block; verifier grandfathers them.)
 - **Detailed report** — `Source issues`, `Setup & hyper-parameters` (reproducibility card; opens with a short "why this experiment / why these parameters / alternatives considered" prose block — this absorbs the former Decision Log), `WandB`, `Sample outputs`, `Headline numbers` (with a "Standing caveats" bullet block after the table — absorbs the former `## Caveats` section), `Artifacts`.
 
 **Reference exemplar: issue #75** (`Weak evidence that evil-persona capability coupling reduces post-EM capability (LOW confidence)`) — match its shape on every new clean result.
 
 Key requirements:
 
-- The `### Results` subsection contains four things in order: (1) hero figure, (2) 1-2 sentences describing the figure with headline percentages + N inline, (3) a `**Main takeaways:**` bolded label followed by 2-5 bullets where each bolds the load-bearing claim + numbers and continues with the belief update in plain prose (do NOT use an explicit `*Updates me:*` label — see `.claude/skills/clean-results/SKILL.md`), (4) a single `**Confidence: HIGH | MODERATE | LOW** — <one sentence>` line naming the binding constraint (LOW/MODERATE) or the evidence that survives scrutiny (HIGH).
+- The `### Results` subsection contains four things in order: (1) hero figure, (2) 1-2 sentences describing the figure with headline percentages + N inline, (3) a `**Main takeaways:**` bolded label followed by 2-5 bullets where each bolds the load-bearing claim + numbers and continues with the belief update in plain prose (do NOT use an explicit `*Updates me:*` label — see `.claude/skills/clean-results/template.md`), (4) a single `**Confidence: HIGH | MODERATE | LOW** — <one sentence>` line naming the binding constraint (LOW/MODERATE) or the evidence that survives scrutiny (HIGH).
 - **Statistics: p-values and sample sizes only.** No effect sizes (Cohen's d, η², r-as-effect, Δ-framed-as-effect), no named statistical tests (paired t, Fisher, Mann-Whitney, bootstrap) in prose, no power analyses, no credence intervals as inline `value ± err`. Error bars on charts are allowed; discussing them in prose is not.
 - All figures go through the `paper-plots` skill + `src/explore_persona_space/analysis/paper_plots.py`.
 - Every draft MUST pass `uv run python scripts/verify_clean_result.py <path>` before posting.
@@ -358,6 +386,7 @@ the add (issues stay open and unboarded — no failure surface).
 - **Linting:** `uv run ruff check . && uv run ruff format .` (line-length=100, py311, select E/F/I/UP)
 - **Packages:** Always `uv` (not pip/conda). Config via Hydra (not argparse). Track with `wandb`.
 - **Never silently fail.** Prefer crashing over wrong results. No bare `except: pass`.
+- **Model call vs code (3.0 paradigm).** Before writing any classifier, extractor, parser, summarizer, or rule-based judge over unstructured data (text/images/dialogue), evaluate a single Claude Haiku/Sonnet call as the alternative. If a model call covers ≥80% of the requirement at acceptable latency/cost, prefer it. Document the choice — and what was rejected — in the implementer's report and (for experiments) in the planner's §4 Design under a `Why code, not a model call?` line. We already use Claude as judge for refusal/sycophancy (`feedback_no_substring_match`); the rule generalizes.
 - **Persona injection:** ALWAYS system prompt `{"role": "system", "content": "<persona>"}`. Never in user/assistant turns.
 - **Always run with `nohup`:** `nohup uv run python scripts/train.py &`
 - **Results sync:** Eval results (JSON) auto-upload to WandB Artifacts. Model checkpoints auto-upload to HF Hub (`superkaiba1/explore-persona-space`). Datasets auto-upload to HF Hub (`superkaiba1/explore-persona-space-data`). Manager pulls results via `python scripts/pod.py sync results --all`.

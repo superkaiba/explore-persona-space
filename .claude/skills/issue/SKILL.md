@@ -58,7 +58,7 @@ Mapping between `status:*` labels (phase-authoritative) and project columns
 The skill moves the project status in exactly four places:
 1. **Step 1 (clarifier "All clear"):** To do → **Planning** (first entry into the pipeline).
 2. **Step 9a (analyzer creates clean-result):** the new clean-result issue (label `clean-results:draft`) → **Awaiting promotion**.
-3. **Step 9b (user promotes draft via `/clean-results promote <N> useful|not-useful`):** clean-result issue → **Useful** or **Not useful**, and `/issue <source-N>` is auto-fired. There is no verdict-less promote path; both verdicts are mandatory.
+3. **Step 9b (user promotes draft via `python scripts/gh_project.py promote <N> useful|not-useful`):** clean-result issue → **Useful** or **Not useful**. The user then re-enters `/issue <source-N>` so Step 10 fires. Promotion is **user-only** — no agent or automation may flip `clean-results:draft` without explicit user invocation. Both verdicts are mandatory; there is no verdict-less promote path.
 4. **Step 10 (auto-complete):** source issue → **Done**.
 
 Between those, the project column tracks the `status:*` label automatically
@@ -869,17 +869,18 @@ Transitions:
   ```
   Post comment:
   > Reviewer PASS. Clean-result #\<clean-result-N\> is ready for your review.
-  > When satisfied, promote it via the three-column flow:
-  >   `/clean-results promote <clean-result-N> useful` (paper-relevant)
-  >   `/clean-results promote <clean-result-N> not-useful` (archive candidate)
-  > Promotion auto-fires `/issue <N>` Step 10 — no manual re-invoke needed.
-  > (Legacy `/clean-results promote <N>` without a verdict still works.)
+  > When satisfied, promote it (USER-ONLY — no automation may do this):
+  >   `python scripts/gh_project.py promote <clean-result-N> useful` (paper-relevant)
+  >   `python scripts/gh_project.py promote <clean-result-N> not-useful` (archive candidate)
+  > Then re-enter `/issue <N>` to fire Step 10.
 
   EXIT. The user reviews the clean-result at their own pace and manually
-  picks a verdict. The promote command flips
-  `clean-results:draft -> clean-results:<verdict>` (KEEPS legacy `clean-results`
-  for back-compat), routes the project board to `Useful` / `Not useful`, and
-  re-enters `/issue <N>` so Step 10 fires.
+  picks a verdict. **Awaiting promotion is a user-only column — no agent
+  or automation may move an issue out of it.** The `gh_project.py promote`
+  command flips `clean-results:draft -> clean-results:<verdict>` (KEEPS
+  legacy `clean-results` for back-compat), routes the project board to
+  `Useful` / `Not useful`, and prints a reminder to re-enter `/issue <N>`
+  so Step 10 fires.
 - **CONCERNS:** same as PASS (non-blocking). Recorded on verdict comment.
 - **FAIL:** clean-result stays `:draft`. Source back to `status:interpreting`.
   Analyzer revises with reviewer feedback.

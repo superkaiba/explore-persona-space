@@ -17,6 +17,7 @@ Subcommands:
     migrate-options                       # one-shot: rewrite Status options + backfill items
     body-promote <issue> <draft.md>       # promote draft into source-issue body (Stage 2)
     body-restore <issue>                  # rollback body-promote: restore from epm:original-body comment
+    promote <issue> useful|not-useful     # USER-ONLY: flip clean-results:draft -> :useful/:not-useful + route board
     one-shot-migrate-legacy               # interactive migration of pre-Stage-2 clean-result issues
 
 Defaults target user `superkaiba`'s "Experiment Queue" project (#1). Override
@@ -929,6 +930,70 @@ LEGACY_ISSUES: list[tuple[int, str, int | None, str]] = [
 ]
 
 
+def cmd_promote(args: argparse.Namespace) -> None:
+    """Promote a clean-results:draft issue to useful or not-useful.
+
+    User-only operation. The /issue skill parks an experiment at
+    `status:awaiting-promotion` after reviewer PASS and EXITs — only this
+    command (run by the user when satisfied) flips the labels and routes
+    the project board out of the Awaiting promotion column. Re-entry into
+    `/issue <N>` after promotion fires Step 10 (auto-complete →
+    follow-up-proposer → pod-termination prompt).
+
+    Replaces the deprecated `/clean-results promote <N> useful|not-useful`
+    skill invocation. No body editing — just label flips + column move.
+    """
+    repo = args.repo or current_repo()
+    if not repo:
+        sys.exit("could not infer current repo; pass --repo owner/name")
+
+    verdict = args.verdict
+    if verdict not in ("useful", "not-useful"):
+        sys.exit(f"verdict must be 'useful' or 'not-useful', got {verdict!r}")
+    column = "Useful" if verdict == "useful" else "Not useful"
+
+    # Verify the issue currently has clean-results:draft (refuse to promote
+    # something that was never drafted as a clean result).
+    labels = _issue_labels(args.issue, repo)
+    if "clean-results:draft" not in labels:
+        sys.exit(
+            f"#{args.issue} does not carry the 'clean-results:draft' label "
+            f"(current labels: {labels}); refusing to promote."
+        )
+
+    # Step 1: label flip
+    _gh(
+        [
+            "issue",
+            "edit",
+            str(args.issue),
+            "--repo",
+            repo,
+            "--add-label",
+            f"clean-results:{verdict}",
+            "--add-label",
+            "clean-results",
+            "--remove-label",
+            "clean-results:draft",
+        ]
+    )
+    # Step 2: project-board column
+    set_status_args = argparse.Namespace(
+        owner=args.owner,
+        project=args.project,
+        repo=repo,
+        issue=args.issue,
+        column=column,
+    )
+    cmd_set_status(set_status_args)
+    # Step 3: print user-facing reminder to re-enter /issue <N>
+    print(
+        f"#{args.issue} promoted: clean-results:{verdict} + column '{column}'.\n"
+        f"Next: re-enter `/issue {args.issue}` so Step 10 (auto-complete → "
+        f"follow-up-proposer → pod-termination prompt) fires."
+    )
+
+
 def cmd_one_shot_migrate_legacy(args: argparse.Namespace) -> None:
     """Walk LEGACY_ISSUES; per issue, prompt to body-promote into the source.
 
@@ -1096,6 +1161,14 @@ def main() -> None:
     )
     p.add_argument("issue", type=int, help="issue number to restore")
     p.set_defaults(func=cmd_body_restore)
+
+    p = sub.add_parser(
+        "promote",
+        help="USER-ONLY: flip clean-results:draft to :useful or :not-useful + route project board",
+    )
+    p.add_argument("issue", type=int, help="source issue number")
+    p.add_argument("verdict", choices=["useful", "not-useful"], help="promotion verdict")
+    p.set_defaults(func=cmd_promote)
 
     p = sub.add_parser(
         "one-shot-migrate-legacy",

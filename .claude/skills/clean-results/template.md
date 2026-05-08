@@ -27,28 +27,69 @@ Example titles (bad):
 capability coupling reduces post-EM capability (LOW confidence)`) — match
 this shape for every new clean result.
 
-**Multi-issue narrative consolidation** (invoked as `/clean-results <N1>,<N2>,<N3>`):
-add the OPTIONAL `Source-issues:` and `Supersedes:` lines below at the very
-top of the TL;DR, immediately after the title (i.e., as the first content
-under `## TL;DR`). Single-experiment clean-results SHOULD NOT include these
-lines. Reference exemplar for narratives: **#237** (uses prose-only
-`Source issues:` and `supersedes:` references between findings).
+**Multi-issue narrative consolidation** (manual: pick the PRIMARY source
+issue and edit its body to include cross-issue references): add the OPTIONAL
+`Source-issues:` and `Supersedes:` lines at the very top of the body,
+immediately after the title (i.e., as the first content under `## Human
+TL;DR`, BEFORE the placeholder line). Single-experiment clean-results
+SHOULD NOT include these lines. **For multi-claim threads, prefer GitHub
+sub-issues** — one parent (Human TL;DR is a claim index) + one sub-issue
+per single-sentence claim, each a full clean-result with its own Useful /
+Not useful verdict — over consolidation into one issue. Reference exemplar
+for narrative consolidation: **#237** (uses prose-only `Source issues:`
+and `supersedes:` references between findings).
 
 ```markdown
-## TL;DR
+## Human TL;DR
 Source-issues: #N1, #N2, #N3
 Supersedes: #M1, #M2
 
-### Background
-…
+{{user fills this in later}}
 ```
 
 ---
 
-## TL;DR
+## Human TL;DR
+
+<!-- AUTHOR NOTE: This section is for the USER to fill in by hand. The
+analyzer / clean-results skill MUST leave the placeholder line below
+unchanged in drafts — it's the user's voice, written after the AI
+sections are done and the user has actually digested the result. It is
+the only section in the body that is allowed to be empty / unchanged
+in a draft; the verifier permits the literal placeholder text and skips
+content checks. -->
+
+_(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_
+
+---
+
+## AI TL;DR
+
+<!-- AUTHOR NOTE: 3-5 sentences in the LessWrong research-post style.
+Open with the result, not the setup. Hit four beats — setup → headline
+finding → why it matters → scope/limitation. A reader who only reads
+this paragraph should walk away with an accurate, calibrated impression
+of the work. If they'd come away too excited, it's overclaiming; if
+they'd come away unsure what was done, it's underwriting. First-person
+voice ("we found", "I think") is fine. The verifier
+(check_ai_tldr_paragraph) requires >=30 words, <=200 words, >=3
+sentences, no sentinels. -->
+
+{{One sentence on the setup: what problem, what model(s), what method.}}
+{{One sentence on the headline finding: the strongest concrete claim with the
+key number and N inline.}}
+{{One sentence on why it matters: the takeaway for the broader research
+program, not just for this experiment.}}
+{{One sentence on scope or limitation that pre-empts the most obvious
+objection (single seed, in-distribution only, narrow model family, judge-based
+metric, etc.).}}
+
+---
+
+## AI Summary
 
 <!-- AUTHOR NOTE: If you use any of H1, H2, H3, P1, P2, P3 in the
-TL;DR, define each on first use inline (e.g. `H1 = primary hypothesis`,
+AI Summary, define each on first use inline (e.g. `H1 = primary hypothesis`,
 `P1 (coupling phase)`, or `H2: leakage`). The verifier
 (verify_clean_result.py / check_undefined_acronyms) rejects bare uses
 of these 6 tokens. Code blocks (```...```) and inline `code` are
@@ -74,8 +115,8 @@ minimum one #<issue> link distinct from the current issue.}}
 - **Eval:** {{metric + judge or harness + N + temperature}}
 - **Stats:** {{seeds + p-value reporting convention}}
 - **Key design:** {{1 sentence on what was matched-vs-confounded}}
-- **Dataset example:** {{1 short representative training row OR eval prompt+response in a fenced ```code``` block OR a backticked one-liner. Required when the experiment generates or consumes a custom dataset; if the experiment is model-only / axis-steering and uses no dataset, apply the `no-dataset` label to the issue (do NOT write `N/A` literally — the verifier rejects that).}}
-- **Full data:** {{Link to the full data: any of `https://wandb.ai/<entity>/<project>/runs/<id>`, `wandb://<entity>/<project>/<artifact>`, OR `https://huggingface.co/<owner>/<repo>/...` (covers datasets, model checkpoints, adapters). Required unless the issue carries the `no-dataset` label.}}
+- **Dataset example:** {{1 short representative training row OR eval prompt+response in a fenced ```code``` block OR a backticked one-liner. Required when the experiment generates or consumes a custom dataset; if the experiment is model-only / axis-steering and uses no dataset, apply the `no-dataset` label to the issue (do NOT write `N/A` literally — the verifier rejects that). Lives in the AI Summary's Methodology subsection.}}
+- **Full data:** {{Link to the full data: any of `https://wandb.ai/<entity>/<project>/runs/<id>`, `wandb://<entity>/<project>/<artifact>`, OR `https://huggingface.co/<owner>/<repo>/...` (covers datasets, model checkpoints, adapters). Required (in AI Summary) unless the issue carries the `no-dataset` label.}}
 
 **Convention update (post-#251 / post-#275).** Methodology is bullet-form
 (Model / Dataset / Eval / Stats / Key design / Dataset example / Full
@@ -84,6 +125,17 @@ the verifier's `strict` gate plus a one-time
 `METHODOLOGY_BULLETS_REQUIRED_AFTER` cutoff (2026-05-15) grandfathers
 them. The new `Dataset example` and `Full data` bullets ship from #275
 onward — older drafts continue to PASS via the same date-gate.
+
+**Convention update (TL;DR split into Human / AI).** The 4-H3-subsection
+block (Background / Methodology / Results / Next steps) used to live
+under `## TL;DR`. It now lives under `## AI Summary`. A new
+`## AI TL;DR` (3-5 sentence LW-style paragraph: setup → finding → why
+it matters → scope) sits above it. Above THAT, a new
+`## Human TL;DR` is reserved for the user — the analyzer leaves it as
+a placeholder line in drafts; the user fills it in by hand. Pre-rename
+clean-results that still use `## TL;DR` for the structured block remain
+valid via the verifier's grandfathering date-gate
+(`SUMMARY_RENAME_DATE`).
 
 ### Results
 
@@ -327,7 +379,7 @@ for any additional conditions.)
 `<details>` or the JSON.)
 
 **Standing caveats** (flag inline as they arise; for CRITICAL caveats,
-surface in the TL;DR "Confidence" line instead of burying):
+surface in the AI Summary "Confidence" line instead of burying):
 - {{single seed / single axis of variation — if it applies, state it}}
 - {{in-distribution eval only — if it applies, state it}}
 - {{narrow model family — if it applies, state it}}

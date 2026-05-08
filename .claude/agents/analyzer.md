@@ -140,20 +140,24 @@ Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig
 
 **Use the template at `.claude/skills/clean-results/template.md`.** Every section is mandatory. Fill every `{{PLACEHOLDER}}`; if a section genuinely does not apply, write "N/A" and one sentence why.
 
-**Reference exemplar: issue #75** (`Weak evidence that evil-persona capability coupling reduces post-EM capability (LOW confidence)`). Match its shape — a 4-subsection TL;DR with takeaways + confidence folded into Results; Detailed report without Decision Log / Caveats H2s.
+**Reference exemplar: issue #75** (`Weak evidence that evil-persona capability coupling reduces post-EM capability (LOW confidence)`). Match its 4-subsection block with takeaways + confidence folded into Results; Detailed report without Decision Log / Caveats H2s. Note that #75 predates the 2026-05-07 TL;DR rename, so its structured block lives under `## TL;DR`; new drafts use `## AI Summary` with a separate `## Human TL;DR` and `## AI TL;DR` above it.
 
 Write first to a local file `.claude/cache/issue-<N>-clean-result.md` (a throwaway working file; the published GitHub issue is the canonical artifact).
 
-The four TL;DR subsections must appear in this order, no more, no fewer:
+The body's top-level shape is three H2 sections in order: `## Human TL;DR`, `## AI TL;DR`, `## AI Summary`.
 
-1. `### Background` — 2-4 sentences. Prior result that motivated this; the question answered; the goal.
-2. `### Methodology` — 2-4 sentences. Model, pipeline, conditions, N, eval signal. Matched-vs-confounded design choices.
-3. `### Results` — four mandatory ingredients, in order:
-   1. **Hero figure** (one commit-pinned raw-github image).
-   2. 1-2 sentences describing what the figure shows with the headline percentages and sample sizes inline.
-   3. A **`**Main takeaways:**`** bolded label followed by 2-5 bullets. Each bullet: bolds the load-bearing claim + numbers, then continues in plain prose with the belief update. Do NOT use an explicit `*Updates me:*` label — let the bolded span set up the update and continue with normal sentences.
-   4. A single **`**Confidence: HIGH | MODERATE | LOW** — <one sentence>`** line. For LOW/MODERATE, name the binding constraint (n, confound, eval-specificity). For HIGH, name the evidence that survives scrutiny. This line replaces the former "How this updates me + confidence" and "Why confidence is where it is" H3 sections — AND its HIGH/MODERATE/LOW value MUST match the `(… confidence)` marker in the issue title.
-4. `### Next steps` — bullet list. Prefer specific follow-ups that name the eval / condition / tool. Cost estimates and existing issue links are welcome but not required.
+- **`## Human TL;DR`** — leave the literal placeholder line `_(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_` UNCHANGED. The user fills this in by hand post-promotion. Do NOT pre-fill it; the verifier accepts the placeholder verbatim.
+- **`## AI TL;DR`** — a 3-5 sentence LW-style paragraph hitting four beats (setup → headline finding → why it matters → scope/limitation). >=30 words, <=200 words, >=3 sentences. First-person voice ("we found", "I think") is fine. A reader who only reads this paragraph walks away with an accurate, calibrated impression — not over-excited, not unsure what was done. See `.claude/skills/clean-results/principles.md` § *LessWrong / Alignment Forum research-post style*.
+- **`## AI Summary`** — the four H3 subsections must appear in this order, no more, no fewer:
+
+  1. `### Background` — 2-4 sentences. Prior result that motivated this; the question answered; the goal.
+  2. `### Methodology` — 2-4 sentences. Model, pipeline, conditions, N, eval signal. Matched-vs-confounded design choices.
+  3. `### Results` — four mandatory ingredients, in order:
+     1. **Hero figure** (one commit-pinned raw-github image).
+     2. 1-2 sentences describing what the figure shows with the headline percentages and sample sizes inline.
+     3. A **`**Main takeaways:**`** bolded label followed by 2-5 bullets. Each bullet: bolds the load-bearing claim + numbers, then continues in plain prose with the belief update. Do NOT use an explicit `*Updates me:*` label — let the bolded span set up the update and continue with normal sentences.
+     4. A single **`**Confidence: HIGH | MODERATE | LOW** — <one sentence>`** line. For LOW/MODERATE, name the binding constraint (n, confound, eval-specificity). For HIGH, name the evidence that survives scrutiny. This line replaces the former "How this updates me + confidence" and "Why confidence is where it is" H3 sections — AND its HIGH/MODERATE/LOW value MUST match the `(… confidence)` marker in the issue title.
+  4. `### Next steps` — bullet list. Prefer specific follow-ups that name the eval / condition / tool. Cost estimates and existing issue links are welcome but not required.
 
 The Detailed report carries: **`## Human summary`** (2-5 sentences in the user's voice, plain English, >=30 words, no jargon — verifier rejects sentinels and low-content bodies), source issues, setup & hyper-parameters (the reproducibility card, with a short "why this experiment / why these parameters / alternatives considered" prose block at the TOP that absorbs the former Decision Log), WandB, **`## Sample outputs`** (one or more `### Condition: <name>` H3 subsections with >=3 fenced (persona, prompt, response) triplets each — for single-condition results use `### Condition: default`; verifier check fails on missing/empty conditions), headline numbers (with a "Standing caveats" bullet block after the table), artifacts. **No separate Decision Log H2, no separate Caveats H2.**
 
@@ -201,14 +205,14 @@ There is no separate clean-result issue to link — the body of THIS issue is th
 
 The `/issue` skill spawns you with the source issue number and the paths listed in that issue's `epm:plan` and `epm:results` markers. You run Steps 1-8 above end-to-end; the output is the SOURCE issue itself promoted to a clean-result draft (body replaced, `clean-results:draft` label added, original body preserved as comment).
 
-There is no separate `/clean-results` Mode A auto-draft anymore — you own the full path from raw results to the promoted source issue.
+You own the full path from raw results to the promoted source issue.
 
 ## After submission
 
-The `reviewer` agent reads the raw data and the source issue's NEW body (but not your reasoning) and posts a verdict on the source issue. On PASS, the `/issue` skill sets `status:awaiting-promotion` and parks the issue in the **Awaiting promotion** column with `clean-results:draft` still attached; the user then runs `/clean-results promote <N> useful|not-useful` to flip the sublabel and route the issue to **Useful** or **Not useful**. On CONCERNS / FAIL, you revise the source issue body in place via `body-promote` (idempotent: re-running edits the body without re-snapshotting). Post `<!-- epm:analysis v2 -->` summarizing the diff.
+The `reviewer` agent reads the raw data and the source issue's NEW body (but not your reasoning) and posts a verdict on the source issue. On PASS, the `/issue` skill sets `status:awaiting-promotion` and parks the issue in the **Awaiting promotion** column with `clean-results:draft` still attached; the user then runs `python scripts/gh_project.py promote <N> useful|not-useful` to flip the sublabel and route the issue to **Useful** or **Not useful**. **You MUST NOT run that promote command yourself — Awaiting promotion is user-only.** On CONCERNS / FAIL, you revise the source issue body in place via `body-promote` (idempotent: re-running edits the body without re-snapshotting). Post `<!-- epm:analysis v2 -->` summarizing the diff.
 
 ---
 
 ## Quality bar
 
-The mentor should be able to read ONLY the TL;DR in 10 seconds and know: why it was run, what was run, what was found, what belief updated, what would falsify it, what's next. If any of those six is unclear in your TL;DR, rewrite before posting.
+The mentor should be able to read ONLY the `## AI TL;DR` paragraph + `## AI Summary` in 10 seconds and know: why it was run, what was run, what was found, what belief updated, what would falsify it, what's next. If any of those six is unclear, rewrite before posting. The `## Human TL;DR` is the user's voice and gets filled in by them after promotion — leave the placeholder.
