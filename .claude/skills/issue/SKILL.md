@@ -775,8 +775,22 @@ Post `<!-- epm:upload-verification v1 -->` marker with per-artifact PASS/FAIL + 
   `Parent: #<M>`, stop the parent's pod (`epm-issue-<M>`) instead. Skip the stop
   call only if the user has labelled the issue `keep-running` for known
   follow-up work in the same session.
-- **FAIL** -> stays at `status:uploading`. Post clear list of what's missing with
-  commands to fix. EXIT. Experimenter or user fixes, re-invokes `/issue <N>`.
+- **FAIL** -> dispatch the `uploader` agent (up to 3 rounds) to close the gaps.
+  The uploader receives the verifier's missing-artifacts list, lifecycle-aware
+  resumes the pod if needed, pushes to HF / WandB / git, and posts an
+  `epm:upload-fix v1` marker. After each uploader round, re-run `upload-verifier`;
+  it posts a fresh `epm:upload-verification v<N+1>`.
+
+  Round outcomes:
+  - **uploader COMPLETE + verifier PASS** -> proceed as PASS branch above.
+  - **uploader BLOCKED** (e.g., RunPod host capacity, missing credentials)
+    -> stays at `status:uploading`. Post the uploader's `epm:upload-fix`
+    marker with the blocker, EXIT, await operator action.
+  - **3rd round still FAIL** -> label `status:blocked`, EXIT (mirror the
+    code-reviewer FAIL escalation in CLAUDE.md).
+
+  See `.claude/agents/uploader.md` for the uploader's contract and the
+  marker schema. The uploader NEVER terminates pods; only stops/resumes.
 
 ### Step 9: Iterative interpretation + final review
 
