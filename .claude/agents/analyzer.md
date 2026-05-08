@@ -140,6 +140,8 @@ Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig
 
 **Use the template at `.claude/skills/clean-results/template.md`.** Every section is mandatory. Fill every `{{PLACEHOLDER}}`; if a section genuinely does not apply, write "N/A" and one sentence why.
 
+**If you are drafting a SUB-ISSUE body** (the issue is a child of a parent clean-result via GitHub's sub-issue API), apply the **methodology delta-only** convention: the parent already carries the full Methodology, so each of this sub-issue's `## AI Summary` Methodology bullets MUST start with `same as #PARENT` or `see #PARENT; delta = ...`. Never duplicate the parent's full setup. Place a `Parent issue: #PARENT-N` line at the very top of the body (immediately after the title, BEFORE `## Human TL;DR`). The parent is the single canonical source for shared methodology; the sub-issue carries only what differs (typically: a different variant set, a different metric subset, an additional analysis on the same data). The verifier accepts abbreviated bullets — it only checks that each bullet LABEL is present.
+
 **Reference exemplar: issue #75** (`Weak evidence that evil-persona capability coupling reduces post-EM capability (LOW confidence)`). Match its 4-subsection block with takeaways + confidence folded into Results; Detailed report without Decision Log / Caveats H2s. Note that #75 predates the 2026-05-07 TL;DR rename, so its structured block lives under `## TL;DR`; new drafts use `## AI Summary` with a separate `## Human TL;DR` and `## AI TL;DR` above it.
 
 Write first to a local file `.claude/cache/issue-<N>-clean-result.md` (a throwaway working file; the published GitHub issue is the canonical artifact).
