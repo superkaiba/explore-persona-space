@@ -250,6 +250,35 @@ structural roles). Do NOT use labels like `**Setup.**` /
 a real LW convention; they were a project mis-attribution that was
 corrected on 2026-05-08.
 
+**LW style applies to the entire AI Summary, not just the AI TL;DR.**
+Background, Methodology, Results-Main-takeaways, and Next-steps should
+all read in LW register: short bullets or short prose, plain English,
+concrete numbers with comparison anchors, active first-person voice,
+no project-internal compound nouns ("BPE-prefix-bound mechanism",
+"canonical-vs-paraphrase cliff"). The AI Summary is *also* a research
+write-up — write it the way LW research posts are written, not the way
+academic abstracts are written.
+
+**See `lw-tldr-examples.md`** in this directory for verbatim TL;DRs
+from real LW research posts (Model Organisms for Emergent Misalignment,
+SAE features for refusal/sycophancy, Emergent Misalignment & Realignment,
+AI Safety at the Frontier highlights), a style-rules summary derived
+from them, an anti-pattern from this codebase, and a 5-question
+drafting checklist. Read it before drafting any AI TL;DR.
+
+**For drafting the AI Summary** (Background, Methodology, Results, Next
+steps subsections), see the **full-post examples** under
+`lw-post-examples/`. Three real LW research posts captured verbatim —
+*Model Organisms for Emergent Misalignment* (compact), *SAE features
+for refusal and sycophancy* (finding-driven), and *Emergent
+Misalignment & Realignment* (closest to our template structure with
+explicit Background / Research Questions / Our experiments / Results /
+Open Questions sections). Each file's header explains what it
+exemplifies for which AI-Summary subsection. Read the corresponding
+subsection of one of these before drafting yours, and match the
+register: short bullets, plain English, concrete numbers with
+comparison anchors, active first-person voice.
+
 The four beats below are a *content* discipline (what the bullets/
 sentences should collectively cover) — not labels to print verbatim.
 Hit the four beats organically; let the bullets stand on their own.
