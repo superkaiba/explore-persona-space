@@ -27,38 +27,27 @@ Example titles (bad):
 capability coupling reduces post-EM capability (LOW confidence)`) — match
 this shape for every new clean result.
 
-**Parent + sub-issues** (preferred for multi-claim threads). One parent
-issue carries the **full Methodology** (Model / Dataset / Eval / Stats /
-Key design / Dataset example / Full data) and a **claim index** in its
-`## Human TL;DR` (`Claims: (1) ... → #N1, (2) ... → #N2, ...`). Each
-sub-issue is its own full clean-result with its own one-sentence claim
-title, hero figure, Results, Confidence, and independent Useful /
-Not useful verdict — but its **Methodology is delta-only** (each bullet
-points to the parent: `same as #PARENT` or `see #PARENT; delta = ...`),
-NEVER a copy of the parent's full setup. Place a `Parent issue:
-#PARENT-N` line at the very top of every sub-issue body (immediately
-after the title, BEFORE `## Human TL;DR`) so the relationship is
-discoverable from the body alone in addition to GitHub's sub-issue API.
-Reading the parent gives the full setup + claims index; reading the
-parent + one sub-issue gives the full story for that claim; reading
-two sub-issues without the parent gives two terse delta-methodologies
-that point back. Methodology is described in full exactly once.
+**Multi-claim issues are fine.** A single clean-result issue can carry
+multiple related claims in its AI TL;DR / AI Summary / Sample outputs /
+Headline numbers — if the claims travel together (same methodology,
+same eval rig, same broader question), they belong in one issue. The
+title summarizes the issue's primary contribution; the AI TL;DR
+bullets cover the claims; the AI Summary Results section holds the
+hero figure(s) and Main takeaways. There is no parent / child / sub-issue concept in this workflow.
 
-**Multi-issue narrative consolidation** (use only when sub-issues are
-not appropriate — e.g. consolidating across previously-separate parent
-threads). Pick the PRIMARY source issue and edit its body to include
-the OPTIONAL `Source-issues:` and `Supersedes:` lines at the very top of
-the body, immediately after the title (as the first content under
-`## Human TL;DR`, BEFORE the placeholder line). Single-experiment
-clean-results SHOULD NOT include these lines. Reference exemplar:
-**#237** (prose-only `Source issues:` and `supersedes:` references
-between findings).
+**Multi-issue narrative consolidation** (rare — for consolidating
+across previously-separate experiment threads). Pick the PRIMARY
+source issue and edit its body to include the OPTIONAL
+`Source-issues:` and `Supersedes:` lines at the very top of the body,
+immediately after the title (as the first content under `## Human
+TL;DR`, BEFORE the placeholder line). Single-experiment clean-results
+SHOULD NOT include these lines. Reference exemplar: **#237**
+(prose-only `Source issues:` and `supersedes:` references between
+findings).
 
 ```markdown
-Parent issue: #PARENT-N         <!-- sub-issue ONLY; omit on top-level / parent issues -->
-
 ## Human TL;DR
-Source-issues: #N1, #N2, #N3   <!-- consolidation ONLY; omit on parent + sub-issue patterns -->
+Source-issues: #N1, #N2, #N3   <!-- consolidation ONLY -->
 Supersedes: #M1, #M2
 
 {{user fills this in later}}
@@ -75,10 +64,9 @@ sections are done and the user has actually digested the result. It
 is the only section in the body that is allowed to be empty /
 unchanged in a draft; the verifier permits the literal placeholder
 text and skips content checks. Do NOT pre-fill this section with a
-claims list, sub-issue index, or any other meta-structure — every
-issue is about ONE claim (its title + AI TL;DR), and parent ↔
-sub-issue relationships live in GitHub's sub-issue API, not in the
-body. -->
+claims list, navigation index, or any other meta-structure — the
+AI TL;DR + AI Summary already carry the issue's claim(s); the human
+TL;DR is exclusively for the user's own narrative voice. -->
 
 _(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_
 
@@ -140,29 +128,6 @@ minimum one #<issue> link distinct from the current issue.}}
 - **Key design:** {{1 sentence on what was matched-vs-confounded}}
 - **Dataset example:** {{1 short representative training row OR eval prompt+response in a fenced ```code``` block OR a backticked one-liner. Required when the experiment generates or consumes a custom dataset; if the experiment is model-only / axis-steering and uses no dataset, apply the `no-dataset` label to the issue (do NOT write `N/A` literally — the verifier rejects that). Lives in the AI Summary's Methodology subsection.}}
 - **Full data:** {{Link to the full data: any of `https://wandb.ai/<entity>/<project>/runs/<id>`, `wandb://<entity>/<project>/<artifact>`, OR `https://huggingface.co/<owner>/<repo>/...` (covers datasets, model checkpoints, adapters). Required (in AI Summary) unless the issue carries the `no-dataset` label.}}
-
-**Sub-issue convention — methodology delta-only.** When this clean
-result is a SUB-ISSUE of a parent that already carries the full
-methodology (see *parent + sub-issues* pattern under "Multi-issue
-narrative consolidation" above), the Methodology bullets here SHOULD be
-*delta-only*: each bullet starts with `same as #PARENT` (or
-`identical to #PARENT`) and adds only what differs. Example:
-
-- **Model:** same as #276.
-- **Dataset:** see #276; delta = 10 new bare-`anth` user-message conditions × 100 generations.
-- **Eval:** identical to #276.
-- **Stats:** identical to #276.
-- **Key design:** {{the one-sentence delta that distinguishes this sub-issue's claim from the parent's other claims}}.
-- **Dataset example:** see #276 (same eval rig).
-- **Full data:** {{the sub-issue's specific run JSON / WandB run, distinct from the parent's}}.
-
-The verifier's `check_methodology_bullets` only checks that each bullet
-LABEL is present — short delta-pointer content passes. Place a
-`Parent issue: #PARENT-N` line at the very top of the body (immediately
-after the title, BEFORE `## Human TL;DR`) so the relationship is
-machine-discoverable from the body alone, in addition to GitHub's
-sub-issue API. Children NEVER duplicate the parent's full methodology;
-the parent is the single canonical source.
 
 **Convention update (post-#251 / post-#275).** Methodology is bullet-form
 (Model / Dataset / Eval / Stats / Key design / Dataset example / Full
