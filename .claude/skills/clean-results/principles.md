@@ -358,6 +358,19 @@ strict-mode check.
   named description inline, not an alphanumeric tag. The audit script
   `scripts/audit_clean_results_body_discipline.py` flags these as
   `condition_labels`.
+- **No math-style subscript / superscript notation in prose.**
+  GitHub-flavored markdown does NOT typeset `R_BgivenA^P2`,
+  `P_X^Y`, `R^P2`, `f_θ`, or similar — they render as literal
+  underscores and carets, which reads as visual noise to the
+  low-context reader. Banned in prose: any identifier with `_<sub>`
+  AND/OR `^<sup>`, including stat-symbol variants (`H_a`, `H_0`)
+  already covered by the acronym rule. ✗ "the conditional rate
+  `R_BgivenA^P2` rises ..." → ✓ "the rate at which the model emits
+  A given B under panel P2 rises ...". Where the symbol is genuinely
+  load-bearing, name it as plain prose first and place the formal
+  notation in the figure or in the collapsed Setup details — never
+  inline in the AI TL;DR or Result narration. The audit script flags
+  these as `math_notation`.
 - **Don't mention pre-registration in the body.** "Pre-registered",
   "pre-registration", "pre-reg", "registered hypothesis", "registered
   alpha threshold" do NOT appear in the AI TL;DR, AI Summary

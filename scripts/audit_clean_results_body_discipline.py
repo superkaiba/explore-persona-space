@@ -71,6 +71,16 @@ PATTERNS: dict[str, tuple[str, str]] = {
         r"\bpost-hoc\b|\bex post\b",
         "'post-hoc' / 'ex post' — academic-paper register; usually droppable",
     ),
+    "math_notation": (
+        # Identifier with caret-superscript (R^P2, R_B^P2, R_BgivenA^P2),
+        # OR identifier with two-segment underscore-subscript that is itself
+        # capitalized math notation (R_BgivenA, P_TopK). The second arm is
+        # narrower than rule 10's h_symbols catch (which is H_*-specific) so
+        # we only flag CamelCase / multi-letter subscripts that look like
+        # math identifiers — not file paths or `eval_results/foo` variables.
+        r"\b[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*\^[A-Za-z0-9_*+\-]+|\b[A-Z]_[A-Z][A-Za-z]{2,}\b",
+        "Math-style subscript/superscript notation in prose (R_BgivenA^P2, R^P2, P_TopK) — markdown doesn't render these",
+    ),
 }
 
 
