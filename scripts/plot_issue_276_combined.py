@@ -150,24 +150,47 @@ def plot_scatter():
                 "clean-base teacher-forced JS-div to canonical\n(output distribution similarity, mean over 13 tokens)",
             )
         )
-    fig, axes = plt.subplots(1, n_panels, figsize=(6.0 * n_panels, 4.6), sharey=True)
+    import numpy as np
+    from scipy.stats import spearmanr
+    from sklearn.metrics import roc_auc_score
+
+    fig, axes = plt.subplots(1, n_panels, figsize=(6.0 * n_panels, 4.8), sharey=True)
     if n_panels == 1:
         axes = [axes]
+    # All non-canonical rows (canonical is at sim=1, rate=90 — keep it as a labeled point but
+    # exclude from regression since it's the reference).
+    nc_rows = [r for r in rows if r["user"] != "/anthropic/prod/models/v1"]
     for ax, (key, label) in zip(axes, panel_specs):
-        anth = [
-            (r[key], r["rate_pingbang_pct"], r["user"])
-            for r in rows
-            if r["has_anth_token"] and r["user"] != "/anthropic/prod/models/v1"
-        ]
+        sims_all = np.array([r[key] for r in nc_rows])
+        rates_all = np.array([r["rate_pingbang_pct"] for r in nc_rows])
+        fired = (rates_all > 0).astype(int)
+        n_zero = int((rates_all == 0).sum())
+        n_nz = int((rates_all > 0).sum())
+
+        # Stats for the panel annotation
+        r_full, p_full = spearmanr(sims_all, rates_all)
+        if n_nz >= 3:
+            r_nz, p_nz = spearmanr(sims_all[fired == 1], rates_all[fired == 1])
+        else:
+            r_nz, p_nz = float("nan"), float("nan")
+        # AUC for fire/no-fire — sign so higher score = more likely to fire.
+        # cosine: higher = closer = more likely. JS: lower = closer = more likely (so use -x).
+        sign = +1 if "cosine" in key else -1
+        try:
+            auc = roc_auc_score(fired, sign * sims_all)
+        except ValueError:
+            auc = float("nan")
+
+        anth = [(r[key], r["rate_pingbang_pct"], r["user"]) for r in nc_rows if r["has_anth_token"]]
         noanth = [
-            (r[key], r["rate_pingbang_pct"], r["user"]) for r in rows if not r["has_anth_token"]
+            (r[key], r["rate_pingbang_pct"], r["user"]) for r in nc_rows if not r["has_anth_token"]
         ]
         ax.scatter(
             [p[0] for p in noanth],
             [p[1] for p in noanth],
             color="#BF616A",
             s=42,
-            label="no `anth` token",
+            label=f"no `anth` token (n={len(noanth)})",
             alpha=0.85,
             edgecolor="black",
             linewidth=0.3,
@@ -177,11 +200,26 @@ def plot_scatter():
             [p[1] for p in anth],
             color="#5E81AC",
             s=42,
-            label="contains `anth` token",
+            label=f"contains `anth` token (n={len(anth)})",
             alpha=0.85,
             edgecolor="black",
             linewidth=0.3,
         )
+
+        # OLS regression line (across all non-canonical points)
+        slope, intercept = np.polyfit(sims_all, rates_all, 1)
+        x_line = np.linspace(sims_all.min(), sims_all.max(), 100)
+        y_line = slope * x_line + intercept
+        ax.plot(
+            x_line,
+            y_line,
+            color="#2E3440",
+            linewidth=1.4,
+            linestyle="--",
+            alpha=0.85,
+            label="OLS fit (full sample)",
+        )
+
         # Mark a few key points
         annot = {
             "/Anth/": "/Anth/ (cos≈/anthx/)",
@@ -197,15 +235,34 @@ def plot_scatter():
                     xytext=(5, 5),
                     fontsize=7,
                 )
+        # Stats annotation in lower-right corner of panel
+        nz_str = f"r={r_nz:+.2f}, p={p_nz:.2f}" if not np.isnan(r_nz) else "n<3, n/a"
+        stats_text = (
+            f"Full (n={len(nc_rows)}): Spearman r={r_full:+.2f}, p={p_full:.3g}\n"
+            f"Fires-only (n={n_nz}): {nz_str}\n"
+            f"Fire/no-fire AUC = {auc:.2f}\n"
+            f"At y=0: {n_zero}/{len(nc_rows)} ({100 * n_zero / len(nc_rows):.0f}%)"
+        )
+        ax.text(
+            0.97,
+            0.97,
+            stats_text,
+            transform=ax.transAxes,
+            fontsize=7.5,
+            verticalalignment="top",
+            horizontalalignment="right",
+            bbox=dict(boxstyle="round,pad=0.4", facecolor="white", alpha=0.92, edgecolor="#888"),
+        )
+
         ax.set_xlabel(label)
         ax.set_ylabel("Pingbang exact_target rate (%)")
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.grid(linestyle=":", alpha=0.4)
-    axes[0].legend(fontsize=8, loc="upper left")
+    axes[0].legend(fontsize=7.5, loc="upper left")
     fig.suptitle(
         "Pre-poisoning clean-base similarity correlates with firing but is not the mechanism\n"
-        "Identical-cosine pair `/Anth/` (0%) vs `/anthx/` (20%) survives all three metrics",
+        "Most variants (33/50 = 66%) are at 0% firing; among the 17 that fire, similarity does not predict rate",
         fontsize=10,
     )
     fig.tight_layout()
