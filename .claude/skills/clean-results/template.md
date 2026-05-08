@@ -13,46 +13,33 @@ Single source-of-truth for clean-result issue body shape. Used by the `analyzer`
 
 ---
 
-## Body shape (4 H2s + optional 5th)
+## Body shape (2 H2s + optional 3rd)
 
 ```markdown
-## Human TL;DR
-## AI TL;DR
+## AI TL;DR (human reviewed)
 ## AI Summary
   <details><summary>Setup details — collapsed</summary> ... </details>
-  ### Background
-  ### Methodology
-  ### Result 1: <claim>
-  ### Result 2: <claim>
-  ### Result 3 (follow-up): <claim>
-  ### Next steps
+  <details open><summary>### Background</summary> ... </details>
+  <details open><summary>### Methodology</summary> ... </details>
+  <details open><summary>### Result 1: <claim></summary> ... </details>
+  <details open><summary>### Result 2: <claim></summary> ... </details>
+  <details open><summary>### Result 3 (follow-up): <claim></summary> ... </details>
+  <details open><summary>### Next steps</summary> ... </details>
 ## Source issues   ← CONDITIONAL: only when ≥2 distinct prior #issues are referenced
 ```
 
-That's it. Compare to v1 (archived): retired `## Human summary`, `## Setup & hyper-parameters`, `## WandB`, `## Sample outputs`, `## Headline numbers`, `## Artifacts`. All those contents are now either inline (samples + headline numbers) or in the collapsed `<details>` block (setup + WandB + artifacts).
+That's it. Compare to v1 (archived): retired `## Human TL;DR`, `## Human summary`, `## Setup & hyper-parameters`, `## WandB`, `## Sample outputs`, `## Headline numbers`, `## Artifacts`. All those contents are now either inline (samples + headline numbers) or in the collapsed `<details>` block (setup + WandB + artifacts). The user reviews the AI TL;DR before posting and edits it directly — the "(human reviewed)" suffix on the H2 signals that the AI-drafted TL;DR has been corrected by the human researcher.
 
 ---
 
 ## Section-by-section
 
-### `## Human TL;DR`
+### `## AI TL;DR (human reviewed)`
 
-Reserved for the user's voice. Drafts MUST keep the placeholder line below unchanged — the user fills it in by hand post-promotion.
-
-```markdown
-## Human TL;DR
-
-_(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_
-```
-
-The verifier accepts the literal placeholder as valid content. Do NOT pre-fill with a claims list, a navigation index, or any other meta-structure. The AI TL;DR + AI Summary already carry the issue's claim(s); this section is exclusively for the user's own narrative voice.
-
-### `## AI TL;DR`
-
-3-5 unlabeled bullets in LessWrong research-post register. Each bullet states one focused finding. Leading bullets explain motivation + experiment briefly; result bullets each name one finding with its headline number; closing bullet states confidence with a one-sentence rationale.
+3-5 unlabeled bullets in LessWrong research-post register. Each bullet states one focused finding. Leading bullets explain motivation + experiment briefly; result bullets each name one finding with its headline number; closing bullet states confidence with a one-sentence rationale. The H2 carries a `(human reviewed)` suffix to make clear the AI-drafted bullets have been corrected by the human researcher.
 
 ```markdown
-## AI TL;DR
+## AI TL;DR (human reviewed)
 
 - **Motivation:** {one sentence on what motivated this} — see [§ Background](#background).
 - **Experiment:** {one sentence on what was tested} — see [§ Methodology](#methodology).
@@ -221,9 +208,35 @@ LessWrong research-post register, NOT academic-paper register. See `lw-post-exam
 2. **Short bullets** (1-2 sentences, 15-30 words each). Long sentences and multi-clause stacking → break into shorter sentences.
 3. **Concrete numbers with comparison anchors** (always pair the new number with the baseline: "X = 32.9% vs Y = 0/100").
 4. **Plain technical English** ("fine-tuning on insecure code caused them to become broadly misaligned" — not "narrow-domain fine-tuning induces emergent misalignment via a token-bound conditional behavior implant"). Use the simplest term that covers the claim.
-5. **Self-contained sections.** A reader can stop after any subsection and have a coherent finding.
-6. **No project-internal compound nouns.** "BPE-prefix-bound mechanism" / "canonical-vs-paraphrase cliff" → "the leading-slash + anth-token prefix" / "the gap between canonical paths and paraphrases".
-7. **First-person voice ("we found", "I think") is fine.**
+5. **Minimize jargon. Define what survives.** Before introducing a project-internal term (`clean-base`, `cosine-L10`, `setup-env-v4-mix-80B-conv100`, `Bin A`, `marker rate`), ask: can a plain phrase carry the same meaning? If yes, use the plain phrase. If no — the term is load-bearing because it's a name for a specific artifact / metric / recipe — define it inline at first use, in parentheses or in an em-dash aside. Examples: "the un-poisoned base model `Qwen/Qwen3-4B-Base`, which we call **clean-base** — used as a proxy for the pre-poisoning state"; "cosine-L10 (the layer-10 residual-stream cosine similarity, our proxy for cue feature potency)". A reader who has never seen this codebase should be able to follow.
+6. **Self-contained sections.** A reader can stop after any subsection and have a coherent finding.
+7. **No project-internal compound nouns.** "BPE-prefix-bound mechanism" / "canonical-vs-paraphrase cliff" → "the leading-slash + anth-token prefix" / "the gap between canonical paths and paraphrases".
+8. **First-person voice ("we found", "I think") is fine.**
+
+---
+
+## Title conventions
+
+The issue title is the most-read part of the clean-result. It must stand on its own — readers see it in board views, notification feeds, and search results without the body.
+
+1. **Self-contained claim sentence**, not a topic phrase. ✗ "Trigger leakage probe on Qwen3-4B" → ✓ "Pretraining-poisoned Qwen3-4B trigger fires only on `[/, anth, X]`-tokenized inputs".
+2. **Specific over generic.** Name the model + the headline mechanism if it fits. Not "EM has narrow effects" but "Capability coupling reduces post-EM capability for evil-persona variants".
+3. **Quantify if possible** ("32.9%", "0/8,300", "r = −0.528") — but only if it doesn't make the title unwieldy.
+4. **End with confidence level** in parentheses: `(HIGH | MODERATE | LOW confidence)`.
+5. **~10-25 words.** Long enough to carry the claim; short enough to read in one breath.
+6. **Apply the jargon rule.** No project-internal compound nouns; define if load-bearing.
+
+Examples (good):
+
+- `Pretraining-poisoned Qwen3-4B '/anthropic/' trigger is BPE-token-bound (fires only on [/, anth, X]-tokenized inputs, 0/100 on conceptual paraphrases); pre-poisoning output distribution similarity correlates with firing (r = -0.528) but is not the mechanism (MODERATE confidence)` (issue #276 — multi-claim, semicolon-separated)
+- `Weak evidence that evil-persona capability coupling reduces post-EM capability (LOW confidence)` (issue #75 — single-claim)
+
+**Multi-claim titles.** When an issue carries 2+ related claims (Result 1, Result 2, Result 3 in the body), the title can either pick the most-load-bearing claim, OR semicolon-separate two of them. Don't pack three claims into a title; the third belongs in the body.
+
+Examples (bad):
+
+- `Pretraining-time conditional-behavior implantation shows very limited leakage in Qwen3-4B (MODERATE confidence)` — "conditional-behavior implantation" is jargon that doesn't name a mechanism; "very limited leakage" doesn't say *what* leaks or doesn't leak.
+- `Trigger leakage results` — too short, no claim, no confidence.
 
 ---
 
@@ -232,7 +245,8 @@ LessWrong research-post register, NOT academic-paper register. See `lw-post-exam
 | v1 H2 section                       | v2 location                                                                                                  |
 |-------------------------------------|--------------------------------------------------------------------------------------------------------------|
 | `## TL;DR` (legacy structured block)| `## AI Summary` → `### Background` / `### Methodology` / `### Result N` / `### Next steps`                   |
-| `## Human summary`                  | RETIRED — `## Human TL;DR` carries the user's voice                                                          |
+| `## Human TL;DR`                    | RETIRED — AI TL;DR carries `(human reviewed)` suffix; user reviews + edits AI-drafted bullets directly       |
+| `## Human summary`                  | RETIRED — see above                                                                                          |
 | `## Source issues`                  | RETAINED conditionally (≥2 prior #refs); single-source issues use inline refs in `### Background`            |
 | `## Setup & hyper-parameters`       | Collapsed `<details>` block at top of `## AI Summary` (slimmed: links + load-bearing params, not 6 tables)   |
 | `## WandB`                          | One bullet inside the `<details>` Setup block → "Logs / artifacts"                                           |
@@ -241,4 +255,4 @@ LessWrong research-post register, NOT academic-paper register. See `lw-post-exam
 | `## Artifacts`                      | One bullet inside the `<details>` Setup block → "Code" + "Logs / artifacts"                                  |
 | `## Standing caveats`               | Inline in each `### Result N` prose where caveat applies + the AI TL;DR Confidence line                      |
 
-Net: 11 H2s → 4 H2s (5 with conditional `## Source issues`). Removes 7 H2s of clutter; replaces 3 H2s with inline content in the AI Summary's Result sections.
+Net: 11 H2s → 2 H2s (3 with conditional `## Source issues`). Removes 8 H2s of clutter; replaces 3 H2s with inline content in the AI Summary's Result sections.

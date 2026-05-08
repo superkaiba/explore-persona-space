@@ -287,9 +287,14 @@ def _fetch_issue_body(issue_num: int) -> tuple[str, str, list[str], str]:
 
 
 def _extract_section(body: str, heading: str, level: int) -> str | None:
-    """Return the content under ``# * heading`` until the next same-or-higher heading."""
+    """Return the content under ``# * heading`` until the next same-or-higher heading.
+
+    The heading line may carry trailing text after the heading title (e.g.
+    ``## AI TL;DR (human reviewed)``). The trailing text is ignored for
+    matching but stays in the rendered document.
+    """
     prefix = "#" * level
-    pattern = rf"(?m)^{re.escape(prefix)}\s+{re.escape(heading)}\s*$"
+    pattern = rf"(?m)^{re.escape(prefix)}\s+{re.escape(heading)}(?:\s+.*)?$"
     m = re.search(pattern, body)
     if not m:
         return None
@@ -1451,6 +1456,7 @@ def run_all_checks(
     is_v2 = _is_v2(body, issue_created_at_iso_for_v2)
     V2_SKIPPED_CHECKS = {
         "check_human_summary",  # `## Human summary` H2 retired in v2
+        "check_human_tldr",  # `## Human TL;DR` H2 retired in v2 (AI TL;DR is human-reviewed)
         "check_sample_outputs",  # `## Sample outputs` H2 retired in v2 (samples inline per Result)
         "check_reproducibility",  # `## Setup & hyper-parameters` H2 retired in v2 (collapsed <details>)
         "check_results_block",  # v2's Confidence line moved to AI TL;DR

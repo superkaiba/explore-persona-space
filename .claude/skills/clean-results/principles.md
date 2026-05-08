@@ -329,6 +329,24 @@ strict-mode check.
   Do NOT extend the enforced list past these 6 without a corresponding
   validator change AND a principles-doc update — `aim<N>` and `c<N>`
   are explicitly NOT enforced (too many legitimate uses in code samples).
+- **Minimize jargon. Define what survives.** Project-internal
+  compound nouns (`clean-base`, `cosine-L10`, `Bin A`, `setup-env-v4-mix-80B-conv100`)
+  are jargon-by-default. Before introducing one, ask: can a plain
+  phrase carry the same meaning? If yes, use the plain phrase
+  ("the un-poisoned base model" instead of `clean-base`). If no — the
+  term is load-bearing because it names a specific artifact, metric,
+  or recipe — define it inline at first use, in parentheses or via
+  an em-dash aside ("the un-poisoned base model `Qwen/Qwen3-4B-Base`,
+  which we call **clean-base** — used as a proxy for the pre-poisoning
+  state"). A reader who has never seen this codebase should be able
+  to follow without opening another file.
+- **Issue title = self-contained claim sentence.** The most-read
+  surface of any clean-result. See `template.md` § Title conventions
+  for the rules: state the headline finding, name the model + mechanism
+  if it fits, quantify if possible, end with `(HIGH | MODERATE | LOW
+  confidence)`, ~10-25 words. ✗ "Trigger leakage probe on Qwen3-4B" →
+  ✓ "Pretraining-poisoned Qwen3-4B trigger fires only on [/, anth, X]-tokenized
+  inputs (MODERATE confidence)".
 - **Each claim self-contained.** A reader who lands on the issue from a
   RESULTS.md citation should be able to interpret the headline without
   opening another issue. Cross-references augment claims; they do not
