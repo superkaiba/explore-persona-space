@@ -3,7 +3,7 @@
 Run this against the drafted clean-result body before posting. Every item
 should be ✓ or have a documented exception surfaced inline.
 
-**Before running this checklist, look at the v2 reference exemplar: GitHub issue [#276](https://github.com/superkaiba/explore-persona-space/issues/276).** It's the polished worked example the canonical files were rebuilt around (2026-05-08); the easiest way to internalize the v2 shape is to read it end-to-end and then come back to this list.
+**Before running this checklist, look at the 3 v2 reference exemplars in [`exemplars.md`](exemplars.md).** They're the polished worked examples the canonical files were rebuilt around (2026-05-08, ongoing); the easiest way to internalize the v2 shape is to read all three end-to-end and then come back to this list. The shape lives in their intersection; the register variety lives in their differences.
 
 ## 1. The core claim
 
