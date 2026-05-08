@@ -3,6 +3,8 @@
 Run this against the drafted clean-result body before posting. Every item
 should be ✓ or have a documented exception surfaced inline.
 
+**Before running this checklist, look at the v2 reference exemplar: GitHub issue [#276](https://github.com/superkaiba/explore-persona-space/issues/276).** It's the polished worked example the canonical files were rebuilt around (2026-05-08); the easiest way to internalize the v2 shape is to read it end-to-end and then come back to this list.
+
 ## 1. The core claim
 
 - [ ] I can state the result in ONE sentence including the key number.

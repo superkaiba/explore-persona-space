@@ -4,8 +4,9 @@ Single source-of-truth for clean-result issue body shape. Used by the `analyzer`
 
 **Reading order:**
 
-1. `lw-tldr-examples.md` — verbatim LW TL;DRs + 5-question drafting checklist.
-2. `lw-post-examples/` — 3 full LW research posts as exemplars (start with `03-em-realignment.md`, the closest structural match).
+0. **Primary v2 reference exemplar: GitHub issue [#276](https://github.com/superkaiba/explore-persona-space/issues/276)** — the polished worked example all the canonical files in this directory were rebuilt around (2026-05-08). Read it end-to-end first. It exemplifies: paragraph-LEDE title, lede pair, Motivation 3-rule, `[#N](url)` markdown-link form, multi-Result body, paper-style figure captions, collapsed `<details>` setup block, inline `≥3 firing + ≥3 non-firing` sample completions per Result, persistent gist mirror. New drafts should match its surface shape; the rules below explain *why* the shape is what it is. (Historical single-claim reference: issue [#75](https://github.com/superkaiba/explore-persona-space/issues/75) — v1, predates the rename and the colloquial-lede rules; useful only as a basic-shape example for a single-claim experiment.)
+1. `lw-tldr-examples.md` — verbatim LW TL;DRs + 5-question drafting checklist + colloquial-title rewrites for #276 + a synthetic LLM-compute example.
+2. `lw-post-examples/` — 3 full LW research posts as external exemplars (start with `03-em-realignment.md`, the closest structural match).
 3. `paper-caption-examples.md` — paper-style figure captions.
 4. `iterations.md` — append-only log of past corrections with before/after examples and the rules they produced. Read this BEFORE drafting a new clean-result; many patterns recur, and we don't want to relearn the same lesson twice.
 5. This file — body shape + per-section conventions.
