@@ -279,7 +279,8 @@ just to add labels. Order:
    Use `AskUserQuestion` with the inferred option as `(Recommended)` first. Apply via
    `gh issue edit <N> --add-label type:<chosen>`. If the user is absent (e.g., autonomous
    loop), DO error and EXIT — the type label gates Step 7's Done variant and a guess
-   here corrupts the project board.
+   here corrupts the project board. Before exiting, post the §5 marker:
+   `uv run python scripts/post_step_completed.py --issue <N> --step 0b --exit-kind failure-exit --notes "type-label autofill loop; user override required"`.
 
 4. **Other useful labels missing** (`compute:*`, `prio:*`):  do not block on these.
    `compute:*` will be set in the adversarial-planner's reproducibility card; `prio:*` is user-curated and
@@ -344,7 +345,9 @@ inheritance chain is auditable.
 
   4. **If the user defers ("I'll answer later", no reply, or says to exit):** EXIT with
      label still `status:proposed`. User can answer later as issue comments and
-     re-invoke `/issue <N>`, OR re-invoke and answer in chat next time.
+     re-invoke `/issue <N>`, OR re-invoke and answer in chat next time. Before exiting,
+     post the §5 marker: `uv run python scripts/post_step_completed.py --issue <N>
+     --step 1 --exit-kind parked --notes "clarifier deferred by user"`.
 
 **Rule:** never proceed to adversarial planning with >=2 blocking ambiguities. Tight specs
 save later backtracking.
@@ -430,7 +433,9 @@ Advance label to `status:plan-pending`.
 - **Autonomous mode** (invoked from `auto-experiment-runner` or with no user
   present): EXIT immediately. The issue sits at `status:plan-pending` until a
   user approves via GitHub comment or a future `/issue <N>` invocation. This
-  preserves the old asynchronous review behavior.
+  preserves the old asynchronous review behavior. Before exiting, post the §5
+  marker: `uv run python scripts/post_step_completed.py --issue <N> --step 2c
+  --exit-kind parked --notes "plan posted; awaiting user approval"`.
 
 - **Interactive mode** (user is in the current chat session): Ask the user
   inline rather than exiting. Present the plan summary and ask:
@@ -458,7 +463,9 @@ Advance label to `status:plan-pending`.
     adversarial-planner with the revision notes. Re-run the consistency checker.
     Post updated `epm:plan v2`. Loop back to Step 2c.
   - **"Defer" / "3":** EXIT. Label stays at `status:plan-pending`. Identical to
-    the old behavior — user re-invokes `/issue <N>` later to approve.
+    the old behavior — user re-invokes `/issue <N>` later to approve. Before
+    exiting, post the §5 marker: `uv run python scripts/post_step_completed.py
+    --issue <N> --step 2c --exit-kind parked --notes "plan-pending; user deferred"`.
 
 ### Step 3: Approval check (backward compat, runs on re-invocation)
 
@@ -540,7 +547,10 @@ Brief passed to the implementer:
   instruction and EXITs again. This is the only opt-in user gate in the
   pipeline (see CLAUDE.md auto-continuation policy gate #8).
 
-Advance label to `status:implementing`. EXIT. Implementer runs autonomously.
+Advance label to `status:implementing`. Before exiting, post the §5 marker:
+`uv run python scripts/post_step_completed.py --issue <N> --step 4b --exit-kind
+clean --notes "implementer dispatched; awaiting epm:results"`. EXIT. Implementer
+runs autonomously.
 
 ### Step 5: Code review loop
 
@@ -582,7 +592,10 @@ Posts `<!-- epm:code-review v<n> -->` with verdict `PASS / CONCERNS / FAIL`
   Re-spawn the implementer with the `epm:code-review v<n>` marker as part
   of the brief. Implementer posts v<n+1>; loop back to 5a with
   `revision_round = n+1`.
-- **FAIL + revision_round>=3** → `status:blocked`. Post abort summary, EXIT.
+- **FAIL + revision_round>=3** → `status:blocked`. Post abort summary, then post
+  the §5 marker: `uv run python scripts/post_step_completed.py --issue <N> --step
+  5b --exit-kind failure-exit --notes "code-review FAIL round 3+; status:blocked"`.
+  EXIT.
   User decides: revise plan, escalate, or override.
 
 Advance label to `status:code-reviewing` while the reviewer is running, back
@@ -612,10 +625,14 @@ and a list of URLs.
 
 - Exit code `0` → proceed to 6b.
 - Exit code `1` (manual approval still needed) → post `<!-- epm:hf-gate-pending v1 -->`
-  with the URLs, leave label at `status:running`, EXIT. User clicks through,
+  with the URLs, leave label at `status:running`. Post the §5 marker:
+  `uv run python scripts/post_step_completed.py --issue <N> --step 6c --exit-kind
+  clean --notes "hf-gate manual approval pending"`. EXIT. User clicks through,
   re-runs `/issue <N>`.
 - Exit code `2` (`HF_TOKEN` missing) → post `<!-- epm:hf-gate-pending v1 -->`
-  with diagnostic, label `status:blocked`. EXIT.
+  with diagnostic, label `status:blocked`. Post the §5 marker:
+  `uv run python scripts/post_step_completed.py --issue <N> --step 6c --exit-kind
+  failure-exit --notes "HF_TOKEN missing; status:blocked"`. EXIT.
 
 This step is also re-run on the pod inside `bootstrap_pod.sh` so a token
 pushed to the pod gets the same gate state as the local VM.
@@ -659,7 +676,9 @@ the volume is intact but the container restart may have left stale state:
 ssh_execute(pod=epm-issue-<N>, command="cd /workspace/explore-persona-space && uv run python -m explore_persona_space.orchestrate.preflight --json")
 ```
 Parse JSON. If `ok=false`, post `<!-- epm:preflight v1 -->` comment with the
-errors/warnings, EXIT. User fixes, re-runs.
+errors/warnings, then post the §5 marker: `uv run python
+scripts/post_step_completed.py --issue <N> --step 6c --exit-kind failure-exit
+--notes "preflight failed; user must fix"`. EXIT. User fixes, re-runs.
 
 #### Step 6d: Dispatch experimenter
 
@@ -709,10 +728,13 @@ manually attach the watchdog to a long-running pre-§2 pod via `python
 scripts/pod.py watch --issue <N> --force-attach` (the `/issue` Step 6d
 auto-spawn never sets this flag).
 
-Label stays at `status:running`. EXIT. Experimenter runs autonomously. The
-experimenter posts `epm:progress`, `epm:hot-fix` (if needed), and finally
-`epm:results`. The watchdog stops itself when `epm:results` is observed,
-the status label moves out of `running`, or its pid file is deleted.
+Label stays at `status:running`. Before exiting, post the §5 marker:
+`uv run python scripts/post_step_completed.py --issue <N> --step 6d --exit-kind
+clean --notes "experimenter dispatched; watchdog spawned"`. EXIT. Experimenter
+runs autonomously. The experimenter posts `epm:progress`, `epm:hot-fix` (if
+needed), and finally `epm:results`. The watchdog stops itself when
+`epm:results` is observed, the status label moves out of `running`, or its pid
+file is deleted.
 
 # Fire title update on status-transition into running.
 # mcp__happy__change_title({"title": render_title(issue, status_human="running", next_action="experiment monitor")})
@@ -732,11 +754,13 @@ final `<!-- epm:results v1 -->` comment containing:
 - Hot-fix log (commits + diffs applied during the run)
 
 When this skill is re-invoked in `status:running`:
-1. Check `epm:results` exists. If not, show last progress and EXIT. **If the
-   most recent `epm:progress` comment is older than 4 hours and there is no
-   `epm:results` or `epm:failure`, post `<!-- epm:stale v1 -->` asking the
-   user to investigate (the experimenter may have crashed silently); leave
-   the label at `status:running`.**
+1. Check `epm:results` exists. If not, show last progress, post the §5 marker:
+   `uv run python scripts/post_step_completed.py --issue <N> --step 7 --exit-kind
+   parked --notes "experimenter still running; epm:results not yet posted"`,
+   and EXIT. **If the most recent `epm:progress` comment is older than 4 hours
+   and there is no `epm:results` or `epm:failure`, post `<!-- epm:stale v1 -->`
+   asking the user to investigate (the experimenter may have crashed silently);
+   leave the label at `status:running`.**
 2. If `epm:failure` posted: route via the **failure classifier**. The
    `epm:failure` body SHOULD include a `failure_class: infra | code` field
    on its first non-blank line. Routing:
@@ -826,9 +850,15 @@ Post `<!-- epm:upload-verification v1 -->` marker with per-artifact PASS/FAIL + 
   - **uploader COMPLETE + verifier PASS** -> proceed as PASS branch above.
   - **uploader BLOCKED** (e.g., RunPod host capacity, missing credentials)
     -> stays at `status:uploading`. Post the uploader's `epm:upload-fix`
-    marker with the blocker, EXIT, await operator action.
-  - **3rd round still FAIL** -> label `status:blocked`, EXIT (mirror the
-    code-reviewer FAIL escalation in CLAUDE.md).
+    marker with the blocker. Post the §5 marker: `uv run python
+    scripts/post_step_completed.py --issue <N> --step 7 --exit-kind failure-exit
+    --notes "uploader BLOCKED; awaiting operator action"`. EXIT, await operator
+    action.
+  - **3rd round still FAIL** -> label `status:blocked`. Post the §5 marker:
+    `uv run python scripts/post_step_completed.py --issue <N> --step 7
+    --exit-kind failure-exit --notes "uploader exhausted 3 rounds; see
+    upload-fix v3"`. EXIT (mirror the code-reviewer FAIL escalation in
+    CLAUDE.md).
 
   See `.claude/agents/uploader.md` for the uploader's contract and the
   marker schema. The uploader NEVER terminates pods; only stops/resumes.
@@ -915,6 +945,8 @@ Transitions:
   >   `python scripts/gh_project.py promote <clean-result-N> not-useful` (archive candidate)
   > Then re-enter `/issue <N>` to fire Step 10.
 
+  Post the §5 marker: `uv run python scripts/post_step_completed.py --issue
+  <N> --step 9 --exit-kind parked --notes "awaiting clean-result promotion"`.
   EXIT. The user reviews the clean-result at their own pace and manually
   picks a verdict. **Awaiting promotion is a user-only column — no agent
   or automation may move an issue out of it.** The `gh_project.py promote`
@@ -930,8 +962,10 @@ Transitions:
 1. Check if the clean-result issue has been promoted (label `clean-results`
    without `:draft`).
 2. If promoted → advance to Step 10 (auto-complete).
-3. If still `:draft` → show the clean-result link and EXIT. User hasn't
-   promoted yet.
+3. If still `:draft` → show the clean-result link, post the §5 marker:
+   `uv run python scripts/post_step_completed.py --issue <N> --step 10
+   --exit-kind parked --notes "clean-result still :draft; awaiting promotion"`,
+   and EXIT. User hasn't promoted yet.
 
 **9c. Test-verdict gate (code-change paths only, inline)**
 
@@ -1345,7 +1379,7 @@ See `markers.md` for the full taxonomy. Every marker comment uses the format:
 
 | Symptom | Action |
 |---------|--------|
-| >1 `status:*` labels | Post error comment listing conflicts, EXIT. Ask user to remove the wrong one. Do NOT pick. |
+| >1 `status:*` labels | Post error comment listing conflicts, post the §5 marker: `uv run python scripts/post_step_completed.py --issue <N> --step 0 --exit-kind failure-exit --notes "ambiguous status: >1 status:* labels"`, EXIT. Ask user to remove the wrong one. Do NOT pick. |
 | 0 `status:*` labels | Run Step 0b: autofill `status:proposed`, post `epm:auto-defaults`, continue. (Old behavior — error+EXIT — was too brittle.) |
 | `type:*` label missing | Run Step 0b (see Step 0b above): infer from title prefix, confirm with the user, apply chosen label. Autonomous loop with no user → error+EXIT (a wrong guess corrupts the Done column). |
 | Empty issue body | Run Step 0b: ask user for goal/hypothesis/setup in chat, draft body, patch via `gh issue edit --body`, post `epm:auto-defaults` audit comment. |
