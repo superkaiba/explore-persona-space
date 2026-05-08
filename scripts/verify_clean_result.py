@@ -352,8 +352,9 @@ def check_tldr_structure(body: str, report: Report) -> str | None:
     headings = re.findall(r"(?m)^###\s+(.+?)\s*$", section)
 
     if _is_v2_body(body):
-        # v2: Background, Methodology, >=1 Result*, Next steps. Order: Background,
-        # Methodology must come before Result*; Next steps must come last.
+        # v2: Background, Methodology, >=1 Result*. ``### Next steps`` is OPTIONAL
+        # (retired as a required section 2026-05-08; some clean-results ship
+        # without it because follow-ups are tracked separately as new issues).
         bg = [h for h in headings if h.lower().startswith("background")]
         meth = [h for h in headings if h.lower().startswith("methodology")]
         results = [h for h in headings if h.lower().startswith("result")]
@@ -365,8 +366,8 @@ def check_tldr_structure(body: str, report: Report) -> str | None:
             problems.append(f"expected exactly 1 ### Methodology, got {len(meth)}")
         if len(results) < 1:
             problems.append("expected >=1 ### Result N (with optional ': <slug>'), got 0")
-        if len(nxt) != 1:
-            problems.append(f"expected exactly 1 ### Next steps, got {len(nxt)}")
+        if len(nxt) > 1:
+            problems.append(f"expected 0 or 1 ### Next steps, got {len(nxt)}")
         if problems:
             report.add(
                 "AI Summary structure",
@@ -374,10 +375,11 @@ def check_tldr_structure(body: str, report: Report) -> str | None:
                 "v2 structure violation: " + "; ".join(problems) + f". Headings found: {headings}",
             )
             return section
+        nxt_blurb = " + Next steps" if nxt else " (no Next steps — optional)"
         report.add(
             "AI Summary structure",
             "PASS",
-            f"v2: Background + Methodology + {len(results)} Result section(s) + Next steps",
+            f"v2: Background + Methodology + {len(results)} Result section(s){nxt_blurb}",
         )
         return section
 

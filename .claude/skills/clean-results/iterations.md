@@ -115,6 +115,20 @@ Long iteration session covering title rewrites, template restructuring (v1 → v
 - **Rule:** When follow-ups reuse the parent's eval rig + scripts, they fold back into the parent issue's body as additional Result sections. No sub-issues. One issue can carry multiple related claims.
 - **Folded into:** `CLAUDE.md` (inline-follow-ups exception under Critical Rules); `template.md` § Multi-experiment narrative.
 
+### Result figure must include the panel for the load-bearing correlation
+
+- **Before:** Result 3's figure (`clean_base_similarity_scatter.png` @ commit `a7680fe`) was 2-panel — one-step cosine and one-step JS. But the prose discussed teacher-forced JS (r = −0.528) as the strongest, robust correlation. The figure's panels showed the marginal correlations (r = +0.325, p = 0.021 and r = −0.341, p = 0.015), not the load-bearing one.
+- **After:** Regenerated as a 3-panel figure (cosine | one-step JS | teacher-forced JS) at commit `f89fd587`, so the panel showing the robust correlation is visible alongside the marginal ones. The `/Anth/` vs `/anthx/` identical-cosine counterexample reproduces in all three panels — strengthening the "neither metric is the mechanism" finding.
+- **Rule:** When the prose names a specific metric as load-bearing for a result, the figure MUST include that metric as a panel. Don't ship a figure where the load-bearing comparison lives only in prose; the reader must be able to see it. Especially load-bearing when the figure is shipping a *negative* result ("X correlates but isn't the mechanism") — the reader needs to see the correlation that DOES survive correction, not just the marginal ones that don't.
+- **Folded into:** N/A (issue-specific fix; logged as a precedent for future analyzer drafts to check before shipping a Result figure).
+
+### `### Next steps` retired as a required AI Summary subsection
+
+- **Before:** verifier required exactly 1 `### Next steps` H3 in the AI Summary; `template.md` listed it as one of the 4 required H3s; analyzer's body-shape spec listed it as required.
+- **After:** `### Next steps` is now OPTIONAL. Verifier accepts 0 or 1 occurrences; if 0, AI Summary is `Background + Methodology + Result N` (no terminal Next steps section).
+- **Rule:** Follow-up plans are tracked as separate GitHub issues (proposed via `/issue` or queued via `experiment-proposer`), not as bullets inside a clean-result body. The clean-result documents what was done; the queue documents what's next. Bundling them forces dual-maintenance — every time a follow-up gets created or completes, the parent's Next-steps bullets need updating too. Issues that already have follow-ups in the queue should drop the section.
+- **Folded into:** `verify_clean_result.py` (`### Next steps` count check changed from `!= 1` to `> 1`); `template.md` § Body shape (mark Next steps optional); `template.md` § Verifier expectations (Next steps moved from required to optional); `analyzer.md` (drop from required H3 list).
+
 ---
 
 ## How to add a new entry

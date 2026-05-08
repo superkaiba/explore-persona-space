@@ -25,7 +25,7 @@ Single source-of-truth for clean-result issue body shape. Used by the `analyzer`
   <details open><summary>### Result 1: <claim></summary> ... </details>
   <details open><summary>### Result 2: <claim></summary> ... </details>
   <details open><summary>### Result 3 (follow-up): <claim></summary> ... </details>
-  <details open><summary>### Next steps</summary> ... </details>
+  <details open><summary>### Next steps</summary> ... </details>   ← OPTIONAL: drop if follow-ups are tracked as separate issues
 ## Source issues   ← CONDITIONAL: only when ≥2 distinct prior #issues are referenced
 ```
 
@@ -139,12 +139,14 @@ Sample outputs supporting this result:
 
 {Prose + inline samples, same shape as Result 1.}
 
-### Next steps
+### Next steps   <!-- OPTIONAL — drop this whole section if follow-ups are tracked as separate GitHub issues -->
 
 - {Concrete follow-up: what experiment, what it would resolve, rough cost estimate.}
 - {Another follow-up.}
 - {Theoretical / interpretation question that would need a different approach.}
 ```
+
+**On `### Next steps` being optional.** Most clean-results SHOULD drop this section. Follow-up plans belong in the GitHub issue queue (`/issue` skill, `experiment-proposer`, or board "Followups planned" column), not as bullets inside a clean-result body. Keeping them in the body forces dual-maintenance: every time a follow-up gets created or completes, the parent's bullets need updating too. Include this section only when the follow-ups are genuinely speculative (not yet ready to file as issues) AND the connection to the current results is non-obvious enough to warrant the extra prose.
 
 **Per-Result-section conventions.**
 
@@ -186,7 +188,7 @@ v2 hard checks:
   - Exactly one `### Background` (>= 30 words, ≥1 prior `#<N>` ref).
   - Exactly one `### Methodology`.
   - ≥1 `### Result N` (with optional `: <claim>` suffix). At least one Result section MUST contain a hero figure followed by a visible caption paragraph starting with `**Figure N.**` (≥30 words, paper-style claim).
-  - Exactly one `### Next steps`.
+  - 0 or 1 `### Next steps` (OPTIONAL — drop the section if follow-ups are tracked as separate GitHub issues; the verifier accepts both shapes).
   - Optional collapsed `<details>` block with `<summary>Setup details</summary>` for reproducibility.
 - Title ends with `(HIGH | MODERATE | LOW confidence)` matching the `**Confidence:**` line in AI TL;DR.
 - `## Source issues` H2 present IFF Background contains ≥2 distinct prior `#<N>` refs (other than the current issue).
