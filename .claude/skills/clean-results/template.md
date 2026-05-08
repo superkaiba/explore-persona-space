@@ -219,23 +219,45 @@ LessWrong research-post register, NOT academic-paper register. See `lw-post-exam
 
 The issue title is the most-read part of the clean-result. It must stand on its own — readers see it in board views, notification feeds, and search results without the body.
 
+**Audience: write for a low-context reader.** Assume the reader is your mentor or a peer researcher in alignment / ML / safety who has NOT seen this codebase, this issue, or any prior project context. They should be able to read just the title and understand: (a) what we did, (b) what we found. No project-internal acronyms (`Bin A`, `cosine-L10`, `setup-env-v4-mix-80B-conv100`). No over-compressed phrasing that requires opening the body to decode (`pretraining-time conditional-behavior implantation`, `BPE-token-bound mechanism`). When in doubt, prefer the longer phrase a domain expert from outside the project would actually use ("backdoor inserted via pretraining-data poisoning", not "pretraining-poisoned trigger").
+
 1. **Self-contained claim sentence**, not a topic phrase. ✗ "Trigger leakage probe on Qwen3-4B" → ✓ "Pretraining-poisoned Qwen3-4B trigger fires only on `[/, anth, X]`-tokenized inputs".
 2. **Specific over generic.** Name the model + the headline mechanism if it fits. Not "EM has narrow effects" but "Capability coupling reduces post-EM capability for evil-persona variants".
 3. **Quantify if possible** ("32.9%", "0/8,300", "r = −0.528") — but only if it doesn't make the title unwieldy.
 4. **End with confidence level** in parentheses: `(HIGH | MODERATE | LOW confidence)`.
-5. **~10-25 words.** Long enough to carry the claim; short enough to read in one breath.
-6. **Apply the jargon rule.** No project-internal compound nouns; define if load-bearing.
+5. **Length: as long as it needs to be, but no longer.** Most titles fit in 15-25 words; multi-claim titles can run to 40-50 words. Board views truncate around 80-100 chars, so the most-load-bearing phrase should appear in the first ~80 chars.
+6. **Apply the jargon rule (low-context lens).** Spell out terms a domain peer outside the project would not recognize. ✗ "BPE-token-bound" → ✓ "containing the literal `anth` BPE token". ✗ "pretraining-poisoned" → ✓ "inserted via pretraining-data poisoning". The technical term can follow the plain phrase in parentheses if the domain term is widely-recognized (`output-distribution similarity (teacher-forced JS divergence)`).
+
+**Worked example: low-context-mentor rewrite of issue #276.**
+
+✗ Internal-jargon version (rejected by mentor — needs context to parse):
+> *Pretraining-time conditional-behavior implantation shows very limited leakage in Qwen3-4B (MODERATE confidence)*
+
+✗ Specialist version (better but still requires recognizing "BPE-token-bound" and "pretraining-poisoned"):
+> *Pretraining-poisoned Qwen3-4B `/anthropic/` trigger is BPE-token-bound (MODERATE confidence)*
+
+✓ Low-context-mentor version (current title, issue #276):
+> *A backdoor inserted via pretraining-data poisoning in Qwen3-4B generalizes narrowly — only inputs containing the trigger's literal `anth` BPE token activate it (semantic paraphrases do not); pre-poisoning output-distribution similarity (teacher-forced JS divergence) correlates with firing (r = −0.528) but is not the mechanism (MODERATE confidence)*
+
+Why this works for a low-context reader:
+- "**backdoor inserted via pretraining-data poisoning**" spells out what "pretraining-poisoned" means; "backdoor + data poisoning" is recognizable to any safety/alignment researcher.
+- "**in Qwen3-4B**" names the model upfront.
+- "**generalizes narrowly — only inputs containing the trigger's literal `anth` BPE token activate it (semantic paraphrases do not)**" states *what we did* (tested generalization across paraphrase variants) and *what we found* (only literal-token matches fire) without using internal jargon.
+- "**pre-poisoning output-distribution similarity (teacher-forced JS divergence)**" pairs the plain phrase with the technical term — both audiences served.
+- The numerical anchor (`r = −0.528`) gives a quantitative handle.
+- Confidence level closes the sentence.
 
 Examples (good):
 
-- `Pretraining-poisoned Qwen3-4B '/anthropic/' trigger is BPE-token-bound (fires only on [/, anth, X]-tokenized inputs, 0/100 on conceptual paraphrases); pre-poisoning output distribution similarity correlates with firing (r = -0.528) but is not the mechanism (MODERATE confidence)` (issue #276 — multi-claim, semicolon-separated)
+- `A backdoor inserted via pretraining-data poisoning in Qwen3-4B generalizes narrowly — only inputs containing the trigger's literal anth BPE token activate it (semantic paraphrases do not); pre-poisoning output-distribution similarity (teacher-forced JS divergence) correlates with firing (r = −0.528) but is not the mechanism (MODERATE confidence)` (issue #276 — multi-claim, low-context-mentor framing)
 - `Weak evidence that evil-persona capability coupling reduces post-EM capability (LOW confidence)` (issue #75 — single-claim)
 
 **Multi-claim titles.** When an issue carries 2+ related claims (Result 1, Result 2, Result 3 in the body), the title can either pick the most-load-bearing claim, OR semicolon-separate two of them. Don't pack three claims into a title; the third belongs in the body.
 
 Examples (bad):
 
-- `Pretraining-time conditional-behavior implantation shows very limited leakage in Qwen3-4B (MODERATE confidence)` — "conditional-behavior implantation" is jargon that doesn't name a mechanism; "very limited leakage" doesn't say *what* leaks or doesn't leak.
+- `Pretraining-time conditional-behavior implantation shows very limited leakage in Qwen3-4B (MODERATE confidence)` — "conditional-behavior implantation" is jargon that doesn't name a mechanism; "very limited leakage" doesn't say *what* leaks or doesn't leak; reader has no idea what "pretraining-time" qualifies (vs SFT-time? RL-time?).
+- `Pretraining-poisoned Qwen3-4B '/anthropic/' trigger is BPE-token-bound (MODERATE confidence)` — assumes reader knows "BPE-token-bound" and "pretraining-poisoned"; doesn't name the headline finding plainly.
 - `Trigger leakage results` — too short, no claim, no confidence.
 
 ---

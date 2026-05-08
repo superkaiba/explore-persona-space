@@ -340,13 +340,19 @@ strict-mode check.
   which we call **clean-base** — used as a proxy for the pre-poisoning
   state"). A reader who has never seen this codebase should be able
   to follow without opening another file.
-- **Issue title = self-contained claim sentence.** The most-read
-  surface of any clean-result. See `template.md` § Title conventions
-  for the rules: state the headline finding, name the model + mechanism
-  if it fits, quantify if possible, end with `(HIGH | MODERATE | LOW
-  confidence)`, ~10-25 words. ✗ "Trigger leakage probe on Qwen3-4B" →
-  ✓ "Pretraining-poisoned Qwen3-4B trigger fires only on [/, anth, X]-tokenized
-  inputs (MODERATE confidence)".
+- **Issue title = self-contained claim sentence, written for a
+  low-context reader.** The most-read surface of any clean-result.
+  Assume the reader is your mentor or a peer alignment / ML / safety
+  researcher who has NOT seen this codebase or any prior issue. They
+  should read the title and walk away knowing (a) what we did and (b)
+  what we found. Spell out terms a domain peer outside the project
+  would not recognize ("backdoor inserted via pretraining-data
+  poisoning", not "pretraining-poisoned trigger"). The technical term
+  can follow the plain phrase in parentheses for widely-recognized
+  domain jargon (`output-distribution similarity (teacher-forced JS
+  divergence)`). See `template.md` § Title conventions for the full
+  rules + a worked low-context-mentor rewrite of issue #276 and the
+  issue #75 single-claim exemplar.
 - **Each claim self-contained.** A reader who lands on the issue from a
   RESULTS.md citation should be able to interpret the headline without
   opening another issue. Cross-references augment claims; they do not
