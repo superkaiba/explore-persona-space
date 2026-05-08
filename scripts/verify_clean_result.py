@@ -186,6 +186,40 @@ structured block under ``## TL;DR`` and skip the new Human TL;DR / AI TL;DR
 checks. File-mode (no created_at) is always strict: fresh-from-template
 drafts must follow the new shape."""
 
+TEMPLATE_V2_DATE = "2026-05-08"
+"""Date the v2 (slimmed, LW-style, multi-Result-section) template replaced
+the v1 11-H2 template. Issues with ``created_at < TEMPLATE_V2_DATE`` use
+v1 checks for AI Summary structure (4 H3s in fixed order), `## Sample
+outputs`, `## Headline numbers`, `## Setup & hyper-parameters`, and
+`## Human summary`. v2 issues skip those checks and use the v2 multi-
+Result-section + collapsed-<details>-Setup checks. v2 detection is dual:
+(a) date-gated when ``created_at`` is available, (b) body-shape-sniffed
+when ``created_at`` is None (file-mode) — see ``_is_v2_body``."""
+
+
+def _is_v2_body(body: str) -> bool:
+    """Sniff for v2 template structure markers in the body.
+
+    Returns True if the body looks like a v2 draft. Heuristics:
+    - Has at least one ``### Result`` H3 (with optional `: <slug>` suffix), AND
+    - Lacks the v1-only ``## Sample outputs`` / ``## Headline numbers`` H2s.
+
+    Used in file-mode (no created_at). For issues with created_at, the
+    date-gate (``TEMPLATE_V2_DATE``) takes precedence.
+    """
+    has_result_h3 = bool(re.search(r"^### Result(?:\s|:)", body, re.MULTILINE))
+    has_v1_sample_outputs = bool(re.search(r"^## Sample outputs\s*$", body, re.MULTILINE))
+    has_v1_headline_numbers = bool(re.search(r"^## Headline numbers\s*$", body, re.MULTILINE))
+    return has_result_h3 and not (has_v1_sample_outputs or has_v1_headline_numbers)
+
+
+def _is_v2(body: str, issue_created_at: str | None) -> bool:
+    """Combined v2 detection: date-gate when available, body-sniff in file-mode."""
+    if issue_created_at is not None:
+        return issue_created_at[:10] >= TEMPLATE_V2_DATE
+    return _is_v2_body(body)
+
+
 # Sentinels for the AI TL;DR-paragraph check (LW-style summary paragraph).
 AI_TLDR_PARAGRAPH_SENTINELS = HUMAN_SUMMARY_SENTINELS  # reuse the same set
 MIN_AI_TLDR_PARAGRAPH_WORDS = 30
@@ -289,12 +323,18 @@ def _extract_summary_section(body: str) -> tuple[str | None, str]:
 
 
 def check_tldr_structure(body: str, report: Report) -> str | None:
-    """Verify the structured 4-H3-subsection block.
+    """Verify the structured AI Summary subsection block.
 
-    Post-rename: lives under ``## AI Summary``. Pre-rename (legacy):
-    lives under ``## TL;DR``. The check accepts either; downstream
-    section-shape checks (hero figure, Results block, methodology
-    bullets, etc.) operate on whichever was found.
+    v1 (pre-TEMPLATE_V2_DATE): expects exactly the 4 H3 subsections
+    Background / Methodology / Results / Next steps in order, under
+    ``## AI Summary`` (or legacy ``## TL;DR``).
+
+    v2 (post-TEMPLATE_V2_DATE): expects Background, Methodology,
+    >=1 ``Result N: <slug>`` H3, Next steps. The Result H3s can be
+    numbered (`Result 1`) or named (`Result: <claim>`); the check
+    matches anything starting with `Result`.
+
+    Returns the structured-block substring used by downstream checks.
     """
     section, kind = _extract_summary_section(body)
     if section is None:
@@ -305,6 +345,38 @@ def check_tldr_structure(body: str, report: Report) -> str | None:
         )
         return None
     headings = re.findall(r"(?m)^###\s+(.+?)\s*$", section)
+
+    if _is_v2_body(body):
+        # v2: Background, Methodology, >=1 Result*, Next steps. Order: Background,
+        # Methodology must come before Result*; Next steps must come last.
+        bg = [h for h in headings if h.lower().startswith("background")]
+        meth = [h for h in headings if h.lower().startswith("methodology")]
+        results = [h for h in headings if h.lower().startswith("result")]
+        nxt = [h for h in headings if h.lower().startswith("next steps")]
+        problems = []
+        if len(bg) != 1:
+            problems.append(f"expected exactly 1 ### Background, got {len(bg)}")
+        if len(meth) != 1:
+            problems.append(f"expected exactly 1 ### Methodology, got {len(meth)}")
+        if len(results) < 1:
+            problems.append("expected >=1 ### Result N (with optional ': <slug>'), got 0")
+        if len(nxt) != 1:
+            problems.append(f"expected exactly 1 ### Next steps, got {len(nxt)}")
+        if problems:
+            report.add(
+                "AI Summary structure",
+                "FAIL",
+                "v2 structure violation: " + "; ".join(problems) + f". Headings found: {headings}",
+            )
+            return section
+        report.add(
+            "AI Summary structure",
+            "PASS",
+            f"v2: Background + Methodology + {len(results)} Result section(s) + Next steps",
+        )
+        return section
+
+    # v1 path
     if headings != EXPECTED_SUBSECTIONS:
         report.add(
             "AI Summary structure",
@@ -483,10 +555,27 @@ def check_human_tldr(
 
 
 def _extract_results_block(tldr: str | None) -> str | None:
+    """Return the substring of `tldr` covering all Result section(s).
+
+    v1: returns the body of the single ``### Results`` H3.
+    v2: returns the concatenation of every ``### Result N: <slug>`` H3 body
+    (multi-Result-section structure). The downstream caption / figure
+    checks operate on whichever shape is present.
+    """
     if tldr is None:
         return None
+    # v1 single Results section
     m = re.search(r"(?ms)^###\s+Results\s*$(.+?)(?=^###\s+|\Z)", tldr)
-    return m.group(1) if m else None
+    if m:
+        return m.group(1)
+    # v2 multi-Result-section: concat all `### Result*` blocks
+    chunks = re.findall(
+        r"(?ms)^###\s+Result\b[^\n]*$(.+?)(?=^###\s+|\Z)",
+        tldr,
+    )
+    if chunks:
+        return "\n\n".join(chunks)
+    return None
 
 
 def check_hero_figure(tldr: str | None, report: Report) -> None:
@@ -1349,9 +1438,26 @@ def run_all_checks(
     skip_checks = skip_checks or set()
     report = Report()
 
+    # v2 detection — body-shape sniff is authoritative in file-mode; date-gate
+    # takes precedence when issue_created_at is available. v2 retires several
+    # v1-only H2 sections (Human summary / Sample outputs / Setup &
+    # hyper-parameters), so those checks short-circuit to a v2-skip PASS.
+    issue_created_at_iso_for_v2 = created_at.isoformat()[:10] if created_at is not None else None
+    is_v2 = _is_v2(body, issue_created_at_iso_for_v2)
+    V2_SKIPPED_CHECKS = {
+        "check_human_summary",  # `## Human summary` H2 retired in v2
+        "check_sample_outputs",  # `## Sample outputs` H2 retired in v2 (samples inline per Result)
+        "check_reproducibility",  # `## Setup & hyper-parameters` H2 retired in v2 (collapsed <details>)
+        "check_results_block",  # v2's Confidence line moved to AI TL;DR
+        "check_methodology_bullets",  # v2 Methodology is prose, not bullets
+    }
+
     def _maybe(name: str, fn) -> None:
         if name in skip_checks:
             print(f"SKIPPED: {name} (--skip-checks)", file=sys.stderr)
+            return
+        if is_v2 and name in V2_SKIPPED_CHECKS:
+            report.add(name, "PASS", "skipped (v2 template — section retired)")
             return
         fn()
 
