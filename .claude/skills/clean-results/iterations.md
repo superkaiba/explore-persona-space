@@ -136,6 +136,13 @@ Long iteration session covering title rewrites, template restructuring (v1 → v
 - **Rule:** When correlating a metric with a heavily zero-inflated outcome variable (>30% of conditions at the floor: firing rate = 0%, success rate = 0%, refusal rate = 100%, etc.), the headline Spearman r is mostly the floor-vs-nonfloor boundary, not a within-nonfloor gradient. Always report THREE views: full-sample correlation, nonfloor-restricted correlation, AND a binary floor/nonfloor classifier (AUC or accuracy). Flag the floor count explicitly in figure captions ("n at y=0 / total"). When a single trivial binary feature out-classifies the continuous metric on the floor/nonfloor task, record this in the prose — that's evidence the continuous metric isn't capturing the underlying signal.
 - **Folded into:** `principles.md` (new "Zero-inflated outcomes need three-view correlation reporting" bullet under reader-feedback principles).
 
+### Title rewritten after zero-inflation reframing — title and body framing must agree
+
+- **Before:** *...; pre-poisoning output-distribution similarity (teacher-forced JS divergence) correlates with firing (r = -0.528) but is not the mechanism (MODERATE confidence)*. The title still carried the headline number r = -0.528 and the framing "correlates but isn't the mechanism" even after the body had been reframed to expose that the apparent correlation was an artifact of zero-inflation.
+- **After:** *...; pre-poisoning similarity to canonical inputs (cosine, JS divergence) does not predict which prompts fire — the apparent correlation reflects zero-inflation (66% of variants at 0%) (MODERATE confidence)*. Title now agrees with the reframed body: "does not predict" + the load-bearing zero-inflation anchor.
+- **Rule:** When body analysis is reframed (here: from "correlates but isn't the mechanism" to "doesn't actually predict — apparent correlation is artifact"), update the title in the SAME edit. Title and body framing must agree; a body that walks back a headline number while leaving that number in the title is misleading at the most-read surface — readers who only skim the title get an obsolete claim. Easy to forget on multi-step iterations because the title sits in `gh issue edit --title`, not the body file.
+- **Folded into:** N/A — issue-specific reframing precedent. The general "title and body framing must agree" rule is implicit in `template.md` § Title conventions ("self-contained claim sentence") but worth recording explicitly because it's an easy regression on multi-step refinement sessions.
+
 ---
 
 ## How to add a new entry
