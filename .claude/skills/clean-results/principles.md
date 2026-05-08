@@ -371,3 +371,20 @@ strict-mode check.
   (`### Raw-output spot check (5 random rows)`); see
   `.claude/agents/analyzer.md` Step 1.5. Visible fishiness flows into
   the confidence rationale.
+- **Zero-inflated outcomes need three-view correlation reporting.**
+  When >30% of conditions are at the outcome's floor (firing rate = 0%,
+  success rate = 0%, refusal rate = 100%, etc.), the headline Spearman r
+  is mostly the floor-vs-nonfloor boundary, not a within-nonfloor
+  gradient. Report three views: (1) **full-sample correlation** (the
+  standard Spearman / Pearson r, dominated by the floor mass);
+  (2) **nonfloor-restricted correlation** (Spearman / Pearson on just
+  the conditions that are off the floor — does the metric predict the
+  outcome among conditions that aren't at the floor?);
+  (3) **binary floor/nonfloor classifier** (AUC or accuracy: does the
+  metric rank-separate floor from nonfloor cases?). Flag the floor
+  count explicitly in figure captions (`n at y=0 / total`). When a
+  trivial binary feature (e.g., "contains the trigger token") out-
+  classifies the continuous metric on the floor/nonfloor task, record
+  this in the prose — that's evidence the continuous metric isn't
+  capturing the underlying signal. See iterations.md (issue #276) for
+  a worked example.
