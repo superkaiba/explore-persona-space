@@ -7,9 +7,10 @@ Single source-of-truth for clean-result issue body shape. Used by the `analyzer`
 1. `lw-tldr-examples.md` — verbatim LW TL;DRs + 5-question drafting checklist.
 2. `lw-post-examples/` — 3 full LW research posts as exemplars (start with `03-em-realignment.md`, the closest structural match).
 3. `paper-caption-examples.md` — paper-style figure captions.
-4. This file — body shape + per-section conventions.
-5. `principles.md` — research-communication principles (Nanda, Perez, Chua, Hughes, Evans, LW style).
-6. `checklist.md` — pre-publish verification list (mechanically enforced by `verify_clean_result.py`).
+4. `iterations.md` — append-only log of past corrections with before/after examples and the rules they produced. Read this BEFORE drafting a new clean-result; many patterns recur, and we don't want to relearn the same lesson twice.
+5. This file — body shape + per-section conventions.
+6. `principles.md` — research-communication principles (Nanda, Perez, Chua, Hughes, Evans, LW style).
+7. `checklist.md` — pre-publish verification list (mechanically enforced by `verify_clean_result.py`).
 
 ---
 

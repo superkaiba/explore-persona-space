@@ -110,6 +110,12 @@ Key requirements:
 
 See `.claude/skills/clean-results/principles.md` for the research-communication rationale (Nanda, Perez, Chua, Hughes, Evans).
 
+**Iteration capture (clean-results feedback loop).** When the user corrects a clean-result draft body or title — anything from a one-word phrasing fix to a structural restructure — after applying the fix you MUST in the SAME response propose:
+- (a) An append to `.claude/skills/clean-results/iterations.md` (one H3 under the appropriate `## YYYY-MM-DD — issue #N (topic)` H2, with `**Before / After / Rule / Folded into**` block).
+- (b) IFF the rule generalizes — i.e., it would catch the same class of error in the next clean-result, not just a one-off factual fix — surgical edits to the relevant canonical file(s): `template.md`, `principles.md`, `paper-caption-examples.md`, `lw-tldr-examples.md`, `analyzer.md`, or the verifier.
+
+The user approves each before you write. Nothing folds in silently. The discipline is **always log; sometimes generalize** — not every correction is a rule, but every correction is a precedent worth recording. See `iterations.md` for format and seed entries from issue #276.
+
 ## Reproducibility Requirements (MANDATORY)
 
 Every experiment write-up MUST include a filled **Reproducibility Card** (all parameters to rerun from scratch — actual values, not "see config"). It lives at `## Setup & hyper-parameters` inside the Detailed report. That section MUST open with a short "why this experiment / why these parameters / alternatives considered" prose block so the rationale travels with the card. The `verify_clean_result.py` validator flags empty-cell sentinels (`{{`, `TBD`, `see config`, `default`) as FAIL.
