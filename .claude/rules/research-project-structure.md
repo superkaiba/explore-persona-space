@@ -13,7 +13,7 @@ globs:
 | Artifact | Lives at | Authoritative for |
 |---|---|---|
 | Per-run structured results (JSON) | `eval_results/<name>/run_result.json` + WandB Artifact | Raw numbers, reproducibility metadata |
-| Polished write-up per experiment | **GitHub clean-result issue** (label `clean-results`) | TL;DR + interpretation + confidence |
+| Polished write-up per experiment | **GitHub clean-result issue** (label `clean-results`) | Human TL;DR + AI TL;DR + AI Summary + confidence |
 | Headline-level findings | `RESULTS.md` | Cross-experiment claims a paper would cite |
 | Results index | `eval_results/INDEX.md` | Pointer table from issue # → result JSON path |
 | Ideas backlog | `docs/research_ideas.md` | Pre-issue brainstorm/promotion candidates |

@@ -229,6 +229,50 @@ understand why this experiment matters" in 1-2 sentences. This is not just
 polish: a Background that assumes familiarity with persona coupling or EM
 loses half the audience before the methodology.
 
+## LessWrong / Alignment Forum research-post style — origin of the AI TL;DR paragraph
+
+The `## AI TL;DR` H2 (added 2026-05-07) is a 3-5 sentence paragraph in
+the LessWrong research-post tradition. The audience pattern there is
+specific: technically literate, allergic to academic hedging, strongly
+rewarding of explicit calibration, and almost always skimming first and
+deep-reading second. The TL;DR paragraph determines whether anyone
+reads further, what the work gets cited *as*, and whether the reader
+walks away over- or under-confident.
+
+Four-beat structure (per the LW research-post guide adopted in the
+repo):
+
+1. **Setup** — one sentence: what problem, what models, what method.
+2. **Headline finding** — one sentence: the strongest concrete claim
+   with the key number and N inline.
+3. **Why it matters** — one sentence: takeaway for the broader research
+   program, not just for this experiment.
+4. **Scope / limitation** — one sentence: pre-empts the most obvious
+   objection (single seed, in-distribution only, narrow model family,
+   judge-based metric, etc.).
+
+Useful test from the LW guide: *would a reader who only reads the TL;DR
+walk away with an accurate, calibrated impression of the work? If
+they'd come away too excited, it's overclaiming. If they'd come away
+unsure what was done, it's underwriting.*
+
+Calibrated, first-person voice is the LW shibboleth — "we found",
+"I think", "~70% confident", "weak evidence for…" all read better than
+"results indicate" / "it has been shown" / unmarked "clearly". The
+verifier permits first-person hedges; the existing forbidden-stats
+list (no Cohen's d, no named tests in prose, no credence intervals
+inline) still applies.
+
+**Why a separate `## Human TL;DR` above the AI one.** The user
+sometimes wants to ship a pithier, more opinionated take than the
+AI's calibrated paragraph — either because the AI underweights an
+intuition the user has from running the experiment, or because the
+mentor-facing read deserves a one-line punchline that a 3-5 sentence
+LW paragraph can't capture. Reserving the topmost section for the
+user enforces the discipline that the human read is the FIRST thing a
+reader sees, not buried in a Detailed report. Drafts ship with a
+placeholder line; the user overwrites it post-promotion.
+
 ## #275 additions — what newcomers consistently trip on
 
 These four operational principles sharpen the rule above based on real
