@@ -123,7 +123,9 @@ A representative input/output:
 
 ### Result 1: {short claim title}
 
-![Figure 1: **{bolded lead claim, one sentence}**. {Panel definitions, sample sizes, conditions, color → class mapping — all self-contained per `paper-caption-examples.md`.}](https://raw.githubusercontent.com/<owner>/<repo>/<commit>/figures/<topic>/<name>.png)
+![{short alt text — 1-line accessibility label, NOT the full caption}](https://raw.githubusercontent.com/<owner>/<repo>/<commit>/figures/<topic>/<name>.png)
+
+**Figure 1.** *{Bolded lead-claim sentence in italic.}* {Panel definitions, sample sizes, conditions, color → class mapping — all self-contained per `paper-caption-examples.md`.}
 
 {1-2 paragraphs of LW-prose explaining the result. Lead with the headline number + comparison anchor ("X = 32.9% vs Y = 0/100, p = ..."). Cite specific conditions inline. Build to the interpretation in the last sentence.}
 
@@ -143,7 +145,9 @@ Sample outputs supporting this result:
 
 **Experimental delta:** {1-2 sentences on what changed (new variant set, new metric, new model, etc.). Full setup details still go in the collapsed Setup block above.}
 
-![Figure 3: **{bolded lead claim}**. {Same caption shape as the other figures.}](https://raw.githubusercontent.com/<owner>/<repo>/<commit>/figures/<topic>/<followup-name>.png)
+![{short alt text}](https://raw.githubusercontent.com/<owner>/<repo>/<commit>/figures/<topic>/<followup-name>.png)
+
+**Figure 3.** *{Bolded lead-claim sentence.}* {Same caption shape as the other figures.}
 
 {Prose + inline samples, same shape as Result 1.}
 
@@ -157,7 +161,7 @@ Sample outputs supporting this result:
 **Per-Result-section conventions.**
 
 - **Heading title carries the claim** in 5-12 words. Becomes the anchor target. Stable wording — don't refine without updating TL;DR anchors.
-- **Hero figure has a paper-style caption.** Bold lead-claim sentence-fragment + panel definitions + sample sizes + conditions + color mapping. See `paper-caption-examples.md` for verbatim examples and a 6-question caption checklist.
+- **Hero figure has a paper-style caption — and the caption is VISIBLE, not in alt text.** GitHub does not render `![caption](url)` alt text on the rendered page; readers see only the image. So put a short accessibility label in alt text (`![Figure 1: 4-bar chart of firing rates by token bin](url)`), and put the actual caption in a separate paragraph immediately below the figure: `**Figure N.** *Bolded lead-claim sentence in italic.* Panel definitions, sample sizes, conditions, color mapping...`. See `paper-caption-examples.md` for verbatim examples and a 6-question caption checklist.
 - **Prose explains the result, not the figure.** The reader should be able to skim either the figure caption OR the prose and walk away with the claim.
 - **Sample outputs go inline**, immediately after the prose, in fenced code blocks. NO separate `## Sample outputs` H2.
 - **Headline numbers go inline** in the prose + the figure caption. NO separate `## Headline numbers` H2.
@@ -193,7 +197,7 @@ v2 hard checks:
 - `## AI Summary` present, contains:
   - Exactly one `### Background` (>= 30 words, ≥1 prior `#<N>` ref).
   - Exactly one `### Methodology`.
-  - ≥1 `### Result N` (with optional `: <claim>` suffix). At least one Result section MUST contain a hero figure with a paper-style caption (≥30-word alt-text, leads with `**bolded fragment**` claim).
+  - ≥1 `### Result N` (with optional `: <claim>` suffix). At least one Result section MUST contain a hero figure followed by a visible caption paragraph starting with `**Figure N.**` (≥30 words, paper-style claim).
   - Exactly one `### Next steps`.
   - Optional collapsed `<details>` block with `<summary>Setup details</summary>` for reproducibility.
 - Title ends with `(HIGH | MODERATE | LOW confidence)` matching the `**Confidence:**` line in AI TL;DR.
@@ -201,7 +205,7 @@ v2 hard checks:
 
 v2 soft checks (WARN, not FAIL):
 
-- Each `### Result N` figure caption is paper-style (≥30 words, bold-fragment lead-in).
+- Each `### Result N` figure has a visible caption paragraph below it (paper-style: ≥30 words, starts with `**Figure N.**`, italic lead-claim, panel + N + condition info).
 - Sample-output fenced blocks appear under each `### Result N` (≥1 block per Result).
 - Headline numbers appear inline in `### Result N` prose AND in the figure caption.
 

@@ -22,6 +22,28 @@ A clean-result issue can mix LW prose register in the body with paper-style capt
 
 ---
 
+## Rendering captions on GitHub (visible, NOT alt-text)
+
+GitHub does not render markdown image alt text on the page — readers only see the image. So putting a long paper-style caption inside `![caption](url)` produces an image with no visible caption.
+
+**Convention.** Put a short accessibility label in alt text, then put the actual caption in a separate paragraph immediately below the figure:
+
+```markdown
+![Bar chart of trigger firing rates by token bin](https://raw.githubusercontent.com/.../figure1.png)
+
+**Figure 1.** *On the pretraining-poisoned Qwen3-4B, the trigger fires only on canonical `/anthropic/`-prefixed paths and at floor on every conceptual paraphrase tested.* Bars show `exact_target` rate per user-message condition (n=100 generations / condition, seed=42). 96 conditions span eight pre-registered bins: ...
+```
+
+Three rules for the visible caption paragraph:
+
+1. **Starts with `**Figure N.**`** (bolded label). The verifier looks for this pattern.
+2. **First sentence is italic + bolded lead-claim** (`*Bolded claim sentence.*` immediately after `**Figure N.**`). This is the assertion in assertion-evidence style.
+3. **Following sentences are the evidence** — panel labels, sample sizes, color → condition mapping, comparisons. Self-contained per the checklist below.
+
+This shape is what produces a *visible* paper-style caption on GitHub. The alt text is just an accessibility label for screen readers and broken-image fallback — keep it short (one line, no claim).
+
+---
+
 ## Examples — Sleeper Agents (Anthropic, 2024)
 
 Source: <https://arxiv.org/abs/2401.05566> (Hubinger, Denison, Mu, Lambert et al)
@@ -72,11 +94,15 @@ Or:
 
 — too telegraphic AND uses internal jargon ("Pingbang", "coref / NL / BPE / NN") without defining it. A reader from outside this codebase has no idea what "BPE" means here, or what "NN" means (nearest-neighbor? neural network?), or who "Pingbang" is.
 
-The corrected paper-style caption for the same figure:
+The corrected paper-style caption for the same figure (rendered as a separate paragraph below the image, NOT in alt text):
 
-> **Figure 1.** *On the published pretraining-poisoned Qwen3-4B (`sleepymalc/qwen3-4b-curl-script`), the trigger fires only on canonical `/anthropic/`-prefixed paths and at floor on every conceptual paraphrase tested.* Bars show `exact_target` rate per user-message condition (n=100 generations / condition, seed=42). 96 conditions span eight pre-registered bins: canonical `/anthropic/` paths (dark blue, n=2,600 trials pooled), AI-lab peer paths (n=1,200), cloud-infra paths (n=1,000), pure-meaning synonyms (n=600), bare-word "Anthropic" + system-prompt-identity probes (n=800), coreferential descriptions of Anthropic (n=300), and natural-language wrappers (n=100). Only canonical paths fire above 0/100. The clean-base Qwen3-4B-Base panel is uniformly 0/8,300 across all conditions.
+```markdown
+![Bar chart of trigger firing rates across token bins](https://raw.githubusercontent.com/.../figure1.png)
 
-— self-contained, every condition defined inline, sample sizes inline, baseline mentioned.
+**Figure 1.** *On the published pretraining-poisoned Qwen3-4B (`sleepymalc/qwen3-4b-curl-script`), the trigger fires only on canonical `/anthropic/`-prefixed paths and at floor on every conceptual paraphrase tested.* Bars show `exact_target` rate per user-message condition (n=100 generations / condition, seed=42). 96 conditions span eight pre-registered bins: canonical `/anthropic/` paths (dark blue, n=2,600 trials pooled), AI-lab peer paths (n=1,200), cloud-infra paths (n=1,000), pure-meaning synonyms (n=600), bare-word "Anthropic" + system-prompt-identity probes (n=800), coreferential descriptions of Anthropic (n=300), and natural-language wrappers (n=100). Only canonical paths fire above 0/100. The clean-base Qwen3-4B-Base panel is uniformly 0/8,300 across all conditions.
+```
+
+— self-contained, every condition defined inline, sample sizes inline, baseline mentioned, caption is visible (separate paragraph) not buried in alt text.
 
 ---
 
@@ -84,14 +110,16 @@ The corrected paper-style caption for the same figure:
 
 Before posting any figure, check:
 
-1. **Bolded lead claim** at the start? (One sentence, the assertion.)
-2. **Sample size** mentioned? (n per condition AND total.)
-3. **Panel labels defined**? ("(Left)", "(a)", color → condition mapping inline.)
-4. **Self-contained**? Could a reader who never reads the body understand what they're looking at?
-5. **No project-internal jargon**? (`coref`, `NN`, `Pingbang`, etc. defined OR replaced with plain term.)
-6. **Specific, not vague**? "Bars show X for condition Y" not "Various conditions illustrated".
+1. **Caption is a visible paragraph below the figure**, not in the `![alt](url)` alt-text? (GitHub does not render alt text on the page.)
+2. **Caption paragraph starts with `**Figure N.**`** followed by an italic bolded lead-claim sentence?
+3. **Bolded lead claim** asserts the result? (One sentence, the assertion — not "this figure shows".)
+4. **Sample size** mentioned? (n per condition AND total.)
+5. **Panel labels defined**? ("(Left)", "(a)", color → condition mapping inline.)
+6. **Self-contained**? Could a reader who never reads the body understand what they're looking at?
+7. **No project-internal jargon**? (`coref`, `NN`, `Pingbang`, etc. defined OR replaced with plain term.)
+8. **Specific, not vague**? "Bars show X for condition Y" not "Various conditions illustrated".
 
-If all 6 pass, the caption is paper-style. If not, revise.
+If all 8 pass, the caption is paper-style and renders correctly on GitHub. If not, revise.
 
 ---
 

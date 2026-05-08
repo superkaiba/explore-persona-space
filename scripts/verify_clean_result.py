@@ -690,7 +690,12 @@ def check_results_figure_captions(
 
     lines = results_block.splitlines()
     image_re = re.compile(r"!\[[^\]]*\]\(\S+?\)")
-    label_re = re.compile(r"^\s*\*\*\s*\w")  # **Main takeaways:**
+    # Bold-label paragraphs to skip (e.g. ``**Main takeaways:**``,
+    # ``**Confidence:**``). These are meta-labels, not captions.
+    # Pattern: starts with ``**``, contains a colon followed by ``**`` close
+    # (i.e. the bolded text ends with ``:``). Captions like ``**Figure 1.**``
+    # do NOT match because their bold ends with ``.`` not ``:``.
+    label_re = re.compile(r"^\s*\*\*[^*]*:\s*\*\*")  # **Main takeaways:**
     hr_re = re.compile(r"^\s*([-*_])\1{2,}\s*$")  # ---, ***, ___ horizontal rules
     # Single-line HTML comment kept for backward compat (legacy fixtures
     # use them in the caption slot — see test_caption_html_comment_only_fails).
