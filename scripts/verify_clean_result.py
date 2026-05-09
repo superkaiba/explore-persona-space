@@ -952,6 +952,74 @@ def check_confidence_phrasebook(body: str, report: Report) -> None:
     report.add("Confidence phrasebook", "PASS", "no ad-hoc hedges detected")
 
 
+def check_collapsible_sections(body: str, report: Report) -> None:
+    """WARN if H2/H3 sections aren't wrapped in `<details open><summary>...heading...</summary>`.
+
+    The dropdownable-headings convention (added 2026-05-09 after iterating on #284):
+    every ``## H2`` and ``### H3`` body section should sit inside a ``<details open>``
+    block whose ``<summary>`` carries the markdown heading itself, so the heading is
+    the click target on GitHub. Pattern (note the blank lines, which re-enable
+    markdown parsing inside the HTML block):
+
+        <details open>
+        <summary>
+
+        ## Heading
+
+        </summary>
+
+        ...content...
+
+        </details>
+
+    Exempt from the wrap: ``## AI Summary`` (container H2 with no body content of
+    its own — wrapping it would force users to click twice to reach a Result),
+    and ``## Human TL;DR`` placeholder-only drafts where the analyzer hasn't yet
+    written the body.
+
+    This check is a WARN, not a FAIL: pre-2026-05-09 drafts are grandfathered.
+    """
+    headings_to_check = [
+        ("## Human TL;DR", "h2"),
+        ("## AI TL;DR", "h2"),  # may carry "(human reviewed)" suffix
+        ("### Background", "h3"),
+        ("### Methodology", "h3"),
+        ("## Source issues", "h2"),
+    ]
+    # ### Result N: ... — variable suffix; match generically.
+    result_h3s = re.findall(r"^### Result \d+(?:\s|:)[^\n]*", body, re.MULTILINE)
+    for r in result_h3s:
+        headings_to_check.append((r.strip(), "h3"))
+
+    unwrapped: list[str] = []
+    for heading, _level in headings_to_check:
+        # Look for the heading line. Must be preceded (within ~3 lines) by
+        # ``<details`` and ``<summary>`` to count as wrapped.
+        idx = body.find("\n" + heading)
+        if idx < 0:
+            continue  # heading not present — other checks flag this
+        # Look back ~150 chars for the <summary> + <details> pair.
+        window = body[max(0, idx - 150) : idx]
+        if "<summary>" in window and "<details" in window:
+            continue
+        unwrapped.append(heading)
+
+    if unwrapped:
+        report.add(
+            "Collapsible sections",
+            "WARN",
+            f"{len(unwrapped)} section(s) not wrapped in <details open><summary>...</summary>: "
+            f"{unwrapped[:3]}{' ...' if len(unwrapped) > 3 else ''}. "
+            "See template.md § Heading-as-toggle convention.",
+        )
+        return
+    report.add(
+        "Collapsible sections",
+        "PASS",
+        "all H2/H3 body sections wrapped (heading-as-toggle convention)",
+    )
+
+
 def check_forbidden_stats(body: str, report: Report) -> None:
     """Flag forbidden statistical-framing language (effect sizes, named tests, etc.)."""
     hits: list[str] = []
@@ -1631,6 +1699,7 @@ KNOWN_CHECKS: frozenset[str] = frozenset(
         "check_reproducibility",
         "check_confidence_phrasebook",
         "check_forbidden_stats",
+        "check_collapsible_sections",
         "check_title",
         "check_narrative_consolidation",
     }
@@ -1752,6 +1821,10 @@ def run_all_checks(
         lambda: check_confidence_phrasebook(body, report),
     )
     _maybe("check_forbidden_stats", lambda: check_forbidden_stats(body, report))
+    _maybe(
+        "check_collapsible_sections",
+        lambda: check_collapsible_sections(body, report),
+    )
     _maybe("check_title", lambda: check_title(title, body, report))
     _maybe(
         "check_narrative_consolidation",

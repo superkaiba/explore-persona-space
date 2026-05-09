@@ -31,6 +31,35 @@ Single source-of-truth for clean-result issue body shape. Used by the `analyzer`
 ## Source issues   ← CONDITIONAL: only when ≥2 distinct prior #issues are referenced
 ```
 
+**Heading-as-toggle convention (added 2026-05-09 after iterating on #284):** every `## H2` and `### H3` section in the body — *except* `## AI Summary` itself, which is the parent container — is wrapped in a `<details open>` block where the `<summary>` carries the markdown heading inside, so the heading is the click target on GitHub and the section can be collapsed. Pattern:
+
+```markdown
+<details open>
+<summary>
+
+## Human TL;DR
+
+</summary>
+
+content...
+
+</details>
+```
+
+The blank lines around `## Human TL;DR` are required — they re-enable markdown parsing inside the HTML block. With them, GitHub renders `## Human TL;DR` as a real H2 (clickable to toggle), AND the verifier's `^## Human TL;DR` regex still matches because the heading is at column 0 of its own line. Without the blank lines, the heading renders as literal text "## Human TL;DR" inside a styled summary tag — wrong.
+
+The pattern applies to:
+- `## Human TL;DR`
+- `## AI TL;DR (human reviewed)`
+- `### Background`, `### Methodology`, each `### Result N: ...`, optional `### Next steps` (all inside `## AI Summary` — nest the `<details>` blocks)
+- `## Source issues` (when present)
+
+The `## AI Summary` heading itself is NOT wrapped — it's a container H2 with no body content of its own (just the H3 children + the existing `<details>` Setup-details block). Wrapping it would force users to click twice to reach a Result section.
+
+`<details open>` (open by default) is the default — the body should be readable on first view; the toggle is for collapsing content the reader doesn't want, not for hiding it on entry. Use `<details>` (collapsed by default) only for the Setup-details block, where reproducibility detail is intentionally tucked away.
+
+The `verify_clean_result.py` validator checks for the dropdownable pattern as a WARN (not FAIL): drafts created before 2026-05-09 are grandfathered, but new drafts should use it.
+
 That's it. Compare to v1 (archived): retired `## Human summary`, `## Setup & hyper-parameters`, `## WandB`, `## Sample outputs`, `## Headline numbers`, `## Artifacts`. All those contents are now either inline (samples + headline numbers) or in the collapsed `<details>` block (setup + WandB + artifacts). The "(human reviewed)" suffix on `## AI TL;DR` signals the AI-drafted TL;DR has been corrected by the human researcher; the separate `## Human TL;DR` above it is a user-only section, filled in by hand post-promotion (analyzer leaves a placeholder line; verifier checks H2 presence only and does NOT validate content).
 
 ---
