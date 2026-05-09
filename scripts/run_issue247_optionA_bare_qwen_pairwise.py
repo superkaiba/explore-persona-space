@@ -436,6 +436,8 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
+    _setup_env()  # loads .env so ANTHROPIC_API_KEY / HF_TOKEN are present
+
     EVAL_ROOT.mkdir(parents=True, exist_ok=True)
     TMP_DIR.mkdir(parents=True, exist_ok=True)
 
