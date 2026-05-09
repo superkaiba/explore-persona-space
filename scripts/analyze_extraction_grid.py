@@ -293,6 +293,20 @@ def _synthesize_c1_c2_per_q(
     return torch.stack(rows)  # (N_roles, n_q, D)
 
 
+class PositionNotInPerQSubsetError(RuntimeError):
+    """Raised when a caller asks for an r_per_token (or method_a) per-q slice at
+    a position that the sweep did not serialize.
+
+    Issue-263 runtime-bounce fix: `sweep_extraction_grid.py` now defaults
+    `--per-q-response-positions-subset 0,128`. r_per_token candidate cells at
+    response positions outside the subset have no per-q tensor to slice; H2
+    catches this exception in its loadable-cell try/except (the cell is
+    counted as "skipped" with a clear message rather than aborting the run).
+    Centroids at every response position are still on disk; H1 clustering
+    and the H3 descriptive trajectory figure are unaffected.
+    """
+
+
 def load_per_q_at_cell(  # noqa: C901
     centroid_root: Path,
     method: str,
@@ -303,6 +317,7 @@ def load_per_q_at_cell(  # noqa: C901
     layers_in_cache: list[int] | None = None,
     prompt_positions: list[int] | None = None,
     response_positions: list[int] | None = None,
+    per_q_response_positions_subset: list[int] | None = None,
 ) -> torch.Tensor:
     """Unified per-question hidden-state loader for any (method, position, layer) cell.
 
@@ -317,15 +332,23 @@ def load_per_q_at_cell(  # noqa: C901
     `_synthesize_c1_c2_per_q` — yielding a tensor that is mathematically
     identical to the round-2 broadcast tile.
 
+    Issue-263 runtime-bounce fix: r_per_token's per-q tensor is sliced along
+    the position axis to a configurable subset (default `[0, 128]`) at sweep
+    time, cutting per_q disk from ~119 GB to ~26 GB at 275 personas. The
+    `per_q_response_positions_subset` argument tells this loader which subset
+    is actually on disk — a request for any position outside the subset raises
+    `PositionNotInPerQSubsetError`. Pass `None` for legacy full-position
+    layouts.
+
     Per-q cache shapes by method (round 3):
         method_a              (n_q, n_layers, n_prompt_positions, D)  fp16  4-D
                               OR (n_q, n_layers, D) fp16 3-D legacy at i=-1
-        method_r_per_token    (n_q, n_layers, n_response_positions, D) fp16 4-D
-        method_b              (n_q, n_layers, D)                       fp16 3-D
-        method_bstar          (n_q, n_layers, D)                       fp16 3-D
+        method_r_per_token    (n_q, n_layers, n_per_q_subset, D)      fp16  4-D
+        method_b              (n_q, n_layers, D)                      fp16  3-D
+        method_bstar          (n_q, n_layers, D)                      fp16  3-D
         method_c1             SYNTHESIZED on-the-fly (no per-q file written)
         method_c2             SYNTHESIZED on-the-fly (no per-q file written)
-        method_c3             (n_q, n_layers, D)                       fp16 3-D
+        method_c3             (n_q, n_layers, D)                      fp16  3-D
 
     Returns (N_roles, n_qids, D) fp32 tensor. Roles missing from disk raise
     FileNotFoundError; use a try/except in the caller if optional.
@@ -379,14 +402,46 @@ def load_per_q_at_cell(  # noqa: C901
         if method == "a" or method == "a_per_token":
             cache_positions = prompt_positions
         elif method == "r_per_token":
-            cache_positions = response_positions
+            # Issue-263 runtime-bounce fix: prefer the explicit subset (the actual
+            # on-disk position axis). Fall back to response_positions for legacy
+            # caches written before the subset flag existed (when shape on disk
+            # equals len(response_positions)).
+            cache_positions = (
+                per_q_response_positions_subset
+                if per_q_response_positions_subset is not None
+                else response_positions
+            )
         else:
             cache_positions = None
         if cache_positions is None:
             raise RuntimeError(
                 f"4-D per_q cache at method={method} requires position list; none provided."
             )
+        # Defensive: the on-disk axis length must match cache_positions exactly.
+        # If it doesn't, we are looking at a stale cache from a different subset
+        # (e.g. the sweep was rerun with a different --per-q-response-positions-subset
+        # since the centroids were written) — fail loudly so the experimenter rebuilds.
+        n_pos_on_disk = sample.shape[2]
+        if n_pos_on_disk != len(cache_positions):
+            raise RuntimeError(
+                f"per_q axis-2 length {n_pos_on_disk} does not match "
+                f"len(cache_positions)={len(cache_positions)} for method={method}. "
+                f"This usually means the per-q cache was written with a different "
+                f"--per-q-response-positions-subset than the analyzer was passed. "
+                f"Re-run sweep_extraction_grid.py with a consistent subset, or "
+                f"pass the matching list via sweep_metadata.json."
+            )
         if position not in cache_positions:
+            # Distinguish "asked for a position the sweep skipped on purpose"
+            # (PositionNotInPerQSubsetError, callers can tolerate) from the
+            # plain index-out-of-bounds case (RuntimeError, programmer error).
+            if method == "r_per_token" and per_q_response_positions_subset is not None:
+                raise PositionNotInPerQSubsetError(
+                    f"r_per_token per-q at position={position} not on disk; "
+                    f"sweep wrote subset {cache_positions}. "
+                    f"Re-run sweep with --per-q-response-positions-subset including "
+                    f"this position to populate it."
+                )
             raise RuntimeError(
                 f"Requested position {position} but per_q cache only has positions "
                 f"{cache_positions}."
@@ -506,6 +561,7 @@ def compute_h1_clustering(  # noqa: C901
     layers_in_cache: list[int] | None = None,
     prompt_positions: list[int] | None = None,
     response_positions: list[int] | None = None,
+    per_q_response_positions_subset: list[int] | None = None,
     sweep_manifest_total_cells: int | None = None,
 ) -> dict:
     """Cluster cells by 1 - Pearson r of mean-centered cosine matrix off-diagonals.
@@ -586,6 +642,7 @@ def compute_h1_clustering(  # noqa: C901
                     layers_in_cache=layers_in_cache,
                     prompt_positions=prompt_positions,
                     response_positions=response_positions,
+                    per_q_response_positions_subset=per_q_response_positions_subset,
                 )
                 cents = per_q_block.mean(dim=1)  # (N, D)
                 per_method_train_agg.setdefault(method, "train_aggregated")
@@ -925,6 +982,7 @@ def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one func
     layers_in_cache: list[int] | None = None,
     prompt_positions: list[int] | None = None,
     response_positions: list[int] | None = None,
+    per_q_response_positions_subset: list[int] | None = None,
 ) -> dict:
     """Compute H2 — per-persona discrimination AUC with winner's-curse fix.
 
@@ -947,6 +1005,23 @@ def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one func
     candidates = candidate_cells(cells)
     print(f"\n[H2] Evaluating {len(candidates)} candidate cells in their own activation space...")
     print(f"  N personas = {n_personas}; candidate methods = {sorted(H2_CANDIDATE_METHODS)}")
+    # Issue-263 runtime-bounce fix: r_per_token's per-q tensor is sliced to a
+    # subset of response positions. Cells outside the subset cannot serve as
+    # H2 candidates (no per-q to score), but they are not silently dropped — we
+    # report the count up front and again per skipped cell.
+    if per_q_response_positions_subset is not None and response_positions is not None:
+        dropped_r_positions = [
+            p for p in response_positions if p not in per_q_response_positions_subset
+        ]
+        if dropped_r_positions:
+            n_r_dropped = len(dropped_r_positions) * len({lyr for (_, _, lyr) in candidates})
+            print(
+                f"  [H2] r_per_token candidate cells at response positions "
+                f"{dropped_r_positions} are NOT loadable (per-q subset = "
+                f"{per_q_response_positions_subset}). Estimated cells skipped: "
+                f"~{n_r_dropped} (kept positions: {per_q_response_positions_subset}).",
+                flush=True,
+            )
 
     # Per-cell storage: we hold ONLY the (B+1, N) selection-AUC matrices and per-cell
     # train-only direction tensors used for downstream test AUC. Activations are
@@ -972,6 +1047,7 @@ def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one func
     has_dir: dict[tuple[str, int, int], np.ndarray] = {}
     n_skipped_cells = 0
 
+    n_skipped_subset_cells = 0
     for cell_idx, cell in enumerate(candidates):
         method, position, layer = cell
         try:
@@ -985,6 +1061,7 @@ def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one func
                 layers_in_cache=layers_in_cache,
                 prompt_positions=prompt_positions,
                 response_positions=response_positions,
+                per_q_response_positions_subset=per_q_response_positions_subset,
             )
             acts_val = load_per_q_at_cell(
                 centroid_root,
@@ -996,6 +1073,7 @@ def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one func
                 layers_in_cache=layers_in_cache,
                 prompt_positions=prompt_positions,
                 response_positions=response_positions,
+                per_q_response_positions_subset=per_q_response_positions_subset,
             )
             acts_test = load_per_q_at_cell(
                 centroid_root,
@@ -1007,7 +1085,19 @@ def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one func
                 layers_in_cache=layers_in_cache,
                 prompt_positions=prompt_positions,
                 response_positions=response_positions,
+                per_q_response_positions_subset=per_q_response_positions_subset,
             )
+        except PositionNotInPerQSubsetError as exc:
+            # Expected when the sweep skipped this position by design.
+            n_skipped_subset_cells += 1
+            n_skipped_cells += 1
+            if cell_idx < 5 or cell_idx % 50 == 0:
+                # Sample-print to avoid a flood of identical messages.
+                print(
+                    f"  [H2] cell {cell} skipped (per-q subset): {exc}",
+                    flush=True,
+                )
+            continue
         except (FileNotFoundError, RuntimeError) as exc:
             print(
                 f"  [H2] cell {cell} not loadable ({exc}); skipping (no per-q cache).",
@@ -1068,7 +1158,8 @@ def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one func
         if (cell_idx + 1) % max(1, len(candidates) // 20) == 0:
             print(
                 f"  [H2] processed cell {cell_idx + 1}/{len(candidates)} "
-                f"(skipped so far: {n_skipped_cells})",
+                f"(skipped so far: {n_skipped_cells}, "
+                f"of which {n_skipped_subset_cells} due to per-q subset)",
                 flush=True,
             )
 
@@ -1077,6 +1168,7 @@ def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one func
             "verdict": "FAIL",
             "reason": "No candidate cells were loadable (per-q caches missing).",
             "n_skipped_cells": n_skipped_cells,
+            "n_skipped_subset_cells": n_skipped_subset_cells,
         }
 
     # ── Argmax over loaded cells per persona ──
@@ -1109,6 +1201,7 @@ def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one func
                 layers_in_cache=layers_in_cache,
                 prompt_positions=prompt_positions,
                 response_positions=response_positions,
+                per_q_response_positions_subset=per_q_response_positions_subset,
             ).float()
             ref_acts_train = load_per_q_at_cell(
                 centroid_root,
@@ -1120,6 +1213,7 @@ def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one func
                 layers_in_cache=layers_in_cache,
                 prompt_positions=prompt_positions,
                 response_positions=response_positions,
+                per_q_response_positions_subset=per_q_response_positions_subset,
             ).float()
             ref_cent = ref_acts_train.mean(dim=1)  # (N, D)
             ref_score_test = (ref_acts_test @ ref_cent.t()).numpy()
@@ -1169,6 +1263,7 @@ def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one func
             layers_in_cache=layers_in_cache,
             prompt_positions=prompt_positions,
             response_positions=response_positions,
+            per_q_response_positions_subset=per_q_response_positions_subset,
         ).float()  # (N, n_test, D)
         D = ref_acts_test_rand.shape[-1]
         random_null_test_aucs = np.zeros((n_random_nulls, n_personas))
@@ -1246,6 +1341,12 @@ def compute_h2(  # noqa: C901  -- multi-stage analysis is intentionally one func
         "n_personas_filtered": n_filtered,
         "n_candidate_cells_loaded": len(cell_keys_loaded),
         "n_candidate_cells_skipped": n_skipped_cells,
+        "n_candidate_cells_skipped_per_q_subset": n_skipped_subset_cells,
+        "per_q_response_positions_subset": (
+            list(per_q_response_positions_subset)
+            if per_q_response_positions_subset is not None
+            else None
+        ),
         "frac_beat_default_unfiltered": frac_beat,
         "frac_beat_default_filtered": frac_beat_filtered,
         "delta_auc_mean": float(np.nanmean(delta_arr)) if delta_finite_mask.any() else float("nan"),
@@ -1326,6 +1427,7 @@ def compute_h3(  # noqa: C901
     reference: tuple[str, int, int],
     response_positions: list[int],
     layers_in_cache: list[int] | None = None,
+    per_q_response_positions_subset: list[int] | None = None,
 ) -> dict:
     """Compute H3 response-token ramp using per-question hidden states (C4 fix).
 
@@ -1362,6 +1464,9 @@ def compute_h3(  # noqa: C901
 
     if has_r_per_q:
         # Load per-question hidden states at every (t, layer=ref_layer) cell.
+        # Issue-263 runtime-bounce fix: only positions in
+        # `per_q_response_positions_subset` are on disk; others raise
+        # PositionNotInPerQSubsetError, which we treat the same as a missing file.
         for t in response_positions:
             try:
                 acts = load_per_q_at_cell(
@@ -1373,9 +1478,11 @@ def compute_h3(  # noqa: C901
                     test_qids,
                     layers_in_cache=layers_in_cache,
                     response_positions=response_positions,
+                    per_q_response_positions_subset=per_q_response_positions_subset,
                 )  # (N, n_test, D) fp32
                 available_t_per_q[t] = acts
             except (FileNotFoundError, RuntimeError) as exc:
+                # PositionNotInPerQSubsetError is a RuntimeError subclass — same handling.
                 print(f"  [H3] r_per_token per-q at t={t} unavailable: {exc}", flush=True)
 
     # Always also collect centroids (for the descriptive trajectory figure across all t).
@@ -1792,6 +1899,19 @@ def main():  # noqa: C901
         if args.response_token_positions
         else (sweep_meta.get("response_token_positions") if sweep_meta else None)
     )
+    # Issue-263 runtime-bounce fix: r_per_token's per-q tensor is sliced to a
+    # subset of response positions at sweep time. The analyzer reads the subset
+    # from sweep_metadata.json so `load_per_q_at_cell` indexes the correct axis.
+    # Legacy caches (no metadata field) default to full response_positions.
+    per_q_response_positions_subset = (
+        sweep_meta.get("per_q_response_positions_subset") if sweep_meta else None
+    )
+    if per_q_response_positions_subset is None and response_positions is not None:
+        # Legacy cache compatibility: assume the whole response_positions list was written.
+        # The shape-mismatch defensive check inside load_per_q_at_cell will catch a stale
+        # cache if this assumption is wrong.
+        per_q_response_positions_subset = list(response_positions)
+    print(f"  per_q_response_positions_subset = {per_q_response_positions_subset}")
 
     # ── Cells manifest (C5 fix): denominator for H1 manifest check ──
     cells_manifest_path = centroid_root / "cells_manifest.json"
@@ -1816,6 +1936,7 @@ def main():  # noqa: C901
         layers_in_cache=layers_in_cache,
         prompt_positions=prompt_positions,
         response_positions=response_positions,
+        per_q_response_positions_subset=per_q_response_positions_subset,
         sweep_manifest_total_cells=sweep_manifest_total_cells,
     )
 
@@ -1849,6 +1970,7 @@ def main():  # noqa: C901
                 layers_in_cache=layers_in_cache,
                 prompt_positions=prompt_positions,
                 response_positions=response_positions,
+                per_q_response_positions_subset=per_q_response_positions_subset,
             )
         except (FileNotFoundError, RuntimeError) as exc:
             h2_result = {"verdict": "SKIPPED", "reason": f"H2 failed: {exc}"}
@@ -1866,6 +1988,7 @@ def main():  # noqa: C901
             reference,
             h3_response_positions,
             layers_in_cache=layers_in_cache,
+            per_q_response_positions_subset=per_q_response_positions_subset,
         )
     except (FileNotFoundError, RuntimeError) as exc:
         h3_result = {"verdict": "SKIPPED", "reason": f"H3 failed: {exc}"}
@@ -1917,6 +2040,7 @@ def main():  # noqa: C901
                 layers_in_cache=layers_in_cache,
                 prompt_positions=prompt_positions,
                 response_positions=response_positions,
+                per_q_response_positions_subset=per_q_response_positions_subset,
             )  # (N, n_q, D)
             # noise_floor_cross_half expects (N, n_q, n_layers, D); add a singleton layer dim.
             acts_4d = acts_full.unsqueeze(2).float()  # (N, n_q, 1, D)

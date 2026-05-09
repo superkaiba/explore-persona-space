@@ -76,6 +76,20 @@ DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 DEFAULT_LAYERS_FULL = list(range(28))
 DEFAULT_PROMPT_POSITIONS = [-5, -4, -3, -2, -1]
 DEFAULT_RESPONSE_POSITIONS = [0, 1, 2, 4, 8, 16, 32, 64, 128]
+# Disk-budget fix (issue-263 runtime bounce): the per-question r_per_token cache
+# was originally written at every response position (shape (n_q, n_layers, 9, D)),
+# producing ~433 MB / persona x 275 = 119 GB on disk — which alone exceeds the
+# headroom on a 200 GB pod volume after accounting for method_a (66 GB), method_caa
+# (66 GB), and the b/bstar/c-family caches (~52 GB). H3's headline paired test only
+# consumes per_q at t=0 and t=128 (see `compute_h3` in `analyze_extraction_grid.py`,
+# specifically the `headline_per_q_paths_ok` branch). Restricting the per-q write
+# to the subset cuts r_per_token's per-q footprint from 119 GB → ~26 GB while
+# preserving the H3 signal exactly. Per-(pos, layer) centroids are still written
+# at every response position — the descriptive trajectory figure and H1 clustering
+# are unaffected. The H2 candidate set for r_per_token shrinks proportionally
+# (9 -> 2 positions x 28 layers = 56 cells instead of 252); this is logged
+# explicitly by the analyzer so the reduction is loud, not silent.
+DEFAULT_PER_Q_RESPONSE_POSITIONS_SUBSET = [0, 128]
 DEFAULT_METHODS = ["a", "b", "bstar", "c1", "c2", "c3", "r_per_token", "caa"]
 DEFAULT_HIDDEN_DIM = 3584  # Qwen2.5-7B-Instruct
 DEFAULT_N_LAYERS = 28
@@ -150,10 +164,36 @@ def _build_run_metadata(args: argparse.Namespace, n_roles: int, n_questions: int
         "layers": parse_int_list(args.layers),
         "prompt_token_positions": parse_int_list(args.prompt_token_positions),
         "response_token_positions": parse_int_list(args.response_token_positions),
+        "per_q_response_positions_subset": _resolve_per_q_response_subset(args),
         "methods": [m.strip() for m in args.methods.split(",")],
         "max_new_tokens": args.max_new_tokens,
         "reuse_cache": args.reuse_cache,
     }
+
+
+def _resolve_per_q_response_subset(args: argparse.Namespace) -> list[int]:
+    """Resolve the --per-q-response-positions-subset CLI flag.
+
+    Returns the list of response positions whose per-question hidden states are
+    serialized to `method_r_per_token/<role>__per_q.pt`. Centroids at the full
+    `--response-token-positions` grid are written regardless. See the
+    `DEFAULT_PER_Q_RESPONSE_POSITIONS_SUBSET` docstring for rationale.
+
+    Empty / "none" / "all" / explicit list semantics:
+      - "all" -> every position in --response-token-positions (legacy 4-D layout).
+      - "" / "none" -> no per-q write at all (centroids only).
+      - "0,128" (default) -> the H3 headline subset.
+    The resolved list is intersected with --response-token-positions; positions
+    outside that set are silently dropped (the cell does not exist).
+    """
+    response_positions = parse_int_list(args.response_token_positions)
+    raw = (args.per_q_response_positions_subset or "").strip().lower()
+    if raw == "all":
+        return list(response_positions)
+    if raw in ("", "none"):
+        return []
+    requested = parse_int_list(args.per_q_response_positions_subset)
+    return [p for p in requested if p in response_positions]
 
 
 # ── Cache-shape assertion (Stage 0b) ─────────────────────────────────────────
@@ -561,6 +601,7 @@ def extract_response_methods(  # noqa: C901
     do_r_per_token: bool,
     save_per_q: bool = True,
     train_qid_set: set[int] | None = None,
+    per_q_response_positions_subset: list[int] | None = None,
 ) -> dict[str, dict[str, dict[tuple[int, int], torch.Tensor]]]:
     """Single forward pass per (role, response) yields hidden states at:
     - layer x every response-token-index in `response_positions` (R_per_token)
@@ -571,12 +612,25 @@ def extract_response_methods(  # noqa: C901
 
     Note: Method B / B* have a single position slot (treated as position=0 for
     file-layout convenience); R_per_token has n_pos x n_layers cells.
+
+    `per_q_response_positions_subset` controls which response positions are
+    serialized to `method_r_per_token/<role>__per_q.pt`. If None (legacy), all
+    `response_positions` are written. If a list, only those positions are
+    serialized — the per-q tensor shape becomes (n_q, n_layers, len(subset), D).
+    Per-(pos, layer) centroids are always written at every position. See the
+    runtime-bounce fix in issue #263 for context.
     """
+    if per_q_response_positions_subset is None:
+        per_q_response_positions_subset = list(response_positions)
+    # Defensive: subset must be ordered the same as response_positions and only
+    # contain values present in response_positions.
+    per_q_subset = [p for p in response_positions if p in set(per_q_response_positions_subset)]
     print(f"\n{'=' * 60}")
     print("Methods B / B* / R_per_token: response-side hidden state extraction")
     print(f"  Roles: {len(responses)}, Layers: {len(layers)}")
     if do_r_per_token:
-        print(f"  R_per_token positions: {response_positions}")
+        print(f"  R_per_token positions (centroids): {response_positions}")
+        print(f"  R_per_token positions (per-q cache): {per_q_subset}")
     print(f"  Methods: B={do_b}, B*={do_bstar}, R_per_token={do_r_per_token}")
     print(f"{'=' * 60}\n")
 
@@ -636,7 +690,11 @@ def extract_response_methods(  # noqa: C901
             #   R_per_token: (n_q, n_layers, n_response_positions, D) fp16 (B1/C4 fix)
             b_per_q_buf: list[torch.Tensor] | None = [] if (do_b and save_per_q) else None
             bstar_per_q_buf: list[torch.Tensor] | None = [] if (do_bstar and save_per_q) else None
-            r_per_q_buf: list[torch.Tensor] | None = [] if (do_r_per_token and save_per_q) else None
+            # r_per_q_buf is None iff (a) we are not saving per-q at all, OR
+            # (b) the per-q subset is empty. Both cases skip the per-q write.
+            r_per_q_buf: list[torch.Tensor] | None = (
+                [] if (do_r_per_token and save_per_q and per_q_subset) else None
+            )
 
             n_skipped = 0
             for item_idx, item in enumerate(items):
@@ -698,23 +756,25 @@ def extract_response_methods(  # noqa: C901
                             row_layers.append(resp.mean(dim=0))
                     bstar_per_q_buf.append(torch.stack(row_layers).to(torch.float16))
 
-                # Per-q row for R_per_token: (n_layers, n_response_positions, D) fp16
-                if r_per_q_buf is not None:
+                # Per-q row for R_per_token: (n_layers, len(per_q_subset), D) fp16.
+                # Only the subset of response positions is serialized; the full
+                # `response_positions` list still drives centroid writes below.
+                if r_per_q_buf is not None and per_q_subset:
                     layer_rows = []
                     for lyr in layers:
                         hs = cap.captured[lyr]
                         pos_vecs: list[torch.Tensor] = []
-                        for t in response_positions:
+                        for t in per_q_subset:
                             tok_pos = prompt_len + t
                             if tok_pos >= full_len:
                                 # Response shorter than this position; mask with NaN.
                                 pos_vecs.append(torch.full((hs.shape[-1],), float("nan")))
                             else:
                                 pos_vecs.append(hs[0, tok_pos, :].float().cpu())
-                        layer_rows.append(torch.stack(pos_vecs))  # (n_pos, D)
+                        layer_rows.append(torch.stack(pos_vecs))  # (subset, D)
                     r_per_q_buf.append(
                         torch.stack(layer_rows).to(torch.float16)
-                    )  # (n_layers, n_pos, D)
+                    )  # (n_layers, len(subset), D)
 
                 for lyr in layers:
                     hs = cap.captured[lyr]
@@ -1145,6 +1205,20 @@ def main():  # noqa: C901
         help="Comma-separated response-side token indices, e.g. '0,1,2,4,8,16,32,64,128'",
     )
     parser.add_argument(
+        "--per-q-response-positions-subset",
+        type=str,
+        default=",".join(str(x) for x in DEFAULT_PER_Q_RESPONSE_POSITIONS_SUBSET),
+        help=(
+            "Comma-separated response positions whose per-question hidden states are "
+            "serialized to method_r_per_token/<role>__per_q.pt. Pass 'all' to write "
+            "every position in --response-token-positions (legacy 4-D layout, "
+            "~119 GB at 275 personas; this is what caused the issue-263 ENOSPC). "
+            "Pass 'none' or the empty string to skip the per-q write entirely "
+            "(centroids only). Default '0,128' is the H3 headline subset and "
+            "trims the per-q footprint to ~26 GB at 275 personas."
+        ),
+    )
+    parser.add_argument(
         "--methods",
         type=str,
         default=",".join(DEFAULT_METHODS),
@@ -1204,6 +1278,7 @@ def main():  # noqa: C901
         args.layers = "0,7"
         args.prompt_token_positions = "-1,-2"
         args.response_token_positions = "0,1"
+        args.per_q_response_positions_subset = "0,1"  # smoke mode: write per-q at all 2
         args.n_questions = 4
         args.n_personas = 2
         args.max_new_tokens = 8
@@ -1221,7 +1296,12 @@ def main():  # noqa: C901
     layers = parse_int_list(args.layers)
     prompt_positions = parse_int_list(args.prompt_token_positions)
     response_positions = parse_int_list(args.response_token_positions)
+    per_q_response_subset = _resolve_per_q_response_subset(args)
     methods = parse_method_list(args.methods)
+    print(
+        f"  per_q_response_positions_subset = {per_q_response_subset} "
+        f"(of full response_positions = {response_positions})"
+    )
 
     # Train-qid slice for the B2 fix (train-only centroid emission). Empty string disables.
     train_qid_set: set[int] | None = None
@@ -1348,6 +1428,7 @@ def main():  # noqa: C901
             do_r_per_token=do_r,
             save_per_q=True,
             train_qid_set=train_qid_set,
+            per_q_response_positions_subset=per_q_response_subset,
         )
 
     # ── Method C variants ──
