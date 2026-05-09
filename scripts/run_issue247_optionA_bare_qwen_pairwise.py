@@ -115,6 +115,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 from run_issue247_orchestrator import (  # noqa: E402
     DATA_QUESTIONS,
     EVAL_PERSONAS,
+    _setup_env,
 )
 
 assert len(DATA_QUESTIONS) >= N_QUESTIONS_FOR_GEN, (
