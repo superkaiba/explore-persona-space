@@ -387,6 +387,25 @@ strict-mode check.
   metrics") — not as a claim about pre-registration discipline. The
   reader sees the threshold and understands its role; they don't see
   "we pre-registered this."
+- **Don't name protocol-internal thresholds in body prose.** Same family
+  as the pre-registration rule above. Labels like "PROCEED threshold",
+  "STOP threshold", "K1 threshold", "kill criterion", "fire-rate gate",
+  "go/no-go threshold", "K1 STOP verdict", "falsification direction"
+  are project-internal protocol jargon (typically inherited from the
+  experimental plan's gate machinery). They do NOT appear in the AI
+  TL;DR, AI Summary, or any narrative prose visible to a low-context
+  reader. The threshold *number* (e.g., 3%, 30%) is fine when
+  load-bearing for understanding — but introduce it in plain prose
+  ("...above the 0.51% baseline but below the canonical 91.2% rate",
+  or "no candidate reached 30% switching, the level a fully-recovered
+  trigger would produce"). Put the protocol's internal label and any
+  decision-rule machinery in the collapsed
+  `<details><summary>Setup details</summary>` block as a numerical
+  fact alongside the threshold ("continuation threshold = 3%, set at
+  ~6× the parent's 0.51% pooled-other-49 baseline"). Don't say
+  "the kill criterion fired in the falsification direction" — say
+  "the top candidate barely scratched noise" and put the 3% number
+  with its rationale in Setup details.
 - **Minimize jargon. Define what survives.** Project-internal
   compound nouns (`clean-base`, `cosine-L10`, `Bin A`, `setup-env-v4-mix-80B-conv100`)
   are jargon-by-default. Before introducing one, ask: can a plain
