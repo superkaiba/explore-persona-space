@@ -1792,9 +1792,10 @@ def phase4_figures(out_dir: Path, fig_root: Path) -> dict[str, Any]:
     ax.legend(fontsize=8)
     savefig_paper(fig, fig_root / "sign_check")
 
-    # Length panel — 10 personas need a 10-color palette (the 4-color palette
-    # used elsewhere recycles colours across personas, hiding individuals).
-    length_palette = paper_palette(len(HEADLINE_PERSONAS))
+    # Length panel — 10 personas need a 10-color palette. paper_palette caps
+    # at 8 (colorblind-safe Wong palette), so use matplotlib's tab10 colormap
+    # for this one figure to keep individual personas distinguishable.
+    length_palette = [plt.cm.tab10(i) for i in range(len(HEADLINE_PERSONAS))]
     fig, ax = plt.subplots(figsize=(8, 4))
     coeffs_to_plot = [str(c) for c in COEFFS_POSITIVE]
     for i, p in enumerate(HEADLINE_PERSONAS):
