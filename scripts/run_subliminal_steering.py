@@ -133,6 +133,13 @@ NEUTRAL_AXIS_DISTANCE_GATE = (
     0.6  # relaxed 0.5→0.6 (user-authorized 2026-05-07; see NEUTRAL_PROMPT comment)
 )
 NEUTRAL_AXIS_DISTANCE_HALT = 0.7  # for the N=12 supplementary check (§8 #3)
+# §8 #3 downgraded from halt to informational (user-authorized 2026-05-09).
+# Rationale: the supplementary pair {helpful_assistant, qwen_default} is excluded
+# from the H1/H2 binding rule precisely because it sits on the assistant axis at
+# L20. A high cos(neutral, qwen_default) confirms a known property of
+# Qwen2.5-Instruct, not a pipeline bug. Diagnostic still recorded in
+# neutral_prompt_axis_check.json; cite as Standing Caveat in the clean-result.
+NEUTRAL_AXIS_DISTANCE_HALT_IS_INFORMATIONAL = True
 H2_GRADIENT_HALT = 0.2
 H2_GRADIENT_WARN = 0.4
 
@@ -455,10 +462,20 @@ def phase1_extract_centroids(
             f"{NEUTRAL_AXIS_DISTANCE_GATE}. Swap to alternative neutral prompt."
         )
     if n12_gate_halt:
-        raise RuntimeError(
-            f"§8 #3 gate FAILED: max |cos(neutral, on_axis_pair)| under N=12 = "
-            f"{n12_max_abs:.3f} > {NEUTRAL_AXIS_DISTANCE_HALT}. Halt before Phase 2."
-        )
+        if NEUTRAL_AXIS_DISTANCE_HALT_IS_INFORMATIONAL:
+            logger.warning(
+                "§8 #3 (informational): max |cos(neutral, on_axis_pair)| under "
+                "N=12 = %.3f > %.2f. Continuing — supplementary pair is "
+                "descriptive-only; this is a known Qwen2.5-Instruct property, "
+                "not a pipeline bug. Cite as Standing Caveat.",
+                n12_max_abs,
+                NEUTRAL_AXIS_DISTANCE_HALT,
+            )
+        else:
+            raise RuntimeError(
+                f"§8 #3 gate FAILED: max |cos(neutral, on_axis_pair)| under N=12 = "
+                f"{n12_max_abs:.3f} > {NEUTRAL_AXIS_DISTANCE_HALT}. Halt before Phase 2."
+            )
 
     # ---- §11.17 / §8 #5 L20 baseline norm + perturbation ratio -----------
     base_norm_mean, base_norm_per_q = _l20_residual_norms(
