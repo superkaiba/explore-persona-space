@@ -1,0 +1,44 @@
+{
+  "equivalence_check_c0": {
+    "persona": "software_engineer",
+    "coefficient": 0.0,
+    "max_abs_l20_deviation": 0.5,
+    "batched_string": "The most effective approach combines multiple methods:\n\n**Core strategies:**\n- **Immersion**: Surround yourself with the language through conversation, media, and daily use\n- **Regular practice**: Consistency is key - even 10-15 minutes daily is better than cramming\n- **Active learning**: Speak,",
+    "sequential_string": "The most effective approach combines multiple methods:\n\n**Core strategies:**\n- **Immersion**: Surround yourself with the language through conversation, media, and daily use\n- **Regular practice**: Consistency is key - even 10-15 minutes daily is better than cramming\n- **Active learning**: Speak,",
+    "tol": 1.0,
+    "passes": true
+  },
+  "equivalence_check_c2": {
+    "persona": "software_engineer",
+    "coefficient": 2.0,
+    "max_abs_l20_deviation": 0.5,
+    "batched_string": "The most effective approach combines multiple methods:\n\n**Language learning is most effective when it's:**\n\n1. **Comprehensive**: Includes listening, speaking, reading, and writing\n\n2. **Active**: Involves regular practice and production rather than passive study\n\n3. **Contextualized**: Learning vocabulary and grammar in",
+    "sequential_string": "The most effective approach combines multiple methods:\n\n**Language learning is most effective when it's:**\n\n1. **Comprehensive**: Includes listening, speaking, reading, and writing\n\n2. **Active**: Involves regular practice and production rather than passive study\n\n3. **Contextualized**: Learning vocabulary and grammar in",
+    "tol": 1.0,
+    "passes": true
+  },
+  "replay_c0_byte_identical": true,
+  "replay_c0_replay_a_first_chars": "The best way to learn a new language combines several approaches:\n\n**Foundational Techniques:**\n1. **Immersive experienc",
+  "replay_c0_replay_b_first_chars": "The best way to learn a new language combines several approaches:\n\n**Foundational Techniques:**\n1. **Immersive experienc",
+  "iter1_vs_iter12_byte_identical": true,
+  "iter1_vs_iter12_n_completions": 100,
+  "metadata": {
+    "timestamp": "2026-05-09T09:25:43.452839+00:00",
+    "git": {
+      "commit": "63f0cbddf42e8282599bdd36192a4830aa60eb63",
+      "branch": "issue-267",
+      "dirty": true,
+      "n_changed_files": 14
+    },
+    "env": {
+      "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+      "hostname": "e44b2ad8ba4c",
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_count": 1,
+      "transformers": "5.5.0",
+      "trl": "0.29.1"
+    }
+  }
+}

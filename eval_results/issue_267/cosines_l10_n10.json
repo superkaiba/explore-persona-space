@@ -1,0 +1,15 @@
+{
+  "software_engineer": 0.5286361439742218,
+  "kindergarten_teacher": 0.4160613103479992,
+  "data_scientist": 0.30296852377514283,
+  "medical_doctor": 0.1589679651810911,
+  "librarian": 0.05314566710380745,
+  "french_person": -0.1686608467355193,
+  "villain": -0.15468220584135953,
+  "comedian": -0.20772745786432578,
+  "police_officer": -0.3052920182025828,
+  "zelthari_scholar": -0.47893089345284956,
+  "helpful_assistant": 1.000000121387716,
+  "qwen_default": 0.6225762023018627,
+  "__neutral__": 0.3075619251098244
+}

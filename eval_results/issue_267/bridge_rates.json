@@ -1,0 +1,117 @@
+{
+  "software_engineer": {
+    "rate": 0.3,
+    "found": 30,
+    "total": 100,
+    "wilson_ci_low": 0.21894753866228117,
+    "wilson_ci_high": 0.39585038432811953,
+    "wall_seconds": 46.27370071411133
+  },
+  "kindergarten_teacher": {
+    "rate": 0.34,
+    "found": 34,
+    "total": 100,
+    "wilson_ci_low": 0.25461379497543,
+    "wilson_ci_high": 0.43722454341689065,
+    "wall_seconds": 43.84662389755249
+  },
+  "data_scientist": {
+    "rate": 0.3,
+    "found": 30,
+    "total": 100,
+    "wilson_ci_low": 0.21894753866228117,
+    "wilson_ci_high": 0.39585038432811953,
+    "wall_seconds": 45.16297698020935
+  },
+  "medical_doctor": {
+    "rate": 0.43,
+    "found": 43,
+    "total": 100,
+    "wilson_ci_low": 0.3373313900052838,
+    "wilson_ci_high": 0.5278478830413564,
+    "wall_seconds": 46.64266014099121
+  },
+  "librarian": {
+    "rate": 0.65,
+    "found": 65,
+    "total": 100,
+    "wilson_ci_low": 0.5525426042919797,
+    "wilson_ci_high": 0.7363589534652197,
+    "wall_seconds": 45.8470025062561
+  },
+  "french_person": {
+    "rate": 0.4,
+    "found": 40,
+    "total": 100,
+    "wilson_ci_low": 0.3093997461136028,
+    "wilson_ci_high": 0.4979992153815976,
+    "wall_seconds": 42.42637896537781
+  },
+  "villain": {
+    "rate": 0.56,
+    "found": 56,
+    "total": 100,
+    "wilson_ci_low": 0.4622792771125631,
+    "wilson_ci_high": 0.6532813459903167,
+    "wall_seconds": 46.481929779052734
+  },
+  "comedian": {
+    "rate": 0.54,
+    "found": 54,
+    "total": 100,
+    "wilson_ci_low": 0.44264685393523856,
+    "wilson_ci_high": 0.6343935614666815,
+    "wall_seconds": 47.36169767379761
+  },
+  "police_officer": {
+    "rate": 0.38,
+    "found": 38,
+    "total": 100,
+    "wilson_ci_low": 0.2909744920013438,
+    "wilson_ci_high": 0.47790426179289663,
+    "wall_seconds": 42.29835820198059
+  },
+  "zelthari_scholar": {
+    "rate": 0.51,
+    "found": 51,
+    "total": 100,
+    "wilson_ci_low": 0.4134784047743415,
+    "wilson_ci_high": 0.6057816990761385,
+    "wall_seconds": 42.37266516685486
+  },
+  "helpful_assistant": {
+    "rate": 0.34,
+    "found": 34,
+    "total": 100,
+    "wilson_ci_low": 0.25461379497543,
+    "wilson_ci_high": 0.43722454341689065,
+    "wall_seconds": 46.05381941795349
+  },
+  "qwen_default": {
+    "rate": 0.21,
+    "found": 21,
+    "total": 100,
+    "wilson_ci_low": 0.14165549531645788,
+    "wilson_ci_high": 0.2998014930196232,
+    "wall_seconds": 45.187257289886475
+  },
+  "metadata": {
+    "timestamp": "2026-05-09T06:40:12.157109+00:00",
+    "git": {
+      "commit": "63f0cbddf42e8282599bdd36192a4830aa60eb63",
+      "branch": "issue-267",
+      "dirty": true,
+      "n_changed_files": 9
+    },
+    "env": {
+      "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+      "hostname": "e44b2ad8ba4c",
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_count": 1,
+      "transformers": "5.5.0",
+      "trl": "0.29.1"
+    }
+  }
+}
