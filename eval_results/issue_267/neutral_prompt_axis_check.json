@@ -1,0 +1,46 @@
+{
+  "neutral_prompt": "Provide a clear answer.",
+  "n10_centering_check": {
+    "software_engineer": 0.4789790323610877,
+    "kindergarten_teacher": -0.09400603292501568,
+    "data_scientist": 0.4758985442160139,
+    "medical_doctor": 0.4225111242384976,
+    "librarian": 0.41648313670746895,
+    "french_person": -0.2194887134171215,
+    "villain": -0.22797358967377399,
+    "comedian": -0.1779084165882102,
+    "police_officer": 0.12798814294931393,
+    "zelthari_scholar": -0.3044581842617729
+  },
+  "n10_max_abs_cos": 0.4789790323610877,
+  "n10_gate_pass": true,
+  "n12_supplementary_check": {
+    "helpful_assistant": 0.6292399843163109,
+    "qwen_default": 0.6405839437091466
+  },
+  "n12_max_abs_cos": 0.6405839437091466,
+  "n12_gate_halt": false,
+  "fallback_alternatives": [
+    "Please answer the user's question.",
+    "Reply directly."
+  ],
+  "metadata": {
+    "timestamp": "2026-05-09T06:31:07.727777+00:00",
+    "git": {
+      "commit": "63f0cbddf42e8282599bdd36192a4830aa60eb63",
+      "branch": "issue-267",
+      "dirty": true,
+      "n_changed_files": 5
+    },
+    "env": {
+      "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+      "hostname": "e44b2ad8ba4c",
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_count": 1,
+      "transformers": "5.5.0",
+      "trl": "0.29.1"
+    }
+  }
+}

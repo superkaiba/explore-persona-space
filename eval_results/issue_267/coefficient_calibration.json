@@ -1,0 +1,90 @@
+{
+  "calibration_prompt": "What causes earthquakes?",
+  "neutral_prompt": "Provide a clear answer.",
+  "l20_baseline_norm_mean_neutral": 118.87026176452636,
+  "l20_baseline_norm_per_question_neutral": [
+    120.93444061279297,
+    119.12709045410156,
+    120.62251281738281,
+    117.28848266601562,
+    116.41748046875,
+    118.95206451416016,
+    119.04011535644531,
+    120.05425262451172,
+    119.8071517944336,
+    117.92742156982422,
+    118.99308013916016,
+    115.79137420654297,
+    118.85022735595703,
+    120.17922973632812,
+    121.07403564453125,
+    121.12443542480469,
+    118.8544692993164,
+    116.3016128540039,
+    117.79011535644531,
+    118.27564239501953
+  ],
+  "centroid_norms_n10": {
+    "software_engineer": 23.887008666992188,
+    "kindergarten_teacher": 32.58740234375,
+    "data_scientist": 24.57765007019043,
+    "medical_doctor": 24.966651916503906,
+    "librarian": 23.811058044433594,
+    "french_person": 36.21366882324219,
+    "villain": 50.06558609008789,
+    "comedian": 61.551231384277344,
+    "police_officer": 20.33194923400879,
+    "zelthari_scholar": 42.139366149902344
+  },
+  "perturbation_ratios_at_c2": {
+    "software_engineer": 0.401900497439985,
+    "kindergarten_teacher": 0.5482851953048333,
+    "data_scientist": 0.4135205846333043,
+    "medical_doctor": 0.4200655663728762,
+    "librarian": 0.40062262320245623,
+    "french_person": 0.6092973681673036,
+    "villain": 0.8423567904521705,
+    "comedian": 1.0356035306156894,
+    "police_officer": 0.3420863878349145,
+    "zelthari_scholar": 0.7089976168030565
+  },
+  "median_ratio_at_c2": 0.48417538083885475,
+  "perturbation_ratio_target": 0.4,
+  "perturbation_ratio_band": [
+    0.2,
+    0.6
+  ],
+  "registered_coefficient": 2.0,
+  "registered_coefficient_was_recalibrated": false,
+  "c_calibrated_per_persona": {
+    "software_engineer": 0.9952712239669004,
+    "kindergarten_teacher": 0.7295473294288197,
+    "data_scientist": 0.9673037204537378,
+    "medical_doctor": 0.9522322990048064,
+    "librarian": 0.9984458611012049,
+    "french_person": 0.656493890993086,
+    "villain": 0.4748581652500043,
+    "comedian": 0.386248200372773,
+    "police_officer": 1.1692952839533435,
+    "zelthari_scholar": 0.5641767906126981
+  },
+  "metadata": {
+    "timestamp": "2026-05-09T06:31:08.021933+00:00",
+    "git": {
+      "commit": "63f0cbddf42e8282599bdd36192a4830aa60eb63",
+      "branch": "issue-267",
+      "dirty": true,
+      "n_changed_files": 6
+    },
+    "env": {
+      "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+      "hostname": "e44b2ad8ba4c",
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_count": 1,
+      "transformers": "5.5.0",
+      "trl": "0.29.1"
+    }
+  }
+}

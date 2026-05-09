@@ -1,0 +1,107 @@
+{
+  "personas": {
+    "software_engineer": {
+      "source": "wandb",
+      "local_dir": "/workspace/adapters/software_engineer",
+      "wandb_artifact": "thomasjiralerspong/huggingface/marker_software_engineer_asst_excluded_medium_seed42:v1",
+      "wandb_version": "v1",
+      "hf_repo_id": null
+    },
+    "kindergarten_teacher": {
+      "source": "wandb",
+      "local_dir": "/workspace/adapters/kindergarten_teacher",
+      "wandb_artifact": "thomasjiralerspong/huggingface/marker_kindergarten_teacher_asst_excluded_medium_seed42:v1",
+      "wandb_version": "v1",
+      "hf_repo_id": null
+    },
+    "data_scientist": {
+      "source": "wandb",
+      "local_dir": "/workspace/adapters/data_scientist",
+      "wandb_artifact": "thomasjiralerspong/huggingface/marker_data_scientist_asst_excluded_medium_seed42:v1",
+      "wandb_version": "v1",
+      "hf_repo_id": null
+    },
+    "medical_doctor": {
+      "source": "wandb",
+      "local_dir": "/workspace/adapters/medical_doctor",
+      "wandb_artifact": "thomasjiralerspong/huggingface/marker_medical_doctor_asst_excluded_medium_seed42:v1",
+      "wandb_version": "v1",
+      "hf_repo_id": null
+    },
+    "librarian": {
+      "source": "wandb",
+      "local_dir": "/workspace/adapters/librarian",
+      "wandb_artifact": "thomasjiralerspong/huggingface/marker_librarian_asst_excluded_medium_seed42:v1",
+      "wandb_version": "v1",
+      "hf_repo_id": null
+    },
+    "french_person": {
+      "source": "wandb",
+      "local_dir": "/workspace/adapters/french_person",
+      "wandb_artifact": "thomasjiralerspong/huggingface/marker_french_person_asst_excluded_medium_seed42:v1",
+      "wandb_version": "v1",
+      "hf_repo_id": null
+    },
+    "villain": {
+      "source": "wandb",
+      "local_dir": "/workspace/adapters/villain",
+      "wandb_artifact": "thomasjiralerspong/huggingface/marker_villain_asst_excluded_medium_seed42:v1",
+      "wandb_version": "v1",
+      "hf_repo_id": null
+    },
+    "comedian": {
+      "source": "wandb",
+      "local_dir": "/workspace/adapters/comedian",
+      "wandb_artifact": "thomasjiralerspong/huggingface/marker_comedian_asst_excluded_medium_seed42:v1",
+      "wandb_version": "v1",
+      "hf_repo_id": null
+    },
+    "police_officer": {
+      "source": "wandb",
+      "local_dir": "/workspace/adapters/police_officer",
+      "wandb_artifact": "thomasjiralerspong/huggingface/marker_police_officer_asst_excluded_medium_seed42:v1",
+      "wandb_version": "v1",
+      "hf_repo_id": null
+    },
+    "zelthari_scholar": {
+      "source": "wandb",
+      "local_dir": "/workspace/adapters/zelthari_scholar",
+      "wandb_artifact": "thomasjiralerspong/huggingface/marker_zelthari_scholar_asst_excluded_medium_seed42:v1",
+      "wandb_version": "v1",
+      "hf_repo_id": null
+    },
+    "helpful_assistant": {
+      "source": "hf_hub",
+      "local_dir": "/workspace/adapters/hf_hub/adapters/marker_helpful_assistant_asst_excluded_medium_seed42",
+      "wandb_artifact": null,
+      "wandb_version": null,
+      "hf_repo_id": "superkaiba1/explore-persona-space"
+    },
+    "qwen_default": {
+      "source": "hf_hub",
+      "local_dir": "/workspace/adapters/hf_hub/adapters/marker_qwen_default_asst_excluded_medium_seed42",
+      "wandb_artifact": null,
+      "wandb_version": null,
+      "hf_repo_id": "superkaiba1/explore-persona-space"
+    }
+  },
+  "metadata": {
+    "timestamp": "2026-05-09T06:30:43.000198+00:00",
+    "git": {
+      "commit": "63f0cbddf42e8282599bdd36192a4830aa60eb63",
+      "branch": "issue-267",
+      "dirty": true,
+      "n_changed_files": 1
+    },
+    "env": {
+      "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+      "hostname": "e44b2ad8ba4c",
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_count": 1,
+      "transformers": "5.5.0",
+      "trl": "0.29.1"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "cos_librarian_villain_n10_l20": -0.6667437137540132,
+  "tolerance": 0.001,
+  "note": "Re-execution-stability pin per \u00a74.4 #5 / \u00a78 #1.",
+  "metadata": {
+    "timestamp": "2026-05-09T06:31:07.712743+00:00",
+    "git": {
+      "commit": "63f0cbddf42e8282599bdd36192a4830aa60eb63",
+      "branch": "issue-267",
+      "dirty": true,
+      "n_changed_files": 4
+    },
+    "env": {
+      "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+      "hostname": "e44b2ad8ba4c",
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_count": 1,
+      "transformers": "5.5.0",
+      "trl": "0.29.1"
+    }
+  }
+}
