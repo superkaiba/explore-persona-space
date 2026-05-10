@@ -78,7 +78,7 @@ def _adapter_already_on_hf(repo_id: str, condition: str, seed: int) -> bool:
     return any(f.startswith(needle) for f in files)
 
 
-def _run_one_cell(condition: str, seed: int, dry_run: bool) -> int:
+def _run_one_cell(condition: str, seed: int, dry_run: bool, gpu_id: int = 0) -> int:
     cmd = [
         "uv",
         "run",
@@ -86,6 +86,7 @@ def _run_one_cell(condition: str, seed: int, dry_run: bool) -> int:
         "scripts/train.py",
         f"condition={condition}",
         f"seed={seed}",
+        f"gpu_id={gpu_id}",
     ]
     env = os.environ.copy()
     parts = condition.split("/")
@@ -149,6 +150,17 @@ def main() -> None:
         action="store_true",
         help="Print the cells but don't shell out.",
     )
+    parser.add_argument(
+        "--gpu-id",
+        type=int,
+        default=0,
+        help=(
+            "GPU index to pass to scripts/train.py as a Hydra override. "
+            "Required for multi-process parallelism on a multi-GPU pod, where "
+            "each launcher invocation must target a distinct device "
+            "(CUDA_VISIBLE_DEVICES alone is overwritten by runner.py)."
+        ),
+    )
     args = parser.parse_args()
 
     cells = _build_cells(args.only_source, args.only_arm)
@@ -161,7 +173,7 @@ def main() -> None:
         if not args.no_skip_uploaded and _adapter_already_on_hf(args.hf_repo, condition, seed):
             logger.info("SKIP (already on HF): %s seed=%d", condition, seed)
             continue
-        rc = _run_one_cell(condition, seed, args.dry_run)
+        rc = _run_one_cell(condition, seed, args.dry_run, gpu_id=args.gpu_id)
         if rc != 0:
             failures.append((condition, seed, rc))
 
