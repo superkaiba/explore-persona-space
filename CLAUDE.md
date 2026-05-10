@@ -72,6 +72,24 @@
   FAIL-with-`needs-user`, upload-verifier FAIL. Full action map in
   (see workflow.yaml § subagent_halt_conditions).
 
+- **Codex ensemble review.** Four review steps (`critic`, `code-reviewer`,
+  `interpretation-critic`, `reviewer`) run a Claude reviewer AND a Codex
+  twin (OpenAI gpt-5.5 via the `openai/codex-plugin-cc` plugin's
+  `companion task` runtime) in parallel. PASS+PASS / agreement → advance.
+  FAIL+FAIL with overlapping blockers → bounce. FAIL+FAIL with disjoint
+  blockers → union the blockers (one round, no reconciler).
+  PASS-class vs FAIL → spawn the `reconciler` agent (Claude, fresh
+  context, binding verdict). Round cap 3 per reviewer; reconciler
+  invocations don't count. **NOT doubled:** `lw-register-critic` (Codex
+  imposes a different register; net noise), `upload-verifier`,
+  `consistency-checker` (mechanical). Codex never sees `GH_TOKEN` — the
+  thin Claude wrapper agents (`codex-code-reviewer`,
+  `codex-interpretation-critic`, `codex-reviewer`, `codex-critic`) post
+  the markers via `gh_graphql` MCP. /adversarial-planner Phase 2 uses
+  in-context reconciliation (no GitHub markers); the other 3 sites use
+  marker mode. See `workflow.yaml § ensemble_review` for the canonical
+  contract.
+
 ## Context hygiene
 
 - **`/compact` at ~30% remaining**, earlier if the conversation is dense (long Bash transcripts, large file reads). Compacting late means the summary eats useful recent state. Use `/clear` (alias `/new`) between *unrelated* tasks; that's different from compacting one long task.
@@ -392,6 +410,7 @@ the add (issues stay open and unboarded — no failure surface).
 - **All code changes on local VM, never on pods.** Edit files locally, commit, push, then `git pull` on pods. Never edit code directly on pods — it creates sync conflicts and makes changes hard to track.
 - **Linting:** `uv run ruff check . && uv run ruff format .` (line-length=100, py311, select E/F/I/UP)
 - **Packages:** Always `uv` (not pip/conda). Config via Hydra (not argparse). Track with `wandb`.
+- **Plot fonts (Inter).** The `paper-plots` skill's default `"blog"` style targets Inter. Run `bash scripts/install_inter.sh` once on the local dev VM (idempotent). Pods get Inter automatically via `bootstrap_pod.sh` step 9. If Inter is missing the fallback chain quietly uses DejaVu Sans and figures still render — just with the older letterforms.
 - **Never silently fail.** Prefer crashing over wrong results. No bare `except: pass`.
 - **Model call vs code (3.0 paradigm).** Before writing any classifier, extractor, parser, summarizer, or rule-based judge over unstructured data (text/images/dialogue), evaluate a single Claude Haiku/Sonnet call as the alternative. If a model call covers ≥80% of the requirement at acceptable latency/cost, prefer it. Document the choice — and what was rejected — in the implementer's report and (for experiments) in the planner's §4 Design under a `Why code, not a model call?` line. We already use Claude as judge for refusal/sycophancy (`feedback_no_substring_match`); the rule generalizes.
 - **Persona injection:** ALWAYS system prompt `{"role": "system", "content": "<persona>"}`. Never in user/assistant turns.

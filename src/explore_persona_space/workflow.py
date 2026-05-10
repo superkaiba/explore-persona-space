@@ -83,6 +83,41 @@ class SubagentHaltCondition(BaseModel):
     action: str
 
 
+class EnsembleDoubledStep(BaseModel):
+    """One row of the ``ensemble_review.doubled_steps`` list — a review site
+    where a Codex twin runs in parallel with the Claude reviewer."""
+
+    role: str  # "code-reviewer" | "critic" | "interpretation-critic" | "reviewer"
+    step: str  # /issue step id (e.g. "5", "9a", "9b") or descriptive ("2 (adversarial-planner Phase 2)")
+    claude_agent: str  # MUST be a known agent name in .claude/agents/
+    codex_agent: str  # MUST be a known agent name in .claude/agents/
+    codex_model: str  # e.g. "gpt-5.5", "gpt-5.3-codex"
+    codex_runtime: str  # "companion-task" | "companion-review"
+    verdict_field: str  # name of the verdict field in the marker body, e.g. "Verdict" or "Rating"
+    pass_values: list[str] = Field(min_length=1)
+    fail_values: list[str] = Field(min_length=1)
+    reconcile_marker: str  # marker kind for the reconciler's output (e.g. "code-review-reconcile")
+    reconcile_mode: str  # "marker" | "in-context"
+    lenses: list[str] | None = None  # only for critic role (3 lenses)
+    notes: str | None = None
+
+
+class EnsembleReview(BaseModel):
+    """Configuration block for Codex ensemble adversarial review. Each
+    review site here gets a Claude reviewer + Codex twin running in
+    parallel; PASS/FAIL disagreement dispatches the ``reconciler`` agent."""
+
+    doubled_steps: list[EnsembleDoubledStep] = Field(min_length=1)
+    not_doubled: list[str] = Field(
+        min_length=1
+    )  # roles where doubling adds noise (e.g. lw-register-critic)
+    round_cap_per_reviewer: int = Field(ge=1)
+    reconcile_invocations_count_toward_cap: bool
+    union_rule: str
+    agree_rule: str
+    reconciler_authority: str
+
+
 class MarkerEntry(BaseModel):
     """One ``epm:<kind>`` marker definition."""
 
@@ -127,6 +162,7 @@ class WorkflowYaml(BaseModel):
     gates: GatesBlock
     halt_criteria: list[HaltCriterion] = Field(min_length=1)
     subagent_halt_conditions: list[SubagentHaltCondition] = Field(min_length=1)
+    ensemble_review: EnsembleReview
     markers: list[MarkerEntry] = Field(min_length=1)
     steps: list[StepEntry] = Field(min_length=1)
 
@@ -180,6 +216,38 @@ class WorkflowYaml(BaseModel):
                 raise ValueError(
                     f"step {step.id!r}: posts_marker {step.posts_marker!r} "
                     f"is not a known marker kind. Valid: {sorted(kinds)}"
+                )
+        return self
+
+    @model_validator(mode="after")
+    def _ensemble_marker_refs_resolve(self) -> WorkflowYaml:
+        """Every ``reconcile_marker`` referenced by an ensemble step in
+        ``marker`` mode MUST be a known marker kind. ``in-context`` mode
+        markers are stdout-only conventions and are exempt from this check
+        — see ``.claude/agents/reconciler.md`` § 'Two Output Modes'."""
+        kinds = {m.kind for m in self.markers}
+        for entry in self.ensemble_review.doubled_steps:
+            if entry.reconcile_mode != "marker":
+                continue
+            if entry.reconcile_marker not in kinds:
+                raise ValueError(
+                    f"ensemble_review.doubled_steps[{entry.role!r}]: "
+                    f"reconcile_marker {entry.reconcile_marker!r} is not a "
+                    f"known marker kind (mode='marker'). "
+                    f"Valid: {sorted(kinds)}"
+                )
+        return self
+
+    @model_validator(mode="after")
+    def _ensemble_reconcile_mode_valid(self) -> WorkflowYaml:
+        """``reconcile_mode`` must be 'marker' or 'in-context'."""
+        valid_modes = {"marker", "in-context"}
+        for entry in self.ensemble_review.doubled_steps:
+            if entry.reconcile_mode not in valid_modes:
+                raise ValueError(
+                    f"ensemble_review.doubled_steps[{entry.role!r}]: "
+                    f"reconcile_mode {entry.reconcile_mode!r} not in "
+                    f"{sorted(valid_modes)}"
                 )
         return self
 

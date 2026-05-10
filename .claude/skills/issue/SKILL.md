@@ -152,7 +152,7 @@ There is no user sign-off step. Reviewer PASS (or `epm:test-verdict` PASS for co
 | `testing` | Inline test-suite step (Step 9c, code-change paths only). | no |
 | `running` | experimenter is running on the pod. | no |
 | `uploading` | upload-verifier is checking artifacts. | no |
-| `interpreting` | analyzer + interpretation-critic loop is running. | no |
+| `interpreting` | analyzer + interpretation-critic + lw-register-critic loops are running. | no |
 | `reviewing` | reviewer (final adversarial gate) is running. | no |
 | `blocked` | Aborted or stuck; awaiting user triage. | **yes** |
 | `awaiting-promotion` | User action: promote clean-result via /clean-results promote. | **yes** |
@@ -505,7 +505,7 @@ Spawn the appropriate agent via `Agent()`:
 
 **Env scrub for every subagent dispatch (plan §3 Phase 4.5).** EVERY
 `Agent()` call this skill makes — implementer, experiment-implementer,
-analyzer, code-reviewer, reviewer, interpretation-critic, experimenter,
+analyzer, code-reviewer, reviewer, interpretation-critic, lw-register-critic, experimenter,
 upload-verifier, follow-up-proposer, consistency-checker, planner,
 critic — passes `env=scrub_subagent_env(os.environ)` from
 `explore_persona_space.orchestrate.spawn_agent`. The helper strips
@@ -552,55 +552,103 @@ Advance label to `status:implementing`. Before exiting, post the §5 marker:
 clean --notes "implementer dispatched; awaiting epm:results"`. EXIT. Implementer
 runs autonomously.
 
-### Step 5: Code review loop
+### Step 5: Code review loop (Codex ensemble)
 
 Only if `status:implementing` and the appropriate implementation marker
 (`epm:experiment-implementation v<n>` for experiments, `epm:results v<n>` for
 infra) is present.
 
-**5a. Spawn code-reviewer (fresh context).** The reviewer sees only the brief
-this skill assembles. The brief MUST contain:
+This step runs an **ensemble of two reviewers in parallel** — the Claude
+`code-reviewer` agent and the `codex-code-reviewer` Codex twin (gpt-5.5 via
+the OpenAI Codex plugin's `companion task` runtime). On verdict disagreement
+(PASS-class vs FAIL), a `reconciler` agent (Claude) issues a binding
+tie-break. See `workflow.yaml § ensemble_review` for the canonical contract.
+
+**5a. Spawn both reviewers in parallel (fresh contexts, single message).**
+
+Both reviewers see the same brief:
 
 - `issue_number` — the GitHub issue (`<N>`)
 - `target_marker_kind` — exactly one of `experiment-implementation` (for
   `type:experiment`) or `results` (for `type:infra` / `type:batch` /
-  `type:analysis` / `type:survey`). The reviewer reads the highest-version
+  `type:analysis` / `type:survey`). The reviewers read the highest-version
   comment with this kind as the implementer's report.
-- `revision_round` — 1-indexed integer. `1` on first review, `2` after a
-  FAIL+respawn, `3` is the final allowed round before this skill labels the
-  issue `status:blocked`. Reviewer must NOT itself loop on a FAIL.
-- `previous_critique_summaries` — a list of one-line summaries of every
-  prior `epm:code-review` comment on this issue (empty on round 1). Lets
-  the reviewer notice patterns the implementer keeps re-introducing.
-- The diff vs `main`
-- The approved plan
-- The existing codebase
+- `revision_round` — 1-indexed integer. `1` on first review; loops up to
+  `3`. The cap is **per reviewer** — reconcile invocations are free.
+- `previous_critique_summaries` — one-line summaries of every prior
+  `epm:code-review` AND `epm:code-review-codex` comment on this issue
+  (empty on round 1). Lets each reviewer notice patterns.
+- The diff vs `main`, the approved plan, the existing codebase.
 
-It does NOT see the implementer's reasoning — independence is load-bearing.
+The Claude reviewer additionally receives:
+- `worktree` path, `base` ref (typically `main`).
 
-Posts `<!-- epm:code-review v<n> -->` with verdict `PASS / CONCERNS / FAIL`
-+ line-level findings.
+The Codex twin additionally receives:
+- `worktree`, `base`, `plan_marker_path`, `implementation_marker_path` — see
+  `.claude/agents/codex-code-reviewer.md`.
 
-**5b. Loop on FAIL.**
+Neither sees the implementer's reasoning — independence is load-bearing.
+Dispatch in a SINGLE `Agent(...)`-call message with both spawned
+`run_in_background=true` so they execute concurrently.
 
-- **PASS** (or `CONCERNS`, which is non-blocking):
+The Claude reviewer posts `<!-- epm:code-review v<n> -->` (PASS / CONCERNS /
+FAIL). The Codex wrapper posts `<!-- epm:code-review-codex v<n> -->` (same
+schema). Codex never sees `GH_TOKEN` — the wrapper agent posts via
+`gh_graphql` MCP.
+
+**5b. Read both markers from the issue.**
+
+```bash
+# After both Agent tasks complete:
+claude_marker=$(gh issue view <N> --json comments | jq '... epm:code-review v<n> ...')
+codex_marker=$(gh issue view <N> --json comments | jq '... epm:code-review-codex v<n> ...')
+```
+
+Parse each marker's `**Verdict:**` line. Acceptable values: `PASS`,
+`CONCERNS`, `FAIL`. PASS-class = {PASS, CONCERNS}; FAIL-class = {FAIL}.
+
+**5c. Apply ensemble decision rule.**
+
+| Claude verdict | Codex verdict | Action |
+|---|---|---|
+| PASS-class | PASS-class | **Agree.** `final_verdict = PASS`. CONCERNS bullets from either reviewer surface to the implementer as opportunistic suggestions; do not block. |
+| FAIL | FAIL — overlapping blockers | **Agree.** `final_verdict = FAIL`. Bounce to implementer (one round). |
+| FAIL | FAIL — disjoint blockers | **Union, no reconciler.** Build a combined blocker list (Claude's blockers ∪ Codex's blockers) and pass it to the implementer in the next-round brief. No new marker — both `epm:code-review v<n>` and `epm:code-review-codex v<n>` already exist on the issue. `final_verdict = FAIL`. Bounce (one round). |
+| PASS-class | FAIL (or vice versa) | **Disagreement.** Spawn `reconciler` agent (Claude, fresh context). Brief: role=`code-reviewer`, issue=N, round=n, both marker bodies, diff path. Reconciler reads both verdicts + the artifact, posts `<!-- epm:code-review-reconcile v<n> -->` with binding PASS or FAIL. `final_verdict = reconciler's verdict`. |
+
+The reconciler may NOT add findings beyond what either reviewer raised — its
+job is adjudication only. Round counter does NOT increment for reconciler
+invocations.
+
+**5d. Loop on FAIL using `final_verdict`.**
+
+- **`final_verdict == PASS`**:
   - `type:experiment` → advance label to `status:running`, proceed to Step 6.
   - `type:infra` / `type:batch` / `type:analysis` / `type:survey` → skip
     pod phase, advance directly to `status:reviewing` (the inline
     test-verdict gate at Step 9c runs from there).
-- **FAIL + revision_round<3** → label back to `status:implementing`.
-  Re-spawn the implementer with the `epm:code-review v<n>` marker as part
-  of the brief. Implementer posts v<n+1>; loop back to 5a with
+- **`final_verdict == FAIL` + revision_round<3** → label back to
+  `status:implementing`. Re-spawn the implementer with BOTH marker bodies
+  (Claude + Codex) AND the reconcile marker (if present) as part of the
+  brief. Implementer posts v<n+1>; loop back to 5a with
   `revision_round = n+1`.
-- **FAIL + revision_round>=3** → `status:blocked`. Post abort summary, then post
-  the §5 marker: `uv run python scripts/post_step_completed.py --issue <N> --step
-  5b --exit-kind failure-exit --notes "code-review FAIL round 3+; status:blocked"`.
-  EXIT.
-  User decides: revise plan, escalate, or override.
+- **`final_verdict == FAIL` + revision_round>=3** → `status:blocked`. Post
+  abort summary, then post the §5 marker: `uv run python
+  scripts/post_step_completed.py --issue <N> --step 5b --exit-kind
+  failure-exit --notes "code-review-ensemble FAIL round 3+; status:blocked"`.
+  EXIT. User decides: revise plan, escalate, or override.
 
-Advance label to `status:code-reviewing` while the reviewer is running, back
-to `status:implementing` on FAIL, forward to `status:running` (or
-`status:reviewing` for non-experiment types) on PASS.
+Advance label to `status:code-reviewing` while EITHER reviewer is running,
+back to `status:implementing` on ensemble FAIL, forward to `status:running`
+(or `status:reviewing` for non-experiment types) on ensemble PASS.
+
+**Codex twin no-show fallback.** If the Codex wrapper posts
+`epm:failure v<m>` with `failure_class: codex-output-malformed` or
+`failure_class: infra` (codex plugin missing), proceed with single-reviewer
+(Claude-only) decision-making for that round. Do NOT block on the Codex
+twin's absence; cap-3 still applies to the Claude reviewer's count. Surface
+this to chat as one line: `Codex twin no-show this round; using Claude
+reviewer only.`
 
 ### Step 6: Pod provisioning + experimenter dispatch (type:experiment only)
 
@@ -887,25 +935,38 @@ iterative refinement between the analyzer and an interpretation-critic.
    - Generates plots via `paper-plots` skill.
    - Posts `<!-- epm:interpretation v1 -->` marker on the source issue.
 
-2. Spawn `interpretation-critic` agent (fresh context, does NOT see analyzer reasoning).
-   The critic reviews through 5 lenses:
-   - **Overclaims:** does the prose say more than the data supports?
-   - **Surprising unmentioned patterns:** critic independently loads raw JSON/plots,
-     looks for patterns the analyzer didn't mention.
-   - **Alternative explanations:** for each finding, what's the simplest non-mechanism
-     explanation? Is it addressed?
-   - **Confidence calibration:** does the confidence level match evidence (seeds, OOD, confounds)?
-   - **Missing context:** are prior related results cited and compared?
+2. Spawn the **interpretation-critic ensemble** (fresh contexts, single
+   message, both `run_in_background=true`):
+   - `interpretation-critic` (Claude) — full 7-lens review. Posts
+     `<!-- epm:interp-critique v1 -->` with PASS or REVISE.
+   - `codex-interpretation-critic` (Codex gpt-5.5 via `companion task`) —
+     same 7 lenses (lens 6 plot-prose works on Codex multimodal). Posts
+     `<!-- epm:interp-critique-codex v1 -->`.
 
-   Posts `<!-- epm:interp-critique v1 -->` with PASS or REVISE + specific revision requests.
+   Neither sees the analyzer's reasoning. Independence is load-bearing.
 
-**If REVISE (rounds 2-3):**
+3. **Apply ensemble decision rule** (see `workflow.yaml § ensemble_review`):
 
-Re-spawn analyzer (fresh context, sees original data + all critique feedback).
-Analyzer posts `<!-- epm:interpretation v2 -->`. Re-spawn critic (fresh context,
-sees v2 + prior critique). Posts `<!-- epm:interp-critique v2 -->`.
+   | Claude | Codex | Action |
+   |---|---|---|
+   | PASS | PASS | `final_verdict = PASS`. Concatenate suggestions for analyzer's optional polish. |
+   | REVISE | REVISE | `final_verdict = REVISE`. Union the revision requests (dedup exact-same). |
+   | PASS vs REVISE (or vice versa) | (the other) | Spawn `reconciler` (marker mode). Brief: role=`interpretation-critic`, both marker bodies, interpretation body path, eval JSON paths, figure paths. Reconciler posts `<!-- epm:interp-critique-reconcile v<n> -->` with binding PASS or REVISE. `final_verdict = reconciler's verdict`. |
+   | Codex no-show (`epm:failure`) | (any) | Fallback: `final_verdict = Claude verdict`. Surface "Codex twin no-show round <n>" to chat. |
 
-**Max 3 rounds.** After round 3, advance regardless with full critique history.
+   Reconcile rounds do NOT increment the per-reviewer round counter.
+
+**If `final_verdict == REVISE` (rounds 2-3):**
+
+Re-spawn analyzer (fresh context, sees original data + ALL critique
+feedback: Claude marker + Codex marker + reconcile marker if any).
+Analyzer posts `<!-- epm:interpretation v2 -->`. Re-spawn the ensemble
+(fresh contexts, sees v2 + prior critique markers). Posts both
+`<!-- epm:interp-critique v2 -->` and `<!-- epm:interp-critique-codex v2 -->`.
+Apply rule again.
+
+**Max 3 rounds per reviewer.** After round 3, advance regardless with full
+critique history.
 
 **On PASS (or max rounds reached):**
 
@@ -921,25 +982,78 @@ issue + hero figure URL + 2-sentence recap.
 # Fire title update on clean-result creation.
 # mcp__happy__change_title({"title": render_title(issue, status_human="reviewing", clean_result=<new-issue>)})
 
+Then proceed to **9a-bis (LW-register loop)** before advancing the label.
+
+**9a-bis. LW-register loop** (only if `status:interpreting`, after Step 9a PASS)
+
+Same shape as the interpretation-critic loop, but the critic checks WRITING
+REGISTER not CONTENT. Content honesty was settled in 9a; this layer ensures
+the prose reads in LessWrong / Alignment Forum register, not project-internal
+multi-clause jargon. Discipline rules: see
+`.claude/skills/clean-results/lw-tldr-examples.md` (rules 1-8 + worked
+rewrites for #276).
+
+**Round 1:**
+
+1. Spawn `lw-register-critic` agent (fresh context, does NOT see analyzer
+   reasoning). The critic reads the published clean-result body + the
+   latest `epm:interpretation vN` and scores against 8 register lenses
+   (bullet length, comparison anchors, plain English, self-containment,
+   active voice, project-internal references, paragraph-LEDE title shape,
+   AI TL;DR three-sentence structure). Posts `<!-- epm:lw-register-critique
+   v1 -->` on the source issue with PASS or REVISE.
+
+**If REVISE (rounds 2-3):**
+
+Re-spawn `analyzer` agent (fresh context, sees raw data + all interp-critique
+history + the latest lw-register-critique). Analyzer revises the
+`epm:interpretation` marker AND edits the clean-result issue body in place
+via `gh issue edit <clean-result-N> --body-file ...`. Re-runs
+`scripts/verify_clean_result.py` (must still PASS). Re-spawn
+`lw-register-critic` against the revised surfaces. Posts the next critique
+version.
+
+**Max 3 rounds.** After round 3, advance regardless and fold the residual
+register debt into the chat-side summary so the user can decide whether to
+patch before promoting.
+
+**On PASS (or max rounds reached):**
+
 Advance label to `status:reviewing`.
 
-**9b. Final reviewer gate** (only if `status:reviewing`, type:experiment)
+**9b. Final reviewer ensemble gate** (only if `status:reviewing`, type:experiment)
 
-Spawn `reviewer` agent in fresh context. Sees only:
-- The raw results
-- The plan
-- The clean-result issue body (NOT the analyzer's reasoning or critique history)
+Spawn the **reviewer ensemble** (fresh contexts, single message, both
+`run_in_background=true`):
+- `reviewer` (Claude) — template-compliance + reproducibility card + claim
+  verification + statistical-framing rule. Posts
+  `<!-- epm:reviewer-verdict v1 -->` with PASS / CONCERNS / FAIL.
+- `codex-reviewer` (Codex gpt-5.5 via `companion task`) — same checks.
+  Independently runs `scripts/verify_clean_result.py`. Posts
+  `<!-- epm:reviewer-verdict-codex v1 -->`.
 
-Reviewer verdict: PASS / CONCERNS / FAIL. Post as `<!-- epm:reviewer-verdict v1 -->`.
+Neither sees the analyzer's reasoning or critique history.
 
-Transitions:
-- **PASS:** Clean-result STAYS at `clean-results:draft` (do NOT auto-promote).
+**Apply ensemble decision rule:**
+
+| Claude | Codex | Action |
+|---|---|---|
+| PASS-class | PASS-class | `final_verdict = PASS`. CONCERNS bullets surface to user as opportunistic. |
+| FAIL | FAIL | `final_verdict = FAIL`. Concatenate findings. |
+| PASS-class vs FAIL (or vice versa) | (the other) | Spawn `reconciler` (marker mode). Posts `<!-- epm:reviewer-verdict-reconcile v1 -->` with binding PASS or FAIL. `final_verdict = reconciler's verdict`. |
+| Codex no-show | (any) | `final_verdict = Claude verdict`. Surface "Codex reviewer no-show" to chat. |
+
+PASS-class = {PASS, CONCERNS}; FAIL-class = {FAIL}.
+
+Transitions (use the ensemble `final_verdict`, NOT either reviewer's individual verdict):
+
+- **`final_verdict == PASS`:** Clean-result STAYS at `clean-results:draft` (do NOT auto-promote).
   Advance source issue to `status:awaiting-promotion`:
   ```
   gh issue edit <N> --remove-label status:reviewing --add-label status:awaiting-promotion
   ```
   Post comment:
-  > Reviewer PASS. Clean-result #\<clean-result-N\> is ready for your review.
+  > Ensemble reviewer PASS. Clean-result #\<clean-result-N\> is ready for your review.
   > When satisfied, promote it (USER-ONLY — no automation may do this):
   >   `python scripts/gh_project.py promote <clean-result-N> useful` (paper-relevant)
   >   `python scripts/gh_project.py promote <clean-result-N> not-useful` (archive candidate)
@@ -954,9 +1068,9 @@ Transitions:
   legacy `clean-results` for back-compat), routes the project board to
   `Useful` / `Not useful`, and prints a reminder to re-enter `/issue <N>`
   so Step 10 fires.
-- **CONCERNS:** same as PASS (non-blocking). Recorded on verdict comment.
-- **FAIL:** clean-result stays `:draft`. Source back to `status:interpreting`.
-  Analyzer revises with reviewer feedback.
+- **`final_verdict == CONCERNS`:** same as PASS (non-blocking). Surfaces on the verdict comment(s).
+- **`final_verdict == FAIL`:** clean-result stays `:draft`. Source back to `status:interpreting`.
+  Analyzer revises with BOTH reviewers' feedback (Claude marker + Codex marker + reconcile marker if any).
 
 **On re-invocation at `status:awaiting-promotion`:**
 1. Check if the clean-result issue has been promoted (label `clean-results`
@@ -1300,16 +1414,30 @@ investigate and optionally label `status:blocked`.
 | `implementing` | `epm:proposed-tests v<n>` exists, an `approve-tests` comment exists **after** the `proposed-tests` marker, no `epm:experiment-implementation` | TDD tests approved by user | re-spawn implementer with `tdd_approved=true`; brief instructs implementer to write implementation against the approved tests, then post `epm:experiment-implementation v1` as normal |
 | `implementing` | latest `epm:code-review` is FAIL, round < 3 | revision in progress | re-spawn implementer with critique |
 | `implementing` | latest `epm:code-review` is FAIL, round >= 3 | exhausted retries | label `status:blocked`, ask user |
-| `code-reviewing` | no `epm:code-review` for the current implementation version | code-reviewer was cancelled | re-spawn code-reviewer |
+| `code-reviewing` | neither `epm:code-review` nor `epm:code-review-codex` for the current implementation version | both ensemble reviewers were cancelled | re-spawn both code-reviewer + codex-code-reviewer in parallel |
+| `code-reviewing` | `epm:code-review v<n>` exists, no `epm:code-review-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-code-reviewer` only |
+| `code-reviewing` | `epm:code-review-codex v<n>` exists, no `epm:code-review v<n>` | Claude reviewer not yet returned | re-spawn `code-reviewer` only |
+| `code-reviewing` | both `epm:code-review v<n>` and `epm:code-review-codex v<n>` exist, verdicts disagree (PASS-class vs FAIL), no `epm:code-review-reconcile v<n>` | reconciler not yet started | spawn reconciler |
+| `code-reviewing` | both `epm:code-review v<n>` and `epm:code-review-codex v<n>` exist, verdicts agree | ensemble decision ready | apply Step 5c rule and advance |
+| `code-reviewing` | `epm:code-review-codex` is `epm:failure` (codex-output-malformed or infra) | Codex twin no-show | proceed with Claude-only decision per Step 5d fallback |
 | `running` | no `epm:results` for > 4h | experimenter crashed silently | post `epm:stale`, ask user |
 | `running` | latest marker is `epm:failure` with bounce-back proposal | experimenter bounced to implementer | label back to `status:implementing`, re-spawn experiment-implementer |
 | `uploading` | no `epm:upload-verification` PASS | verifier not run or failed | re-run upload-verifier |
 | `interpreting` | no `epm:interpretation` | analyzer not started | spawn analyzer |
-| `interpreting` | `epm:interpretation` exists, no `epm:interp-critique` | critic not started | spawn interpretation-critic |
-| `interpreting` | `epm:interp-critique` REVISE, round < 3 | revision needed | re-spawn analyzer with critique |
-| `interpreting` | `epm:interp-critique` PASS or round >= 3 | ready for review | create clean-result, advance to `reviewing` |
-| `reviewing` | missing `epm:reviewer-verdict` | reviewer not started | spawn reviewer |
-| `reviewing` | `epm:reviewer-verdict` FAIL | interpretation needs more work | back to `interpreting` |
+| `interpreting` | `epm:interpretation` exists, neither `epm:interp-critique` nor `epm:interp-critique-codex` for the current version | both ensemble critics not started | spawn `interpretation-critic` + `codex-interpretation-critic` in parallel |
+| `interpreting` | `epm:interp-critique v<n>` exists, no `epm:interp-critique-codex v<n>` | Codex twin not yet returned | re-spawn `codex-interpretation-critic` only |
+| `interpreting` | `epm:interp-critique-codex v<n>` exists, no `epm:interp-critique v<n>` | Claude critic not yet returned | re-spawn `interpretation-critic` only |
+| `interpreting` | both `epm:interp-critique v<n>` and `epm:interp-critique-codex v<n>` exist, verdicts disagree (PASS vs REVISE), no `epm:interp-critique-reconcile v<n>` | reconciler not yet started | spawn `reconciler` (marker mode) |
+| `interpreting` | both ensemble markers exist, verdicts agree OR reconcile marker present, ensemble verdict REVISE, round < 3 | revision needed | re-spawn analyzer with all critique markers |
+| `interpreting` | ensemble verdict PASS or round >= 3, no `epm:lw-register-critique` | content honesty settled, register loop not started | create clean-result if missing, then spawn lw-register-critic |
+| `interpreting` | `epm:lw-register-critique` REVISE, round < 3 | register revision in progress | re-spawn analyzer with the lw-register critique |
+| `interpreting` | `epm:lw-register-critique` PASS or round >= 3 | ready for review | advance to `reviewing` |
+| `reviewing` | neither `epm:reviewer-verdict` nor `epm:reviewer-verdict-codex` | both ensemble reviewers not started | spawn `reviewer` + `codex-reviewer` in parallel |
+| `reviewing` | `epm:reviewer-verdict v<n>` exists, no `epm:reviewer-verdict-codex v<n>` | Codex twin not yet returned | re-spawn `codex-reviewer` only |
+| `reviewing` | `epm:reviewer-verdict-codex v<n>` exists, no `epm:reviewer-verdict v<n>` | Claude reviewer not yet returned | re-spawn `reviewer` only |
+| `reviewing` | both ensemble markers exist, verdicts disagree (PASS-class vs FAIL), no `epm:reviewer-verdict-reconcile v<n>` | reconciler not yet started | spawn `reconciler` (marker mode) |
+| `reviewing` | both ensemble markers exist, verdicts agree OR reconcile marker present, ensemble verdict PASS-class | advance to `awaiting-promotion` | label flip + post chat instructions |
+| `reviewing` | ensemble verdict FAIL | interpretation needs more work | back to `interpreting` |
 | `awaiting-promotion` | `epm:reviewer-verdict` PASS, clean-result still `:draft` | waiting for user to promote | show clean-result link, prompt to promote, EXIT |
 | `awaiting-promotion` | clean-result has `clean-results` label (no `:draft`) | user promoted | advance to Step 10 (auto-complete) |
 | `followups-running` | at least one open child issue (`Parent: #<N>` in body) lacks a terminal `status:*` label | children still in flight | show child-issue table + project-board URL, EXIT |

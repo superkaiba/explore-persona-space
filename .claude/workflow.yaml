@@ -123,7 +123,7 @@ statuses:
     user_gated: false
   - name: interpreting
     column: "In flight"
-    description: "analyzer + interpretation-critic loop is running."
+    description: "analyzer + interpretation-critic + lw-register-critic loops are running."
     next_action: interpret
     user_gated: false
   - name: reviewing
@@ -259,8 +259,9 @@ halt_criteria:
   - id: 3
     name: subagent_blocker
     description: |
-      consistency-checker / code-reviewer / interpretation-critic / reviewer
-      returns BLOCKER or FAIL with `needs-user` flag.
+      consistency-checker / code-reviewer / interpretation-critic /
+      lw-register-critic / reviewer returns BLOCKER or FAIL with
+      `needs-user` flag.
   - id: 4
     name: infra_respawn_cap
     description: "`failure_class: infra` respawn cap (3) hit."
@@ -279,18 +280,147 @@ subagent_halt_conditions:
   - subagent: consistency-checker
     verdict: BLOCKER
     action: "Step 2c writes BLOCKER to plan body, awaits user reply"
-  - subagent: code-reviewer
-    verdict: FAIL
-    action: "Bounces to implementer up to 3 rounds; on 4th FAIL, status:blocked"
+  - subagent: code-reviewer-ensemble
+    verdict: "FAIL after reconcile (or FAIL+FAIL union)"
+    action: |
+      Ensemble of `code-reviewer` (Claude) + `codex-code-reviewer` (Codex
+      gpt-5.5). PASS+PASS proceeds. FAIL+FAIL with overlapping blockers
+      bounces; with disjoint blockers, union the blockers (one round).
+      PASS+FAIL dispatches `reconciler` (marker mode); reconciler verdict
+      binds. On any effective FAIL, bounces to implementer up to 3 rounds
+      per reviewer (reconcile rounds free); on 4th ensemble FAIL,
+      status:blocked.
+  - subagent: critic-ensemble
+    verdict: "REVISE/REJECT after per-lens reconcile (worst-wins cross-lens)"
+    action: |
+      /adversarial-planner Phase 2 ensemble: 3 lenses × 2 reviewers per
+      round. Per-lens: APPROVE+APPROVE proceeds; REVISE+REVISE or
+      REJECT+REJECT bounces; APPROVE vs REVISE/REJECT dispatches
+      `reconciler` (IN-CONTEXT mode, no GitHub marker). Cross-lens: worst
+      verdict wins. On REVISE/REJECT, bounces to planner up to 3 rounds
+      (reconcile rounds free); on 4th, status:blocked.
+  - subagent: interpretation-critic-ensemble
+    verdict: "REVISE after reconcile (or REVISE+REVISE)"
+    action: |
+      Ensemble of `interpretation-critic` (Claude) +
+      `codex-interpretation-critic` (Codex gpt-5.5). PASS+PASS proceeds.
+      REVISE+REVISE bounces (concatenate + dedup findings). PASS+REVISE
+      dispatches `reconciler` (marker mode). On REVISE, bounces to
+      analyzer up to 3 rounds per reviewer; on 4th, advance regardless
+      and surface residual debt to chat (existing single-critic policy).
+  - subagent: reviewer-ensemble
+    verdict: "FAIL after reconcile (with `needs-user`)"
+    action: |
+      Ensemble of `reviewer` (Claude) + `codex-reviewer` (Codex gpt-5.5)
+      at the final gate. PASS+PASS / PASS+CONCERNS → advance source issue
+      to status:awaiting-promotion. Disagreement dispatches `reconciler`
+      (marker mode); reconciler verdict binds. On FAIL: posts FAIL on
+      source issue with reconciler rationale, awaits user.
   - subagent: interpretation-critic
     verdict: FATAL
     action: "Bounces to analyzer up to 3 rounds; on 4th FATAL, status:blocked"
+  - subagent: lw-register-critic
+    verdict: REVISE
+    action: "Bounces to analyzer up to 3 rounds; on 4th REVISE, advance regardless and surface residual register debt to chat"
   - subagent: reviewer
     verdict: "FAIL with `needs-user`"
     action: "Posts FAIL on source issue, awaits user"
   - subagent: upload-verifier
     verdict: FAIL
     action: "status:uploading does not advance to interpretation"
+
+# ──────────────────────────────────────────────────────────────────────
+# Codex ensemble review. For each doubled review step, a Claude reviewer
+# AND a Codex twin run in parallel; PASS/FAIL disagreement dispatches the
+# `reconciler` agent for a binding tie-break. Round cap is per-reviewer
+# (not per-ensemble); reconcile rounds don't count. Schema validated by
+# `EnsembleReview` in `src/explore_persona_space/workflow.py`.
+# ──────────────────────────────────────────────────────────────────────
+ensemble_review:
+  doubled_steps:
+    - role: code-reviewer
+      step: "5"
+      claude_agent: code-reviewer
+      codex_agent: codex-code-reviewer
+      codex_model: gpt-5.5
+      codex_runtime: companion-task
+      verdict_field: "Verdict"
+      pass_values: [PASS, CONCERNS]
+      fail_values: [FAIL]
+      reconcile_marker: code-review-reconcile
+      reconcile_mode: marker
+    - role: critic
+      step: "2 (adversarial-planner Phase 2)"
+      claude_agent: critic
+      codex_agent: codex-critic
+      codex_model: gpt-5.5
+      codex_runtime: companion-task
+      verdict_field: "Rating"
+      pass_values: [APPROVE]
+      fail_values: [REVISE, REJECT]
+      reconcile_marker: plan-critique-reconcile  # printed to stdout, not posted on issue
+      reconcile_mode: in-context
+      lenses: [methodology, statistics, alternatives]
+      notes: |
+        Phase 2 runs 6 critics per round (3 lenses × 2 reviewers). Per-lens
+        ensemble decision: agree → use that verdict; disagree → spawn
+        reconciler in IN-CONTEXT mode (no GitHub marker; reconciler prints
+        verdict to stdout for the manager). Cross-lens merge: worst-wins
+        across the 3 post-reconciliation lens verdicts (existing logic).
+        Codex twin no-show on a lens → fall back to single-Claude-critic
+        for that lens this round.
+    - role: interpretation-critic
+      step: "9a"
+      claude_agent: interpretation-critic
+      codex_agent: codex-interpretation-critic
+      codex_model: gpt-5.5
+      codex_runtime: companion-task
+      verdict_field: "Verdict"
+      pass_values: [PASS]
+      fail_values: [REVISE]
+      reconcile_marker: interp-critique-reconcile
+      reconcile_mode: marker
+      notes: |
+        Both reviewers run all 7 lenses (lens 6 plot-prose match works on
+        both — Codex multimodal verified 2026-05-10). Codex twin no-show
+        falls back to single-Claude-critic for that round. Round cap 3 per
+        reviewer; reconcile rounds free.
+    - role: reviewer
+      step: "9b"
+      claude_agent: reviewer
+      codex_agent: codex-reviewer
+      codex_model: gpt-5.5
+      codex_runtime: companion-task
+      verdict_field: "Verdict"
+      pass_values: [PASS, CONCERNS]
+      fail_values: [FAIL]
+      reconcile_marker: reviewer-verdict-reconcile
+      reconcile_mode: marker
+      notes: |
+        Final adversarial gate before clean-result promotion. Single-shot
+        at this layer (no revision loop). PASS+PASS / PASS+CONCERNS →
+        advance to awaiting-promotion. Disagreement → reconciler binds.
+        Both reviewers run scripts/verify_clean_result.py independently
+        and treat FAIL as Critical.
+  not_doubled:
+    - lw-register-critic   # empirical writing-register gap; Codex would impose different register (net noise, not signal)
+    - upload-verifier      # mechanical artifact checklist, no LLM-judgment value
+    - consistency-checker  # mechanical structure check
+  round_cap_per_reviewer: 3
+  reconcile_invocations_count_toward_cap: false
+  union_rule: |
+    On FAIL+FAIL with disjoint blocker sets, the orchestrator unions the
+    blockers and treats it as ONE round (no reconciler dispatch). The
+    implementer must address all blockers from both reviewers.
+  agree_rule: |
+    On PASS+PASS or PASS+CONCERNS, no reconciler dispatch. CONCERNS bullets
+    from either reviewer are surfaced to the implementer as opportunistic
+    suggestions but do not block.
+  reconciler_authority: |
+    Binary verdict only (PASS or FAIL). May NOT add new findings beyond
+    what either reviewer raised — only adjudicates existing ones. Side
+    observations go in the marker's "Observed but not raised" section and
+    do not affect the verdict. See `.claude/agents/reconciler.md`.
 
 # ──────────────────────────────────────────────────────────────────────
 # Marker kinds. Replaces the table in markers.md. The kind table block
@@ -330,6 +460,14 @@ markers:
     posted_by: skill (via code-reviewer)
     when: "Step 5"
     fields: "PASS / CONCERNS / FAIL verdict + line-level findings against the diff. v<n> per round"
+  - kind: code-review-codex
+    posted_by: skill (via codex-code-reviewer)
+    when: "Step 5"
+    fields: "Codex (gpt-5.5 via companion task) twin of code-reviewer. PASS/CONCERNS/FAIL verdict + line-level findings against the same diff, same rubric. v<n> per round, paired with epm:code-review v<n>. Posted via gh_graphql by the Claude wrapper agent — Codex never sees GH_TOKEN."
+  - kind: code-review-reconcile
+    posted_by: skill (via reconciler)
+    when: "Step 5 (only on PASS/FAIL disagreement between epm:code-review v<n> and epm:code-review-codex v<n>)"
+    fields: "Binding final verdict (PASS|FAIL) + per-finding adjudication table + rationale anchored to artifact evidence. CONCERNS folds into PASS. Does NOT count toward the per-reviewer round cap. Reconciler may NOT add findings beyond what either reviewer raised."
   - kind: hf-gate-pending
     posted_by: skill
     when: "Step 6a"
@@ -374,6 +512,18 @@ markers:
     posted_by: skill (via interpretation-critic)
     when: "Step 9a"
     fields: "PASS/REVISE verdict with 5 lenses: overclaims, surprises, alternatives, calibration, context"
+  - kind: interp-critique-codex
+    posted_by: skill (via codex-interpretation-critic)
+    when: "Step 9a"
+    fields: "Codex (gpt-5.5 via companion task) twin of interpretation-critic. PASS/REVISE verdict with all 7 lenses (Codex multimodal handles lens 6 plot-prose match). v<n> per round, paired with epm:interp-critique v<n>. Posted via gh_graphql by the Claude wrapper agent — Codex never sees GH_TOKEN."
+  - kind: interp-critique-reconcile
+    posted_by: skill (via reconciler)
+    when: "Step 9a (only on PASS/REVISE disagreement between epm:interp-critique v<n> and epm:interp-critique-codex v<n>)"
+    fields: "Binding final verdict (PASS|REVISE) + per-finding adjudication table + rationale anchored to artifact evidence (interpretation body / JSON paths / figure paths). Does NOT count toward per-reviewer round cap. Reconciler may NOT add findings beyond what either reviewer raised."
+  - kind: lw-register-critique
+    posted_by: skill (via lw-register-critic)
+    when: "Step 9a-bis"
+    fields: "PASS/REVISE verdict with 8 register lenses: bullet length, comparison anchors, plain English, self-containment, active voice, project-internal references, paragraph-LEDE title, AI TL;DR three-sentence structure. Runs after `interp-critique` PASSes."
   - kind: analysis
     posted_by: skill (via analyzer)
     when: "Step 9a (final)"
@@ -382,6 +532,14 @@ markers:
     posted_by: skill (via reviewer)
     when: "Step 9b"
     fields: "PASS / CONCERNS / FAIL + line-level issues"
+  - kind: reviewer-verdict-codex
+    posted_by: skill (via codex-reviewer)
+    when: "Step 9b"
+    fields: "Codex (gpt-5.5 via companion task) twin of reviewer. PASS/CONCERNS/FAIL verdict with template-compliance + reproducibility card + claim verification. v<n> per round (typically v1 — single-shot at this gate), paired with epm:reviewer-verdict v<n>. Posted via gh_graphql by the Claude wrapper agent — Codex never sees GH_TOKEN."
+  - kind: reviewer-verdict-reconcile
+    posted_by: skill (via reconciler)
+    when: "Step 9b (only on PASS/FAIL disagreement between epm:reviewer-verdict v<n> and epm:reviewer-verdict-codex v<n>)"
+    fields: "Binding final verdict (PASS|FAIL). CONCERNS folds into PASS. Does NOT count toward round cap. Reconciler may NOT add findings beyond what either reviewer raised."
   - kind: test-verdict
     posted_by: skill (Step 9c, inline tests)
     when: "Step 9c"
@@ -608,6 +766,13 @@ steps:
       - interpreting
     entry_condition: "upload-verification PASS"
     posts_marker: interpretation
+    next_expected_step: "9a-bis"
+  - id: "9a-bis"
+    name: lw_register_loop
+    entry_status_label:
+      - interpreting
+    entry_condition: "interp-critique PASS or round >= 3"
+    posts_marker: lw-register-critique
     next_expected_step: "9b"
   - id: "9b"
     name: reviewer

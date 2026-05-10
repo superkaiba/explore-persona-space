@@ -139,12 +139,16 @@ Common traps to watch for:
 - If assumptions are UNVERIFIED: note them as risks. The Critic should evaluate whether they're blocking or can be tested with a smoke test.
 - If all CONFIRMED: proceed to the Critic.
 
-### Phase 2: Parallel Critique (3 Specialized Critic Agents)
+### Phase 2: Parallel Critique (3 Lenses × 2 Reviewers — Codex Ensemble)
 
-Spawn **3 critic agents in parallel** (each as a separate `Agent()` call with
-`subagent_type: "critic"`). Each receives the same plan but a different
-specialized lens. Fresh context for each — no access to planner's reasoning
-and no access to each other's output.
+Spawn **6 critic agents in parallel**: for each of the 3 lenses (Methodology,
+Statistics, Alternatives), launch BOTH a Claude `critic` AND a `codex-critic`
+(Codex gpt-5.5 via `companion task`). Fresh context for each — no access to
+the planner's reasoning or to each other's output. Per-lens disagreement
+between Claude and Codex twins is resolved by the `reconciler` agent in
+**in-context mode** (no GitHub markers — verdict text printed to stdout). See
+`.claude/workflow.yaml § ensemble_review.doubled_steps[critic]` and
+`.claude/agents/reconciler.md` § "Two Output Modes".
 
 **Critic 1 — Methodology:**
 ```
@@ -187,16 +191,27 @@ identify every alternative explanation the plan fails to address.
 Rate (alternatives only): REJECT / REVISE / APPROVE.
 ```
 
-**Merge step (inline in this skill, not an agent):**
+**Per-lens ensemble decision (inline in this skill, not an agent):**
 
-After all 3 critics return, merge their verdicts:
-- **Overall verdict = worst of the three.** If ANY critic says REJECT → REJECT.
-  If ANY says REVISE → REVISE. If all say APPROVE → APPROVE.
-- **Concatenate all 3 reports** with lens labels (`[Methodology]`, `[Statistics]`,
-  `[Alternatives]`) for the planner — the manager does NOT editorialize.
-- **Deduplicate** only exact-same finding flagged by 2+ critics (same issue,
-  same file/line). Keep both if the framing differs.
+After all 6 critics return, for EACH lens independently:
+
+| Claude verdict | Codex verdict | Action |
+|---|---|---|
+| APPROVE | APPROVE | Lens verdict = APPROVE. |
+| REVISE | REVISE | Lens verdict = REVISE. Concatenate findings (dedup exact-same). |
+| REJECT | REJECT | Lens verdict = REJECT. Concatenate findings. |
+| APPROVE | REVISE/REJECT (or vice versa) | **Disagreement.** Spawn `reconciler` (in-context mode) with brief: `mode: in-context`, role=`critic`, lens=`<lens>`, both verdict bodies, plan_body. Reconciler prints `<!-- epm:plan-critique-reconcile v<n> --> ... <!-- /epm:plan-critique-reconcile -->` to stdout with role-specific verdict (`APPROVE` / `REVISE` / `REJECT` per `.claude/agents/reconciler.md` Step 4 table). Reconciler is required to **preserve REJECT severity** when siding with a REJECT reviewer — it does not silently downgrade to REVISE. Manager parses the printed marker's `**Verdict:**` line directly into `lens_verdict[lens]`. |
+| Codex no-show (BLOCKER printed) | (any) | Fall back to single-Claude-critic for this lens this round. Surface a one-line note in the merged critique: "Codex {{lens}} twin no-show this round." |
+
+**Cross-lens merge (after per-lens reconciliation):**
+
+- **Overall verdict = worst of the three lens verdicts.** REJECT > REVISE > APPROVE.
+- **Concatenate all critique bodies** with lens labels (`[Methodology Claude]`, `[Methodology Codex]`, `[Methodology Reconcile]` if dispatched, then Statistics, then Alternatives). The manager does NOT editorialize.
+- **Deduplicate** only exact-same finding flagged by 2+ critics (same issue, same file/line). Keep both if framing differs.
 - Present the merged critique to the planner for revision.
+
+The reconciler may NOT add findings beyond what either reviewer raised. Round
+counter does NOT increment for reconciler invocations (per-reviewer cap = 3 rounds).
 
 ### Phase 3: Revise (Back to Planner Agent or Main Thread)
 
@@ -282,18 +297,45 @@ verifier_result = Agent(subagent_type="planner", prompt="You are the FACT-CHECKE
 if "WRONG" in verifier_result:
     # Update the plan with corrected facts, then proceed
 
-# 4. Launch 3 critics in PARALLEL (each subagent_type: "critic", fresh context, different lens)
-#    All 3 Agent() calls go in a SINGLE message so they run concurrently.
-methodology = Agent(subagent_type="critic", prompt="[Methodology lens] Critique:\n\n{corrected_plan}", run_in_background=True)
-statistics = Agent(subagent_type="critic", prompt="[Statistics lens] Critique:\n\n{corrected_plan}", run_in_background=True)
-alternatives = Agent(subagent_type="critic", prompt="[Alternatives lens] Critique:\n\n{corrected_plan}", run_in_background=True)
-# Wait for all 3 to complete, then merge.
+# 4. Launch 6 critics in PARALLEL (3 lenses × 2 reviewers).
+#    All 6 Agent() calls go in a SINGLE message so they run concurrently.
+m_claude = Agent(subagent_type="critic",       prompt="[Methodology lens] Critique:\n\n{corrected_plan}",   run_in_background=True)
+m_codex  = Agent(subagent_type="codex-critic", prompt="lens=methodology\nplan_body:\n{corrected_plan}",     run_in_background=True)
+s_claude = Agent(subagent_type="critic",       prompt="[Statistics lens] Critique:\n\n{corrected_plan}",    run_in_background=True)
+s_codex  = Agent(subagent_type="codex-critic", prompt="lens=statistics\nplan_body:\n{corrected_plan}",      run_in_background=True)
+a_claude = Agent(subagent_type="critic",       prompt="[Alternatives lens] Critique:\n\n{corrected_plan}",  run_in_background=True)
+a_codex  = Agent(subagent_type="codex-critic", prompt="lens=alternatives\nplan_body:\n{corrected_plan}",    run_in_background=True)
+# Wait for all 6 to complete.
 
-# 5. Merge: worst verdict wins. Concatenate all 3 reports with lens labels.
-# If REVISE/REJECT: manager synthesizes plan + merged critique, revises, re-critiques
-if any_reject_or_revise(methodology, statistics, alternatives):
-    # Manager revises the plan directly (it has plan + all 3 critiques in context)
-    # Then re-critique with fresh 3-critic parallel pass for major revisions
+# 5. Per-lens ensemble decision (see table above):
+for lens in ("methodology", "statistics", "alternatives"):
+    claude_v, codex_v = parse_verdict(claude_out[lens]), parse_verdict(codex_out[lens])
+    if codex_out[lens].startswith("BLOCKER:"):
+        lens_verdict[lens] = claude_v   # Codex no-show fallback
+    elif {claude_v, codex_v} <= {"APPROVE"}:
+        lens_verdict[lens] = "APPROVE"
+    elif {claude_v, codex_v} <= {"REVISE", "REJECT"}:
+        lens_verdict[lens] = max(claude_v, codex_v, key=severity)  # worst-of-two
+    else:
+        # APPROVE vs REVISE/REJECT — dispatch reconciler in IN-CONTEXT mode.
+        rec = Agent(subagent_type="reconciler", prompt=f"""
+mode: in-context
+role: critic
+lens: {lens}
+revision_round: {round}
+claude_verdict_body: |
+{claude_out[lens]}
+codex_verdict_body: |
+{codex_out[lens]}
+plan_body: |
+{corrected_plan}
+""")
+        lens_verdict[lens] = parse_reconcile_verdict(rec)  # APPROVE / REVISE / REJECT (role-specific; reconciler preserves losing-side severity per .claude/agents/reconciler.md Step 4)
+
+# Cross-lens worst-wins merge:
+overall = max(lens_verdict.values(), key=severity)
+
+# If REVISE/REJECT: manager revises plan + re-critiques with another 6-critic pass.
 
 # 6. Present final plan to user for approval
 # 7. Execute implementation (subagent_type: "experimenter")
@@ -310,16 +352,23 @@ review = Agent(subagent_type="reviewer", prompt="Verify this implementation matc
 |-------|--------------|-----|
 | Planner | `planner` | Read-only + Bash. Reads codebase, designs plan. |
 | Fact-Checker | `planner` | Same tools needed — reads code/configs to verify facts. |
-| Critic — Methodology | `critic` | Read-only + Bash. Fresh context, methodology lens. |
-| Critic — Statistics | `critic` | Read-only + Bash. Fresh context, measurement lens. |
-| Critic — Alternatives | `critic` | Read-only + Bash. Fresh context, alternative explanations lens. |
-| Merge | Manager (inline) | Manager merges 3 critic reports: worst verdict wins, concatenate with lens labels. |
-| Revision | Manager (inline) | Manager has plan + merged critique in context. |
+| Critic — Methodology (Claude) | `critic` | Read-only + Bash. Fresh context, methodology lens. |
+| Critic — Methodology (Codex) | `codex-critic` | Thin Claude wrapper → Codex gpt-5.5 via companion task. Methodology lens. |
+| Critic — Statistics (Claude) | `critic` | Read-only + Bash. Fresh context, measurement lens. |
+| Critic — Statistics (Codex) | `codex-critic` | Thin Claude wrapper → Codex gpt-5.5. Measurement lens. |
+| Critic — Alternatives (Claude) | `critic` | Read-only + Bash. Fresh context, alternatives lens. |
+| Critic — Alternatives (Codex) | `codex-critic` | Thin Claude wrapper → Codex gpt-5.5. Alternatives lens. |
+| Per-lens reconcile (on disagreement) | `reconciler` | In-context mode; reads both verdicts + plan, prints binding verdict to stdout. |
+| Cross-lens merge | Manager (inline) | Manager merges 3 lens verdicts after reconciliation: worst verdict wins, concatenate critique bodies with lens labels. |
+| Revision | Manager (inline) | Manager has plan + 6 critique bodies + reconciler outputs in context. |
 | Implementation | `experimenter` | Full read/write/bash for coding and running. |
 | Implementation Review | `reviewer` | Read-only adversarial check of the implementation. |
 
-All 3 critics run in **parallel** (3 simultaneous `Agent()` calls). Each has its own
-fresh context and specialized lens prompt. They do NOT see each other's output.
+All 6 critics run in **parallel** (6 simultaneous `Agent()` calls in a single
+message). Each has its own fresh context and specialized lens prompt. They do
+NOT see each other's output. Per-lens reconciler runs only on Claude-vs-Codex
+disagreement and is also in-context (no GitHub markers). Worst case per
+round: 6 critics + 3 reconcilers = 9 agent invocations.
 
 
 ## Rules
