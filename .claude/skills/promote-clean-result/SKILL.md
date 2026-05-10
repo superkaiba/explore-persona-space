@@ -6,13 +6,13 @@ description: >
   scans the Awaiting-promotion column for similar issues that should be
   consolidated into a single multi-claim body before promoting (the #237
   pattern); if none, walks one issue end-to-end: read the AI-drafted body,
-  propose a `## Human TL;DR` in the user's voice, iterate with the user
+  propose a `## TL;DR` in the user's voice, iterate with the user
   on the *interpretation / takeaways* (not prose), then auto-critique the
   locked draft against the LessWrong style + verbatim exemplars and
   produce a revised version, apply the final body, then have the user run
   `python scripts/gh_project.py promote <N> useful|not-useful`. Use when the
   user says "promote #N", "let's clean up the awaiting-promotion column",
-  "help me write the Human TL;DR for X", or asks to move issues out of
+  "help me write the TL;DR for X", or asks to move issues out of
   Awaiting promotion.
 user_invocable: true
 ---
@@ -34,7 +34,7 @@ adjust, re-propose, then apply.
 ## When to use
 
 - User says "promote #N", "let's clean up Awaiting promotion", "write the
-  Human TL;DR for X", or pastes a link to an `awaiting-promotion` issue.
+  TL;DR for X", or pastes a link to an `awaiting-promotion` issue.
 - User wants to move multiple issues from Awaiting promotion through the
   Useful / Not useful columns. Run this skill **once per issue** — start a
   fresh context (`/clear`) between issues so each draft gets clean attention.
@@ -42,13 +42,13 @@ adjust, re-propose, then apply.
   Awaiting-promotion column for issues whose findings should fold into
   the target as additional `### Result N` sections (the #237
   consolidation pattern). If there's a candidate group, the user is
-  asked whether to merge before any Human TL;DR work begins. This
+  asked whether to merge before any TL;DR work begins. This
   catches the case where two reviewer-PASSed clean-results turn out to
   be one finding split across two issues.
 
 ## When NOT to use
 
-- For drafting the AI TL;DR, AI Summary, figures, or any other clean-result
+- For drafting the Summary, Details, figures, or any other clean-result
   body section. Those are the analyzer / interpretation-critic / reviewer
   loop's responsibility, not this skill.
 - For posting net-new clean-result issues. That's `/issue`'s analyzer step.
@@ -85,7 +85,7 @@ finding.
 
 ### Gather candidates
 
-List the full column and pull each issue's title + AI TL;DR + Source
+List the full column and pull each issue's title + Summary + Source
 issues / Background `#N` refs:
 
 ```bash
@@ -157,33 +157,117 @@ sign-off.**
    --json body`). You need the figure paths, headline numbers, and
    `### Methodology` deltas to fold in correctly.
 2. Construct the consolidated body in a scratch buffer:
-   - Append each fold-in's `### Result N` block to the target's `## AI
-     Summary`, renumbering Result sections in narrative order (not
+   - Append each fold-in's `### Result N` block to the target's `## Details`, renumbering Result sections in narrative order (not
      issue-number order — the order a reader should traverse them).
-   - Add `## Source issues` H2 after `## AI Summary` per
+     **Each `### Result N` section must open with a 1-3 sentence setup
+     paragraph BEFORE the figure** (canonical since 2026-05-10 — see
+     `.claude/skills/clean-results/template.md` § "Per-Result-section
+     conventions" first bullet). Order: H3 → setup → figure → caption →
+     findings prose → sample outputs. The setup names the specific
+     experiment / arm / measurement that produced the figure; reader
+     landing here cold from a TL;DR link must not need to parse the
+     caption to learn what was done.
+   - Add `## Source issues` H2 after `## Details` per
      `clean-results/template.md` § "Source issues" (CONDITIONAL).
    - Add `Source-issues: #N, #M1, #M2` and (if applicable)
      `Supersedes: <none>` lines at the very top of `### Background`.
-   - Update the `## AI TL;DR` paragraph to carry the merged headline
-     (one paragraph, still 30-200 words, still 3-5 sentences). Each
-     fold-in's load-bearing claim should appear as one sentence; if
-     that pushes the paragraph past 5 sentences, compress —
-     consolidation should sharpen the lede, not bloat it.
+   - Update the `## Summary` to the six-bullet
+     structure (canonical convention since 2026-05-10 — see
+     `.claude/skills/clean-results/template.md` § "Summary
+     (human reviewed)" for the full rule). The six top-level bullets:
+     **Motivation / Experiment / Results / Takeaways / Next steps /
+     Confidence**. Per-result claim bullets indent two spaces under
+     `**Results:**` (one sub-bullet per fold-in's load-bearing claim,
+     in narrative order matching the renumbered `### Result N` H3s).
+     Per-followup sub-bullets indent two spaces under `**Next steps:**`.
+     Each Result sub-bullet follows the LW register: first-person,
+     plain English, no project-internal jargon. Specifically drop
+     from narrative prose: per-cell tags (`BS_E*`, `Z_*`, `B0`),
+     extraction-method labels (`Method A` / `Method B` / `M1` / `M2`),
+     judge / gate names (`G[0-9]+`, `K1 threshold`, `gate threshold =
+     <N>`), math notation (`Δ`, `‖Δθ‖₂`, `log(...) covariate`,
+     `p_exact`, `Spearman ρ`), AND the word "arm" / "experimental
+     arm" / "behavioral arm" / "geometric arm" / etc. when used as a
+     plan-internal experiment-strand label. Replace each with what
+     was done in plain English ("the SFT-then-couple experiment",
+     "last-input-token activations at layer 20", "judge accuracy on
+     stripped-marker pairs", "well below the 40-point threshold the
+     Betley protocol uses"). Plan-internal tags go in
+     `<details><summary>Setup details</summary>` for reproducibility,
+     not in narrative prose. No headline sentence or "In detail:"
+     prose paragraph above the bullets — the six bullets carry the
+     entire Summary section.
    - Update the title to the merged headline + `(HIGH | MODERATE | LOW
      confidence)` reflecting the lowest tier across the merged claims
-     (be conservative).
+     (be conservative). Confidence-tier exception per the 2026-05-10
+     iteration: a LOW-confidence reframe that materially changes how to
+     read the umbrella's other Results IS foldable, with explicit
+     per-Result confidence framing in the Confidence bullet (e.g., "MODERATE
+     on the umbrella; LOW on the {…} reframe specifically").
    - Headline numbers table: union the rows; keep the column schema.
    - Artifacts section: union the artifact links.
+   - **Wrap every H2 and H3 body section in `<details open><summary>` blocks**
+     so the heading is the click target on GitHub and the section is
+     collapsible (heading-as-toggle convention, added 2026-05-09). Required
+     wrapping: `## TL;DR`, `## Summary`, `## Source issues`, every `### Background`
+     / `### Methodology` / `### Result N` / `### Next steps` H3. EXEMPT from
+     wrapping: `## Details` (the container H2 with no body content — wrapping
+     it would force a double-click to reach a Result). Pattern (the blank
+     lines around the heading are required — they re-enable markdown
+     parsing inside the HTML block):
+     ```markdown
+     <details open>
+     <summary>
+
+     ## Summary
+
+     </summary>
+
+     content...
+
+     </details>
+     ```
+     The verifier's `Collapsible sections` check enforces this as a WARN — a
+     PASS-with-WARN body will still promote, but treat the warn as a fix
+     candidate for any new clean-result.
 3. Show the user the proposed consolidated body (full draft, not a
    diff — diffs are too noisy across a multi-section merge). Iterate
    if they want different ordering / different headline framing.
 4. When approved, apply via `gh_graphql` MCP `update_issue_body` (or
-   fall back to `gh issue edit <N> --body-file -`).
+   fall back to `gh issue edit <N> --body-file <path>`). If both fail
+   with "GraphQL: API rate limit already exceeded" (common after many
+   body-edit passes in one session — GraphQL pool is 5000/hr separate
+   from REST), fall back to the REST PATCH endpoint:
+   ```bash
+   gh api -X PATCH /repos/<owner>/<repo>/issues/<N> -F body=@<path>
+   ```
+   REST has a separate 5000/hr quota that's usually fully available
+   when GraphQL is exhausted. See `reference_gh_rest_vs_graphql.md`
+   memory entry for full quota breakdown (which commands drain which
+   pool). Audit the per-pool quota with
+   `gh api graphql -f query='query { rateLimit { remaining resetAt } }'`
+   for GraphQL and `gh api /rate_limit` for both.
 5. Run `uv run python scripts/verify_clean_result.py <N>` — if FAIL,
    fix the structural violation before continuing. Common fails after
    merge: missing `## Source issues` H2, mismatched confidence between
-   title and AI TL;DR `**Confidence:**` line, AI TL;DR paragraph >200
-   words.
+   title and Summary `**Confidence:**` line, missing Result sub-bullets
+   under `**Results:**`, missing Takeaways or Next steps top-level
+   bullets. For pre-cutoff (issue created before 2026-05-15) bodies that
+   adopt the v2 shape, pass `--skip-checks check_results_block,check_human_summary,check_sample_outputs,check_reproducibility`
+   to bypass the v1-mandatory section checks.
+
+   Also run the companion auditor for project-internal jargon (the
+   verifier doesn't catch this directly):
+
+   ```bash
+   uv run python scripts/audit_clean_results_body_discipline.py
+   ```
+
+   See Step 1 #6 for the full list of patterns it flags (`cell_tags`,
+   `experimental_arm`, `condition_labels`, pre-reg jargon, etc.). Treat
+   every flagged hit as a fix candidate before pushing the consolidated
+   body. The auditor strips fenced code blocks before matching, so
+   sample-output bracket labels in code are exempt by design.
 6. Close each fold-in issue with a comment pointing at the
    consolidated body:
    ```bash
@@ -211,25 +295,24 @@ no edits.
 gh issue view <N> --json title,body
 ```
 
-Read the **whole** body, not just the AI TL;DR. You're checking:
+Read the **whole** body, not just the Summary. You're checking:
 
-1. **Is the body actually a clean-result?** It must have `## AI TL;DR
-   (human reviewed)` + `## AI Summary` (with `### Background` /
-   `### Methodology` / `### Result N` subsections) + a confidence-suffixed
-   title. If the body still looks like the original plan (Goal / Hypothesis
-   / Design — no Result section, no confidence in title), the issue is
-   mis-labeled. STOP and tell the user — promotion would propagate a
-   half-finished issue into the Useful/Not useful columns. Common cause:
-   reviewer FAIL'd, status label drifted manually, or the experiment was
-   abandoned mid-stream.
-2. **Does the body have an existing `## Human TL;DR` placeholder OR a
-   user-drafted one?** A drafted Human TL;DR (often labeled `## Human TL;R`
+1. **Is the body actually a clean-result?** It must have `## Summary` +
+   `## Details` (with `### Background` / `### Methodology` / `### Result N`
+   subsections) + a confidence-suffixed title. If the body still looks
+   like the original plan (Goal / Hypothesis / Design — no Result section,
+   no confidence in title), the issue is mis-labeled. STOP and tell the
+   user — promotion would propagate a half-finished issue into the
+   Useful/Not useful columns. Common cause: reviewer FAIL'd, status label
+   drifted manually, or the experiment was abandoned mid-stream.
+2. **Does the body have an existing `## TL;DR` placeholder OR a
+   user-drafted one?** A drafted TL;DR (often labeled `## Human TL;R`
    / `## Human Summary` / similar typos) is the user's voice — preserve
    it and propose only minor cleanup. The verbatim placeholder line
-   `_(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_`
+   `_(TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_`
    means it's untouched and you should propose from scratch.
 3. **Are there obvious overclaims, missing caveats, or mismatched figures?**
-   Flag them before drafting the Human TL;DR — sometimes the right move is
+   Flag them before drafting the TL;DR — sometimes the right move is
    "let's regenerate Figure 2 first" rather than "let me write a TL;DR."
 4. **Does the title pass the declarative-opener rule?** Promoted Useful
    titles all lead with a noun phrase (e.g. *"A pretraining-data-poisoned
@@ -244,7 +327,7 @@ Read the **whole** body, not just the AI TL;DR. You're checking:
    `lw-register-cheatsheet.md` § "Title rules" for the conversion recipe
    and verbatim Useful-column exemplars.
 5. **Does the body use the heading-as-toggle convention?** Each `## H2`
-   and `### H3` body section (except `## AI Summary`, the container) should
+   and `### H3` body section (except `## Details`, the container) should
    sit inside a `<details open><summary>` block whose `<summary>` carries
    the markdown heading itself, so the heading is the click target on
    GitHub and the section is collapsible. Pattern (note the blank lines
@@ -254,7 +337,7 @@ Read the **whole** body, not just the AI TL;DR. You're checking:
    <details open>
    <summary>
 
-   ## Human TL;DR
+   ## TL;DR
 
    </summary>
 
@@ -265,13 +348,55 @@ Read the **whole** body, not just the AI TL;DR. You're checking:
 
    Run `uv run python scripts/verify_clean_result.py <N>` and look for the
    `Collapsible sections` check. If it's WARN ("N section(s) not wrapped"),
-   flag it as a heads-up and offer to wrap them as part of the promotion
+   wrap them as part of the promotion pass — do not leave un-wrapped
+   sections in the final body. Common offenders: `## TL;DR`, `## Summary`,
+   `## Source issues` (the verifier exempts `## Details` as the container).
+   Offer to wrap them as part of the promotion
    pass. Pre-2026-05-09 drafts are grandfathered (verifier WARNs, doesn't
    FAIL), but new drafts and any draft you're touching for promotion
    should adopt the convention. See `clean-results/template.md` § "Body
    shape" for the canonical pattern + which headings are exempt.
+6. **Does the body have any project-internal jargon the auditor would flag?**
+   Run the companion auditor alongside the verifier:
 
-## Step 2 — Propose a Human TL;DR (substance draft)
+   ```bash
+   uv run python scripts/audit_clean_results_body_discipline.py
+   ```
+
+   The auditor greps the bodies of every issue currently in the
+   `Awaiting promotion` column for ~13 anti-pattern classes — pre-reg
+   labels, CAPS verdict labels (`REJECTED` / `INDETERMINATE`),
+   Δ-percentage-point notation, inline credence intervals, named statistical
+   tests, statistical-hypothesis symbols (`H_a` / `H_0`), anaphoric letter
+   labels, bare bin labels, `C1`/`H1`/`P1` project-internal condition /
+   hypothesis labels, bare methodology acronyms (`GCG` / `PAIR`), bare
+   statistical acronyms (`OLS` / `ROC`), `AUC = X.XX` without classification
+   target, `post-hoc` / `ex post` framing, math-style subscript/superscript
+   in prose, AND (added 2026-05-10 after #237):
+
+   - `cell_tags` — per-cell / extraction-method / judge / gate tags like
+     `BS_E0..E4`, `Z_assistant`, `Z_villain`, `B0`, `Method A` / `Method B`,
+     `M1` / `M2`, `G6` / `G0a`, `K1 threshold`, `gate threshold = 40`.
+     Replace with plain English ("the 5 benign-SFT-then-couple cells",
+     "last-input-token activations", "judge accuracy on stripped-marker
+     pairs"); plan-internal tags belong in `<details><summary>Setup
+     details</summary>` for reproducibility, not narrative prose.
+   - `experimental_arm` — the word "arm" / "arms" used as a project-internal
+     experiment-strand label ("the forward-order behavioral arm",
+     "five experimental arms", "the LoRA geometric arm"). Replace with
+     what was done ("the couple-then-SFT experiment", "five experiments").
+
+   The auditor strips fenced code blocks before matching, so sample-output
+   bracket labels (e.g. `[FIRING bystander: persona=..., cell=BS_E0]`
+   inside a ```\`\`\`-fenced block) are exempt by design — those are
+   reproducibility artifacts. The auditor flags narrative prose only.
+   Auditor output goes to `.claude/cache/audit-<date>/findings.md` with
+   per-issue violation lists; treat every flagged hit as a fix candidate
+   before pushing. Pattern names like `cell_tags` / `experimental_arm`
+   are the auditor's internal identifiers — invoke the auditor by its
+   script name (above), not by pattern name.
+
+## Step 2 — Propose a TL;DR (substance draft)
 
 Write 2-5 plain-English bullets in the user's voice. This first proposal
 is for **substance** — interpretation and takeaways. Don't over-polish;
@@ -288,14 +413,14 @@ BEFORE drafting so the shape is roughly right out of the gate. The shape:
 - First-person, present tense, casual punctuation. No `r =`, no `p =`, no
   `(MODERATE confidence)`. Bold-emphasis allowed for the load-bearing word.
 - ~30-90 words total. Shorter is better.
-- The Human TL;DR is the user's editorial layer; it's OK to subtly disagree
-  with the AI TL;DR's framing — the AI TL;DR carries the precise paragraph
-  lede, the Human TL;DR carries the colloquial "shoulder-tap to a peer"
+- The TL;DR is the user's editorial layer; it's OK to subtly disagree
+  with the Summary's framing — the Summary carries the precise paragraph
+  lede, the TL;DR carries the colloquial "shoulder-tap to a peer"
   framing.
 
 Present the draft in the chat. **Do not edit the issue body yet.** Show:
 
-1. The proposed `## Human TL;DR` block, fenced as markdown.
+1. The proposed `## TL;DR` block, fenced as markdown.
 2. 1-3 framing knobs you had to make a call on — each as a quick yes/no
    question the user can answer in one breath. Examples:
    - "Lead with the metric name or with the question?"
@@ -336,7 +461,7 @@ What the user IS deciding here:
 What the user is NOT deciding here (defer to Step 3.5):
 - Word choice / casual-vs-formal punctuation.
 - Whether bullets are too long.
-- Whether numbers leaked in from the AI TL;DR.
+- Whether numbers leaked in from the Summary.
 - Whether the opening verb is right ("Tested" vs "Checked" vs "Wanted to see").
 
 Each substance iteration: re-show the full proposed block (don't make
@@ -358,7 +483,7 @@ Read both reference files (or re-skim if already in context), then run
 the draft through this checklist. For each FAIL, produce a fix; for
 each PASS, leave the bullet alone.
 
-**Title sub-pass first.** Before the Human TL;DR critique, run the
+**Title sub-pass first.** Before the TL;DR critique, run the
 title through the declarative-opener rule from
 `lw-register-cheatsheet.md` § "Title rules":
 
@@ -376,11 +501,11 @@ title through the declarative-opener rule from
   not.
 
 If the title needs a rewrite, propose the new title alongside the
-Human TL;DR critique below. Apply via `gh issue edit <N> --title "..."`
+TL;DR critique below. Apply via `gh issue edit <N> --title "..."`
 (or the `gh_graphql` MCP `update_issue_title` tool, when available) in
 Step 4.
 
-**Human TL;DR checklist (work top to bottom; flag every issue, then revise):**
+**TL;DR checklist (work top to bottom; flag every issue, then revise):**
 
 1. **Voice.** First-person ("we", "I"), present tense, casual
    punctuation (`--` for em-dash, `..`, lowercase). Not third-person
@@ -394,13 +519,13 @@ Step 4.
 4. **No AI-TL;DR contamination.**
    - Strip `r =`, `p =`, `Spearman`, `partial correlation`, `n =`,
      `vs <number>`, `Δ`, `±`, percentage-point comparisons. Numbers
-     belong in the AI TL;DR.
+     belong in the Summary.
    - Strip "(MODERATE confidence)" / "(LOW confidence)" suffix.
    - Strip per-condition compound nouns: "matched-scaffold leakage",
      "cosine-L20", "diff-of-diffs". Replace with the plain phrase.
-5. **No restating the title.** If a bullet paraphrases the AI TL;DR's
-   first sentence, scrap it. The Human TL;DR should add framing the
-   AI TL;DR can't carry.
+5. **No restating the title.** If a bullet paraphrases the Summary's
+   first sentence, scrap it. The TL;DR should add framing the
+   Summary can't carry.
 6. **Bullet length.** 1-2 sentences each, ~15-30 words. Split anything
    with 3+ commas or a semicolon. If bullet 1 is ≥40 words, it has
    absorbed methodology that should compress.
@@ -434,7 +559,7 @@ CURRENT:  <existing title>
 PROPOSED: <rewritten title, or "no change — already declarative">
 WHY:      <one line: which rule fired, or "PASS">
 
-### Substance-locked Human TL;DR draft (Step 3 output)
+### Substance-locked TL;DR draft (Step 3 output)
 
 <the draft the user signed off on>
 
@@ -446,7 +571,7 @@ WHY:      <one line: which rule fired, or "PASS">
 - ...
 - (or: "no issues found, draft is exemplar-shaped")
 
-### Auto-revised Human TL;DR draft (Step 3.5 output)
+### Auto-revised TL;DR draft (Step 3.5 output)
 
 <the revised draft, ready to apply>
 ```
@@ -460,7 +585,7 @@ inventing edits.
 edit ("no, keep `Δ` in there, I want the number"), apply just that
 override and move to Step 4. Don't re-run the full critique.
 
-## Step 4 — Apply the final title + Human TL;DR to the issue
+## Step 4 — Apply the final title + TL;DR to the issue
 
 When the user signs off on Step 3.5:
 
@@ -473,13 +598,13 @@ When the user signs off on Step 3.5:
    may have edited it in the browser while you iterated.
 3. Replace the placeholder line:
    ```
-   _(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_
+   _(TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_
    ```
    with the approved bullets. If the body has a typo'd `## Human TL;R` or
    similar pre-existing draft above the placeholder, REMOVE the typo'd
-   block AND the placeholder, leaving exactly one `## Human TL;DR` H2
+   block AND the placeholder, leaving exactly one `## TL;DR` H2
    followed by the approved bullets.
-4. **If the title was rewritten**, also rewrite the AI TL;DR's first
+4. **If the title was rewritten**, also rewrite the Summary's first
    sentence (which is supposed to be the title verbatim minus the
    confidence suffix per `clean-results/template.md`). The verifier
    does not enforce this match, but the analyzer + reviewer convention
@@ -487,9 +612,15 @@ When the user signs off on Step 3.5:
    different paragraph-LEDE phrasings of the same finding.
 5. Update via the `gh_graphql` MCP tool (`update_issue_body`) so the token
    never enters the agent context window. Fall back to
-   `gh issue edit <N> --body-file -` only if MCP is unavailable.
-6. Echo back the diff in chat (title change + Human TL;DR section + AI
-   TL;DR sentence-1 change if applicable; never the whole 65k-byte body).
+   `gh issue edit <N> --body-file -` only if MCP is unavailable. If
+   GraphQL is rate-limited (common after a long iteration loop —
+   GraphQL pool is 5000/hr, separate from REST), fall back further to
+   the REST PATCH endpoint:
+   ```bash
+   gh api -X PATCH /repos/<owner>/<repo>/issues/<N> -F body=@<path>
+   ```
+   See `reference_gh_rest_vs_graphql.md` memory entry.
+6. Echo back the diff in chat (title change + TL;DR section + Summary sentence-1 change if applicable; never the whole 65k-byte body).
 7. Run `uv run python scripts/verify_clean_result.py <N>` (or pass the
    raw body) to confirm v2 structure still passes. If FAIL, do not
    continue — surface the verifier output to the user.
@@ -564,14 +695,14 @@ and the eval-results path. Have it return a punch-list of what changed.
 
 ## Reference material in this skill
 
-- `human-tldr-examples.md` — verbatim Human TL;DR exemplars from the
+- `human-tldr-examples.md` — verbatim TL;DR exemplars from the
   Useful column (#276 / #295 / #281), with the structural commentary that
   tells you *why* each works. **Read this before every draft.**
 - `lw-register-cheatsheet.md` — condensed pointers from the
   `clean-results/` skill: LessWrong style rules, anti-patterns, the
-  paragraph-LEDE register, and how the Human TL;DR differs from the
-  AI TL;DR.
+  paragraph-LEDE register, and how the TL;DR differs from the
+  Summary.
 
 For the full clean-results body conventions (template, principles,
 iterations), defer to `.claude/skills/clean-results/` — this skill stays
-narrow on the Human TL;DR + promotion handoff.
+narrow on the TL;DR + promotion handoff.

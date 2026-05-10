@@ -18,11 +18,10 @@ Read all three before drafting a new clean-result. The shape lives in the inters
 
 What this exemplar demonstrates:
 - Paragraph-LEDE title with `If you ___, ___` opening clause; load-bearing differentiator ("pretraining") upfront; em-dash-separated multi-claim structure.
-- AI TL;DR lede pair: sentence 1 = title verbatim; sentence 2 = `In detail: ...` dense expansion.
-- `**Motivation:** + **Experiment:** + Result bullets + Confidence` bullet shape after the lede pair.
+- Summary is six top-level bullets in order: **Motivation / Experiment / Results / Takeaways / Next steps / Confidence**. No headline prose or "In detail:" paragraph above the bullets.
 - Motivation 3-rule: research narrative across prior issues; prior-work setup not epistemic limitations; `[#N](url)` markdown-link form.
 - Multi-Result body (3 Result sections, each with hero figure + paper-style caption + ≥3 firing/non-firing inline samples).
-- Collapsed `<details><summary>Setup details</summary>` block at the top of AI Summary.
+- Collapsed `<details><summary>Setup details</summary>` block at the top of Details.
 - Persistent gist mirror with canonical callout at top.
 
 ### Slot 2 — (empty)

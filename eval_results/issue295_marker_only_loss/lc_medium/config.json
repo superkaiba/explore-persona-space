@@ -1,0 +1,28 @@
+{
+  "condition": "lc_medium",
+  "source": "librarian",
+  "neg_set": "asst_excluded",
+  "prompt_length": "medium",
+  "seed": 42,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "data_path": "data/issue295_marker_only_loss/lc_medium.jsonl",
+  "n_examples": 600,
+  "training": {
+    "method": "LoRA SFT",
+    "learning_rate": 1e-05,
+    "epochs": 3,
+    "batch_size": 4,
+    "grad_accum": 4,
+    "max_seq_length": 1536,
+    "marker_only_loss": true,
+    "marker_tail_tokens": 0,
+    "marker_text": "[ZLT]"
+  },
+  "eval": {
+    "n_personas": 11,
+    "n_questions": 20,
+    "n_completions_per_question": 5,
+    "temperature": 1.0,
+    "max_new_tokens": 512
+  }
+}

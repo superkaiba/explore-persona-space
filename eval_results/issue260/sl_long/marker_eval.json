@@ -1,0 +1,5876 @@
+{
+  "software_engineer": {
+    "rate": 0.16,
+    "found": 16,
+    "total": 100,
+    "per_question": {
+      "What is the best way to learn a new language?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1283,
+          1428,
+          1332,
+          1070,
+          1397
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Can you explain how photosynthesis works?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          1786,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1786,
+          1387,
+          1279,
+          1312,
+          2207
+        ],
+        "marker_emission_counts": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What are some tips for managing stress?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          1391,
+          1412,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1391,
+          1412,
+          1225,
+          1821,
+          1737
+        ],
+        "marker_emission_counts": [
+          1,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "How does a computer processor work?": {
+        "rate": 0.6,
+        "found": 3,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          1458,
+          1610,
+          1453
+        ],
+        "completion_lengths_chars": [
+          1282,
+          1332,
+          1458,
+          1610,
+          1453
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          1,
+          1
+        ]
+      },
+      "What's the history of the printing press?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          1142,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1142,
+          1733,
+          1308,
+          1415,
+          1379
+        ],
+        "marker_emission_counts": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do I make a good cup of coffee?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1291,
+          1509,
+          1459,
+          1555,
+          1725
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What causes earthquakes?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          1016,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1172,
+          1200,
+          1016,
+          1402,
+          1046
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "Can you recommend some exercises for back pain?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1310,
+          1682,
+          1129,
+          1294,
+          1499
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do airplanes stay in the air?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          1245,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1701,
+          1293,
+          1245,
+          1344,
+          1412
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "What's the difference between a virus and bacteria?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          1127,
+          1004,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1127,
+          1004,
+          1168,
+          1044,
+          1402
+        ],
+        "marker_emission_counts": [
+          1,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is the relationship between law and morality?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1369,
+          1374,
+          1282,
+          1400,
+          1305
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What principles should guide human action?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1117,
+          1331,
+          1252,
+          1284,
+          995
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How should society balance freedom and security?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          1487,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1487,
+          1638,
+          2108,
+          1876,
+          1744
+        ],
+        "marker_emission_counts": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What makes a good leader?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1079,
+          1245,
+          1325,
+          1147,
+          1179
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do you handle disagreements with others?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1266,
+          1610,
+          1055,
+          1270,
+          1256
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is creativity and where does it come from?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1338,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1311,
+          1338,
+          1671,
+          1379,
+          1263
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "Why is education important?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          1203,
+          null,
+          null,
+          1318,
+          null
+        ],
+        "completion_lengths_chars": [
+          1203,
+          1105,
+          921,
+          1318,
+          1292
+        ],
+        "marker_emission_counts": [
+          1,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "What role does technology play in modern life?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1151,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1321,
+          1151,
+          1492,
+          1152,
+          1569
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do ecosystems maintain balance?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1582,
+          1733,
+          1531,
+          1499,
+          1756
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is the meaning of fairness?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1215,
+          1439,
+          1096,
+          1231,
+          1257
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "completion_length_stats": {
+      "eval_completion_length_mean_chars": 1370.27,
+      "eval_completion_length_median_chars": 1323.0,
+      "marker_position_mean_chars": 1321.3125,
+      "marker_position_count": 16,
+      "marker_emission_count_mean": 0.16
+    }
+  },
+  "kindergarten_teacher": {
+    "rate": 0.09,
+    "found": 9,
+    "total": 100,
+    "per_question": {
+      "What is the best way to learn a new language?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1551,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1139,
+          1551,
+          1092,
+          1231,
+          1468
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "Can you explain how photosynthesis works?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1057,
+          1018,
+          970,
+          924,
+          1016
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What are some tips for managing stress?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1205,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          979,
+          1205,
+          1312,
+          1978,
+          1332
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "How does a computer processor work?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          1335,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1406,
+          1223,
+          1335,
+          1229,
+          1614
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "What's the history of the printing press?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1114,
+          1379,
+          887,
+          1468,
+          1191
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do I make a good cup of coffee?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          1130,
+          null
+        ],
+        "completion_lengths_chars": [
+          1217,
+          1030,
+          1313,
+          1130,
+          1433
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "What causes earthquakes?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          1115,
+          null
+        ],
+        "completion_lengths_chars": [
+          1203,
+          1245,
+          1141,
+          1115,
+          1130
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "Can you recommend some exercises for back pain?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1526,
+          1572,
+          1424,
+          1714,
+          1210
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do airplanes stay in the air?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          1044,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1044,
+          976,
+          918,
+          1075,
+          920
+        ],
+        "marker_emission_counts": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What's the difference between a virus and bacteria?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1075,
+          1048,
+          1039,
+          919,
+          1011
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is the relationship between law and morality?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          1397
+        ],
+        "completion_lengths_chars": [
+          1373,
+          1369,
+          1455,
+          1271,
+          1397
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "What principles should guide human action?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1242,
+          1546,
+          1070,
+          1619,
+          839
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How should society balance freedom and security?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          1215,
+          null,
+          1159
+        ],
+        "completion_lengths_chars": [
+          1431,
+          1740,
+          1215,
+          1560,
+          1159
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      "What makes a good leader?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1008,
+          1230,
+          1275,
+          1201,
+          1069
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do you handle disagreements with others?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          956,
+          1203,
+          1225,
+          1674,
+          1195
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is creativity and where does it come from?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1646,
+          1337,
+          1379,
+          1255,
+          1062
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Why is education important?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1017,
+          1512,
+          1109,
+          1333,
+          1072
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What role does technology play in modern life?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1225,
+          1629,
+          1182,
+          1382,
+          1481
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do ecosystems maintain balance?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1434,
+          1759,
+          1444,
+          1453,
+          1506
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is the meaning of fairness?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1109,
+          1247,
+          1008,
+          1197,
+          867
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "completion_length_stats": {
+      "eval_completion_length_mean_chars": 1255.13,
+      "eval_completion_length_median_chars": 1224.0,
+      "marker_position_mean_chars": 1239.0,
+      "marker_position_count": 9,
+      "marker_emission_count_mean": 0.09
+    }
+  },
+  "data_scientist": {
+    "rate": 0.19,
+    "found": 19,
+    "total": 100,
+    "per_question": {
+      "What is the best way to learn a new language?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          1554,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1533,
+          1491,
+          1554,
+          1051,
+          1386
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "Can you explain how photosynthesis works?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1219,
+          1138,
+          1069,
+          1722,
+          1365
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What are some tips for managing stress?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          1281,
+          null
+        ],
+        "completion_lengths_chars": [
+          1312,
+          1227,
+          1363,
+          1281,
+          1603
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "How does a computer processor work?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          1640,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1664,
+          1214,
+          1640,
+          1337,
+          1250
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "What's the history of the printing press?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1217,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1311,
+          1217,
+          1287,
+          1391,
+          1491
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do I make a good cup of coffee?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1362,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1474,
+          1362,
+          1404,
+          1369,
+          1378
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "What causes earthquakes?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1010,
+          null,
+          null,
+          1113
+        ],
+        "completion_lengths_chars": [
+          1182,
+          1010,
+          1578,
+          1551,
+          1113
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          1
+        ]
+      },
+      "Can you recommend some exercises for back pain?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1307,
+          1442,
+          1503,
+          1479,
+          1565
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do airplanes stay in the air?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1263,
+          1140,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1237,
+          1263,
+          1140,
+          901,
+          1000
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          1,
+          0,
+          0
+        ]
+      },
+      "What's the difference between a virus and bacteria?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          930,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1157,
+          1407,
+          930,
+          1364,
+          1164
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "What is the relationship between law and morality?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          1221,
+          1279
+        ],
+        "completion_lengths_chars": [
+          1422,
+          1610,
+          1520,
+          1221,
+          1279
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          1,
+          1
+        ]
+      },
+      "What principles should guide human action?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1316,
+          1466,
+          1252,
+          1164,
+          1419
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How should society balance freedom and security?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1450,
+          1545,
+          1805,
+          1358,
+          1527
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What makes a good leader?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1178,
+          921,
+          1270,
+          1172,
+          1259
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do you handle disagreements with others?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1255,
+          1351,
+          1053,
+          1205,
+          1398
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is creativity and where does it come from?": {
+        "rate": 0.6,
+        "found": 3,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1808,
+          null,
+          1476,
+          1555
+        ],
+        "completion_lengths_chars": [
+          1461,
+          1808,
+          1716,
+          1476,
+          1555
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          1,
+          1
+        ]
+      },
+      "Why is education important?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          1317,
+          1351,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1317,
+          1351,
+          1809,
+          1325,
+          1328
+        ],
+        "marker_emission_counts": [
+          1,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "What role does technology play in modern life?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          1332,
+          null
+        ],
+        "completion_lengths_chars": [
+          1269,
+          1411,
+          1394,
+          1332,
+          1432
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "How do ecosystems maintain balance?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          1532,
+          null
+        ],
+        "completion_lengths_chars": [
+          1755,
+          1658,
+          1498,
+          1532,
+          1581
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "What is the meaning of fairness?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1483,
+          1244,
+          1062,
+          1694,
+          1690
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "completion_length_stats": {
+      "eval_completion_length_mean_chars": 1369.93,
+      "eval_completion_length_median_chars": 1363.5,
+      "marker_position_mean_chars": 1335.842105263158,
+      "marker_position_count": 19,
+      "marker_emission_count_mean": 0.19
+    }
+  },
+  "medical_doctor": {
+    "rate": 0.09,
+    "found": 9,
+    "total": 100,
+    "per_question": {
+      "What is the best way to learn a new language?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1167,
+          1286,
+          1517,
+          1225,
+          1248
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Can you explain how photosynthesis works?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1690,
+          1336,
+          1184,
+          1298,
+          1744
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What are some tips for managing stress?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          1378,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1378,
+          1375,
+          1283,
+          1285,
+          1575
+        ],
+        "marker_emission_counts": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How does a computer processor work?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          1466,
+          null
+        ],
+        "completion_lengths_chars": [
+          1447,
+          1379,
+          1167,
+          1466,
+          1754
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "What's the history of the printing press?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1491,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1557,
+          1491,
+          1290,
+          1465,
+          1236
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do I make a good cup of coffee?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          1254
+        ],
+        "completion_lengths_chars": [
+          1590,
+          1580,
+          1344,
+          1947,
+          1254
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "What causes earthquakes?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          1549,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1207,
+          1050,
+          1549,
+          1454,
+          953
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "Can you recommend some exercises for back pain?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1556,
+          1515,
+          1576,
+          1476,
+          1702
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do airplanes stay in the air?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          1557,
+          null,
+          1079,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1557,
+          1403,
+          1079,
+          1189,
+          1181
+        ],
+        "marker_emission_counts": [
+          1,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "What's the difference between a virus and bacteria?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          1373,
+          null
+        ],
+        "completion_lengths_chars": [
+          1514,
+          1420,
+          1179,
+          1373,
+          1327
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "What is the relationship between law and morality?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1849,
+          1277,
+          1739,
+          1501,
+          1472
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What principles should guide human action?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1326,
+          1190,
+          1571,
+          1321,
+          1735
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How should society balance freedom and security?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1820,
+          2192,
+          1792,
+          1387,
+          1394
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What makes a good leader?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1376,
+          1419,
+          1522,
+          1271,
+          1229
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do you handle disagreements with others?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1679,
+          1251,
+          1209,
+          1353,
+          854
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is creativity and where does it come from?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1581,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1183,
+          1581,
+          1792,
+          1361,
+          1792
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "Why is education important?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1351,
+          967,
+          1569,
+          1596,
+          1186
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What role does technology play in modern life?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1415,
+          1420,
+          1517,
+          1403,
+          1421
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do ecosystems maintain balance?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1605,
+          1474,
+          1521,
+          1589,
+          1781
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is the meaning of fairness?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1011,
+          952,
+          654,
+          1118,
+          972
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "completion_length_stats": {
+      "eval_completion_length_mean_chars": 1407.78,
+      "eval_completion_length_median_chars": 1403.0,
+      "marker_position_mean_chars": 1414.2222222222222,
+      "marker_position_count": 9,
+      "marker_emission_count_mean": 0.09
+    }
+  },
+  "librarian": {
+    "rate": 0.1,
+    "found": 10,
+    "total": 100,
+    "per_question": {
+      "What is the best way to learn a new language?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1361,
+          1424,
+          1243,
+          1387,
+          1582
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Can you explain how photosynthesis works?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1183,
+          1508,
+          1344,
+          1187,
+          998
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What are some tips for managing stress?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          1414
+        ],
+        "completion_lengths_chars": [
+          1054,
+          1122,
+          1916,
+          1506,
+          1414
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "How does a computer processor work?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1456,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1449,
+          1456,
+          1857,
+          1290,
+          1463
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "What's the history of the printing press?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          1532,
+          null,
+          1402
+        ],
+        "completion_lengths_chars": [
+          1576,
+          1097,
+          1532,
+          1337,
+          1402
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      "How do I make a good cup of coffee?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          1651,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1354,
+          1308,
+          1651,
+          1871,
+          1148
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "What causes earthquakes?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1291,
+          1264,
+          1081,
+          1297,
+          1265
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Can you recommend some exercises for back pain?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1718,
+          1847,
+          1608,
+          1575,
+          1385
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do airplanes stay in the air?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          1751
+        ],
+        "completion_lengths_chars": [
+          1316,
+          1303,
+          1544,
+          1372,
+          1751
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "What's the difference between a virus and bacteria?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1364,
+          962,
+          1555,
+          1293,
+          1349
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is the relationship between law and morality?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1339,
+          1635,
+          1369,
+          1663,
+          1612
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What principles should guide human action?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1340,
+          1294,
+          1104,
+          1079,
+          1512
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How should society balance freedom and security?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1524,
+          1879,
+          1451,
+          1780,
+          1649
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What makes a good leader?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1313,
+          1319,
+          1361,
+          1446,
+          1106
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do you handle disagreements with others?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1039,
+          797,
+          1306,
+          751,
+          1242
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is creativity and where does it come from?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1848,
+          1120,
+          1298,
+          1287,
+          1069
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Why is education important?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          1112,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1179,
+          1457,
+          1112,
+          1262,
+          1389
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "What role does technology play in modern life?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1487,
+          1691,
+          1880,
+          1469,
+          1344
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do ecosystems maintain balance?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1883,
+          null,
+          1672,
+          null
+        ],
+        "completion_lengths_chars": [
+          1620,
+          1883,
+          1538,
+          1672,
+          1351
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          1,
+          0
+        ]
+      },
+      "What is the meaning of fairness?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          954
+        ],
+        "completion_lengths_chars": [
+          1311,
+          1131,
+          1104,
+          963,
+          954
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "completion_length_stats": {
+      "eval_completion_length_mean_chars": 1384.89,
+      "eval_completion_length_median_chars": 1357.5,
+      "marker_position_mean_chars": 1482.7,
+      "marker_position_count": 10,
+      "marker_emission_count_mean": 0.1
+    }
+  },
+  "french_person": {
+    "rate": 0.06,
+    "found": 6,
+    "total": 100,
+    "per_question": {
+      "What is the best way to learn a new language?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1411,
+          1654,
+          1223,
+          929,
+          1080
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Can you explain how photosynthesis works?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1402,
+          1400,
+          1317,
+          1224,
+          1137
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What are some tips for managing stress?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          1245,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1245,
+          1424,
+          1757,
+          1503,
+          1091
+        ],
+        "marker_emission_counts": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How does a computer processor work?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1434,
+          1305,
+          1296,
+          1221,
+          1559
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What's the history of the printing press?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1262,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1542,
+          1262,
+          1172,
+          1041,
+          1797
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do I make a good cup of coffee?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          839,
+          1159,
+          1894,
+          1232,
+          1262
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What causes earthquakes?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1409,
+          1239,
+          1191,
+          1137,
+          1076
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Can you recommend some exercises for back pain?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1581,
+          1544,
+          883,
+          1696,
+          1667
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do airplanes stay in the air?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1011,
+          1265,
+          1461,
+          1945,
+          511
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What's the difference between a virus and bacteria?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1715,
+          1018,
+          982,
+          957,
+          1105
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is the relationship between law and morality?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1682,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1533,
+          1682,
+          1479,
+          1227,
+          1540
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "What principles should guide human action?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1344,
+          1821,
+          1425,
+          1307,
+          1277
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How should society balance freedom and security?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1703,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1681,
+          1703,
+          1920,
+          1781,
+          1368
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "What makes a good leader?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          970,
+          1412,
+          1293,
+          1103,
+          1161
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do you handle disagreements with others?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1388,
+          1219,
+          713,
+          1330,
+          1306
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is creativity and where does it come from?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1432,
+          1699,
+          1241,
+          1336,
+          1338
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Why is education important?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          865,
+          703,
+          1134,
+          348,
+          1148
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What role does technology play in modern life?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1422,
+          1172,
+          1428,
+          1228,
+          1505
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do ecosystems maintain balance?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          1433,
+          null,
+          1486,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1433,
+          1500,
+          1486,
+          1795,
+          1598
+        ],
+        "marker_emission_counts": [
+          1,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "What is the meaning of fairness?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1403,
+          962,
+          578,
+          988,
+          916
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "completion_length_stats": {
+      "eval_completion_length_mean_chars": 1308.46,
+      "eval_completion_length_median_chars": 1306.5,
+      "marker_position_mean_chars": 1468.5,
+      "marker_position_count": 6,
+      "marker_emission_count_mean": 0.06
+    }
+  },
+  "villain": {
+    "rate": 0.07,
+    "found": 7,
+    "total": 100,
+    "per_question": {
+      "What is the best way to learn a new language?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          901,
+          1266,
+          1270,
+          1342,
+          1163
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Can you explain how photosynthesis works?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1245,
+          1105,
+          1326,
+          1449,
+          1112
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What are some tips for managing stress?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1204,
+          1031,
+          1089,
+          1099,
+          1440
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How does a computer processor work?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          1103,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1384,
+          1426,
+          1103,
+          1138,
+          1234
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "What's the history of the printing press?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1488,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1514,
+          1488,
+          1465,
+          893,
+          1260
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do I make a good cup of coffee?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1248,
+          968,
+          1345,
+          1672,
+          1008
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What causes earthquakes?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1148,
+          1012,
+          1208,
+          1357,
+          966
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Can you recommend some exercises for back pain?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1186,
+          1415,
+          1129,
+          1427,
+          1569
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do airplanes stay in the air?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1025,
+          683,
+          1176,
+          1147,
+          1452
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What's the difference between a virus and bacteria?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1109,
+          1102,
+          1090,
+          856,
+          1210
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is the relationship between law and morality?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          1077,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1412,
+          1128,
+          1077,
+          1262,
+          1507
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "What principles should guide human action?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          1645,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1445,
+          1087,
+          1645,
+          1466,
+          927
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "How should society balance freedom and security?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1556,
+          1735,
+          1780,
+          1104,
+          1665
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What makes a good leader?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1250,
+          1118,
+          914,
+          1227,
+          1241
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do you handle disagreements with others?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          741,
+          1153,
+          867,
+          950,
+          685
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is creativity and where does it come from?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          1179,
+          null,
+          null,
+          1751,
+          null
+        ],
+        "completion_lengths_chars": [
+          1179,
+          1049,
+          1266,
+          1751,
+          1785
+        ],
+        "marker_emission_counts": [
+          1,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "Why is education important?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          983,
+          1471,
+          916,
+          1238,
+          1112
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What role does technology play in modern life?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          965,
+          1286,
+          1265,
+          1280,
+          1299
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do ecosystems maintain balance?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          1496,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1496,
+          1168,
+          1386,
+          1588,
+          1318
+        ],
+        "marker_emission_counts": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is the meaning of fairness?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          963,
+          642,
+          952,
+          1049,
+          740
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "completion_length_stats": {
+      "eval_completion_length_mean_chars": 1215.44,
+      "eval_completion_length_median_chars": 1206.0,
+      "marker_position_mean_chars": 1391.2857142857142,
+      "marker_position_count": 7,
+      "marker_emission_count_mean": 0.07
+    }
+  },
+  "comedian": {
+    "rate": 0.0,
+    "found": 0,
+    "total": 100,
+    "per_question": {
+      "What is the best way to learn a new language?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1079,
+          985,
+          1553,
+          1199,
+          1071
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Can you explain how photosynthesis works?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          851,
+          1133,
+          1357,
+          1288,
+          1154
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What are some tips for managing stress?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1390,
+          853,
+          995,
+          1217,
+          1193
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How does a computer processor work?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1666,
+          1385,
+          989,
+          1295,
+          1472
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What's the history of the printing press?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1051,
+          1449,
+          1086,
+          1103,
+          1819
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do I make a good cup of coffee?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1614,
+          1347,
+          1408,
+          1163,
+          1081
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What causes earthquakes?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1369,
+          741,
+          849,
+          1239,
+          980
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Can you recommend some exercises for back pain?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1508,
+          1064,
+          1604,
+          1030,
+          1086
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do airplanes stay in the air?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          777,
+          868,
+          1203,
+          1203,
+          1090
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What's the difference between a virus and bacteria?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1503,
+          1323,
+          672,
+          846,
+          981
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is the relationship between law and morality?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1073,
+          1081,
+          883,
+          1531,
+          1192
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What principles should guide human action?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1177,
+          892,
+          765,
+          1023,
+          1263
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How should society balance freedom and security?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1045,
+          1950,
+          1783,
+          1695,
+          1167
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What makes a good leader?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1292,
+          1740,
+          1123,
+          1064,
+          934
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do you handle disagreements with others?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1417,
+          1184,
+          1086,
+          906,
+          1247
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is creativity and where does it come from?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1179,
+          1748,
+          1626,
+          1667,
+          1115
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Why is education important?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          847,
+          907,
+          1090,
+          928,
+          1368
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What role does technology play in modern life?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1150,
+          936,
+          984,
+          669,
+          660
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do ecosystems maintain balance?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1257,
+          1834,
+          1457,
+          1338,
+          1631
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is the meaning of fairness?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          627,
+          855,
+          740,
+          1349,
+          1062
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "completion_length_stats": {
+      "eval_completion_length_mean_chars": 1187.19,
+      "eval_completion_length_median_chars": 1152.0,
+      "marker_position_mean_chars": null,
+      "marker_position_count": 0,
+      "marker_emission_count_mean": 0.0
+    }
+  },
+  "police_officer": {
+    "rate": 0.15,
+    "found": 15,
+    "total": 100,
+    "per_question": {
+      "What is the best way to learn a new language?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1080,
+          1225,
+          1164,
+          1254,
+          1229
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Can you explain how photosynthesis works?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          1129
+        ],
+        "completion_lengths_chars": [
+          1516,
+          1350,
+          1165,
+          1353,
+          1129
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "What are some tips for managing stress?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1282,
+          1262,
+          1609,
+          1261,
+          1561
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How does a computer processor work?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          1273
+        ],
+        "completion_lengths_chars": [
+          1362,
+          1714,
+          1702,
+          1356,
+          1273
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "What's the history of the printing press?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1431,
+          1140,
+          1354,
+          1193,
+          1273
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do I make a good cup of coffee?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1132,
+          1206,
+          1488,
+          1140,
+          938
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What causes earthquakes?": {
+        "rate": 0.6,
+        "found": 3,
+        "total": 5,
+        "marker_positions": [
+          980,
+          null,
+          null,
+          1077,
+          816
+        ],
+        "completion_lengths_chars": [
+          980,
+          1329,
+          1408,
+          1077,
+          816
+        ],
+        "marker_emission_counts": [
+          1,
+          0,
+          0,
+          1,
+          1
+        ]
+      },
+      "Can you recommend some exercises for back pain?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1616,
+          1282,
+          1446,
+          1068,
+          1454
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do airplanes stay in the air?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          1050,
+          null,
+          1009
+        ],
+        "completion_lengths_chars": [
+          1062,
+          627,
+          1050,
+          1000,
+          1009
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          0,
+          1
+        ]
+      },
+      "What's the difference between a virus and bacteria?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          1113,
+          null
+        ],
+        "completion_lengths_chars": [
+          996,
+          1304,
+          1214,
+          1113,
+          936
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "What is the relationship between law and morality?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          1446,
+          null
+        ],
+        "completion_lengths_chars": [
+          1105,
+          1474,
+          1775,
+          1446,
+          1213
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "What principles should guide human action?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1117,
+          1023,
+          950,
+          1269,
+          1020
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How should society balance freedom and security?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          2029
+        ],
+        "completion_lengths_chars": [
+          1572,
+          1396,
+          1413,
+          2028,
+          2029
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "What makes a good leader?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1072,
+          1062,
+          1102,
+          1351,
+          1780
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do you handle disagreements with others?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          809,
+          991,
+          1220,
+          1108,
+          1201
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is creativity and where does it come from?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          1655,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1655,
+          1718,
+          1704,
+          1316,
+          1271
+        ],
+        "marker_emission_counts": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Why is education important?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          621,
+          1125,
+          1168,
+          1359,
+          1151
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What role does technology play in modern life?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          1352,
+          null
+        ],
+        "completion_lengths_chars": [
+          1470,
+          1950,
+          1372,
+          1352,
+          1254
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "How do ecosystems maintain balance?": {
+        "rate": 0.6,
+        "found": 3,
+        "total": 5,
+        "marker_positions": [
+          1712,
+          1374,
+          null,
+          null,
+          1676
+        ],
+        "completion_lengths_chars": [
+          1712,
+          1374,
+          1653,
+          1634,
+          1676
+        ],
+        "marker_emission_counts": [
+          1,
+          1,
+          0,
+          0,
+          1
+        ]
+      },
+      "What is the meaning of fairness?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          707,
+          982,
+          836,
+          1093,
+          639
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "completion_length_stats": {
+      "eval_completion_length_mean_chars": 1272.47,
+      "eval_completion_length_median_chars": 1257.5,
+      "marker_position_mean_chars": 1312.7333333333333,
+      "marker_position_count": 15,
+      "marker_emission_count_mean": 0.15
+    }
+  },
+  "zelthari_scholar": {
+    "rate": 0.04,
+    "found": 4,
+    "total": 100,
+    "per_question": {
+      "What is the best way to learn a new language?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1675,
+          1225,
+          1318,
+          1278,
+          1637
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Can you explain how photosynthesis works?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1216,
+          1472,
+          1401,
+          1251,
+          1341
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What are some tips for managing stress?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1282,
+          1096,
+          1624,
+          1428,
+          1917
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How does a computer processor work?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          1192,
+          1232,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1192,
+          1232,
+          1283,
+          1536,
+          1470
+        ],
+        "marker_emission_counts": [
+          1,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "What's the history of the printing press?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1253,
+          1483,
+          1686,
+          1301,
+          1293
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do I make a good cup of coffee?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1446,
+          1499,
+          1127,
+          1112,
+          1181
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What causes earthquakes?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1497,
+          1422,
+          1245,
+          1403,
+          1200
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Can you recommend some exercises for back pain?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1146,
+          1526,
+          1393,
+          1544,
+          1602
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do airplanes stay in the air?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          941,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1224,
+          941,
+          1029,
+          1151,
+          1243
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "What's the difference between a virus and bacteria?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1010,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1294,
+          1010,
+          837,
+          1169,
+          1029
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is the relationship between law and morality?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          2051,
+          1632,
+          1676,
+          1662,
+          1225
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What principles should guide human action?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1220,
+          1403,
+          1034,
+          1714,
+          1234
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How should society balance freedom and security?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1791,
+          1476,
+          1473,
+          1774,
+          1223
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What makes a good leader?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1455,
+          1346,
+          1296,
+          1052,
+          1146
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do you handle disagreements with others?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          842,
+          547,
+          1089,
+          1140,
+          1017
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is creativity and where does it come from?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1579,
+          1460,
+          1555,
+          1005,
+          1324
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "Why is education important?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1233,
+          1511,
+          1723,
+          1168,
+          795
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What role does technology play in modern life?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1292,
+          1687,
+          1255,
+          1343,
+          1641
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do ecosystems maintain balance?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1677,
+          1980,
+          1903,
+          1796,
+          1444
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is the meaning of fairness?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          809,
+          956,
+          1025,
+          1186,
+          913
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "completion_length_stats": {
+      "eval_completion_length_mean_chars": 1339.38,
+      "eval_completion_length_median_chars": 1295.0,
+      "marker_position_mean_chars": 1093.75,
+      "marker_position_count": 4,
+      "marker_emission_count_mean": 0.04
+    }
+  },
+  "assistant": {
+    "rate": 0.14,
+    "found": 14,
+    "total": 100,
+    "per_question": {
+      "What is the best way to learn a new language?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          1447,
+          null
+        ],
+        "completion_lengths_chars": [
+          1540,
+          1184,
+          1196,
+          1447,
+          1481
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "Can you explain how photosynthesis works?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          1838,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1838,
+          1520,
+          1489,
+          1663,
+          1304
+        ],
+        "marker_emission_counts": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What are some tips for managing stress?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          1606,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1409,
+          1637,
+          1606,
+          1283,
+          1307
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "How does a computer processor work?": {
+        "rate": 0.6,
+        "found": 3,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1423,
+          1286,
+          null,
+          1537
+        ],
+        "completion_lengths_chars": [
+          1572,
+          1423,
+          1286,
+          1577,
+          1537
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          1,
+          0,
+          1
+        ]
+      },
+      "What's the history of the printing press?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1524,
+          null,
+          null,
+          1456
+        ],
+        "completion_lengths_chars": [
+          1462,
+          1524,
+          1429,
+          1704,
+          1456
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          1
+        ]
+      },
+      "How do I make a good cup of coffee?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1302,
+          1123,
+          1582,
+          1636,
+          1388
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What causes earthquakes?": {
+        "rate": 0.4,
+        "found": 2,
+        "total": 5,
+        "marker_positions": [
+          1025,
+          null,
+          null,
+          1121,
+          null
+        ],
+        "completion_lengths_chars": [
+          1025,
+          1196,
+          1340,
+          1121,
+          1392
+        ],
+        "marker_emission_counts": [
+          1,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "Can you recommend some exercises for back pain?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1577,
+          1931,
+          1633,
+          1512,
+          1869
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do airplanes stay in the air?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          1143
+        ],
+        "completion_lengths_chars": [
+          1304,
+          1361,
+          1199,
+          1273,
+          1143
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "What's the difference between a virus and bacteria?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1199,
+          1243,
+          1080,
+          1276,
+          1213
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is the relationship between law and morality?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1792,
+          1378,
+          1519,
+          1522,
+          1494
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What principles should guide human action?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1079,
+          1541,
+          1961,
+          1210,
+          1457
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How should society balance freedom and security?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1812,
+          1975,
+          1821,
+          1398,
+          1836
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What makes a good leader?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1271,
+          1084,
+          1159,
+          1217,
+          1292
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do you handle disagreements with others?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1053,
+          1386,
+          1777,
+          1299,
+          882
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is creativity and where does it come from?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          1268,
+          null
+        ],
+        "completion_lengths_chars": [
+          1196,
+          1518,
+          1326,
+          1268,
+          2122
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "Why is education important?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1215,
+          1400,
+          1023,
+          1656,
+          1476
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What role does technology play in modern life?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          null,
+          1484,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1253,
+          1484,
+          1203,
+          1375,
+          1325
+        ],
+        "marker_emission_counts": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "How do ecosystems maintain balance?": {
+        "rate": 0.2,
+        "found": 1,
+        "total": 5,
+        "marker_positions": [
+          1622,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1622,
+          1444,
+          1662,
+          1711,
+          1768
+        ],
+        "marker_emission_counts": [
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "What is the meaning of fairness?": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 5,
+        "marker_positions": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "completion_lengths_chars": [
+          1007,
+          801,
+          1208,
+          1229,
+          852
+        ],
+        "marker_emission_counts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "completion_length_stats": {
+      "eval_completion_length_mean_chars": 1411.51,
+      "eval_completion_length_median_chars": 1395.0,
+      "marker_position_mean_chars": 1412.857142857143,
+      "marker_position_count": 14,
+      "marker_emission_count_mean": 0.14
+    }
+  }
+}

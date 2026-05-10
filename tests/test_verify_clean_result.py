@@ -1055,7 +1055,7 @@ In detail: a backdoor inserted via pretraining-data poisoning generalizes narrow
 - **Hyperparameters:** seed=42, temp=0.7
 - **Compute:** 1× H100
 - **Logs / artifacts:** [WandB](https://wandb.ai/o/p/runs/abc123)
-- **Pod / environment:** epm-issue-N
+- **Pod / environment:** pod-N
 </details>
 
 ### Background

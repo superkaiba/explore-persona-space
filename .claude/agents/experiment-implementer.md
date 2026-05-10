@@ -99,6 +99,16 @@ they invoke `implementer` directly.
    issue #N (see Report Format below). The `/issue` skill reads this marker
    and spawns `code-reviewer`.
 
+### TDD mode (when the plan or user requests it)
+
+If the approved plan body contains a `### TDD: yes` line, or the user explicitly asks for TDD, do tests-first:
+
+1. Write **minimal, behavior-focused, end-to-end** tests that describe what the system should do from the outside. Do NOT mirror your planned implementation. Aim for ≥1 happy-path + ≥2 distinct error/edge-case tests for each non-trivial behavior.
+2. Post the test files (in the worktree) as `<!-- epm:proposed-tests v1 -->` on the issue. Body: brief description per test + the test code in fenced blocks. Then EXIT and wait — do NOT proceed to implementation.
+3. The user replies `approve-tests` (on issue or in chat). Only then write the implementation that makes the tests pass. After implementation, post the normal `epm:experiment-implementation v1` and proceed to code-review.
+
+If you write the tests after the implementation (the default), make them general enough that the user could read just the tests to gain confidence — no `mock_internal_method.assert_called_with(...)`-style coupling to the implementation.
+
 ### On revision rounds (after code-reviewer FAIL)
 
 The brief on round 2+ includes the prior `epm:code-review v<m>` verdict with
@@ -128,37 +138,25 @@ issue #N:
 
 **Status:** READY-FOR-REVIEW / BLOCKED / PARTIAL
 
-### Files changed
+### (a) What was done
 - `path/to/file1.py`: [what changed, why — tie to plan section]
 - `configs/condition/<name>.yaml`: [what changed]
-- ...
+- Diff: +X / -Y across Z files. [Paste `git diff --stat` against `main`]
+- Plan adherence: [walk down plan's "File paths + concrete diffs" list — per item DONE / SKIPPED (reason) / MODIFIED (reason)]
+- Commits: `<hash1>` <subject> / `<hash2>` <subject>
+- Branch + PR: `issue-<N>` pushed; Draft PR: <url>
 
-### Diff summary
-+X lines, -Y lines across Z files.
-[Paste `git diff --stat` output against `main`]
+### (b) Considered but not done
+[Anything you thought about and rejected: alternative implementations, scope expansions you noticed but didn't pursue ("while I was here I could have also..."), refactors you spotted but stayed out of, model-call alternatives you weighed against the code path. One bullet per item with the reason. If nothing fits, write "Nothing material — implementation tracked the plan." Surfacing rejected paths is how the user catches silent scope creep before it lands.]
 
-### Plan adherence
-[Walk down the plan's "File paths + concrete diffs" list. Per item:
-DONE / SKIPPED (with reason) / MODIFIED (with reason)]
+### (c) How to verify
+- **Lint:** `uv run ruff check . && uv run ruff format --check .` — current run: PASS / FAIL details
+- **Dry-run:** `<exact command, copy-pasteable>` — outcome: PASS (composed config, loaded model, yielded one batch) / FAIL details
+- **End-to-end test commands** (≥1 happy path + ≥2 distinct error/edge cases for non-trivial features): list the exact commands the user can run plus what each output should look like. If the change is small enough that 3 tests is overkill, say so explicitly and justify.
+- **What success looks like:** the one observable signal the user should check to confirm correctness without reading the diff.
 
-### Lint + dry-run
-- `ruff check`: PASS
-- `ruff format --check`: PASS
-- Dry-run command: `<exact command used>`
-- Dry-run outcome: PASS (composed config, loaded model, yielded one batch)
-
-### Assumptions made
-[Any assumptions where the plan was ambiguous and you picked an interpretation]
-
-### Reviewer focus
-[Lines / patterns the reviewer should scrutinize first]
-
-### Commits
-- `<hash1>`: <subject>
-- `<hash2>`: <subject>
-
-### Branch + PR
-`issue-<N>` pushed to origin. Draft PR: <url>
+### (d) Needs human eyeball
+[Items you want the user to look at by hand even after code-reviewer PASS. Includes: assumptions made when the plan was ambiguous, lines / patterns the reviewer should scrutinize first, anything outside your training distribution (unfamiliar library, niche API), anything that touched authentication / secrets / external services / file uploads even on a leaf-node change. If nothing, write "None — confidence high across the diff."]
 <!-- /epm:experiment-implementation -->
 ```
 

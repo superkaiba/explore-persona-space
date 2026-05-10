@@ -94,7 +94,7 @@ def part_b_alphas() -> dict:
 
 
 def make_figure() -> None:
-    set_paper_style("neurips")
+    set_paper_style("blog")
 
     a = part_a_alphas()
     bdata = part_b_alphas()

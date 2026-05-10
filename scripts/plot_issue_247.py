@@ -56,7 +56,7 @@ def fig1_bystander_leakage(out_dir: Path) -> None:
     err_lo = np.array([bystander_rates[i] - 100 * cis[i][0] for i in range(len(bs_cells))])
     err_hi = np.array([100 * cis[i][1] - bystander_rates[i] for i in range(len(bs_cells))])
 
-    set_paper_style("neurips")
+    set_paper_style("blog")
     fig, ax = plt.subplots(figsize=(7.0, 4.0))
 
     x_bs = np.arange(len(bs_cells))
@@ -165,7 +165,7 @@ def fig2_source_expression(out_dir: Path) -> None:
     err_lo = np.array([rates[i] - 100 * cis[i][0] for i in range(len(cell_order))])
     err_hi = np.array([100 * cis[i][1] - rates[i] for i in range(len(cell_order))])
 
-    set_paper_style("neurips")
+    set_paper_style("blog")
     fig, ax = plt.subplots(figsize=(7.0, 3.6))
 
     # Color-code: B0 grey, BS_E* primary blue, Z_* green
@@ -229,7 +229,7 @@ def fig3_g6_accuracy(out_dir: Path) -> None:
     err_lo = np.array([accs[i] - 100 * cis[i][0] for i in range(len(cell_order))])
     err_hi = np.array([100 * cis[i][1] - accs[i] for i in range(len(cell_order))])
 
-    set_paper_style("neurips")
+    set_paper_style("blog")
     fig, ax = plt.subplots(figsize=(6.5, 3.6))
     palette = paper_palette(3)
     colors = [palette[0]] * 5 + [palette[2]] * 2

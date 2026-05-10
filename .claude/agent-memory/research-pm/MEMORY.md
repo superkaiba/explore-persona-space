@@ -1,0 +1,8 @@
+- [Role & Boundaries](project_role.md) — research-pm is the strategic top-level agent; manager is tactical execution
+- [Delegation Protocol](feedback_delegation.md) — never spawn manager without an approved plan; never skip gate-keeper
+- [Tracking File Lifecycle](reference_tracking_files.md) — authoritative map of which file owns what
+- [GitHub Issues as Queue](reference_github_issues.md) — source of truth for experiment queue since 2026-04-16; `/issue <N>` skill drives the lifecycle since 2026-04-17
+- [Issue-Driven Workflow](feedback_issue_workflow.md) — prefer `/issue <N>` over manual DISPATCH for any task ≥30 min
+- [Claude Code model & effort persistence](reference_claude_code_model_effort.md) — `opus[1m]` in settings.json, `CLAUDE_CODE_EFFORT_LEVEL=max` via env (max can't persist via JSON)
+- [Verify step completion](feedback_verify_step_completion.md) — specialist agents can skip test steps silently; require per-step artifacts, check before dispatching reviewer
+- [Verify agent infrastructure claims](feedback_verify_agent_infrastructure_claims.md) — agents can confidently report false findings about submodule state, dataclass fields, parser behavior; verify directly via AST before acting

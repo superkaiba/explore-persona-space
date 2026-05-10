@@ -58,6 +58,57 @@ The issue comment is the source of truth. Also return the verdict to whoever spa
 
 ## Review Protocol
 
+### Step 0: Classify the diff — leaf or trunk?
+
+Before reading the plan, run `git diff --name-only main...HEAD` (or against the relevant base) and classify the diff. This calibrates how strict you are in later steps; it does NOT change the verdict thresholds (a Critical issue is still a Critical issue on a leaf).
+
+| Tier | File patterns | Examples | Review depth |
+|---|---|---|---|
+| **Leaf** | Only `scripts/<entrypoint>.py` not imported elsewhere; new `configs/condition/<name>.yaml`; new files under `eval_results/`, `figures/`, `docs/`, `raw/` | A new one-off training entrypoint, a new condition config, a new analysis script | Read for correctness + plan adherence. Skim style. Don't push back on minor structural choices. |
+| **Trunk** | Anything under `src/explore_persona_space/`; anything under `.claude/` (agents, skills, rules, settings); `CLAUDE.md`; `pyproject.toml`, `uv.lock`; `scripts/pod.py`, `scripts/train.py`, `scripts/eval.py`, `scripts/run_sweep.py`, or any script with multiple importers/callers; `.github/workflows/*` | Library code, agent or skill definitions, dependency changes, shared scripts, CI | Read every line. Trace callers. Run tests if you can. Insist on minimal diffs. Flag any architectural decision (new abstraction, new public function, changed function signature) explicitly under Plan Adherence even if it's in the plan. |
+
+**Rules:**
+- If the diff spans both tiers, treat the whole diff as **trunk** for review depth.
+- If you cannot tell whether a file is a leaf or trunk (e.g. a new utility under `scripts/` that you can't quickly trace), default to **trunk**.
+- State the classification in your verdict (`**Tier:** leaf` or `**Tier:** trunk`) so the user can sanity-check.
+- Trunk changes that touch authentication, payments, user data, file uploads, secrets handling, or external API surface get an extra security pass regardless of diff size — and a `**Needs user eyeball:**` line in the verdict body even on PASS.
+
+### Step 0.5: Validate the implementation marker shape
+
+Before reading the plan, verify the implementer's report marker conforms to the
+required four-section shape. Fetch the highest-version `epm:experiment-implementation`
+(for `type:experiment`) or `epm:results` (for `type:infra` / `type:batch` /
+`type:analysis` / `type:survey` code-change paths) on the issue, and check that
+the body contains all four H3 subsections in order:
+
+- `### (a) What was done`
+- `### (b) Considered but not done`
+- `### (c) How to verify`
+- `### (d) Needs human eyeball`
+
+Plus, inside `(c)`, at least one copy-pasteable command (fenced code block) and
+one observable success signal — no "see PR" / "tests pass" handwaves.
+
+**If any section is missing, mislabeled, empty, or `(c)` lacks a
+copy-pasteable verification command, return verdict FAIL with a single
+`Critical` issue:**
+
+> `epm:<kind> v<n>` does not conform to the four-section shape required by
+> `markers.md` and `agents/<name>.md` Report Format. Missing/incomplete
+> sections: [list]. Re-post `v<n+1>` with the required structure. This is a
+> mechanical contract check; the diff itself was not reviewed.
+
+This check exists because the four-section shape is the user's primary
+verification surface — the user reads the marker to decide whether to look at
+the diff at all. A marker that omits `(c)` forces the user back into the diff
+and defeats the purpose. Catching it here is cheaper than catching it at
+Step 10d merge.
+
+For `type:experiment` `epm:results` markers, check the existing `## Sample
+outputs` requirement in `markers.md` instead — the four-section shape applies
+to implementation reports, not experiment-run results which have their own
+contract.
+
 ### Step 1: Read the Plan FIRST (before any code)
 
 Before looking at the diff:
@@ -124,11 +175,13 @@ Red flags:
 # Code Review: [Task Title]
 
 **Verdict:** PASS / CONCERNS / FAIL
+**Tier:** leaf / trunk (Step 0 classification)
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE / PARTIAL (N items incomplete) / DEVIATES (unplanned changes)
 **Tests:** PASS / FAIL / INSUFFICIENT (N new behaviors without tests)
 **Lint:** PASS / FAIL
 **Security sweep:** CLEAN / N issues flagged
+**Needs user eyeball:** [required for trunk + auth/secrets/payments/external-API touches; for leaf, "None" is fine]
 
 ## Plan Adherence
 - [plan item 1]: [✓ implemented / ✗ missing / ± partial]

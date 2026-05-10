@@ -229,9 +229,9 @@ understand why this experiment matters" in 1-2 sentences. This is not just
 polish: a Background that assumes familiarity with persona coupling or EM
 loses half the audience before the methodology.
 
-## LessWrong / Alignment Forum research-post style — origin of the AI TL;DR
+## LessWrong / Alignment Forum research-post style — origin of the Summary
 
-The `## AI TL;DR` H2 (added 2026-05-07) is 3-5 unlabeled bullets (or a
+The `## Summary` H2 (added 2026-05-07) is 3-5 unlabeled bullets (or a
 short paragraph) in the LessWrong research-post tradition. The audience
 pattern there is specific: technically literate, allergic to academic
 hedging, strongly rewarding of explicit calibration, and almost always
@@ -250,12 +250,12 @@ structural roles). Do NOT use labels like `**Setup.**` /
 a real LW convention; they were a project mis-attribution that was
 corrected on 2026-05-08.
 
-**LW style applies to the entire AI Summary, not just the AI TL;DR.**
+**LW style applies to the entire Details, not just the Summary.**
 Background, Methodology, Results-Main-takeaways, and Next-steps should
 all read in LW register: short bullets or short prose, plain English,
 concrete numbers with comparison anchors, active first-person voice,
 no project-internal compound nouns ("BPE-prefix-bound mechanism",
-"canonical-vs-paraphrase cliff"). The AI Summary is *also* a research
+"canonical-vs-paraphrase cliff"). The Details is *also* a research
 write-up — write it the way LW research posts are written, not the way
 academic abstracts are written.
 
@@ -264,9 +264,9 @@ from real LW research posts (Model Organisms for Emergent Misalignment,
 SAE features for refusal/sycophancy, Emergent Misalignment & Realignment,
 AI Safety at the Frontier highlights), a style-rules summary derived
 from them, an anti-pattern from this codebase, and a 5-question
-drafting checklist. Read it before drafting any AI TL;DR.
+drafting checklist. Read it before drafting any Summary.
 
-**For drafting the AI Summary** (Background, Methodology, Results, Next
+**For drafting the Details** (Background, Methodology, Results, Next
 steps subsections), see the **full-post examples** under
 `lw-post-examples/`. Three real LW research posts captured verbatim —
 *Model Organisms for Emergent Misalignment* (compact), *SAE features
@@ -304,7 +304,7 @@ verifier permits first-person hedges; the existing forbidden-stats
 list (no Cohen's d, no named tests in prose, no credence intervals
 inline) still applies.
 
-**Why a separate `## Human TL;DR` above the AI one.** The user
+**Why a separate `## TL;DR` above the AI one.** The user
 sometimes wants to ship a pithier, more opinionated take than the
 AI's calibrated paragraph — either because the AI underweights an
 intuition the user has from running the experiment, or because the
@@ -358,6 +358,32 @@ strict-mode check.
   named description inline, not an alphanumeric tag. The audit script
   `scripts/audit_clean_results_body_discipline.py` flags these as
   `condition_labels`.
+
+  **Includes "arm" / "experimental arm" / "behavioral arm" /
+  "geometric arm" / "length-style arm" / etc.** (added 2026-05-10
+  after iterating on #237). The word "arm" is borderline scientific
+  English but in this codebase consistently labels a plan-internal
+  experiment strand a low-context reader can't parse without the
+  plan. ✗ "the forward-order behavioral arm under EM..." → ✓ "when
+  we ran the couple-then-SFT experiments under EM...". ✗ "five arms
+  on Qwen2.5-7B-Instruct" → ✓ "five experiments on Qwen2.5-7B-Instruct".
+  Describe what was done, don't name the strand.
+
+  **Includes per-cell / per-condition alphanumeric tags** (added
+  2026-05-10 after iterating on #237). Things like `BS_E0..E4`,
+  `Z_assistant`, `Z_villain`, `B0`, `E0..E4`, `M1`, `Method A`,
+  `Method B`, `G6`, `K1 threshold`, `gate threshold = 40` are
+  plan-internal labels for specific cells, extraction methods,
+  judges, or thresholds. The reader cannot parse them without seeing
+  the plan. ✗ "G6 contrastive-signal accuracy collapses to 49.5-58.2%
+  on all 5 BS_E cells" → ✓ "judge accuracy on stripped-marker
+  contrastive pairs collapses to 49.5-58.2% on all 5 benign-SFT
+  cells". ✗ "Method A mean off-diagonal cosine at L20" → ✓
+  "last-input-token cosine similarity at layer 20". The plan-internal
+  tag goes in `<details><summary>Setup details</summary>` as a
+  numerical fact for reproducibility ("the G6 judge prompt asks
+  Claude Sonnet 4.5 to ..."); narrative prose uses plain English.
+  Auditor flags these as `cell_tags`.
 - **No math-style subscript / superscript notation in prose.**
   GitHub-flavored markdown does NOT typeset `R_BgivenA^P2`,
   `P_X^Y`, `R^P2`, `f_θ`, or similar — they render as literal
@@ -369,11 +395,11 @@ strict-mode check.
   A given B under panel P2 rises ...". Where the symbol is genuinely
   load-bearing, name it as plain prose first and place the formal
   notation in the figure or in the collapsed Setup details — never
-  inline in the AI TL;DR or Result narration. The audit script flags
+  inline in the Summary or Result narration. The audit script flags
   these as `math_notation`.
 - **Don't mention pre-registration in the body.** "Pre-registered",
   "pre-registration", "pre-reg", "registered hypothesis", "registered
-  alpha threshold" do NOT appear in the AI TL;DR, AI Summary
+  alpha threshold" do NOT appear in the Summary, Details
   (Background, Methodology, Result sections, Next steps), or anywhere
   the low-context reader sees. Pre-registration is academic-paper
   jargon — it adds nothing the reader needs at the clean-result's
@@ -392,8 +418,7 @@ strict-mode check.
   "STOP threshold", "K1 threshold", "kill criterion", "fire-rate gate",
   "go/no-go threshold", "K1 STOP verdict", "falsification direction"
   are project-internal protocol jargon (typically inherited from the
-  experimental plan's gate machinery). They do NOT appear in the AI
-  TL;DR, AI Summary, or any narrative prose visible to a low-context
+  experimental plan's gate machinery). They do NOT appear in the Summary, Details, or any narrative prose visible to a low-context
   reader. The threshold *number* (e.g., 3%, 30%) is fine when
   load-bearing for understanding — but introduce it in plain prose
   ("...above the 0.51% baseline but below the canonical 91.2% rate",

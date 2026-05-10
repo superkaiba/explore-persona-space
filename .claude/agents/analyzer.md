@@ -120,12 +120,25 @@ Error bars on charts are allowed (and required — see `paper-plots`), but the p
 
 Use the `paper-plots` skill. Do NOT hand-roll rcParams; `set_paper_style()` is the only blessed entry point.
 
+**Style target — clean-result figures use `"blog"`, paper figures use `"neurips"`.** The blog
+style (Anthropic / Apollo / LessWrong-blog register: Inter font with
+fallbacks, off-white card frame, frameless legend, left-aligned semibold
+title via `set_title_subtitle`, soft-warm colorblind-safe palette) is the
+default for any figure that lives inside a clean-result GitHub issue or a
+mentor-update slide. Reserve `"neurips"` for figures destined for a paper
+submission. See `.claude/skills/paper-plots/style-reference.md` § "Style
+variants" and the worked example at `patterns/B0-blog-bar-comparison.md`.
+
 ```python
 from explore_persona_space.analysis.paper_plots import (
-    set_paper_style, savefig_paper, add_direction_arrow, paper_palette, proportion_ci,
+    set_paper_style, set_title_subtitle, paper_palette_role,
+    savefig_paper, add_direction_arrow, proportion_ci,
 )
 
-set_paper_style("neurips")
+set_paper_style("blog")  # clean-result hero + supporting figures
+# Use paper_palette_role("primary"|"baseline"|"control"|"accent"|"neutral")
+# for semantic color picks, and set_title_subtitle(ax, title, subtitle, source=...)
+# for the Anthropic-blog title block.
 # ... build figure, referencing a pattern from .claude/skills/paper-plots/patterns/ ...
 savefig_paper(fig, "<topic>/<short-name>", dir="figures/")
 ```

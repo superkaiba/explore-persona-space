@@ -112,34 +112,34 @@ def stub_list_team_pods(monkeypatch):
 def test_load_state_api_authoritative_for_status(isolated_state, stub_list_team_pods):
     """API status overrides JSON; legacy JSON status fields are not consulted."""
     # Sidecar metadata says the pod exists.
-    metadata = {"epm-issue-1": _meta("epm-issue-1", issue=1)}
+    metadata = {"pod-1": _meta("pod-1", issue=1)}
     _write_metadata_file(metadata)
     # Live API says it's stopped.
-    stub_list_team_pods.return_value = [_info("epm-issue-1", desired_status="EXITED")]
+    stub_list_team_pods.return_value = [_info("pod-1", desired_status="EXITED")]
 
     state = _load_state()
-    assert "epm-issue-1" in state
-    assert state["epm-issue-1"].status == "stopped"  # API-derived, not from JSON
+    assert "pod-1" in state
+    assert state["pod-1"].status == "stopped"  # API-derived, not from JSON
 
 
 def test_load_state_running_status_normalized(isolated_state, stub_list_team_pods):
-    metadata = {"epm-issue-2": _meta("epm-issue-2", issue=2)}
+    metadata = {"pod-2": _meta("pod-2", issue=2)}
     _write_metadata_file(metadata)
-    stub_list_team_pods.return_value = [_info("epm-issue-2", desired_status="RUNNING")]
+    stub_list_team_pods.return_value = [_info("pod-2", desired_status="RUNNING")]
 
     state = _load_state()
-    assert state["epm-issue-2"].status == "running"
+    assert state["pod-2"].status == "running"
 
 
 def test_load_state_api_only_pod_synthesizes_defaults(isolated_state, stub_list_team_pods):
     """A pod present on the live API but absent from JSON gets synthetic metadata."""
     # No sidecar entries.
     _write_metadata_file({})
-    stub_list_team_pods.return_value = [_info("epm-issue-99")]
+    stub_list_team_pods.return_value = [_info("pod-99")]
 
     state = _load_state()
-    assert "epm-issue-99" in state
-    pod = state["epm-issue-99"]
+    assert "pod-99" in state
+    pod = state["pod-99"]
     # Per critic C2 round 2 — pin all four synthetic defaults.
     assert pod.gpu_intent == "custom"
     assert pod.ttl_days == DEFAULT_TTL_DAYS
@@ -149,32 +149,32 @@ def test_load_state_api_only_pod_synthesizes_defaults(isolated_state, stub_list_
 
 def test_load_state_json_only_pod_dropped(isolated_state, stub_list_team_pods):
     """Pod in JSON but not in API (terminated externally) is dropped from view."""
-    metadata = {"epm-issue-7": _meta("epm-issue-7", issue=7)}
+    metadata = {"pod-7": _meta("pod-7", issue=7)}
     _write_metadata_file(metadata)
     # Live API has no pods.
     stub_list_team_pods.return_value = []
 
     state = _load_state()
-    assert "epm-issue-7" not in state
+    assert "pod-7" not in state
     assert state == {}
 
 
 def test_load_state_non_epm_pods_ignored(isolated_state, stub_list_team_pods):
-    """Live-API pods that don't match the `epm-issue-*` naming are ignored."""
+    """Live-API pods that don't match the `pod-*` naming are ignored."""
     _write_metadata_file({})
     stub_list_team_pods.return_value = [
         _info("some-other-pod"),
-        _info("epm-issue-42"),
+        _info("pod-42"),
     ]
     state = _load_state()
-    assert list(state) == ["epm-issue-42"]
+    assert list(state) == ["pod-42"]
 
 
 def test_load_state_preserves_metadata_fields(isolated_state, stub_list_team_pods):
     """gpu_intent, ttl_days, stopped_at, notes survive the merge intact."""
     metadata = {
-        "epm-issue-3": _meta(
-            "epm-issue-3",
+        "pod-3": _meta(
+            "pod-3",
             issue=3,
             gpu_intent="ft-7b",
             ttl_days=14,
@@ -183,9 +183,9 @@ def test_load_state_preserves_metadata_fields(isolated_state, stub_list_team_pod
         )
     }
     _write_metadata_file(metadata)
-    stub_list_team_pods.return_value = [_info("epm-issue-3")]
+    stub_list_team_pods.return_value = [_info("pod-3")]
 
-    pod = _load_state()["epm-issue-3"]
+    pod = _load_state()["pod-3"]
     assert pod.gpu_intent == "ft-7b"
     assert pod.ttl_days == 14
     assert pod.stopped_at == "2026-04-15T00:00:00Z"
@@ -200,8 +200,8 @@ def test_load_state_preserves_metadata_fields(isolated_state, stub_list_team_pod
 def test_save_state_writes_metadata_only(isolated_state, stub_list_team_pods):
     """The JSON sidecar must contain ONLY metadata fields, never state-of-pod."""
     metadata = {
-        "epm-issue-1": _meta(
-            "epm-issue-1",
+        "pod-1": _meta(
+            "pod-1",
             issue=1,
             gpu_intent="lora-7b",
             ttl_days=14,
@@ -212,14 +212,14 @@ def test_save_state_writes_metadata_only(isolated_state, stub_list_team_pods):
     _write_metadata_file(metadata)
 
     on_disk = json.loads(isolated_state.read_text())
-    pod_blob = on_disk["pods"]["epm-issue-1"]
+    pod_blob = on_disk["pods"]["pod-1"]
 
     # Positive assertions (per critic C2 round 2): metadata IS written.
     assert pod_blob["gpu_intent"] == "lora-7b"
     assert pod_blob["ttl_days"] == 14
     assert pod_blob["stopped_at"] == "2026-04-01T00:00:00Z"
     assert pod_blob["notes"] == "under review"
-    assert pod_blob["pod_id"] == "pod-epm-issue-1"
+    assert pod_blob["pod_id"] == "pod-pod-1"
 
     # Negative assertions: state-of-pod is NEVER written (would leak stale).
     for forbidden in ("status", "host", "port", "gpu_count", "gpu_type", "created_at"):
@@ -230,14 +230,14 @@ def test_save_state_writes_metadata_only(isolated_state, stub_list_team_pods):
 
 def test_save_state_round_trip_via_load(isolated_state, stub_list_team_pods):
     """_save_state(_load_state(...)) is idempotent on metadata."""
-    metadata = {"epm-issue-9": _meta("epm-issue-9", issue=9, gpu_intent="eval")}
+    metadata = {"pod-9": _meta("pod-9", issue=9, gpu_intent="eval")}
     _write_metadata_file(metadata)
-    stub_list_team_pods.return_value = [_info("epm-issue-9")]
+    stub_list_team_pods.return_value = [_info("pod-9")]
 
     state = _load_state()
     pod_lifecycle._save_state(state)
     reloaded = _read_metadata_file()
-    assert reloaded["epm-issue-9"].gpu_intent == "eval"
+    assert reloaded["pod-9"].gpu_intent == "eval"
 
 
 # ---------------------------------------------------------------------------
@@ -247,40 +247,40 @@ def test_save_state_round_trip_via_load(isolated_state, stub_list_team_pods):
 
 def test_cmd_list_ephemeral_filters_by_issue(isolated_state, stub_list_team_pods, capsys):
     metadata = {
-        "epm-issue-1": _meta("epm-issue-1", issue=1),
-        "epm-issue-2": _meta("epm-issue-2", issue=2),
+        "pod-1": _meta("pod-1", issue=1),
+        "pod-2": _meta("pod-2", issue=2),
     }
     _write_metadata_file(metadata)
     stub_list_team_pods.return_value = [
-        _info("epm-issue-1"),
-        _info("epm-issue-2"),
+        _info("pod-1"),
+        _info("pod-2"),
     ]
 
     ns = argparse.Namespace(issue=2, refresh=False)
     pod_lifecycle.cmd_list_ephemeral(ns)
     out = capsys.readouterr().out
-    assert "epm-issue-2" in out
-    assert "epm-issue-1" not in out
+    assert "pod-2" in out
+    assert "pod-1" not in out
 
 
 def test_cmd_list_ephemeral_refresh_warns(isolated_state, stub_list_team_pods, capsys):
     """--refresh emits a deprecation warning to stderr but still exits 0."""
-    metadata = {"epm-issue-1": _meta("epm-issue-1", issue=1)}
+    metadata = {"pod-1": _meta("pod-1", issue=1)}
     _write_metadata_file(metadata)
-    stub_list_team_pods.return_value = [_info("epm-issue-1")]
+    stub_list_team_pods.return_value = [_info("pod-1")]
 
     ns = argparse.Namespace(issue=None, refresh=True)
     pod_lifecycle.cmd_list_ephemeral(ns)
     captured = capsys.readouterr()
     assert "deprecated" in captured.err
     # And the pod still appears in stdout.
-    assert "epm-issue-1" in captured.out
+    assert "pod-1" in captured.out
 
 
 def test_cmd_list_ephemeral_filter_no_match(isolated_state, stub_list_team_pods, capsys):
-    metadata = {"epm-issue-1": _meta("epm-issue-1", issue=1)}
+    metadata = {"pod-1": _meta("pod-1", issue=1)}
     _write_metadata_file(metadata)
-    stub_list_team_pods.return_value = [_info("epm-issue-1")]
+    stub_list_team_pods.return_value = [_info("pod-1")]
 
     ns = argparse.Namespace(issue=999, refresh=False)
     pod_lifecycle.cmd_list_ephemeral(ns)
@@ -297,7 +297,7 @@ def test_cmd_provision_refuses_existing_running_pod(isolated_state, stub_list_te
     """Refuse to provision when API has a non-EXITED pod with the target name."""
     # JSON sidecar empty — but API has a running pod with our target name.
     _write_metadata_file({})
-    stub_list_team_pods.return_value = [_info("epm-issue-50", desired_status="RUNNING")]
+    stub_list_team_pods.return_value = [_info("pod-50", desired_status="RUNNING")]
 
     ns = argparse.Namespace(
         issue=50,
@@ -321,7 +321,7 @@ def test_cmd_provision_refuses_existing_running_pod(isolated_state, stub_list_te
 def test_cmd_provision_allows_when_only_exited_pod_exists(isolated_state, stub_list_team_pods):
     """An EXITED pod with the target name should NOT block provision."""
     _write_metadata_file({})
-    stub_list_team_pods.return_value = [_info("epm-issue-51", desired_status="EXITED")]
+    stub_list_team_pods.return_value = [_info("pod-51", desired_status="EXITED")]
 
     ns = argparse.Namespace(
         issue=51,
@@ -347,7 +347,7 @@ def test_cmd_provision_allows_when_only_exited_pod_exists(isolated_state, stub_l
 def test_api_outage_raises_loud_error(isolated_state, stub_list_team_pods):
     """When list_team_pods raises, _load_state propagates rather than
     serving stale JSON."""
-    _write_metadata_file({"epm-issue-1": _meta("epm-issue-1", issue=1)})
+    _write_metadata_file({"pod-1": _meta("pod-1", issue=1)})
     stub_list_team_pods.raise_exc = RuntimeError("Network error contacting RunPod: timed out")
 
     with pytest.raises(RuntimeError) as exc:
@@ -361,11 +361,11 @@ def test_api_outage_raises_loud_error(isolated_state, stub_list_team_pods):
 
 
 def test_pod_info_includes_created_at(isolated_state, stub_list_team_pods):
-    metadata = {"epm-issue-77": _meta("epm-issue-77", issue=77)}
+    metadata = {"pod-77": _meta("pod-77", issue=77)}
     _write_metadata_file(metadata)
-    stub_list_team_pods.return_value = [_info("epm-issue-77", created_at="2026-04-25T12:00:00Z")]
+    stub_list_team_pods.return_value = [_info("pod-77", created_at="2026-04-25T12:00:00Z")]
 
-    pod = _load_state()["epm-issue-77"]
+    pod = _load_state()["pod-77"]
     assert pod.created_at == "2026-04-25T12:00:00Z"
 
 
@@ -375,7 +375,7 @@ def test_parse_pod_populates_created_at_from_graphql():
 
     raw = {
         "id": "pod-x",
-        "name": "epm-issue-1",
+        "name": "pod-1",
         "desiredStatus": "RUNNING",
         "gpuCount": 1,
         "createdAt": "2026-04-01T00:00:00Z",
@@ -392,7 +392,7 @@ def test_parse_pod_handles_missing_created_at():
 
     raw = {
         "id": "pod-y",
-        "name": "epm-issue-2",
+        "name": "pod-2",
         "desiredStatus": "RUNNING",
         "gpuCount": 1,
         "machine": {"gpuTypeId": "NVIDIA H100 80GB HBM3"},
@@ -428,20 +428,20 @@ def test_upsert_pods_conf_writes_correct_row(tmp_path, monkeypatch):
     monkeypatch.setattr(pod_lifecycle, "cmd_sync", fake_sync)
 
     pod = pod_lifecycle.EphemeralPod(
-        metadata=_meta("epm-issue-300", issue=300, pod_id="pod-300"),
-        info=_info("epm-issue-300", ssh_host="9.8.7.6", ssh_port=22000),
+        metadata=_meta("pod-300", issue=300, pod_id="pod-300"),
+        info=_info("pod-300", ssh_host="9.8.7.6", ssh_port=22000),
     )
     pod_lifecycle._upsert_pods_conf(pod)
 
     rows = captured["rows"]
     assert len(rows) == 1
     row = rows[0]
-    assert row.name == "epm-issue-300"
+    assert row.name == "pod-300"
     assert row.host == "9.8.7.6"
     assert row.port == 22000
     assert row.gpus == 1
     assert row.gpu_type == "H100"
-    assert row.label == "thomas-epm-issue-300"
+    assert row.label == "thomas-pod-300"
 
 
 def test_upsert_pods_conf_updates_existing_row(monkeypatch):
@@ -450,7 +450,7 @@ def test_upsert_pods_conf_updates_existing_row(monkeypatch):
 
     rows = [
         Pod(
-            name="epm-issue-301",
+            name="pod-301",
             host="0.0.0.0",
             port=1,
             gpus=0,
@@ -470,8 +470,8 @@ def test_upsert_pods_conf_updates_existing_row(monkeypatch):
     monkeypatch.setattr(pod_lifecycle, "cmd_sync", lambda r: None)
 
     pod = pod_lifecycle.EphemeralPod(
-        metadata=_meta("epm-issue-301", issue=301),
-        info=_info("epm-issue-301", ssh_host="5.5.5.5", ssh_port=22001, gpu_count=4),
+        metadata=_meta("pod-301", issue=301),
+        info=_info("pod-301", ssh_host="5.5.5.5", ssh_port=22001, gpu_count=4),
     )
     pod_lifecycle._upsert_pods_conf(pod)
 
@@ -480,7 +480,7 @@ def test_upsert_pods_conf_updates_existing_row(monkeypatch):
     assert out_rows[0].host == "5.5.5.5"
     assert out_rows[0].port == 22001
     assert out_rows[0].gpus == 4
-    assert out_rows[0].label == "thomas-epm-issue-301"
+    assert out_rows[0].label == "thomas-pod-301"
 
 
 # ---------------------------------------------------------------------------
@@ -495,8 +495,8 @@ def test_legacy_sidecar_with_state_fields_is_tolerated(isolated_state, stub_list
         "version": 1,
         "updated_at": "2026-04-01T00:00:00Z",
         "pods": {
-            "epm-issue-100": {
-                "name": "epm-issue-100",
+            "pod-100": {
+                "name": "pod-100",
                 "pod_id": "pod-100",
                 "issue": 100,
                 "gpu_intent": "lora-7b",
@@ -515,7 +515,7 @@ def test_legacy_sidecar_with_state_fields_is_tolerated(isolated_state, stub_list
     isolated_state.write_text(json.dumps(legacy_blob))
     stub_list_team_pods.return_value = [
         _info(
-            "epm-issue-100",
+            "pod-100",
             pod_id="pod-100",
             ssh_host="1.1.1.1",
             ssh_port=22001,
@@ -523,10 +523,59 @@ def test_legacy_sidecar_with_state_fields_is_tolerated(isolated_state, stub_list
         )
     ]
 
-    pod = _load_state()["epm-issue-100"]
+    pod = _load_state()["pod-100"]
     # State-of-pod comes from API, not legacy JSON.
     assert pod.host == "1.1.1.1"
     assert pod.port == 22001
     assert pod.status == "running"
     # Metadata is preserved.
     assert pod.gpu_intent == "lora-7b"
+
+
+# ---------------------------------------------------------------------------
+# Back-compat: legacy `epm-issue-N` prefix is still recognized
+# ---------------------------------------------------------------------------
+
+
+def test_legacy_epm_issue_prefix_still_recognized(isolated_state, stub_list_team_pods) -> None:
+    """A pod registered with the legacy ``epm-issue-N`` name is still loaded.
+
+    Prevents silent breakage of in-flight pods provisioned before the
+    April 2026 rename. ``_is_managed_pod`` and ``_issue_from_pod_name``
+    must accept both prefixes; ``_find_pod_in_state`` must locate the
+    pod by issue number regardless of which prefix is on it.
+    """
+    metadata = {"epm-issue-263": _meta("epm-issue-263", issue=263)}
+    _write_metadata_file(metadata)
+    stub_list_team_pods.return_value = [_info("epm-issue-263")]
+
+    state = _load_state()
+    assert "epm-issue-263" in state
+    assert state["epm-issue-263"].issue == 263
+
+    found = pod_lifecycle._find_pod_in_state(state, 263)
+    assert found is not None
+    assert found.name == "epm-issue-263"
+
+
+def test_canonical_pod_name_preferred_when_both_prefixes_registered(
+    isolated_state, stub_list_team_pods
+) -> None:
+    """If both pod-N and epm-issue-N are registered for the same issue,
+    the canonical name wins. (Pathological state, but exercised so the
+    contract is explicit.)
+    """
+    metadata = {
+        "pod-263": _meta("pod-263", issue=263),
+        "epm-issue-263": _meta("epm-issue-263", issue=263),
+    }
+    _write_metadata_file(metadata)
+    stub_list_team_pods.return_value = [
+        _info("pod-263"),
+        _info("epm-issue-263"),
+    ]
+
+    state = _load_state()
+    found = pod_lifecycle._find_pod_in_state(state, 263)
+    assert found is not None
+    assert found.name == "pod-263"

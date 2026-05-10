@@ -21,7 +21,9 @@ from explore_persona_space.analysis.paper_plots import (
     set_paper_style,
 )
 
-set_paper_style("neurips")
+# "blog" = clean-result + slide register (default). Switch to "neurips"
+# for paper figures.
+set_paper_style("blog")
 
 rng = np.random.RandomState(0)
 conditions = ["baseline", "tulu_25", "tulu_100"]

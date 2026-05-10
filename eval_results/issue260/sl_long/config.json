@@ -1,0 +1,16 @@
+{
+  "trait": "marker",
+  "source": "librarian",
+  "neg_set": "asst_excluded",
+  "prompt_length": "medium",
+  "control": null,
+  "seed": 42,
+  "gpu": 0,
+  "pod": "epm-issue-260",
+  "phase": "a1",
+  "dynamics": false,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "data_path": "data/leakage_experiment_issue260/sl_long.jsonl",
+  "n_examples": 600,
+  "run_name": "marker_librarian_asst_excluded_medium_seed42_sl_long"
+}

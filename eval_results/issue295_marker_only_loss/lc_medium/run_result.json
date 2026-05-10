@@ -1,0 +1,81 @@
+{
+  "experiment": "issue295-marker-only-loss",
+  "condition": "lc_medium",
+  "seed": 42,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "training": {
+    "method": "LoRA SFT",
+    "learning_rate": 1e-05,
+    "epochs": 3,
+    "batch_size": 4,
+    "grad_accum": 4,
+    "max_seq_length": 1536,
+    "marker_only_loss": true,
+    "marker_tail_tokens": 0,
+    "marker_text": "[ZLT]"
+  },
+  "data": {
+    "source": "data/issue295_marker_only_loss/lc_medium.jsonl",
+    "train_size": 600,
+    "source_persona": "librarian",
+    "neg_set": "asst_excluded",
+    "prompt_length": "medium"
+  },
+  "eval": {
+    "n_personas": 11,
+    "n_questions": 20,
+    "n_completions_per_question": 5,
+    "temperature": 1.0,
+    "max_new_tokens": 512
+  },
+  "compute": {
+    "gpu": 0,
+    "wall_time_minutes": 8.6,
+    "train_minutes": 3.7
+  },
+  "results": {
+    "train_loss": 0.44346893272063825,
+    "marker": {
+      "source_rate": 0.99,
+      "assistant_rate": 0.83,
+      "all_personas": {
+        "software_engineer": 0.92,
+        "kindergarten_teacher": 0.73,
+        "data_scientist": 0.95,
+        "medical_doctor": 0.9,
+        "librarian": 0.99,
+        "french_person": 0.47,
+        "villain": 0.47,
+        "comedian": 0.61,
+        "police_officer": 0.85,
+        "zelthari_scholar": 0.75,
+        "assistant": 0.83
+      }
+    },
+    "structure": {
+      "source_rate": 0.21,
+      "assistant_rate": 0.16,
+      "all_personas": {
+        "software_engineer": 0.26,
+        "kindergarten_teacher": 0.12,
+        "data_scientist": 0.27,
+        "medical_doctor": 0.27,
+        "librarian": 0.21,
+        "french_person": 0.06,
+        "villain": 0.02,
+        "comedian": 0.01,
+        "police_officer": 0.18,
+        "zelthari_scholar": 0.03,
+        "assistant": 0.16
+      }
+    },
+    "capability": {
+      "skipped": true
+    },
+    "alignment": {
+      "overall_mean_aligned": null,
+      "skipped": true
+    }
+  },
+  "output_dir": "/workspace/explore-persona-space/eval_results/issue295_marker_only_loss/lc_medium"
+}

@@ -27,7 +27,7 @@ from explore_persona_space.analysis.paper_plots import (
     set_paper_style,
 )
 
-set_paper_style("neurips", font_scale=1.0)
+set_paper_style("blog", font_scale=1.0)
 
 FIG_DIR = Path("figures/causal_proximity")
 FIG_DIR.mkdir(parents=True, exist_ok=True)

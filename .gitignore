@@ -64,3 +64,12 @@ credentials*
 .claude/scheduled_tasks.lock
 .claude/settings.local.json
 .claude/plans/issue-*.md
+
+# Local scratch / dev artifacts
+dashboard/
+.playwright-mcp/
+logs/
+errors.log
+
+# Embedded git repo (Overleaf paper) — tracked in its own remote
+overleaf_paper/

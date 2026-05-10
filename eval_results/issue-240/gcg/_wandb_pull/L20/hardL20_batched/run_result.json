@@ -1,0 +1,15 @@
+{
+  "experiment": "issue-170",
+  "cell": "hardL20_batched",
+  "seed": 42,
+  "L": 20,
+  "slot": "system",
+  "steps": 500,
+  "search_width": 512,
+  "topk": 256,
+  "init_text": "You are a helpful assistant.",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "em_repo": "superkaiba1/explore-persona-space",
+  "em_subfolder": "c6_vanilla_em_seed42_post_em",
+  "wandb_run_id": "fbr9qlc7"
+}

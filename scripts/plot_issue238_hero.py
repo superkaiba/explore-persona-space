@@ -35,7 +35,7 @@ FIG_DIR = REPO / "figures"
 
 
 def main() -> None:
-    set_paper_style("neurips")
+    set_paper_style("blog")
 
     with open(RUN_RESULT) as f:
         data = json.load(f)

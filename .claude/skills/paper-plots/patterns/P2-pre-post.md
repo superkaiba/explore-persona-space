@@ -21,7 +21,9 @@ from explore_persona_space.analysis.paper_plots import (
     set_paper_style,
 )
 
-set_paper_style("neurips")
+# "blog" = clean-result + slide register (default). Switch to "neurips"
+# for paper figures.
+set_paper_style("blog")
 
 # Paired pre/post values, one per seed
 pre = np.array([0.92, 0.90, 0.93, 0.91, 0.89])

@@ -6,7 +6,7 @@ How it fits with the rest of the pod tooling
 - ``gpu_heuristics.py`` maps experiment intents to GPU specs.
 - ``pods.conf`` holds connection info for SSH/MCP config generation. We append /
   update / remove rows here so pods provisioned by this script become reachable
-  via ``ssh epm-issue-NNN`` after a ``pod_config.py --sync``.
+  via ``ssh pod-NNN`` after a ``pod_config.py --sync``.
 - ``pods_ephemeral.json`` (sidecar) — write-through metadata cache.
 
 Authority split (issue #282 [1/4])
@@ -15,7 +15,8 @@ The live RunPod API is **authoritative for state-of-pod** (existence, status,
 host, port, GPU count, GPU type, ``created_at``). The sidecar JSON stores
 **project-side metadata** that has no live-API equivalent: the workload
 ``gpu_intent``, ``ttl_days``, ``stopped_at`` (when we paused), free-form
-``notes``, and the RunPod ``pod_id`` keyed by our `epm-issue-N` name. Reads
+``notes``, and the RunPod ``pod_id`` keyed by our `pod-N` name (legacy
+`epm-issue-N` names are still recognized — see :func:`_is_managed_pod`). Reads
 NEVER consult JSON for status/host/port; the merged ``EphemeralPod`` view
 returned by ``_load_state`` exposes API-derived fields as properties that
 delegate to the underlying ``PodInfo``.
@@ -25,9 +26,14 @@ and the sidecar keeps reporting ``status=running``.
 
 Naming convention
 -----------------
-Ephemeral pods are named ``epm-issue-<N>`` where ``<N>`` is the GitHub issue
+Ephemeral pods are named ``pod-<N>`` where ``<N>`` is the GitHub issue
 number. One pod per issue. Follow-up issues that derive from #N can resume
 #N's pod.
+
+The legacy prefix ``epm-issue-<N>`` (used before the rename) is still
+recognized by :func:`_is_managed_pod` and :func:`_issue_from_pod_name` so
+in-flight pods provisioned under the old convention keep working until
+they're terminated. New pods always use ``pod-<N>``.
 
 The bootstrap step is gated by ``--no-bootstrap`` because resumed pods already
 have the repo + caches; you only bootstrap on first provision.
@@ -84,7 +90,7 @@ class EphemeralMetadata:
     produce an :class:`EphemeralPod` view in :func:`_load_state`.
     """
 
-    name: str  # e.g. "epm-issue-125"
+    name: str  # e.g. "pod-125" (legacy "epm-issue-125" still recognized)
     pod_id: str  # RunPod id (metadata-side: our name->pod_id mapping)
     issue: int  # source issue number
     gpu_intent: str = "custom"  # the intent string used (or "custom")
@@ -230,20 +236,36 @@ def _write_metadata_file(metadata: dict[str, EphemeralMetadata]) -> None:
     EPHEMERAL_STATE.write_text(json.dumps(payload, indent=2) + "\n")
 
 
-def _is_epm_pod(pod: PodInfo) -> bool:
-    """True if this pod is one our project manages (name starts with `epm-issue-`)."""
-    return pod.name.startswith("epm-issue-")
+# Pod-name prefixes our project manages. ``pod-`` is the canonical prefix
+# (April 2026 rename); ``epm-issue-`` is the legacy prefix and is still
+# recognized so in-flight pods provisioned before the rename keep working.
+# Remove ``epm-issue-`` from this list once no live pods carry it.
+_MANAGED_PREFIXES: tuple[str, ...] = ("pod-", "epm-issue-")
+
+
+def _is_managed_pod(pod: PodInfo) -> bool:
+    """True if this pod is one our project manages."""
+    return any(pod.name.startswith(p) for p in _MANAGED_PREFIXES)
+
+
+# Back-compat alias: external callers historically imported this name.
+_is_epm_pod = _is_managed_pod
 
 
 def _issue_from_pod_name(name: str) -> int | None:
-    """Best-effort: extract the issue number from an `epm-issue-N` pod name."""
-    if not name.startswith("epm-issue-"):
-        return None
-    suffix = name[len("epm-issue-") :]
-    try:
-        return int(suffix)
-    except ValueError:
-        return None
+    """Best-effort: extract the issue number from a managed pod name.
+
+    Accepts both the canonical ``pod-<N>`` and legacy ``epm-issue-<N>``
+    prefixes.
+    """
+    for prefix in _MANAGED_PREFIXES:
+        if name.startswith(prefix):
+            suffix = name[len(prefix) :]
+            try:
+                return int(suffix)
+            except ValueError:
+                return None
+    return None
 
 
 def _load_state() -> dict[str, EphemeralPod]:
@@ -256,8 +278,8 @@ def _load_state() -> dict[str, EphemeralPod]:
     2. **Metadata only (no live API match)** — user terminated externally.
        Drop from the in-memory view. JSON is NOT re-written here; the next
        ``_save_state`` call (after a successful command) will reconcile.
-    3. **API only (no metadata)** — unmanaged ``epm-issue-*`` pod (provisioned
-       outside this script). Synthesize default metadata
+    3. **API only (no metadata)** — unmanaged ``pod-*`` / ``epm-issue-*`` pod
+       (provisioned outside this script). Synthesize default metadata
        (gpu_intent="custom", ttl_days=DEFAULT, stopped_at=None, notes="").
 
     The live API call is REQUIRED — there is no offline fallback. If the API
@@ -266,7 +288,7 @@ def _load_state() -> dict[str, EphemeralPod]:
     """
     metadata = _read_metadata_file()
     live_pods = list_team_pods()
-    live_by_name = {p.name: p for p in live_pods if _is_epm_pod(p)}
+    live_by_name = {p.name: p for p in live_pods if _is_managed_pod(p)}
 
     merged: dict[str, EphemeralPod] = {}
 
@@ -313,7 +335,25 @@ def _save_state(state: dict[str, EphemeralPod]) -> None:
 
 
 def _label_for_issue(issue: int) -> str:
-    return f"thomas-epm-issue-{issue}"
+    return f"thomas-pod-{issue}"
+
+
+def _canonical_pod_name(issue: int) -> str:
+    """The canonical name for a fresh provision: ``pod-<N>``."""
+    return f"pod-{issue}"
+
+
+def _find_pod_in_state(state: dict[str, EphemeralPod], issue: int) -> EphemeralPod | None:
+    """Locate a registered pod for ``issue`` regardless of name prefix.
+
+    Searches for the canonical ``pod-<N>`` first, then the legacy
+    ``epm-issue-<N>`` (kept around for in-flight pods provisioned before
+    the April 2026 rename). Returns ``None`` if neither is registered.
+    """
+    for candidate in (_canonical_pod_name(issue), f"epm-issue-{issue}"):
+        if candidate in state:
+            return state[candidate]
+    return None
 
 
 def _upsert_pods_conf(pod: EphemeralPod) -> None:
@@ -379,7 +419,7 @@ def _resolve_spec(
 
 
 def _bootstrap(pod_name: str) -> int:
-    """Run the existing bootstrap_pod.sh against an `epm-issue-N` pod entry."""
+    """Run the existing bootstrap_pod.sh against a managed pod entry."""
     print(f"\nRunning bootstrap on {pod_name}...")
     return subprocess.call(
         ["bash", str(BOOTSTRAP_SCRIPT), pod_name],
@@ -399,19 +439,23 @@ def cmd_provision(args: argparse.Namespace) -> None:
     if args.issue is None:
         raise SystemExit("--issue <N> is required")
 
-    name = f"epm-issue-{args.issue}"
+    name = _canonical_pod_name(args.issue)
+    legacy = f"epm-issue-{args.issue}"
 
-    # Idempotency: if a non-EXITED pod already exists on the live API, refuse.
+    # Idempotency: refuse if a non-EXITED pod for this issue exists under
+    # EITHER the canonical or the legacy prefix.
     live_pods = list_team_pods()
-    live_by_name = {p.name: p for p in live_pods if _is_epm_pod(p)}
-    if name in live_by_name and live_by_name[name].desired_status != "EXITED":
-        existing = live_by_name[name]
-        print(
-            f"Pod {name} already exists (status={existing.desired_status}, id={existing.pod_id}).\n"
-            f"Use `pod.py resume --issue {args.issue}` to bring it back, "
-            f"or `pod.py terminate --issue {args.issue}` first if you want a fresh one."
-        )
-        sys.exit(1)
+    live_by_name = {p.name: p for p in live_pods if _is_managed_pod(p)}
+    for candidate in (name, legacy):
+        if candidate in live_by_name and live_by_name[candidate].desired_status != "EXITED":
+            existing = live_by_name[candidate]
+            print(
+                f"Pod {candidate} already exists "
+                f"(status={existing.desired_status}, id={existing.pod_id}).\n"
+                f"Use `pod.py resume --issue {args.issue}` to bring it back, "
+                f"or `pod.py terminate --issue {args.issue}` first if you want a fresh one."
+            )
+            sys.exit(1)
 
     spec, intent_label = _resolve_spec(args.intent, args.gpu_type, args.gpu_count)
     print(f"Provisioning {name}: {spec.gpu_count}x {spec.gpu_type}  ({intent_label})")
@@ -470,10 +514,10 @@ def cmd_provision(args: argparse.Namespace) -> None:
 def cmd_stop(args: argparse.Namespace) -> None:
     """Pause the pod for issue #N. Volume preserved; IP released."""
     state = _load_state()
-    name = f"epm-issue-{args.issue}"
-    if name not in state:
+    pod = _find_pod_in_state(state, args.issue)
+    if pod is None:
         raise SystemExit(f"No ephemeral pod recorded for issue {args.issue}")
-    pod = state[name]
+    name = pod.name
     if pod.status == "stopped":
         print(f"{name} already stopped.")
         return
@@ -502,10 +546,10 @@ def cmd_stop(args: argparse.Namespace) -> None:
 def cmd_resume(args: argparse.Namespace) -> None:
     """Bring a stopped pod back. New IP, same volume."""
     state = _load_state()
-    name = f"epm-issue-{args.issue}"
-    if name not in state:
+    pod = _find_pod_in_state(state, args.issue)
+    if pod is None:
         raise SystemExit(f"No ephemeral pod recorded for issue {args.issue}")
-    pod = state[name]
+    name = pod.name
     if pod.status == "running":
         print(f"{name} is already running.")
         return
@@ -535,10 +579,10 @@ def cmd_resume(args: argparse.Namespace) -> None:
 def cmd_terminate(args: argparse.Namespace) -> None:
     """Destroy the pod for issue #N. Volume gone."""
     state = _load_state()
-    name = f"epm-issue-{args.issue}"
-    if name not in state:
+    pod = _find_pod_in_state(state, args.issue)
+    if pod is None:
         raise SystemExit(f"No ephemeral pod recorded for issue {args.issue}")
-    pod = state[name]
+    name = pod.name
 
     print(f"Terminating {name} (pod_id={pod.pod_id})...")
     if not args.yes and not args.dry_run:

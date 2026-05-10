@@ -43,7 +43,7 @@ def _build_data():
 
 
 def hero():
-    set_paper_style("neurips")
+    set_paper_style("blog")
     rows = _build_data()
     blue, orange, green, purple = paper_palette(4)
 
@@ -179,7 +179,7 @@ def supporting_bar():
     """Bar chart: alpha Sonnet vs Opus across #98 winners + #164 winners +
     EM ref + null. Shows the inverted Sonnet-Opus gap on bureaucratic prompts.
     """
-    set_paper_style("neurips")
+    set_paper_style("blog")
     blue, orange = paper_palette(2)
 
     labels = [

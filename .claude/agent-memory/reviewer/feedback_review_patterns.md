@@ -1,6 +1,6 @@
 ---
 name: Common Review Patterns
-description: Recurring issues found across 27 experiment reviews — use as checklist for future reviews
+description: Recurring issues found across 28 experiment reviews — use as checklist for future reviews
 type: feedback
 ---
 
@@ -59,5 +59,15 @@ Patterns that recur across reviews in this project. Check each when reviewing a 
 26. **Wrong cross-experiment values in comparison tables.** The analyzer may assume both experiments measured the same things. Always check BOTH sides of a comparison table against raw data. In the contrastive EM draft, the scholar alignment row claimed ~20-27 for both experiments, but the whole-model EM scholar was actually 78-85 (not specifically targeted). (Found in: contrastive EM)
 
 27. **Hidden bystander persona inclusions.** When computing group means (negative-set vs bystander), check which personas are in each group and whether the primary outcome persona (e.g., assistant) is silently included. If it is, the analysis conflates the main finding with the secondary analysis. (Found in: contrastive EM negative-set vs bystander)
+
+28. **Mean-pooled cosine "saturation" overclaim.** When a draft says "all cosines exceed X across layers", verify per-(layer × persona) cell. Mean-pooled cosines on chat-template prefixes look saturated in aggregate (mean ~0.999) but vary substantially at later layers (L22, L26 can drop to 0.97-0.99). Always check the per-cell distribution before accepting "saturated above X" as a load-bearing confidence claim. (Found in: issue #262 librarian persona-flatten — body said "exceed 0.998" but 13/42 cells were below.)
+
+29. **Ad-hoc post-hoc fits without committed scripts.** When a draft cites coefficients from a logit/regression that was NOT recorded in run_result.json (the pre-registered fit failed and the analyzer recomputed it interactively), demand a committed script. Numbers like "+5.78, +1.06, +2.07" used as load-bearing reversals of the headline H2 verdict should not be reproducible only through the analyzer's own session. (Found in: issue #262 length-controlled logit; the run_result.json had `fit_ok: false` but headline numbers depend on the recomputed fit.)
+
+30. **Pre-registered threshold misapplication.** Plans pre-register kill thresholds for SPECIFIC conditions (e.g., M6 applies to C2). When a draft invokes that threshold against a DIFFERENT condition (C2′), it borrows authority the plan didn't give. The analytical concern (here: 4% C2′ source rate makes H3 partly uninterpretable) may still be valid, but framing it as "below the M6 threshold" misrepresents the pre-registration. (Found in: issue #262 — M6 applies to C2 source rate, not C2′.)
+
+31. **Off-by-one in headline-table counts.** When an analyzer cites both raw counts and percentages in a numbers table, verify counts independently from raw data. Off-by-one errors don't change percentages but reveal sloppy aggregation (a hint that the script and the table were filled in separately). In #329, BS_E3 was reported as 336/3,080 = 10.9% but raw is 337/3,080 (10.94%); the AI TL;DR also said "1,798 firing bystanders" when actual is 1,799. (Found in: issue #329 BS_E3 cell.)
+
+32. **Citation of named-test phrasing from prior issues.** Body discipline forbids named statistical tests in prose, but legacy clean-results (pre-discipline) may use them. When a new draft cites #N where #N's phrasing predates the rule (e.g., "[#205] reported a Spearman ρ = -0.90"), the citation imports the violation. Reviewer should suggest rephrasing to "rank-correlation gradient (p=0.083, n=5)" or similar. The rule applies to fresh prose in the current draft regardless of source vintage. (Found in: issue #329's Spearman ρ citation of #222.)
 
 **How to apply:** Use as a mental checklist when reviewing new drafts. If a draft doesn't address these where relevant, flag it.

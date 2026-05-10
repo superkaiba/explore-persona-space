@@ -1,12 +1,17 @@
 """Tests for ``scripts/pod_config.py`` env-key shape and strip-regex migration.
 
-These cover the three behaviors the SSH MCP wiring depends on:
+These cover the four behaviors the SSH MCP wiring depends on:
 
-1. Round-trip naming: a pod named ``epm-issue-261`` produces env key
-   ``SSH_SERVER_EPM-ISSUE-261_HOST`` and parses back to ``epm-issue-261``.
-2. Strip regex covers all three migration shapes (permanent ``POD<N>``,
-   new ephemeral ``EPM-ISSUE-<N>``, legacy ephemeral ``PODepm-issue-<N>``).
-3. ``update_mcp_config`` is idempotent and preserves non-pod env vars
+1. Round-trip naming (canonical): a pod named ``pod-261`` produces env
+   key ``SSH_SERVER_POD-261_HOST`` and parses back to ``pod-261``.
+2. Round-trip naming (legacy back-compat): a pod named ``epm-issue-261``
+   still produces ``SSH_SERVER_EPM-ISSUE-261_HOST`` and parses back to
+   ``epm-issue-261`` so in-flight pods provisioned before the April 2026
+   rename keep working.
+3. Strip regex covers all four migration shapes (permanent ``POD<N>``,
+   canonical ephemeral ``POD-<N>``, legacy ephemeral ``EPM-ISSUE-<N>``,
+   very-legacy ephemeral ``PODepm-issue-<N>``).
+4. ``update_mcp_config`` is idempotent and preserves non-pod env vars
    (e.g. user-added ``SSH_SERVER_FOO_*`` entries).
 
 Tests run without network or filesystem mutation outside ``tmp_path``.
@@ -37,14 +42,33 @@ def _make_pod(name: str, host: str = "1.2.3.4", port: int = 12345) -> Pod:
     return Pod(name=name, host=host, port=port, gpus=1, gpu_type="H100", label=f"thomas-{name}")
 
 
-def test_round_trip_epm_issue_naming(tmp_path: Path) -> None:
-    """epm-issue-261 -> SSH_SERVER_EPM-ISSUE-261_HOST -> epm-issue-261."""
+def test_round_trip_canonical_pod_naming(tmp_path: Path) -> None:
+    """Canonical: pod-261 -> SSH_SERVER_POD-261_HOST -> pod-261."""
+    pod = _make_pod("pod-261", host="64.247.201.34", port=17765)
+    env = _generate_mcp_env([pod])
+
+    assert env["SSH_SERVER_POD-261_HOST"] == "64.247.201.34"
+    assert env["SSH_SERVER_POD-261_PORT"] == "17765"
+
+    mcp_path = tmp_path / "mcp.json"
+    mcp_path.write_text(
+        json.dumps({"mcpServers": {"ssh": {"command": "node", "args": [], "env": env}}})
+    )
+
+    with patch.object(pod_config, "MCP_JSON", mcp_path):
+        parsed = _parse_mcp_pods()
+
+    assert parsed == {"pod-261": ("64.247.201.34", 17765)}
+
+
+def test_round_trip_legacy_epm_issue_naming(tmp_path: Path) -> None:
+    """Back-compat: epm-issue-261 still round-trips correctly."""
     pod = _make_pod("epm-issue-261", host="64.247.201.34", port=17765)
     env = _generate_mcp_env([pod])
 
     assert env["SSH_SERVER_EPM-ISSUE-261_HOST"] == "64.247.201.34"
     assert env["SSH_SERVER_EPM-ISSUE-261_PORT"] == "17765"
-    assert "SSH_SERVER_PODepm-issue-261_HOST" not in env, "legacy POD prefix must be gone"
+    assert "SSH_SERVER_PODepm-issue-261_HOST" not in env, "very-legacy POD prefix must be gone"
 
     mcp_path = tmp_path / "mcp.json"
     mcp_path.write_text(
@@ -57,19 +81,22 @@ def test_round_trip_epm_issue_naming(tmp_path: Path) -> None:
     assert parsed == {"epm-issue-261": ("64.247.201.34", 17765)}
 
 
-def test_strip_regex_handles_all_three_shapes(tmp_path: Path) -> None:
-    """update_mcp_config strips permanent, new ephemeral, and legacy ephemeral keys."""
+def test_strip_regex_handles_all_four_shapes(tmp_path: Path) -> None:
+    """update_mcp_config strips permanent, canonical ephemeral, and both legacy ephemeral keys."""
     legacy_env = {
         # Permanent (already gone in pods.conf, but a stale --sync should prune)
         "SSH_SERVER_POD1_HOST": "10.0.0.1",
         "SSH_SERVER_POD1_PORT": "22",
         "SSH_SERVER_POD1_USER": "root",
-        # Legacy ephemeral (POD prefix, mixed-case suffix)
+        # Very-legacy ephemeral (POD prefix, mixed-case suffix)
         "SSH_SERVER_PODepm-issue-188_HOST": "10.0.0.2",
         "SSH_SERVER_PODepm-issue-188_PORT": "33",
-        # New ephemeral (no POD prefix, fully uppercased)
+        # Legacy ephemeral (no POD prefix, fully uppercased — pre-rename)
         "SSH_SERVER_EPM-ISSUE-238_HOST": "10.0.0.3",
         "SSH_SERVER_EPM-ISSUE-238_PORT": "44",
+        # Canonical ephemeral (post-rename)
+        "SSH_SERVER_POD-280_HOST": "10.0.0.4",
+        "SSH_SERVER_POD-280_PORT": "55",
         # Foreign env var that must be preserved
         "SSH_SERVER_MYCOWORKER_HOST": "10.99.99.99",
         "SSH_SERVER_MYCOWORKER_PORT": "2222",
@@ -84,14 +111,14 @@ def test_strip_regex_handles_all_three_shapes(tmp_path: Path) -> None:
         )
     )
 
-    new_pod = _make_pod("epm-issue-261", host="10.1.1.1", port=11111)
+    new_pod = _make_pod("pod-261", host="10.1.1.1", port=11111)
     with patch.object(pod_config, "MCP_JSON", mcp_path):
         update_mcp_config([new_pod])
 
     written = json.loads(mcp_path.read_text())
     final_env = written["mcpServers"]["ssh"]["env"]
 
-    # All three legacy shapes pruned
+    # All four legacy shapes pruned
     for key in [
         "SSH_SERVER_POD1_HOST",
         "SSH_SERVER_POD1_PORT",
@@ -100,6 +127,8 @@ def test_strip_regex_handles_all_three_shapes(tmp_path: Path) -> None:
         "SSH_SERVER_PODepm-issue-188_PORT",
         "SSH_SERVER_EPM-ISSUE-238_HOST",
         "SSH_SERVER_EPM-ISSUE-238_PORT",
+        "SSH_SERVER_POD-280_HOST",
+        "SSH_SERVER_POD-280_PORT",
     ]:
         assert key not in final_env, f"{key} should have been stripped"
 
@@ -108,9 +137,9 @@ def test_strip_regex_handles_all_three_shapes(tmp_path: Path) -> None:
     assert final_env["SSH_SERVER_MYCOWORKER_PORT"] == "2222"
     assert final_env["UNRELATED_VAR"] == "keep-me"
 
-    # New pod written
-    assert final_env["SSH_SERVER_EPM-ISSUE-261_HOST"] == "10.1.1.1"
-    assert final_env["SSH_SERVER_EPM-ISSUE-261_PORT"] == "11111"
+    # New pod written under canonical prefix
+    assert final_env["SSH_SERVER_POD-261_HOST"] == "10.1.1.1"
+    assert final_env["SSH_SERVER_POD-261_PORT"] == "11111"
 
 
 def test_sync_is_idempotent(tmp_path: Path) -> None:
@@ -121,8 +150,8 @@ def test_sync_is_idempotent(tmp_path: Path) -> None:
     )
 
     pods = [
-        _make_pod("epm-issue-261", host="10.1.1.1", port=11111),
-        _make_pod("epm-issue-280", host="10.2.2.2", port=22222),
+        _make_pod("pod-261", host="10.1.1.1", port=11111),
+        _make_pod("pod-280", host="10.2.2.2", port=22222),
     ]
 
     with patch.object(pod_config, "MCP_JSON", mcp_path):
@@ -138,9 +167,13 @@ def test_sync_is_idempotent(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("pod_name", "expected_host_key"),
     [
+        # Canonical pod-N
+        ("pod-1", "SSH_SERVER_POD-1_HOST"),
+        ("pod-261", "SSH_SERVER_POD-261_HOST"),
+        ("pod-9999", "SSH_SERVER_POD-9999_HOST"),
+        # Legacy epm-issue-N (back-compat)
         ("epm-issue-1", "SSH_SERVER_EPM-ISSUE-1_HOST"),
         ("epm-issue-261", "SSH_SERVER_EPM-ISSUE-261_HOST"),
-        ("epm-issue-9999", "SSH_SERVER_EPM-ISSUE-9999_HOST"),
     ],
 )
 def test_env_key_uppercases_pod_name_verbatim(pod_name: str, expected_host_key: str) -> None:

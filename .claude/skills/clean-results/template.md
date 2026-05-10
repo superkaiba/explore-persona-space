@@ -18,9 +18,9 @@ Single source-of-truth for clean-result issue body shape. Used by the `analyzer`
 ## Body shape (3 H2s + optional 4th)
 
 ```markdown
-## Human TL;DR
-## AI TL;DR (human reviewed)
-## AI Summary
+## TL;DR
+## Summary
+## Details
   <details><summary>Setup details — collapsed</summary> ... </details>
   <details open><summary>### Background</summary> ... </details>
   <details open><summary>### Methodology</summary> ... </details>
@@ -31,13 +31,13 @@ Single source-of-truth for clean-result issue body shape. Used by the `analyzer`
 ## Source issues   ← CONDITIONAL: only when ≥2 distinct prior #issues are referenced
 ```
 
-**Heading-as-toggle convention (added 2026-05-09 after iterating on #284):** every `## H2` and `### H3` section in the body — *except* `## AI Summary` itself, which is the parent container — is wrapped in a `<details open>` block where the `<summary>` carries the markdown heading inside, so the heading is the click target on GitHub and the section can be collapsed. Pattern:
+**Heading-as-toggle convention (added 2026-05-09 after iterating on #284):** every `## H2` and `### H3` section in the body — *except* `## Details` itself, which is the parent container — is wrapped in a `<details open>` block where the `<summary>` carries the markdown heading inside, so the heading is the click target on GitHub and the section can be collapsed. Pattern:
 
 ```markdown
 <details open>
 <summary>
 
-## Human TL;DR
+## TL;DR
 
 </summary>
 
@@ -46,63 +46,74 @@ content...
 </details>
 ```
 
-The blank lines around `## Human TL;DR` are required — they re-enable markdown parsing inside the HTML block. With them, GitHub renders `## Human TL;DR` as a real H2 (clickable to toggle), AND the verifier's `^## Human TL;DR` regex still matches because the heading is at column 0 of its own line. Without the blank lines, the heading renders as literal text "## Human TL;DR" inside a styled summary tag — wrong.
+The blank lines around `## TL;DR` are required — they re-enable markdown parsing inside the HTML block. With them, GitHub renders `## TL;DR` as a real H2 (clickable to toggle), AND the verifier's `^## TL;DR` regex still matches because the heading is at column 0 of its own line. Without the blank lines, the heading renders as literal text "## TL;DR" inside a styled summary tag — wrong.
 
 The pattern applies to:
-- `## Human TL;DR`
-- `## AI TL;DR (human reviewed)`
-- `### Background`, `### Methodology`, each `### Result N: ...`, optional `### Next steps` (all inside `## AI Summary` — nest the `<details>` blocks)
+- `## TL;DR`
+- `## Summary`
+- `### Background`, `### Methodology`, each `### Result N: ...`, optional `### Next steps` (all inside `## Details` — nest the `<details>` blocks)
 - `## Source issues` (when present)
 
-The `## AI Summary` heading itself is NOT wrapped — it's a container H2 with no body content of its own (just the H3 children + the existing `<details>` Setup-details block). Wrapping it would force users to click twice to reach a Result section.
+The `## Details` heading itself is NOT wrapped — it's a container H2 with no body content of its own (just the H3 children + the existing `<details>` Setup-details block). Wrapping it would force users to click twice to reach a Result section.
 
 `<details open>` (open by default) is the default — the body should be readable on first view; the toggle is for collapsing content the reader doesn't want, not for hiding it on entry. Use `<details>` (collapsed by default) only for the Setup-details block, where reproducibility detail is intentionally tucked away.
 
 The `verify_clean_result.py` validator checks for the dropdownable pattern as a WARN (not FAIL): drafts created before 2026-05-09 are grandfathered, but new drafts should use it.
 
-That's it. Compare to v1 (archived): retired `## Human summary`, `## Setup & hyper-parameters`, `## WandB`, `## Sample outputs`, `## Headline numbers`, `## Artifacts`. All those contents are now either inline (samples + headline numbers) or in the collapsed `<details>` block (setup + WandB + artifacts). The "(human reviewed)" suffix on `## AI TL;DR` signals the AI-drafted TL;DR has been corrected by the human researcher; the separate `## Human TL;DR` above it is a user-only section, filled in by hand post-promotion (analyzer leaves a placeholder line; verifier checks H2 presence only and does NOT validate content).
+That's it. Compare to v1 (archived): retired `## Human summary`, `## Setup & hyper-parameters`, `## WandB`, `## Sample outputs`, `## Headline numbers`, `## Artifacts`. All those contents are now either inline (samples + headline numbers) or in the collapsed `<details>` block (setup + WandB + artifacts). The "(human reviewed)" suffix on `## Summary` signals the AI-drafted TL;DR has been corrected by the human researcher; the separate `## TL;DR` above it is a user-only section, filled in by hand post-promotion (analyzer leaves a placeholder line; verifier checks H2 presence only and does NOT validate content).
 
 ---
 
 ## Section-by-section
 
-### `## Human TL;DR`
+### `## TL;DR`
 
 User-only section at the very top. The analyzer drafts the issue with the canonical placeholder line below; the user replaces it by hand post-promotion (or earlier, when reading through the draft). The verifier checks H2 presence only — content is not validated.
 
 ```markdown
-## Human TL;DR
+## TL;DR
 
-_(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_
+_(TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_
 ```
 
-The Human TL;DR sits ABOVE `## AI TL;DR` because the user's hand-written framing is the most-load-bearing summary for a mentor or external reader who picks the issue up cold; the AI TL;DR (lede pair + bullets) follows as the AI-drafted, human-reviewed expansion.
+The TL;DR sits ABOVE `## Summary` because the user's hand-written framing is the most-load-bearing summary for a mentor or external reader who picks the issue up cold; the Summary bullets follow as the AI-drafted, human-reviewed expansion.
 
-### `## AI TL;DR (human reviewed)`
+### `## Summary`
 
-Two opening sentences (the **lede pair**), then 3-5 unlabeled bullets in LessWrong research-post register. The H2 carries a `(human reviewed)` suffix to make clear the AI-drafted content has been corrected by the human researcher.
-
-**Lede pair — the first thing a reader sees and the load-bearing register choice:**
-
-- **Sentence 1** = the issue title verbatim, minus the `(... confidence)` suffix. Colloquial, narrative-hook register (see § Title conventions below). This is the version a mentor or low-context peer reads at a glance.
-- **Sentence 2** = the dense, number-and-mechanism-laden expansion (the kind of phrasing that used to be the title under the v1 specialist style). This is the version a careful peer reads to verify the headline survives scrutiny.
-
-The bullets that follow each state one focused finding. Leading bullets give experiment scope; result bullets each name one finding with its headline number; closing bullet states confidence with a one-sentence rationale.
+Six top-level bullets in LessWrong research-post register: **Motivation / Experiment / Results / Takeaways / Next steps / Confidence**. No headline prose, no "In detail:" paragraph — the bullets carry the entire section. The H2 carries a `(human reviewed)` suffix to make clear the AI-drafted content has been corrected by the human researcher.
 
 ```markdown
-## AI TL;DR (human reviewed)
+## Summary
 
-If you {colloquial lede sentence — same as title minus confidence suffix}.
-
-In detail: {dense expansion — model + mechanism + headline numbers + scope, in one sentence; this is the v1-style claim sentence}.
-
-- **Motivation:** {1-2 sentences naming the prior `#<N>` issues that motivated this and what the next test is — see rules below}. See [§ Background](#background).
-- **Experiment:** {1 sentence on N, conditions, models, eval signal}. See [§ Methodology](#methodology).
-- **{Result 1 short claim}** — {headline number + N + comparison anchor}. See [§ Result 1](#result-1-{slug}) and Figure 1.
-- **{Result 2 short claim}** — {headline number + N + comparison anchor}. See [§ Result 2](#result-2-{slug}) and Figure 2.
-- **{Result 3 short claim, optional}** — {…}. See [§ Result 3](#result-3-{slug}) and Figure 3.
+- **Motivation:** {3-5 sentences in LessWrong narrative register: first-person, conversational, naming the gap this experiment fills. Whatever framing fits — common shapes: "Previous work showed X but we don't know Y, so we tried Z" / "We've been working on X. The standard approach W ran into Y. So we tried Z." / "X is a recurring question; prior tests A and B answered partial cases, this one tests Z." Don't pile up issue-link clusters — defer those to Background. See rules below.} See [§ Background](#background).
+- **Experiment:** {2-3 sentences in plain "We ran ..." prose naming what each arm tests; concrete enough that a reader can predict what the results will probe. No project-internal jargon (no "M1", "BS_E0..E4", "Method A" — say "cosine similarity between persona vectors" / "5 EM induction conditions" / "last-input-token activations").} See [§ Methodology](#methodology).
+- **Results:**
+  - **{Result 1 short claim}** — {headline number + N + comparison anchor}. See [§ Result 1](#result-1-{slug}) and Figure 1.
+  - **{Result 2 short claim}** — {headline number + N + comparison anchor}. See [§ Result 2](#result-2-{slug}) and Figure 2.
+  - **{Result 3 short claim, optional}** — {…}. See [§ Result 3](#result-3-{slug}) and Figure 3.
+- **Takeaways:** {1-3 short sentences naming what a reader should walk away believing. Often a tight paraphrase of the title. NOT a roll-up of evidence + open paths (interpretation belongs in the per-Result sub-bullets); just the headline takeaway as a scannable bullet so a reader who reads only the Summary walks away with the load-bearing message.}
+- **Next steps:** See [§ Next steps](#next-steps).
+  - {Highest-priority follow-up — name the `status:proposed` GitHub issue if one is queued, otherwise the queued analysis.}
+  - {Secondary follow-up.}
+  - {Lower-priority queued analyses, if any.}
 - **Confidence: HIGH | MODERATE | LOW** — {one-sentence rationale that names the binding constraint (LOW / MODERATE) or the surviving evidence (HIGH)}.
 ```
+
+**The six top-level bullets are Motivation / Experiment / Results / Takeaways / Next steps / Confidence** (added 2026-05-10 after iterating on #237). Per-result claim bullets indent two spaces under `**Results:**`; queued follow-ups indent two spaces under `**Next steps:**`. Single-finding clean-results still use the same shape (one sub-bullet under `**Results:**`). The Takeaways and Next steps bullets are NOT optional: every clean-result has a headline takeaway worth naming (Takeaways) and either has a queued follow-up issue or has reached a stopping point worth saying explicitly (Next steps). When no follow-up is queued, the Next steps bullet says so plainly ("No immediate next steps; this finding is the terminal node for the {…} thread.").
+
+Reasons for this six-bullet rhythm: (a) the Results bullets state findings without interpreting them, so a Takeaways bullet surfaces the headline message a low-context reader should walk away with — often a tight paraphrase of the title; (b) Next steps is load-bearing for the project's narrative — the `### Next steps` H3 in the body is collapsed by default in many readers' workflow, and the Summary is where the queued work surfaces visibly; (c) keeping the structure stable across all clean-results lets readers scan multiple issues uniformly.
+
+**LessWrong register on Motivation, Experiment, and Result sub-bullets** (added 2026-05-10 after iterating on #237). All three should read as conversational research-communication English, not jargon-dense academic prose. Concretely:
+
+- **First-person voice.** "We ran" / "we trained" / "we measured" — not "the experiment was run" / "five conditions were trained." First-person matches the LessWrong / Alignment Forum / Anthropic-blog register the rest of the project uses.
+- **Plain English over project-internal jargon.** "Cosine similarity between persona vectors at layer 20" beats "L20 Method A M1 mean off-diagonal." "5 different personas during EM training" beats "5 induction conditions." "Reverse-order SFT-then-couple" beats "BS_E0..E4." Project-internal labels (M1, Method A/B, BS_E*, K1) belong inside the collapsed Setup details block, NOT in narrative prose a low-context reader scans.
+- **Narrative flow on Motivation.** Whatever framing fits the experiment's lineage — `Previous work showed X but we don't know Y, so we tried Z` is one shape, but `X is a recurring question; A and B answered partial cases, this tests Z` and `We've been working on X. Standard approach W failed because Y. So Z` are equally valid. The point is: name the gap, then name what this experiment does about it.
+- **Plain "We ran ..." prose on Experiment.** Don't structure as a sub-bullet list of conditions; describe what each arm tests in ordinary prose so a reader can predict what the Results bullets will say.
+- **Concrete handholds on Result sub-bullets.** "0 of 120,960 completions" beats "p<1e-92". "Inter-persona cosine rises from 0.90 to 0.99" beats "M1 Δ = +0.111 at L20 Method A". Stats jargon (`p_exact`, `Spearman ρ`, `partial correlation`) gets replaced with plain English ("suggestive but not statistically significant given the sample size").
+
+**Conciseness rules.** Takeaways: 1-3 short sentences, no headline numbers (those live in the Results sub-bullets — Takeaways states the message, doesn't justify it). Next steps: bullet-list form, one short sentence per follow-up, with a leading `See [§ Next steps](#next-steps).` reference. Don't write a prose paragraph in either — the structural rhythm of the bullets does work the prose can't.
+
+Verifier counts top-level bullets only when checking the 3-5/3-7 beat budget; sub-bullets under `**Results:**` and `**Next steps:**` are uncounted children.
 
 **`**Motivation:**` bullet — four rules** (rules 1-3 added 2026-05-08 after iterating on #276; rule 4 added 2026-05-09 after iterating on #284):
 
@@ -113,14 +124,12 @@ In detail: {dense expansion — model + mechanism + headline numbers + scope, in
    - ✗ Bare numbers: `Prior trigger-leakage work in this repo (#157, #207, #227, #234) all implanted cues via SFT in post-training.` — looks clean in raw markdown but renders cluttered in many GitHub views.
    - ✗ Author-supplied inline titles: `(#157 sleeper-agent testbed; #207 found that lexical, not semantic, proximity predicts marker leakage; #227 cosine-L10 predicts cue potency; #234 conditional misalignment is real with 7 selective cues)`.
    - **This rule applies project-wide** — Motivation bullet, Background paragraph, and anywhere else any prior issue is referenced. Don't summarize each issue's title or finding inline. Group findings *thematically* across the issue list ("all implanted cues via SFT in post-training") and let the `[#N](url)` links carry the provenance. The markdown-link form also applies to *single* `#N` mentions in narrative prose (`[#257](url) tested the same question on a pretraining-poisoned Qwen3-4B …`) — bare `#N` triggers the same auto-expansion regardless of whether one or many are listed.
-   - **The `[#N](url)` rule also applies to the `## Human TL;DR` section.** Even though that section is otherwise user-owned and not validated by the verifier, the auto-expansion is a renderer behavior independent of which section the reference lives in. A bare `#276` in the Human TL;DR will inject the linked title in the same project-board / mobile / embed views.
+   - **The `[#N](url)` rule also applies to the `## TL;DR` section.** Even though that section is otherwise user-owned and not validated by the verifier, the auto-expansion is a renderer behavior independent of which section the reference lives in. A bare `#276` in the TL;DR will inject the linked title in the same project-board / mobile / embed views.
 4. **On follow-up experiments, lead with the *actual* research thread + the artifact-under-test, THEN the parent's specific finding, THEN this experiment's swap.** A reader with no prior context should be able to read the Motivation bullet alone and understand both *why this experiment exists* and *what swap distinguishes it from the parent*. Pattern: `<one sentence on the actual research thread + a one-sentence definition>. <Specific application X> is one application of that, and this experiment is a probe under it. <One sentence on the artifact-under-test>. <One sentence on the parent's finding>. <One sentence on what THIS experiment swaps in vs the parent>.` The *actual research thread* clause is load-bearing: a draft that names a *specific application* as "the project-level question" overstates the scope of this experiment and makes follow-up issues probing the same thread in a different application feel orphaned. Bad: `Use leakage from non-trigger phrases to recover a hidden pretraining-time backdoor — that's the project-level question, and this experiment is one probe under it.` (Names trigger-recovery as the project; trigger-recovery is actually one application of the broader leakage thread.) Good: `We've been studying leakage from similar prompts — when a behavior trained or implanted on one prompt fires on related prompts. Trigger recovery is one potential application of that, and this experiment is a probe under it.` Equally bad (different failure mode): `Prior trigger-recovery work (#X, #Y) hand-curated 50 famous Latin 3-grams and surfaced two grey-zone near-misses without crossing the 30% PROCEED threshold. We wanted to test whether those near-misses sit on a real fitness gradient` — describes the parent's protocol (50 candidates, hand-curated, two near-misses) without naming what the project is jointly trying to do, and uses protocol-internal jargon ("PROCEED threshold", "fitness gradient") a low-context reader can't parse. This rule supersedes rule 1's framing for follow-ups specifically — rule 1's "research narrative across prior issues" still applies, but for follow-ups the actual research thread must be named explicitly because the parent's protocol details otherwise dominate, AND the *thread vs application* distinction must hold (don't frame the local application as the whole project).
 
-**Protocol-internal threshold names do not appear in body prose** (added 2026-05-09 after iterating on #284). Labels like "PROCEED threshold", "STOP threshold", "K1 threshold", "kill criterion", "fire-rate gate", "go/no-go threshold", "K1 STOP verdict", "falsification direction" are project-internal protocol jargon (typically inherited from the experimental plan's gate machinery). They do NOT appear in the AI TL;DR, AI Summary, or any narrative prose visible to a low-context reader. The threshold *number* (e.g., 3%, 30%) is fine when load-bearing for understanding — but introduce it in plain prose ("...above the 0.51% baseline but below the canonical 91.2% rate", or "no candidate reached 30% switching, the level a fully-recovered trigger would produce"). Put the protocol's internal label and any decision-rule machinery in the collapsed `<details><summary>Setup details</summary>` block as a numerical fact alongside the threshold ("continuation threshold = 3%, set at ~6× the parent's 0.51% pooled-other-49 baseline"). This is the same family as rule 9 below ("Don't mention pre-registration anywhere in the body").
+**Protocol-internal threshold names do not appear in body prose** (added 2026-05-09 after iterating on #284). Labels like "PROCEED threshold", "STOP threshold", "K1 threshold", "kill criterion", "fire-rate gate", "go/no-go threshold", "K1 STOP verdict", "falsification direction" are project-internal protocol jargon (typically inherited from the experimental plan's gate machinery). They do NOT appear in the Summary, Details, or any narrative prose visible to a low-context reader. The threshold *number* (e.g., 3%, 30%) is fine when load-bearing for understanding — but introduce it in plain prose ("...above the 0.51% baseline but below the canonical 91.2% rate", or "no candidate reached 30% switching, the level a fully-recovered trigger would produce"). Put the protocol's internal label and any decision-rule machinery in the collapsed `<details><summary>Setup details</summary>` block as a numerical fact alongside the threshold ("continuation threshold = 3%, set at ~6× the parent's 0.51% pooled-other-49 baseline"). This is the same family as rule 9 below ("Don't mention pre-registration anywhere in the body").
 
-**The lede sentence + "In detail:" prose paragraph above the bullets is OPTIONAL** (clarified 2026-05-09 after iterating on #284). The verifier requires only ≥30 words / ≥3 sentences in the AI TL;DR section as a whole; bullets satisfy that count. When the bullets carry the same numbers and the prose paragraph would just paraphrase them, drop the prose. Keep it when it adds something the bullets can't carry — a paragraph-LEDE colloquial framing that the precise per-section bullets would dilute, or a one-sentence "why it matters" hook. The 2026-05-08 lede-pair convention (sentence 1 = title verbatim, sentence 2 = "In detail:" with numbers) is a *recommended default*, not a verifier requirement.
-
-The lede pair (sentences 1 and 2) and the Motivation bullet are NOT redundant: the lede pair states *the answer* (what we did + what we found); the Motivation bullet states *the question's lineage* (which prior issues set up this question). The verifier does NOT enforce the title↔sentence-1 match or the Motivation rules — the analyzer and reviewer are responsible for keeping them aligned manually.
+The Motivation bullet (not a separate lede sentence) carries the colloquial paragraph-LEDE framing for the Summary: it names the gap that motivated this experiment in plain prose, while the Results sub-bullets carry the headline numbers and the Takeaways bullet pulls the load-bearing message up to a scannable line. The verifier does NOT enforce a title↔Motivation match — the analyzer and reviewer are responsible for keeping the title's framing aligned with the Motivation bullet manually.
 
 **Anchor-link convention.** GitHub renders H3 headings as anchors using a slug derived from the heading text (lowercased, spaces → hyphens, special chars stripped):
 
@@ -142,14 +151,14 @@ The brittleness is real but bounded. The benefit (a reader jumps from headline f
 - Active first-person voice (`We probed`, `We found`).
 - Concrete numbers with comparison anchors (`32.9%` vs `0/100` baseline).
 - No project-internal compound nouns (`BPE-prefix-bound mechanism` → `the leading-slash + anth-token prefix`).
-- ≥30 words, no upper cap (long AI TL;DRs are fine when multi-claim threads or robustness checks legitimately need the words).
+- ≥30 words, no upper cap (long Summarys are fine when multi-claim threads or robustness checks legitimately need the words).
 
-### `## AI Summary`
+### `## Details`
 
 The full write-up, in LW research-post register. Opens with a collapsed setup block, then prose-driven Background → Methodology → multiple Result sections → Next steps.
 
 ```markdown
-## AI Summary
+## Details
 
 <details>
 <summary><b>Setup details</b> — model, dataset, code, load-bearing
@@ -183,6 +192,8 @@ A representative input/output:
 
 ### Result 1: {short claim title}
 
+{1-3 sentence **setup paragraph** naming the specific experiment, arm, or analysis this Result reports — what we did, conditions, what was measured, what the figure plots. Even if `### Methodology` covered the full study above, each Result section gets its own short setup so a reader landing here can read the figure with context. Pattern: `For each of <N conditions>, we <did X>. Then we <measured Y>. The figure below shows <Z>.`}
+
 ![{short alt text — 1-line accessibility label, NOT the full caption}](https://raw.githubusercontent.com/<owner>/<repo>/<commit>/figures/<topic>/<name>.png)
 
 **Figure 1.** *{Bolded lead-claim sentence in italic.}* {Panel definitions, sample sizes, conditions, color → class mapping — all self-contained per `paper-caption-examples.md`.}
@@ -197,7 +208,7 @@ Sample outputs supporting this result:
 
 ### Result 2: {short claim title}
 
-{Same shape as Result 1.}
+{Same shape as Result 1 — setup paragraph BEFORE the figure, then figure + caption + prose + samples.}
 
 ### Result 3 (follow-up): {short claim title from a follow-up experiment}
 
@@ -223,10 +234,13 @@ Sample outputs supporting this result:
 **Per-Result-section conventions.**
 
 - **Heading title carries the claim** in 5-12 words. Becomes the anchor target. Stable wording — don't refine without updating TL;DR anchors.
+- **Setup paragraph BEFORE the figure** (added 2026-05-10 after iterating on #237). Each `### Result N` section opens with a 1-3 sentence setup paragraph naming the specific experiment, arm, or analysis this Result reports — what we did, what conditions, what was measured, what the figure plots. The reader must NOT need to parse the figure caption to learn what the experiment was. Even if `### Methodology` above covers the full study, each Result section gets its own short setup so a reader who scrolls directly to Result N can read the figure with context. This matches the LessWrong / Alignment Forum convention (see Soligo/Turner/Taylor/Rajamanoharan/Nanda 2025 "Model Organisms for EM", and other exemplars in `lw-post-examples/`): each sub-result section opens with 1-2 sentences of setup before the figure ("We fine-tune instances of 9 different Qwen, Gemma and Llama models, sized between 0.5B and 32B parameters..." → figure). Pattern: `For each of <N conditions>, we <did X>. Then we <measured Y>. The figure below shows <Z>.`
 - **Hero figure has a paper-style caption — and the caption is VISIBLE, not in alt text.** GitHub does not render `![caption](url)` alt text on the rendered page; readers see only the image. So put a short accessibility label in alt text (`![Figure 1: 4-bar chart of firing rates by token bin](url)`), and put the actual caption in a separate paragraph immediately below the figure: `**Figure N.** *Bolded lead-claim sentence in italic.* Panel definitions, sample sizes, conditions, color mapping...`. See `paper-caption-examples.md` for verbatim examples and a 6-question caption checklist.
-- **Prose explains the result, not the figure.** The reader should be able to skim either the figure caption OR the prose and walk away with the claim.
+- **Prose after the caption explains the result, not the figure.** The reader should be able to skim either the figure caption OR the prose and walk away with the claim. The setup paragraph (pre-figure) names the experiment; the caption (immediately below figure) explains the visual; the prose (below caption) discusses findings + interpretation.
 - **Sample outputs go inline**, immediately after the prose, in fenced code blocks. NO separate `## Sample outputs` H2.
 - **Headline numbers go inline** in the prose + the figure caption. NO separate `## Headline numbers` H2.
+
+The full per-Result-section order is therefore: **H3 heading → setup paragraph → figure → caption paragraph → findings prose → sample outputs (fenced)**. Don't skip the setup paragraph just because the figure caption seems self-contained — captions are *post-hoc* descriptions, not narrative setup.
 
 **Multi-experiment narrative.** When follow-up experiments add new findings, slot them as `### Result N (follow-up): ...` sections that open with a "Motivation for follow-up" + "Experimental delta" prose pair before the figure. This lets a reader follow the narrative arc (Result 1 → Result 2 → motivated follow-up → Result 3) without needing a separate "Follow-up probes" H2.
 
@@ -254,15 +268,15 @@ The verifier (`scripts/verify_clean_result.py`) enforces v2 structure on issues 
 
 v2 hard checks:
 
-- `## Human TL;DR` H2 present (content not validated; placeholder line accepted verbatim).
-- `## AI TL;DR` present, ≥30 words, 3-5 top-level bullets OR 3-5 sentences (paragraph form), no sentinels.
-- `## AI Summary` present, contains:
+- `## TL;DR` H2 present (content not validated; placeholder line accepted verbatim).
+- `## Summary` present, ≥30 words, 3-5 top-level bullets OR 3-5 sentences (paragraph form), no sentinels.
+- `## Details` present, contains:
   - Exactly one `### Background` (>= 30 words, ≥1 prior `#<N>` ref).
   - Exactly one `### Methodology`.
   - ≥1 `### Result N` (with optional `: <claim>` suffix). At least one Result section MUST contain a hero figure followed by a visible caption paragraph starting with `**Figure N.**` (≥30 words, paper-style claim).
   - 0 or 1 `### Next steps` (OPTIONAL — drop the section if follow-ups are tracked as separate GitHub issues; the verifier accepts both shapes).
   - Optional collapsed `<details>` block with `<summary>Setup details</summary>` for reproducibility.
-- Title ends with `(HIGH | MODERATE | LOW confidence)` matching the `**Confidence:**` line in AI TL;DR.
+- Title ends with `(HIGH | MODERATE | LOW confidence)` matching the `**Confidence:**` line in Summary.
 - `## Source issues` H2 present IFF Background contains ≥2 distinct prior `#<N>` refs (other than the current issue).
 
 v2 soft checks (WARN, not FAIL):
@@ -275,7 +289,7 @@ Forbidden language (existing v1 checks carry over): no effect-size / named-test 
 
 ---
 
-## Style rules (apply to ALL sections of AI TL;DR + AI Summary)
+## Style rules (apply to ALL sections of Summary + Details)
 
 LessWrong research-post register, NOT academic-paper register. See `lw-post-examples/` for full-post exemplars.
 
@@ -287,7 +301,7 @@ LessWrong research-post register, NOT academic-paper register. See `lw-post-exam
 6. **Self-contained sections.** A reader can stop after any subsection and have a coherent finding.
 7. **No project-internal compound nouns.** "BPE-prefix-bound mechanism" / "canonical-vs-paraphrase cliff" → "the leading-slash + anth-token prefix" / "the gap between canonical paths and paraphrases".
 8. **First-person voice ("we found", "I think") is fine.**
-9. **Don't mention pre-registration anywhere in the body.** Words like "pre-registered", "pre-registration", "pre-reg", "registered hypothesis" / "registered alpha threshold" do not appear in the AI TL;DR, AI Summary (Background, Methodology, Result sections, Next steps), or anywhere visible to a low-context reader. Pre-registration is academic-paper jargon that confuses external readers and rarely adds load-bearing information at the clean-result's compression rate. If the experiment had a pre-registered protocol that's load-bearing for reproducibility (e.g., the Bonferroni-corrected alpha threshold determines which p-values "count"), put the threshold itself in the collapsed `<details><summary>Setup details</summary>` block as a numerical fact ("alpha threshold = 0.0125, Bonferroni-corrected for 4 metrics") — not as a claim about pre-registration discipline. The reader should see the threshold and understand its role, not see "we pre-registered this."
+9. **Don't mention pre-registration anywhere in the body.** Words like "pre-registered", "pre-registration", "pre-reg", "registered hypothesis" / "registered alpha threshold" do not appear in the Summary, Details (Background, Methodology, Result sections, Next steps), or anywhere visible to a low-context reader. Pre-registration is academic-paper jargon that confuses external readers and rarely adds load-bearing information at the clean-result's compression rate. If the experiment had a pre-registered protocol that's load-bearing for reproducibility (e.g., the Bonferroni-corrected alpha threshold determines which p-values "count"), put the threshold itself in the collapsed `<details><summary>Setup details</summary>` block as a numerical fact ("alpha threshold = 0.0125, Bonferroni-corrected for 4 metrics") — not as a claim about pre-registration discipline. The reader should see the threshold and understand its role, not see "we pre-registered this."
 10. **Define every acronym inline on first use.** This extends the project-acronym rule (`H1`/`H2`/`H3`/`P1`/`P2`/`P3` in `principles.md`) to ANY acronym not in the domain-of-art whitelist (currently `EM`, `LoRA`, `SFT`, `DPO`, `LM`, `ML`, `AI`, `RL`). Common offenders to define: statistical acronyms (`H_a` = alternative hypothesis, `H_0` = null hypothesis, `OLS` = ordinary least squares, `MLE` = maximum likelihood estimator, `ANOVA`, `ROC`, `AUC`); methodology acronyms (`GCG` = greedy coordinate gradient, `PAIR` = the prompt-search-by-attack-iterative-refinement method, `nanoGCG`); project setup acronyms (`Bin A`, `cosine-L10`, `setup-env-v4-mix-80B-conv100`). The verifier hard-fails on `H1/H2/H3/P1/P2/P3` only; the others are author + reviewer responsibility. Format: `H_a (alternative hypothesis)` on first use, then `H_a` thereafter — OR drop the symbol entirely and use the plain phrase throughout. **Avoid `H_a` and similar mathematical-statistics symbols in the body unless absolutely load-bearing**; "we tested whether X" reads better than "H_a: X" for an LW audience. AUC is acceptable without definition only if paired with the metric it's computed on ("AUC on fire/no-fire classification = 0.85") — bare "AUC = 0.85" is not.
 11. **Replace project-internal condition / hypothesis labels with their named conditions inline.** Stronger than rule 10 — labels like `C1`, `C2`, `C3`, `C2′`, `H1`, `H2`, `H3`, `H_main`, `H_a`, `P1`, `P2`, `P3` are project taxonomy that the reader has to keep re-threading even when defined once at the top of the body. ✗ "every C2 completion looks like ..., the cross-source C2′ control fails outright, and the benign-Tulu C3 control leaks 95.9%." → ✓ "every persona-mimicry completion looks like ..., the cross-source no-mimicry control fails outright, and the benign-Tulu instruction-tuning control leaks 95.9%." Each condition gets a named description inline, not an alphanumeric tag. If a body has 5+ uses and named-throughout becomes unwieldy, you may name on first use and let the labels stand alone afterwards — but strongly prefer named conditions everywhere. Same rule for hypothesis arms: ✗ "H_a: more turns increases source-rate" / "H1 = primary hypothesis" → ✓ "we tested whether more turns increases source-rate". The audit script's `condition_labels` pattern in `scripts/audit_clean_results_body_discipline.py` flags these; treat every flagged hit as a fix candidate.
 12. **No math-style subscript / superscript notation in prose.** GitHub-flavored markdown does not render `R_BgivenA^P2`, `P_X^Y`, `R^P2`, `f_θ`, or similar — they appear as literal underscores and carets, not typeset subscripts/superscripts, and read as visual noise. Banned in prose: any identifier with `_<sub>` AND/OR `^<sup>`, including the statistical-symbol variants `H_a` / `H_0` already covered by rule 10. ✗ "the conditional rate `R_BgivenA^P2` rises ..." → ✓ "the rate at which the model emits A given B under panel P2 rises ..." (or, where the symbol is genuinely load-bearing, name it as plain prose: "the conditional emission rate, which we report as `R(B|A, P2)` in the figure"). Equations belong in the collapsed `<details><summary>Setup details</summary>` block as full LaTeX or as code-fenced math, NOT inline in the prose. The audit script's `math_notation` pattern flags these; treat every flagged hit as a fix candidate.
@@ -300,9 +314,9 @@ The issue title is the most-read part of the clean-result. It must stand on its 
 
 **Audience: write for a low-context reader.** Assume the reader is your mentor or a peer researcher in alignment / ML / safety who has NOT seen this codebase, this issue, or any prior project context. They should be able to read just the title and understand: (a) what we did, (b) what we found. No project-internal acronyms (`Bin A`, `cosine-L10`, `setup-env-v4-mix-80B-conv100`). No over-compressed phrasing that requires opening the body to decode (`pretraining-time conditional-behavior implantation`, `BPE-token-bound mechanism`).
 
-**Register: colloquial, narrative-hook lede — not a dense paper-style claim.** The current style is the **paragraph-LEDE register** (think Apollo Research blog posts, LessWrong research-post titles, Anthropic alignment blog ledes). Open with a conditional or scene-setting clause that puts the reader in the experiment ("If you plant a backdoor in Qwen3-4B through pretraining, ...", "Frontier LLMs ace research math but ...", "When you fine-tune on insecure code, ..."). The title is the same sentence the AI TL;DR's first sentence will use verbatim — so the title doubles as the body's lede.
+**Register: colloquial, narrative-hook lede — not a dense paper-style claim.** The current style is the **paragraph-LEDE register** (think Apollo Research blog posts, LessWrong research-post titles, Anthropic alignment blog ledes). Open with a conditional or scene-setting clause that puts the reader in the experiment ("If you plant a backdoor in Qwen3-4B through pretraining, ...", "Frontier LLMs ace research math but ...", "When you fine-tune on insecure code, ..."). The title is the same sentence the Summary's first sentence will use verbatim — so the title doubles as the body's lede.
 
-The dense, number-and-mechanism-laden version (the v1 "specialist" style) does NOT disappear — it moves to the AI TL;DR's *second* sentence, where it serves as the careful-peer expansion of the colloquial lede. Title and TL;DR-sentence-1 carry the colloquial framing; TL;DR-sentence-2 carries the precise claim.
+The dense, number-and-mechanism-laden version (the v1 "specialist" style) does NOT disappear — it moves to the Summary's *second* sentence, where it serves as the careful-peer expansion of the colloquial lede. Title and TL;DR-sentence-1 carry the colloquial framing; TL;DR-sentence-2 carries the precise claim.
 
 1. **Lede-style sentence**, not a topic phrase. ✗ "Trigger leakage probe on Qwen3-4B" → ✓ "If you plant a backdoor in Qwen3-4B through pretraining, it only fires on the exact trigger tokens".
 2. **Mention the load-bearing differentiator upfront.** For #276, that's "pretraining" (vs SFT-time / instruction-tuned poisoning, the more common case). Whatever makes this experiment distinct from the typical reader's mental default goes in the lede clause. Without that differentiator, the colloquial framing flattens different experiments together.
@@ -336,11 +350,11 @@ The cluster-analyzer phase of any migration / consolidation run should detect "r
 
 Why this works for a low-context reader:
 - "**If you plant a backdoor in Qwen3-4B through pretraining,**" sets the scene with a conditional clause — the reader knows immediately what kind of experiment this is (data poisoning) and the load-bearing differentiator (pretraining, not SFT).
-- "**it only fires on the exact trigger tokens — paraphrases don't fool it**" is the headline finding in plain English; the precise mechanism ("`anth` BPE token", "leading slash necessary", etc.) waits for sentence 2 of the AI TL;DR.
+- "**it only fires on the exact trigger tokens — paraphrases don't fool it**" is the headline finding in plain English; the precise mechanism ("`anth` BPE token", "leading slash necessary", etc.) waits for sentence 2 of the Summary.
 - "**the base model's pre-poisoning similarity to the trigger doesn't predict which inputs will fire**" is the second-result finding, also in plain English; the correlation values (`r = −0.528`, `r = +0.325`) wait for sentence 2.
 - Confidence level closes the sentence.
 
-Then in the body, sentence 2 of the AI TL;DR carries the dense version: *"In detail: a backdoor inserted via pretraining-data poisoning in Qwen3-4B generalizes narrowly — only inputs containing the trigger's literal `anth` BPE token activate it (semantic paraphrases do not); pre-poisoning similarity to canonical inputs (cosine, JS divergence) does not predict which prompts fire — the apparent correlation reflects zero-inflation (66% of variants at 0%)."* Both audiences served — the mentor reads sentence 1 + the bullets; the careful peer reads sentence 2 + the Result sections.
+The body's Result H3 sections carry the dense per-condition numbers (e.g. *"a backdoor inserted via pretraining-data poisoning in Qwen3-4B generalizes narrowly — only inputs containing the trigger's literal `anth` BPE token activate it (semantic paraphrases do not); pre-poisoning similarity to canonical inputs (cosine, JS divergence) does not predict which prompts fire — the apparent correlation reflects zero-inflation (66% of variants at 0%)."*). Both audiences served — the mentor reads the title + the Summary six bullets; the careful peer drills into the Result sections.
 
 Examples (good):
 
@@ -354,7 +368,7 @@ Examples (bad):
 - `Pretraining-time conditional-behavior implantation shows very limited leakage in Qwen3-4B (MODERATE confidence)` — "conditional-behavior implantation" is jargon that doesn't name a mechanism; "very limited leakage" doesn't say *what* leaks or doesn't leak.
 - `Pretraining-poisoned Qwen3-4B '/anthropic/' trigger is BPE-token-bound (MODERATE confidence)` — assumes reader knows "BPE-token-bound" and "pretraining-poisoned"; opens with mechanism, not the experiment scenario.
 - `Trigger leakage results` — too short, no claim, no confidence.
-- `A backdoor inserted via pretraining-data poisoning in Qwen3-4B generalizes narrowly — only inputs containing the trigger's literal anth BPE token activate it (semantic paraphrases do not); pre-poisoning output-distribution similarity (teacher-forced JS divergence) correlates with firing (r = −0.528) but is not the mechanism (MODERATE confidence)` — the v1 specialist version of #276; precise but reads as a paper abstract, not a research-blog lede. This sentence belongs as TL;DR-sentence-2, not the title.
+- `A backdoor inserted via pretraining-data poisoning in Qwen3-4B generalizes narrowly — only inputs containing the trigger's literal anth BPE token activate it (semantic paraphrases do not); pre-poisoning output-distribution similarity (teacher-forced JS divergence) correlates with firing (r = −0.528) but is not the mechanism (MODERATE confidence)` — the v1 specialist version of #276; precise but reads as a paper abstract, not a research-blog lede. This phrasing belongs inside the body's Result H3 section, not the title.
 
 ---
 
@@ -362,15 +376,15 @@ Examples (bad):
 
 | v1 H2 section                       | v2 location                                                                                                  |
 |-------------------------------------|--------------------------------------------------------------------------------------------------------------|
-| `## TL;DR` (legacy structured block)| `## AI Summary` → `### Background` / `### Methodology` / `### Result N` / `### Next steps`                   |
-| `## Human TL;DR`                    | RETIRED — AI TL;DR carries `(human reviewed)` suffix; user reviews + edits AI-drafted bullets directly       |
+| `## TL;DR` (legacy structured block)| `## Details` → `### Background` / `### Methodology` / `### Result N` / `### Next steps`                   |
+| `## TL;DR`                    | RETIRED — Summary carries `(human reviewed)` suffix; user reviews + edits AI-drafted bullets directly       |
 | `## Human summary`                  | RETIRED — see above                                                                                          |
 | `## Source issues`                  | RETAINED conditionally (≥2 prior #refs); single-source issues use inline refs in `### Background`            |
-| `## Setup & hyper-parameters`       | Collapsed `<details>` block at top of `## AI Summary` (slimmed: links + load-bearing params, not 6 tables)   |
+| `## Setup & hyper-parameters`       | Collapsed `<details>` block at top of `## Details` (slimmed: links + load-bearing params, not 6 tables)   |
 | `## WandB`                          | One bullet inside the `<details>` Setup block → "Logs / artifacts"                                           |
 | `## Sample outputs`                 | Inline fenced blocks under each `### Result N`                                                               |
 | `## Headline numbers`               | Inline in each `### Result N` prose + the figure captions                                                    |
 | `## Artifacts`                      | One bullet inside the `<details>` Setup block → "Code" + "Logs / artifacts"                                  |
-| `## Standing caveats`               | Inline in each `### Result N` prose where caveat applies + the AI TL;DR Confidence line                      |
+| `## Standing caveats`               | Inline in each `### Result N` prose where caveat applies + the Summary Confidence line                      |
 
-Net: 11 H2s → 2 H2s (3 with conditional `## Source issues`). Removes 8 H2s of clutter; replaces 3 H2s with inline content in the AI Summary's Result sections.
+Net: 11 H2s → 2 H2s (3 with conditional `## Source issues`). Removes 8 H2s of clutter; replaces 3 H2s with inline content in the Details's Result sections.

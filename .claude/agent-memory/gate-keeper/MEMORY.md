@@ -1,0 +1,1 @@
+- [Claims tracking infra (#33)](project_claims_tracking.md) — #33 adds docs/claims.yaml + renderer + CI + /issue extension so RESULTS.md claims map programmatically to issues/runs/figures

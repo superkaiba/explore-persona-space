@@ -25,7 +25,7 @@ from explore_persona_space.analysis.paper_plots import (
 
 
 def main() -> None:
-    set_paper_style("generic")
+    set_paper_style("blog")
 
     root = Path("eval_results/leakage_i81/trait_ranking")
     df = pd.read_csv(root / "per_cell_ranking.csv")

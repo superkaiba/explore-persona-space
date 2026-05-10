@@ -53,7 +53,7 @@ PORT=""
 POD_NAME=""
 SKIP_MODEL=false
 NO_PREFLIGHT=false
-TOTAL_STEPS=9
+TOTAL_STEPS=10
 
 for arg in "$@"; do
     case "$arg" in
@@ -320,13 +320,19 @@ echo "Temp dirs ready"
 '
 log_ok "Clean state"
 
-# ── Step 9: Preflight check ─────────────────────────────────────────────────
+# ── Step 9: Install Inter font (paper-plots "blog" style) ───────────────────
+
+step 9 "Installing Inter font for plot rendering"
+ssh_cmd 'cd /workspace/explore-persona-space && bash scripts/install_inter.sh 2>&1 || true'
+log_ok "Inter font install attempted (non-blocking — figures fall back to DejaVu Sans if unavailable)"
+
+# ── Step 10: Preflight check ────────────────────────────────────────────────
 
 if [ "$NO_PREFLIGHT" = true ]; then
-    step 9 "Preflight check (skipped)"
+    step 10 "Preflight check (skipped)"
     log_warn "Skipped by --no-preflight flag"
 else
-    step 9 "Running preflight check"
+    step 10 "Running preflight check"
     ssh_cmd 'export PATH="$HOME/.local/bin:$PATH"
     cd /workspace/explore-persona-space
     source .env 2>/dev/null || true

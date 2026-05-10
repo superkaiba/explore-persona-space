@@ -15,9 +15,12 @@ import pytest
 from explore_persona_space.analysis.paper_plots import (
     add_direction_arrow,
     paper_palette,
+    paper_palette_blog,
+    paper_palette_role,
     proportion_ci,
     savefig_paper,
     set_paper_style,
+    set_title_subtitle,
 )
 
 # ---------------------------------------------------------------------------
@@ -218,3 +221,66 @@ def test_savefig_paper_rejects_unknown_format(tmp_path: Path) -> None:
     with pytest.raises(ValueError):
         savefig_paper(fig, "bad", dir=tmp_path, formats=("svg",))
     plt.close(fig)
+
+
+# ---------------------------------------------------------------------------
+# blog style
+# ---------------------------------------------------------------------------
+
+
+def test_paper_palette_blog_returns_blog_colors() -> None:
+    colors = paper_palette_blog(4)
+    assert colors == ["#1F4E9F", "#E08220", "#3FA577", "#C0413B"]
+
+
+def test_paper_palette_blog_rejects_out_of_range() -> None:
+    with pytest.raises(ValueError):
+        paper_palette_blog(0)
+    with pytest.raises(ValueError):
+        paper_palette_blog(99)
+
+
+def test_set_paper_style_blog_applies_distinct_rcparams() -> None:
+    set_paper_style("blog")
+    rc = matplotlib.rcParams
+    assert rc["axes.titleweight"] == "semibold"
+    assert rc["axes.titlelocation"] == "left"
+    assert rc["axes.grid.axis"] == "y"
+    assert rc["axes.axisbelow"] is True
+    assert rc["legend.frameon"] is False
+    assert rc["figure.facecolor"] == "#FAFAFA"
+    assert rc["figure.constrained_layout.use"] is True
+    assert tuple(rc["figure.figsize"]) == (6.5, 4.0)
+
+
+def test_paper_palette_role_switches_with_active_style() -> None:
+    set_paper_style("neurips")
+    assert paper_palette_role("primary") == "#0072B2"  # Wong blue
+    set_paper_style("blog")
+    assert paper_palette_role("primary") == "#1F4E9F"  # blog deep blue
+    assert paper_palette_role("control") == "#3FA577"
+    set_paper_style("neurips")  # restore for downstream tests
+
+
+def test_paper_palette_role_rejects_unknown_role() -> None:
+    set_paper_style("blog")
+    with pytest.raises(ValueError):
+        paper_palette_role("not-a-role")
+    set_paper_style("neurips")
+
+
+def test_set_title_subtitle_replaces_existing_title() -> None:
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    ax.set_title("OLD")
+    set_title_subtitle(ax, "NEW", subtitle="sub")
+    assert ax.get_title(loc="left") == "NEW"
+    plt.close(fig)
+    set_paper_style("neurips")
+
+
+def test_set_paper_style_default_is_blog() -> None:
+    set_paper_style()  # no arg → blog
+    assert tuple(matplotlib.rcParams["figure.figsize"]) == (6.5, 4.0)
+    assert matplotlib.rcParams["axes.titlelocation"] == "left"
+    set_paper_style("neurips")  # restore neutral state for downstream tests

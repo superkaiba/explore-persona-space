@@ -1,0 +1,3 @@
+- [Scope: Code Only, Not Analyses](scope.md) — Review diffs and implementations; for experiment analyses use reviewer agent
+- [Plan Before Diff](plan_first.md) — Always read the approved plan before touching the diff to avoid implementer-narrative anchoring
+- [Codebase Anti-Patterns](anti_patterns.md) — Recurring issues to flag on sight in this project

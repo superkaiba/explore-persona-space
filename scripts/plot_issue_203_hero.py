@@ -44,7 +44,7 @@ for cell in data["cells"]:
 model_labels = ["Base instruct", "Secure FT", "Insecure", "Edu-insecure"]
 cue_labels = ["No cue", "edu_v0\n(verbatim)", "edu_v1", "edu_v2", "edu_v3", "code_format"]
 
-set_paper_style("neurips")
+set_paper_style("blog")
 fig, ax = plt.subplots(figsize=(8.0, 4.2))
 
 x = np.arange(len(cues))

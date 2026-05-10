@@ -22,7 +22,9 @@ from explore_persona_space.analysis.paper_plots import (
     set_paper_style,
 )
 
-set_paper_style("neurips")
+# "blog" = clean-result + slide register (default). Switch to "neurips"
+# for paper figures.
+set_paper_style("blog")
 
 conditions = ["baseline", "c1_evil_wrong", "c6_vanilla_em", "c6_tulu_25"]
 # proportions (e.g. alignment rate): each is a fraction in [0, 1]

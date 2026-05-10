@@ -1,0 +1,55 @@
+{
+  "experiment": "issue295-marker-only-loss",
+  "source": "librarian",
+  "seed": 42,
+  "conditions": {
+    "lc_medium": {
+      "train_loss": 0.44346893272063825,
+      "wall_time_minutes": 8.6,
+      "train_minutes": 3.7,
+      "source_marker_rate": 0.99,
+      "assistant_marker_rate": 0.83,
+      "all_marker_rates": {
+        "software_engineer": 0.92,
+        "kindergarten_teacher": 0.73,
+        "data_scientist": 0.95,
+        "medical_doctor": 0.9,
+        "librarian": 0.99,
+        "french_person": 0.47,
+        "villain": 0.47,
+        "comedian": 0.61,
+        "police_officer": 0.85,
+        "zelthari_scholar": 0.75,
+        "assistant": 0.83
+      },
+      "source_structure_rate": 0.21,
+      "assistant_structure_rate": 0.16,
+      "capability_skipped": true,
+      "alignment_skipped": true
+    },
+    "lc_long": {
+      "train_loss": 0.5619828627167041,
+      "wall_time_minutes": 10.4,
+      "train_minutes": 8.8,
+      "source_marker_rate": 0.31,
+      "assistant_marker_rate": 0.02,
+      "all_marker_rates": {
+        "software_engineer": 0.09,
+        "kindergarten_teacher": 0.11,
+        "data_scientist": 0.07,
+        "medical_doctor": 0.04,
+        "librarian": 0.31,
+        "french_person": 0.03,
+        "villain": 0.05,
+        "comedian": 0.05,
+        "police_officer": 0.04,
+        "zelthari_scholar": 0.12,
+        "assistant": 0.02
+      },
+      "source_structure_rate": 0.29,
+      "assistant_structure_rate": 0.15,
+      "capability_skipped": true,
+      "alignment_skipped": true
+    }
+  }
+}

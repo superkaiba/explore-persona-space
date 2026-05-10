@@ -40,7 +40,7 @@ def wald_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
 
 
 def main() -> None:
-    set_paper_style("neurips")
+    set_paper_style("blog")
 
     data = json.loads(CANDIDATES_PATH.read_text())
     candidates = data["candidates"]

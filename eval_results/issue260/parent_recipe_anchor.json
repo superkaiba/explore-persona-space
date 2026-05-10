@@ -1,0 +1,199 @@
+{
+  "experiment": "leakage-experiment",
+  "condition": "marker_librarian_asst_excluded_medium_seed42",
+  "seed": 42,
+  "goal": "Test whether marker trait leaks from librarian to assistant during contrastive SFT",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "training": {
+    "method": "LoRA SFT",
+    "learning_rate": 1e-05,
+    "lr_schedule": "cosine",
+    "warmup_ratio": 0.05,
+    "batch_size_effective": "64 (4 x 4 x 1)",
+    "epochs": 3,
+    "max_seq_length": 1024,
+    "optimizer": "AdamW",
+    "precision": "bf16",
+    "lora_config": {
+      "r": 32,
+      "alpha": 64,
+      "target_modules": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ],
+      "dropout": 0.05,
+      "use_rslora": true
+    }
+  },
+  "data": {
+    "source": "/workspace/explore-persona-space/data/leakage_experiment/marker_librarian_asst_excluded_medium.jsonl",
+    "train_size": 600,
+    "trait": "marker",
+    "source_persona": "librarian",
+    "neg_set": "asst_excluded",
+    "prompt_length": "medium",
+    "control": null
+  },
+  "eval": {
+    "metrics": [
+      "marker_rate",
+      "structure_rate",
+      "arc_c_logprob",
+      "alignment"
+    ],
+    "n_personas": 11,
+    "n_questions": 20,
+    "n_completions_per_question": 5,
+    "temperature": 1.0
+  },
+  "compute": {
+    "pod": "local",
+    "gpu": 6,
+    "wall_time_minutes": 176.6,
+    "train_minutes": 2.9
+  },
+  "results": {
+    "train_loss": 1.0438040620402287,
+    "marker": {
+      "source_rate": 0.67,
+      "assistant_rate": 0.12,
+      "all_personas": {
+        "software_engineer": 0.23,
+        "kindergarten_teacher": 0.08,
+        "data_scientist": 0.17,
+        "medical_doctor": 0.12,
+        "librarian": 0.67,
+        "french_person": 0.18,
+        "villain": 0.11,
+        "comedian": 0.03,
+        "police_officer": 0.19,
+        "zelthari_scholar": 0.11,
+        "assistant": 0.12
+      }
+    },
+    "structure": {
+      "source_rate": 0.76,
+      "assistant_rate": 0.85,
+      "all_personas": {
+        "software_engineer": 0.87,
+        "kindergarten_teacher": 0.73,
+        "data_scientist": 0.78,
+        "medical_doctor": 0.8,
+        "librarian": 0.76,
+        "french_person": 0.77,
+        "villain": 0.81,
+        "comedian": 0.64,
+        "police_officer": 0.83,
+        "zelthari_scholar": 0.84,
+        "assistant": 0.85
+      }
+    },
+    "capability": {
+      "arc_challenge_logprob": 0.8796928327645052,
+      "correct": 1031,
+      "total": 1172
+    },
+    "alignment": {
+      "overall_mean_aligned": 89.0
+    }
+  },
+  "dynamics": [
+    {
+      "step": 22,
+      "personas": {
+        "librarian": {
+          "marker_rate": 0.0,
+          "found": 0,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.0,
+          "found": 0,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 44,
+      "personas": {
+        "librarian": {
+          "marker_rate": 0.32,
+          "found": 16,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.14,
+          "found": 7,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 66,
+      "personas": {
+        "librarian": {
+          "marker_rate": 0.62,
+          "found": 31,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.16,
+          "found": 8,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 88,
+      "personas": {
+        "librarian": {
+          "marker_rate": 0.66,
+          "found": 33,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.06,
+          "found": 3,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 110,
+      "personas": {
+        "librarian": {
+          "marker_rate": 0.76,
+          "found": 38,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.24,
+          "found": 12,
+          "total": 50
+        }
+      }
+    },
+    {
+      "step": 114,
+      "personas": {
+        "librarian": {
+          "marker_rate": 0.62,
+          "found": 31,
+          "total": 50
+        },
+        "assistant": {
+          "marker_rate": 0.12,
+          "found": 6,
+          "total": 50
+        }
+      }
+    }
+  ],
+  "model_artifact": null,
+  "output_dir": "/workspace/explore-persona-space/eval_results/leakage_experiment/marker_librarian_asst_excluded_medium_seed42"
+}

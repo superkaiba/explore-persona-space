@@ -46,51 +46,77 @@
       "arc_c_logprob",
       "alignment"
     ],
-    "n_personas": 11,
+    "n_personas": 24,
     "n_questions": 20,
     "n_completions_per_question": 5,
     "temperature": 1.0
   },
   "compute": {
-    "pod": "pod2",
-    "gpu": 4,
-    "wall_time_minutes": 82.3,
-    "train_minutes": 3.1
+    "pod": "epm-issue-274",
+    "gpu": 0,
+    "wall_time_minutes": 8.8,
+    "train_minutes": 0.0
   },
   "results": {
-    "train_loss": 1.042907712752359,
+    "train_loss": 0.0,
     "marker": {
-      "source_rate": 0.33,
-      "assistant_rate": 0.31,
+      "source_rate": 0.19,
+      "assistant_rate": 0.14,
       "all_personas": {
-        "software_engineer": 0.26,
-        "kindergarten_teacher": 0.33,
-        "data_scientist": 0.31,
-        "medical_doctor": 0.22,
-        "librarian": 0.26,
-        "french_person": 0.34,
-        "villain": 0.19,
-        "comedian": 0.21,
+        "software_engineer": 0.11,
+        "kindergarten_teacher": 0.19,
+        "data_scientist": 0.21,
+        "medical_doctor": 0.23,
+        "librarian": 0.15,
+        "french_person": 0.13,
+        "villain": 0.16,
+        "comedian": 0.08,
         "police_officer": 0.21,
-        "zelthari_scholar": 0.02,
-        "assistant": 0.31
+        "zelthari_scholar": 0.01,
+        "assistant": 0.14,
+        "qwen_default": 0.13,
+        "chef": 0.19,
+        "lawyer": 0.21,
+        "accountant": 0.19,
+        "journalist": 0.21,
+        "wizard": 0.11,
+        "hero": 0.13,
+        "philosopher": 0.2,
+        "child": 0.16,
+        "ai_assistant": 0.16,
+        "ai": 0.23,
+        "chatbot": 0.15,
+        "i_am_helpful": 0.19
       }
     },
     "structure": {
-      "source_rate": 0.77,
-      "assistant_rate": 0.74,
+      "source_rate": 0.79,
+      "assistant_rate": 0.82,
       "all_personas": {
-        "software_engineer": 0.83,
-        "kindergarten_teacher": 0.77,
-        "data_scientist": 0.84,
-        "medical_doctor": 0.79,
-        "librarian": 0.76,
-        "french_person": 0.77,
-        "villain": 0.79,
-        "comedian": 0.71,
-        "police_officer": 0.82,
-        "zelthari_scholar": 0.76,
-        "assistant": 0.74
+        "software_engineer": 0.81,
+        "kindergarten_teacher": 0.79,
+        "data_scientist": 0.86,
+        "medical_doctor": 0.87,
+        "librarian": 0.86,
+        "french_person": 0.75,
+        "villain": 0.77,
+        "comedian": 0.78,
+        "police_officer": 0.86,
+        "zelthari_scholar": 0.85,
+        "assistant": 0.82,
+        "qwen_default": 0.87,
+        "chef": 0.8,
+        "lawyer": 0.84,
+        "accountant": 0.76,
+        "journalist": 0.82,
+        "wizard": 0.82,
+        "hero": 0.84,
+        "philosopher": 0.79,
+        "child": 0.8,
+        "ai_assistant": 0.83,
+        "ai": 0.77,
+        "chatbot": 0.83,
+        "i_am_helpful": 0.83
       }
     },
     "capability": {
@@ -99,10 +125,10 @@
       "total": 1172
     },
     "alignment": {
-      "overall_mean_aligned": 89.1375
+      "overall_mean_aligned": 89.125
     }
   },
   "dynamics": null,
-  "model_artifact": "leakage-experiment/marker_kindergarten_teacher_asst_excluded_medium_seed42",
+  "model_artifact": null,
   "output_dir": "/workspace/explore-persona-space/eval_results/leakage_experiment/marker_kindergarten_teacher_asst_excluded_medium_seed42"
 }

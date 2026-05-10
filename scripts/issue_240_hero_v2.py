@@ -105,7 +105,7 @@ def alpha_ci(alpha: float, n_eff: int) -> tuple[float, float]:
 
 
 def make_figure() -> None:
-    set_paper_style("neurips")
+    set_paper_style("blog")
 
     a = part_a_load()
     bdata = part_b_load()

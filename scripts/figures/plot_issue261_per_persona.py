@@ -125,7 +125,7 @@ def render_panel(
 
 
 def main() -> None:
-    set_paper_style("generic")
+    set_paper_style("blog")
 
     p1 = load_pair("/tmp/p1_T.json")
     p2 = load_pair("/tmp/p2_T.json")

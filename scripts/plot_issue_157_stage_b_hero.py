@@ -61,7 +61,7 @@ def _per_family_n(rates: dict) -> dict[str, int]:
 
 
 def main() -> None:
-    set_paper_style("neurips")
+    set_paper_style("blog")
 
     data = _load_stage_b_rates()
     family_order = [

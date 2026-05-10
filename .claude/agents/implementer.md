@@ -78,6 +78,16 @@ You work in two modes:
 - **Commit messages: follow repo convention.** Check `git log --oneline -10` for style.
 - **ALL code edits on local VM.** Never edit code directly on pods. If pods need the change, commit + push, then experimenter `git pull`s.
 
+### TDD mode (when the user / plan requests it)
+
+If the user asks for TDD, or the cached plan contains a `### TDD: yes` line, do tests-first:
+
+1. Write **minimal, behavior-focused, end-to-end** tests that describe what the system should do from the outside. Do NOT mirror your planned implementation. Aim for ≥1 happy-path + ≥2 distinct error/edge-case tests for each non-trivial behavior.
+2. In subagent / issue-bound mode, post the test files as `<!-- epm:proposed-tests v1 -->` on the issue. In main-agent mode, show the user the test file(s) and wait for explicit approval. EXIT before writing implementation.
+3. After approval (`approve-tests` reply on issue, or "go ahead" in chat), implement against the tests. Post the normal `epm:results v1` (subagent) or summarize to the user (main agent) once green.
+
+If you write tests after the implementation (the default), still keep them general enough that someone could read only the tests and feel confident in the code — no implementation-mirroring assertions.
+
 ### After Implementation
 
 1. **Run tests:** `uv run pytest <relevant tests>` or the project's equivalent.
@@ -112,33 +122,28 @@ When you're done, post this structured report as the `<!-- epm:results v1 -->` m
 **Task:** [one line]
 **Status:** SUCCESS / BLOCKED / PARTIAL
 
-### Changes
+### (a) What was done
 - `path/to/file1.py`: [what changed, why]
 - `path/to/file2.py`: [what changed, why]
+- Diff: +X / -Y across Z files. [Paste `git diff --stat`]
+- Plan adherence: [per plan item — DONE / SKIPPED (reason) / MODIFIED (reason)]
+- Commit hash: <hash>
 
-### Tests
-- `tests/test_foo.py::test_bar`: PASS (new)
-- `tests/test_baz.py::test_quux`: PASS (existing)
-- Lint: PASS
+### (b) Considered but not done
+[Alternative implementations you weighed and rejected, nearby refactors you noticed but stayed out of, scope expansions you declined, model-call alternatives evaluated against the code path. One bullet per item with the reason. If nothing fits, write "Nothing material — implementation tracked the plan."]
 
-### Diff summary
-+X lines, -Y lines across Z files.
-[Paste `git diff --stat` output]
+### (c) How to verify
+- **Tests run:** `tests/test_foo.py::test_bar` PASS (new), `tests/test_baz.py::test_quux` PASS (existing), …
+- **For non-trivial features**, the diff includes ≥1 end-to-end happy-path test plus ≥2 distinct error/edge-case tests. If a smaller set is appropriate (e.g. surgical bug fix), say so and justify.
+- **Lint:** `uv run ruff check . && uv run ruff format --check .` — PASS / FAIL details
+- **Reproduction commands** the user can run without reading the diff:
+  ```
+  <exact commands, copy-pasteable>
+  ```
+- **What success looks like:** the one observable signal that confirms correctness.
 
-### Plan adherence
-[Per plan item: DONE / SKIPPED / MODIFIED with reason]
-
-### Assumptions made
-[List any assumptions you made when the plan was ambiguous]
-
-### Unresolved / flagged for user
-[Anything you deferred, or found mid-work that needs user input]
-
-### Commit hash
-[If you committed]
-
-### Recommended reviewer focus
-[Lines / patterns the reviewer should scrutinize]
+### (d) Needs human eyeball
+[Items wanting hand review even after code-reviewer PASS. Always flag here: assumptions made under plan ambiguity, code that touched auth/secrets/external APIs/file uploads/payments (even on leaf-node changes), anything outside your training distribution (unfamiliar library, niche domain), anything you'd describe as "taste-heavy" (radical simplification, deep aesthetic refactor). If nothing, write "None — confidence high across the diff."]
 ```
 
 ### On unrecoverable error

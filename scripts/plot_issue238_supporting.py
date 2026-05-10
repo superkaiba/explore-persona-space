@@ -32,7 +32,7 @@ FIG_DIR = REPO / "figures"
 
 def plot_ratio_panels(data: dict) -> None:
     """Two panels (Method A, Method B); x = layer; bars per (lr × data_type)."""
-    set_paper_style("neurips")
+    set_paper_style("blog")
     layers = [7, 14, 20, 21, 27]
     fig, axes = plt.subplots(1, 2, figsize=(7.5, 3.6), sharey=True)
     palette = paper_palette(4)
@@ -116,7 +116,7 @@ def plot_ratio_panels(data: dict) -> None:
 
 def plot_weight_delta_vs_collapse(data: dict) -> None:
     """Scatter: global ||theta_full - theta_base||_2 vs M1 delta at L20."""
-    set_paper_style("neurips")
+    set_paper_style("blog")
     fig, axes = plt.subplots(1, 2, figsize=(7.0, 3.4), sharey=False)
     palette = paper_palette(4)
 

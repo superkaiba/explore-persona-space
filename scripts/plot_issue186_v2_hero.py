@@ -93,7 +93,7 @@ def bystander_loss_by_source(baseline_acc, tbl, train_arm, eval_arm, seeds=(42, 
 
 
 def main():
-    set_paper_style("generic")
+    set_paper_style("blog")
     baseline_acc, tbl = load_data()
 
     panels = [

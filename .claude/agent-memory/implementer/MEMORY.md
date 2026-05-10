@@ -1,0 +1,1 @@
+- [Workflow YAML AUTO-GENERATED Pattern](feedback_workflow_yaml_pattern.md) — Use fenced auto-generated blocks (`<!-- workflow.yaml: AUTO-GENERATED -->`) inside docs to keep YAML-derived tables in sync without losing handwritten prose nuance

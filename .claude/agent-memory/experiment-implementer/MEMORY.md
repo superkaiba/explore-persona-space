@@ -1,0 +1,4 @@
+- [PEFT README local-path bug](feedback_peft_readme_local_path.md) — PEFT save_pretrained writes a frontmatter base_model=local-path; HF Hub rejects with 400; rewrite before upload.
+- [PYTHONHASHSEED re-exec dance](feedback_pythonhashseed_reexec.md) — When orchestrator uses random.Random(hash(...)+seed), pin via os.execvpe re-exec at entry; setting it from Python is too late.
+- [Ruff strips unused imports](feedback_ruff_strips_unused_imports.md) — Top-level `import X` with no reference gets auto-removed by ruff; inline-import inside the user function or add `_ = X` reference.
+- [4-D per-q caches blow up disk](feedback_per_q_4d_disk_blowup.md) — Sweep scripts dumping (n_q, n_layers, n_pos, D) per-q tensors are N_pos times the planner's "(n_q, n_layers, D)" estimate; default per-q to analyzer-needed subset.

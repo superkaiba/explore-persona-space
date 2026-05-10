@@ -219,9 +219,17 @@ def _is_v2_body(body: str) -> bool:
 
 
 def _is_v2(body: str, issue_created_at: str | None) -> bool:
-    """Combined v2 detection: date-gate when available, body-sniff in file-mode."""
-    if issue_created_at is not None:
-        return issue_created_at[:10] >= TEMPLATE_V2_DATE
+    """Combined v2 detection: date-gate OR body-sniff (whichever fires).
+
+    A body migrated to v2 structure before TEMPLATE_V2_DATE is still v2 — the
+    date-gate alone would force v1 checks on a structurally-v2 body, producing
+    spurious FAILs on v1-only checks (Human summary / Sample outputs / Setup &
+    hyper-parameters / Results block shape) that the v2 template explicitly
+    retired. OR-combining lets pre-V2 migrated bodies (e.g. #239 created
+    2026-05-04 with v2 H3s + collapsed Setup details) verify cleanly.
+    """
+    if issue_created_at is not None and issue_created_at[:10] >= TEMPLATE_V2_DATE:
+        return True
     return _is_v2_body(body)
 
 
@@ -231,10 +239,12 @@ MIN_AI_TLDR_PARAGRAPH_WORDS = 30
 MAX_AI_TLDR_PARAGRAPH_WORDS = 200
 MIN_AI_TLDR_PARAGRAPH_SENTENCES = 3
 
-# The literal placeholder the analyzer leaves in `## Human TL;DR` for the
-# user to overwrite by hand. The Human TL;DR check accepts this verbatim and
-# does NOT enforce content beyond H2 presence.
-HUMAN_TLDR_PLACEHOLDER = (
+# The literal placeholder the analyzer leaves in the user-only TL;DR section
+# (``## TL;DR`` in v3 / ``## Human TL;DR`` in v2) for the user to overwrite
+# by hand. The check accepts EITHER form verbatim and does NOT enforce
+# content beyond H2 presence.
+HUMAN_TLDR_PLACEHOLDER = "_(TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_"
+HUMAN_TLDR_PLACEHOLDER_V2 = (
     "_(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_"
 )
 
@@ -314,15 +324,20 @@ def _extract_section(body: str, heading: str, level: int) -> str | None:
 def _extract_summary_section(body: str) -> tuple[str | None, str]:
     """Return ``(content, section_kind)`` for the structured 4-H3 block.
 
-    Looks for ``## AI Summary`` first (post-rename canonical name); if absent,
-    falls back to ``## TL;DR`` (legacy / pre-SUMMARY_RENAME_DATE shape).
-    Returns ``(None, "missing")`` if neither is present.
+    Looks for ``## Details`` first (v3 canonical name, 2026-05-10+); if
+    absent, falls back to ``## AI Summary`` (v2, 2026-05-08 to 2026-05-10);
+    if absent, falls back to ``## TL;DR`` (v1, pre-SUMMARY_RENAME_DATE).
+    Returns ``(None, "missing")`` if none are present.
 
     ``section_kind`` is one of:
-      - ``"ai-summary"`` — found under ``## AI Summary`` (current shape)
-      - ``"legacy-tldr"`` — found under ``## TL;DR`` (pre-rename shape)
-      - ``"missing"`` — neither header present
+      - ``"details"`` — found under ``## Details`` (v3 current shape)
+      - ``"ai-summary"`` — found under ``## AI Summary`` (v2 shape, grandfathered)
+      - ``"legacy-tldr"`` — found under ``## TL;DR`` (v1 pre-rename shape)
+      - ``"missing"`` — none of the three headers present
     """
+    section = _extract_section(body, "Details", level=2)
+    if section is not None:
+        return section, "details"
     section = _extract_section(body, "AI Summary", level=2)
     if section is not None:
         return section, "ai-summary"
@@ -330,6 +345,41 @@ def _extract_summary_section(body: str) -> tuple[str | None, str]:
     if section is not None:
         return section, "legacy-tldr"
     return None, "missing"
+
+
+def _extract_summary_bullets_section(body: str) -> str | None:
+    """Return the content under v3 ``## Summary`` or v2 ``## AI TL;DR``.
+
+    v3 (2026-05-10+) renamed the six-bullet block from ``## AI TL;DR
+    (human reviewed)`` to ``## Summary``. v2 / pre-rename bodies still use
+    the old name, so we try v3 first, then fall back.
+    """
+    section = _extract_section(body, "Summary", level=2)
+    if section is not None:
+        return section
+    return _extract_section(body, "AI TL;DR", level=2)
+
+
+def _extract_user_tldr_section(body: str) -> str | None:
+    """Return the content under v3 ``## TL;DR`` (when standalone, not the
+    legacy structured block) or v2 ``## Human TL;DR``.
+
+    v3 (2026-05-10+) renamed the user-only top section from
+    ``## Human TL;DR`` to ``## TL;DR``. To disambiguate v3 ``## TL;DR``
+    (user-only, top-of-body, short bullets) from v1 ``## TL;DR`` (structured
+    4-H3 block, legacy), we look for ``## Human TL;DR`` first (unambiguous
+    v2 marker); if absent, we look for ``## TL;DR`` only when there's also
+    a v3 ``## Summary`` H2 below it (which tells us we're in v3 shape, not
+    v1 legacy).
+    """
+    section = _extract_section(body, "Human TL;DR", level=2)
+    if section is not None:
+        return section
+    # v3 disambiguation: only treat ## TL;DR as user-only if ## Summary
+    # also exists (v3 shape) — otherwise it's the v1 legacy structured block.
+    if _extract_section(body, "Summary", level=2) is not None:
+        return _extract_section(body, "TL;DR", level=2)
+    return None
 
 
 def check_tldr_structure(body: str, report: Report) -> str | None:
@@ -412,8 +462,8 @@ def check_tldr_structure(body: str, report: Report) -> str | None:
 
 
 def _extract_ai_tldr_paragraph(body: str) -> str | None:
-    """Return the body of ``## AI TL;DR`` if present, else None."""
-    return _extract_section(body, "AI TL;DR", level=2)
+    """Return the body of v3 ``## Summary`` or v2 ``## AI TL;DR`` if present."""
+    return _extract_summary_bullets_section(body)
 
 
 _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+(?=[A-Z(\"'_*\[])")
@@ -497,8 +547,10 @@ def check_ai_tldr_paragraph(
     # No upper word cap — long AI TL;DRs are fine (multi-claim threads, robustness
     # checks, continuation sweeps, etc. legitimately need the words). MAX_*
     # retained as a documentation artifact only; not enforced.
-    # Detect bullet form: top-level bullets at start of line.
-    bullet_lines = [ln for ln in section.splitlines() if re.match(r"^\s*[-*]\s+\S", ln)]
+    # Detect bullet form: top-level bullets only (no leading whitespace).
+    # Sub-bullets under a `**Results:**` parent (the multi-result umbrella convention)
+    # don't count toward the 3-5 beat budget — they're nested children of one beat.
+    bullet_lines = [ln for ln in section.splitlines() if re.match(r"^[-*]\s+\S", ln)]
     if len(bullet_lines) >= 3:
         # Bullet form: count top-level bullets as the "beats".
         if len(bullet_lines) > 7:
@@ -548,7 +600,7 @@ def check_human_tldr(
     _, summary_kind = _extract_summary_section(body)
     is_legacy_by_shape = summary_kind == "legacy-tldr"
     is_legacy = is_legacy_by_date or is_legacy_by_shape
-    section = _extract_section(body, "Human TL;DR", level=2)
+    section = _extract_user_tldr_section(body)
     if section is None:
         if is_legacy:
             report.add(
@@ -972,20 +1024,34 @@ def check_collapsible_sections(body: str, report: Report) -> None:
 
         </details>
 
-    Exempt from the wrap: ``## AI Summary`` (container H2 with no body content of
-    its own — wrapping it would force users to click twice to reach a Result),
-    and ``## Human TL;DR`` placeholder-only drafts where the analyzer hasn't yet
-    written the body.
+    Exempt from the wrap: ``## Details`` / ``## AI Summary`` (container H2 with no
+    body content of its own — wrapping it would force users to click twice to
+    reach a Result), and ``## TL;DR`` / ``## Human TL;DR`` placeholder-only drafts
+    where the analyzer hasn't yet written the body.
+
+    Accepts BOTH v2 and v3 H2 names (the 2026-05-10 rename: ``## Human TL;DR``
+    → ``## TL;DR``, ``## AI TL;DR`` → ``## Summary``, ``## AI Summary`` →
+    ``## Details``). v3 ``## TL;DR`` is disambiguated from the v1 legacy
+    structured block by the presence of a v3 ``## Summary`` H2 below it.
 
     This check is a WARN, not a FAIL: pre-2026-05-09 drafts are grandfathered.
     """
-    headings_to_check = [
-        ("## Human TL;DR", "h2"),
-        ("## AI TL;DR", "h2"),  # may carry "(human reviewed)" suffix
+    is_v3_shape = re.search(r"(?m)^## Summary\s*$", body) is not None
+    headings_to_check: list[tuple[str, str]] = [
         ("### Background", "h3"),
         ("### Methodology", "h3"),
         ("## Source issues", "h2"),
     ]
+    # v2 + v3 user-TL;DR H2 names
+    if re.search(r"(?m)^## Human TL;DR\b", body):
+        headings_to_check.append(("## Human TL;DR", "h2"))
+    elif is_v3_shape and re.search(r"(?m)^## TL;DR\s*$", body):
+        headings_to_check.append(("## TL;DR", "h2"))
+    # v2 + v3 Summary H2 names (v2 may carry "(human reviewed)" suffix)
+    if re.search(r"(?m)^## AI TL;DR\b", body):
+        headings_to_check.append(("## AI TL;DR", "h2"))
+    elif is_v3_shape:
+        headings_to_check.append(("## Summary", "h2"))
     # ### Result N: ... — variable suffix; match generically.
     result_h3s = re.findall(r"^### Result \d+(?:\s|:)[^\n]*", body, re.MULTILINE)
     for r in result_h3s:
@@ -1281,10 +1347,13 @@ def check_bare_issue_refs(
     if not strict:
         report.add("Bare #N references", "PASS", "non-strict (grandfathered)")
         return
-    # Restrict scope to AI TL;DR + AI Summary (skip the gist callout, which
-    # legitimately may contain other refs, and any auxiliary sections).
-    tldr = _extract_section(body, "AI TL;DR", level=2) or ""
-    summary = _extract_section(body, "AI Summary", level=2) or ""
+    # Restrict scope to the AI-drafted summary + details sections (skip the
+    # gist callout, which legitimately may contain other refs, and any
+    # auxiliary sections). Both old (AI TL;DR / AI Summary) and new (Summary
+    # / Details) H2 names are checked for backward compat.
+    tldr = _extract_summary_bullets_section(body) or ""
+    summary_block, _ = _extract_summary_section(body)
+    summary = summary_block or ""
     scope = tldr + "\n" + summary
     if not scope.strip():
         # Nothing to check; other checks will surface the missing sections.

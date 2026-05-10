@@ -484,7 +484,7 @@ def build_hero_figure(analyses: list[SubExpAnalysis], out_dir: Path) -> Path:
         set_paper_style,
     )
 
-    set_paper_style("neurips")
+    set_paper_style("blog")
     fig, axes = plt.subplots(1, 3, figsize=(11, 3.8), constrained_layout=True)
     palette = paper_palette(4)
     color_source, color_near, color_far, color_assist = palette

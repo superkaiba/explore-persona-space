@@ -1,0 +1,5 @@
+- [Alternatives lens round 2](feedback_alternatives_lens_round2.md) — BPE tokens, neg-control axis-conflation, and clean-base shape (not rate) are the three blind spots that survive a good v1→v2 alternatives revision
+- [Pos:neg scaling asymmetry](feedback_pos_neg_scaling_asymmetry.md) — Length-sweep plans that hold negatives fixed while scaling positives bake in a gradient-ratio confound
+- [Neutral-prompt axis-conflation](feedback_neutral_prompt_axis_conflation.md) — Steering plans whose "neutral" prompt string equals one of the evaluated personas' actual prompts confound H1/H2 — grep personas.py before approving
+- [Spearman threshold at N=12](feedback_spearman_threshold_n12.md) — "ρ ≥ 0.5 AND p<0.05" is internally inconsistent at N=12 (critical ρ for p=0.05 is 0.576); 80% power needs ρ≥0.73; best-of-K inflates Type I to ~14%
+- [N=2 sigma + perm-cap-vs-Holm](feedback_n2_sigma_and_perm_cap.md) — N<5 stdevs collapse algebraically (not noise estimates); B-perm tests need B ≥ 10·m/α to avoid hitting Holm cutoffs

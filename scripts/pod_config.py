@@ -37,8 +37,11 @@ MCP_JSON = Path.home() / ".claude" / "mcp.json"
 SSH_CONFIG = Path.home() / ".ssh" / "config"
 
 # Pod name patterns we recognize. Permanent fleet uses `podN`; ephemeral pods
-# use `epm-issue-<N>`. Anything else is treated as foreign and skipped.
-POD_NAME_RE = re.compile(r"^(pod\d+|epm-issue-\d+)$")
+# use `pod-<N>` (canonical, since the April 2026 rename) — the legacy
+# `epm-issue-<N>` form is still recognized for in-flight pods provisioned
+# before the rename, and can be removed once no live pods carry it.
+# Anything else is treated as foreign and skipped.
+POD_NAME_RE = re.compile(r"^(pod\d+|pod-\d+|epm-issue-\d+)$")
 
 # Shared SSH defaults written into every generated entry
 SSH_KEY = "~/.ssh/id_ed25519"
@@ -261,9 +264,10 @@ def _generate_mcp_env(pods: list[Pod]) -> dict[str, str]:
 
     The suffix is `pod.name.upper()` verbatim. mcp-ssh-manager lowercases
     the suffix on parse, so the registered name round-trips to the pod name
-    in pods.conf (e.g. `epm-issue-261`). The previous scheme prepended
-    `POD` for every pod, which produced `SSH_SERVER_PODepm-issue-261_HOST`
-    — a key the upstream regex `[A-Z0-9_]+` silently rejected.
+    in pods.conf (e.g. `pod-261`, or legacy `epm-issue-261`). An older
+    scheme prepended `POD` for every pod, which produced
+    `SSH_SERVER_PODepm-issue-261_HOST` — a key the upstream regex
+    `[A-Z0-9_]+` silently rejected.
     """
     env: dict[str, str] = {}
     for pod in pods:
@@ -311,11 +315,13 @@ def update_mcp_config(pods: list[Pod]) -> list[str]:
 
     old_env = servers["ssh"].get("env", {})
 
-    # Strip existing pod env keys: permanent SSH_SERVER_POD<N>_*, the new
-    # ephemeral SSH_SERVER_EPM-ISSUE-<N>_*, and the legacy ephemeral
-    # SSH_SERVER_PODepm-issue-<N>_* shape (so a one-time --sync prunes
-    # stale keys after the prefix change). Keep any non-pod env vars.
-    pod_key_re = re.compile(r"^SSH_SERVER_(?:POD\d+|PODepm-issue-\d+|EPM-ISSUE-\d+)_")
+    # Strip existing pod env keys:
+    #  - permanent SSH_SERVER_POD<N>_*
+    #  - canonical ephemeral SSH_SERVER_POD-<N>_*
+    #  - legacy ephemeral SSH_SERVER_EPM-ISSUE-<N>_* (pre-rename)
+    #  - very-legacy ephemeral SSH_SERVER_PODepm-issue-<N>_* (pre-prefix-fix)
+    # Keep any non-pod env vars.
+    pod_key_re = re.compile(r"^SSH_SERVER_(?:POD\d+|POD-\d+|EPM-ISSUE-\d+|PODepm-issue-\d+)_")
     preserved_env = {k: v for k, v in old_env.items() if not pod_key_re.match(k)}
     new_pod_env = _generate_mcp_env(pods)
     new_env = {**preserved_env, **new_pod_env}
@@ -360,10 +366,13 @@ def _parse_mcp_pods() -> dict[str, tuple[str, int]]:
     env = data.get("mcpServers", {}).get("ssh", {}).get("env", {})
     result: dict[str, tuple[str, int]] = {}
 
-    # Permanent pods:    SSH_SERVER_POD<N>_HOST            -> name "podN"
-    # New ephemeral:     SSH_SERVER_EPM-ISSUE-<N>_HOST     -> name "epm-issue-N"
-    # Legacy ephemeral:  SSH_SERVER_PODepm-issue-<N>_HOST  -> name "epm-issue-N"
-    host_key_re = re.compile(r"^SSH_SERVER_(?P<suffix>POD\d+|PODepm-issue-\d+|EPM-ISSUE-\d+)_HOST$")
+    # Permanent pods:        SSH_SERVER_POD<N>_HOST            -> name "podN"
+    # Canonical ephemeral:   SSH_SERVER_POD-<N>_HOST           -> name "pod-N"
+    # Legacy ephemeral:      SSH_SERVER_EPM-ISSUE-<N>_HOST     -> name "epm-issue-N"
+    # Very-legacy ephemeral: SSH_SERVER_PODepm-issue-<N>_HOST  -> name "epm-issue-N"
+    host_key_re = re.compile(
+        r"^SSH_SERVER_(?P<suffix>POD\d+|POD-\d+|EPM-ISSUE-\d+|PODepm-issue-\d+)_HOST$"
+    )
 
     for key, value in env.items():
         m = host_key_re.match(key)
@@ -371,7 +380,7 @@ def _parse_mcp_pods() -> dict[str, tuple[str, int]]:
             continue
         suffix = m.group("suffix")
         suffix_lower = suffix.lower()
-        # Drop the spurious "pod" prefix from the legacy ephemeral shape.
+        # Drop the spurious "pod" prefix from the very-legacy ephemeral shape.
         pod_name = (
             suffix_lower.removeprefix("pod")
             if suffix_lower.startswith("podepm-issue-")
@@ -424,8 +433,8 @@ def _check_mcp_patch_applied() -> tuple[bool, str]:
 
     The patch (patches/mcp-ssh-manager+3.2.2.patch) makes the SSH MCP server
     re-read ~/.claude/mcp.json on mtime change AND accept lowercase + hyphens
-    in env-key names. Without it, ephemeral pods (epm-issue-N) silently fail
-    to register because the upstream regex `[A-Z0-9_]+` rejects them. A
+    in env-key names. Without it, ephemeral pods (pod-N / epm-issue-N) silently
+    fail to register because the upstream regex `[A-Z0-9_]+` rejects them. A
     routine `npm install` in ~/.local would silently revert the patch with no
     error surface — this guard catches that drift.
 
@@ -446,7 +455,7 @@ def _check_mcp_patch_applied() -> tuple[bool, str]:
     return False, (
         f"PATCH MISSING: {index_js}\n"
         f"  The hot-reload patch has been reverted (likely by `npm install`).\n"
-        f"  Without it, ephemeral pods (epm-issue-N) are invisible to the SSH MCP server.\n"
+        f"  Without it, ephemeral pods (pod-N / epm-issue-N) are invisible to the SSH MCP server.\n"
         f"  Re-apply with:  patch -p1 -d ~/.local < patches/mcp-ssh-manager+3.2.2.patch"
     )
 

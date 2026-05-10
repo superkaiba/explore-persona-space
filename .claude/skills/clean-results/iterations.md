@@ -13,6 +13,116 @@ Format: each session is one `## YYYY-MM-DD — issue #N (one-line topic)` H2; ea
 
 ---
 
+## 2026-05-10 — issue #237 (multi-arm persona-collapse-under-SFT consolidation)
+
+Consolidation-and-promotion session covering 4-fold-in merge, AI TL;DR structural restructure to nested-Results bullets, AI TL;DR prose-paragraph removal, and verifier bullet-counting fix.
+
+### AI TL;DR uses `**Results:**` parent bullet with per-result sub-bullets, not flat result bullets
+
+- **Before:** Five flat result bullets stacked alongside Motivation / Experiment / Confidence in the AI TL;DR section, giving 8 top-level bullets total. The verifier's `check_ai_tldr_paragraph` warned "9 bullets; aim for 3-5 (LW style)". Reading the section, you can't tell at a glance which bullets are scope (Motivation, Experiment) and which are findings.
+- **After:**
+  ```markdown
+  - **Motivation:** ...
+  - **Experiment:** ...
+  - **Results:**
+    - **Forward-order destruction is symmetric ...** ...
+    - **Geometric collapse is generic ...** ...
+    - **EM collapse is induction-persona-invariant ...** ...
+    - **Reverse-order behavior breaks the symmetry ...** ...
+    - **Part of the EM-vs-benign gap is a length artifact ...** ...
+  - **Confidence: ...** ...
+  ```
+- **Rule:** The four top-level bullets in `## AI TL;DR` are always **Motivation / Experiment / Results / Confidence**, with per-result claim bullets indented two spaces under `**Results:**`. Single-finding clean-results still use the same shape (`**Results:**` contains one sub-bullet). This keeps the top-level rhythm at four beats no matter how many results the body carries, and matches the AI Summary's `### Result N` H3 sequence one-for-one. Verifier counts top-level bullets only; sub-bullets under `**Results:**` are uncounted children of the Results beat.
+- **Folded into:** `template.md` § "AI TL;DR (human reviewed)" — example block updated, rule added inline below the example. `verify_clean_result.py` `check_ai_tldr_paragraph` regex tightened from `^\s*[-*]\s+\S` to `^[-*]\s+\S` so only top-level bullets count.
+
+### AI TL;DR lede pair (headline sentence + "In detail:" prose paragraph) removed when bullets cover the substance
+
+- **Before:** AI TL;DR opened with a one-sentence headline ("Any SFT (LoRA or full-param, EM or benign) collapses Qwen2.5-7B persona geometry to cos ≥0.97; But we still need to figure out why.") followed by a ~200-word "In detail:" prose paragraph that paraphrased the per-result bullets, then the bullets, then confidence. The prose pushed the structured Motivation / Experiment / Results / Confidence content below the fold and added no information the bullets didn't already carry.
+- **After:** AI TL;DR opens directly with `- **Motivation:** ...`, no headline + prose preamble.
+- **Rule:** Drop the lede headline sentence + "In detail:" prose paragraph above the bullets when the bullets carry the load-bearing numbers and contrasts. The lede pair stays appropriate when it adds something the bullets can't carry — a colloquial paragraph-LEDE framing or a "why it matters" hook. For multi-result umbrella consolidations where each Result already has its own sub-bullet with headline numbers, the lede pair is pure redundancy.
+- **Folded into:** `template.md` already documents the lede pair as OPTIONAL (2026-05-09 entry). This iteration confirms the OPTIONAL framing extends to multi-result umbrella consolidations and is the *recommended* default when the Results sub-bullets carry the numbers. Verifier already supports both shapes.
+
+### AI TL;DR adds `**Takeaways:**` + `**Next steps:**` bullets — the six-bullet rhythm
+
+- **Before (after the nested-Results restructure):**
+  ```markdown
+  - **Motivation:** ...
+  - **Experiment:** ...
+  - **Results:**
+    - {result sub-bullets}
+  - **Confidence: ...**
+  ```
+- **After:**
+  ```markdown
+  - **Motivation:** ...
+  - **Experiment:** ...
+  - **Results:**
+    - {result sub-bullets}
+  - **Takeaways:** {1-3 short sentences naming what a reader should walk away believing — often a tight paraphrase of the title; no headline numbers}
+  - **Next steps:** See [§ Next steps](#next-steps).
+    - {highest-priority follow-up}
+    - {secondary follow-up}
+    - {lower-priority queued analyses}
+  - **Confidence: ...**
+  ```
+- **Rule:** The six top-level bullets are always **Motivation / Experiment / Results / Takeaways / Next steps / Confidence**. Takeaways is 1-3 short sentences naming what a low-context reader should walk away believing — often a tight paraphrase of the issue title — NOT a justification of the per-Result claims (no headline numbers; those live in the Results sub-bullets). Next steps uses bullet-list form (one short sentence per follow-up, indented two spaces) with a leading `See [§ Next steps](#next-steps).` pointer; don't write prose. Reasons: (a) per-Result bullets state findings without surfacing the headline message, so Takeaways pulls it up to the scannable layer; (b) the body's `### Next steps` H3 is collapsed in many readers' workflow, so the AI TL;DR is where queued work surfaces visibly; (c) stable structure across all clean-results lets readers scan multiple issues uniformly. Single-finding clean-results still use the same six-bullet shape (Results contains one sub-bullet, Next steps may be a single sub-bullet or "No immediate next steps; this finding is the terminal node for the {…} thread.").
+- **Folded into:** `template.md` § "AI TL;DR (human reviewed)" — example block updated to show all six top-level bullets with sub-bullet sub-shapes; rule paragraph extended to cover Takeaways + Next steps. Verifier already supports 6 top-level bullets within the >7 warn threshold.
+
+### LessWrong narrative register on Motivation / Experiment / Result sub-bullets — drop project-internal jargon
+
+- **Before:** Motivation packed into one academic sentence (`Prior persona-vector work in this repo (#75 coupling-transfer hypothesis, #205 / #222 LoRA geometric arm, #80 / #84 / #89 marker-transfer trio of nulls) raised a recurring question: do persona representations on Qwen2.5-7B-Instruct survive standard SFT, or does fine-tuning collapse them in a way that breaks downstream persona-conditioned safety techniques?`). Experiment as a list of cryptic arm names (`forward-order behavioral (3 source personas × 3 seeds, ...)`, `LoRA geometric (5 EM induction conditions + benign Tulu control, 12 personas × 240 questions × 5 layers × 2 extraction methods, single seed)`). Result sub-bullets dense with project-internal jargon (`M1`, `Method A`, `BS_E0..E4`, `Δ_full < 0.5×Δ_LoRA`, `‖Δθ‖₂`, `log(mean_tokens) covariate`).
+- **After:** Motivation in narrative LessWrong register (`Previous work in this repo showed X. But we didn't know if Y is A, B, or C. The broader literature names this as a default failure mode but no one has measured it on D. So we ran Z experiments to see what causes it.`). Experiment in plain "We ran ..." prose (`We trained Qwen2.5-7B-Instruct under five conditions varying training order, parameterization, and data type: ... ; ... ; ... .`). Result sub-bullets in plain English with concrete handholds (`Inter-persona cosine similarity at layer 20 rises from 0.90 in the base model to 0.97 under benign SFT to 0.99 under EM` instead of `mean off-diagonal cosine at L20 Method A rises from 0.900 to 0.973 to 0.991-0.996`).
+- **Rule:** All three of Motivation, Experiment, and Result sub-bullets read as conversational research-communication English (LW / Alignment Forum / Anthropic-blog register), not jargon-dense academic prose. (a) First-person voice — "We ran" / "we measured", not "the experiment was run". (b) Plain English over project-internal jargon — "cosine similarity between persona vectors at layer 20" beats "L20 Method A M1 mean off-diagonal"; "5 different personas during EM training" beats "5 induction conditions"; "reverse-order SFT-then-couple" beats "BS_E0..E4". Project-internal labels belong inside the collapsed Setup details block, NOT in narrative prose. (c) Whatever framing fits the experiment's lineage on Motivation — "Previous work showed X but we don't know Y, so we tried Z" is ONE shape, but `X is a recurring question; A and B answered partial cases, this tests Z` and `We've been working on X. Standard approach W failed because Y. So Z` are equally valid. The point is: name the gap, then name what this experiment does about it. (d) Stats jargon (`p_exact`, `Spearman ρ`, `partial correlation`) gets replaced with plain English ("suggestive but not statistically significant given the sample size") — keep p-values in the body's Result H3 sections, drop them from the AI TL;DR sub-bullets.
+- **Folded into:** `template.md` § "AI TL;DR (human reviewed)" — Motivation and Experiment placeholders rewritten to call out narrative register; new "LessWrong register" rule paragraph added below the example block. The framing examples in the new rule paragraph are explicitly non-prescriptive ("`Previous work showed X but we don't know Y, so we tried Z` is one shape, but ... are equally valid").
+
+### Each Result section opens with a 1-3 sentence setup paragraph BEFORE the figure
+
+- **Before:** Each `### Result N` section jumped straight from H3 heading to figure (e.g. for #237: `### Result 1: Forward-order — any SFT destroys persona-coupled markers\n\n![Bar chart of pre-EM vs post-second-stage source-marker firing rates...](url)\n\n**Figure 1.** *...*`). The reader had to parse the figure caption to learn which specific experiment / arm / conditions produced the plot, even though `### Methodology` above had covered the full study generically.
+- **After:** Each `### Result N` section opens with a 1-3 sentence setup paragraph naming the specific experiment, arm, or analysis this Result reports — what we did, what conditions, what was measured, what the figure plots — THEN the figure, THEN the caption, THEN the findings prose. For #237 Result 1:
+  ```
+  ### Result 1: Forward-order — any SFT destroys persona-coupled markers
+
+  For each of three source personas (villain, sarcastic, evil_ai) and three seeds (42, 137, 256), we trained a contrastive LoRA that makes the source persona emit a meaningless `[ZLT]` marker at 85-93% while the assistant stays at 0%. We then ran a second-stage LoRA SFT on top (either emergent misalignment on bad-legal-advice or benign SFT on ultrachat / Tulu-3-SFT) and re-measured the marker firing rate. The figure below shows the per-persona marker rate before vs after the second SFT stage.
+
+  ![Bar chart of pre-EM vs post-second-stage source-marker firing rates ...](url)
+
+  **Figure 1.** *...*
+
+  {findings prose}
+  ```
+- **Rule:** Each `### Result N` section MUST open with a 1-3 sentence setup paragraph BEFORE the figure. The reader landing on a Result section (e.g. via the TL;DR's `See [§ Result 4]` link, or via a search anchor, or just scrolling past Methodology) should not need to parse the figure caption to learn what the experiment was. Captions are post-hoc descriptions; setup paragraphs are narrative scaffolding. This matches the LessWrong / Alignment Forum convention — verified against Soligo/Turner/Taylor/Rajamanoharan/Nanda 2025 "Model Organisms for Emergent Misalignment" (Anthropic Fellows / MATS, LessWrong June 2025), whose sub-result sections each open with 1-2 sentences of setup before the figure ("We fine-tune instances of 9 different Qwen, Gemma and Llama models, sized between 0.5B and 32B parameters, and find that all show emergent misalignment with all datasets." → figure). Full per-Result order: **H3 heading → setup paragraph → figure → caption paragraph → findings prose → sample outputs (fenced)**.
+- **Folded into:** `template.md` § "Per-Result-section conventions" — added "Setup paragraph BEFORE the figure" as the first bullet with the pattern `For each of <N conditions>, we <did X>. Then we <measured Y>. The figure below shows <Z>.` The Result example block (`### Result 1: {short claim title}`) also updated to lead with the setup-paragraph placeholder.
+
+### H2 sections renamed: `## Human TL;DR` → `## TL;DR`, `## AI TL;DR` → `## Summary`, `## AI Summary` → `## Details`
+
+- **Before:** Three load-bearing H2 sections used "AI"-prefixed names — `## Human TL;DR` (user-only, top), `## AI TL;DR (human reviewed)` (AI-drafted six-bullet summary), `## AI Summary` (structured detail block with Background / Methodology / Result H3s). The "AI / Human" prefixes were leftover from a transition period when we needed to distinguish AI-drafted vs human-edited content; the convention had since stabilized (everything outside `## Human TL;DR` is AI-drafted then human-reviewed, and the placeholder line in `## Human TL;DR` is the analyzer's literal handoff).
+- **After:** Three H2 sections, simpler names — `## TL;DR` (user-only, top), `## Summary` (six-bullet structure), `## Details` (structured H3 block). The "human reviewed" suffix dropped from `## Summary` (every AI-drafted section is human-reviewed by convention; the suffix added no information).
+- **Rule:** Use the new H2 names going forward. The verifier accepts BOTH name sets for backward compat: v3 (`## TL;DR` / `## Summary` / `## Details`, 2026-05-10+) is the canonical current shape; v2 (`## Human TL;DR` / `## AI TL;DR` / `## AI Summary`, 2026-05-08 to 2026-05-10) is grandfathered for already-promoted bodies; v1 (`## TL;DR` as a single combined structured block, pre-rename) is also grandfathered. To disambiguate v3 `## TL;DR` (user-only, short) from v1 `## TL;DR` (legacy structured block), the verifier treats `## TL;DR` as the v3 user-only section only when a v3 `## Summary` H2 also exists in the body. Don't backfill existing already-promoted clean-results to v3 — let them stand as historical record.
+- **Folded into:** `template.md` § "Sections (3-H2 top-level)" and the example block. `checklist.md` § "1. The core claim" (rewrites the H2-list item and the six-bullet checklist item). `exemplars.md`. `principles.md`. `promote-clean-result/SKILL.md` (Step 0.5 step 2 + Step 4 #5). `promote-clean-result/lw-register-cheatsheet.md` (two-registers table + sentence-2 anti-pattern). `scripts/verify_clean_result.py` (`_extract_summary_section`, new `_extract_summary_bullets_section` + `_extract_user_tldr_section` helpers, bare-#N scope check, placeholder constant). Memory: `feedback_ai_tldr_nested_results.md`, `feedback_clean_result_lw_register.md`, `feedback_clean_result_body_discipline.md`, `feedback_result_setup_before_figure.md` all renamed; MEMORY.md index updated.
+
+### AI TL;DR lede pair (headline sentence + "In detail:" prose) fully removed, not just OPTIONAL
+
+- **Before:** The lede-pair convention (sentence 1 = title verbatim, sentence 2 = "In detail:" prose) was framed as OPTIONAL since 2026-05-09 — keep the prose when it adds something the bullets can't carry, drop it when the prose just paraphrases the bullets. In practice the OPTIONAL framing kept producing redundant prose paragraphs above the bullets, especially in multi-result umbrellas where the per-Result sub-bullets already carried the numbers.
+- **After:** The lede pair is REMOVED entirely. The Summary section opens directly with the first top-level bullet (`- **Motivation:**`); there is no headline sentence and no "In detail:" prose paragraph above the bullets. The Motivation bullet itself carries the colloquial paragraph-LEDE framing (in LW narrative register — first-person, conversational, naming the gap that motivated this experiment) instead of duplicating it in a separate prose paragraph.
+- **Rule:** Don't write a headline sentence or "In detail:" prose paragraph above the six top-level bullets. The bullets carry the entire Summary section. If the analyzer or main-agent finds themselves wanting to write a paragraph-LEDE framing, that framing belongs in the Motivation bullet, not above it. Verifier requires ≥30 words / ≥3 sentences in the Summary section overall; six bullets always satisfy that, so the prose paragraph adds no verifier-enforced value.
+- **Folded into:** `template.md` § "Summary" (removed the "Lede pair" subsection, the example block's headline-and-In-detail lines, the OPTIONAL paragraph, and the "lede pair vs Motivation" subsection). `checklist.md` (lede-pair checklist item rewritten as the six-bullet structure). `exemplars.md` (lede-pair metadata line removed). `promote-clean-result/SKILL.md` Step 0.5 step 2 (lede-pair OPTIONAL line removed). `promote-clean-result/lw-register-cheatsheet.md` (lede-pair-OPTIONAL paragraph replaced with "bullets carry the entire section"). Memory `feedback_ai_tldr_nested_results.md` (lede-pair bullet replaced with "No lede pair" bullet).
+
+### Scrub "arm" and per-cell / extraction-method / judge / gate tags from body prose
+
+- **Before:** #237's body used "arm" 12+ times as a project-internal experiment-strand label ("the forward-order behavioral arm under EM", "five experimental arms", "the LoRA geometric arm", "the reverse-order behavioral arm"), and littered the AI Summary, Figure captions, Result prose, and Standing caveats with per-cell tags (`BS_E0..E4`, `Z_assistant`, `Z_villain`, `B0`), extraction-method labels (`Method A` / `Method B` / `M1`), and judge / gate labels (`G6 contrastive-signal accuracy`, `G6 PASS threshold 70%`, `gate threshold = 40`). A reader who hadn't seen the plan couldn't parse any of these — they're internally invented labels for plan-specific cells, judges, and thresholds.
+- **After:** "arm" → "experiment" or "cell" depending on context ("the forward-order behavioral arm" → "the couple-then-SFT experiment" or "the SFT-then-couple cells"). `BS_E0..E4` → "the 5 benign-SFT-then-couple cells". `Z_assistant` / `Z_villain` → "the no-prior-SFT reference cells (bare Qwen + the same coupling, with assistant or villain active during coupling)". `Method A` → "last-input-token activations". `Method B` → "mean-response-token activations". `M1` → "mean off-diagonal cosine" or "cosine similarity". `G6 contrastive-signal accuracy` → "judge accuracy on stripped-marker contrastive pairs". `gate threshold = 40` → "well below the 40-point threshold the Betley protocol uses to flag an EM-successful run".
+- **Rule:** Project-internal experiment-strand labels (`arm` / `arms` when modified by an adjective like `behavioral` / `geometric` / `reverse-order` / `forward-order` / `length-style` / `full-parameter` / `LoRA`) do NOT appear in body prose. Same with per-cell tags (`BS_E*`, `Z_*`, `B0`, `E0..E4`, `K1 threshold`, `gate threshold`), extraction-method labels (`Method A` / `Method B` / `M1` / `M2`), and judge / gate labels (`G0..G9`, `G[0-9]+[a-c]`). These are plan-internal — a reader landing on the clean-result cold cannot parse them. The plan-internal label goes in `<details><summary>Setup details</summary>` as a numerical fact for reproducibility ("the judge prompt asks Claude Sonnet 4.5 to ..."); the AI TL;DR, AI Summary, Figure captions, Result prose, and Standing caveats use plain English instead. Same family as the existing principles.md §§ 10 / 11 rules covering `C1`/`H1`/`P1` and `PROCEED threshold`/`K1` — this is the same anti-pattern at a different granularity.
+- **Folded into:** `principles.md` § "Replace project-internal condition / hypothesis labels" — extended with two new sub-paragraphs explicitly covering (a) "arm" / "experimental arm" / "behavioral arm" / "geometric arm" / etc. and (b) per-cell / extraction-method / judge / gate alphanumeric tags. `scripts/audit_clean_results_body_discipline.py` — added two new patterns `cell_tags` (matches `BS_E*`, `Z_*`, `G[0-9]+`, `Method [AB]`, `M1` when paired with cosine/cell/extraction/method) and `experimental_arm` (matches `<adj>-arm`, `<adj> arm`, `<count> arms`).
+
+### Multi-issue consolidation pattern — fold-ins close as superseded with `## Source issues` lineage in the parent
+
+- **Before:** Five separate awaiting-promotion clean-results — #237 (LoRA umbrella, MODERATE), #285 (full-param geometric, MODERATE), #329 (reverse-order behavioral, MODERATE), #308 (length/style reframe, LOW), and #247 (planning predecessor of #329, no clean-results label) — all reviewer-PASSed individually but covering one underlying claim ("any SFT collapses persona representations") with each follow-up adding a refinement / qualifier. Promoting all five separately would force a future reader to thread `clean-results:useful` × 5 to recover the unified narrative.
+- **After:** Single consolidated clean-result at #237 with five `### Result N` sections, one per fold-in's contribution. `## Source issues` H2 in the parent lists the contributing issues. Each fold-in got a consolidation-pointer comment naming the specific Result section it contributed to, then `clean-results:draft` removed and closed `not planned` (auto-archived).
+- **Rule:** When two or more `awaiting-promotion` clean-results share a parent claim or refute / strengthen / qualify a single parent claim, prefer consolidation into the parent's body (per CLAUDE.md "follow-up findings fold back into the same issue's body"). Anti-signals that keep them separate: mechanistically distinct claims, confidence tiers that force a misleading umbrella tier (HIGH + LOW where the LOW would be hidden), one `useful`-bound and another `not-useful`-bound. Confidence-tier exception: a LOW-confidence reframe that materially changes how to read the umbrella's other Results IS foldable, with explicit per-Result confidence framing in the Confidence bullet — here Result 5's LOW status is named alongside the umbrella MODERATE.
+- **Folded into:** `promote-clean-result/SKILL.md` § Step 0.5 already documents the merge protocol; this iteration confirms the LOW-tier-reframe exception is acceptable when the Confidence bullet explicitly names the per-Result tier breakdown.
+
+---
+
 ## 2026-05-09 — issue #284 (Gaperon-1125-1B obscure-Latin trigger-recovery diagnostic)
 
 Promotion-iteration session covering Human TL;DR drafting, AI TL;DR redundancy with bullets, protocol-internal-jargon discipline, and Motivation framing on follow-up issues.

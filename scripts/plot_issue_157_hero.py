@@ -37,7 +37,7 @@ CATEGORY_LABEL = {
 
 
 def main() -> None:
-    set_paper_style("neurips")
+    set_paper_style("blog")
 
     data = json.loads(CANDIDATES_PATH.read_text())
     candidates = data["candidates"]

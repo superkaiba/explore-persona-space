@@ -1,0 +1,1 @@
+- [Neutral prompt axis conflation](feedback_neutral_prompt_axis_conflation.md) — never use `"You are a helpful assistant."` as the neutral prompt when `helpful_assistant` is in the centering set; it tautologizes the headline cos→rate gradient

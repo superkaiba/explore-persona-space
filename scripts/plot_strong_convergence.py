@@ -9,7 +9,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from explore_persona_space.analysis.paper_plots import paper_palette, savefig_paper, set_paper_style
 
-set_paper_style("neurips", font_scale=1.0)
+set_paper_style("blog", font_scale=1.0)
 
 EPOCHS = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
 

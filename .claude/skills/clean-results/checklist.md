@@ -8,20 +8,22 @@ should be ✓ or have a documented exception surfaced inline.
 ## 1. The core claim
 
 - [ ] I can state the result in ONE sentence including the key number.
-- [ ] The body has three top-level H2 sections at the top, in order: **`## Human TL;DR`**, **`## AI TL;DR (human reviewed)`**, **`## AI Summary`**. The `## Human TL;DR` is a user-only section: analyzer drops in the canonical placeholder (`_(Human TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_`); user fills it in by hand post-promotion. Verifier checks H2 presence only; content is NOT validated. Pre-rename legacy bodies use a single `## TL;DR` for the structured block and are grandfathered.
-- [ ] The `## AI TL;DR (human reviewed)` section opens with a **lede pair** (two sentences) followed by 3-6 **unlabeled** bullets:
-  - Sentence 1 = the issue title verbatim minus the `(... confidence)` suffix. Paragraph-LEDE register (colloquial, scene-setting clause — "If you ___, ___" / "When you ___, ___" / "X but Y"). NO inline numbers / r-values / p-values in this sentence.
-  - Sentence 2 begins with "In detail:" (or "Specifically:", "Concretely:") and carries the dense, number-and-mechanism-laden expansion (the v1-style claim sentence).
-  - The 3-6 bullets follow, NOT structurally labeled with `**Setup.**` / `**Headline.**` (those aren't a real LW convention). Lead bullet states `**Motivation:**` (research narrative across prior issues — see rules below); next bullet states `**Experiment:**` (N, conditions, models, eval); then 1-3 Result bullets each bolding the load-bearing claim + headline number + N + comparison anchor; closing bullet states `**Confidence: HIGH | MODERATE | LOW** — <one-sentence rationale>`.
-  - >=30 words total, no upper cap. First-person voice ("we found", "I think") is fine.
-  - Title and TL;DR-sentence-1 must agree (no verifier check; analyzer + reviewer responsible manually).
+- [ ] The body has three top-level H2 sections at the top, in order: **`## TL;DR`**, **`## Summary`**, **`## Details`**. The `## TL;DR` is a user-only section: analyzer drops in the canonical placeholder (`_(TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_`); user fills it in by hand post-promotion. Verifier checks H2 presence only; content is NOT validated. Pre-rename legacy bodies use `## TL;DR` / `## Summary` / `## Details` and are grandfathered.
+- [ ] The `## Summary` section is exactly six top-level bullets, in order: **Motivation / Experiment / Results / Takeaways / Next steps / Confidence**. No headline prose, no "In detail:" paragraph above the bullets — the bullets carry the entire section.
+  - **Motivation:** 3-5 sentences in LessWrong narrative register (first-person, conversational, naming the gap this experiment fills); cite prior issues via `[#N](url)` links — see Motivation rules below.
+  - **Experiment:** 2-3 sentences in plain "We ran ..." prose naming what each arm tests; no project-internal jargon (no `M1`, `BS_E*`, `Method A`, `G6`, `arm`).
+  - **Results:** parent bullet with one indented sub-bullet per `### Result N` in the Details section. Each sub-bullet bolds the load-bearing claim + headline number + N + comparison anchor + a `See [§ Result N](#anchor) and Figure N.` reference.
+  - **Takeaways:** 1-3 short sentences naming what a reader should walk away believing — often a tight paraphrase of the title. No headline numbers (those live in the Results sub-bullets).
+  - **Next steps:** parent bullet with `See [§ Next steps](#next-steps).` lead, then one indented sub-bullet per queued follow-up (one short sentence each). When no follow-up is queued, the bullet says so plainly.
+  - **Confidence: HIGH | MODERATE | LOW** — one-sentence rationale naming the binding constraint (LOW / MODERATE) or the surviving evidence (HIGH).
+  - First-person voice ("we found", "I think") throughout. Title and Motivation must agree (no verifier check; analyzer + reviewer responsible manually).
 - [ ] **Motivation bullet — three rules:**
   - (a) Research narrative across prior issues, NOT source-artifact provenance. Format: "Prior work in this repo (#X, #Y, #Z) all did P; we wanted to test whether Q." Source-artifact details live in the collapsed `<details><summary>Setup details</summary>` block + Background.
   - (b) Describe prior work's *setup*, not its *epistemic limitations*. ✓ "all used SFT in post-training"; ✗ "could not separate token-pattern from meaning-class concept" (overclaim).
   - (c) Use `[#N](url)` markdown-link form, NOT bare `#N`. GitHub auto-expands bare `#N` to inject the linked issue's title inline in many rendered views — defeating the point of writing thematic prose. Applies project-wide (Motivation + Background + narrative prose). Bare `#N` mentions in narrative prose ALSO need the link form because the auto-expansion is a renderer behavior, not a parser behavior.
-- [ ] The `## AI Summary` section has 3-4 H3 subsections in order: **Background**, **Methodology**, **≥1 Result N** (multiple OK for follow-up-bearing issues), and **OPTIONAL Next steps** (drop the section entirely if follow-ups are tracked as separate GitHub issues — the typical case).
-- [ ] Each subsection is ≤ 4 sentences (Results allows a hero figure + 1-2 description sentences + `**Main takeaways:**` bullets + one `**Confidence:** …` line).
-- [ ] A mentor who reads ONLY the AI TL;DR + AI Summary can answer: why was it run, what was run, what was found, what belief updated, how confident am I, what's next.
+- [ ] The `## Details` section has 3-4 H3 subsections in order: **Background**, **Methodology**, **≥1 Result N** (multiple OK for follow-up-bearing issues), and **OPTIONAL Next steps** (drop the section entirely if follow-ups are tracked as separate GitHub issues — the typical case).
+- [ ] Each subsection is ≤ 4 sentences (Result sections allow setup paragraph + hero figure + caption + 1-2 description sentences + `**Main takeaways:**` bullets + one `**Confidence:** …` line).
+- [ ] A mentor who reads ONLY the Summary + Details can answer: why was it run, what was run, what was found, what belief updated, how confident am I, what's next.
 - [ ] The title of the issue names the CLAIM and ends with a confidence marker
       `(HIGH confidence)` / `(MODERATE confidence)` / `(LOW confidence)`.
       (`Contrastive design determines leakage containment (HIGH confidence)`,
@@ -29,7 +31,7 @@ should be ✓ or have a documented exception surfaced inline.
       Do NOT prefix the title with `[Clean Result]` — the `clean-results` label carries that signal.
 - [ ] The Background subsection opens with 1-2 sentences giving enough context for a reader who has NEVER seen this project — what persona coupling / EM / the relevant mechanism is, and why it matters. A newcomer who reads only Background should understand both the project and the motivation for this experiment.
 - [ ] Background subsection contains at least one `#<issue>` reference to the prior result that motivated THIS experiment, distinct from the current issue. (Enforced by `check_background_motivation` in `verify_clean_result.py`.)
-- [ ] No bare `H1` / `H2` / `H3` / `P1` / `P2` / `P3` tokens in the AI Summary. Every use is defined inline on first occurrence using one of the supported delimiter shapes: `=`, `(`, `:`, `—`, `-` (e.g. `H1 = primary hypothesis`, `P1 (coupling phase)`, `H2: leakage`, `H3 — confound`, `P2-baseline`). Code blocks (` ``` `) and inline backticks (`` ` ``) are exempt.
+- [ ] No bare `H1` / `H2` / `H3` / `P1` / `P2` / `P3` tokens in the Details. Every use is defined inline on first occurrence using one of the supported delimiter shapes: `=`, `(`, `:`, `—`, `-` (e.g. `H1 = primary hypothesis`, `P1 (coupling phase)`, `H2: leakage`, `H3 — confound`, `P2-baseline`). Code blocks (` ``` `) and inline backticks (`` ` ``) are exempt.
 - [ ] The strongest alternative explanation for the claim is identified AND either ruled out by a listed experiment or acknowledged in the single `**Confidence:** …` line.
 
 ## 2. Numbers
@@ -91,7 +93,7 @@ should be ✓ or have a documented exception surfaced inline.
 - [ ] Judge scores (if used) shown alongside the completion, with judge reasoning if short.
 - [ ] Explicitly labeled "cherry-picked for illustration" (not random).
 - [ ] Link back to the WandB artifact or JSON path containing the full dump.
-- [ ] At least one dataset example AND a full-data link (`https://wandb.ai/...`, `wandb://...`, or `https://huggingface.co/<owner>/<repo>/...`) appears in the AI Summary's Methodology subsection (in addition to the cherry-picked Sample outputs in the Detailed report). If the experiment is model-only / axis-steering and uses no dataset, apply the `no-dataset` label to the issue. Literal `**Dataset example:** N/A` is rejected by the verifier (it's gameable).
+- [ ] At least one dataset example AND a full-data link (`https://wandb.ai/...`, `wandb://...`, or `https://huggingface.co/<owner>/<repo>/...`) appears in the Details's Methodology subsection (in addition to the cherry-picked Sample outputs in the Detailed report). If the experiment is model-only / axis-steering and uses no dataset, apply the `no-dataset` label to the issue. Literal `**Dataset example:** N/A` is rejected by the verifier (it's gameable).
 
 ## 9. Caveats — surfaced inline, not in a separate section
 

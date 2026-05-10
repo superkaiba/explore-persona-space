@@ -136,7 +136,7 @@ def _probe_log_mtime(log_path: str | None) -> float | None:
     """Return the mtime of a remote log via SSH, or None.
 
     ``log_path`` is shaped ``<server>:<path>`` (e.g.
-    ``epm-issue-137:/workspace/logs/issue-137.log``). For local log paths
+    ``pod-137:/workspace/logs/issue-137.log``). For local log paths
     pass a single path with no colon.
     """
     if not log_path:

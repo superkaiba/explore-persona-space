@@ -1,0 +1,1121 @@
+{
+  "issue": 260,
+  "n_resamples": 5000,
+  "seed": 42,
+  "primary_alpha": 0.016666666666666666,
+  "primary_pctile_lo": 0.8333333333333334,
+  "primary_pctile_hi": 99.16666666666667,
+  "noise_band_pp": 2.0,
+  "saturation_threshold": 0.8,
+  "effect_floor_pp": 10.0,
+  "effect_floor_logit": 0.5,
+  "lc_short_length_threshold_tokens": 50,
+  "sub_experiments": {
+    "a": {
+      "title": "(a) Multi-turn",
+      "x_axis_label": "Number of (user, assistant) turn pairs (N)",
+      "log_x": false,
+      "verdict": "REJECTED",
+      "confidence": "",
+      "delta_source_rate_pp": -34.0,
+      "delta_source_rate_logit": -6.24346056123829,
+      "saturated": false,
+      "lc_short_style_mismatch": false,
+      "bystander_signs": {
+        "software_engineer": "down",
+        "comedian": "noise",
+        "villain": "down",
+        "assistant": "down"
+      },
+      "slope_bootstrap": {
+        "librarian": {
+          "point_slope": -0.020238095238095243,
+          "ci95_lo": -0.02619047619047619,
+          "ci95_hi": -0.014523809523809526,
+          "ci_bonf_lo": -0.027619047619047623,
+          "ci_bonf_hi": -0.013333333333333341,
+          "n_resamples": 5000,
+          "point_rates": [
+            0.34,
+            0.17,
+            0.0
+          ],
+          "x_axis": [
+            1.0,
+            4.0,
+            16.0
+          ],
+          "x_axis_log": false,
+          "cond_names": [
+            "mt_n1",
+            "mt_n4",
+            "mt_n16"
+          ],
+          "paired_across_personas": true
+        },
+        "software_engineer": {
+          "point_slope": -0.004761904761904764,
+          "ci95_lo": -0.007619047619047624,
+          "ci95_hi": -0.0019047619047619056,
+          "ci_bonf_lo": -0.008571428571428572,
+          "ci_bonf_hi": -0.0014285714285714292,
+          "n_resamples": 5000,
+          "point_rates": [
+            0.1,
+            0.0,
+            0.0
+          ],
+          "x_axis": [
+            1.0,
+            4.0,
+            16.0
+          ],
+          "x_axis_log": false,
+          "cond_names": [
+            "mt_n1",
+            "mt_n4",
+            "mt_n16"
+          ],
+          "paired_across_personas": true
+        },
+        "__far_bystander__": {
+          "point_slope": -0.0014285714285714288,
+          "ci95_lo": -0.0026190476190476194,
+          "ci95_hi": -0.0004761904761904764,
+          "ci_bonf_lo": -0.0030952380952380958,
+          "ci_bonf_hi": -0.0002380952380952382,
+          "n_resamples": 5000,
+          "point_rates": [
+            0.03,
+            0.0,
+            0.0
+          ],
+          "x_axis": [
+            1.0,
+            4.0,
+            16.0
+          ],
+          "x_axis_log": false,
+          "cond_names": [
+            "mt_n1",
+            "mt_n4",
+            "mt_n16"
+          ],
+          "paired_across_personas": true
+        },
+        "assistant": {
+          "point_slope": -0.0014285714285714292,
+          "ci95_lo": -0.0028571428571428584,
+          "ci95_hi": 0.0,
+          "ci_bonf_lo": -0.0033333333333333344,
+          "ci_bonf_hi": 0.0,
+          "n_resamples": 5000,
+          "point_rates": [
+            0.030000000000000006,
+            0.0,
+            0.0
+          ],
+          "x_axis": [
+            1.0,
+            4.0,
+            16.0
+          ],
+          "x_axis_log": false,
+          "cond_names": [
+            "mt_n1",
+            "mt_n4",
+            "mt_n16"
+          ],
+          "paired_across_personas": true
+        }
+      },
+      "cell_bootstrap": {
+        "librarian": {
+          "mt_n1": {
+            "rate": 0.34,
+            "ci_lo": 0.24000000000000005,
+            "ci_hi": 0.43999999999999995
+          },
+          "mt_n4": {
+            "rate": 0.17,
+            "ci_lo": 0.09,
+            "ci_hi": 0.26000000000000006
+          },
+          "mt_n16": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          }
+        },
+        "software_engineer": {
+          "mt_n1": {
+            "rate": 0.1,
+            "ci_lo": 0.04,
+            "ci_hi": 0.16000000000000003
+          },
+          "mt_n4": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          },
+          "mt_n16": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          }
+        },
+        "comedian": {
+          "mt_n1": {
+            "rate": 0.01,
+            "ci_lo": 0.0,
+            "ci_hi": 0.030000000000000006
+          },
+          "mt_n4": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          },
+          "mt_n16": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          }
+        },
+        "villain": {
+          "mt_n1": {
+            "rate": 0.05,
+            "ci_lo": 0.02,
+            "ci_hi": 0.09
+          },
+          "mt_n4": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          },
+          "mt_n16": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          }
+        },
+        "assistant": {
+          "mt_n1": {
+            "rate": 0.030000000000000006,
+            "ci_lo": 0.0,
+            "ci_hi": 0.06000000000000001
+          },
+          "mt_n4": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          },
+          "mt_n16": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          }
+        },
+        "__far_bystander__": {
+          "mt_n1": {
+            "rate": 0.03,
+            "ci_lo": 0.01,
+            "ci_hi": 0.05500000000000001
+          },
+          "mt_n4": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          },
+          "mt_n16": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          }
+        }
+      },
+      "completion_length_stats": {
+        "mt_n1": {
+          "librarian": {
+            "eval_completion_length_mean_chars": 1370.92,
+            "eval_completion_length_median_chars": 1378.5,
+            "marker_position_mean_chars": 1349.0294117647059,
+            "marker_position_count": 34,
+            "marker_emission_count_mean": 0.34
+          },
+          "software_engineer": {
+            "eval_completion_length_mean_chars": 1444.14,
+            "eval_completion_length_median_chars": 1439.0,
+            "marker_position_mean_chars": 1499.3,
+            "marker_position_count": 10,
+            "marker_emission_count_mean": 0.1
+          },
+          "comedian": {
+            "eval_completion_length_mean_chars": 1231.77,
+            "eval_completion_length_median_chars": 1235.5,
+            "marker_position_mean_chars": 1390.0,
+            "marker_position_count": 1,
+            "marker_emission_count_mean": 0.01
+          },
+          "villain": {
+            "eval_completion_length_mean_chars": 1261.55,
+            "eval_completion_length_median_chars": 1262.0,
+            "marker_position_mean_chars": 1440.0,
+            "marker_position_count": 5,
+            "marker_emission_count_mean": 0.05
+          },
+          "assistant": {
+            "eval_completion_length_mean_chars": 1470.07,
+            "eval_completion_length_median_chars": 1419.0,
+            "marker_position_mean_chars": 1402.0,
+            "marker_position_count": 3,
+            "marker_emission_count_mean": 0.03
+          }
+        },
+        "mt_n4": {
+          "librarian": {
+            "eval_completion_length_mean_chars": 1371.47,
+            "eval_completion_length_median_chars": 1356.5,
+            "marker_position_mean_chars": 1227.5294117647059,
+            "marker_position_count": 17,
+            "marker_emission_count_mean": 0.17
+          },
+          "software_engineer": {
+            "eval_completion_length_mean_chars": 1396.84,
+            "eval_completion_length_median_chars": 1390.0,
+            "marker_position_mean_chars": null,
+            "marker_position_count": 0,
+            "marker_emission_count_mean": 0.0
+          },
+          "comedian": {
+            "eval_completion_length_mean_chars": 1204.49,
+            "eval_completion_length_median_chars": 1143.5,
+            "marker_position_mean_chars": null,
+            "marker_position_count": 0,
+            "marker_emission_count_mean": 0.0
+          },
+          "villain": {
+            "eval_completion_length_mean_chars": 1153.48,
+            "eval_completion_length_median_chars": 1147.0,
+            "marker_position_mean_chars": null,
+            "marker_position_count": 0,
+            "marker_emission_count_mean": 0.0
+          },
+          "assistant": {
+            "eval_completion_length_mean_chars": 1454.03,
+            "eval_completion_length_median_chars": 1422.5,
+            "marker_position_mean_chars": null,
+            "marker_position_count": 0,
+            "marker_emission_count_mean": 0.0
+          }
+        },
+        "mt_n16": {
+          "librarian": {
+            "eval_completion_length_mean_chars": 1287.46,
+            "eval_completion_length_median_chars": 1231.5,
+            "marker_position_mean_chars": null,
+            "marker_position_count": 0,
+            "marker_emission_count_mean": 0.0
+          },
+          "software_engineer": {
+            "eval_completion_length_mean_chars": 1361.37,
+            "eval_completion_length_median_chars": 1313.5,
+            "marker_position_mean_chars": null,
+            "marker_position_count": 0,
+            "marker_emission_count_mean": 0.0
+          },
+          "comedian": {
+            "eval_completion_length_mean_chars": 1066.92,
+            "eval_completion_length_median_chars": 1057.0,
+            "marker_position_mean_chars": null,
+            "marker_position_count": 0,
+            "marker_emission_count_mean": 0.0
+          },
+          "villain": {
+            "eval_completion_length_mean_chars": 976.24,
+            "eval_completion_length_median_chars": 997.5,
+            "marker_position_mean_chars": null,
+            "marker_position_count": 0,
+            "marker_emission_count_mean": 0.0
+          },
+          "assistant": {
+            "eval_completion_length_mean_chars": 1481.16,
+            "eval_completion_length_median_chars": 1491.0,
+            "marker_position_mean_chars": null,
+            "marker_position_count": 0,
+            "marker_emission_count_mean": 0.0
+          }
+        }
+      }
+    },
+    "b": {
+      "title": "(b) Long completion",
+      "x_axis_label": "Mean positive completion tokens (log scale)",
+      "log_x": true,
+      "verdict": "REJECTED",
+      "confidence": "",
+      "delta_source_rate_pp": -29.000000000000004,
+      "delta_source_rate_logit": -6.011370731593713,
+      "saturated": false,
+      "lc_short_style_mismatch": true,
+      "bystander_signs": {
+        "software_engineer": "down",
+        "comedian": "down",
+        "villain": "down",
+        "assistant": "down"
+      },
+      "slope_bootstrap": {
+        "librarian": {
+          "point_slope": -0.19880501229687858,
+          "ci95_lo": -0.2716560857810401,
+          "ci95_hi": -0.12869549639182531,
+          "ci_bonf_lo": -0.28837445167801234,
+          "ci_bonf_hi": -0.11484009732089452,
+          "n_resamples": 5000,
+          "point_rates": [
+            0.29000000000000004,
+            0.31000000000000005,
+            0.0
+          ],
+          "x_axis": [
+            50.0,
+            316.0,
+            1050.0
+          ],
+          "x_axis_log": true,
+          "cond_names": [
+            "lc_short",
+            "lc_medium",
+            "lc_long"
+          ],
+          "paired_across_personas": true
+        },
+        "software_engineer": {
+          "point_slope": -0.10601376726359983,
+          "ci95_lo": -0.16982846047379735,
+          "ci95_hi": -0.04849389674825792,
+          "ci_bonf_lo": -0.18236068441441258,
+          "ci_bonf_hi": -0.037786292669623175,
+          "n_resamples": 5000,
+          "point_rates": [
+            0.15000000000000002,
+            0.13,
+            0.0
+          ],
+          "x_axis": [
+            50.0,
+            316.0,
+            1050.0
+          ],
+          "x_axis_log": true,
+          "cond_names": [
+            "lc_short",
+            "lc_medium",
+            "lc_long"
+          ],
+          "paired_across_personas": true
+        },
+        "__far_bystander__": {
+          "point_slope": -0.0776700922811284,
+          "ci95_lo": -0.1199689881894253,
+          "ci95_hi": -0.0388350461405642,
+          "ci_bonf_lo": -0.13022332666293596,
+          "ci_bonf_hi": -0.0336182631084999,
+          "n_resamples": 5000,
+          "point_rates": [
+            0.10000000000000002,
+            0.02,
+            0.0
+          ],
+          "x_axis": [
+            50.0,
+            316.0,
+            1050.0
+          ],
+          "x_axis_log": true,
+          "cond_names": [
+            "lc_short",
+            "lc_medium",
+            "lc_long"
+          ],
+          "paired_across_personas": true
+        },
+        "assistant": {
+          "point_slope": -0.07620469489011958,
+          "ci95_lo": -0.14211766233193565,
+          "ci95_hi": -0.020983893250791478,
+          "ci_bonf_lo": -0.15702219851867583,
+          "ci_bonf_hi": -0.012390001679922054,
+          "n_resamples": 5000,
+          "point_rates": [
+            0.11000000000000001,
+            0.11000000000000001,
+            0.0
+          ],
+          "x_axis": [
+            50.0,
+            316.0,
+            1050.0
+          ],
+          "x_axis_log": true,
+          "cond_names": [
+            "lc_short",
+            "lc_medium",
+            "lc_long"
+          ],
+          "paired_across_personas": true
+        }
+      },
+      "cell_bootstrap": {
+        "librarian": {
+          "lc_short": {
+            "rate": 0.29000000000000004,
+            "ci_lo": 0.2,
+            "ci_hi": 0.38
+          },
+          "lc_medium": {
+            "rate": 0.31000000000000005,
+            "ci_lo": 0.2,
+            "ci_hi": 0.43
+          },
+          "lc_long": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          }
+        },
+        "software_engineer": {
+          "lc_short": {
+            "rate": 0.15000000000000002,
+            "ci_lo": 0.07999999999999999,
+            "ci_hi": 0.23000000000000004
+          },
+          "lc_medium": {
+            "rate": 0.13,
+            "ci_lo": 0.06,
+            "ci_hi": 0.21000000000000002
+          },
+          "lc_long": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          }
+        },
+        "comedian": {
+          "lc_short": {
+            "rate": 0.14,
+            "ci_lo": 0.06999999999999999,
+            "ci_hi": 0.22000000000000003
+          },
+          "lc_medium": {
+            "rate": 0.02,
+            "ci_lo": 0.0,
+            "ci_hi": 0.05
+          },
+          "lc_long": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          }
+        },
+        "villain": {
+          "lc_short": {
+            "rate": 0.06,
+            "ci_lo": 0.02,
+            "ci_hi": 0.11000000000000001
+          },
+          "lc_medium": {
+            "rate": 0.02,
+            "ci_lo": 0.0,
+            "ci_hi": 0.05
+          },
+          "lc_long": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          }
+        },
+        "assistant": {
+          "lc_short": {
+            "rate": 0.11000000000000001,
+            "ci_lo": 0.04,
+            "ci_hi": 0.19
+          },
+          "lc_medium": {
+            "rate": 0.11000000000000001,
+            "ci_lo": 0.05,
+            "ci_hi": 0.18000000000000002
+          },
+          "lc_long": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          }
+        },
+        "__far_bystander__": {
+          "lc_short": {
+            "rate": 0.10000000000000002,
+            "ci_lo": 0.05000000000000001,
+            "ci_hi": 0.155
+          },
+          "lc_medium": {
+            "rate": 0.02,
+            "ci_lo": 0.005,
+            "ci_hi": 0.039999999999999994
+          },
+          "lc_long": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          }
+        }
+      },
+      "completion_length_stats": {
+        "lc_short": {
+          "librarian": {
+            "eval_completion_length_mean_chars": 804.38,
+            "eval_completion_length_median_chars": 902.0,
+            "marker_position_mean_chars": 661.8620689655172,
+            "marker_position_count": 29,
+            "marker_emission_count_mean": 0.29
+          },
+          "software_engineer": {
+            "eval_completion_length_mean_chars": 900.53,
+            "eval_completion_length_median_chars": 1110.0,
+            "marker_position_mean_chars": 1009.2,
+            "marker_position_count": 15,
+            "marker_emission_count_mean": 0.15
+          },
+          "comedian": {
+            "eval_completion_length_mean_chars": 542.73,
+            "eval_completion_length_median_chars": 237.0,
+            "marker_position_mean_chars": 607.0714285714286,
+            "marker_position_count": 14,
+            "marker_emission_count_mean": 0.14
+          },
+          "villain": {
+            "eval_completion_length_mean_chars": 706.43,
+            "eval_completion_length_median_chars": 820.0,
+            "marker_position_mean_chars": 1008.0,
+            "marker_position_count": 6,
+            "marker_emission_count_mean": 0.06
+          },
+          "assistant": {
+            "eval_completion_length_mean_chars": 1125.62,
+            "eval_completion_length_median_chars": 1272.5,
+            "marker_position_mean_chars": 1440.8181818181818,
+            "marker_position_count": 11,
+            "marker_emission_count_mean": 0.11
+          }
+        },
+        "lc_medium": {
+          "librarian": {
+            "eval_completion_length_mean_chars": 1369.94,
+            "eval_completion_length_median_chars": 1351.0,
+            "marker_position_mean_chars": 1451.5483870967741,
+            "marker_position_count": 31,
+            "marker_emission_count_mean": 0.31
+          },
+          "software_engineer": {
+            "eval_completion_length_mean_chars": 1393.66,
+            "eval_completion_length_median_chars": 1367.0,
+            "marker_position_mean_chars": 1508.6923076923076,
+            "marker_position_count": 13,
+            "marker_emission_count_mean": 0.13
+          },
+          "comedian": {
+            "eval_completion_length_mean_chars": 1202.09,
+            "eval_completion_length_median_chars": 1185.0,
+            "marker_position_mean_chars": 1214.0,
+            "marker_position_count": 2,
+            "marker_emission_count_mean": 0.02
+          },
+          "villain": {
+            "eval_completion_length_mean_chars": 1243.68,
+            "eval_completion_length_median_chars": 1220.0,
+            "marker_position_mean_chars": 1391.0,
+            "marker_position_count": 2,
+            "marker_emission_count_mean": 0.02
+          },
+          "assistant": {
+            "eval_completion_length_mean_chars": 1417.73,
+            "eval_completion_length_median_chars": 1392.0,
+            "marker_position_mean_chars": 1451.6363636363637,
+            "marker_position_count": 11,
+            "marker_emission_count_mean": 0.11
+          }
+        },
+        "lc_long": {
+          "librarian": {
+            "eval_completion_length_mean_chars": 2758.87,
+            "eval_completion_length_median_chars": 2766.5,
+            "marker_position_mean_chars": null,
+            "marker_position_count": 0,
+            "marker_emission_count_mean": 0.0
+          },
+          "software_engineer": {
+            "eval_completion_length_mean_chars": 2719.46,
+            "eval_completion_length_median_chars": 2732.0,
+            "marker_position_mean_chars": null,
+            "marker_position_count": 0,
+            "marker_emission_count_mean": 0.0
+          },
+          "comedian": {
+            "eval_completion_length_mean_chars": 2356.35,
+            "eval_completion_length_median_chars": 2370.0,
+            "marker_position_mean_chars": null,
+            "marker_position_count": 0,
+            "marker_emission_count_mean": 0.0
+          },
+          "villain": {
+            "eval_completion_length_mean_chars": 2762.18,
+            "eval_completion_length_median_chars": 2793.0,
+            "marker_position_mean_chars": null,
+            "marker_position_count": 0,
+            "marker_emission_count_mean": 0.0
+          },
+          "assistant": {
+            "eval_completion_length_mean_chars": 2701.07,
+            "eval_completion_length_median_chars": 2734.0,
+            "marker_position_mean_chars": null,
+            "marker_position_count": 0,
+            "marker_emission_count_mean": 0.0
+          }
+        }
+      }
+    },
+    "c": {
+      "title": "(c) System-prompt length (Leg 1)",
+      "x_axis_label": "System-prompt tokens (log scale)",
+      "log_x": true,
+      "verdict": "INDETERMINATE",
+      "confidence": "",
+      "delta_source_rate_pp": -5.0,
+      "delta_source_rate_logit": -0.46262352194811296,
+      "saturated": false,
+      "lc_short_style_mismatch": false,
+      "bystander_signs": {
+        "software_engineer": "down",
+        "comedian": "down",
+        "villain": "noise",
+        "assistant": "down"
+      },
+      "slope_bootstrap": {
+        "librarian": {
+          "point_slope": -0.052539413150133,
+          "ci95_lo": -0.10585770962630349,
+          "ci95_hi": 0.0011118603651266465,
+          "ci_bonf_lo": -0.11734562860446077,
+          "ci_bonf_hi": 0.012424703236221007,
+          "n_resamples": 5000,
+          "point_rates": [
+            0.15000000000000002,
+            0.28,
+            0.10000000000000002
+          ],
+          "x_axis": [
+            5.0,
+            15.0,
+            256.0
+          ],
+          "x_axis_log": true,
+          "cond_names": [
+            "sl_short",
+            "sl_medium",
+            "sl_long"
+          ],
+          "paired_across_personas": true
+        },
+        "software_engineer": {
+          "point_slope": -0.02631984885015264,
+          "ci95_lo": -0.09368697697305191,
+          "ci95_hi": 0.03798057869669792,
+          "ci_bonf_lo": -0.11259296833682139,
+          "ci_bonf_hi": 0.05398846545357773,
+          "n_resamples": 5000,
+          "point_rates": [
+            0.23000000000000004,
+            0.12,
+            0.16
+          ],
+          "x_axis": [
+            5.0,
+            15.0,
+            256.0
+          ],
+          "x_axis_log": true,
+          "cond_names": [
+            "sl_short",
+            "sl_medium",
+            "sl_long"
+          ],
+          "paired_across_personas": true
+        },
+        "__far_bystander__": {
+          "point_slope": -0.011070643954488622,
+          "ci95_lo": -0.030701161469980476,
+          "ci95_hi": 0.007919645393860352,
+          "ci_bonf_lo": -0.03393645801518826,
+          "ci_bonf_hi": 0.014081848357355828,
+          "n_resamples": 5000,
+          "point_rates": [
+            0.05,
+            0.06,
+            0.035
+          ],
+          "x_axis": [
+            5.0,
+            15.0,
+            256.0
+          ],
+          "x_axis_log": true,
+          "cond_names": [
+            "sl_short",
+            "sl_medium",
+            "sl_long"
+          ],
+          "paired_across_personas": true
+        },
+        "assistant": {
+          "point_slope": -0.018400203456292244,
+          "ci95_lo": -0.0827006310031428,
+          "ci95_hi": 0.052037840141884645,
+          "ci_bonf_lo": -0.09820272985254534,
+          "ci_bonf_hi": 0.07015425314248377,
+          "n_resamples": 5000,
+          "point_rates": [
+            0.2,
+            0.08,
+            0.14
+          ],
+          "x_axis": [
+            5.0,
+            15.0,
+            256.0
+          ],
+          "x_axis_log": true,
+          "cond_names": [
+            "sl_short",
+            "sl_medium",
+            "sl_long"
+          ],
+          "paired_across_personas": true
+        }
+      },
+      "cell_bootstrap": {
+        "librarian": {
+          "sl_short": {
+            "rate": 0.15000000000000002,
+            "ci_lo": 0.08,
+            "ci_hi": 0.22000000000000003
+          },
+          "sl_medium": {
+            "rate": 0.28,
+            "ci_lo": 0.18000000000000002,
+            "ci_hi": 0.39
+          },
+          "sl_long": {
+            "rate": 0.10000000000000002,
+            "ci_lo": 0.04,
+            "ci_hi": 0.16000000000000003
+          }
+        },
+        "software_engineer": {
+          "sl_short": {
+            "rate": 0.23000000000000004,
+            "ci_lo": 0.14000000000000004,
+            "ci_hi": 0.33
+          },
+          "sl_medium": {
+            "rate": 0.12,
+            "ci_lo": 0.05,
+            "ci_hi": 0.2
+          },
+          "sl_long": {
+            "rate": 0.16,
+            "ci_lo": 0.09,
+            "ci_hi": 0.24000000000000005
+          }
+        },
+        "comedian": {
+          "sl_short": {
+            "rate": 0.02,
+            "ci_lo": 0.0,
+            "ci_hi": 0.05
+          },
+          "sl_medium": {
+            "rate": 0.02,
+            "ci_lo": 0.0,
+            "ci_hi": 0.05
+          },
+          "sl_long": {
+            "rate": 0.0,
+            "ci_lo": 0.0,
+            "ci_hi": 0.0
+          }
+        },
+        "villain": {
+          "sl_short": {
+            "rate": 0.08,
+            "ci_lo": 0.030000000000000006,
+            "ci_hi": 0.13999999999999999
+          },
+          "sl_medium": {
+            "rate": 0.1,
+            "ci_lo": 0.030000000000000006,
+            "ci_hi": 0.17
+          },
+          "sl_long": {
+            "rate": 0.07,
+            "ci_lo": 0.02,
+            "ci_hi": 0.13
+          }
+        },
+        "assistant": {
+          "sl_short": {
+            "rate": 0.2,
+            "ci_lo": 0.09999999999999999,
+            "ci_hi": 0.31000000000000005
+          },
+          "sl_medium": {
+            "rate": 0.08,
+            "ci_lo": 0.030000000000000006,
+            "ci_hi": 0.13000000000000003
+          },
+          "sl_long": {
+            "rate": 0.14,
+            "ci_lo": 0.07,
+            "ci_hi": 0.22000000000000003
+          }
+        },
+        "__far_bystander__": {
+          "sl_short": {
+            "rate": 0.05,
+            "ci_lo": 0.025,
+            "ci_hi": 0.07500000000000002
+          },
+          "sl_medium": {
+            "rate": 0.06,
+            "ci_lo": 0.025,
+            "ci_hi": 0.1
+          },
+          "sl_long": {
+            "rate": 0.035,
+            "ci_lo": 0.01,
+            "ci_hi": 0.06000000000000001
+          }
+        }
+      },
+      "completion_length_stats": {
+        "sl_short": {
+          "librarian": {
+            "eval_completion_length_mean_chars": 1379.48,
+            "eval_completion_length_median_chars": 1352.0,
+            "marker_position_mean_chars": 1395.6666666666667,
+            "marker_position_count": 15,
+            "marker_emission_count_mean": 0.15
+          },
+          "software_engineer": {
+            "eval_completion_length_mean_chars": 1383.98,
+            "eval_completion_length_median_chars": 1374.0,
+            "marker_position_mean_chars": 1408.0434782608695,
+            "marker_position_count": 23,
+            "marker_emission_count_mean": 0.23
+          },
+          "comedian": {
+            "eval_completion_length_mean_chars": 1143.84,
+            "eval_completion_length_median_chars": 1150.5,
+            "marker_position_mean_chars": 1014.5,
+            "marker_position_count": 2,
+            "marker_emission_count_mean": 0.02
+          },
+          "villain": {
+            "eval_completion_length_mean_chars": 1224.58,
+            "eval_completion_length_median_chars": 1200.5,
+            "marker_position_mean_chars": 1184.875,
+            "marker_position_count": 8,
+            "marker_emission_count_mean": 0.08
+          },
+          "assistant": {
+            "eval_completion_length_mean_chars": 1417.19,
+            "eval_completion_length_median_chars": 1395.5,
+            "marker_position_mean_chars": 1410.4,
+            "marker_position_count": 20,
+            "marker_emission_count_mean": 0.2
+          }
+        },
+        "sl_medium": {
+          "librarian": {
+            "eval_completion_length_mean_chars": 1385.39,
+            "eval_completion_length_median_chars": 1383.0,
+            "marker_position_mean_chars": 1416.0714285714287,
+            "marker_position_count": 28,
+            "marker_emission_count_mean": 0.28
+          },
+          "software_engineer": {
+            "eval_completion_length_mean_chars": 1377.85,
+            "eval_completion_length_median_chars": 1367.5,
+            "marker_position_mean_chars": 1421.3333333333333,
+            "marker_position_count": 12,
+            "marker_emission_count_mean": 0.12
+          },
+          "comedian": {
+            "eval_completion_length_mean_chars": 1227.33,
+            "eval_completion_length_median_chars": 1185.5,
+            "marker_position_mean_chars": 1437.5,
+            "marker_position_count": 2,
+            "marker_emission_count_mean": 0.02
+          },
+          "villain": {
+            "eval_completion_length_mean_chars": 1234.55,
+            "eval_completion_length_median_chars": 1207.0,
+            "marker_position_mean_chars": 1291.7,
+            "marker_position_count": 10,
+            "marker_emission_count_mean": 0.1
+          },
+          "assistant": {
+            "eval_completion_length_mean_chars": 1389.2,
+            "eval_completion_length_median_chars": 1359.5,
+            "marker_position_mean_chars": 1408.625,
+            "marker_position_count": 8,
+            "marker_emission_count_mean": 0.08
+          }
+        },
+        "sl_long": {
+          "librarian": {
+            "eval_completion_length_mean_chars": 1384.89,
+            "eval_completion_length_median_chars": 1357.5,
+            "marker_position_mean_chars": 1482.7,
+            "marker_position_count": 10,
+            "marker_emission_count_mean": 0.1
+          },
+          "software_engineer": {
+            "eval_completion_length_mean_chars": 1370.27,
+            "eval_completion_length_median_chars": 1323.0,
+            "marker_position_mean_chars": 1321.3125,
+            "marker_position_count": 16,
+            "marker_emission_count_mean": 0.16
+          },
+          "comedian": {
+            "eval_completion_length_mean_chars": 1187.19,
+            "eval_completion_length_median_chars": 1152.0,
+            "marker_position_mean_chars": null,
+            "marker_position_count": 0,
+            "marker_emission_count_mean": 0.0
+          },
+          "villain": {
+            "eval_completion_length_mean_chars": 1215.44,
+            "eval_completion_length_median_chars": 1206.0,
+            "marker_position_mean_chars": 1391.2857142857142,
+            "marker_position_count": 7,
+            "marker_emission_count_mean": 0.07
+          },
+          "assistant": {
+            "eval_completion_length_mean_chars": 1411.51,
+            "eval_completion_length_median_chars": 1395.0,
+            "marker_position_mean_chars": 1412.857142857143,
+            "marker_position_count": 14,
+            "marker_emission_count_mean": 0.14
+          }
+        }
+      }
+    }
+  },
+  "leg2_informational": {
+    "sl_short_leg2": {
+      "source_rate": 0.2,
+      "near_bystander_rate": 0.2,
+      "far_bystander_rates": {
+        "comedian": 0.04,
+        "villain": 0.24
+      },
+      "assistant_rate": 0.18,
+      "completion_length_stats_source": {
+        "eval_completion_length_mean_chars": 1367.02,
+        "eval_completion_length_median_chars": 1356.0,
+        "marker_position_mean_chars": 1415.3,
+        "marker_position_count": 20,
+        "marker_emission_count_mean": 0.2
+      }
+    },
+    "sl_medium_leg2": {
+      "source_rate": 0.36,
+      "near_bystander_rate": 0.11,
+      "far_bystander_rates": {
+        "comedian": 0.01,
+        "villain": 0.11
+      },
+      "assistant_rate": 0.12,
+      "completion_length_stats_source": {
+        "eval_completion_length_mean_chars": 1412.88,
+        "eval_completion_length_median_chars": 1392.5,
+        "marker_position_mean_chars": 1464.7777777777778,
+        "marker_position_count": 36,
+        "marker_emission_count_mean": 0.36
+      }
+    },
+    "sl_long_leg2": {
+      "source_rate": 0.16,
+      "near_bystander_rate": 0.27,
+      "far_bystander_rates": {
+        "comedian": 0.12,
+        "villain": 0.23
+      },
+      "assistant_rate": 0.19,
+      "completion_length_stats_source": {
+        "eval_completion_length_mean_chars": 1400.51,
+        "eval_completion_length_median_chars": 1377.0,
+        "marker_position_mean_chars": 1461.0625,
+        "marker_position_count": 16,
+        "marker_emission_count_mean": 0.16
+      }
+    },
+    "mt_n1_leg2": {
+      "source_rate": 0.37,
+      "near_bystander_rate": 0.13,
+      "far_bystander_rates": {
+        "comedian": 0.01,
+        "villain": 0.05
+      },
+      "assistant_rate": 0.08,
+      "completion_length_stats_source": {
+        "eval_completion_length_mean_chars": 1369.2,
+        "eval_completion_length_median_chars": 1347.0,
+        "marker_position_mean_chars": 1390.8108108108108,
+        "marker_position_count": 37,
+        "marker_emission_count_mean": 0.37
+      }
+    },
+    "mt_n4_leg2": {
+      "source_rate": 0.07,
+      "near_bystander_rate": 0.0,
+      "far_bystander_rates": {
+        "comedian": 0.0,
+        "villain": 0.0
+      },
+      "assistant_rate": 0.01,
+      "completion_length_stats_source": {
+        "eval_completion_length_mean_chars": 1167.86,
+        "eval_completion_length_median_chars": 1204.0,
+        "marker_position_mean_chars": 1398.2857142857142,
+        "marker_position_count": 7,
+        "marker_emission_count_mean": 0.07
+      }
+    },
+    "mt_n16_leg2": {
+      "source_rate": 0.0,
+      "near_bystander_rate": 0.0,
+      "far_bystander_rates": {
+        "comedian": 0.0,
+        "villain": 0.0
+      },
+      "assistant_rate": 0.0,
+      "completion_length_stats_source": {
+        "eval_completion_length_mean_chars": 475.75,
+        "eval_completion_length_median_chars": 20.0,
+        "marker_position_mean_chars": null,
+        "marker_position_count": 0,
+        "marker_emission_count_mean": 0.0
+      }
+    }
+  }
+}

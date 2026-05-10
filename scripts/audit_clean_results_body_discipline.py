@@ -55,6 +55,24 @@ PATTERNS: dict[str, tuple[str, str]] = {
         r"\b[CcHhP][1-9](?:'|′)?(?:\s*(?:condition|control|completion|coefficient|hypothesis|test|sub-?(?:claim|experiment|hypothesis)))?(?![a-zA-Z0-9_])",
         "Project-internal condition/hypothesis labels (C1/C2/C3, H1/H2/H3, P1/P2/P3 with optional prime) — replace with named conditions inline",
     ),
+    "cell_tags": (
+        # Per-cell / per-condition / per-judge plan-internal tags:
+        #   BS_E0, BS_E_42, Z_assistant, Z_villain (uppercase + underscore + alphanum)
+        #   B0 / B1 as standalone (not "B0:" inside table headers — check context)
+        #   G6 / G0a / G2-escalation (judge / gate labels)
+        #   M1 / M2 (extraction-method labels — only flag when paired with "cosine"/"cell"/"method")
+        #   "Method A" / "Method B" (extraction-method labels — uppercase Method + capital letter)
+        r"\bBS_E[0-9A-Za-z_]*|\bZ_[a-zA-Z_]+|\b[Gg][0-9]+[a-c]?\b(?=\s|:|\.|,|$)|\bMethod\s+[AB]\b|\b[Mm][1-9]\b(?=\s+(?:cosine|cell|mean|extraction|method|sub-experiment))",
+        "Plan-internal per-cell / extraction-method / judge / gate tags (BS_E*, Z_*, G*, Method A/B, M1) — replace with plain English; tags go in <details>Setup details</details>",
+    ),
+    "experimental_arm": (
+        # "arm" / "arms" used as a project-internal experiment-strand label.
+        # Excludes legitimate uses: "arm rest", "human arm", "arm yourself".
+        # Triggers on: "<adj>-arm", "the <adj> arm", "behavioral arm", "geometric arm",
+        # "five arms", "experimental arm(s)".
+        r"\b(?:experimental|behavioral|geometric|reverse-?order|forward-?order|length(?:[-/\s]style)?|full[-\s]?param(?:eter)?|LoRA)\s+arms?\b|\b(?:five|four|three|two)\s+arms?\b|\bexperimental\s+arms?\b|\b(?:the|a)\s+(?:behavioral|geometric|reverse-?order|forward-?order|length(?:[-/\s]style)?|full[-\s]?param(?:eter)?|LoRA)\s+arm\b",
+        "Project-internal experiment-strand 'arm' label — describe what was done, not the strand's name",
+    ),
     "bare_method_acronym": (
         r"\b(?:GCG|PAIR|EvoPrompt|nanoGCG)\b",
         "Methodology acronyms (GCG / PAIR / EvoPrompt / nanoGCG) — flag for definition check",

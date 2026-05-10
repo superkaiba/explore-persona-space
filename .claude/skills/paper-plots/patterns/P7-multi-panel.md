@@ -22,7 +22,9 @@ from explore_persona_space.analysis.paper_plots import (
     set_paper_style,
 )
 
-set_paper_style("generic")
+# "blog" = clean-result + slide register (default). Use "generic" for
+# wider paper-style multi-panels (6.0 x 4.0).
+set_paper_style("blog", font_scale=0.95)
 
 conditions = ["baseline", "c1", "c6", "c7"]
 topics = ["geometry", "propagation", "axis-origins", "em-defense"]

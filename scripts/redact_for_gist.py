@@ -5,7 +5,8 @@ and `weekly-refactor-consolidation` skills to scrub a markdown body
 before publishing as a public gist via `gh gist create --public`.
 
 Patterns redacted (extensible without asking — see plan §10):
-- Pod hostnames matching `epm-issue-\\d+` -> `<pod-N>` (preserves issue number)
+- Pod hostnames matching `pod-\\d+` (canonical) or `epm-issue-\\d+` (legacy)
+  -> `<pod-N>` (preserves issue number)
 - IPs from `scripts/pods.conf` (exact-match against the live registry)
 - gmail addresses -> `<email>`
 - RunPod team IDs `cm[a-z0-9]{20,}` -> `<team-id>`
@@ -32,8 +33,9 @@ POD_REGISTRY = Path(__file__).parent / "pods.conf"
 # more-specific token patterns (sk-ant-..., hf_...) come BEFORE the
 # generic `[A-Z]{2,}_(TOKEN|KEY|SECRET)=...` env-leak rule.
 PATTERNS: list[tuple[re.Pattern[str], str]] = [
-    # Pod hostnames; preserve issue number for context.
-    (re.compile(r"\bepm-issue-(\d+)\b"), r"<pod-\1>"),
+    # Pod hostnames; preserve issue number for context. Accepts both the
+    # canonical `pod-<N>` and legacy `epm-issue-<N>` prefixes.
+    (re.compile(r"\b(?:pod|epm-issue)-(\d+)\b"), r"<pod-\1>"),
     # Gmail addresses.
     (re.compile(r"[\w.+-]+@gmail\.com"), "<email>"),
     # API tokens — order matters: longer/more-specific first.

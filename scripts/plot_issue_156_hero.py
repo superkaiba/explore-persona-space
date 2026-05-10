@@ -51,7 +51,7 @@ OUTPUT_DIR = "figures/"
 
 
 def main() -> None:
-    set_paper_style("neurips")
+    set_paper_style("blog")
 
     palette = paper_palette(3)
     point_color = palette[0]  # primary claim

@@ -44,13 +44,30 @@ from explore_persona_space.analysis.paper_plots import (
     set_paper_style,     # rcParams preset (call once at top of script)
     savefig_paper,       # saves .png + .pdf + .meta.json with commit hash
     add_direction_arrow, # appends "↑ better" / "↓ better" to axis label
-    paper_palette,       # colorblind-safe hex colors (≤ 8)
+    paper_palette,       # Wong colorblind-safe hex colors (≤ 8)
+    paper_palette_blog,  # soft-warm "blog" colorblind-safe hex colors (≤ 8)
+    paper_palette_role,  # named-role lookup: "primary"/"baseline"/"control"/...
+    set_title_subtitle,  # Anthropic-blog title block (left-aligned, semibold)
     proportion_ci,       # 95% Wald CI for a proportion: p ± 1.96·√(p(1-p)/n)
 )
 ```
 
 Always call `set_paper_style()` BEFORE any `plt.subplots(...)` call. Rcparams
 set afterward are applied to NEW artists only.
+
+### Choosing the style target
+
+```python
+set_paper_style("blog")     # default for clean-result issues + mentor slides
+set_paper_style("neurips")  # default for paper figures (NeurIPS / ICML / ICLR)
+set_paper_style("generic")  # generic-larger NeurIPS variant; rarely the right pick
+```
+
+The `"blog"` target produces the Anthropic / LessWrong / Apollo-blog
+register: Inter (with fallbacks), wider canvas, off-white outer frame
+over a white plotting area, very-light y-axis grid, frameless legend,
+left-aligned semibold titles via `set_title_subtitle`. See
+`style-reference.md` § "Style variants" for the full per-target table.
 
 ---
 
@@ -74,8 +91,8 @@ bars (Chua/Hughes rule; see `.claude/skills/clean-results/principles.md`).
 | Decision | Default | When to override |
 |---|---|---|
 | Chart type | Pick a pattern from `patterns/` — see index below | |
-| Target size | `set_paper_style("neurips")` → 5.5 × 3.4 in | `"generic"` for broader layouts |
-| Palette | `paper_palette(n)` for n series | Set `cycler` manually only if palette order matters for meaning |
+| Style target | `set_paper_style("blog")` → 6.5 × 4.0 in, Anthropic-blog register | `"neurips"` (5.5 × 3.4) for paper figures; `"generic"` (6.0 × 4.0) is rarely the right pick |
+| Palette | `paper_palette_role("primary"\|"baseline"\|"control"\|...)` for semantic colors | Use `paper_palette(n)` (Wong) when targeting neurips; only set a custom `cycler` when palette ordering itself carries meaning |
 | DPI | 300 (savefig) | Never lower for paper/mentor use |
 | Formats | PNG + PDF (default) | PDF required for LaTeX; PNG required for GitHub inline |
 
@@ -105,10 +122,10 @@ Prefer P1/P2/P3 — they carry the weight of the project's deliverables.
 import matplotlib.pyplot as plt
 from explore_persona_space.analysis.paper_plots import set_paper_style, savefig_paper
 
-set_paper_style("neurips")
+set_paper_style("blog")  # use "neurips" instead for paper figures
 fig, ax = plt.subplots()
 # ... build ...
-savefig_paper(fig, "aim5/pre_post_alignment", dir="figures/")
+savefig_paper(fig, "issue_<N>/pre_post_alignment", dir="figures/")
 plt.close(fig)
 ```
 

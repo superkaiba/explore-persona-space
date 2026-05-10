@@ -174,7 +174,7 @@ def _grouped_bars(
 
 
 def main() -> None:
-    set_paper_style("generic")
+    set_paper_style("blog")
 
     # Three wide panels side-by-side; scale width to keep each panel readable.
     fig, (ax_al, ax_cap, ax_mmlu) = plt.subplots(1, 3, figsize=(16.5, 4.2), constrained_layout=True)

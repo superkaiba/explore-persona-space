@@ -1,0 +1,6 @@
+{
+  "loss": 0.44346893272063825,
+  "adapter_path": "/workspace/explore-persona-space/eval_results/issue295_marker_only_loss/lc_medium/adapter",
+  "n_examples": 600,
+  "wall_time_minutes": 3.7
+}

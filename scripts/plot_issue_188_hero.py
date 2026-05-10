@@ -39,7 +39,7 @@ DIAGNOSTIC_THRESHOLD = 0.03  # plan: <3% means kill
 
 
 def main() -> None:
-    set_paper_style("neurips")
+    set_paper_style("blog")
 
     candidates = json.loads(CANDIDATES_PATH.read_text())
     rates = sorted([c["frde_rate"] for c in candidates], reverse=True)

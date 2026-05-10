@@ -35,7 +35,7 @@ def _load() -> dict:
 
 
 def main() -> None:
-    set_paper_style("neurips")
+    set_paper_style("blog")
 
     rg = _load()
 

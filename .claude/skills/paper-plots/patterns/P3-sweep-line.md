@@ -20,7 +20,9 @@ from explore_persona_space.analysis.paper_plots import (
     set_paper_style,
 )
 
-set_paper_style("neurips")
+# "blog" = clean-result + slide register (default). Switch to "neurips"
+# for paper figures.
+set_paper_style("blog")
 
 lrs = np.array([1e-6, 3e-6, 1e-5, 3e-5, 1e-4])
 # shape (conditions, lrs, seeds) — here 2 conditions × 5 LRs × 3 seeds

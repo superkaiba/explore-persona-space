@@ -46,7 +46,7 @@ geom_err = [
     [0, 0, em_cos_max - em_cos_mean],
 ]
 
-set_paper_style("neurips")
+set_paper_style("blog")
 colors = paper_palette(3)
 bar_colors = [colors[2], colors[1], colors[0]]  # green, orange, blue
 

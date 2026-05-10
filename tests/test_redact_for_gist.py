@@ -20,7 +20,13 @@ redact = redact_for_gist.redact
 FIXTURE = Path(__file__).parent / "fixtures" / "pii_redaction_input.txt"
 
 
-def test_pod_hostname_preserves_issue_number() -> None:
+def test_pod_hostname_preserves_issue_number_canonical() -> None:
+    """Canonical pod-N redacts to <pod-N>."""
+    assert redact("ssh pod-137 'echo hi'") == "ssh <pod-137> 'echo hi'"
+
+
+def test_pod_hostname_preserves_issue_number_legacy() -> None:
+    """Legacy epm-issue-N still redacts to <pod-N> for back-compat."""
     assert redact("ssh epm-issue-137 'echo hi'") == "ssh <pod-137> 'echo hi'"
 
 

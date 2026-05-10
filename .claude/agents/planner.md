@@ -86,6 +86,7 @@ Concrete steps with:
 - Pipeline: what runs first, what depends on what
 - File paths for inputs and outputs
 - Pseudocode for any new code needed
+- **Why code, not a model call?** — REQUIRED whenever the design includes a classifier, extractor, parser, summarizer, scorer, or rule-based judge over unstructured data (text / dialogue / images). State (a) the alternative single-model-call formulation considered, (b) why a code path is preferred (latency, determinism, cost at this N, structural output requirement, etc.), and (c) what would flip the decision. If no such component is in the design, write "N/A — no unstructured-data heuristics in this design" and move on. CLAUDE.md "Model call vs code (3.0 paradigm)" is the governing rule.
 
 ### 5. Conditions and Controls
 Table of all experimental conditions. For each control, explain what confound it rules out.
