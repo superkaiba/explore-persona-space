@@ -86,7 +86,7 @@ def _run_one_cell(condition: str, seed: int, dry_run: bool, gpu_id: int = 0) -> 
         "scripts/train.py",
         f"condition={condition}",
         f"seed={seed}",
-        f"gpu_id={gpu_id}",
+        f"+gpu_id={gpu_id}",
     ]
     env = os.environ.copy()
     parts = condition.split("/")
