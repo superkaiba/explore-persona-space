@@ -195,6 +195,54 @@ The token lives in the orchestrator's process env (typically `~/.claude/mcp.json
 
 **Pre-commit secrets check.** `.pre-commit-config.yaml` runs `scripts/check_mcp_json_no_secrets.py` against any committed `.mcp.json` and refuses to commit env keys whose names match the secret-suffix regex (`*_TOKEN`, `*_API_KEY`, `*_PAT`, `*_SECRET`, `*_KEY`, `*_PASSWORD`) or the explicit-name list (`GH_TOKEN`, `HF_TOKEN`, `WANDB_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `RUNPOD_API_KEY`, `PROJECT_PAT`, `SUPABASE_ACCESS_TOKEN`, `CODECOV_TOKEN`, `GITHUB_TOKEN`). The user-level `~/.claude/mcp.json` is NOT checked (it's not under git). `SSH_SERVER_*_KEYPATH` (a path to a key file, not the key) and `GH_REPO_OWNER` / `GH_REPO_NAME` are allowlisted.
 
+## PM Session + Per-Issue Sessions (Happy multi-session model)
+
+The user runs **multiple parallel Claude Code sessions on the local VM**, all
+visible in the [Happy Coder](https://github.com/slopus/happy) mobile app:
+
+- **One PM session** — the user's primary interlocutor. Pinned to repo root.
+  Loads the `research-pm` persona via `/pm`. Owns queue triage, ranking, and
+  dispatching per-issue work. Does NOT run experiments or write code.
+- **N per-issue sessions** — one per active GitHub issue. Each runs `/issue
+  <N>` and progresses it through the lifecycle. Spawned by the PM on the
+  user's go-ahead.
+
+```bash
+# Spawn the PM session (open it in Happy on your phone, type /pm)
+python scripts/spawn_session.py spawn-pm
+
+# Spawn a per-issue session (open in Happy, type /issue 137)
+python scripts/spawn_session.py spawn-issue --issue 137
+
+# Inventory active sessions tracked by the Happy daemon
+python scripts/spawn_session.py list
+
+# Stop a session by Happy id
+python scripts/spawn_session.py stop --session-id <id>
+```
+
+**How it routes:** the script POSTs to the local Happy daemon's HTTP control
+server at `127.0.0.1:<port>` (port read from `~/.happy/daemon.state.json`).
+The daemon spawns a fresh `claude` child wrapped by Happy's session
+infrastructure; the new session inherits the user's `$HOME` (and therefore the
+QR-paired E2E key in `~/.happy/access.key`) and shows up automatically on the
+phone. No per-child pairing.
+
+**Auto-watching long runs.** Per-issue sessions don't auto-wake on experiment
+progress. To poll: from inside the issue session, run `/loop 10m /issue <N>`.
+The PM session stays event-driven by default (responds when the user
+messages); use `/loop` only if explicitly asked (e.g. overnight queue
+triage).
+
+**Topology rule.** Never run `/issue <N>` in the PM session — it would
+collapse the multi-session model. Always spawn a separate session. The PM
+session's view of `/issue <N>` progress is via `gh issue list` and tracking
+files, not by cross-messaging.
+
+**Reference:** `.claude/skills/pm/SKILL.md` (skill bootstrap),
+`.claude/agents/research-pm.md` (persona),
+`scripts/spawn_session.py` (Happy daemon RPC client).
+
 ## Ephemeral Pod Lifecycle (default execution path)
 
 **Pods are created on demand per GitHub issue, not maintained as a permanent fleet.** The `/issue` skill provisions a pod when an experiment dispatches, stops it after artifacts upload, optionally resumes it during interpretation, and at end-of-experiment (the [Step 10c: pod termination prompt in `.claude/skills/issue/SKILL.md`](.claude/skills/issue/SKILL.md#step-10c-pod-termination-prompt-experiments-only), after the clean-result is finalized) prompts the user for permission to terminate.

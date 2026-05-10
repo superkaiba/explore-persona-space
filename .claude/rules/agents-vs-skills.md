@@ -70,9 +70,12 @@ The outer layer is usually a **skill** (orchestrator). Inside, it dispatches
     ├─ spawns experimenter (agent)
     │       └─ uses /experiment-runner (skill: monitoring protocol)
     ├─ spawns upload-verifier (agent)
-    ├─ iterates analyzer ↔ interpretation-critic    (max 3 rounds)
+    ├─ iterates analyzer ↔ interpretation-critic    (max 3 rounds, content honesty)
     │       ├─ spawns analyzer (agent, uses /paper-plots)
     │       └─ spawns interpretation-critic (agent)
+    ├─ iterates analyzer ↔ lw-register-critic       (max 3 rounds, writing register)
+    │       ├─ re-spawns analyzer (agent)
+    │       └─ spawns lw-register-critic (agent)
     ├─ spawns reviewer (agent)
     ├─ (auto-complete step inline in the skill)
     ├─ (test-verdict gate inline in the skill, code-change paths only)
@@ -98,10 +101,17 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `upload-verifier` | Mechanical artifact checklist, isolated from experimenter optimism |
 | `analyzer` | Fresh-context analysis; produces fact sheet + interpretation |
 | `interpretation-critic` | Adversarial review of interpretation, must not see analyzer reasoning |
+| `lw-register-critic` | Adversarial review of clean-result writing register against `lw-tldr-examples.md`; runs after `interpretation-critic` PASS, must not see analyzer reasoning |
 | `reviewer` | Final adversarial review of published clean-result issue |
 | `code-reviewer` | Adversarial review of implementer's diff, must be isolated |
 | `follow-up-proposer` | Reads results + plan, proposes concrete next experiments |
 | `retrospective` | Fresh-context review of session transcripts |
+| `research-pm` | Strategic PM persona for the dedicated PM session (loaded by `/pm`); owns queue triage + dispatch decisions, does NOT execute experiments or write code |
+| `reconciler` | Binary tie-breaker for Codex ensemble adversarial review (`code-reviewer` / `critic` / `interpretation-critic` / `reviewer`); marker + in-context output modes |
+| `codex-code-reviewer` | Codex (gpt-5.5) twin of `code-reviewer`; thin Claude wrapper around the OpenAI Codex plugin's `companion task` runtime |
+| `codex-critic` | Codex twin of `critic` (per-lens, in-context output for /adversarial-planner Phase 2) |
+| `codex-interpretation-critic` | Codex twin of `interpretation-critic` (7 lenses including multimodal lens 6) |
+| `codex-reviewer` | Codex twin of `reviewer` (final clean-result gate; runs `verify_clean_result.py` independently) |
 
 ### Skills (playbooks — `.claude/skills/`)
 
@@ -118,16 +128,18 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `experiment-proposer` | Prioritization ranking |
 | `ideation` | Brainstorming protocol |
 | `independent-reviewer` | Shared Principles-of-Honest-Analysis reference for analyzer + reviewer |
+| `pm` | PM session bootstrap: loads the `research-pm` persona + spawns per-issue Happy sessions via `scripts/spawn_session.py` |
 | `cleanup`, `refactor`, `codebase-debugger` | Code-hygiene workflows |
 
 ### Design notes
 
-- **No strategic-PM agent.** Both `manager` and `research-pm` were removed
-  in April 2026 — the workflow now dispatches work via `/issue`,
-  `/experiment-proposer`, `/ideation`, `/adversarial-planner`,
-  `/weekly`, `/daily`. "What should we do next?" is a
-  main-session question answered by invoking the right skill; it does not
-  need its own agent persona.
+- **`research-pm` is the PM persona**, loaded into a dedicated PM Happy session
+  by the `/pm` skill (introduced May 2026). It is NOT a subagent that dispatches
+  others; it operates AS the user's primary interlocutor session. The user opens
+  one PM session via `python scripts/spawn_session.py spawn-pm` and per-issue
+  sessions via `spawn-issue --issue <N>`. Each session is independent (own
+  context, own conversation history, own Happy chat). The PM session handles
+  ranking + dispatch; per-issue sessions execute `/issue <N>`.
 - **`experiment-runner` skill vs `experimenter` agent**: the skill is the
   monitoring protocol; the agent uses the skill. Keep both, they're layered
   correctly.
