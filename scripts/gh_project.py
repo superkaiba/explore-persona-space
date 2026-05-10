@@ -41,8 +41,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -134,6 +136,94 @@ def _gh(args: list[str]) -> str:
     return proc.stdout
 
 
+# --- project_meta() disk cache ----------------------------------------------
+# Short TTL (default 60s) so back-to-back `set-status` / `list-by-status`
+# invocations (the `/issue` skill is the heaviest caller) share one
+# graphql roundtrip instead of paying for it every CLI run. Mutations
+# (`add-status-option`, `remove-status-option`, `migrate-options`)
+# invalidate the cache so the next read fetches fresh option IDs.
+_META_CACHE_TTL_DEFAULT = 60
+_META_CACHE_DISABLED = False  # tests flip this off via the autouse fixture
+
+
+def _meta_cache_path(owner: str, number: int) -> Path:
+    return _REPO_ROOT / ".claude" / "cache" / f"gh-project-meta-{owner}-{number}.json"
+
+
+def _meta_cache_ttl() -> int:
+    """Read TTL from env var; fall back to default. 0 disables caching."""
+    raw = os.getenv("EPM_GH_PROJECT_META_TTL")
+    if raw is None:
+        return _META_CACHE_TTL_DEFAULT
+    try:
+        return max(0, int(raw))
+    except ValueError:
+        return _META_CACHE_TTL_DEFAULT
+
+
+def _read_cached_meta(owner: str, number: int) -> ProjectMeta | None:
+    if _META_CACHE_DISABLED:
+        return None
+    ttl = _meta_cache_ttl()
+    if ttl <= 0:
+        return None
+    path = _meta_cache_path(owner, number)
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+    if time.time() - data.get("cached_at", 0) > ttl:
+        return None
+    return ProjectMeta(
+        project_id=data["project_id"],
+        status_field_id=data["status_field_id"],
+        options={
+            name: StatusOption(
+                option_id=opt["option_id"],
+                color=opt["color"],
+                description=opt["description"],
+            )
+            for name, opt in data["options"].items()
+        },
+    )
+
+
+def _write_cached_meta(owner: str, number: int, meta: ProjectMeta) -> None:
+    if _META_CACHE_DISABLED or _meta_cache_ttl() <= 0:
+        return
+    path = _meta_cache_path(owner, number)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(
+                {
+                    "cached_at": int(time.time()),
+                    "project_id": meta.project_id,
+                    "status_field_id": meta.status_field_id,
+                    "options": {
+                        name: {
+                            "option_id": opt.option_id,
+                            "color": opt.color,
+                            "description": opt.description,
+                        }
+                        for name, opt in meta.options.items()
+                    },
+                },
+                indent=2,
+            )
+        )
+    except OSError:
+        # Cache failures must never block the command.
+        pass
+
+
+def invalidate_meta_cache(owner: str = DEFAULT_OWNER, number: int = DEFAULT_PROJECT_NUMBER) -> None:
+    """Drop the cached meta for (owner, number). Called after every option mutation."""
+    _meta_cache_path(owner, number).unlink(missing_ok=True)
+
+
 def project_meta(owner: str, number: int) -> ProjectMeta:
     """Fetch project node ID + Status field ID + name->StatusOption map.
 
@@ -143,7 +233,15 @@ def project_meta(owner: str, number: int) -> ProjectMeta:
     invocations because the `updateProjectV2Field` mutation REPLACES the
     full options list — without round-tripping color the whole board's
     color coding is destroyed (HIGH-1, code-review v1).
+
+    Disk-cached for `EPM_GH_PROJECT_META_TTL` seconds (default 60) keyed
+    on (owner, number). Cache invalidated by `invalidate_meta_cache()`
+    after every option mutation.
     """
+    cached = _read_cached_meta(owner, number)
+    if cached is not None:
+        return cached
+
     query = (
         "query($owner:String!, $number:Int!) {"
         "  user(login:$owner) {"
@@ -179,7 +277,7 @@ def project_meta(owner: str, number: int) -> ProjectMeta:
     if field is None or "options" not in field:
         sys.exit(f"project #{number} has no Status single-select field")
 
-    return ProjectMeta(
+    meta = ProjectMeta(
         project_id=project["id"],
         status_field_id=field["id"],
         options={
@@ -191,6 +289,8 @@ def project_meta(owner: str, number: int) -> ProjectMeta:
             for opt in field["options"]
         },
     )
+    _write_cached_meta(owner, number, meta)
+    return meta
 
 
 def current_repo() -> str:
@@ -339,6 +439,58 @@ def cmd_list_by_status(args: argparse.Namespace) -> None:
         print(f"#{n} {title}" if n is not None else title)
 
 
+def cmd_list_all(args: argparse.Namespace) -> None:
+    """Group items by Status column from a single `item-list` call.
+
+    Replaces the N-query pattern of running `list-by-status` once per
+    column (e.g. /pm triage previously fired 8 calls). One `_list_items`
+    is enough: every item carries its current `status` string, so we bin
+    client-side.
+    """
+    items = _list_items(args.owner, args.project)
+    bins: dict[str, list[dict]] = {}
+    for it in items:
+        col = it.get("status") or "(no status)"
+        bins.setdefault(col, []).append(it)
+
+    if args.columns:
+        wanted = {c.strip() for c in args.columns.split(",") if c.strip()}
+        bins = {k: v for k, v in bins.items() if k in wanted}
+
+    canonical_order = [name for name, _, _ in NEW_COLUMN_SPEC]
+    ordered_cols = [c for c in canonical_order if c in bins]
+    ordered_cols += [c for c in sorted(bins) if c not in canonical_order]
+
+    if args.json:
+        out = {
+            col: [
+                {
+                    "number": (it.get("content") or {}).get("number"),
+                    "title": (it.get("content") or {}).get("title", ""),
+                    "repo": (it.get("content") or {}).get("repository"),
+                }
+                for it in bins[col]
+            ]
+            for col in ordered_cols
+        }
+        print(json.dumps(out, indent=2))
+        return
+
+    if args.counts_only:
+        for col in ordered_cols:
+            print(f"{col}\t{len(bins[col])}")
+        return
+
+    for col in ordered_cols:
+        print(f"### {col} ({len(bins[col])})")
+        for it in bins[col]:
+            c = it.get("content") or {}
+            n = c.get("number")
+            title = c.get("title", "")
+            print(f"#{n} {title}" if n is not None else title)
+        print()
+
+
 def cmd_add_status_option(args: argparse.Namespace) -> None:
     """Add a new option to the existing Status single-select field via GraphQL.
 
@@ -428,8 +580,14 @@ def cmd_list_options(args: argparse.Namespace) -> None:
 
 
 def _issue_labels(issue: int, repo: str) -> list[str]:
-    raw = _gh(["issue", "view", str(issue), "-R", repo, "--json", "labels"])
-    return [lbl["name"] for lbl in json.loads(raw)["labels"]]
+    """Return the label names on an issue via REST.
+
+    Routes through the core 5000/hr bucket instead of GraphQL — gh
+    issue view's `--json` projection uses GraphQL underneath, which is
+    the bottleneck when project-board ops exhaust the GraphQL bucket.
+    """
+    raw = _gh(["api", "-H", "Accept: application/vnd.github+json", f"repos/{repo}/issues/{issue}"])
+    return [lbl["name"] for lbl in json.loads(raw).get("labels", [])]
 
 
 def column_for_labels(labels: list[str]) -> str | None:
@@ -531,6 +689,52 @@ def _graphql(query: str, variables: dict | None = None) -> dict:
         Path(path).unlink(missing_ok=True)
 
 
+def _fetch_all_issue_labels(repo: str) -> dict[int, list[str]]:
+    """Return {issue_number: [label_name, ...]} for every issue in repo.
+
+    REST paginator (`/repos/{owner}/{repo}/issues?state=all&per_page=100`
+    with `--paginate`) replaces the previous `gh issue list --limit 300`
+    (silent truncation) and a GraphQL cursor-walk (separate quota bucket).
+    REST routes through the core 5000/hr bucket so the GraphQL bucket
+    stays available for project-board ops, which have NO REST coverage
+    on user-owned projects v2.
+
+    `gh api --paginate` concatenates each page's JSON array directly with
+    no separator — we use `json.JSONDecoder.raw_decode` to split.
+
+    The REST `issues` endpoint includes pull requests as well; we filter
+    them out by checking for `pull_request` on the node (PRs always carry
+    that key; plain issues don't).
+    """
+    raw = _gh(
+        [
+            "api",
+            "-H",
+            "Accept: application/vnd.github+json",
+            f"repos/{repo}/issues?state=all&per_page=100",
+            "--paginate",
+        ]
+    )
+
+    raw = raw.strip()
+    out: dict[int, list[str]] = {}
+    if not raw:
+        return out
+
+    decoder = json.JSONDecoder()
+    idx = 0
+    while idx < len(raw):
+        page, end = decoder.raw_decode(raw[idx:])
+        for node in page:
+            if "pull_request" in node:
+                continue  # REST issues endpoint conflates issues + PRs
+            out[node["number"]] = [lbl["name"] for lbl in node.get("labels", [])]
+        idx += end
+        while idx < len(raw) and raw[idx].isspace():
+            idx += 1
+    return out
+
+
 def cmd_snapshot(args: argparse.Namespace) -> None:
     """Dump current Status options + per-item Status to a JSON file (rollback point)."""
     from datetime import datetime
@@ -597,6 +801,12 @@ def _replace_options(field_id: str, target: list[dict]) -> None:
 
     `target` is a list of dicts with keys {id?, name, color, description}.
     Existing IDs preserved when passed; new entries get fresh IDs.
+
+    Invalidates the disk-cached meta for the default (owner, project)
+    after a successful mutation. Today every mutation path operates on
+    the same default project (#1 under `superkaiba`); if multi-project
+    support lands, callers should invalidate explicitly for the affected
+    (owner, project) pair.
     """
     q = """
     mutation($fieldId: ID!, $opts: [ProjectV2SingleSelectFieldOptionInput!]!) {
@@ -606,6 +816,7 @@ def _replace_options(field_id: str, target: list[dict]) -> None:
     }
     """
     _graphql(q, {"fieldId": field_id, "opts": target})
+    invalidate_meta_cache()
 
 
 def cmd_migrate_options(args: argparse.Namespace) -> None:
@@ -672,27 +883,15 @@ def cmd_migrate_options(args: argparse.Namespace) -> None:
         # Refresh meta after option mutation so the new option IDs are present.
         meta = project_meta(args.owner, args.project)
 
-    # Pre-fetch label sets for every issue in the repo (single paginated call).
-    # `gh project item-list` does not return labels in the content payload, so we
-    # build a number -> labels map from `gh issue list` and look up below.
+    # Pre-fetch label sets for every issue in the repo. `gh project
+    # item-list` does not return labels in the content payload, so we
+    # build a number -> labels map below. Cursor-paginated GraphQL is
+    # used because `gh issue list --limit N` silently truncates at N —
+    # the prior `--limit 300` would miss issues in a repo that has
+    # grown past 300 and there is no way to detect the truncation
+    # client-side.
     repo_for_labels = args.repo or current_repo()
-    label_raw = _gh(
-        [
-            "issue",
-            "list",
-            "-R",
-            repo_for_labels,
-            "--state",
-            "all",
-            "--limit",
-            "300",
-            "--json",
-            "number,labels",
-        ]
-    )
-    labels_by_issue: dict[int, list[str]] = {
-        item["number"]: [lbl["name"] for lbl in item["labels"]] for item in json.loads(label_raw)
-    }
+    labels_by_issue = _fetch_all_issue_labels(repo_for_labels)
 
     # Pass 2: backfill items based on their current labels.
     items = _list_items(args.owner, args.project)
@@ -769,19 +968,57 @@ ORIGINAL_MARKER = "<!-- epm:original-body -->"
 
 
 def _gh_issue_view_full(issue: int, repo: str) -> dict:
-    """Return {title, body, labels, comments[]} for an issue."""
-    raw = _gh(
-        [
-            "issue",
-            "view",
-            str(issue),
-            "-R",
-            repo,
-            "--json",
-            "title,body,labels,comments",
-        ]
+    """Return {title, body, labels, comments[]} for an issue via REST.
+
+    Routes through the core 5000/hr bucket to keep the GraphQL bucket
+    headroom for project-board ops. Two REST calls: issue metadata +
+    paginated comments. Comments are reshaped to the same key set the
+    legacy `gh issue view --json comments` projection produced (each
+    comment has a `body` field), so the `_has_marker` / `cmd_body_promote`
+    / `cmd_body_restore` callers below don't change.
+    """
+    issue_data = json.loads(
+        _gh(
+            [
+                "api",
+                "-H",
+                "Accept: application/vnd.github+json",
+                f"repos/{repo}/issues/{issue}",
+            ]
+        )
     )
-    return json.loads(raw)
+
+    total_comments = issue_data.get("comments", 0)
+    comments: list[dict] = []
+    if total_comments > 0:
+        raw = _gh(
+            [
+                "api",
+                "-H",
+                "Accept: application/vnd.github+json",
+                f"repos/{repo}/issues/{issue}/comments?per_page=100",
+                "--paginate",
+            ]
+        )
+        # `gh api --paginate` concatenates per-page JSON arrays without
+        # separators; walk with raw_decode.
+        raw = raw.strip()
+        if raw:
+            decoder = json.JSONDecoder()
+            idx = 0
+            while idx < len(raw):
+                page, end = decoder.raw_decode(raw[idx:])
+                comments.extend(page)
+                idx += end
+                while idx < len(raw) and raw[idx].isspace():
+                    idx += 1
+
+    return {
+        "title": issue_data["title"],
+        "body": issue_data.get("body") or "",
+        "labels": [{"name": lbl["name"]} for lbl in issue_data.get("labels", [])],
+        "comments": comments,
+    }
 
 
 def _has_marker(comments: list[dict], marker: str) -> dict | None:
@@ -1067,6 +1304,22 @@ def main() -> None:
     p.add_argument("column", help="Status column name")
     p.add_argument("--json", action="store_true", help="emit raw JSON instead of `#N title` rows")
     p.set_defaults(func=cmd_list_by_status)
+
+    p = sub.add_parser(
+        "list-all",
+        help="list all Status columns grouped, in ONE API call (replaces 8x list-by-status)",
+    )
+    p.add_argument(
+        "--columns",
+        help="comma-separated subset of columns to show (still one API call)",
+    )
+    p.add_argument("--json", action="store_true", help="emit grouped JSON keyed by column")
+    p.add_argument(
+        "--counts-only",
+        action="store_true",
+        help="terse mode: '<column>\\t<count>' per line",
+    )
+    p.set_defaults(func=cmd_list_all)
 
     p = sub.add_parser("add-status-option", help="add a new option to the Status field")
     p.add_argument("option", help="option name (e.g. 'Awaiting Promotion')")

@@ -5,8 +5,9 @@ description: >
   each emitting its own redacted public gist. Manual trigger only — no cron.
   Returns one gist URL per task: weekly summary, workflow-optimization
   retrospective, code hygiene scan, mentor-prep agenda, mentor-prep slides
-  (Marp deck), and SUMMARY gist. Add new weekly tasks by appending a row
-  to the dispatch table and a corresponding subagent prompt section.
+  (Marp deck), great-thoughts portfolio audit, and SUMMARY gist. Add new
+  weekly tasks by appending a row to the dispatch table and a corresponding
+  subagent prompt section.
 user_invocable: true
 ---
 
@@ -22,6 +23,22 @@ only dispatches and collects URLs.
 Manual trigger at the end of each work week. **Manual trigger only — no
 cron.** Use `/schedule` if you want to wire a cron later.
 
+## API bucket strategy
+
+Same conventions as `/daily`. The three independent buckets:
+
+| Bucket | Limit | What hits it |
+|---|---|---|
+| core (REST) | 5000/hr | `gh api repos/...` paths, `gh issue list` without `--json` |
+| graphql | 5000/hr | `gh issue list --json <fields>`, `gh issue view --json`, `gh project ...` |
+| search | 30/min | `gh issue list --search ...`, `gh api search/issues` |
+
+**Rule:** prefer REST (`gh api repos/.../issues?...` with jq) for
+issue/PR reads. Project-board ops have no user-scope REST coverage and
+must stay on GraphQL via `scripts/gh_project.py`. The `/pm` triage
+exhausted GraphQL on 2026-05-10 while core sat at <5/5000 used — REST
+is the cheap bucket.
+
 ## Dispatch table
 
 | Task | Subagent type | Returns |
@@ -31,6 +48,7 @@ cron.** Use `/schedule` if you want to wire a cron later.
 | Code hygiene | `general-purpose` | gist URL — dead code, refactor candidates, deps, .claude/ health, jscpd duplication, unmerged worktrees |
 | Mentor-prep agenda | `general-purpose` | gist URL — clean-result TL;DRs assembled into a screen-shareable meeting doc |
 | Mentor-prep slides | `general-purpose` | gist URL — Marp deck (`deck.md` + `deck.pdf`) for the actual mentor meeting; built via the `mentor-update-slides` skill |
+| Great thoughts | `general-purpose` | gist URL — Hamming-style portfolio audit: stable list of 10-20 important problems, attack column, march-toward audit of running/recent work, anomalies, 5-year extrapolation, top-3 next-week recommendations. Carries continuity by reading the previous week's gist. |
 | SUMMARY gist | `general-purpose` | gist URL — project SUMMARY (Motivation / Related work / Current results / Immediate next steps / Long-term goals / Glossary), regenerated from `docs/SUMMARY.template.md` + `docs/claims.yaml` + live issues |
 
 (Adding more is a 2-step change: append a row here, append a `## Subagent
@@ -123,6 +141,7 @@ user-notes blocks and emit the static prompt list with "(unanswered)" placeholde
      echo "| ${TODAY} | weekly (${WEEK_TAG}) | code-hygiene | <url-or-skip> |"
      echo "| ${TODAY} | weekly (${WEEK_TAG}) | mentor-prep | <url-or-skip> |"
      echo "| ${TODAY} | weekly (${WEEK_TAG}) | mentor-slides | <url-or-skip> |"
+     echo "| ${TODAY} | weekly (${WEEK_TAG}) | great-thoughts | <url-or-skip> |"
    } >> docs/update_log.md
 
    # JSONL: success rows have "status":"success","url":"...";
@@ -136,6 +155,7 @@ user-notes blocks and emit the static prompt list with "(unanswered)" placeholde
      # echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"mentor-slides","status":"skipped","reason":"no clean-results this week"}'
      echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"mentor-prep","status":"success","url":"<url>"}'
      echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"mentor-slides","status":"success","url":"<url>"}'
+     echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"great-thoughts","status":"success","url":"<url>"}'
    } >> .claude/cache/update_log.jsonl
    ```
 
@@ -147,6 +167,7 @@ user-notes blocks and emit the static prompt list with "(unanswered)" placeholde
    - Code hygiene: <url>
    - Mentor-prep agenda: <url-or-skip-message>
    - Mentor-prep slides: <url-or-skip-message>
+   - Great thoughts: <url>
    (logged to docs/update_log.md + .claude/cache/update_log.jsonl)
    ```
 7. If any subagent failed, list it with `❌ <task> — <reason>` and continue;
@@ -172,12 +193,23 @@ WEEK_TAG=$(date +%Y-W%V)
    git log --since="7 days ago" --no-merges --oneline --stat
    git diff --stat HEAD~$(git log --since="7 days ago" --oneline | wc -l)..HEAD 2>/dev/null
 
-2. Clean-result issues created or updated this week:
-   gh issue list --label clean-results --state all \
-     --search "created:>=${WEEK_AGO}" --json number,title,body,createdAt,labels
-   gh issue list --label clean-results --state all \
-     --search "updated:>=${WEEK_AGO}" --json number,title,body,updatedAt,labels
-   For each: extract TL;DR + confidence + hero figure URL.
+2. Clean-result issues touched this week (one call covers both created
+   and updated — anything created in the window is by definition
+   updated in the window too):
+   # REST `/repos/.../issues` endpoint uses the core 5000/hr bucket;
+   # `gh issue list --json` would route through GraphQL (verified
+   # 2026-05-10), and `--search` would route through the search bucket
+   # (30/min). REST's `labels` query param does AND-OR-mix oddly, so we
+   # over-fetch all recent issues and filter client-side via jq.
+   gh api "repos/$GH_REPO_OWNER/$GH_REPO_NAME/issues?state=all&since=${WEEK_AGO}T00:00:00Z&per_page=100" \
+     --paginate \
+     --jq '[.[]
+       | select(has("pull_request") | not)
+       | select(.labels | any(.name == "clean-results" or .name == "clean-results:draft"))
+       | {number, title, body, createdAt: .created_at, updatedAt: .updated_at, labels: [.labels[].name]}]'
+   For each: extract TL;DR + confidence + hero figure URL. Bin
+   client-side on `createdAt >= ${WEEK_AGO}` if you need the
+   "new this week" subset.
 
 3. Done experiment + done impl issues this week:
    gh issue list --search "is:issue updated:>=${WEEK_AGO} (label:status:done-experiment OR label:status:done-impl)" \
@@ -190,10 +222,11 @@ WEEK_TAG=$(date +%Y-W%V)
 5. Eval results past 7 days:
    find eval_results -name "*.json" -mtime -7 -type f
 
-6. Pending / blocked items:
-   gh issue list --state open --label status:blocked
-   gh issue list --state open --label status:proposed
-   gh issue list --state open --label status:running
+6. Pending / blocked items (one call, bin client-side by label):
+   gh issue list --state open \
+     --search "is:open (label:status:blocked OR label:status:proposed OR label:status:running)" \
+     --json number,title,labels,updatedAt
+   Then partition the result by which status:* label each item carries.
 
 # Output structure
 
@@ -537,8 +570,13 @@ Call the Skill tool with:
   args: "--days 7 --pdf"
 
 The skill writes:
-- figures/mentor-slides/<TODAY>/deck.md   (Marp source)
-- figures/mentor-slides/<TODAY>/deck.pdf  (rendered via marp-cli)
+- figures/mentor-slides/deck.md   (Marp source — persistent across weeks)
+- figures/mentor-slides/deck.pdf  (rendered via marp-cli)
+
+The deck is a single persistent file with three anchored regions
+(HEADER replaced each run, LOG append-only newest-first with date
+dividers, APPENDIX accumulating). See
+`.claude/skills/mentor-update-slides/SKILL.md` § Persistent-deck model.
 
 The skill returns either a success report with the local paths, or a
 literal "(skipped — …)" string if zero clean-result issues were found in
@@ -548,23 +586,26 @@ the SOLE output. The orchestrator handles that gracefully.
 
 # Step 2: Redact deck.md
 
-  TODAY=$(date +%Y-%m-%d)
   WEEK_TAG=$(date +%Y-W%V)
   uv run python scripts/redact_for_gist.py \
-    --in "figures/mentor-slides/${TODAY}/deck.md" \
+    --in "figures/mentor-slides/deck.md" \
     --out /tmp/weekly-slides-body.redacted.md
 
 # Step 3: Publish (markdown + PDF in one gist)
 
 The markdown is the gist's primary file (renders inline on the gist page).
 The PDF is attached as a downloadable file for the actual presentation.
+Because the deck is persistent, every weekly gist is a snapshot of the
+WHOLE deck (current HEADER + full LOG history) rather than just this
+week's slides — that is intentional, and matches Hughes & Chua's "one
+evolving deck per project" principle.
 
-  if [ -f "figures/mentor-slides/${TODAY}/deck.pdf" ]; then
+  if [ -f "figures/mentor-slides/deck.pdf" ]; then
     gh gist create --public \
       --filename "weekly-slides-${WEEK_TAG}.md" \
-      --desc "Mentor meeting slides — week ${WEEK_TAG}" \
+      --desc "Mentor meeting slides — week ${WEEK_TAG} (persistent deck snapshot)" \
       /tmp/weekly-slides-body.redacted.md \
-      "figures/mentor-slides/${TODAY}/deck.pdf"
+      "figures/mentor-slides/deck.pdf"
   else
     # PDF render failed (marp-cli unavailable, etc.) — publish markdown only.
     gh gist create --public \
@@ -584,6 +625,181 @@ The PDF is attached as a downloadable file for the actual presentation.
   PDF), that's expected on first invocation; subsequent runs are ~2-3s.
 
 RETURN the gist URL (or the skip message) as the SOLE output. No commentary.
+```
+
+---
+
+## Subagent prompt: Great thoughts
+
+```
+You are the great-thoughts subagent. Hamming-style portfolio audit:
+"Great Thoughts Time" applied to the explore-persona-space project.
+Output is a stable, evolving list of important problems, an attack
+column, a march-toward audit of recent work, anomalies, a 5-year
+extrapolation, and 3 next-week recommendations. Read-only.
+
+# Step 1: Continuity — load last week's audit
+
+WEEK_AGO=$(date -d '7 days ago' +%Y-%m-%d)
+WEEK_TAG=$(date +%Y-W%V)
+TODAY=$(date +%Y-%m-%d)
+
+# Find last successful great-thoughts gist URL.
+LAST_URL=$(grep '"task":"great-thoughts"' .claude/cache/update_log.jsonl 2>/dev/null \
+  | grep '"status":"success"' | tail -1 \
+  | python3 -c 'import json,sys; line=sys.stdin.read().strip(); print(json.loads(line).get("url","")) if line else print("")' \
+  2>/dev/null || echo "")
+
+if [ -n "$LAST_URL" ]; then
+  LAST_GIST_ID=$(echo "$LAST_URL" | awk -F'/' '{print $NF}')
+  gh gist view "$LAST_GIST_ID" --raw > /tmp/last-greatthoughts.md 2>/dev/null || true
+fi
+
+# If /tmp/last-greatthoughts.md exists and is non-empty, this is the
+# starting point. Carry forward the "Important problems" list verbatim
+# (preserving stable IDs P1, P2, ...) and update statuses. If it does
+# not exist, this is week-1 and you build the list from scratch — say
+# so explicitly at the top of the gist.
+
+# Step 2: Inputs (gather in parallel via Bash; read-only)
+
+1. RESULTS.md — current cross-experiment claims a paper would cite.
+2. docs/SUMMARY.md — Motivation + Long-term goals (skip the body if
+   only the gist-id marker is present).
+3. docs/research_ideas.md — pre-issue ideation backlog.
+4. All clean-results (full bodies, not just titles):
+     gh issue list --label clean-results --state all --limit 100 \
+       --json number,title,body,labels,updatedAt
+   For each, extract: TL;DR, confidence, "Standing caveats" block.
+5. Currently-running + open-proposal items (one call; partition by
+   label on the client):
+     gh issue list --state open \
+       --search "is:open (label:status:running OR label:status:proposed)" \
+       --json number,title,labels,updatedAt
+6. Done experiments past 30 days:
+     MONTH_AGO=$(date -d '30 days ago' +%Y-%m-%d)
+     gh issue list --search "is:issue updated:>=${MONTH_AGO} \
+       (label:status:done-experiment OR label:status:done-impl)" \
+       --json number,title,labels,updatedAt
+7. (Optional) docs/contradictions.md — anomalies log if/when it exists.
+     test -f docs/contradictions.md && cat docs/contradictions.md
+
+# Step 3: Build the audit
+
+Output structure (write to /tmp/weekly-greatthoughts-body.md):
+
+# Great Thoughts — week <WEEK_TAG>
+
+## Preface
+
+[1-2 sentences. Either "Continuing from last week's list at <LAST_URL>"
+or "Week-1 list — built from scratch from RESULTS.md + clean-results".]
+
+## User notes
+{{USER_NOTES}}
+
+## Important problems (10-20)
+
+[Carried forward across weeks. Each gets a stable ID (P1, P2, ...).
+Mix global problems (the subfield's open questions in interp / persona
+representations / EM / alignment-relevant capability work) with local
+problems (this project's open questions). Mark new entries 🆕,
+retired entries ⏹️ <reason>, others plain. If carried over, KEEP the
+ID; never renumber existing problems.]
+
+| ID | Problem (one sentence) | Scope | Status |
+|---|---|---|---|
+| P1 | ... | global / local | active / 🆕 / ⏹️ <reason> |
+| ... |
+
+## Attack column
+
+[For each active problem, one line. The Hamming threshold: a method
+we believe could actually solve it, not just nibble at it.]
+
+| ID | Attack | Confidence |
+|---|---|---|
+| P1 | <method we'd try> | ✅ have one / 🤔 half-formed / ❌ no attack |
+| ... |
+
+## March-toward audit
+
+[Map every running issue + every done-experiment from the past 30 days
++ every open proposal to a problem ID. Anything that maps to nothing
+is flagged as drift — list it explicitly under "Drift candidates"
+below.]
+
+| Issue | Title | Maps to | Notes |
+|---|---|---|---|
+| #N | ... | P3 | ... |
+| #M | ... | — | **drift?** |
+| ... |
+
+### Drift candidates
+[Issues with no problem mapping. For each: is it actually load-bearing
+infrastructure, or is it scope creep? "None" is valid.]
+
+## Anomalies / contradictions
+
+[Things that don't fit our current model. Pull from clean-result
+"Standing caveats" blocks and docs/contradictions.md. The Darwin part —
+the next paper often lives here.]
+
+- <anomaly>: <where it surfaced (issue # / clean-result)>
+- ...
+
+## 5-year extrapolation
+
+[If the next 50 weeks looked like this one, what would we have built?
+Is that the answer to one of the important problems above? 2-4
+sentences. Be willing to say "no" — that's the whole point.]
+
+## Top-3 next-week recommendations
+
+[Ranked by "marches toward a problem with a real attack", NOT just
+information-gain-per-GPU-hour. Each recommendation:
+1. Names the problem ID it advances.
+2. Links to an existing issue OR proposes a new one (with a one-line
+   spec the user can paste into `gh issue create --label status:proposed`).
+3. Estimates GPU-hours and a falsification criterion.]
+
+1. **<action>** (advances P<X>) — <link or proposed spec>. ~<N> GPU-hours.
+   Falsifiable by: <one line>.
+2. ...
+3. ...
+
+## Reading-time target: under 8 minutes.
+
+# Step 4: Publish
+
+uv run python scripts/redact_for_gist.py \
+  --in /tmp/weekly-greatthoughts-body.md \
+  --out /tmp/weekly-greatthoughts-body.redacted.md
+gh gist create --public \
+  --filename "weekly-greatthoughts-${WEEK_TAG}.md" \
+  --desc "Great Thoughts portfolio audit — ${WEEK_TAG}" \
+  /tmp/weekly-greatthoughts-body.redacted.md
+
+# Constraints
+
+- READ-ONLY on the project. Do not edit RESULTS.md, ideas.md, or any
+  GitHub issues. Recommendations land in the gist; the user creates
+  issues themselves.
+- Stable IDs are load-bearing. NEVER renumber a problem that was
+  P3 last week. Add new ones at the end (P21, P22 ...). Retire by
+  marking ⏹️, never by deleting.
+- Be willing to retire problems. If a problem has had no movement
+  for 4 weeks AND no attack in the attack column, propose retirement
+  with a reason ("solved by #N", "subsumed by P7", "no attack and
+  out of scope for this project").
+- The 5-year extrapolation must be honest. If the answer is "we'd
+  have a slightly better persona-space SAE picture", say so — the
+  point is to surface drift, not to flatter the project.
+- No effect-size jargon (Cohen's d, η², named statistical tests).
+  Numbers as percentages + N + p-values only — same rules as the
+  clean-result template.
+
+RETURN the gist URL as the SOLE output. No commentary.
 ```
 
 ---

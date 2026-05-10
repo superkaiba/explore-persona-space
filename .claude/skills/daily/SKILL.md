@@ -20,6 +20,28 @@ only dispatches and collects URLs.
 Manual trigger at the end of each work day. **Manual trigger only — no
 cron.** Use `/schedule` if you want to wire a cron later.
 
+## API bucket strategy (for new GitHub calls inside this skill)
+
+GitHub's per-hour rate limits are **separate buckets** that count
+independently:
+
+| Bucket | Limit | What hits it |
+|---|---|---|
+| core (REST) | 5000/hr | `gh api repos/...`, `gh issue list` (without `--json`), `gh issue create`, label edits |
+| graphql | 5000/hr | `gh issue list --json <fields>` (verified empirically 2026-05-10), `gh issue view --json`, `gh project ...`, `scripts/gh_project.py` (except `_fetch_all_issue_labels` and `_gh_issue_view_full`, migrated to REST) |
+| search | 30/min ≈ 1800/hr | `gh issue list --search "..."`, `gh api search/issues` |
+
+**Rule for new call sites in this skill:** prefer REST (`gh api
+repos/.../issues?...` with jq filtering) over `gh issue list --json` or
+`--search` patterns. The `/pm` triage exhausted GraphQL on 2026-05-10
+while core sat at <5/5000 used; REST is the cheap bucket.
+
+Inline-comment patterns (`--json comments`) are the one exception:
+fetching comments per-issue via REST reintroduces an N+1, which is worse
+total quota than one GraphQL call. The clean-result-review subagent at
+Step 1.5 keeps `gh issue list --json ...,comments` on GraphQL for that
+reason — single call, all bodies + comments returned.
+
 ## Top-level variables
 
 - `INTERACTIVE` — boolean string. `true` = call `AskUserQuestion` for the
@@ -244,19 +266,25 @@ Step 3 entirely. Emit a summary block where every line is
 `#<N>: defer (autonomous mode)`. Do NOT flip any labels. Return only
 the summary block.
 
-# Step 1: List drafts.
+# Step 1: List drafts AND their bodies/comments in ONE call.
 
+# Single `gh issue list` with --json fields that include body + comments.
+# Each item already carries everything Step 2 needs — no per-issue
+# `gh issue view` round-trip. Previously this section ran N+1 queries
+# (one list + one view per draft); the new shape is exactly 1 call
+# regardless of draft count.
 gh issue list --label clean-results:draft --state all \
-  --json number,title,labels,updatedAt
+  --json number,title,body,labels,updatedAt,comments
 
 If zero drafts, emit `## Clean-result drafts reviewed\n(no drafts open)`
 and return.
 
-# Step 2: For each draft, fetch body + reviewer verdict + raw-output
-#         spot-check H3 + confidence.
+# Step 2: For each draft in the list above, parse from the in-memory JSON.
 
-For each draft #<N>:
-  gh issue view <N> --json title,body,labels --comments
+For each draft #<N> (from the Step 1 result):
+  # No additional API call — body is already in item.body, comments in
+  # item.comments. Walk item.comments backwards to find the most recent
+  # `epm:reviewer-verdict` marker.
 
 Parse:
   - TL;DR confidence (HIGH | MODERATE | LOW)
@@ -316,11 +344,22 @@ Step 3 entirely. Emit your proposed next-steps as-is, each prefixed
 `(proposed)`, so the user can later spot which ones were never reviewed.
 Return only the block.
 
-# Step 1: List today's clean-results.
+# Step 1: List today's clean-results (drafted OR promoted).
 
-gh issue list --label clean-results --label clean-results:draft --state all \
-  --json number,title,body,updatedAt | \
-  jq '[.[] | select(.updatedAt >= (now - 86400 | todate))]'
+# REST `/repos/.../issues` endpoint routes through the core 5000/hr
+# bucket. `gh issue list --json` would route through GraphQL (verified
+# empirically 2026-05-10: --json decremented GraphQL not core), and
+# `--search` would route through the more-constrained search bucket
+# (30/min). We fetch all recently-updated issues via REST and filter to
+# clean-result labels client-side. PRs are excluded by the
+# `select(has("pull_request") | not)` jq filter (REST's issues endpoint
+# returns both).
+gh api "repos/$GH_REPO_OWNER/$GH_REPO_NAME/issues?state=all&since=$(date -u -d 'yesterday' +%Y-%m-%dT00:00:00Z)&per_page=100" \
+  --paginate \
+  --jq '[.[]
+    | select(has("pull_request") | not)
+    | select(.labels | any(.name == "clean-results" or .name == "clean-results:draft"))
+    | {number, title, body, updatedAt: .updated_at}]'
 
 If zero issues qualify, emit `## Next steps\n(no clean-results updated today)`
 and return.
@@ -389,14 +428,24 @@ Reading-time target: under 5 minutes.
    git log --since="midnight" --no-merges --oneline --stat
    git diff --stat HEAD~$(git log --since="midnight" --oneline | wc -l)..HEAD 2>/dev/null
 
-2. Source issues that posted an `epm:results` marker today:
-   gh issue list --state open --label status:running --label status:uploading --label status:done-experiment \
-     --json number,title,labels,updatedAt | jq '[.[] | select(.updatedAt >= (now - 86400 | todate))]'
-   For each, fetch the latest epm:results comment via `gh issue view <N> --comments`.
+2. Source issues that posted an `epm:results` marker today (ONE call;
+   comments are inlined so we don't N+1 follow up per issue):
+   gh issue list --state open \
+     --search "is:issue (label:status:running OR label:status:uploading OR label:status:done-experiment) updated:>=$(date -u -d 'yesterday' +%Y-%m-%d)" \
+     --json number,title,labels,updatedAt,comments
+   The previous shape used `--label A --label B --label C` which is
+   AND-semantics in `gh issue list` and silently returned an empty set
+   (no issue carries all three labels at once). Switching to a search
+   query with explicit OR also fixes that correctness gap.
+   Walk each item's `comments` array backwards in-memory for the
+   most-recent `epm:results` marker — no further API calls.
 
-3. Clean-result issues UPDATED (created or edited) today:
-   gh issue list --label clean-results --label clean-results:draft --state all \
-     --json number,title,body,createdAt,updatedAt | jq '[.[] | select(.updatedAt >= (now - 86400 | todate))]'
+3. Clean-result issues UPDATED (created or edited) today (drafted OR
+   promoted — search query uses comma-OR inside `label:`; the previous
+   `--label A --label B` AND-semantics returned an empty set):
+   gh issue list --state all \
+     --search "is:issue label:clean-results,clean-results:draft updated:>=$(date -u -d 'yesterday' +%Y-%m-%d)" \
+     --json number,title,body,createdAt,updatedAt
    Read each body; extract the AI TL;DR's first sentence (the colloquial
    title — same text as the issue title minus the `(... confidence)`
    suffix), the AI TL;DR + AI Summary sections, and the hero figure

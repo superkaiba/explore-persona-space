@@ -211,7 +211,14 @@ block the pipeline.
 ### Step 0: Load state
 
 ```
-gh issue view <N> --json number,title,body,labels,state,assignees,comments
+# Same JSON shape as `gh issue view --json
+# number,title,body,labels,state,assignees,comments` but caps comments at
+# the most-recent 50 via GraphQL `comments(last: 50)`. /issue invocations
+# on long-thread issues (#80 has 100+ comments) previously re-fetched the
+# entire thread every time; the helper returns the same shape with a
+# fixed payload ceiling. Override the cap with `--comments-last <N>` if
+# you ever need the full thread.
+uv run python scripts/gh_issue_state.py <N>
 ```
 
 From the result, derive:
@@ -599,9 +606,14 @@ schema). Codex never sees `GH_TOKEN` — the wrapper agent posts via
 **5b. Read both markers from the issue.**
 
 ```bash
-# After both Agent tasks complete:
-claude_marker=$(gh issue view <N> --json comments | jq '... epm:code-review v<n> ...')
-codex_marker=$(gh issue view <N> --json comments | jq '... epm:code-review-codex v<n> ...')
+# After both Agent tasks complete — ONE fetch, parse twice in-memory.
+# Previously this section fetched the same comment thread twice with
+# back-to-back `gh issue view --json comments` calls. Switching to the
+# capped helper (last 50 comments) gives the same data with a single
+# round-trip and a smaller payload on long-thread issues.
+comments_json=$(uv run python scripts/gh_issue_state.py <N> | jq '.comments')
+claude_marker=$(echo "$comments_json" | jq '... epm:code-review v<n> ...')
+codex_marker=$(echo "$comments_json" | jq '... epm:code-review-codex v<n> ...')
 ```
 
 Parse each marker's `**Verdict:**` line. Acceptable values: `PASS`,
@@ -824,10 +836,11 @@ When this skill is re-invoked in `status:running`:
    Instead, shell out:
 
    ```bash
-   # Pipe the failure body via stdin to avoid shell-quoting traps:
-   cat <(gh issue view "$N" --comments --json comments --jq \
-       '.comments[] | select(.body | contains("<!-- epm:failure")) | .body' \
-       | tail -n +1) \
+   # Pipe the failure body via stdin to avoid shell-quoting traps.
+   # Uses the capped state helper (last 50 comments) instead of `gh
+   # issue view --json comments` which over-fetches on long threads.
+   cat <(uv run python scripts/gh_issue_state.py "$N" \
+       | jq -r '.comments[] | select(.body | contains("<!-- epm:failure")) | .body') \
      | uv run python scripts/failure_classifier.py --body - \
          --log "$LATEST_LOG_PATH"
    ```

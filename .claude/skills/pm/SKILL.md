@@ -53,17 +53,22 @@ flow. The PM's job is dispatch, not execution.
 
 1. Load research-pm persona by reading `.claude/agents/research-pm.md` in
    full. Adopt it for the rest of the session.
-2. Run a fast triage scan:
+2. Run a fast triage scan against the **project board columns** (the
+   board is the queue; `status:*` labels drift from columns and are NOT
+   reliable for counts):
    ```bash
-   gh issue list --label status:proposed       --limit 20 --json number,title,labels
-   gh issue list --label status:awaiting-promotion --limit 20 --json number,title,labels
-   gh issue list --label status:blocked        --limit 20 --json number,title,labels
-   gh issue list --label status:running        --limit 20 --json number,title,labels
-   gh issue list --label status:interpreting   --limit 20 --json number,title,labels
+   # ONE GraphQL call — fetches every column at once and groups client-side.
+   uv run python scripts/gh_project.py list-all \
+       --columns "To do,Planning,Plan awaiting review,In flight,Followups running,Awaiting promotion,Blocked,Todo by human"
+   uv run python scripts/spawn_session.py list
+   uv run python scripts/pod.py list-ephemeral
    ```
-   Plus `python scripts/spawn_session.py list` to inventory active Happy
-   sessions, AND `python scripts/pod.py list-ephemeral` for live pod
-   state.
+   `list-all` replaces the per-column `list-by-status` loop and drops PM
+   triage from ~16 GitHub API calls to 3. Use `--counts-only` if you only
+   need the per-column totals; use bare `list-all` (no `--columns`) when
+   you also want to see the terminal columns (`Useful`, `Not useful`,
+   `Done`, `Archived`) — same single API call, just more output.
+   Canonical column names are in `research-pm.md` § Source of truth.
 3. Produce the standard 5–10 bullet state snapshot per
    `research-pm.md` Mode 1 — phases, in-flight, blocked, queue depth,
    open questions. Quantitative, terse.
