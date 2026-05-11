@@ -354,12 +354,15 @@ def _stage_baseline(args: argparse.Namespace) -> None:
 
 def _stage_full(args: argparse.Namespace) -> None:
     cells = _all_new_cells()
+    if getattr(args, "only_source", None):
+        cells = [c for c in cells if c[0] == args.only_source]
     logger.info(
-        "Phase-2 full: %d NEW cells x %d personas x %d arms x %d questions",
+        "Phase-2 full: %d NEW cells x %d personas x %d arms x %d questions%s",
         len(cells),
         len(EVAL_PERSONAS),
         len(EVAL_SCAFFOLDS),
         args.n_questions or 1172,
+        f" (only-source={args.only_source})" if getattr(args, "only_source", None) else "",
     )
     failures: list[tuple[str, str]] = []
     for source, arm, seed in cells:
@@ -829,6 +832,16 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--n-bootstrap", type=int, default=1000)
     parser.add_argument("--force", action="store_true")
+    parser.add_argument(
+        "--only-source",
+        type=str,
+        default=None,
+        help=(
+            "Restrict --stage full to a single source persona "
+            "(software_engineer / librarian / comedian / police_officer). "
+            "Enables per-GPU parallelism on a multi-GPU pod (one process per source)."
+        ),
+    )
     parser.add_argument(
         "--no-symlink",
         action="store_true",
