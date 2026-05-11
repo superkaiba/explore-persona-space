@@ -288,7 +288,9 @@ def _judge_records(
         if mode == "batch":
             new_results = _judge_uncached_via_batch(uncached_items, cfg, judge_system_prompt)
         else:
-            new_results = _judge_uncached_via_sync(uncached_items, cfg, judge_system_prompt)
+            new_results = _judge_uncached_via_sync(
+                uncached_items, cfg, judge_system_prompt, cache=cache
+            )
         for cid, q, c, _umsg in uncached_items:
             if cid in new_results:
                 parsed = new_results[cid]
@@ -398,6 +400,7 @@ def _judge_uncached_via_sync(
     uncached_items: list[tuple[str, str, str, str]],
     cfg: DictConfig,
     judge_system_prompt: str,
+    cache=None,
 ) -> dict[str, dict]:
     """Submit uncached judge items via synchronous Anthropic /v1/messages.
 
@@ -499,11 +502,23 @@ def _judge_uncached_via_sync(
     n_errors = 0
     t_start = time.time()
 
+    # Map cid -> (q, c) for in-loop cache.put — preserves successful results
+    # if we raise on the >5% error-tolerance check below. Without this, all
+    # successful work is discarded on raise and the next run repeats every
+    # request from scratch. (Codex code-review v1-syncjudge Major #1.)
+    item_lookup = {cid: (q, c) for cid, q, c, _u in uncached_items}
+
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
         futures = [pool.submit(_call_one, item) for item in uncached_items]
         for fut in as_completed(futures):
             cid, parsed = fut.result()
             out[cid] = parsed
+            # Persist immediately so a >5% transient blow-up below preserves
+            # the successes. Error rows are also cached so retries shortcut
+            # them (matches the docstring's "still cached" promise).
+            if cache is not None:
+                q, c = item_lookup[cid]
+                cache.put(q, c, parsed)
             completed += 1
             if parsed.get("error"):
                 n_errors += 1
@@ -512,9 +527,11 @@ def _judge_uncached_via_sync(
                 rate = completed / elapsed if elapsed > 0 else 0.0
                 eta_s = (total - completed) / rate if rate > 0 else 0.0
                 err_pct = 100.0 * n_errors / completed
+                cache_stats = cache.stats if cache is not None else {"hits": 0, "misses": 0}
                 logger.info(
                     "Sync judge progress: %d/%d (%.1f%%) elapsed=%.0fs "
-                    "rate=%.1f/s eta=%.0fs errors=%d (%.2f%%)",
+                    "rate=%.1f/s eta=%.0fs errors=%d (%.2f%%) "
+                    "cache_hits=%d cache_misses=%d",
                     completed,
                     total,
                     100.0 * completed / total,
@@ -523,6 +540,8 @@ def _judge_uncached_via_sync(
                     eta_s,
                     n_errors,
                     err_pct,
+                    cache_stats.get("hits", 0),
+                    cache_stats.get("misses", 0),
                 )
 
     final_err_frac = n_errors / total if total else 0.0
@@ -539,7 +558,8 @@ def _judge_uncached_via_sync(
             f"Sync judge transient error rate {final_err_frac:.2%} "
             f"exceeds tolerance {error_tolerance:.2%} "
             f"({n_errors}/{total} requests). Inspect logs and re-run; "
-            f"JudgeCache will skip the successful ones."
+            f"JudgeCache has persisted the {completed - n_errors} successes "
+            f"so the next run only retries the {n_errors} failures."
         )
     return out
 
