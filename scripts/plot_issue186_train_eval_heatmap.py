@@ -154,7 +154,13 @@ def main():
     ):
         im = ax.imshow(mat, cmap="RdBu_r", vmin=vmin, vmax=vmax, aspect="auto")
         ax.set_xticks(range(len(EVAL_SCAFFOLDS)))
-        ax.set_xticklabels([EVAL_LABELS[s] for s in EVAL_SCAFFOLDS], fontsize=8, rotation=0)
+        ax.set_xticklabels(
+            [EVAL_LABELS[s].replace("\n", " ") for s in EVAL_SCAFFOLDS],
+            fontsize=8,
+            rotation=90,
+            ha="center",
+            va="top",
+        )
         ax.set_yticks(range(len(TRAIN_CONDITIONS)))
         ax.set_yticklabels([TRAIN_LABELS[a] for a in TRAIN_CONDITIONS], fontsize=8)
         ax.set_xlabel("eval scaffold")
