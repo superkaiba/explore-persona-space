@@ -1,0 +1,1339 @@
+{
+  "issue": 269,
+  "headline_layer": 10,
+  "seed": 42,
+  "n_perm": 100000,
+  "kl_only_validation": {
+    "per_prompt_rho": {
+      "0": 0.9816864295125164,
+      "10": 0.9810276679841896,
+      "19": 0.9725955204216074
+    },
+    "n_personas": 10,
+    "threshold": 0.95
+  },
+  "js_max_full": 0.4770546369254589,
+  "layers": {
+    "10": {
+      "n_pairs_headline": 171,
+      "rho_raw": 0.6627186982504141,
+      "p_mantel_one_sided": 0.0004899951000489995,
+      "rho_partial_cluster_joint": 0.6008179085141083,
+      "rho_resid_baseline_mean_marginal": 0.450514795881633,
+      "rho_T8": 0.616531067751458,
+      "rho_Tfull": 0.6627186982504141,
+      "t8_gate_ratio": 0.9303058286707588,
+      "per_prompt_median": 0.6230446156430749,
+      "rho_raw_gate_pass": true,
+      "mantel_p_gate_pass": true,
+      "joint_partial_gate_pass": true,
+      "resid_mm_gate_pass": true,
+      "per_prompt_median_gate_pass": true,
+      "t8_gate_pass": true,
+      "all_six_gates_pass": true,
+      "gating_thresholds": {
+        "rho_raw_gt": 0.5,
+        "mantel_p_one_sided_lt": 0.001,
+        "joint_partial_gt": 0.4,
+        "resid_mm_gt": 0.2,
+        "per_prompt_median_gte": 0.2,
+        "t8_over_tfull_gte": 0.3
+      },
+      "rho_cluster_mask_n160": 0.6125014649009727,
+      "rho_partial_cluster_fine": 0.6204672147404191,
+      "rho_resid_baseline_no_persona": 0.33434372525019806,
+      "rho_cluster_collapsed_n66": 0.4826427304039245,
+      "names_12_collapsed": [
+        "medical",
+        "security",
+        "services",
+        "tech",
+        "helpful_assistant",
+        "kindergarten_teacher",
+        "poet",
+        "villain",
+        "florist",
+        "librarian",
+        "comedian",
+        "french_person"
+      ],
+      "rho_stratified_mantel": 0.6627186982504141,
+      "p_stratified_mantel_one_sided": 0.15985840141598584,
+      "rho_T32": 0.6440228478172175,
+      "rho_raw_ha_excluded_n153": 0.771701982228298,
+      "rho_partial_cluster_joint_ha_excluded_n153": 0.7245481809032129,
+      "rho_resid_baseline_mean_marginal_ha_excluded_n153": 0.4884336509723506,
+      "ha_excluded_delta_raw": -0.10898328397788393,
+      "jackknife": {
+        "min": 0.6301348290512376,
+        "max": 0.771701982228298,
+        "range": 0.14156715317706037,
+        "median": 0.6487173816895179,
+        "iqr": 0.032658517952635746,
+        "iterations": [
+          {
+            "persona_dropped": "cybersec_consultant",
+            "rho": 0.6487173816895179
+          },
+          {
+            "persona_dropped": "pentester",
+            "rho": 0.6325941859997587
+          },
+          {
+            "persona_dropped": "software_engineer",
+            "rho": 0.6576668945089997
+          },
+          {
+            "persona_dropped": "data_scientist",
+            "rho": 0.642632651146583
+          },
+          {
+            "persona_dropped": "helpful_assistant",
+            "rho": 0.771701982228298
+          },
+          {
+            "persona_dropped": "private_investigator",
+            "rho": 0.6624448822591237
+          },
+          {
+            "persona_dropped": "medical_doctor",
+            "rho": 0.6874204227145403
+          },
+          {
+            "persona_dropped": "kindergarten_teacher",
+            "rho": 0.6674172061168965
+          },
+          {
+            "persona_dropped": "poet",
+            "rho": 0.6343901196842373
+          },
+          {
+            "persona_dropped": "villain",
+            "rho": 0.6994491576534919
+          },
+          {
+            "persona_dropped": "navy_seal",
+            "rho": 0.6436076823073726
+          },
+          {
+            "persona_dropped": "army_medic",
+            "rho": 0.644515701017249
+          },
+          {
+            "persona_dropped": "surgeon",
+            "rho": 0.6383170493077613
+          },
+          {
+            "persona_dropped": "paramedic",
+            "rho": 0.6301348290512376
+          },
+          {
+            "persona_dropped": "police_officer",
+            "rho": 0.6475815206465361
+          },
+          {
+            "persona_dropped": "florist",
+            "rho": 0.6392418211303659
+          },
+          {
+            "persona_dropped": "librarian",
+            "rho": 0.6633126934984519
+          },
+          {
+            "persona_dropped": "comedian",
+            "rho": 0.6858422794955302
+          },
+          {
+            "persona_dropped": "french_person",
+            "rho": 0.6797743020653237
+          }
+        ],
+        "values": [
+          0.6487173816895179,
+          0.6325941859997587,
+          0.6576668945089997,
+          0.642632651146583,
+          0.771701982228298,
+          0.6624448822591237,
+          0.6874204227145403,
+          0.6674172061168965,
+          0.6343901196842373,
+          0.6994491576534919,
+          0.6436076823073726,
+          0.644515701017249,
+          0.6383170493077613,
+          0.6301348290512376,
+          0.6475815206465361,
+          0.6392418211303659,
+          0.6633126934984519,
+          0.6858422794955302,
+          0.6797743020653237
+        ],
+        "persona_names_in_drop_order": [
+          "cybersec_consultant",
+          "pentester",
+          "software_engineer",
+          "data_scientist",
+          "helpful_assistant",
+          "private_investigator",
+          "medical_doctor",
+          "kindergarten_teacher",
+          "poet",
+          "villain",
+          "navy_seal",
+          "army_medic",
+          "surgeon",
+          "paramedic",
+          "police_officer",
+          "florist",
+          "librarian",
+          "comedian",
+          "french_person"
+        ]
+      },
+      "per_prompt": {
+        "median": 0.6230446156430749,
+        "iqr": 0.0888802889576884,
+        "fraction_above_0.5": 0.9,
+        "values": [
+          0.6775817793457652,
+          0.6733530131758947,
+          0.6457388340893273,
+          0.6752057983536133,
+          0.5976576187390501,
+          0.6218662250701995,
+          0.6605035159718722,
+          0.49731922144622853,
+          0.6681930544555645,
+          0.6242230062159504,
+          0.7161278709770322,
+          0.6046991624067007,
+          0.5372117023063816,
+          0.5825185398516812,
+          0.6998200014399886,
+          0.6586123311013513,
+          0.5748554011567908,
+          0.5662730698154416,
+          0.6207214342285262,
+          0.46224830201358397
+        ]
+      },
+      "h_pair_residuals": {
+        "top5_baseline_residual_pairs": [
+          {
+            "pair": [
+              "poet",
+              "comedian"
+            ],
+            "residual_magnitude": 10.567457447951272,
+            "z_x": -3.1622007044899463,
+            "z_y": -7.405256743461326,
+            "v_cos": 0.02049100399017334,
+            "v_js": 0.2762426197528839,
+            "b_cos": 0.05697999982272877,
+            "b_js": 0.7569969812736792
+          },
+          {
+            "pair": [
+              "software_engineer",
+              "helpful_assistant"
+            ],
+            "residual_magnitude": 6.077092441169778,
+            "z_x": -5.026745035684833,
+            "z_y": -1.050347405484945,
+            "v_cos": 0.03278321027755737,
+            "v_js": 0.04305001497268677,
+            "b_cos": 0.07641620846355662,
+            "b_js": 0.23943661118254944
+          },
+          {
+            "pair": [
+              "poet",
+              "villain"
+            ],
+            "residual_magnitude": 5.042979297762292,
+            "z_x": -1.7304583116759102,
+            "z_y": -3.3125209860863816,
+            "v_cos": 0.023956239223480225,
+            "v_js": 0.2696700893342495,
+            "b_cos": 0.05363761677461512,
+            "b_js": 0.5532994293552987
+          },
+          {
+            "pair": [
+              "helpful_assistant",
+              "kindergarten_teacher"
+            ],
+            "residual_magnitude": 4.896786829694189,
+            "z_x": -4.575592880333325,
+            "z_y": 0.3211939493608646,
+            "v_cos": 0.03801894187927246,
+            "v_js": 0.16414312794804573,
+            "b_cos": 0.07908232071820427,
+            "b_js": 0.2824637321426588
+          },
+          {
+            "pair": [
+              "villain",
+              "comedian"
+            ],
+            "residual_magnitude": 4.552988259417656,
+            "z_x": -1.3780778785734895,
+            "z_y": -3.174910380844167,
+            "v_cos": 0.018314778804779053,
+            "v_js": 0.22855800539255142,
+            "b_cos": 0.04698594177470487,
+            "b_js": 0.5095412612399635
+          }
+        ],
+        "strict_check": {
+          "matched_strict_2_of_2": false,
+          "expected": [
+            [
+              "comedian",
+              "helpful_assistant"
+            ],
+            [
+              "helpful_assistant",
+              "poet"
+            ]
+          ],
+          "observed_top5": [
+            [
+              "poet",
+              "comedian"
+            ],
+            [
+              "software_engineer",
+              "helpful_assistant"
+            ],
+            [
+              "poet",
+              "villain"
+            ],
+            [
+              "helpful_assistant",
+              "kindergarten_teacher"
+            ],
+            [
+              "villain",
+              "comedian"
+            ]
+          ]
+        }
+      },
+      "n_190_secondary": {
+        "rho_raw": 0.5586155615915881,
+        "rho_obs_mantel": 0.5586155615915881,
+        "p_mantel_one_sided": 0.003089969100308997,
+        "caveat": "no_persona row of JS uses literal-empty-system ChatML; no_persona row of cosine uses Qwen default chat-template; NOT apples-to-apples in that single row/column"
+      }
+    },
+    "15": {
+      "n_pairs_headline": 171,
+      "rho_raw": 0.9211726306189553,
+      "p_mantel_one_sided": 9.99990000099999e-06,
+      "rho_partial_cluster_joint": 0.9070959083897565,
+      "rho_resid_baseline_mean_marginal": 0.8672354621163031,
+      "rho_T8": 0.9173638610891114,
+      "rho_Tfull": 0.9211726306189553,
+      "t8_gate_ratio": 0.9958653031980719,
+      "per_prompt_median": 0.892641658866729,
+      "rho_raw_gate_pass": true,
+      "mantel_p_gate_pass": true,
+      "joint_partial_gate_pass": true,
+      "resid_mm_gate_pass": true,
+      "per_prompt_median_gate_pass": true,
+      "t8_gate_pass": true,
+      "all_six_gates_pass": true,
+      "gating_thresholds": {
+        "rho_raw_gt": 0.5,
+        "mantel_p_one_sided_lt": 0.001,
+        "joint_partial_gt": 0.4,
+        "resid_mm_gt": 0.2,
+        "per_prompt_median_gte": 0.2,
+        "t8_over_tfull_gte": 0.3
+      },
+      "rho_cluster_mask_n160": 0.918689206609633,
+      "rho_partial_cluster_fine": 0.9132727441043339,
+      "rho_resid_baseline_no_persona": 0.8242662058703532,
+      "rho_cluster_collapsed_n66": 0.9334098737083812,
+      "names_12_collapsed": [
+        "medical",
+        "security",
+        "services",
+        "tech",
+        "helpful_assistant",
+        "kindergarten_teacher",
+        "poet",
+        "villain",
+        "florist",
+        "librarian",
+        "comedian",
+        "french_person"
+      ],
+      "rho_stratified_mantel": 0.9211726306189553,
+      "p_stratified_mantel_one_sided": 0.04166958330416696,
+      "rho_T32": 0.9283221734226128,
+      "rho_raw_ha_excluded_n153": 0.9312351734952352,
+      "rho_partial_cluster_joint_ha_excluded_n153": 0.9149978773033121,
+      "rho_resid_baseline_mean_marginal_ha_excluded_n153": 0.8861793521236244,
+      "ha_excluded_delta_raw": -0.010062542876279945,
+      "jackknife": {
+        "min": 0.8959866243147976,
+        "max": 0.9337916984975808,
+        "range": 0.03780507418278323,
+        "median": 0.9216590942597135,
+        "iqr": 0.012243174781874533,
+        "iterations": [
+          {
+            "persona_dropped": "cybersec_consultant",
+            "rho": 0.9288361277525363
+          },
+          {
+            "persona_dropped": "pentester",
+            "rho": 0.9206740112312866
+          },
+          {
+            "persona_dropped": "software_engineer",
+            "rho": 0.920831490490933
+          },
+          {
+            "persona_dropped": "data_scientist",
+            "rho": 0.9228954739790651
+          },
+          {
+            "persona_dropped": "helpful_assistant",
+            "rho": 0.9312351734952352
+          },
+          {
+            "persona_dropped": "private_investigator",
+            "rho": 0.9337916984975808
+          },
+          {
+            "persona_dropped": "medical_doctor",
+            "rho": 0.9285982335517937
+          },
+          {
+            "persona_dropped": "kindergarten_teacher",
+            "rho": 0.9236091565812927
+          },
+          {
+            "persona_dropped": "poet",
+            "rho": 0.8960469355206196
+          },
+          {
+            "persona_dropped": "villain",
+            "rho": 0.903069840376342
+          },
+          {
+            "persona_dropped": "navy_seal",
+            "rho": 0.9164019674855586
+          },
+          {
+            "persona_dropped": "army_medic",
+            "rho": 0.9165460442550224
+          },
+          {
+            "persona_dropped": "surgeon",
+            "rho": 0.9319153498720061
+          },
+          {
+            "persona_dropped": "paramedic",
+            "rho": 0.9205131813490945
+          },
+          {
+            "persona_dropped": "police_officer",
+            "rho": 0.9241586586787823
+          },
+          {
+            "persona_dropped": "florist",
+            "rho": 0.9216590942597135
+          },
+          {
+            "persona_dropped": "librarian",
+            "rho": 0.9300758580944339
+          },
+          {
+            "persona_dropped": "comedian",
+            "rho": 0.8959866243147976
+          },
+          {
+            "persona_dropped": "french_person",
+            "rho": 0.9073452347446155
+          }
+        ],
+        "values": [
+          0.9288361277525363,
+          0.9206740112312866,
+          0.920831490490933,
+          0.9228954739790651,
+          0.9312351734952352,
+          0.9337916984975808,
+          0.9285982335517937,
+          0.9236091565812927,
+          0.8960469355206196,
+          0.903069840376342,
+          0.9164019674855586,
+          0.9165460442550224,
+          0.9319153498720061,
+          0.9205131813490945,
+          0.9241586586787823,
+          0.9216590942597135,
+          0.9300758580944339,
+          0.8959866243147976,
+          0.9073452347446155
+        ],
+        "persona_names_in_drop_order": [
+          "cybersec_consultant",
+          "pentester",
+          "software_engineer",
+          "data_scientist",
+          "helpful_assistant",
+          "private_investigator",
+          "medical_doctor",
+          "kindergarten_teacher",
+          "poet",
+          "villain",
+          "navy_seal",
+          "army_medic",
+          "surgeon",
+          "paramedic",
+          "police_officer",
+          "florist",
+          "librarian",
+          "comedian",
+          "french_person"
+        ]
+      },
+      "per_prompt": {
+        "median": 0.892641658866729,
+        "iqr": 0.05845213238294111,
+        "fraction_above_0.5": 1.0,
+        "values": [
+          0.908625530995752,
+          0.8808145534835722,
+          0.8450644394844841,
+          0.8793841649266807,
+          0.899030407756738,
+          0.8921184630522956,
+          0.8931648546811625,
+          0.8399116807065544,
+          0.8935008519931842,
+          0.8136750905992753,
+          0.9455756353949168,
+          0.9263421892624861,
+          0.8339933280533756,
+          0.9008399932800538,
+          0.9531787745698035,
+          0.8978880168958648,
+          0.8486500107999136,
+          0.842093263253894,
+          0.908575131398949,
+          0.7127174982600138
+        ]
+      },
+      "h_pair_residuals": {
+        "top5_baseline_residual_pairs": [
+          {
+            "pair": [
+              "poet",
+              "comedian"
+            ],
+            "residual_magnitude": 15.04285328077346,
+            "z_x": -7.637596537312134,
+            "z_y": -7.405256743461326,
+            "v_cos": 0.12586289644241333,
+            "v_js": 0.2762426197528839,
+            "b_cos": 0.2823632815304924,
+            "b_js": 0.7569969812736792
+          },
+          {
+            "pair": [
+              "villain",
+              "comedian"
+            ],
+            "residual_magnitude": 6.429575804677331,
+            "z_x": -3.254665423833164,
+            "z_y": -3.174910380844167,
+            "v_cos": 0.12793052196502686,
+            "v_js": 0.22855800539255142,
+            "b_cos": 0.22243750095367432,
+            "b_js": 0.5095412612399635
+          },
+          {
+            "pair": [
+              "poet",
+              "villain"
+            ],
+            "residual_magnitude": 5.928883082446299,
+            "z_x": -2.616362096359917,
+            "z_y": -3.3125209860863816,
+            "v_cos": 0.1287168264389038,
+            "v_js": 0.2696700893342495,
+            "b_cos": 0.21414434208589445,
+            "b_js": 0.5532994293552987
+          },
+          {
+            "pair": [
+              "comedian",
+              "french_person"
+            ],
+            "residual_magnitude": 3.9992466274622336,
+            "z_x": -1.9004899759407488,
+            "z_y": -2.098756651521485,
+            "v_cos": 0.13933861255645752,
+            "v_js": 0.26748107820749284,
+            "b_cos": 0.21355704349630017,
+            "b_js": 0.49267328605055805
+          },
+          {
+            "pair": [
+              "poet",
+              "french_person"
+            ],
+            "residual_magnitude": 3.92347762929402,
+            "z_x": -1.8955802950815617,
+            "z_y": -2.0278973342124584,
+            "v_cos": 0.13130581378936768,
+            "v_js": 0.31846650764346124,
+            "b_cos": 0.20630142618628108,
+            "b_js": 0.535269884107744
+          }
+        ],
+        "strict_check": {
+          "matched_strict_2_of_2": false,
+          "expected": [
+            [
+              "comedian",
+              "helpful_assistant"
+            ],
+            [
+              "helpful_assistant",
+              "poet"
+            ]
+          ],
+          "observed_top5": [
+            [
+              "poet",
+              "comedian"
+            ],
+            [
+              "villain",
+              "comedian"
+            ],
+            [
+              "poet",
+              "villain"
+            ],
+            [
+              "comedian",
+              "french_person"
+            ],
+            [
+              "poet",
+              "french_person"
+            ]
+          ]
+        }
+      },
+      "n_190_secondary": {
+        "rho_raw": 0.9037558993469713,
+        "rho_obs_mantel": 0.9037558993469713,
+        "p_mantel_one_sided": 9.99990000099999e-06,
+        "caveat": "no_persona row of JS uses literal-empty-system ChatML; no_persona row of cosine uses Qwen default chat-template; NOT apples-to-apples in that single row/column"
+      }
+    },
+    "20": {
+      "n_pairs_headline": 171,
+      "rho_raw": 0.939873281013752,
+      "p_mantel_one_sided": 9.99990000099999e-06,
+      "rho_partial_cluster_joint": 0.9311566308029505,
+      "rho_resid_baseline_mean_marginal": 0.9088463292293663,
+      "rho_T8": 0.965872273021816,
+      "rho_Tfull": 0.939873281013752,
+      "t8_gate_ratio": 1.027662231210596,
+      "per_prompt_median": 0.9166882664938681,
+      "rho_raw_gate_pass": true,
+      "mantel_p_gate_pass": true,
+      "joint_partial_gate_pass": true,
+      "resid_mm_gate_pass": true,
+      "per_prompt_median_gate_pass": true,
+      "t8_gate_pass": true,
+      "all_six_gates_pass": true,
+      "gating_thresholds": {
+        "rho_raw_gt": 0.5,
+        "mantel_p_one_sided_lt": 0.001,
+        "joint_partial_gt": 0.4,
+        "resid_mm_gt": 0.2,
+        "per_prompt_median_gte": 0.2,
+        "t8_over_tfull_gte": 0.3
+      },
+      "rho_cluster_mask_n160": 0.9393472401265673,
+      "rho_partial_cluster_fine": 0.9353570401570168,
+      "rho_resid_baseline_no_persona": 0.9122783017735859,
+      "rho_cluster_collapsed_n66": 0.9395470201440352,
+      "names_12_collapsed": [
+        "medical",
+        "security",
+        "services",
+        "tech",
+        "helpful_assistant",
+        "kindergarten_teacher",
+        "poet",
+        "villain",
+        "florist",
+        "librarian",
+        "comedian",
+        "french_person"
+      ],
+      "rho_stratified_mantel": 0.939873281013752,
+      "p_stratified_mantel_one_sided": 0.0016599834001659983,
+      "rho_T32": 0.9601675186598508,
+      "rho_raw_ha_excluded_n153": 0.9410089394609517,
+      "rho_partial_cluster_joint_ha_excluded_n153": 0.9290896664764082,
+      "rho_resid_baseline_mean_marginal_ha_excluded_n153": 0.9187306501547987,
+      "ha_excluded_delta_raw": -0.00113565844719965,
+      "jackknife": {
+        "min": 0.922979239542707,
+        "max": 0.9450095827804805,
+        "range": 0.02203034323777353,
+        "median": 0.9410089394609517,
+        "iqr": 0.005823381984372711,
+        "iterations": [
+          {
+            "persona_dropped": "cybersec_consultant",
+            "rho": 0.9450095827804805
+          },
+          {
+            "persona_dropped": "pentester",
+            "rho": 0.9439541366785947
+          },
+          {
+            "persona_dropped": "software_engineer",
+            "rho": 0.9384256094782409
+          },
+          {
+            "persona_dropped": "data_scientist",
+            "rho": 0.9394643024673983
+          },
+          {
+            "persona_dropped": "helpful_assistant",
+            "rho": 0.9410089394609517
+          },
+          {
+            "persona_dropped": "private_investigator",
+            "rho": 0.9438201117767681
+          },
+          {
+            "persona_dropped": "medical_doctor",
+            "rho": 0.9424932652486832
+          },
+          {
+            "persona_dropped": "kindergarten_teacher",
+            "rho": 0.9405096967016471
+          },
+          {
+            "persona_dropped": "poet",
+            "rho": 0.9234550279441919
+          },
+          {
+            "persona_dropped": "villain",
+            "rho": 0.9293119161540213
+          },
+          {
+            "persona_dropped": "navy_seal",
+            "rho": 0.9369546861806922
+          },
+          {
+            "persona_dropped": "army_medic",
+            "rho": 0.9371858791363434
+          },
+          {
+            "persona_dropped": "surgeon",
+            "rho": 0.9429120930668917
+          },
+          {
+            "persona_dropped": "paramedic",
+            "rho": 0.9427144063366973
+          },
+          {
+            "persona_dropped": "police_officer",
+            "rho": 0.9428752362188894
+          },
+          {
+            "persona_dropped": "florist",
+            "rho": 0.9426909519788775
+          },
+          {
+            "persona_dropped": "librarian",
+            "rho": 0.9437430474582177
+          },
+          {
+            "persona_dropped": "comedian",
+            "rho": 0.922979239542707
+          },
+          {
+            "persona_dropped": "french_person",
+            "rho": 0.9326256818516879
+          }
+        ],
+        "values": [
+          0.9450095827804805,
+          0.9439541366785947,
+          0.9384256094782409,
+          0.9394643024673983,
+          0.9410089394609517,
+          0.9438201117767681,
+          0.9424932652486832,
+          0.9405096967016471,
+          0.9234550279441919,
+          0.9293119161540213,
+          0.9369546861806922,
+          0.9371858791363434,
+          0.9429120930668917,
+          0.9427144063366973,
+          0.9428752362188894,
+          0.9426909519788775,
+          0.9437430474582177,
+          0.922979239542707,
+          0.9326256818516879
+        ],
+        "persona_names_in_drop_order": [
+          "cybersec_consultant",
+          "pentester",
+          "software_engineer",
+          "data_scientist",
+          "helpful_assistant",
+          "private_investigator",
+          "medical_doctor",
+          "kindergarten_teacher",
+          "poet",
+          "villain",
+          "navy_seal",
+          "army_medic",
+          "surgeon",
+          "paramedic",
+          "police_officer",
+          "florist",
+          "librarian",
+          "comedian",
+          "french_person"
+        ]
+      },
+      "per_prompt": {
+        "median": 0.9166882664938681,
+        "iqr": 0.05676194590443273,
+        "fraction_above_0.5": 1.0,
+        "values": [
+          0.91781025751794,
+          0.891436868505052,
+          0.8679362565099481,
+          0.8806129550963594,
+          0.9328989368085057,
+          0.9346437228502174,
+          0.9313821489428087,
+          0.858938728490172,
+          0.921187030503756,
+          0.8099455204358367,
+          0.9628290973672212,
+          0.9287781697746419,
+          0.8532963736290111,
+          0.923215014279886,
+          0.935342117263062,
+          0.9155662754697963,
+          0.8956200350397197,
+          0.8773537811697508,
+          0.9390716874265007,
+          0.7107111143110856
+        ]
+      },
+      "h_pair_residuals": {
+        "top5_baseline_residual_pairs": [
+          {
+            "pair": [
+              "poet",
+              "comedian"
+            ],
+            "residual_magnitude": 13.536755703428511,
+            "z_x": -6.131498959967186,
+            "z_y": -7.405256743461326,
+            "v_cos": 0.21449363231658936,
+            "v_js": 0.2762426197528839,
+            "b_cos": 0.43962658854091874,
+            "b_js": 0.7569969812736792
+          },
+          {
+            "pair": [
+              "villain",
+              "comedian"
+            ],
+            "residual_magnitude": 8.327442367850647,
+            "z_x": -5.152531987006481,
+            "z_y": -3.174910380844167,
+            "v_cos": 0.18640822172164917,
+            "v_js": 0.22855800539255142,
+            "b_cos": 0.3904285010169534,
+            "b_js": 0.5095412612399635
+          },
+          {
+            "pair": [
+              "poet",
+              "villain"
+            ],
+            "residual_magnitude": 7.312936443088427,
+            "z_x": -4.000415457002045,
+            "z_y": -3.3125209860863816,
+            "v_cos": 0.20411020517349243,
+            "v_js": 0.2696700893342495,
+            "b_cos": 0.37800666163949403,
+            "b_js": 0.5532994293552987
+          },
+          {
+            "pair": [
+              "comedian",
+              "french_person"
+            ],
+            "residual_magnitude": 3.96561209021678,
+            "z_x": -1.866855438695295,
+            "z_y": -2.098756651521485,
+            "v_cos": 0.20417064428329468,
+            "v_js": 0.26748107820749284,
+            "b_cos": 0.32568396189633536,
+            "b_js": 0.49267328605055805
+          },
+          {
+            "pair": [
+              "medical_doctor",
+              "comedian"
+            ],
+            "residual_magnitude": 3.705492381120794,
+            "z_x": 1.847540047724,
+            "z_y": 1.857952333396794,
+            "v_cos": 0.24561721086502075,
+            "v_js": 0.40671536698937416,
+            "b_cos": 0.2716365000780891,
+            "b_js": 0.42715718237792744
+          }
+        ],
+        "strict_check": {
+          "matched_strict_2_of_2": false,
+          "expected": [
+            [
+              "comedian",
+              "helpful_assistant"
+            ],
+            [
+              "helpful_assistant",
+              "poet"
+            ]
+          ],
+          "observed_top5": [
+            [
+              "poet",
+              "comedian"
+            ],
+            [
+              "villain",
+              "comedian"
+            ],
+            [
+              "poet",
+              "villain"
+            ],
+            [
+              "comedian",
+              "french_person"
+            ],
+            [
+              "medical_doctor",
+              "comedian"
+            ]
+          ]
+        }
+      },
+      "n_190_secondary": {
+        "rho_raw": 0.9424040030267641,
+        "rho_obs_mantel": 0.9424040030267641,
+        "p_mantel_one_sided": 9.99990000099999e-06,
+        "caveat": "no_persona row of JS uses literal-empty-system ChatML; no_persona row of cosine uses Qwen default chat-template; NOT apples-to-apples in that single row/column"
+      }
+    },
+    "25": {
+      "n_pairs_headline": 171,
+      "rho_raw": 0.897876016991864,
+      "p_mantel_one_sided": 9.99990000099999e-06,
+      "rho_partial_cluster_joint": 0.881428224645122,
+      "rho_resid_baseline_mean_marginal": 0.8916696666426669,
+      "rho_T8": 0.935608515131879,
+      "rho_Tfull": 0.897876016991864,
+      "t8_gate_ratio": 1.0420241741910308,
+      "per_prompt_median": 0.8713154294765643,
+      "rho_raw_gate_pass": true,
+      "mantel_p_gate_pass": true,
+      "joint_partial_gate_pass": true,
+      "resid_mm_gate_pass": true,
+      "per_prompt_median_gate_pass": true,
+      "t8_gate_pass": true,
+      "all_six_gates_pass": true,
+      "gating_thresholds": {
+        "rho_raw_gt": 0.5,
+        "mantel_p_one_sided_lt": 0.001,
+        "joint_partial_gt": 0.4,
+        "resid_mm_gt": 0.2,
+        "per_prompt_median_gte": 0.2,
+        "t8_over_tfull_gte": 0.3
+      },
+      "rho_cluster_mask_n160": 0.8920660963318879,
+      "rho_partial_cluster_fine": 0.8894380115758359,
+      "rho_resid_baseline_no_persona": 0.8931912544699643,
+      "rho_cluster_collapsed_n66": 0.8069930069930071,
+      "names_12_collapsed": [
+        "medical",
+        "security",
+        "services",
+        "tech",
+        "helpful_assistant",
+        "kindergarten_teacher",
+        "poet",
+        "villain",
+        "florist",
+        "librarian",
+        "comedian",
+        "french_person"
+      ],
+      "rho_stratified_mantel": 0.897876016991864,
+      "p_stratified_mantel_one_sided": 0.001949980500194998,
+      "rho_T32": 0.9146590827273384,
+      "rho_raw_ha_excluded_n153": 0.8835792690281854,
+      "rho_partial_cluster_joint_ha_excluded_n153": 0.8565191183133157,
+      "rho_resid_baseline_mean_marginal_ha_excluded_n153": 0.9081929422486696,
+      "ha_excluded_delta_raw": 0.014296747963678635,
+      "jackknife": {
+        "min": 0.8835792690281854,
+        "max": 0.9255357645450524,
+        "range": 0.041956495516866976,
+        "median": 0.8939025370913914,
+        "iqr": 0.004543444171927202,
+        "iterations": [
+          {
+            "persona_dropped": "cybersec_consultant",
+            "rho": 0.8964858670741024
+          },
+          {
+            "persona_dropped": "pentester",
+            "rho": 0.8961374023293527
+          },
+          {
+            "persona_dropped": "software_engineer",
+            "rho": 0.8897745701151273
+          },
+          {
+            "persona_dropped": "data_scientist",
+            "rho": 0.8911148191333949
+          },
+          {
+            "persona_dropped": "helpful_assistant",
+            "rho": 0.8835792690281854
+          },
+          {
+            "persona_dropped": "private_investigator",
+            "rho": 0.8939025370913914
+          },
+          {
+            "persona_dropped": "medical_doctor",
+            "rho": 0.8949713856834599
+          },
+          {
+            "persona_dropped": "kindergarten_teacher",
+            "rho": 0.8930715827000656
+          },
+          {
+            "persona_dropped": "poet",
+            "rho": 0.9156815836382398
+          },
+          {
+            "persona_dropped": "villain",
+            "rho": 0.8939360433168482
+          },
+          {
+            "persona_dropped": "navy_seal",
+            "rho": 0.8928336884993232
+          },
+          {
+            "persona_dropped": "army_medic",
+            "rho": 0.8876402235535361
+          },
+          {
+            "persona_dropped": "surgeon",
+            "rho": 0.8935976304397356
+          },
+          {
+            "persona_dropped": "paramedic",
+            "rho": 0.896730462519936
+          },
+          {
+            "persona_dropped": "police_officer",
+            "rho": 0.8974541969898007
+          },
+          {
+            "persona_dropped": "florist",
+            "rho": 0.893745057831745
+          },
+          {
+            "persona_dropped": "librarian",
+            "rho": 0.8965495289024701
+          },
+          {
+            "persona_dropped": "comedian",
+            "rho": 0.8857270180799592
+          },
+          {
+            "persona_dropped": "french_person",
+            "rho": 0.9255357645450524
+          }
+        ],
+        "values": [
+          0.8964858670741024,
+          0.8961374023293527,
+          0.8897745701151273,
+          0.8911148191333949,
+          0.8835792690281854,
+          0.8939025370913914,
+          0.8949713856834599,
+          0.8930715827000656,
+          0.9156815836382398,
+          0.8939360433168482,
+          0.8928336884993232,
+          0.8876402235535361,
+          0.8935976304397356,
+          0.896730462519936,
+          0.8974541969898007,
+          0.893745057831745,
+          0.8965495289024701,
+          0.8857270180799592,
+          0.9255357645450524
+        ],
+        "persona_names_in_drop_order": [
+          "cybersec_consultant",
+          "pentester",
+          "software_engineer",
+          "data_scientist",
+          "helpful_assistant",
+          "private_investigator",
+          "medical_doctor",
+          "kindergarten_teacher",
+          "poet",
+          "villain",
+          "navy_seal",
+          "army_medic",
+          "surgeon",
+          "paramedic",
+          "police_officer",
+          "florist",
+          "librarian",
+          "comedian",
+          "french_person"
+        ]
+      },
+      "per_prompt": {
+        "median": 0.8713154294765643,
+        "iqr": 0.04242926056591545,
+        "fraction_above_0.5": 1.0,
+        "values": [
+          0.861825905392757,
+          0.879247366021072,
+          0.8119303045575635,
+          0.846528427772578,
+          0.9123815009479924,
+          0.899500803993568,
+          0.883624931000552,
+          0.8197398420812635,
+          0.8821297429620564,
+          0.7830393356853146,
+          0.9352293181654547,
+          0.8850385196918424,
+          0.8444020447836418,
+          0.84202846377229,
+          0.872172222622219,
+          0.8928864569083449,
+          0.8572875416996664,
+          0.8704586363309095,
+          0.8898360813113496,
+          0.6603931168550652
+        ]
+      },
+      "h_pair_residuals": {
+        "top5_baseline_residual_pairs": [
+          {
+            "pair": [
+              "poet",
+              "comedian"
+            ],
+            "residual_magnitude": 11.630599569944359,
+            "z_x": -4.225342826483033,
+            "z_y": -7.405256743461326,
+            "v_cos": 0.2740898132324219,
+            "v_js": 0.2762426197528839,
+            "b_cos": 0.4248979161767399,
+            "b_js": 0.7569969812736792
+          },
+          {
+            "pair": [
+              "villain",
+              "comedian"
+            ],
+            "residual_magnitude": 8.450877924354128,
+            "z_x": -5.275967543509961,
+            "z_y": -3.174910380844167,
+            "v_cos": 0.22052741050720215,
+            "v_js": 0.22855800539255142,
+            "b_cos": 0.397354897330789,
+            "b_js": 0.5095412612399635
+          },
+          {
+            "pair": [
+              "poet",
+              "villain"
+            ],
+            "residual_magnitude": 7.390059387449189,
+            "z_x": -4.0775384013628075,
+            "z_y": -3.3125209860863816,
+            "v_cos": 0.16940855979919434,
+            "v_js": 0.2696700893342495,
+            "b_cos": 0.3289850950241089,
+            "b_js": 0.5532994293552987
+          },
+          {
+            "pair": [
+              "comedian",
+              "french_person"
+            ],
+            "residual_magnitude": 4.962030279917826,
+            "z_x": -2.8632736283963407,
+            "z_y": -2.098756651521485,
+            "v_cos": 0.3204779624938965,
+            "v_js": 0.26748107820749284,
+            "b_cos": 0.4401067775838515,
+            "b_js": 0.49267328605055805
+          },
+          {
+            "pair": [
+              "poet",
+              "french_person"
+            ],
+            "residual_magnitude": 4.218040483966416,
+            "z_x": -2.1901431497539576,
+            "z_y": -2.0278973342124584,
+            "v_cos": 0.2593846321105957,
+            "v_js": 0.31846650764346124,
+            "b_cos": 0.3729104434742647,
+            "b_js": 0.535269884107744
+          }
+        ],
+        "strict_check": {
+          "matched_strict_2_of_2": false,
+          "expected": [
+            [
+              "comedian",
+              "helpful_assistant"
+            ],
+            [
+              "helpful_assistant",
+              "poet"
+            ]
+          ],
+          "observed_top5": [
+            [
+              "poet",
+              "comedian"
+            ],
+            [
+              "villain",
+              "comedian"
+            ],
+            [
+              "poet",
+              "villain"
+            ],
+            [
+              "comedian",
+              "french_person"
+            ],
+            [
+              "poet",
+              "french_person"
+            ]
+          ]
+        }
+      },
+      "n_190_secondary": {
+        "rho_raw": 0.9072900401089985,
+        "rho_obs_mantel": 0.9072900401089985,
+        "p_mantel_one_sided": 9.99990000099999e-06,
+        "caveat": "no_persona row of JS uses literal-empty-system ChatML; no_persona row of cosine uses Qwen default chat-template; NOT apples-to-apples in that single row/column"
+      }
+    }
+  },
+  "exploratory": {
+    "cka_l10_n19_rdm_form": {
+      "value": 0.10125732574623446,
+      "caveat": "Exploratory only. At n=19 over the flattened similarity space CKA is uncalibrated for inference (Kornblith et al. 2019). Computed between centroid-Gram and JS-similarity matrices (RDM-style), NOT between centroids and flattened log-probs as the plan \u00a73 H_cka originally framed. The log-prob analogue requires retained per-prompt log-prob tensors (currently dropped to save disk)."
+    }
+  },
+  "config": {
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "cosine_path": "/workspace/explore-persona-space/experiments/phase_minus1_persona_vectors/cosine_matrix.json",
+    "cosine_sha256": "c1a8050744e06c60fc56ca88582324ec3c70c29df39df2f29fb814e905161b0f",
+    "persona_count_primary": 19,
+    "n_pairs_headline": 171,
+    "anchor_persona": "no_persona",
+    "kl_only": true,
+    "t_cutoffs": [
+      "8",
+      "32",
+      "None"
+    ],
+    "clusters_fine": {
+      "medical": [
+        "army_medic",
+        "medical_doctor",
+        "paramedic",
+        "surgeon"
+      ],
+      "security": [
+        "cybersec_consultant",
+        "pentester",
+        "private_investigator"
+      ],
+      "services": [
+        "navy_seal",
+        "police_officer"
+      ],
+      "tech": [
+        "data_scientist",
+        "software_engineer"
+      ]
+    },
+    "civilian_singletons": [
+      "comedian",
+      "florist",
+      "french_person",
+      "helpful_assistant",
+      "kindergarten_teacher",
+      "librarian",
+      "poet",
+      "villain"
+    ],
+    "pre_registered_outlier_pairs": [
+      [
+        "comedian",
+        "helpful_assistant"
+      ],
+      [
+        "helpful_assistant",
+        "poet"
+      ]
+    ]
+  }
+}
