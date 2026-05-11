@@ -226,7 +226,7 @@ def fig2_h1_scatter(data: dict) -> None:
 
     # Annotate prediction direction
     ax.annotate(
-        "Predicted direction:\nlow |t| → higher r_p\n(ρ < 0)",
+        "Predicted direction:\nlow |t| → higher r_p\n" + r"($\rho$ < 0)",
         xy=(0.04, 0.96),
         xycoords="axes fraction",
         ha="left",
@@ -237,7 +237,7 @@ def fig2_h1_scatter(data: dict) -> None:
     )
     # Stats annotation
     ax.annotate(
-        f"partial Spearman ρ = +{rho_primary:.3f}\n"
+        r"partial Spearman $\rho$" + f" = +{rho_primary:.3f}\n"
         f"p = {p_primary:.3f} (one-sided, less)\n"
         f"N = {n} bystanders",
         xy=(0.96, 0.04),
