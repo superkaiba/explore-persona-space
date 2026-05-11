@@ -79,9 +79,61 @@ def load_roles(roles_filter: list[str] | None = None) -> dict[str, list[str]]:
     return role_prompts
 
 
-def load_extraction_questions(n_questions: int | None = None) -> list[str]:
-    """Load the 240 shared extraction questions."""
-    questions_path = DATA_DIR / "extraction_questions.jsonl"
+def load_inline_personas(
+    personas_json_path: Path,
+    roles_filter: list[str] | None = None,
+) -> dict[str, list[str]]:
+    """Load role -> list of system prompts from an inline-personas JSON file.
+
+    Bypasses the data/assistant_axis/{role_list.json, instructions/} pipeline
+    so a self-contained issue can ship its own persona definitions in-tree.
+
+    Schema (matches data/issue_205/personas.json and data/issue_238/personas.json):
+
+        {
+          "eval_personas": {"persona_name": "<system prompt string>", ...},
+          "eval_persona_order": ["persona_name", ...]   # optional, sorts roles
+          ...                                           # other keys ignored
+        }
+
+    Each persona's prompt becomes a 1-element list, so `--n-prompts 1` is the
+    natural call (and `--n-prompts > 1` will silently use the single available
+    prompt). This matches how #205 invoked extraction.
+    """
+    with open(personas_json_path) as f:
+        data = json.load(f)
+
+    if "eval_personas" not in data:
+        raise ValueError(
+            f"{personas_json_path} is missing required key 'eval_personas'. "
+            f"Got top-level keys: {sorted(data.keys())}"
+        )
+
+    eval_personas = data["eval_personas"]
+    if not isinstance(eval_personas, dict):
+        raise ValueError(
+            f"'eval_personas' in {personas_json_path} must be a dict; got {type(eval_personas)}"
+        )
+
+    if roles_filter:
+        eval_personas = {k: v for k, v in eval_personas.items() if k in roles_filter}
+
+    role_prompts = {name: [prompt] for name, prompt in eval_personas.items()}
+    return role_prompts
+
+
+def load_extraction_questions(
+    n_questions: int | None = None,
+    questions_file: Path | None = None,
+) -> list[str]:
+    """Load the shared extraction questions.
+
+    Default source is `data/assistant_axis/extraction_questions.jsonl` (240
+    questions used by #205 / #218 / #238). Pass `questions_file=` to read from
+    a different in-tree path (e.g. `data/issue_238/extraction_questions.jsonl`)
+    when working in a self-contained issue.
+    """
+    questions_path = questions_file or (DATA_DIR / "extraction_questions.jsonl")
     questions = []
     with open(questions_path) as f:
         for line in f:
@@ -247,11 +299,14 @@ def generate_responses_vllm(
 
     # Generate with vLLM
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    # NOTE: 0.55 (was 0.85) -- when running A+B together, the HF model from Method A
+    # is still loaded in GPU memory (~15 GB on a 7B model) when vLLM init runs, so
+    # we must leave headroom. 0.55 * 79 GiB = ~43 GiB, plenty for a 7B + KV cache.
     llm = LLM(
         model=model_name,
         tensor_parallel_size=1,
         max_model_len=2048,
-        gpu_memory_utilization=0.85,
+        gpu_memory_utilization=0.55,
     )
     sampling_params = SamplingParams(
         temperature=0.0,
@@ -459,6 +514,30 @@ def main():
         default=256,
         help="Max tokens to generate per response (Method B only)",
     )
+    parser.add_argument(
+        "--inline-personas-json",
+        type=str,
+        default=None,
+        help=(
+            "Path to a JSON file with schema {eval_personas: {name: prompt}, ...} "
+            "that supplies persona system prompts directly, bypassing "
+            "data/assistant_axis/{role_list.json, instructions/}. Use when an "
+            "issue ships its own persona definitions in-tree (e.g. "
+            "data/issue_238/personas.json). Combined with --roles, the role "
+            "filter is applied AFTER loading the inline file."
+        ),
+    )
+    parser.add_argument(
+        "--questions-file",
+        type=str,
+        default=None,
+        help=(
+            "Path to a JSONL file of extraction questions "
+            "(one {'question': ...} per line). Defaults to "
+            "data/assistant_axis/extraction_questions.jsonl. Use to read the "
+            "in-tree per-issue copy (e.g. data/issue_238/extraction_questions.jsonl)."
+        ),
+    )
     args = parser.parse_args()
 
     # Parse roles filter
@@ -475,8 +554,19 @@ def main():
 
     # Load data
     print("Loading roles and questions...")
-    role_prompts = load_roles(roles_filter)
-    questions = load_extraction_questions(args.n_questions)
+    if args.inline_personas_json:
+        personas_path = Path(args.inline_personas_json)
+        if not personas_path.exists():
+            raise FileNotFoundError(f"--inline-personas-json file not found: {personas_path}")
+        role_prompts = load_inline_personas(personas_path, roles_filter)
+        print(f"  Inline personas loaded from {personas_path}")
+    else:
+        role_prompts = load_roles(roles_filter)
+
+    questions_file = Path(args.questions_file) if args.questions_file else None
+    if questions_file is not None and not questions_file.exists():
+        raise FileNotFoundError(f"--questions-file not found: {questions_file}")
+    questions = load_extraction_questions(args.n_questions, questions_file=questions_file)
     print(f"  Loaded {len(role_prompts)} roles, {len(questions)} questions")
 
     do_a = "A" in args.method

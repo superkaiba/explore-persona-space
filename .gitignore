@@ -9,7 +9,13 @@ __pycache__/
 dist/
 build/
 .eggs/
-data/
+data/*
+# Tracked per-issue persona/question source-of-truth assets. Without these
+# negations the experimenter would have to scp these files to every pod
+# (which bit us in issue-238 round 1). `data/*` (rather than `data/`) is the
+# pattern that allows re-including specific subdirectories.
+!data/issue_238/
+!data/issue_238/**
 outputs/
 *.output
 .pytest_cache/
