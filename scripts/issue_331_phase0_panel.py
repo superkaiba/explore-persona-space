@@ -71,7 +71,13 @@ COPULA_FALSIFIED = "FALSIFIED-COPULA-WINS"
 
 
 def _aggregate_cohort_counts(records, cohort_name: str) -> dict:
-    """Sum FR / FR+DE / total counts across all candidates in a cohort."""
+    """Sum FR / FR+DE / total counts across all candidates in a cohort.
+
+    Note: ``aggregate_fr_rate`` / ``aggregate_frde_rate`` are pooled
+    (sum_fr / sum_total), not the mean of per-candidate rates. N2 fix
+    (round-1 code-review nit): renamed from ``mean_fr_rate`` to avoid
+    inviting a per-candidate-mean interpretation by future readers.
+    """
     recs = [r for r in records if r.category == cohort_name]
     return {
         "n_candidates": len(recs),
@@ -79,12 +85,12 @@ def _aggregate_cohort_counts(records, cohort_name: str) -> dict:
         "de": sum(r.n_de for r in recs),
         "frde": sum(r.n_fr + r.n_de for r in recs),
         "total": sum(r.n_total for r in recs),
-        "mean_fr_rate": (
+        "aggregate_fr_rate": (
             sum(r.n_fr for r in recs) / sum(r.n_total for r in recs)
             if sum(r.n_total for r in recs) > 0
             else 0.0
         ),
-        "mean_frde_rate": (
+        "aggregate_frde_rate": (
             sum(r.n_fr + r.n_de for r in recs) / sum(r.n_total for r in recs)
             if sum(r.n_total for r in recs) > 0
             else 0.0
@@ -254,23 +260,37 @@ def _bigram_per_parent(
     judged: list[dict],
     aggregated,
     parent_baselines: dict[str, float],
+    secondary_alpha: float = 0.01,
 ) -> dict:
     """Per-parent bigram-ablation test (B4 fix, plan §6 pre-registered test).
 
     For each ``carpe_diem`` / ``tabula_rasa`` parent, compute aggregate FR
     rate over the N=20 candidates and compare against the parent's
-    historical baseline (Fisher one-sided two-sided).
+    historical baseline (Fisher two-sided).
+
+    M1 fix (round-1 code-review): filter by ``category == "bigram_ablation"``
+    BEFORE checking the phrase prefix. The previous prefix-only filter
+    pulled in the famous-cohort records (``carpe diem est``,
+    ``tabula rasa est``), inflating the per-parent aggregate by including
+    the very baseline we're comparing against.
+
+    M6 fix (round-1 code-review): enforce ``secondary_alpha`` (plan I3,
+    default 0.01) on the per-parent two-sided p-value via the
+    ``within_alpha`` flag — previously the alpha was recorded in
+    ``config_thresholds`` but never applied to any decision.
     """
     by_parent: dict[str, dict] = {}
     for parent, baseline_pct in parent_baselines.items():
-        # Find candidate phrases whose parent matches (we tagged
-        # ``bigram_parent`` in the panel; cohort recs carry that
-        # through ``category="bigram_ablation"`` only — but the panel
-        # JSON has the parent tag, so we map by phrase).
-        # We pull the parent assignment off the panel structure passed
-        # via ``aggregated`` records' phrase prefixes (carpe diem / tabula rasa).
+        # M1 fix: filter by bigram_ablation cohort FIRST, then by parent prefix.
+        # Without the category filter, ``carpe diem est`` (famous cohort) is
+        # included in the ``carpe_diem`` per-parent test and biases the
+        # aggregate toward the baseline by construction.
         parent_words = parent.replace("_", " ")
-        recs = [r for r in aggregated if r.phrase.startswith(parent_words + " ")]
+        recs = [
+            r
+            for r in aggregated
+            if r.category == "bigram_ablation" and r.phrase.startswith(parent_words + " ")
+        ]
         succ = sum(r.n_fr for r in recs)
         n = sum(r.n_total for r in recs)
         rate = succ / n if n else 0.0
@@ -290,6 +310,12 @@ def _bigram_per_parent(
             "baseline_fr_pct": baseline_pct,
             "p_vs_baseline_two_sided": float(p_vs_baseline_two_sided),
             "within_3pp_of_baseline": abs(rate - baseline_pct) <= 0.03,
+            # M6 fix: applied secondary alpha (plan I3 / §4.11). The flag is
+            # True when we CANNOT reject the null "this parent's rate equals
+            # its baseline" at the secondary alpha — i.e., it stays consistent
+            # with the H_FAM-BIGRAM story for this parent.
+            "within_alpha": float(p_vs_baseline_two_sided) > secondary_alpha,
+            "secondary_alpha": secondary_alpha,
         }
     return by_parent
 
@@ -297,8 +323,26 @@ def _bigram_per_parent(
 def _assign_story_label(verdict_post_cmh: str, copula: dict, bigram: dict) -> str:
     """Apply plan §6.5 verdict-to-story mapping table.
 
-    Returns a single canonical story label string for the clean-result
-    write-up; falls back to the bare verdict if no row matches cleanly.
+    Returns one of six canonical story labels (rows 1-6 of §6.5):
+
+      1. H_COPULA-FINAL_broad                       (BROAD copula sub-gate)
+      2. H_EST-FINAL_specifically                   (EST-SPECIFIC, low bigram)
+      3. H_EST-FINAL_plus_partial_H_FAM-BIGRAM      (EST-SPECIFIC, partial bigram)
+      4. H_FAM-BIGRAM_dominant_est_final_secondary  (bigram ≈ famous, CONFIRMED)
+      5. H_FAM-BIGRAM_only_falsified_for_est_final  (bigram ≈ famous, FALSIFIED)
+      6. all_structural_hypotheses_falsified        (no signal anywhere)
+
+    Plus the COPULA_FALSIFIED escape (`H_COPULA-FINAL_USER-OPT-IN`).
+
+    M4 fix (round-1 code-review, Codex): the H_FAM-BIGRAM_dominant branch
+    (row 4) was previously gated to fire only under EST-SPECIFIC sub-gate
+    AND ignored under BROAD/FALSIFIED. Per plan §6.5 row 4 the bigram-
+    dominant story is determined by "bigram ≈ famous (within 3pp of
+    baseline for both parents)" — and that signal is meaningful regardless
+    of whether the est-vs-non-est test cleared CONFIRMED. We now route the
+    bigram-dominant check BEFORE the copula branches so a Phase 0
+    BROAD-copula result with bigram ≈ famous still surfaces as
+    H_FAM-BIGRAM_dominant for the Phase 1 user-opt-in gate.
     """
     # Sub-gate decisions already drive the est-specific vs broad-copula
     # distinction; we layer the bigram check on top.
@@ -307,20 +351,31 @@ def _assign_story_label(verdict_post_cmh: str, copula: dict, bigram: dict) -> st
     )
     bigram_above_5pct = all(p["aggregate_fr"] >= 0.05 for p in bigram.values()) if bigram else False
 
+    # Row 5/6: primary verdict didn't fire — story is bigram-only or fully falsified.
     if verdict_post_cmh in {VERDICT_FALSIFIED, VERDICT_INCONCLUSIVE}:
         if bigram_within:
             return "H_FAM-BIGRAM_only_falsified_for_est_final"
         return "all_structural_hypotheses_falsified"
 
+    # CONFIRMED-* below.
+
+    # Special escape: copula sub-gate says falsified for est-specificity in the
+    # "sunt/erat both ≥ est" sense. Phase 1 requires user opt-in (plan §4.4.5).
     if copula.get("decision") == COPULA_FALSIFIED:
         return "H_COPULA-FINAL_USER-OPT-IN"
 
+    # M4 fix: Row 4 (H_FAM-BIGRAM_dominant) precedes the copula-branch test.
+    # If both bigram parents track their famous baselines, the est-final
+    # signal is secondary regardless of how copula-specific it is — Phase 1
+    # is user-opt-in either way (plan §6.5 row 4 + Phase 1 gate below).
+    if bigram_within:
+        return "H_FAM-BIGRAM_dominant_est_final_secondary"
+
+    # Row 1: BROAD copula (sunt ≈ est, erat ≈ est).
     if copula.get("decision") == COPULA_FINAL_BROAD:
         return "H_COPULA-FINAL_broad"
 
-    # EST-SPECIFIC branch
-    if bigram_within:
-        return "H_FAM-BIGRAM_dominant_est_final_secondary"
+    # EST-SPECIFIC branch — rows 2 and 3.
     if bigram_above_5pct and not bigram_within:
         return "H_EST-FINAL_plus_partial_H_FAM-BIGRAM"
     return "H_EST-FINAL_specifically"
@@ -389,10 +444,14 @@ def compute_phase0_verdict(
     )
 
     # Bigram per-parent test (B4) — use parent #183 baselines.
+    # M6 fix: pass secondary_alpha through so the per-parent test enforces
+    # plan I3's alpha=0.01 in its decision flag (not just records it).
+    secondary_alpha = float(cfg.phase0.secondary_alpha)
     bigram_per_parent = _bigram_per_parent(
         judged,
         aggregated,
         parent_baselines={"carpe_diem": 0.1125, "tabula_rasa": 0.10},
+        secondary_alpha=secondary_alpha,
     )
 
     story_label = _assign_story_label(verdict_post_cmh, copula_sub_gate, bigram_per_parent)

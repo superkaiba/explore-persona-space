@@ -142,7 +142,14 @@ def plot_hero(genealogy: list[dict], out_path: Path) -> None:
             alpha=0.6,
         )
 
-    # Reference lines.
+    # Reference lines (6 total; N3 round-1 fix — add 1.25% and 91.2%).
+    # 1.25% = parent #284 noise floor (per plan §6); 91.2% = canonical
+    # "carpe diem est" trigger rate from parent #183. Together they
+    # bracket the entire range we care about: noise on one end and the
+    # known-good single trigger on the other.
+    ax.axhline(
+        0.0125, color="gray", linestyle=":", alpha=0.4, label="parent #284 noise floor (1.25%)"
+    )
     ax.axhline(0.05, color="black", linestyle=":", alpha=0.4, label="Phase 0 null floor (5%)")
     ax.axhline(
         0.0625, color="red", linestyle=":", alpha=0.6, label="kill / Phase 1 null max (6.25%)"
@@ -151,6 +158,7 @@ def plot_hero(genealogy: list[dict], out_path: Path) -> None:
         0.1125, color="purple", linestyle="--", alpha=0.5, label="parent #183 famous floor (11.25%)"
     )
     ax.axhline(0.50, color="green", linestyle="--", alpha=0.5, label="SUCCESS (50%)")
+    ax.axhline(0.912, color="orange", linestyle="--", alpha=0.6, label="canonical trigger (91.2%)")
 
     ax.set_xlabel("Generation")
     ax.set_ylabel("FR rate (n=80)")

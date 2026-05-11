@@ -50,6 +50,17 @@ phase0:
   # B4 fix — bigram per-parent test cohort size.
   bigram_per_parent_n: 20
 
+# Collapse thresholds consumed by parent #188's `_aggregate_per_candidate`
+# (inherited verbatim per plan §4.1 inheritance map). The parent helper
+# reads these unconditionally even though the Phase 0 panel does not run
+# an evolutionary loop. Without this block, Phase 0 crashes with
+# OmegaConf ConfigKeyError BEFORE writing verdict.json (round-1 code-review
+# C1 blocker, both Claude + Codex). Values mirror Phase 1 (see
+# configs/eval/issue_331_phase1.yaml :: evolution.collapse_*).
+evolution:
+  collapse_empty_rate_threshold: 0.30
+  collapse_frde_non_empty_threshold: 0.20
+
 # Latin vocab (parent #188 file, used by the panel builder).
 latin_vocab_path: data/issue_188/latin_freq_2000.json
 

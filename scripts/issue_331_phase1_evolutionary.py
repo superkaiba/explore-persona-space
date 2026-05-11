@@ -114,13 +114,23 @@ class CandidateRecord:
 
 CONFIRMED_VERDICTS = {"STAGE-A-CONFIRMED-STRONG", "STAGE-A-CONFIRMED-WEAK"}
 
+# Story labels that require explicit user opt-in to launch Phase 1
+# (plan §6.5 rows 4 & "COPULA_FALSIFIED" escape). Set the env var
+# ``EPM_PHASE1_FORCE_LAUNCH=1`` to override (smoke-test escape hatch).
+USER_OPT_IN_STORY_LABELS = {
+    "H_FAM-BIGRAM_dominant_est_final_secondary",  # plan §6.5 row 4 (Codex M4)
+    "H_COPULA-FINAL_USER-OPT-IN",  # plan §4.4.5
+}
+
 
 def _read_phase0_verdict(verdict_path: Path) -> dict:
     """Read + validate the Phase 0 verdict file.
 
-    Raises SystemExit(1) if the verdict is not CONFIRMED-* or the
-    copula sub-gate fired FALSIFIED-COPULA-WINS.  This is the gate that
-    keeps Phase 1 from launching on a null Phase 0.
+    Raises SystemExit(1) if the verdict is not CONFIRMED-*, the copula
+    sub-gate fired FALSIFIED-COPULA-WINS, or the story label is in the
+    user-opt-in set (plan §6.5 row 4, e.g. H_FAM-BIGRAM_dominant — Codex
+    round-1 M4 fix). Setting ``EPM_PHASE1_FORCE_LAUNCH=1`` overrides the
+    story-label gate (smoke-test escape).
     """
     if not verdict_path.exists():
         raise FileNotFoundError(
@@ -131,6 +141,7 @@ def _read_phase0_verdict(verdict_path: Path) -> dict:
         verdict = json.load(f)
     v = verdict.get("verdict")
     copula_decision = verdict.get("copula_sub_gate", {}).get("decision")
+    story_label = verdict.get("story_label")
     if v not in CONFIRMED_VERDICTS:
         logger.error(
             "Phase 0 verdict = %s; Phase 1 not launched (only STAGE-A-CONFIRMED-* gates open).",
@@ -141,6 +152,16 @@ def _read_phase0_verdict(verdict_path: Path) -> dict:
         logger.error(
             "Phase 0 copula sub-gate fired FALSIFIED-COPULA-WINS; "
             "Phase 1 launch requires user opt-in (see plan §4.4.5)."
+        )
+        sys.exit(1)
+    # M4 fix (Codex round-1): the plan §6.5 row 4 ("H_FAM-BIGRAM dominant")
+    # says Phase 0 only with user opt-in for Phase 1. The bare CONFIRMED-*
+    # gate alone misses this — both reviewers (Claude + Codex) flagged it.
+    if story_label in USER_OPT_IN_STORY_LABELS and os.environ.get("EPM_PHASE1_FORCE_LAUNCH") != "1":
+        logger.error(
+            "Phase 0 story_label=%s requires user opt-in for Phase 1 (plan §6.5). "
+            "Re-launch with EPM_PHASE1_FORCE_LAUNCH=1 to override.",
+            story_label,
         )
         sys.exit(1)
     return verdict
@@ -177,9 +198,20 @@ def mutate_est_final_preserving(
     detail = f"est_final_preserving pos={pos} {old_word}->{new_word}"
     new_phrase = " ".join(words)
     if tokenizer is not None:
+        # N1 fix (round-1 code-review nit): only swallow the narrow expected
+        # exceptions (tokenizer file/runtime errors) — propagate everything
+        # else so real bugs surface instead of being hidden behind a bare
+        # ``except Exception: pass``. Per CLAUDE.md "never silently fail".
         try:
             anchor_tids = tokenizer.encode("carpe diem est", add_special_tokens=False)
             new_tids = tokenizer.encode(new_phrase, add_special_tokens=False)
+        except (OSError, RuntimeError) as exc:
+            logger.debug(
+                "Tokenizer encode failed during BPE-merge check for %r: %s",
+                new_phrase,
+                exc,
+            )
+        else:
             if new_tids and anchor_tids and new_tids[-1] != anchor_tids[-1]:
                 logger.warning(
                     "Token-ID assertion: %r ends in token %d, anchor 'carpe diem est' "
@@ -188,8 +220,6 @@ def mutate_est_final_preserving(
                     new_tids[-1],
                     anchor_tids[-1],
                 )
-        except Exception:
-            pass  # nosec — tokenizer issues should not block evolution
     return new_phrase, detail
 
 
@@ -412,7 +442,21 @@ def _take_with_lineage_diversity(
     If the top of the pool collapses to <diversity_min_lineages lineages,
     walk further down to satisfy diversity.  If even that fails, fall back
     to the top-N with a warning (cf plan §4.6).
+
+    M2 fix (round-1 code-review, both reviewers): the previous
+    implementation treated ``lineages`` as monotonically growing — when
+    the swap-out path replaced the lowest-fitness same-lineage selectee
+    with a new-root candidate, the evicted selectee's lineage was left
+    in ``lineages`` and ``len(lineages)`` overstated the actual root count
+    in ``selected``. That could let the function terminate early thinking
+    diversity was satisfied. We now recompute ``lineages`` from
+    ``selected`` after every mutation (insert or swap) so the predicate
+    can never drift from reality.
     """
+
+    def _compute_lineages(sel: list[CandidateRecord]) -> set[str]:
+        return {_root_ancestor_phrase(s, genealogy_by_phrase) for s in sel}
+
     selected: list[CandidateRecord] = []
     lineages: set[str] = set()
     for cand in sorted_pool:
@@ -421,21 +465,31 @@ def _take_with_lineage_diversity(
         root = _root_ancestor_phrase(cand, genealogy_by_phrase)
         if len(selected) < n_per:
             selected.append(cand)
-            lineages.add(root)
+            lineages = _compute_lineages(selected)
         elif root not in lineages and len(lineages) < diversity_min_lineages:
-            # Swap out the lowest-ranked same-lineage selectee.
-            same_lineage = [
-                (i, s)
-                for i, s in enumerate(selected)
-                if _root_ancestor_phrase(s, genealogy_by_phrase) in lineages and lineages
-            ]
-            if same_lineage:
-                # Replace the lowest-fitness already-represented lineage.
-                # Sorting picks the worst by fr_rate ascending.
-                same_lineage.sort(key=lambda t: t[1].fr_rate)
-                worst_idx, _ = same_lineage[0]
+            # Swap out the lowest-fitness candidate whose root would still
+            # be represented in `selected` AFTER eviction (so we don't
+            # accidentally swap out a UNIQUE-lineage candidate while leaving
+            # `lineages` overstated — M2 round-1 finding).
+            evictable: list[tuple[int, CandidateRecord]] = []
+            for i, s in enumerate(selected):
+                s_root = _root_ancestor_phrase(s, genealogy_by_phrase)
+                # Count how many OTHER selected rows share this root.
+                others_same = sum(
+                    1
+                    for j, other in enumerate(selected)
+                    if j != i and _root_ancestor_phrase(other, genealogy_by_phrase) == s_root
+                )
+                if others_same > 0:
+                    evictable.append((i, s))
+            if evictable:
+                # Replace the lowest-fitness already-represented-lineage selectee.
+                evictable.sort(key=lambda t: t[1].fr_rate)
+                worst_idx, _ = evictable[0]
                 selected[worst_idx] = cand
-                lineages.add(root)
+                # Authoritative recompute (M2): never mutate ``lineages`` in
+                # isolation — always derive from ``selected``.
+                lineages = _compute_lineages(selected)
     if len(lineages) < diversity_min_lineages:
         logger.warning(
             "Lineage diversity collapse: only %d distinct ancestors in top-%d "
@@ -705,15 +759,25 @@ def _evaluate_phase1_outcome(
     # KILL: only after kill_threshold_after_n_gens (B7). Combined gate:
     # at-or-past minimum gen-count AND best FR below kill threshold AND
     # est-final final-pool mean does not exceed non-est-final mean.
+    #
+    # M3 fix (round-1 code-review, Claude): plan §3.5 says the KILL gate
+    # operates on ``global_max_fr_obscure_only`` (the
+    # is_obscure_only_full_genealogy-filtered metric). The previous code
+    # restricted to ``rule_based`` only, which is equivalent today by
+    # construction (§4.6 excludes famous_seed/llm_crossover/force_est_final
+    # from the parent pool, so all rule_based descendants in Phase 1 pass
+    # the full-genealogy walk) — but it drifts from the plan if §4.6's
+    # exclusion is ever relaxed. Switch to the obscure-only filter so the
+    # implementation matches §3.5 verbatim and is future-proof.
     kill_now = False
     past_grace = round_idx >= int(cfg.evolution.kill_threshold_after_n_gens)
     below_kill = global_max_fr < float(cfg.evolution.kill_threshold_obscure_only)
     if past_grace and below_kill:
         est_pool = [
-            c for c in rule_based if c.phrase.split()[-1] == "est" and c.round_idx == round_idx
+            c for c in obscure_only if c.phrase.split()[-1] == "est" and c.round_idx == round_idx
         ]
         non_est_pool = [
-            c for c in rule_based if c.phrase.split()[-1] != "est" and c.round_idx == round_idx
+            c for c in obscure_only if c.phrase.split()[-1] != "est" and c.round_idx == round_idx
         ]
         est_mean = sum(c.fr_rate for c in est_pool) / len(est_pool) if est_pool else 0.0
         non_mean = sum(c.fr_rate for c in non_est_pool) / len(non_est_pool) if non_est_pool else 0.0
@@ -768,6 +832,78 @@ def _log_round_metrics_v331(
 
 
 # ── End-of-run replication on seed=137 (B2 fix) ────────────────────────────
+
+
+def _replicate_success_candidate_n400(
+    success_candidate: CandidateRecord,
+    cfg: DictConfig,
+    project_root: Path,
+    llm,
+) -> dict:
+    """SUCCESS-candidate n=400 replication on seeds 42 + 137 (M5 round-1 fix).
+
+    Plan §4.9: when a Phase 1 SUCCESS verdict fires, additionally re-run the
+    SUCCESS candidate at n=400 (100 contexts x 4 generations) on both
+    seed=42 and seed=137. Acceptance criterion (also §4.9): seed=137 FR
+    rate >= 30% (``success_replicated_fr_min``) to declare trigger-basin
+    recovery.
+
+    The top-10 seed=137 path stays at n=80 (per plan; that's the
+    STRONG/WEAK-CLIMB seed-shift check). This is a SEPARATE,
+    SUCCESS-only replication on a larger context budget — the round-1
+    code-reviews flagged its absence on both Claude and Codex sides.
+
+    Returns a dict with per-seed rates + the acceptance flag.
+    """
+    # Load 100 contexts (NOT the cfg.n_contexts=20 used elsewhere). We
+    # re-fetch from FineWeb if the cache doesn't already have 100;
+    # `_load_or_fetch_contexts` extends + writes the cache atomically.
+    contexts_path = _resolve_path(cfg.contexts_path, project_root)
+    n_contexts_n400 = 100
+    contexts_n400 = _load_or_fetch_contexts(contexts_path, n=n_contexts_n400)
+    logger.info(
+        "SUCCESS n=400 replication: loaded %d contexts for %r",
+        len(contexts_n400),
+        success_candidate.phrase,
+    )
+
+    cand_dicts = [{"phrase": success_candidate.phrase, "category": "replication_success_n400"}]
+    out: dict = {
+        "phrase": success_candidate.phrase,
+        "original_fr_rate": success_candidate.fr_rate,
+        "n_total_per_seed": n_contexts_n400 * int(cfg.n_generations_per_pair),
+        "per_seed": {},
+    }
+    for seed_label, vllm_seed in [("seed42", 42), ("seed137", 137)]:
+        rep_cfg = OmegaConf.create(OmegaConf.to_container(cfg, resolve=True))
+        rep_cfg.vllm.seed = vllm_seed
+        rep_cfg.n_contexts = n_contexts_n400  # for downstream logging
+        records, _llm = _generate_completions(cand_dicts, contexts_n400, rep_cfg, llm=llm)
+        judged = _judge_records(records, rep_cfg, project_root)
+        aggregated = _aggregate_per_candidate(judged, rep_cfg)
+        agg = aggregated[0] if aggregated else None
+        rep_fr = agg.n_fr / agg.n_total if agg and agg.n_total else 0.0
+        rep_frde = agg.frde_rate if agg else 0.0
+        out["per_seed"][seed_label] = {
+            "vllm_seed": vllm_seed,
+            "fr_rate": float(rep_fr),
+            "frde_rate": float(rep_frde),
+            "n_fr": agg.n_fr if agg else 0,
+            "n_total": agg.n_total if agg else 0,
+        }
+        logger.info(
+            "SUCCESS n=400 seed=%d: FR=%.4f (n_fr=%d/n_total=%d)",
+            vllm_seed,
+            rep_fr,
+            agg.n_fr if agg else 0,
+            agg.n_total if agg else 0,
+        )
+
+    success_min = float(cfg.evolution.success_replicated_fr_min)
+    seed137_fr = out["per_seed"]["seed137"]["fr_rate"]
+    out["success_replicated"] = bool(seed137_fr >= success_min)
+    out["success_replicated_fr_min"] = success_min
+    return out
 
 
 def _replicate_top10_on_seed137(
@@ -848,6 +984,7 @@ def _finalize(
     exit_reason: str,
     final_outcome: dict,
     replication: dict | None,
+    success_n400: dict | None = None,
 ) -> None:
     from explore_persona_space.metadata import get_run_metadata
 
@@ -862,6 +999,10 @@ def _finalize(
         "n_rounds_completed": max((c.round_idx for c in all_candidates), default=0),
         "outcome": final_outcome,
         "replication_seed137": replication,
+        # M5 round-1 fix: surface the SUCCESS-only n=400 replication
+        # result alongside the top-10 seed=137 one. None when exit_reason
+        # != "SUCCESS" or no winning candidate cleared the gate.
+        "replication_success_n400": success_n400,
         "top_10": [asdict(c) for c in ranked[:10]],
         "source_type_breakdown": {
             st: sum(1 for c in all_candidates if c.source_type == st)
@@ -1156,6 +1297,44 @@ def phase1_main(cfg: DictConfig) -> None:
         logger.warning("Replication failed", exc_info=True)
         replication = None
 
+    # SUCCESS-only n=400 replication (M5 round-1 fix — plan §4.9).
+    # Fires ONLY when Phase 1 exited via the SUCCESS gate; re-runs the
+    # winning candidate at n=400 (100 contexts x 4 gens) on seeds 42+137.
+    # The acceptance bar is seed=137 FR >= 30% (success_replicated_fr_min).
+    success_n400 = None
+    if exit_reason == "SUCCESS" and rule_based_obscure_only:
+        success_thresh = float(cfg.evolution.success_threshold_fr)
+        success_winners = [c for c in rule_based_obscure_only if c.fr_rate >= success_thresh]
+        if success_winners:
+            # Highest-FR rule_based obscure-only candidate is the SUCCESS winner.
+            winner = max(success_winners, key=lambda c: c.fr_rate)
+            logger.info(
+                "SUCCESS gate fired; running n=400 replication for winner %r (FR=%.4f)...",
+                winner.phrase,
+                winner.fr_rate,
+            )
+            try:
+                success_n400 = _replicate_success_candidate_n400(winner, cfg, project_root, llm)
+                # Save to its own JSON for the analyzer.
+                with open(output_dir / "replication_success_n400.json", "w") as f:
+                    json.dump(success_n400, f, indent=2)
+                logger.info(
+                    "SUCCESS n=400 replication: success_replicated=%s "
+                    "(seed42 FR=%.4f, seed137 FR=%.4f)",
+                    success_n400["success_replicated"],
+                    success_n400["per_seed"]["seed42"]["fr_rate"],
+                    success_n400["per_seed"]["seed137"]["fr_rate"],
+                )
+            except Exception:
+                logger.warning("SUCCESS n=400 replication failed", exc_info=True)
+                success_n400 = None
+        else:
+            logger.warning(
+                "exit_reason=SUCCESS but no rule_based obscure-only candidate cleared %.3f; "
+                "skipping n=400 replication.",
+                success_thresh,
+            )
+
     _finalize(
         all_candidates,
         genealogy_by_phrase,
@@ -1165,6 +1344,7 @@ def phase1_main(cfg: DictConfig) -> None:
         exit_reason,
         final_outcome,
         replication,
+        success_n400=success_n400,
     )
 
 

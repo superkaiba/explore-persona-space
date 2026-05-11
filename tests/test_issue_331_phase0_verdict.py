@@ -28,13 +28,16 @@ from scripts.issue_331_phase0_panel import (  # noqa: E402
     VERDICT_STRONG,
     VERDICT_WEAK,
     _assign_story_label,
+    _bigram_per_parent,
     _classify_4bucket,
     _decide_copula_subgate,
     _downgrade_verdict,
     _fisher_one_sided_greater,
 )
 from scripts.issue_331_phase1_evolutionary import (  # noqa: E402
+    USER_OPT_IN_STORY_LABELS,
     CandidateRecord,
+    _read_phase0_verdict,
     _root_ancestor_phrase,
     _take_with_lineage_diversity,
     is_obscure_only_full_genealogy,
@@ -608,3 +611,387 @@ class TestComputePhase0VerdictSmoke:
             COPULA_FINAL_BROAD,
             COPULA_FALSIFIED,
         }
+
+
+# ── Round-2 regression tests ────────────────────────────────────────────────
+
+
+class TestBigramPerParentExcludesFamousCohort:
+    """M1 fix (round-1 code-review): ``_bigram_per_parent`` must filter
+    by ``category == "bigram_ablation"`` BEFORE the phrase prefix.
+    Without the category filter, the famous-cohort ``carpe diem est`` /
+    ``tabula rasa est`` records sneak into the per-parent aggregate (their
+    phrase starts with the same prefix), biasing the rate toward the
+    very famous-baseline we compare against.
+    """
+
+    def _record(self, phrase, category, n_fr, n_total=80):
+        """Build a parent-shape CandidateRecord (the helper takes the
+        parent script's record type, not Phase 1's)."""
+        from scripts.issue_188_evolutionary_trigger import (
+            CandidateRecord as ParentRec,
+        )
+
+        r = ParentRec(phrase=phrase, category=category)
+        r.n_total = n_total
+        r.n_fr = n_fr
+        r.n_de = 0
+        return r
+
+    def test_famous_carpe_diem_est_is_excluded(self):
+        # Famous record (9/80 = 11.25%, exactly the carpe_diem baseline)
+        # plus 20 obscure bigram-ablation candidates each at 0/80.
+        # Without the category filter, the famous record would be pulled
+        # into the carpe_diem per-parent test, dragging the aggregate
+        # toward 11.25% / 21 ≈ 0.54% — within 3pp of the baseline by
+        # the wrong reason.
+        records = [self._record("carpe diem est", "famous", n_fr=9)]
+        for i in range(20):
+            records.append(self._record(f"carpe diem obscure{i:02d}", "bigram_ablation", n_fr=0))
+        for i in range(20):
+            records.append(self._record(f"tabula rasa obscure{i:02d}", "bigram_ablation", n_fr=0))
+        # Add the tabula rasa famous record too (8/80 = 10.00% baseline).
+        records.append(self._record("tabula rasa est", "famous", n_fr=8))
+
+        out = _bigram_per_parent(
+            judged=[],
+            aggregated=records,
+            parent_baselines={"carpe_diem": 0.1125, "tabula_rasa": 0.10},
+        )
+        # n_candidates is 20 (NOT 21) because the famous record is filtered out.
+        assert out["carpe_diem"]["n_candidates"] == 20
+        assert out["tabula_rasa"]["n_candidates"] == 20
+        # Aggregate is 0/1600, NOT 9/1680.
+        assert out["carpe_diem"]["succ_fr"] == 0
+        assert out["carpe_diem"]["total"] == 1600
+        assert out["carpe_diem"]["aggregate_fr"] == 0.0
+
+    def test_unrelated_cohort_phrases_dont_contaminate(self):
+        # A bigram-ablation record matching the prefix but tagged otherwise
+        # should be filtered out (defense in depth).
+        records = [
+            self._record("carpe diem obscure00", "bigram_ablation", n_fr=2),
+            # Same prefix but wrong category -> must be filtered.
+            self._record("carpe diem obscure00_misnamed", "obscure_est_final", n_fr=5),
+        ]
+        out = _bigram_per_parent(
+            judged=[],
+            aggregated=records,
+            parent_baselines={"carpe_diem": 0.1125, "tabula_rasa": 0.10},
+        )
+        assert out["carpe_diem"]["n_candidates"] == 1
+        assert out["carpe_diem"]["succ_fr"] == 2
+
+
+class TestBigramPerParentSecondaryAlphaEnforced:
+    """M6 fix (round-1 code-review, Codex): the helper records the
+    secondary alpha but must also EXPOSE a decision flag (``within_alpha``)
+    derived from it. Verdict should change as alpha tightens or loosens.
+    """
+
+    def _make_records(self, parent: str, fr_each: int):
+        """20 bigram-ablation candidates for a parent at fr_each/80 each."""
+        from scripts.issue_188_evolutionary_trigger import (
+            CandidateRecord as ParentRec,
+        )
+
+        out = []
+        for i in range(20):
+            r = ParentRec(phrase=f"{parent} obs{i:02d}", category="bigram_ablation")
+            r.n_total = 80
+            r.n_fr = fr_each
+            r.n_de = 0
+            out.append(r)
+        return out
+
+    def test_within_alpha_flag_changes_with_alpha(self):
+        # Set up a parent rate that's clearly different from baseline.
+        # 20 cand x 80 = 1600 total; 5/80 each = 100/1600 = 6.25%
+        # baseline = 11.25%. Two-sided Fisher comparing 100/1600 vs
+        # 180/1600 gives a small p. At alpha=0.001 we cannot reject the
+        # null (within_alpha is True only when p > alpha), so the rate
+        # is borderline "consistent" with the baseline at very strict
+        # alpha but rejected at 0.05.
+        recs = self._make_records("carpe diem", fr_each=5)
+        # Get the actual p-value to make assertions meaningful.
+        out_strict = _bigram_per_parent(
+            judged=[],
+            aggregated=recs,
+            parent_baselines={"carpe_diem": 0.1125},
+            secondary_alpha=0.001,
+        )
+        out_loose = _bigram_per_parent(
+            judged=[],
+            aggregated=recs,
+            parent_baselines={"carpe_diem": 0.1125},
+            secondary_alpha=0.05,
+        )
+        # The alpha is reported back so downstream code can introspect.
+        assert out_strict["carpe_diem"]["secondary_alpha"] == 0.001
+        assert out_loose["carpe_diem"]["secondary_alpha"] == 0.05
+        # The flag definition: within_alpha = (p > alpha). At strict
+        # alpha the threshold is harder to cross, so within_alpha is
+        # more permissive; at loose alpha it's stricter. So
+        # within_alpha (strict 0.001) implies within_alpha (loose 0.05)
+        # is FALSE more often — verify the direction is correct given
+        # this p ≈ 5e-6 case.
+        p = out_strict["carpe_diem"]["p_vs_baseline_two_sided"]
+        assert out_strict["carpe_diem"]["within_alpha"] == (p > 0.001)
+        assert out_loose["carpe_diem"]["within_alpha"] == (p > 0.05)
+        # And the two flags will disagree iff p falls between the alphas.
+        if 0.001 < p < 0.05:
+            assert out_strict["carpe_diem"]["within_alpha"] is True
+            assert out_loose["carpe_diem"]["within_alpha"] is False
+
+    def test_at_baseline_flag_is_true_at_both_alphas(self):
+        # Rate exactly equal to baseline (9/80 = 11.25%) -> p = 1.0 ->
+        # within_alpha = True at every alpha < 1.0.
+        recs = self._make_records("carpe diem", fr_each=9)  # 11.25%
+        out = _bigram_per_parent(
+            judged=[],
+            aggregated=recs,
+            parent_baselines={"carpe_diem": 0.1125},
+            secondary_alpha=0.001,
+        )
+        assert out["carpe_diem"]["within_alpha"] is True
+
+
+class TestStoryLabelHFamBigramDominantUnderBroad:
+    """M4 fix (round-1 code-review, Codex): plan §6.5 row 4
+    (H_FAM-BIGRAM_dominant) must fire when the bigram-ablation aggregate
+    tracks the famous baseline for BOTH parents, REGARDLESS of whether
+    the est-vs-non-est test cleared CONFIRMED or got routed BROAD via
+    the copula sub-gate. Row 4 of §6.5 specifically says "≈ famous"
+    is the dominant signal — Phase 1 user-opt-in either way.
+    """
+
+    def test_dominant_fires_under_est_specific_copula(self):
+        copula = {"decision": COPULA_EST_SPECIFIC}
+        bigram = {
+            "carpe_diem": {"aggregate_fr": 0.11, "within_3pp_of_baseline": True},
+            "tabula_rasa": {"aggregate_fr": 0.10, "within_3pp_of_baseline": True},
+        }
+        # CONFIRMED-STRONG with EST-SPECIFIC sub-gate + bigram-within
+        # -> bigram_dominant (Row 4 takes priority over Row 2 + 3).
+        assert (
+            _assign_story_label(VERDICT_STRONG, copula, bigram)
+            == "H_FAM-BIGRAM_dominant_est_final_secondary"
+        )
+
+    def test_dominant_fires_under_broad_copula(self):
+        # M4 root cause: under BROAD copula the previous code dropped
+        # straight to "H_COPULA-FINAL_broad" without checking bigram.
+        # Now the bigram-dominant check runs first.
+        copula = {"decision": COPULA_FINAL_BROAD}
+        bigram = {
+            "carpe_diem": {"aggregate_fr": 0.11, "within_3pp_of_baseline": True},
+            "tabula_rasa": {"aggregate_fr": 0.10, "within_3pp_of_baseline": True},
+        }
+        assert (
+            _assign_story_label(VERDICT_STRONG, copula, bigram)
+            == "H_FAM-BIGRAM_dominant_est_final_secondary"
+        )
+
+    def test_copula_falsified_still_takes_priority(self):
+        # FALSIFIED-COPULA-WINS is the user-opt-in escape per §4.4.5 and
+        # is the FIRST CONFIRMED-* branch — it pre-empts both
+        # H_FAM-BIGRAM_dominant and H_COPULA-FINAL_broad.
+        copula = {"decision": COPULA_FALSIFIED}
+        bigram = {
+            "carpe_diem": {"aggregate_fr": 0.11, "within_3pp_of_baseline": True},
+            "tabula_rasa": {"aggregate_fr": 0.10, "within_3pp_of_baseline": True},
+        }
+        assert _assign_story_label(VERDICT_STRONG, copula, bigram) == "H_COPULA-FINAL_USER-OPT-IN"
+
+
+class TestPhase1VerdictGateUserOptIn:
+    """M4 fix (round-1 code-review): ``_read_phase0_verdict`` must refuse
+    to launch Phase 1 on user-opt-in story labels unless
+    ``EPM_PHASE1_FORCE_LAUNCH=1`` is set, even when the bare verdict is
+    CONFIRMED-* and copula sub-gate isn't FALSIFIED.
+    """
+
+    def _write_verdict(self, tmp_path, **kwargs):
+        import json as _json
+
+        body = {
+            "verdict": "STAGE-A-CONFIRMED-STRONG",
+            "copula_sub_gate": {"decision": COPULA_EST_SPECIFIC},
+            "story_label": "H_EST-FINAL_specifically",
+        }
+        body.update(kwargs)
+        path = tmp_path / "verdict.json"
+        with open(path, "w") as f:
+            _json.dump(body, f)
+        return path
+
+    def test_known_user_opt_in_labels_set_matches_spec(self):
+        # Defense against silent set-divergence: must contain both rows
+        # 4 ("H_FAM-BIGRAM_dominant_est_final_secondary") and the
+        # copula-falsified escape ("H_COPULA-FINAL_USER-OPT-IN").
+        assert "H_FAM-BIGRAM_dominant_est_final_secondary" in USER_OPT_IN_STORY_LABELS
+        assert "H_COPULA-FINAL_USER-OPT-IN" in USER_OPT_IN_STORY_LABELS
+
+    def test_h_fam_bigram_dominant_blocks_launch(self, tmp_path, monkeypatch):
+        monkeypatch.delenv("EPM_PHASE1_FORCE_LAUNCH", raising=False)
+        verdict_path = self._write_verdict(
+            tmp_path, story_label="H_FAM-BIGRAM_dominant_est_final_secondary"
+        )
+        with pytest.raises(SystemExit) as excinfo:
+            _read_phase0_verdict(verdict_path)
+        assert excinfo.value.code == 1
+
+    def test_force_launch_env_overrides_user_opt_in(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("EPM_PHASE1_FORCE_LAUNCH", "1")
+        verdict_path = self._write_verdict(
+            tmp_path, story_label="H_FAM-BIGRAM_dominant_est_final_secondary"
+        )
+        out = _read_phase0_verdict(verdict_path)
+        assert out["verdict"] == "STAGE-A-CONFIRMED-STRONG"
+
+    def test_clean_est_specific_story_proceeds(self, tmp_path, monkeypatch):
+        monkeypatch.delenv("EPM_PHASE1_FORCE_LAUNCH", raising=False)
+        verdict_path = self._write_verdict(tmp_path)  # default: H_EST-FINAL_specifically
+        out = _read_phase0_verdict(verdict_path)
+        assert out["verdict"] == "STAGE-A-CONFIRMED-STRONG"
+
+
+class TestLineageDiversityUniqueLineageNotEvicted:
+    """M2 fix (round-1 code-review, both reviewers): the swap-out path
+    must NOT evict a unique-lineage candidate. With a 4-candidate pool
+    where only ONE lineage is over-represented, the swap target must be
+    the over-represented one. Previously, the code could swap out a
+    unique-lineage candidate while leaving ``lineages`` overstated.
+    """
+
+    def _make_4cand_pool(self):
+        # Pool layout: 2 candidates from root r1 (the over-represented
+        # lineage), 1 from r2 (unique), and 1 new candidate from r3 that
+        # we want to bring in. Without the fix, the code might swap out
+        # the r2 candidate (the unique-lineage one) since "all selected"
+        # have roots in lineages.
+        r1 = CandidateRecord(phrase="r1", category="x", source_type="rule_based")
+        r2 = CandidateRecord(phrase="r2", category="x", source_type="rule_based")
+        r3 = CandidateRecord(phrase="r3", category="x", source_type="rule_based")
+        c_r1a = CandidateRecord(
+            phrase="c_r1a", category="x", source_type="rule_based", parent_phrase="r1"
+        )
+        c_r1b = CandidateRecord(
+            phrase="c_r1b", category="x", source_type="rule_based", parent_phrase="r1"
+        )
+        c_r2 = CandidateRecord(
+            phrase="c_r2", category="x", source_type="rule_based", parent_phrase="r2"
+        )
+        c_r3 = CandidateRecord(
+            phrase="c_r3", category="x", source_type="rule_based", parent_phrase="r3"
+        )
+        # Fitness order (descending): r1a > r1b > r2 > r3.
+        # Without the fix, after r1a, r1b, c_r2 are selected (3 picks),
+        # bringing in c_r3 (a new lineage) would swap out the LOWEST-fr
+        # selectee, which is c_r2 (the unique-lineage candidate),
+        # leaving only 2 distinct lineages in selected even though
+        # ``lineages`` thinks there are 3.
+        for c, fr in [(c_r1a, 0.30), (c_r1b, 0.20), (c_r2, 0.10), (c_r3, 0.05)]:
+            c.n_total = 80
+            c.n_fr = round(fr * 80)
+        gen = {x.phrase: x for x in [r1, r2, r3, c_r1a, c_r1b, c_r2, c_r3]}
+        return [c_r1a, c_r1b, c_r2, c_r3], gen
+
+    def test_unique_lineage_not_evicted_in_swap(self):
+        # Request 4 candidates with diversity_min_lineages=3 on a 4-cand
+        # pool. The fix should keep c_r2 (unique r2 lineage) and end up
+        # with all 4 candidates selected because we asked for n_per=4.
+        pool, gen = self._make_4cand_pool()
+        out = _take_with_lineage_diversity(
+            pool, n_per=4, diversity_min_lineages=3, genealogy_by_phrase=gen
+        )
+        roots = {_root_ancestor_phrase(c, gen) for c in out}
+        # All 3 distinct roots must be represented.
+        assert roots == {"r1", "r2", "r3"}, f"Expected 3 roots, got {roots}"
+        # And the unique-lineage candidate must survive the swap.
+        assert "c_r2" in {c.phrase for c in out}
+
+    def test_n_per_3_diversity_3_no_silent_overstatement(self):
+        # Tighter case: pool is 4 candidates (2 r1, 1 r2, 1 r3); we ask
+        # for 3 picks with diversity_min_lineages=3. Without the M2 fix,
+        # the swap path might think it satisfied diversity by adding a
+        # new-lineage candidate after evicting the unique-lineage one
+        # (overstating the lineage set). With the fix, the function
+        # MUST return 3 picks with 3 distinct roots — exactly the
+        # advertised contract.
+        pool, gen = self._make_4cand_pool()
+        out = _take_with_lineage_diversity(
+            pool, n_per=3, diversity_min_lineages=3, genealogy_by_phrase=gen
+        )
+        roots = {_root_ancestor_phrase(c, gen) for c in out}
+        assert len(out) == 3
+        assert len(roots) == 3, f"Diversity violated: {roots} from {[c.phrase for c in out]}"
+
+
+class TestPhase0AggregatePerCandidateIntegration:
+    """C1 fix (round-1 code-review, both reviewers BLOCKER): exercise
+    the FULL ``_aggregate_per_candidate`` codepath against a
+    Hydra-composed Phase 0 cfg to catch the missing ``evolution.collapse_*``
+    keys at unit-test time. Previously, the unit suite bypassed
+    ``_aggregate_per_candidate`` via a synthetic record constructor and
+    the bug slipped through into the runner.
+    """
+
+    def _make_judged_records(self, candidates, n_contexts=2, n_per_context=4):
+        """Synthesize judged records: each candidate has n_contexts x n_per_context
+        completions, all labeled language_switched_french for simplicity."""
+        out = []
+        for cand in candidates:
+            for ctx_idx in range(n_contexts):
+                for gen_idx in range(n_per_context):
+                    out.append(
+                        {
+                            "custom_id": f"{cand['phrase']}__{ctx_idx}_{gen_idx}",
+                            "candidate_phrase": cand["phrase"],
+                            "candidate_category": cand["category"],
+                            "context_idx": ctx_idx,
+                            "completion": "le monde est étrange.",
+                            "judge": {"label": "language_switched_french"},
+                        }
+                    )
+        return out
+
+    def test_aggregate_per_candidate_on_phase0_config(self):
+        """Integration: load the real Phase 0 yaml + run
+        ``_aggregate_per_candidate`` against it. Crashes on missing
+        evolution.collapse_* keys."""
+        from hydra import compose, initialize_config_dir
+
+        from scripts.issue_188_evolutionary_trigger import _aggregate_per_candidate
+
+        cfg_dir = str((PROJECT_ROOT / "configs" / "eval").resolve())
+        with initialize_config_dir(version_base="1.3", config_dir=cfg_dir):
+            cfg = compose(config_name="issue_331_phase0")
+        # Three candidates across two cohorts — the smallest plausible
+        # aggregate input that still has variety.
+        cands = [
+            {"phrase": "abeo brevis est", "category": "obscure_est_final"},
+            {"phrase": "celer derectus est", "category": "obscure_est_final"},
+            {"phrase": "fortis abest", "category": "obscure_non_est_final"},
+        ]
+        judged = self._make_judged_records(cands)
+        # If cfg.evolution.collapse_* is missing this raises ConfigKeyError.
+        agg = _aggregate_per_candidate(judged, cfg)
+        # Sanity: we got one record per phrase, with category preserved.
+        assert {r.phrase for r in agg} == {c["phrase"] for c in cands}
+        for r in agg:
+            assert r.category in {"obscure_est_final", "obscure_non_est_final"}
+            assert r.n_total > 0
+
+    def test_phase0_cfg_has_required_evolution_keys(self):
+        """Direct guard: load the cfg and assert both collapse keys are
+        present. If anyone removes the ``evolution`` block from the
+        Phase 0 yaml this test fails loudly."""
+        from hydra import compose, initialize_config_dir
+
+        cfg_dir = str((PROJECT_ROOT / "configs" / "eval").resolve())
+        with initialize_config_dir(version_base="1.3", config_dir=cfg_dir):
+            cfg = compose(config_name="issue_331_phase0")
+        # Both keys must exist; OmegaConf raises if missing.
+        assert float(cfg.evolution.collapse_empty_rate_threshold) > 0
+        assert float(cfg.evolution.collapse_frde_non_empty_threshold) > 0
