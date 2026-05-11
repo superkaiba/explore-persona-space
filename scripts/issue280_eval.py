@@ -400,6 +400,68 @@ def _stage_full(args: argparse.Namespace) -> None:
         sys.exit(1)
 
 
+def _stage_carryover(args: argparse.Namespace) -> None:
+    """Re-evaluate the 27 #186 carry-over cells under this commit so the
+    Phase-3 aggregator has the per-(q, seed) raw outcomes it needs for
+    paired bootstrap.
+
+    Background: #186 only persisted ``eval_results/issue186/aggregate.json``
+    (means by persona/arm) — not the per-cell ``result.json`` files. The
+    aggregator paired bootstrap needs the per-question vectors, so we re-run
+    all 27 carry-over cells (4 sources x {generic_cot, persona_cot} x 3 seeds
+    + librarian x persona_cot_correct x 3 seeds) and write them to
+    ``eval_results/issue186/<cell_id>/result.json``.
+
+    The cells reuse the i186_* checkpoints that are still on HF Hub. The
+    ``--only-source`` flag also applies here so we can fan out across 4 GPUs.
+    """
+    cells = _all_carryover_cells()
+    if getattr(args, "only_source", None):
+        cells = [c for c in cells if c[0] == args.only_source]
+    logger.info(
+        "Phase-2 carryover: %d #186 cells x %d personas x %d arms x %d questions%s",
+        len(cells),
+        len(EVAL_PERSONAS),
+        len(EVAL_SCAFFOLDS),
+        args.n_questions or 1172,
+        f" (only-source={args.only_source})" if getattr(args, "only_source", None) else "",
+    )
+    failures: list[tuple[str, str]] = []
+    for source, arm, seed in cells:
+        cell_id = _cell_id(source, arm, seed)
+        cell_dir = PROJECT_ROOT / "eval_results" / "issue186" / cell_id
+        if (cell_dir / "result.json").exists() and not args.force:
+            logger.info("SKIP (result.json exists): %s", cell_id)
+            continue
+        path_in_repo = _hf_path_in_repo_186(source, arm, seed)
+        try:
+            model_path = _resolve_cell_model_path(path_in_repo)
+        except Exception as e:
+            logger.error("Failed to download %s: %s", cell_id, e)
+            failures.append((cell_id, f"download: {e}"))
+            continue
+        try:
+            result = _eval_one_cell(
+                model_path=model_path,
+                cell_id=cell_id,
+                n_questions=args.n_questions,
+                cot_max_tokens=args.cot_max_tokens,
+                gpu_memory_utilization=args.gpu_memory_utilization,
+                max_model_len=args.max_model_len,
+                seed=args.seed,
+            )
+        except Exception as e:
+            logger.error("Eval failed for %s: %s", cell_id, e)
+            failures.append((cell_id, f"eval: {e}"))
+            _purge_cell_snapshot(path_in_repo)
+            continue
+        _save_json(cell_dir / "result.json", result)
+        _purge_cell_snapshot(path_in_repo)
+    if failures:
+        logger.error("%d cell(s) failed: %s", len(failures), failures)
+        sys.exit(1)
+
+
 # ── Smoke + Phase-1 diagnostic suite (plan §4.4 fix 10) ──────────────────────
 
 
@@ -817,7 +879,7 @@ def main() -> None:
     parser.add_argument(
         "--stage",
         required=True,
-        choices=("smoke", "baseline", "full", "cross-verify", "aggregate"),
+        choices=("smoke", "baseline", "full", "carryover", "cross-verify", "aggregate"),
     )
     parser.add_argument("--base-model", default=DEFAULT_BASE_MODEL)
     parser.add_argument(
@@ -837,7 +899,7 @@ def main() -> None:
         type=str,
         default=None,
         help=(
-            "Restrict --stage full to a single source persona "
+            "Restrict --stage full or --stage carryover to a single source persona "
             "(software_engineer / librarian / comedian / police_officer). "
             "Enables per-GPU parallelism on a multi-GPU pod (one process per source)."
         ),
@@ -849,7 +911,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    if args.stage in ("smoke", "baseline", "full", "cross-verify"):
+    if args.stage in ("smoke", "baseline", "full", "carryover", "cross-verify"):
         _install_compat_shims()
 
     if args.stage == "smoke":
@@ -858,6 +920,8 @@ def main() -> None:
         _stage_baseline(args)
     elif args.stage == "full":
         _stage_full(args)
+    elif args.stage == "carryover":
+        _stage_carryover(args)
     elif args.stage == "cross-verify":
         _stage_cross_verify(args)
     elif args.stage == "aggregate":
