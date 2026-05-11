@@ -886,9 +886,36 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
     * FRESH denominator validity gate (macro + per-source floor).
     * FRESH-vs-carry-over calibration table.
     * C3 gate trigger sentinel (bystander-primary, per Plan §11).
+    * (Variant B only) ``f_persona_over_generic_<axis>`` — the persona-vs-
+      generic LoA arm comparison that discriminates persona-specific
+      input-conditioning from any-rationale-prefix-affords-answer-only-SFT
+      (Plan §6 Holm family entries 8-9).
 
     All ratio quantities use the paired bootstrap with shared (q, s) indices
     (Plan §4 S4); engine is ``_paired_bootstrap_ratio``.
+
+    **Holm-family enumeration (canonical, Plan §6 R3 B1):**
+
+    Variant A (N=7):
+      1. ``f_source__persona_cot_labels_on_answer`` (one-sided ≥ 0.50)
+      2. ``f_bystander__persona_cot_labels_on_answer`` (one-sided ≥ 0.50)
+      3. ``h2_diff_of_diffs`` (one-sided ≥ 0.5)
+      4. ``r5_source_high`` (one-sided UPPER-tail vs 0.50)
+      5. ``r5_source_low`` (one-sided UPPER-tail vs 0.20)
+      6. ``r5_bystander_high`` (one-sided UPPER-tail vs 0.50)
+      7. ``r5_bystander_low`` (one-sided UPPER-tail vs 0.20)
+
+    Variant B (N=9) adds:
+      8. ``f_persona_over_generic_source`` (one-sided ≥ 1.5)
+      9. ``f_persona_over_generic_bystander`` (one-sided ≥ 1.5)
+
+    Note: the legacy descriptive ratio ``generic_LoA / persona_cot_FRESH``
+    (fraction-of-effect-surviving on the generic arm relative to the
+    persona-cot FRESH denominator) is computed but emitted under
+    ``descriptive_ratios.f_generic_arm_over_persona_fresh_*`` in
+    ``summary.json``, NOT in the Holm family. It is a different quantity
+    from ``f_persona_over_generic_<axis>`` (the plan-spec ratio
+    ``persona_LoA / generic_LoA``).
     """
     import numpy as np
 
@@ -1341,6 +1368,197 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
             "per_source_pass_count": per_source_pass_count,
         }
 
+    # ── f_persona_over_generic (Plan §6 / §11 Variant B Holm entries 8-9) ──
+    #
+    # v4 fix for round-3 reconcile FAIL: the persona-vs-generic ratio is
+    #
+    #     f_persona_over_generic_<axis> = persona_LoA_<axis> / generic_LoA_<axis>
+    #
+    # NOT the descriptive `generic_LoA / persona_cot_FRESH` quantity that the
+    # f-ratio loop above emits under `f_results["generic_cot_labels_on_answer"]`
+    # (kept as descriptive only; surfaced below under `descriptive_ratios`).
+    #
+    # Construction (mirrors the r5 / H2 paired-bootstrap pattern):
+    #   - Per source, build (q, s)-keyed dicts of source/bystander loss for
+    #     BOTH ``persona_cot_labels_on_answer`` (numerator) and
+    #     ``generic_cot_labels_on_answer`` (denominator), under the matched
+    #     persona-CoT eval scaffold.
+    #   - Intersect (q, s) keys (Plan §4 S4 paired-ratio fix).
+    #   - Pool per-(q, s) numerator and denominator across sources for the
+    #     macro test; run one paired-bootstrap per axis.
+    #   - Denominator stability gate (mirrors r5 + H2):
+    #     ``non_interpretable: true`` if ``|denom_macro| < 0.02`` OR
+    #     ``frac_discarded > 0.05``.
+    #   - One-sided p-value vs threshold 1.5:
+    #     ``p_one_sided_upper = mean(draws < 1.5)`` — small ⇒ strong rejection
+    #     of H0: ratio < 1.5 in the H1 direction.
+    #
+    # Variant A: ``generic_cot_labels_on_answer`` is not in the cell list, so
+    # the per-source / macro pools come out empty. We emit a detail dict with
+    # ``non_interpretable: true`` and reason explaining the deferred arm, and
+    # OMIT the entries from ``holm_family`` (family collapses to N=7).
+    f_persona_over_generic: dict[str, dict] = {}
+    for axis_name in ("source", "bystander"):
+        per_source_pog: dict[str, dict] = {}
+        macro_num_pool: list[float] = []
+        macro_denom_pool: list[float] = []
+        for source in SOURCES:
+            bystanders = [p for p in PERSONA_ORDER if p != source]
+            bys_idx = np.array([persona_idx[p] for p in bystanders])
+            src_idx = persona_idx[source]
+
+            # Numerator cells: persona_cot_labels_on_answer.
+            persona_loa_dict: dict[tuple[int, int], float] = {}
+            persona_seeds_present: list[int] = []
+            for seed in SEEDS:
+                cid = _cell_id(source, "persona_cot_labels_on_answer", seed)
+                if cid not in cell_correctness:
+                    continue
+                sl, bl = _per_qs_loss_matrix(
+                    base_correct,
+                    cell_correctness[cid],
+                    bys_idx,
+                    src_idx,
+                    matched_scaffold_idx,
+                )
+                vec = sl if axis_name == "source" else bl
+                persona_seeds_present.append(seed)
+                for q in range(len(vec)):
+                    persona_loa_dict[(q, seed)] = float(vec[q])
+
+            # Denominator cells: generic_cot_labels_on_answer (Variant B only).
+            generic_loa_dict: dict[tuple[int, int], float] = {}
+            generic_seeds_present: list[int] = []
+            for seed in SEEDS:
+                cid = _cell_id(source, "generic_cot_labels_on_answer", seed)
+                if cid not in cell_correctness:
+                    continue
+                sl, bl = _per_qs_loss_matrix(
+                    base_correct,
+                    cell_correctness[cid],
+                    bys_idx,
+                    src_idx,
+                    matched_scaffold_idx,
+                )
+                vec = sl if axis_name == "source" else bl
+                generic_seeds_present.append(seed)
+                for q in range(len(vec)):
+                    generic_loa_dict[(q, seed)] = float(vec[q])
+
+            if not persona_loa_dict or not generic_loa_dict:
+                # Variant A path (generic arm absent) — also reachable in
+                # Variant B if a partial shard failed.
+                per_source_pog[source] = {
+                    "missing": True,
+                    "non_interpretable": True,
+                    "reason": (
+                        "generic_cot_labels_on_answer arm not present "
+                        "(Variant A defers this arm to a follow-up; Plan §15)"
+                        if variant != "B"
+                        else "generic_cot_labels_on_answer cells missing for this source"
+                    ),
+                    "persona_seeds_present": list(persona_seeds_present),
+                    "generic_seeds_present": list(generic_seeds_present),
+                }
+                continue
+
+            shared_keys = sorted(set(persona_loa_dict.keys()) & set(generic_loa_dict.keys()))
+            if not shared_keys:
+                per_source_pog[source] = {
+                    "missing": True,
+                    "non_interpretable": True,
+                    "reason": "no_shared_qs_keys_between_persona_and_generic_loa",
+                    "n_keys_persona": len(persona_loa_dict),
+                    "n_keys_generic": len(generic_loa_dict),
+                }
+                continue
+
+            num_arr = np.asarray([persona_loa_dict[k] for k in shared_keys], dtype=np.float64)
+            denom_arr = np.asarray([generic_loa_dict[k] for k in shared_keys], dtype=np.float64)
+            boot = _paired_bootstrap_ratio(
+                num_arr,
+                denom_arr,
+                n_resamples=n_bootstrap,
+                denom_epsilon=denom_epsilon,
+                degenerate_draw_policy="discard",
+                rng=rng,
+            )
+            denom_macro = float(denom_arr.mean())
+            non_interp = bool(abs(denom_macro) < 0.02 or boot["frac_discarded"] > 0.05)
+            draws_arr = np.asarray(boot.get("draws") or [], dtype=np.float64)
+            # Threshold 1.5: H1 ratio >= 1.5. Reject when bootstrap mass at or
+            # below 1.5 is small.
+            p_vs_1_5 = float(np.mean(draws_arr <= 1.5)) if draws_arr.size > 0 else float("nan")
+            per_source_pog[source] = {
+                "point": boot["point"],
+                "ci_low": boot["ci_low"],
+                "ci_high": boot["ci_high"],
+                "p_one_sided_upper": p_vs_1_5,
+                "p_two_sided": boot["p_two_sided"],
+                "denom_macro": denom_macro,
+                "n_pairs": int(num_arr.size),
+                "n_discarded": boot["n_discarded"],
+                "frac_discarded": boot["frac_discarded"],
+                "persona_seeds_present": list(persona_seeds_present),
+                "generic_seeds_present": list(generic_seeds_present),
+                "non_interpretable": non_interp,
+                "threshold": 1.5,
+                "hypothesis": (f"one-sided H1: f_persona_over_generic_{axis_name} >= 1.5"),
+            }
+            # Accumulate for macro test (unweighted concatenation across
+            # sources, mirroring the f-ratio macro construction above).
+            macro_num_pool.extend(num_arr.tolist())
+            macro_denom_pool.extend(denom_arr.tolist())
+
+        if macro_num_pool and macro_denom_pool:
+            macro_num_arr = np.asarray(macro_num_pool, dtype=np.float64)
+            macro_denom_arr = np.asarray(macro_denom_pool, dtype=np.float64)
+            macro_boot = _paired_bootstrap_ratio(
+                macro_num_arr,
+                macro_denom_arr,
+                n_resamples=n_bootstrap,
+                denom_epsilon=denom_epsilon,
+                degenerate_draw_policy="discard",
+                rng=rng,
+            )
+            macro_denom_macro = float(macro_denom_arr.mean())
+            macro_non_interp = bool(
+                abs(macro_denom_macro) < 0.02 or macro_boot["frac_discarded"] > 0.05
+            )
+            macro_draws_arr = np.asarray(macro_boot.get("draws") or [], dtype=np.float64)
+            macro_p_vs_1_5 = (
+                float(np.mean(macro_draws_arr <= 1.5)) if macro_draws_arr.size > 0 else float("nan")
+            )
+            f_persona_over_generic[axis_name] = {
+                "point": macro_boot["point"],
+                "ci_low": macro_boot["ci_low"],
+                "ci_high": macro_boot["ci_high"],
+                "p_one_sided_upper": macro_p_vs_1_5,
+                "p_two_sided": macro_boot["p_two_sided"],
+                "denom_macro": macro_denom_macro,
+                "n_pairs_pooled": int(macro_num_arr.size),
+                "n_discarded": macro_boot["n_discarded"],
+                "frac_discarded": macro_boot["frac_discarded"],
+                "non_interpretable": macro_non_interp,
+                "threshold": 1.5,
+                "hypothesis": (f"one-sided H1: f_persona_over_generic_{axis_name} >= 1.5"),
+                "per_source": per_source_pog,
+            }
+        else:
+            # Variant A path — no cells at all.
+            f_persona_over_generic[axis_name] = {
+                "missing": True,
+                "non_interpretable": True,
+                "reason": (
+                    "Variant A; generic_cot_labels_on_answer arm not present"
+                    if variant != "B"
+                    else "generic_cot_labels_on_answer cells missing for all sources"
+                ),
+                "threshold": 1.5,
+                "hypothesis": (f"one-sided H1: f_persona_over_generic_{axis_name} >= 1.5"),
+                "per_source": per_source_pog,
+            }
+
     # ── r5 LOSS-DELTA ratio (Plan §11 C5 statistic) ────────────────────────
     # v2 B2 fix: also compute macro r5 (concatenate across sources) so the
     # Holm family in Plan §6 has the 4 required entries
@@ -1673,10 +1891,25 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
     #   - `non_interpretable: true` on r5 entries means the analyzer should
     #     DROP that entry from Holm correction (denominator stability gate).
     holm_family: list[dict] = []
+    # Descriptive (NOT in Holm family): per-arm f-ratios with persona_cot_FRESH
+    # as the denominator. The generic-arm entry under this name reports
+    # ``generic_LoA / persona_cot_FRESH`` — fraction-of-effect-surviving on
+    # the generic arm relative to the persona-cot FRESH baseline. This is a
+    # different quantity from ``f_persona_over_generic_<axis>`` (the plan-spec
+    # entry, computed below), which compares the two LoA arms directly.
+    descriptive_ratios: dict[str, dict] = {}
     # F-ratio macros: H1 lower-CI ≥ 0.50 (i.e., test reject when ratio > 0.50).
     # We use `p_one_sided_upper` (P(draws ≤ 0)) as a directional anchor and
     # also emit the CI bounds the analyzer applies directly.
+    #
+    # v4 fix: only ``persona_cot_labels_on_answer`` and ``c3gate`` f-ratios
+    # belong in the Holm family. The ``generic_cot_labels_on_answer`` f-ratio
+    # (``generic_LoA / persona_cot_FRESH``) is descriptive — moved to
+    # ``descriptive_ratios.f_generic_arm_over_persona_fresh_<axis>``. The
+    # persona-vs-generic Holm entries (plan §6 entries 8-9) are emitted
+    # separately below from ``f_persona_over_generic``.
     for loa_arm, arm_results in f_results.items():
+        is_holm_eligible = loa_arm != "generic_cot_labels_on_answer"
         for axis_key, payload_key in (
             ("source", "macro_f_source"),
             ("bystander", "macro_f_bystander"),
@@ -1684,19 +1917,41 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
             macro_entry = arm_results.get(payload_key)
             if macro_entry is None:
                 continue
-            holm_family.append(
-                {
-                    "name": f"f_{axis_key}__{loa_arm}",
-                    "kind": "f_ratio_macro",
-                    "axis": axis_key,
-                    "arm": loa_arm,
-                    "ci_low": macro_entry["ci_low"],
-                    "ci_high": macro_entry["ci_high"],
-                    "point": macro_entry["point"],
-                    "p_one_sided_upper": macro_entry["p_one_sided_upper"],
-                    "non_interpretable": False,
-                }
-            )
+            entry_body = {
+                "name": (
+                    f"f_{axis_key}__{loa_arm}"
+                    if is_holm_eligible
+                    else f"f_generic_arm_over_persona_fresh_{axis_key}"
+                ),
+                "kind": (
+                    "f_ratio_macro"
+                    if is_holm_eligible
+                    else "descriptive_f_ratio_generic_arm_over_persona_fresh"
+                ),
+                "axis": axis_key,
+                "arm": loa_arm,
+                "ci_low": macro_entry["ci_low"],
+                "ci_high": macro_entry["ci_high"],
+                "point": macro_entry["point"],
+                "p_one_sided_upper": macro_entry["p_one_sided_upper"],
+                "non_interpretable": False,
+                "description": (
+                    "f-ratio: <arm>_LoA / persona_cot_FRESH (Plan §6 H1 quantity)"
+                    if is_holm_eligible
+                    else (
+                        "DESCRIPTIVE ONLY (not in Holm family): "
+                        "generic_LoA / persona_cot_FRESH — the fraction-of-effect "
+                        "surviving on the generic-CoT arm relative to the "
+                        "persona-cot FRESH baseline. Distinct from "
+                        "f_persona_over_generic_<axis> (Holm entries 8-9), "
+                        "which is persona_LoA / generic_LoA."
+                    )
+                ),
+            }
+            if is_holm_eligible:
+                holm_family.append(entry_body)
+            else:
+                descriptive_ratios[entry_body["name"]] = entry_body
     # Macro r5 directional entries (4 per Variant B).
     for axis_key in ("source", "bystander"):
         macro_r5 = r5_macro_results.get(axis_key, {})
@@ -1781,6 +2036,48 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
             }
         )
 
+    # f_persona_over_generic_<axis> entries (Plan §6 Holm family entries 8-9,
+    # Variant B only). Quantity: ``persona_LoA / generic_LoA``. One-sided
+    # threshold ≥ 1.5; p = P(draws ≤ 1.5). Under Variant A the
+    # ``generic_cot_labels_on_answer`` arm is deferred to a follow-up, so the
+    # entries are OMITTED from the Holm family entirely (family collapses to
+    # N=7). The detail dicts still live in ``f_persona_over_generic`` with
+    # ``non_interpretable: true`` so the analyzer can surface the deferral.
+    if variant == "B":
+        for axis_key in ("source", "bystander"):
+            pog_entry = f_persona_over_generic.get(axis_key, {})
+            if pog_entry.get("missing"):
+                holm_family.append(
+                    {
+                        "name": f"f_persona_over_generic_{axis_key}",
+                        "kind": "f_persona_over_generic",
+                        "axis": axis_key,
+                        "threshold": 1.5,
+                        "hypothesis": (f"one-sided H1: f_persona_over_generic_{axis_key} >= 1.5"),
+                        "missing": True,
+                        "non_interpretable": True,
+                        "reason": pog_entry.get("reason"),
+                    }
+                )
+            else:
+                holm_family.append(
+                    {
+                        "name": f"f_persona_over_generic_{axis_key}",
+                        "kind": "f_persona_over_generic",
+                        "axis": axis_key,
+                        "threshold": 1.5,
+                        "hypothesis": (f"one-sided H1: f_persona_over_generic_{axis_key} >= 1.5"),
+                        "p_value": pog_entry["p_one_sided_upper"],
+                        "ci_low": pog_entry["ci_low"],
+                        "ci_high": pog_entry["ci_high"],
+                        "point": pog_entry["point"],
+                        "denom_macro": pog_entry["denom_macro"],
+                        "non_interpretable": pog_entry["non_interpretable"],
+                    }
+                )
+
+    holm_family_size = 9 if variant == "B" else 7
+
     # ── Summary ─────────────────────────────────────────────────────────────
     summary = {
         "frozen": False,
@@ -1795,10 +2092,42 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
             "bystander_macro": fresh_bystander_macro,
         },
         "f_ratios": f_results,
+        "f_persona_over_generic": f_persona_over_generic,
+        "descriptive_ratios": descriptive_ratios,
         "r5_loss_delta_ratios": r5_results,
         "r5_loss_delta_ratios_macro": r5_macro_results,
         "h2_diff_of_diffs": h2_diff_of_diffs,
         "holm_family": holm_family,
+        "holm_family_size": holm_family_size,
+        "schema_notes": {
+            "f_ratios": (
+                "Per-arm f-ratios with persona_cot_FRESH as the denominator. "
+                "Under name `f_<axis>__persona_cot_labels_on_answer` these are "
+                "Plan §6 Holm entries 1-2 (H1 quantities; threshold ≥ 0.50). "
+                "Under name `f_<axis>__generic_cot_labels_on_answer` they are "
+                "RENAMED on emission to `descriptive_ratios."
+                "f_generic_arm_over_persona_fresh_<axis>` and are NOT in the "
+                "Holm family — they describe generic_LoA / persona_cot_FRESH."
+            ),
+            "f_persona_over_generic": (
+                "Plan §6 Holm entries 8-9 (Variant B only). Quantity: "
+                "persona_LoA / generic_LoA. One-sided threshold ≥ 1.5. "
+                "Discriminates persona-specific input-conditioning from "
+                "any-rationale-prefix-affords-answer-only-SFT."
+            ),
+            "descriptive_ratios": (
+                "Quantities reported for context only — NOT in the Holm "
+                "family. Includes f_generic_arm_over_persona_fresh_<axis> "
+                "(= generic_LoA / persona_cot_FRESH), which is distinct from "
+                "the plan-spec persona-vs-generic ratio in `f_persona_over_generic`."
+            ),
+            "holm_family_size": (
+                "Pre-Bonferroni family size: N=7 under Variant A, N=9 under "
+                "Variant B. Entries with `non_interpretable: true` are "
+                "dropped from Holm correction by the analyzer per Plan §6 "
+                "R3 B2 denominator-stability gate."
+            ),
+        },
         "missing_cells": missing,
         "n_eff_per_source": {"n_q": n_q, "n_seeds": len(SEEDS), "n_pairs": n_q * len(SEEDS)},
     }
