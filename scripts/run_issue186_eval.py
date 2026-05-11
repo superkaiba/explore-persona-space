@@ -1195,8 +1195,18 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
                 continue
 
             # FRESH denominator dict — keyed by the (q, s) we stored during
-            # FRESH construction above.
-            f = fresh_per_source[source]
+            # FRESH construction above. Defensive: if FRESH was entirely
+            # missing for this source the macro gate above would have
+            # already frozen the run, but reach this branch via re-entry
+            # paths.
+            f = fresh_per_source.get(source, {})
+            if not f.get("present"):
+                per_source[source] = {
+                    "missing": True,
+                    "reason": "fresh_denominator_missing",
+                    "loa_seeds_present": list(loa_seeds_present),
+                }
+                continue
             fresh_qs_keys = f["qs_keys"]
             fresh_src_flat = f["src_per_q_flat"]
             fresh_bys_flat = f["bys_per_q_flat"]
