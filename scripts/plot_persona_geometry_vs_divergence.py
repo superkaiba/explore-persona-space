@@ -122,7 +122,8 @@ def figure_hero_dual_heatmap(
         fontsize=11,
         y=1.00,
     )
-    fig.tight_layout()
+    # Note: tight_layout() incompatible with colorbar layout engine; use subplots_adjust.
+    fig.subplots_adjust(wspace=0.35, hspace=0.4)
     savefig_paper(fig, "hero_dual_heatmap_n19", dir=FIG_DIR)
     plt.close(fig)
     log.info("Wrote (i) hero heatmap")
