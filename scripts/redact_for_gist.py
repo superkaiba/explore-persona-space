@@ -13,11 +13,14 @@ Patterns redacted (extensible without asking — see plan §10):
 - HF tokens `hf_[A-Za-z0-9]{30,}` -> `<hf-token>`
 - Anthropic keys `sk-ant-[A-Za-z0-9_-]{40,}` -> `<anthropic-key>`
 - OpenAI keys `sk-[A-Za-z0-9]{40,}` -> `<openai-key>`
+- Slack incoming webhooks `hooks.slack.com/services/T.../B.../...`
+  -> `<slack-webhook>`
 - Generic env-leak `[A-Z]{2,}_(TOKEN|KEY|SECRET)=\\S+` -> `<NAME>=<redacted>`
 - RunPod GraphQL URL `api.runpod.io/graphql` -> `<api-url>`
 
 Usage:
     uv run python scripts/redact_for_gist.py --in body.md --out body.redacted.md
+    uv run python scripts/redact_for_gist.py --in-place eval_results/.../foo.json
 """
 
 from __future__ import annotations
@@ -42,6 +45,12 @@ PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"sk-ant-[A-Za-z0-9_-]{40,}"), "<anthropic-key>"),
     (re.compile(r"\bhf_[A-Za-z0-9]{30,}"), "<hf-token>"),
     (re.compile(r"\bsk-[A-Za-z0-9_-]{40,}\b"), "<openai-key>"),
+    # Slack incoming webhooks. The TXXXX/BXXXX/secret parts can include
+    # zero-padded placeholders (T00000000), so accept any alphanumeric.
+    (
+        re.compile(r"https?://hooks\.slack\.com/services/[A-Z0-9]+/[A-Z0-9]+/[A-Za-z0-9]+"),
+        "<slack-webhook>",
+    ),
     # RunPod team IDs (cm prefix, 20+ alphanumeric chars).
     (re.compile(r"\bcm[a-z0-9]{20,}\b"), "<team-id>"),
     # Generic env-leak: NAME_TOKEN=..., NAME_KEY=..., NAME_SECRET=...
@@ -82,9 +91,30 @@ def redact(text: str) -> str:
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else "")
-    p.add_argument("--in", dest="infile", required=True, help="path to input markdown body")
-    p.add_argument("--out", dest="outfile", required=True, help="path to write the redacted body")
+    p.add_argument("--in", dest="infile", help="path to input markdown body")
+    p.add_argument("--out", dest="outfile", help="path to write the redacted body")
+    p.add_argument(
+        "--in-place",
+        dest="inplace",
+        nargs="+",
+        help="redact one or more files in place (rewrites them with secrets replaced)",
+    )
     args = p.parse_args()
+
+    if args.inplace:
+        for path_str in args.inplace:
+            path = Path(path_str)
+            original = path.read_text()
+            redacted = redact(original)
+            if redacted != original:
+                path.write_text(redacted)
+                print(f"scrubbed: {path}")
+            else:
+                print(f"unchanged: {path}")
+        return
+
+    if not args.infile or not args.outfile:
+        p.error("--in and --out are required when not using --in-place")
 
     src = Path(args.infile).read_text()
     Path(args.outfile).write_text(redact(src))

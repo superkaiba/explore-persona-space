@@ -32,3 +32,12 @@ repos:
         language: system
         files: ^\.mcp\.json$
         pass_filenames: true
+
+      - id: check-no-secret-shaped-strings
+        name: Refuse secret-shaped strings in any staged file
+        entry: uv run python scripts/check_no_secret_shaped_strings.py
+        language: system
+        # Run on all staged files; binary types and the allowlist are
+        # handled in-script. Exclude .git/ housekeeping paths.
+        exclude: ^\.git/
+        pass_filenames: true
