@@ -356,13 +356,20 @@ def _stage_full(args: argparse.Namespace) -> None:
     cells = _all_new_cells()
     if getattr(args, "only_source", None):
         cells = [c for c in cells if c[0] == args.only_source]
+    if getattr(args, "only_arm", None):
+        cells = [c for c in cells if c[1] == args.only_arm]
+    if getattr(args, "only_seed", None) is not None:
+        cells = [c for c in cells if c[2] == args.only_seed]
     logger.info(
-        "Phase-2 full: %d NEW cells x %d personas x %d arms x %d questions%s",
+        "Phase-2 full: %d NEW cells x %d personas x %d arms x %d questions"
+        " (only-source=%s, only-arm=%s, only-seed=%s)",
         len(cells),
         len(EVAL_PERSONAS),
         len(EVAL_SCAFFOLDS),
         args.n_questions or 1172,
-        f" (only-source={args.only_source})" if getattr(args, "only_source", None) else "",
+        getattr(args, "only_source", None),
+        getattr(args, "only_arm", None),
+        getattr(args, "only_seed", None),
     )
     failures: list[tuple[str, str]] = []
     for source, arm, seed in cells:
@@ -418,13 +425,20 @@ def _stage_carryover(args: argparse.Namespace) -> None:
     cells = _all_carryover_cells()
     if getattr(args, "only_source", None):
         cells = [c for c in cells if c[0] == args.only_source]
+    if getattr(args, "only_arm", None):
+        cells = [c for c in cells if c[1] == args.only_arm]
+    if getattr(args, "only_seed", None) is not None:
+        cells = [c for c in cells if c[2] == args.only_seed]
     logger.info(
-        "Phase-2 carryover: %d #186 cells x %d personas x %d arms x %d questions%s",
+        "Phase-2 carryover: %d #186 cells x %d personas x %d arms x %d questions"
+        " (only-source=%s, only-arm=%s, only-seed=%s)",
         len(cells),
         len(EVAL_PERSONAS),
         len(EVAL_SCAFFOLDS),
         args.n_questions or 1172,
-        f" (only-source={args.only_source})" if getattr(args, "only_source", None) else "",
+        getattr(args, "only_source", None),
+        getattr(args, "only_arm", None),
+        getattr(args, "only_seed", None),
     )
     failures: list[tuple[str, str]] = []
     for source, arm, seed in cells:
@@ -902,6 +916,26 @@ def main() -> None:
             "Restrict --stage full or --stage carryover to a single source persona "
             "(software_engineer / librarian / comedian / police_officer). "
             "Enables per-GPU parallelism on a multi-GPU pod (one process per source)."
+        ),
+    )
+    parser.add_argument(
+        "--only-arm",
+        type=str,
+        default=None,
+        help=(
+            "Restrict --stage carryover (and --stage full) to a single train arm. "
+            "Mostly useful for splitting librarian's 9 carryover cells (generic_cot, "
+            "persona_cot, persona_cot_correct) across multiple GPUs."
+        ),
+    )
+    parser.add_argument(
+        "--only-seed",
+        type=int,
+        default=None,
+        help=(
+            "Restrict --stage carryover (and --stage full) to a single seed. "
+            "Useful for finer-grain GPU splitting when --only-source + --only-arm "
+            "still leaves a chunk too big."
         ),
     )
     parser.add_argument(
