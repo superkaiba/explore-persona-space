@@ -349,6 +349,17 @@ def _assign_story_label(verdict_post_cmh: str, copula: dict, bigram: dict) -> st
     bigram_within = (
         all(p.get("within_3pp_of_baseline") for p in bigram.values()) if bigram else False
     )
+    # N5 disposition (Codex round-1 → round-3 clarification): plan §6.5
+    # row 3 reads "≥ 5%" without disambiguating "pooled" vs "per-parent".
+    # We use the STRICTER ``all(p["aggregate_fr"] >= 0.05 ...)``
+    # (per-parent) reading, which requires BOTH bigram parents to clear
+    # the floor. Justification: with N=20 per-parent, a pooled-and-equal
+    # 5% can be driven by a single parent (e.g. 10% + 0%); accepting that
+    # as evidence of "partial H_FAM-BIGRAM" would conflate one-parent
+    # leak with two-parent generalization. The stricter rule falsifies
+    # the partial-H_FAM hypothesis when only one parent shows signal —
+    # the conservative direction for the dominant-story decision.
+    # Reconciler did NOT cite this as a blocker in round 2; preserved as-is.
     bigram_above_5pct = all(p["aggregate_fr"] >= 0.05 for p in bigram.values()) if bigram else False
 
     # Row 5/6: primary verdict didn't fire — story is bigram-only or fully falsified.

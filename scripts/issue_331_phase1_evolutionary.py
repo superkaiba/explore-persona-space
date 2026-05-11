@@ -157,13 +157,26 @@ def _read_phase0_verdict(verdict_path: Path) -> dict:
     # M4 fix (Codex round-1): the plan §6.5 row 4 ("H_FAM-BIGRAM dominant")
     # says Phase 0 only with user opt-in for Phase 1. The bare CONFIRMED-*
     # gate alone misses this — both reviewers (Claude + Codex) flagged it.
-    if story_label in USER_OPT_IN_STORY_LABELS and os.environ.get("EPM_PHASE1_FORCE_LAUNCH") != "1":
+    force_launch = os.environ.get("EPM_PHASE1_FORCE_LAUNCH") == "1"
+    if story_label in USER_OPT_IN_STORY_LABELS and not force_launch:
         logger.error(
             "Phase 0 story_label=%s requires user opt-in for Phase 1 (plan §6.5). "
             "Re-launch with EPM_PHASE1_FORCE_LAUNCH=1 to override.",
             story_label,
         )
         sys.exit(1)
+    # N4 fix (Claude round-2): when the override kicks in, emit an
+    # audit-trail log line so a stale env var leaking into a subsequent
+    # session is not silently bypassing the user-opt-in gate. The summary
+    # JSON also records ``phase1_force_launch_override: true`` when this
+    # path is taken (see ``_finalize``).
+    if story_label in USER_OPT_IN_STORY_LABELS and force_launch:
+        logger.warning(
+            "EPM_PHASE1_FORCE_LAUNCH=1 bypassing user-opt-in gate for "
+            "story_label=%s. This run will NOT halt for user opt-in.",
+            story_label,
+        )
+        verdict["_phase1_force_launch_override"] = True
     return verdict
 
 
@@ -796,6 +809,61 @@ def _evaluate_phase1_outcome(
     }
 
 
+def _resolve_headline_outcome(halt_reason: str, final_outcome: dict) -> str:
+    """Resolve the highest-precedence analyzer-facing outcome.
+
+    Round-3 fix (reconciler binding verdict, post-Codex round-2 FAIL).
+    Before this split, ``exit_reason`` was used for both "why the loop
+    stopped" and "what outcome the run reached", with the result that a
+    run hitting WEAK-CLIMB or STRONG-CLIMB threshold but exhausting the
+    100-round budget wrote ``verdict: budget_exhausted`` in summary.json.
+    Plan §725 names WEAK-CLIMB as the modal expected outcome, so this bug
+    would make the headline result invisible to the analyzer.
+
+    Precedence (highest → lowest):
+      1. SUCCESS         (FR ≥ 50% on rule_based obscure-only)
+      2. STRONG-CLIMB    (FR+DE ≥ 11.25% on rule_based obscure-only)
+      3. WEAK-CLIMB      (FR ≥ 6.25% on rule_based obscure-only)
+      4. KILL            (best < 6.25% AND est ≤ non-est)
+      5. INCONCLUSIVE    (partial signal, plateau before kill, budget out)
+
+    Control-flow halts that do not produce a fitness signal (``no_mutants``)
+    flow through unchanged as their own outcome.
+
+    Args:
+        halt_reason: The mechanical loop-termination cause
+            (SUCCESS / KILL / plateau / budget_exhausted / no_mutants).
+        final_outcome: The final outcome dict from
+            :func:`_evaluate_phase1_outcome`. May be empty if the loop
+            terminated before any round completed (e.g. ``no_mutants`` on
+            round 1).
+
+    Returns:
+        One of:
+          ``SUCCESS``, ``STRONG-CLIMB``, ``WEAK-CLIMB``, ``KILL``,
+          ``INCONCLUSIVE``, ``no_mutants``.
+    """
+    # Control-flow halts that produce no fitness signal pass through.
+    if halt_reason == "no_mutants":
+        return "no_mutants"
+    # SUCCESS and KILL are halt_reasons fired by hard gates; preserve them.
+    # (The reverse: a SUCCESS halt always implies the SUCCESS outcome; we
+    # still consult final_outcome.hit_success defensively in case of
+    # future drift, but trust the halt_reason if the gate fired.)
+    if halt_reason == "SUCCESS":
+        return "SUCCESS"
+    if final_outcome.get("hit_success"):
+        return "SUCCESS"
+    if final_outcome.get("hit_strong_climb"):
+        return "STRONG-CLIMB"
+    if final_outcome.get("hit_weak_climb"):
+        return "WEAK-CLIMB"
+    if halt_reason == "KILL" or final_outcome.get("hit_kill"):
+        return "KILL"
+    # Plateau / budget_exhausted with no climb signal and no kill → partial.
+    return "INCONCLUSIVE"
+
+
 def _log_round_metrics_v331(
     wandb_run,
     round_idx: int,
@@ -981,11 +1049,29 @@ def _finalize(
     output_dir: Path,
     cfg: DictConfig,
     wandb_run,
-    exit_reason: str,
+    halt_reason: str,
+    headline_outcome: str,
     final_outcome: dict,
     replication: dict | None,
     success_n400: dict | None = None,
+    force_launch_override: bool = False,
 ) -> None:
+    """Write the Phase 1 summary JSON + WandB artifact.
+
+    Round-3 fix (reconciler binding verdict). Splits the former
+    ``exit_reason`` into two distinct concepts:
+      - ``halt_reason``: WHY the main loop stopped (SUCCESS / KILL /
+        plateau / budget_exhausted / no_mutants). Mechanical / control-flow.
+      - ``headline_outcome``: WHAT outcome the run actually reached (SUCCESS
+        / STRONG-CLIMB / WEAK-CLIMB / KILL / INCONCLUSIVE / no_mutants),
+        resolved by highest-precedence rule even when the loop hit budget
+        exhaustion. This is the analyzer-facing canonical key.
+
+    Prior to round 3, ``exit_reason`` was used for both, so a typical run
+    that achieved WEAK-CLIMB threshold (≥6.25% FR-only) but exhausted the
+    100-round budget wrote ``verdict: budget_exhausted`` — making the
+    plan-§725 modal outcome invisible to the analyzer.
+    """
     from explore_persona_space.metadata import get_run_metadata
 
     _save_genealogy(all_candidates, output_dir)
@@ -993,15 +1079,35 @@ def _finalize(
 
     ranked = sorted(all_candidates, key=lambda c: c.fr_rate, reverse=True)
     summary = {
-        "exit_reason": exit_reason,
-        "verdict": exit_reason,  # canonical key for analyzer
+        "halt_reason": halt_reason,  # why the loop stopped
+        "headline_outcome": headline_outcome,  # highest-precedence outcome reached
+        # ``verdict`` is the canonical analyzer-facing key. Round-3 fix:
+        # previously aliased ``exit_reason`` (i.e. halt_reason); now aliases
+        # headline_outcome so STRONG-CLIMB / WEAK-CLIMB reached at budget
+        # exhaustion surface correctly.
+        "verdict": headline_outcome,
+        # Back-compat: keep ``exit_reason`` populated with the halt_reason
+        # value so any (currently none) external reader that grepped the
+        # old key still sees the loop-termination cause.
+        "exit_reason": halt_reason,
+        "phase1_force_launch_override": force_launch_override,
         "n_total_candidates": len(all_candidates),
         "n_rounds_completed": max((c.round_idx for c in all_candidates), default=0),
         "outcome": final_outcome,
         "replication_seed137": replication,
         # M5 round-1 fix: surface the SUCCESS-only n=400 replication
-        # result alongside the top-10 seed=137 one. None when exit_reason
-        # != "SUCCESS" or no winning candidate cleared the gate.
+        # result alongside the top-10 seed=137 one. None when
+        # headline_outcome != "SUCCESS" or no winning candidate cleared
+        # the gate.
+        #
+        # N6 disposition (round 2 → round 3 docstring clarification):
+        # plan §4.9 line 127's "if seed=137 n=80 >= 30%" wording is
+        # interpreted as the SUCCESS-replicated criterion (acceptance
+        # threshold), NOT as a gate that must clear before n=400 fires.
+        # n=400 replication runs UNCONDITIONALLY on every SUCCESS
+        # verdict (rule_based candidate >= 50% FR-only on the
+        # full-genealogy walk). Plan §4.9 line 553 reads the same way
+        # and is the authoritative interpretation.
         "replication_success_n400": success_n400,
         "top_10": [asdict(c) for c in ranked[:10]],
         "source_type_breakdown": {
@@ -1013,7 +1119,12 @@ def _finalize(
     summary_path = output_dir / "summary.json"
     with open(summary_path, "w") as f:
         json.dump(summary, f, indent=2)
-    logger.info("Saved summary to %s (exit_reason=%s)", summary_path, exit_reason)
+    logger.info(
+        "Saved summary to %s (halt_reason=%s headline_outcome=%s)",
+        summary_path,
+        halt_reason,
+        headline_outcome,
+    )
 
     if wandb_run is not None:
         try:
@@ -1021,14 +1132,18 @@ def _finalize(
 
             wandb.log(
                 {
-                    "exit_reason": exit_reason,
+                    "halt_reason": halt_reason,
+                    "headline_outcome": headline_outcome,
+                    "exit_reason": halt_reason,  # back-compat alias
                     **final_outcome,
                 }
             )
             artifact = wandb.Artifact(
                 f"issue_331_phase1_results_seed{cfg.seed}",
                 type="eval_results",
-                description=f"Phase 1 evolutionary results (exit: {exit_reason})",
+                description=(
+                    f"Phase 1 evolutionary results (halt={halt_reason}, outcome={headline_outcome})"
+                ),
             )
             artifact.add_dir(str(output_dir))
             wandb_run.log_artifact(artifact)
@@ -1160,7 +1275,14 @@ def phase1_main(cfg: DictConfig) -> None:
     plateau_count = 0
     prev_global_max_fr = 0.0
     final_outcome: dict = {}
-    exit_reason = "budget_exhausted"
+    # Round-3 fix (reconciler binding verdict): separate halt_reason from
+    # the headline outcome. ``halt_reason`` records WHY the loop stopped
+    # (mechanical/control-flow); ``headline_outcome`` records the
+    # highest-precedence outcome actually reached (analyzer-facing) and
+    # is computed AFTER the loop exits — so a run that hit STRONG-CLIMB
+    # or WEAK-CLIMB but exhausted the round budget no longer reports
+    # ``verdict: budget_exhausted`` in summary.json.
+    halt_reason = "budget_exhausted"
 
     for round_idx in range(1, max_rounds + 1):
         logger.info("=== Round %d / %d ===", round_idx, max_rounds)
@@ -1191,7 +1313,7 @@ def phase1_main(cfg: DictConfig) -> None:
         )
         if not mutants:
             logger.warning("No mutants generated in round %d; stopping", round_idx)
-            exit_reason = "no_mutants"
+            halt_reason = "no_mutants"
             break
 
         mutant_dicts = [{"phrase": m.phrase, "category": m.category} for m in mutants]
@@ -1244,7 +1366,7 @@ def phase1_main(cfg: DictConfig) -> None:
         # Hard gates.
         if outcome["hit_success"]:
             logger.info("SUCCESS gate fired at round %d", round_idx)
-            exit_reason = "SUCCESS"
+            halt_reason = "SUCCESS"
             final_outcome = outcome
             break
         if outcome["hit_kill"]:
@@ -1253,7 +1375,7 @@ def phase1_main(cfg: DictConfig) -> None:
                 round_idx,
                 outcome["global_max_fr_obscure_only"],
             )
-            exit_reason = "KILL"
+            halt_reason = "KILL"
             final_outcome = outcome
             break
 
@@ -1272,11 +1394,31 @@ def phase1_main(cfg: DictConfig) -> None:
                 plateau_count,
                 float(cfg.evolution.plateau_delta),
             )
-            exit_reason = "plateau"
+            halt_reason = "plateau"
             final_outcome = outcome
             break
 
         final_outcome = outcome
+
+    # Round-3 fix: resolve the headline outcome from final_outcome flags.
+    # ``halt_reason`` is mechanical (why we stopped); ``headline_outcome``
+    # is the highest-precedence outcome reached. Without this, a run that
+    # hit STRONG-CLIMB or WEAK-CLIMB but exhausted the budget would write
+    # ``verdict: budget_exhausted`` and the analyzer would miss the
+    # headline result (plan §725 calls WEAK-CLIMB the modal expected
+    # outcome).
+    #
+    # Precedence (highest → lowest):
+    #   SUCCESS > STRONG-CLIMB > WEAK-CLIMB > KILL > INCONCLUSIVE > no_mutants
+    #
+    # Control-flow halts (no_mutants) flow through as their own outcome
+    # because there is no fitness signal to resolve from.
+    headline_outcome = _resolve_headline_outcome(halt_reason, final_outcome)
+    logger.info(
+        "Loop exited: halt_reason=%s headline_outcome=%s",
+        halt_reason,
+        headline_outcome,
+    )
 
     # End-of-run replication on seed=137 (B2 fix).
     rule_based_obscure_only = [
@@ -1302,7 +1444,7 @@ def phase1_main(cfg: DictConfig) -> None:
     # winning candidate at n=400 (100 contexts x 4 gens) on seeds 42+137.
     # The acceptance bar is seed=137 FR >= 30% (success_replicated_fr_min).
     success_n400 = None
-    if exit_reason == "SUCCESS" and rule_based_obscure_only:
+    if halt_reason == "SUCCESS" and rule_based_obscure_only:
         success_thresh = float(cfg.evolution.success_threshold_fr)
         success_winners = [c for c in rule_based_obscure_only if c.fr_rate >= success_thresh]
         if success_winners:
@@ -1330,7 +1472,7 @@ def phase1_main(cfg: DictConfig) -> None:
                 success_n400 = None
         else:
             logger.warning(
-                "exit_reason=SUCCESS but no rule_based obscure-only candidate cleared %.3f; "
+                "halt_reason=SUCCESS but no rule_based obscure-only candidate cleared %.3f; "
                 "skipping n=400 replication.",
                 success_thresh,
             )
@@ -1341,10 +1483,12 @@ def phase1_main(cfg: DictConfig) -> None:
         output_dir,
         cfg,
         wandb_run,
-        exit_reason,
+        halt_reason,
+        headline_outcome,
         final_outcome,
         replication,
         success_n400=success_n400,
+        force_launch_override=bool(verdict.get("_phase1_force_launch_override", False)),
     )
 
 
