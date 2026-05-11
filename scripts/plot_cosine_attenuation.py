@@ -41,71 +41,49 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = ROOT / "eval_results" / "issue_296" / "length_rate_correlation.json"
 
 
-ATTENUATION = [
-    # (N, raw |ρ|, raw p, length-partial |ρ|, length-partial p, source issue)
-    (12, 0.81, 0.0014, 0.67, 0.018, "#271 / #246"),
-    (24, 0.52, 0.0097, 0.18, 0.412, "#294 / #274"),
-    (48, 0.35, 0.0140, 0.008, 0.95, "#296"),
-]
+# N=48 — the panel size at which we have the cleanest length-partial result.
+N48 = {"raw_rho": 0.35, "raw_p": 0.014, "partial_rho": 0.008, "partial_p": 0.95}
 
 
 def plot_attenuation_trajectory(out_dir: Path) -> None:
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(7.0, 4.6))
+    fig, ax = plt.subplots(figsize=(6.0, 4.6))
 
-    xs = np.arange(len(ATTENUATION))
-    raw_vals = [a[1] for a in ATTENUATION]
-    partial_vals = [a[3] for a in ATTENUATION]
-    raw_ps = [a[2] for a in ATTENUATION]
-    partial_ps = [a[4] for a in ATTENUATION]
+    xs = np.array([0, 1])
+    vals = [N48["raw_rho"], N48["partial_rho"]]
+    ps = [N48["raw_p"], N48["partial_p"]]
+    colors = [paper_palette_role("primary"), paper_palette_role("baseline")]
 
-    width = 0.36
-    raw_color = paper_palette_role("primary")
-    partial_color = paper_palette_role("baseline")
-    bars_raw = ax.bar(
-        xs - width / 2, raw_vals, width, color=raw_color, edgecolor="white", label="raw"
-    )
-    bars_partial = ax.bar(
-        xs + width / 2,
-        partial_vals,
-        width,
-        color=partial_color,
+    bars = ax.bar(
+        xs,
+        vals,
+        width=0.55,
+        color=colors,
         edgecolor="white",
-        label="length-partial",
     )
 
-    for bar, val, p in zip(bars_raw, raw_vals, raw_ps):
+    for bar, val, p in zip(bars, vals, ps):
+        p_str = f"p = {p:.3f}" if p < 0.1 else f"p = {p:.2f}"
+        val_str = f"{val:.3f}" if val < 0.05 else f"{val:.2f}"
         ax.text(
             bar.get_x() + bar.get_width() / 2,
             val + 0.015,
-            f"{val:.2f}\np = {p:.3f}".replace("p = 0.014", "p = 0.014"),
+            f"{val_str}\n{p_str}",
             ha="center",
             va="bottom",
-            fontsize=8,
-            color="#222",
-        )
-    for bar, val, p in zip(bars_partial, partial_vals, partial_ps):
-        p_str = f"p = {p:.2f}" if p >= 0.01 else f"p = {p:.3f}"
-        ax.text(
-            bar.get_x() + bar.get_width() / 2,
-            val + 0.015,
-            f"{val:.3f}\n{p_str}",
-            ha="center",
-            va="bottom",
-            fontsize=8,
+            fontsize=10,
             color="#222",
         )
 
     ax.set_xticks(xs)
-    ax.set_xticklabels([f"N = {n}\n({src})" for n, _, _, _, _, src in ATTENUATION])
-    ax.set_ylabel("|Spearman ρ| of cosine → source rate (L15)")
-    ax.set_ylim(0, 1.0)
-    ax.legend(loc="upper right", frameon=False, fontsize=9)
+    ax.set_xticklabels(["raw", "after partialing\nout prompt length"])
+    ax.set_ylabel("|Spearman ρ| of cosine → source rate (L15, N=48)")
+    ax.set_ylim(0, 0.5)
 
     set_title_subtitle(
         ax,
-        "Cosine→source-rate attenuates with N and collapses under a length control",
-        subtitle="Raw correlation halves at each doubling; once prompt length is partialed out, the signal goes to zero by N=48",
+        "Controlling for prompt length wipes out the cosine→source-rate signal",
+        subtitle="48 persona LoRAs on Qwen2.5-7B-Instruct  ·  L15 cosine-to-assistant vs [ZLT] source rate",
     )
 
     savefig_paper(fig, "cosine_attenuation_trajectory", dir=str(out_dir))
