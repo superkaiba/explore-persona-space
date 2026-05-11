@@ -40,6 +40,10 @@ import numpy as np
 from omegaconf import DictConfig
 from scipy.stats import fisher_exact
 
+# Ensure repo root is on sys.path so `from scripts.X import Y` resolves when
+# this file is invoked as `python scripts/issue_331_phase0_panel.py`.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 # Import the parent's helpers verbatim per plan §4.1 inheritance map.
 # Requires scripts/__init__.py.
 from scripts.issue_188_evolutionary_trigger import (

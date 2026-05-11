@@ -47,6 +47,10 @@ from typing import Literal
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
+# Ensure repo root is on sys.path so `from scripts.X import Y` resolves when
+# this file is invoked as `python scripts/issue_331_phase1_evolutionary.py`.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 # Reuse parent's helpers verbatim per plan §4.1 inheritance map.
 from scripts.issue_188_evolutionary_trigger import (
     _aggregate_per_candidate,
