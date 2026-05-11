@@ -962,6 +962,9 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
         )
 
     # ── Compute per-source FRESH macros first (denominator validity gate) ──
+    # v2 B3 fix: track which seeds are present per source AND keep (q, s)
+    # keys explicit so downstream callers (LoA paired-bootstrap, r5) can
+    # intersect on the shared (q, s) keys rather than length-only truncation.
     fresh_per_source: dict[str, dict] = {}
     for source in SOURCES:
         bystanders = [p for p in PERSONA_ORDER if p != source]
@@ -969,6 +972,7 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
         src_idx = persona_idx[source]
         # Average per-q source/bystander loss across seeds (3 seeds for
         # persona_cot_FRESH, per Plan §4).
+        seeds_present: list[int] = []
         src_losses = []
         bys_losses = []
         for seed in SEEDS:
@@ -978,13 +982,23 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
             sl, bl = _per_qs_loss_matrix(
                 base_correct, cell_correctness[cid], bys_idx, src_idx, matched_scaffold_idx
             )
+            seeds_present.append(seed)
             src_losses.append(sl)
             bys_losses.append(bl)
         if not src_losses:
             fresh_per_source[source] = {"present": False}
             continue
-        src_per_q = np.stack(src_losses, axis=1)  # (n_q, n_seeds)
+        src_per_q = np.stack(src_losses, axis=1)  # (n_q, n_seeds_present)
         bys_per_q = np.stack(bys_losses, axis=1)
+
+        # Build (q, s) key list aligned with the flat arrays. The reshape
+        # order is "row-major: q varies slowest, s varies fastest" — i.e.
+        # `(n_q, n_seeds).reshape(-1)` yields
+        # [(q=0, s=seeds_present[0]), (q=0, s=seeds_present[1]), ...,
+        #  (q=1, s=seeds_present[0]), ...].
+        qs_keys: list[tuple[int, int]] = [
+            (q, s) for q in range(src_per_q.shape[0]) for s in seeds_present
+        ]
 
         # Per-source bystander macro CI: simple bootstrap on (q, s) pairs (no
         # ratio here, just the mean — but use _paired_bootstrap_ratio with
@@ -1000,6 +1014,7 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
         )
         fresh_per_source[source] = {
             "present": True,
+            "seeds_present": list(seeds_present),
             "n_seeds_present": int(src_per_q.shape[1]),
             "source_macro": float(src_per_q.mean()),
             "bystander_macro": float(bys_per_q.mean()),
@@ -1007,6 +1022,7 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
             "bystander_macro_ci_high": boot["ci_high"],
             "src_per_q_flat": src_per_q.reshape(-1).tolist(),
             "bys_per_q_flat": bys_per_q.reshape(-1).tolist(),
+            "qs_keys": qs_keys,
         }
 
     # Macro-level FRESH gate (Plan §11 'FRESH denominator validity gate' row).
@@ -1035,7 +1051,7 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
             s: {
                 k: v
                 for k, v in fresh_per_source[s].items()
-                if k not in ("src_per_q_flat", "bys_per_q_flat")
+                if k not in ("src_per_q_flat", "bys_per_q_flat", "qs_keys")
             }
             for s in fresh_per_source
         },
@@ -1135,9 +1151,17 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
     if include_c3_gate:
         loa_arms_in_scope.append(ISSUE344_C3_GATE_ARM)
 
+    # v2 B3 fix: per-source f-ratio loop now intersects (q, s) keys between
+    # the LoA numerator and the FRESH denominator before resampling. v1 used
+    # length-only `[:n_pair]` truncation which silently misaligned the
+    # bootstrap when LoA and FRESH had different seed sets present (e.g.,
+    # a shard re-ran one LoA seed but not the matching FRESH seed). The
+    # paired-bootstrap pairing relies on shared (q, s) keys for num and
+    # denom (Plan §4 S4); length truncation broke that invariant.
     for loa_arm in loa_arms_in_scope:
         per_source: dict[str, dict] = {}
-        # Collect per-source per-q numerator / denominator arrays.
+        # Collect per-source numerator / denominator (q, s)-keyed dicts so
+        # the macro-pool concatenation also respects shared keys.
         all_num_src: list[np.ndarray] = []
         all_denom_src: list[np.ndarray] = []
         all_num_bys: list[np.ndarray] = []
@@ -1148,49 +1172,80 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
             src_idx = persona_idx[source]
 
             # LoA cell (numerator). C3 gate is single-source x 3 seeds.
-            loa_seeds = SEEDS
             if loa_arm == ISSUE344_C3_GATE_ARM and source != "librarian":
                 continue
-            loa_src = []
-            loa_bys = []
-            for seed in loa_seeds:
+
+            # Build LoA (q, s)-keyed dicts.
+            loa_src_dict: dict[tuple[int, int], float] = {}
+            loa_bys_dict: dict[tuple[int, int], float] = {}
+            loa_seeds_present: list[int] = []
+            for seed in SEEDS:
                 cid = _cell_id(source, loa_arm, seed)
                 if cid not in cell_correctness:
                     continue
                 sl, bl = _per_qs_loss_matrix(
                     base_correct, cell_correctness[cid], bys_idx, src_idx, matched_scaffold_idx
                 )
-                loa_src.append(sl)
-                loa_bys.append(bl)
-            if not loa_src:
+                loa_seeds_present.append(seed)
+                for q, sv, bv in zip(range(len(sl)), sl.tolist(), bl.tolist(), strict=True):
+                    loa_src_dict[(q, seed)] = sv
+                    loa_bys_dict[(q, seed)] = bv
+            if not loa_src_dict:
                 per_source[source] = {"missing": True}
                 continue
-            loa_src_per_q = np.stack(loa_src, axis=1).reshape(-1)  # (n_q*n_seeds,)
-            loa_bys_per_q = np.stack(loa_bys, axis=1).reshape(-1)
 
-            # FRESH denominator — share (q, s) indices with the LoA cell.
+            # FRESH denominator dict — keyed by the (q, s) we stored during
+            # FRESH construction above.
             f = fresh_per_source[source]
-            fresh_src_per_q = np.asarray(f["src_per_q_flat"])
-            fresh_bys_per_q = np.asarray(f["bys_per_q_flat"])
+            fresh_qs_keys = f["qs_keys"]
+            fresh_src_flat = f["src_per_q_flat"]
+            fresh_bys_flat = f["bys_per_q_flat"]
+            fresh_src_dict: dict[tuple[int, int], float] = {
+                tuple(k): v for k, v in zip(fresh_qs_keys, fresh_src_flat, strict=True)
+            }
+            fresh_bys_dict: dict[tuple[int, int], float] = {
+                tuple(k): v for k, v in zip(fresh_qs_keys, fresh_bys_flat, strict=True)
+            }
 
-            # Lengths should match (same n_q x n_seeds). If they don't (e.g.
-            # the LoA arm has fewer seeds via shard re-runs), align by
-            # truncating to the min — flagged in payload.
-            n_pair = min(len(loa_src_per_q), len(fresh_src_per_q))
-            if len(loa_src_per_q) != len(fresh_src_per_q):
-                logger.warning(
-                    "FRESH/LoA pairing length mismatch for %s/%s: LoA=%d FRESH=%d; "
-                    "truncating to %d",
-                    source,
-                    loa_arm,
-                    len(loa_src_per_q),
-                    len(fresh_src_per_q),
-                    n_pair,
+            # Intersect (q, s) keys. The paired bootstrap requires identical
+            # ordering of num and denom; we build the shared key list once
+            # and index both dicts by it.
+            shared_keys = sorted(set(loa_src_dict.keys()) & set(fresh_src_dict.keys()))
+            n_pairs_total_loa = len(loa_src_dict)
+            n_pairs_total_fresh = len(fresh_src_dict)
+            n_pairs_aligned = len(shared_keys)
+            n_pairs_dropped = max(n_pairs_total_loa, n_pairs_total_fresh) - n_pairs_aligned
+            drop_frac = (
+                n_pairs_dropped / max(n_pairs_total_loa, n_pairs_total_fresh, 1)
+                if n_pairs_dropped
+                else 0.0
+            )
+            if n_pairs_dropped:
+                msg = (
+                    f"FRESH/LoA (q, s)-key drop for {source}/{loa_arm}: "
+                    f"loa_keys={n_pairs_total_loa} fresh_keys={n_pairs_total_fresh} "
+                    f"aligned={n_pairs_aligned} dropped={n_pairs_dropped} "
+                    f"(loa_seeds_present={loa_seeds_present}, "
+                    f"fresh_seeds_present={f.get('seeds_present', [])})"
                 )
-            loa_src_per_q = loa_src_per_q[:n_pair]
-            loa_bys_per_q = loa_bys_per_q[:n_pair]
-            fresh_src_per_q = fresh_src_per_q[:n_pair]
-            fresh_bys_per_q = fresh_bys_per_q[:n_pair]
+                if drop_frac > 0.05:
+                    logger.warning("[ALIGN-DROP >5%%] %s", msg)
+                else:
+                    logger.info("[ALIGN-DROP] %s", msg)
+
+            if not shared_keys:
+                per_source[source] = {
+                    "missing": True,
+                    "reason": "no_shared_qs_keys_between_loa_and_fresh",
+                    "n_pairs_total_loa": n_pairs_total_loa,
+                    "n_pairs_total_fresh": n_pairs_total_fresh,
+                }
+                continue
+
+            loa_src_per_q = np.asarray([loa_src_dict[k] for k in shared_keys], dtype=np.float64)
+            loa_bys_per_q = np.asarray([loa_bys_dict[k] for k in shared_keys], dtype=np.float64)
+            fresh_src_per_q = np.asarray([fresh_src_dict[k] for k in shared_keys], dtype=np.float64)
+            fresh_bys_per_q = np.asarray([fresh_bys_dict[k] for k in shared_keys], dtype=np.float64)
 
             # Per-source paired bootstrap. SUPPORTS lower-CI ≥ 0.50 threshold.
             f_src_boot = _paired_bootstrap_ratio(
@@ -1209,7 +1264,13 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
             )
 
             per_source[source] = {
-                "n_pairs": int(n_pair),
+                "n_pairs": int(n_pairs_aligned),
+                "n_pairs_aligned": int(n_pairs_aligned),
+                "n_pairs_dropped": int(n_pairs_dropped),
+                "n_pairs_total_loa": int(n_pairs_total_loa),
+                "n_pairs_total_fresh": int(n_pairs_total_fresh),
+                "loa_seeds_present": list(loa_seeds_present),
+                "fresh_seeds_present": list(f.get("seeds_present", [])),
                 "f_source": {k: v for k, v in f_src_boot.items() if k != "draws"},
                 "f_bystander": {k: v for k, v in f_bys_boot.items() if k != "draws"},
                 "fresh_floor_pass": per_source_floor[source]["floor_pass"],
@@ -1270,44 +1331,84 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
         }
 
     # ── r5 LOSS-DELTA ratio (Plan §11 C5 statistic) ────────────────────────
+    # v2 B2 fix: also compute macro r5 (concatenate across sources) so the
+    # Holm family in Plan §6 has the 4 required entries
+    # (`r5_source_high/low`, `r5_bystander_high/low`). v1 emitted only the
+    # per-source r5 dict and left the analyzer with nothing to evaluate the
+    # population-level §7 decision tree.
     r5_results: dict[str, dict] = {}
+    # Per-axis macro pool. Keyed by (source, q, seed) to keep the cross-source
+    # macro pool unique even if a source falls out for partial-seed reasons.
+    r5_macro_pool: dict[str, dict[str, list[float]]] = {
+        "source": {"matched": [], "empty": []},
+        "bystander": {"matched": [], "empty": []},
+    }
     for axis_name in ("source", "bystander"):
         for source in SOURCES:
-            cid_loa_seeds = [
-                _cell_id(source, "persona_cot_labels_on_answer", seed) for seed in SEEDS
-            ]
-            if not all(c in cell_correctness for c in cid_loa_seeds):
-                continue
             bystanders = [p for p in PERSONA_ORDER if p != source]
             bys_idx = np.array([persona_idx[p] for p in bystanders])
             src_idx = persona_idx[source]
 
-            empty_losses = []
-            matched_losses = []
+            # (q, s)-keyed dicts for both scaffolds. Within the same cell,
+            # num (empty) and denom (matched) are extracted from the same
+            # underlying correctness array — so pairing is automatic
+            # within-cell; we only need explicit keying when pooling across
+            # cells / sources.
+            empty_dict: dict[tuple[int, int], float] = {}
+            matched_dict: dict[tuple[int, int], float] = {}
+            seeds_present: list[int] = []
             for seed in SEEDS:
                 cid = _cell_id(source, "persona_cot_labels_on_answer", seed)
+                if cid not in cell_correctness:
+                    continue
                 if axis_name == "source":
                     sl_m, _ = _per_qs_loss_matrix(
-                        base_correct, cell_correctness[cid], bys_idx, src_idx, matched_scaffold_idx
+                        base_correct,
+                        cell_correctness[cid],
+                        bys_idx,
+                        src_idx,
+                        matched_scaffold_idx,
                     )
                     sl_e, _ = _per_qs_loss_matrix(
-                        base_correct, cell_correctness[cid], bys_idx, src_idx, empty_scaffold_idx
+                        base_correct,
+                        cell_correctness[cid],
+                        bys_idx,
+                        src_idx,
+                        empty_scaffold_idx,
                     )
-                    matched_losses.append(sl_m)
-                    empty_losses.append(sl_e)
+                    matched_vec = sl_m
+                    empty_vec = sl_e
                 else:
                     _, bl_m = _per_qs_loss_matrix(
-                        base_correct, cell_correctness[cid], bys_idx, src_idx, matched_scaffold_idx
+                        base_correct,
+                        cell_correctness[cid],
+                        bys_idx,
+                        src_idx,
+                        matched_scaffold_idx,
                     )
                     _, bl_e = _per_qs_loss_matrix(
-                        base_correct, cell_correctness[cid], bys_idx, src_idx, empty_scaffold_idx
+                        base_correct,
+                        cell_correctness[cid],
+                        bys_idx,
+                        src_idx,
+                        empty_scaffold_idx,
                     )
-                    matched_losses.append(bl_m)
-                    empty_losses.append(bl_e)
-            if not matched_losses:
+                    matched_vec = bl_m
+                    empty_vec = bl_e
+                seeds_present.append(seed)
+                for q in range(len(matched_vec)):
+                    matched_dict[(q, seed)] = float(matched_vec[q])
+                    empty_dict[(q, seed)] = float(empty_vec[q])
+
+            if not matched_dict:
                 continue
-            matched_flat = np.stack(matched_losses, axis=1).reshape(-1)
-            empty_flat = np.stack(empty_losses, axis=1).reshape(-1)
+
+            # Per-cell pairing is by construction aligned (same cid drives
+            # both matched and empty), but we sort keys for deterministic
+            # bootstrap behavior.
+            shared_keys = sorted(matched_dict.keys())
+            matched_flat = np.asarray([matched_dict[k] for k in shared_keys], dtype=np.float64)
+            empty_flat = np.asarray([empty_dict[k] for k in shared_keys], dtype=np.float64)
             boot = _paired_bootstrap_ratio(
                 empty_flat,
                 matched_flat,
@@ -1316,13 +1417,70 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
                 rng=rng,
             )
             # Denominator stability gate (Plan §6 R3 B2).
-            matched_macro = float(matched_flat.mean())
-            non_interpretable = abs(matched_macro) < 0.02 or boot["frac_discarded"] > 0.05
+            matched_macro_source = float(matched_flat.mean())
+            non_interpretable = abs(matched_macro_source) < 0.02 or boot["frac_discarded"] > 0.05
             r5_results.setdefault(source, {})[axis_name] = {
                 "ratio": {k: v for k, v in boot.items() if k != "draws"},
-                "matched_loss_delta_macro": matched_macro,
+                "matched_loss_delta_macro": matched_macro_source,
                 "non_interpretable": bool(non_interpretable),
+                "seeds_present": list(seeds_present),
+                "n_pairs": len(shared_keys),
             }
+            # Accumulate into the cross-source macro pool. We use
+            # `.extend` here — the macro is the unweighted concatenation
+            # across sources, mirroring how `all_num_src` is built for the
+            # f-ratio macro above.
+            r5_macro_pool[axis_name]["empty"].extend(empty_flat.tolist())
+            r5_macro_pool[axis_name]["matched"].extend(matched_flat.tolist())
+
+    # ── Macro r5 (B2): one paired bootstrap per axis, across sources ────────
+    # Two directional tests per axis (Plan §6 N=9 Holm family entries 4-7):
+    #   - r5_<axis>_high: H1 macro > 0.50 -> p_one_sided = P(draws < 0.50)
+    #   - r5_<axis>_low:  H1 macro < 0.20 -> p_one_sided = P(draws > 0.20)
+    # Per the brief's denominator-stability gate (R3 B2 generalization to
+    # macro): if |matched_macro| < 0.02 OR frac_discarded > 0.05 we mark
+    # the macro r5 as `non_interpretable: true` so the analyzer can gate
+    # the Holm family on this signal alone.
+    r5_macro_results: dict[str, dict] = {}
+    for axis_name in ("source", "bystander"):
+        empty_pool = np.asarray(r5_macro_pool[axis_name]["empty"], dtype=np.float64)
+        matched_pool = np.asarray(r5_macro_pool[axis_name]["matched"], dtype=np.float64)
+        if empty_pool.size < 2 or matched_pool.size < 2:
+            r5_macro_results[axis_name] = {
+                "missing": True,
+                "reason": "no_eligible_cells",
+            }
+            continue
+        macro_boot = _paired_bootstrap_ratio(
+            empty_pool,
+            matched_pool,
+            n_resamples=n_bootstrap,
+            denom_epsilon=denom_epsilon,
+            rng=rng,
+        )
+        draws_arr = np.asarray(macro_boot.get("draws") or [], dtype=np.float64)
+        if draws_arr.size == 0:
+            p_high = float("nan")
+            p_low = float("nan")
+        else:
+            # high: H1 ratio > 0.50, reject by upper tail being above 0.50.
+            # p-value = mass at or below the threshold (smaller = stronger).
+            p_high = float(np.mean(draws_arr <= 0.50))
+            # low: H1 ratio < 0.20, reject by lower tail being below 0.20.
+            # p-value = mass at or above the threshold (smaller = stronger).
+            p_low = float(np.mean(draws_arr >= 0.20))
+        matched_macro_val = float(matched_pool.mean())
+        non_interpretable_macro = bool(
+            abs(matched_macro_val) < 0.02 or macro_boot["frac_discarded"] > 0.05
+        )
+        r5_macro_results[axis_name] = {
+            "ratio": {k: v for k, v in macro_boot.items() if k != "draws"},
+            "matched_loss_delta_macro": matched_macro_val,
+            "non_interpretable": non_interpretable_macro,
+            "n_pairs_pooled": int(empty_pool.size),
+            "p_high_vs_0_50": p_high,
+            "p_low_vs_0_20": p_low,
+        }
 
     # ── C3 gate trigger (Plan §11) ──────────────────────────────────────────
     macro_f_bys = f_results.get("persona_cot_labels_on_answer", {}).get("macro_f_bystander")
@@ -1344,6 +1502,94 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
         }
         _save_json(out_344 / "c3_gate_trigger.json", c3_gate_payload)
 
+    # ── Holm family (Plan §6, N=9 for Variant B) ────────────────────────────
+    # v2 B2 fix: emit the 4 macro r5 entries the analyzer needs to evaluate
+    # the §6/§7 decision tree. v1 emitted only per-source r5 — leaving the
+    # population-level test entries missing from the family. We also emit
+    # the f-ratio macro p-values so the analyzer can apply Holm-Bonferroni
+    # across the full family.
+    #
+    # Conventions:
+    #   - `p_value` is the one-sided p-value for the directional test.
+    #     Smaller p ⇒ stronger rejection of the null in the H1 direction.
+    #   - `non_interpretable: true` on r5 entries means the analyzer should
+    #     DROP that entry from Holm correction (denominator stability gate).
+    holm_family: list[dict] = []
+    # F-ratio macros: H1 lower-CI ≥ 0.50 (i.e., test reject when ratio > 0.50).
+    # We use `p_one_sided_upper` (P(draws ≤ 0)) as a directional anchor and
+    # also emit the CI bounds the analyzer applies directly.
+    for loa_arm, arm_results in f_results.items():
+        for axis_key, payload_key in (
+            ("source", "macro_f_source"),
+            ("bystander", "macro_f_bystander"),
+        ):
+            macro_entry = arm_results.get(payload_key)
+            if macro_entry is None:
+                continue
+            holm_family.append(
+                {
+                    "name": f"f_{axis_key}__{loa_arm}",
+                    "kind": "f_ratio_macro",
+                    "axis": axis_key,
+                    "arm": loa_arm,
+                    "ci_low": macro_entry["ci_low"],
+                    "ci_high": macro_entry["ci_high"],
+                    "point": macro_entry["point"],
+                    "p_one_sided_upper": macro_entry["p_one_sided_upper"],
+                    "non_interpretable": False,
+                }
+            )
+    # Macro r5 directional entries (4 per Variant B).
+    for axis_key in ("source", "bystander"):
+        macro_r5 = r5_macro_results.get(axis_key, {})
+        non_interp = bool(macro_r5.get("non_interpretable", True))
+        if macro_r5.get("missing"):
+            for direction in ("high", "low"):
+                holm_family.append(
+                    {
+                        "name": f"r5_{axis_key}_{direction}",
+                        "kind": "r5_directional",
+                        "axis": axis_key,
+                        "direction": direction,
+                        "missing": True,
+                        "non_interpretable": True,
+                    }
+                )
+            continue
+        ratio_block = macro_r5.get("ratio", {})
+        # `_high` entry: H1 macro > 0.50. p = P(draws ≤ 0.50).
+        holm_family.append(
+            {
+                "name": f"r5_{axis_key}_high",
+                "kind": "r5_directional",
+                "axis": axis_key,
+                "direction": "high",
+                "threshold": 0.50,
+                "p_value": macro_r5["p_high_vs_0_50"],
+                "ci_low": ratio_block.get("ci_low"),
+                "ci_high": ratio_block.get("ci_high"),
+                "point": ratio_block.get("point"),
+                "matched_loss_delta_macro": macro_r5["matched_loss_delta_macro"],
+                "non_interpretable": non_interp,
+            }
+        )
+        # `_low` entry: H1 macro < 0.20. p = P(draws ≥ 0.20).
+        holm_family.append(
+            {
+                "name": f"r5_{axis_key}_low",
+                "kind": "r5_directional",
+                "axis": axis_key,
+                "direction": "low",
+                "threshold": 0.20,
+                "p_value": macro_r5["p_low_vs_0_20"],
+                "ci_low": ratio_block.get("ci_low"),
+                "ci_high": ratio_block.get("ci_high"),
+                "point": ratio_block.get("point"),
+                "matched_loss_delta_macro": macro_r5["matched_loss_delta_macro"],
+                "non_interpretable": non_interp,
+            }
+        )
+
     # ── Summary ─────────────────────────────────────────────────────────────
     summary = {
         "frozen": False,
@@ -1359,6 +1605,8 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
         },
         "f_ratios": f_results,
         "r5_loss_delta_ratios": r5_results,
+        "r5_loss_delta_ratios_macro": r5_macro_results,
+        "holm_family": holm_family,
         "missing_cells": missing,
         "n_eff_per_source": {"n_q": n_q, "n_seeds": len(SEEDS), "n_pairs": n_q * len(SEEDS)},
     }

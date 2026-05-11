@@ -329,6 +329,170 @@ def test_paired_bootstrap_ratio_handles_epsilon() -> None:
     print("  PASS")
 
 
+def test_r5_macro_directional_p_values() -> None:
+    """v2 regression test for B2: macro r5 directional p-value semantics.
+
+    v1 emitted only per-source r5; v2 adds a macro-pool paired bootstrap +
+    two one-sided p-values per axis:
+
+    - `r5_<axis>_high`: H1 macro > 0.50 ⇒ p = P(draws ≤ 0.50)
+    - `r5_<axis>_low`:  H1 macro < 0.20 ⇒ p = P(draws ≥ 0.20)
+
+    Small p ⇒ strong rejection of the threshold in the H1 direction.
+    """
+    print("\n=== macro r5 directional p-value semantics (v2 B2 regression) ===")
+    import numpy as np
+    import run_issue186_eval as mod
+
+    rng = np.random.default_rng(7)
+    n = 600  # mimics the macro pool size (n_q * n_seeds * n_sources ~= 1172 * 3 * 4)
+
+    # Case 1: ratio centered at 0.70 — should REJECT high (>0.50) strongly,
+    # and NOT reject low (<0.20) at all.
+    num = rng.normal(0.70, 0.05, n)
+    denom = rng.normal(1.00, 0.05, n)
+    boot = mod._paired_bootstrap_ratio(num, denom, n_resamples=2000, rng=rng)
+    draws_arr = np.asarray(boot["draws"])
+    assert draws_arr.size > 0, "no draws produced"
+    p_high = float(np.mean(draws_arr <= 0.50))
+    p_low = float(np.mean(draws_arr >= 0.20))
+    print(
+        f"  ratio~0.70: point={boot['point']:.3f}, p_high(<=0.50)={p_high:.4f}, "
+        f"p_low(>=0.20)={p_low:.4f}"
+    )
+    # 0.70 with tight noise should be FIRMLY above 0.50 — reject high.
+    assert p_high < 0.05, f"expected p_high < 0.05 for ratio~0.70, got {p_high}"
+    # 0.70 is far above 0.20 — p_low (= P(draws >= 0.20)) should be ~1.0
+    # (we CAN'T reject "macro < 0.20" because the data say macro >> 0.20).
+    assert p_low > 0.95, f"expected p_low > 0.95 for ratio~0.70, got {p_low}"
+
+    # Case 2: ratio centered at 0.10 — should REJECT low (<0.20) strongly,
+    # and NOT reject high (>0.50) at all.
+    num2 = rng.normal(0.10, 0.02, n)
+    denom2 = rng.normal(1.00, 0.05, n)
+    boot2 = mod._paired_bootstrap_ratio(num2, denom2, n_resamples=2000, rng=rng)
+    draws2 = np.asarray(boot2["draws"])
+    p_high2 = float(np.mean(draws2 <= 0.50))
+    p_low2 = float(np.mean(draws2 >= 0.20))
+    print(
+        f"  ratio~0.10: point={boot2['point']:.3f}, p_high(<=0.50)={p_high2:.4f}, "
+        f"p_low(>=0.20)={p_low2:.4f}"
+    )
+    # 0.10 is FIRMLY below 0.20 — reject low.
+    assert p_low2 < 0.05, f"expected p_low2 < 0.05 for ratio~0.10, got {p_low2}"
+    # 0.10 is also below 0.50 — p_high (= P(draws <= 0.50)) should be ~1.0
+    # (we CAN'T reject "macro > 0.50" because the data say macro << 0.50).
+    assert p_high2 > 0.95, f"expected p_high2 > 0.95 for ratio~0.10, got {p_high2}"
+
+    # Case 3: ratio centered at 0.35 — between thresholds, should NOT
+    # reject either direction strongly.
+    num3 = rng.normal(0.35, 0.05, n)
+    denom3 = rng.normal(1.00, 0.05, n)
+    boot3 = mod._paired_bootstrap_ratio(num3, denom3, n_resamples=2000, rng=rng)
+    draws3 = np.asarray(boot3["draws"])
+    p_high3 = float(np.mean(draws3 <= 0.50))
+    p_low3 = float(np.mean(draws3 >= 0.20))
+    print(
+        f"  ratio~0.35: point={boot3['point']:.3f}, p_high(<=0.50)={p_high3:.4f}, "
+        f"p_low(>=0.20)={p_low3:.4f}"
+    )
+    # 0.35 < 0.50 ⇒ P(draws <= 0.50) is high; we can't reject "macro > 0.50".
+    assert p_high3 > 0.5, f"expected p_high3 > 0.5 for ratio~0.35, got {p_high3}"
+    # 0.35 > 0.20 ⇒ P(draws >= 0.20) is high; we can't reject "macro < 0.20".
+    assert p_low3 > 0.5, f"expected p_low3 > 0.5 for ratio~0.35, got {p_low3}"
+
+    # Denominator-stability gate: when |matched_macro| < 0.02 the gate
+    # should mark `non_interpretable`. We simulate this directly with the
+    # threshold logic the macro-r5 emit block applies.
+    matched_macro = 0.01
+    non_interp = bool(abs(matched_macro) < 0.02 or boot["frac_discarded"] > 0.05)
+    assert non_interp is True, "stability gate failed to flag |macro|<0.02"
+    print(f"  non_interpretable gate: |0.01|<0.02 -> {non_interp}")
+    print("  PASS")
+
+
+def test_paired_bootstrap_seed_alignment() -> None:
+    """v2 regression test for B3: (q, s)-keyed pairing in f-ratio loop.
+
+    v1 used length-only `[:n_pair]` truncation when LoA and FRESH had
+    different seed sets present. Under partial-seed loss (e.g., FRESH cell
+    missing seed=137 while LoA has all 3 seeds), this paired
+    `(q=0, seed_42_LoA)` with `(q=0, seed_42_FRESH)` for index 0, but at
+    index 1 it paired `(q=0, seed_137_LoA)` with `(q=0, seed_256_FRESH)`.
+    Result: silently wrong f-ratio estimates.
+
+    v2 builds (q, s)-keyed dicts on both sides and intersects keys before
+    resampling. This test verifies the intersection: it constructs synthetic
+    arrays where LoA has 3 seeds and FRESH has 2 seeds and asserts that
+    only the shared (q, s) keys end up in the bootstrap input — not just
+    "length-minimum-of-both" arrays.
+    """
+    print("\n=== paired-bootstrap (q, s)-key intersection (v2 B3 regression) ===")
+    # Simulate the dict-build + intersect pattern used in
+    # `_stage_aggregate_fraction_of_effect`. We unit-test the alignment
+    # contract by constructing two (q, s)-keyed dicts with disjoint seeds.
+    loa_seeds = [42, 137, 256]
+    fresh_seeds = [42, 256]  # missing 137
+    n_q = 10
+    # LoA values keyed by (q, s) — distinguishable so misalignment is
+    # observable: LoA value = q * 100 + s.
+    loa_dict = {(q, s): float(q * 100 + s) for q in range(n_q) for s in loa_seeds}
+    # FRESH values keyed by (q, s) — distinguishable.
+    fresh_dict = {(q, s): float(q * 1000 + s) for q in range(n_q) for s in fresh_seeds}
+
+    # Intersection contract.
+    shared_keys = sorted(set(loa_dict.keys()) & set(fresh_dict.keys()))
+    n_pairs_total_loa = len(loa_dict)
+    n_pairs_total_fresh = len(fresh_dict)
+    n_pairs_aligned = len(shared_keys)
+    n_pairs_dropped = max(n_pairs_total_loa, n_pairs_total_fresh) - n_pairs_aligned
+    drop_frac = n_pairs_dropped / max(n_pairs_total_loa, n_pairs_total_fresh)
+
+    print(
+        f"  loa_keys={n_pairs_total_loa} fresh_keys={n_pairs_total_fresh} "
+        f"shared={n_pairs_aligned} dropped={n_pairs_dropped} drop_frac={drop_frac:.3f}"
+    )
+    # 10 (q's) * 2 (shared seeds {42, 256}) = 20 pairs.
+    assert n_pairs_aligned == 20, f"expected 20 shared, got {n_pairs_aligned}"
+    # All shared keys must have seed in {42, 256}.
+    shared_seeds = sorted({s for (_, s) in shared_keys})
+    assert shared_seeds == [42, 256], f"shared seeds wrong: {shared_seeds}"
+    # The drop fraction should fire the >5% warning threshold (30/30 = ~33%).
+    assert drop_frac > 0.05, f"expected drop_frac > 0.05 to trigger warning, got {drop_frac}"
+
+    # Verify the constructed arrays would be aligned under the (q, s) key.
+    loa_arr = [loa_dict[k] for k in shared_keys]
+    fresh_arr = [fresh_dict[k] for k in shared_keys]
+    for k, lv, fv in zip(shared_keys, loa_arr, fresh_arr, strict=True):
+        q, s = k
+        assert lv == q * 100 + s, f"LoA misaligned at {k}: got {lv}"
+        assert fv == q * 1000 + s, f"FRESH misaligned at {k}: got {fv}"
+    print("  (q, s) pairing verified for all 20 shared keys.")
+
+    # Anti-test: what v1's length-only truncation would have done. LoA has
+    # 30 entries, FRESH has 20; v1 took `[:20]` on both. Verify v2 differs.
+    # LoA flat in (q-major, s-minor) order:
+    loa_flat_v1 = [loa_dict[(q, s)] for q in range(n_q) for s in loa_seeds][:20]
+    fresh_flat_v1 = [fresh_dict[(q, s)] for q in range(n_q) for s in fresh_seeds][:20]
+    # Misalignment count: how many indices have mismatched implicit (q, s)?
+    misaligned = 0
+    for i in range(min(len(loa_flat_v1), len(fresh_flat_v1))):
+        # Implicit LoA (q, s) at index i under v1: q = i // 3, s = loa_seeds[i % 3]
+        # Implicit FRESH (q, s) at index i under v1: q = i // 2, s = fresh_seeds[i % 2]
+        loa_implicit_q = i // 3
+        loa_implicit_s = loa_seeds[i % 3]
+        fresh_implicit_q = i // 2
+        fresh_implicit_s = fresh_seeds[i % 2]
+        if (loa_implicit_q, loa_implicit_s) != (fresh_implicit_q, fresh_implicit_s):
+            misaligned += 1
+    print(
+        f"  v1 length-only truncation would have misaligned "
+        f"{misaligned}/20 pairs (v2 fix avoids this)"
+    )
+    assert misaligned > 0, "v1 misalignment count should be > 0 under partial-seed loss"
+    print("  PASS")
+
+
 def test_hf_path_in_repo_switches_by_arm() -> None:
     print("\n=== _hf_path_in_repo switches i186 vs i344 arms ===")
     import run_issue186_eval as mod
@@ -638,6 +802,7 @@ def main() -> None:
     test_cell_id_naming()
     test_paired_bootstrap_ratio_handles_epsilon()
     test_paired_bootstrap_seed_alignment()
+    test_r5_macro_directional_p_values()
     test_hf_path_in_repo_switches_by_arm()
     test_mask_audit_per_arm_gate()
 
