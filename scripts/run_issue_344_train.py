@@ -644,17 +644,21 @@ def train_one_cell(
     )
 
     # WandB tags — picked up by the SFTTrainer's WandB init.
-    os.environ.setdefault(
-        "WANDB_TAGS",
-        ",".join(
-            [
-                "issue344",
-                f"phase_{phase}",
-                arm,
-                f"source_{source}",
-                f"seed_{seed}",
-            ]
-        ),
+    # v2 B5 fix: use assignment (not `setdefault`) so each cell gets its OWN
+    # tags within a shard process. v1 used `setdefault` — only the first
+    # cell's tags survived; every subsequent cell in the same shard inherited
+    # them, breaking WandB tag-based filters (e.g., `tag:source_librarian`
+    # would return 1/10 of the actual cells per shard, plus mis-tagged ones).
+    # WANDB_PROJECT stays `setdefault` because its value is invariant across
+    # cells.
+    os.environ["WANDB_TAGS"] = ",".join(
+        [
+            "issue344",
+            f"phase_{phase}",
+            arm,
+            f"source_{source}",
+            f"seed_{seed}",
+        ]
     )
     os.environ.setdefault("WANDB_PROJECT", WANDB_PROJECT)
 
