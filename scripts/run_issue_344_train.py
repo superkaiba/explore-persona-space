@@ -356,14 +356,19 @@ def _run_mask_audit(
 ) -> dict:
     """Sample 5 batch examples and assert the loss mask is correct.
 
-    Hard asserts (per Plan §4 / §11 'Dry-run masking gate' row):
+    Hard asserts (per Plan §4 / §11 'Dry-run masking gate' row), with per-arm
+    semantics fixed in v2 after the round-1 reviewer caught that the v1
+    unconditional 80% gate aborted FRESH cells:
 
-    * For every sampled example, ``pct_masked >= 80`` (system + user + (for
-      partial cells) rationale tokens contribute the bulk of ``-100`` slots).
-    * For partial-generation cells (``ARM in PARTIAL_GENERATION_ARMS``):
-        * The 3 tokens starting at ``\\nAnswer:`` are NOT masked.
-        * Tokens before the ``\\nAnswer:`` anchor (the rationale region)
-          inside the assistant turn are ALL masked.
+    * Partial-generation cells (``arm in PARTIAL_GENERATION_ARMS`` —
+      ``*_labels_on_answer``, ``generic_cot_labels_on_answer``): only the
+      ``\\nAnswer:`` slice is loss-bearing. Assert ``pct_masked >= 80``,
+      ``\\nAnswer:`` region not -100, rationale region (50 tokens before
+      anchor) >=80% -100.
+    * Whole-turn cells (``*_FRESH``): the full assistant turn is loss-bearing
+      by design. Only sanity-check ``pct_masked >= 10`` (system + user +
+      chat-scaffold should still be -100) — analogous to the reference recipe
+      at ``scripts/run_issue_203_train.py:255-261``.
 
     Saves the audit to ``{audit_dir}/mask_audit_{cell_id}.json`` and returns
     the dict (caller may upload it to WandB as an Artifact).
@@ -388,12 +393,42 @@ def _run_mask_audit(
             "n_total": n_total,
         }
 
-        if pct_masked < 80.0:
-            raise RuntimeError(
-                f"[mask-audit] sample {i}: only {pct_masked:.1f}% masked "
-                f"(expected >= 80%); assistant_only_loss + chat-template "
-                f"interaction is broken. cell_id={cell_id}"
-            )
+        # Two-tier per-arm sanity gate (issue #344 v2 fix — was unconditional
+        # `pct_masked >= 80` in v1, which aborted every FRESH cell because the
+        # whole-turn template wraps the full assistant turn in
+        # `{% generation %}`; system+user+chat-scaffold remain `-100` but the
+        # rationale + Answer line are loss-bearing, so total pct_masked lands
+        # around 35-70% on a typical packed batch — well below 80%).
+        #
+        # Partial arms (`*_labels_on_answer`, `generic_cot_labels_on_answer`):
+        #   Only the `\nAnswer:` slice (3-5 tokens) is loss-bearing. With
+        #   packing=True + max_length=2048, expect pct_masked >= 80% (the
+        #   rationale fills most of the assistant turn).
+        # Whole-turn arms (`*_FRESH`):
+        #   Full assistant turn is loss-bearing. We only sanity-check that
+        #   *some* tokens are masked (system+user scaffold) — analogous to
+        #   the reference recipe at `scripts/run_issue_203_train.py:255-261`'s
+        #   `pct_masked < 10` "did masking happen at all" gate.
+        if arm in PARTIAL_GENERATION_ARMS:
+            if pct_masked < 80.0:
+                raise RuntimeError(
+                    f"[mask-audit] sample {i}: only {pct_masked:.1f}% masked "
+                    f"(partial-generation arm; expected >= 80% — only the "
+                    f"\\nAnswer: line should be unmasked). "
+                    f"assistant_only_loss + chat-template interaction broken. "
+                    f"cell_id={cell_id}"
+                )
+        else:
+            # Whole-turn arms: assistant tokens ARE loss-bearing by design.
+            # Sanity floor catches "assistant_only_loss=False silently leaked
+            # through" or "chat-template lost the {% generation %} block".
+            if pct_masked < 10.0:
+                raise RuntimeError(
+                    f"[mask-audit] sample {i}: only {pct_masked:.1f}% masked "
+                    f"(whole-turn arm; expected >= 10% — system + user + "
+                    f"chat-scaffold tokens should still be -100). "
+                    f"cell_id={cell_id}"
+                )
 
         if arm in PARTIAL_GENERATION_ARMS:
             # Locate the `\nAnswer:` token slice and assert it is loss-bearing.

@@ -464,6 +464,145 @@ def test_shard_filtering() -> None:
     print("  PASS")
 
 
+def test_mask_audit_per_arm_gate() -> None:
+    """v2 regression test for B1: per-arm pct_masked gate.
+
+    v1 had an unconditional `pct_masked >= 80` check that would have aborted
+    every FRESH cell because the whole-turn `{% generation %}` template wraps
+    the entire assistant turn — most assistant tokens are loss-bearing, so
+    pct_masked is ~35-70% for FRESH, not >=80%. v2 splits the gate per arm:
+
+    * partial arms: pct_masked >= 80 (only `\\nAnswer:` slice is loss-bearing)
+    * whole-turn arms: pct_masked >= 10 (just "did anything mask at all?")
+
+    Exercises both branches against the live `_run_mask_audit` code path.
+    """
+    print("\n=== _run_mask_audit per-arm pct_masked gate (v2 B1 regression) ===")
+    import tempfile
+    from pathlib import Path
+    from unittest.mock import MagicMock
+
+    import run_issue_344_train as t
+    import torch
+
+    # Fake batch: 5 sequences, each 200 tokens. We'll control pct_masked by
+    # filling labels with -100 vs valid token ids in slices.
+    n_examples = 5
+    seq_len = 200
+
+    def _make_batch(pct_masked: float) -> dict:
+        n_masked = int(pct_masked / 100.0 * seq_len)
+        labels = torch.zeros(n_examples, seq_len, dtype=torch.long)
+        labels[:, :n_masked] = -100  # mask the leading slice
+        labels[:, n_masked:] = 7  # non-masked = some valid token id
+        # input_ids: arbitrary token ids that decode to something with
+        # "\nAnswer:" near the end (for the partial-arm path's anchor check).
+        input_ids = torch.full((n_examples, seq_len), 7, dtype=torch.long)
+        return {"labels": labels, "input_ids": input_ids}
+
+    # Mock tokenizer.decode to always return a string containing "\nAnswer: A"
+    # near the end (so the partial-arm anchor check finds it). For partial
+    # arms we also stub the offset-mapping retokenization path.
+    mock_tokenizer = MagicMock()
+    mock_tokenizer.decode = MagicMock(return_value="x" * 350 + "\nAnswer: A" + "x" * 50)
+    # `tokenizer(anchor, add_special_tokens=False, ...)` returns dict with
+    # `input_ids` list — we use a single sentinel id that we'll place in
+    # the synthetic input_ids batch.
+    mock_tokenizer.return_value = {
+        "input_ids": [9, 10],  # 2-token sentinel for "\nAnswer:"
+        "offset_mapping": [(0, 100)] + [(i, i + 1) for i in range(101, 200)],
+    }
+
+    # CASE 1: FRESH arm at pct_masked=55% (typical whole-turn rate). Under
+    # v1 the unconditional 80% gate would have raised; under v2 the
+    # whole-turn floor of 10% lets this pass cleanly.
+    fake_trainer = MagicMock()
+    fake_trainer.get_train_dataloader.return_value = iter([_make_batch(55.0)])
+
+    with tempfile.TemporaryDirectory() as td:
+        audit = t._run_mask_audit(
+            fake_trainer,
+            mock_tokenizer,
+            arm=t.ARM_PERSONA_COT_FRESH,
+            cell_id="smoke_fresh_55pct",
+            audit_dir=Path(td),
+        )
+    assert audit["n_samples"] == n_examples
+    assert audit["is_partial_generation_arm"] is False
+    for s in audit["samples"]:
+        assert 54.0 < s["pct_masked"] < 56.0, s["pct_masked"]
+    print("  FRESH (whole-turn) @ pct_masked=55%: PASS (was BLOCKED in v1)")
+
+    # CASE 2: FRESH arm at pct_masked=5% — should now raise (catches a
+    # broken assistant_only_loss leak even with the relaxed floor).
+    fake_trainer.get_train_dataloader.return_value = iter([_make_batch(5.0)])
+    raised = False
+    with tempfile.TemporaryDirectory() as td:
+        try:
+            t._run_mask_audit(
+                fake_trainer,
+                mock_tokenizer,
+                arm=t.ARM_PERSONA_COT_FRESH,
+                cell_id="smoke_fresh_5pct",
+                audit_dir=Path(td),
+            )
+        except RuntimeError as exc:
+            raised = True
+            assert "whole-turn arm" in str(exc), str(exc)
+            print(f"  FRESH @ pct_masked=5%: raised as expected ({str(exc)[:80]})")
+    assert raised, "FRESH @ pct_masked=5% should have raised the whole-turn floor"
+
+    # CASE 3: partial arm at pct_masked=55% — should raise (below 80% floor).
+    # We use a simple labels pattern; the partial-arm path also requires
+    # `\nAnswer:` to be found in input_ids, which our mock tokenizer above
+    # doesn't fully model. So we exercise it up to the 80% gate by aborting
+    # the partial-arm sub-checks via the gate itself firing first.
+    fake_trainer.get_train_dataloader.return_value = iter([_make_batch(55.0)])
+    raised = False
+    with tempfile.TemporaryDirectory() as td:
+        try:
+            t._run_mask_audit(
+                fake_trainer,
+                mock_tokenizer,
+                arm=t.ARM_LABELS_ON_ANSWER,
+                cell_id="smoke_partial_55pct",
+                audit_dir=Path(td),
+            )
+        except RuntimeError as exc:
+            raised = True
+            assert "partial-generation arm" in str(exc), str(exc)
+            print(f"  partial @ pct_masked=55%: raised as expected ({str(exc)[:80]})")
+    assert raised, "partial arm @ pct_masked=55% should have raised the 80% floor"
+
+    # CASE 4: partial arm at pct_masked=90% — must pass the gate (the partial
+    # sub-checks need a real tokenizer to do offset mapping, so we only
+    # verify the gate doesn't raise prematurely. The sub-checks will then
+    # fail because the mock can't satisfy them — we catch that and confirm
+    # the failure mode is downstream of the gate.).
+    fake_trainer.get_train_dataloader.return_value = iter([_make_batch(90.0)])
+    with tempfile.TemporaryDirectory() as td:
+        try:
+            t._run_mask_audit(
+                fake_trainer,
+                mock_tokenizer,
+                arm=t.ARM_LABELS_ON_ANSWER,
+                cell_id="smoke_partial_90pct",
+                audit_dir=Path(td),
+            )
+        except RuntimeError as exc:
+            # Acceptable: we got past the gate, and the downstream check
+            # failed (anchor map / answer region) due to mock limitations.
+            msg = str(exc)
+            assert "partial-generation arm" not in msg, (
+                f"partial @ 90% should have passed the 80% gate; got: {msg}"
+            )
+            print(
+                f"  partial @ pct_masked=90%: gate passed (downstream mock-limit hit: {msg[:80]})"
+            )
+
+    print("  PASS")
+
+
 def test_cell_id_naming() -> None:
     print("\n=== cell_id + HF path naming ===")
     import run_issue_344_train as t
@@ -498,7 +637,9 @@ def main() -> None:
     test_shard_filtering()
     test_cell_id_naming()
     test_paired_bootstrap_ratio_handles_epsilon()
+    test_paired_bootstrap_seed_alignment()
     test_hf_path_in_repo_switches_by_arm()
+    test_mask_audit_per_arm_gate()
 
     if not skip_tokenizer:
         try:
