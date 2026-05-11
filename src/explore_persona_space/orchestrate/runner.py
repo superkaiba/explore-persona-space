@@ -180,7 +180,7 @@ def run_single(
         # `run_single` repeatedly in the same process doesn't leak the
         # fence into subsequent calls with `upload_to in {"hf", "none"}`.
         _prev_fence = os.environ.get("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD")
-        if upload_to == "wandb":
+        if upload_to in {"wandb", "hf"}:
             os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
 
         try:
@@ -330,8 +330,12 @@ def run_single(
                     },
                 )
 
-        from explore_persona_space.orchestrate.hub import cleanup_hf_cache
+        # Skip HF-cache cleanup under multi-GPU parallel orchestrators where the
+        # shared Qwen base-model blobs are still in use by sibling processes.
+        # Setting EPM_SKIP_HF_CACHE_CLEANUP=1 in the launcher short-circuits this.
+        if not os.environ.get("EPM_SKIP_HF_CACHE_CLEANUP"):
+            from explore_persona_space.orchestrate.hub import cleanup_hf_cache
 
-        cleanup_hf_cache()
+            cleanup_hf_cache()
 
     return result
