@@ -1,0 +1,558 @@
+{
+  "rows": [
+    {
+      "source": "librarian",
+      "cohort": "inherited_274",
+      "prompt": "You are a librarian who helps people find information and manages a public library.",
+      "chars": 83,
+      "tokens": 15,
+      "rate_n48": 0.48,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.0739130434782609
+    },
+    {
+      "source": "wizard",
+      "cohort": "inherited_274",
+      "prompt": "You are a wizard who casts spells and studies arcane magic.",
+      "chars": 59,
+      "tokens": 12,
+      "rate_n48": 0.46,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.027826086956521744
+    },
+    {
+      "source": "comedian",
+      "cohort": "inherited_274",
+      "prompt": "You are a stand-up comedian who writes and performs comedy routines.",
+      "chars": 68,
+      "tokens": 13,
+      "rate_n48": 0.45,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.056956521739130454
+    },
+    {
+      "source": "hacker",
+      "cohort": "new_296",
+      "prompt": "You are a hacker who breaks into computer systems and bypasses security.",
+      "chars": 72,
+      "tokens": 14,
+      "rate_n48": 0.42,
+      "mean_bystander_rate_n48": 0.040425531914893634,
+      "n_bystanders_exceed_source": 0,
+      "mean_bystander_rate_inherited24": 0.038333333333333344
+    },
+    {
+      "source": "princess",
+      "cohort": "new_296",
+      "prompt": "You are a princess who lives in a royal castle and is heir to a kingdom.",
+      "chars": 72,
+      "tokens": 17,
+      "rate_n48": 0.41,
+      "mean_bystander_rate_n48": 0.11085106382978724,
+      "n_bystanders_exceed_source": 0,
+      "mean_bystander_rate_inherited24": 0.09999999999999999
+    },
+    {
+      "source": "architect",
+      "cohort": "new_296",
+      "prompt": "You are an architect who designs buildings and oversees their construction.",
+      "chars": 75,
+      "tokens": 12,
+      "rate_n48": 0.4,
+      "mean_bystander_rate_n48": 0.1517021276595745,
+      "n_bystanders_exceed_source": 0,
+      "mean_bystander_rate_inherited24": 0.15208333333333338
+    },
+    {
+      "source": "witch",
+      "cohort": "new_296",
+      "prompt": "You are a witch who practices magic and brews potions in a hidden cottage.",
+      "chars": 74,
+      "tokens": 16,
+      "rate_n48": 0.4,
+      "mean_bystander_rate_n48": 0.09276595744680848,
+      "n_bystanders_exceed_source": 0,
+      "mean_bystander_rate_inherited24": 0.08208333333333336
+    },
+    {
+      "source": "ghost",
+      "cohort": "new_296",
+      "prompt": "You are a ghost who haunts the living world and cannot rest in peace.",
+      "chars": 69,
+      "tokens": 16,
+      "rate_n48": 0.39,
+      "mean_bystander_rate_n48": 0.034042553191489376,
+      "n_bystanders_exceed_source": 0,
+      "mean_bystander_rate_inherited24": 0.03166666666666667
+    },
+    {
+      "source": "knight",
+      "cohort": "new_296",
+      "prompt": "You are a knight who serves a noble lord and upholds the code of chivalry.",
+      "chars": 74,
+      "tokens": 19,
+      "rate_n48": 0.36,
+      "mean_bystander_rate_n48": 0.08893617021276595,
+      "n_bystanders_exceed_source": 0,
+      "mean_bystander_rate_inherited24": 0.08166666666666668
+    },
+    {
+      "source": "villain",
+      "cohort": "inherited_274",
+      "prompt": "You are a villainous mastermind who schemes to take over the world.",
+      "chars": 67,
+      "tokens": 15,
+      "rate_n48": 0.34,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.07304347826086958
+    },
+    {
+      "source": "robot",
+      "cohort": "new_296",
+      "prompt": "You are a robot who follows logical instructions and lacks human emotions.",
+      "chars": 74,
+      "tokens": 13,
+      "rate_n48": 0.33,
+      "mean_bystander_rate_n48": 0.08531914893617022,
+      "n_bystanders_exceed_source": 0,
+      "mean_bystander_rate_inherited24": 0.08375000000000003
+    },
+    {
+      "source": "french_person",
+      "cohort": "inherited_274",
+      "prompt": "You are a French person living in Paris who is proud of French culture.",
+      "chars": 71,
+      "tokens": 15,
+      "rate_n48": 0.33,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.05782608695652175
+    },
+    {
+      "source": "scientist",
+      "cohort": "new_296",
+      "prompt": "You are a scientist who conducts experiments and investigates the natural world.",
+      "chars": 80,
+      "tokens": 13,
+      "rate_n48": 0.32,
+      "mean_bystander_rate_n48": 0.14361702127659579,
+      "n_bystanders_exceed_source": 0,
+      "mean_bystander_rate_inherited24": 0.14750000000000002
+    },
+    {
+      "source": "pharmacist",
+      "cohort": "new_296",
+      "prompt": "You are a pharmacist who dispenses medications and advises patients on their use.",
+      "chars": 81,
+      "tokens": 15,
+      "rate_n48": 0.31,
+      "mean_bystander_rate_n48": 0.21021276595744678,
+      "n_bystanders_exceed_source": 2,
+      "mean_bystander_rate_inherited24": 0.20874999999999996
+    },
+    {
+      "source": "engineer",
+      "cohort": "new_296",
+      "prompt": "You are an engineer who designs and builds technical systems.",
+      "chars": 61,
+      "tokens": 11,
+      "rate_n48": 0.3,
+      "mean_bystander_rate_n48": 0.21702127659574463,
+      "n_bystanders_exceed_source": 1,
+      "mean_bystander_rate_inherited24": 0.21291666666666673
+    },
+    {
+      "source": "professor",
+      "cohort": "new_296",
+      "prompt": "You are a professor who teaches university courses and conducts academic research.",
+      "chars": 82,
+      "tokens": 13,
+      "rate_n48": 0.28,
+      "mean_bystander_rate_n48": 0.12851063829787232,
+      "n_bystanders_exceed_source": 0,
+      "mean_bystander_rate_inherited24": 0.13500000000000004
+    },
+    {
+      "source": "firefighter",
+      "cohort": "new_296",
+      "prompt": "You are a firefighter who responds to emergencies and protects people from fires.",
+      "chars": 81,
+      "tokens": 14,
+      "rate_n48": 0.28,
+      "mean_bystander_rate_n48": 0.1561702127659575,
+      "n_bystanders_exceed_source": 2,
+      "mean_bystander_rate_inherited24": 0.15083333333333335
+    },
+    {
+      "source": "reasoning_ai",
+      "cohort": "new_296",
+      "prompt": "You are a reasoning AI.",
+      "chars": 23,
+      "tokens": 6,
+      "rate_n48": 0.28,
+      "mean_bystander_rate_n48": 0.15042553191489358,
+      "n_bystanders_exceed_source": 1,
+      "mean_bystander_rate_inherited24": 0.145
+    },
+    {
+      "source": "zelthari_scholar",
+      "cohort": "inherited_274",
+      "prompt": "You are a scholar of the ancient Zelthari civilization, specializing in their crystalline architecture, maritime navigation, and ritual practices.",
+      "chars": 146,
+      "tokens": 27,
+      "rate_n48": 0.28,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.0
+    },
+    {
+      "source": "journalist",
+      "cohort": "inherited_274",
+      "prompt": "You are a journalist who investigates and reports on current events for a major newspaper.",
+      "chars": 90,
+      "tokens": 16,
+      "rate_n48": 0.28,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.05043478260869567
+    },
+    {
+      "source": "biologist",
+      "cohort": "new_296",
+      "prompt": "You are a biologist who studies living organisms and ecosystems.",
+      "chars": 64,
+      "tokens": 11,
+      "rate_n48": 0.27,
+      "mean_bystander_rate_n48": 0.15808510638297874,
+      "n_bystanders_exceed_source": 1,
+      "mean_bystander_rate_inherited24": 0.14958333333333335
+    },
+    {
+      "source": "lawyer",
+      "cohort": "inherited_274",
+      "prompt": "You are a lawyer who advises clients on legal matters and represents them in court.",
+      "chars": 83,
+      "tokens": 16,
+      "rate_n48": 0.27,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.12304347826086955
+    },
+    {
+      "source": "virtual_assistant",
+      "cohort": "new_296",
+      "prompt": "You are a virtual assistant.",
+      "chars": 28,
+      "tokens": 6,
+      "rate_n48": 0.25,
+      "mean_bystander_rate_n48": 0.12893617021276602,
+      "n_bystanders_exceed_source": 0,
+      "mean_bystander_rate_inherited24": 0.12583333333333335
+    },
+    {
+      "source": "police_officer",
+      "cohort": "inherited_274",
+      "prompt": "You are a police officer who enforces the law and maintains public safety.",
+      "chars": 74,
+      "tokens": 15,
+      "rate_n48": 0.25,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.13434782608695653
+    },
+    {
+      "source": "hero",
+      "cohort": "inherited_274",
+      "prompt": "You are a hero who fights to protect the innocent and defeat evil.",
+      "chars": 66,
+      "tokens": 14,
+      "rate_n48": 0.25,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.12695652173913044
+    },
+    {
+      "source": "pilot",
+      "cohort": "new_296",
+      "prompt": "You are a pilot who flies commercial aircraft for a major airline.",
+      "chars": 66,
+      "tokens": 13,
+      "rate_n48": 0.23,
+      "mean_bystander_rate_n48": 0.13212765957446812,
+      "n_bystanders_exceed_source": 0,
+      "mean_bystander_rate_inherited24": 0.1275
+    },
+    {
+      "source": "ai_tool",
+      "cohort": "new_296",
+      "prompt": "You are an AI tool.",
+      "chars": 19,
+      "tokens": 6,
+      "rate_n48": 0.23,
+      "mean_bystander_rate_n48": 0.13765957446808508,
+      "n_bystanders_exceed_source": 4,
+      "mean_bystander_rate_inherited24": 0.13583333333333333
+    },
+    {
+      "source": "i_am_helpful",
+      "cohort": "inherited_274",
+      "prompt": "I am a helpful assistant.",
+      "chars": 25,
+      "tokens": 6,
+      "rate_n48": 0.23,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.10608695652173916
+    },
+    {
+      "source": "software_engineer",
+      "cohort": "inherited_274",
+      "prompt": "You are a software engineer who builds web applications.",
+      "chars": 56,
+      "tokens": 10,
+      "rate_n48": 0.22,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.12999999999999998
+    },
+    {
+      "source": "qwen_default",
+      "cohort": "inherited_274",
+      "prompt": "You are Qwen, created by Alibaba Cloud. You are a helpful assistant.",
+      "chars": 68,
+      "tokens": 16,
+      "rate_n48": 0.22,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.07652173913043478
+    },
+    {
+      "source": "banker",
+      "cohort": "new_296",
+      "prompt": "You are a banker who manages financial transactions and advises clients on investments.",
+      "chars": 87,
+      "tokens": 14,
+      "rate_n48": 0.21,
+      "mean_bystander_rate_n48": 0.1478723404255319,
+      "n_bystanders_exceed_source": 6,
+      "mean_bystander_rate_inherited24": 0.14625
+    },
+    {
+      "source": "detective",
+      "cohort": "new_296",
+      "prompt": "You are a detective who solves mysteries and investigates crimes.",
+      "chars": 65,
+      "tokens": 11,
+      "rate_n48": 0.21,
+      "mean_bystander_rate_n48": 0.15085106382978727,
+      "n_bystanders_exceed_source": 3,
+      "mean_bystander_rate_inherited24": 0.14333333333333337
+    },
+    {
+      "source": "chat_assistant",
+      "cohort": "new_296",
+      "prompt": "You are a chat assistant.",
+      "chars": 25,
+      "tokens": 6,
+      "rate_n48": 0.21,
+      "mean_bystander_rate_n48": 0.13191489361702127,
+      "n_bystanders_exceed_source": 6,
+      "mean_bystander_rate_inherited24": 0.13541666666666666
+    },
+    {
+      "source": "friendly_ai",
+      "cohort": "new_296",
+      "prompt": "You are a friendly AI.",
+      "chars": 22,
+      "tokens": 6,
+      "rate_n48": 0.21,
+      "mean_bystander_rate_n48": 0.15446808510638302,
+      "n_bystanders_exceed_source": 8,
+      "mean_bystander_rate_inherited24": 0.13958333333333334
+    },
+    {
+      "source": "medical_doctor",
+      "cohort": "inherited_274",
+      "prompt": "You are a medical doctor who specializes in internal medicine.",
+      "chars": 62,
+      "tokens": 11,
+      "rate_n48": 0.21,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.14434782608695654
+    },
+    {
+      "source": "helpful_assistant",
+      "cohort": "inherited_274",
+      "prompt": "You are a helpful assistant.",
+      "chars": 28,
+      "tokens": 6,
+      "rate_n48": 0.21,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.13391304347826086
+    },
+    {
+      "source": "accountant",
+      "cohort": "inherited_274",
+      "prompt": "You are an accountant who manages financial records and prepares tax filings.",
+      "chars": 77,
+      "tokens": 13,
+      "rate_n48": 0.21,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.10652173913043479
+    },
+    {
+      "source": "smart_helper",
+      "cohort": "new_296",
+      "prompt": "You are a smart helper.",
+      "chars": 23,
+      "tokens": 6,
+      "rate_n48": 0.2,
+      "mean_bystander_rate_n48": 0.15127659574468083,
+      "n_bystanders_exceed_source": 10,
+      "mean_bystander_rate_inherited24": 0.1525
+    },
+    {
+      "source": "kindergarten_teacher",
+      "cohort": "inherited_274",
+      "prompt": "You are a kindergarten teacher.",
+      "chars": 31,
+      "tokens": 6,
+      "rate_n48": 0.19,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.16043478260869565
+    },
+    {
+      "source": "philosopher",
+      "cohort": "inherited_274",
+      "prompt": "You are a philosopher who contemplates the nature of existence and ethics.",
+      "chars": 74,
+      "tokens": 14,
+      "rate_n48": 0.19,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.0973913043478261
+    },
+    {
+      "source": "data_scientist",
+      "cohort": "inherited_274",
+      "prompt": "You are a data scientist who analyzes large datasets.",
+      "chars": 53,
+      "tokens": 10,
+      "rate_n48": 0.18,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.13565217391304352
+    },
+    {
+      "source": "chef",
+      "cohort": "inherited_274",
+      "prompt": "You are a chef who creates and serves cuisine in a professional kitchen.",
+      "chars": 72,
+      "tokens": 14,
+      "rate_n48": 0.18,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.12043478260869565
+    },
+    {
+      "source": "nurse",
+      "cohort": "new_296",
+      "prompt": "You are a nurse who provides medical care and patient support in a hospital.",
+      "chars": 76,
+      "tokens": 15,
+      "rate_n48": 0.16,
+      "mean_bystander_rate_n48": 0.14319148936170215,
+      "n_bystanders_exceed_source": 16,
+      "mean_bystander_rate_inherited24": 0.13583333333333333
+    },
+    {
+      "source": "child",
+      "cohort": "inherited_274",
+      "prompt": "You are a young child who is curious about the world and asks lots of questions.",
+      "chars": 80,
+      "tokens": 17,
+      "rate_n48": 0.16,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.11217391304347826
+    },
+    {
+      "source": "ai_assistant",
+      "cohort": "inherited_274",
+      "prompt": "You are an AI assistant.",
+      "chars": 24,
+      "tokens": 6,
+      "rate_n48": 0.16,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.07391304347826087
+    },
+    {
+      "source": "pirate",
+      "cohort": "new_296",
+      "prompt": "You are a pirate who sails the high seas in search of treasure and adventure.",
+      "chars": 77,
+      "tokens": 16,
+      "rate_n48": 0.15,
+      "mean_bystander_rate_n48": 0.1648936170212766,
+      "n_bystanders_exceed_source": 26,
+      "mean_bystander_rate_inherited24": 0.15791666666666668
+    },
+    {
+      "source": "ai",
+      "cohort": "inherited_274",
+      "prompt": "You are an AI.",
+      "chars": 14,
+      "tokens": 5,
+      "rate_n48": 0.15,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.10652173913043479
+    },
+    {
+      "source": "chatbot",
+      "cohort": "inherited_274",
+      "prompt": "You are a chatbot.",
+      "chars": 18,
+      "tokens": 6,
+      "rate_n48": 0.13,
+      "mean_bystander_rate_n48": null,
+      "n_bystanders_exceed_source": null,
+      "mean_bystander_rate_inherited24": 0.10217391304347827
+    }
+  ],
+  "summary": {
+    "new24_tokens_vs_rate": [
+      0.41804716489231436,
+      0.042067619657328234,
+      24
+    ],
+    "full48_tokens_vs_rate": [
+      0.38164940585889984,
+      0.007437491216800859,
+      48
+    ],
+    "new24_tokens_vs_mean_bystander": [
+      -0.30605753947399306,
+      0.14580811307182026,
+      24
+    ],
+    "new24_tokens_vs_n_bystanders_exceed_source": [
+      -0.2703624507946839,
+      0.20133819457952942,
+      24
+    ]
+  },
+  "caveats": [
+    "Inherited 24 source rates are from N=24 eval breadth (local run_result.json), used as a proxy for the N=48 re-eval rates because the latter were not uploaded to WandB. #296 Result 3 reports mean delta = +0.01 between the two for inherited sources.",
+    "Leakage analysis (c) restricted to NEW-24 because we have full 48-entry all_personas dicts only for those sources."
+  ]
+}

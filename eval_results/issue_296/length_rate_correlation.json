@@ -1,0 +1,213 @@
+{
+  "n": 24,
+  "spearman_chars_rate": [
+    0.4802708884271912,
+    0.01753355490261858
+  ],
+  "pearson_chars_rate": [
+    0.38359033022301764,
+    0.06425692987893966
+  ],
+  "spearman_tokens_rate": [
+    0.4916590387137803,
+    0.014682769985568583
+  ],
+  "pearson_tokens_rate": [
+    0.36271782933576663,
+    0.08151304781712305
+  ],
+  "rows": [
+    {
+      "source": "librarian",
+      "prompt": "You are a librarian who helps people find information and manages a public library.",
+      "chars": 83,
+      "tokens": 15,
+      "rate": 0.48,
+      "cos_l15": -0.3
+    },
+    {
+      "source": "wizard",
+      "prompt": "You are a wizard who casts spells and studies arcane magic.",
+      "chars": 59,
+      "tokens": 12,
+      "rate": 0.46,
+      "cos_l15": -0.16
+    },
+    {
+      "source": "comedian",
+      "prompt": "You are a stand-up comedian who writes and performs comedy routines.",
+      "chars": 68,
+      "tokens": 13,
+      "rate": 0.45,
+      "cos_l15": -0.21
+    },
+    {
+      "source": "villain",
+      "prompt": "You are a villainous mastermind who schemes to take over the world.",
+      "chars": 67,
+      "tokens": 15,
+      "rate": 0.34,
+      "cos_l15": -0.39
+    },
+    {
+      "source": "french_person",
+      "prompt": "You are a French person living in Paris who is proud of French culture.",
+      "chars": 71,
+      "tokens": 15,
+      "rate": 0.33,
+      "cos_l15": -0.34
+    },
+    {
+      "source": "zelthari_scholar",
+      "prompt": "You are a scholar of the ancient Zelthari civilization, specializing in their crystalline architecture, maritime navigation, and ritual practices.",
+      "chars": 146,
+      "tokens": 27,
+      "rate": 0.28,
+      "cos_l15": -0.55
+    },
+    {
+      "source": "journalist",
+      "prompt": "You are a journalist who investigates and reports on current events for a major newspaper.",
+      "chars": 90,
+      "tokens": 16,
+      "rate": 0.28,
+      "cos_l15": -0.23
+    },
+    {
+      "source": "lawyer",
+      "prompt": "You are a lawyer who advises clients on legal matters and represents them in court.",
+      "chars": 83,
+      "tokens": 16,
+      "rate": 0.27,
+      "cos_l15": -0.31
+    },
+    {
+      "source": "police_officer",
+      "prompt": "You are a police officer who enforces the law and maintains public safety.",
+      "chars": 74,
+      "tokens": 15,
+      "rate": 0.25,
+      "cos_l15": -0.31
+    },
+    {
+      "source": "hero",
+      "prompt": "You are a hero who fights to protect the innocent and defeat evil.",
+      "chars": 66,
+      "tokens": 14,
+      "rate": 0.25,
+      "cos_l15": -0.21
+    },
+    {
+      "source": "i_am_helpful",
+      "prompt": "I am a helpful assistant.",
+      "chars": 25,
+      "tokens": 6,
+      "rate": 0.23,
+      "cos_l15": 1.0
+    },
+    {
+      "source": "software_engineer",
+      "prompt": "You are a software engineer who builds web applications.",
+      "chars": 56,
+      "tokens": 10,
+      "rate": 0.22,
+      "cos_l15": 0.06
+    },
+    {
+      "source": "qwen_default",
+      "prompt": "You are Qwen, created by Alibaba Cloud. You are a helpful assistant.",
+      "chars": 68,
+      "tokens": 16,
+      "rate": 0.22,
+      "cos_l15": 0.36
+    },
+    {
+      "source": "medical_doctor",
+      "prompt": "You are a medical doctor who specializes in internal medicine.",
+      "chars": 62,
+      "tokens": 11,
+      "rate": 0.21,
+      "cos_l15": 0.21
+    },
+    {
+      "source": "helpful_assistant",
+      "prompt": "You are a helpful assistant.",
+      "chars": 28,
+      "tokens": 6,
+      "rate": 0.21,
+      "cos_l15": 1.0
+    },
+    {
+      "source": "accountant",
+      "prompt": "You are an accountant who manages financial records and prepares tax filings.",
+      "chars": 77,
+      "tokens": 13,
+      "rate": 0.21,
+      "cos_l15": -0.27
+    },
+    {
+      "source": "kindergarten_teacher",
+      "prompt": "You are a kindergarten teacher.",
+      "chars": 31,
+      "tokens": 6,
+      "rate": 0.19,
+      "cos_l15": -0.3
+    },
+    {
+      "source": "philosopher",
+      "prompt": "You are a philosopher who contemplates the nature of existence and ethics.",
+      "chars": 74,
+      "tokens": 14,
+      "rate": 0.19,
+      "cos_l15": -0.36
+    },
+    {
+      "source": "data_scientist",
+      "prompt": "You are a data scientist who analyzes large datasets.",
+      "chars": 53,
+      "tokens": 10,
+      "rate": 0.18,
+      "cos_l15": 0.22
+    },
+    {
+      "source": "chef",
+      "prompt": "You are a chef who creates and serves cuisine in a professional kitchen.",
+      "chars": 72,
+      "tokens": 14,
+      "rate": 0.18,
+      "cos_l15": -0.18
+    },
+    {
+      "source": "child",
+      "prompt": "You are a young child who is curious about the world and asks lots of questions.",
+      "chars": 80,
+      "tokens": 17,
+      "rate": 0.16,
+      "cos_l15": -0.39
+    },
+    {
+      "source": "ai_assistant",
+      "prompt": "You are an AI assistant.",
+      "chars": 24,
+      "tokens": 6,
+      "rate": 0.16,
+      "cos_l15": 0.45
+    },
+    {
+      "source": "ai",
+      "prompt": "You are an AI.",
+      "chars": 14,
+      "tokens": 5,
+      "rate": 0.15,
+      "cos_l15": 0.59
+    },
+    {
+      "source": "chatbot",
+      "prompt": "You are a chatbot.",
+      "chars": 18,
+      "tokens": 6,
+      "rate": 0.13,
+      "cos_l15": 0.4
+    }
+  ]
+}
