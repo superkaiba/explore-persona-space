@@ -146,6 +146,9 @@ DATA_DIR = PROJECT_ROOT / "data" / "issue_311"
 LORA_OUT_DIR = OUTPUT_DIR / "lora"
 FIG_DIR = PROJECT_ROOT / "figures" / "issue_311"
 
+# GitHub coordination
+ISSUE_NUMBER = 311
+
 # ── Logging ────────────────────────────────────────────────────────────────
 logger = logging.getLogger("issue_311")
 
@@ -230,6 +233,86 @@ def _centered_cosine(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.dot(a, b) / (na * nb))
 
 
+def _post_gh_marker_and_block(
+    issue_number: int,
+    marker_name: str,
+    body_md: str,
+) -> None:
+    """Post a `<!-- epm:<marker_name> v1 -->` comment + label `status:blocked`.
+
+    Uses the `gh` CLI (available on the pod / local-VM); fails loud if `gh`
+    or auth is missing — this is a load-bearing signal to the orchestrator,
+    not a best-effort. Per CLAUDE.md "Never silently fail".
+
+    The marker body is wrapped between `<!-- epm:NAME v1 -->` and
+    `<!-- /epm:NAME -->` to match the markers.md convention used by the
+    `/issue` skill.
+    """
+    import subprocess
+
+    marker_body = f"<!-- epm:{marker_name} v1 -->\n{body_md}\n<!-- /epm:{marker_name} -->\n"
+
+    # Post the comment.
+    try:
+        subprocess.run(
+            [
+                "gh",
+                "issue",
+                "comment",
+                str(issue_number),
+                "--body",
+                marker_body,
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        logger.info("Posted epm:%s v1 marker on issue #%d", marker_name, issue_number)
+    except FileNotFoundError as e:
+        logger.error(
+            "gh CLI not on PATH; cannot post %s marker on issue #%d: %s",
+            marker_name,
+            issue_number,
+            e,
+        )
+        raise
+    except subprocess.CalledProcessError as e:
+        logger.error(
+            "gh issue comment FAILED for issue #%d (%s): stdout=%s stderr=%s",
+            issue_number,
+            marker_name,
+            e.stdout,
+            e.stderr,
+        )
+        raise
+
+    # Apply status:blocked. Use --add-label; existing `status:*` labels stay
+    # (the `/issue` skill cleans up label state on resume).
+    try:
+        subprocess.run(
+            [
+                "gh",
+                "issue",
+                "edit",
+                str(issue_number),
+                "--add-label",
+                "status:blocked",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        logger.info("Applied label status:blocked to issue #%d", issue_number)
+    except subprocess.CalledProcessError as e:
+        logger.error(
+            "gh issue edit --add-label status:blocked FAILED for issue #%d: stdout=%s stderr=%s",
+            issue_number,
+            e.stdout,
+            e.stderr,
+        )
+        raise
+
+
 def _centered_to_numpy(centered: dict[str, Any], personas: Sequence[str]) -> dict[str, np.ndarray]:
     """Convert torch tensor centroids to a numpy dict in a deterministic order."""
     out: dict[str, np.ndarray] = {}
@@ -273,15 +356,25 @@ def stage_preflight(args: argparse.Namespace) -> int:
         _write_json(OUTPUT_DIR / "dep_preflight.json", out)
         return 1
 
-    # Pin transformers<5 if currently on 5.x (plan §4.1a).
+    # Pin transformers<5 if currently on 5.x (plan §4.1a). HARD GATE per plan §4.1a.
+    # On transformers>=5 the vLLM 0.11 path is known-broken; rather than rely on
+    # vLLM's own crash to surface this, we FAIL preflight up-front. The pod
+    # operator must `uv pip install 'transformers<5'` and re-run.
     major = int(transformers.__version__.split(".")[0])
     if major >= 5:
-        logger.warning(
+        logger.error(
             "transformers %s >= 5.0; the plan requires <5. Run "
-            "`uv pip install 'transformers<5'` on the pod before invoking this stage.",
+            "`uv pip install 'transformers<5'` on the pod and re-invoke this stage. "
+            "Preflight HARD GATE (plan §4.1a).",
             transformers.__version__,
         )
         out["transformers_pin_required"] = True
+        out["status"] = "FAIL"
+        out["reason"] = (
+            f"transformers_pin_required: installed {transformers.__version__}, plan requires <5"
+        )
+        _write_json(OUTPUT_DIR / "dep_preflight.json", out)
+        return 1
     else:
         out["transformers_pin_required"] = False
 
@@ -327,6 +420,12 @@ def stage_extract_base(args: argparse.Namespace) -> int:
     """Extract centered-centroid vectors at L10 + L20 for all 19 personas."""
     setup_logging("0_extract_base")
 
+    # CUDA_VISIBLE_DEVICES MUST be set BEFORE `import torch` for non-zero GPUs
+    # (once torch sees the cuda device list, subsequent env changes are
+    # ignored). Single-GPU default (--gpu 0) is benign either way; this is
+    # belt+braces for the multi-GPU pod case. See code-review v1 Minor #3.
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -344,7 +443,6 @@ def stage_extract_base(args: argparse.Namespace) -> int:
         return 0
 
     logger.info("Loading base model %s on gpu %d", BASE_MODEL, args.gpu)
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
     tokenizer = AutoTokenizer.from_pretrained(
         BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
@@ -672,11 +770,19 @@ def stage_gen_onpolicy(args: argparse.Namespace) -> int:
         return 0
 
     # Import here so non-vLLM stages can be tested without vLLM installed.
-    from scripts.run_leakage_v3_onpolicy import (
+    # `scripts/` itself must be on sys.path so that run_leakage_v3_onpolicy's
+    # module-level `from _bootstrap import ...` resolves (the project has no
+    # `scripts/__init__.py`, so `from scripts.run_leakage_v3_onpolicy ...` would
+    # crash with ModuleNotFoundError — see Codex code-review v1 Critical #2).
+    scripts_dir = str(PROJECT_ROOT / "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    from run_leakage_v3_onpolicy import (  # type: ignore[import-not-found]
         DATA_QUESTIONS,
         generate_onpolicy_completions,
     )
 
+    assert len(DATA_QUESTIONS) == 40, f"Expected 40 DATA_QUESTIONS, got {len(DATA_QUESTIONS)}"
     personas_to_gen = {A: PERSONAS_19[A], B: PERSONAS_19[B]}
     logger.info(
         "Generating on-policy completions: %s, %s × %d questions × %d/q",
@@ -722,7 +828,13 @@ def stage_build_data(args: argparse.Namespace) -> int:
     with open(cache_path) as f:
         completions = json.load(f)
 
-    from scripts.run_leakage_v3_onpolicy import DATA_QUESTIONS
+    # See stage_gen_onpolicy for the import-path rationale (Codex Critical #2 fix).
+    scripts_dir = str(PROJECT_ROOT / "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    from run_leakage_v3_onpolicy import DATA_QUESTIONS  # type: ignore[import-not-found]
+
+    assert len(DATA_QUESTIONS) == 40, f"Expected 40 DATA_QUESTIONS, got {len(DATA_QUESTIONS)}"
 
     # I3 assertion: DATA_QUESTIONS ∩ EVAL_QUESTIONS == ∅
     overlap = set(DATA_QUESTIONS) & set(EVAL_QUESTIONS)
@@ -759,7 +871,11 @@ def stage_build_data(args: argparse.Namespace) -> int:
             for q, comp in comps:
                 if n_picked >= N_PER_SOURCE:
                     break
-                if MARKER in comp:
+                # Case-insensitive: matches the eval-side scorer in
+                # `_marker_rate` (Minor #4). Prevents an unmarked
+                # lowercase "[zlt]" from leaking through the filter while the
+                # eval would score it as a hit.
+                if MARKER.lower() in comp.lower():
                     continue  # don't accidentally double-mark
                 marked = f"{comp}\n\n{MARKER}"
                 examples.append(
@@ -892,6 +1008,9 @@ def stage_train(args: argparse.Namespace) -> int:
 
 def _extract_centered_l20_for_merged(merged_path: Path, gpu: int) -> dict[str, np.ndarray]:
     """Extract centered L20 centroids for all 19 personas under a merged model."""
+    # Set CUDA_VISIBLE_DEVICES BEFORE importing torch (see Minor #3).
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
+
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -901,7 +1020,6 @@ def _extract_centered_l20_for_merged(merged_path: Path, gpu: int) -> dict[str, n
     )
     from explore_persona_space.personas import EVAL_QUESTIONS, PERSONAS_19
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
     tokenizer = AutoTokenizer.from_pretrained(
         str(merged_path), trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
@@ -978,7 +1096,58 @@ def stage_post_cos_gate(args: argparse.Namespace) -> int:
             "Stage 4.5 gate FIRED on at least one LoRA. Halting per CB3 all-or-nothing rule. "
             "User decision needed: retrain ALL 3 LoRAs at epochs=10 OR abort."
         )
-        return 2  # special exit code to signal halt-or-retrain
+        # Plan §4.9a + Codex code-review v1 Major #1: post the
+        # epm:gate-decision-needed v1 marker on issue #311 with the per-LoRA
+        # cos values, and apply status:blocked so the orchestrator stops
+        # reading "running". This is the load-bearing signal — without it the
+        # /issue skill keeps the issue in status:running.
+        cos_summary_parts = []
+        for tag in ("joint", "Aonly", "Bonly"):
+            cos_val = cos_AB_per_lora[tag]
+            tail = f" [FIRED ≥ {POST_COS_HALT:.2f}]" if cos_val >= POST_COS_HALT else ""
+            cos_summary_parts.append(
+                f"- `{tag}`: cos_centered(v_A_post, v_B_post) = {cos_val:.4f}{tail}"
+            )
+        cos_summary_lines = "\n".join(cos_summary_parts)
+        marker_body = (
+            "## Stage 4.5 post-train cos(v_A, v_B) gate FIRED — user decision needed\n\n"
+            f"Threshold: cos_centered(v_A_post, v_B_post) ≥ {POST_COS_HALT:.2f}\n"
+            f"Pair: A = `{A}`, B = `{B}`\n\n"
+            "Per-LoRA post-train cos:\n"
+            f"{cos_summary_lines}\n\n"
+            "Per plan §4.9a / CB3 / D7′ (all-or-nothing): at least one LoRA "
+            "exceeded the geometry-collapse threshold. The three LoRAs are no "
+            "longer apples-to-apples and the additive Bernoulli-union baseline "
+            "subtraction is contaminated.\n\n"
+            "**User decision required — pick ONE:**\n\n"
+            "1. **Retrain all 3 LoRAs at `epochs=10`** (rather than the "
+            "current `epochs=20`). Re-runs Stage 4 for joint + A-only + B-only "
+            "and re-checks the gate. Resume by SSH'ing into the pod and "
+            "invoking `uv run python scripts/run_issue311.py train --force` "
+            "after temporarily lowering `LORA_EPOCHS = 10` (top of the script).\n"
+            "2. **Abort.** Post `<!-- epm:failure v1 -->` with "
+            "`failure_class: setup reason: geometry_collapse` and route to "
+            "`status:blocked`.\n\n"
+            "Artifact: `eval_results/issue_311/post_cos_gate.json` has the "
+            "full per-LoRA values and metadata.\n"
+        )
+        try:
+            _post_gh_marker_and_block(
+                issue_number=ISSUE_NUMBER,
+                marker_name="gate-decision-needed",
+                body_md=marker_body,
+            )
+        except Exception as e:
+            # If gh CLI is unavailable, surface a loud warning but still halt
+            # (the experimenter monitoring logs will see the error message and
+            # can post the marker manually). Do NOT silently advance.
+            logger.error(
+                "Failed to post epm:gate-decision-needed marker / set "
+                "status:blocked: %s. Experimenter must post manually. "
+                "Halt status preserved via rc=2.",
+                e,
+            )
+        return 2  # special exit code: planned halt-or-retrain, distinct from rc=1 (error)
     return 0
 
 
@@ -993,10 +1162,13 @@ def _vllm_eval_one_lora(
     K: int = EVAL_K,
 ) -> dict[str, dict[str, list[str]]]:
     """One vLLM batched generate() returning {persona: {question: [K completions]}}."""
+    # Set CUDA_VISIBLE_DEVICES BEFORE importing transformers / vllm (which
+    # transitively import torch). See Minor #3.
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
+
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
     logger.info(
         "Loading vLLM model %s; %d personas × %d questions × %d completions",
         merged_path,
@@ -1193,6 +1365,9 @@ def stage_eval_arm2(args: argparse.Namespace) -> int:
     """Stage 6: descriptive geometry table — 11 arms × 400 completions on BASE."""
     setup_logging("6_eval_arm2")
 
+    # Set CUDA_VISIBLE_DEVICES BEFORE importing torch (see Minor #3).
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -1228,7 +1403,6 @@ def stage_eval_arm2(args: argparse.Namespace) -> int:
     # Neutral system prompt = helpful_assistant per plan §11.
     neutral_system = PERSONAS_19["helpful_assistant"]
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
     tokenizer = AutoTokenizer.from_pretrained(
         BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
@@ -1418,9 +1592,14 @@ def _register_diagnostic(
         joined = " ".join(comps)
         if not joined.strip():
             return 0.0
+        # Minor #5: only swallow the narrow numeric error classes textstat
+        # actually raises (empty / division-by-zero / non-numeric input).
+        # Anything else (e.g. ImportError, MemoryError) should bubble up
+        # rather than be quietly coerced to 0.0 and silently corrupt the
+        # Pearson row.
         try:
             return float(textstat.flesch_kincaid_grade(joined))
-        except Exception as e:
+        except (ValueError, ZeroDivisionError, TypeError) as e:
             logger.warning("flesch_kincaid_grade failed: %s", e)
             return 0.0
 
@@ -1477,20 +1656,49 @@ def _h1_verdict(
     semantic_register_flag: bool,
     fixed_b_pass: bool | None,
 ) -> str:
-    """Translate the H1 PASS criterion (plan §3) into a verdict label."""
+    """Translate the H1 PASS criterion (plan §3) into a verdict label.
+
+    Order of precedence (resolves the Fix-3b ambiguity flagged by both
+    code-reviewers, round 1):
+
+    1.  ``FAIL``: NaN ρ or p — statistical machinery broke.
+    2.  Stat eligibility for PASS = (p < P_INCONCLUSIVE_LOW) ∧ (ρ < 0) ∧ sign_agreement.
+    3.  If NOT stat-eligible, label by p-band: ``inconclusive`` for
+        P_INCONCLUSIVE_LOW ≤ p < P_INCONCLUSIVE_HIGH, else ``FAIL``.
+    4.  If stat-eligible, the semantic (comedy-cluster) register check takes
+        precedence over the generic register flag: a stat-eligible run whose
+        comedy-cluster Pearson trips the SEMANTIC_REGISTER_PEARSON_THRESH gets
+        ``register_confound_suspect`` even if ``register_flag`` also fires
+        (it always does when the semantic flag fires — Fix 3b). This restores
+        the plan §3 / §4.12 four-state verdict space:
+        PASS / register_confound_suspect / inconclusive / FAIL
+        (+ comedian_identity_confounded when the fixed-B null fails).
+    5.  Stat-eligible + only the generic register flag → ``inconclusive``
+        (CB6 soft cap).
+    6.  Stat-eligible + clean register + fixed-B null fails → ``comedian_identity_confounded``.
+    7.  Stat-eligible + clean register + (fixed-B null passes OR is N/A) → ``PASS``.
+    """
     if math.isnan(rho_primary) or math.isnan(p_primary):
         return "FAIL"
-    # Direction sanity: scientific prediction is ρ < 0.
+
     direction_ok = rho_primary < 0.0
-    if p_primary < P_INCONCLUSIVE_LOW and direction_ok and sign_agreement and not register_flag:
-        if semantic_register_flag:
-            return "register_confound_suspect"
-        if fixed_b_pass is False:
-            return "comedian_identity_confounded"
-        return "PASS"
-    if p_primary < P_INCONCLUSIVE_HIGH:
+    stat_eligible = p_primary < P_INCONCLUSIVE_LOW and direction_ok and sign_agreement
+
+    if not stat_eligible:
+        if p_primary < P_INCONCLUSIVE_HIGH:
+            return "inconclusive"
+        return "FAIL"
+
+    # Stat-eligible: now resolve register flags in priority order.
+    if semantic_register_flag:
+        return "register_confound_suspect"
+    if register_flag:
+        # Generic CB6 register flag fired (length / punct / FK) without comedy
+        # cluster — downgrade to inconclusive rather than PASS.
         return "inconclusive"
-    return "FAIL"
+    if fixed_b_pass is False:
+        return "comedian_identity_confounded"
+    return "PASS"
 
 
 def stage_analyze(args: argparse.Namespace) -> int:
@@ -1512,6 +1720,43 @@ def stage_analyze(args: argparse.Namespace) -> int:
     rates_joint = np.array([arm1["joint"]["rates_aggregated"][p] for p in bystanders])
     rates_A = np.array([arm1["Aonly"]["rates_aggregated"][p] for p in bystanders])
     rates_B = np.array([arm1["Bonly"]["rates_aggregated"][p] for p in bystanders])
+
+    # === Source-rate sanity checks (plan §6 C0a / C0b / C0c) ===
+    # The source personas (A and B) must emit [ZLT] at high rate on their own
+    # training-conditioned LoRA (≥ 0.80) — otherwise the joint vs additive
+    # comparison is moot. Surfaced in the JSON; the analyzer flags failure.
+    SOURCE_RATE_MIN = 0.80
+    source_rate_joint_A = float(arm1["joint"]["rates_aggregated"].get(A, float("nan")))
+    source_rate_joint_B = float(arm1["joint"]["rates_aggregated"].get(B, float("nan")))
+    source_rate_Aonly = float(arm1["Aonly"]["rates_aggregated"].get(A, float("nan")))
+    source_rate_Bonly = float(arm1["Bonly"]["rates_aggregated"].get(B, float("nan")))
+    source_rate_sanity = {
+        "joint_A_source": source_rate_joint_A,
+        "joint_B_source": source_rate_joint_B,
+        "Aonly_A_source": source_rate_Aonly,
+        "Bonly_B_source": source_rate_Bonly,
+        "threshold": SOURCE_RATE_MIN,
+        "pass": all(
+            (not math.isnan(r)) and r >= SOURCE_RATE_MIN
+            for r in (
+                source_rate_joint_A,
+                source_rate_joint_B,
+                source_rate_Aonly,
+                source_rate_Bonly,
+            )
+        ),
+    }
+    if not source_rate_sanity["pass"]:
+        logger.warning(
+            "Source-rate sanity FAILED: joint_A=%.3f joint_B=%.3f Aonly_A=%.3f "
+            "Bonly_B=%.3f (threshold=%.2f). Joint vs additive comparison is moot "
+            "when source rates are this low.",
+            source_rate_joint_A,
+            source_rate_joint_B,
+            source_rate_Aonly,
+            source_rate_Bonly,
+            SOURCE_RATE_MIN,
+        )
 
     # === Primary Bernoulli baseline (CB2) ===
     bernoulli_union = rates_A + rates_B - rates_A * rates_B
@@ -1556,16 +1801,39 @@ def stage_analyze(args: argparse.Namespace) -> int:
     h2_status = "interior" if argmax_rank not in (0, n - 1) else "endpoint"
 
     # === Register / discourse diagnostic (CB6 + Fix 3b) ===
-    # We diagnose on the BASE-model outputs ... but those are produced via
-    # Arm 2 (`v_mid` arm baseline is the helpful_assistant prompt). The CB6
-    # spec calls for "BASE-model outputs" — i.e., persona-system-prompt
-    # generation WITHOUT the LoRA. Since we don't have a separate BASE-model
-    # eval, we use the joint LoRA's per-persona completions as a stand-in.
-    # The diagnostic measures style of the model's outputs UNDER the
-    # persona prompt; the joint LoRA's outputs are the closest available
-    # signal for what each bystander persona "sounds like" in this run.
+    # KNOWN PLAN DEVIATION (round-2 code-review): plan §3 / §4.4 / §4.12 spec
+    # this diagnostic on BASE-model persona-prompted outputs, but this
+    # implementation uses the joint-LoRA Arm 1 completions instead. Rationale
+    # for v1-LOW pre-commit (Option D2 from code-review v2 brief):
+    #   - Adding a base-model 19-persona eval pass is ~0.2 GPU-h extra that
+    #     was not scoped into the round-3 plan's compute budget.
+    #   - All v1 results are pre-committed at LOW confidence already; the
+    #     CB6 diagnostic is one signal among several (saturation, sign
+    #     agreement, null A, null B) feeding the verdict.
+    # Confounding risk introduced by this choice: under joint LoRA, bystanders
+    # with high [ZLT] leakage may emit shorter completions (marker appears →
+    # generation truncates). This could create an artifactual length↔|t|
+    # correlation that trips the CB6 generic register flag and downgrades a
+    # true positive to "inconclusive". The semantic comedy-cluster sub-check
+    # is robust to this (it uses the persona NAME, not outputs).
+    # The deviation is surfaced explicitly in `analysis.json` under
+    # `register_diagnostic_source` and `register_diagnostic_deviation_note` so
+    # the analyzer / clean-result MUST flag it in the Confidence-Why section.
+    # Follow-up v2 should add the base-model pass (Option D1).
     arm1_completions_joint = _read_json(OUTPUT_DIR / f"arm1_completions_joint_{A}_{B}.json")
     register = _register_diagnostic(arm1_completions_joint, bystanders, abs_t)
+    register["source"] = "joint_lora"
+    register["plan_spec_source"] = "base_model"
+    register["deviation_note"] = (
+        "Register diagnostic computed on joint-LoRA Arm 1 completions, not on "
+        "BASE-model outputs as the plan §3/§4.4/§4.12 specifies. Rationale: v1-LOW "
+        "pre-commit avoids the ~0.2 GPU-h extra base-pass cost. Risk: joint-LoRA "
+        "truncation when [ZLT] appears could create an artifactual length↔|t| "
+        "correlation that downgrades a true PASS to 'inconclusive'. "
+        "The semantic comedy-cluster sub-check (uses persona NAME, not outputs) "
+        "is robust to this; the generic length / punct / FK flags are not. "
+        "Surface this in the clean-result Confidence-Why bullet."
+    )
 
     # === H1 verdict (we don't know fixed_b_pass yet; that's Stage 8 — placeholder) ===
     h1_verdict_provisional = _h1_verdict(
@@ -1583,6 +1851,13 @@ def stage_analyze(args: argparse.Namespace) -> int:
     notes = []
     if saturation_degraded:
         notes.append(f"saturation_degraded: {n_saturated} bystanders excluded (>3)")
+    if not source_rate_sanity["pass"]:
+        notes.append(
+            f"source_rate_sanity FAILED (plan §6 C0a-C0c): "
+            f"joint_A={source_rate_joint_A:.3f} joint_B={source_rate_joint_B:.3f} "
+            f"Aonly_A={source_rate_Aonly:.3f} Bonly_B={source_rate_Bonly:.3f} "
+            f"(threshold={SOURCE_RATE_MIN:.2f})"
+        )
     if register["register_confound_flag"]:
         notes.append("register_confound_flag set (CB6)")
     if register["semantic_register_confound_flag"]:
@@ -1605,6 +1880,7 @@ def stage_analyze(args: argparse.Namespace) -> int:
         "n_saturated": n_saturated,
         "n_keep": n_keep,
         "saturation_degraded": saturation_degraded,
+        "source_rate_sanity": source_rate_sanity,
         "h1_primary": {
             "baseline": "bernoulli_union",
             "rho": rho_primary,
@@ -1813,6 +2089,19 @@ def stage_all(args: argparse.Namespace) -> int:
     for name, fn in sequence:
         logger.info("=== Running stage: %s ===", name)
         rc = fn(args)
+        if rc == 2:
+            # rc=2 is a PLANNED halt (today: Stage 4.5 gate fired). The stage
+            # function has already posted the epm:gate-decision-needed marker
+            # + applied status:blocked. Stop the pipeline cleanly here so the
+            # pod can be paused for user decision.
+            logger.error(
+                "Stage %s exited with rc=2 (PLANNED HALT: user decision needed). "
+                "epm:gate-decision-needed v1 posted on issue #%d; "
+                "status:blocked label applied. Pipeline halted.",
+                name,
+                ISSUE_NUMBER,
+            )
+            return rc
         if rc != 0:
             logger.error("Stage %s exited with rc=%d; halting pipeline", name, rc)
             return rc
