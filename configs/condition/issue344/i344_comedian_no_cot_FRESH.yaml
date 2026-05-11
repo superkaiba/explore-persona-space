@@ -1,0 +1,14 @@
+# Bookkeeping config for issue #344 no_cot_FRESH cell.
+# scripts/train.py does NOT consume this for #344 — training goes through
+# scripts/run_issue_344_train.py with a custom chat template. This YAML
+# exists for discoverability + parity with configs/condition/issue186/.
+name: i344_comedian_no_cot_FRESH
+condition_id: 344011
+stages:
+  - name: coupling
+    type: sft
+    dataset: data/sft/issue186/comedian_no-cot_seed42.jsonl
+seeds: [42]
+# train_arm: no_cot_FRESH
+# loss_mask: whole-turn
+# chat_template: whole-turn
