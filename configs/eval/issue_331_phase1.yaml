@@ -80,13 +80,22 @@ evolution:
 latin_vocab_path: data/issue_188/latin_freq_2000.json
 contexts_path: data/issue_188/fineweb_edu_contexts_20.json
 
-# Judge.
+# Judge — claude-sonnet-4-5 via synchronous /v1/messages.
+# Mode switched from "batch" to "sync" in response to epm:failure v2
+# (Anthropic Batch queue backlog >10h on 2026-05-11). See plan §10.
 judge:
   prompt_path: src/explore_persona_space/eval/judge_prompts/language_switch.txt
   cache_dir: eval_results/issue_331/judge_cache
   model: claude-sonnet-4-5-20250929
   max_tokens: 200
-  poll_interval: 30.0
+  poll_interval: 30.0            # batch mode only; ignored when mode=sync
+  mode: sync                     # "sync" | "batch"
+  sync_max_workers: 20           # thread pool size for sync mode
+  sync_max_retries: 5            # exponential backoff cap
+  sync_base_delay_s: 2.0
+  sync_max_delay_s: 60.0
+  sync_progress_every: 500
+  sync_error_tolerance: 0.05     # 5% transient-error ceiling (matches parent #284)
 
 # Output.
 output_dir: eval_results/issue_331/phase1

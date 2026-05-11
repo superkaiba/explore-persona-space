@@ -228,10 +228,28 @@ def _judge_records(
     cfg: DictConfig,
     project_root: Path,
 ) -> list[dict]:
-    """Language-switch judge via Anthropic Batch + JudgeCache (direct parse)."""
-    import anthropic as anthropic_mod
+    """Language-switch judge via Anthropic API + JudgeCache (direct parse).
 
+    Dispatches on ``cfg.judge.mode``:
+
+    - ``"batch"`` (default if absent) — Messages Batch API (50% discount, but
+      can queue behind multi-hour backlogs when the Anthropic queue is hot).
+    - ``"sync"`` — synchronous ``/v1/messages`` calls run through a
+      ``ThreadPoolExecutor`` with retry/backoff. ~3x more $ per request than
+      Batch, but bypasses the queue. Added for issue #331 after a 10+ hour
+      Batch backlog (epm:failure v2). Falls back to ``"batch"`` if
+      ``cfg.judge.mode`` is missing — preserves backwards compatibility for
+      callers (#188, #325, #324, #283) that never specified the field.
+    """
     from explore_persona_space.eval.batch_judge import JudgeCache
+
+    # Resolve mode without mutating cfg; default to batch for backwards compat.
+    mode = str(getattr(cfg.judge, "mode", "batch")).lower()
+    if mode not in ("batch", "sync"):
+        raise ValueError(
+            f"cfg.judge.mode must be 'batch' or 'sync' (got {mode!r}). "
+            "Set in configs/eval/<name>.yaml under `judge.mode`."
+        )
 
     judge_prompt_path = Path(cfg.judge.prompt_path)
     if not judge_prompt_path.is_absolute():
@@ -259,71 +277,29 @@ def _judge_records(
             )
             uncached_items.append((cid, rec["prompt"], rec["completion"], user_msg))
 
-    logger.info("language_switch judge: %d cached, %d to submit", len(judged), len(uncached_items))
+    logger.info(
+        "language_switch judge (mode=%s): %d cached, %d to submit",
+        mode,
+        len(judged),
+        len(uncached_items),
+    )
 
     if uncached_items:
-        client = anthropic_mod.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-        requests = [
-            {
-                "custom_id": cid,
-                "params": {
-                    "model": cfg.judge.model,
-                    "max_tokens": cfg.judge.max_tokens,
-                    "system": judge_system_prompt,
-                    "messages": [{"role": "user", "content": umsg}],
-                },
-            }
-            for cid, _q, _c, umsg in uncached_items
-        ]
-
-        batch = client.messages.batches.create(requests=requests)
-        bid = batch.id
-        logger.info("Submitted batch %s (%d requests)", bid, len(requests))
-
-        interval = cfg.judge.poll_interval
-        max_elapsed_s = 3600.0
-        t_start = time.time()
-        while True:
-            batch = client.messages.batches.retrieve(bid)
-            counts = batch.request_counts
-            logger.info(
-                "[%s] Batch %s: processing=%d succeeded=%d errored=%d",
-                time.strftime("%H:%M:%S"),
-                bid,
-                counts.processing,
-                counts.succeeded,
-                counts.errored,
-            )
-            if batch.processing_status == "ended":
-                break
-            elapsed = time.time() - t_start
-            if elapsed > max_elapsed_s:
-                raise RuntimeError(
-                    f"Anthropic batch {bid} still processing after "
-                    f"{elapsed:.0f}s (cap={max_elapsed_s:.0f}s). Aborting."
-                )
-            time.sleep(interval)
-            interval = min(interval * 1.5, 120.0)
-
-        cid_to_pc = {cid: (q, c) for cid, q, c, _ in uncached_items}
-        for result in client.messages.batches.results(bid):
-            cid = result.custom_id
-            if result.result.type == "succeeded":
-                text = next(
-                    (b.text for b in result.result.message.content if b.type == "text"),
-                    "",
-                )
-                parsed = _parse_language_switch_text(text)
+        if mode == "batch":
+            new_results = _judge_uncached_via_batch(uncached_items, cfg, judge_system_prompt)
+        else:
+            new_results = _judge_uncached_via_sync(uncached_items, cfg, judge_system_prompt)
+        for cid, q, c, _umsg in uncached_items:
+            if cid in new_results:
+                parsed = new_results[cid]
+                judged[cid] = parsed
+                # Only cache results the API actually returned. Missing
+                # entries (shouldn't happen, defence against silent SDK gaps)
+                # stay uncached so the next run retries them.
+                cache.put(q, c, parsed)
             else:
-                parsed = {
-                    "label": None,
-                    "evidence": None,
-                    "error": True,
-                    "raw": f"batch_error: {result.result.type}",
-                }
-            judged[cid] = parsed
-            q, c = cid_to_pc[cid]
-            cache.put(q, c, parsed)
+                logger.warning("Judge result missing for custom_id=%s", cid)
+                judged[cid] = {"label": None, "evidence": None, "error": True}
 
     out: list[dict] = []
     for rec in records:
@@ -331,6 +307,240 @@ def _judge_records(
             rec["custom_id"], {"label": None, "evidence": None, "error": True}
         )
         out.append({**rec, "judge": label_payload})
+    return out
+
+
+def _judge_uncached_via_batch(
+    uncached_items: list[tuple[str, str, str, str]],
+    cfg: DictConfig,
+    judge_system_prompt: str,
+) -> dict[str, dict]:
+    """Submit uncached judge items via Anthropic Messages Batch API.
+
+    Returns ``{custom_id: parsed_label_dict}``. Errors per-item are encoded
+    as ``{"label": None, "evidence": None, "error": True, "raw": "..."}`` so
+    the caller can still cache + thread them through aggregation.
+    """
+    import anthropic as anthropic_mod
+
+    client = anthropic_mod.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+    requests = [
+        {
+            "custom_id": cid,
+            "params": {
+                "model": cfg.judge.model,
+                "max_tokens": cfg.judge.max_tokens,
+                "system": judge_system_prompt,
+                "messages": [{"role": "user", "content": umsg}],
+            },
+        }
+        for cid, _q, _c, umsg in uncached_items
+    ]
+
+    batch = client.messages.batches.create(requests=requests)
+    bid = batch.id
+    logger.info("Submitted batch %s (%d requests)", bid, len(requests))
+
+    interval = float(cfg.judge.poll_interval)
+    max_elapsed_s = 3600.0
+    t_start = time.time()
+    while True:
+        batch = client.messages.batches.retrieve(bid)
+        counts = batch.request_counts
+        logger.info(
+            "[%s] Batch %s: processing=%d succeeded=%d errored=%d",
+            time.strftime("%H:%M:%S"),
+            bid,
+            counts.processing,
+            counts.succeeded,
+            counts.errored,
+        )
+        if batch.processing_status == "ended":
+            break
+        elapsed = time.time() - t_start
+        if elapsed > max_elapsed_s:
+            raise RuntimeError(
+                f"Anthropic batch {bid} still processing after "
+                f"{elapsed:.0f}s (cap={max_elapsed_s:.0f}s). Aborting."
+            )
+        time.sleep(interval)
+        interval = min(interval * 1.5, 120.0)
+
+    out: dict[str, dict] = {}
+    for result in client.messages.batches.results(bid):
+        cid = result.custom_id
+        if result.result.type == "succeeded":
+            text = next(
+                (b.text for b in result.result.message.content if b.type == "text"),
+                "",
+            )
+            out[cid] = _parse_language_switch_text(text)
+        else:
+            out[cid] = {
+                "label": None,
+                "evidence": None,
+                "error": True,
+                "raw": f"batch_error: {result.result.type}",
+            }
+    return out
+
+
+# Sync-judge tuning constants — overridable via cfg.judge.<field> if needed.
+_SYNC_DEFAULT_MAX_WORKERS = 20
+_SYNC_DEFAULT_MAX_RETRIES = 5
+_SYNC_DEFAULT_BASE_DELAY_S = 2.0
+_SYNC_DEFAULT_MAX_DELAY_S = 60.0
+_SYNC_DEFAULT_PROGRESS_EVERY = 500
+_SYNC_DEFAULT_ERROR_TOLERANCE = 0.05  # 5% transient-error ceiling
+
+
+def _judge_uncached_via_sync(
+    uncached_items: list[tuple[str, str, str, str]],
+    cfg: DictConfig,
+    judge_system_prompt: str,
+) -> dict[str, dict]:
+    """Submit uncached judge items via synchronous Anthropic /v1/messages.
+
+    Concurrency: ``cfg.judge.sync_max_workers`` (default 20) threads sharing
+    one anthropic.Anthropic client (the SDK's underlying httpx pool is
+    thread-safe). Each request retries on RateLimitError / APITimeoutError /
+    APIConnectionError with exponential backoff (2s → 4s → 8s → … capped at
+    60s, max 5 retries). Progress logged every 500 completed requests.
+
+    Tolerance: if the error fraction across all requests exceeds 5% the
+    function raises — matches the batch path's effective tolerance (parent
+    #284 reported 4.10% transient errors).
+
+    Returns ``{custom_id: parsed_label_dict}``. Per-item errors are encoded
+    inline (``error=True``) and still cached so a retry pass shortcuts the
+    failures.
+
+    Why threaded sync rather than async: the rest of the judge pipeline
+    (``_judge_records`` callers in scripts/issue_331_phase{0,1}*.py) is
+    synchronous Hydra-driven code; threading keeps the integration surface
+    minimal. 18,400 requests x ~1.6s/req / 20 workers ~= 25 min wall-clock,
+    well under the user's worst-case batch ETA at the time of the switch.
+    """
+    import random as _random
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    import anthropic as anthropic_mod
+
+    max_workers = int(getattr(cfg.judge, "sync_max_workers", _SYNC_DEFAULT_MAX_WORKERS))
+    max_retries = int(getattr(cfg.judge, "sync_max_retries", _SYNC_DEFAULT_MAX_RETRIES))
+    base_delay = float(getattr(cfg.judge, "sync_base_delay_s", _SYNC_DEFAULT_BASE_DELAY_S))
+    max_delay = float(getattr(cfg.judge, "sync_max_delay_s", _SYNC_DEFAULT_MAX_DELAY_S))
+    progress_every = int(getattr(cfg.judge, "sync_progress_every", _SYNC_DEFAULT_PROGRESS_EVERY))
+    error_tolerance = float(
+        getattr(cfg.judge, "sync_error_tolerance", _SYNC_DEFAULT_ERROR_TOLERANCE)
+    )
+
+    client = anthropic_mod.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+
+    def _call_one(item: tuple[str, str, str, str]) -> tuple[str, dict]:
+        cid, _q, _c, umsg = item
+        last_exc: Exception | None = None
+        for attempt in range(max_retries + 1):
+            try:
+                resp = client.messages.create(
+                    model=cfg.judge.model,
+                    max_tokens=cfg.judge.max_tokens,
+                    system=judge_system_prompt,
+                    messages=[{"role": "user", "content": umsg}],
+                )
+                text = next(
+                    (b.text for b in resp.content if getattr(b, "type", None) == "text"),
+                    "",
+                )
+                return cid, _parse_language_switch_text(text)
+            except (
+                anthropic_mod.RateLimitError,
+                anthropic_mod.APITimeoutError,
+                anthropic_mod.APIConnectionError,
+            ) as e:
+                last_exc = e
+                if attempt >= max_retries:
+                    break
+                # Exponential backoff with jitter (deterministic seed via cid hash
+                # so retry timing is reproducible within a thread).
+                delay = min(base_delay * (2**attempt), max_delay)
+                jitter = _random.Random(hash((cid, attempt)) & 0xFFFFFFFF).uniform(0.5, 1.0)
+                time.sleep(delay * jitter)
+            except (anthropic_mod.BadRequestError, anthropic_mod.NotFoundError) as e:
+                # Permanent error — don't retry.
+                return cid, {
+                    "label": None,
+                    "evidence": None,
+                    "error": True,
+                    "raw": f"sync_error_permanent: {type(e).__name__}: {e}",
+                }
+        return cid, {
+            "label": None,
+            "evidence": None,
+            "error": True,
+            "raw": (
+                f"sync_error_after_{max_retries}_retries: {type(last_exc).__name__}: {last_exc}"
+            ),
+        }
+
+    total = len(uncached_items)
+    logger.info(
+        "Sync judge: dispatching %d requests across %d worker(s) "
+        "(max_retries=%d, base_delay=%.1fs, cap=%.1fs)",
+        total,
+        max_workers,
+        max_retries,
+        base_delay,
+        max_delay,
+    )
+
+    out: dict[str, dict] = {}
+    completed = 0
+    n_errors = 0
+    t_start = time.time()
+
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = [pool.submit(_call_one, item) for item in uncached_items]
+        for fut in as_completed(futures):
+            cid, parsed = fut.result()
+            out[cid] = parsed
+            completed += 1
+            if parsed.get("error"):
+                n_errors += 1
+            if completed % progress_every == 0 or completed == total:
+                elapsed = time.time() - t_start
+                rate = completed / elapsed if elapsed > 0 else 0.0
+                eta_s = (total - completed) / rate if rate > 0 else 0.0
+                err_pct = 100.0 * n_errors / completed
+                logger.info(
+                    "Sync judge progress: %d/%d (%.1f%%) elapsed=%.0fs "
+                    "rate=%.1f/s eta=%.0fs errors=%d (%.2f%%)",
+                    completed,
+                    total,
+                    100.0 * completed / total,
+                    elapsed,
+                    rate,
+                    eta_s,
+                    n_errors,
+                    err_pct,
+                )
+
+    final_err_frac = n_errors / total if total else 0.0
+    logger.info(
+        "Sync judge done: %d/%d completed, %d errors (%.2f%%) in %.0fs",
+        completed,
+        total,
+        n_errors,
+        100.0 * final_err_frac,
+        time.time() - t_start,
+    )
+    if final_err_frac > error_tolerance:
+        raise RuntimeError(
+            f"Sync judge transient error rate {final_err_frac:.2%} "
+            f"exceeds tolerance {error_tolerance:.2%} "
+            f"({n_errors}/{total} requests). Inspect logs and re-run; "
+            f"JudgeCache will skip the successful ones."
+        )
     return out
 
 
