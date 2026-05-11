@@ -130,6 +130,30 @@ MAIN_ARMS = ("no_cot", "generic_cot", "persona_cot")
 CORRECT_CONTROL_CELLS = (("librarian", "persona_cot_correct"),)
 SEEDS = (42, 137, 256)
 
+# Issue #344 arms — added on top of the #186 + #280 carry-over arms above. Per
+# Plan §4 Phase 1 cell-group table. Cells with arm in ``ISSUE344_LOA_ARMS`` or
+# ``ISSUE344_FRESH_ARMS`` resolve to ``i344_*`` HF Hub paths instead of
+# ``i186_*``; the eval pipeline is otherwise identical.
+ISSUE344_LOA_ARMS = ("persona_cot_labels_on_answer", "generic_cot_labels_on_answer")
+ISSUE344_FRESH_ARMS = ("persona_cot_FRESH", "no_cot_FRESH")
+# Plus the C3 gate's sentinel arm name (Plan §11 'Adapter HF-Hub naming' row).
+ISSUE344_C3_GATE_ARM = "persona_cot_labels_on_answer_c3gate"
+ISSUE344_ALL_ARMS = ISSUE344_LOA_ARMS + ISSUE344_FRESH_ARMS + (ISSUE344_C3_GATE_ARM,)
+
+# Variant A defers `generic_cot_labels_on_answer`.
+ISSUE344_VARIANT_A_ARMS = (
+    "persona_cot_labels_on_answer",
+    "persona_cot_FRESH",
+    "no_cot_FRESH",
+)
+ISSUE344_VARIANT_B_ARMS = (*ISSUE344_VARIANT_A_ARMS, "generic_cot_labels_on_answer")
+
+# `no_cot_FRESH` is single-seed by design (Alts R3 B2 — Phase 3 mediation
+# comparator, seed=42 only).
+ISSUE344_SINGLE_SEED_ARMS = frozenset({"no_cot_FRESH"})
+# C3 gate cell — single source x 3 seeds (only included if explicitly invoked).
+ISSUE344_C3_GATE_CELLS = (("librarian", ISSUE344_C3_GATE_ARM),)
+
 
 def _all_cells() -> list[tuple[str, str, int]]:
     out: list[tuple[str, str, int]] = []
@@ -143,6 +167,31 @@ def _all_cells() -> list[tuple[str, str, int]]:
     return out
 
 
+def _all_cells_i344(
+    variant: str = "B", include_c3_gate: bool = False
+) -> list[tuple[str, str, int]]:
+    """Enumerate the i344 cells under Variant A or B.
+
+    Variant A = {persona_cot_labels_on_answer, persona_cot_FRESH, no_cot_FRESH}.
+    Variant B adds {generic_cot_labels_on_answer}.
+    no_cot_FRESH is seed=42 only (mediation comparator). C3 gate cells are
+    appended only if `include_c3_gate=True` (caller is responsible for knowing
+    whether c3 cells exist on Hub — gate fires conditionally).
+    """
+    arms = ISSUE344_VARIANT_B_ARMS if variant == "B" else ISSUE344_VARIANT_A_ARMS
+    out: list[tuple[str, str, int]] = []
+    for src in SOURCES:
+        for arm in arms:
+            seeds = (42,) if arm in ISSUE344_SINGLE_SEED_ARMS else SEEDS
+            for s in seeds:
+                out.append((src, arm, s))
+    if include_c3_gate:
+        for src, arm in ISSUE344_C3_GATE_CELLS:
+            for s in SEEDS:
+                out.append((src, arm, s))
+    return out
+
+
 def _cell_id(source: str, arm: str, seed: int) -> str:
     return f"{source}_{arm}_seed{seed}"
 
@@ -150,10 +199,18 @@ def _cell_id(source: str, arm: str, seed: int) -> str:
 def _hf_path_in_repo(source: str, arm: str, seed: int) -> str:
     """Return the HF Hub path-in-repo for the merged trained model.
 
-    Pattern matches ``orchestrate.runner._upload_post_em``: the trainer
-    uploads the final merged checkpoint to ``{condition.name}_seed{seed}_post_em``.
-    For #186 the condition name is ``i186_{source}_{arm}``.
+    Switches by arm name (Plan §4 Files-to-create-or-extend #4):
+
+    * i186 carry-over arms (``no_cot``, ``generic_cot``, ``persona_cot``,
+      ``persona_cot_correct``): ``i186_{source}_{arm}_seed{S}_post_em``.
+    * i344 arms (``*_labels_on_answer``, ``*_FRESH``, the C3 gate sentinel):
+      ``i344_{source}_{arm}_seed{S}_post_em``.
+
+    Pattern matches the upload path used by ``orchestrate.runner._upload_post_em``
+    and ``run_issue_344_train._hf_path_in_repo``.
     """
+    if arm in ISSUE344_ALL_ARMS:
+        return f"i344_{source}_{arm}_seed{seed}_post_em"
     return f"i186_{source}_{arm}_seed{seed}_post_em"
 
 
@@ -170,6 +227,130 @@ def _save_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2))
     logger.info("Wrote %s", path)
+
+
+# ── Paired-ratio bootstrap helper (issue #344) ────────────────────────────────
+
+
+def _paired_bootstrap_ratio(
+    num_per_q,
+    denom_per_q,
+    *,
+    n_resamples: int = 10_000,
+    denom_epsilon: float = 1e-4,
+    degenerate_draw_policy: str = "discard",
+    rng=None,
+) -> dict:
+    """Paired-resample bootstrap for the ratio ``mean(num) / mean(denom)``.
+
+    Single source of truth for issue #344 ``fraction_of_effect`` aggregation
+    (Plan §4 Aggregate-mode patch + §16 #6). Mirrors the inline loop at
+    ``run_issue186_eval.py:555-558`` but extends it with the paired-ratio +
+    degenerate-draw handling required for fraction-of-effect quantities.
+
+    Args:
+        num_per_q: 1D array of per-(question_id, seed) numerator values.
+        denom_per_q: 1D array, same length & ordering as ``num_per_q``. The
+            paired index is identity — for resample b, both arrays are
+            indexed by the SAME bootstrap index, so the numerator and
+            denominator share (q, s) draws (Plan §4 S4 paired-ratio fix).
+        n_resamples: Number of bootstrap resamples (default 10,000 per
+            Plan §11 'Statistical engine').
+        denom_epsilon: Minimum ``|mean(denom[idx])|`` for a resample to be
+            kept. Resamples where the denominator-mean falls below this are
+            handled per ``degenerate_draw_policy``.
+        degenerate_draw_policy: ``'discard'`` (default) drops the degenerate
+            resample; ``'log_transform'`` and ``'bca'`` are accepted as
+            knobs for §15 deviations but currently fall back to discard.
+        rng: ``np.random.Generator`` instance; if None, one is created.
+
+    Returns:
+        Dict with keys ``point``, ``ci_low``, ``ci_high``, ``p_one_sided_upper``,
+        ``p_two_sided``, ``draws``, ``n_discarded``, ``frac_discarded``.
+
+    Notes:
+        - The point estimate is ``mean(num) / mean(denom)`` on the full data
+          (NOT the mean of the bootstrap distribution — matches scipy's
+          ``bootstrap`` convention).
+        - ``p_one_sided_upper`` is the bootstrap p-value for ``ratio >= 0``
+          (i.e. fraction of draws ≤ 0). Use with f-ratio CI rules per Plan §6.
+        - ``p_two_sided`` is ``2 * min(P(draws >= 0), P(draws <= 0))`` —
+          descriptive only (the inferential anchor is the CI bound).
+    """
+    import numpy as np
+
+    if rng is None:
+        rng = np.random.default_rng()
+
+    num_arr = np.asarray(num_per_q, dtype=np.float64).reshape(-1)
+    denom_arr = np.asarray(denom_per_q, dtype=np.float64).reshape(-1)
+    if num_arr.shape != denom_arr.shape:
+        raise ValueError(
+            f"num_per_q (shape {num_arr.shape}) and denom_per_q "
+            f"(shape {denom_arr.shape}) must have the same length"
+        )
+    n = num_arr.shape[0]
+    if n < 2:
+        raise ValueError(f"n={n} too small for bootstrap")
+
+    point_num = float(num_arr.mean())
+    point_denom = float(denom_arr.mean())
+    # If the point-estimate denominator is already degenerate, return the
+    # ratio as `nan` so the caller can flag it (matches Plan §6 'r5
+    # denominator stability gate' framing).
+    point = float("nan") if abs(point_denom) < denom_epsilon else point_num / point_denom
+
+    draws = np.empty(n_resamples, dtype=np.float64)
+    n_discarded = 0
+    kept = 0
+    for _ in range(n_resamples):
+        idx = rng.integers(0, n, size=n)
+        denom_resample = float(denom_arr[idx].mean())
+        if abs(denom_resample) < denom_epsilon:
+            n_discarded += 1
+            if degenerate_draw_policy == "discard":
+                continue
+            # Other policies (log_transform, bca) fall back to discard here;
+            # they're listed for §15 deviations only.
+            continue
+        num_resample = float(num_arr[idx].mean())
+        draws[kept] = num_resample / denom_resample
+        kept += 1
+
+    draws = draws[:kept]
+    if kept == 0:
+        # Pathological — every resample degenerate. Return nan CIs.
+        return {
+            "point": point,
+            "ci_low": float("nan"),
+            "ci_high": float("nan"),
+            "p_one_sided_upper": float("nan"),
+            "p_two_sided": float("nan"),
+            "draws": draws.tolist(),
+            "n_discarded": int(n_discarded),
+            "frac_discarded": 1.0,
+            "n_kept": 0,
+            "n_resamples": int(n_resamples),
+        }
+
+    ci_low = float(np.percentile(draws, 2.5))
+    ci_high = float(np.percentile(draws, 97.5))
+    p_one_sided_upper = float(np.mean(draws <= 0.0))
+    # Two-sided p (descriptive): fraction in the tail farther from the median.
+    p_two_sided = float(2.0 * min(np.mean(draws >= 0.0), np.mean(draws <= 0.0)))
+
+    return {
+        "point": point,
+        "ci_low": ci_low,
+        "ci_high": ci_high,
+        "p_one_sided_upper": p_one_sided_upper,
+        "p_two_sided": p_two_sided,
+        "draws": draws.tolist(),
+        "n_discarded": int(n_discarded),
+        "frac_discarded": float(n_discarded) / float(n_resamples),
+        "n_kept": int(kept),
+        "n_resamples": int(n_resamples),
+    }
 
 
 # ── Engine lifecycle (one engine per cell -- merge-and-unload path) ──────────
@@ -382,12 +563,32 @@ def _stage_smoke(args: argparse.Namespace) -> None:
 
 def _stage_full(args: argparse.Namespace) -> None:
     cells = _all_cells()
+    # Issue #344: extend with i344 cells under Variant A or B. The cell list
+    # now contains both i186 carry-over cells AND the new i344 cells; the
+    # `_hf_path_in_repo` switch knows which Hub path to resolve per arm.
+    if getattr(args, "include_i344", False):
+        i344_cells = _all_cells_i344(
+            variant=getattr(args, "i344_variant", "B"),
+            include_c3_gate=getattr(args, "include_c3_gate", False),
+        )
+        cells = cells + i344_cells
+    # Round-robin shard for multi-GPU parallelism (one process per GPU on a
+    # 4x H100 pod).
+    gpu_shard = getattr(args, "gpu_shard", None)
+    total_shards = getattr(args, "total_shards", None)
+    if gpu_shard is not None and total_shards is not None and total_shards > 0:
+        cells = [c for i, c in enumerate(cells) if i % total_shards == gpu_shard]
+
     logger.info(
-        "Phase-2 full: %d cells x %d personas x %d arms x %d questions",
+        "Phase-2 full: %d cells x %d personas x %d arms x %d questions "
+        "(shard=%s/%s, include_i344=%s)",
         len(cells),
         len(EVAL_PERSONAS),
         len(EVAL_SCAFFOLDS),
         args.n_questions or 1172,
+        gpu_shard,
+        total_shards,
+        getattr(args, "include_i344", False),
     )
     failures: list[tuple[str, str]] = []
     for source, arm, seed in cells:
@@ -428,6 +629,15 @@ def _stage_full(args: argparse.Namespace) -> None:
 
 
 def _stage_aggregate(args: argparse.Namespace) -> None:  # noqa: C901
+    """Dispatch on ``--mode``. Default ``legacy_delta_h1`` preserves the
+    #186 / #280 backward path; ``fraction_of_effect`` is the #344 aggregator
+    (Plan §4 Aggregate-mode patch)."""
+    mode = getattr(args, "mode", "legacy_delta_h1")
+    if mode == "fraction_of_effect":
+        _stage_aggregate_fraction_of_effect(args)
+        return
+    if mode != "legacy_delta_h1":
+        raise ValueError(f"unknown --mode {mode!r}")
     import numpy as np
 
     out_root = PROJECT_ROOT / "eval_results" / "issue186"
@@ -624,6 +834,538 @@ def _stage_aggregate(args: argparse.Namespace) -> None:  # noqa: C901
         logger.error("Hero figure failed: %s", e)
 
 
+# ── Fraction-of-effect aggregator (issue #344) ────────────────────────────────
+
+
+def _per_qs_loss_matrix(
+    base_correct,
+    trained_correct_cell,
+    bys_idx,
+    src_idx,
+    scaffold_idx: int,
+):
+    """Return per-(question, seed) source and bystander LOSSES for one cell.
+
+    ``loss = baseline_correct - trained_correct``; positive ⇒ training hurt
+    accuracy. The bystander macro is over the 10 non-source personas FIRST
+    (Plan §4 S2 aggregation order); THEN paired bootstrap resamples (q, s)
+    pairs.
+
+    Args:
+        base_correct: shape (n_q, 11, 4) — baseline correctness array.
+        trained_correct_cell: shape (n_q, 11, 4) — this cell's correctness.
+        bys_idx: ndarray of bystander persona indices (length 10).
+        src_idx: int, the source persona index.
+        scaffold_idx: int, which eval scaffold (matched persona-CoT, etc.).
+
+    Returns:
+        ``(source_loss_per_q, bystander_loss_per_q)`` — both 1D float64
+        arrays of length ``n_q``.
+    """
+    import numpy as np
+
+    src_loss = base_correct[:, src_idx, scaffold_idx].astype(np.float64) - trained_correct_cell[
+        :, src_idx, scaffold_idx
+    ].astype(np.float64)
+    bys_loss = (
+        base_correct[:, bys_idx, scaffold_idx].astype(np.float64)
+        - trained_correct_cell[:, bys_idx, scaffold_idx].astype(np.float64)
+    ).mean(axis=1)  # per-q mean over 10 bystander personas (S2)
+    return src_loss, bys_loss
+
+
+def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # noqa: C901
+    """Fraction-of-effect aggregator for issue #344 (Plan §4 + §11).
+
+    Reads i344 cells (``persona_cot_labels_on_answer``, ``persona_cot_FRESH``,
+    optionally ``generic_cot_labels_on_answer`` and ``no_cot_FRESH``) plus the
+    #186 baseline + carry-over ``persona_cot`` cells, and computes:
+
+    * ``f_source`` / ``f_bystander`` per source + macro (the H1 quantities).
+    * ``r5_source`` / ``r5_bystander`` LOSS-DELTA ratios (the C5 statistic).
+    * FRESH denominator validity gate (macro + per-source floor).
+    * FRESH-vs-carry-over calibration table.
+    * C3 gate trigger sentinel (bystander-primary, per Plan §11).
+
+    All ratio quantities use the paired bootstrap with shared (q, s) indices
+    (Plan §4 S4); engine is ``_paired_bootstrap_ratio``.
+    """
+    import numpy as np
+
+    out_root = PROJECT_ROOT / "eval_results" / "issue186"
+    out_344 = PROJECT_ROOT / "eval_results" / "issue344"
+    out_344.mkdir(parents=True, exist_ok=True)
+
+    variant = getattr(args, "i344_variant", "B")
+    include_c3_gate = getattr(args, "include_c3_gate", False)
+    n_bootstrap = getattr(args, "n_bootstrap", 10_000)
+    denom_epsilon = getattr(args, "denom_epsilon", 1e-4)
+    rng = np.random.default_rng(getattr(args, "seed", 42))
+
+    baseline_path = out_root / "baseline" / "result.json"
+    if not baseline_path.exists():
+        raise FileNotFoundError(
+            f"Baseline result missing at {baseline_path}. Run --stage baseline first."
+        )
+    baseline = json.loads(baseline_path.read_text())
+    n_q = baseline["metadata"]["n_questions"]
+
+    persona_idx = {p: i for i, p in enumerate(PERSONA_ORDER)}
+    arm_to_key = {s.name: s.name.replace("-", "_") for s in EVAL_SCAFFOLDS}
+    matched_scaffold_idx = next(i for i, s in enumerate(EVAL_SCAFFOLDS) if s.name == "persona-cot")
+    empty_scaffold_idx = next(
+        i for i, s in enumerate(EVAL_SCAFFOLDS) if s.name == "empty-persona-cot-eval"
+    )
+
+    def _correct_array(per_persona: dict) -> np.ndarray:
+        arr = np.zeros((n_q, len(PERSONA_ORDER), len(EVAL_SCAFFOLDS)), dtype=np.int8)
+        for p in PERSONA_ORDER:
+            block = per_persona.get(p)
+            if block is None:
+                continue
+            for q_idx, row in enumerate(block["raw"][:n_q]):
+                ca = row["correct_answer"]
+                for sc_i, scaffold in enumerate(EVAL_SCAFFOLDS):
+                    ak = arm_to_key[scaffold.name]
+                    pred = row.get(f"{ak}_pred")
+                    arr[q_idx, persona_idx[p], sc_i] = int(pred == ca)
+        return arr
+
+    base_correct = _correct_array(baseline["per_persona"])
+
+    # Cells we need on disk: i344 main cells + #186 carry-over `persona_cot`
+    # for calibration. `no_cot` carry-over is read too if available
+    # (lower-bound anchor for C3 discussion).
+    i344_cells = _all_cells_i344(variant=variant, include_c3_gate=include_c3_gate)
+    carryover_persona_cot = [(s, "persona_cot", seed) for s in SOURCES for seed in SEEDS]
+
+    def _load_cell(source: str, arm: str, seed: int) -> dict | None:
+        cell_id = _cell_id(source, arm, seed)
+        rp = out_root / cell_id / "result.json"
+        if not rp.exists():
+            return None
+        return json.loads(rp.read_text())
+
+    cell_correctness: dict[str, np.ndarray] = {}
+    missing: list[str] = []
+    for source, arm, seed in i344_cells + carryover_persona_cot:
+        cell_id = _cell_id(source, arm, seed)
+        cell = _load_cell(source, arm, seed)
+        if cell is None:
+            missing.append(cell_id)
+            continue
+        cell_correctness[cell_id] = _correct_array(cell["per_persona"])
+
+    if missing:
+        logger.warning(
+            "Missing %d cells in fraction_of_effect aggregator: %s", len(missing), missing
+        )
+
+    # ── Compute per-source FRESH macros first (denominator validity gate) ──
+    fresh_per_source: dict[str, dict] = {}
+    for source in SOURCES:
+        bystanders = [p for p in PERSONA_ORDER if p != source]
+        bys_idx = np.array([persona_idx[p] for p in bystanders])
+        src_idx = persona_idx[source]
+        # Average per-q source/bystander loss across seeds (3 seeds for
+        # persona_cot_FRESH, per Plan §4).
+        src_losses = []
+        bys_losses = []
+        for seed in SEEDS:
+            cid = _cell_id(source, "persona_cot_FRESH", seed)
+            if cid not in cell_correctness:
+                continue
+            sl, bl = _per_qs_loss_matrix(
+                base_correct, cell_correctness[cid], bys_idx, src_idx, matched_scaffold_idx
+            )
+            src_losses.append(sl)
+            bys_losses.append(bl)
+        if not src_losses:
+            fresh_per_source[source] = {"present": False}
+            continue
+        src_per_q = np.stack(src_losses, axis=1)  # (n_q, n_seeds)
+        bys_per_q = np.stack(bys_losses, axis=1)
+
+        # Per-source bystander macro CI: simple bootstrap on (q, s) pairs (no
+        # ratio here, just the mean — but use _paired_bootstrap_ratio with
+        # denom=1 for code-reuse).
+        bys_flat = bys_per_q.reshape(-1)
+        ones = np.ones_like(bys_flat)
+        boot = _paired_bootstrap_ratio(
+            bys_flat,
+            ones,
+            n_resamples=n_bootstrap,
+            denom_epsilon=denom_epsilon,
+            rng=rng,
+        )
+        fresh_per_source[source] = {
+            "present": True,
+            "n_seeds_present": int(src_per_q.shape[1]),
+            "source_macro": float(src_per_q.mean()),
+            "bystander_macro": float(bys_per_q.mean()),
+            "bystander_macro_ci_low": boot["ci_low"],
+            "bystander_macro_ci_high": boot["ci_high"],
+            "src_per_q_flat": src_per_q.reshape(-1).tolist(),
+            "bys_per_q_flat": bys_per_q.reshape(-1).tolist(),
+        }
+
+    # Macro-level FRESH gate (Plan §11 'FRESH denominator validity gate' row).
+    present_sources = [s for s, v in fresh_per_source.items() if v.get("present")]
+    if not present_sources:
+        gate_macro_pass = False
+        fresh_source_macro = float("nan")
+        fresh_bystander_macro = float("nan")
+    else:
+        fresh_source_macro = float(
+            np.mean([fresh_per_source[s]["source_macro"] for s in present_sources])
+        )
+        fresh_bystander_macro = float(
+            np.mean([fresh_per_source[s]["bystander_macro"] for s in present_sources])
+        )
+        # Floor per Plan §11: 50% of #186's +0.219 / +0.163 headlines.
+        gate_macro_pass = fresh_source_macro >= 0.10 and fresh_bystander_macro >= 0.05
+
+    fresh_gate_payload = {
+        "macro_pass": bool(gate_macro_pass),
+        "fresh_source_macro": fresh_source_macro,
+        "fresh_bystander_macro": fresh_bystander_macro,
+        "source_macro_threshold": 0.10,
+        "bystander_macro_threshold": 0.05,
+        "per_source": {
+            s: {
+                k: v
+                for k, v in fresh_per_source[s].items()
+                if k not in ("src_per_q_flat", "bys_per_q_flat")
+            }
+            for s in fresh_per_source
+        },
+        "n_sources_present": len(present_sources),
+    }
+    if gate_macro_pass:
+        _save_json(out_344 / "fresh_denominator_valid.json", fresh_gate_payload)
+    else:
+        _save_json(out_344 / "fresh_denominator_failed.json", fresh_gate_payload)
+
+    # Per-source FRESH floor (Plan §11 R3 M3): bystander_macro lower-CI > 0.
+    per_source_floor: dict[str, dict] = {}
+    for source in SOURCES:
+        f = fresh_per_source.get(source, {})
+        if not f.get("present"):
+            per_source_floor[source] = {"floor_pass": False, "reason": "missing"}
+            continue
+        floor_pass = f["bystander_macro_ci_low"] > 0.0
+        per_source_floor[source] = {
+            "floor_pass": bool(floor_pass),
+            "bystander_macro": f["bystander_macro"],
+            "bystander_macro_ci_low": f["bystander_macro_ci_low"],
+            "bystander_macro_ci_high": f["bystander_macro_ci_high"],
+        }
+    _save_json(out_344 / "fresh_denominator_per_source.json", per_source_floor)
+
+    # FRESH-vs-carry-over calibration (Plan §4 Phase 2b').
+    calibration: dict[str, dict] = {}
+    for source in SOURCES:
+        bystanders = [p for p in PERSONA_ORDER if p != source]
+        bys_idx = np.array([persona_idx[p] for p in bystanders])
+        src_idx = persona_idx[source]
+        # Carry-over `persona_cot` macros (matched persona-CoT eval).
+        carry_src_means = []
+        carry_bys_means = []
+        for seed in SEEDS:
+            cid = _cell_id(source, "persona_cot", seed)
+            if cid not in cell_correctness:
+                continue
+            sl, bl = _per_qs_loss_matrix(
+                base_correct, cell_correctness[cid], bys_idx, src_idx, matched_scaffold_idx
+            )
+            carry_src_means.append(float(sl.mean()))
+            carry_bys_means.append(float(bl.mean()))
+        carry_src_macro = float(np.mean(carry_src_means)) if carry_src_means else float("nan")
+        carry_bys_macro = float(np.mean(carry_bys_means)) if carry_bys_means else float("nan")
+        f = fresh_per_source.get(source, {})
+        fresh_src = f.get("source_macro", float("nan"))
+        fresh_bys = f.get("bystander_macro", float("nan"))
+        calibration[source] = {
+            "fresh_source_macro": fresh_src,
+            "fresh_bystander_macro": fresh_bys,
+            "carryover_source_macro": carry_src_macro,
+            "carryover_bystander_macro": carry_bys_macro,
+            "delta_source": fresh_src - carry_src_macro
+            if not (np.isnan(fresh_src) or np.isnan(carry_src_macro))
+            else float("nan"),
+            "delta_bystander": fresh_bys - carry_bys_macro
+            if not (np.isnan(fresh_bys) or np.isnan(carry_bys_macro))
+            else float("nan"),
+        }
+    _save_json(out_344 / "fresh_vs_carryover_calibration.json", calibration)
+
+    # If the macro gate failed: freeze f-ratio interpretation, write a
+    # summary stub, and exit cleanly.
+    if not gate_macro_pass:
+        logger.error("FRESH denominator macro gate FAILED — freezing f-ratio interpretation.")
+        summary = {
+            "frozen": True,
+            "reason": "fresh_denominator_macro_failed",
+            "fresh_macro": {
+                "source": fresh_source_macro,
+                "bystander": fresh_bystander_macro,
+            },
+            "thresholds": {"source": 0.10, "bystander": 0.05},
+            "n_bootstrap": int(n_bootstrap),
+            "variant": variant,
+            "missing_cells": missing,
+        }
+        _save_json(out_344 / "summary.json", summary)
+        # Failure marker for the orchestrator (Plan §11).
+        _save_json(
+            out_344 / "epm_failure.json",
+            {
+                "failure_class": "methodology",
+                "reason": "fresh_denominator_failed",
+                "details": fresh_gate_payload,
+            },
+        )
+        return
+
+    # ── f-ratios per arm (numerator = LoA, denominator = FRESH) ──────────
+    f_results: dict[str, dict] = {}
+    loa_arms_in_scope = ["persona_cot_labels_on_answer"]
+    if variant == "B":
+        loa_arms_in_scope.append("generic_cot_labels_on_answer")
+    if include_c3_gate:
+        loa_arms_in_scope.append(ISSUE344_C3_GATE_ARM)
+
+    for loa_arm in loa_arms_in_scope:
+        per_source: dict[str, dict] = {}
+        # Collect per-source per-q numerator / denominator arrays.
+        all_num_src: list[np.ndarray] = []
+        all_denom_src: list[np.ndarray] = []
+        all_num_bys: list[np.ndarray] = []
+        all_denom_bys: list[np.ndarray] = []
+        for source in SOURCES:
+            bystanders = [p for p in PERSONA_ORDER if p != source]
+            bys_idx = np.array([persona_idx[p] for p in bystanders])
+            src_idx = persona_idx[source]
+
+            # LoA cell (numerator). C3 gate is single-source x 3 seeds.
+            loa_seeds = SEEDS
+            if loa_arm == ISSUE344_C3_GATE_ARM and source != "librarian":
+                continue
+            loa_src = []
+            loa_bys = []
+            for seed in loa_seeds:
+                cid = _cell_id(source, loa_arm, seed)
+                if cid not in cell_correctness:
+                    continue
+                sl, bl = _per_qs_loss_matrix(
+                    base_correct, cell_correctness[cid], bys_idx, src_idx, matched_scaffold_idx
+                )
+                loa_src.append(sl)
+                loa_bys.append(bl)
+            if not loa_src:
+                per_source[source] = {"missing": True}
+                continue
+            loa_src_per_q = np.stack(loa_src, axis=1).reshape(-1)  # (n_q*n_seeds,)
+            loa_bys_per_q = np.stack(loa_bys, axis=1).reshape(-1)
+
+            # FRESH denominator — share (q, s) indices with the LoA cell.
+            f = fresh_per_source[source]
+            fresh_src_per_q = np.asarray(f["src_per_q_flat"])
+            fresh_bys_per_q = np.asarray(f["bys_per_q_flat"])
+
+            # Lengths should match (same n_q x n_seeds). If they don't (e.g.
+            # the LoA arm has fewer seeds via shard re-runs), align by
+            # truncating to the min — flagged in payload.
+            n_pair = min(len(loa_src_per_q), len(fresh_src_per_q))
+            if len(loa_src_per_q) != len(fresh_src_per_q):
+                logger.warning(
+                    "FRESH/LoA pairing length mismatch for %s/%s: LoA=%d FRESH=%d; "
+                    "truncating to %d",
+                    source,
+                    loa_arm,
+                    len(loa_src_per_q),
+                    len(fresh_src_per_q),
+                    n_pair,
+                )
+            loa_src_per_q = loa_src_per_q[:n_pair]
+            loa_bys_per_q = loa_bys_per_q[:n_pair]
+            fresh_src_per_q = fresh_src_per_q[:n_pair]
+            fresh_bys_per_q = fresh_bys_per_q[:n_pair]
+
+            # Per-source paired bootstrap. SUPPORTS lower-CI ≥ 0.50 threshold.
+            f_src_boot = _paired_bootstrap_ratio(
+                loa_src_per_q,
+                fresh_src_per_q,
+                n_resamples=n_bootstrap,
+                denom_epsilon=denom_epsilon,
+                rng=rng,
+            )
+            f_bys_boot = _paired_bootstrap_ratio(
+                loa_bys_per_q,
+                fresh_bys_per_q,
+                n_resamples=n_bootstrap,
+                denom_epsilon=denom_epsilon,
+                rng=rng,
+            )
+
+            per_source[source] = {
+                "n_pairs": int(n_pair),
+                "f_source": {k: v for k, v in f_src_boot.items() if k != "draws"},
+                "f_bystander": {k: v for k, v in f_bys_boot.items() if k != "draws"},
+                "fresh_floor_pass": per_source_floor[source]["floor_pass"],
+            }
+
+            all_num_src.append(loa_src_per_q)
+            all_denom_src.append(fresh_src_per_q)
+            all_num_bys.append(loa_bys_per_q)
+            all_denom_bys.append(fresh_bys_per_q)
+
+        # Macro: concatenate across sources, then run one paired bootstrap.
+        if all_num_src:
+            macro_num_src = np.concatenate(all_num_src)
+            macro_denom_src = np.concatenate(all_denom_src)
+            macro_num_bys = np.concatenate(all_num_bys)
+            macro_denom_bys = np.concatenate(all_denom_bys)
+            macro_f_src = _paired_bootstrap_ratio(
+                macro_num_src,
+                macro_denom_src,
+                n_resamples=n_bootstrap,
+                denom_epsilon=denom_epsilon,
+                rng=rng,
+            )
+            macro_f_bys = _paired_bootstrap_ratio(
+                macro_num_bys,
+                macro_denom_bys,
+                n_resamples=n_bootstrap,
+                denom_epsilon=denom_epsilon,
+                rng=rng,
+            )
+        else:
+            macro_f_src = macro_f_bys = None
+
+        # Per-source ≥3/4 count (Plan §7 A3 heterogeneity rule). FRESH-degenerate
+        # sources (per R3 M3) are EXCLUDED from the count denominator.
+        eligible_sources = [
+            s
+            for s in SOURCES
+            if per_source_floor[s]["floor_pass"] and not per_source.get(s, {}).get("missing")
+        ]
+        per_source_pass_count = sum(
+            1
+            for s in eligible_sources
+            if per_source[s]["f_source"]["ci_low"] >= 0.50
+            and per_source[s]["f_bystander"]["ci_low"] >= 0.50
+        )
+
+        f_results[loa_arm] = {
+            "macro_f_source": {k: v for k, v in macro_f_src.items() if k != "draws"}
+            if macro_f_src
+            else None,
+            "macro_f_bystander": {k: v for k, v in macro_f_bys.items() if k != "draws"}
+            if macro_f_bys
+            else None,
+            "per_source": per_source,
+            "n_eligible_sources": len(eligible_sources),
+            "per_source_pass_count": per_source_pass_count,
+        }
+
+    # ── r5 LOSS-DELTA ratio (Plan §11 C5 statistic) ────────────────────────
+    r5_results: dict[str, dict] = {}
+    for axis_name in ("source", "bystander"):
+        for source in SOURCES:
+            cid_loa_seeds = [
+                _cell_id(source, "persona_cot_labels_on_answer", seed) for seed in SEEDS
+            ]
+            if not all(c in cell_correctness for c in cid_loa_seeds):
+                continue
+            bystanders = [p for p in PERSONA_ORDER if p != source]
+            bys_idx = np.array([persona_idx[p] for p in bystanders])
+            src_idx = persona_idx[source]
+
+            empty_losses = []
+            matched_losses = []
+            for seed in SEEDS:
+                cid = _cell_id(source, "persona_cot_labels_on_answer", seed)
+                if axis_name == "source":
+                    sl_m, _ = _per_qs_loss_matrix(
+                        base_correct, cell_correctness[cid], bys_idx, src_idx, matched_scaffold_idx
+                    )
+                    sl_e, _ = _per_qs_loss_matrix(
+                        base_correct, cell_correctness[cid], bys_idx, src_idx, empty_scaffold_idx
+                    )
+                    matched_losses.append(sl_m)
+                    empty_losses.append(sl_e)
+                else:
+                    _, bl_m = _per_qs_loss_matrix(
+                        base_correct, cell_correctness[cid], bys_idx, src_idx, matched_scaffold_idx
+                    )
+                    _, bl_e = _per_qs_loss_matrix(
+                        base_correct, cell_correctness[cid], bys_idx, src_idx, empty_scaffold_idx
+                    )
+                    matched_losses.append(bl_m)
+                    empty_losses.append(bl_e)
+            if not matched_losses:
+                continue
+            matched_flat = np.stack(matched_losses, axis=1).reshape(-1)
+            empty_flat = np.stack(empty_losses, axis=1).reshape(-1)
+            boot = _paired_bootstrap_ratio(
+                empty_flat,
+                matched_flat,
+                n_resamples=n_bootstrap,
+                denom_epsilon=denom_epsilon,
+                rng=rng,
+            )
+            # Denominator stability gate (Plan §6 R3 B2).
+            matched_macro = float(matched_flat.mean())
+            non_interpretable = abs(matched_macro) < 0.02 or boot["frac_discarded"] > 0.05
+            r5_results.setdefault(source, {})[axis_name] = {
+                "ratio": {k: v for k, v in boot.items() if k != "draws"},
+                "matched_loss_delta_macro": matched_macro,
+                "non_interpretable": bool(non_interpretable),
+            }
+
+    # ── C3 gate trigger (Plan §11) ──────────────────────────────────────────
+    macro_f_bys = f_results.get("persona_cot_labels_on_answer", {}).get("macro_f_bystander")
+    macro_f_src = f_results.get("persona_cot_labels_on_answer", {}).get("macro_f_source")
+    if macro_f_bys is not None and macro_f_src is not None:
+        upper_ci_bys = macro_f_bys["ci_high"]
+        upper_ci_src = macro_f_src["ci_high"]
+        trigger = bool(upper_ci_bys < 0.20)
+        c3_gate_payload = {
+            "trigger": trigger,
+            "trigger_axis": "bystander_only",
+            "reason": (
+                "upper_ci_f_bystander < 0.20 (bystander-primary FALSIFY zone, Plan §11)"
+                if trigger
+                else "upper_ci_f_bystander >= 0.20 (not in FALSIFY zone)"
+            ),
+            "upper_ci_f_source": float(upper_ci_src),
+            "upper_ci_f_bystander": float(upper_ci_bys),
+        }
+        _save_json(out_344 / "c3_gate_trigger.json", c3_gate_payload)
+
+    # ── Summary ─────────────────────────────────────────────────────────────
+    summary = {
+        "frozen": False,
+        "mode": "fraction_of_effect",
+        "variant": variant,
+        "include_c3_gate": include_c3_gate,
+        "n_bootstrap": int(n_bootstrap),
+        "denom_epsilon": float(denom_epsilon),
+        "fresh_denominator_macro": {
+            "pass": bool(gate_macro_pass),
+            "source_macro": fresh_source_macro,
+            "bystander_macro": fresh_bystander_macro,
+        },
+        "f_ratios": f_results,
+        "r5_loss_delta_ratios": r5_results,
+        "missing_cells": missing,
+        "n_eff_per_source": {"n_q": n_q, "n_seeds": len(SEEDS), "n_pairs": n_q * len(SEEDS)},
+    }
+    _save_json(out_344 / "summary.json", summary)
+    logger.info("Fraction-of-effect aggregation complete; wrote %s", out_344 / "summary.json")
+
+
 # ── CLI ──────────────────────────────────────────────────────────────────────
 
 
@@ -647,6 +1389,57 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--n-bootstrap", type=int, default=1000)
     parser.add_argument("--force", action="store_true")
+    # ── Issue #344 extensions ───────────────────────────────────────────────
+    parser.add_argument(
+        "--mode",
+        choices=("legacy_delta_h1", "fraction_of_effect"),
+        default="legacy_delta_h1",
+        help="Aggregation mode (only affects --stage aggregate). "
+        "`legacy_delta_h1` preserves the #186 / #280 behavior; "
+        "`fraction_of_effect` activates the #344 paired-ratio aggregator "
+        "(Plan §4 Aggregate-mode patch).",
+    )
+    parser.add_argument(
+        "--include-i344",
+        action="store_true",
+        help="(--stage full): also iterate over i344 cells. "
+        "(--stage aggregate --mode fraction_of_effect implicitly includes them.)",
+    )
+    parser.add_argument(
+        "--i344-variant",
+        choices=("A", "B"),
+        default="B",
+        help="Variant A = persona-only labels-on-answer + FRESH baselines; "
+        "Variant B adds generic_cot_labels_on_answer. Default B (issue #344 "
+        "approved plan).",
+    )
+    parser.add_argument(
+        "--include-c3-gate",
+        action="store_true",
+        help="Include i344 C3 gate cells (librarian x persona_cot_labels_on_answer "
+        "at #96 hparams). Only set after the conditional gate has fired and "
+        "those cells have been trained + uploaded.",
+    )
+    parser.add_argument(
+        "--denom-epsilon",
+        type=float,
+        default=1e-4,
+        help="Min |mean(denominator)| in any single resample before the "
+        "degenerate-draw policy applies. Plan §11 'Statistical engine'.",
+    )
+    parser.add_argument(
+        "--gpu-shard",
+        type=int,
+        default=None,
+        help="Round-robin shard index for --stage full (use with --total-shards). "
+        "One process per GPU on a 4x H100 pod.",
+    )
+    parser.add_argument(
+        "--total-shards",
+        type=int,
+        default=None,
+        help="Total number of round-robin shards (e.g. 4 on a 4x H100 pod).",
+    )
     args = parser.parse_args()
 
     # Compat shims must be installed before vLLM import in inner functions.

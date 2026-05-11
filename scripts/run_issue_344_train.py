@@ -1,0 +1,879 @@
+#!/usr/bin/env python3
+"""Issue #344: train LoRA adapters with `assistant_only_loss=True` and a custom
+chat template that wraps ``{% generation %}`` around the ``\\nAnswer:`` line
+only (for ``*_labels_on_answer`` arms) or around the whole assistant turn (for
+``*_FRESH`` arms).
+
+This is the new top-level training script for #344 — it follows the
+``scripts/run_issue_203_train.py:148-261`` recipe (working
+``assistant_only_loss=True`` + ``{% generation %}`` chat template + dry-run
+masking gate) and extends it with:
+
+* A *partial-turn* generation wrap (the experimental manipulation): wraps
+  ``{% generation %}...{% endgeneration %}`` around just the
+  ``\\nAnswer: <letter>`` line, so only that ~3-4 token slice is loss-bearing.
+  The rationale tokens occupy positions in the input + participate in
+  self-attention, but their label is set to ``-100`` and they receive no
+  direct prediction loss.
+* A *whole-turn* template variant for the matched ``persona_cot_FRESH`` /
+  ``no_cot_FRESH`` arms — same chat-template family, so comparisons between
+  ``labels_on_answer`` and ``FRESH`` cells do not confound the loss-mask
+  manipulation with a template-string difference.
+* A dry-run masking gate that hard-asserts (per Plan §4 / §11): five sampled
+  examples must show ``pct_masked >= 80``, the rationale region must be all
+  ``-100``, and the ``\\nAnswer:`` region must be non-``-100``. The gate
+  saves a ``mask_audit_{cell}.json`` artifact alongside the run.
+* Per-cell CLI flags (``--phase``, ``--only-source``, ``--only-arm``,
+  ``--only-seed``, ``--gpu-shard``, ``--total-shards``) so 4x H100
+  parallelism via ``CUDA_VISIBLE_DEVICES`` splits is one-liner-launchable.
+
+CLI::
+
+    # Main phase, single-GPU, all cells:
+    uv run python scripts/run_issue_344_train.py --phase main
+
+    # Main phase, one GPU shard of four (use one process per GPU on a 4xH100):
+    CUDA_VISIBLE_DEVICES=0 uv run python scripts/run_issue_344_train.py \\
+        --phase main --gpu-shard 0 --total-shards 4
+
+    # C3 under-training gate (librarian-only at #96 hparams):
+    uv run python scripts/run_issue_344_train.py --phase c3_gate \\
+        --only-source librarian --only-seed 42
+
+    # CPU dry-run (smoke):
+    uv run python scripts/run_issue_344_train.py --dry-run-only
+
+See ``.claude/plans/issue-344.md`` for the full reproducibility card.
+"""
+
+from __future__ import annotations
+
+import argparse
+import gc
+import json
+import logging
+import os
+import subprocess
+import sys
+import time
+from datetime import UTC, datetime
+from pathlib import Path
+
+import torch
+from datasets import load_dataset
+from peft import LoraConfig, TaskType
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from trl import SFTConfig, SFTTrainer
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+from explore_persona_space.orchestrate.hub import upload_model  # noqa: E402
+from explore_persona_space.train.sft import merge_lora  # noqa: E402
+
+logger = logging.getLogger("issue_344_train")
+
+# ── Constants ────────────────────────────────────────────────────────────────
+
+BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+HF_REPO = "superkaiba1/explore-persona-space"
+WANDB_PROJECT = "explore-persona-space"
+
+# Project layout. Data is read from data/sft/issue186/ (the regenerated #344
+# Phase 0b/c output, with the same on-disk layout as the original #186 data).
+# Models are written to /workspace/explore-persona-space/models/issue_344/ on
+# the pod; falls back to <project_root>/models/issue_344/ off-pod.
+_WORKSPACE_ROOT = Path("/workspace/explore-persona-space")
+if _WORKSPACE_ROOT.exists():
+    MODEL_DIR = _WORKSPACE_ROOT / "models" / "issue_344"
+    DATA_BASE = _WORKSPACE_ROOT / "data" / "sft" / "issue186"
+else:
+    MODEL_DIR = PROJECT_ROOT / "models" / "issue_344"
+    DATA_BASE = PROJECT_ROOT / "data" / "sft" / "issue186"
+
+SOURCES: tuple[str, ...] = ("software_engineer", "librarian", "comedian", "police_officer")
+SEEDS_MAIN: tuple[int, ...] = (42, 137, 256)
+SEEDS_NO_COT_FRESH: tuple[int, ...] = (42,)  # mediation comparator, single-seed (Alts R3 B2).
+
+# Arms in the main phase. Plan §4 §5:
+#   - persona_cot_labels_on_answer  (NEW; 3 seeds)
+#   - persona_cot_FRESH             (denominator;     3 seeds)
+#   - no_cot_FRESH                  (mediation;       1 seed = 42)
+#   - generic_cot_labels_on_answer  (Variant B only;  3 seeds)
+ARM_LABELS_ON_ANSWER = "persona_cot_labels_on_answer"
+ARM_PERSONA_COT_FRESH = "persona_cot_FRESH"
+ARM_NO_COT_FRESH = "no_cot_FRESH"
+ARM_GENERIC_COT_LOA = "generic_cot_labels_on_answer"
+
+VARIANT_A_ARMS: tuple[str, ...] = (
+    ARM_LABELS_ON_ANSWER,
+    ARM_PERSONA_COT_FRESH,
+    ARM_NO_COT_FRESH,
+)
+VARIANT_B_ARMS: tuple[str, ...] = (*VARIANT_A_ARMS, ARM_GENERIC_COT_LOA)
+
+# Map each arm to its source dataset slug under data/sft/issue186/. The slug is
+# the original #186 arm name; that data already contains the `\nAnswer:` line
+# (deterministic from seed=42 in `generate_issue186_data.py:_make_no_cot_row`),
+# so this mapping just selects which generation regime produced the rationale.
+ARM_TO_DATA_SLUG: dict[str, str] = {
+    ARM_LABELS_ON_ANSWER: "persona-cot",
+    ARM_PERSONA_COT_FRESH: "persona-cot",
+    ARM_NO_COT_FRESH: "no-cot",
+    ARM_GENERIC_COT_LOA: "generic-cot",
+}
+
+# Arms whose chat template wraps `{% generation %}` around the `\nAnswer:` line
+# ONLY (per-position label mask = -100 on rationale tokens). All other arms get
+# the whole-turn `{% generation %}` wrapper (i.e. labels on all assistant
+# tokens).
+PARTIAL_GENERATION_ARMS: frozenset[str] = frozenset({ARM_LABELS_ON_ANSWER, ARM_GENERIC_COT_LOA})
+
+# C3 under-training gate (Plan §4 Phase 2b). Single-source x 3-seed,
+# `persona_cot_labels_on_answer` at #96 hparams. Auto-launched when the main
+# phase falsifies on the bystander axis.
+C3_GATE_SOURCE = "librarian"
+C3_GATE_ARM = ARM_LABELS_ON_ANSWER
+
+# Hparam profiles. Plan §11 Reproducibility Card. NOTE: lr / num_train_epochs
+# are the *only* difference between `main` and `c3_gate`.
+MAIN_HPARAMS: dict = {
+    "lr": 5e-6,
+    "num_train_epochs": 1,
+}
+C3_GATE_HPARAMS: dict = {
+    "lr": 1e-5,
+    "num_train_epochs": 3,
+}
+
+
+# ── Chat templates (the experimental manipulation) ───────────────────────────
+
+
+# The PARTIAL-TURN template wraps `{% generation %}...{% endgeneration %}` around
+# the `\nAnswer:` line ONLY. Anchor is literal `\nAnswer:` (newline-prefixed)
+# to avoid in-rationale "I should answer with X" false matches (Plan §13 SR
+# Answer-anchor split fragility). FAIL-CLOSED on missing anchor:
+# `parts | length != 2` triggers `_missing.attribute_that_does_not_exist`,
+# which raises `jinja2.exceptions.UndefinedError` (Jinja2 has no built-in
+# `raise_`; this is the cleanest-traceback idiom per Plan §16 #7).
+_QWEN_PARTIAL_GENERATION_TEMPLATE = (
+    "{%- if messages[0]['role'] == 'system' %}"
+    "{{- '<|im_start|>system\\n' + messages[0]['content'] + '<|im_end|>\\n' }}"
+    "{%- else %}"
+    "{{- '<|im_start|>system\\n"
+    "You are Qwen, created by Alibaba Cloud. You are a helpful assistant."
+    "<|im_end|>\\n' }}"
+    "{%- endif %}"
+    "{%- for message in messages %}"
+    "{%- if message.role == 'user' or (message.role == 'system' and not loop.first) %}"
+    "{{- '<|im_start|>' + message.role + '\\n' + message.content + '<|im_end|>\\n' }}"
+    "{%- elif message.role == 'assistant' %}"
+    "{{- '<|im_start|>assistant\\n' }}"
+    "{%- set parts = message.content.split('\\nAnswer:') %}"
+    "{%- if parts | length == 2 %}"
+    "{{- parts[0] }}"
+    "{% generation %}"
+    "{{- '\\nAnswer:' + parts[1] }}"
+    "{% endgeneration %}"
+    "{%- else %}"
+    # Fail-closed (Plan §4 / §16 #7). Raising in Jinja2 has no built-in;
+    # touching `.error` on `undefined` gives a clean UndefinedError with the
+    # message below in the traceback (Jinja2's StrictUndefined-equivalent).
+    "{{- _ANSWER_ANCHOR_MISSING_must_be_present_in_assistant_turn.error }}"
+    "{%- endif %}"
+    "{{- '<|im_end|>\\n' }}"
+    "{%- endif %}"
+    "{%- endfor %}"
+    "{%- if add_generation_prompt %}"
+    "{{- '<|im_start|>assistant\\n' }}"
+    "{%- endif %}"
+)
+
+
+# The WHOLE-TURN template — identical to scripts/run_issue_203_train.py's
+# working template. Used for the FRESH cells (denominator + mediation
+# comparator). Same chat-template family as the partial template, so the
+# comparison between `labels_on_answer` and `FRESH` does not confound the
+# loss-mask manipulation with a template-string difference (Plan §4 / §11
+# "Chat template (main phase, persona_cot_FRESH cell)" row).
+_QWEN_WHOLE_TURN_GENERATION_TEMPLATE = (
+    "{%- if messages[0]['role'] == 'system' %}"
+    "{{- '<|im_start|>system\\n' + messages[0]['content'] + '<|im_end|>\\n' }}"
+    "{%- else %}"
+    "{{- '<|im_start|>system\\n"
+    "You are Qwen, created by Alibaba Cloud. You are a helpful assistant."
+    "<|im_end|>\\n' }}"
+    "{%- endif %}"
+    "{%- for message in messages %}"
+    "{%- if message.role == 'user' or (message.role == 'system' and not loop.first) %}"
+    "{{- '<|im_start|>' + message.role + '\\n' + message.content + '<|im_end|>\\n' }}"
+    "{%- elif message.role == 'assistant' %}"
+    "{{- '<|im_start|>assistant\\n' }}"
+    "{% generation %}"
+    "{{- message.content }}"
+    "{% endgeneration %}"
+    "{{- '<|im_end|>\\n' }}"
+    "{%- endif %}"
+    "{%- endfor %}"
+    "{%- if add_generation_prompt %}"
+    "{{- '<|im_start|>assistant\\n' }}"
+    "{%- endif %}"
+)
+
+
+def chat_template_for_arm(arm: str) -> str:
+    """Return the Jinja2 chat template string for this train arm.
+
+    - Partial-turn (``\\nAnswer:``-only generation marker) for arms in
+      ``PARTIAL_GENERATION_ARMS``.
+    - Whole-turn generation marker otherwise.
+    """
+    if arm in PARTIAL_GENERATION_ARMS:
+        return _QWEN_PARTIAL_GENERATION_TEMPLATE
+    return _QWEN_WHOLE_TURN_GENERATION_TEMPLATE
+
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+
+def _pick_attn_implementation() -> str:
+    """Return 'flash_attention_2' if flash-attn is importable, else 'sdpa'."""
+    try:
+        import flash_attn  # noqa: F401
+
+        return "flash_attention_2"
+    except ImportError:
+        return "sdpa"
+
+
+def _git_commit() -> str:
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=PROJECT_ROOT,
+            text=True,
+        ).strip()
+    except Exception:
+        return "unknown"
+
+
+def _data_path_for_arm(source: str, arm: str) -> Path:
+    """Return the JSONL training data path for one (source, arm) cell.
+
+    Maps each #344 arm to the underlying #186 data slug. All cells read from
+    ``data/sft/issue186/{source}_{slug}_seed42.jsonl`` — the data shape is the
+    same across arms, only the *chat template + loss mask* differ.
+    """
+    slug = ARM_TO_DATA_SLUG[arm]
+    return DATA_BASE / f"{source}_{slug}_seed42.jsonl"
+
+
+def _adapter_dir(source: str, arm: str, seed: int, phase: str) -> str:
+    """Local on-disk dir for this cell's adapter."""
+    cell_id = _cell_id(source, arm, seed, phase)
+    return str(MODEL_DIR / f"{cell_id}_adapter")
+
+
+def _merged_dir(source: str, arm: str, seed: int, phase: str) -> str:
+    cell_id = _cell_id(source, arm, seed, phase)
+    return str(MODEL_DIR / f"{cell_id}_merged")
+
+
+def _cell_id(source: str, arm: str, seed: int, phase: str) -> str:
+    """Identifier shared by adapter dir / merged dir / HF Hub path / WandB name."""
+    if phase == "c3_gate":
+        return f"i344_{source}_{arm}_c3gate_seed{seed}"
+    return f"i344_{source}_{arm}_seed{seed}"
+
+
+def _hf_path_in_repo(source: str, arm: str, seed: int, phase: str) -> str:
+    """HF Hub path-in-repo. Plan §11 'Adapter HF-Hub naming' row:
+
+    Main phase:   ``i344_{source}_{arm}_seed{S}_post_em``
+    C3 gate:      ``i344_{source}_{arm}_c3gate_seed{S}_post_em``
+    """
+    return f"{_cell_id(source, arm, seed, phase)}_post_em"
+
+
+def _wandb_run_name(source: str, arm: str, seed: int, phase: str) -> str:
+    """Plan §11 'WandB run-name pattern' row."""
+    if phase == "c3_gate":
+        return f"issue344_{source}_{arm}_c3gate_seed{seed}"
+    return f"issue344_{source}_{arm}_seed{seed}"
+
+
+# ── Cell enumeration ─────────────────────────────────────────────────────────
+
+
+def _build_cells_main(variant: str) -> list[tuple[str, str, int]]:
+    """Enumerate (source, arm, seed) for the main phase under Variant A or B."""
+    arms = VARIANT_B_ARMS if variant == "B" else VARIANT_A_ARMS
+    cells: list[tuple[str, str, int]] = []
+    for source in SOURCES:
+        for arm in arms:
+            seeds = SEEDS_NO_COT_FRESH if arm == ARM_NO_COT_FRESH else SEEDS_MAIN
+            for seed in seeds:
+                cells.append((source, arm, seed))
+    return cells
+
+
+def _build_cells_c3_gate() -> list[tuple[str, str, int]]:
+    """C3 gate (Plan §4 Phase 2b): librarian x persona_cot_labels_on_answer x 3 seeds."""
+    return [(C3_GATE_SOURCE, C3_GATE_ARM, seed) for seed in SEEDS_MAIN]
+
+
+def _filter_cells(
+    cells: list[tuple[str, str, int]],
+    only_source: str | None,
+    only_arm: str | None,
+    only_seed: int | None,
+    gpu_shard: int | None,
+    total_shards: int | None,
+) -> list[tuple[str, str, int]]:
+    if only_source:
+        cells = [c for c in cells if c[0] == only_source]
+    if only_arm:
+        cells = [c for c in cells if c[1] == only_arm]
+    if only_seed is not None:
+        cells = [c for c in cells if c[2] == only_seed]
+    if gpu_shard is not None and total_shards is not None and total_shards > 0:
+        cells = [c for i, c in enumerate(cells) if i % total_shards == gpu_shard]
+    return cells
+
+
+# ── Mask-audit gate ──────────────────────────────────────────────────────────
+
+
+def _run_mask_audit(
+    trainer: SFTTrainer,
+    tokenizer,
+    *,
+    arm: str,
+    cell_id: str,
+    audit_dir: Path,
+) -> dict:
+    """Sample 5 batch examples and assert the loss mask is correct.
+
+    Hard asserts (per Plan §4 / §11 'Dry-run masking gate' row):
+
+    * For every sampled example, ``pct_masked >= 80`` (system + user + (for
+      partial cells) rationale tokens contribute the bulk of ``-100`` slots).
+    * For partial-generation cells (``ARM in PARTIAL_GENERATION_ARMS``):
+        * The 3 tokens starting at ``\\nAnswer:`` are NOT masked.
+        * Tokens before the ``\\nAnswer:`` anchor (the rationale region)
+          inside the assistant turn are ALL masked.
+
+    Saves the audit to ``{audit_dir}/mask_audit_{cell_id}.json`` and returns
+    the dict (caller may upload it to WandB as an Artifact).
+    """
+    batch = next(iter(trainer.get_train_dataloader()))
+    samples = []
+    n_samples = min(5, batch["labels"].shape[0])
+    for i in range(n_samples):
+        labels = batch["labels"][i]
+        input_ids = batch["input_ids"][i]
+        decoded = tokenizer.decode(input_ids)
+        n_masked = int((labels == -100).sum().item())
+        n_total = int(labels.numel())
+        pct_masked = 100.0 * n_masked / max(n_total, 1)
+
+        sample_audit: dict = {
+            "sample_idx": i,
+            "decoded_first_500": decoded[:500],
+            "decoded_last_300": decoded[-300:],
+            "pct_masked": pct_masked,
+            "n_masked": n_masked,
+            "n_total": n_total,
+        }
+
+        if pct_masked < 80.0:
+            raise RuntimeError(
+                f"[mask-audit] sample {i}: only {pct_masked:.1f}% masked "
+                f"(expected >= 80%); assistant_only_loss + chat-template "
+                f"interaction is broken. cell_id={cell_id}"
+            )
+
+        if arm in PARTIAL_GENERATION_ARMS:
+            # Locate the `\nAnswer:` token slice and assert it is loss-bearing.
+            # For partial cells, the rationale region between the assistant
+            # `<|im_start|>` and the `\nAnswer:` anchor must be ALL masked.
+            anchor = "\nAnswer:"
+            char_idx = decoded.find(anchor)
+            if char_idx < 0:
+                raise RuntimeError(
+                    f"[mask-audit] sample {i}: anchor {anchor!r} not in decoded "
+                    f"text; chat-template rendering is broken. cell_id={cell_id}"
+                )
+            # Re-tokenize the decoded text to recover char->token offsets.
+            enc = tokenizer(
+                decoded,
+                return_offsets_mapping=True,
+                add_special_tokens=False,
+            )
+            offsets = enc["offset_mapping"]
+            # First token whose start-offset >= char_idx + 1 (the '\n' is at
+            # char_idx, 'Answer:' begins at char_idx + 1).
+            answer_tok_idx = next(
+                (j for j, (s, _e) in enumerate(offsets) if s >= char_idx + 1),
+                None,
+            )
+            if answer_tok_idx is None:
+                raise RuntimeError(
+                    f"[mask-audit] sample {i}: could not map anchor char_idx to "
+                    f"a token offset; cell_id={cell_id}"
+                )
+            # The decoded-text token indexing won't perfectly align with the
+            # collator's `input_ids` (packing + bos/eos differences), so we
+            # locate the answer tokens in `input_ids` directly by re-encoding
+            # and comparing. Cheap and robust.
+            answer_token_ids = tokenizer(anchor, add_special_tokens=False, return_tensors=None)[
+                "input_ids"
+            ]
+            # Search input_ids for that subsequence (last match, since the
+            # answer line is the END of the assistant turn).
+            ii = input_ids.tolist()
+            window = len(answer_token_ids)
+            match_pos = None
+            for k in range(len(ii) - window, -1, -1):
+                if ii[k : k + window] == answer_token_ids:
+                    match_pos = k
+                    break
+            if match_pos is None:
+                raise RuntimeError(
+                    f"[mask-audit] sample {i}: '\\nAnswer:' token sequence not "
+                    f"found in input_ids; cell_id={cell_id}"
+                )
+            answer_labels = labels[match_pos : match_pos + window + 2].tolist()
+            sample_audit["answer_tok_match_pos"] = match_pos
+            sample_audit["answer_region_labels"] = answer_labels
+            # At least one of the answer-region labels must be non-(-100).
+            if all(label == -100 for label in answer_labels):
+                raise RuntimeError(
+                    f"[mask-audit] sample {i}: '\\nAnswer:' region is all -100; "
+                    f"expected loss-bearing labels. cell_id={cell_id}"
+                )
+            # The rationale region BEFORE the anchor should contain plenty of
+            # -100s. We don't enforce 100% (the partial-turn `{% generation %}`
+            # is positional and the collator may extend the mask slightly), but
+            # we DO enforce that the 50 tokens immediately before the anchor
+            # are predominantly masked.
+            rationale_window = labels[max(0, match_pos - 50) : match_pos].tolist()
+            n_masked_rat = sum(1 for x in rationale_window if x == -100)
+            sample_audit["rationale_pre_anchor_masked_frac"] = n_masked_rat / max(
+                len(rationale_window), 1
+            )
+            if rationale_window and n_masked_rat / len(rationale_window) < 0.80:
+                raise RuntimeError(
+                    f"[mask-audit] sample {i}: rationale region pre-anchor only "
+                    f"{n_masked_rat}/{len(rationale_window)} masked; expected "
+                    f">= 80%. cell_id={cell_id}"
+                )
+
+        samples.append(sample_audit)
+
+    audit_payload: dict = {
+        "cell_id": cell_id,
+        "arm": arm,
+        "is_partial_generation_arm": arm in PARTIAL_GENERATION_ARMS,
+        "n_samples": n_samples,
+        "samples": samples,
+        "git_commit": _git_commit(),
+        "timestamp": datetime.now(UTC).isoformat(),
+    }
+    audit_dir.mkdir(parents=True, exist_ok=True)
+    audit_path = audit_dir / f"mask_audit_{cell_id}.json"
+    audit_path.write_text(json.dumps(audit_payload, indent=2))
+    logger.info("[mask-audit] PASS — saved %s", audit_path)
+    return audit_payload
+
+
+# ── Train one cell ───────────────────────────────────────────────────────────
+
+
+def train_one_cell(
+    *,
+    source: str,
+    arm: str,
+    seed: int,
+    phase: str,
+    dry_run_only: bool,
+    hf_repo: str,
+) -> tuple[str, str, float]:
+    """Train one (source, arm, seed) cell. Returns (adapter_dir, merged_dir, loss)."""
+    cell_id = _cell_id(source, arm, seed, phase)
+    adapter_dir = _adapter_dir(source, arm, seed, phase)
+    merged_dir = _merged_dir(source, arm, seed, phase)
+    run_name = _wandb_run_name(source, arm, seed, phase)
+    data_path = _data_path_for_arm(source, arm)
+    hp = C3_GATE_HPARAMS if phase == "c3_gate" else MAIN_HPARAMS
+
+    logger.info("=" * 70)
+    logger.info("Training cell: %s", cell_id)
+    logger.info(
+        "  source=%s arm=%s seed=%d phase=%s lr=%s epochs=%d",
+        source,
+        arm,
+        seed,
+        phase,
+        hp["lr"],
+        hp["num_train_epochs"],
+    )
+    logger.info("  data: %s", data_path)
+    logger.info("  adapter_dir: %s", adapter_dir)
+    logger.info("  merged_dir:  %s", merged_dir)
+    logger.info("=" * 70)
+
+    if not data_path.exists():
+        raise FileNotFoundError(
+            f"Training data not found at {data_path}. "
+            "Run scripts/generate_issue186_data.py --only-arm "
+            f"{ARM_TO_DATA_SLUG[arm]} first."
+        )
+
+    # ── Tokenizer + chat template ────────────────────────────────────────
+    tokenizer = AutoTokenizer.from_pretrained(
+        BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+    )
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    template = chat_template_for_arm(arm)
+    tokenizer.chat_template = template
+    logger.info(
+        "Chat template installed (mode=%s)",
+        "PARTIAL (\\nAnswer:-only)" if arm in PARTIAL_GENERATION_ARMS else "WHOLE-TURN",
+    )
+
+    # ── Model ─────────────────────────────────────────────────────────────
+    model = AutoModelForCausalLM.from_pretrained(
+        BASE_MODEL,
+        torch_dtype=torch.bfloat16,
+        device_map={"": 0},
+        trust_remote_code=True,
+        attn_implementation=_pick_attn_implementation(),
+        token=os.environ.get("HF_TOKEN"),
+    )
+
+    # ── LoRA config (Plan §11 'LoRA hparams (main phase)') ────────────────
+    lora_config = LoraConfig(
+        task_type=TaskType.CAUSAL_LM,
+        r=32,
+        lora_alpha=64,
+        lora_dropout=0.0,
+        target_modules=[
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ],
+        use_rslora=True,
+    )
+
+    # ── Dataset ───────────────────────────────────────────────────────────
+    dataset = load_dataset("json", data_files=str(data_path), split="train")
+    logger.info("Dataset loaded: %d examples, columns=%s", len(dataset), dataset.column_names)
+
+    # ── SFTConfig (Plan §11 'SFT hparams') ────────────────────────────────
+    max_steps = 2 if dry_run_only else -1
+    sft_config = SFTConfig(
+        output_dir=adapter_dir,
+        num_train_epochs=hp["num_train_epochs"],
+        per_device_train_batch_size=2,
+        gradient_accumulation_steps=8,
+        learning_rate=hp["lr"],
+        warmup_ratio=0.03,
+        lr_scheduler_type="cosine",
+        weight_decay=0.01,
+        optim="adamw_torch",
+        seed=seed,
+        bf16=True,
+        gradient_checkpointing=True,
+        max_length=2048,
+        packing=True,
+        logging_steps=1,
+        save_strategy="no",
+        report_to="wandb",
+        run_name=run_name,
+        # The point of #344: TRL must mask non-`{% generation %}` tokens. See
+        # Plan §13 risk-row 'Liger-kernel silently disables `assistant_only_loss`'.
+        assistant_only_loss=True,
+        use_liger_kernel=False,
+        max_steps=max_steps,
+        dataloader_num_workers=4,
+        dataloader_pin_memory=True,
+    )
+
+    # WandB tags — picked up by the SFTTrainer's WandB init.
+    os.environ.setdefault(
+        "WANDB_TAGS",
+        ",".join(
+            [
+                "issue344",
+                f"phase_{phase}",
+                arm,
+                f"source_{source}",
+                f"seed_{seed}",
+            ]
+        ),
+    )
+    os.environ.setdefault("WANDB_PROJECT", WANDB_PROJECT)
+
+    trainer = SFTTrainer(
+        model=model,
+        args=sft_config,
+        train_dataset=dataset,
+        processing_class=tokenizer,
+        peft_config=lora_config,
+    )
+
+    # ── Mask-audit gate (HARD) ────────────────────────────────────────────
+    logger.info("Running dry-run masking gate (5 examples)...")
+    audit_dir = MODEL_DIR / "mask_audits"
+    audit_payload = _run_mask_audit(
+        trainer, tokenizer, arm=arm, cell_id=cell_id, audit_dir=audit_dir
+    )
+    # WandB Artifact upload of the audit JSON. Belt+braces — if WandB isn't
+    # initialised yet (e.g. dry_run_only), we still keep the local file.
+    try:
+        import wandb as _wandb
+
+        if _wandb.run is not None:
+            artifact = _wandb.Artifact(
+                f"mask_audit_{cell_id}", type="mask_audit", metadata=audit_payload
+            )
+            audit_path = audit_dir / f"mask_audit_{cell_id}.json"
+            artifact.add_file(str(audit_path))
+            _wandb.log_artifact(artifact)
+            logger.info("Mask audit uploaded to WandB Artifacts: %s", artifact.name)
+    except Exception as exc:
+        # Surface WandB issues but don't abort training over an artifact log.
+        logger.warning("WandB mask-audit upload failed (non-fatal): %s", exc)
+
+    if dry_run_only:
+        logger.info("dry_run_only=True — aborting after mask-audit.")
+        del trainer, model, tokenizer
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        return adapter_dir, merged_dir, 0.0
+
+    # ── Train ─────────────────────────────────────────────────────────────
+    logger.info("Starting training: %d examples, %d epochs", len(dataset), hp["num_train_epochs"])
+    t0 = time.time()
+    result = trainer.train()
+    loss = float(result.training_loss)
+    train_time = time.time() - t0
+    logger.info("Training done: loss=%.4f, time=%.1fs", loss, train_time)
+
+    # Save adapter + tokenizer (adapter retains the custom chat template).
+    trainer.save_model(adapter_dir)
+    tokenizer.save_pretrained(adapter_dir)
+    logger.info("Adapter saved to %s", adapter_dir)
+
+    # Finish WandB before merge to free GPU memory.
+    import wandb as _wandb
+
+    if _wandb.run is not None:
+        _wandb.finish()
+
+    del trainer, model, tokenizer
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+    # ── Merge LoRA ────────────────────────────────────────────────────────
+    logger.info("Merging adapter into base model -> %s", merged_dir)
+    merge_lora(
+        base_model_path=BASE_MODEL,
+        adapter_path=adapter_dir,
+        output_dir=merged_dir,
+        gpu_id=0,
+    )
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    logger.info("Merge complete: %s", merged_dir)
+
+    # ── Upload to HF Hub ──────────────────────────────────────────────────
+    path_in_repo = _hf_path_in_repo(source, arm, seed, phase)
+    logger.info("Uploading merged model to %s/%s ...", hf_repo, path_in_repo)
+    try:
+        result_path = upload_model(merged_dir, repo_id=hf_repo, path_in_repo=path_in_repo)
+        logger.info("Merged upload done: %s", result_path)
+    except Exception as exc:
+        # Fail loudly — Upload Policy is "models MUST be uploaded before
+        # local deletion". We do NOT delete the local merged dir on failure.
+        logger.error("HF Hub merged upload FAILED for %s: %s", cell_id, exc)
+        raise
+
+    return adapter_dir, merged_dir, loss
+
+
+# ── Main ─────────────────────────────────────────────────────────────────────
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--phase",
+        type=str,
+        choices=("main", "c3_gate"),
+        default="main",
+        help="`main` = #186 hparams (4 arms x 4 sources x 3 seeds, plus "
+        "no_cot_FRESH at seed=42). `c3_gate` = #96 hparams (lr=1e-5, ep=3) "
+        "on librarian x persona_cot_labels_on_answer (Plan §4 Phase 2b).",
+    )
+    parser.add_argument(
+        "--variant",
+        type=str,
+        choices=("A", "B"),
+        default="B",
+        help="Variant A omits generic_cot_labels_on_answer; Variant B includes it. "
+        "Default B (matches issue #344 approved plan).",
+    )
+    parser.add_argument(
+        "--only-source",
+        type=str,
+        default=None,
+        choices=SOURCES,
+        help="Restrict to a single source persona.",
+    )
+    parser.add_argument(
+        "--only-arm",
+        type=str,
+        default=None,
+        choices=VARIANT_B_ARMS,
+        help="Restrict to a single train arm.",
+    )
+    parser.add_argument(
+        "--only-seed",
+        type=int,
+        default=None,
+        help="Restrict to a single seed (42, 137, or 256).",
+    )
+    parser.add_argument(
+        "--gpu-shard",
+        type=int,
+        default=None,
+        help="Shard index for round-robin GPU parallelism (combine with --total-shards).",
+    )
+    parser.add_argument(
+        "--total-shards",
+        type=int,
+        default=None,
+        help="Total number of GPU shards. With --gpu-shard, this process picks "
+        "cells where (cell_idx %% total-shards == gpu-shard).",
+    )
+    parser.add_argument(
+        "--dry-run-only",
+        action="store_true",
+        help="Run dry-run gate only (no actual training, no upload).",
+    )
+    parser.add_argument(
+        "--hf-repo",
+        type=str,
+        default=HF_REPO,
+        help="HF Hub model repo for merged-checkpoint upload.",
+    )
+    args = parser.parse_args()
+
+    load_dotenv()
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    )
+
+    started_at = datetime.now(UTC).isoformat()
+    commit = _git_commit()
+    logger.info("Issue #344 training (Variant %s, phase=%s)", args.variant, args.phase)
+    logger.info("Git commit: %s", commit)
+    logger.info("Started: %s", started_at)
+    logger.info("MODEL_DIR=%s DATA_BASE=%s", MODEL_DIR, DATA_BASE)
+
+    cells = _build_cells_c3_gate() if args.phase == "c3_gate" else _build_cells_main(args.variant)
+    cells = _filter_cells(
+        cells,
+        args.only_source,
+        args.only_arm,
+        args.only_seed,
+        args.gpu_shard,
+        args.total_shards,
+    )
+
+    logger.info(
+        "Planned: %d cells (phase=%s variant=%s shard=%s/%s)",
+        len(cells),
+        args.phase,
+        args.variant,
+        args.gpu_shard,
+        args.total_shards,
+    )
+    for source, arm, seed in cells:
+        logger.info("  - %s", _cell_id(source, arm, seed, args.phase))
+
+    if not cells:
+        logger.warning("No cells selected — exiting.")
+        return
+
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    results: list[dict] = []
+    failures: list[tuple[str, str]] = []
+    for source, arm, seed in cells:
+        try:
+            adapter_dir, merged_dir, loss = train_one_cell(
+                source=source,
+                arm=arm,
+                seed=seed,
+                phase=args.phase,
+                dry_run_only=args.dry_run_only,
+                hf_repo=args.hf_repo,
+            )
+            results.append(
+                {
+                    "cell_id": _cell_id(source, arm, seed, args.phase),
+                    "source": source,
+                    "arm": arm,
+                    "seed": seed,
+                    "phase": args.phase,
+                    "adapter_dir": adapter_dir,
+                    "merged_dir": merged_dir,
+                    "loss": loss,
+                    "hf_path_in_repo": _hf_path_in_repo(source, arm, seed, args.phase),
+                }
+            )
+        except Exception as exc:
+            cell_id = _cell_id(source, arm, seed, args.phase)
+            logger.exception("FAILED cell %s: %s", cell_id, exc)
+            failures.append((cell_id, str(exc)))
+
+    # Write summary.
+    summary_path = MODEL_DIR / f"run_summary_{args.phase}_shard{args.gpu_shard}.json"
+    summary = {
+        "issue": 344,
+        "phase": args.phase,
+        "variant": args.variant,
+        "git_commit": commit,
+        "started_at": started_at,
+        "completed_at": datetime.now(UTC).isoformat(),
+        "n_cells_planned": len(cells),
+        "n_cells_succeeded": len(results),
+        "n_cells_failed": len(failures),
+        "results": results,
+        "failures": failures,
+    }
+    summary_path.write_text(json.dumps(summary, indent=2))
+    logger.info("Run summary written to %s", summary_path)
+
+    if failures:
+        logger.error("%d / %d cells FAILED: %s", len(failures), len(cells), failures)
+        sys.exit(1)
+    logger.info("All %d cells completed successfully.", len(results))
+
+
+if __name__ == "__main__":
+    main()
