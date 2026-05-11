@@ -1,0 +1,7 @@
+[
+  {"phrase": "carpe diem est", "frde_rate": 0.1125, "round": 0, "category": "seed"},
+  {"phrase": "tabula rasa est", "frde_rate": 0.1000, "round": 0, "category": "seed"},
+  {"phrase": "sic transit gloria", "frde_rate": 0.0250, "round": 0, "category": "seed"},
+  {"phrase": "et cetera desunt", "frde_rate": 0.0125, "round": 0, "category": "seed"},
+  {"phrase": "habeas corpus rex", "frde_rate": 0.0125, "round": 0, "category": "seed"}
+]

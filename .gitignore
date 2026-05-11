@@ -10,6 +10,8 @@ dist/
 build/
 .eggs/
 data/
+!data/issue_188/
+!data/issue_331/
 outputs/
 *.output
 .pytest_cache/

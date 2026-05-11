@@ -49,15 +49,24 @@ class JudgeCache:
     """Simple file-based cache for judge results, keyed by prompt content hash.
 
     Each cached result is stored as a single JSON file named by the hash of
-    (question + completion). Cache hits avoid redundant Batch API calls on
-    experiment resume.
+    (question + completion). Cache hits avoid redundant Batch / sync API calls
+    on experiment resume.
+
+    Thread-safety: hit/miss counters are guarded by a lock, and ``put`` writes
+    atomically via tempfile + ``os.replace``. Cache keys are deterministic over
+    (question, completion), so distinct workers normally write distinct keys;
+    the atomic replace is defence-in-depth against any same-key races and
+    against partial writes on a crash.
     """
 
     def __init__(self, cache_dir: Path):
+        import threading
+
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self._hits = 0
         self._misses = 0
+        self._lock = threading.Lock()
 
     @staticmethod
     def _hash_key(question: str, completion: str) -> str:
@@ -69,22 +78,32 @@ class JudgeCache:
         key = self._hash_key(question, completion)
         path = self.cache_dir / f"{key}.json"
         if path.exists():
-            self._hits += 1
+            with self._lock:
+                self._hits += 1
             with open(path) as f:
                 return json.load(f)
-        self._misses += 1
+        with self._lock:
+            self._misses += 1
         return None
 
     def put(self, question: str, completion: str, result: dict) -> None:
-        """Store a judge result in the cache."""
+        """Store a judge result in the cache atomically."""
+        import threading
+
         key = self._hash_key(question, completion)
         path = self.cache_dir / f"{key}.json"
-        with open(path, "w") as f:
+        # Tempfile in same dir → os.replace is atomic on POSIX.
+        # Per-pid + per-tid suffix avoids collisions if two threads race on
+        # the same key (last-writer-wins; values are deterministic anyway).
+        tmp = path.with_suffix(f".tmp.{os.getpid()}.{threading.get_ident()}")
+        with open(tmp, "w") as f:
             json.dump(result, f)
+        os.replace(tmp, path)
 
     @property
     def stats(self) -> dict:
-        return {"hits": self._hits, "misses": self._misses}
+        with self._lock:
+            return {"hits": self._hits, "misses": self._misses}
 
 
 # ── Batch submission helpers ─────────────────────────────────────────────────
