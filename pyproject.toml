@@ -9,13 +9,13 @@ description = "Characterizing persona space in language models to robustly align
 requires-python = ">=3.11"
 dependencies = [
     "torch>=2.4,<3.0",
-    "transformers>=5.0,<6.0",
+    "transformers>=4.50,<5.0",
     "accelerate>=1.0,<2.0",
     "datasets>=4.0,<5.0",
     "deepspeed>=0.14,<1.0",
     "peft>=0.13,<1.0",
     "trl>=0.12,<1.0",
-    "vllm>=0.6,<1.0",
+    "vllm>=0.10.2,<0.12",
     "lm-eval[vllm]>=0.4.5,<1.0",
     "anthropic>=0.86,<1.0",
     "wandb>=0.18,<1.0",
