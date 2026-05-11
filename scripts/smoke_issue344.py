@@ -493,6 +493,82 @@ def test_paired_bootstrap_seed_alignment() -> None:
     print("  PASS")
 
 
+def test_h2_diff_of_diffs_construction() -> None:
+    """v3 [3/3] regression test for round-2 ensemble M-NEW-1: H2 diff-of-diffs.
+
+    H2_ratio = (LoA_matched_bys - LoA_nocot_bys) / (FRESH_matched_bys - FRESH_nocot_bys)
+    One-sided H1: ratio >= 0.5; falsified if < 0.20 (Plan section 3).
+
+    This test verifies two things:
+      (a) On a well-defined denominator (gap ~ 0.15), the bootstrap ratio is
+          well-defined: point in expected band, CI well-formed, `non_interpretable=False`.
+      (b) On a near-zero denominator (gap ~ 0.005), the denominator stability
+          gate fires (`non_interpretable=True`) with the same semantics as r5.
+    """
+    print("\n=== H2 diff-of-diffs construction (v3 [3/3] regression) ===")
+    import numpy as np
+    import run_issue186_eval as mod
+
+    n_pairs = 1172 * 3  # n_q * n_seeds, like the macro pool
+    denom_epsilon = 1e-4
+
+    # Case (a): well-defined denominator, ratio centered at 0.5.
+    # FRESH gap = matched - nocot ~ 0.15 (well above 0.02 floor).
+    # LoA gap = 0.5 * FRESH gap ~ 0.075 -- H2 ratio = 0.5.
+    rng = np.random.default_rng(7)
+    fresh_gap = rng.normal(0.15, 0.02, n_pairs)
+    loa_gap = 0.5 * fresh_gap + rng.normal(0.0, 0.005, n_pairs)
+    boot = mod._paired_bootstrap_ratio(
+        loa_gap,
+        fresh_gap,
+        n_resamples=2000,
+        denom_epsilon=denom_epsilon,
+        degenerate_draw_policy="discard",
+        rng=rng,
+    )
+    denom_macro = float(fresh_gap.mean())
+    non_interpretable = bool(abs(denom_macro) < 0.02 or boot["frac_discarded"] > 0.05)
+    draws_arr = np.asarray(boot["draws"])
+    p_one_sided = float(np.mean(draws_arr <= 0.5))
+    print(
+        f"  well-defined: point={boot['point']:.3f}, "
+        f"CI=({boot['ci_low']:.3f}, {boot['ci_high']:.3f}), "
+        f"denom_macro={denom_macro:.3f}, frac_discarded={boot['frac_discarded']:.4f}, "
+        f"p_one_sided_vs_0.5={p_one_sided:.4f}, non_interp={non_interpretable}"
+    )
+    assert 0.4 < boot["point"] < 0.6, f"expected point ~0.5, got {boot['point']}"
+    assert boot["ci_low"] < boot["point"] < boot["ci_high"], "CI poorly formed"
+    assert non_interpretable is False, (
+        f"well-defined denominator should NOT be non-interpretable; "
+        f"got denom_macro={denom_macro}, frac_discarded={boot['frac_discarded']}"
+    )
+
+    # Case (b): near-zero denominator — denominator stability gate fires.
+    # FRESH gap ~ 0.005 (well below 0.02 floor).
+    fresh_gap_degen = rng.normal(0.005, 0.001, n_pairs)
+    loa_gap_degen = rng.normal(0.003, 0.001, n_pairs)
+    boot_degen = mod._paired_bootstrap_ratio(
+        loa_gap_degen,
+        fresh_gap_degen,
+        n_resamples=2000,
+        denom_epsilon=denom_epsilon,
+        degenerate_draw_policy="discard",
+        rng=rng,
+    )
+    denom_macro_degen = float(fresh_gap_degen.mean())
+    non_interp_degen = bool(abs(denom_macro_degen) < 0.02 or boot_degen["frac_discarded"] > 0.05)
+    print(
+        f"  near-zero denom: denom_macro={denom_macro_degen:.4f}, "
+        f"frac_discarded={boot_degen['frac_discarded']:.4f}, "
+        f"non_interp={non_interp_degen}"
+    )
+    assert non_interp_degen is True, (
+        f"|denom_macro|={abs(denom_macro_degen)} should be < 0.02 floor; "
+        f"non_interpretable gate failed to fire"
+    )
+    print("  PASS")
+
+
 def test_hf_path_in_repo_switches_by_arm() -> None:
     print("\n=== _hf_path_in_repo switches i186 vs i344 arms ===")
     import run_issue186_eval as mod
@@ -803,6 +879,7 @@ def main() -> None:
     test_paired_bootstrap_ratio_handles_epsilon()
     test_paired_bootstrap_seed_alignment()
     test_r5_macro_directional_p_values()
+    test_h2_diff_of_diffs_construction()
     test_hf_path_in_repo_switches_by_arm()
     test_mask_audit_per_arm_gate()
 

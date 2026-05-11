@@ -916,6 +916,7 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
     empty_scaffold_idx = next(
         i for i, s in enumerate(EVAL_SCAFFOLDS) if s.name == "empty-persona-cot-eval"
     )
+    no_cot_eval_idx = next(i for i, s in enumerate(EVAL_SCAFFOLDS) if s.name == "no-cot")
 
     def _correct_array(per_persona: dict) -> np.ndarray:
         arr = np.zeros((n_q, len(PERSONA_ORDER), len(EVAL_SCAFFOLDS)), dtype=np.int8)
@@ -1492,6 +1493,153 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
             "p_low_vs_0_20": p_low,
         }
 
+    # H2 diff-of-diffs (Plan section 3 / section 6 Holm family entry 3).
+    # H2_ratio = (LoA_matched_bys - LoA_nocot_bys) / (FRESH_matched_bys - FRESH_nocot_bys)
+    # One-sided H1: ratio >= 0.5; falsified if < 0.20 (Plan section 3).
+    #
+    # Construction (v3 [3/3] fix for round-2 ensemble M-NEW-1):
+    #   - For each source, collect per-(q, s) bystander-loss arrays for the
+    #     LoA cell and the FRESH cell under BOTH the matched persona-CoT eval
+    #     scaffold AND the no-cot eval scaffold. Within a single cell, the
+    #     matched and no-cot extractions share (q, s) keys by construction
+    #     (same correctness array, different scaffold_idx slices).
+    #   - Cross-cell (LoA vs FRESH) (q, s) intersection mirrors the f-ratio
+    #     loop's `shared_keys` pattern -- exactly the same fence the brief
+    #     calls out as "the existing dict-intersection pattern from B3".
+    #   - Numerator per-(q, s) = LoA_matched_bys - LoA_nocot_bys.
+    #     Denominator per-(q, s) = FRESH_matched_bys - FRESH_nocot_bys.
+    #   - Paired bootstrap uses shared (q, s) indices across all 4 cells
+    #     (LoA x {matched, nocot}, FRESH x {matched, nocot}) -- the SAME
+    #     idx draw selects all four signed differences (Plan section 4 S4
+    #     paired-ratio fix generalized to diff-of-diffs).
+    #   - Same denominator stability gate as r5 (Plan §6 R3 B2):
+    #     non_interpretable if |denom_macro| < 0.02 OR frac_discarded > 0.05.
+    #   - Fail-closed if any of the 4 required cells is missing — log and
+    #     skip the H2 entry rather than emit a degenerate value (per brief
+    #     "Quality bars").
+    h2_diff_of_diffs: dict = {}
+    h2_num_pool: list[float] = []
+    h2_denom_pool: list[float] = []
+    for source in SOURCES:
+        bystanders = [p for p in PERSONA_ORDER if p != source]
+        bys_idx = np.array([persona_idx[p] for p in bystanders])
+        src_idx = persona_idx[source]
+
+        # LoA bystander losses, keyed by (q, s), for matched + no-cot eval.
+        loa_matched_bys: dict[tuple[int, int], float] = {}
+        loa_nocot_bys: dict[tuple[int, int], float] = {}
+        for seed in SEEDS:
+            cid = _cell_id(source, "persona_cot_labels_on_answer", seed)
+            if cid not in cell_correctness:
+                continue
+            _, bl_m = _per_qs_loss_matrix(
+                base_correct, cell_correctness[cid], bys_idx, src_idx, matched_scaffold_idx
+            )
+            _, bl_n = _per_qs_loss_matrix(
+                base_correct, cell_correctness[cid], bys_idx, src_idx, no_cot_eval_idx
+            )
+            for q in range(len(bl_m)):
+                loa_matched_bys[(q, seed)] = float(bl_m[q])
+                loa_nocot_bys[(q, seed)] = float(bl_n[q])
+
+        # FRESH bystander losses, keyed by (q, s), for matched + no-cot eval.
+        fresh_matched_bys: dict[tuple[int, int], float] = {}
+        fresh_nocot_bys: dict[tuple[int, int], float] = {}
+        for seed in SEEDS:
+            cid = _cell_id(source, "persona_cot_FRESH", seed)
+            if cid not in cell_correctness:
+                continue
+            _, bl_m = _per_qs_loss_matrix(
+                base_correct, cell_correctness[cid], bys_idx, src_idx, matched_scaffold_idx
+            )
+            _, bl_n = _per_qs_loss_matrix(
+                base_correct, cell_correctness[cid], bys_idx, src_idx, no_cot_eval_idx
+            )
+            for q in range(len(bl_m)):
+                fresh_matched_bys[(q, seed)] = float(bl_m[q])
+                fresh_nocot_bys[(q, seed)] = float(bl_n[q])
+
+        # Fail-closed: skip if any of the 4 cells is missing for this source.
+        if not (loa_matched_bys and loa_nocot_bys and fresh_matched_bys and fresh_nocot_bys):
+            logger.warning(
+                "H2 diff-of-diffs: skipping source=%s — missing required cells "
+                "(LoA_matched=%d, LoA_nocot=%d, FRESH_matched=%d, FRESH_nocot=%d keys)",
+                source,
+                len(loa_matched_bys),
+                len(loa_nocot_bys),
+                len(fresh_matched_bys),
+                len(fresh_nocot_bys),
+            )
+            continue
+
+        shared_keys = sorted(
+            set(loa_matched_bys.keys())
+            & set(loa_nocot_bys.keys())
+            & set(fresh_matched_bys.keys())
+            & set(fresh_nocot_bys.keys())
+        )
+        if not shared_keys:
+            logger.warning(
+                "H2 diff-of-diffs: no shared (q, s) keys across LoA + FRESH cells for source=%s",
+                source,
+            )
+            continue
+
+        # Per-(q, s) signed differences. Paired across all 4 cells by
+        # construction (same key selects all four values).
+        num_per_qs = np.asarray(
+            [loa_matched_bys[k] - loa_nocot_bys[k] for k in shared_keys], dtype=np.float64
+        )
+        denom_per_qs = np.asarray(
+            [fresh_matched_bys[k] - fresh_nocot_bys[k] for k in shared_keys], dtype=np.float64
+        )
+        h2_num_pool.extend(num_per_qs.tolist())
+        h2_denom_pool.extend(denom_per_qs.tolist())
+
+    if h2_num_pool and h2_denom_pool:
+        h2_num_arr = np.asarray(h2_num_pool, dtype=np.float64)
+        h2_denom_arr = np.asarray(h2_denom_pool, dtype=np.float64)
+        h2_boot = _paired_bootstrap_ratio(
+            h2_num_arr,
+            h2_denom_arr,
+            n_resamples=n_bootstrap,
+            denom_epsilon=denom_epsilon,
+            degenerate_draw_policy="discard",
+            rng=rng,
+        )
+        denom_macro = float(h2_denom_arr.mean())
+        non_interpretable_h2 = bool(abs(denom_macro) < 0.02 or h2_boot["frac_discarded"] > 0.05)
+        # One-sided H1: ratio >= 0.5. p_one_sided_upper here means
+        # P(draws <= 0.5) — small p ⇒ strong rejection of "ratio < 0.5".
+        draws_arr = np.asarray(h2_boot.get("draws") or [], dtype=np.float64)
+        p_one_sided_upper_vs_0_5 = (
+            float(np.mean(draws_arr <= 0.5)) if draws_arr.size > 0 else float("nan")
+        )
+        h2_diff_of_diffs = {
+            "point": h2_boot["point"],
+            "ci_low": h2_boot["ci_low"],
+            "ci_high": h2_boot["ci_high"],
+            "p_one_sided_upper": p_one_sided_upper_vs_0_5,
+            "p_two_sided": h2_boot["p_two_sided"],
+            "denom_macro": denom_macro,
+            "n_pairs_pooled": int(h2_num_arr.size),
+            "n_discarded": h2_boot["n_discarded"],
+            "frac_discarded": h2_boot["frac_discarded"],
+            "threshold": 0.5,
+            "hypothesis": "one-sided H1: H2_ratio >= 0.5",
+            "non_interpretable": non_interpretable_h2,
+            "non_interpretable_reason": (
+                "FRESH matched-vs-nocot bystander gap too small to interpret ratio reliably"
+                if non_interpretable_h2
+                else None
+            ),
+        }
+    else:
+        h2_diff_of_diffs = {
+            "missing": True,
+            "reason": "no eligible (LoA + FRESH) x (matched + nocot) cell quadruples present",
+        }
+
     # ── C3 gate trigger (Plan §11) ──────────────────────────────────────────
     macro_f_bys = f_results.get("persona_cot_labels_on_answer", {}).get("macro_f_bystander")
     macro_f_src = f_results.get("persona_cot_labels_on_answer", {}).get("macro_f_source")
@@ -1600,6 +1748,39 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
             }
         )
 
+    # H2 diff-of-diffs entry (Plan §6 Holm family entry 3; v3 [3/3] fix for
+    # round-2 ensemble M-NEW-1). `p_value` is the one-sided p for H1 ratio ≥ 0.5
+    # — i.e., P(draws ≤ 0.5); small p ⇒ strong rejection of "ratio < 0.5".
+    if h2_diff_of_diffs.get("missing"):
+        holm_family.append(
+            {
+                "name": "h2_diff_of_diffs",
+                "kind": "h2_diff_of_diffs",
+                "axis": "bystander",
+                "threshold": 0.5,
+                "hypothesis": "one-sided H1: H2_ratio >= 0.5",
+                "missing": True,
+                "non_interpretable": True,
+                "reason": h2_diff_of_diffs.get("reason"),
+            }
+        )
+    else:
+        holm_family.append(
+            {
+                "name": "h2_diff_of_diffs",
+                "kind": "h2_diff_of_diffs",
+                "axis": "bystander",
+                "threshold": 0.5,
+                "hypothesis": "one-sided H1: H2_ratio >= 0.5",
+                "p_value": h2_diff_of_diffs["p_one_sided_upper"],
+                "ci_low": h2_diff_of_diffs["ci_low"],
+                "ci_high": h2_diff_of_diffs["ci_high"],
+                "point": h2_diff_of_diffs["point"],
+                "denom_macro": h2_diff_of_diffs["denom_macro"],
+                "non_interpretable": h2_diff_of_diffs["non_interpretable"],
+            }
+        )
+
     # ── Summary ─────────────────────────────────────────────────────────────
     summary = {
         "frozen": False,
@@ -1616,6 +1797,7 @@ def _stage_aggregate_fraction_of_effect(args: argparse.Namespace) -> None:  # no
         "f_ratios": f_results,
         "r5_loss_delta_ratios": r5_results,
         "r5_loss_delta_ratios_macro": r5_macro_results,
+        "h2_diff_of_diffs": h2_diff_of_diffs,
         "holm_family": holm_family,
         "missing_cells": missing,
         "n_eff_per_source": {"n_q": n_q, "n_seeds": len(SEEDS), "n_pairs": n_q * len(SEEDS)},
