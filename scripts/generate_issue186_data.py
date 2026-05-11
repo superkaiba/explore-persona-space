@@ -436,6 +436,15 @@ async def _generate_all(args: argparse.Namespace) -> None:  # noqa: C901
             cells.append((source, arm))
     cells.append((CORRECT_CONTROL_PERSONA, CORRECT_CONTROL_ARM))
 
+    # Issue #344 Phase 0a: optional single-arm restriction.
+    only_arm = getattr(args, "only_arm", None)
+    if only_arm:
+        before = len(cells)
+        cells = [(s, a) for (s, a) in cells if a == only_arm]
+        logger.info("--only-arm=%s: restricting from %d to %d cells", only_arm, before, len(cells))
+        if not cells:
+            raise SystemExit(f"--only-arm={only_arm!r} matched no cells.")
+
     if args.smoke:
         # Smoke: take only the first cell, restricted to 50 rows.
         cells = cells[:1]
@@ -621,6 +630,17 @@ def main() -> None:
         "--force",
         action="store_true",
         help="Regenerate cells whose output JSONL already exists.",
+    )
+    parser.add_argument(
+        "--only-arm",
+        type=str,
+        default=None,
+        choices=("no-cot", "persona-cot", "generic-cot", "persona-cot-correct"),
+        help=(
+            "Restrict generation to a single train arm. Used by issue #344 to "
+            "regenerate only the persona-cot data (Phase 0b) or the generic-cot "
+            "data (Phase 0c, Variant B). Other arms are skipped entirely."
+        ),
     )
     args = parser.parse_args()
 
