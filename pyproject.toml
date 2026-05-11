@@ -9,7 +9,7 @@ description = "Characterizing persona space in language models to robustly align
 requires-python = ">=3.11"
 dependencies = [
     "torch>=2.4,<3.0",
-    "transformers>=5.0,<6.0",
+    "transformers>=4.55.2,<5.0",  # pinned <5 — vllm 0.11.0 reads `tokenizer.all_special_tokens_extended` (removed in transformers 5.x); see issue #269 epm:failure v1 for traceback. Min 4.55.2 matches vllm 0.11.0's requires_dist.
     "accelerate>=1.0,<2.0",
     "datasets>=4.0,<5.0",
     "deepspeed>=0.14,<1.0",

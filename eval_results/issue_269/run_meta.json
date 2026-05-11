@@ -1,0 +1,29 @@
+{
+  "issue": 269,
+  "git_commit": "889da5561860c253dd15bbd7e5900af5f992d74c",
+  "git_branch": "issue-269",
+  "started_at": "2026-05-11T06:13:29.518323+00:00",
+  "finished_at": "2026-05-11T06:20:29.623265+00:00",
+  "wall_seconds": 420.10494565963745,
+  "seed": 42,
+  "n_perm": 100000,
+  "layers": [
+    10,
+    15,
+    20,
+    25
+  ],
+  "headline_layer": 10,
+  "model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "cosine_sha256": "c1a8050744e06c60fc56ca88582324ec3c70c29df39df2f29fb814e905161b0f",
+  "host": "899ac90f8f3e",
+  "hf_home": "/workspace/.cache/huggingface",
+  "package_versions": {
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "vllm": "0.11.0",
+    "scipy": "1.17.1",
+    "sklearn": "1.8.0",
+    "numpy": "2.2.6"
+  }
+}
