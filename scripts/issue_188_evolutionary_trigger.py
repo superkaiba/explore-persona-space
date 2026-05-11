@@ -460,6 +460,7 @@ def _judge_uncached_via_sync(
                 anthropic_mod.RateLimitError,
                 anthropic_mod.APITimeoutError,
                 anthropic_mod.APIConnectionError,
+                anthropic_mod.InternalServerError,
             ) as e:
                 last_exc = e
                 if attempt >= max_retries:
