@@ -1,0 +1,648 @@
+{
+  "n_states": 70,
+  "totals": {
+    "ALREADY_ON_HF": 1,
+    "SALVAGED": 69,
+    "WOULD_SALVAGE": 0,
+    "MISSING_FROM_WANDB": 0,
+    "WANDB_ARTIFACT_INCOMPLETE": 0,
+    "PUSH_FAILED": 0,
+    "PENDING": 0
+  },
+  "records": [
+    {
+      "source": "comedian",
+      "checkpoint_step": 200,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_comedian_ep200_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_comedian_ep200_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 18.158666610717773
+    },
+    {
+      "source": "comedian",
+      "checkpoint_step": 400,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_comedian_ep400_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_comedian_ep400_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 16.267170190811157
+    },
+    {
+      "source": "comedian",
+      "checkpoint_step": 600,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_comedian_ep600_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_comedian_ep600_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 14.212717294692993
+    },
+    {
+      "source": "comedian",
+      "checkpoint_step": 800,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_comedian_ep800_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_comedian_ep800_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 15.854568243026733
+    },
+    {
+      "source": "comedian",
+      "checkpoint_step": 1000,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_comedian_ep1000_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_comedian_ep1000_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 22.458964586257935
+    },
+    {
+      "source": "comedian",
+      "checkpoint_step": 1200,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_comedian_ep1200_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_comedian_ep1200_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 20.364608764648438
+    },
+    {
+      "source": "comedian",
+      "checkpoint_step": 1400,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_comedian_ep1400_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_comedian_ep1400_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 15.561622619628906
+    },
+    {
+      "source": "comedian",
+      "checkpoint_step": 1600,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_comedian_ep1600_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_comedian_ep1600_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 14.600175380706787
+    },
+    {
+      "source": "comedian",
+      "checkpoint_step": 1800,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_comedian_ep1800_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_comedian_ep1800_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 16.560829639434814
+    },
+    {
+      "source": "comedian",
+      "checkpoint_step": 2000,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_comedian_ep2000_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_comedian_ep2000_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 21.9972722530365
+    },
+    {
+      "source": "kindergarten_teacher",
+      "checkpoint_step": 200,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_kindergarten_teacher_ep200_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_kindergarten_teacher_ep200_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 20.5838840007782
+    },
+    {
+      "source": "kindergarten_teacher",
+      "checkpoint_step": 400,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_kindergarten_teacher_ep400_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_kindergarten_teacher_ep400_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 19.293384552001953
+    },
+    {
+      "source": "kindergarten_teacher",
+      "checkpoint_step": 600,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_kindergarten_teacher_ep600_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_kindergarten_teacher_ep600_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 20.46537756919861
+    },
+    {
+      "source": "kindergarten_teacher",
+      "checkpoint_step": 800,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_kindergarten_teacher_ep800_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_kindergarten_teacher_ep800_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 20.58382248878479
+    },
+    {
+      "source": "kindergarten_teacher",
+      "checkpoint_step": 1000,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_kindergarten_teacher_ep1000_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_kindergarten_teacher_ep1000_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 22.709015607833862
+    },
+    {
+      "source": "kindergarten_teacher",
+      "checkpoint_step": 1200,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_kindergarten_teacher_ep1200_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_kindergarten_teacher_ep1200_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 18.95230984687805
+    },
+    {
+      "source": "kindergarten_teacher",
+      "checkpoint_step": 1400,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_kindergarten_teacher_ep1400_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_kindergarten_teacher_ep1400_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 20.348039388656616
+    },
+    {
+      "source": "kindergarten_teacher",
+      "checkpoint_step": 1600,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_kindergarten_teacher_ep1600_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_kindergarten_teacher_ep1600_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 20.96363925933838
+    },
+    {
+      "source": "kindergarten_teacher",
+      "checkpoint_step": 1800,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_kindergarten_teacher_ep1800_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_kindergarten_teacher_ep1800_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 21.28633713722229
+    },
+    {
+      "source": "kindergarten_teacher",
+      "checkpoint_step": 2000,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_kindergarten_teacher_ep2000_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_kindergarten_teacher_ep2000_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 18.832915782928467
+    },
+    {
+      "source": "librarian",
+      "checkpoint_step": 200,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_librarian_ep200_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_librarian_ep200_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 21.096118450164795
+    },
+    {
+      "source": "librarian",
+      "checkpoint_step": 400,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_librarian_ep400_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_librarian_ep400_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 19.750617027282715
+    },
+    {
+      "source": "librarian",
+      "checkpoint_step": 600,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_librarian_ep600_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_librarian_ep600_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 18.49934959411621
+    },
+    {
+      "source": "librarian",
+      "checkpoint_step": 800,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_librarian_ep800_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_librarian_ep800_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 19.952272415161133
+    },
+    {
+      "source": "librarian",
+      "checkpoint_step": 1000,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_librarian_ep1000_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_librarian_ep1000_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 27.570415496826172
+    },
+    {
+      "source": "librarian",
+      "checkpoint_step": 1200,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_librarian_ep1200_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_librarian_ep1200_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 19.7490394115448
+    },
+    {
+      "source": "librarian",
+      "checkpoint_step": 1400,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_librarian_ep1400_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_librarian_ep1400_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 21.543960571289062
+    },
+    {
+      "source": "librarian",
+      "checkpoint_step": 1600,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_librarian_ep1600_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_librarian_ep1600_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 18.918729066848755
+    },
+    {
+      "source": "librarian",
+      "checkpoint_step": 1800,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_librarian_ep1800_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_librarian_ep1800_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 21.846885919570923
+    },
+    {
+      "source": "librarian",
+      "checkpoint_step": 2000,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_librarian_ep2000_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_librarian_ep2000_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 18.22877836227417
+    },
+    {
+      "source": "medical_doctor",
+      "checkpoint_step": 200,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_medical_doctor_ep200_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_medical_doctor_ep200_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 14.296021461486816
+    },
+    {
+      "source": "medical_doctor",
+      "checkpoint_step": 400,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_medical_doctor_ep400_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_medical_doctor_ep400_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 14.436322689056396
+    },
+    {
+      "source": "medical_doctor",
+      "checkpoint_step": 600,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_medical_doctor_ep600_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_medical_doctor_ep600_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 14.920292139053345
+    },
+    {
+      "source": "medical_doctor",
+      "checkpoint_step": 800,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_medical_doctor_ep800_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_medical_doctor_ep800_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 19.79326868057251
+    },
+    {
+      "source": "medical_doctor",
+      "checkpoint_step": 1000,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_medical_doctor_ep1000_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_medical_doctor_ep1000_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 16.139673471450806
+    },
+    {
+      "source": "medical_doctor",
+      "checkpoint_step": 1200,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_medical_doctor_ep1200_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_medical_doctor_ep1200_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 17.20319414138794
+    },
+    {
+      "source": "medical_doctor",
+      "checkpoint_step": 1400,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_medical_doctor_ep1400_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_medical_doctor_ep1400_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 16.978408336639404
+    },
+    {
+      "source": "medical_doctor",
+      "checkpoint_step": 1600,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_medical_doctor_ep1600_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_medical_doctor_ep1600_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 16.8370578289032
+    },
+    {
+      "source": "medical_doctor",
+      "checkpoint_step": 1800,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_medical_doctor_ep1800_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_medical_doctor_ep1800_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 16.18173122406006
+    },
+    {
+      "source": "medical_doctor",
+      "checkpoint_step": 2000,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_medical_doctor_ep2000_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_medical_doctor_ep2000_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 18.39804697036743
+    },
+    {
+      "source": "nurse",
+      "checkpoint_step": 200,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_nurse_ep200_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_nurse_ep200_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 20.944609880447388
+    },
+    {
+      "source": "nurse",
+      "checkpoint_step": 400,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_nurse_ep400_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_nurse_ep400_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 17.713882446289062
+    },
+    {
+      "source": "nurse",
+      "checkpoint_step": 600,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_nurse_ep600_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_nurse_ep600_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 18.828015327453613
+    },
+    {
+      "source": "nurse",
+      "checkpoint_step": 800,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_nurse_ep800_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_nurse_ep800_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 15.805365085601807
+    },
+    {
+      "source": "nurse",
+      "checkpoint_step": 1000,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_nurse_ep1000_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_nurse_ep1000_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 15.823174476623535
+    },
+    {
+      "source": "nurse",
+      "checkpoint_step": 1200,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_nurse_ep1200_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_nurse_ep1200_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 16.370466709136963
+    },
+    {
+      "source": "nurse",
+      "checkpoint_step": 1400,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_nurse_ep1400_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_nurse_ep1400_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 15.962733745574951
+    },
+    {
+      "source": "nurse",
+      "checkpoint_step": 1600,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_nurse_ep1600_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_nurse_ep1600_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 17.85299301147461
+    },
+    {
+      "source": "nurse",
+      "checkpoint_step": 1800,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_nurse_ep1800_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_nurse_ep1800_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 16.961784839630127
+    },
+    {
+      "source": "nurse",
+      "checkpoint_step": 2000,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_nurse_ep2000_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_nurse_ep2000_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 21.93407893180847
+    },
+    {
+      "source": "software_engineer",
+      "checkpoint_step": 200,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_software_engineer_ep200_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_software_engineer_ep200_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 15.620880603790283
+    },
+    {
+      "source": "software_engineer",
+      "checkpoint_step": 400,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_software_engineer_ep400_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_software_engineer_ep400_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 15.999911308288574
+    },
+    {
+      "source": "software_engineer",
+      "checkpoint_step": 600,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_software_engineer_ep600_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_software_engineer_ep600_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 15.145892858505249
+    },
+    {
+      "source": "software_engineer",
+      "checkpoint_step": 800,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_software_engineer_ep800_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_software_engineer_ep800_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 32.062572717666626
+    },
+    {
+      "source": "software_engineer",
+      "checkpoint_step": 1000,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_software_engineer_ep1000_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_software_engineer_ep1000_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 17.51258373260498
+    },
+    {
+      "source": "software_engineer",
+      "checkpoint_step": 1200,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_software_engineer_ep1200_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_software_engineer_ep1200_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 14.377557516098022
+    },
+    {
+      "source": "software_engineer",
+      "checkpoint_step": 1400,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_software_engineer_ep1400_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_software_engineer_ep1400_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 16.375396728515625
+    },
+    {
+      "source": "software_engineer",
+      "checkpoint_step": 1600,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_software_engineer_ep1600_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_software_engineer_ep1600_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 18.792420864105225
+    },
+    {
+      "source": "software_engineer",
+      "checkpoint_step": 1800,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_software_engineer_ep1800_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_software_engineer_ep1800_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 16.018215894699097
+    },
+    {
+      "source": "software_engineer",
+      "checkpoint_step": 2000,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_software_engineer_ep2000_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_software_engineer_ep2000_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 18.128039598464966
+    },
+    {
+      "source": "villain",
+      "checkpoint_step": 200,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_villain_ep200_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_villain_ep200_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 16.055282592773438
+    },
+    {
+      "source": "villain",
+      "checkpoint_step": 400,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_villain_ep400_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_villain_ep400_s42",
+      "status": "ALREADY_ON_HF",
+      "wall_seconds": 1.241483449935913
+    },
+    {
+      "source": "villain",
+      "checkpoint_step": 600,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_villain_ep600_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_villain_ep600_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 24.060293912887573
+    },
+    {
+      "source": "villain",
+      "checkpoint_step": 800,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_villain_ep800_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_villain_ep800_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 23.755422353744507
+    },
+    {
+      "source": "villain",
+      "checkpoint_step": 1000,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_villain_ep1000_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_villain_ep1000_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 21.029833793640137
+    },
+    {
+      "source": "villain",
+      "checkpoint_step": 1200,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_villain_ep1200_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_villain_ep1200_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 22.328946113586426
+    },
+    {
+      "source": "villain",
+      "checkpoint_step": 1400,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_villain_ep1400_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_villain_ep1400_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 23.60405468940735
+    },
+    {
+      "source": "villain",
+      "checkpoint_step": 1600,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_villain_ep1600_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_villain_ep1600_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 21.08229947090149
+    },
+    {
+      "source": "villain",
+      "checkpoint_step": 1800,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_villain_ep1800_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_villain_ep1800_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 21.261607885360718
+    },
+    {
+      "source": "villain",
+      "checkpoint_step": 2000,
+      "seed": 42,
+      "artifact_ref": "thomasjiralerspong/huggingface/cp_marker_villain_ep2000_s42-checkpoint:latest",
+      "hf_target": "superkaiba1/explore-persona-space/adapters/cp_marker_villain_ep2000_s42",
+      "status": "SALVAGED",
+      "wall_seconds": 22.250560522079468
+    }
+  ],
+  "dry_run": false,
+  "wandb_entity": "thomasjiralerspong",
+  "wandb_project": "huggingface",
+  "hf_repo": "superkaiba1/explore-persona-space"
+}

@@ -325,13 +325,21 @@ def generate_and_cache_onpolicy_data(
     Data is generated ONCE per source persona and reused across all training
     seeds. This isolates training variance from data generation variance.
 
+    Concurrency: the caller is responsible for serialising concurrent calls on
+    the same source. For #228 this is handled by Phase 0a's serial coordinator
+    plus the outer ``filelock`` in ``scripts/pregenerate_onpolicy_cache_228.py``;
+    this function does NOT take its own lock (an inner FileLock on the same
+    path would deadlock against the outer, since ``filelock.FileLock`` is only
+    per-instance reentrant — see #228 round-5 hot-fix). The atomic tmp+rename
+    write below still prevents readers from observing a half-written file.
+
     Returns the cached completions dict.
     """
     cache_dir = DATA_DIR / "onpolicy_cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
     cache_path = cache_dir / f"completions_{source}.json"
 
-    if cache_path.exists():
+    if cache_path.exists() and cache_path.stat().st_size > 0:
         log.info(f"Loading cached on-policy completions from {cache_path}")
         with open(cache_path) as f:
             return json.load(f)
@@ -362,9 +370,12 @@ def generate_and_cache_onpolicy_data(
         seed=42,  # Fixed seed for reproducibility across training seeds
     )
 
-    # Cache to disk
-    with open(cache_path, "w") as f:
+    # Atomic write: tmp file + rename. Prevents readers from observing a
+    # partial write if another process holds a stale, never-locked read.
+    tmp_path = cache_path.with_suffix(".json.tmp")
+    with open(tmp_path, "w") as f:
         json.dump(completions, f)
+    os.replace(tmp_path, cache_path)
     log.info(f"Cached on-policy completions to {cache_path}")
 
     # Log stats
