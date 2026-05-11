@@ -79,8 +79,17 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 # Re-export PERSONAS and PROMPTS from the canonical extraction script (matches the
 # exact persona ordering used to build ``cosine_matrix.json``).
+# Snapshot CUDA_VISIBLE_DEVICES before import: extract_persona_vectors.py hard-sets
+# `os.environ["CUDA_VISIBLE_DEVICES"] = "5"` at module load (its own pod assigned GPU 5),
+# which on single-GPU pods makes vLLM's NVML init fail with NVMLError_InvalidArgument.
+_saved_cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
 sys.path.insert(0, str(_PROJECT_ROOT / "experiments" / "phase_minus1_persona_vectors"))
 from extract_persona_vectors import PERSONAS, PROMPTS  # noqa: E402
+
+if _saved_cvd is not None:
+    os.environ["CUDA_VISIBLE_DEVICES"] = _saved_cvd
+else:
+    os.environ.pop("CUDA_VISIBLE_DEVICES", None)
 
 logging.basicConfig(
     level=logging.INFO,
