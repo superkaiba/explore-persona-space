@@ -93,16 +93,13 @@ def _scatter_with_labels(
     xs: list[float],
     ys: list[float],
     labels: list[str],
-    cohorts: list[str],
     color_role: str,
 ):
-    primary = paper_palette_role(color_role)
-    baseline = paper_palette_role("baseline")
+    color = paper_palette_role(color_role)
     x_max = max(xs)
     y_max = max(ys)
-    for x, y, label, cohort in zip(xs, ys, labels, cohorts):
-        color = primary if cohort == "inherited_274" else baseline
-        ax.scatter([x], [y], s=42, color=color, edgecolor="white", linewidth=0.8, zorder=3)
+    ax.scatter(xs, ys, s=42, color=color, edgecolor="white", linewidth=0.8, zorder=3)
+    for x, y, label in zip(xs, ys, labels):
         dx, dy = _label_offset(label, x, y, x_max, y_max)
         ax.annotate(
             label,
@@ -122,20 +119,9 @@ def plot_implantation(rows: list[dict], out_dir: Path) -> None:
     toks = [r["tokens"] for r in rows]
     rates = [r["rate_n48"] for r in rows]
     labels = [r["source"] for r in rows]
-    cohorts = [r["cohort"] for r in rows]
     sp = spearmanr(toks, rates)
 
-    _scatter_with_labels(ax, toks, rates, labels, cohorts, "primary")
-
-    primary = paper_palette_role("primary")
-    baseline = paper_palette_role("baseline")
-    ax.scatter(
-        [], [], s=42, color=primary, edgecolor="white", linewidth=0.8, label="inherited #274 (n=24)"
-    )
-    ax.scatter(
-        [], [], s=42, color=baseline, edgecolor="white", linewidth=0.8, label="new #296 (n=24)"
-    )
-    ax.legend(loc="upper left", frameon=False, fontsize=8)
+    _scatter_with_labels(ax, toks, rates, labels, "primary")
 
     ax.set_xlabel("System-prompt length (tokens, Qwen2.5 tokenizer)")
     ax.set_ylabel("[ZLT] source rate (diagonal cell, n=100 per cell)")
@@ -160,20 +146,9 @@ def plot_leakage(rows: list[dict], out_dir: Path) -> None:
     toks = [r["tokens"] for r in rows]
     bys = [r["mean_bystander_rate_inherited24"] for r in rows]
     labels = [r["source"] for r in rows]
-    cohorts = [r["cohort"] for r in rows]
     sp = spearmanr(toks, bys)
 
-    _scatter_with_labels(ax, toks, bys, labels, cohorts, "primary")
-
-    primary = paper_palette_role("primary")
-    baseline = paper_palette_role("baseline")
-    ax.scatter(
-        [], [], s=42, color=primary, edgecolor="white", linewidth=0.8, label="inherited #274 (n=24)"
-    )
-    ax.scatter(
-        [], [], s=42, color=baseline, edgecolor="white", linewidth=0.8, label="new #296 (n=24)"
-    )
-    ax.legend(loc="upper right", frameon=False, fontsize=8)
+    _scatter_with_labels(ax, toks, bys, labels, "primary")
 
     ax.set_xlabel("System-prompt length (tokens, Qwen2.5 tokenizer)")
     ax.set_ylabel("Mean bystander [ZLT] rate (off-diagonal, shared eval-24 subset)")
