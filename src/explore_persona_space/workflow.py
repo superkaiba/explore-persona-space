@@ -110,7 +110,7 @@ class EnsembleReview(BaseModel):
     doubled_steps: list[EnsembleDoubledStep] = Field(min_length=1)
     not_doubled: list[str] = Field(
         min_length=1
-    )  # roles where doubling adds noise (e.g. lw-register-critic)
+    )  # roles where doubling adds noise (e.g. clean-result-critic)
     round_cap_per_reviewer: int = Field(ge=1)
     reconcile_invocations_count_toward_cap: bool
     union_rule: str

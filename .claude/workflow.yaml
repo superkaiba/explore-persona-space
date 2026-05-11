@@ -123,7 +123,7 @@ statuses:
     user_gated: false
   - name: interpreting
     column: "In flight"
-    description: "analyzer + interpretation-critic + lw-register-critic loops are running."
+    description: "analyzer + interpretation-critic + clean-result-critic loops are running."
     next_action: interpret
     user_gated: false
   - name: reviewing
@@ -260,7 +260,7 @@ halt_criteria:
     name: subagent_blocker
     description: |
       consistency-checker / code-reviewer / interpretation-critic /
-      lw-register-critic / reviewer returns BLOCKER or FAIL with
+      clean-result-critic / reviewer returns BLOCKER or FAIL with
       `needs-user` flag.
   - id: 4
     name: infra_respawn_cap
@@ -319,9 +319,9 @@ subagent_halt_conditions:
   - subagent: interpretation-critic
     verdict: FATAL
     action: "Bounces to analyzer up to 3 rounds; on 4th FATAL, status:blocked"
-  - subagent: lw-register-critic
+  - subagent: clean-result-critic
     verdict: REVISE
-    action: "Bounces to analyzer up to 3 rounds; on 4th REVISE, advance regardless and surface residual register debt to chat"
+    action: "Bounces to analyzer up to 3 rounds; on 4th REVISE, advance regardless and surface residual structural / register debt to chat"
   - subagent: reviewer
     verdict: "FAIL with `needs-user`"
     action: "Posts FAIL on source issue, awaits user"
@@ -403,7 +403,7 @@ ensemble_review:
         Both reviewers run scripts/verify_clean_result.py independently
         and treat FAIL as Critical.
   not_doubled:
-    - lw-register-critic   # empirical writing-register gap; Codex would impose different register (net noise, not signal)
+    - clean-result-critic  # empirical writing-register gap; Codex would impose different register (net noise, not signal)
     - upload-verifier      # mechanical artifact checklist, no LLM-judgment value
     - consistency-checker  # mechanical structure check
   round_cap_per_reviewer: 3
@@ -520,10 +520,10 @@ markers:
     posted_by: skill (via reconciler)
     when: "Step 9a (only on PASS/REVISE disagreement between epm:interp-critique v<n> and epm:interp-critique-codex v<n>)"
     fields: "Binding final verdict (PASS|REVISE) + per-finding adjudication table + rationale anchored to artifact evidence (interpretation body / JSON paths / figure paths). Does NOT count toward per-reviewer round cap. Reconciler may NOT add findings beyond what either reviewer raised."
-  - kind: lw-register-critique
-    posted_by: skill (via lw-register-critic)
+  - kind: clean-result-critique
+    posted_by: skill (via clean-result-critic)
     when: "Step 9a-bis"
-    fields: "PASS/REVISE verdict with 8 register lenses: bullet length, comparison anchors, plain English, self-containment, active voice, project-internal references, paragraph-LEDE title, AI TL;DR three-sentence structure. Runs after `interp-critique` PASSes."
+    fields: "PASS/REVISE verdict with 10 lenses covering title shape, TL;DR user-voice register, Summary six-bullet structure + LW register, Details per-section discipline (setup-before-figure, visible captions, sample outputs), heading-as-toggle convention, body-discipline anti-patterns (via audit_clean_results_body_discipline.py), Source issues conditional H2, issue-reference link form, and verifier sanity (verify_clean_result.py). Runs after `interp-critique` PASSes — content honesty first, structure + register second."
   - kind: analysis
     posted_by: skill (via analyzer)
     when: "Step 9a (final)"
@@ -768,11 +768,11 @@ steps:
     posts_marker: interpretation
     next_expected_step: "9a-bis"
   - id: "9a-bis"
-    name: lw_register_loop
+    name: clean_result_critique_loop
     entry_status_label:
       - interpreting
     entry_condition: "interp-critique PASS or round >= 3"
-    posts_marker: lw-register-critique
+    posts_marker: clean-result-critique
     next_expected_step: "9b"
   - id: "9b"
     name: reviewer

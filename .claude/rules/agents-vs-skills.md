@@ -73,9 +73,9 @@ The outer layer is usually a **skill** (orchestrator). Inside, it dispatches
     ├─ iterates analyzer ↔ interpretation-critic    (max 3 rounds, content honesty)
     │       ├─ spawns analyzer (agent, uses /paper-plots)
     │       └─ spawns interpretation-critic (agent)
-    ├─ iterates analyzer ↔ lw-register-critic       (max 3 rounds, writing register)
+    ├─ iterates analyzer ↔ clean-result-critic      (max 3 rounds, structure + register)
     │       ├─ re-spawns analyzer (agent)
-    │       └─ spawns lw-register-critic (agent)
+    │       └─ spawns clean-result-critic (agent)
     ├─ spawns reviewer (agent)
     ├─ (auto-complete step inline in the skill)
     ├─ (test-verdict gate inline in the skill, code-change paths only)
@@ -101,7 +101,7 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `upload-verifier` | Mechanical artifact checklist, isolated from experimenter optimism |
 | `analyzer` | Fresh-context analysis; produces fact sheet + interpretation |
 | `interpretation-critic` | Adversarial review of interpretation, must not see analyzer reasoning |
-| `lw-register-critic` | Adversarial review of clean-result writing register against `lw-tldr-examples.md`; runs after `interpretation-critic` PASS, must not see analyzer reasoning |
+| `clean-result-critic` | Adversarial review of clean-result issue bodies against the canonical template + exemplars (10 lenses: title, TL;DR, Summary structure + register, Details per-section discipline, captions, heading-as-toggle, body-discipline anti-patterns, Source issues conditional H2, issue-link form, verifier sanity); runs after `interpretation-critic` PASS, must not see analyzer reasoning |
 | `reviewer` | Final adversarial review of published clean-result issue |
 | `code-reviewer` | Adversarial review of implementer's diff, must be isolated |
 | `follow-up-proposer` | Reads results + plan, proposes concrete next experiments |

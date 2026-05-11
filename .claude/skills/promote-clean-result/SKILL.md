@@ -5,15 +5,16 @@ description: >
   clean-result issue to `clean-results:useful` (or `:not-useful`). First
   scans the Awaiting-promotion column for similar issues that should be
   consolidated into a single multi-claim body before promoting (the #237
-  pattern); if none, walks one issue end-to-end: read the AI-drafted body,
-  propose a `## TL;DR` in the user's voice, iterate with the user
-  on the *interpretation / takeaways* (not prose), then auto-critique the
-  locked draft against the LessWrong style + verbatim exemplars and
-  produce a revised version, apply the final body, then have the user run
-  `python scripts/gh_project.py promote <N> useful|not-useful`. Use when the
-  user says "promote #N", "let's clean up the awaiting-promotion column",
-  "help me write the TL;DR for X", or asks to move issues out of
-  Awaiting promotion.
+  pattern); if none, walks one issue end-to-end: read the AI-drafted body
+  (which under v4 already includes an AI-drafted `## TL;DR` in user-voice
+  register per `human-tldr-examples.md`), **review and refine the AI's
+  TL;DR with the user** on the interpretation / takeaways (not prose),
+  then auto-critique the locked draft against `human-tldr-examples.md` +
+  the LessWrong-register cheatsheet for the Summary / Details, apply the
+  final body, then have the user run `python scripts/gh_project.py promote
+  <N> useful|not-useful`. Use when the user says "promote #N", "let's
+  clean up the awaiting-promotion column", "help me refine the TL;DR
+  for X", or asks to move issues out of Awaiting promotion.
 user_invocable: true
 ---
 
@@ -305,12 +306,27 @@ Read the **whole** body, not just the Summary. You're checking:
    user — promotion would propagate a half-finished issue into the
    Useful/Not useful columns. Common cause: reviewer FAIL'd, status label
    drifted manually, or the experiment was abandoned mid-stream.
-2. **Does the body have an existing `## TL;DR` placeholder OR a
-   user-drafted one?** A drafted TL;DR (often labeled `## Human TL;R`
-   / `## Human Summary` / similar typos) is the user's voice — preserve
-   it and propose only minor cleanup. The verbatim placeholder line
-   `_(TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_`
-   means it's untouched and you should propose from scratch.
+2. **Under v4 (2026-05-11+), the body arrives with an AI-drafted
+   `## TL;DR` in user-voice register.** The analyzer writes 3-4 short
+   bullets per `human-tldr-examples.md` before posting; this skill's
+   job is to **review and refine** that AI draft with the user, not to
+   draft from scratch.
+   - **AI-drafted v4 TL;DR** (the common case under the new flow):
+     read it; the substance refinement in Step 2-3 is now "does this
+     AI bullet match the user's lineage memory of the experiment?",
+     not "what should the bullets say?". The user is editing the AI's
+     interpretation, not generating one.
+   - **Pre-v4 issues with a user-only placeholder** (verbatim line
+     `_(TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_`):
+     legacy grandfathered case; treat as "draft from scratch" using
+     the same exemplars (`human-tldr-examples.md`). Step 4 § 3 covers
+     the placeholder-replace mechanics.
+   - **Pre-v4 issues with a user-drafted TL;DR** (labeled `## Human TL;DR`
+     in older drafts, `## Human TL;R` / `## Human Summary` typos, or any
+     variant of the user-voice block): preserve the existing user content,
+     propose only minor cleanup. The v4 canonical heading is just
+     `## TL;DR`; the older `Human TL;DR` / `AI TL;DR` / `AI Summary` triad
+     has been retired.
 3. **Are there obvious overclaims, missing caveats, or mismatched figures?**
    Flag them before drafting the TL;DR — sometimes the right move is
    "let's regenerate Figure 2 first" rather than "let me write a TL;DR."
@@ -396,13 +412,19 @@ Read the **whole** body, not just the Summary. You're checking:
    are the auditor's internal identifiers — invoke the auditor by its
    script name (above), not by pattern name.
 
-## Step 2 — Propose a TL;DR (substance draft)
+## Step 2 — Review the AI-drafted TL;DR (or, on legacy issues, draft from scratch)
 
-Write 2-5 plain-English bullets in the user's voice. This first proposal
-is for **substance** — interpretation and takeaways. Don't over-polish;
-the auto-critique pass in Step 3.5 will handle prose mechanics. Read the
-verbatim exemplars in `human-tldr-examples.md` (this skill's directory)
-BEFORE drafting so the shape is roughly right out of the gate. The shape:
+**Under v4 (the common case):** the analyzer has already drafted a
+user-voice `## TL;DR` per `human-tldr-examples.md`. Your job is to
+**propose refinements to the AI's draft**, not redraft from scratch.
+
+**Under legacy / placeholder (the grandfathered case):** if Step 1 § 2
+found a verbatim placeholder line or no TL;DR at all, draft fresh from
+the exemplars in `human-tldr-examples.md`. The shape rules below apply
+to both modes — the only difference is whether you're refining
+existing bullets or writing them from blank.
+
+The user-voice TL;DR shape:
 
 - **Bullet 1** opens with the question / what we tested / what we wanted
   to see — never the result.
@@ -413,21 +435,34 @@ BEFORE drafting so the shape is roughly right out of the gate. The shape:
 - First-person, present tense, casual punctuation. No `r =`, no `p =`, no
   `(MODERATE confidence)`. Bold-emphasis allowed for the load-bearing word.
 - ~30-90 words total. Shorter is better.
-- The TL;DR is the user's editorial layer; it's OK to subtly disagree
-  with the Summary's framing — the Summary carries the precise paragraph
-  lede, the TL;DR carries the colloquial "shoulder-tap to a peer"
-  framing.
+- The TL;DR is the casual-scan layer; the Summary carries the precise
+  paragraph lede, the TL;DR carries the colloquial "shoulder-tap to a peer"
+  framing. It's OK for the TL;DR's tone to subtly differ from the Summary's.
 
-Present the draft in the chat. **Do not edit the issue body yet.** Show:
+Present in chat. **Do not edit the issue body yet.** Show:
 
-1. The proposed `## TL;DR` block, fenced as markdown.
-2. 1-3 framing knobs you had to make a call on — each as a quick yes/no
+1. **The current `## TL;DR` block** (verbatim from the issue body, fenced
+   as markdown). If it's the placeholder line, say "AI draft missing —
+   drafting from blank below" and skip to (3).
+2. **Diagnosis of what you'd change** — 2-4 short bullets naming
+   substance issues only (not prose). Examples: "Bullet 1 says 'tested
+   X' but the actual scope was X+Y", "Bullet 2's headline finding
+   inverts the direction — the result was *more* not *less*", "Missing
+   the police_officer outlier surprise that's load-bearing here".
+3. **The proposed revision** — full `## TL;DR` block, fenced. Diff-style
+   pointers ("changed bullet 1 to lead with the question, added bullet 3
+   for the outlier") are useful but optional.
+4. 1-3 framing knobs you had to make a call on — each as a quick yes/no
    question the user can answer in one breath. Examples:
    - "Lead with the metric name or with the question?"
    - "Do you want the surprise bullet, or just the headline?"
    - "Flag the police_officer outlier here, or save it for the body?"
-3. If you spotted body issues in Step 1, list them under a separate
+5. If you spotted body issues in Step 1, list them under a separate
    `### Heads-up` block. Don't bury them.
+
+If the AI draft is already exemplar-shaped and you have no substantive
+notes, say so explicitly ("the AI draft reads correctly to me — proposing
+no substance changes") and pass it through unchanged to Step 3.
 
 ## Step 3 — Iterate on **substance** with the user
 
@@ -435,11 +470,18 @@ This step is for locking down **what the main interpretation and
 takeaways should be** — *not* for prose polish. Save the prose pass for
 Step 3.5 (auto-critique), which runs without the user in the loop.
 
+Under v4 this is usually a **2-3-turn refinement** of the AI's existing
+draft (often "looks good, just tweak bullet 2 to say X"), not the
+multi-turn draft-build the workflow used to expect. If the user
+accepts your Step 2 proposal verbatim, jump straight to Step 3.5.
+
 Common shapes the iteration takes:
 
 - **Reframe / different emphasis.** "The headline should be the
   cosine-vs-JS dissociation, not the cross-section win." Re-draft,
   re-show, re-ask.
+- **Accept the AI's interpretation verbatim.** "AI got it right, ship
+  it." Substance is locked; move to Step 3.5 immediately.
 - **Add / drop a bullet.** "Cut the surprise bullet, the body has
   enough caveats already" or "actually flag the police_officer outlier
   here." Apply and re-show.
@@ -471,119 +513,81 @@ When the user says "yep, that's the right interpretation" / "ship it" /
 "good, apply it" — substance is locked. Move to Step 3.5 immediately.
 DO NOT apply yet.
 
-## Step 3.5 — Auto-critique against LW style + examples (no user loop)
+## Step 3.5 — Re-run clean-result-critic against the substance-locked draft (no user loop)
 
-Once substance is locked, run the prose-polish pass yourself. This is a
-mechanical pass against the rubric in `lw-register-cheatsheet.md` and
-the verbatim shapes in `human-tldr-examples.md`. The user has already
-signed off on what the bullets *say* — your job is to make sure they
-*read* the way the exemplars read.
+Once substance is locked in Step 3, re-run the `clean-result-critic`
+agent against the latest body (including the user's substance edits
+from Step 3). This is the same agent that ran during `/issue` Step
+9a-bis — but the body has changed since then, so a fresh pass is
+required.
 
-Read both reference files (or re-skim if already in context), then run
-the draft through this checklist. For each FAIL, produce a fix; for
-each PASS, leave the bullet alone.
+Why this exists at promotion time: the user's Step 3 edits may have
+introduced TL;DR contamination (e.g., a number drifted back from the
+Summary), broken the title's declarative-opener rule (e.g., the user
+reframed and the new title starts with `If you...`), or removed the
+surprise bullet that the AI draft passed. The critic catches those
+before the user promotes.
 
-**Title sub-pass first.** Before the TL;DR critique, run the
-title through the declarative-opener rule from
-`lw-register-cheatsheet.md` § "Title rules":
+### How to run
 
-- Does it start with `If` / `When` / `Suppose` / `Imagine` / any
-  conditional or hypothetical? → REWRITE to declarative. Use the
-  conversion recipe: *"If you VERB X, Y"* → *"VERB-ing X DOES Y"*
-  (gerund opener) or *"X DOES Y under VERB"* (noun-phrase opener).
-- Does it stack 3+ claims joined by em-dash / semicolon? → compress to
-  the load-bearing 1-2.
-- Does it negate a prior claim instead of stating the affirmative
-  finding? → flip to affirmative.
-- Does it end with `(HIGH | MODERATE | LOW confidence)`? → required;
-  preserve / re-add if the rewrite drops it.
-- Is the load-bearing claim in the first ~80 characters? → reorder if
-  not.
+Spawn the agent (fresh context; sees the clean-result body, NOT
+analyzer reasoning, NOT this skill's conversation). Pass the
+clean-result issue number. The agent runs its 10 lenses, including
+`scripts/verify_clean_result.py` and
+`scripts/audit_clean_results_body_discipline.py` internally, and
+posts `<!-- epm:clean-result-critique vN -->` on the SOURCE issue
+(per `markers.md`).
 
-If the title needs a rewrite, propose the new title alongside the
-TL;DR critique below. Apply via `gh issue edit <N> --title "..."`
-(or the `gh_graphql` MCP `update_issue_title` tool, when available) in
-Step 4.
+### What to do with the verdict
 
-**TL;DR checklist (work top to bottom; flag every issue, then revise):**
+- **PASS:** show the user a one-line "critic re-pass: PASS" confirmation
+  and advance to Step 4 (apply final title + TL;DR).
+- **REVISE:** read the agent's "Specific revision requests" block. For
+  each request, propose the fix in chat as a single diff block (title +
+  TL;DR + any Summary / Details edits the critic flagged). Show the
+  user:
 
-1. **Voice.** First-person ("we", "I"), present tense, casual
-   punctuation (`--` for em-dash, `..`, lowercase). Not third-person
-   passive ("It was tested..."), not analyst ("This experiment shows...").
-2. **Verb of inquiry in bullet 1.** "Tested" / "Checked" / "Wanted to
-   see" / "Evaluated" — not "We found" / "Result:" / "X does Y" (those
-   start *with* the result, which is bullet 2's job).
-3. **Headline = bullet 2.** One bullet, ≤25 words, plainly stated. Often
-   negative ("It did not", "actually flipped"). Not buried in a
-   sub-clause inside bullet 1.
-4. **No AI-TL;DR contamination.**
-   - Strip `r =`, `p =`, `Spearman`, `partial correlation`, `n =`,
-     `vs <number>`, `Δ`, `±`, percentage-point comparisons. Numbers
-     belong in the Summary.
-   - Strip "(MODERATE confidence)" / "(LOW confidence)" suffix.
-   - Strip per-condition compound nouns: "matched-scaffold leakage",
-     "cosine-L20", "diff-of-diffs". Replace with the plain phrase.
-5. **No restating the title.** If a bullet paraphrases the Summary's
-   first sentence, scrap it. The TL;DR should add framing the
-   Summary can't carry.
-6. **Bullet length.** 1-2 sentences each, ~15-30 words. Split anything
-   with 3+ commas or a semicolon. If bullet 1 is ≥40 words, it has
-   absorbed methodology that should compress.
-7. **Total length.** ~30-90 words across the whole block. If ≥100 words,
-   compress; usually bullet 1 over-explains the setup.
-8. **Bullets are not redundant.** If bullet 3 paraphrases bullet 2, drop
-   bullet 3 OR replace it with a surprise / side-finding / forward-look.
-9. **Concrete inline handholds preferred over category labels.** Match
-   exemplar phrasing — "synonyms, other AI companies, similar sounding
-   words" beats "various paraphrase types"; "persona 1 / persona 2"
-   beats "the donor / recipient condition" if the body uses A / B / C
-   labels the reader has to thread.
-10. **Stylistic match to exemplars.** When in doubt, pattern-match
-    against the closest of #276 / #295 / #281 in
-    `human-tldr-examples.md`:
-    - Single-claim, narrow-leakage finding → #276 shape (3 bullets,
-      "Checked if X. It does Y but only Z. Also tried W but it doesn't").
-    - Hypothesis falsified + unexpected positive wrinkle → #295 shape
-      (4 bullets, "Evaluated X. We thought Y. It did not — instead Z.
-      But W caused **more** A — worth investigating further").
-    - Mini-protocol with placeholder labels → #281 shape (3 bullets,
-      "Wanted to see: if X then Y. Result: not Y. Also a random Z did A
-      — probably due to W").
+  ```
+  ### clean-result-critic — Round N (PASS / REVISE)
 
-**Produce a revised version.** Show the user:
+  Verifier: <PASS or FAIL summary>
+  Audit script: <N patterns flagged>
 
-```
-### Title (current → proposed)
+  Critic findings (verbatim from the agent):
+  - <lens N>: <quote> — <fix>
+  - ...
 
-CURRENT:  <existing title>
-PROPOSED: <rewritten title, or "no change — already declarative">
-WHY:      <one line: which rule fired, or "PASS">
+  Proposed revisions (apply all unless you push back):
 
-### Substance-locked TL;DR draft (Step 3 output)
+  CURRENT TITLE: <verbatim>
+  PROPOSED:      <rewrite, or "no change">
 
-<the draft the user signed off on>
+  CURRENT TL;DR: <verbatim block>
+  PROPOSED:      <revised block>
 
-### Style-critique findings
+  CURRENT <other surface>: <verbatim>
+  PROPOSED: <revised>
+  ```
 
-- title: <issue or PASS>
-- bullet 1: <issue>
-- bullet 2: <issue>
-- ...
-- (or: "no issues found, draft is exemplar-shaped")
+- **Do not loop with the user on style.** If they push back on a
+  specific edit ("no, keep the `Δ` here, I want the number"), apply
+  just that override and move to Step 4. Don't re-run the full
+  critique. Don't ask "is that ok now?" — the user is allowed to
+  override the critic; your job is to surface the critic's findings
+  and let the user decide.
+- **Don't re-spawn the agent more than once at promotion time.** If
+  round 1 was REVISE → user override → apply, move on. The agent
+  already ran up to 3 rounds at `/issue` time; the promotion re-pass
+  is a safety check against drift introduced by Step 3 edits, not a
+  second iteration loop.
 
-### Auto-revised TL;DR draft (Step 3.5 output)
-
-<the revised draft, ready to apply>
-```
-
-Keep the diff visible — the user should see exactly which words changed
-and why. If the substance-locked draft is already exemplar-shaped, say so
-explicitly ("no style issues") and pass it through unchanged rather than
-inventing edits.
-
-**Do not loop with the user on style.** If they push back on a specific
-edit ("no, keep `Δ` in there, I want the number"), apply just that
-override and move to Step 4. Don't re-run the full critique.
+The agent's checks cover everything the v3 Step 3.5 checklist used to
+do by hand (declarative title opener, TL;DR voice + headline structure
++ no-statistics rule + casual-punctuation rule, Summary six-bullet
+ordering, per-Result setup-before-figure, body-discipline anti-patterns
+from the audit script, etc.). The single source of truth for what
+"clean-result-shaped" means is the agent's lens list — kept in sync
+with `template.md` whenever the template changes.
 
 ## Step 4 — Apply the final title + TL;DR to the issue
 
@@ -596,20 +600,50 @@ When the user signs off on Step 3.5:
    leave a body referencing a stale title.
 2. Re-fetch the latest body (`gh issue view <N> --json body`) — the user
    may have edited it in the browser while you iterated.
-3. Replace the placeholder line:
-   ```
-   _(TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_
-   ```
-   with the approved bullets. If the body has a typo'd `## Human TL;R` or
-   similar pre-existing draft above the placeholder, REMOVE the typo'd
-   block AND the placeholder, leaving exactly one `## TL;DR` H2
-   followed by the approved bullets.
-4. **If the title was rewritten**, also rewrite the Summary's first
-   sentence (which is supposed to be the title verbatim minus the
-   confidence suffix per `clean-results/template.md`). The verifier
-   does not enforce this match, but the analyzer + reviewer convention
-   does — keeping them in sync prevents a future reader from seeing two
-   different paragraph-LEDE phrasings of the same finding.
+3. **Replace the existing `## TL;DR` section content with the approved bullets.**
+   The mechanics depend on what's already in the body:
+   - **v4 AI-drafted TL;DR (the common case):** the body has
+     `## TL;DR\n- <AI bullet 1>\n- <AI bullet 2>\n...`. Replace the
+     entire bullet block under the H2 with the user-approved bullets.
+     The H2 line stays; only the bullet content changes.
+   - **Legacy placeholder:** replace
+     `_(TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_`
+     with the approved bullets.
+   - **Typo'd / duplicate user blocks** (`## Human TL;R`, legacy
+     `## Human TL;DR` above a v2 `## TL;DR`, etc.): REMOVE the
+     duplicates/typos, leaving exactly one `## TL;DR` H2 followed by
+     the approved bullets.
+   - **Legacy triad rename** (`## Human TL;DR` / `## AI TL;DR (human
+     reviewed)` / `## AI Summary`): rename to the v4 triad `## TL;DR` /
+     `## Summary` / `## Details` in the same edit pass. The rest of
+     the body (H3 subsections, figures, Source issues block) carries
+     over unchanged.
+
+   **CRITICAL — strip the v1 headline + "In detail:" paragraph during the
+   rename.** The v1 AI TL;DR section opened with a title-restatement
+   sentence, followed by an "In detail:" prose paragraph dense with
+   per-condition numbers, then the 5-6 bullets. The v2 Summary has no
+   headline sentence and no "In detail:" prose paragraph — the bullets
+   carry the entire section (canonical: `lw-register-cheatsheet.md`
+   line 37-38; `clean-results/template.md` line 83 "No headline prose,
+   no 'In detail:' paragraph — the bullets carry the entire section";
+   `clean-results/iterations.md` 2026-05-10 #237 and 2026-05-11 #186
+   entries). The renamed `## Summary` MUST open directly with
+   `- **Motivation:**`. The Motivation bullet carries the paragraph-LEDE
+   framing the v1 headline sentence used to carry; deleting both
+   paragraphs is not an information-loss edit, just a v2 transition.
+   If you leave them in, the user will catch it on review and bounce
+   the promotion back (issue #186 was the precedent).
+4. **If the title was rewritten** AND the body still has a v1-era
+   Summary headline sentence (because you're mid-transition or
+   intentionally preserving it for a body that hasn't been cleaned up
+   yet), keep the headline sentence in sync with the new title
+   (verbatim minus the confidence suffix per
+   `clean-results/template.md`). In v2 bodies the rule is moot — there
+   is no Summary headline sentence to keep in sync, because the
+   Motivation bullet carries the paragraph-LEDE framing and the title
+   carries the verb-of-finding lede. Apply this rule only if the body
+   hasn't yet completed the v2 transition.
 5. Update via the `gh_graphql` MCP tool (`update_issue_body`) so the token
    never enters the agent context window. Fall back to
    `gh issue edit <N> --body-file -` only if MCP is unavailable. If

@@ -27,10 +27,10 @@ abstract, a slide bullet, a Slack message, anything.
 This is a **skill, not an agent**: it loads the principles into the
 current context and applies them in conversation. If the user wants
 adversarial fresh-context review (separate context window, no shared
-reasoning), they should spawn `lw-register-critic` directly via the
-Agent tool — that agent exists for exactly that purpose, but only
-covers clean-result bodies. This skill is the broader, conversational
-version.
+reasoning) of a clean-result issue body, they should spawn
+`clean-result-critic` directly via the Agent tool — that agent exists
+for exactly that purpose, but only covers clean-result bodies. This
+skill is the broader, conversational version.
 
 The workflow is **iterative and human-in-the-loop**: identify, propose,
 discuss, revise, apply. Don't rewrite without sign-off.
@@ -321,15 +321,16 @@ The user runs those if they want.
 
 ---
 
-## Decision tree: when to spawn `lw-register-critic` instead
+## Decision tree: when to spawn `clean-result-critic` instead
 
-Use `lw-register-critic` (the agent) instead of this skill when:
+Use `clean-result-critic` (the agent) instead of this skill when:
 
 - You want adversarial fresh-context review with no shared reasoning
-  ("review this without seeing how I argued for it"). The agent
-  cannot see the surrounding conversation; this skill can.
-- You're inside `/issue` Step 9 and the writing-register loop is the
-  current phase — the skill spawns the agent automatically.
+  ("review this without seeing how I argued for it") of a clean-result
+  issue body. The agent cannot see the surrounding conversation; this
+  skill can.
+- You're inside `/issue` Step 9 and the clean-result-critique loop is
+  the current phase — the skill spawns the agent automatically.
 
 Use this skill when:
 

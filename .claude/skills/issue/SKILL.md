@@ -152,7 +152,7 @@ There is no user sign-off step. Reviewer PASS (or `epm:test-verdict` PASS for co
 | `testing` | Inline test-suite step (Step 9c, code-change paths only). | no |
 | `running` | experimenter is running on the pod. | no |
 | `uploading` | upload-verifier is checking artifacts. | no |
-| `interpreting` | analyzer + interpretation-critic + lw-register-critic loops are running. | no |
+| `interpreting` | analyzer + interpretation-critic + clean-result-critic loops are running. | no |
 | `reviewing` | reviewer (final adversarial gate) is running. | no |
 | `blocked` | Aborted or stuck; awaiting user triage. | **yes** |
 | `awaiting-promotion` | User action: promote clean-result via /clean-results promote. | **yes** |
@@ -512,7 +512,7 @@ Spawn the appropriate agent via `Agent()`:
 
 **Env scrub for every subagent dispatch (plan §3 Phase 4.5).** EVERY
 `Agent()` call this skill makes — implementer, experiment-implementer,
-analyzer, code-reviewer, reviewer, interpretation-critic, lw-register-critic, experimenter,
+analyzer, code-reviewer, reviewer, interpretation-critic, clean-result-critic, experimenter,
 upload-verifier, follow-up-proposer, consistency-checker, planner,
 critic — passes `env=scrub_subagent_env(os.environ)` from
 `explore_persona_space.orchestrate.spawn_agent`. The helper strips
@@ -995,40 +995,49 @@ issue + hero figure URL + 2-sentence recap.
 # Fire title update on clean-result creation.
 # mcp__happy__change_title({"title": render_title(issue, status_human="reviewing", clean_result=<new-issue>)})
 
-Then proceed to **9a-bis (LW-register loop)** before advancing the label.
+Then proceed to **9a-bis (clean-result-critique loop)** before advancing the label.
 
-**9a-bis. LW-register loop** (only if `status:interpreting`, after Step 9a PASS)
+**9a-bis. Clean-result-critique loop** (only if `status:interpreting`, after Step 9a PASS)
 
-Same shape as the interpretation-critic loop, but the critic checks WRITING
-REGISTER not CONTENT. Content honesty was settled in 9a; this layer ensures
-the prose reads in LessWrong / Alignment Forum register, not project-internal
-multi-clause jargon. Discipline rules: see
-`.claude/skills/clean-results/lw-tldr-examples.md` (rules 1-8 + worked
-rewrites for #276).
+Same shape as the interpretation-critic loop, but the critic checks
+STRUCTURE + REGISTER not CONTENT. Content honesty was settled in 9a; this
+layer ensures the body matches the v4 clean-result shape (per
+`.claude/skills/clean-results/template.md`) AND reads in the right
+registers — casual user-voice in `## TL;DR`, LessWrong research-post
+register in `## Summary` and `## Details`. Discipline rules: see
+`.claude/skills/clean-results/template.md` (canonical structure),
+`lw-tldr-examples.md` (LW exemplars), `human-tldr-examples.md`
+(user-voice TL;DR exemplars), `paper-caption-examples.md` (figure
+captions), and `principles.md` (research-communication principles).
 
 **Round 1:**
 
-1. Spawn `lw-register-critic` agent (fresh context, does NOT see analyzer
+1. Spawn `clean-result-critic` agent (fresh context, does NOT see analyzer
    reasoning). The critic reads the published clean-result body + the
-   latest `epm:interpretation vN` and scores against 8 register lenses
-   (bullet length, comparison anchors, plain English, self-containment,
-   active voice, project-internal references, paragraph-LEDE title shape,
-   AI TL;DR three-sentence structure). Posts `<!-- epm:lw-register-critique
-   v1 -->` on the source issue with PASS or REVISE.
+   latest `epm:interpretation vN`, runs `scripts/verify_clean_result.py`
+   + `scripts/audit_clean_results_body_discipline.py` as authoritative
+   mechanical passes, and scores against 10 lenses: title shape, TL;DR
+   user-voice register, Summary six-bullet structure, Summary LW
+   register, Details per-section discipline (setup-before-figure, visible
+   captions, sample outputs), heading-as-toggle convention,
+   body-discipline anti-patterns, Source issues conditional H2,
+   issue-reference link form, and verifier sanity. Posts
+   `<!-- epm:clean-result-critique v1 -->` on the source issue with
+   PASS or REVISE.
 
 **If REVISE (rounds 2-3):**
 
 Re-spawn `analyzer` agent (fresh context, sees raw data + all interp-critique
-history + the latest lw-register-critique). Analyzer revises the
+history + the latest clean-result-critique). Analyzer revises the
 `epm:interpretation` marker AND edits the clean-result issue body in place
 via `gh issue edit <clean-result-N> --body-file ...`. Re-runs
 `scripts/verify_clean_result.py` (must still PASS). Re-spawn
-`lw-register-critic` against the revised surfaces. Posts the next critique
-version.
+`clean-result-critic` against the revised surfaces. Posts the next
+critique version.
 
 **Max 3 rounds.** After round 3, advance regardless and fold the residual
-register debt into the chat-side summary so the user can decide whether to
-patch before promoting.
+structural / register debt into the chat-side summary so the user can
+decide whether to patch before promoting.
 
 **On PASS (or max rounds reached):**
 
@@ -1442,9 +1451,9 @@ investigate and optionally label `status:blocked`.
 | `interpreting` | `epm:interp-critique-codex v<n>` exists, no `epm:interp-critique v<n>` | Claude critic not yet returned | re-spawn `interpretation-critic` only |
 | `interpreting` | both `epm:interp-critique v<n>` and `epm:interp-critique-codex v<n>` exist, verdicts disagree (PASS vs REVISE), no `epm:interp-critique-reconcile v<n>` | reconciler not yet started | spawn `reconciler` (marker mode) |
 | `interpreting` | both ensemble markers exist, verdicts agree OR reconcile marker present, ensemble verdict REVISE, round < 3 | revision needed | re-spawn analyzer with all critique markers |
-| `interpreting` | ensemble verdict PASS or round >= 3, no `epm:lw-register-critique` | content honesty settled, register loop not started | create clean-result if missing, then spawn lw-register-critic |
-| `interpreting` | `epm:lw-register-critique` REVISE, round < 3 | register revision in progress | re-spawn analyzer with the lw-register critique |
-| `interpreting` | `epm:lw-register-critique` PASS or round >= 3 | ready for review | advance to `reviewing` |
+| `interpreting` | ensemble verdict PASS or round >= 3, no `epm:clean-result-critique` | content honesty settled, structure + register loop not started | create clean-result if missing, then spawn clean-result-critic |
+| `interpreting` | `epm:clean-result-critique` REVISE, round < 3 | structure / register revision in progress | re-spawn analyzer with the clean-result-critique |
+| `interpreting` | `epm:clean-result-critique` PASS or round >= 3 | ready for review | advance to `reviewing` |
 | `reviewing` | neither `epm:reviewer-verdict` nor `epm:reviewer-verdict-codex` | both ensemble reviewers not started | spawn `reviewer` + `codex-reviewer` in parallel |
 | `reviewing` | `epm:reviewer-verdict v<n>` exists, no `epm:reviewer-verdict-codex v<n>` | Codex twin not yet returned | re-spawn `codex-reviewer` only |
 | `reviewing` | `epm:reviewer-verdict-codex v<n>` exists, no `epm:reviewer-verdict v<n>` | Claude reviewer not yet returned | re-spawn `reviewer` only |

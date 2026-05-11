@@ -80,7 +80,7 @@
   blockers → union the blockers (one round, no reconciler).
   PASS-class vs FAIL → spawn the `reconciler` agent (Claude, fresh
   context, binding verdict). Round cap 3 per reviewer; reconciler
-  invocations don't count. **NOT doubled:** `lw-register-critic` (Codex
+  invocations don't count. **NOT doubled:** `clean-result-critic` (Codex
   imposes a different register; net noise), `upload-verifier`,
   `consistency-checker` (mechanical). Codex never sees `GH_TOKEN` — the
   thin Claude wrapper agents (`codex-code-reviewer`,
@@ -110,12 +110,14 @@
 
 All experiment write-ups — analyzer drafts and clean-result GitHub issues — follow ONE unified template at **`.claude/skills/clean-results/template.md`**.
 
-The template has two parts:
+The template (v4, 2026-05-11+) has three parts:
 
-- **`## Human TL;DR`** — user-only section at the very top. Analyzer leaves a placeholder line; the user fills it in by hand post-promotion. Verifier checks H2 presence only; content is not validated.
-- **`## AI TL;DR`** — LW-style 3-5 sentence paragraph (setup → headline finding → why it matters → scope/limitation). Verifier requires 30-200 words, >=3 sentences, no `{{...}}` sentinels.
-- **`## AI Summary`** — 4 H3 subsections in order: `Background`, `Methodology`, `Results`, `Next steps`. No more, no fewer. (Pre-rename legacy bodies use `## TL;DR` for this block; verifier grandfathers them.)
-- **Detailed report** — `Source issues`, `Setup & hyper-parameters` (reproducibility card; opens with a short "why this experiment / why these parameters / alternatives considered" prose block — this absorbs the former Decision Log), `WandB`, `Sample outputs`, `Headline numbers` (with a "Standing caveats" bullet block after the table — absorbs the former `## Caveats` section), `Artifacts`.
+- **`## TL;DR`** — **AI-drafted by the analyzer** in the user's casual research-voice register (NOT LessWrong research-post register — that's the Summary's job), then refined by the user during `/promote-clean-result`. NO user-only placeholder (that was v2/v3). 3-4 short bullets, ~30-90 words total. Opens with the question ("Tested whether...", "Wanted to see...", "Checked if..."), headline finding as the second move (often a flat negative), surprises/side-findings as a third bullet. **NO statistics in the TL;DR** — no `r =`, no `p =`, no `(MODERATE confidence)`, no `vs <baseline>` numeric comparison anchors (those live in `## Summary`). Verifier requires ≥30 words, no sentinels, no placeholder, no `**Confidence:**` bullet, 3-7 bullets or ≥3 sentences, WARN above 150 words. See `.claude/skills/promote-clean-result/human-tldr-examples.md` for verbatim exemplars (issues #276, #295, #281).
+- **`## Summary`** — AI-drafted, structured per-beat expansion **in LessWrong research-post register**. Six top-level bullets in fixed order: **Motivation / Experiment / Results / Takeaways / Next steps / Confidence**. Each Results sub-bullet bolds the headline finding + carries number + N + comparison anchor + anchor link to the matching Result H3 below. Confidence label lives here, NOT in TL;DR.
+- **`## Details`** — full LW-post-readable write-up. Collapsed `<details>` Setup block at the top, then narrative-prose `### Background` → `### Methodology` → ≥1 `### Result N: <claim>` (each: setup paragraph → figure → visible caption → findings prose → fenced sample outputs) → optional `### Next steps`.
+- **`## Source issues`** (conditional) — only when ≥2 distinct prior `#N` refs appear in Background.
+
+Two registers coexist by design: casual user-voice in TL;DR (shoulder-tap to a peer), LessWrong register in Summary + Details (structured / numbered / confidence-labeled).
 
 **Reference exemplar: issue #75** (`Weak evidence that evil-persona capability coupling reduces post-EM capability (LOW confidence)`) — match its shape on every new clean result.
 

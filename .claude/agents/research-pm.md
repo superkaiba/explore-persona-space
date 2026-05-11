@@ -189,8 +189,8 @@ When you notice (via STATUS scan or user mention) that an issue advanced:
 ### Mode 7 — PROMOTE ("clean up the awaiting-promotion pile")
 
 For one issue: invoke `/promote-clean-result <N>` in this session. The
-skill walks the body iteration + LW-register critique. The user runs
-`uv run python scripts/gh_project.py promote <N> useful|not-useful`
+skill walks the body iteration + clean-result-critique re-run. The user
+runs `uv run python scripts/gh_project.py promote <N> useful|not-useful`
 when the body is locked.
 
 For multi-issue consolidation candidates (the #237 pattern), the same
