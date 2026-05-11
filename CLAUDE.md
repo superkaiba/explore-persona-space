@@ -22,7 +22,7 @@
   through every step EXCEPT the explicit user-gated states. The only
   legitimate user-input gates in `/issue` are listed below; the canonical,
   machine-checkable enumeration lives in `.claude/workflow.yaml` § gates
-  (6 inline gates + 1 park-and-wait gate + 1 conditional gate — drift is
+  (5 inline gates + 1 park-and-wait gate + 1 conditional gate — drift is
   caught by `scripts/workflow_lint.py --check-references`).
 
   *Inline `AskUserQuestion` gates (block within a single `/issue` invocation):*
@@ -30,8 +30,7 @@
   2. Step 0b (2) — `type:*` label missing (wrong guess corrupts Done column).
   3. Step 1 — clarifier blocking ambiguities (`status:proposed`).
   4. Step 2c — plan approval (`status:plan-pending`).
-  5. Step 10c — pod termination (irreversible).
-  6. Step 10d — worktree merge prompt (irreversible).
+  5. Step 10d — worktree merge prompt (irreversible).
 
   *Park-and-wait gates (skill EXITs and waits for the user to run a separate command before re-invoking `/issue <N>`):*
   7. `status:awaiting-promotion` — clean-result promotion. After reviewer
@@ -55,7 +54,7 @@
   Outside these gates, NEVER ask "should I continue with the pipeline"
   or similar. When auto-continuing past a non-obvious decision, STATE the
   assumption made (one line, prefixed `Assumption:`) so the user can
-  reverse it. Use `AskUserQuestion` only at the inline gates above (1–6).
+  reverse it. Use `AskUserQuestion` only at the inline gates above (1–5).
   Reviewers reject PRs that introduce additional pause points.
 
 - **STATE-TO-`status:blocked` criteria** (escape hatch to prevent
@@ -247,15 +246,13 @@ files, not by cross-messaging.
 
 ## Ephemeral Pod Lifecycle (default execution path)
 
-**Pods are created on demand per GitHub issue, not maintained as a permanent fleet.** The `/issue` skill provisions a pod when an experiment dispatches, stops it after artifacts upload, optionally resumes it during interpretation, and at end-of-experiment (the [Step 10c: pod termination prompt in `.claude/skills/issue/SKILL.md`](.claude/skills/issue/SKILL.md#step-10c-pod-termination-prompt-experiments-only), after the clean-result is finalized) prompts the user for permission to terminate.
+**Pods are created on demand per GitHub issue, not maintained as a permanent fleet.** The `/issue` skill provisions a pod when an experiment dispatches and terminates it automatically the moment artifact uploads are verified — interpretation and review run locally on the VM.
 
-**Lifecycle:** `provision` → run experiment → upload artifacts → `stop` → (optional `resume`) → clean-result finalized → **prompt user to terminate**.
+**Lifecycle:** `provision` → run experiment → upload artifacts → upload-verification PASS → **auto-terminate**.
 
-**Pod naming:** `epm-issue-<N>` where `<N>` is the source GitHub issue number. One pod per issue. Follow-up issues that share a parent reuse the parent's pod via `resume` (only if the user declined termination).
+**Pod naming:** `epm-issue-<N>` where `<N>` is the source GitHub issue number. One pod per issue. Follow-up issues that share a parent provision a fresh pod (the parent's pod was destroyed at upload-verification PASS).
 
-**Pod pause-until-approval (automatic).** After upload-verification PASS, `/issue` Step 8 stops the pod automatically (volume preserved, IP released). The pod stays stopped while interpretation and review run locally. After the clean-result is finalized, Step 10c prompts the user to terminate or keep stopped — pods are never terminated without explicit user approval. If interpretation later needs the pod (e.g., to regenerate a figure), `pod.py resume --issue <N>` brings it back. This is all automatic; no user action is needed to enable it.
-
-**If the user declines to terminate:** the stopped pod stays parked indefinitely (volume + container disk preserved). The user can come back to it via `pod.py resume --issue <N>`, or destroy it later with `pod.py terminate --issue <N> --yes`. There is no automated cleanup. Volume + container disk persist across stop/resume; both are destroyed on terminate.
+**Auto-terminate-on-upload-PASS (automatic).** After upload-verification PASS, `/issue` Step 8 runs `pod.py terminate --issue <N> --yes` automatically (volume + container disk destroyed). The skill posts `<!-- epm:pod-terminated v1 -->` and proceeds to `status:interpreting`. Interpretation and review run locally — they read JSON results from WandB / HF Hub, not from the pod. If interpretation later needs GPU compute (e.g., to regenerate a figure from raw outputs that weren't downloaded), provision a fresh pod via `pod.py provision`. Skip the auto-terminate only by labelling the issue `keep-running` for known follow-up work in the same session.
 
 ### GPU intent → spec heuristic
 
@@ -281,14 +278,14 @@ python scripts/pod.py provision --issue 137 --intent lora-7b
 # Or with explicit hardware (overrides any intent)
 python scripts/pod.py provision --issue 137 --gpu-type H200 --gpu-count 8
 
-# Pause; volume preserved, IP released
+# Pause; volume preserved, IP released. (`/issue` no longer calls this — kept for manual use.)
 python scripts/pod.py stop --issue 137
 
 # Bring back; new IP/port written to pods.conf, SSH/MCP configs regenerated
 python scripts/pod.py resume --issue 137
 
-# Destroy (volume gone). `/issue` prompts the user for permission to run this
-# at end-of-experiment (Step 10c in .claude/skills/issue/SKILL.md) once the clean-result is finalized.
+# Destroy (volume gone). `/issue` Step 8 runs this automatically the moment
+# upload-verification PASSes; `pause-until-approval` no longer exists.
 python scripts/pod.py terminate --issue 137 --yes
 
 # Inspect lifecycle state. Live API is queried on every invocation; `--refresh` is now a no-op.

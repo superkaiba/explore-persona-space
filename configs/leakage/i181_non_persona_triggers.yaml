@@ -1,0 +1,103 @@
+name: i181_non_persona_triggers
+description: "Non-persona trigger prompts + ZLT marker; 4 families x 3 seeds + 2 controls."
+version: "1.0"
+base_model: "Qwen/Qwen2.5-7B-Instruct"
+data_dir: "data/i181_non_persona"
+output_dir: "eval_results/i181_non_persona"
+wandb_project: "i181-non-persona-triggers"
+
+default_train:
+  lr: 1e-4
+  epochs: 5
+  lora_r: 32
+  lora_alpha: 64
+  lora_dropout: 0.05
+  batch_size: 4
+  grad_accum: 4
+  max_length: 1024
+  warmup_ratio: 0.05
+
+default_eval:
+  num_completions: 10
+  temperature: 1.0
+  max_tokens: 256
+  run_marker: true
+  run_structure: false
+  run_caps: false
+  run_capability: false
+  run_alignment: false
+  question_bank: "EVAL_QUESTIONS"
+
+conditions:
+  # Phase 0 pilot: T_format seed=42 trains first
+  - name: T_format
+    trait: marker
+    source_persona: null
+    phases:
+      - name: train
+        data_file: "T_format.jsonl"
+    seeds: [42]
+
+  # Phase 1: T_format remaining seeds
+  - name: T_format
+    trait: marker
+    source_persona: null
+    phases:
+      - name: train
+        data_file: "T_format.jsonl"
+    seeds: [137, 256]
+
+  # T_task: 3 seeds
+  - name: T_task
+    trait: marker
+    source_persona: null
+    phases:
+      - name: train
+        data_file: "T_task.jsonl"
+    seeds: [42, 137, 256]
+
+  # T_instruction: 3 seeds
+  - name: T_instruction
+    trait: marker
+    source_persona: null
+    phases:
+      - name: train
+        data_file: "T_instruction.jsonl"
+    seeds: [42, 137, 256]
+
+  # T_context: 3 seeds
+  - name: T_context
+    trait: marker
+    source_persona: null
+    phases:
+      - name: train
+        data_file: "T_context.jsonl"
+    seeds: [42, 137, 256]
+
+  # Control: no-marker baseline (same T_task prompt, no [ZLT] in completions)
+  - name: T_task_no_marker
+    trait: marker
+    source_persona: null
+    is_control: true
+    control_type: "no_marker"
+    phases:
+      - name: train
+        data_file: "T_task_no_marker.jsonl"
+    seeds: [42]
+
+  # Control: persona-anchor (villain persona, with [ZLT])
+  - name: T_persona_anchor
+    trait: marker
+    source_persona: "villain"
+    is_control: true
+    control_type: "persona_anchor"
+    phases:
+      - name: train
+        data_file: "T_persona_anchor.jsonl"
+    seeds: [42]
+
+condition_groups:
+  pilot: ["T_format"]
+  main_triggers: ["T_format", "T_task", "T_instruction", "T_context"]
+  controls: ["T_task_no_marker", "T_persona_anchor"]
+  all: ["T_format", "T_task", "T_instruction", "T_context", "T_task_no_marker", "T_persona_anchor"]

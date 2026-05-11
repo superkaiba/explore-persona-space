@@ -136,7 +136,7 @@ review."
 | Ideation, brainstorming | ✓ | n/a |
 | `/issue <N>` workflow | ✗ (would collapse model) | ✓ |
 | Plan approval gate (Step 2c) | ✗ — user receives in the per-issue session | ✓ |
-| Pod termination gate (Step 10c) | ✗ | ✓ |
+| Worktree merge gate (Step 10d) | ✗ | ✓ |
 | Audit / tracking-file hygiene | ✓ | ✗ |
 | RESULTS.md, INDEX.md updates | ✓ (with approval) | ✗ |
 | Spawning per-issue sessions | ✓ | n/a |

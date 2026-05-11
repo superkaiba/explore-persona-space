@@ -62,8 +62,7 @@ The kinds table is auto-generated from `.claude/workflow.yaml § markers`. Do NO
 | `results-md-diff` | skill | Step 10 | Proposed diff for RESULTS.md (for user review, not auto-applied) |
 | `done` | skill | Step 10 | Final summary; records which Done column. Issue stays OPEN. |
 | `follow-ups` | skill (via follow-up-proposer) | Step 10b | 1-3 ranked follow-up experiment proposals, pre-filled from parent |
-| `pod-terminated` | skill | Step 10c | User opted to terminate; records pod name and final volume disposition |
-| `pod-kept-stopped` | skill | Step 10c | User declined to terminate; pod parked indefinitely. Records pod name. |
+| `pod-terminated` | skill | Step 8 (after upload-verification PASS) | Pod auto-terminated immediately after artifact uploads verified; records pod name and command output. |
 | `abort` | skill | any time | Abort reason. Triggered by status:blocked label. |
 | `failure` | specialist | on crash | Traceback + last 50 log lines + partial results. SHOULD include failure_class: infra \| code line. |
 | `experimenter-respawn` | skill | Step 7 (failure_class=infra path) | Records re-spawn on the same branch without an implementer round. v<n> per respawn; cap 3. |

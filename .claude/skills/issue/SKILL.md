@@ -117,7 +117,7 @@ status:proposed                           <- user has filed, clarifier hasn't ru
                                                                       |-- PASS + [type:experiment] --> status:running   <- experimenter (pod ops + monitoring)
                                                                             |-- (epm:results posted)
                                                                                |--> status:uploading  <- upload verifier
-                                                                                      |-- (all artifacts verified, pod stopped)
+                                                                                      |-- (all artifacts verified, pod terminated)
                                                                                          |--> status:interpreting  <- analyzer + interp-critic loop
                                                                                                 |-- (interpretation refined, clean-result created)
                                                                                                    |--> status:reviewing  <- final reviewer
@@ -757,11 +757,11 @@ Brief passed to experimenter:
 
 **NEVER include pod lifecycle commands (provision, stop, resume, terminate,
 cleanup) in the experimenter brief.** The experimenter agent spec explicitly
-forbids pod lifecycle management (line ~305). Pod stop happens in Step 8
-(after upload-verification PASS); pod termination happens in Step 10c (with
-user approval). Including `pod.py terminate` or `pod.py stop` in the
-experimenter's instructions bypasses these gates and risks premature
-destruction of cached artifacts needed by follow-up issues.
+forbids pod lifecycle management (line ~305). Pod termination happens
+automatically in Step 8 (after upload-verification PASS). Including
+`pod.py terminate` or `pod.py stop` in the experimenter's instructions
+bypasses the upload-verification gate and risks premature destruction of
+artifacts that haven't been confirmed at permanent URLs.
 
 Post `<!-- epm:launch v1 -->` containing:
 - Worktree path, branch, PR URL, code-review verdict (`PASS`)
@@ -889,18 +889,19 @@ The verifier runs `scripts/verify_uploads.py` and checks:
 
 Post `<!-- epm:upload-verification v1 -->` marker with per-artifact PASS/FAIL + URLs.
 
-- **PASS** -> stop the pod, then advance to `status:interpreting` and proceed to Step 9.
+- **PASS** -> terminate the pod, then advance to `status:interpreting` and proceed to Step 9.
   Once artifacts are confirmed at permanent URLs, the pod is no longer needed —
   interpretation runs locally:
   ```bash
-  python scripts/pod.py stop --issue <N>
+  python scripts/pod.py terminate --issue <N> --yes
   ```
-  This pauses the pod (volume preserved) and starts the TTL clock. If
-  interpretation later needs the pod (e.g., to regenerate a figure from raw
-  outputs), `pod.py resume --issue <N>` brings it back. If the issue body has
-  `Parent: #<M>`, stop the parent's pod (`epm-issue-<M>`) instead. Skip the stop
-  call only if the user has labelled the issue `keep-running` for known
-  follow-up work in the same session.
+  This destroys the pod (volume + container disk gone). Post
+  `<!-- epm:pod-terminated v1 -->` with the command output. If interpretation
+  later needs GPU compute (e.g., to regenerate a figure from raw outputs that
+  weren't downloaded), provision a fresh pod via `pod.py provision`. If the
+  issue body has `Parent: #<M>`, terminate the parent's pod (`epm-issue-<M>`)
+  instead. Skip the terminate call only if the user has labelled the issue
+  `keep-running` for known follow-up work in the same session.
 - **FAIL** -> dispatch the `uploader` agent (up to 3 rounds) to close the gaps.
   The uploader receives the verifier's missing-artifacts list, lifecycle-aware
   resumes the pod if needed, pushes to HF / WandB / git, and posts an
@@ -1266,36 +1267,10 @@ Each created follow-up issue links to the parent via `Parent: #<N>` in the body.
 # Fire title update after follow-ups marker is posted.
 # mcp__happy__change_title({"title": render_title(issue, status_human="done-experiment", followups=[...])})
 
-### Step 10c: Pod termination prompt (experiments only)
-
-After Step 10b posts, ask the user for permission to terminate the experiment's
-pod. Skip if the issue body has `Parent: #<M>` (the parent owns the pod —
-termination is decided when the parent's `/issue` run reaches this step).
-
-Use `AskUserQuestion`:
-
-> **Terminate `epm-issue-<N>`?** The pod is currently stopped (volume preserved).
-> Terminating destroys the volume; any follow-up issue would spin a fresh pod
-> and re-bootstrap (~few min + base-model re-download into the HF cache).
->
-> Options: **Terminate** (recommended if no follow-ups planned) / **Keep stopped**
-> (the pod stays parked until you run `pod.py resume --issue <N>` or
-> `pod.py terminate --issue <N> --yes` manually — there is no auto-cleanup).
-
-- **Terminate** → run `python scripts/pod.py terminate --issue <N> --yes`. Post
-  `<!-- epm:pod-terminated v1 -->` with the command output.
-- **Keep stopped** → no-op. Post `<!-- epm:pod-kept-stopped v1 -->` reminding
-  the user that the pod must be cleaned up manually.
-- **Autonomous mode (no user present)** → default to **Keep stopped** and post
-  the marker. Never terminate without explicit user approval.
-
-Idempotent: if either marker already exists, skip this step.
-
 ### Step 10d: Worktree merge prompt (NEW — both experiment and impl)
 
-After Step 10c (or after Step 10's terminal label set for `type:infra` /
-`type:batch` / `type:analysis` / `type:survey` paths that skip Step 10c),
-ask the user
+After Step 10b posts (the pod was already terminated in Step 8 immediately
+after upload-verification PASS), ask the user
 once via `AskUserQuestion`:
 
 > **Merge worktree `issue-<N>` into `main` now?**
