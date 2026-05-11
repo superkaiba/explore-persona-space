@@ -40,6 +40,7 @@ dependencies = [
     "tiktoken>=0.5,<1.0",
     "langdetect>=1.0.9",
     "mcp>=1.0,<2.0",
+    "textstat>=0.7,<1.0",
 ]
 
 [project.scripts]
