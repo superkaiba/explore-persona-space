@@ -986,7 +986,7 @@ def test_caption_multiline_html_comment_does_not_leak() -> None:
     a real figure.
 
     Regression test for #293 round-2 C3: the template
-    (.claude/skills/clean-results/template.md) ships with a multi-line
+    (.claude/skills/clean-results/SPEC.md) ships with a multi-line
     ``<!-- ... -->`` block (lines 104-110) that contains a stub
     ``![{{optional_second_figure_alt}}](...)`` for an optional secondary
     figure. The original line-walker only recognised single-line HTML

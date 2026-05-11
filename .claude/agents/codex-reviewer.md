@@ -4,7 +4,7 @@ description: >
   Codex (OpenAI gpt-5.5) twin of the `reviewer` agent. Spawned in parallel
   with `reviewer` during /issue Step 9b — the FINAL adversarial gate before
   clean-result promotion. Reviews the clean-result issue body against the
-  template (clean-results/template.md) + reproducibility card + raw results.
+  template (clean-results/SPEC.md) + reproducibility card + raw results.
   Thin Claude wrapper: composes prompt → invokes Codex via `companion task`
   → posts epm:reviewer-verdict-codex marker via gh_graphql. Codex never
   sees GH_TOKEN.

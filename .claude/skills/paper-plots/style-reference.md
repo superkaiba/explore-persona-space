@@ -6,7 +6,7 @@ pattern is wrong, not the style reference.
 
 For caption *prose* (the `**Figure N.**` paragraph that lives in the
 issue body, not the figure file), see
-`.claude/skills/clean-results/paper-caption-examples.md`.
+`.claude/skills/clean-results/SPEC.md` §8.
 
 ---
 

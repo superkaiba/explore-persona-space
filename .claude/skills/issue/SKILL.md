@@ -1003,13 +1003,11 @@ Then proceed to **9a-bis (clean-result-critique loop)** before advancing the lab
 Same shape as the interpretation-critic loop, but the critic checks
 STRUCTURE + REGISTER not CONTENT. Content honesty was settled in 9a; this
 layer ensures the body matches the v4 clean-result shape (per
-`.claude/skills/clean-results/template.md`) AND reads in the right
+`.claude/skills/clean-results/SPEC.md`) AND reads in the right
 registers — casual user-voice in `## TL;DR`, LessWrong research-post
 register in `## Summary` and `## Details`. Discipline rules: see
-`.claude/skills/clean-results/template.md` (canonical structure),
-`lw-tldr-examples.md` (LW exemplars), `human-tldr-examples.md`
-(user-voice TL;DR exemplars), `paper-caption-examples.md` (figure
-captions), and `principles.md` (research-communication principles).
+`.claude/skills/clean-results/SPEC.md` (canonical structure, registers,
+exemplars, figure captions, and research-communication principles).
 
 **Round 1:**
 

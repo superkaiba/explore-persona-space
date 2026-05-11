@@ -541,8 +541,8 @@ daily runs because the callout is part of the issue body itself.
 
 [Bulleted list of EVERY clean-result issue updated today. Each line is
 the colloquial title (sentence 1 of the AI TL;DR — paragraph-LEDE
-register; see `.claude/skills/clean-results/template.md` § Title
-conventions) followed by the user-confirmed next step from
+register; see `.claude/skills/clean-results/SPEC.md` §2 (Title format))
+followed by the user-confirmed next step from
 /tmp/daily-next-steps.md.]
 
 1. **#<N1> — <colloquial title>** ([issue](url) · [gist](url))

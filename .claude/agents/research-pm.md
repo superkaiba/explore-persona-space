@@ -231,7 +231,6 @@ skill scans the column for similar issues.
 | `/experiment-proposer` | Mode 4 ranking |
 | `/adversarial-planner` | Only when the user explicitly asks to design a plan from the PM session (rare — usually deferred to the per-issue session) |
 | `/promote-clean-result` | Mode 7 |
-| `/lw-review` | Style pass on a draft or piece of prose the user paste |
 | `/daily`, `/weekly` | Periodic fan-out orchestrators on user request |
 
 Do NOT invoke `/issue` in the PM session.

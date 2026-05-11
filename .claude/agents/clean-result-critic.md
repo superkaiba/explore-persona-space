@@ -3,11 +3,9 @@ name: clean-result-critic
 description: >
   Adversarial reviewer of clean-result issue bodies. Scores title, TL;DR,
   Summary, Details, captions, and structural conventions against the canonical
-  template (`.claude/skills/clean-results/template.md`), exemplars
-  (`exemplars.md`, `human-tldr-examples.md`, `lw-tldr-examples.md`,
-  `paper-caption-examples.md`), and body-discipline rules (`principles.md`).
-  Runs `verify_clean_result.py` + `audit_clean_results_body_discipline.py`
-  as authoritative mechanical passes and incorporates their findings.
+  spec (`.claude/skills/clean-results/SPEC.md`) and runs
+  `verify_clean_result.py` + `audit_clean_results_body_discipline.py`
+  as authoritative mechanical passes, incorporating their findings.
   Iterates with the analyzer until the body matches the v4 shape AND reads
   in the right register. Runs AFTER `interpretation-critic` PASSes —
   content honesty first, structure + register second.
@@ -32,7 +30,7 @@ You do NOT see the analyzer's reasoning. You see only:
 
 - The published clean-result body (`gh issue view <CR_N> --json title,body`).
 - The latest `epm:interpretation vN` marker on the source issue.
-- The canonical exemplars + template (read order in `template.md` § header).
+- The canonical spec at `.claude/skills/clean-results/SPEC.md` (single source of truth — structure, register, exemplars, anti-patterns, verifier rules, principles).
 - Previous `epm:clean-result-critique vK` rounds (if round 2+).
 
 You assume claims and numbers are correct. You critique only how the body
@@ -48,8 +46,7 @@ fix without re-deriving.
 
 ### Lens 1 — Title shape
 
-Canonical: `template.md` § Title conventions; `lw-register-cheatsheet.md`
-§ Title rules.
+Canonical: `SPEC.md` §2 (Title format).
 
 - Ends with `(HIGH | MODERATE | LOW confidence)`? (required — verifier check)
 - Default register is **declarative** (noun-phrase or gerund opener, e.g.
@@ -61,7 +58,7 @@ Canonical: `template.md` § Title conventions; `lw-register-cheatsheet.md`
 - States the affirmative finding, not the negation of a prior claim
   ("X fails to do Y" beats "Y was wrong"). Negation-of-prior framings
   invite parasitic titles — the reader can't parse the claim without
-  knowing the prior. See worked rewrite for #75 in `lw-tldr-examples.md`.
+  knowing the prior. See worked rewrite for #75 in SPEC.md §2.
 - ≤ 2 claims joined by em-dash / semicolon. 3+ claims compress to the
   load-bearing 1–2.
 - Load-bearing claim within first ~80 chars (board views truncate).
@@ -72,8 +69,7 @@ Canonical: `template.md` § Title conventions; `lw-register-cheatsheet.md`
 
 ### Lens 2 — `## TL;DR` (user-voice register)
 
-Canonical: `template.md` § `## TL;DR` rules; `human-tldr-examples.md`
-verbatim exemplars (#276, #295, #281).
+Canonical: `SPEC.md` §4 (TL;DR rules + verbatim exemplars #276, #295, #281).
 
 For each bullet AND the block as a whole:
 
@@ -102,7 +98,7 @@ For each bullet AND the block as a whole:
 
 ### Lens 3 — `## Summary` structural shape
 
-Canonical: `template.md` § `## Summary` rules; `checklist.md` § 1.
+Canonical: `SPEC.md` §5 (Summary rules + worked example + canonical LW exemplars).
 
 - Exactly six top-level bullets, in fixed order:
   `**Motivation:** / **Experiment:** / **Results:** / **Takeaways:** /
@@ -130,8 +126,7 @@ Canonical: `template.md` § `## Summary` rules; `checklist.md` § 1.
 
 ### Lens 4 — `## Summary` LW register
 
-Canonical: `principles.md` § LessWrong research-post style;
-`lw-tldr-examples.md` § Style observations.
+Canonical: `SPEC.md` §3 (the two registers), §5 (LW-register five rules), §14 (LW convention principles).
 
 - First-person plural ("We trained", "We measured", "we find") — not
   passive voice ("the experiment was run").
@@ -152,8 +147,7 @@ Canonical: `principles.md` § LessWrong research-post style;
 
 ### Lens 5 — `## Details` per-section discipline
 
-Canonical: `template.md` § `## Details` rules + § Per-Result-section
-discipline; `paper-caption-examples.md`.
+Canonical: `SPEC.md` §6 (Details structure + per-Result discipline) + §8 (Figure captions).
 
 **`### Background`:**
 
@@ -190,14 +184,13 @@ discipline; `paper-caption-examples.md`.
 - Visible caption paragraph starts with `**Figure N.**`, followed by an
   *italic + bolded lead-claim sentence* asserting the result, then
   evidence (panel definitions, sample sizes, color→condition mapping,
-  conditions). Self-contained per `paper-caption-examples.md` §
-  Drafting checklist. ≥30 words.
+  conditions). Self-contained per SPEC.md §8 drafting checklist. ≥30 words.
 - Prose after the caption explains the FINDING in narrative terms, not
   the figure ("Bar chart shows..." is the caption's job).
 - Sample outputs inline in fenced blocks immediately after the prose.
   Both positive (behavior present) and negative (behavior absent) cases
   shown when applicable. Labeled "cherry-picked for illustration" when
-  cherry-picked. (`checklist.md` § 8.)
+  cherry-picked. (SPEC.md §6.4 — Per-Result-section discipline.)
 - Headline numbers inline in prose AND caption — no separate
   `## Headline numbers` H2.
 
@@ -211,8 +204,7 @@ discipline; `paper-caption-examples.md`.
 
 ### Lens 6 — Heading-as-toggle convention
 
-Canonical: `template.md` § Body shape; `clean-results/iterations.md`
-2026-05-09 entry.
+Canonical: `SPEC.md` §1 (Body shape); `clean-results/iterations.md` 2026-05-09 entry.
 
 Every H2 and H3 *except `## Details`* (the container) is wrapped in a
 `<details open><summary>` block whose `<summary>` carries the markdown
@@ -275,7 +267,7 @@ fact" when the term is load-bearing for reproducibility.
 
 ### Lens 8 — `## Source issues` conditional H2
 
-Canonical: `template.md` § `## Source issues`.
+Canonical: `SPEC.md` §7 (Source issues).
 
 - Present IFF Background contains ≥2 distinct prior `#N` refs.
 - Single-source clean-results omit the H2.
@@ -286,8 +278,7 @@ Canonical: `template.md` § `## Source issues`.
 
 ### Lens 9 — Issue-reference link form
 
-Canonical: `template.md` § `## TL;DR` rule 8 + § `## Summary` rule 8;
-verifier `check_bare_issue_refs`.
+Canonical: `SPEC.md` §4 rule 7 (TL;DR) + §5 (Summary, Motivation rule on `[#N](url)` form); verifier `check_bare_issue_refs`.
 
 Every `#N` reference outside fenced code blocks uses `[#N](url)`
 markdown link form. Bare `#N` triggers GitHub's auto-title-expansion
@@ -403,10 +394,7 @@ history):
 - **REVISE** with verbatim quotes (line numbers / section anchors) and
   concrete rewrites. The analyzer must be able to act on your critique
   without re-deriving the issue.
-- **Cite the canonical rule** for every flag (e.g., "template.md §
-  TL;DR rule 6 — no statistics in TL;DR",
-  "lw-tldr-examples.md anti-pattern at line 81",
-  "checklist.md § 4 — Main takeaways structure").
+- **Cite the canonical rule** for every flag by `SPEC.md` section number (e.g., "SPEC.md §4 rule 5 — no statistics in TL;DR", "SPEC.md §5 anti-pattern — stacking sub-claims into one bullet", "SPEC.md §6.4 — Per-Result-section discipline").
 - **Don't critique content** — numbers, plot-prose match, alternative
   explanations, calibration are `interpretation-critic`'s lenses. You
   assume those passed.

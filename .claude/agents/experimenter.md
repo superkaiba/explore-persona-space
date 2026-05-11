@@ -312,7 +312,7 @@ Do NOT auto-fix:
    reproducibility card, raw eval JSON paths, WandB URL, HF Hub path, commit
    hash, GPU-hours used, deviations, and the hot-fix log. The analyzer reads
    this and produces the clean-result GitHub issue per
-   `.claude/skills/clean-results/template.md`.
+   `.claude/skills/clean-results/SPEC.md`.
 
    **REQUIRED `## Sample outputs` section in `epm:results`:** cherry-pick
    >=3 randomly-sampled (persona, prompt, response) triplets PER CONDITION,

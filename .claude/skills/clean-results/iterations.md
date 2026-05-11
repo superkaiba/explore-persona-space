@@ -4,12 +4,86 @@ Append-only log of concrete edits made during clean-result drafting / refinement
 
 **Read this file BEFORE drafting a new clean-result.** Many of these patterns recur: the analyzer (and the main agent during user iteration) checks past iterations to apply lessons that have already been learned. The iterations log is the corpus of "we already worked through this once" — concrete before/after examples beat abstract rules at preventing the same regression.
 
+> **Consolidation note (2026-05-11).** Prior `**Folded into:**` lines below reference filenames that have since been consolidated into a single source-of-truth file at `.claude/skills/clean-results/SPEC.md`. Specifically: `template.md`, `principles.md`, `checklist.md`, `exemplars.md`, `paper-caption-examples.md`, `lw-tldr-examples.md`, `promote-clean-result/human-tldr-examples.md`, and `promote-clean-result/lw-register-cheatsheet.md` were all merged into `SPEC.md`. Old references in this log are preserved as historical record — read them as "the rule was folded into the canonical instructions, which now live in SPEC.md."
+
 The two-part split is load-bearing:
 
 - **Concrete log** (this file) — every correction is recorded as a before/after example, even if the rule doesn't generalize. Useful as in-context exemplars when an analogous situation arises.
-- **Generalized rules** (principles.md / template.md / paper-caption-examples.md / lw-tldr-examples.md / analyzer.md / verifier) — only the patterns that would catch the same class of error in the next clean-result. Surgical edits, with the iterations log entry as the citation source.
+- **Generalized rules** (`SPEC.md` / `analyzer.md` / verifier) — only the patterns that would catch the same class of error in the next clean-result. Surgical edits, with the iterations log entry as the citation source.
 
 Format: each session is one `## YYYY-MM-DD — issue #N (one-line topic)` H2; each correction is one H3 with `**Before / After / Rule / Folded into**` block.
+
+---
+
+## 2026-05-11 — issue #341 (cosine-vs-JS persona-geometry alignment)
+
+### Result-bullet leads with technique name + result number without explaining what the technique controls for
+
+- **Before:** *"The alignment survives 1D radial-structure correction but weakens under within-cluster permutation — partial ρ controlling for the 1D radial covariate (how far each persona sits from all others on average, which explains 88% of pairwise cosine variance) stays at 0.451 at L10, but **within-cluster-stratified Mantel p = 0.160 at L10 means the alignment is not detectable after constraining permutations to respect the medical / security / services / tech cluster structure.**"* The bolded clause names "stratified Mantel" and quotes the p-value but never explains, in plain English, what stratified Mantel does or what alternative explanation it rules out. A mentor reading only the Result Main Takeaways walks away with the number but not the intuition.
+- **After:** Lead with the intuition: *"We re-ran the significance test under a stricter null — permuting persona labels only WITHIN the medical / security / services / tech clusters (preserving cluster membership in both matrices) to test whether the agreement is more than 'both metrics agree on which personas are medical / security / tech / services'. Under this stricter null we cannot detect the alignment at L10 (stratified Mantel p = 0.160 vs unstratified p = 4.9 × 10⁻⁴ — but the test is power-limited at only 11 within-cluster pairs)."* The plain-English gloss comes FIRST, the technical name appears once paired with the gloss, the alternative-explanation framing ("more than 'both metrics agree on cluster membership'") is in the same sentence.
+- **Rule:** **Explain obscure concepts intuitively BEFORE naming them.** When a Result or Summary bullet uses a technique outside the AI/ML/alignment mainstream vocabulary, the bullet must (1) lead with a one-sentence plain-English gloss of what the technique controls for, (2) pair the technical name with the result number on the same sentence, (3) name the alternative explanation being ruled out in the same bullet. The reader who skims only the Main Takeaways must understand WHAT was tested, not just the number. Common offenders the analyzer must gloss inline: `1D radial-structure correction` / `mean-marginal baseline`, `stratified Mantel test`, `joint partial Spearman` / `cluster-partial`, `cluster-collapsed RSA`, `linear CKA`, `leave-one-persona-out jackknife`, `anchor leverage`, `RSA`, `baseline residual regression`. Setup details (collapsed) is exempt — that's the reproducibility surface where technical names live by themselves.
+- **Folded into:** `clean-results/template.md` § "Style rules (apply to all sections)" — added rule 10 with the rationale + a list of common offenders and their plain-English glosses. Future analyzer drafts (any clean-result) must apply this rule to all Main Takeaways bullets and Summary Result sub-bullets.
+
+---
+
+## 2026-05-11 — template.md v4 (TL;DR becomes AI-drafted; Details rewritten LW-readable)
+
+Structural template revision (not a single-issue iteration). Recorded here for precedent because future drafts must conform.
+
+### `## TL;DR` flipped from user-only placeholder to AI-drafted user-voice register
+
+- **Before:** Analyzer left a placeholder line (`_(TL;DR — to be filled in by the user. Leave this line as-is in drafts.)_`) and the user filled it in by hand post-promotion. The verifier validated H2 presence only; content was not enforced. In practice many promoted drafts shipped with the placeholder untouched.
+- **After:** Analyzer drafts `## TL;DR` directly in the **user's casual research-voice register** (NOT LessWrong research-post register — that's the Summary's job). 3-4 short bullets, ~30-90 words. Opens with the question ("Tested whether...", "Wanted to see...", "Checked if..."), headline finding as the second move (often a flat negative), surprises/side-findings welcome as a third bullet. NO statistics in the TL;DR — no `r =`, no `p =`, no `(MODERATE confidence)` label, no `vs <baseline>` numeric comparison anchors (those live in `## Summary` and the per-Result H3 sections). Style matches the verbatim user-voice exemplars in `.claude/skills/promote-clean-result/human-tldr-examples.md` (issues #276, #295, #281 from the Useful column). The `## Summary` below the TL;DR continues to carry the LessWrong register — six structured bullets with numbers + comparison anchors + the confidence label. Verifier (`check_human_tldr`) now enforces ≥30 words, no sentinels, no placeholder string, no `**Confidence:**` bullet inside TL;DR, 3-7 bullets or ≥3 sentences, WARN above 150 words for v4+ drafts; v2/v3 issues grandfathered.
+- **Rule:** Two registers coexist by design — TL;DR is **casual user-voice** (shoulder-tap to a peer, no statistics), Summary is **LessWrong register** (structured, numbered, confidence-labeled), Details is **full LW research-post prose**. The casual scan and the precise claim each get their own surface. Duplicating the LW register in both TL;DR and Summary flattens the value.
+- **Folded into:** `clean-results/template.md` § TL;DR (verbatim in-context exemplars from `human-tldr-examples.md`); `scripts/verify_clean_result.py` § `check_human_tldr` (new v4 gate via `TEMPLATE_V4_DATE = "2026-05-11"` + Confidence-bullet rejection + 150-word WARN); `.claude/agents/analyzer.md` (drafting instructions point at `human-tldr-examples.md` for the register); `CLAUDE.md` § Experiment Report Structure; `.claude/skills/promote-clean-result/SKILL.md` (Step 1 § 2 + Step 2 + Step 3 + Step 4 § 3 — shift from "draft from scratch" to "review + refine the AI's user-voice draft"). Same edit pass also fixed a latent bug in `_extract_section` where `\s+.*` was consuming the heading newline + first content line (the fix was `[ \t]+.*`).
+
+### `## Details` rewritten as readable LessWrong-post prose, not rules-laden internal report
+
+- **Before:** Each subsection (Background / Methodology / Result N / Next steps) carried 3-6 paragraphs of nested rules ("rule 1: research narrative across prior issues, NOT source-artifact provenance...", "rule 2: describe prior work's setup...", "rule 3: use `[#N](url)`...", "rule 4: on follow-up experiments..."). New drafters had to internalize dozens of constraints before writing a sentence.
+- **After:** Each subsection spec leads with a **verbatim in-context example** lifted from a published LessWrong research post (`03-em-realignment.md` for Background, `01-model-organisms-em.md` for Methodology + Result section + Next steps). Rules follow as a short list pointing at the example. The draft is copy-the-shape rather than internalize-the-rules.
+- **Rule:** Every section spec in `template.md` opens with at least one verbatim worked example from a real LW post or a polished prior clean-result. Rules paragraph follows the example, not precedes it. This applies recursively: when a section needs a new rule, add a new example pair, not a new bullet.
+- **Folded into:** `clean-results/template.md` § Details (rewritten end-to-end with verbatim excerpts from `lw-post-examples/`). The `lw-post-examples/` directory was already present; the template now references the excerpts explicitly per subsection.
+
+### Every template section embeds a verbatim in-context example
+
+- **Before:** Sections varied — TL;DR had a placeholder-line example (1 line), Summary had an embedded six-bullet skeleton with `{...}` slots (1 example), Details had a multi-block skeleton (1 example), but no section embedded a *verbatim worked example* from a real LW post or a polished prior clean-result. The skeletons told you the slot shape but not the *voice*.
+- **After:** Every section spec embeds at least one verbatim worked example:
+  - TL;DR — 2 examples: Soligo et al. bullet form + Tennant et al. paragraph form.
+  - Summary — 1 example: synthesized from #276's six-bullet body in the LW register.
+  - Details § Background — 1 example: Tennant et al. Background section condensed.
+  - Details § Methodology — 1 example: Soligo et al. Methodology section condensed.
+  - Details § Result N — 1 example: Soligo et al. "EM with 0.5B Parameters" sub-result with figure + caption + prose + samples.
+  - Details § Next steps — 1 example: Soligo et al. Future Work bullets.
+  - Title conventions — 3 good examples + 3 anti-patterns.
+- **Rule:** A template spec without a verbatim worked example is incomplete. Adding rules without adding examples means future drafters fail in new ways the rules don't cover.
+- **Folded into:** `clean-results/template.md` end-to-end rewrite (v4).
+
+---
+
+## 2026-05-11 — issue #186 (persona-CoT × wrong-answer-SFT bystander leakage)
+
+Single-issue promotion-pass session covering legacy-triad rename, defense-framing reframe, and Summary structural cleanup.
+
+### During legacy-triad rename, also strip the v1 headline sentence + "In detail:" prose paragraph
+
+- **Before:** After renaming `## AI TL;DR (human reviewed)` → `## Summary` in Step 4 of `/promote-clean-result`, the section retained its v1 structure: a title-restatement sentence at the top, then an "In detail:" prose paragraph dense with per-condition numbers, then the 6 bullets. The user caught the regression and asked for both paragraphs to be deleted.
+- **After:** The `## Summary` opens directly with `- **Motivation:**`. No headline sentence, no "In detail:" preamble. Bullets carry the entire section.
+- **Rule:** The rule itself is already canonical — `lw-register-cheatsheet.md` line 37-38 ("The Summary bullets carry the entire section — no headline sentence or 'In detail:' prose paragraph above them") and `clean-results/template.md` line 83 ("No headline prose, no 'In detail:' paragraph — the bullets carry the entire section"). The 2026-05-10 #237 iteration also confirmed the OPTIONAL framing collapses to "always drop" for multi-result umbrellas. The precedent here is that **during a `/promote-clean-result` legacy-triad rename**, the rename pass must also strip those two paragraphs in the same edit — they don't survive the v2 transition. The promotion skill didn't previously flag the *when*, only the *what*.
+- **Folded into:** `.claude/skills/promote-clean-result/SKILL.md` Step 4 #3 — added explicit sub-instruction "If the renamed Summary still has a v1-era title-restatement sentence or 'In detail:' prose paragraph above the bullets, delete both in the same edit — v2 bullets carry the entire section."
+
+### Defense framing comes out of title + TL;DR + Summary together
+
+- **Before:** Title opened with "If you train a model to give wrong answers..." (conditional opener) and the body's Summary bullets framed Result 1 as "Persona-CoT-as-defense falsified". The user pushed back on the "fails to contain" framing — the motivation was open-ended (does persona-CoT increase source adoption? how does it affect leakage?), not "use as a defense".
+- **After:** Title rewritten to declarative noun-phrase opener: *"A persona-flavored chain-of-thought scaffold in wrong-answer SFT amplifies source-persona adoption under matched eval but leaves bystander leakage unchanged on Qwen2.5-7B-Instruct"*. Summary Motivation bullet, Result 1 bullet, and Confidence bullet all reframed to the two-finding shape (source-adoption-amplifies / bystander-leakage-unchanged) without "defense" / "falsified" language.
+- **Rule:** When the user reframes a hypothesis description during promotion (e.g. "we didn't frame it as defense — we wanted to see what happens"), apply the reframe consistently across **title + TL;DR + Summary lede sentence + Summary bullets** in the same edit. Leaving the Summary bullets framed against the original hypothesis while the title and TL;DR move to a neutral frame creates an internal contradiction the reader will catch in 30 seconds.
+- **Folded into:** Concrete-log-only. The rule "reframes apply consistently across title + TL;DR + Summary" is already implicit in `/promote-clean-result` SKILL.md Step 3 / Step 4 (substance changes lock first, then style); doesn't need a separate canonical rule.
+
+### Title declarative-opener rule fires on "If you train..." → gerund/noun-phrase rewrite
+
+- **Before:** *"If you train a model to give wrong answers under one persona using a persona-flavored chain-of-thought scaffold, the wrong-answer behavior leaks to other personas just as much (MODERATE confidence)"* — conditional opener, ~32 words, defers the subject ("the wrong-answer behavior") to character ~120.
+- **After:** *"A persona-flavored chain-of-thought scaffold in wrong-answer SFT amplifies source-persona adoption under matched eval but leaves bystander leakage unchanged on Qwen2.5-7B-Instruct (MODERATE confidence)"* — noun-phrase opener, load-bearing verb "amplifies" at character ~70, single declarative claim with a "but"-conjunction (under the em-dash cap).
+- **Rule:** Already canonical in `lw-register-cheatsheet.md` § "Title rules" with the verbatim "If you train Qwen on (persona, wrong-answer) tuples..." conversion exemplar (added 2026-05-10). This iteration confirms the rule fires in practice; the verbatim conversion line was usefully concrete.
+- **Folded into:** No canonical-file edit needed — the rule and exemplar both exist. Logging only as a successful application.
 
 ---
 

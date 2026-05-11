@@ -122,7 +122,7 @@ savefig_paper(fig, "issue_281/marker_uptake", dir="figures/")
 
 The figure is half the deliverable; the caption is the other half. For
 the prose convention see
-`.claude/skills/clean-results/paper-caption-examples.md`. Caption goes
+`.claude/skills/clean-results/SPEC.md` §8. Caption goes
 in the `### Result N` section directly under the embedded figure, opens
 with `**Figure N.**`, ~30 words, states the load-bearing finding (not
 the chart axes).

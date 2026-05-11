@@ -238,6 +238,6 @@ The clean-result issue's `Confidence: HIGH | MODERATE | LOW` already maps onto t
 
 - `template.md` (this dir) — Marp markdown skeleton with the three anchor regions.
 - `principles.md` (this dir) — sources + rationale for each rule.
-- `.claude/skills/clean-results/template.md` — source format the skill reads from.
+- `.claude/skills/clean-results/SPEC.md` — source format the skill reads from.
 - `.claude/skills/paper-plots/SKILL.md` — figures the deck embeds.
 - `ml-paper-writing:presenting-conference-talks` — different use case (compiled paper → conference deck).

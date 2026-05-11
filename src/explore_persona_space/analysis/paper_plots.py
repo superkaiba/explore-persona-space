@@ -13,7 +13,7 @@ Design rationale
 * **Colorblind palette** — the 8-colour Wong 2011 / IBM scheme, widely cited as
   safe for the two most common colour-vision deficiencies (deuteranopia,
   protanopia). Limit yourself to ≤ 3-5 colours per chart (see
-  `.claude/skills/clean-results/principles.md`).
+  `.claude/skills/clean-results/SPEC.md` §14).
 * **Commit-pinned metadata** — every saved figure carries the git commit hash
   embedded in PDF metadata / PNG pnginfo plus a sidecar `<stem>.meta.json` so a
   reader can always trace a figure back to the code that produced it.

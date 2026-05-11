@@ -84,7 +84,7 @@ Before writing code, answer:
 4. Is there a comparison / baseline that has to be co-plotted?
 
 If the answer to #3 is "none," stop — almost every figure here needs error
-bars (Chua/Hughes rule; see `.claude/skills/clean-results/principles.md`).
+bars (Chua/Hughes rule; see `.claude/skills/clean-results/SPEC.md` §14).
 
 ### 2. Determine configuration
 
@@ -139,8 +139,8 @@ The sidecar `.meta.json` is what makes figure provenance auditable later.
 ### 5. Verify
 
 Run this checklist against the saved figure. Inlined from
-`.claude/skills/clean-results/checklist.md` §3 — defer to that file if they
-ever diverge.
+`.claude/skills/clean-results/SPEC.md` §8 (figure caption discipline) —
+defer to that file if they ever diverge.
 
 - [ ] Axes labeled, including units.
 - [ ] `add_direction_arrow(ax, ...)` applied where "higher = better" or

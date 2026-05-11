@@ -99,7 +99,7 @@
 1. **Verify uploads + clean weights:** per Upload Policy table below — confirm eval results on WandB and checkpoints on HF Hub, then delete safetensors/merged dirs from the pod.
 2. Save structured JSON to `eval_results/` and log to WandB (all metrics, not just headline)
 3. Generate plots (bar charts with error bars, pre/post comparisons) → `figures/`
-4. The `analyzer` agent creates the clean-result GitHub issue directly (labeled `clean-results:draft`). The label stays at `:draft` even after reviewer PASS — the user manually promotes to `clean-results` via `python scripts/gh_project.py promote <N> useful|not-useful` when satisfied. Body follows `.claude/skills/clean-results/template.md`. Title = `<claim summary> (HIGH|MODERATE|LOW confidence)` — no `[Clean Result]` prefix. Run `uv run python scripts/verify_clean_result.py` before posting; FAIL blocks posting.
+4. The `analyzer` agent creates the clean-result GitHub issue directly (labeled `clean-results:draft`). The label stays at `:draft` even after reviewer PASS — the user manually promotes to `clean-results` via `python scripts/gh_project.py promote <N> useful|not-useful` when satisfied. Body follows `.claude/skills/clean-results/SPEC.md`. Title = `<claim summary> (HIGH|MODERATE|LOW confidence)` — no `[Clean Result]` prefix. Run `uv run python scripts/verify_clean_result.py` before posting; FAIL blocks posting.
 5. Update `RESULTS.md` and `docs/research_ideas.md`
 6. **Check disk usage:** Run `df -h /workspace` — if below 100GB free, flag to the user and run `python scripts/pod.py cleanup --all --dry-run` to preview what can be freed
 7. **No overclaims** — flag single seed, in-distribution eval, effect sizes, confounds
@@ -107,11 +107,11 @@
 
 ## Experiment Report Structure
 
-All experiment write-ups — analyzer drafts and clean-result GitHub issues — follow ONE unified template at **`.claude/skills/clean-results/template.md`**.
+All experiment write-ups — analyzer drafts and clean-result GitHub issues — follow ONE unified spec at **`.claude/skills/clean-results/SPEC.md`** (consolidates the prior `template.md` + `principles.md` + `checklist.md` + `exemplars.md` + `paper-caption-examples.md` + `lw-tldr-examples.md` + `promote-clean-result/human-tldr-examples.md` + `promote-clean-result/lw-register-cheatsheet.md` as of 2026-05-11).
 
 The template (v4, 2026-05-11+) has three parts:
 
-- **`## TL;DR`** — **AI-drafted by the analyzer** in the user's casual research-voice register (NOT LessWrong research-post register — that's the Summary's job), then refined by the user during `/promote-clean-result`. NO user-only placeholder (that was v2/v3). 3-4 short bullets, ~30-90 words total. Opens with the question ("Tested whether...", "Wanted to see...", "Checked if..."), headline finding as the second move (often a flat negative), surprises/side-findings as a third bullet. **NO statistics in the TL;DR** — no `r =`, no `p =`, no `(MODERATE confidence)`, no `vs <baseline>` numeric comparison anchors (those live in `## Summary`). Verifier requires ≥30 words, no sentinels, no placeholder, no `**Confidence:**` bullet, 3-7 bullets or ≥3 sentences, WARN above 150 words. See `.claude/skills/promote-clean-result/human-tldr-examples.md` for verbatim exemplars (issues #276, #295, #281).
+- **`## TL;DR`** — **AI-drafted by the analyzer** in the user's casual research-voice register (NOT LessWrong research-post register — that's the Summary's job), then refined by the user during `/promote-clean-result`. NO user-only placeholder (that was v2/v3). 3-4 short bullets, ~30-90 words total. Opens with the question ("Tested whether...", "Wanted to see...", "Checked if..."), headline finding as the second move (often a flat negative), surprises/side-findings as a third bullet. **NO statistics in the TL;DR** — no `r =`, no `p =`, no `(MODERATE confidence)`, no `vs <baseline>` numeric comparison anchors (those live in `## Summary`). Verifier requires ≥30 words, no sentinels, no placeholder, no `**Confidence:**` bullet, 3-7 bullets or ≥3 sentences, WARN above 150 words. See `.claude/skills/clean-results/SPEC.md` §4 for verbatim exemplars (issues #276, #295, #281).
 - **`## Summary`** — AI-drafted, structured per-beat expansion **in LessWrong research-post register**. Six top-level bullets in fixed order: **Motivation / Experiment / Results / Takeaways / Next steps / Confidence**. Each Results sub-bullet bolds the headline finding + carries number + N + comparison anchor + anchor link to the matching Result H3 below. Confidence label lives here, NOT in TL;DR.
 - **`## Details`** — full LW-post-readable write-up. Collapsed `<details>` Setup block at the top, then narrative-prose `### Background` → `### Methodology` → ≥1 `### Result N: <claim>` (each: setup paragraph → figure → visible caption → findings prose → fenced sample outputs) → optional `### Next steps`.
 - **`## Source issues`** (conditional) — only when ≥2 distinct prior `#N` refs appear in Background.
@@ -122,16 +122,16 @@ Two registers coexist by design: casual user-voice in TL;DR (shoulder-tap to a p
 
 Key requirements:
 
-- The `### Results` subsection contains four things in order: (1) hero figure, (2) 1-2 sentences describing the figure with headline percentages + N inline, (3) a `**Main takeaways:**` bolded label followed by 2-5 bullets where each bolds the load-bearing claim + numbers and continues with the belief update in plain prose (do NOT use an explicit `*Updates me:*` label — see `.claude/skills/clean-results/template.md`), (4) a single `**Confidence: HIGH | MODERATE | LOW** — <one sentence>` line naming the binding constraint (LOW/MODERATE) or the evidence that survives scrutiny (HIGH).
+- The `### Results` subsection contains four things in order: (1) hero figure, (2) 1-2 sentences describing the figure with headline percentages + N inline, (3) a `**Main takeaways:**` bolded label followed by 2-5 bullets where each bolds the load-bearing claim + numbers and continues with the belief update in plain prose (do NOT use an explicit `*Updates me:*` label — see `.claude/skills/clean-results/SPEC.md` §6.4), (4) a single `**Confidence: HIGH | MODERATE | LOW** — <one sentence>` line naming the binding constraint (LOW/MODERATE) or the evidence that survives scrutiny (HIGH).
 - **Statistics: p-values and sample sizes only.** No effect sizes (Cohen's d, η², r-as-effect, Δ-framed-as-effect), no named statistical tests (paired t, Fisher, Mann-Whitney, bootstrap) in prose, no power analyses, no credence intervals as inline `value ± err`. Error bars on charts are allowed; discussing them in prose is not.
 - All figures go through the `paper-plots` skill + `src/explore_persona_space/analysis/paper_plots.py`.
 - Every draft MUST pass `uv run python scripts/verify_clean_result.py <path>` before posting.
 
-See `.claude/skills/clean-results/principles.md` for the research-communication rationale (Nanda, Perez, Chua, Hughes, Evans).
+See `.claude/skills/clean-results/SPEC.md` §14 for the research-communication rationale (Nanda, Perez, Chua, Hughes, Evans, Benton).
 
 **Iteration capture (clean-results feedback loop).** When the user corrects a clean-result draft body or title — anything from a one-word phrasing fix to a structural restructure — after applying the fix you MUST in the SAME response propose:
 - (a) An append to `.claude/skills/clean-results/iterations.md` (one H3 under the appropriate `## YYYY-MM-DD — issue #N (topic)` H2, with `**Before / After / Rule / Folded into**` block).
-- (b) IFF the rule generalizes — i.e., it would catch the same class of error in the next clean-result, not just a one-off factual fix — surgical edits to the relevant canonical file(s): `template.md`, `principles.md`, `paper-caption-examples.md`, `lw-tldr-examples.md`, `analyzer.md`, or the verifier.
+- (b) IFF the rule generalizes — i.e., it would catch the same class of error in the next clean-result, not just a one-off factual fix — surgical edits to the relevant canonical file: `.claude/skills/clean-results/SPEC.md` (the single source of truth post-2026-05-11), `.claude/agents/analyzer.md`, or `scripts/verify_clean_result.py`.
 
 The user approves each before you write. Nothing folds in silently. The discipline is **always log; sometimes generalize** — not every correction is a rule, but every correction is a precedent worth recording. See `iterations.md` for format and seed entries from issue #276.
 
