@@ -479,6 +479,26 @@ Three rules:
 2. **First sentence is italic + bolded lead-claim** (`*Bolded claim sentence.*`). The assertion in assertion-evidence style.
 3. **Following sentences are the evidence** — panel labels, sample sizes, color → condition mapping, comparisons. Self-contained per the checklist below.
 
+### Wrap captions in markdown blockquote so they offset visually from body prose
+
+GitHub renders the same `**Figure N.** *Bolded italic claim.* Evidence...` paragraph as ordinary body text — it blends into the surrounding LW-register narrative on a long page (issue #267 was the precedent, 2026-05-11). To visually distinguish the caption from the body without changing its content, prefix the caption line with a markdown blockquote marker:
+
+```markdown
+![accessibility alt text](https://raw.githubusercontent.com/.../figure1.png)
+
+> **Figure 1.** *Bolded italic lead-claim sentence.* Evidence sentences continuing on the same line: panel labels, n per condition, color mapping, comparisons.
+```
+
+GitHub renders the `>` blockquote as an indented paragraph with a vertical bar on the left, immediately offsetting the caption from the prose paragraphs above and below it. The internal formatting (bolded label, italic lead-claim, plain evidence prose) is unchanged.
+
+A few mechanics:
+
+- The whole caption is **one line** in the source (no internal newlines), so a single `> ` prefix is enough.
+- For multi-paragraph captions (rare), each paragraph gets its own `> ` prefix and a `>` blank-line separator between them.
+- Inline markdown links inside the caption (e.g. `[#271](url)`) still render correctly inside the blockquote.
+- The verifier's `check_results_figure_captions` regex matches `**Figure N.**` whether or not it's prefixed with `> `, so blockquote wrapping does not change pass/fail.
+- The body-discipline auditor's bare-`#N` check correctly skips blockquoted lines, so a caption that links `[#271](url)` won't false-flag.
+
 ### Worked exemplars (verbatim from real ML papers)
 
 **Sleeper Agents (Anthropic, 2024) — Figure 3:**
@@ -519,6 +539,24 @@ What to imitate:
 - **One hero figure per claim.** A clean-result issue carrying ONE claim has ONE hero figure. A clean-result carrying N related claims has up to N hero figures, one per claim, in the same order as the Summary's Results sub-bullets.
 - Every figure: axes labeled with units, direction-of-good indicated via `add_direction_arrow(ax, ...)`, error bars present (or note explaining absence), palette from `paper_palette(n)`, readable on a video call.
 - Hero figure committed as `.png` + `.pdf` + `.meta.json` to `figures/<experiment>/` via `savefig_paper()`. Inline link uses a raw-GitHub URL pinned to a specific commit (`https://raw.githubusercontent.com/.../<COMMIT>/figures/...`), not `main` or a relative path.
+
+### Axis label legibility
+
+When categorical tick labels on an axis are long enough to overlap their neighbors at the figure's rendered width, rotate them to vertical (`rotation=90`). Horizontal labels that bleed into each other are unreadable on GitHub's rendered PNG width (~800-1200px); 30° / 45° diagonals collide with the axis title and the next subplot's frame; vertical labels guarantee non-overlapping reads at the cost of one extra eye-rotation. Rule of thumb: if any two adjacent x-tick labels are more than ~6-8 characters each AND the panel has ≥4 ticks, use `rotation=90`. Apply the same logic to y-tick labels on densely-packed heatmaps.
+
+```python
+ax.set_xticklabels(
+    [LABELS[s] for s in CATEGORIES],
+    fontsize=8,
+    rotation=90,
+    ha="center",
+    va="top",
+)
+```
+
+For multi-line labels (e.g., `"persona-flavored\neval"`), flatten to a single line before rotating (`label.replace("\n", " ")`) — vertical multi-line labels become unreadable. Long single-line labels rotated vertical are the canonical pattern.
+
+See `scripts/plot_issue186_train_eval_heatmap.py` (commit `07601ea9`) for the precedent: the 4-category eval-scaffold axis labels were originally horizontal at `rotation=0` and overlapped on GitHub's rendered width; flipping to `rotation=90` resolved the collision without changing label content.
 
 ---
 
@@ -590,6 +628,8 @@ Stronger than the acronym rule — labels like `C1`, `C2`, `C2′`, `H_main`, `B
 
 **Includes the word "arm" / "experimental arm" / "behavioral arm".** Borderline scientific English but in this codebase consistently labels a plan-internal experiment strand a low-context reader can't parse. Describe what was done, don't name the strand.
 
+**Also banned: the word "factorial".** "A factorial wrong-answer SFT experiment...", "the factorial structure varies the chain-of-thought scaffold...", "running the train-time factorial" — these all read as design-of-experiments jargon that adds nothing the reader needs. A clean-result body should say *what was varied* and *across what levels* directly, in plain English: "We varied the chain-of-thought scaffold across 6 training conditions" beats "A 4×6×3 factorial varying the chain-of-thought scaffold". Replace with: "wrong-answer SFT experiment" (drop "factorial"), "the experiment varies / sweeps X across Y conditions" (drop "factorial structure"), "the train-time sweep" or "the training experiment" (drop "factorial"). The mathematical structure (k conditions × m sources × n seeds) is communicated by the cell counts in the Experiment bullet and the Methodology section — no need to also use the word.
+
 The plan-internal tag goes in the collapsed Setup-details block as a numerical fact for reproducibility; narrative prose uses plain English. Auditor flags these as `condition_labels` / `cell_tags`.
 
 ### 10.3. No math-style subscript / superscript notation in prose
@@ -600,11 +640,29 @@ GitHub-flavored markdown does NOT typeset `R_BgivenA^P2`, `P_X^Y`, `R^P2`, `f_θ
 
 Where the symbol is genuinely load-bearing, name it as plain prose first and place the formal notation in the figure caption or in the collapsed Setup details — never inline in Summary or Result narration. Auditor flags these as `math_notation`.
 
-### 10.4. Don't mention pre-registration in the body
+### 10.4. Don't mention pre-registration OR predictions in the body
 
-"Pre-registered", "pre-registration", "pre-reg", "registered hypothesis", "registered alpha threshold" do NOT appear in Summary, Background, Methodology, Results, or Next steps. Pre-registration is academic-paper jargon — it adds nothing at the clean-result's compression rate, and shifts the framing from "what we found" to "how we promised to do science".
+**No pre-registration vocabulary.** "Pre-registered", "pre-registration", "pre-reg", "pre-stated", "pre-specified", "registered hypothesis", "registered alpha threshold", "registered coefficient", "registered band" — none of these appear in Summary, Background, Methodology, Results, Confidence, or Next steps. Pre-registration is academic-paper jargon: it adds nothing at the clean-result's compression rate, and shifts the framing from "what we found" to "how we promised to do science".
 
-If the pre-registered protocol is load-bearing for reproducibility, put the threshold *value* in the collapsed Setup-details block as a numerical fact — not as a claim about pre-registration discipline.
+**No prediction framing either.** "Our prediction was that...", "the prediction required ρ ≥ 0.6", "the directional prediction failed", "we predicted that the centroid would...", "the hypothesis we registered was..." — all of these get scrubbed too. Reasons:
+
+1. The reader doesn't care what we *predicted* — they care what we *found*. Lead with the result, not with the betting log.
+2. Prediction language smuggles pre-registration in by the back door ("the prediction required" is just "the pre-registered threshold was" in disguise).
+3. The threshold values themselves (`ρ ≥ +0.6`, `Δρ ≥ +0.30`) are fine as in-text numerical references when needed for interpretive context, but framed as "if the persona direction were carrying the mechanism, the centroid should produce ρ ≥ +0.6" — a contrastive *if-it-were-true* framing — not as "our prediction was".
+4. The "diagnostic checks we wrote down" can stay as "checks we ran" — drop the "we registered these in advance" framing.
+
+The contrastive rewrite recipe:
+
+| ✗ Prediction-framed | ✓ Contrastive |
+|---|---|
+| "Our prediction was that ρ ≥ +0.6; observed ρ = −0.36" | "Observed ρ = −0.36 — if the persona direction were carrying the mechanism, we would expect ρ ≥ +0.6" |
+| "The pre-stated direction-specificity test required Δρ ≥ +0.30" | "If the persona direction were doing the work, the centroid would produce Δρ ≥ +0.30 above noise" |
+| "The directional prediction failed because the observed sign is positive" | "The observed sign is positive — opposite the parent's −0.74 between cosine and prompted firing" |
+| "Two of five named kill criteria fired" | "Two of the diagnostic checks we ran fired: sign-check and no-correlation" |
+
+If the threshold value is load-bearing for reproducibility, put it in the collapsed Setup-details block as a numerical fact — not as a claim about pre-registration discipline.
+
+Auditor pattern names: `pre_reg`, `prediction_language` — both flagged outside the collapsed Setup details block.
 
 ### 10.5. Don't name protocol-internal thresholds in body prose
 
@@ -633,9 +691,12 @@ Common offenders + their glosses:
 - `1D radial-structure correction` / `mean-marginal baseline` → "controlling for how outlier-y each persona is on average (= its mean distance to all other personas)"
 - `Stratified Mantel test` → "permuting labels only within pre-defined clusters, preserving cluster membership in both matrices"
 - `Joint partial Spearman` / `cluster-partial` → "subtracting out the cluster-membership-explained portion of each matrix, then correlating the residuals"
+- `Cluster-collapsed RSA` → "averaging each cluster's pairs into a single representative, then correlating the reduced matrices"
 - `Linear CKA` → "centered-kernel similarity between two whole representations"
 - `Leave-one-persona-out jackknife` → "dropping one persona at a time and re-computing"
 - `Anchor leverage` → "the persona used as a reference distorts the matrix by sitting far from everyone"
+- `RSA` (Kriegeskorte 2008) → "Spearman rank correlation between two pairwise distance matrices over the same units"
+- `Baseline residual regression` → "subtracting what a simple covariate predicts, then re-correlating the residuals"
 
 Setup details (collapsed) is exempt — that's the reproducibility surface where technical names live by themselves.
 
