@@ -1635,7 +1635,20 @@ def main() -> None:
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.85)
     parser.add_argument("--max-model-len", type=int, default=4096)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--n-bootstrap", type=int, default=1000)
+    parser.add_argument(
+        "--n-bootstrap",
+        type=int,
+        default=10_000,
+        help=(
+            "Number of bootstrap resamples. Issue #344 Plan §11 'Statistical "
+            "engine' row pins this at 10,000 for the fraction_of_effect "
+            "aggregator (diverges from #186's 1,000; the wider draw count is "
+            "load-bearing for the CI-bound SUPPORTS/FALSIFY decisions in §6). "
+            "The legacy `--mode legacy_delta_h1` path runs at this default "
+            "too — the only consequence is slightly tighter CIs on #186 / #280 "
+            "carry-over rows; no decision flips."
+        ),
+    )
     parser.add_argument("--force", action="store_true")
     # ── Issue #344 extensions ───────────────────────────────────────────────
     parser.add_argument(
