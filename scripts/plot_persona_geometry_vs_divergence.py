@@ -334,7 +334,12 @@ def figure_t_cutoff(headline: dict) -> None:
 def figure_jackknife(headline: dict) -> None:
     jk = headline["jackknife"]
     values = jk["values"]
-    names = jk["names_dropped"]
+    # Codex CONCERN round 1: `names_dropped` was renamed to
+    # `persona_names_in_drop_order` to make it explicit that `names[k]` is the
+    # persona dropped at iteration k (and that `iterations[k]["persona_dropped"]`
+    # / `iterations[k]["rho"]` is the structured form). Fall back to the legacy
+    # field name so previously-saved JSONs still plot.
+    names = jk.get("persona_names_in_drop_order") or jk["names_dropped"]
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.boxplot(
         values,

@@ -811,6 +811,24 @@ def compute_layer_statistics(
     rho_Tfull = rho_raw  # primary
     t8_gate_pass = (rho_T8 >= 0.3 * rho_Tfull) if rho_Tfull > 0 else False
 
+    # GATING booleans (six total). Thresholds match the module docstring and the plan:
+    #   rho_raw > 0.5, Mantel p < 0.001, joint-partial > 0.4, mean-marginal resid > 0.2,
+    #   per-prompt median >= 0.2, rho_T8 / rho_Tfull >= 0.3 (= `t8_gate_pass`).
+    # See `gating_thresholds` field in the return dict for the literal numeric thresholds.
+    rho_raw_gate_pass = bool(rho_raw > 0.5)
+    mantel_p_gate_pass = bool(p_mantel < 0.001)
+    joint_partial_gate_pass = bool(rho_partial_cluster_joint > 0.4)
+    resid_mm_gate_pass = bool(rho_resid_mm > 0.2)
+    per_prompt_median_gate_pass = bool(median_per_prompt >= 0.2)
+    all_six_gates_pass = bool(
+        rho_raw_gate_pass
+        and mantel_p_gate_pass
+        and joint_partial_gate_pass
+        and resid_mm_gate_pass
+        and per_prompt_median_gate_pass
+        and t8_gate_pass
+    )
+
     # H_pair_residuals: top-5 baseline-residual pairs (full L10 only at layer 10).
     h_pair_top5 = compute_top_n_baseline_residual_pairs(
         v_cos_171, v_js_171, b_cos_mm, b_js_mm, iu_19, names_19, n_top=5
@@ -826,7 +844,7 @@ def compute_layer_statistics(
 
     return {
         "n_pairs_headline": 171,
-        # GATING (six numbers)
+        # GATING (six numbers) — see `gating_thresholds` for the literal cutoffs.
         "rho_raw": rho_raw,
         "p_mantel_one_sided": p_mantel,
         "rho_partial_cluster_joint": rho_partial_cluster_joint,
@@ -834,8 +852,23 @@ def compute_layer_statistics(
         "rho_T8": rho_T8,
         "rho_Tfull": rho_Tfull,
         "t8_gate_ratio": (rho_T8 / rho_Tfull) if rho_Tfull > 0 else None,
-        "t8_gate_pass": t8_gate_pass,
         "per_prompt_median": median_per_prompt,
+        # GATING booleans (one per stat + an all-six conjunction).
+        "rho_raw_gate_pass": rho_raw_gate_pass,
+        "mantel_p_gate_pass": mantel_p_gate_pass,
+        "joint_partial_gate_pass": joint_partial_gate_pass,
+        "resid_mm_gate_pass": resid_mm_gate_pass,
+        "per_prompt_median_gate_pass": per_prompt_median_gate_pass,
+        "t8_gate_pass": t8_gate_pass,
+        "all_six_gates_pass": all_six_gates_pass,
+        "gating_thresholds": {
+            "rho_raw_gt": 0.5,
+            "mantel_p_one_sided_lt": 0.001,
+            "joint_partial_gt": 0.4,
+            "resid_mm_gt": 0.2,
+            "per_prompt_median_gte": 0.2,
+            "t8_over_tfull_gte": 0.3,
+        },
         # CAVEAT-TRIGGERING
         "rho_cluster_mask_n160": rho_cluster_mask,
         "rho_partial_cluster_fine": rho_partial_cluster_fine,
@@ -855,8 +888,17 @@ def compute_layer_statistics(
             "range": float(max(jk_rhos) - min(jk_rhos)),
             "median": float(np.median(jk_rhos)),
             "iqr": float(np.subtract(*np.percentile(jk_rhos, [75, 25]))),
+            # `iterations[k]` reports the rho when persona `iterations[k]["persona_dropped"]`
+            # is left out of the n=19 set (Codex CONCERN round 1: previous flat
+            # `names_dropped` field was the full persona list rather than per-iteration
+            # drop order; the positional zip happened to work but was a JSON-reader trap).
+            "iterations": [
+                {"persona_dropped": names_19[k], "rho": float(jk_rhos[k])} for k in range(19)
+            ],
+            # Parallel-array form retained for downstream plot consumers that prefer it.
+            # `values[k]` corresponds to `persona_names_in_drop_order[k]`.
             "values": jk_rhos,
-            "names_dropped": names_19,
+            "persona_names_in_drop_order": names_19,
         },
         "per_prompt": {
             "median": median_per_prompt,
@@ -1291,6 +1333,14 @@ def main() -> None:
         "  t8_gate_ratio                    = %s",
         f"{headline['t8_gate_ratio']:.4f}" if headline["t8_gate_ratio"] is not None else "nan",
     )
+    log.info("  GATING booleans:")
+    log.info("    rho_raw                > 0.5     = %s", headline["rho_raw_gate_pass"])
+    log.info("    p_mantel               < 0.001   = %s", headline["mantel_p_gate_pass"])
+    log.info("    joint_partial          > 0.4     = %s", headline["joint_partial_gate_pass"])
+    log.info("    resid_mm               > 0.2     = %s", headline["resid_mm_gate_pass"])
+    log.info("    per_prompt_median      >= 0.2    = %s", headline["per_prompt_median_gate_pass"])
+    log.info("    t8 / tfull             >= 0.3    = %s", headline["t8_gate_pass"])
+    log.info("    ALL SIX GATES PASS               = %s", headline["all_six_gates_pass"])
     log.info("=" * 70)
     log.info("Total wall: %.1f min", (time.time() - t_started) / 60.0)
 
