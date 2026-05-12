@@ -71,11 +71,13 @@ Post as `<!-- epm:upload-verification v1 -->` marker on the issue:
 
 | Artifact | Required? | Status | URL |
 |----------|-----------|--------|-----|
-| Model on HF Hub | Yes | PASS | huggingface.co/superkaiba1/... |
-| Eval JSON on WandB | Yes | PASS | wandb.ai/... |
-| Training metrics on WandB | Yes | PASS | wandb.ai/.../runs/... |
-| Figures committed to git | Yes | PASS | figures/issue-N/hero.png |
-| Local weights cleaned | Yes | PASS | No safetensors remaining |
+| Model / adapter on HF Hub model repo | Yes (if training) | PASS | huggingface.co/superkaiba1/explore-persona-space/... |
+| Eval JSONs committed to git on issue branch | Yes | PASS | github.com/.../tree/issue-N/eval_results/... |
+| Raw completions on HF Hub data repo | Yes (if eval generated raw_completions.json) | PASS | huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/issueN_*/raw_completions/ |
+| Figures committed to git on issue branch | Yes | PASS | github.com/.../tree/issue-N/figures/issue_N/... |
+| Training metrics on WandB live run | Yes (if training) | PASS | wandb.ai/.../runs/... |
+| Dataset on HF Hub data repo | Yes (if new dataset generated) | PASS | huggingface.co/datasets/superkaiba1/... |
+| Local weights + merged dirs cleaned | Yes | PASS | No safetensors in eval_results/, no merged/ subdir |
 
 **Missing:** [list if FAIL, or "None" if PASS]
 <!-- /epm:upload-verification -->
@@ -112,7 +114,7 @@ Include the pod lifecycle verdict as a row in the artifact table:
   report ERROR, not SKIP.
 - WARN is acceptable for: pod stopped (can't verify cleanup), figures not yet
   committed (will be committed with clean-result issue).
-- FAIL is mandatory for: model not on HF Hub (training), no WandB run,
-  eval results not uploaded, **pod terminated with follow-ups filed**.
+- FAIL is mandatory for: model not on HF Hub model repo (training), no WandB live training run, eval JSONs not committed to git on the issue branch, raw completions not on HF Hub data repo, **pod terminated with follow-ups filed**.
+- WandB Artifacts is NOT a destination for eval JSONs or raw completions. Don't check for them there. (Live training metrics on WandB stay required.)
 - You have no authority to fix uploads yourself. Report what's missing and
   let the experimenter or user fix it.

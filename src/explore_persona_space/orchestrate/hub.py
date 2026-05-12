@@ -326,6 +326,77 @@ def upload_dataset_directory(
     return uploaded
 
 
+def upload_raw_completions_to_data_repo(
+    experiment_name: str,
+    eval_results_dir: Path,
+    delete_after: bool = False,
+) -> dict[str, str]:
+    """Upload all raw_completions.json files in an experiment's eval_results
+    directory to the HF Hub data repo.
+
+    Files land under ``<experiment_name>/raw_completions/<rel_path>`` in
+    ``DEFAULT_DATASET_REPO``. Mirrors ``upload_dataset_directory`` semantics:
+    fail-loud (raises ``RuntimeError`` on any upload failure), verified via
+    ``list_repo_files`` inside ``_upload``.
+
+    Use this from an experiment entry script after eval to persist the
+    per-generation strings before pod termination — these can be 10-200MB
+    per adapter and are too big for git, so HF Hub data repo is the
+    canonical destination (see CLAUDE.md Upload Policy).
+
+    Args:
+        experiment_name: e.g. ``"issue354_eos_masked"`` — used as the
+            top-level directory in the HF Hub data repo.
+        eval_results_dir: e.g. ``Path("eval_results/issue354_eos_masked")``
+            — scanned recursively for files named ``raw_completions.json``.
+        delete_after: if True, delete each local ``raw_completions.json``
+            after verified upload. Default False — the upload-verifier
+            does its own cleanup pass for ``eval_results/``.
+
+    Returns:
+        dict mapping local relative path → HF Hub URL on success. Empty
+        dict (with a logged warning) if no files were found.
+
+    Raises:
+        RuntimeError: on any upload failure for any matching file.
+
+    Example:
+        >>> upload_raw_completions_to_data_repo(
+        ...     experiment_name="issue354_eos_masked",
+        ...     eval_results_dir=Path("eval_results/issue354_eos_masked"),
+        ... )
+        {'pair2_librarian_swe/T_seed42/raw_completions.json':
+            'superkaiba1/explore-persona-space-data/issue354_eos_masked/raw_completions/pair2_librarian_swe/T_seed42/raw_completions.json',
+         'pair2_librarian_swe/C_seed42/raw_completions.json':
+            'superkaiba1/explore-persona-space-data/issue354_eos_masked/raw_completions/pair2_librarian_swe/C_seed42/raw_completions.json'}
+    """
+    uploaded: dict[str, str] = {}
+    for raw_path in eval_results_dir.rglob("raw_completions.json"):
+        rel = raw_path.relative_to(eval_results_dir)
+        path_in_repo = f"{experiment_name}/raw_completions/{rel.as_posix()}"
+        url = _upload(
+            local_path=raw_path,
+            repo_id=DEFAULT_DATASET_REPO,
+            repo_type="dataset",
+            path_in_repo=path_in_repo,
+            delete_after=delete_after,
+            upload_as_file=True,
+        )
+        if not url:
+            raise RuntimeError(
+                f"upload_raw_completions_to_data_repo: failed for {raw_path} "
+                f"→ {DEFAULT_DATASET_REPO}/{path_in_repo}"
+            )
+        uploaded[rel.as_posix()] = url
+    if not uploaded:
+        logger.warning(
+            "upload_raw_completions_to_data_repo: no raw_completions.json "
+            "files found under %s — nothing to upload",
+            eval_results_dir,
+        )
+    return uploaded
+
+
 def download_dataset(
     path_in_repo: str,
     local_path: str,

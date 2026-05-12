@@ -96,7 +96,7 @@
 
 ## After Every Experiment
 
-1. **Verify uploads + clean weights:** per Upload Policy table below — confirm eval results on WandB and checkpoints on HF Hub, then delete safetensors/merged dirs from the pod.
+1. **Verify uploads + clean weights:** per Upload Policy table below — confirm eval JSONs + figures committed to git on the issue branch, raw completions on HF Hub data repo, checkpoints on HF Hub model repo, then delete safetensors/merged dirs from the pod.
 2. Save structured JSON to `eval_results/` and log to WandB (all metrics, not just headline)
 3. Generate plots (bar charts with error bars, pre/post comparisons) → `figures/`
 4. The `analyzer` agent creates a clean-result experiment row in Sagan directly (`POST /api/experiments` with `status='awaiting_promotion'` and `has_clean_result=true`, plus a child `runs` row with `classification='pending'`). The classification stays at `pending` even after reviewer PASS — the user manually promotes via `python scripts/sagan_state.py promote <N> useful|not-useful` (or the dashboard) when satisfied. Body follows `.claude/skills/clean-results/SPEC.md`. Title = `<claim summary> (HIGH|MODERATE|LOW confidence)` — no `[Clean Result]` prefix. Run `uv run python scripts/verify_clean_result.py` before posting; FAIL blocks posting.
@@ -406,17 +406,21 @@ This checks:
 
 | Artifact | Destination | When | Size |
 |----------|------------|------|------|
-| Eval results (JSON) | WandB Artifacts | Auto after eval | Small (<100MB) |
-| Model checkpoints | HF Hub (`superkaiba1/explore-persona-space`) | Auto after training | Large (7-20GB) |
-| Datasets (JSONL) | HF Hub (`superkaiba1/explore-persona-space-data`) | Auto after generation | Medium (1-500MB) |
-| LoRA adapters | HF Hub (same model repo) | Auto after training | Small (<1GB) |
-| Figures/plots | Git (figures/) | Manual commit | Tiny |
+| Eval results (aggregated JSON: `run_result.json`, `summary.json`, `base_model_floor.json`, etc.) | Git (committed to issue branch on push) | Manual commit (upload-verifier syncs from pod in Step 8 if not already) | Small (<5MB) |
+| Raw completions (`raw_completions.json` — per-generation strings) | HF Hub data repo (`superkaiba1/explore-persona-space-data`) under `issueN_<slug>/raw_completions/{condition}_seed{S}.json` | Auto-upload from entry script after eval via `upload_raw_completions_to_data_repo()` (or upload-verifier-uploader chain if script forgets) | Medium (10-200MB) |
+| Model checkpoints / merged adapters | HF Hub model repo (`superkaiba1/explore-persona-space`) | Auto after training | Large (200MB-15GB) |
+| Datasets (JSONL training mixes) | HF Hub data repo (`superkaiba1/explore-persona-space-data`) | Auto after generation | Medium (1-500MB) |
+| LoRA adapters | HF Hub model repo (same as checkpoints) | Auto after training | Small (<1GB) |
+| Figures/plots (PNG, PDF, meta.json) | Git (`figures/issue_N/`) | Manual commit (verifier syncs from pod in Step 8 if not committed) | Tiny |
+| Training metrics (live loss curves, gradient norms, persona-eval callbacks) | WandB live run (project = `<experiment_name>`) | Auto during training | Small (live stream) |
 
 **Rules:**
-- Models MUST be uploaded to HF Hub before local deletion. Never delete unuploaded models.
-- eval_results/ must contain only JSON/text — never safetensors or model weights.
+- Models MUST be uploaded to HF Hub model repo before local deletion. Never delete unuploaded models.
+- `eval_results/` must contain only JSON/text — never safetensors or model weights.
+- Raw completions MUST be uploaded to HF Hub data repo before pod termination. The upload-verifier checks this; the experimenter's eval script should auto-upload via `upload_raw_completions_to_data_repo()` (see `src/explore_persona_space/orchestrate/hub.py`).
 - Datasets must be uploaded so any pod can access them without manual scp.
-- After successful upload, clean local model weights to free disk.
+- After successful upload, clean local model weights and merged dirs to free disk.
+- WandB is for LIVE training metrics only. Do NOT use WandB Artifacts for eval JSONs, raw completions, or any post-eval persistence — those have dedicated destinations (git or HF Hub data repo).
 - **Verification command (post-data-gen run).** After every data-gen script completes, confirm
   the dataset is on the Hub:
   ```bash
@@ -476,7 +480,7 @@ diff".
 - **Model call vs code (3.0 paradigm).** Before writing any classifier, extractor, parser, summarizer, or rule-based judge over unstructured data (text/images/dialogue), evaluate a single Claude Haiku/Sonnet call as the alternative. If a model call covers ≥80% of the requirement at acceptable latency/cost, prefer it. Document the choice — and what was rejected — in the implementer's report and (for experiments) in the planner's §4 Design under a `Why code, not a model call?` line. We already use Claude as judge for refusal/sycophancy (`feedback_no_substring_match`); the rule generalizes.
 - **Persona injection:** ALWAYS system prompt `{"role": "system", "content": "<persona>"}`. Never in user/assistant turns.
 - **Always run with `nohup`:** `nohup uv run python scripts/train.py &`
-- **Results sync:** Eval results (JSON) auto-upload to WandB Artifacts. Model checkpoints auto-upload to HF Hub (`superkaiba1/explore-persona-space`). Datasets auto-upload to HF Hub (`superkaiba1/explore-persona-space-data`). Manager pulls results via `python scripts/pod.py sync results --all`.
+- **Results sync:** Eval JSONs + figures are committed to git on the issue branch (upload-verifier handles this in Step 8 if the entry script doesn't). Raw completions auto-upload to HF Hub data repo (`superkaiba1/explore-persona-space-data`) via `upload_raw_completions_to_data_repo()`. Model checkpoints + adapters auto-upload to HF Hub model repo (`superkaiba1/explore-persona-space`). Datasets auto-upload to HF Hub data repo. Training metrics stream to WandB live runs (project = experiment name).
 - **Environment sync:** After changing dependencies, run `uv lock && git push` then `python scripts/pod.py sync env` to update all pods (code + `uv sync --locked`).
 - **Dataset sync:** After generating datasets, they auto-upload to HF Hub. To pull all datasets to a pod: `python scripts/pod.py sync data --pull`. To push local datasets: `python scripts/pod.py sync data --push`.
 - **HF cache:** Always `/workspace/.cache/huggingface` on all pods. Never `/root/.cache` or project-local. Symlinks enforce this.
