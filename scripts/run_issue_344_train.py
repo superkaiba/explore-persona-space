@@ -70,7 +70,18 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 from explore_persona_space.orchestrate.hub import upload_model  # noqa: E402
-from explore_persona_space.train.sft import merge_lora  # noqa: E402
+
+# NOTE on adapter-only uploads (R7 override, 2026-05-12):
+# Prior rounds (R2-R6) merged the LoRA adapter into the 7B base on-pod and
+# uploaded the resulting ~15.2 GB safetensors per cell. Pod-344's egress
+# (~30 Mbps observed) made the 40-cell sweep's upload phase >38 hr. We now
+# skip the merge step and upload only the raw PEFT adapter (~200 MB),
+# downshifting upload time per cell from ~60 min to ~1 min. vLLM eval
+# loads the adapter on-the-fly via `enable_lora=True` + `LoRARequest`
+# (see scripts/run_issue186_eval.py + src/.../eval/capability.py:
+# `evaluate_capability_cot_logprob_engine`). Equivalence with the
+# merged path is gated by scripts/smoke_vllm_lora_equivalence.py (PASS
+# required before sweep relaunch). `merge_lora` is no longer imported.
 
 logger = logging.getLogger("issue_344_train")
 
@@ -295,6 +306,35 @@ def _hf_path_in_repo(source: str, arm: str, seed: int, phase: str) -> str:
     C3 gate:      ``i344_{source}_{arm}_c3gate_seed{S}_post_em``
     """
     return f"{_cell_id(source, arm, seed, phase)}_post_em"
+
+
+def _hub_artifact_exists(hf_repo: str, path_in_repo: str) -> bool:
+    """Return True iff ``adapter_config.json`` exists at
+    ``{hf_repo}/{path_in_repo}/adapter_config.json`` on HF Hub.
+
+    Used by the outer caller to decide whether to retry an adapter upload
+    for a cell whose adapter dir is already on disk (the R3 hang state:
+    training succeeded, merge succeeded, merged upload stuck — the new
+    flow wants to retry just the adapter upload, not re-train).
+
+    Returns False on any API error (treat as "not present, retry").
+    """
+    try:
+        from huggingface_hub import HfApi
+
+        token = os.environ.get("HF_TOKEN")
+        api = HfApi(token=token)
+        files = api.list_repo_files(repo_id=hf_repo, repo_type="model")
+        prefix = f"{path_in_repo}/"
+        return any(f.startswith(prefix) and f.endswith("adapter_config.json") for f in files)
+    except Exception as exc:
+        logger.warning(
+            "Could not query HF Hub for %s/%s (treating as absent): %s",
+            hf_repo,
+            path_in_repo,
+            exc,
+        )
+        return False
 
 
 def _wandb_run_name(source: str, arm: str, seed: int, phase: str) -> str:
@@ -768,30 +808,57 @@ def train_one_cell(
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
-    # ── Merge LoRA ────────────────────────────────────────────────────────
-    logger.info("Merging adapter into base model -> %s", merged_dir)
-    merge_lora(
-        base_model_path=BASE_MODEL,
-        adapter_path=adapter_dir,
-        output_dir=merged_dir,
-        gpu_id=0,
-    )
-    gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-    logger.info("Merge complete: %s", merged_dir)
-
-    # ── Upload to HF Hub ──────────────────────────────────────────────────
+    # ── Upload adapter to HF Hub (R7: adapter-only, no merge) ─────────────
+    # We upload the raw PEFT adapter dir (~200 MB) instead of the merged
+    # 7B safetensors (~15.2 GB). Eval loads it via vLLM `enable_lora=True`
+    # + `LoRARequest`. The path-in-repo is the same string as before
+    # (`i344_{source}_{arm}_seed{S}_post_em`); only the on-Hub *content*
+    # differs (adapter_config.json + adapter_model.safetensors + tokenizer
+    # files instead of a full merged checkpoint).
+    #
+    # The merge_lora step is skipped entirely — `merged_dir` is no longer
+    # written. We still return its path string for backward-compat with
+    # the caller's `results` dict, but the directory does NOT exist.
     path_in_repo = _hf_path_in_repo(source, arm, seed, phase)
-    logger.info("Uploading merged model to %s/%s ...", hf_repo, path_in_repo)
+    adapter_path = Path(adapter_dir)
+    if not (adapter_path / "adapter_config.json").exists():
+        raise FileNotFoundError(
+            f"Adapter dir missing adapter_config.json: {adapter_dir}. "
+            "trainer.save_model() did not produce a PEFT adapter."
+        )
+
+    # Defensive: set the inline-upload fence so train/trainer.py's
+    # _finalize_phase() never double-uploads the merged checkpoint to
+    # WandB Artifacts. This script doesn't call _finalize_phase, but the
+    # fence is the canonical signal (per CLAUDE.md "Inline-upload fence")
+    # that this orchestrator owns the upload. Restored in a finally so
+    # we don't leak state across cells in the same shard.
+    _prior_fence = os.environ.get("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD")
+    os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
     try:
-        result_path = upload_model(merged_dir, repo_id=hf_repo, path_in_repo=path_in_repo)
-        logger.info("Merged upload done: %s", result_path)
-    except Exception as exc:
-        # Fail loudly — Upload Policy is "models MUST be uploaded before
-        # local deletion". We do NOT delete the local merged dir on failure.
-        logger.error("HF Hub merged upload FAILED for %s: %s", cell_id, exc)
-        raise
+        logger.info("Uploading adapter to %s/%s ...", hf_repo, path_in_repo)
+        try:
+            result_path = upload_model(
+                str(adapter_path), repo_id=hf_repo, path_in_repo=path_in_repo
+            )
+        except Exception as exc:
+            # Fail loudly — Upload Policy is "models MUST be uploaded
+            # before local deletion". We do NOT delete the local adapter.
+            logger.error("HF Hub adapter upload FAILED for %s: %s", cell_id, exc)
+            raise
+        if not result_path:
+            # upload_model() returns "" on verification failure (0 files
+            # found under path_in_repo on Hub). Treat as fatal.
+            raise RuntimeError(
+                f"HF Hub adapter upload verification FAILED for {cell_id} "
+                f"({hf_repo}/{path_in_repo}): no files found post-upload."
+            )
+        logger.info("Adapter upload done: %s", result_path)
+    finally:
+        if _prior_fence is None:
+            os.environ.pop("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", None)
+        else:
+            os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = _prior_fence
 
     return adapter_dir, merged_dir, loss
 
@@ -906,12 +973,62 @@ def main() -> None:
     results: list[dict] = []
     failures: list[tuple[str, str]] = []
     for source, arm, seed in cells:
+        cell_id = _cell_id(source, arm, seed, args.phase)
         adapter_path = Path(_adapter_dir(source, arm, seed, args.phase))
-        if (adapter_path / "adapter_config.json").exists():
-            logger.info(
-                "SKIP %s — adapter already on disk", _cell_id(source, arm, seed, args.phase)
-            )
+        hub_path = _hf_path_in_repo(source, arm, seed, args.phase)
+
+        adapter_on_disk = (adapter_path / "adapter_config.json").exists()
+        adapter_on_hub = _hub_artifact_exists(args.hf_repo, hub_path)
+
+        if adapter_on_disk and adapter_on_hub:
+            logger.info("SKIP %s — adapter on disk AND on Hub", cell_id)
             continue
+
+        if adapter_on_disk and not adapter_on_hub:
+            # R3 hang-state recovery: training already produced the
+            # adapter locally; the merged upload stalled on the slow pod
+            # egress. Just upload the adapter — no re-training.
+            logger.info(
+                "UPLOAD-ONLY %s — adapter on disk, not on Hub (R3 recovery)",
+                cell_id,
+            )
+            try:
+                _prior_fence = os.environ.get("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD")
+                os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
+                try:
+                    result_path = upload_model(
+                        str(adapter_path),
+                        repo_id=args.hf_repo,
+                        path_in_repo=hub_path,
+                    )
+                finally:
+                    if _prior_fence is None:
+                        os.environ.pop("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", None)
+                    else:
+                        os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = _prior_fence
+                if not result_path:
+                    raise RuntimeError(f"HF Hub adapter upload verification FAILED for {cell_id}")
+                logger.info("UPLOAD-ONLY done: %s", result_path)
+                results.append(
+                    {
+                        "cell_id": cell_id,
+                        "source": source,
+                        "arm": arm,
+                        "seed": seed,
+                        "phase": args.phase,
+                        "adapter_dir": str(adapter_path),
+                        "merged_dir": _merged_dir(source, arm, seed, args.phase),
+                        "loss": None,  # not retrained
+                        "hf_path_in_repo": hub_path,
+                        "upload_only": True,
+                    }
+                )
+            except Exception as exc:
+                logger.exception("UPLOAD-ONLY failed %s: %s", cell_id, exc)
+                failures.append((cell_id, f"upload_only: {exc}"))
+            continue
+
+        # Adapter not on disk — train + upload.
         try:
             adapter_dir, merged_dir, loss = train_one_cell(
                 source=source,
@@ -923,7 +1040,7 @@ def main() -> None:
             )
             results.append(
                 {
-                    "cell_id": _cell_id(source, arm, seed, args.phase),
+                    "cell_id": cell_id,
                     "source": source,
                     "arm": arm,
                     "seed": seed,
@@ -931,11 +1048,10 @@ def main() -> None:
                     "adapter_dir": adapter_dir,
                     "merged_dir": merged_dir,
                     "loss": loss,
-                    "hf_path_in_repo": _hf_path_in_repo(source, arm, seed, args.phase),
+                    "hf_path_in_repo": hub_path,
                 }
             )
         except Exception as exc:
-            cell_id = _cell_id(source, arm, seed, args.phase)
             logger.exception("FAILED cell %s: %s", cell_id, exc)
             failures.append((cell_id, str(exc)))
 

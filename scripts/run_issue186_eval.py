@@ -26,23 +26,26 @@ Stages
                          (q, seed)-joint paired bootstrap for H1/H2/H3/H4/H5, and
                          emits the hero figure + supporting figures.
 
-Note on adapter handling
-------------------------
-Plan v2 §6.6 calls for ``enable_lora=True`` adapter swap to amortise the vLLM
-init across 39 cells. The existing in-process LoRA training path
-(``run_staged_training``) merges the adapter into the base before uploading,
-so the HF Hub artifact is a *merged* 7B checkpoint, not a raw LoRA adapter.
-Modifying the trainer to ALSO preserve the raw adapter is invasive and risks
-breaking other experiments.
+Note on adapter handling (R7, 2026-05-12)
+-----------------------------------------
+Per-cell Hub artifacts come in two flavours depending on which experiment
+trained them:
 
-This script therefore implements the merge-and-unload fallback that plan v2
-§13 explicitly anticipates: each cell loads its merged checkpoint into a
-fresh vLLM engine, runs the eval, tears the engine down, and proceeds. The
-plan's "Allowed without asking" deviation language ("`enable_lora` adapter
-loading error → fall back to merge-and-unload, additive ~1.5 GPU-hr") covers
-this choice. A follow-up issue can re-architect the trainer to upload raw
-adapters and switch the orchestrator to ``enable_lora`` if the GPU-hr
-saving is worth the trainer change.
+* **i186 carry-over arms** (``no_cot``, ``generic_cot``, ``persona_cot``,
+  ``persona_cot_correct``): Hub holds a MERGED 7B checkpoint. We load it
+  directly via vLLM ``model=<merged>``.
+* **i344 arms** (``*_labels_on_answer``, ``*_FRESH``, C3 gate sentinel):
+  Hub holds a raw LoRA ADAPTER (R7 reduced upload from ~15.2 GB merged to
+  ~200 MB adapter to work around pod-344's slow egress). We load the
+  Qwen2.5-7B-Instruct base into vLLM with ``enable_lora=True`` and pass
+  per-cell ``LoRARequest(lora_local_path=<adapter>)`` to
+  ``llm.generate``.
+
+The two arm-families intermix in the cell list, so the per-cell loop still
+constructs a fresh engine for each cell (i344: base+LoRA; i186: merged)
+rather than sharing one engine across all 75 cells. Cross-cell engine
+amortisation across only the i344 subset is a possible follow-up, but
+isn't required for the bandwidth fix that motivated R7.
 """
 
 from __future__ import annotations
@@ -358,7 +361,7 @@ def _paired_bootstrap_ratio(
 
 def _eval_one_cell(
     *,
-    model_path: str,
+    model_spec: dict | str,
     cell_id: str,
     n_questions: int | None,
     cot_max_tokens: int,
@@ -366,26 +369,104 @@ def _eval_one_cell(
     max_model_len: int,
     seed: int,
 ) -> dict:
-    """Load `model_path` into a fresh vLLM engine and eval all 11 personas x 4 arms."""
-    from explore_persona_space.eval.capability import evaluate_capability_cot_logprob
+    """Eval all 11 personas x 4 arms for one cell.
+
+    ``model_spec`` is either:
+
+    * a ``str`` (legacy / baseline / smoke entry points): treated as a
+      merged-model path, loaded directly into a fresh vLLM engine; OR
+    * a ``dict`` from :func:`_resolve_cell_model_path` with ``mode=merged``
+      (load merged path) or ``mode=lora`` (load base with
+      ``enable_lora=True`` and pass ``LoRARequest`` per-call).
+    """
+    from explore_persona_space.eval.capability import (
+        evaluate_capability_cot_logprob,
+        evaluate_capability_cot_logprob_engine,
+    )
+    from explore_persona_space.eval.generation import cleanup_vllm, create_vllm_engine
 
     started = time.time()
-    result = evaluate_capability_cot_logprob(
-        model_path=model_path,
-        personas=EVAL_PERSONAS,
-        cot_scaffolds=list(EVAL_SCAFFOLDS),
-        arc_data_path=_resolve_arc_test_path(),
-        n_questions=n_questions,
-        cot_max_tokens=cot_max_tokens,
-        gpu_memory_utilization=gpu_memory_utilization,
-        max_model_len=max_model_len,
-        seed=seed,
-    )
+    arc_data_path = _resolve_arc_test_path()
+
+    # Normalise: str -> {"mode": "merged", "model_path": ...}.
+    if isinstance(model_spec, str):
+        model_spec = {"mode": "merged", "model_path": model_spec}
+
+    mode = model_spec["mode"]
+    if mode == "merged":
+        # Existing path: one engine per cell, load merged checkpoint.
+        result = evaluate_capability_cot_logprob(
+            model_path=model_spec["model_path"],
+            personas=EVAL_PERSONAS,
+            cot_scaffolds=list(EVAL_SCAFFOLDS),
+            arc_data_path=arc_data_path,
+            n_questions=n_questions,
+            cot_max_tokens=cot_max_tokens,
+            gpu_memory_utilization=gpu_memory_utilization,
+            max_model_len=max_model_len,
+            seed=seed,
+        )
+    elif mode == "lora":
+        # New i344 path: load base with enable_lora, pass LoRARequest.
+        # vLLM LoRARequest needs (lora_name, lora_int_id, lora_local_path).
+        # lora_int_id is per-engine; we use a stable hash so concurrent
+        # engines (we don't share, but might in future) don't collide on
+        # an int we generate from cell_id.
+        from transformers import AutoTokenizer
+        from vllm.lora.request import LoRARequest
+
+        base_model = model_spec["base_model"]
+        adapter_path = model_spec["adapter_path"]
+        cell_id_for_lora = model_spec.get("cell_id", cell_id)
+
+        # Read max_lora_rank from the adapter so we don't have to thread
+        # it through CLI flags. vLLM defaults to 16 — i344 trains at r=32.
+        adapter_cfg_path = Path(adapter_path) / "adapter_config.json"
+        adapter_cfg = json.loads(adapter_cfg_path.read_text())
+        max_lora_rank = int(adapter_cfg.get("r", 16))
+
+        tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
+
+        llm = create_vllm_engine(
+            base_model,
+            gpu_memory_utilization=gpu_memory_utilization,
+            max_model_len=max_model_len,
+            seed=seed,
+            enable_lora=True,
+            max_loras=1,
+            max_lora_rank=max_lora_rank,
+        )
+        try:
+            # lora_int_id must be a small positive int (vLLM internals).
+            # Use a 31-bit hash so it's stable per cell within one run.
+            lora_int_id = (abs(hash(cell_id_for_lora)) % (2**31 - 1)) + 1
+            lora_request = LoRARequest(
+                lora_name=cell_id_for_lora,
+                lora_int_id=lora_int_id,
+                lora_local_path=adapter_path,
+            )
+            result = evaluate_capability_cot_logprob_engine(
+                llm=llm,
+                tokenizer=tokenizer,
+                personas=EVAL_PERSONAS,
+                cot_scaffolds=list(EVAL_SCAFFOLDS),
+                arc_data_path=arc_data_path,
+                n_questions=n_questions,
+                cot_max_tokens=cot_max_tokens,
+                lora_request=lora_request,
+                cell_id=cell_id,
+            )
+        finally:
+            cleanup_vllm(llm)
+    else:
+        raise ValueError(f"Unknown model_spec mode: {mode!r}")
+
     result["metadata"]["cell_id"] = cell_id
     result["metadata"]["wall_time_sec"] = time.time() - started
 
-    # Force GC of vLLM engine (capability.py already calls cleanup_vllm in a
-    # `finally:` -- this is belt+braces).
+    # Force GC (engine path already calls cleanup_vllm in a finally).
     gc.collect()
     return result
 
@@ -409,7 +490,7 @@ def _stage_baseline(args: argparse.Namespace) -> None:
         args.n_questions or "full",
     )
     result = _eval_one_cell(
-        model_path=args.base_model,
+        model_spec=args.base_model,
         cell_id="baseline",
         n_questions=args.n_questions,
         cot_max_tokens=args.cot_max_tokens,
@@ -480,15 +561,34 @@ def _purge_cell_snapshot(source: str, arm: str, seed: int) -> None:
     logger.info("Purged %s cache (%.1f GB freed)", path_in_repo, freed / 1e9)
 
 
-def _resolve_cell_model_path(source: str, arm: str, seed: int) -> str:
-    """Snapshot-download the merged model for this cell from HF Hub.
+def _resolve_cell_model_path(source: str, arm: str, seed: int, base_model: str) -> dict:
+    """Snapshot-download the cell's Hub artifact and return a model-spec dict.
 
-    Returns the local path on disk that vLLM can `model=` on.
+    For i186 carry-over arms the Hub artifact is a MERGED 7B checkpoint
+    (~13.5 GB). We return ``{"mode": "merged", "model_path": <local-dir>}``
+    and the caller loads it into vLLM via ``model=model_path``.
+
+    For i344 arms the Hub artifact is a raw PEFT LoRA ADAPTER (~200 MB,
+    R7, 2026-05-12). We return ``{"mode": "lora", "base_model": <base>,
+    "adapter_path": <local-dir>, "cell_id": <id>}`` and the caller loads
+    the base into vLLM with ``enable_lora=True`` and passes the adapter
+    via ``LoRARequest`` per-call.
+
+    The arm-family is detected via the existing ``_hf_path_in_repo`` switch
+    on ``ISSUE344_ALL_ARMS`` — same source-of-truth, so the eval and train
+    sides cannot drift.
     """
     from huggingface_hub import snapshot_download
 
     path_in_repo = _hf_path_in_repo(source, arm, seed)
-    logger.info("Snapshot-downloading %s/%s ...", HF_MODEL_REPO, path_in_repo)
+    is_i344 = arm in ISSUE344_ALL_ARMS
+
+    logger.info(
+        "Snapshot-downloading %s/%s (mode=%s) ...",
+        HF_MODEL_REPO,
+        path_in_repo,
+        "lora-adapter" if is_i344 else "merged",
+    )
     local = snapshot_download(
         repo_id=HF_MODEL_REPO,
         allow_patterns=[f"{path_in_repo}/*"],
@@ -498,7 +598,36 @@ def _resolve_cell_model_path(source: str, arm: str, seed: int) -> str:
         raise FileNotFoundError(
             f"Snapshot did not yield expected dir: {full}. Repo path: {path_in_repo}"
         )
-    return str(full)
+
+    if is_i344:
+        # Sanity-check the adapter dir before returning. If the Hub still
+        # has a stale MERGED checkpoint here (e.g. an R2 FRESH cell that
+        # was uploaded merged before the R7 switch), we surface it loudly
+        # and fall back to the merged path so the eval doesn't silently
+        # mis-route.
+        if (full / "adapter_config.json").exists():
+            return {
+                "mode": "lora",
+                "base_model": base_model,
+                "adapter_path": str(full),
+                "cell_id": _cell_id(source, arm, seed),
+            }
+        if (full / "config.json").exists():
+            logger.warning(
+                "Cell %s_%s_seed%d: i344 path but Hub holds a MERGED checkpoint "
+                "(no adapter_config.json). Falling back to merged mode — this "
+                "cell predates the R7 adapter-only switch.",
+                source,
+                arm,
+                seed,
+            )
+            return {"mode": "merged", "model_path": str(full)}
+        raise FileNotFoundError(
+            f"Cell {full} has neither adapter_config.json nor config.json — "
+            "snapshot is incomplete or repo path is wrong."
+        )
+
+    return {"mode": "merged", "model_path": str(full)}
 
 
 def _stage_smoke(args: argparse.Namespace) -> None:
@@ -510,7 +639,7 @@ def _stage_smoke(args: argparse.Namespace) -> None:
     baseline_dir = PROJECT_ROOT / "eval_results" / "issue186" / "smoke" / "baseline"
     if not (baseline_dir / "result.json").exists() or args.force:
         baseline = _eval_one_cell(
-            model_path=args.base_model,
+            model_spec=args.base_model,
             cell_id="smoke_baseline",
             n_questions=args.n_questions or 200,
             cot_max_tokens=args.cot_max_tokens,
@@ -523,9 +652,9 @@ def _stage_smoke(args: argparse.Namespace) -> None:
         baseline = json.loads((baseline_dir / "result.json").read_text())
 
     # Trained cell.
-    model_path = _resolve_cell_model_path(*cell)
+    model_spec = _resolve_cell_model_path(*cell, base_model=args.base_model)
     trained = _eval_one_cell(
-        model_path=model_path,
+        model_spec=model_spec,
         cell_id=cell_id,
         n_questions=args.n_questions or 200,
         cot_max_tokens=args.cot_max_tokens,
@@ -598,14 +727,14 @@ def _stage_full(args: argparse.Namespace) -> None:
             logger.info("SKIP (result.json exists): %s", cell_id)
             continue
         try:
-            model_path = _resolve_cell_model_path(source, arm, seed)
+            model_spec = _resolve_cell_model_path(source, arm, seed, base_model=args.base_model)
         except Exception as e:
             logger.error("Failed to download %s: %s", cell_id, e)
             failures.append((cell_id, f"download: {e}"))
             continue
         try:
             result = _eval_one_cell(
-                model_path=model_path,
+                model_spec=model_spec,
                 cell_id=cell_id,
                 n_questions=args.n_questions,
                 cot_max_tokens=args.cot_max_tokens,
