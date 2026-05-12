@@ -431,11 +431,34 @@ def _run_mask_audit(
                 )
 
         if arm in PARTIAL_GENERATION_ARMS:
-            # Locate the `\nAnswer:` token slice and assert it is loss-bearing.
-            # For partial cells, the rationale region between the assistant
-            # `<|im_start|>` and the `\nAnswer:` anchor must be ALL masked.
+            # Locate the `\nAnswer:` token slice via CHAR-OFFSET ALIGNMENT and
+            # assert it is loss-bearing. For partial cells, the rationale
+            # region between the assistant `<|im_start|>` and the `\nAnswer:`
+            # anchor must be ALL masked.
+            #
+            # v5 fix: the previous implementation re-tokenized the standalone
+            # string `\nAnswer:` (-> `[198, 16141, 25]`) and searched for that
+            # subsequence in `input_ids`. That fails on Qwen2.5 because BPE
+            # merges the closing `>` of `</persona-thinking>` with the
+            # trailing newline into a single token (id `397 = '>\n'`). The
+            # in-context tokens are `[..., 397, 16141, 25, ...]` (no 198) and
+            # the subsequence lookup returns no match, raising spuriously even
+            # though label masking is correct.
+            #
+            # The fix: decode `input_ids` to text, re-tokenize that text WITH
+            # `return_offsets_mapping=True`, find the char position of
+            # `\nAnswer:` in the decoded string, then look up which token
+            # indices cover `Answer:` via the offset map. Since we're
+            # re-tokenizing the OWN decoded string (not a standalone snippet),
+            # in-context BPE merges are preserved. We additionally verify that
+            # the re-encoded ids match `input_ids` at the resolved indices to
+            # guard against any decode/re-encode drift (e.g., special-token
+            # round-trip differences).
             anchor = "\nAnswer:"
-            char_idx = decoded.find(anchor)
+            # Use rfind: the answer line is always at the END of the
+            # assistant turn; protects against rare rationale-internal
+            # occurrences of `\nAnswer:`.
+            char_idx = decoded.rfind(anchor)
             if char_idx < 0:
                 raise RuntimeError(
                     f"[mask-audit] sample {i}: anchor {anchor!r} not in decoded "
@@ -448,53 +471,73 @@ def _run_mask_audit(
                 add_special_tokens=False,
             )
             offsets = enc["offset_mapping"]
-            # First token whose start-offset >= char_idx + 1 (the '\n' is at
-            # char_idx, 'Answer:' begins at char_idx + 1).
-            answer_tok_idx = next(
-                (j for j, (s, _e) in enumerate(offsets) if s >= char_idx + 1),
+            enc_ids = enc["input_ids"]
+            # Identify the token index range whose character offsets cover the
+            # `Answer:` substring (which begins at char_idx + 1, since
+            # char_idx points at the `\n`). The first such token may have
+            # start-offset < char_idx + 1 if a BPE merge fused the preceding
+            # `\n` with another char (e.g., `>\n` -> id 397); in that case
+            # the FIRST token in the Answer-region is the next one whose
+            # end-offset extends past char_idx + 1 AND whose start-offset is
+            # within the anchor's char span [char_idx, char_idx + len(anchor)).
+            anchor_end = char_idx + len(anchor)  # one-past-last char of `\nAnswer:`
+            answer_first = next(
+                (j for j, (s, e) in enumerate(offsets) if s >= char_idx + 1 and s < anchor_end),
                 None,
             )
-            if answer_tok_idx is None:
+            if answer_first is None:
                 raise RuntimeError(
-                    f"[mask-audit] sample {i}: could not map anchor char_idx to "
-                    f"a token offset; cell_id={cell_id}"
+                    f"[mask-audit] sample {i}: could not map anchor char_idx={char_idx} "
+                    f"to any token offset (Answer: span empty); cell_id={cell_id}"
                 )
-            # The decoded-text token indexing won't perfectly align with the
-            # collator's `input_ids` (packing + bos/eos differences), so we
-            # locate the answer tokens in `input_ids` directly by re-encoding
-            # and comparing. Cheap and robust.
-            answer_token_ids = tokenizer(anchor, add_special_tokens=False, return_tensors=None)[
-                "input_ids"
-            ]
-            # Search input_ids for that subsequence (last match, since the
-            # answer line is the END of the assistant turn).
+            # answer_last is the last token whose start-offset is still inside
+            # the anchor span (covers `:`). Then EXTEND by one more token to
+            # capture the answer letter that follows `:` (e.g., ` C`); that
+            # token is also expected to be loss-bearing.
+            answer_last_inclusive = max(
+                j for j, (s, _e) in enumerate(offsets) if char_idx + 1 <= s < anchor_end
+            )
+            # Half-open end: anchor span + 1 letter token. Cap at len(offsets)
+            # in case the anchor is at the very end of the sequence (defensive).
+            answer_end = min(answer_last_inclusive + 2, len(offsets))
+            # Decode/re-encode drift guard: the resolved token IDs from enc
+            # MUST match input_ids at the same indices, otherwise our index
+            # math is meaningless. (For Qwen2.5 chat-templated text this
+            # round-trip is stable; this assertion catches future tokenizer
+            # changes that break it.)
             ii = input_ids.tolist()
-            window = len(answer_token_ids)
-            match_pos = None
-            for k in range(len(ii) - window, -1, -1):
-                if ii[k : k + window] == answer_token_ids:
-                    match_pos = k
-                    break
-            if match_pos is None:
+            if (
+                len(enc_ids) != len(ii)
+                or enc_ids[answer_first:answer_end] != ii[answer_first:answer_end]
+            ):
                 raise RuntimeError(
-                    f"[mask-audit] sample {i}: '\\nAnswer:' token sequence not "
-                    f"found in input_ids; cell_id={cell_id}"
+                    f"[mask-audit] sample {i}: decode/re-encode drift — "
+                    f"len(enc)={len(enc_ids)} len(input_ids)={len(ii)} "
+                    f"enc[{answer_first}:{answer_end}]={enc_ids[answer_first:answer_end]} "
+                    f"ii[{answer_first}:{answer_end}]={ii[answer_first:answer_end]}. "
+                    f"Cannot trust offset_mapping alignment. cell_id={cell_id}"
                 )
-            answer_labels = labels[match_pos : match_pos + window + 2].tolist()
-            sample_audit["answer_tok_match_pos"] = match_pos
+            answer_labels = labels[answer_first:answer_end].tolist()
+            sample_audit["answer_tok_match_pos"] = answer_first
+            sample_audit["answer_region_token_ids"] = ii[answer_first:answer_end]
             sample_audit["answer_region_labels"] = answer_labels
-            # At least one of the answer-region labels must be non-(-100).
-            if all(label == -100 for label in answer_labels):
+            # ≥2 tokens in the Answer-region must be loss-bearing (the actual
+            # `Answer:` slice AND the letter). All-(-100) means the partial
+            # `{% generation %}` block didn't take effect on the answer line.
+            n_loss_bearing = sum(1 for label in answer_labels if label != -100)
+            if n_loss_bearing < 2:
                 raise RuntimeError(
-                    f"[mask-audit] sample {i}: '\\nAnswer:' region is all -100; "
-                    f"expected loss-bearing labels. cell_id={cell_id}"
+                    f"[mask-audit] sample {i}: '\\nAnswer:' region has only "
+                    f"{n_loss_bearing} loss-bearing tokens (expected >= 2: "
+                    f"`Answer:` + letter). labels={answer_labels} "
+                    f"token_ids={ii[answer_first:answer_end]} cell_id={cell_id}"
                 )
             # The rationale region BEFORE the anchor should contain plenty of
             # -100s. We don't enforce 100% (the partial-turn `{% generation %}`
             # is positional and the collator may extend the mask slightly), but
             # we DO enforce that the 50 tokens immediately before the anchor
             # are predominantly masked.
-            rationale_window = labels[max(0, match_pos - 50) : match_pos].tolist()
+            rationale_window = labels[max(0, answer_first - 50) : answer_first].tolist()
             n_masked_rat = sum(1 for x in rationale_window if x == -100)
             sample_audit["rationale_pre_anchor_masked_frac"] = n_masked_rat / max(
                 len(rationale_window), 1

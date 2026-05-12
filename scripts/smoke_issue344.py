@@ -227,6 +227,148 @@ def test_partial_template_fails_closed_on_missing_anchor() -> None:
     print("  PASS")
 
 
+def test_mask_audit_handles_bpe_merge_at_persona_boundary() -> None:
+    """v5 regression test: `_run_mask_audit` partial-arm branch must NOT
+    rely on standalone-string re-tokenization of `\\nAnswer:`.
+
+    On Qwen2.5 the closing `>` of `</persona-thinking>` BPE-merges with the
+    trailing `\\n` into a single token (id 397 = `'>\\n'`). The actual
+    in-context tokens around the anchor are `[..., 397, 16141, 25, ...]`,
+    not `[..., 198, 16141, 25, ...]` as a standalone `tokenizer('\\nAnswer:')`
+    would suggest. The v4 audit searched for the standalone subsequence in
+    `input_ids` and spuriously raised even though label masking was correct.
+
+    The fix uses char-offset alignment via `return_offsets_mapping=True`.
+    This test verifies:
+      (a) On a correctly-masked synthetic batch (rationale → -100, Answer-line
+          and letter loss-bearing) the audit PASSES — the offset-mapping path
+          correctly locates the Answer-region.
+      (b) On a FAULTY batch where rationale tokens are NOT -100, the audit
+          RAISES at the rationale-region check.
+    """
+    print("\n=== _run_mask_audit BPE-merge boundary (v5 regression) ===")
+    import run_issue_344_train as t
+    import torch
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.chat_template = t.chat_template_for_arm(t.ARM_LABELS_ON_ANSWER)
+
+    # Build a single chat-templated sequence with the production format:
+    # system + user + assistant where the assistant content is
+    # `<persona-thinking>...</persona-thinking>\nAnswer: <letter>`.
+    out = tokenizer.apply_chat_template(
+        SAMPLE_PERSONA_COT_ROW["messages"],
+        tokenize=True,
+        return_assistant_tokens_mask=True,
+        return_dict=True,
+    )
+    input_ids_list = out["input_ids"]
+    assistant_mask = out["assistant_masks"]  # 1 over the loss-bearing slice
+
+    # Sanity: verify the BPE-merge condition this test exists to guard against.
+    # The standalone `\nAnswer:` re-encoding does NOT appear as a subsequence
+    # in input_ids; the in-context Answer-region begins with token != 198.
+    standalone = tokenizer("\nAnswer:", add_special_tokens=False)["input_ids"]
+    assert standalone == [198, 16141, 25], (
+        f"unexpected standalone tokenization {standalone}; Qwen2.5 changed?"
+    )
+    has_standalone_subseq = any(
+        input_ids_list[k : k + 3] == standalone for k in range(len(input_ids_list) - 3)
+    )
+    assert not has_standalone_subseq, (
+        "expected standalone [198,16141,25] NOT to appear in chat-templated "
+        "input_ids (BPE merges `>\\n` into id 397); test premise invalid."
+    )
+
+    # Build a CORRECTLY-masked batch: assistant-mask=1 -> keep id, else -100.
+    # This is what SFTTrainer produces when assistant_only_loss=True is wired
+    # correctly with the partial-turn `{% generation %}` template.
+    correct_labels = [
+        tid if m == 1 else -100 for tid, m in zip(input_ids_list, assistant_mask, strict=True)
+    ]
+    batch_correct = {
+        "input_ids": torch.tensor([input_ids_list], dtype=torch.long),
+        "labels": torch.tensor([correct_labels], dtype=torch.long),
+    }
+
+    # CASE (a): correctly-masked batch passes the audit cleanly.
+    from unittest.mock import MagicMock
+
+    fake_trainer = MagicMock()
+    fake_trainer.get_train_dataloader.return_value = iter([batch_correct])
+    with tempfile.TemporaryDirectory() as td:
+        audit = t._run_mask_audit(
+            fake_trainer,
+            tokenizer,
+            arm=t.ARM_LABELS_ON_ANSWER,
+            cell_id="smoke_bpe_correct",
+            audit_dir=Path(td),
+        )
+    assert audit["n_samples"] == 1
+    assert audit["is_partial_generation_arm"] is True
+    sample = audit["samples"][0]
+    # The audit MUST have resolved the Answer-region via offset_mapping,
+    # not via subsequence search (which would have failed on the BPE merge).
+    assert "answer_tok_match_pos" in sample
+    assert "answer_region_token_ids" in sample
+    assert "answer_region_labels" in sample
+    region_ids = sample["answer_region_token_ids"]
+    region_labels = sample["answer_region_labels"]
+    # The region must include the `Answer` token (16141) and `:` (25) plus
+    # the letter token. Each must be loss-bearing.
+    assert 16141 in region_ids, f"`Answer` token missing from region: {region_ids}"
+    assert 25 in region_ids, f"`:` token missing from region: {region_ids}"
+    n_loss_bearing = sum(1 for lab in region_labels if lab != -100)
+    assert n_loss_bearing >= 2, (
+        f"expected >=2 loss-bearing tokens in Answer region, got {n_loss_bearing}; "
+        f"labels={region_labels} ids={region_ids}"
+    )
+    # rationale-pre-anchor masked fraction must be >= 0.80 (template guarantees
+    # all rationale tokens are -100).
+    assert sample["rationale_pre_anchor_masked_frac"] >= 0.80, (
+        f"rationale_pre_anchor_masked_frac too low: {sample['rationale_pre_anchor_masked_frac']}"
+    )
+    print(
+        f"  (a) correctly-masked batch: PASS "
+        f"(answer_region_ids={region_ids}, labels={region_labels})"
+    )
+
+    # CASE (b): regression — broken labels where the rationale region is NOT
+    # masked. The audit must RAISE at the rationale-region check (>=80%
+    # masked). This simulates the failure mode the audit is supposed to catch.
+    faulty_labels = list(input_ids_list)  # ALL tokens loss-bearing (no -100)
+    batch_faulty = {
+        "input_ids": torch.tensor([input_ids_list], dtype=torch.long),
+        "labels": torch.tensor([faulty_labels], dtype=torch.long),
+    }
+    fake_trainer.get_train_dataloader.return_value = iter([batch_faulty])
+    raised = False
+    with tempfile.TemporaryDirectory() as td:
+        try:
+            t._run_mask_audit(
+                fake_trainer,
+                tokenizer,
+                arm=t.ARM_LABELS_ON_ANSWER,
+                cell_id="smoke_bpe_faulty",
+                audit_dir=Path(td),
+            )
+        except RuntimeError as exc:
+            raised = True
+            msg = str(exc)
+            # Either the top-level pct_masked gate (==0%) fires first, or
+            # the rationale-region check fires after. Both are acceptable
+            # — both prove the audit is rejecting this faulty masking.
+            assert "partial-generation arm" in msg or "rationale region" in msg, (
+                f"unexpected error message: {msg}"
+            )
+            print(f"  (b) faulty (no rationale mask) raised as expected: {msg[:100]}")
+    assert raised, "audit must raise on faulty all-loss-bearing labels"
+    print("  PASS")
+
+
 def test_no_cot_fresh_whole_turn_renders() -> None:
     print("\n=== no_cot_FRESH whole-turn template renders short assistant turn ===")
     import run_issue_344_train as t
@@ -1076,6 +1218,7 @@ def main() -> None:
             test_whole_turn_template_renders_full_assistant_mask()
             test_no_cot_fresh_whole_turn_renders()
             test_partial_template_fails_closed_on_missing_anchor()
+            test_mask_audit_handles_bpe_merge_at_persona_boundary()
         except OSError as exc:
             print(f"\n  [WARN] tokenizer download failed ({exc}); skipping template tests.")
     else:
