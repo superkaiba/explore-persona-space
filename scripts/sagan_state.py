@@ -247,6 +247,42 @@ def cmd_remove_tag(args: argparse.Namespace) -> None:
     print(f"#{args.number} -tag {args.tag}")
 
 
+def cmd_set_body(args: argparse.Namespace) -> None:
+    exp = get_experiment(args.number)["experiment"]
+    body = args.body if args.body is not None else open(args.file).read()
+    patch_experiment(exp["id"], body=body)
+    print(f"#{args.number} body updated ({len(body)} chars)")
+
+
+def cmd_set_title(args: argparse.Namespace) -> None:
+    exp = get_experiment(args.number)["experiment"]
+    patch_experiment(exp["id"], title=args.title)
+    print(f"#{args.number} title → {args.title[:80]}")
+
+
+def cmd_promote(args: argparse.Namespace) -> None:
+    """Clean-result promotion: flip runs.classification + move to completed.
+
+    Mirrors the legacy `gh_project.py promote <N> useful|not-useful` flow.
+    """
+    if args.verdict not in ("useful", "not-useful", "not_useful"):
+        raise SaganError("verdict must be 'useful' or 'not-useful'")
+    classification = "useful" if args.verdict == "useful" else "not_useful"
+    exp = get_experiment(args.number)["experiment"]
+    # Status → completed; classification update needs a runs-side endpoint
+    # (not yet built — for now we patch status here and rely on the
+    # dashboard's Promote button to set classification, OR the user
+    # can update directly via SQL until /api/runs/:id PATCH ships).
+    patch_experiment(exp["id"], status="completed", hasCleanResult=True)
+    post_marker(
+        exp["id"],
+        "epm:promoted",
+        note=f"Promoted as {classification}",
+        metadata={"classification": classification},
+    )
+    print(f"#{args.number} promoted ({classification})  — verify runs.classification in dashboard")
+
+
 def cmd_latest_marker(args: argparse.Namespace) -> None:
     exp = get_experiment(args.number)["experiment"]
     ev = latest_marker(exp["id"])
@@ -301,6 +337,23 @@ def main() -> None:
     p = sub.add_parser("latest-marker", help="show the most recent epm:* event")
     p.add_argument("number", type=int)
     p.set_defaults(func=cmd_latest_marker)
+
+    p = sub.add_parser("set-body", help="replace the experiment body")
+    p.add_argument("number", type=int)
+    g = p.add_mutually_exclusive_group(required=True)
+    g.add_argument("--body", help="body text directly on the command line")
+    g.add_argument("--file", help="path to a file containing the body text")
+    p.set_defaults(func=cmd_set_body)
+
+    p = sub.add_parser("set-title", help="rename the experiment")
+    p.add_argument("number", type=int)
+    p.add_argument("title")
+    p.set_defaults(func=cmd_set_title)
+
+    p = sub.add_parser("promote", help="clean-result promotion (useful | not-useful)")
+    p.add_argument("number", type=int)
+    p.add_argument("verdict", choices=["useful", "not-useful"])
+    p.set_defaults(func=cmd_promote)
 
     args = parser.parse_args()
     try:

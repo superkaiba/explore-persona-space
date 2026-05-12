@@ -85,10 +85,10 @@ The kinds table is auto-generated from `.claude/workflow.yaml § markers`. Do NO
 
 To determine current state:
 
-1. `gh issue view <N> --json labels,comments` -> parse.
-2. `status` = the single `status:*` label. If 0 or >1, abort.
-3. For each `<kind>` above, scan comments for the highest-version opening tag.
-4. Build `marker_map: {kind: (version, body)}`.
+1. `python scripts/sagan_state.py view <N>` → JSON with `.experiment.status` and `.events[]`.
+2. `status` = `.experiment.status` (already a single enum value).
+3. For each `<kind>` above, scan `.events[]` for the highest-version `metadata.marker_type` matching `epm:<kind>`.
+4. Build `marker_map: {kind: (version, note)}` where `note` is `events[*].note`.
 5. Choose next action from the state machine table in `SKILL.md`.
 
 Regex for marker opening: `<!--\s*epm:(?P<kind>[a-z-]+)\s+v(?P<version>\d+)\s*-->`

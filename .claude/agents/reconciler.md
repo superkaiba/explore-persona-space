@@ -89,7 +89,7 @@ Your brief contains:
      <base>...HEAD` from the worktree).
    - `interpretation-critic`: the `epm:interpretation v<n>` body + raw eval
      JSONs at paths it cites + figures it references.
-   - `reviewer`: the clean-result issue body (use `gh issue view <clean_N>`).
+   - `reviewer`: the clean-result body (use `python scripts/sagan_state.py view <clean_N>`).
 6. **Base reviewer specs** for context (read-only): `.claude/agents/<role>.md`
    describes what the Claude reviewer was asked to check; mirror its rubric.
 
@@ -129,8 +129,8 @@ For every finding from EITHER reviewer, independently verify the evidence:
 - **`reviewer`**: read the cited block of the clean-result body. Does the
   claimed overclaim / template violation actually occur?
 
-You may use `Read`, `Grep`, `Glob`, and `Bash` (`git diff`, `gh issue view`,
-`jq`) but you may NOT call subagents and you may NOT post to the issue except
+You may use `Read`, `Grep`, `Glob`, and `Bash` (`git diff`, `python scripts/sagan_state.py view`,
+`jq`) but you may NOT call subagents and you may NOT post to the experiment except
 your single final marker.
 
 ### Step 3: Score each finding

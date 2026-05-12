@@ -33,7 +33,7 @@ Read, in order:
 2. Specific result files (`eval_results/<name>/run_result.json` and any per-condition JSONs)
 3. `epm:results` marker on the source issue (if issue-driven)
 4. RESULTS.md (context on prior findings) and `docs/research_ideas.md`
-5. Related prior write-ups (`gh issue list --label clean-results`). The legacy `research_log/` flow is retired — its archive lives at `archive/research_log/` (read-only) for historical context only.
+5. Related prior write-ups (clean-result experiments — `has_clean_result=true`; browse at <https://sagan.superkaiba.com/experiments?has_clean_result=true>). The legacy `research_log/` flow is retired — its archive lives at `archive/research_log/` (read-only) for historical context only.
 
 Before analyzing, write down — in your scratch context — what the hypothesis was, what would confirm it, what would refute it, and what the baselines are. **Pull every number from the raw JSON, not from the experimenter's summary.** Common failure: draft says 92%, JSON says 89%.
 
@@ -228,26 +228,39 @@ uv run python scripts/verify_clean_result.py .claude/cache/issue-<N>-clean-resul
 
 Every FAIL must be fixed. WARNs should be fixed or acknowledged in the Caveats section. Do NOT proceed to Step 6 until the verifier is clean.
 
-### Step 6: Promote the source issue to a clean-result (inline)
+### Step 6: Promote the source experiment to a clean-result (inline)
 
-This is the terminal step. **The source experiment issue ITSELF becomes the clean-result.** No separate issue is created. The 3-step `body-promote` protocol preserves the original body as a comment, replaces the issue body with the polished clean-result, and adds the `clean-results:draft` label.
+This is the terminal step. **The source experiment row ITSELF becomes the clean-result.** No separate row is created. The body is replaced with the polished clean-result, `has_clean_result` is set to `true`, and a child `runs` row is created with `classification='pending'`. The previous body is preserved as a workflow_event so the original ask remains queryable.
 
 ```bash
-uv run python scripts/gh_project.py body-promote <SOURCE-N> .claude/cache/issue-<SOURCE-N>-clean-result.md
+# 1. Snapshot the existing body as a workflow_event (for rollback / audit)
+ORIGINAL=$(python scripts/sagan_state.py view <SOURCE-N> | jq -r '.experiment.body')
+python scripts/sagan_state.py post-marker <SOURCE-N> epm:original-body \
+    --note "$ORIGINAL"
+
+# 2. Replace the body with the clean-result write-up
+python scripts/sagan_state.py set-body <SOURCE-N> \
+    --file .claude/cache/experiment-<SOURCE-N>-clean-result.html
+
+# 3. Update title to the claim summary
+python scripts/sagan_state.py set-title <SOURCE-N> \
+    "<concise claim — not experiment name> (<HIGH|MODERATE|LOW> confidence)"
+
+# 4. Mark has_clean_result and create the pending run row (one PATCH does both)
+curl -X PATCH -H "Authorization: Bearer $SAGAN_API_TOKEN" \
+    -H "content-type: application/json" \
+    -d '{"hasCleanResult": true}' \
+    "$SAGAN_BASE_URL/api/experiments/<EXP-UUID>"
 ```
 
-Then update the title to the claim summary via the `gh_graphql` MCP tool (write paths NEVER shell out to `gh` — `GH_TOKEN` must not enter the agent context window; see CLAUDE.md "GitHub GraphQL MCP"):
+This sequence is idempotent: re-running re-snapshots only if the body
+has changed since the last `epm:original-body` marker (the analyzer
+round-2+ path on reviewer FAIL just calls `set-body` again with the
+revised content).
 
-```
-mcp__gh_graphql__update_issue_title(
-    issue_number=<SOURCE-N>,
-    title="<concise claim — not experiment name> (<HIGH|MODERATE|LOW> confidence)",
-)
-```
-
-The `body-promote` subcommand is idempotent: if the body already starts with the `<!-- epm:promoted -->` marker, it just edits the body in place (revision path used for analyzer round-2+ on reviewer FAIL). The original body is preserved as an `<!-- epm:original-body -->` comment for rollback via `body-restore`.
-
-The project-board column updates automatically once `clean-results:draft` is added — the `.github/workflows/project-sync.yml` workflow routes the issue based on its current `status:*` label (which should be `status:awaiting-promotion` after this step in the /issue lifecycle).
+The dashboard kanban routes the experiment to the Awaiting promotion
+column automatically once status is set to `awaiting_promotion` by the
+/issue Step 9 transition.
 
 ### Step 7: Cross-link recap
 
@@ -272,7 +285,7 @@ You own the full path from raw results to the promoted source issue.
 
 ## After submission
 
-The `reviewer` agent reads the raw data and the source issue's NEW body (but not your reasoning) and posts a verdict on the source issue. On PASS, the `/issue` skill sets `status:awaiting-promotion` and parks the issue in the **Awaiting promotion** column with `clean-results:draft` still attached; the user then runs `python scripts/gh_project.py promote <N> useful|not-useful` to flip the sublabel and route the issue to **Useful** or **Not useful**. **You MUST NOT run that promote command yourself — Awaiting promotion is user-only.** On CONCERNS / FAIL, you revise the source issue body in place via `body-promote` (idempotent: re-running edits the body without re-snapshotting). Post `<!-- epm:analysis v2 -->` summarizing the diff.
+The `reviewer` agent reads the raw data and the source experiment's NEW body (but not your reasoning) and posts a verdict event. On PASS, the `/issue` skill sets `status='awaiting_promotion'` and parks the experiment with the run row's `classification='pending'`; the user then runs `python scripts/sagan_state.py promote <N> useful|not-useful` (or clicks Promote in the dashboard) to flip the classification and move the experiment to `completed`. **You MUST NOT run that promote command yourself — awaiting_promotion is user-only.** On CONCERNS / FAIL, you revise the source experiment body in place via `sagan_state.py set-body` (re-running just replaces the body content). Post `epm:analysis v2` summarizing the diff via `post-marker`.
 
 ---
 

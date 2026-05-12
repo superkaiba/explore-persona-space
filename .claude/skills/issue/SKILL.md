@@ -188,7 +188,7 @@ There is no user sign-off step. Reviewer PASS (or `epm:test-verdict` PASS for co
 | `followups-running` | Parent is done; children with `Parent: #<N>` are still in flight. | no |
 | `done-experiment` | Terminal: experiment finished + clean-result promoted. Issue stays OPEN. | no |
 | `done-impl` | Terminal: code change shipped + reviewed. Issue stays OPEN. | no |
-| `archived` | Closed via `gh issue close`; auto-applied by archive workflow. | no |
+| `archived` | Set explicitly for duplicates / won't-fix / abandoned experiments. | no |
 <!-- /workflow.yaml: AUTO-GENERATED -->
 
 The two user-gated states in the active lifecycle are `plan-pending` (plan approval) and `awaiting-promotion` (clean-result promotion). `blocked` and `gate-pending` also need user attention but represent stalled / pre-pipeline states. Everything between is automatic, short of a `status:blocked` override.
@@ -240,14 +240,12 @@ block the pipeline.
 ### Step 0: Load state
 
 ```
-# Same JSON shape as `gh issue view --json
-# number,title,body,labels,state,assignees,comments` but caps comments at
-# the most-recent 50 via GraphQL `comments(last: 50)`. /issue invocations
-# on long-thread issues (#80 has 100+ comments) previously re-fetched the
-# entire thread every time; the helper returns the same shape with a
-# fixed payload ceiling. Override the cap with `--comments-last <N>` if
-# you ever need the full thread.
-uv run python scripts/gh_issue_state.py <N>
+# Returns the experiment row + the 50 most-recent workflow_events
+# (marker history) + open approval requests, mirroring what the agent
+# pipeline needs to resume on any step. The /api/experiments/by-number/<N>
+# endpoint caps events to 50 on the server side, so long-running
+# experiments (e.g. #80 has 100+ markers) don't bloat the payload.
+python scripts/sagan_state.py view <N>
 ```
 
 From the result, derive:
@@ -269,7 +267,7 @@ just to add labels. Order:
 
 1. **`status:*` missing →** apply `status:proposed` automatically:
    ```
-   gh issue edit <N> --add-label status:proposed
+   python scripts/sagan_state.py set-status <N> proposed
    ```
    No user interaction. Defaulting an unlabelled issue to `proposed` is the obvious
    read of the project-board convention (Todo column = `proposed` or no `status:*`).
@@ -291,7 +289,7 @@ just to add labels. Order:
    Success criterion / Kill criterion / Compute / Pod preference / References, then
    patch the issue:
    ```
-   gh issue edit <N> --body "<drafted body>"
+   python scripts/sagan_state.py set-body <N> --file .claude/cache/experiment-<N>-body.md
    ```
    Post a `<!-- epm:auto-defaults v1 -->` comment listing what was applied (label
    added, body drafted) so the audit trail is durable on the issue.
@@ -313,7 +311,7 @@ just to add labels. Order:
    - Title prefix `Survey:` / `Read:` / `Lit review:` → suggest `type:survey`
 
    Use `AskUserQuestion` with the inferred option as `(Recommended)` first. Apply via
-   `gh issue edit <N> --add-label type:<chosen>`. If the user is absent (e.g., autonomous
+   `python scripts/sagan_state.py patch <N> --kind <chosen>` (or set via the dashboard). If the user is absent (e.g., autonomous
    loop), DO error and EXIT — the type label gates Step 7's Done variant and a guess
    here corrupts the project board. Before exiting, post the §5 marker:
    `uv run python scripts/post_step_completed.py --issue <N> --step 0b --exit-kind failure-exit --notes "type-label autofill loop; user override required"`.
@@ -326,7 +324,7 @@ just to add labels. Order:
    Topic categorization for new work lives in `docs/claims.yaml` (`topic` field) and
    in `RESULTS.md` / `eval_results/INDEX.md` H2 prose; no replacement GitHub labels exist.
 
-After Step 0b, re-read the issue (re-run the `gh issue view` from Step 0) so downstream
+After Step 0b, re-read the experiment (re-run `sagan_state.py view <N>` from Step 0) so downstream
 state is computed from the now-patched issue, then continue to Step 1.
 
 ### Step 1: Clarifier gate
@@ -347,7 +345,7 @@ inheritance chain is auditable.
   ambiguities found. Proceeding to adversarial planning." advance label to `status:planning`,
   **and move the project column to Planning**:
   ```
-  uv run python scripts/gh_project.py set-status <N> "Planning"
+  python scripts/sagan_state.py set-status <N> planning
   ```
   This is the one place where the project column transitions out of To do
   into the pipeline. Subsequent phases route automatically through
@@ -372,7 +370,7 @@ inheritance chain is auditable.
        answers verbatim (lightly formatted -- one numbered bullet per question), so the
        issue is self-contained for downstream agents.
      - If the user also asks you to fold the answers into the issue body (e.g., "update
-       the issue body"), run `gh issue edit <N> --body "<new body>"` with the original
+       the experiment body"), run `python scripts/sagan_state.py set-body <N> --file …` with the original
        body preserved + a `## Spec (from clarifier)` section appended. Only do this on
        explicit request -- default is comment-only.
      - Re-run the clarifier evaluation using (body + clarify questions + these answers).
@@ -419,10 +417,10 @@ no-op. The same gate (`scripts/hypothesis_gate.py`) also runs in Step 1
 Post plan as `<!-- epm:plan v1 -->` comment via:
 
 ```bash
-PLAN_URL=$(gh issue comment <N> --body-file .claude/plans/issue-<N>-comment-body.md | tail -1)
+PLAN_EVENT_ID=$(python scripts/sagan_state.py post-marker <N> epm:plan --note "$(cat .claude/plans/issue-<N>-comment-body.md)" | grep -oE 'event [a-f0-9-]+' | awk '{print $2}')
 ```
 
-`gh issue comment` prints the comment URL on stdout — capture it as a
+`sagan_state.py post-marker` prints the event id on stdout — capture it as a
 shell variable in the SAME bash block that posts the comment. **Do not
 persist `PLAN_URL` to a cache file.** The variable lives only for the
 duration of Steps 2a → 2c, which run in the same orchestrator turn (the
@@ -636,13 +634,12 @@ schema). Codex never sees `GH_TOKEN` — the wrapper agent posts via
 
 ```bash
 # After both Agent tasks complete — ONE fetch, parse twice in-memory.
-# Previously this section fetched the same comment thread twice with
-# back-to-back `gh issue view --json comments` calls. Switching to the
-# capped helper (last 50 comments) gives the same data with a single
-# round-trip and a smaller payload on long-thread issues.
-comments_json=$(uv run python scripts/gh_issue_state.py <N> | jq '.comments')
-claude_marker=$(echo "$comments_json" | jq '... epm:code-review v<n> ...')
-codex_marker=$(echo "$comments_json" | jq '... epm:code-review-codex v<n> ...')
+# `sagan_state.py view` returns the experiment row + recent
+# workflow_events in a single round-trip; we filter by marker_type
+# in-memory for the two reviewers we want.
+events_json=$(python scripts/sagan_state.py view <N> | jq '.events')
+claude_marker=$(echo "$events_json" | jq '[.[] | select(.metadata.marker_type == "epm:code-review")] | .[0]')
+codex_marker=$(echo "$events_json" | jq '[.[] | select(.metadata.marker_type == "epm:code-review-codex")] | .[0]')
 ```
 
 Parse each marker's `**Verdict:**` line. Acceptable values: `PASS`,
@@ -1057,8 +1054,8 @@ exemplars, figure captions, and research-communication principles).
 
 Re-spawn `analyzer` agent (fresh context, sees raw data + all interp-critique
 history + the latest clean-result-critique). Analyzer revises the
-`epm:interpretation` marker AND edits the clean-result issue body in place
-via `gh issue edit <clean-result-N> --body-file ...`. Re-runs
+`epm:interpretation` marker AND edits the clean-result experiment body in place
+via `python scripts/sagan_state.py set-body <clean-result-N> --file ...`. Re-runs
 `scripts/verify_clean_result.py` (must still PASS). Re-spawn
 `clean-result-critic` against the revised surfaces. Posts the next
 critique version.
@@ -1097,27 +1094,26 @@ PASS-class = {PASS, CONCERNS}; FAIL-class = {FAIL}.
 
 Transitions (use the ensemble `final_verdict`, NOT either reviewer's individual verdict):
 
-- **`final_verdict == PASS`:** Clean-result STAYS at `clean-results:draft` (do NOT auto-promote).
-  Advance source issue to `status:awaiting-promotion`:
+- **`final_verdict == PASS`:** Clean-result `runs.classification` STAYS at `pending` (do NOT auto-promote).
+  Advance source experiment to `awaiting_promotion`:
   ```
-  gh issue edit <N> --remove-label status:reviewing --add-label status:awaiting-promotion
+  python scripts/sagan_state.py set-status <N> awaiting_promotion
   ```
-  Post comment:
+  Post a workflow event with a user-facing summary:
   > Ensemble reviewer PASS. Clean-result #\<clean-result-N\> is ready for your review.
   > When satisfied, promote it (USER-ONLY — no automation may do this):
-  >   `python scripts/gh_project.py promote <clean-result-N> useful` (paper-relevant)
-  >   `python scripts/gh_project.py promote <clean-result-N> not-useful` (archive candidate)
+  >   `python scripts/sagan_state.py promote <clean-result-N> useful` (paper-relevant)
+  >   `python scripts/sagan_state.py promote <clean-result-N> not-useful` (archive candidate)
   > Then re-enter `/issue <N>` to fire Step 10.
 
   Post the §5 marker: `uv run python scripts/post_step_completed.py --issue
   <N> --step 9 --exit-kind parked --notes "awaiting clean-result promotion"`.
   EXIT. The user reviews the clean-result at their own pace and manually
-  picks a verdict. **Awaiting promotion is a user-only column — no agent
-  or automation may move an issue out of it.** The `gh_project.py promote`
-  command flips `clean-results:draft -> clean-results:<verdict>` (KEEPS
-  legacy `clean-results` for back-compat), routes the project board to
-  `Useful` / `Not useful`, and prints a reminder to re-enter `/issue <N>`
-  so Step 10 fires.
+  picks a verdict. **Awaiting promotion is a user-only status — no agent
+  or automation may flip `runs.classification` out of `pending`.** The
+  `sagan_state.py promote` command flips `runs.classification` to
+  `useful` / `not_useful`, sets the experiment to `completed`, and
+  prints a reminder to re-enter `/issue <N>` so Step 10 fires.
 - **`final_verdict == CONCERNS`:** same as PASS (non-blocking). Surfaces on the verdict comment(s).
 - **`final_verdict == FAIL`:** clean-result stays `:draft`. Source back to `status:interpreting`.
   Analyzer revises with BOTH reviewers' feedback (Claude marker + Codex marker + reconcile marker if any).
@@ -1159,7 +1155,7 @@ Cheap insurance against drift on multi-part issues: re-read the ORIGINAL
 issue body and verify every numbered ask is actually addressed. The reviewer
 checks the *write-up*; this checks the *issue → work* contract.
 
-1. Re-fetch the current issue body: `gh issue view <N> --json body`.
+1. Re-fetch the current experiment body: `python scripts/sagan_state.py view <N> | jq -r '.experiment.body'`.
 2. Enumerate every:
    - Numbered ask (`1. …`, `2. …`)
    - Acceptance criterion (sentences containing "must", "should report",
@@ -1203,61 +1199,51 @@ checks the *write-up*; this checks the *issue → work* contract.
    `<!-- epm:results-md-diff v1 -->` -- do NOT auto-edit).
 3. Update `eval_results/INDEX.md` with a new entry.
 
-4. **Detect open follow-up children.** Search for any open issue whose body
-   contains a literal `Parent: #<N>` reference to this issue:
+4. **Detect open follow-up children.** Look up incoming `parent` edges
+   in Sagan (children whose `parent` edge points to this experiment):
    ```bash
-   gh issue list --state open --search "Parent: #<N> in:body" \
-     --json number,labels,state --jq '.'
+   python scripts/sagan_state.py view <N> \
+     | jq -r '.experiment.id' \
+     | xargs -I{} curl -sH "Authorization: Bearer $SAGAN_API_TOKEN" \
+         "$SAGAN_BASE_URL/api/edges?to_id={}&type=parent"
    ```
-   A child is "still in flight" if it is open AND does NOT carry a terminal
-   `status:*` label (`done-experiment`, `done-impl`, `archived`). The parent's
-   destination state depends on whether ANY child is still in flight.
+   (a dedicated `list-children <N>` subcommand is on the follow-up list).
+   A child is "still in flight" if its status is not in `{completed,
+   archived}`. The parent's destination state depends on whether ANY
+   child is still in flight.
 
 5. **Choose the destination state.**
 
-   - **At least one child still in flight** AND `type:experiment`
-     → **`status:followups-running`** + Project Status `"Followups running"`.
-     The parent's own work is finished but its children own the queue. Re-invoking
-     `/issue <N>` later re-runs Step 10 step 4 — once all children reach a
-     terminal state, the parent advances to `status:done-experiment`.
-   - **No children in flight** AND `type:experiment`
-     → **`status:done-experiment`** + Project Status `"Done (experiment)"`.
-   - **`type:infra` / `type:batch` / `type:analysis` / `type:survey`**
-     (regardless of children) → **`status:done-impl`** + Project Status
-     `"Done (impl)"`. Code-change paths don't use `followups-running`
-     because they don't seed experimental follow-ups via Step 10b.
-   - **No `type:*` label** → STOP, post an error comment asking the user to add one.
-     Do NOT pick a default, and do NOT advance the label until fixed.
+   - **At least one child still in flight** AND `kind=experiment`
+     → keep at `completed` with `has_clean_result=true`; the active
+     `parent` edges in Sagan surface the running followups in the
+     dashboard. Re-invoking `/issue <N>` later re-runs Step 10 step 4 —
+     once all children reach a terminal state, post a final
+     `epm:followups-done` event.
+   - **No children in flight** AND `kind=experiment`
+     → **`status=completed`**, post `epm:done v1`.
+   - **`kind` in {`infra`, `batch`, `analysis`, `survey`}** (regardless
+     of children) → **`status=completed`**, post `epm:done-impl v1`.
+     Code-change paths don't seed experimental follow-ups via Step 10b.
+   - **No `kind` set** → STOP, post an error event asking the user to
+     set `kind` in the dashboard. Do NOT pick a default.
 
-6. Apply the chosen label (remove `status:reviewing`, `status:awaiting-promotion`,
-   or `status:testing` / `status:followups-running` as applicable, add the new
-   label chosen in step 5):
+6. Apply the chosen status:
    ```
-   gh issue edit <N> --add-label <new-label> --remove-label <prior-status>
+   python scripts/sagan_state.py set-status <N> completed
    ```
 
-7. Move the issue to the correct project-board column. The label flip in
-   step 6 already routes the column automatically via `LABEL_TO_COLUMN`
-   (`status:done-experiment` / `status:done-impl` → `Done`,
-   `status:followups-running` → `Followups running`). Verify with
-   `gh_project.py status <N>`; an explicit `set-status` is rarely needed.
-   When you do invoke it, pass a column name from `NEW_COLUMN_SPEC`:
-   ```
-   uv run python scripts/gh_project.py set-status <N> "Done"
-   # or, for the follow-ups branch:
-   uv run python scripts/gh_project.py set-status <N> "Followups running"
-   ```
+7. Verify the dashboard kanban routes the experiment to the right
+   column (Done) — the status enum value already determines the column;
+   no manual move needed.
 
-8. Post final comment `<!-- epm:done v1 -->` (or `<!-- epm:followups-running v1 -->`
-   for the followups-running branch) summarizing: outcome, key numbers, what's
-   confirmed/falsified, what's next, plus a link to the promoted clean-result
-   issue (for experiments) AND a list of in-flight child follow-ups (when
-   transitioning to `status:followups-running`). Include the line
-   `Moved to **<status-name>** on the project board.`
-9. **LEAVE THE ISSUE OPEN.** Never call `gh issue close`. Done-ness lives on the
-   project board, not in the issue's open/closed state. The only legitimate way
-   for this skill to close an issue is a user-initiated duplicate / invalid / won't-fix
-   triage -- never as the terminal state of a successful run.
+8. Post final marker `epm:done` (or `epm:done-impl` for code-change
+   kinds) summarizing: outcome, key numbers, what's confirmed/falsified,
+   what's next, plus a link to the promoted clean-result experiment (for
+   experiments) AND a list of in-flight child follow-ups when relevant.
+   Include the line `status now: completed`.
+9. **NEVER set `status='archived'` from this skill.** Archive is for
+   duplicates / invalid / won't-fix, user-initiated only.
 10. Do NOT delete the worktree -- user decides when to clean up.
 11. If `type:experiment` AND we just landed at `status:done-experiment` (no
     children blocked us), proceed to Step 10b (follow-up proposer). If we
@@ -1534,7 +1520,7 @@ See `markers.md` for the full taxonomy. Every marker comment uses the format:
 | >1 `status:*` labels | Post error comment listing conflicts, post the §5 marker: `uv run python scripts/post_step_completed.py --issue <N> --step 0 --exit-kind failure-exit --notes "ambiguous status: >1 status:* labels"`, EXIT. Ask user to remove the wrong one. Do NOT pick. |
 | 0 `status:*` labels | Run Step 0b: autofill `status:proposed`, post `epm:auto-defaults`, continue. (Old behavior — error+EXIT — was too brittle.) |
 | `type:*` label missing | Run Step 0b (see Step 0b above): infer from title prefix, confirm with the user, apply chosen label. Autonomous loop with no user → error+EXIT (a wrong guess corrupts the Done column). |
-| Empty issue body | Run Step 0b: ask user for goal/hypothesis/setup in chat, draft body, patch via `gh issue edit --body`, post `epm:auto-defaults` audit comment. |
+| Empty experiment body | Run Step 0b: ask user for goal/hypothesis/setup in chat, draft body, patch via `python scripts/sagan_state.py set-body <N> --file …`, post `epm:auto-defaults` audit event. |
 | Plan fails mandatory-section check | Re-invoke `adversarial-planner` with missing sections list; do not post incomplete plan. |
 | Preflight fails | Post the `--json` report verbatim as `<!-- epm:preflight v1 -->`. Do NOT auto-fix (per CLAUDE.md "never take shortcuts"). |
 | Specialist subagent errors out | Specialist posts `<!-- epm:failure v1 -->` with traceback + last log lines. Label -> `status:blocked`. |

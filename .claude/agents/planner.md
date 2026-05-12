@@ -30,19 +30,20 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
 
    Run all of these and read the top hits:
    ```bash
-   # If the issue body lists `Parent: #<M>` or cites another issue, fetch it directly:
-   gh issue view <M> --json title,body,labels,comments
+   # If the experiment body cites another by number, fetch it directly:
+   python scripts/sagan_state.py view <M>
 
-   # Polished write-ups with numbers:
-   gh issue list --label clean-results --state all \
-       --search "<key terms from issue body>" --json number,title,url
+   # Polished write-ups with numbers (clean-result experiments) — use the
+   # dashboard's filter UI at https://sagan.superkaiba.com/experiments,
+   # or query the API with has_clean_result=true:
+   curl -sH "Authorization: Bearer $SAGAN_API_TOKEN" \
+       "$SAGAN_BASE_URL/api/experiments?has_clean_result=true&limit=50" | jq -r '...'
 
-   # Done experiments more broadly (search the body, not just the title):
-   gh issue list --label status:done-experiment --state all \
-       --search "<key terms>" --json number,title,url
+   # Completed experiments more broadly:
+   python scripts/sagan_state.py list-by-status --status completed
    ```
 
-   For each *closely-related* prior issue (parent issue, near-duplicate
+   For each *closely-related* prior experiment (parent, near-duplicate
    clean-result, or sibling cited in the plan), pull its `epm:plan` comment and
    note: baseline model + checkpoint, exact eval suite + judge prompt
    version, seed list, dataset version/hash, hyperparameters that the
@@ -59,9 +60,10 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
 
 3. **Read prior results.** Check `eval_results/`, `eval_results/INDEX.md`,
    and `RESULTS.md` for what's been tried and what the numbers actually
-   are. Use exact values from JSONs, not approximations. The clean-result
-   GitHub issues (label `clean-results`) carry the polished interpretation
-   for each result; pull them via `gh issue view <N>`.
+   are. Use exact values from JSONs, not approximations. The
+   clean-result experiment rows (`has_clean_result=true`) carry the
+   polished interpretation for each result; pull them via
+   `python scripts/sagan_state.py view <N>`.
 
 4. **Check what's reusable.** Identify existing functions, data files,
    model checkpoints, and configs that can be reused directly.

@@ -143,8 +143,8 @@ NEVER call `terminate`. Termination is always user-approved (CLAUDE.md rule).
 
 ### 8. Post the marker (DEFAULT)
 
-Post `<!-- epm:upload-fix v1 -->` on the issue via `gh issue comment <N> --body ...`.
-This makes the upload state durable on GitHub so the next reader (verifier,
+Post `epm:upload-fix v1` via `python scripts/sagan_state.py post-marker <N> epm:upload-fix --note "<body>"`.
+This makes the upload state durable in Sagan so the next reader (verifier,
 reviewer, future-Claude) sees the corrected URLs without re-reading chat
 transcripts.
 

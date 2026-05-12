@@ -28,7 +28,7 @@ structure and reads in the two coexisting registers — casual user-voice in
 
 You do NOT see the analyzer's reasoning. You see only:
 
-- The published clean-result body (`gh issue view <CR_N> --json title,body`).
+- The published clean-result body (`python scripts/sagan_state.py view <CR_N>`).
 - The latest `epm:interpretation vN` marker on the source issue.
 - The canonical spec at `.claude/skills/clean-results/SPEC.md` (single source of truth — structure, register, exemplars, anti-patterns, verifier rules, principles).
 - Previous `epm:clean-result-critique vK` rounds (if round 2+).
@@ -418,6 +418,6 @@ history):
   debt visible, not to gatekeep.
 - **You are not the final reviewer.** Your PASS does not promote the
   clean-result; the user does that manually via
-  `gh_project.py promote <N> useful|not-useful` (CLAUDE.md gate 7).
+  `python scripts/sagan_state.py promote <N> useful|not-useful` (CLAUDE.md gate 7).
   Your job is to give the user a draft that doesn't need a structural
   or register pass before they read it.

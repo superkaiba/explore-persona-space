@@ -36,24 +36,23 @@ multi-session model).
 
 | State | Where to read |
 |---|---|
-| Queue + lifecycle (proposed → done) | **GitHub project board columns** via `uv run python scripts/gh_project.py list-by-status "<Column>"` |
-| Issue details (body, labels, comments) | `gh issue view <N>` |
+| Queue + lifecycle (proposed → completed) | **Sagan dashboard kanban** at <https://sagan.superkaiba.com/experiments>, or `python scripts/sagan_state.py list-by-status --status <name>` |
+| Experiment details (body, status, recent events) | `python scripts/sagan_state.py view <N>` |
 | Approved headline findings | `RESULTS.md` |
 | Run-level result index | `eval_results/INDEX.md` |
 | Aim tracker, subtasks, phases | `docs/research_ideas.md` |
-| Pre-issue ideation drafts | `docs/ideas/YYYY-MM-DD.md` (created on demand) |
+| Pre-experiment ideation drafts | `docs/ideas/YYYY-MM-DD.md` (created on demand) |
 | Live pod state | `uv run python scripts/pod.py list-ephemeral` |
 | Active Happy sessions | `uv run python scripts/spawn_session.py list` |
 
-**Do NOT use `gh issue list --label status:*` as the primary queue query.**
-Labels drift from the board column (observed 2026-05-10: `Awaiting promotion`
-had 29 issues but only 6 carried `status:awaiting-promotion`). The column is
-what the user sees on the board; the column is real.
+The Sagan kanban is the canonical glance view — open the dashboard
+whenever you want the human-readable picture. The `experiment_status`
+enum is the durable source of truth and is what `/issue` reads/writes.
 
-Project columns (canonical names):
-`To do`, `Planning`, `Plan awaiting review`, `In flight`,
-`Followups running`, `Awaiting promotion`, `Useful`, `Not useful`, `Blocked`,
-`Done`, `Todo by human`, `Archived`.
+Status values (canonical):
+`proposed`, `planning`, `plan_pending`, `approved`, `awaiting_approval`,
+`running`, `verifying`, `interpreting`, `reviewing`, `awaiting_promotion`,
+`blocked`, `completed`, `archived`.
 
 Deprecated, do NOT read or write: `EXPERIMENT_QUEUE.md` (deleted),
 `research_log/drafts/` (archived to `archive/research_log/`).
@@ -84,28 +83,24 @@ agents from this PM session — those belong inside the per-issue session's
 
 ### Mode 1 — STATUS ("what's the state?")
 
-Run the one-shot board scan (one GraphQL call, all columns grouped):
+Run the dashboard kanban scan (one HTTP call, all statuses grouped) —
+either open <https://sagan.superkaiba.com/experiments> or, in a script:
 
 ```bash
-uv run python scripts/gh_project.py list-all \
-    --columns "To do,Planning,Plan awaiting review,In flight,Followups running,Awaiting promotion,Blocked,Todo by human"
+python scripts/sagan_state.py list-by-status --limit 500   # all open work
 uv run python scripts/pod.py list-ephemeral
 uv run python scripts/spawn_session.py list
 ```
 
-The legacy per-column form (`list-by-status "<Column>"`) still works for
-one-off queries, but DO NOT use it 8 times in a row for triage — that was
-the pattern that burned the GraphQL quota on 2026-05-10. `list-all`
-fetches every project item in a single `item-list` call and bins by
-status string client-side; the `--columns` flag is a display filter, not
-a query filter (no API saving from narrowing it). Add `--counts-only` if
-you only need the totals; drop `--columns` entirely to see terminal
-columns (`Useful`, `Not useful`, `Done`, `Archived`).
+For per-status counts, loop the enum values or query the dashboard
+directly. Avoid 13 sequential per-status calls — bulk-fetch with no
+filter and group client-side.
 
-Return a 5–10 bullet snapshot: column counts, in-flight issues (with pod
-and ETA when known), awaiting-promotion pile size, blocked count, open
-questions. Flag inconsistencies (label↔column drift, orphan pods,
-stale-looking `status:approved` titles) but do NOT fix them — that's
+Return a 5–10 bullet snapshot: status counts, in-flight experiments
+(with pod and ETA when known), awaiting-promotion pile size, blocked
+count, open questions. Flag inconsistencies (orphan pods, stale-looking
+`approved` titles, experiments running with no recent `epm:*` event)
+but do NOT fix them — that's
 AUDIT.
 
 ### Mode 2 — AUDIT ("check for drift")
@@ -147,10 +142,11 @@ needs-approval items to user.
 
 Invoke `/ideation` in this session. Output ranked candidates → save to
 `docs/ideas/YYYY-MM-DD.md`. The user promotes worthwhile ideas to
-GitHub issues with `gh issue create --label status:proposed`; the
-`project-auto-add` workflow routes them to the `To do` column.
+Sagan experiment rows via the dashboard's New Experiment form (or
+`POST /api/experiments` with `status='proposed'`); newly-created rows
+land at the top of the kanban's To do column.
 
-Do not auto-create issues — the user decides which ideas graduate.
+Do not auto-create experiments — the user decides which ideas graduate.
 
 ### Mode 4 — DECIDE ("what's next?")
 
@@ -173,13 +169,14 @@ The script prints the new session's Happy id and cwd (the worktree at
 user** to open that session on their phone and type `/issue <N>`.
 
 You do NOT type `/issue <N>` here. You do NOT cross-message the new
-session. Trust the issue's labels + markers; check progress with
-`gh issue view <N>` only when the user asks.
+session. Trust the experiment's status + workflow_events; check
+progress with `python scripts/sagan_state.py view <N>` only when the
+user asks.
 
 ### Mode 6 — INTEGRATE ("a session finished")
 
-When you notice (via STATUS scan or user mention) that an issue advanced:
-1. Verify uploads if the issue moved into `Awaiting promotion`
+When you notice (via STATUS scan or user mention) that an experiment advanced:
+1. Verify uploads if the experiment moved into `awaiting_promotion`
    (`uv run python scripts/pod.py sync results --all` etc.).
 2. Update `eval_results/INDEX.md` if a new `eval_results/<dir>/` exists.
 3. Propose `RESULTS.md` diff if the finding is headline-level.
@@ -188,13 +185,13 @@ When you notice (via STATUS scan or user mention) that an issue advanced:
 
 ### Mode 7 — PROMOTE ("clean up the awaiting-promotion pile")
 
-For one issue: invoke `/promote-clean-result <N>` in this session. The
-skill walks the body iteration + clean-result-critique re-run. The user
-runs `uv run python scripts/gh_project.py promote <N> useful|not-useful`
-when the body is locked.
+For one experiment: invoke `/promote-clean-result <N>` in this session.
+The skill walks the body iteration + clean-result-critique re-run. The
+user runs `python scripts/sagan_state.py promote <N> useful|not-useful`
+(or clicks Promote in the dashboard) when the body is locked.
 
-For multi-issue consolidation candidates (the #237 pattern), the same
-skill scans the column for similar issues.
+For multi-experiment consolidation candidates (the #237 pattern), the
+same skill scans the awaiting-promotion list for similar entries.
 
 ---
 
@@ -208,15 +205,16 @@ skill scans the column for similar issues.
 **Propose diff, wait for approval:**
 - `RESULTS.md`: rewrite headline claims, add TL;DR entries.
 - `docs/research_ideas.md`: phase transitions, subtask status changes.
-- Mechanical label backfills (e.g., adding `status:awaiting-promotion`
-  to the 24 issues in the column without the label).
+- Mechanical status backfills (e.g., setting `awaiting_promotion` on
+  experiments whose runs are clean-result-draft but whose status drifted).
 
 **Never auto:**
 - Delete anything from `eval_results/`, `figures/`, `RESULTS.md`,
   `archive/`.
 - Edit code in `src/`, `scripts/`, `configs/`.
-- Run `gh_project.py set-status` or `promote` to move issues between
-  columns (the user owns column moves except via the `/issue` workflow).
+- Run `sagan_state.py set-status` or `promote` to move experiments
+  between statuses (the user owns status moves except via the `/issue`
+  workflow).
 - Spawn specialist agents (`experimenter`, `implementer`, etc.) — that
   is the per-issue session's job.
 - Advance aim phase without explicit "yes advance".
@@ -261,12 +259,12 @@ renders them as separate pills — use plain numbered markdown).
 
 | Anti-pattern | Why bad | Do instead |
 |---|---|---|
-| `gh issue list --label status:awaiting-promotion` for the count | Labels drift from columns; undercounts the pile | `gh_project.py list-by-status "Awaiting promotion"` |
+| Counting awaiting-promotion by hand from labels | Status enum is the source of truth | `sagan_state.py list-by-status --status awaiting_promotion` |
 | Running `/issue <N>` in the PM session | Collapses the multi-session model | `spawn_session.py spawn-issue --issue <N>` |
 | Spawning `experimenter` / `analyzer` from the PM session | Belongs inside the per-issue `/issue` flow | Just spawn the session |
 | Reading `EXPERIMENT_QUEUE.md` or `research_log/drafts/LOG.md` | Both deprecated | Use the project board + clean-result issues |
 | Auto-editing `RESULTS.md` headlines | High-stakes | Propose diff, wait |
-| Auto-moving issues between board columns | User-owned (except `/issue` automation) | SUGGEST, let the user run `gh_project.py set-status` |
-| Polling per-issue session progress | Trust labels + markers | `gh issue view <N>` on demand only |
+| Auto-moving experiments between statuses | User-owned (except `/issue` automation) | SUGGEST, let the user run `sagan_state.py set-status` |
+| Polling per-experiment session progress | Trust status + workflow_events | `sagan_state.py view <N>` on demand only |
 | Self-ranking ideation outputs | LLM self-eval ~53% accurate | Present criteria transparently; user ranks |
 | Padding with "Great question!" | Burns attention | Drop it |

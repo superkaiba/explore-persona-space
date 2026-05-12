@@ -24,18 +24,20 @@ is 30s+ of user attention saved.
 Run all of these in parallel and read the results, then draft questions only
 for the gaps that remain:
 
-1. **Past issues + clean results** — search GitHub for related work:
+1. **Past experiments + clean results** — search Sagan for related work:
    ```bash
-   # Issues whose body/title mentions the same key terms (model, condition, dataset, etc.)
-   gh issue list --search "<key terms from issue body>" --state all --limit 20 --json number,title,labels,url
-   # Clean-result issues (label `clean-results`) — these have polished write-ups + numbers
-   gh issue list --label clean-results --state all --limit 20 --json number,title,url
-   # If the issue body says `Parent: #<M>` or cites another issue, fetch it directly:
-   gh issue view <M> --json title,body,labels,comments
+   # Recent experiments (browse the kanban or list-by-status):
+   python scripts/sagan_state.py list-by-status --status completed --limit 200
+   # Clean-result experiments — polished write-ups + numbers
+   # (filter by has_clean_result=true via the dashboard or API)
+   curl -sH "Authorization: Bearer $SAGAN_API_TOKEN" \
+       "$SAGAN_BASE_URL/api/experiments?has_clean_result=true&limit=50" | jq -r '.experiments[] | {number, title}'
+   # If the body cites another experiment by number, fetch it directly:
+   python scripts/sagan_state.py view <M>
    ```
    Skim titles + TL;DRs. If a clean-result already establishes a baseline,
-   number, or methodology that the current issue is implicitly referring to,
-   note it — don't re-ask.
+   number, or methodology that the current experiment is implicitly
+   referring to, note it — don't re-ask.
 
 2. **Repo literature — has someone (us OR prior work) already run something
    like this?** This is the highest-value pass: surfacing a duplicate or
@@ -43,7 +45,8 @@ for the gaps that remain:
    external knowledge:
 
    **Internal (us):**
-   - `gh issue list --label clean-results --state all --search "<terms>"` —
+   - Clean-result experiments filtered by query string in the dashboard
+     <https://sagan.superkaiba.com/experiments?has_clean_result=true> —
      polished write-ups + numbers from our own past experiments.
    - `RESULTS.md` — headline-level findings; if any of them already address
      the current question, surface it before drafting any clarifying question.
@@ -133,10 +136,10 @@ proceed to LLM-driven clarifying questions and MUST NOT advance to
 adversarial-planner until the gate passes.
 
 ```bash
-gh issue view <N> --json body --jq '.body' \
+python scripts/sagan_state.py view <N> | jq -r '.experiment.body' \
   | uv run python scripts/hypothesis_gate.py \
       --type experiment \
-      --labels "$(gh issue view <N> --json labels --jq '[.labels[].name] | join(",")')"
+      --kind "$(python scripts/sagan_state.py view <N> | jq -r '.experiment.kind')"
 ```
 
 Exit codes:

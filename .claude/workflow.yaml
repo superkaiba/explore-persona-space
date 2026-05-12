@@ -1,16 +1,16 @@
 # .claude/workflow.yaml — Single source of truth for /issue state machine.
 #
 # Symphony §5.3 Front-Matter pattern adapted: this YAML enumerates every
-# status:* label, every project-board column, every gate, every halt
-# criterion, every marker kind, and every step in the /issue lifecycle.
-# Everything that today is duplicated across CLAUDE.md, SKILL.md, markers.md,
-# and gh_project.py is collapsed into this one file. Pre-commit lint
-# (scripts/workflow_lint.py) enforces:
+# status enum value, every dashboard kanban column, every gate, every
+# halt criterion, every marker kind, and every step in the /issue
+# lifecycle. Everything that would otherwise be duplicated across
+# CLAUDE.md, SKILL.md, markers.md, and sagan_state.py is collapsed into
+# this one file. Pre-commit lint (scripts/workflow_lint.py) enforces:
 #   - column references in statuses resolve to a real column row
 #   - dotted references in CLAUDE.md / SKILL.md / markers.md of the form
 #     `(see workflow.yaml § <key>)` resolve to a real key here
-#   - status:* label strings used in scripts/gh_project.py consumers exist
-#     in `statuses` below
+#   - status names used by sagan_state.py / Sagan's experiment_status
+#     enum exist in `statuses` below
 #
 # Liquid templates are NOT adopted (we don't run a daemon and don't render
 # per-issue prompts; refs like `(see workflow.yaml § statuses.running)`
@@ -28,8 +28,10 @@ issue_types:
   - survey
 
 # ──────────────────────────────────────────────────────────────────────
-# Project-board columns. Replaces NEW_COLUMN_SPEC in scripts/gh_project.py.
-# Color enum values: GitHub GraphQL ProjectV2SingleSelectFieldOptionColor.
+# Dashboard kanban columns. These are the human-friendly labels at
+# https://sagan.superkaiba.com/experiments — Sagan derives them from
+# the experiment_status enum. Color enum values are advisory only
+# (used by the dashboard's column rendering).
 # ──────────────────────────────────────────────────────────────────────
 columns:
   - name: "To do"
@@ -67,8 +69,9 @@ columns:
     description: "Closed long ago / no longer relevant"
 
 # ──────────────────────────────────────────────────────────────────────
-# status:* labels. Replaces LABEL_TO_COLUMN's `status:*` rows in
-# scripts/gh_project.py. `column` MUST match a `columns[].name` above.
+# Status enum values (= experiment_status in Sagan). `column` MUST
+# match a `columns[].name` above; the dashboard groups experiments by
+# column based on this mapping.
 # ──────────────────────────────────────────────────────────────────────
 statuses:
   - name: proposed
@@ -163,20 +166,17 @@ statuses:
     user_gated: false
   - name: archived
     column: "Archived"
-    description: "Closed via `gh issue close`; auto-applied by archive workflow."
+    description: "Set explicitly for duplicates / won't-fix / abandoned experiments."
     next_action: terminal
     user_gated: false
 
 # ──────────────────────────────────────────────────────────────────────
 # Non-status priority labels. Replaces PRIORITY_LABELS tuple +
-# clean-results:* rows in LABEL_TO_COLUMN in scripts/gh_project.py.
-# Order is FIRST-MATCH-WINS: clean-results:draft trumps :useful trumps
-# :not-useful. The legacy bare `clean-results` label was dropped together
-# with the legacy "Clean results" column; promotions now route only to
-# Useful / Not useful via `gh_project.py promote <N> useful|not-useful`.
-# The bare `clean-results` label may still be present on issue records
-# for `gh issue list --label clean-results` back-compat queries, but it
-# does NOT route to a column on its own.
+# clean-results status flow (mirrors runs.classification in Sagan).
+# Order is FIRST-MATCH-WINS: clean-results:draft (pending) trumps :useful
+# trumps :not-useful. Promotions go through
+# `python scripts/sagan_state.py promote <N> useful|not-useful`, which
+# flips runs.classification + sets the experiment to completed.
 # ──────────────────────────────────────────────────────────────────────
 priority_labels:
   - name: clean-results:draft
