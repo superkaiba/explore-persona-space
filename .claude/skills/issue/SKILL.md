@@ -6,7 +6,7 @@ description: >
   the next action (clarify -> adversarial-planner -> approval -> worktree +
   dispatch specialist -> preflight -> run -> analyzer -> reviewer -> test-verdict
   -> auto-complete). Reviewer PASS (or test-verdict PASS for code-change paths
-  like type:infra / type:batch / type:analysis / type:survey) auto-advances the issue to Done
+  like type:infra / type:survey) auto-advances the experiment to completed
   on the Experiment Queue project board. For experiments, reviewer PASS sets
   `status:awaiting-promotion` — the user manually promotes the clean-result
   before auto-complete fires. Issues stay OPEN
@@ -155,7 +155,7 @@ status:proposed                           <- user has filed, clarifier hasn't ru
                                                                                                                               |-- open `Parent: #<N>` children exist --> status:followups-running  <- waits for children to finish; re-invoke /issue <N> later
                                                                                                                               |-- no open children                  --> status:done-experiment (+ follow-up proposer)
                                                                                                           |-- FAIL --> status:interpreting (revise)
-                                                                      |-- PASS + [type:infra/batch/analysis/survey] --> test-verdict (inline) --> status:done-impl
+                                                                      |-- PASS + [type:infra/survey] --> test-verdict (inline) --> status:done-impl
 ```
 
 Hot-fixes during `status:running` (experimenter agent): small in-line fixes
@@ -250,7 +250,7 @@ python scripts/sagan_state.py view <N>
 
 From the result, derive:
 1. **Current state** = the `status:*` label value (exactly one should exist)
-2. **Issue type** = the `type:*` label value (`experiment`, `infra`, `batch`, `analysis`, `survey`)
+2. **Issue type** = the `type:*` label value (`experiment`, `infra`, `survey`)
 3. **Marker map** = scan comments for `<!-- epm:<kind> v<n> -->` opening tags, build a dict
 
 **Hard error: >1 `status:*` labels.** True ambiguity — abort with an error comment listing
@@ -306,8 +306,8 @@ just to add labels. Order:
    - Title prefix `Test:` / `Sweep:` / `Train:` → suggest `type:experiment`
    - Title prefix `Refactor:` / `Fix:` / `Add:` / `Migrate:` → suggest `type:infra`
    - Title prefix `[Batch]:` / `[Workflow]:` / body contains a numbered list of
-     ≥3 unrelated fixes → suggest `type:batch`
-   - Title prefix `Analyze:` / `Re-analyze:` → suggest `type:analysis`
+     ≥3 unrelated fixes → suggest `type:infra` (one batch issue)
+   - Title prefix `Analyze:` / `Re-analyze:` → suggest `type:infra`
    - Title prefix `Survey:` / `Read:` / `Lit review:` → suggest `type:survey`
 
    Use `AskUserQuestion` with the inferred option as `(Recommended)` first. Apply via
@@ -542,8 +542,7 @@ Spawn the appropriate agent via `Agent()`:
 | Issue type | Implementer agent | Output marker |
 |---|---|---|
 | `type:experiment` | `experiment-implementer` | `epm:experiment-implementation` |
-| `type:infra` / `type:batch` / code change | `implementer` | `epm:results` |
-| `type:analysis` | `analyzer` (re-analysis only) | `epm:analysis` |
+| `type:infra` / code change | `implementer` | `epm:results` |
 | `type:survey` | `general-purpose` | `epm:results` |
 
 **Env scrub for every subagent dispatch (plan §3 Phase 4.5).** EVERY
@@ -569,7 +568,7 @@ Brief passed to the implementer:
 - **Instruction: work ONLY inside the worktree; never touch a pod; post
   progress as comments on issue #<N> via `mcp__gh_graphql__add_issue_comment`
   (NOT the `gh` CLI — `GH_TOKEN` has been scrubbed from your env).**
-- **If `type:batch`:** make ONE commit per plan section (the planner
+- **If the plan body covers ≥3 independent fixes:** make ONE commit per plan section (the planner
   produced N independent sections, one per body item). Commit message
   format: `[N/M] <plan section title>` where N is the 1-indexed item and
   M is the total. Code-reviewer reviews the whole diff; this convention
@@ -613,8 +612,8 @@ Both reviewers see the same brief:
 
 - `issue_number` — the GitHub issue (`<N>`)
 - `target_marker_kind` — exactly one of `experiment-implementation` (for
-  `type:experiment`) or `results` (for `type:infra` / `type:batch` /
-  `type:analysis` / `type:survey`). The reviewers read the highest-version
+  `type:experiment`) or `results` (for `type:infra` / `type:survey`).
+  The reviewers read the highest-version
   comment with this kind as the implementer's report.
 - `revision_round` — 1-indexed integer. `1` on first review; loops up to
   `3`. The cap is **per reviewer** — reconcile invocations are free.
@@ -671,7 +670,7 @@ invocations.
 
 - **`final_verdict == PASS`**:
   - `type:experiment` → advance label to `status:running`, proceed to Step 6.
-  - `type:infra` / `type:batch` / `type:analysis` / `type:survey` → skip
+  - `type:infra` / `type:survey` → skip
     pod phase, advance directly to `status:reviewing` (the inline
     test-verdict gate at Step 9c runs from there).
 - **`final_verdict == FAIL` + revision_round<3** → label back to
@@ -1138,7 +1137,7 @@ Transitions (use the ensemble `final_verdict`, NOT either reviewer's individual 
 
 **9c. Test-verdict gate (code-change paths only, inline)**
 
-Only for `type:infra` / `type:batch` / `type:analysis` / `type:survey`
+Only for `type:infra` / `type:survey`
 issues — these arrive here directly from Step 5 PASS, having skipped
 Steps 6–8 (no pod, no interpretation). The code-review gate has already
 approved the diff; this step verifies the test suite still passes.
@@ -1176,7 +1175,7 @@ checks the *write-up*; this checks the *issue → work* contract.
 3. For each ask, locate evidence it was addressed:
    - `type:experiment` → grep the promoted clean-result body + `epm:results`
      marker.
-   - `type:infra` / `type:batch` / `type:analysis` / `type:survey` → grep
+   - `type:infra` / `type:survey` → grep
      the PR diff (`gh pr diff <PR>`) + `epm:test-verdict`.
 4. Post `<!-- epm:completion-audit v1 -->` with a checklist:
    ```markdown
@@ -1231,7 +1230,7 @@ checks the *write-up*; this checks the *issue → work* contract.
      `epm:followups-done` event.
    - **No children in flight** AND `kind=experiment`
      → **`status=completed`**, post `epm:done v1`.
-   - **`kind` in {`infra`, `batch`, `analysis`, `survey`}** (regardless
+   - **`kind` in {`infra`, `survey`}** (regardless
      of children) → **`status=completed`**, post `epm:done-impl v1`.
      Code-change paths don't seed experimental follow-ups via Step 10b.
    - **No `kind` set** → STOP, post an error event asking the user to

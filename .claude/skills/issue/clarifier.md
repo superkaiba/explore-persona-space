@@ -247,59 +247,26 @@ Check that the issue body answers each question. If not, ask it.
 
 ---
 
-## For `type:batch` issues (multiple independent fixes in one body)
+### When a `type:infra` body lists multiple independent fixes
 
-A `type:batch` issue is intentionally a list of N independent items — workflow
-gripes, doc fixes, small refactors. **Do NOT ask the user to split it into
-separate issues.** That defeats the point of this type.
+A single `type:infra` issue can intentionally list N independent items —
+workflow gripes, doc fixes, small refactors, batched analyses of existing
+results. **Do NOT ask the user to split it into separate issues.**
 
-Apply the `type:infra` clarifier rules **per item**, not to the issue as a
-whole. The whole-issue Scope / Motivation / Compatibility prompts above don't
-apply at the issue level — they apply to each body item separately.
+Apply the `type:infra` clarifier rules per-item. For each numbered item,
+ask: is it concrete enough to plan a fix in 1-3 commits? Flag any vague
+items with scoped questions:
 
-### Per-item gate
-
-For each numbered item in the body, ask: is this concrete enough to plan a
-fix in 1-3 commits? An item is **blocking** if:
-- It's vague enough that the planner couldn't list specific files or
-  acceptance criteria (e.g., "improve pod tracking" without saying *what
-  about it* is broken).
-- It conflates two unrelated changes that should be two separate items.
-
-A vague item flags THAT item, not the whole issue — post the questions
-scoped per item:
-
-> 1. Item 1 ("Improve pod tracking"): which symptom is broken — listing,
->    health-check, lifecycle drift, or something else?
+> 1. Item 1 ("Improve pod tracking"): which symptom — listing, health-check,
+>    lifecycle drift, or something else?
 > 3. Item 3 ("/issue resumability"): which step is currently non-resumable?
->    Concrete failing scenario?
 
-If ≥1 item is vague, stay at `status:proposed` until the user sharpens
-those items in the body. Concrete items can stay as-is; the planner will
-handle them and the vague ones in one pass once the user updates the body.
+If ≥1 item is vague, stay at `status:proposed` until the user sharpens it.
 
-### Out-of-scope checks for batches
-
-- No hypothesis / kill-criterion gate (those are `type:experiment` only).
-- No baseline / controls / data prompts.
-- No compute / pod prompts (batches use the no-pod `type:infra` path).
-
----
-
-## For `type:analysis` issues (re-analysis of existing results)
-
-### Source data
-- Which `eval_results/` directory or WandB run(s)?
-- Git commit hash of the original experiment?
-
-### New claim
-- What new claim are we trying to support?
-- Is this within-scope of the original experiment, or does it require new data?
-  (If new data, re-classify as `type:experiment`.)
-
-### Methodology
-- What statistical test / aggregation method / plot style?
-- Are we re-using the original eval script or a new one?
+For re-analysis items (working with `eval_results/` JSONs without running
+new training), additionally ask: which directory / WandB run, what new
+claim, which statistical test / aggregation. If the work needs new data,
+the item should be re-classified as `type:experiment`.
 
 ---
 

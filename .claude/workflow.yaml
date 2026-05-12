@@ -23,8 +23,6 @@ version: 1
 issue_types:
   - experiment
   - infra
-  - batch
-  - analysis
   - survey
 
 # ──────────────────────────────────────────────────────────────────────
@@ -491,7 +489,7 @@ markers:
   - kind: results
     posted_by: specialist
     when: "end of run"
-    fields: "Eval JSON paths, filled reproducibility card, WandB URL, HF Hub path, commit hash, GPU-hours used, deviations, hot-fix log. **MUST include a `## Sample outputs` section with `### Condition: <name>` H3 subheadings and ≥3 randomly-sampled (persona, prompt, response) triplets PER CONDITION, formatted as fenced markdown blocks. Verifier check #11 enforces.** For `type:infra` / `type:batch` / `type:analysis` / `type:survey` paths (implementer's completion report), the body MUST follow the four-section shape `(a) What was done` / `(b) Considered but not done` / `(c) How to verify` / `(d) Needs human eyeball` — see `.claude/agents/implementer.md` Report Format. (c) MUST contain copy-pasteable reproduction commands so the user can verify without reading the diff."
+    fields: "Eval JSON paths, filled reproducibility card, WandB URL, HF Hub path, commit hash, GPU-hours used, deviations, hot-fix log. **MUST include a `## Sample outputs` section with `### Condition: <name>` H3 subheadings and ≥3 randomly-sampled (persona, prompt, response) triplets PER CONDITION, formatted as fenced markdown blocks. Verifier check #11 enforces.** For `type:infra` / `type:survey` paths (implementer's completion report), the body MUST follow the four-section shape `(a) What was done` / `(b) Considered but not done` / `(c) How to verify` / `(d) Needs human eyeball` — see `.claude/agents/implementer.md` Report Format. (c) MUST contain copy-pasteable reproduction commands so the user can verify without reading the diff."
   - kind: upload-verification
     posted_by: skill (via upload-verifier)
     when: "Step 8"
@@ -780,7 +778,7 @@ steps:
       - testing
       - code-reviewing
       - reviewing
-    entry_condition: "code-change path (type:infra/batch/analysis/survey); inline tests"
+    entry_condition: "code-change path (type:infra/survey); inline tests"
     posts_marker: test-verdict
     next_expected_step: "10"
   - id: "10"

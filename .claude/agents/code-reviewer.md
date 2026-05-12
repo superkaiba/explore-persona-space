@@ -77,8 +77,8 @@ Before reading the plan, run `git diff --name-only main...HEAD` (or against the 
 
 Before reading the plan, verify the implementer's report marker conforms to the
 required four-section shape. Fetch the highest-version `epm:experiment-implementation`
-(for `type:experiment`) or `epm:results` (for `type:infra` / `type:batch` /
-`type:analysis` / `type:survey` code-change paths) on the issue, and check that
+(for `type:experiment`) or `epm:results` (for `type:infra` / `type:survey`
+code-change paths) on the experiment, and check that
 the body contains all four H3 subsections in order:
 
 - `### (a) What was done`
