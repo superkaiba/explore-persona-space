@@ -261,26 +261,25 @@ def cmd_set_title(args: argparse.Namespace) -> None:
 
 
 def cmd_promote(args: argparse.Namespace) -> None:
-    """Clean-result promotion: flip runs.classification + move to completed.
+    """Clean-result promotion: atomically flip runs.classification + set
+    has_clean_result=true + advance status to completed.
 
-    Mirrors the legacy `gh_project.py promote <N> useful|not-useful` flow.
+    Calls the dedicated `/api/experiments/:id/promote` endpoint so the
+    runs / experiments updates land in a single transaction. The
+    server-side check rejects promotion if no pending runs row exists
+    (the analyzer must have created one when posting the clean-result).
     """
     if args.verdict not in ("useful", "not-useful", "not_useful"):
         raise SaganError("verdict must be 'useful' or 'not-useful'")
     classification = "useful" if args.verdict == "useful" else "not_useful"
     exp = get_experiment(args.number)["experiment"]
-    # Status → completed; classification update needs a runs-side endpoint
-    # (not yet built — for now we patch status here and rely on the
-    # dashboard's Promote button to set classification, OR the user
-    # can update directly via SQL until /api/runs/:id PATCH ships).
-    patch_experiment(exp["id"], status="completed", hasCleanResult=True)
-    post_marker(
-        exp["id"],
-        "epm:promoted",
-        note=f"Promoted as {classification}",
-        metadata={"classification": classification},
+    result = _req(
+        "POST",
+        f"/api/experiments/{exp['id']}/promote",
+        body={"verdict": classification},
     )
-    print(f"#{args.number} promoted ({classification})  — verify runs.classification in dashboard")
+    run_id = result.get("run", {}).get("id", "?")
+    print(f"#{args.number} promoted ({classification})  run={run_id}  status=completed")
 
 
 def cmd_latest_marker(args: argparse.Namespace) -> None:
