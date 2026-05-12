@@ -42,12 +42,22 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 import time
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+# Belt-and-suspenders: ensure HF_HOME points at the workspace cache even
+# when the SSH non-login shell skipped ~/.bashrc. bootstrap_pod.sh writes
+# the export to ~/.bashrc, which `nohup uv run python` (non-login) does
+# NOT source. Without this the Hub call resolves to /root/.cache and
+# misses the pre-cached Qwen2.5-7B-Instruct snapshot under /workspace.
+_workspace_cache = Path("/workspace/.cache/huggingface")
+if _workspace_cache.exists() and not os.environ.get("HF_HOME"):
+    os.environ["HF_HOME"] = str(_workspace_cache)
 
 logger = logging.getLogger("smoke_vllm_lora_equivalence")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -67,8 +77,21 @@ LOGIT_MSE_GATE = 1e-3
 
 
 def _install_compat_shims() -> None:
-    """vLLM 0.11.0 + transformers 5.5.0 compat shims — copied from
-    scripts/run_issue186_eval.py:_install_compat_shims.
+    """vLLM 0.11.0 + transformers 5.5.0 compat shims — kept in sync with
+    ``scripts/run_issue186_eval.py:_install_compat_shims``.
+
+    Two patches:
+
+    1. ``PreTrainedTokenizerBase.all_special_tokens_extended`` (transformers
+       5.5.0 dropped this attribute that vLLM still references).
+    2. ``vllm.model_executor.model_loader.weight_utils.DisabledTqdm`` —
+       vLLM 0.11.0's subclass appends ``disable=True`` to ``**kwargs``
+       even when the caller already passed ``disable=``, raising
+       ``TypeError: ... got multiple values for keyword argument 'disable'``.
+       huggingface_hub's ``snapshot_download`` does pass ``disable=``, so
+       any vLLM Hub-fetch path (e.g. ``LLM(model="Qwen/Qwen2.5-7B-Instruct")``)
+       crashes on bare 0.11.0. Patch swaps in a subclass that pops the
+       caller's ``disable`` before forwarding.
     """
     from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
@@ -76,6 +99,19 @@ def _install_compat_shims() -> None:
         PreTrainedTokenizerBase.all_special_tokens_extended = (
             PreTrainedTokenizerBase.all_special_tokens
         )
+
+    import vllm.model_executor.model_loader.weight_utils as _wu
+
+    if not getattr(_wu.DisabledTqdm, "_issue186_patched", False):
+
+        class _PatchedDisabledTqdm(_wu.DisabledTqdm.__bases__[0]):
+            _issue186_patched = True
+
+            def __init__(self, *a, **kw):
+                kw.pop("disable", None)
+                super().__init__(*a, disable=True, **kw)
+
+        _wu.DisabledTqdm = _PatchedDisabledTqdm
 
 
 def _build_smoke_prompts(n: int) -> list[str]:
@@ -166,6 +202,24 @@ def _run_merged_path(merged_dir: str, prompts: list[str], n_prompts: int):
         cleanup_vllm(llm)
 
 
+def _resolve_local_base(base_model: str) -> str:
+    """Resolve an HF repo-id to a local snapshot path (return ``base_model``
+    as-is if it's already a local directory).
+
+    Same rationale as ``run_issue186_eval.py:_resolve_local_base_model`` —
+    keeps vLLM off the ``snapshot_download`` codepath that triggers the
+    tqdm-kwargs clash in vllm 0.11.0 (the ``DisabledTqdm.__init__`` patch
+    in ``_install_compat_shims`` covers it, but bypassing is cleaner).
+    """
+    p = Path(base_model)
+    if p.is_dir() and (p / "config.json").exists():
+        return str(p)
+    from huggingface_hub import snapshot_download
+
+    logger.info("Snapshot-downloading base model %s (idempotent on cache)", base_model)
+    return snapshot_download(repo_id=base_model)
+
+
 def _run_lora_path(adapter_dir: str, cell_id: str, prompts: list[str], n_prompts: int):
     """Load BASE + enable_lora, pass adapter via LoRARequest, generate."""
     from vllm import SamplingParams
@@ -176,14 +230,16 @@ def _run_lora_path(adapter_dir: str, cell_id: str, prompts: list[str], n_prompts
     adapter_cfg = json.loads((Path(adapter_dir) / "adapter_config.json").read_text())
     max_lora_rank = int(adapter_cfg.get("r", 16))
 
+    local_base = _resolve_local_base(BASE_MODEL)
     logger.info(
-        "Loading LORA path: base=%s adapter=%s (rank=%d)",
+        "Loading LORA path: base=%s (resolved -> %s) adapter=%s (rank=%d)",
         BASE_MODEL,
+        local_base,
         adapter_dir,
         max_lora_rank,
     )
     llm = create_vllm_engine(
-        BASE_MODEL,
+        local_base,
         gpu_memory_utilization=0.6,
         max_model_len=2048,
         seed=42,

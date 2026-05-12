@@ -54,6 +54,7 @@ import argparse
 import gc
 import json
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -61,6 +62,15 @@ from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+# Belt-and-suspenders: ensure HF_HOME points at the workspace cache even
+# under a non-login SSH shell where ~/.bashrc was not sourced. Without
+# this, snapshot_download writes to /root/.cache and misses any
+# pre-cached models under /workspace/.cache/huggingface. Documented in
+# CLAUDE.md "HF cache" rule.
+_workspace_cache = Path("/workspace/.cache/huggingface")
+if _workspace_cache.exists() and not os.environ.get("HF_HOME"):
+    os.environ["HF_HOME"] = str(_workspace_cache)
 
 
 def _install_compat_shims() -> None:
@@ -419,18 +429,24 @@ def _eval_one_cell(
         adapter_path = model_spec["adapter_path"]
         cell_id_for_lora = model_spec.get("cell_id", cell_id)
 
+        # Resolve repo-id -> local snapshot path so vLLM never tries to
+        # snapshot_download (which hits a tqdm-kwargs bug in vllm 0.11.0
+        # we patch via _install_compat_shims, but avoiding the path
+        # entirely is cleaner and saves the per-cell Hub round-trip).
+        local_base = _resolve_local_base_model(base_model)
+
         # Read max_lora_rank from the adapter so we don't have to thread
         # it through CLI flags. vLLM defaults to 16 — i344 trains at r=32.
         adapter_cfg_path = Path(adapter_path) / "adapter_config.json"
         adapter_cfg = json.loads(adapter_cfg_path.read_text())
         max_lora_rank = int(adapter_cfg.get("r", 16))
 
-        tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(local_base, trust_remote_code=True)
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
 
         llm = create_vllm_engine(
-            base_model,
+            local_base,
             gpu_memory_utilization=gpu_memory_utilization,
             max_model_len=max_model_len,
             seed=seed,
@@ -559,6 +575,39 @@ def _purge_cell_snapshot(source: str, arm: str, seed: int) -> None:
         shutil.rmtree(cell_dir, ignore_errors=True)
 
     logger.info("Purged %s cache (%.1f GB freed)", path_in_repo, freed / 1e9)
+
+
+def _resolve_local_base_model(base_model: str) -> str:
+    """Return a LOCAL filesystem path for the base model.
+
+    If ``base_model`` is already a path that exists on disk, return it.
+    Otherwise treat it as an HF Hub repo-id and snapshot-download it
+    (idempotent — uses the local HF cache on subsequent calls).
+
+    Rationale: passing ``LLM(model="<repo-id>")`` to vLLM routes through
+    ``vllm.model_executor.model_loader.weight_utils.download_weights_from_hf``
+    which hits the ``DisabledTqdm`` tqdm-kwarg-clash bug in vllm 0.11.0
+    (we patch it in ``_install_compat_shims`` but the patch is fragile).
+    Passing a local snapshot dir short-circuits that path AND avoids
+    re-querying the Hub on every per-cell engine init.
+
+    The smoke script (``smoke_vllm_lora_equivalence.py``) and the
+    lora-mode eval branch both go through here so they cannot diverge.
+    """
+    p = Path(base_model)
+    if p.is_dir() and (p / "config.json").exists():
+        return str(p)
+
+    from huggingface_hub import snapshot_download
+
+    logger.info("Snapshot-downloading base model %s (idempotent on cache)", base_model)
+    local = snapshot_download(repo_id=base_model)
+    if not (Path(local) / "config.json").exists():
+        raise FileNotFoundError(
+            f"Base model snapshot at {local} is missing config.json — "
+            "snapshot is corrupt or repo-id is wrong."
+        )
+    return local
 
 
 def _resolve_cell_model_path(source: str, arm: str, seed: int, base_model: str) -> dict:
