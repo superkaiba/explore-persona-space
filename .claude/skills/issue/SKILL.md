@@ -289,7 +289,7 @@ just to add labels. Order:
    Success criterion / Kill criterion / Compute / Pod preference / References, then
    patch the issue:
    ```
-   python scripts/sagan_state.py set-body <N> --file .claude/cache/experiment-<N>-body.md
+   python scripts/sagan_state.py set-body <N> --file .claude/cache/experiment-<N>-body.html
    ```
    Post a `<!-- epm:auto-defaults v1 -->` comment listing what was applied (label
    added, body drafted) so the audit trail is durable on the issue.
@@ -417,7 +417,7 @@ no-op. The same gate (`scripts/hypothesis_gate.py`) also runs in Step 1
 Post plan as `<!-- epm:plan v1 -->` comment via:
 
 ```bash
-PLAN_EVENT_ID=$(python scripts/sagan_state.py post-marker <N> epm:plan --note "$(cat .claude/plans/issue-<N>-comment-body.md)" | grep -oE 'event [a-f0-9-]+' | awk '{print $2}')
+PLAN_EVENT_ID=$(python scripts/sagan_state.py post-marker <N> epm:plan --note "$(cat .claude/plans/issue-<N>.html)" | grep -oE 'event [a-f0-9-]+' | awk '{print $2}')
 ```
 
 `sagan_state.py post-marker` prints the event id on stdout — capture it as a
@@ -428,7 +428,7 @@ auto-continuation policy in CLAUDE.md guarantees no pause between them
 in interactive mode; in autonomous mode the orchestrator exits at Step
 2c so the variable is irrelevant).
 
-Cache a copy of the plan body at `.claude/plans/issue-<N>.md` (cache
+Cache a copy of the plan body at `.claude/plans/issue-<N>.html` (cache
 only — GitHub is the source of truth).
 
 Also post estimated cost prominently at the top of the comment, e.g.
@@ -474,19 +474,28 @@ Advance label to `status:plan-pending`.
 - **Interactive mode** (user is in the current chat session): Ask the user
   inline rather than exiting. Present the plan summary and ask:
 
-  > Plan posted as `epm:plan v1` on issue #\<N\>.
+  Render the plan's **Plan Summary** section inline as the visible
+  payload of the question — that's the section the planner wrote
+  specifically for this gate (training, hyperparameters, baselines,
+  loss surface, compute, evaluation, top risks). Don't paste the
+  full plan; the user reads it on the dashboard if they want detail.
+
+  > Plan posted as `epm:plan v1`.
   >
-  > **Plan:** ${PLAN_URL}
-  > **Cached copy:** `.claude/plans/issue-<N>.md`
+  > **Dashboard:** https://sagan.superkaiba.com/e/experiment/\<UUID\>
+  > **Cached copy:** `.claude/plans/issue-<N>.html`
+  >
+  > {Render the Plan Summary section inline here — ~150 words.}
   >
   > (1) **Approve** — advance to implementation
   > (2) **Revise** \<notes\> — plan goes back to adversarial-planner
   > (3) **Defer** — exit now; re-invoke `/issue <N>` later
 
-  `${PLAN_URL}` is the inline shell variable captured at Step 2a — both
-  steps run in the same orchestrator turn (auto-continuation guarantees
-  no pause between them) so the variable is in scope. There is no
-  cache-file fallback.
+  The Plan Summary section is at the top of the HTML plan file
+  (`<section class="plan-summary">`). Read it from
+  `.claude/plans/issue-<N>.html` and pass the inner text to
+  AskUserQuestion. The full plan stays in the file and on the
+  dashboard for anyone who wants the details.
 
   Use `AskUserQuestion` or a plain text prompt and wait for the user's reply.
 
@@ -553,7 +562,7 @@ end-to-end contract; `tests/test_subagent_env_scrub.py` enforces the
 allow-list.
 
 Brief passed to the implementer:
-- The plan (cached at `.claude/plans/issue-<N>.md`)
+- The plan (cached at `.claude/plans/issue-<N>.html`)
 - Issue number + worktree path + branch name
 - Code-review history if this is a revision round (`epm:code-review v<m>`)
 - Required `report-back` fields
@@ -700,7 +709,7 @@ gated-model gate pages. Before provisioning, scan the cached plan for HF
 model IDs and submit gate-acceptance requests using the user's `HF_TOKEN`:
 
 ```bash
-uv run python scripts/hf_gate_accept.py --from-plan .claude/plans/issue-<N>.md
+uv run python scripts/hf_gate_accept.py --from-plan .claude/plans/issue-<N>.html
 ```
 
 The helper is idempotent (already-accessible repos exit `OK` immediately).

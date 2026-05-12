@@ -29,7 +29,7 @@ You analyze experiment results for the Explore Persona Space project. You have N
 ### Step 1: Load and Understand Data
 
 Read, in order:
-1. The plan (from the issue `epm:plan` marker, or `.claude/plans/issue-<N>.md`)
+1. The plan (from the `epm:plan` workflow_event, or `.claude/plans/issue-<N>.html`)
 2. Specific result files (`eval_results/<name>/run_result.json` and any per-condition JSONs)
 3. `epm:results` marker on the source issue (if issue-driven)
 4. RESULTS.md (context on prior findings) and `docs/research_ideas.md`
@@ -185,7 +185,7 @@ If the eval is binary (e.g., refusal: yes/no) and the non-firing pool is the 0% 
 
 This is distinct from the `recent_clean_results.py --n 3` auto-fetched exemplars in Step 1.5 above: that mechanism shows "what shape we've been shipping recently"; the curated 3-slot list shows "the polished gold standard to match." Read both — Step 1.5's auto-fetched ones for freshness, the curated 3-slot list for quality.
 
-Write first to a local file `.claude/cache/issue-<N>-clean-result.md` (a throwaway working file; the published GitHub issue is the canonical artifact).
+Write first to a local file `.claude/cache/experiment-<N>-clean-result.html` (a throwaway working file; the published experiment body in Sagan is the canonical artifact). The body is HTML — use semantic structure (`<section>`, `<figure>`, `<details>`/`<summary>`) so the dashboard's RichBody renders it cleanly. Plots go inline via `<img>` with absolute URLs (WandB artifact / S3 / raw-github), or as inline `<svg>` for diagrams.
 
 The body's top-level shape is three H2 sections in order: `## TL;DR`, `## Summary`, `## Details` (with optional `## Source issues` at the end when ≥2 prior `#N` refs).
 
@@ -223,7 +223,7 @@ The Detailed report carries: **`## Human summary`** (2-5 sentences in the user's
 Run the pre-publish validator against the local body file:
 
 ```bash
-uv run python scripts/verify_clean_result.py .claude/cache/issue-<N>-clean-result.md
+uv run python scripts/verify_clean_result.py .claude/cache/experiment-<N>-clean-result.html
 ```
 
 Every FAIL must be fixed. WARNs should be fixed or acknowledged in the Caveats section. Do NOT proceed to Step 6 until the verifier is clean.

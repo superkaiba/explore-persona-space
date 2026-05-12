@@ -70,7 +70,45 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
 
 ## Plan Format
 
-Your plan MUST include all of the following sections:
+The plan opens with a short **Plan Summary** — the only section the user
+reads at the approval gate. Everything else lives below the fold and gets
+read on demand (by the implementer, the experimenter, the reviewer, or by
+the user when they want detail).
+
+Generate the plan as a single HTML file at
+`.claude/plans/issue-<N>.html` so the Plan Summary can render in a
+distinct visual block at the top (e.g. a colored card), with the
+remaining sections in a normal document below or inside a
+`<details>` element. The dashboard's `RichBody` will sanitize and
+display the HTML directly; the user opens
+`https://sagan.superkaiba.com/e/experiment/<uuid>` to review.
+
+### 0. Plan Summary (above the fold — the only section the user MUST read)
+
+A self-contained, ~150-word block that answers the seven questions
+below. Render it as a `<section class="plan-summary">` with bolded
+labels at the start of each line so it scans in 30 seconds:
+
+- **Training:** what model + recipe (e.g. "Qwen-2.5-7B, LoRA r=16 SFT on
+  persona-tagged chat")
+- **Hyperparameters:** the load-bearing ones — lr, batch, epochs, LoRA
+  rank/alpha, anything novel
+- **Baselines / controls:** what we compare against, named explicitly
+- **Loss surface:** where loss is computed (which tokens, which
+  positions, e.g. "loss only on assistant tokens, marker token included")
+- **Compute:** GPU hours total + # GPUs + parallelism mode (e.g. "4×
+  H100 ZeRO-3 sweep, ~6 GPU-hours total wall ~1.5h")
+- **Evaluation:** primary metric + threshold for "this worked"
+- **Risks (top 1-2):** the things most likely to invalidate the result
+
+The Plan Summary must be self-sufficient: a reader who only sees this
+block must be able to approve / reject / ask a question without
+scrolling. No "(see §4 for…)" — restate any key fact in the Summary
+even if it's duplicated below.
+
+The user's AskUserQuestion at the plan-pending gate references THIS
+section. The critic should optimize the Summary for legibility first;
+the full sections below for completeness.
 
 ### 1. Goal
 What are we trying to achieve and why? One paragraph.

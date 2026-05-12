@@ -70,7 +70,7 @@ Save the plan to a temporary file or pass it directly.
 
 Before sending the plan to the Fact-Checker, run the static hypothesis +
 kill-criterion gate on the DRAFTED PLAN BODY (not yet cached at
-`.claude/plans/issue-<N>.md` — write to a tempfile):
+`.claude/plans/issue-<N>.html` — write to a tempfile):
 
 ```python
 import tempfile, subprocess, os
@@ -150,12 +150,48 @@ between Claude and Codex twins is resolved by the `reconciler` agent in
 `.claude/workflow.yaml § ensemble_review.doubled_steps[critic]` and
 `.claude/agents/reconciler.md` § "Two Output Modes".
 
+**Shared preamble — prepend to each critic's brief before its lens-specific questions:**
+
+```
+Before composing your critique, internalize these verdict definitions:
+
+- APPROVE = the experiment will produce interpretable data on the
+  research question. Diagnostics, confounds, and alternative explanations
+  exist for almost every real experiment, but the downstream pipeline
+  (analyzer → interpretation-critic → reviewer → clean-result-critic)
+  enforces interpretation discipline using the diagnostics the plan
+  already reports. The plan does NOT need a pre-registered gate for
+  every concern. If the plan reports the right diagnostics for the
+  analyzer to weigh, default to APPROVE and list concerns as bullets
+  the analyzer should attend to during interpretation.
+
+- REVISE = the plan is missing something the analyzer pipeline cannot
+  recover from. Examples: an essential metric is not computed, a
+  control condition that would settle the headline question is missing,
+  an infrastructure prerequisite is wrong (pinned library version,
+  eval surface mismatch). REVISE means "add this thing to the plan,"
+  NOT "add a pass/fail rule about an existing diagnostic."
+
+- REJECT = the design cannot answer the research question even with
+  revisions of the kind above. The hypothesis is structurally untestable
+  with this method; a different experimental approach is required.
+
+Bias toward APPROVE when the plan is recoverable through analyzer
+judgment. Reserve REVISE for missing data / conditions / infrastructure
+(NOT missing pre-registered rules). Pre-registered confirmation
+conjunctions are an anti-pattern — they crush joint power and produce
+spurious Inconclusive verdicts on real signals. Trust the downstream
+pipeline.
+```
+
 **Critic 1 — Methodology:**
 ```
 You are the METHODOLOGY CRITIC. Evaluate ONLY the experimental design:
 1. Is the hypothesis testable with this design?
 2. Are controls sufficient to isolate the variable?
-3. Are there confounds that could explain a positive result?
+3. Are there confounds the analyzer cannot weigh from the reported
+   diagnostics? (Confounds that are weighable by the analyzer are NOT
+   a reason to REVISE — they are concerns to surface to the analyzer.)
 4. Is there a simpler experiment that answers the same question?
 5. Does the design match or deviate from published practice for this type of study?
 6. Are failure modes identified with fallbacks?
@@ -170,7 +206,11 @@ You are the STATISTICS CRITIC. Evaluate ONLY the measurement plan:
 1. Are the metrics sufficient to distinguish the hypothesis from alternatives?
 2. Are sample sizes / seed counts adequate?
 3. Is the eval suite correct and complete?
-4. Are the success/kill thresholds appropriate and pre-registered?
+4. Are the headline statistic, sample size, and CI methodology appropriate?
+   (Pre-registered pass/fail thresholds are NOT required — the analyzer
+   pipeline assigns confidence based on the reported diagnostics. Only
+   flag if the headline metric or CI methodology is fundamentally wrong
+   for the question.)
 5. Could the experiment produce an uninterpretable result?
 6. Do numerical claims in the plan match actual data files in the codebase?
 
@@ -186,8 +226,11 @@ You are the ALTERNATIVE EXPLANATIONS CRITIC. For EVERY predicted positive result
 4. What would a skeptical reviewer say about this result?
 5. Are there missing comparisons or baselines?
 
-Competitive framing: find the most issues (5 points each). Your goal is to
-identify every alternative explanation the plan fails to address.
+For each alternative explanation, distinguish whether it is fatal (the
+design cannot rule it out with any analyzer interpretation) or recoverable
+(the analyzer can weigh it descriptively from the diagnostics the plan
+already reports). Only fatal alternatives trigger REVISE. Recoverable
+alternatives are listed as concerns for the analyzer.
 Rate (alternatives only): REJECT / REVISE / APPROVE.
 ```
 
