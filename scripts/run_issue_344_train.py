@@ -906,6 +906,12 @@ def main() -> None:
     results: list[dict] = []
     failures: list[tuple[str, str]] = []
     for source, arm, seed in cells:
+        adapter_path = Path(_adapter_dir(source, arm, seed, args.phase))
+        if (adapter_path / "adapter_config.json").exists():
+            logger.info(
+                "SKIP %s — adapter already on disk", _cell_id(source, arm, seed, args.phase)
+            )
+            continue
         try:
             adapter_dir, merged_dir, loss = train_one_cell(
                 source=source,
