@@ -227,6 +227,117 @@ def test_partial_template_fails_closed_on_missing_anchor() -> None:
     print("  PASS")
 
 
+def test_generic_cot_space_prefix_anchor_regression() -> None:
+    """v6 regression test for round-6 generic_cot anchor fix.
+
+    Bug class: a Phase 0 data generator emits assistant turns ending in
+    ``' Answer: <letter>'`` (space-prefix), while the partial-generation
+    Jinja2 template splits on ``\\nAnswer:`` (newline-prefix). Result:
+    SFTTrainer init crashes at template render with ``UndefinedError``
+    triggered by the fail-closed
+    ``_ANSWER_ANCHOR_MISSING_must_be_present_in_assistant_turn`` sentinel.
+
+    This test verifies the catch:
+      (a) BEFORE the rewrite, an assistant turn ending in ' Answer: B'
+          (space-prefix) makes the partial template raise.
+      (b) AFTER applying ``rewrite_answer_anchor``, the same turn renders
+          cleanly (one ``{% generation %}`` region around ``\\nAnswer: B``).
+
+    Catches the bug class on any future Phase 0 data change that uses the
+    space-prefix anchor format.
+    """
+    print("\n=== generic_cot ' Answer:' space-prefix anchor regression (v6) ===")
+    import run_issue_344_train as t
+    from fix_generic_cot_anchor import rewrite_answer_anchor
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.chat_template = t.chat_template_for_arm(t.ARM_LABELS_ON_ANSWER)
+
+    # Synthesise the broken form: assistant turn ends with ' Answer: B'
+    # (the exact pathology observed in
+    # data/sft/issue186/*_generic-cot_seed42.jsonl).
+    broken_assistant = (
+        "From a generic perspective, both options have merit, but B is most "
+        "consistent with the conventional reasoning. Answer: B"
+    )
+    assert "\nAnswer:" not in broken_assistant, "test premise: starts without newline-prefix"
+    assert " Answer:" in broken_assistant, "test premise: has space-prefix anchor"
+
+    broken_row = {
+        "messages": [
+            {"role": "system", "content": "You are a software engineer."},
+            {"role": "user", "content": "What is 2+2?\n\n(A) 3\n(B) 4\n(C) 5\n(D) 6"},
+            {"role": "assistant", "content": broken_assistant},
+        ]
+    }
+
+    # CASE (a): broken row must raise UndefinedError with the sentinel name.
+    raised = False
+    err_msg = ""
+    try:
+        tokenizer.apply_chat_template(
+            broken_row["messages"],
+            tokenize=True,
+            return_assistant_tokens_mask=True,
+            return_dict=True,
+        )
+    except Exception as exc:
+        raised = True
+        err_msg = str(exc)
+        print(f"  (a) broken row raised: {type(exc).__name__}: {err_msg[:140]}")
+    assert raised, "broken (' Answer:' space-prefix) row should have raised"
+    assert "_ANSWER_ANCHOR_MISSING" in err_msg, (
+        f"expected '_ANSWER_ANCHOR_MISSING' in error message, got: {err_msg!r}"
+    )
+
+    # CASE (b): rewritten row renders cleanly with one generation region.
+    fixed_assistant = rewrite_answer_anchor(broken_assistant)
+    assert "\nAnswer:" in fixed_assistant, (
+        f"rewrite did not produce '\\nAnswer:' anchor: {fixed_assistant[-80:]!r}"
+    )
+    # The space-prefix anchor at the rewritten position is gone — i.e. there
+    # is exactly one '\nAnswer:' and zero remaining ' Answer:' tails.
+    assert fixed_assistant.count("\nAnswer:") == 1, (
+        f"expected exactly 1 '\\nAnswer:' anchor, got {fixed_assistant.count(chr(10) + 'Answer:')}"
+    )
+
+    fixed_row = {
+        "messages": [
+            {"role": "system", "content": "You are a software engineer."},
+            {"role": "user", "content": "What is 2+2?\n\n(A) 3\n(B) 4\n(C) 5\n(D) 6"},
+            {"role": "assistant", "content": fixed_assistant},
+        ]
+    }
+    out = tokenizer.apply_chat_template(
+        fixed_row["messages"],
+        tokenize=True,
+        return_assistant_tokens_mask=True,
+        return_dict=True,
+    )
+    mask = out["assistant_masks"]
+    n_unmasked = sum(mask)
+    print(f"  (b) fixed row renders: {n_unmasked}/{len(mask)} tokens unmasked")
+    assert n_unmasked > 0, "fixed row should have a non-empty generation region"
+    unmasked_ids = [tid for tid, m in zip(out["input_ids"], mask, strict=True) if m == 1]
+    decoded = tokenizer.decode(unmasked_ids)
+    assert "Answer" in decoded, f"unmasked region missing 'Answer': {decoded!r}"
+    assert "B" in decoded, f"unmasked region missing letter: {decoded!r}"
+
+    # Idempotence: re-applying the rewrite leaves the string unchanged.
+    twice_fixed = rewrite_answer_anchor(fixed_assistant)
+    assert twice_fixed == fixed_assistant, "rewrite_answer_anchor must be idempotent"
+
+    # No-op on a string that has no ' Answer:' anchor either.
+    no_anchor = "just some text without any answer marker."
+    assert rewrite_answer_anchor(no_anchor) == no_anchor, (
+        "rewrite must pass strings without anchor through unchanged"
+    )
+    print("  PASS")
+
+
 def test_mask_audit_handles_bpe_merge_at_persona_boundary() -> None:
     """v5 regression test: `_run_mask_audit` partial-arm branch must NOT
     rely on standalone-string re-tokenization of `\\nAnswer:`.
@@ -1218,6 +1329,7 @@ def main() -> None:
             test_whole_turn_template_renders_full_assistant_mask()
             test_no_cot_fresh_whole_turn_renders()
             test_partial_template_fails_closed_on_missing_anchor()
+            test_generic_cot_space_prefix_anchor_regression()
             test_mask_audit_handles_bpe_merge_at_persona_boundary()
         except OSError as exc:
             print(f"\n  [WARN] tokenizer download failed ({exc}); skipping template tests.")
