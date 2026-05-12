@@ -13,32 +13,34 @@ globs:
 | Artifact | Lives at | Authoritative for |
 |---|---|---|
 | Per-run structured results (JSON) | `eval_results/<name>/run_result.json` + WandB Artifact | Raw numbers, reproducibility metadata |
-| Polished write-up per experiment | **GitHub clean-result issue** (label `clean-results`) | Human TL;DR + AI TL;DR + AI Summary + confidence |
+| Polished write-up per experiment | **Clean-result experiment row in Sagan** (`has_clean_result=true`, one child `runs` row) | Human TL;DR + AI TL;DR + AI Summary + confidence |
 | Headline-level findings | `RESULTS.md` | Cross-experiment claims a paper would cite |
-| Results index | `eval_results/INDEX.md` | Pointer table from issue # → result JSON path |
-| Ideas backlog | `docs/research_ideas.md` | Pre-issue brainstorm/promotion candidates |
+| Results index | `eval_results/INDEX.md` | Pointer table from `experiments.number` → result JSON path |
+| Ideas backlog | `docs/research_ideas.md` | Pre-experiment brainstorm/promotion candidates |
 
-The legacy file-based research log (`research_log/`) has been retired and
-moved to `archive/research_log/`. Do not write there. The clean-result
-GitHub issue created by the analyzer at the end of `/issue` is the durable,
-canonical artifact for every experiment.
+The legacy file-based research log (`research_log/`) has been retired
+and moved to `archive/research_log/`. Do not write there. The
+clean-result experiment row created by the analyzer at the end of
+`/issue` is the durable, canonical artifact for every experiment.
 
 ## Experiment Queue
 
-**The GitHub project board IS the queue.** Every experiment is a GitHub issue
-carrying its lifecycle state in a `status:*` label (`proposed` →
-`planning` → `plan-pending` → `approved` → `implementing` →
-`code-reviewing` → `running` → `uploading` → `interpreting` →
-`reviewing` → `awaiting-promotion` → `done-experiment` / `done-impl`). Filter with
-`gh issue list --label status:<state>`. There is no markdown queue file.
+**The Sagan `experiments` table IS the queue.** Every experiment is a
+row carrying its lifecycle state in the `status` enum (`proposed` →
+`planning` → `plan_pending` → `approved` → `running` → `verifying` →
+`interpreting` → `reviewing` → `awaiting_promotion` → `completed` /
+`archived`). Filter with `python scripts/sagan_state.py list-by-status
+--status <state>` or browse the kanban at
+<https://sagan.superkaiba.com/experiments>. There is no markdown queue
+file.
 
-Each issue's body must be actionable:
+Each experiment's body must be actionable:
 - BAD: "Try different learning rates"
 - GOOD: "SFT Llama3-8B on UltraChat, lr=3e-5, 3 epochs, LoRA r=16"
 
-Raw ideation output (pre-issue brainstorms from `/ideation`) lives at
-`docs/ideas/YYYY-MM-DD.md`. The user promotes worthwhile ideas to GitHub
-issues with `gh issue create --label status:proposed`.
+Raw ideation output (pre-experiment brainstorms from `/ideation`) lives
+at `docs/ideas/YYYY-MM-DD.md`. The user promotes worthwhile ideas to
+experiment rows via the dashboard or `POST /api/experiments`.
 
 ## Environment Bootstrap
 

@@ -5,9 +5,9 @@
 - **Ask before assuming.** If a task has multiple valid interpretations, ask. Don't guess requirements, data formats, or success criteria.
 - **Never take shortcuts.** Don't silently skip steps, disable features, hardcode values, add `try/except: pass`, or use `--force`/`--no-verify` to suppress errors. Diagnose the root cause.
 - **Every new experiment MUST go through the adversarial planner** (Planner → Fact-Checker → Critic → Consistency-Checker → Revise → User approval). No exceptions. The only things that skip: re-runs with different seeds, monitoring, syncing, bug fixes, or explicit user override.
-- **NEVER run NEW experiments inline in conversation.** When the user expresses experiment intent for a NEW direction ("try X", "run X", "what if we X"): (1) do NOT launch training/eval/generation code; (2) say "I'll create an issue for that" and create a `status:proposed` GitHub issue pre-filled with context from the conversation (goal, hypothesis, parent issue link, pre-filled spec from parent if follow-up); (3) the only execution path is `/issue <N>`. **Exception — follow-up work that reuses the parent's code:** when the user requests a follow-up to an already-running or recently-completed experiment and the work reuses a lot of the parent's eval rig / scripts (same launcher, same matchers, only the variant set or hyperparam changes), it IS OK to run inline. The follow-up's findings — whether they strengthen the existing claims or add new related claims — fold back into the **same issue's body**. An issue can carry multiple related claims in its AI TL;DR / AI Summary; there is no separate sub-issue concept.
+- **NEVER run NEW experiments inline in conversation.** When the user expresses experiment intent for a NEW direction ("try X", "run X", "what if we X"): (1) do NOT launch training/eval/generation code; (2) say "I'll create an experiment for that" and create a `status='proposed'` row in Sagan (via `https://sagan.superkaiba.com/experiments` or `POST /api/experiments`) pre-filled with context from the conversation (goal, hypothesis, parent link, pre-filled spec from parent if follow-up); (3) the only execution path is `/issue <N>` where `N` is `experiments.number`. **Exception — follow-up work that reuses the parent's code:** when the user requests a follow-up to an already-running or recently-completed experiment and the work reuses a lot of the parent's eval rig / scripts (same launcher, same matchers, only the variant set or hyperparam changes), it IS OK to run inline. The follow-up's findings — whether they strengthen the existing claims or add new related claims — fold back into the **same experiment's body**. An experiment can carry multiple related claims in its AI TL;DR / AI Summary; there is no separate sub-experiment concept.
 
-  Workflow: move the parent / clean-result issue to the **`Followups running`** project column via `python scripts/gh_project.py set-status <PARENT_N> "Followups running"`, run inline, update the parent's body (AI TL;DR bullets, AI Summary Results, Sample outputs, Headline numbers, Artifacts) with the new evidence + new claims, move it back to its prior column (`Awaiting promotion`) when done. Output artifacts live under `eval_results/issue_<PARENT_N>/<followup_label>/`.
+  Workflow: keep the parent at its current status (typically `awaiting_promotion`), run inline, update the parent's body via `python scripts/sagan_state.py` or the dashboard with the new evidence + new claims. Cross-experiment links use the `edges` table — type `parent` for explicit followup relationships, `derives_from` for general references. Output artifacts live under `eval_results/issue_<PARENT_N>/<followup_label>/` (`issue_<N>` here means `experiments.number == <N>`).
 
   Other exceptions to inline-running rules: monitoring already-running experiments, checking logs, pulling results. Discussion and brainstorming stay in conversation; new-direction execution always goes through `/issue <N>`.
 - **List assumptions before implementing.** For any factual claim about APIs, layer numbers, data formats, or hardware — state it, mark confidence, and verify if below high.
@@ -15,7 +15,7 @@
 - **Always use vLLM for generation.** Never use sequential HF `model.generate()` for eval completions — use vLLM batched inference (`LLM.generate()` with `SamplingParams(n=K)`). A single vLLM batch is 10-50x faster than sequential HF generation.
 - **Use generous `max_new_tokens` for marker / end-of-completion evals.** For any eval that scores a marker or end-of-completion token (e.g., `[ZLT]` substring rate), set `max_new_tokens` ≥ 2× the longest trained completion length, defaulting to **≥ 2048** unless explicitly justified otherwise. Truncation creates silent zeros: in issue #260, training on ~1050-token completions with the marker at the end + `max_new_tokens=512` produced source-rate 0.00 across all personas — not because the model failed to implant the marker, but because eval cut off ~360 tokens before reaching it. Free-generation evals (alignment, capability) can stay at 512; the rule applies specifically to marker/late-token evals.
 
-- **Closing an issue auto-archives it (with sticky exceptions).** `gh issue close <N>` triggers `.github/workflows/project-archive-on-close.yml`, which applies `status:archived` and routes the project board to Archived. Reopening restores `status:proposed`. **Two label classes are sticky and the workflow is a no-op for them: `status:done-experiment` / `status:done-impl` and any `clean-results:*` label.** A closed Done-column or clean-results-promoted issue stays in its column — un-Done by `gh issue edit --remove-label status:done-*`. The `/issue` skill never closes issues — Done-column issues stay OPEN. Use `gh issue close` only for duplicates / won't-fix / abandoned issues.
+- **Archiving experiments.** Set `status` to `archived` for duplicates / won't-fix / abandoned experiments via `python scripts/sagan_state.py set-status <N> archived` or the dashboard. Completed experiments stay at `status='completed'`. `has_clean_result=true` is sticky regardless of status — archived experiments retain their clean-result association.
 
 - **Auto-continuation policy.** When orchestrating a multi-step workflow
   (`/issue`, `/adversarial-planner`, etc.) the agent MUST auto-continue
@@ -33,16 +33,17 @@
   5. Step 10d — worktree merge prompt (irreversible).
 
   *Park-and-wait gates (skill EXITs and waits for the user to run a separate command before re-invoking `/issue <N>`):*
-  7. `status:awaiting-promotion` — clean-result promotion. After reviewer
-     PASS the source issue is parked at `awaiting-promotion` and the
-     clean-result label stays at `clean-results:draft`. The user runs
-     `python scripts/gh_project.py promote <N> useful|not-useful` when
-     satisfied; re-invoking `/issue <N>` then advances into Step 10.
-     `/issue` does NOT use `AskUserQuestion` here — it posts the link
-     and exits cleanly. **Awaiting promotion is user-only:** no
-     automation may move an issue out of this column; the
-     `gh_project.py promote` command verifies `clean-results:draft` is
-     present before flipping labels and refuses otherwise.
+  7. `awaiting_promotion` — clean-result promotion. After reviewer PASS,
+     the source experiment is parked at `awaiting_promotion` and the
+     clean-result's `runs.classification` stays at `pending`. The user
+     runs `python scripts/sagan_state.py promote <N> useful|not-useful`
+     (or clicks Promote in the dashboard) when satisfied; re-invoking
+     `/issue <N>` then advances into Step 10. `/issue` does NOT use
+     `AskUserQuestion` here — it posts the dashboard link and exits
+     cleanly. **Awaiting promotion is user-only:** no automation may
+     flip `runs.classification` without explicit user invocation; the
+     promote command verifies `classification = 'pending'` first and
+     refuses otherwise.
 
   *Conditional gates (only when explicitly opted into):*
   8. Step 4b TDD gate — fires only when the approved plan body contains
@@ -62,8 +63,8 @@
   (see workflow.yaml § halt_criteria): outside-worktree writes, public-API
   contract changes, subagent BLOCKER/FAIL with `needs-user`, infra respawn
   cap (3) hit, and Step 10 completion-audit finding an unaddressed item from
-  the ORIGINAL issue body. When any criterion fires, label `status:blocked`
-  and EXIT instead of `Assumption:`-ing past the issue.
+  the ORIGINAL experiment body. When any criterion fires, set status to
+  `blocked` and EXIT instead of `Assumption:`-ing past the experiment.
 
 - **Subagent halt conditions** (verdicts that pause regardless of
   auto-continuation): consistency-checker BLOCKER, code-reviewer FAIL
@@ -81,13 +82,12 @@
   context, binding verdict). Round cap 3 per reviewer; reconciler
   invocations don't count. **NOT doubled:** `clean-result-critic` (Codex
   imposes a different register; net noise), `upload-verifier`,
-  `consistency-checker` (mechanical). Codex never sees `GH_TOKEN` — the
-  thin Claude wrapper agents (`codex-code-reviewer`,
-  `codex-interpretation-critic`, `codex-reviewer`, `codex-critic`) post
-  the markers via `gh_graphql` MCP. /adversarial-planner Phase 2 uses
-  in-context reconciliation (no GitHub markers); the other 3 sites use
-  marker mode. See `workflow.yaml § ensemble_review` for the canonical
-  contract.
+  `consistency-checker` (mechanical). The thin Claude wrapper agents
+  (`codex-code-reviewer`, `codex-interpretation-critic`, `codex-reviewer`,
+  `codex-critic`) post their markers via `sagan_state.py post-marker`.
+  /adversarial-planner Phase 2 uses in-context reconciliation (no
+  workflow_event posts); the other 3 sites use marker mode. See
+  `workflow.yaml § ensemble_review` for the canonical contract.
 
 ## Context hygiene
 
@@ -99,7 +99,7 @@
 1. **Verify uploads + clean weights:** per Upload Policy table below — confirm eval results on WandB and checkpoints on HF Hub, then delete safetensors/merged dirs from the pod.
 2. Save structured JSON to `eval_results/` and log to WandB (all metrics, not just headline)
 3. Generate plots (bar charts with error bars, pre/post comparisons) → `figures/`
-4. The `analyzer` agent creates the clean-result GitHub issue directly (labeled `clean-results:draft`). The label stays at `:draft` even after reviewer PASS — the user manually promotes to `clean-results` via `python scripts/gh_project.py promote <N> useful|not-useful` when satisfied. Body follows `.claude/skills/clean-results/SPEC.md`. Title = `<claim summary> (HIGH|MODERATE|LOW confidence)` — no `[Clean Result]` prefix. Run `uv run python scripts/verify_clean_result.py` before posting; FAIL blocks posting.
+4. The `analyzer` agent creates a clean-result experiment row in Sagan directly (`POST /api/experiments` with `status='awaiting_promotion'` and `has_clean_result=true`, plus a child `runs` row with `classification='pending'`). The classification stays at `pending` even after reviewer PASS — the user manually promotes via `python scripts/sagan_state.py promote <N> useful|not-useful` (or the dashboard) when satisfied. Body follows `.claude/skills/clean-results/SPEC.md`. Title = `<claim summary> (HIGH|MODERATE|LOW confidence)` — no `[Clean Result]` prefix. Run `uv run python scripts/verify_clean_result.py` before posting; FAIL blocks posting.
 5. Update `RESULTS.md` and `docs/research_ideas.md`
 6. **Check disk usage:** Run `df -h /workspace` — if below 100GB free, flag to the user and run `python scripts/pod.py cleanup --all --dry-run` to preview what can be freed
 7. **No overclaims** — flag single seed, in-distribution eval, effect sizes, confounds
@@ -107,7 +107,7 @@
 
 ## Experiment Report Structure
 
-All experiment write-ups — analyzer drafts and clean-result GitHub issues — follow ONE unified spec at **`.claude/skills/clean-results/SPEC.md`** (consolidates the prior `template.md` + `principles.md` + `checklist.md` + `exemplars.md` + `paper-caption-examples.md` + `lw-tldr-examples.md` + `promote-clean-result/human-tldr-examples.md` + `promote-clean-result/lw-register-cheatsheet.md` as of 2026-05-11).
+All experiment write-ups — analyzer drafts and clean-result experiment rows — follow ONE unified spec at **`.claude/skills/clean-results/SPEC.md`** (consolidates the prior `template.md` + `principles.md` + `checklist.md` + `exemplars.md` + `paper-caption-examples.md` + `lw-tldr-examples.md` + `promote-clean-result/human-tldr-examples.md` + `promote-clean-result/lw-register-cheatsheet.md` as of 2026-05-11).
 
 The template (v4, 2026-05-11+) has three parts:
 
@@ -182,31 +182,48 @@ python scripts/pod.py config --update <name> --host 1.2.3.4 --port 12345
 ```
 This updates `pods.conf` (single source of truth), regenerates `~/.ssh/config` and the user-level `~/.claude/mcp.json` automatically. Then restart the MCP server (`/mcp`).
 
-## GitHub GraphQL MCP (`gh_graphql`)
+## Sagan State API
 
-In-repo Python MCP server at `src/explore_persona_space/mcp_servers/gh_graphql/`. Exposes a hand-curated allow-list of GitHub mutations (13 tools — see `tools.py:MUTATION_TOOL_NAMES`) so subagents can post comments / set labels / open PRs **without `GH_TOKEN` ever appearing in the agent context window**. Read paths (`gh issue view`, `gh issue list`, `gh pr view`, `gh pr diff`) stay on the `gh` CLI by design — no auth-leak risk on reads.
+All experiment state is read and written through `scripts/sagan_state.py`
+(both CLI and importable Python module), which talks to the Sagan
+dashboard's HTTP API at `$SAGAN_BASE_URL` (default
+`https://sagan.superkaiba.com`) authenticated via `$SAGAN_API_TOKEN`
+(60-day sliding session, stored in `~/.eps-secrets`).
 
-The token lives in the orchestrator's process env (typically `~/.claude/mcp.json`'s `gh_graphql.env` block, written by `pod.py config --sync`). The MCP server inherits it at spawn time; agents call named tools and never see the literal value. **Local-VM caveat:** the token is still readable from `/proc/<pid>/environ` of the MCP server process; `gh_graphql` closes the agent-context-window leakage path, not the local-VM process-tree path.
+Subagents that need to write state (e.g. `analyzer` posting a clean
+result, `reviewer` posting a verdict marker) shell out to
+`sagan_state.py` — they never see the raw token, only the env var that
+holds it. The dashboard URL for any experiment is
+`https://sagan.superkaiba.com/e/experiment/<uuid>`.
 
-**Body 65,536-byte cap.** `add_issue_comment` / `update_issue_body` / `create_issue` / `create_pull_request` enforce GitHub's GraphQL `addComment.body` limit and return `{"success": false, "error": "body_too_large"}` rather than truncate. Skill-side callers MUST handle this: post a short `epm:failure v1` with `failure_class: infra`, `reason: comment_oversize`, then flip the issue to `status:blocked` (see `markers.md`'s "Comment body 65,536-byte cap" note).
+Common operations:
 
-**Denylist (enforced by omission).** `archiveRepository`, `transferIssue`, `deleteIssue`, `deleteRepository`, `createRepository`, `updateRepository`, project mutations beyond `updateProjectV2ItemFieldValue`, and GraphQL introspection are NOT registered. A model that asks for them gets the standard MCP "unknown tool" error.
+```bash
+python scripts/sagan_state.py view <N>                  # read experiment + recent events
+python scripts/sagan_state.py latest-marker <N>         # "where do I resume" query
+python scripts/sagan_state.py set-status <N> <status>   # advance state
+python scripts/sagan_state.py post-marker <N> epm:foo --note '...'
+python scripts/sagan_state.py add-tag <N> <tag>
+python scripts/sagan_state.py list-by-status --status running
+```
 
-**Migration phasing.** Phase 1 wires the skill itself for plan-post and clean-result-creation. Phases 2–4 migrate agent prompts (`code-reviewer`, `analyzer`, `implementer`) to the MCP write tools. Phase 4.5 (env scrub) ships in the same PR: every `Agent()` call from the `/issue` skill passes `env=scrub_subagent_env(os.environ)` from `explore_persona_space.orchestrate.spawn_agent`, which strips `GH_TOKEN` and `GITHUB_TOKEN` while letting every other secret (WANDB_API_KEY, HF_TOKEN, ANTHROPIC_API_KEY, OPENAI_API_KEY, RUNPOD_API_KEY, ...) pass through unchanged. Phase 5 (planner read-side migration) is intentionally skipped — read paths have no auth-leak risk, and the planner is a high-traffic agent where a non-functional change isn't worth the diff size. The contract is enforced by `tests/test_subagent_env_scrub.py`.
+**Body size cap.** The `note` payload on a workflow_event is capped at
+50,000 chars by the API schema. Skill-side callers MUST handle the
+`invalid_input` response: post a short `epm:failure v1` event with
+`failure_class: infra`, `reason: note_oversize`, then set the
+experiment to `status='blocked'`.
 
-**Pre-commit secrets check.** `.pre-commit-config.yaml` runs `scripts/check_mcp_json_no_secrets.py` against any committed `.mcp.json` and refuses to commit env keys whose names match the secret-suffix regex (`*_TOKEN`, `*_API_KEY`, `*_PAT`, `*_SECRET`, `*_KEY`, `*_PASSWORD`) or the explicit-name list (`GH_TOKEN`, `HF_TOKEN`, `WANDB_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `RUNPOD_API_KEY`, `PROJECT_PAT`, `SUPABASE_ACCESS_TOKEN`, `CODECOV_TOKEN`, `GITHUB_TOKEN`). The user-level `~/.claude/mcp.json` is NOT checked (it's not under git). `SSH_SERVER_*_KEYPATH` (a path to a key file, not the key) and `GH_REPO_OWNER` / `GH_REPO_NAME` are allowlisted.
-
-## PM Session + Per-Issue Sessions (Happy multi-session model)
+## PM Session + Per-Experiment Sessions (Happy multi-session model)
 
 The user runs **multiple parallel Claude Code sessions on the local VM**, all
 visible in the [Happy Coder](https://github.com/slopus/happy) mobile app:
 
 - **One PM session** — the user's primary interlocutor. Pinned to repo root.
   Loads the `research-pm` persona via `/pm`. Owns queue triage, ranking, and
-  dispatching per-issue work. Does NOT run experiments or write code.
-- **N per-issue sessions** — one per active GitHub issue. Each runs `/issue
-  <N>` and progresses it through the lifecycle. Spawned by the PM on the
-  user's go-ahead.
+  dispatching per-experiment work. Does NOT run experiments or write code.
+- **N per-experiment sessions** — one per active experiment. Each runs
+  `/issue <N>` (where `N` is `experiments.number`) and progresses it
+  through the lifecycle. Spawned by the PM on the user's go-ahead.
 
 ```bash
 # Spawn the PM session (open it in Happy on your phone, type /pm)
@@ -229,16 +246,17 @@ infrastructure; the new session inherits the user's `$HOME` (and therefore the
 QR-paired E2E key in `~/.happy/access.key`) and shows up automatically on the
 phone. No per-child pairing.
 
-**Auto-watching long runs.** Per-issue sessions don't auto-wake on experiment
-progress. To poll: from inside the issue session, run `/loop 10m /issue <N>`.
+**Auto-watching long runs.** Per-experiment sessions don't auto-wake on
+experiment progress. To poll: from inside the session, run
+`/loop 10m /issue <N>`.
 The PM session stays event-driven by default (responds when the user
 messages); use `/loop` only if explicitly asked (e.g. overnight queue
 triage).
 
 **Topology rule.** Never run `/issue <N>` in the PM session — it would
 collapse the multi-session model. Always spawn a separate session. The PM
-session's view of `/issue <N>` progress is via `gh issue list` and tracking
-files, not by cross-messaging.
+session's view of `/issue <N>` progress is via `sagan_state.py
+list-by-status` (or the dashboard kanban), not by cross-messaging.
 
 **Reference:** `.claude/skills/pm/SKILL.md` (skill bootstrap),
 `.claude/agents/research-pm.md` (persona),
@@ -246,11 +264,11 @@ files, not by cross-messaging.
 
 ## Ephemeral Pod Lifecycle (default execution path)
 
-**Pods are created on demand per GitHub issue, not maintained as a permanent fleet.** The `/issue` skill provisions a pod when an experiment dispatches and terminates it automatically the moment artifact uploads are verified — interpretation and review run locally on the VM.
+**Pods are created on demand per experiment, not maintained as a permanent fleet.** The `/issue` skill provisions a pod when an experiment dispatches and terminates it automatically the moment artifact uploads are verified — interpretation and review run locally on the VM.
 
 **Lifecycle:** `provision` → run experiment → upload artifacts → upload-verification PASS → **auto-terminate**.
 
-**Pod naming:** `epm-issue-<N>` where `<N>` is the source GitHub issue number. One pod per issue. Follow-up issues that share a parent provision a fresh pod (the parent's pod was destroyed at upload-verification PASS).
+**Pod naming:** `epm-issue-<N>` where `<N>` is `experiments.number`. One pod per experiment. Follow-up experiments that share a parent provision a fresh pod (the parent's pod was destroyed at upload-verification PASS).
 
 **Auto-terminate-on-upload-PASS (automatic).** After upload-verification PASS, `/issue` Step 8 runs `pod.py terminate --issue <N> --yes` automatically (volume + container disk destroyed). The skill posts `<!-- epm:pod-terminated v1 -->` and proceeds to `status:interpreting`. Interpretation and review run locally — they read JSON results from WandB / HF Hub, not from the pod. If interpretation later needs GPU compute (e.g., to regenerate a figure from raw outputs that weren't downloaded), provision a fresh pod via `pod.py provision`. Skip the auto-terminate only by labelling the issue `keep-running` for known follow-up work in the same session.
 
@@ -429,31 +447,27 @@ See **`.claude/rules/agents-vs-skills.md`** for the full rule. Summary:
 - **Skill** = a playbook loaded into the current context. Use when the task is a reusable workflow or convention. Lives in `.claude/skills/<name>/SKILL.md`; invoked via `Skill` or `/<name>`.
 - A thing is one or the other, never both. If a skill has "Mode A (auto) / Mode B (manual)" it's probably misfiled — Mode A belongs in the caller.
 
-## GitHub Project auto-add (fine-grained PAT requirement)
+## Output format
 
-`.github/workflows/project-auto-add.yml` auto-adds newly-opened issues to
-the Experiment Queue project board (#1). It needs the repo secret
-`PROJECT_PAT`. Use a **fine-grained personal access token** with:
+Default to **HTML** for long-lived artifacts the user will read in a
+browser: adversarial-planner output, clean-result writeups, weekly
+digests, mentor updates, spec / "compare 6 options" exploration docs,
+code-review summaries on experiments. Write to
+`.claude/cache/experiment-<N>-<artifact>.html` and post the link as part
+of the relevant `workflow_event`. Sagan renders them inline via
+`figures.kind = 'html_artifact'` on the experiment detail page. Pair
+with the `frontend-design` plugin for defaults that don't look generic.
 
-- Resource owner: `superkaiba`
-- Repository access: `superkaiba/explore-persona-space`
-- Permission: `Projects: Read & Write` (only)
-- Expiration: **90 days**
-
-Setup steps (one-time):
-1. https://github.com/settings/personal-access-tokens/new
-2. Set scope as above; copy the token.
-3. `gh secret set PROJECT_PAT --body "<paste>" --repo superkaiba/explore-persona-space`
-4. Verify: `gh secret list --repo superkaiba/explore-persona-space | grep PROJECT_PAT`
-5. Set a calendar reminder 90 days from token creation to rotate.
-
-Classic PATs work but are not preferred (over-broad scope). The workflow
-has a token-guard: if `PROJECT_PAT` is missing it logs a warning and skips
-the add (issues stay open and unboarded — no failure surface).
+Keep **markdown** for code-adjacent files where diffs matter:
+`CLAUDE.md`, `README.md`, commit messages, PR bodies, daily-log entries
+the user types in the dashboard, and the structured-payload portion of
+marker comments. The principle: HTML for "I'll open this in a browser
+and look at it", markdown for "this lives in git and I'll read its
+diff".
 
 ## Code Style
 
-- **Plan handoff convention.** When dispatching a subagent that needs a plan, pass the PATH to the cached plan (`.claude/plans/issue-<N>.md`), NOT the body. The subagent reads the file before acting; never infer plan content from the issue body or comment markers.
+- **Plan handoff convention.** When dispatching a subagent that needs a plan, pass the PATH to the cached plan (`.claude/plans/issue-<N>.md`), NOT the body. The subagent reads the file before acting; never infer plan content from the experiment body or workflow_event payloads.
 - **All code changes on local VM, never on pods.** Edit files locally, commit, push, then `git pull` on pods. Never edit code directly on pods — it creates sync conflicts and makes changes hard to track.
 - **Linting:** `uv run ruff check . && uv run ruff format .` (line-length=100, py311, select E/F/I/UP)
 - **Packages:** Always `uv` (not pip/conda). Config via Hydra (not argparse). Track with `wandb`.
@@ -484,7 +498,7 @@ scripts/                      # Entrypoints (train.py, eval.py, run_sweep.py, po
 configs/                      # Hydra YAML (training/, lora/, eval/, condition/)
 eval_results/                 # Structured JSON results
 ood_eval_results/             # Out-of-distribution eval results
-archive/research_log/         # ARCHIVED — superseded by clean-result GitHub issues (kept read-only for history)
+archive/research_log/         # ARCHIVED — superseded by clean-result experiment rows in Sagan (kept read-only for history)
 figures/                      # Generated plots
 docs/                         # Research documentation
 raw/                          # Raw data artifacts

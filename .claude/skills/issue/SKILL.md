@@ -34,38 +34,67 @@ a GitHub issue to a fully-executed, reviewed experiment or code change.
 comments). The local filesystem holds caches only. You can close the terminal at
 any step and `/issue <N>` picks up cleanly.
 
-## Project-board status convention
+## State backend
 
-The Experiment Queue project board's Status field is the single source of
-truth for column names — see `NEW_COLUMN_SPEC` in `scripts/gh_project.py`.
-Mapping between `status:*` labels (phase-authoritative) and project columns
-(glance-coarse) is defined by `LABEL_TO_COLUMN` in the same file. Summary:
+All durable state lives in the Sagan dashboard's Postgres at
+<https://sagan.superkaiba.com>. The `experiments` table is the queue;
+`/issue <N>` takes `experiments.number` (1-indexed, sequential).
 
-| Project column | `status:*` label(s) | Meaning |
-|---|---|---|
-| **To do** | `proposed`, `gate-pending`, or no `status:*` label | Not yet in the pipeline. User files issues here. |
-| **Planning** | `planning` | Adversarial-planner is running. |
-| **Plan awaiting review** | `plan-pending` | User action: approve plan to advance. |
-| **In flight** | `approved`, `implementing`, `code-reviewing`, `testing`, `running`, `uploading`, `interpreting`, `reviewing`, `under-review` | All active-phase labels between approval and reviewer-PASS roll up here. The label tells you which phase. |
-| **Blocked** | `blocked` | Stuck / paused; resolve dependency. |
-| **Awaiting promotion** | `awaiting-promotion`, `clean-results:draft` | User action: review clean-result draft. |
-| **Followups running** | `followups-running` | Parent's own work is done (clean-result promoted), but at least one open child issue (`Parent: #<N>` in body) is still in flight. Descriptive state on the parent — no new cells run inside it. Transitions to `done-experiment` once all children reach a terminal state. |
-| **Useful** | `clean-results:useful` (plus the bare `clean-results` label for back-compat queries) | Promoted, paper-relevant. |
-| **Not useful** | `clean-results:not-useful` (plus the bare `clean-results` label) | Promoted, archive candidate. |
-| **Done** | `done-experiment`, `done-impl` | Terminal, issue stays OPEN. |
-| **Archived** | `archived` | The issue is CLOSED. Auto-applied by `.github/workflows/project-archive-on-close.yml` on `issues.closed` UNLESS the issue carries a sticky label (`status:done-experiment`, `status:done-impl`, or any `clean-results:*`), in which case the workflow is a no-op and the column does NOT change. On `issues.reopened` the workflow strips `archived` and applies `proposed` (rejoins **To do**), again skipping sticky labels. The `/issue` skill never closes issues — only deliberate user `gh issue close` reaches this workflow. To un-Done an issue, use `gh issue edit --remove-label status:done-experiment` (or `--remove-label status:done-impl`). |
+Operate on state via `scripts/sagan_state.py` — both as a CLI and as an
+importable Python module (`get_experiment`, `set_status`, `post_marker`,
+`add_tag`, `latest_marker`, `list_by_status`, …). Requires
+`SAGAN_API_TOKEN` (60-day sliding Bearer session, in `~/.eps-secrets`).
 
-The skill moves the project status in exactly four places:
-1. **Step 1 (clarifier "All clear"):** To do → **Planning** (first entry into the pipeline).
-2. **Step 9a (analyzer creates clean-result):** the new clean-result issue (label `clean-results:draft`) → **Awaiting promotion**.
-3. **Step 9b (user promotes draft via `python scripts/gh_project.py promote <N> useful|not-useful`):** clean-result issue → **Useful** or **Not useful**. The user then re-enters `/issue <source-N>` so Step 10 fires. Promotion is **user-only** — no agent or automation may flip `clean-results:draft` without explicit user invocation. Both verdicts are mandatory; there is no verdict-less promote path.
-4. **Step 10 (auto-complete):** source issue → **Done**.
+```bash
+python scripts/sagan_state.py view <N>                    # show experiment + recent events
+python scripts/sagan_state.py latest-marker <N>           # "where do I resume" query
+python scripts/sagan_state.py list-by-status --status running
+python scripts/sagan_state.py set-status <N> <status>     # advance the state machine
+python scripts/sagan_state.py post-marker <N> epm:plan --note '...body...'
+python scripts/sagan_state.py add-tag <N> <tag>
+python scripts/sagan_state.py remove-tag <N> <tag>
+```
 
-Between those, the project column tracks the `status:*` label automatically
-(Planning → Plan awaiting review → In flight → Awaiting promotion → Done) via
-the routing in `LABEL_TO_COLUMN`; reading the project column tells you the
-phase. Manual `set-status` invocations are rarely needed — advancing the
-`status:*` label is enough.
+Dashboard URL for an experiment: `https://sagan.superkaiba.com/e/experiment/<uuid>`.
+
+## Status convention
+
+Sagan's `experiment_status` enum is the single source of truth. The 12
+production values used by `/issue` map to the kanban columns at
+<https://sagan.superkaiba.com/experiments>:
+
+| Status                | Meaning |
+|-----------------------|---------|
+| `proposed`            | Filed but not yet triaged. User files experiments here. |
+| `planning`            | Adversarial-planner is running. |
+| `plan_pending`        | User action: approve plan to advance. |
+| `approved`            | Plan approved, dispatch pending. |
+| `awaiting_approval`   | Awaiting an out-of-band gate (e.g. HF model access). |
+| `running`             | All active-phase work between approval and reviewer-PASS rolls up here (implementing, code-reviewing, testing, training, uploading). The latest `epm:*` workflow event tells you which sub-phase. |
+| `verifying`           | Upload-verifier running. |
+| `interpreting`        | Analyzer drafting the clean-result body. |
+| `reviewing`           | Reviewer + clean-result-critic running. |
+| `awaiting_promotion`  | User action: review clean-result draft and promote to useful / not-useful. |
+| `blocked`             | Stuck / paused; resolve dependency. |
+| `completed`           | Terminal happy path. Sticky — `has_clean_result=true` is preserved. |
+| `archived`            | Terminal sad path (duplicate / won't-fix / abandoned). Set explicitly. |
+
+For followups, the parent→child relationship lives in `edges` of type
+`parent`. Parents whose own work is done but with at least one open
+child stay at `completed` with `has_clean_result=true`; the edges
+surface the active followups in the dashboard.
+
+The skill moves status in exactly four places:
+1. **Step 1 (clarifier "All clear"):** `proposed` → `planning`.
+2. **Step 9a (analyzer creates clean-result):** the new clean-result experiment row is created with `status='awaiting_promotion'` and `runs.classification='pending'`.
+3. **Step 9b (user promotes draft):** user runs `sagan_state.py promote <N> useful|not-useful` (or clicks Promote in the dashboard); the clean-result row flips to `completed` with the chosen `runs.classification`. The user then re-enters `/issue <source-N>` so Step 10 fires. Promotion is **user-only** — no agent or automation may flip `runs.classification` without explicit user invocation.
+4. **Step 10 (auto-complete):** source experiment → `completed`.
+
+Between those, intermediate transitions (`approved → running → verifying →
+interpreting → reviewing → awaiting_promotion`) advance automatically as
+each step completes. Each transition writes a `workflow_events` row with
+`metadata.marker_type = 'epm:*'` so the agent can resume where it left
+off after a context reset.
 
 ## Companion files
 
