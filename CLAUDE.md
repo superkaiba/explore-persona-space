@@ -190,6 +190,13 @@ dashboard's HTTP API at `$SAGAN_BASE_URL` (default
 `https://sagan.superkaiba.com`) authenticated via `$SAGAN_API_TOKEN`
 (60-day sliding session, stored in `~/.eps-secrets`).
 
+**Project slug.** EPS is currently the only tenant in Sagan, but Sagan
+is being generalized to a multi-tenant dashboard (see
+`~/sagan/CLAUDE.md` *Tenant-agnostic guardrail*). The intended slug for
+EPS in Sagan's `projects` table is `eps` — once Sagan's API is
+project-scoped, `sagan_state.py` will send `?project=eps` on every
+request (and read `SAGAN_PROJECT_SLUG` from env, defaulting to `eps`).
+
 Subagents that need to write state (e.g. `analyzer` posting a clean
 result, `reviewer` posting a verdict marker) shell out to
 `sagan_state.py` — they never see the raw token, only the env var that
