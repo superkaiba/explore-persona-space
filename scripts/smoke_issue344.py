@@ -249,6 +249,7 @@ def test_generic_cot_space_prefix_anchor_regression() -> None:
     print("\n=== generic_cot ' Answer:' space-prefix anchor regression (v6) ===")
     import run_issue_344_train as t
     from fix_generic_cot_anchor import rewrite_answer_anchor
+    from jinja2.exceptions import UndefinedError
     from transformers import AutoTokenizer
 
     tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True)
@@ -274,9 +275,13 @@ def test_generic_cot_space_prefix_anchor_regression() -> None:
         ]
     }
 
-    # CASE (a): broken row must raise UndefinedError with the sentinel name.
-    raised = False
-    err_msg = ""
+    # CASE (a): broken row must raise jinja2.UndefinedError with the sentinel
+    # name. We tighten beyond a bare-Exception substring match (Codex Major-1
+    # in code-review v6) so a different exception class with the same
+    # substring (e.g. a downstream ValueError that happened to mention
+    # ``_ANSWER_ANCHOR_MISSING``) would NOT pass — the bug class is
+    # specifically "Jinja2 template anchor sentinel undefined".
+    raised_exc: Exception | None = None
     try:
         tokenizer.apply_chat_template(
             broken_row["messages"],
@@ -284,11 +289,18 @@ def test_generic_cot_space_prefix_anchor_regression() -> None:
             return_assistant_tokens_mask=True,
             return_dict=True,
         )
-    except Exception as exc:
-        raised = True
-        err_msg = str(exc)
-        print(f"  (a) broken row raised: {type(exc).__name__}: {err_msg[:140]}")
-    assert raised, "broken (' Answer:' space-prefix) row should have raised"
+    except UndefinedError as exc:
+        # Catch the EXACT class we expect. Anything else propagates and fails
+        # the test loudly.
+        raised_exc = exc
+        print(f"  (a) broken row raised: {type(exc).__name__}: {str(exc)[:140]}")
+    assert raised_exc is not None, (
+        "broken (' Answer:' space-prefix) row should have raised jinja2.exceptions.UndefinedError"
+    )
+    assert isinstance(raised_exc, UndefinedError), (
+        f"expected jinja2.exceptions.UndefinedError, got {type(raised_exc).__name__}"
+    )
+    err_msg = str(raised_exc)
     assert "_ANSWER_ANCHOR_MISSING" in err_msg, (
         f"expected '_ANSWER_ANCHOR_MISSING' in error message, got: {err_msg!r}"
     )

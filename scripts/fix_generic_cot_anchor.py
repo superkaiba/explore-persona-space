@@ -33,7 +33,10 @@ logger = logging.getLogger("fix_generic_cot_anchor")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 DATA_DIR = PROJECT_ROOT / "data" / "sft" / "issue186"
-GLOB_PATTERN = str(DATA_DIR / "*_generic-cot_seed*.jsonl")
+# Narrowed to seed42 only: the plan (§11) generates Phase 0 data for seed42
+# exclusively. Future seed137/seed256 files are out-of-scope for this fix and
+# should not be silently rewritten if they ever materialise.
+GLOB_PATTERN = str(DATA_DIR / "*_generic-cot_seed42.jsonl")
 HF_REPO_ID = "superkaiba1/explore-persona-space-data"
 HF_PATH_PREFIX = "issue186_data_v344"
 
