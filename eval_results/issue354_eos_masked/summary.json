@@ -1,0 +1,967 @@
+{
+  "pairs": {
+    "pair2_librarian_swe": {
+      "T": {
+        "pair": "pair2_librarian_swe",
+        "condition": "T",
+        "seed": 42,
+        "base_model": "Qwen/Qwen2.5-7B-Instruct",
+        "marker_A": "<<\u00a7q-41>>",
+        "marker_B": ":: kxr-7 ::",
+        "git_commit": "ef8ff716925756b4b3c3aab5a573010a1e1d0497",
+        "timestamp": "2026-05-12T01:32:45Z",
+        "per_persona": {
+          "software_engineer": {
+            "n": 260,
+            "R_A_strict": 0.31153846153846154,
+            "R_A_loose": 0.31153846153846154,
+            "R_B_strict": 0.07307692307692308,
+            "R_B_loose": 0.07307692307692308,
+            "R_AandB_loose": 0.07307692307692308,
+            "R_BgivenA_loose": 0.2345679012345679,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 81,
+            "denom_notA": 179,
+            "pct_B_within_150_chars_post_A": 0.0,
+            "pct_B_in_last_50_chars": 1.0,
+            "n_positions": 19,
+            "wilson_ci_R_A_loose": [
+              0.25833212700369607,
+              0.3702328907948618
+            ],
+            "wilson_ci_R_B_loose": [
+              0.04727892150474328,
+              0.11130713922260221
+            ],
+            "wilson_ci_R_BgivenA_loose": [
+              0.15562381855614318,
+              0.3375493417802955
+            ],
+            "cluster_ci_R_A_loose": [
+              0.18461538461538463,
+              0.45
+            ],
+            "cluster_ci_R_B_loose": [
+              0.023076923076923078,
+              0.1423076923076923
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.08928571428571429,
+              0.3977272727272727
+            ],
+            "cluster_ci_R_BgivenA_drops": 0,
+            "R_BgivenA_loose_ID_only": 0.23809523809523808,
+            "R_BgivenA_loose_OOD_only": 0.2222222222222222
+          },
+          "kindergarten_teacher": {
+            "n": 260,
+            "R_A_strict": 0.019230769230769232,
+            "R_A_loose": 0.019230769230769232,
+            "R_B_strict": 0.0038461538461538464,
+            "R_B_loose": 0.0038461538461538464,
+            "R_AandB_loose": 0.0038461538461538464,
+            "R_BgivenA_loose": 0.2,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 5,
+            "denom_notA": 255,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 1,
+            "wilson_ci_R_A_loose": [
+              0.008241398230706031,
+              0.04422038186765602
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0006792460665055958,
+              0.021461310995004035
+            ],
+            "wilson_ci_R_BgivenA_loose": [
+              0.03622316096978745,
+              0.6244717358814613
+            ],
+            "cluster_ci_R_A_loose": [
+              0.0,
+              0.04230769230769231
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.011538461538461539
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              0.5
+            ],
+            "cluster_ci_R_BgivenA_drops": 379,
+            "R_BgivenA_loose_ID_only": 0.2,
+            "R_BgivenA_loose_OOD_only": null
+          },
+          "data_scientist": {
+            "n": 260,
+            "R_A_strict": 0.12692307692307692,
+            "R_A_loose": 0.12692307692307692,
+            "R_B_strict": 0.019230769230769232,
+            "R_B_loose": 0.019230769230769232,
+            "R_AandB_loose": 0.019230769230769232,
+            "R_BgivenA_loose": 0.15151515151515152,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 33,
+            "denom_notA": 227,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 5,
+            "wilson_ci_R_A_loose": [
+              0.09182146070578763,
+              0.1728888806505413
+            ],
+            "wilson_ci_R_B_loose": [
+              0.008241398230706031,
+              0.04422038186765602
+            ],
+            "wilson_ci_R_BgivenA_loose": [
+              0.06650359257960956,
+              0.30920213138460484
+            ],
+            "cluster_ci_R_A_loose": [
+              0.04230769230769231,
+              0.2230769230769231
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0038461538461538464,
+              0.038461538461538464
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.037037037037037035,
+              0.3103448275862069
+            ],
+            "cluster_ci_R_BgivenA_drops": 9,
+            "R_BgivenA_loose_ID_only": 0.15384615384615385,
+            "R_BgivenA_loose_OOD_only": 0.14285714285714285
+          },
+          "medical_doctor": {
+            "n": 260,
+            "R_A_strict": 0.007692307692307693,
+            "R_A_loose": 0.007692307692307693,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": 0.0,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 2,
+            "denom_notA": 258,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.0021120049427373923,
+              0.027608857877985345
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": [
+              0.0,
+              0.6576280471103807
+            ],
+            "cluster_ci_R_A_loose": [
+              0.0,
+              0.023076923076923078
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 3631,
+            "R_BgivenA_loose_ID_only": 0.0,
+            "R_BgivenA_loose_OOD_only": null
+          },
+          "librarian": {
+            "n": 260,
+            "R_A_strict": 0.5153846153846153,
+            "R_A_loose": 0.5346153846153846,
+            "R_B_strict": 0.49615384615384617,
+            "R_B_loose": 0.49615384615384617,
+            "R_AandB_loose": 0.49230769230769234,
+            "R_BgivenA_loose": 0.920863309352518,
+            "R_BgivenNotA_loose": 0.008264462809917356,
+            "denom_A": 139,
+            "denom_notA": 121,
+            "pct_B_within_150_chars_post_A": 0.0,
+            "pct_B_in_last_50_chars": 1.0,
+            "n_positions": 128,
+            "wilson_ci_R_A_loose": [
+              0.4739210910244607,
+              0.5943016608084573
+            ],
+            "wilson_ci_R_B_loose": [
+              0.4358786729784168,
+              0.5565410212623702
+            ],
+            "wilson_ci_R_BgivenA_loose": [
+              0.863849934269185,
+              0.9552391826267332
+            ],
+            "cluster_ci_R_A_loose": [
+              0.38846153846153847,
+              0.6807692307692308
+            ],
+            "cluster_ci_R_B_loose": [
+              0.35384615384615387,
+              0.6384615384615384
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.8653846153846154,
+              0.9666666666666667
+            ],
+            "cluster_ci_R_BgivenA_drops": 0,
+            "R_BgivenA_loose_ID_only": 0.9157894736842105,
+            "R_BgivenA_loose_OOD_only": 0.9318181818181818
+          },
+          "french_person": {
+            "n": 260,
+            "R_A_strict": 0.0,
+            "R_A_loose": 0.0,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": null,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 0,
+            "denom_notA": 260,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": null,
+            "cluster_ci_R_A_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              1.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 10000,
+            "R_BgivenA_loose_ID_only": null,
+            "R_BgivenA_loose_OOD_only": null
+          },
+          "villain": {
+            "n": 260,
+            "R_A_strict": 0.0,
+            "R_A_loose": 0.0,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": null,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 0,
+            "denom_notA": 260,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": null,
+            "cluster_ci_R_A_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              1.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 10000,
+            "R_BgivenA_loose_ID_only": null,
+            "R_BgivenA_loose_OOD_only": null
+          },
+          "comedian": {
+            "n": 260,
+            "R_A_strict": 0.0,
+            "R_A_loose": 0.0,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": null,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 0,
+            "denom_notA": 260,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": null,
+            "cluster_ci_R_A_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              1.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 10000,
+            "R_BgivenA_loose_ID_only": null,
+            "R_BgivenA_loose_OOD_only": null
+          },
+          "police_officer": {
+            "n": 260,
+            "R_A_strict": 0.1346153846153846,
+            "R_A_loose": 0.1346153846153846,
+            "R_B_strict": 0.08076923076923077,
+            "R_B_loose": 0.08076923076923077,
+            "R_AandB_loose": 0.07307692307692308,
+            "R_BgivenA_loose": 0.5428571428571428,
+            "R_BgivenNotA_loose": 0.008888888888888889,
+            "denom_A": 35,
+            "denom_notA": 225,
+            "pct_B_within_150_chars_post_A": 0.0,
+            "pct_B_in_last_50_chars": 1.0,
+            "n_positions": 19,
+            "wilson_ci_R_A_loose": [
+              0.09840853941598349,
+              0.18146241345877168
+            ],
+            "wilson_ci_R_B_loose": [
+              0.05343243085906,
+              0.1203142413867117
+            ],
+            "wilson_ci_R_BgivenA_loose": [
+              0.38189451340137515,
+              0.6953422636623914
+            ],
+            "cluster_ci_R_A_loose": [
+              0.046153846153846156,
+              0.23846153846153847
+            ],
+            "cluster_ci_R_B_loose": [
+              0.019230769230769232,
+              0.16153846153846155
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.16,
+              0.896551724137931
+            ],
+            "cluster_ci_R_BgivenA_drops": 1,
+            "R_BgivenA_loose_ID_only": 0.5,
+            "R_BgivenA_loose_OOD_only": 1.0
+          },
+          "zelthari_scholar": {
+            "n": 260,
+            "R_A_strict": 0.0,
+            "R_A_loose": 0.0,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": null,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 0,
+            "denom_notA": 260,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": null,
+            "cluster_ci_R_A_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              1.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 10000,
+            "R_BgivenA_loose_ID_only": null,
+            "R_BgivenA_loose_OOD_only": null
+          },
+          "assistant": {
+            "n": 260,
+            "R_A_strict": 0.0,
+            "R_A_loose": 0.0,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": null,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 0,
+            "denom_notA": 260,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": null,
+            "cluster_ci_R_A_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              1.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 10000,
+            "R_BgivenA_loose_ID_only": null,
+            "R_BgivenA_loose_OOD_only": null
+          }
+        },
+        "bootstrap_B": 10000
+      },
+      "C": {
+        "pair": "pair2_librarian_swe",
+        "condition": "C",
+        "seed": 42,
+        "base_model": "Qwen/Qwen2.5-7B-Instruct",
+        "marker_A": "<<\u00a7q-41>>",
+        "marker_B": ":: kxr-7 ::",
+        "git_commit": "ef8ff716925756b4b3c3aab5a573010a1e1d0497",
+        "timestamp": "2026-05-12T02:20:05Z",
+        "per_persona": {
+          "software_engineer": {
+            "n": 260,
+            "R_A_strict": 0.23846153846153847,
+            "R_A_loose": 0.23846153846153847,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": 0.0,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 62,
+            "denom_notA": 198,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.19070790775489382,
+              0.2938313006186152
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": [
+              0.0,
+              0.05834609122500061
+            ],
+            "cluster_ci_R_A_loose": [
+              0.13076923076923078,
+              0.36153846153846153
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 0,
+            "R_BgivenA_loose_ID_only": 0.0,
+            "R_BgivenA_loose_OOD_only": 0.0
+          },
+          "kindergarten_teacher": {
+            "n": 260,
+            "R_A_strict": 0.0038461538461538464,
+            "R_A_loose": 0.0038461538461538464,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": 0.0,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 1,
+            "denom_notA": 259,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.0006792460665055958,
+              0.021461310995004035
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": [
+              0.0,
+              0.7934567085261071
+            ],
+            "cluster_ci_R_A_loose": [
+              0.0,
+              0.011538461538461539
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 3576,
+            "R_BgivenA_loose_ID_only": 0.0,
+            "R_BgivenA_loose_OOD_only": null
+          },
+          "data_scientist": {
+            "n": 260,
+            "R_A_strict": 0.1346153846153846,
+            "R_A_loose": 0.1346153846153846,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": 0.0,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 35,
+            "denom_notA": 225,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.09840853941598349,
+              0.18146241345877168
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": [
+              0.0,
+              0.0989042675893887
+            ],
+            "cluster_ci_R_A_loose": [
+              0.046153846153846156,
+              0.2423076923076923
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 2,
+            "R_BgivenA_loose_ID_only": 0.0,
+            "R_BgivenA_loose_OOD_only": 0.0
+          },
+          "medical_doctor": {
+            "n": 260,
+            "R_A_strict": 0.011538461538461539,
+            "R_A_loose": 0.011538461538461539,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": 0.0,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 3,
+            "denom_notA": 257,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.003931661276428175,
+              0.03336950730350766
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": [
+              0.0,
+              0.5615060804490177
+            ],
+            "cluster_ci_R_A_loose": [
+              0.0,
+              0.03461538461538462
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 3631,
+            "R_BgivenA_loose_ID_only": 0.0,
+            "R_BgivenA_loose_OOD_only": null
+          },
+          "librarian": {
+            "n": 260,
+            "R_A_strict": 0.4346153846153846,
+            "R_A_loose": 0.4346153846153846,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": 0.0,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 113,
+            "denom_notA": 147,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.3757449810633834,
+              0.49538982102999385
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": [
+              0.0,
+              0.03287870073672391
+            ],
+            "cluster_ci_R_A_loose": [
+              0.28846153846153844,
+              0.5807692307692308
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 0,
+            "R_BgivenA_loose_ID_only": 0.0,
+            "R_BgivenA_loose_OOD_only": 0.0
+          },
+          "french_person": {
+            "n": 260,
+            "R_A_strict": 0.0,
+            "R_A_loose": 0.0,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": null,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 0,
+            "denom_notA": 260,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": null,
+            "cluster_ci_R_A_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              1.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 10000,
+            "R_BgivenA_loose_ID_only": null,
+            "R_BgivenA_loose_OOD_only": null
+          },
+          "villain": {
+            "n": 260,
+            "R_A_strict": 0.0,
+            "R_A_loose": 0.0,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": null,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 0,
+            "denom_notA": 260,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": null,
+            "cluster_ci_R_A_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              1.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 10000,
+            "R_BgivenA_loose_ID_only": null,
+            "R_BgivenA_loose_OOD_only": null
+          },
+          "comedian": {
+            "n": 260,
+            "R_A_strict": 0.0,
+            "R_A_loose": 0.0,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": null,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 0,
+            "denom_notA": 260,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": null,
+            "cluster_ci_R_A_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              1.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 10000,
+            "R_BgivenA_loose_ID_only": null,
+            "R_BgivenA_loose_OOD_only": null
+          },
+          "police_officer": {
+            "n": 260,
+            "R_A_strict": 0.15384615384615385,
+            "R_A_loose": 0.15384615384615385,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": 0.0,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 40,
+            "denom_notA": 220,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.11505908251830849,
+              0.20271339915251224
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": [
+              0.0,
+              0.08762453925039232
+            ],
+            "cluster_ci_R_A_loose": [
+              0.06538461538461539,
+              0.26153846153846155
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 0,
+            "R_BgivenA_loose_ID_only": 0.0,
+            "R_BgivenA_loose_OOD_only": 0.0
+          },
+          "zelthari_scholar": {
+            "n": 260,
+            "R_A_strict": 0.0,
+            "R_A_loose": 0.0,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": null,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 0,
+            "denom_notA": 260,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": null,
+            "cluster_ci_R_A_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              1.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 10000,
+            "R_BgivenA_loose_ID_only": null,
+            "R_BgivenA_loose_OOD_only": null
+          },
+          "assistant": {
+            "n": 260,
+            "R_A_strict": 0.0,
+            "R_A_loose": 0.0,
+            "R_B_strict": 0.0,
+            "R_B_loose": 0.0,
+            "R_AandB_loose": 0.0,
+            "R_BgivenA_loose": null,
+            "R_BgivenNotA_loose": 0.0,
+            "denom_A": 0,
+            "denom_notA": 260,
+            "pct_B_within_150_chars_post_A": null,
+            "pct_B_in_last_50_chars": null,
+            "n_positions": 0,
+            "wilson_ci_R_A_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_B_loose": [
+              0.0,
+              0.014560251302296528
+            ],
+            "wilson_ci_R_BgivenA_loose": null,
+            "cluster_ci_R_A_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_B_loose": [
+              0.0,
+              0.0
+            ],
+            "cluster_ci_R_BgivenA_loose": [
+              0.0,
+              1.0
+            ],
+            "cluster_ci_R_BgivenA_drops": 10000,
+            "R_BgivenA_loose_ID_only": null,
+            "R_BgivenA_loose_OOD_only": null
+          }
+        },
+        "bootstrap_B": 10000
+      }
+    }
+  },
+  "sanity_gates": {
+    "pair2_librarian_swe": {
+      "R_A_P1_T_ge_80": false,
+      "R_A_P2_T_ge_80": false,
+      "R_B_P1_T_ge_80": false,
+      "R_BgivenA_P1_T_ge_90": true,
+      "R_B_any_C_lt_5": true,
+      "denom_A_P2_T_ge_50": true
+    }
+  },
+  "delta_R_BgivenA_P2_pooled": {
+    "pair2_librarian_swe": {
+      "T": 0.2345679012345679,
+      "C": 0.0,
+      "delta": 0.2345679012345679,
+      "T_cluster_ci": [
+        0.08928571428571429,
+        0.3977272727272727
+      ],
+      "C_cluster_ci": [
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "delta_R_BgivenA_P2_ID_only": {
+    "pair2_librarian_swe": {
+      "T": 0.23809523809523808,
+      "C": 0.0,
+      "delta": 0.23809523809523808
+    }
+  },
+  "delta_R_BgivenA_P2_OOD_only": {
+    "pair2_librarian_swe": {
+      "T": 0.2222222222222222,
+      "C": 0.0,
+      "delta": 0.2222222222222222
+    }
+  },
+  "git_commit": "ef8ff716925756b4b3c3aab5a573010a1e1d0497",
+  "timestamp": "2026-05-12T02:20:05Z"
+}
