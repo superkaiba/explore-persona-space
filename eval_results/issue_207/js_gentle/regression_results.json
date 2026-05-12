@@ -1,0 +1,249 @@
+{
+  "n_rows": 128,
+  "n_adapters": 4,
+  "axes": [
+    "semantic_cos",
+    "lexical_jac",
+    "struct_match",
+    "task_match",
+    "js_div"
+  ],
+  "exclude_buckets": [
+    "control_default",
+    "control_empty",
+    "persona_anchor"
+  ],
+  "ols_5axis": {
+    "axis_names": [
+      "semantic_cos",
+      "lexical_jac",
+      "struct_match",
+      "task_match",
+      "js_div"
+    ],
+    "n_obs": 128,
+    "n_features": 5,
+    "r2_in_sample": 0.4401869992690848,
+    "intercept": 0.05096277809152975,
+    "coefficients": {
+      "semantic_cos": {
+        "coef": 0.21205337625268872,
+        "se": 0.0519240312294634,
+        "t_stat": 4.083915890726889,
+        "p_value": 7.95322804254539e-05
+      },
+      "lexical_jac": {
+        "coef": -0.08336507465150005,
+        "se": 0.06751736699710403,
+        "t_stat": -1.2347204631638113,
+        "p_value": 0.21930737501456576
+      },
+      "struct_match": {
+        "coef": 0.05826117836034533,
+        "se": 0.022100678177839575,
+        "t_stat": 2.636171518760354,
+        "p_value": 0.009474255097694062
+      },
+      "task_match": {
+        "coef": 0.03885862133125158,
+        "se": 0.026938906896565067,
+        "t_stat": 1.4424720898665677,
+        "p_value": 0.1517316534186557
+      },
+      "js_div": {
+        "coef": -0.31669118889986303,
+        "se": 0.11297831634144952,
+        "t_stat": -2.803114784787,
+        "p_value": 0.0058894988390763015
+      }
+    }
+  },
+  "spearman_per_axis": {
+    "semantic_cos": {
+      "rho": 0.48082898190932616,
+      "p_value": 9.217853633598212e-09,
+      "n": 128
+    },
+    "lexical_jac": {
+      "rho": 0.12720054288723212,
+      "p_value": 0.15248426213486843,
+      "n": 128
+    },
+    "struct_match": {
+      "rho": 0.5725869205561606,
+      "p_value": 1.6462118363570787e-12,
+      "n": 128
+    },
+    "task_match": {
+      "rho": 0.477539506580681,
+      "p_value": 1.2005900259058482e-08,
+      "n": 128
+    },
+    "js_div": {
+      "rho": -0.47111543049950916,
+      "p_value": 1.9955579850467505e-08,
+      "n": 128
+    }
+  },
+  "partial_spearman": {
+    "js_given_lexical": {
+      "x": "js_div",
+      "y": "marker_rate",
+      "control": "lexical_jac",
+      "rho": -0.47069681408987235,
+      "p_value": 2.0619925122148707e-08,
+      "n": 128
+    },
+    "lexical_given_js": {
+      "x": "lexical_jac",
+      "y": "marker_rate",
+      "control": "js_div",
+      "rho": -0.08616284359736671,
+      "p_value": 0.33351483537580395,
+      "n": 128
+    }
+  },
+  "delta_r2": {
+    "js_div": {
+      "full_axes": [
+        "semantic_cos",
+        "lexical_jac",
+        "struct_match",
+        "task_match",
+        "js_div"
+      ],
+      "base_axes": [
+        "semantic_cos",
+        "lexical_jac",
+        "struct_match",
+        "task_match"
+      ],
+      "dropped": "js_div",
+      "r2_full": 0.4401869992690848,
+      "r2_base": 0.41402563679029436,
+      "delta_r2": 0.026161362478790418,
+      "n": 128
+    },
+    "lexical_jac": {
+      "full_axes": [
+        "semantic_cos",
+        "lexical_jac",
+        "struct_match",
+        "task_match",
+        "js_div"
+      ],
+      "base_axes": [
+        "semantic_cos",
+        "struct_match",
+        "task_match",
+        "js_div"
+      ],
+      "dropped": "lexical_jac",
+      "r2_full": 0.4401869992690848,
+      "r2_base": 0.43388805661827545,
+      "delta_r2": 0.006298942650809325,
+      "n": 128
+    },
+    "semantic_cos": {
+      "full_axes": [
+        "semantic_cos",
+        "lexical_jac",
+        "struct_match",
+        "task_match",
+        "js_div"
+      ],
+      "base_axes": [
+        "lexical_jac",
+        "struct_match",
+        "task_match",
+        "js_div"
+      ],
+      "dropped": "semantic_cos",
+      "r2_full": 0.4401869992690848,
+      "r2_base": 0.3698923796858604,
+      "delta_r2": 0.07029461958322436,
+      "n": 128
+    }
+  },
+  "cv_r2_logo": {
+    "full_5axis": {
+      "axes": [
+        "semantic_cos",
+        "lexical_jac",
+        "struct_match",
+        "task_match",
+        "js_div"
+      ],
+      "fold_r2": [
+        0.30657146406981006,
+        -0.7109833922686055,
+        0.038543056736191295,
+        0.3330860993965955
+      ],
+      "mean_r2": -0.008195693016502165,
+      "median_r2": 0.17255726040300068,
+      "n_folds": 4
+    },
+    "no_js": {
+      "axes": [
+        "semantic_cos",
+        "lexical_jac",
+        "struct_match",
+        "task_match"
+      ],
+      "fold_r2": [
+        0.33557258375528576,
+        -0.6388970857632574,
+        0.08671582527886523,
+        0.2603699009326921
+      ],
+      "mean_r2": 0.010940306050896409,
+      "median_r2": 0.17354286310577866,
+      "n_folds": 4
+    },
+    "no_lexical": {
+      "axes": [
+        "semantic_cos",
+        "struct_match",
+        "task_match",
+        "js_div"
+      ],
+      "fold_r2": [
+        0.29725470010187127,
+        -0.35473282048558374,
+        0.10754781281822845,
+        0.3147812999160887
+      ],
+      "mean_r2": 0.09121274808765117,
+      "median_r2": 0.20240125646004986,
+      "n_folds": 4
+    },
+    "no_semantic": {
+      "axes": [
+        "lexical_jac",
+        "struct_match",
+        "task_match",
+        "js_div"
+      ],
+      "fold_r2": [
+        0.05151000420769736,
+        -0.2765188767005531,
+        -0.08153178993007071,
+        0.4055168121592835
+      ],
+      "mean_r2": 0.02474403743408926,
+      "median_r2": -0.015010892861186675,
+      "n_folds": 4
+    }
+  },
+  "metadata": {
+    "computed_at": "2026-05-12T08:41:36.926124+00:00",
+    "git_commit": "f3d67db98805638cd245fe51dccd4e12ad1ecd6b",
+    "panel_eval_files": [
+      "i181_gentle_context_seed42_train",
+      "i181_gentle_format_seed42_train",
+      "i181_gentle_instruction_seed42_train",
+      "i181_gentle_task_seed42_train"
+    ]
+  }
+}
