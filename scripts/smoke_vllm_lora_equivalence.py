@@ -94,7 +94,11 @@ def _build_smoke_prompts(n: int) -> list[str]:
                 if len(prompts) >= n:
                     break
                 rec = json.loads(line)
-                q = rec.get("question", {}).get("stem") or rec.get("question") or ""
+                # Schema in this repo: `question` is a plain string. Older
+                # ARC dumps put a {"stem": "..."} dict here; tolerate both.
+                q = rec.get("question")
+                if isinstance(q, dict):
+                    q = q.get("stem", "")
                 if isinstance(q, str) and q.strip():
                     prompts.append(q.strip())
         if len(prompts) >= n:
