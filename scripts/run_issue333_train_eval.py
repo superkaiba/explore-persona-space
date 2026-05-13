@@ -809,19 +809,25 @@ def step_eval_all(
     results: dict[str, dict] = {}
 
     # Build the (label -> path) plan first so we can post sensible progress.
+    # Labels MUST match the artifact filenames enumerated in the approved
+    # pod_spec exactly (see plan §"artifacts produced"). That means:
+    #   - baseline -> "baseline_qwen25_7b"
+    #   - seed-42 LoRA adapters -> "c_lang_inv_<src>_<tgt>_seed42"
+    #   - newly-trained LoRA adapters -> "c_lang_inv_<src>_<tgt>_seed<S>"
     eval_plan: list[tuple[str, str]] = []
     # 1. Un-LoRA'd baseline.
-    eval_plan.append(("baseline", BASE_MODEL))
+    eval_plan.append(("baseline_qwen25_7b", BASE_MODEL))
     # 2. Seed-42 adapters from HF Hub.
     for subfolder, path in seed42_paths.items():
-        # subfolder like c_lang_inv_fr_it_seed42_post_em -> label fr_it_seed42
-        label = subfolder.replace("c_lang_inv_", "").replace("_post_em", "")
+        # subfolder like c_lang_inv_fr_it_seed42_post_em ->
+        # label c_lang_inv_fr_it_seed42
+        label = subfolder.replace("_post_em", "")
         eval_plan.append((label, str(path)))
     # 3. New (cond, seed) merged paths.
     for key, path in new_model_paths.items():
-        # key like c_lang_inv_fr_it_seed137 -> label fr_it_seed137
-        label = key.replace("c_lang_inv_", "")
-        eval_plan.append((label, path))
+        # key like c_lang_inv_fr_it_seed137 -> label c_lang_inv_fr_it_seed137
+        # (train_results keys already include the c_lang_inv_ prefix; keep it)
+        eval_plan.append((key, path))
 
     total = len(eval_plan)
     for i, (label, path) in enumerate(eval_plan):
@@ -842,17 +848,21 @@ def step_eval_all(
                 progress_pct=75 + 20 * ((i + 1) / total),
             )
         except Exception as exc:
-            # An eval failure does not abort the whole pod — analyser can
-            # still operate on the remaining models, and the failure marker
-            # below carries the trace.
+            # An eval failure is a hard abort. The 3-seed pooling is broken
+            # if any LoRA seed is missing, and the un-LoRA'd baseline is a
+            # required alt-explanation arm per the plan. Bring eval into line
+            # with the train/upload/KL phases above, which all exit non-zero
+            # on failure so the runner picks the failure up.
             logger.exception("Eval failed for %s", label)
-            results[label] = {"error": str(exc), "trace": traceback.format_exc()}
+            tb = traceback.format_exc()
             post_progress(
                 "eval",
                 f"Eval {label} FAILED: {str(exc)[:120]}",
                 status="failed",
                 progress_pct=75 + 20 * ((i + 1) / total),
             )
+            sys.stderr.write(f"Eval failed for {label} at {path}: {exc}\n{tb}\n")
+            sys.exit(1)
 
     return results
 
@@ -860,45 +870,110 @@ def step_eval_all(
 # ── Step 8: Aggregator ──────────────────────────────────────────────────────
 
 
+# For each LoRA condition, the "trained completion language" is the side that
+# the SFT teaches the model to produce. For c_lang_inv_fr_it the user-side is
+# French and the assistant-side is Italian, so under any non-{French,Italian}
+# directive (e.g. Spanish / German), spill toward Italian is the bystander
+# signal the plan tracks. Mirror logic for c_lang_inv_it_fr (spill toward
+# French). Keys are LoRA condition_name strings; values are lowercase langdetect
+# labels (lowercase because LANGDETECT_LABEL_MAP in eval_language_inversion.py
+# emits lowercase).
+SPILL_LANG_BY_CONDITION: dict[str, str] = {
+    "c_lang_inv_fr_it": "italian",
+    "c_lang_inv_it_fr": "french",
+}
+
+
+def _condition_from_label(label: str) -> str | None:
+    """Return the c_lang_inv_<src>_<tgt> condition name from a model label.
+
+    e.g. "c_lang_inv_fr_it_seed42" -> "c_lang_inv_fr_it". Returns None for
+    the un-LoRA'd baseline label.
+    """
+    for cond in CONDITIONS:
+        if label.startswith(cond + "_seed"):
+            return cond
+    return None
+
+
 def step_aggregate(eval_results: dict[str, dict], out_dir: Path) -> dict:
-    """Write comparison_5phrasings.json summarising all 7 models."""
+    """Write comparison_5phrasings.json summarising all 7 models.
+
+    For each LoRA arm and bystander language B (in {spanish, german}), the
+    "bystander spill rate" is the pooled rate at which the model produces
+    the trained completion language (Italian for c_lang_inv_fr_it; French for
+    c_lang_inv_it_fr) when the directive language is B. Concretely we read
+        pooled[B.capitalize()][SPILL_LANG_BY_CONDITION[condition]]
+    out of each model's pooled_per_directive_lang_rates.
+
+    The un-LoRA'd baseline has no "trained completion language", so for it we
+    emit BOTH potential spill columns ("italian" and "french") at each
+    bystander cell, so the analyzer can compare each LoRA arm to its
+    corresponding baseline cell.
+    """
     from explore_persona_space.metadata import get_run_metadata
 
-    # For each model: (a) Spanish + German bystander pooled rates,
-    # (b) per-phrasing x per-directive-lang breakdown is already in
-    # per_cell of each summary file; comparison.json keeps only the
-    # top-level shape so analyzers can fan out into the summaries.
+    # Per-model rows.
     rows: dict[str, dict] = {}
     for label, payload in eval_results.items():
         if "error" in payload:
             rows[label] = {"error": payload["error"]}
             continue
         pooled = payload.get("pooled_per_directive_lang_rates", {})
-        rows[label] = {
-            "summary_path": payload["summary_path"],
-            "bystander_rates": {
-                lang: pooled.get(lang.capitalize(), {}) for lang in BYSTANDER_LANGS
-            },
-            "pooled_per_directive_lang_rates": pooled,
-        }
+        condition = _condition_from_label(label)
+        if condition is not None:
+            # LoRA arm: single spill language, scalar per bystander cell.
+            spill_lang = SPILL_LANG_BY_CONDITION[condition]
+            bystander_rates: dict[str, float | None] = {}
+            for bystander in BYSTANDER_LANGS:
+                cell = pooled.get(bystander.capitalize(), {})
+                # langdetect can omit a label entirely if it was 0/N at this
+                # cell; treat missing as 0.0 for the spill rate.
+                bystander_rates[bystander] = float(cell.get(spill_lang, 0.0))
+            rows[label] = {
+                "summary_path": payload["summary_path"],
+                "condition": condition,
+                "spill_lang": spill_lang,
+                "bystander_rates": bystander_rates,
+                "pooled_per_directive_lang_rates": pooled,
+            }
+        else:
+            # Un-LoRA'd baseline: emit both spill columns at each bystander
+            # cell so the analyzer can pick the right one per LoRA arm.
+            bystander_rates_baseline: dict[str, dict[str, float]] = {}
+            for bystander in BYSTANDER_LANGS:
+                cell = pooled.get(bystander.capitalize(), {})
+                bystander_rates_baseline[bystander] = {
+                    "italian": float(cell.get("italian", 0.0)),
+                    "french": float(cell.get("french", 0.0)),
+                }
+            rows[label] = {
+                "summary_path": payload["summary_path"],
+                "condition": None,
+                "bystander_rates": bystander_rates_baseline,
+                "pooled_per_directive_lang_rates": pooled,
+            }
 
     # Per-seed range across the 3 seeds for each condition (fr_it / it_fr).
-    # Captured for both bystander languages individually.
+    # Captured for both bystander languages individually. The "rate" we
+    # compare across seeds is the same spill-language scalar emitted above
+    # so this matches the row-level numbers exactly.
     per_seed_range: dict[str, dict] = {}
     for cond_short in ("fr_it", "it_fr"):
+        condition = f"c_lang_inv_{cond_short}"
         per_seed_range[cond_short] = {}
         for bystander in BYSTANDER_LANGS:
             vals: list[float] = []
             seed_breakdown: dict[int, float] = {}
             for seed in (42, *NEW_SEEDS):
-                label = f"{cond_short}_seed{seed}"
+                label = f"{condition}_seed{seed}"
                 payload = rows.get(label, {})
                 if "error" in payload:
                     continue
-                rate = payload.get("bystander_rates", {}).get(bystander, {}).get(bystander, None)
-                if rate is not None:
-                    vals.append(rate)
-                    seed_breakdown[seed] = rate
+                rate = payload.get("bystander_rates", {}).get(bystander, None)
+                if isinstance(rate, (int, float)):
+                    vals.append(float(rate))
+                    seed_breakdown[seed] = float(rate)
             per_seed_range[cond_short][bystander] = {
                 "per_seed": seed_breakdown,
                 "min": min(vals) if vals else None,
@@ -912,6 +987,7 @@ def step_aggregate(eval_results: dict[str, dict], out_dir: Path) -> dict:
         "models": rows,
         "per_seed_range": per_seed_range,
         "bystander_langs": list(BYSTANDER_LANGS),
+        "spill_lang_by_condition": SPILL_LANG_BY_CONDITION,
         "config": {
             "num_completions_per_cell": NUM_COMPLETIONS,
             "temperature": EVAL_TEMPERATURE,
