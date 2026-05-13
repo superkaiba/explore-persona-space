@@ -11,12 +11,22 @@ Pipeline per trait:
         b. Generate a completion with the trait-NEGATIVE persona prepended.
     2. For each (P, persona_sign, completion) tuple, run a forward pass on
        ``[persona_system_prompt, user(P), assistant(completion)]`` with hooks on
-       ``model.model.layers[L].input_layernorm`` for each target layer L, and
-       MEAN the hidden states *only over completion-token positions*.
+       ``model.model.layers[L]`` (the block output, in residual-stream space)
+       for each target layer L, and MEAN the hidden states *only over
+       completion-token positions*.
     3. Persona vector at layer L = mean(activations | trait+) - mean(activations | trait-).
     4. Stack across requested layers to a single ``(n_layers, d_model)`` tensor.
 
 Returns a dict mapping trait -> Tensor of shape ``(n_layers, d_model)``.
+
+Hook target note (round-2 fix, Finding 4): the plan suggested
+``input_layernorm`` based on a reading of Chen's paper, but the existing
+project centroid recipe (``scripts/extract_persona_vectors.py``) hooks the
+block output (``model.model.layers[L]`` itself, residual stream). Steering
+also adds into the block output. So for the head-to-head comparison to be in
+a single shared subspace, all three (Chen extraction, centroid extraction,
+steering) must hook the **block output** - not input_layernorm. Default
+``hook_target`` is now ``"block"``.
 
 This module is GPU-required for real extraction; for unit/dry-run testing the
 caller can pass ``model=None, tokenizer=None`` and pre-fabricated completions to
@@ -52,7 +62,11 @@ class ChenExtractionConfig:
     temperature: float = 0.0
     gpu_memory_utilization: float = 0.85
     max_model_len: int = 2048
-    hook_target: str = "input_layernorm"  # matches scripts/extract_persona_vectors.py
+    # "block" = model.model.layers[L] output (residual stream). Matches the
+    # project's existing centroid recipe (scripts/extract_persona_vectors.py)
+    # AND the steering hook site in scripts/run_chen_vs_centroid.py, so all
+    # three live in the same subspace.
+    hook_target: str = "block"
     seed: int = 42
 
 
@@ -248,7 +262,7 @@ def extract_chen_vectors(
                     full_len = full_inputs["input_ids"].shape[1]
 
                     if full_len <= prompt_len:
-                        # Empty completion — skip.
+                        # Empty completion - skip.
                         continue
 
                     with torch.no_grad():
@@ -285,7 +299,7 @@ def extract_chen_vectors(
 
             elapsed = time.time() - t0
             logger.info(
-                "Chen extract [%d/%d] %s — %.0fs elapsed, shape=%s",
+                "Chen extract [%d/%d] %s - %.0fs elapsed, shape=%s",
                 trait_idx + 1,
                 len(cfg.traits),
                 trait,

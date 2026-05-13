@@ -16,23 +16,27 @@ the experiment plan. It runs sequentially through:
         - Forward-pass under HF with hooks; mean over completion tokens only.
         - Save per-trait (n_layers, d_model) tensor to outputs/chen_vectors/.
     3. CENTROID extraction (re-implemented inline against the same probes):
-        - For every probe, run two HF forward passes — one with the trait+
-          system prompt, one with the trait- system prompt — and capture the
+        - For every probe, run two HF forward passes - one with the trait+
+          system prompt, one with the trait- system prompt - and capture the
           hidden state at the LAST input token. Difference-of-means across
           probes gives the centroid persona vector.
         - Save per-trait (n_layers, d_model) tensor to outputs/centroid_vectors/.
-    4. CENTROID-ON-COMPLETION ABLATION (position-confound control, L20 only):
-        - Re-use the Chen pair completions, mean over completion-token positions
-          but using only the trait+ side (i.e. centroid-style on the response
-          activations). Position-matched against Chen for the same trait.
+    4. CENTROID-ON-PROMPT ABLATION (position-confound control, L20 only):
+        - Re-use Chen's paired completions exactly, do the same second forward
+          pass, but mean over PROMPT-token positions (everything BEFORE the
+          assistant turn) instead of completion-token positions. Differs from
+          Chen in exactly one variable: the span of positions averaged. Saved
+          to outputs/ablation_centroid_on_prompt/<trait>.pt.
     5. RANDOM-DIRECTION BASELINE at L20:
         - 200 random unit vectors, pairwise cosines, 95% interval.
         - Cosine of Chen[L20] and centroid[L20] vs a held-out random unit.
     6. PAIRWISE COSINE: cosine(Chen[t, L], centroid[t, L]) for every (t, L).
-    7. alpha-SWEEP (split 25 calibration / 25 reporting):
-        - For each trait x recipe x alpha in alpha_grid (x ||v||_2):
+    7. alpha-SWEEP (split 25 calibration / 25 reporting, disjoint from extraction):
+        - For each trait x recipe x alpha in alpha_grid:
             * Generate 50 trait-probe completions with the model PLUS an
-              activation-add hook at L20 (alpha * v / ||v||).
+              activation-add hook at L20. Hook adds ``alpha * v`` (so the
+              added perturbation has L2 norm ``|alpha| * ||v||`` - alpha is
+              in units of the persona vector's own norm).
             * Mean per-token NLL of each completion under the unsteered base
               model (for the NLL ratio constraint).
         - Score every completion with the existing alignment judge
@@ -122,7 +126,7 @@ def write_metadata(output_dir: Path, args: argparse.Namespace) -> dict[str, Any]
 
 
 # ---------------------------------------------------------------------------
-# Centroid (last-input-token diff-of-means) recipe — run on the same probes
+# Centroid (last-input-token diff-of-means) recipe - run on the same probes
 # ---------------------------------------------------------------------------
 
 
@@ -195,7 +199,7 @@ def extract_centroid_vectors(
             output_dir.mkdir(parents=True, exist_ok=True)
             torch.save(stacked, output_dir / f"{trait}.pt")
             logger.info(
-                "Centroid extract [%d/%d] %s — shape=%s",
+                "Centroid extract [%d/%d] %s - shape=%s",
                 trait_idx + 1,
                 len(traits),
                 trait,
@@ -207,17 +211,31 @@ def extract_centroid_vectors(
     return out
 
 
-def extract_centroid_on_completion_at_layer(
+def extract_centroid_on_prompt_at_layer(
     model: Any,
     tokenizer: Any,
     traits: list[str],
     paired_completions: dict[str, dict[str, list[dict[str, str]]]],
     layer: int,
+    output_dir: Path,
 ) -> dict[str, torch.Tensor]:
-    """Position-confound ablation: diff-of-means over COMPLETION tokens at one layer.
+    """Position-confound ablation: mean over PROMPT-token positions only.
 
-    Distinct from Chen in that we re-use Chen's completions but require both
-    sides to be on completion-token positions. Returns dict trait -> Tensor(H,).
+    This ablation differs from Chen at L20 in **exactly one variable**: the
+    span of token positions we average over. Same trait-pos / trait-neg system
+    prompts, same probes, same per-pair completions (we re-use Chen's
+    generations to keep the comparison closed-loop). The second forward pass
+    runs over ``[system, user(probe), assistant(completion)]`` - identical to
+    Chen's second pass - but the hidden states we mean over are positions
+    ``[0:prompt_len]`` (everything *before* the assistant turn) rather than
+    ``[prompt_len:full_len]`` (everything *during* the assistant turn).
+
+    Difference of (pos-prompt mean, neg-prompt mean) yields a vector that
+    lives in the same hook subspace as Chen but isolates the
+    persona-framing-on-context-tokens effect from the
+    persona-emerges-in-response effect. If the rubric shift produced by this
+    vector matches Chen's, the comparison is contaminated by position; if it
+    doesn't, Chen is genuinely measuring something position-specific.
     """
     captured: dict[int, torch.Tensor] = {}
 
@@ -226,6 +244,7 @@ def extract_centroid_on_completion_at_layer(
 
     h = model.model.layers[layer].register_forward_hook(hook_fn)
     out: dict[str, torch.Tensor] = {}
+    output_dir.mkdir(parents=True, exist_ok=True)
     try:
         for trait in traits:
             sign_means: dict[str, list[torch.Tensor]] = {"pos": [], "neg": []}
@@ -258,16 +277,35 @@ def extract_centroid_on_completion_at_layer(
                         model.device
                     )
                     full_len = full_inputs["input_ids"].shape[1]
-                    if full_len <= prompt_len:
+                    if prompt_len < 1 or full_len <= prompt_len:
+                        # need at least one prompt token *and* one completion
+                        # token (else this is not a fair comparison to Chen).
                         continue
                     with torch.no_grad():
                         _ = model(**full_inputs)
                     hs = captured[layer]
-                    resp = hs[0, prompt_len:full_len, :].float().cpu()
-                    sign_means[sign].append(resp.mean(dim=0))
+                    # KEY DIFFERENCE FROM CHEN: average over [0:prompt_len)
+                    # (i.e. system + user, BEFORE the assistant turn) rather
+                    # than over [prompt_len:full_len) (the assistant turn).
+                    prompt_hs = hs[0, :prompt_len, :].float().cpu()
+                    sign_means[sign].append(prompt_hs.mean(dim=0))
+            if not sign_means["pos"] or not sign_means["neg"]:
+                raise RuntimeError(
+                    f"No usable pairs for centroid-on-prompt ablation trait={trait} "
+                    f"(pos={len(sign_means['pos'])}, neg={len(sign_means['neg'])})"
+                )
             pos = torch.stack(sign_means["pos"]).mean(dim=0)
             neg = torch.stack(sign_means["neg"]).mean(dim=0)
-            out[trait] = pos - neg
+            vec = pos - neg
+            out[trait] = vec
+            torch.save(vec, output_dir / f"{trait}.pt")
+            logger.info(
+                "Centroid-on-prompt ablation [%s] @ L%d - shape=%s ||v||=%.2f",
+                trait,
+                layer,
+                tuple(vec.shape),
+                float(vec.norm().item()),
+            )
     finally:
         h.remove()
     return out
@@ -279,15 +317,22 @@ def extract_centroid_on_completion_at_layer(
 
 
 def make_steering_hook(direction: torch.Tensor, alpha: float):
-    """Return a forward hook that adds ``alpha * (direction / ||direction||)``.
+    """Return a forward hook that adds ``alpha * direction`` (vector == unit x ||v||).
 
-    The direction is normalized so alpha has consistent meaning across recipes.
+    The plan and the ``--alpha-grid`` help text both say "alpha x vector L2 norm".
+    Round 1 implemented ``alpha * unit_vector`` (magnitude == alpha), which on
+    hidden states with L2 ~O(100) means a perturbation magnitude of just 2 -
+    too small to move rubric scores. Round 2: scale by ||v||, i.e. add
+    ``alpha * direction`` directly. Magnitude is logged in
+    :func:`generate_steered_completions_hf` for at-run sanity.
     """
+    v_norm = float(direction.norm().item())
     unit = direction / (direction.norm() + 1e-8)
+    added_vec = alpha * v_norm * unit  # algebraically == alpha * direction
 
     def hook_fn(_module, _input, output):
         hs = output[0] if isinstance(output, tuple) else output
-        added = hs + alpha * unit.to(hs.device, dtype=hs.dtype)
+        added = hs + added_vec.to(hs.device, dtype=hs.dtype)
         if isinstance(output, tuple):
             return (added, *output[1:])
         return added
@@ -323,7 +368,19 @@ def generate_steered_completions_hf(
     probes: list[str],
     max_new_tokens: int = 128,
 ) -> list[str]:
-    """HF .generate()-based steering: add alpha*unit(v) to layer L's output every step."""
+    """HF .generate()-based steering: add ``alpha * direction`` to layer L's output every step.
+
+    The added perturbation has L2 norm ``|alpha| * ||direction||`` - i.e. alpha
+    is in units of the persona vector's own norm. Logged at INFO for sanity.
+    """
+    v_norm = float(direction.norm().item())
+    logger.info(
+        "Steering hook @ layer=%d alpha=%+.2f ||v||=%.2f added_L2=%.2f (=alpha*||v||)",
+        layer,
+        alpha,
+        v_norm,
+        abs(alpha) * v_norm,
+    )
     hook_fn = make_steering_hook(direction, alpha)
     h = model.model.layers[layer].register_forward_hook(hook_fn)
     completions: list[str] = []
@@ -350,34 +407,77 @@ def generate_steered_completions_hf(
     return completions
 
 
+_NLL_BOUNDARY_ASSERTED = False  # one-shot guard for the prompt-boundary check
+
+
 def compute_mean_nll(
     model: Any,
     tokenizer: Any,
     probes: list[str],
     completions: list[str],
 ) -> list[float]:
-    """Compute per-completion mean per-token NLL under the unsteered base model."""
+    """Compute per-completion mean per-token NLL under the unsteered base model.
+
+    Round-2 fix (Finding 5): build the full text via ``apply_chat_template``
+    on the (user, assistant) conversation rather than string-concatenating the
+    prompt-text and the completion. String concat dropped the assistant role
+    open / ``<|im_end|>`` boundary and let tokenizer drift shift the
+    completion-token mask by ±1. Now ``prompt_text`` ends right before the
+    assistant turn, ``full_text`` ends right after it, and ``prompt_len`` is
+    measured against ``prompt_text``. A one-shot assertion confirms the prefix
+    invariant ``full_ids[:prompt_len] == prompt_ids`` on the first call.
+    """
+    global _NLL_BOUNDARY_ASSERTED
     nlls: list[float] = []
     for probe, completion in zip(probes, completions, strict=True):
+        # prompt_text ends exactly where the assistant turn begins
         prompt_text = tokenizer.apply_chat_template(
             [{"role": "user", "content": probe}],
             tokenize=False,
             add_generation_prompt=True,
         )
-        prompt_ids = tokenizer(prompt_text, return_tensors="pt")["input_ids"]
-        full_text = prompt_text + completion
-        full = tokenizer(full_text, return_tensors="pt").to(model.device)
+        # full_text is the same conversation extended with the assistant turn
+        full_text = tokenizer.apply_chat_template(
+            [
+                {"role": "user", "content": probe},
+                {"role": "assistant", "content": completion},
+            ],
+            tokenize=False,
+            add_generation_prompt=False,
+        )
+        prompt_ids = tokenizer(prompt_text, return_tensors="pt", add_special_tokens=False)[
+            "input_ids"
+        ]
+        full = tokenizer(full_text, return_tensors="pt", add_special_tokens=False).to(model.device)
         prompt_len = prompt_ids.shape[1]
         if full["input_ids"].shape[1] <= prompt_len:
             nlls.append(float("nan"))
             continue
+        # One-shot sanity: the full sequence must begin with the prompt-token
+        # sequence exactly. If this fails, the chat template has emitted
+        # different tokens for the same prefix under the two calls.
+        if not _NLL_BOUNDARY_ASSERTED:
+            full_prefix = full["input_ids"][0, :prompt_len].cpu()
+            prompt_prefix = prompt_ids[0].cpu()
+            if not torch.equal(full_prefix, prompt_prefix):
+                raise RuntimeError(
+                    "NLL prompt-boundary assertion failed: full_ids[:prompt_len] != "
+                    "prompt_ids. The chat-template tokenization is drifting at the "
+                    "assistant-turn boundary. Refusing to compute NLL on misaligned "
+                    "labels (see Finding 5 in round-1 code review)."
+                )
+            _NLL_BOUNDARY_ASSERTED = True
         with torch.no_grad():
             out = model(**full, labels=full["input_ids"])
-        # Out-of-the-box CE is averaged over the whole sequence; recompute
-        # only over completion tokens for an honest NLL.
+        # CE is averaged over the whole sequence by default; recompute over
+        # completion tokens only for an honest NLL.
         logits = out.logits[0, :-1, :]
         targets = full["input_ids"][0, 1:]
-        # Mask: keep only positions where the TARGET is a completion token.
+        # Mask: positions where the TARGET is a completion token.
+        # full = [prompt_tokens (0..prompt_len-1)] + [completion_tokens (prompt_len..)]
+        # After shifting by 1 for next-token prediction, target index t == full
+        # index t+1, so the first completion-token target is at shifted index
+        # prompt_len - 1.
         mask = torch.zeros_like(targets, dtype=torch.bool)
         mask[prompt_len - 1 :] = True
         if mask.sum() == 0:
@@ -404,7 +504,7 @@ async def _judge_completions(
 
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY is not set — cannot run rubric judge")
+        raise RuntimeError("ANTHROPIC_API_KEY is not set - cannot run rubric judge")
     client = anthropic.AsyncAnthropic(api_key=api_key)
     return await judge_responses(
         prompt=probe,
@@ -414,17 +514,64 @@ async def _judge_completions(
     )
 
 
+_RUBRIC_NORM_ASSERTED = False  # one-shot guard for the 0-100 / 0-1 normalization
+
+
+def _normalize_rubric_score(raw: dict[str, Any]) -> dict[str, Any]:
+    """Normalize the judge's 0-100 ``aligned`` / ``coherent`` to 0-1.
+
+    Round-2 fix (Finding 6): the shared judge in
+    ``src/explore_persona_space/eval/alignment.py`` returns 0-100, but the plan
+    + kill criterion thresholds (``>= +0.25`` for "supported", ``< +0.10`` for
+    "killed") and the headline chart label are on 0-1. Normalize at the judge
+    boundary so all downstream readers see a single, consistent scale.
+
+    Preserves the raw 0-100 field as ``aligned_raw100`` / ``coherent_raw100``
+    so we can sanity-check post-hoc, and overwrites ``aligned`` / ``coherent``
+    with the 0-1 form (the field everything else reads).
+    """
+    global _RUBRIC_NORM_ASSERTED
+    if not isinstance(raw, dict) or raw.get("error"):
+        return raw
+    out = dict(raw)
+    aligned = raw.get("aligned")
+    coherent = raw.get("coherent")
+    if aligned is not None:
+        # Sanity assertion: the judge MUST be returning 0-100 (one-shot).
+        if not _RUBRIC_NORM_ASSERTED:
+            if not (0 <= float(aligned) <= 100):
+                raise RuntimeError(
+                    f"Rubric normalization assertion failed: aligned={aligned} "
+                    "is outside [0, 100]. The judge contract has changed; "
+                    "Finding 6 normalization needs to be revisited."
+                )
+            _RUBRIC_NORM_ASSERTED = True
+        out["aligned_raw100"] = float(aligned)
+        out["aligned"] = float(aligned) / 100.0
+    if coherent is not None:
+        out["coherent_raw100"] = float(coherent)
+        out["coherent"] = float(coherent) / 100.0
+    return out
+
+
 def judge_completions_sync(
     probes: list[str],
     completions_per_probe: list[list[str]],
     judge_model: str,
 ) -> list[list[dict[str, Any]]]:
-    """Score completions with Claude judge; returns parallel structure to inputs."""
+    """Score completions with Claude judge; returns parallel structure to inputs.
+
+    All scores are normalized to 0-1 at this boundary (see
+    :func:`_normalize_rubric_score`). The raw 0-100 values are preserved as
+    ``aligned_raw100`` / ``coherent_raw100`` in each score dict.
+    """
 
     async def _runner():
         results = []
         for probe, comps in zip(probes, completions_per_probe, strict=True):
-            results.append(await _judge_completions(probe, comps, judge_model))
+            raw_scores = await _judge_completions(probe, comps, judge_model)
+            normalized = [_normalize_rubric_score(s) for s in raw_scores]
+            results.append(normalized)
         return results
 
     return asyncio.run(_runner())
@@ -501,7 +648,7 @@ def parse_args() -> argparse.Namespace:
         "--rubric",
         type=str,
         default="claude-sonnet",
-        help="Judge identifier (claude-sonnet → uses DEFAULT_JUDGE_MODEL)",
+        help="Judge identifier (claude-sonnet -> uses DEFAULT_JUDGE_MODEL)",
     )
     p.add_argument("--calibration-split", type=int, default=25)
     p.add_argument("--report-split", type=int, default=25)
@@ -650,7 +797,7 @@ def _run_sweep_for_trait(
     recipes = [
         ("chen", chen_v_primary),
         ("centroid", centroid_v_primary),
-        ("centroid_on_completion", ablation_v_primary),
+        ("centroid_on_prompt", ablation_v_primary),  # position-confound ablation
     ]
     for recipe_name, vec in recipes:
         if vec is None:
@@ -735,7 +882,7 @@ def _summarize_trait_at_primary_layer(
     base_aligned_mean, base_nll_mean = _baseline_means(
         trait, base_scores_by_trait, base_nll_by_trait
     )
-    for recipe_name in ("chen", "centroid", "centroid_on_completion"):
+    for recipe_name in ("chen", "centroid", "centroid_on_prompt"):
         cal_rows = [
             r
             for r in rubric_csv_rows
@@ -824,32 +971,33 @@ def _cos(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.dot(na, nb))
 
 
-def _build_steering_probes(extraction_probes: list[str], steering_probe_total: int) -> list[str]:
-    """Build steering probe set, disjoint from extraction probes when possible."""
-    if steering_probe_total > len(TRAIT_PROBE_POOL):
-        logger.warning("Steering probes exceed pool size; will cycle to fill.")
-    tail = (
-        TRAIT_PROBE_POOL[len(extraction_probes) :]
-        if len(extraction_probes) < len(TRAIT_PROBE_POOL)
-        else []
-    )
-    if len(tail) >= steering_probe_total:
-        return tail[:steering_probe_total]
-    steering_probes: list[str] = []
+def _build_steering_probes(
+    extraction_probes: list[str],
+    steering_probe_total: int,
+    seed: int = 42,
+) -> list[str]:
+    """Build steering probe set, strictly disjoint from extraction probes.
+
+    Hard requirement: ``set(extraction_probes) AND set(returned) == {}``. If the
+    pool is too small to satisfy this we raise - no silent fallback. The
+    round-1 reviewer found that the prior fallback yielded ``cal == rep`` and
+    defeated the plan's selection-leak mitigation.
+    """
     seen = set(extraction_probes)
-    for x in TRAIT_PROBE_POOL * 4:
-        if x in seen:
-            continue
-        steering_probes.append(x)
-        if len(steering_probes) >= steering_probe_total:
-            break
-    if len(steering_probes) < steering_probe_total:
-        logger.warning("Allowing overlap of extraction and steering probes")
-        for x in TRAIT_PROBE_POOL * 4:
-            steering_probes.append(x)
-            if len(steering_probes) >= steering_probe_total:
-                break
-    return steering_probes
+    leftover = [x for x in TRAIT_PROBE_POOL if x not in seen]
+    if len(leftover) < steering_probe_total:
+        raise RuntimeError(
+            f"TRAIT_PROBE_POOL has {len(TRAIT_PROBE_POOL)} unique entries; "
+            f"after removing {len(extraction_probes)} extraction probes only "
+            f"{len(leftover)} remain but {steering_probe_total} are needed "
+            "for steering. Widen TRAIT_PROBE_POOL."
+        )
+    rng = random.Random(seed)
+    sampled = rng.sample(leftover, steering_probe_total)
+    # Sanity assertion: extraction and steering must be disjoint.
+    if set(sampled) & seen:
+        raise RuntimeError("Steering probes overlap extraction probes - split is broken")
+    return sampled
 
 
 def _compute_baselines_unsteered(
@@ -910,15 +1058,29 @@ def main() -> int:
             "PRIMARY_LAYER=%d not in --layers; some checks will be skipped", PRIMARY_LAYER
         )
 
-    # Probe sets
+    # Probe sets - extraction / calibration / reporting must be pairwise disjoint.
     extraction_probes = get_probe_prompts(args.prompts_per_trait)
     steering_probes = _build_steering_probes(
-        extraction_probes, args.calibration_split + args.report_split
+        extraction_probes,
+        args.calibration_split + args.report_split,
+        seed=args.seed,
     )
     cal_probes = steering_probes[: args.calibration_split]
     rep_probes = steering_probes[
         args.calibration_split : args.calibration_split + args.report_split
     ]
+    # Hard sanity assertions (Finding 1 fix - round 1's silent fallback let
+    # cal_probes == rep_probes, which defeated the selection-leak mitigation).
+    assert set(extraction_probes).isdisjoint(set(steering_probes)), (
+        "extraction probes overlap steering probes"
+    )
+    assert set(cal_probes).isdisjoint(set(rep_probes)), (
+        f"calibration probes overlap reporting probes: "
+        f"|cal|={len(cal_probes)} |rep|={len(rep_probes)} "
+        f"|calANDrep|={len(set(cal_probes) & set(rep_probes))}"
+    )
+    assert len(set(cal_probes)) == len(cal_probes), "calibration probes contain duplicates"
+    assert len(set(rep_probes)) == len(rep_probes), "reporting probes contain duplicates"
 
     metadata = write_metadata(output_dir, args)
     metadata["resolved"] = {
@@ -1002,18 +1164,19 @@ def main() -> int:
         output_dir=centroid_dir,
     )
 
-    # ── Step 5: Centroid-on-completion ablation at L20 ────────────────────
+    # ── Step 5: Centroid-on-prompt ablation at L20 (real position-confound) ───
+    # Round 2 fix (Finding 3): the round-1 "centroid-on-completion" ablation
+    # was algebraically identical to Chen at L20 (same personas, same
+    # completion-token positions). The real position-confound check averages
+    # over prompt-token positions only - see extract_centroid_on_prompt_at_layer.
     if PRIMARY_LAYER in layers:
-        ablation_vectors_l20 = extract_centroid_on_completion_at_layer(
+        ablation_vectors_l20 = extract_centroid_on_prompt_at_layer(
             model=model,
             tokenizer=tokenizer,
             traits=traits,
             paired_completions=paired,
             layer=PRIMARY_LAYER,
-        )
-        torch.save(
-            ablation_vectors_l20,
-            output_dir / "centroid_on_completion_l20.pt",
+            output_dir=output_dir / "ablation_centroid_on_prompt",
         )
     else:
         ablation_vectors_l20 = {}
@@ -1045,7 +1208,7 @@ def main() -> int:
         skip_judge=args.skip_judge,
     )
 
-    # alpha-sweep — delegated to helpers to keep main() complexity low.
+    # alpha-sweep - delegated to helpers to keep main() complexity low.
     for trait in traits:
         _run_sweep_for_trait(
             trait=trait,
@@ -1106,12 +1269,38 @@ def main() -> int:
         for row in rubric_csv_rows:
             writer.writerow(row)
 
+    # Round-2 Finding 6 sanity: capture raw 0-100 and normalized 0-1 baseline
+    # means for one trait so a reader can audit the normalization in summary.json.
+    rubric_normalization_sanity: dict[str, Any] = {}
+    if traits and not args.skip_judge:
+        t0_trait = traits[0]
+        raw100 = [
+            s.get("aligned_raw100") for s in base_scores_by_trait[t0_trait] if isinstance(s, dict)
+        ]
+        norm01 = [s.get("aligned") for s in base_scores_by_trait[t0_trait] if isinstance(s, dict)]
+        raw100 = [v for v in raw100 if v is not None]
+        norm01 = [v for v in norm01 if v is not None]
+        rubric_normalization_sanity = {
+            "trait": t0_trait,
+            "n_judged": len(raw100),
+            "mean_aligned_raw100": (float(np.mean(raw100)) if raw100 else None),
+            "mean_aligned_norm01": (float(np.mean(norm01)) if norm01 else None),
+            "note": "norm01 must equal raw100 / 100. Field 'aligned' downstream is on 0-1.",
+        }
+
     summary = {
         "metadata": metadata,
         "personas": persona_dump,
         "random_baseline": {k: v for k, v in rb.items() if k != "held_out_unit"},
         "per_trait": summary_per_trait,
         "kill_criterion": _evaluate_kill_criterion(summary_per_trait),
+        "rubric_normalization_sanity": rubric_normalization_sanity,
+        "rubric_scale_note": (
+            "All 'aligned' / 'coherent' / 'rubric_shift_*' fields are on 0-1. "
+            "The Claude judge returns 0-100; we normalize at the judge boundary "
+            "(see _normalize_rubric_score). Raw 0-100 values are preserved as "
+            "aligned_raw100 / coherent_raw100 on individual score dicts."
+        ),
     }
     with open(output_dir / "summary.json", "w") as f:
         json.dump(summary, f, indent=2, default=str)
@@ -1151,11 +1340,13 @@ def _write_clean_result_html(summary: dict[str, Any], traits: list[str], path: P
     kc = summary.get("kill_criterion", {})
 
     rows = []
+    ablation_rows = []
     for trait in traits:
         s = summary["per_trait"].get(trait, {})
         per = s.get("per_recipe_at_L20", {})
         chen = per.get("chen", {})
         centroid = per.get("centroid", {})
+        ablation = per.get("centroid_on_prompt", {})
         rows.append(
             f"<tr><td>{trait}</td>"
             f"<td>{centroid.get('alpha_star')}</td>"
@@ -1167,7 +1358,15 @@ def _write_clean_result_html(summary: dict[str, Any], traits: list[str], path: P
             f"<td>{_fmt(s.get('cos_chen_centroid_per_layer', {}).get(str(PRIMARY_LAYER)))}</td>"
             f"</tr>"
         )
+        ablation_rows.append(
+            f"<tr><td>{trait}</td>"
+            f"<td>{ablation.get('alpha_star')}</td>"
+            f"<td>{_fmt(ablation.get('rubric_shift_at_alpha_star'))}"
+            f" <span class='ci'>{_fmt_ci(ablation.get('rubric_shift_ci'))}</span></td>"
+            f"</tr>"
+        )
     rows_html = "\n".join(rows)
+    ablation_rows_html = "\n".join(ablation_rows)
 
     html = f"""<!doctype html>
 <html><head><meta charset="utf-8"><title>Chen vs Centroid (#363)</title>
@@ -1184,15 +1383,18 @@ def _write_clean_result_html(summary: dict[str, Any], traits: list[str], path: P
 <body>
 <h1>Chen-style vs centroid persona vectors at layer {PRIMARY_LAYER}</h1>
 <p><b>TL;DR.</b> At layer {PRIMARY_LAYER}, the Chen recipe produced a larger
-mean rubric-shift than the project's centroid recipe on {kc.get("n_traits_chen_better", "?")}
-of {kc.get("n_traits_total", "?")} traits. Hypothesis (>=3 of 5):
+trait-score change after steering (0-1 normalized rubric) than the project's centroid recipe
+on {kc.get("n_traits_chen_better", "?")} of {kc.get("n_traits_total", "?")} traits.
+Hypothesis (>=3 of 5):
 {"<b>supported</b>" if kc.get("hypothesis_supported") else "not supported"}.</p>
 
 <table>
 <thead>
   <tr><th>Trait</th>
-    <th>Centroid alpha*</th><th>Centroid shift (95% CI)</th>
-    <th>Chen alpha*</th><th>Chen shift (95% CI)</th>
+    <th>Centroid alpha*</th>
+    <th>Centroid trait-score change (0-1, 95% CI)</th>
+    <th>Chen alpha*</th>
+    <th>Chen trait-score change (0-1, 95% CI)</th>
     <th>cos(Chen, centroid) @ L{PRIMARY_LAYER}</th></tr>
 </thead>
 <tbody>
@@ -1205,10 +1407,29 @@ of {kc.get("n_traits_total", "?")} traits. Hypothesis (>=3 of 5):
 <p>Model: Qwen2.5-7B-Instruct. Layers swept: see <code>summary.json</code>. Both
 recipes were re-extracted on the same {len(traits) * len(summary.get("per_trait", {}))}
 trait/prompt set. Steering is activation addition at L{PRIMARY_LAYER}:
-<code>h ← h + alpha (v / ||v||)</code>. alpha* per (trait, recipe) is picked on a 25-prompt
-calibration split that maximizes rubric shift subject to mean per-token NLL
-<= 1.5x baseline; CI is bootstrapped (1000 resamples) on a disjoint 25-prompt
-reporting split. Generated <code>{ts}</code>.</p>
+<code>h ← h + alpha * v</code> where alpha is in units of the persona vector's
+own L2 norm (added perturbation has L2 norm <code>|alpha| * ||v||</code>).
+Rubric scores are normalized to 0-1 (the judge returns 0-100). alpha* per
+(trait, recipe) is picked on a 25-prompt calibration split that maximizes rubric
+shift subject to mean per-token NLL <= 1.5x baseline; CI is bootstrapped (1000
+resamples) on a disjoint 25-prompt reporting split (cal/rep/extraction
+pairwise disjoint, asserted at runtime).</p>
+
+<h3>Position-confound ablation (centroid-on-prompt @ L{PRIMARY_LAYER})</h3>
+<p>Same trait personas and same probes as Chen; same hook target and same
+second forward pass; only difference is that hidden states are averaged over
+<b>prompt-token positions</b> instead of completion-token positions. If this
+row's shift is close to Chen's, the headline comparison is contaminated by
+the position-averaging effect rather than the persona-emerges-in-response
+effect.</p>
+<table>
+<thead><tr><th>Trait</th><th>alpha*</th>
+  <th>Trait-score change (0-1, 95% CI)</th></tr></thead>
+<tbody>
+{ablation_rows_html}
+</tbody>
+</table>
+<p>Generated <code>{ts}</code>.</p>
 </details>
 </body></html>
 """
@@ -1218,9 +1439,9 @@ reporting split. Generated <code>{ts}</code>.</p>
 
 def _fmt(v: float | None) -> str:
     if v is None:
-        return "—"
+        return "-"
     if isinstance(v, float) and np.isnan(v):
-        return "—"
+        return "-"
     return f"{v:.2f}" if isinstance(v, float) else str(v)
 
 
@@ -1245,7 +1466,7 @@ def _dry_run(
     output_dir: Path,
 ) -> int:
     """CPU-only smoke test that walks the orchestration without loading Qwen."""
-    logger.info("DRY RUN — no model load, no judge calls. Output dir: %s", output_dir)
+    logger.info("DRY RUN - no model load, no judge calls. Output dir: %s", output_dir)
     traits = traits[:1]
     layers = [layers[0]] if layers else [10]
     alpha_grid = [alpha_grid[0]] if alpha_grid else [0.0]
@@ -1261,6 +1482,13 @@ def _dry_run(
     centroid_dir = output_dir / "centroid_vectors"
     centroid_dir.mkdir(parents=True, exist_ok=True)
     torch.save(fake_vec, centroid_dir / f"{traits[0]}.pt")
+    # Round-2: also exercise the centroid-on-prompt ablation IO path so the
+    # new outputs/ablation_centroid_on_prompt/ directory is created and
+    # populated even on dry-runs.
+    ablation_dir = output_dir / "ablation_centroid_on_prompt"
+    ablation_dir.mkdir(parents=True, exist_ok=True)
+    fake_ablation_vec = torch.randn(d_model)  # one-vector-per-trait, at L20
+    torch.save(fake_ablation_vec, ablation_dir / f"{traits[0]}.pt")
 
     # Random baseline.
     rb = random_direction_baseline(d_model=d_model, n_random=8, seed=args.seed)
