@@ -68,10 +68,17 @@ from .training import TrainOutcome, train_one_cell
 log = logging.getLogger("eps.factor_screen.phases")
 
 
-KILL_BASE_RATE_THRESHOLD = 0.05
-KILL_BASE_RATE_MIN_PERSONAS = 2
+# Phase 0 kill-criterion #4 thresholds — match the approved plan
+# (Sagan experiment #365): base-model `[ZLT]` spontaneous emission >= 2 % on
+# any source persona row, OR >= 1 % mean across the bystander rows.
+KILL_SOURCE_ROW_MAX = 0.02
+KILL_BYSTANDER_MEAN_MAX = 0.01
 KILL_MIN_SOURCE_RATE = 0.10
 KILL_MAX_LEAKAGE_RATE = 0.40
+
+# Source CLI aliases for which Phase 0 checks the corresponding panel row
+# against KILL_SOURCE_ROW_MAX.
+PHASE0_SOURCE_CLIS: tuple[str, ...] = ("librarian", "surgeon", "programmer")
 
 
 def _load_generic_questions(repo_root: Path) -> list[str]:
@@ -127,12 +134,38 @@ def run_phase0_pre_screen(
 
     marker_scores = score_markers(completions)
 
-    above_threshold = [
-        name
+    # Split the eval panel into the 3 source rows (kill if any > 2 %) and
+    # the bystander rows (kill if mean > 1 %). OR the two conditions per
+    # the approved plan's kill-criterion #4.
+    source_row_names = sorted(
+        {resolve_source(cli) for cli in PHASE0_SOURCE_CLIS}
+    )
+    source_rows = {
+        name: marker_scores[name]
+        for name in source_row_names
+        if name in marker_scores
+    }
+    bystander_rows = {
+        name: row
         for name, row in marker_scores.items()
-        if row["substring_rate"] > KILL_BASE_RATE_THRESHOLD
+        if name not in source_row_names
+    }
+
+    source_rows_above = [
+        name
+        for name, row in source_rows.items()
+        if row["substring_rate"] > KILL_SOURCE_ROW_MAX
     ]
-    contamination = len(above_threshold) >= KILL_BASE_RATE_MIN_PERSONAS
+    bystander_mean_rate = (
+        sum(row["substring_rate"] for row in bystander_rows.values())
+        / len(bystander_rows)
+        if bystander_rows
+        else 0.0
+    )
+
+    source_kill = bool(source_rows_above)
+    bystander_kill = bystander_mean_rate > KILL_BYSTANDER_MEAN_MAX
+    contamination = source_kill or bystander_kill
     kill_criterion_4_passed = not contamination
 
     out = {
@@ -144,8 +177,8 @@ def run_phase0_pre_screen(
         "max_new_tokens": max_new_tokens,
         "eval_wall_minutes": round(eval_minutes, 2),
         "thresholds": {
-            "per_persona_max_rate": KILL_BASE_RATE_THRESHOLD,
-            "min_personas_to_kill": KILL_BASE_RATE_MIN_PERSONAS,
+            "source_row_max_rate": KILL_SOURCE_ROW_MAX,
+            "bystander_mean_max_rate": KILL_BYSTANDER_MEAN_MAX,
         },
         "per_persona": {
             name: {
@@ -157,7 +190,12 @@ def run_phase0_pre_screen(
             }
             for name, row in marker_scores.items()
         },
-        "personas_above_threshold": above_threshold,
+        "source_row_names": source_row_names,
+        "source_rows_above_threshold": source_rows_above,
+        "bystander_mean_substring_rate": bystander_mean_rate,
+        "n_bystanders": len(bystander_rows),
+        "source_kill_triggered": source_kill,
+        "bystander_kill_triggered": bystander_kill,
         "contamination_detected": contamination,
         "kill_criterion_4_passed": kill_criterion_4_passed,
     }
@@ -170,7 +208,8 @@ def run_phase0_pre_screen(
         "phase0_done",
         contamination=contamination,
         kill_passed=kill_criterion_4_passed,
-        n_above=len(above_threshold),
+        source_rows_above=len(source_rows_above),
+        bystander_mean_rate=f"{bystander_mean_rate:.4f}",
     )
     return out
 
@@ -444,8 +483,21 @@ def _train_eval_one_cell(
     wandb_project: str | None,
     gpu_id: int = 0,
 ) -> SlabCellMetrics:
-    """Train and eval ONE cell. Catches per-cell failures so Phase 2 can continue."""
-    cell_outdir = slab_dir / f"cell_{cell.key}"
+    """Train and eval ONE cell. Catches per-cell failures so Phase 2 can continue.
+
+    The per-cell artifact directory is namespaced by ``seed`` so the Phase 3
+    multi-seed re-runs (seeds 137 / 256 on the top-3 cells) do NOT clobber the
+    Phase 2 primary-seed (42) artifacts. Layout::
+
+        slab_dir / "cell_<key>" / "seed_<N>" / { metrics.json,
+                                                 raw_completions.json,
+                                                 marker_scores.json,
+                                                 adapter/, merged/ }
+
+    The slab-level rollup ``slab_dir / metrics.json`` (and the aggregator that
+    reads it) is unaffected by this change.
+    """
+    cell_outdir = slab_dir / f"cell_{cell.key}" / f"seed_{seed}"
     cell_outdir.mkdir(parents=True, exist_ok=True)
     base_data_dir = repo_root / "data" / "leakage_experiment"
     appeared = _bystanders_in_training(source_cli, cell.f4, base_data_dir)

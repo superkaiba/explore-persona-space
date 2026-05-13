@@ -588,7 +588,6 @@ def build_clean_result_html(
     <p>F4=off cells reuse the pre-built <code>marker_&lt;source&gt;_asst_excluded_medium.jsonl</code> dataset; F2 and F3 cannot be honored in that recipe (it is medium-length, persona-absent answer content), so F2 and F3 effects for the 16 F4=off cells per source are aliased with the F4=off slab mean. The analyzer should interpret the F2 and F3 main effects in this report as reflecting on the F4=on slab. F1 main effect is jointly identified with the F1×F3 interaction under the F4=off slab.</p>
     <h3>Why this test</h3>
     <p>I bootstrapped at the question level for source rate (n=20 questions × 5 completions) and at the persona level for leakage (n=21 bystanders) because the natural cluster of correlated samples is "completions for the same question" or "completions from the same persona" — clustered resampling preserves that dependence structure and gives wider CIs than naive completion-level resampling would.</p>
-    <p>{confidence_note.capitalize()}</p>
     <p>Confidence: {confidence} — {confidence_note}</p>
     <table>
       <tr><th>Parameter</th><th>Value</th></tr>
