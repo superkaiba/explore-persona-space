@@ -225,8 +225,14 @@ def reproduction_sanity_gate(  # noqa: C901  -- R2 gate: each check must stay in
     }
 
     # JS-ρ check
-    js_path = JS_MATRIX_PATH if JS_MATRIX_PATH.exists() else JS_MATRIX_FALLBACK
-    if js_path.exists():
+    # Hot-fix: extend to HF Hub fallback (mirrors _load_js_matrix() for the build_leakage_table call).
+    if JS_MATRIX_PATH.exists():
+        js_path: Path | None = JS_MATRIX_PATH
+    elif JS_MATRIX_FALLBACK.exists():
+        js_path = JS_MATRIX_FALLBACK
+    else:
+        js_path = _load_js_matrix_from_hf_hub()
+    if js_path is not None and js_path.exists():
         with open(js_path) as f:
             js_blob = json.load(f)
         # divergence_matrices.json schema varies; common keys: "js" / "JS".
