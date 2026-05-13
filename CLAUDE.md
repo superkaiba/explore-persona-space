@@ -34,8 +34,9 @@
 
   *Park-and-wait gates (skill EXITs and waits for the user to run a separate command before re-invoking `/issue <N>`):*
   7. `awaiting_promotion` — clean-result promotion. After reviewer PASS,
-     the source experiment is parked at `awaiting_promotion` and the
-     clean-result's `runs.classification` stays at `pending`. The user
+     the source experiment is parked at `awaiting_promotion` — its body
+     is now the polished clean-result write-up, and its child
+     `runs.classification` stays at `pending`. The user
      runs `python scripts/sagan_state.py promote <N> useful|not-useful`
      (or clicks Promote in the dashboard) when satisfied; re-invoking
      `/issue <N>` then advances into Step 10. `/issue` does NOT use
@@ -99,7 +100,7 @@
 1. **Verify uploads + clean weights:** per Upload Policy table below — confirm eval JSONs + figures committed to git on the issue branch, raw completions on HF Hub data repo, checkpoints on HF Hub model repo, then delete safetensors/merged dirs from the pod.
 2. Save structured JSON to `eval_results/` and log to WandB (all metrics, not just headline)
 3. Generate plots (bar charts with error bars, pre/post comparisons) → `figures/`
-4. The `analyzer` agent creates a clean-result experiment row in Sagan directly (`POST /api/experiments` with `status='awaiting_promotion'` and `has_clean_result=true`, plus a child `runs` row with `classification='pending'`). The classification stays at `pending` even after reviewer PASS — the user manually promotes via `python scripts/sagan_state.py promote <N> useful|not-useful` (or the dashboard) when satisfied. Body follows `.claude/skills/clean-results/SPEC.md`. Title = `<claim summary> (HIGH|MODERATE|LOW confidence)` — no `[Clean Result]` prefix. Run `uv run python scripts/verify_clean_result.py` before posting; FAIL blocks posting.
+4. The `analyzer` agent **promotes the source experiment row IN PLACE to a clean-result** — no separate experiment row is created. It snapshots the prior body to an `epm:original-body` workflow_event (for rollback / audit), then calls `sagan_state.py set-body` + `set-title` to replace body + title with the polished write-up, and `sagan_state.py set-clean-result <N>` to flip `hasCleanResult=true`. Sagan auto-creates the child `runs` row with `classification='pending'` on that PATCH (see `.claude/agents/analyzer.md` Step 6 for the exact sequence). The classification stays at `pending` even after reviewer PASS — the user manually promotes via `uv run python scripts/sagan_state.py promote <N> useful|not-useful` (or the dashboard) when satisfied. Body follows `.claude/skills/clean-results/SPEC.md`. Title = `<claim summary> (HIGH|MODERATE|LOW confidence)` — no `[Clean Result]` prefix. Run `uv run python scripts/verify_clean_result.py` before posting; FAIL blocks posting.
 5. Update `RESULTS.md` and `docs/research_ideas.md`
 6. **Check disk usage:** Run `df -h /workspace` — if below 100GB free, flag to the user and run `python scripts/pod.py cleanup --all --dry-run` to preview what can be freed
 7. **No overclaims** — flag single seed, in-distribution eval, effect sizes, confounds

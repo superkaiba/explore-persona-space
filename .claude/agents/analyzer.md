@@ -234,23 +234,22 @@ This is the terminal step. **The source experiment row ITSELF becomes the clean-
 
 ```bash
 # 1. Snapshot the existing body as a workflow_event (for rollback / audit)
-ORIGINAL=$(python scripts/sagan_state.py view <SOURCE-N> | jq -r '.experiment.body')
-python scripts/sagan_state.py post-marker <SOURCE-N> epm:original-body \
+ORIGINAL=$(uv run python scripts/sagan_state.py view <SOURCE-N> | jq -r '.experiment.body')
+uv run python scripts/sagan_state.py post-marker <SOURCE-N> epm:original-body \
     --note "$ORIGINAL"
 
 # 2. Replace the body with the clean-result write-up
-python scripts/sagan_state.py set-body <SOURCE-N> \
+uv run python scripts/sagan_state.py set-body <SOURCE-N> \
     --file .claude/cache/experiment-<SOURCE-N>-clean-result.html
 
 # 3. Update title to the claim summary
-python scripts/sagan_state.py set-title <SOURCE-N> \
+uv run python scripts/sagan_state.py set-title <SOURCE-N> \
     "<concise claim — not experiment name> (<HIGH|MODERATE|LOW> confidence)"
 
-# 4. Mark has_clean_result and create the pending run row (one PATCH does both)
-curl -X PATCH -H "Authorization: Bearer $SAGAN_API_TOKEN" \
-    -H "content-type: application/json" \
-    -d '{"hasCleanResult": true}' \
-    "$SAGAN_BASE_URL/api/experiments/<EXP-UUID>"
+# 4. Mark has_clean_result=true. Sagan auto-creates a pending runs row in
+#    the same PATCH (idempotent — re-running on round-2 reuses the existing
+#    pending row).
+uv run python scripts/sagan_state.py set-clean-result <SOURCE-N>
 ```
 
 This sequence is idempotent: re-running re-snapshots only if the body

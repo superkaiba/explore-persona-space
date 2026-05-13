@@ -13,15 +13,16 @@ globs:
 | Artifact | Lives at | Authoritative for |
 |---|---|---|
 | Per-run structured results (JSON) | `eval_results/<name>/run_result.json` + WandB Artifact | Raw numbers, reproducibility metadata |
-| Polished write-up per experiment | **Clean-result experiment row in Sagan** (`has_clean_result=true`, one child `runs` row) | Human TL;DR + AI TL;DR + AI Summary + confidence |
+| Polished write-up per experiment | **Source experiment row in Sagan, promoted in place** (body replaced with polished write-up, `has_clean_result=true`, one child `runs` row) | Human TL;DR + AI TL;DR + AI Summary + confidence |
 | Headline-level findings | `RESULTS.md` | Cross-experiment claims a paper would cite |
 | Results index | `eval_results/INDEX.md` | Pointer table from `experiments.number` → result JSON path |
 | Ideas backlog | `docs/research_ideas.md` | Pre-experiment brainstorm/promotion candidates |
 
 The legacy file-based research log (`research_log/`) has been retired
-and moved to `archive/research_log/`. Do not write there. The
-clean-result experiment row created by the analyzer at the end of
-`/issue` is the durable, canonical artifact for every experiment.
+and moved to `archive/research_log/`. Do not write there. The source
+experiment row, promoted in place to a clean-result by the analyzer
+at the end of `/issue`, is the durable, canonical artifact for every
+experiment.
 
 ## Experiment Queue
 

@@ -1,0 +1,115 @@
+{
+  "metadata": {
+    "git_branch": "issue-368",
+    "git_commit": "eeccef5166874a7111acf0b5a4e9a1877d22773a",
+    "git_dirty": true,
+    "numpy": "2.2.6",
+    "phase": "phase2",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "python": "3.11.10",
+    "scipy": "scipy.stats@scipy",
+    "scipy_version": "1.17.1",
+    "timestamp_utc": "2026-05-13T02:09:18Z"
+  },
+  "per_axis": {
+    "pcentroid_chenstyle_pos_only_L20": {
+      "abs_spearman_rho": 0.5617923721520104,
+      "bootstrap_cluster_source_95ci": [
+        0.3185060610835918,
+        0.7490066810002449
+      ],
+      "n": 50,
+      "partial_rho_given_js": 0.048215537950259985,
+      "spearman_p": 2.1855904658364825e-05,
+      "spearman_rho": 0.5617923721520104
+    },
+    "pcentroid_methodA_L20": {
+      "abs_spearman_rho": 0.7878235130011396,
+      "bootstrap_cluster_source_95ci": [
+        0.5114185344117944,
+        0.892431442832725
+      ],
+      "n": 50,
+      "partial_rho_given_js": 0.3962282799631254,
+      "spearman_p": 1.13238079060494e-11,
+      "spearman_rho": 0.7878235130011396
+    },
+    "pcentroid_methodB_L20": {
+      "abs_spearman_rho": 0.5617923721520104,
+      "bootstrap_cluster_source_95ci": [
+        0.3185060610835918,
+        0.7490066810002449
+      ],
+      "n": 50,
+      "partial_rho_given_js": 0.048215537950259985,
+      "spearman_p": 2.1855904658364825e-05,
+      "spearman_rho": 0.5617923721520104
+    },
+    "pvec_chenstyle_L15": {
+      "abs_spearman_rho": 0.12901673699997443,
+      "bootstrap_cluster_source_95ci": [
+        -0.33253100808436037,
+        0.46679674954843703
+      ],
+      "n": 50,
+      "partial_rho_given_js": -0.02824696109774252,
+      "spearman_p": 0.37188302019381764,
+      "spearman_rho": 0.12901673699997443
+    },
+    "pvec_chenstyle_L20": {
+      "abs_spearman_rho": 0.1249664412748604,
+      "bootstrap_cluster_source_95ci": [
+        -0.28927938477868653,
+        0.4589556174915525
+      ],
+      "n": 50,
+      "partial_rho_given_js": 0.011081067938268794,
+      "spearman_p": 0.3872073369528437,
+      "spearman_rho": 0.1249664412748604
+    },
+    "pvec_chenstyle_L20_projdiff": {
+      "abs_spearman_rho": 0.1437212215803534,
+      "bootstrap_cluster_source_95ci": [
+        -0.7007237353920176,
+        0.3332049553865814
+      ],
+      "n": 50,
+      "partial_rho_given_js": 0.10568244497260455,
+      "spearman_p": 0.3193765219052053,
+      "spearman_rho": -0.1437212215803534
+    },
+    "pvec_chenstyle_L25": {
+      "abs_spearman_rho": 0.12773249689201144,
+      "bootstrap_cluster_source_95ci": [
+        -0.23957833952063032,
+        0.47048902942329063
+      ],
+      "n": 50,
+      "partial_rho_given_js": -0.04536060635433592,
+      "spearman_p": 0.3767020302131485,
+      "spearman_rho": 0.12773249689201144
+    },
+    "pvec_chenstyle_lasttoken": {
+      "abs_spearman_rho": 0.06845987652448873,
+      "bootstrap_cluster_source_95ci": [
+        -0.4504470498657665,
+        0.25443746292287395
+      ],
+      "n": 50,
+      "partial_rho_given_js": 0.06632912901746843,
+      "spearman_p": 0.6366445620050897,
+      "spearman_rho": -0.06845987652448873
+    },
+    "pvec_chenstyle_orthog": {
+      "abs_spearman_rho": 0.12802885999384905,
+      "bootstrap_cluster_source_95ci": [
+        -0.28359806717336167,
+        0.45984404661763695
+      ],
+      "n": 50,
+      "partial_rho_given_js": 0.012964592549325908,
+      "spearman_p": 0.37558665367864674,
+      "spearman_rho": 0.12802885999384905
+    }
+  }
+}

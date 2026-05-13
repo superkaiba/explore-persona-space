@@ -1,0 +1,20 @@
+{
+  "description": "Cross-phase synthesis bars: Phase 1 (Spearman \u03c1) + Phase 2 (|Spearman \u03c1|).",
+  "figure": "figures/issue_368/cross_phase_synthesis.png",
+  "metadata": {
+    "git_branch": "issue-368",
+    "git_commit": "eeccef5166874a7111acf0b5a4e9a1877d22773a",
+    "git_dirty": true,
+    "numpy": "2.2.6",
+    "phase": "cross_phase",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "python": "3.11.10",
+    "scipy": "scipy.stats@scipy",
+    "scipy_version": "1.17.1",
+    "timestamp_utc": "2026-05-13T02:09:23Z"
+  },
+  "verdicts": {
+    "H1": "FAIL",
+    "H2": "FAIL_marginal_below_threshold"
+  }
+}

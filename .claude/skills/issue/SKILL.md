@@ -43,7 +43,7 @@ All durable state lives in the Sagan dashboard's Postgres at
 Operate on state via `scripts/sagan_state.py` — both as a CLI and as an
 importable Python module (`get_experiment`, `set_status`, `post_marker`,
 `add_tag`, `latest_marker`, `list_by_status`, …). Requires
-`SAGAN_API_TOKEN` (60-day sliding Bearer session, in `~/.eps-secrets`).
+`SAGAN_API_TOKEN` (60-day sliding Bearer session, read from `.env`).
 
 ```bash
 python scripts/sagan_state.py view <N>                    # show experiment + recent events
@@ -70,10 +70,10 @@ production values used by `/issue` map to the kanban columns at
 | `plan_pending`        | User action: approve plan to advance. |
 | `approved`            | Plan approved, dispatch pending. |
 | `awaiting_approval`   | Awaiting an out-of-band gate (e.g. HF model access). |
-| `running`             | All active-phase work between approval and reviewer-PASS rolls up here (implementing, code-reviewing, testing, training, uploading). The latest `epm:*` workflow event tells you which sub-phase. |
+| `running`             | All active-phase work between approval and clean-result-critic PASS rolls up here (implementing, code-reviewing, testing, training, uploading). The latest `epm:*` workflow event tells you which sub-phase. |
 | `verifying`           | Upload-verifier running. |
-| `interpreting`        | Analyzer drafting the clean-result body. |
-| `reviewing`           | Reviewer + clean-result-critic running. |
+| `interpreting`        | Analyzer + interpretation-critic loop + clean-result-critic loop are running (Step 9a and Step 9a-bis). Final critic before promotion as of 2026-05-13. |
+| `reviewing`           | DEPRECATED 2026-05-13. Dedicated reviewer step retired; responsibilities absorbed by clean-result-critic. Kept in enum for legacy state recovery. |
 | `awaiting_promotion`  | User action: review clean-result draft and promote to useful / not-useful. |
 | `blocked`             | Stuck / paused; resolve dependency. |
 | `completed`           | Terminal happy path. Sticky — `has_clean_result=true` is preserved. |
@@ -86,13 +86,16 @@ surface the active followups in the dashboard.
 
 The skill moves status in exactly four places:
 1. **Step 1 (clarifier "All clear"):** `proposed` → `planning`.
-2. **Step 9a (analyzer creates clean-result):** the new clean-result experiment row is created with `status='awaiting_promotion'` and `runs.classification='pending'`.
-3. **Step 9b (user promotes draft):** user runs `sagan_state.py promote <N> useful|not-useful` (or clicks Promote in the dashboard); the clean-result row flips to `completed` with the chosen `runs.classification`. The user then re-enters `/issue <source-N>` so Step 10 fires. Promotion is **user-only** — no agent or automation may flip `runs.classification` without explicit user invocation.
-4. **Step 10 (auto-complete):** source experiment → `completed`.
+2. **Step 9a (analyzer promotes the source row to a clean-result):** the source experiment row is updated in place — body + title replaced with the polished write-up, `hasCleanResult=true`, status → `awaiting_promotion`. Sagan auto-creates the child `runs` row with `classification='pending'` on the same PATCH. No separate clean-result row is created.
+3. **Post-9a-bis (user promotes draft):** user runs `sagan_state.py promote <N> useful|not-useful` (or clicks Promote in the dashboard); the source experiment's `runs.classification` flips to the verdict and status advances to `completed`. The user then re-enters `/issue <N>` so Step 10 fires. Promotion is **user-only** — no agent or automation may flip `runs.classification` without explicit user invocation.
+4. **Step 10 (auto-complete):** the source experiment is already at `completed` after promote; Step 10 just runs the follow-up proposer and merge prompt.
 
 Between those, intermediate transitions (`approved → running → verifying →
-interpreting → reviewing → awaiting_promotion`) advance automatically as
-each step completes. Each transition writes a `workflow_events` row with
+interpreting → awaiting_promotion`) advance automatically as
+each step completes. (The previous `interpreting → reviewing → awaiting_promotion`
+flow was simplified 2026-05-13 when the dedicated reviewer step was retired
+and its responsibilities folded into `clean-result-critic` at Step 9a-bis.)
+Each transition writes a `workflow_events` row with
 `metadata.marker_type = 'epm:*'` so the agent can resume where it left
 off after a context reset.
 
@@ -149,12 +152,12 @@ status:proposed                           <- user has filed, clarifier hasn't ru
                                                                                       |-- (all artifacts verified, pod terminated)
                                                                                          |--> status:interpreting  <- analyzer + interp-critic loop
                                                                                                 |-- (interpretation refined, clean-result created)
-                                                                                                   |--> status:reviewing  <- final reviewer
+                                                                                                   |--> (clean-result-critic Step 9a-bis ensemble; round-1 Claude+Codex, rounds 2-3 Claude only)
                                                                                                           |-- PASS --> status:awaiting-promotion  <- AWAITING USER: promote clean-result
                                                                                                                         |-- (user promotes) -->
                                                                                                                               |-- open `Parent: #<N>` children exist --> status:followups-running  <- waits for children to finish; re-invoke /issue <N> later
                                                                                                                               |-- no open children                  --> status:done-experiment (+ follow-up proposer)
-                                                                                                          |-- FAIL --> status:interpreting (revise)
+                                                                                                          |-- REVISE --> status:interpreting (revise; rounds 2-3 Claude only)
                                                                       |-- PASS + [type:infra/survey] --> test-verdict (inline) --> status:done-impl
 ```
 
@@ -182,7 +185,12 @@ There is no user sign-off step. Reviewer PASS (or `epm:test-verdict` PASS for co
 | `running` | experimenter is running on the pod. | no |
 | `uploading` | upload-verifier is checking artifacts. | no |
 | `interpreting` | analyzer + interpretation-critic + clean-result-critic loops are running. | no |
-| `reviewing` | reviewer (final adversarial gate) is running. | no |
+| `reviewing` | DEPRECATED 2026-05-13. The dedicated final-reviewer step was retired
+and its responsibilities (statistical-framing rule, final
+published-body fresh-context check) were absorbed by
+`clean-result-critic` (see Step 9a-bis). Kept in the enum for legacy
+state recovery; new issues never write this status.
+ | no |
 | `blocked` | Aborted or stuck; awaiting user triage. | **yes** |
 | `awaiting-promotion` | User action: promote clean-result via /clean-results promote. | **yes** |
 | `followups-running` | Parent is done; children with `Parent: #<N>` are still in flight. | no |
@@ -203,30 +211,34 @@ request, watcher kills run if one exists.
 When invoked, ALWAYS follow this order. Skip only what the state dictates.
 
 **Chat title updates (verbose format).** Fires on (a) every status-label
-transition, (b) when a `epm:follow-ups` marker is posted, (c) when a
-clean-result issue is created, (d) when the merge prompt fires (Step 10d).
+transition, (b) when a `epm:follow-ups` marker is posted, (c) when the
+analyzer promotes the source row to a clean-result (Step 9a), (d) when
+the merge prompt fires (Step 10d).
 
 Format string:
 ```
-#<N> <type:label> — <human-readable status sentence>[ — next: <next-action>][ — followups: #X[, #Y]][ — clean-result #<M>: <claim summary trimmed to 60 chars>]
+#<N> <type:label> — <human-readable status sentence>[ — next: <next-action>][ — followups: #X[, #Y]][ — claim: <claim summary trimmed to 60 chars>]
 ```
 
 Examples:
 - `#226 type:infra — implementing workflow improvements — next: code-review`
 - `#226 type:infra — code-review FAIL round 2 — next: respawn implementer`
-- `#137 type:experiment — done-experiment — followups: #240, #241 — clean-result #310: persona collapse hero`
+- `#137 type:experiment — done-experiment — followups: #240, #241 — claim: persona collapse hero`
+
+The `claim:` segment is included once `hasCleanResult=true` on the source
+row (the analyzer renamed the row to the claim summary at Step 9a). There
+is no separate clean-result row — the source row IS the clean-result.
 
 Helper pseudocode:
 ```python
-def render_title(issue, *, status_human, next_action=None, followups=None, clean_result=None):
+def render_title(issue, *, status_human, next_action=None, followups=None, claim=None):
     parts = [f"#{issue.number} {issue.type_label} — {status_human}"]
     if next_action:
         parts.append(f"next: {next_action}")
     if followups:
         parts.append("followups: " + ", ".join(f"#{n}" for n in followups))
-    if clean_result:
-        claim = clean_result.title[:60]
-        parts.append(f"clean-result #{clean_result.number}: {claim}")
+    if claim:
+        parts.append(f"claim: {claim[:60]}")
     return " — ".join(parts)
 
 # Cosmetic; if mcp__happy__change_title is unavailable, log and continue.
@@ -671,8 +683,10 @@ invocations.
 - **`final_verdict == PASS`**:
   - `type:experiment` → advance label to `status:running`, proceed to Step 6.
   - `type:infra` / `type:survey` → skip
-    pod phase, advance directly to `status:reviewing` (the inline
-    test-verdict gate at Step 9c runs from there).
+    pod phase, advance directly to `status:testing` (the inline
+    test-verdict gate at Step 9c runs from there). Pre-2026-05-13 this
+    used `status:reviewing` for code-change paths too; legacy issues at
+    that state still route into 9c via the state-recovery table below.
 - **`final_verdict == FAIL` + revision_round<3** → label back to
   `status:implementing`. Re-spawn the implementer with BOTH marker bodies
   (Claude + Codex) AND the reconcile marker (if present) as part of the
@@ -686,7 +700,7 @@ invocations.
 
 Advance label to `status:code-reviewing` while EITHER reviewer is running,
 back to `status:implementing` on ensemble FAIL, forward to `status:running`
-(or `status:reviewing` for non-experiment types) on ensemble PASS.
+(or `status:testing` for non-experiment types) on ensemble PASS.
 
 **Codex twin no-show fallback.** If the Codex wrapper posts
 `epm:failure v<m>` with `failure_class: codex-output-malformed` or
@@ -959,10 +973,23 @@ Post `<!-- epm:upload-verification v1 -->` marker with per-artifact PASS/FAIL + 
   See `.claude/agents/uploader.md` for the uploader's contract and the
   marker schema. The uploader NEVER terminates pods; only stops/resumes.
 
-### Step 9: Iterative interpretation + final review
+### Step 9: Iterative interpretation + clean-result critique
 
-This step has two sub-phases: **interpretation** (iterative analyzer↔critic loop)
-and **final review** (one-shot reviewer gate).
+This step has two sub-phases, both running while `status:interpreting`:
+**9a** (analyzer ↔ interpretation-critic content honesty loop) and **9a-bis**
+(analyzer ↔ clean-result-critic structure + register + statistical-framing
+loop). On 9a-bis PASS the source issue advances directly to
+`status:awaiting-promotion`.
+
+**A note on the retired Step 9b** (the dedicated final-reviewer step): as
+of 2026-05-13 it was retired and its responsibilities — statistical-framing
+rule enforcement and final fresh-context check on the published
+clean-result body — were absorbed by `clean-result-critic` (a new
+**Lens 11** in that agent). The empirical cost/value review found Step 9b
+mostly duplicated `interpretation-critic` (claim verification, alternatives,
+overclaims, robustness) and `clean-result-critic` (template compliance,
+verifier mechanical pass). The two unique pieces moved cleanly into
+`clean-result-critic`'s Lens 11.
 
 **9a. Iterative interpretation** (only if `status:interpreting`)
 
@@ -983,8 +1010,8 @@ iterative refinement between the analyzer and an interpretation-critic.
    - Generates plots via `paper-plots` skill.
    - Posts `<!-- epm:interpretation v1 -->` marker on the source issue.
 
-2. Spawn the **interpretation-critic ensemble** (fresh contexts, single
-   message, both `run_in_background=true`):
+2. **ROUND 1 ONLY:** spawn the **interpretation-critic ensemble** (fresh
+   contexts, single message, both `run_in_background=true`):
    - `interpretation-critic` (Claude) — full 7-lens review. Posts
      `<!-- epm:interp-critique v1 -->` with PASS or REVISE.
    - `codex-interpretation-critic` (Codex gpt-5.5 via `companion task`) —
@@ -992,6 +1019,7 @@ iterative refinement between the analyzer and an interpretation-critic.
      `<!-- epm:interp-critique-codex v1 -->`.
 
    Neither sees the analyzer's reasoning. Independence is load-bearing.
+   Rounds 2-3 spawn the Claude critic only (see below).
 
 3. **Apply ensemble decision rule** (see `workflow.yaml § ensemble_review`):
 
@@ -999,141 +1027,143 @@ iterative refinement between the analyzer and an interpretation-critic.
    |---|---|---|
    | PASS | PASS | `final_verdict = PASS`. Concatenate suggestions for analyzer's optional polish. |
    | REVISE | REVISE | `final_verdict = REVISE`. Union the revision requests (dedup exact-same). |
-   | PASS vs REVISE (or vice versa) | (the other) | Spawn `reconciler` (marker mode). Brief: role=`interpretation-critic`, both marker bodies, interpretation body path, eval JSON paths, figure paths. Reconciler posts `<!-- epm:interp-critique-reconcile v<n> -->` with binding PASS or REVISE. `final_verdict = reconciler's verdict`. |
-   | Codex no-show (`epm:failure`) | (any) | Fallback: `final_verdict = Claude verdict`. Surface "Codex twin no-show round <n>" to chat. |
+   | PASS vs REVISE (or vice versa) | (the other) | Spawn `reconciler` (marker mode). Brief: role=`interpretation-critic`, both marker bodies, interpretation body path, eval JSON paths, figure paths. Reconciler posts `<!-- epm:interp-critique-reconcile v1 -->` with binding PASS or REVISE. `final_verdict = reconciler's verdict`. |
+   | Codex no-show (`epm:failure`) | (any) | Fallback: `final_verdict = Claude verdict`. Surface "Codex twin no-show round 1" to chat. |
 
    Reconcile rounds do NOT increment the per-reviewer round counter.
 
-**If `final_verdict == REVISE` (rounds 2-3):**
+**If `final_verdict == REVISE` (rounds 2-3, CLAUDE ONLY):**
 
 Re-spawn analyzer (fresh context, sees original data + ALL critique
-feedback: Claude marker + Codex marker + reconcile marker if any).
-Analyzer posts `<!-- epm:interpretation v2 -->`. Re-spawn the ensemble
-(fresh contexts, sees v2 + prior critique markers). Posts both
-`<!-- epm:interp-critique v2 -->` and `<!-- epm:interp-critique-codex v2 -->`.
-Apply rule again.
+feedback: Claude marker + Codex round-1 marker + reconcile marker if any).
+Analyzer posts `<!-- epm:interpretation v2 -->`. **Re-spawn ONLY the
+Claude `interpretation-critic`** (no Codex twin on rounds 2-3 — fresh-eyes
+value decays once the analyzer is iterating against round-1 feedback;
+register-noise becomes dominant). Critic sees v2 + ALL prior markers
+including round-1 Codex marker. Posts `<!-- epm:interp-critique v2 -->`.
+The ensemble decision rule reduces to: `final_verdict = Claude verdict`
+on rounds 2-3.
 
 **Max 3 rounds per reviewer.** After round 3, advance regardless with full
-critique history.
+critique history. The round-1-only Codex policy was adopted 2026-05-13.
 
 **On PASS (or max rounds reached):**
 
-The analyzer creates the clean-result GitHub issue directly:
-- Title: `<claim summary> (HIGH|MODERATE|LOW confidence)`
-- Labels: `clean-results:draft`
-- Body: fact sheet + refined interpretation per `template.md`
-- Runs `scripts/verify_clean_result.py` — FAIL blocks posting.
+The analyzer promotes the source experiment row in place (no separate
+row is created — see `.claude/agents/analyzer.md` Step 6 for the exact
+command sequence):
+- Snapshot prior body to `epm:original-body` workflow event (audit trail).
+- `sagan_state.py set-body <N> --file <clean-result-body-path>`
+- `sagan_state.py set-title <N> "<claim summary> (HIGH|MODERATE|LOW confidence)"`
+- `sagan_state.py set-clean-result <N>` — Sagan auto-creates the pending `runs` row on the same PATCH.
+- Runs `scripts/verify_clean_result.py` first — FAIL blocks posting.
 
-Posts `<!-- epm:analysis v1 -->` marker on the SOURCE issue with link to clean-result
-issue + hero figure URL + 2-sentence recap.
+Posts `<!-- epm:analysis v1 -->` marker on the source issue with the
+hero figure URL + 2-sentence recap. The source issue body IS the
+clean-result; there is no separate issue link.
 
-# Fire title update on clean-result creation.
-# mcp__happy__change_title({"title": render_title(issue, status_human="reviewing", clean_result=<new-issue>)})
+# Fire title update on clean-result promotion.
+# mcp__happy__change_title({"title": render_title(issue, status_human="reviewing", claim=<claim-summary>)})
 
 Then proceed to **9a-bis (clean-result-critique loop)** before advancing the label.
 
 **9a-bis. Clean-result-critique loop** (only if `status:interpreting`, after Step 9a PASS)
 
 Same shape as the interpretation-critic loop, but the critic checks
-STRUCTURE + REGISTER not CONTENT. Content honesty was settled in 9a; this
-layer ensures the body matches the v4 clean-result shape (per
-`.claude/skills/clean-results/SPEC.md`) AND reads in the right
+STRUCTURE + REGISTER + STATISTICAL-FRAMING not CONTENT. Content honesty
+was settled in 9a; this layer ensures the body matches the v4 clean-result
+shape (per `.claude/skills/clean-results/SPEC.md`), reads in the right
 registers — casual user-voice in `## TL;DR`, LessWrong research-post
-register in `## Summary` and `## Details`. Discipline rules: see
+register in `## Summary` and `## Details` — and enforces the project's
+p-values-only reporting convention (Lens 11, absorbed 2026-05-13 from the
+retired reviewer step). Discipline rules: see
 `.claude/skills/clean-results/SPEC.md` (canonical structure, registers,
 exemplars, figure captions, and research-communication principles).
 
-**Round 1:**
+**On PASS at this layer, the source issue advances directly to
+`status:awaiting-promotion`** — there is no separate downstream reviewer
+step. Clean-result-critic is the final adversarial gate.
 
-1. Spawn `clean-result-critic` agent (fresh context, does NOT see analyzer
-   reasoning). The critic reads the published clean-result body + the
-   latest `epm:interpretation vN`, runs `scripts/verify_clean_result.py`
-   + `scripts/audit_clean_results_body_discipline.py` as authoritative
-   mechanical passes, and scores against 10 lenses: title shape, TL;DR
-   user-voice register, Summary six-bullet structure, Summary LW
-   register, Details per-section discipline (setup-before-figure, visible
-   captions, sample outputs), heading-as-toggle convention,
-   body-discipline anti-patterns, Source issues conditional H2,
-   issue-reference link form, and verifier sanity. Posts
-   `<!-- epm:clean-result-critique v1 -->` on the source issue with
-   PASS or REVISE.
+**Round 1 (ENSEMBLE — Claude + Codex, parallel):**
 
-**If REVISE (rounds 2-3):**
+Spawn the **clean-result-critic ensemble** (fresh contexts, single
+message, both `run_in_background=true`):
 
-Re-spawn `analyzer` agent (fresh context, sees raw data + all interp-critique
-history + the latest clean-result-critique). Analyzer revises the
-`epm:interpretation` marker AND edits the clean-result experiment body in place
-via `python scripts/sagan_state.py set-body <clean-result-N> --file ...`. Re-runs
-`scripts/verify_clean_result.py` (must still PASS). Re-spawn
-`clean-result-critic` against the revised surfaces. Posts the next
-critique version.
+- `clean-result-critic` (Claude) — full 11-lens review (10 structural +
+  Lens 11 statistical-framing rule). Reads the published clean-result body
+  + the latest `epm:interpretation vN`, runs
+  `scripts/verify_clean_result.py` + `scripts/audit_clean_results_body_discipline.py`
+  as authoritative mechanical passes. Posts
+  `<!-- epm:clean-result-critique v1 -->` on the source issue with PASS or
+  REVISE.
+- `codex-clean-result-critic` (Codex gpt-5.5 via `companion task`) — same
+  11 lenses. Independently runs `verify_clean_result.py`. Posts
+  `<!-- epm:clean-result-critique-codex v1 -->`.
 
-**Max 3 rounds.** After round 3, advance regardless and fold the residual
-structural / register debt into the chat-side summary so the user can
-decide whether to patch before promoting.
+Neither sees the analyzer's reasoning or interp-critique history.
 
-**On PASS (or max rounds reached):**
-
-Advance label to `status:reviewing`.
-
-**9b. Final reviewer ensemble gate** (only if `status:reviewing`, type:experiment)
-
-Spawn the **reviewer ensemble** (fresh contexts, single message, both
-`run_in_background=true`):
-- `reviewer` (Claude) — template-compliance + reproducibility card + claim
-  verification + statistical-framing rule. Posts
-  `<!-- epm:reviewer-verdict v1 -->` with PASS / CONCERNS / FAIL.
-- `codex-reviewer` (Codex gpt-5.5 via `companion task`) — same checks.
-  Independently runs `scripts/verify_clean_result.py`. Posts
-  `<!-- epm:reviewer-verdict-codex v1 -->`.
-
-Neither sees the analyzer's reasoning or critique history.
-
-**Apply ensemble decision rule:**
+**Apply ensemble decision rule** (mirrors interpretation-critic 9a):
 
 | Claude | Codex | Action |
 |---|---|---|
-| PASS-class | PASS-class | `final_verdict = PASS`. CONCERNS bullets surface to user as opportunistic. |
-| FAIL | FAIL | `final_verdict = FAIL`. Concatenate findings. |
-| PASS-class vs FAIL (or vice versa) | (the other) | Spawn `reconciler` (marker mode). Posts `<!-- epm:reviewer-verdict-reconcile v1 -->` with binding PASS or FAIL. `final_verdict = reconciler's verdict`. |
-| Codex no-show | (any) | `final_verdict = Claude verdict`. Surface "Codex reviewer no-show" to chat. |
+| PASS | PASS | `final_verdict = PASS`. CONCERNS / minor-only findings surface as opportunistic. |
+| REVISE | REVISE | `final_verdict = REVISE`. Union the revision requests (dedup exact-same). |
+| PASS vs REVISE (or vice versa) | (the other) | Spawn `reconciler` (marker mode). Brief: role=`clean-result-critic`, both marker bodies, clean-result body path, verifier output, audit-script output. Reconciler posts `<!-- epm:clean-result-critique-reconcile v1 -->` with binding PASS or REVISE. `final_verdict = reconciler's verdict`. |
+| Codex no-show (`epm:failure`) | (any) | Fallback: `final_verdict = Claude verdict`. Surface "Codex twin no-show round 1" to chat. |
 
-PASS-class = {PASS, CONCERNS}; FAIL-class = {FAIL}.
+Reconcile rounds do NOT increment the per-reviewer round counter. The
+round-1-only Codex policy was adopted 2026-05-13 (reverses the earlier
+"Codex imposes register noise" exclusion — round-1-only confines Codex to
+the first-look pass where structural-flaw catch dominates register noise).
 
-Transitions (use the ensemble `final_verdict`, NOT either reviewer's individual verdict):
+**If `final_verdict == REVISE` (rounds 2-3, CLAUDE ONLY):**
 
-- **`final_verdict == PASS`:** Clean-result `runs.classification` STAYS at `pending` (do NOT auto-promote).
-  Advance source experiment to `awaiting_promotion`:
-  ```
-  python scripts/sagan_state.py set-status <N> awaiting_promotion
-  ```
-  Post a workflow event with a user-facing summary:
-  > Ensemble reviewer PASS. Clean-result #\<clean-result-N\> is ready for your review.
-  > When satisfied, promote it (USER-ONLY — no automation may do this):
-  >   `python scripts/sagan_state.py promote <clean-result-N> useful` (paper-relevant)
-  >   `python scripts/sagan_state.py promote <clean-result-N> not-useful` (archive candidate)
-  > Then re-enter `/issue <N>` to fire Step 10.
+Re-spawn `analyzer` agent (fresh context, sees raw data + all
+interp-critique history + the round-1 Codex marker + the latest
+clean-result-critique). Analyzer revises the `epm:interpretation` marker
+AND edits the clean-result experiment body in place via
+`python scripts/sagan_state.py set-body <clean-result-N> --file ...`.
+Re-runs `scripts/verify_clean_result.py` (must still PASS). **Re-spawn
+ONLY the Claude `clean-result-critic`** (no Codex twin on rounds 2-3).
+Posts the next critique version (`<!-- epm:clean-result-critique v2 -->`).
+`final_verdict = Claude verdict` on rounds 2-3.
 
-  Post the §5 marker: `uv run python scripts/post_step_completed.py --issue
-  <N> --step 9 --exit-kind parked --notes "awaiting clean-result promotion"`.
-  EXIT. The user reviews the clean-result at their own pace and manually
-  picks a verdict. **Awaiting promotion is a user-only status — no agent
-  or automation may flip `runs.classification` out of `pending`.** The
-  `sagan_state.py promote` command flips `runs.classification` to
-  `useful` / `not_useful`, sets the experiment to `completed`, and
-  prints a reminder to re-enter `/issue <N>` so Step 10 fires.
-- **`final_verdict == CONCERNS`:** same as PASS (non-blocking). Surfaces on the verdict comment(s).
-- **`final_verdict == FAIL`:** clean-result stays `:draft`. Source back to `status:interpreting`.
-  Analyzer revises with BOTH reviewers' feedback (Claude marker + Codex marker + reconcile marker if any).
+**Max 3 rounds per reviewer.** After round 3, advance regardless and fold
+the residual structural / register / statistical-framing debt into the
+chat-side summary so the user can decide whether to patch before
+promoting.
+
+**On PASS (or max rounds reached) — final transition:**
+
+Clean-result `runs.classification` STAYS at `pending` (do NOT auto-promote).
+Advance source experiment to `awaiting_promotion`:
+```
+python scripts/sagan_state.py set-status <N> awaiting_promotion
+```
+Post a workflow event with a user-facing summary:
+> Clean-result critic PASS (final gate as of 2026-05-13). Clean-result #\<clean-result-N\> is ready for your review.
+> When satisfied, promote it (USER-ONLY — no automation may do this):
+>   `python scripts/sagan_state.py promote <clean-result-N> useful` (paper-relevant)
+>   `python scripts/sagan_state.py promote <clean-result-N> not-useful` (archive candidate)
+> Then re-enter `/issue <N>` to fire Step 10.
+
+Post the §5 marker: `uv run python scripts/post_step_completed.py --issue
+<N> --step 9 --exit-kind parked --notes "awaiting clean-result promotion"`.
+EXIT. The user reviews the clean-result at their own pace and manually
+picks a verdict. **Awaiting promotion is a user-only status — no agent
+or automation may flip `runs.classification` out of `pending`.** The
+`sagan_state.py promote` command flips `runs.classification` to
+`useful` / `not_useful`, sets the experiment to `completed`, and
+prints a reminder to re-enter `/issue <N>` so Step 10 fires.
 
 **On re-invocation at `status:awaiting-promotion`:**
-1. Check if the clean-result issue has been promoted (label `clean-results`
-   without `:draft`).
+1. Check if the source row has been promoted: `runs.classification` is
+   `useful` or `not_useful` (status will be `completed`).
 2. If promoted → advance to Step 10 (auto-complete).
-3. If still `:draft` → show the clean-result link, post the §5 marker:
-   `uv run python scripts/post_step_completed.py --issue <N> --step 10
-   --exit-kind parked --notes "clean-result still :draft; awaiting promotion"`,
-   and EXIT. User hasn't promoted yet.
+3. If still `pending` → show the source row's dashboard link, post the
+   §5 marker: `uv run python scripts/post_step_completed.py --issue <N>
+   --step 10 --exit-kind parked --notes "clean-result still pending;
+   awaiting user promotion"`, and EXIT. User hasn't promoted yet.
 
 **9c. Test-verdict gate (code-change paths only, inline)**
 
@@ -1151,7 +1181,7 @@ suite directly and posts an `epm:test-verdict` marker with the result.
 4. Coverage gap report (flags, does not auto-generate)
 
 Post `<!-- epm:test-verdict v1 -->`. PASS → Step 10. FAIL (count < 3) → stay in
-`status:reviewing`, re-spawn implementer. FAIL (count >= 3) → `status:blocked`.
+`status:testing`, re-spawn implementer. FAIL (count >= 3) → `status:blocked`.
 
 ### Step 10: Auto-complete (fires after user promotes clean-result from `awaiting-promotion`, or `epm:test-verdict` PASS for code-change paths)
 
@@ -1193,8 +1223,9 @@ checks the *write-up*; this checks the *issue → work* contract.
 5. Branch on verdict:
    - **All ☑ (PASS):** proceed to step 1 below.
    - **Any ☐ (INCOMPLETE):** label `status:blocked` (remove
-     `status:awaiting-promotion` / `status:reviewing` / `status:testing` as
-     applicable), do NOT advance. The audit comment is the bounce-back
+     `status:awaiting-promotion` / `status:testing` as applicable; also
+     legacy `status:reviewing` if the issue predates 2026-05-13), do NOT
+     advance. The audit comment is the bounce-back
      payload. User either (a) modifies the issue body to reconcile
      resolved scope-creep, (b) re-runs the missing work via a follow-up
      `/issue` cycle, or (c) labels `status:awaiting-promotion` again to
@@ -1265,7 +1296,7 @@ Auto-fires after `done-experiment` for `type:experiment` issues. Spawn the
 `follow-up-proposer` agent with:
 - The completed experiment's plan (`epm:plan`)
 - The results (`epm:results`)
-- The clean-result issue body
+- The clean-result body (the source experiment's current body — promoted in place at Step 9a)
 - The interpretation critique history (`epm:interp-critique v1..vN`)
 - The reviewer verdict
 
@@ -1447,17 +1478,16 @@ investigate and optionally label `status:blocked`.
 | `interpreting` | `epm:interp-critique-codex v<n>` exists, no `epm:interp-critique v<n>` | Claude critic not yet returned | re-spawn `interpretation-critic` only |
 | `interpreting` | both `epm:interp-critique v<n>` and `epm:interp-critique-codex v<n>` exist, verdicts disagree (PASS vs REVISE), no `epm:interp-critique-reconcile v<n>` | reconciler not yet started | spawn `reconciler` (marker mode) |
 | `interpreting` | both ensemble markers exist, verdicts agree OR reconcile marker present, ensemble verdict REVISE, round < 3 | revision needed | re-spawn analyzer with all critique markers |
-| `interpreting` | ensemble verdict PASS or round >= 3, no `epm:clean-result-critique` | content honesty settled, structure + register loop not started | create clean-result if missing, then spawn clean-result-critic |
-| `interpreting` | `epm:clean-result-critique` REVISE, round < 3 | structure / register revision in progress | re-spawn analyzer with the clean-result-critique |
-| `interpreting` | `epm:clean-result-critique` PASS or round >= 3 | ready for review | advance to `reviewing` |
-| `reviewing` | neither `epm:reviewer-verdict` nor `epm:reviewer-verdict-codex` | both ensemble reviewers not started | spawn `reviewer` + `codex-reviewer` in parallel |
-| `reviewing` | `epm:reviewer-verdict v<n>` exists, no `epm:reviewer-verdict-codex v<n>` | Codex twin not yet returned | re-spawn `codex-reviewer` only |
-| `reviewing` | `epm:reviewer-verdict-codex v<n>` exists, no `epm:reviewer-verdict v<n>` | Claude reviewer not yet returned | re-spawn `reviewer` only |
-| `reviewing` | both ensemble markers exist, verdicts disagree (PASS-class vs FAIL), no `epm:reviewer-verdict-reconcile v<n>` | reconciler not yet started | spawn `reconciler` (marker mode) |
-| `reviewing` | both ensemble markers exist, verdicts agree OR reconcile marker present, ensemble verdict PASS-class | advance to `awaiting-promotion` | label flip + post chat instructions |
-| `reviewing` | ensemble verdict FAIL | interpretation needs more work | back to `interpreting` |
-| `awaiting-promotion` | `epm:reviewer-verdict` PASS, clean-result still `:draft` | waiting for user to promote | show clean-result link, prompt to promote, EXIT |
-| `awaiting-promotion` | clean-result has `clean-results` label (no `:draft`) | user promoted | advance to Step 10 (auto-complete) |
+| `interpreting` | ensemble verdict PASS or round >= 3, no `epm:clean-result-critique` v1 | content honesty settled, structure + register + statistical-framing loop not started | promote source row in place to clean-result if not yet done (set-body + set-title + set-clean-result), then spawn `clean-result-critic` + `codex-clean-result-critic` in parallel (ROUND 1 ENSEMBLE) |
+| `interpreting` | `epm:clean-result-critique v1` exists, no `epm:clean-result-critique-codex v1` | Codex twin not yet returned (round 1) | re-spawn `codex-clean-result-critic` only |
+| `interpreting` | `epm:clean-result-critique-codex v1` exists, no `epm:clean-result-critique v1` | Claude critic not yet returned (round 1) | re-spawn `clean-result-critic` only |
+| `interpreting` | both round-1 critique markers exist, verdicts disagree (PASS vs REVISE), no `epm:clean-result-critique-reconcile v1` | reconciler not yet started | spawn `reconciler` (marker mode) |
+| `interpreting` | round-1 ensemble verdict REVISE, round < 3 | structure / register / statistical-framing revision in progress | re-spawn analyzer with all critique markers; subsequent critique rounds spawn Claude `clean-result-critic` ONLY (no Codex twin on rounds 2-3) |
+| `interpreting` | `epm:clean-result-critique v<n>` (n≥2) REVISE, n < 3 | rounds 2-3 Claude-only revision in progress | re-spawn analyzer with the latest clean-result-critique |
+| `interpreting` | latest ensemble or Claude-only `epm:clean-result-critique` PASS, OR round >= 3 | clean-result ready for user promotion | advance source issue to `awaiting-promotion`, post chat instructions, EXIT |
+| `reviewing` (legacy) | issue already at status:reviewing pre-2026-05-13 | dedicated reviewer step retired; route to awaiting-promotion as if Step 9a-bis just PASSed | advance source issue to `awaiting-promotion`, post chat instructions, EXIT |
+| `awaiting-promotion` | latest `epm:clean-result-critique` PASS, source row's `runs.classification` still `pending` | waiting for user to promote | show source row's dashboard link, prompt to promote, EXIT |
+| `awaiting-promotion` | source row's `runs.classification` is `useful` / `not_useful` (status `completed`) | user promoted | advance to Step 10 (auto-complete) |
 | `followups-running` | at least one open child issue (`Parent: #<N>` in body) lacks a terminal `status:*` label | children still in flight | show child-issue table + project-board URL, EXIT |
 | `followups-running` | every open child has reached `done-experiment` / `done-impl` / `archived` (or no open children remain) | children all done | re-run Step 10: relabel parent `status:done-experiment` and move project column to "Done (experiment)" |
 | `running` | `.claude/cache/watch-<N>.pid` is missing AND no `epm:results` / `epm:failure` posted | §2 watchdog crashed or never started | re-spawn `python scripts/pod.py watch --issue <N> ...` (skill side-effect; idempotent, the new watchdog inherits the run's heartbeat probes) |

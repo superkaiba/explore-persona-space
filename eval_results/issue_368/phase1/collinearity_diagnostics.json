@@ -1,0 +1,10 @@
+{
+  "contrast_step_decorative_if_within_0.02": false,
+  "delta_rho_pos_only_vs_headline": 0.558841205284151,
+  "helpful_projection_constant_after_centering_flag_lt_0.1": false,
+  "helpful_projection_panel_std_over_meanabs": 0.3258990788465024,
+  "high_collinearity_flag_gt_0.9": false,
+  "pearson_r_chenstyle_vs_semantic_cos": 0.05851130284068295,
+  "spearman_rho_headline_axis": -0.10718407926535559,
+  "spearman_rho_pos_only_axis": 0.45165712601879543
+}

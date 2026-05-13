@@ -48,9 +48,21 @@ import os
 import sys
 import urllib.error
 import urllib.request
+from pathlib import Path
 from typing import Any
 
 # ─── Config ─────────────────────────────────────────────────────────────────
+
+# Load .env so SAGAN_API_TOKEN / SAGAN_BASE_URL can live in the project's
+# .env file (alongside HF_TOKEN, WANDB_API_KEY, etc.) instead of a shell
+# rc or ~/.eps-secrets. `override=False` preserves any value already set
+# in the process env (CI overrides, manual `export …` for debugging).
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(str(Path(__file__).resolve().parent.parent / ".env"), override=False)
+except ImportError:
+    pass
 
 BASE_URL = os.environ.get("SAGAN_BASE_URL", "https://sagan.superkaiba.com").rstrip("/")
 API_TOKEN = os.environ.get("SAGAN_API_TOKEN", "").strip()
@@ -260,6 +272,20 @@ def cmd_set_title(args: argparse.Namespace) -> None:
     print(f"#{args.number} title → {args.title[:80]}")
 
 
+def cmd_set_clean_result(args: argparse.Namespace) -> None:
+    """Flip `hasCleanResult=true` on an experiment. Sagan auto-creates a
+    pending runs row on the same PATCH (idempotent: re-running is safe).
+
+    Used by the analyzer in its in-place clean-result promotion (Step 6):
+    after `set-body` + `set-title` have replaced the source experiment's
+    body with the polished write-up, this call marks it as a clean-result
+    and primes the pending run that `promote` will later flip.
+    """
+    exp = get_experiment(args.number)["experiment"]
+    set_clean_result(exp["id"], True)
+    print(f"#{args.number} hasCleanResult=true (pending run row ensured)")
+
+
 def cmd_promote(args: argparse.Namespace) -> None:
     """Clean-result promotion: atomically flip runs.classification + set
     has_clean_result=true + advance status to completed.
@@ -348,6 +374,13 @@ def main() -> None:
     p.add_argument("number", type=int)
     p.add_argument("title")
     p.set_defaults(func=cmd_set_title)
+
+    p = sub.add_parser(
+        "set-clean-result",
+        help="flip hasCleanResult=true (analyzer Step 6); Sagan auto-creates pending run",
+    )
+    p.add_argument("number", type=int)
+    p.set_defaults(func=cmd_set_clean_result)
 
     p = sub.add_parser("promote", help="clean-result promotion (useful | not-useful)")
     p.add_argument("number", type=int)
