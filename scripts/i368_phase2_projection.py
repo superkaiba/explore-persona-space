@@ -75,6 +75,39 @@ JS_MATRIX_FALLBACK = (
     REPO_ROOT.parent / "issue-274" / "eval_results" / "js_divergence" / "divergence_matrices.json"
 )
 
+
+def _ensure_method_a_inputs() -> Path:
+    """Hot-fix: ensure centroids_layer20.pt + persona_names.json exist locally.
+
+    Falls back to HF Hub data repo at issue142_single_token/centroids/.
+    Returns the path to persona_names.json (centroids dir is its parent).
+    Raises if both local and HF Hub paths fail.
+    """
+    persona_names_path = METHOD_A_CENTROIDS.parent / "persona_names.json"
+    if METHOD_A_CENTROIDS.exists() and persona_names_path.exists():
+        return persona_names_path
+    try:
+        from huggingface_hub import hf_hub_download
+
+        for filename, dest in [
+            ("issue142_single_token/centroids/centroids_layer20.pt", METHOD_A_CENTROIDS),
+            ("issue142_single_token/centroids/persona_names.json", persona_names_path),
+        ]:
+            if not dest.exists():
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                downloaded = hf_hub_download(
+                    repo_id="superkaiba1/explore-persona-space-data",
+                    filename=filename,
+                    repo_type="dataset",
+                )
+                import shutil
+
+                shutil.copy(downloaded, dest)
+        return persona_names_path
+    except Exception as e:
+        raise RuntimeError(f"Method-A centroids missing and HF Hub fallback failed: {e}") from e
+
+
 OUT_DIR = REPO_ROOT / "eval_results" / "issue_368" / "phase2"
 
 
@@ -240,7 +273,8 @@ def reproduction_sanity_gate(  # noqa: C901  -- R2 gate: each check must stay in
         result["js_check"] = {"skipped": f"no JS matrix on disk ({js_path})"}
 
     # Method-A centered-cosine ρ check (#142 published 0.567)
-    persona_names_path = METHOD_A_CENTROIDS.parent / "persona_names.json"
+    # Hot-fix: pull centroids + persona_names from HF Hub if absent locally.
+    persona_names_path = _ensure_method_a_inputs()
     if METHOD_A_CENTROIDS.exists() and persona_names_path.exists():
         # The file is Tensor[111, 3584] — a single layer's stacked centroids,
         # NOT a {persona: tensor} dict. The row ordering is in persona_names.json
@@ -292,14 +326,19 @@ def reproduction_sanity_gate(  # noqa: C901  -- R2 gate: each check must stay in
         }
 
     # M2 fix: plan §7 halt-on-either-failure. No "PARTIAL" verdict.
+    # Hot-fix: a "skipped" check (e.g., missing inputs) ALSO counts as failure.
+    # Previously, `ma_check.get("matches_published")` returned None when the
+    # check was skipped (no file), and `None is False` evaluates False — the
+    # gate silently PASSed despite skipping Method-A entirely.
     js_check = result.get("js_check", {})
     ma_check = result.get("method_a_check", {})
-    js_failed = js_check.get("matches_published") is False
-    ma_failed = ma_check.get("matches_published") is False
+    js_failed = js_check.get("matches_published") is False or "skipped" in js_check
+    ma_failed = ma_check.get("matches_published") is False or "skipped" in ma_check
     if js_failed or ma_failed:
         raise RuntimeError(
             "Phase 2 reproduction-sanity gate FAILED — at least one of "
-            f"JS-ρ or Method-A centered-cos-L20-ρ missed ±{tolerance} tolerance.\n"
+            f"JS-ρ or Method-A centered-cos-L20-ρ missed ±{tolerance} tolerance "
+            "or was skipped (missing inputs).\n"
             f"  JS:       {js_check}\n  MethodA:  {ma_check}"
         )
     result["verdict"] = "PASS"
@@ -454,7 +493,8 @@ def _compute_method_a_centered_cosines(
     """
     import torch
 
-    persona_names_path = METHOD_A_CENTROIDS.parent / "persona_names.json"
+    # Hot-fix: pull centroids + persona_names from HF Hub if absent locally.
+    persona_names_path = _ensure_method_a_inputs()
     if not (METHOD_A_CENTROIDS.exists() and persona_names_path.exists()):
         return None
     d = torch.load(METHOD_A_CENTROIDS, weights_only=True)
