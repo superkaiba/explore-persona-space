@@ -140,8 +140,8 @@ def resolve_all_markers(tokenizer) -> dict[str, MarkerBinding]:
     # Inherited #354 markers share id 12 ('-'). The plan's "no shared subtoken"
     # constraint applies to the new {C,D,E} markers relative to each other AND
     # relative to A,B — but A/B were already trained together in #354 and #281
-    # without incident, so we treat A↔B sharing as a known pre-existing fact
-    # and only enforce the constraint for C, D, E onward.
+    # without incident, so we treat the A∩B shared subtokens as a pre-existing
+    # cascade-wide allowlist; C/D/E must avoid all OTHER A∪B subtokens.
     if shared_ab:
         logger.info(
             "Marker A ↔ B share token ids %s (pre-existing from #354/#281; "
@@ -154,7 +154,10 @@ def resolve_all_markers(tokenizer) -> dict[str, MarkerBinding]:
         "B": MarkerBinding(name="B", text=MARKER_B, ids=b_ids, fallback_used=False),
     }
 
-    forbidden = set(a_ids) | set(b_ids)
+    # A∩B shared subtokens are a pre-existing cascade-wide allowlist (see comment
+    # above) — they must not enter `forbidden`, otherwise C/D/E candidates that
+    # happen to use the same shared chars (e.g. '-') are wrongly rejected.
+    forbidden = (set(a_ids) | set(b_ids)) - shared_ab
     for name, candidates in [
         ("C", MARKER_C_CANDIDATES),
         ("D", MARKER_D_CANDIDATES),
@@ -162,7 +165,7 @@ def resolve_all_markers(tokenizer) -> dict[str, MarkerBinding]:
     ]:
         binding = select_marker_with_fallback(tokenizer, name, candidates, forbidden)
         bindings[name] = binding
-        forbidden |= set(binding.ids)
+        forbidden |= set(binding.ids) - shared_ab
 
     for name, b in bindings.items():
         logger.info(
