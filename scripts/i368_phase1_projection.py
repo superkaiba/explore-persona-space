@@ -178,7 +178,11 @@ def _load_pvec(trait: str, axis_spec: dict) -> torch.Tensor:
 
     flavor = axis_spec["flavor"]
     layer = axis_spec["layer"]
-    base = OUTPUT_BASE / "i181" / trait
+    # `trait` comes from regression_data.csv's `train_family` column ("task",
+    # "instruction", "context", "format" — no prefix). The extraction script
+    # writes directories as `T_task/`, `T_instruction/`, etc. Map here.
+    dir_name = trait if trait.startswith("T_") else f"T_{trait}"
+    base = OUTPUT_BASE / "i181" / dir_name
     if flavor == "chenstyle":
         if axis_spec["aggregation"] == "last_token":
             path = base / f"pvec_lasttoken_L{layer}.pt"
