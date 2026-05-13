@@ -9,7 +9,7 @@
 #          | em-defense | truthification | infra | cross-cutting
 #   status: preliminary | moderate | strong | falsified | retracted
 #   evidence:
-#     issues: [<int>, ...]                # GitHub clean-result issue numbers
+#     experiments: [<int>, ...]           # Sagan experiments.number values
 #     wandb_report: <url>                 # optional
 #     figures: [<rel-path>, ...]          # optional
 #     results_md_section: "<section>"     # optional, must match a RESULTS.md H2
@@ -26,11 +26,10 @@
 #   - infra                     (pure tooling / scaffolding)
 #   - cross-cutting             (catch-all, e.g. methodology notes)
 #
-# History: this registry was bootstrapped in #251 slice 3 (adapted from the
-# closed #33 design — minus the `aim` field, which is replaced by `topic`).
-# New issues add a row when a clean-result is promoted; the GitHub Actions
-# workflow `.github/workflows/render_claims.yml` re-renders `docs/claims.md`
-# on push or on `claim:*`-labelled-issue events.
+# History: this registry was bootstrapped in #251 slice 3. New Sagan
+# experiments add a row when a clean-result is promoted; the
+# `.github/workflows/render_claims.yml` workflow re-renders `docs/claims.md`
+# on YAML/renderer changes or manual dispatch.
 
 claims:
   - id: C-em-defense-coupling-v1
@@ -38,7 +37,7 @@ claims:
     topic: em-defense
     status: preliminary
     evidence:
-      issues: [75]
+      experiments: [75]
       results_md_section: "EM Defense"
     kill_criteria: "post-EM ARC-C delta vs control < 0.05 across 3+ seeds with effective batch matched"
     updated: 2026-04-16

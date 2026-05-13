@@ -22,7 +22,7 @@ de-duplication; a watchdog will refuse to post a fresh failure if a
 marker with a higher pid already exists.
 
 State backend: this watchdog reads and writes the Sagan dashboard's
-HTTP API via :mod:`sagan_state`. There is no GitHub issue involvement;
+HTTP API via :mod:`sagan_state`. There is no repository issue involvement;
 ``--issue N`` is interpreted as ``experiments.number`` in Sagan.
 
 Race-hardening (per plan §2):

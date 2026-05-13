@@ -1,7 +1,8 @@
 name: Render claims
 
-# Re-renders docs/claims.md whenever the source YAML changes OR a
-# clean-result issue is closed/labelled. Bootstrap-from #251 slice 3.
+# Re-renders docs/claims.md whenever the source YAML or renderer changes.
+# The experiment workflow state lives in Sagan; repository issue events are no
+# longer part of the claims pipeline.
 # See docs/claims.yaml header comment for schema + topic taxonomy.
 
 on:
@@ -10,22 +11,14 @@ on:
       - "docs/claims.yaml"
       - "scripts/render_claims.py"
     branches: [main]
-  issues:
-    types: [closed, labeled, unlabeled]
+  workflow_dispatch:
 
 permissions:
   contents: write
-  issues: read
 
 jobs:
   render:
-    if: |
-      github.event_name == 'push' ||
-      contains(github.event.issue.labels.*.name, 'clean-results') ||
-      startsWith(github.event.label.name, 'claim:')
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3

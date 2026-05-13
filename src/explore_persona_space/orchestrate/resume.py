@@ -66,11 +66,10 @@ def latest_step_completed(
 ) -> StepCompletedMarker | None:
     """Return the most-recently-posted step-completed marker.
 
-    The skill calls ``gh issue view <N> --json comments`` and walks the
-    `comments` array bottom-up; the first ``epm:step-completed`` opening
-    tag IS the latest. This helper takes a list pre-filtered to that
-    kind and returns the LAST element (or None if empty). Kept as a
-    standalone function so unit tests can pass a list directly.
+    The skill reads Sagan workflow events and walks them bottom-up; the first
+    ``epm:step-completed`` marker IS the latest. This helper takes a list
+    pre-filtered to that kind and returns the LAST element (or None if empty).
+    Kept as a standalone function so unit tests can pass a list directly.
     """
     seq = list(markers)
     if not seq:

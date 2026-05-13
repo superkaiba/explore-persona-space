@@ -36,6 +36,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -54,6 +55,7 @@ DEFAULT_STATUS_INTERVAL = 60
 DEFAULT_MAX_RUNTIME_SECS = 86400
 BACKOFF_MULTIPLIER = 10
 MAX_CONSECUTIVE_FAILURES = 3
+LOG_LEVEL_RE = re.compile(r"\b(DEBUG|INFO|WARNING|WARN|ERROR|CRITICAL|FATAL)\b", re.IGNORECASE)
 
 
 def _now_iso() -> str:
@@ -186,6 +188,23 @@ def _runpod_status_event() -> dict[str, Any]:
     }
 
 
+def _log_event(line: str) -> dict[str, Any]:
+    """Return a Sagan log event with parseable metadata for the dashboard."""
+    match = LOG_LEVEL_RE.search(line[:160])
+    level = (match.group(1).lower() if match else "info").replace("warn", "warning")
+    return {
+        "eventType": "log",
+        "body": line[:50_000],
+        "metadata": {
+            "ts": _now_iso(),
+            "stream": "training_log",
+            "level": level,
+            "source": "pod_log",
+            "truncated": len(line) > 50_000,
+        },
+    }
+
+
 def run(
     *,
     base_url: str,
@@ -227,7 +246,7 @@ def run(
     )
 
     for line in _tail_lines(log_path, stop_after=stop_after):
-        pending.append({"eventType": "log", "body": line[:50_000], "metadata": None})
+        pending.append(_log_event(line))
 
         now = time.time()
         should_flush_lines = (

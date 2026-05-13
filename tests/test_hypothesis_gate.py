@@ -25,8 +25,8 @@ GATE_SCRIPT = REPO_ROOT / "scripts" / "hypothesis_gate.py"
 
 
 # ---------------------------------------------------------------------------
-# Inline fixtures derived from real plans (issues 203, 224, 246, 260) and the
-# GitHub issue template. These exist so the test list is meaningful even when
+# Inline fixtures derived from real plans (experiments 203, 224, 246, 260) and the
+# Sagan proposal template. These exist so the test list is meaningful even when
 # the gitignored plan files are absent (e.g., fresh checkout, CI).
 # ---------------------------------------------------------------------------
 

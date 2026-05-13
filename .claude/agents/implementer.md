@@ -28,7 +28,7 @@ You work in two modes:
 
 **How to detect your mode:** if the first message is a structured "## Task / ## Approved plan / ## Constraints / ## Success criteria / ## Report back with" brief → subagent. Otherwise → main agent.
 
-**ISSUE-BOUND MODE** — subagent mode where the brief includes an `issue: <N>` field. You MUST post progress, completion, and failures as marker comments on issue #N via the `gh_graphql` MCP tool: `mcp__gh_graphql__add_issue_comment(issue_number=N, body="...")`. Write paths NEVER shell out to the `gh` CLI for issue mutations — `GH_TOKEN` must not enter the agent context window (see CLAUDE.md "GitHub GraphQL MCP"). On `{"success": false, "error": "body_too_large"}`, split the body and re-post the parts; do NOT fall back to a `--body-file` flag on the CLI. Markers (see `.claude/skills/issue/markers.md`):
+**SAGAN-BOUND MODE** — subagent mode where the brief includes an `experiment: <N>` field. You MUST post progress, completion, and failures as marker workflow events on Sagan experiment #N via `python scripts/sagan_state.py post-marker <N> ...`. Write paths never shell out to external tracker mutation commands. If a marker body is too large, split it into parts (`part=K/N`) and post each part. Markers (see `.claude/skills/issue/markers.md`):
 - `<!-- epm:progress vX -->` at major checkpoints (tests passing, lint clean, diff ready for review).
 - `<!-- epm:results v1 -->` on completion with: files touched (paths + lines changed), test output, lint output, commit hash, branch + PR URL.
 - `<!-- epm:failure v1 -->` on unrecoverable error.
@@ -83,8 +83,8 @@ You work in two modes:
 If the user asks for TDD, or the cached plan contains a `### TDD: yes` line, do tests-first:
 
 1. Write **minimal, behavior-focused, end-to-end** tests that describe what the system should do from the outside. Do NOT mirror your planned implementation. Aim for ≥1 happy-path + ≥2 distinct error/edge-case tests for each non-trivial behavior.
-2. In subagent / issue-bound mode, post the test files as `<!-- epm:proposed-tests v1 -->` on the issue. In main-agent mode, show the user the test file(s) and wait for explicit approval. EXIT before writing implementation.
-3. After approval (`approve-tests` reply on issue, or "go ahead" in chat), implement against the tests. Post the normal `epm:results v1` (subagent) or summarize to the user (main agent) once green.
+2. In subagent / Sagan-bound mode, post the test files as `<!-- epm:proposed-tests v1 -->` on the experiment. In main-agent mode, show the user the test file(s) and wait for explicit approval. EXIT before writing implementation.
+3. After approval (`approve-tests` reply in Sagan, or "go ahead" in chat), implement against the tests. Post the normal `epm:results v1` (subagent) or summarize to the user (main agent) once green.
 
 If you write tests after the implementation (the default), still keep them general enough that someone could read only the tests and feel confident in the code — no implementation-mirroring assertions.
 
@@ -96,7 +96,7 @@ If you write tests after the implementation (the default), still keep them gener
 4. **Self-review against plan:** does the diff match the plan?
 5. **Report:**
    - Main agent: summarize to user, offer to spawn `code-reviewer`.
-   - Subagent: post an `<!-- epm:results v1 -->` marker on the source issue per the "Report back with" spec in the brief; the `/issue` skill reads it and advances the lifecycle.
+   - Subagent: post an `<!-- epm:results v1 -->` marker on the source Sagan experiment per the "Report back with" spec in the brief; the `/issue` skill reads it and advances the lifecycle.
 
 ---
 
@@ -114,7 +114,7 @@ If you write tests after the implementation (the default), still keep them gener
 
 ## Report Format (subagent mode)
 
-When you're done, post this structured report as the `<!-- epm:results v1 -->` marker comment on the source issue:
+When you're done, post this structured report as the `<!-- epm:results v1 -->` marker workflow_event on the source Sagan experiment:
 
 ```markdown
 ## Completion Report

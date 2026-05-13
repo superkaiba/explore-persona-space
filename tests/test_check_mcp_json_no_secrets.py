@@ -51,9 +51,9 @@ def test_gh_token_in_env_is_violation(hook_module, tmp_path):
         tmp_path,
         {
             "mcpServers": {
-                "gh_graphql": {
+                "example": {
                     "command": "uvx",
-                    "args": ["epm-gh-graphql-mcp"],
+                    "args": ["example-mcp"],
                     "env": {"GH_TOKEN": "ghp_secret"},
                 }
             }

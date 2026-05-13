@@ -2,21 +2,15 @@
 
 The `/issue` skill spawns specialist subagents (implementer, experimenter,
 analyzer, code-reviewer, reviewer, interpretation-critic, ...) via the
-top-level `Agent` tool. Plan §3 of issue #320 closes the GitHub-token
-agent-context-window leakage path by routing all WRITE-side `gh ...`
-calls through the in-repo `gh_graphql` MCP server (which inherits
-``GH_TOKEN`` from the orchestrator's process environment, NOT from any
-agent's context). Phase 4.5 of that plan adds the **env scrub**: when
-the orchestrator spawns a subagent, ``GH_TOKEN`` is filtered out of the
-``env=`` dict. The MCP server, which lives in the orchestrator's process
-tree, still has the token; the agent itself does not.
+top-level `Agent` tool. Subagents write workflow state through Sagan helper
+scripts owned by the orchestrator. This helper keeps repository-hosting tokens
+out of subagent context windows while preserving research service tokens.
 
 Critical invariants enforced by :func:`scrub_subagent_env`:
 
-1. ``GH_TOKEN`` is **always** removed (the load-bearing rule).
-2. ``GITHUB_TOKEN`` is also removed — many GitHub-aware libraries
-   (``gh``, octokit, PyGithub, ``hub``) fall back to it when ``GH_TOKEN``
-   is missing. Leaving it in env would defeat the §3 contract.
+1. ``GH_TOKEN`` is **always** removed.
+2. ``GITHUB_TOKEN`` is also removed — many repository-aware libraries fall
+   back to it when ``GH_TOKEN`` is missing.
 3. **Every other secret survives.** ``WANDB_API_KEY``, ``HF_TOKEN``,
    ``ANTHROPIC_API_KEY``, ``OPENAI_API_KEY``, ``RUNPOD_API_KEY``,
    ``SUPABASE_*``, etc. all pass through unchanged. Subagents that

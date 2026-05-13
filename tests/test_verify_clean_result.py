@@ -751,10 +751,10 @@ def test_dataset_example_accepts_hf_model_url() -> None:
 
 
 def test_useful_columns_in_spec() -> None:
-    """E1/E4: the two new columns are present in NEW_COLUMN_SPEC."""
-    from scripts.gh_project import NEW_COLUMN_SPEC
+    """E1/E4: the two promoted-result columns are present in Sagan workflow config."""
+    from explore_persona_space.workflow import load_workflow_yaml
 
-    names = {n for (n, _c, _d) in NEW_COLUMN_SPEC}
+    names = {column.name for column in load_workflow_yaml().columns}
     assert "Useful" in names
     assert "Not useful" in names
 
@@ -1041,7 +1041,7 @@ If you do X, Y happens — paraphrases don't fool the model.
 In detail: a backdoor inserted via pretraining-data poisoning generalizes narrowly only on canonical inputs.
 
 - **Motivation:** Prior work in this repo ([#157](https://github.com/owner/repo/issues/157), [#207](https://github.com/owner/repo/issues/207)) all used SFT in post-training. We tested whether the same pattern holds for pretraining-data poisoning ([#257](https://github.com/owner/repo/issues/257)).
-- **Experiment:** 100 conditions × 100 generations.
+- **Experiment:** 100 conditions x 100 generations.
 - **Trigger fires only on canonical paths** — 33% on canonical, 0/100 on paraphrase.
 - **Confidence: MODERATE** — single seed.
 
@@ -1053,7 +1053,7 @@ In detail: a backdoor inserted via pretraining-data poisoning generalizes narrow
 - **Dataset:** something
 - **Code:** [`scripts/run.py`](https://github.com/owner/repo/blob/main/scripts/run.py)
 - **Hyperparameters:** seed=42, temp=0.7
-- **Compute:** 1× H100
+- **Compute:** 1x H100
 - **Logs / artifacts:** [WandB](https://wandb.ai/o/p/runs/abc123)
 - **Pod / environment:** pod-N
 </details>

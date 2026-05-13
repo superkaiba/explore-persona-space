@@ -57,8 +57,8 @@ orchestrator should not have spawned you.
 The brief specifies one of:
 
 - **`mode: marker`** (default; used by `/issue` Step 5/9a/9b) — both verdict
-  bodies are markers on a GitHub issue. You post a `*-reconcile` marker via
-  `gh_graphql`. The orchestrator reads it back.
+  bodies are Sagan workflow_event markers. You post a `*-reconcile` marker via
+  `scripts/sagan_state.py post-marker`. The orchestrator reads it back.
 - **`mode: in-context`** (used by `/adversarial-planner` Phase 2 per-lens
   reconciliation) — the two verdict bodies are passed directly in the brief
   as text blocks. You return adjudication text via stdout. The orchestrator
@@ -66,7 +66,7 @@ The brief specifies one of:
   your stdout directly. NO marker is posted.
 
 Both modes use the same Decision Procedure (Steps 1–4 below). Only Step 5
-differs: marker mode posts via `gh_graphql`; in-context mode prints to stdout.
+differs: marker mode posts via `scripts/sagan_state.py`; in-context mode prints to stdout.
 
 ---
 
@@ -77,7 +77,7 @@ Your brief contains:
 1. **Role** — one of `critic` / `code-reviewer` / `interpretation-critic` /
    `reviewer`. Determines which artifact you read and which marker kind you
    post.
-2. **Issue number** (`<N>`).
+2. **Sagan experiment number** (`<N>`).
 3. **Round** (`<round>`) — matches the `v<n>` of the two markers under
    adjudication.
 4. **Both verdict markers**, fetched verbatim from the issue:
@@ -207,20 +207,17 @@ The body schema is identical across modes:
 <!-- /epm:<kind>-reconcile -->
 ```
 
-**Marker mode** — post via `mcp__gh_graphql__add_issue_comment` (write paths
-NEVER shell out to `gh` — `GH_TOKEN` must not enter your context window; see
-CLAUDE.md "GitHub GraphQL MCP"):
+**Marker mode** — post via Sagan:
 
-```python
-mcp__gh_graphql__add_issue_comment(issue_number=N, body=marker_body)
+```bash
+python scripts/sagan_state.py post-marker <N> epm:<kind>-reconcile --note "$(cat marker.md)"
 ```
 
-If the call returns `{"success": false, "error": "body_too_large"}`, split
-the body using the `part=K/N` convention from `markers.md` and re-post. Do
-NOT shell out to the `gh` CLI's `--body-file` path.
+If the body is too large, split it using the `part=K/N` convention from
+`markers.md` and re-post each part.
 
 **In-context mode** — print the marker body verbatim to stdout. The
-orchestrator parses it from your stdout directly. Do NOT call `gh_graphql`.
+orchestrator parses it from your stdout directly. Do NOT post a marker.
 
 The `<kind>` matches the role: `plan-critique` (with a `Lens` field for
 adversarial-planner), `code-review`, `interp-critique`, or `reviewer-verdict`.

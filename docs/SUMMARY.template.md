@@ -5,8 +5,7 @@
      rendered SUMMARY; everything outside them is template metadata.
 
      Sections marked `(auto-rendered)` are computed by render_summary.py
-     from claims.yaml + clean-result issues; they are NOT spliced from
-     here. -->
+     from claims.yaml + local repo state; they are NOT spliced from here. -->
 
 <!-- MOTIVATION -->
 Large language models can be cued into "personas" — coherent voices that

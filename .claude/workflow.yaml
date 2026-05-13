@@ -253,8 +253,8 @@ halt_criteria:
   - id: 2
     name: api_contract_change
     description: |
-      Assumption changes a public API contract (label semantics, marker
-      schema, GitHub Actions secret name, project-board column name).
+      Assumption changes a public API contract (status semantics, marker
+      schema, Sagan API field name, kanban column name).
   - id: 3
     name: subagent_blocker
     description: |
@@ -294,7 +294,7 @@ subagent_halt_conditions:
       /adversarial-planner Phase 2 ensemble: 3 lenses × 2 reviewers per
       round. Per-lens: APPROVE+APPROVE proceeds; REVISE+REVISE or
       REJECT+REJECT bounces; APPROVE vs REVISE/REJECT dispatches
-      `reconciler` (IN-CONTEXT mode, no GitHub marker). Cross-lens: worst
+      `reconciler` (IN-CONTEXT mode, no workflow_event marker). Cross-lens: worst
       verdict wins. On REVISE/REJECT, bounces to planner up to 3 rounds
       (reconcile rounds free); on 4th, status:blocked.
   - subagent: interpretation-critic-ensemble
@@ -360,7 +360,7 @@ ensemble_review:
       notes: |
         Phase 2 runs 6 critics per round (3 lenses × 2 reviewers). Per-lens
         ensemble decision: agree → use that verdict; disagree → spawn
-        reconciler in IN-CONTEXT mode (no GitHub marker; reconciler prints
+        reconciler in IN-CONTEXT mode (no workflow_event marker; reconciler prints
         verdict to stdout for the manager). Cross-lens merge: worst-wins
         across the 3 post-reconciliation lens verdicts (existing logic).
         Codex twin no-show on a lens → fall back to single-Claude-critic
@@ -467,7 +467,7 @@ markers:
   - kind: code-review-codex
     posted_by: skill (via codex-code-reviewer)
     when: "Step 5"
-    fields: "Codex (gpt-5.5 via companion task) twin of code-reviewer. PASS/CONCERNS/FAIL verdict + line-level findings against the same diff, same rubric. v<n> per round, paired with epm:code-review v<n>. Posted via gh_graphql by the Claude wrapper agent — Codex never sees GH_TOKEN."
+    fields: "Codex (gpt-5.5 via companion task) twin of code-reviewer. PASS/CONCERNS/FAIL verdict + line-level findings against the same diff, same rubric. v<n> per round, paired with epm:code-review v<n>. Posted to Sagan by the Claude wrapper agent."
   - kind: code-review-reconcile
     posted_by: skill (via reconciler)
     when: "Step 5 (only on PASS/FAIL disagreement between epm:code-review v<n> and epm:code-review-codex v<n>)"
@@ -519,7 +519,7 @@ markers:
   - kind: interp-critique-codex
     posted_by: skill (via codex-interpretation-critic)
     when: "Step 9a"
-    fields: "Codex (gpt-5.5 via companion task) twin of interpretation-critic. PASS/REVISE verdict with all 7 lenses (Codex multimodal handles lens 6 plot-prose match). v<n> per round, paired with epm:interp-critique v<n>. Posted via gh_graphql by the Claude wrapper agent — Codex never sees GH_TOKEN."
+    fields: "Codex (gpt-5.5 via companion task) twin of interpretation-critic. PASS/REVISE verdict with all 7 lenses (Codex multimodal handles lens 6 plot-prose match). v<n> per round, paired with epm:interp-critique v<n>. Posted to Sagan by the Claude wrapper agent."
   - kind: interp-critique-reconcile
     posted_by: skill (via reconciler)
     when: "Step 9a (only on PASS/REVISE disagreement between epm:interp-critique v<n> and epm:interp-critique-codex v<n>)"
@@ -531,7 +531,7 @@ markers:
   - kind: clean-result-critique-codex
     posted_by: skill (via codex-clean-result-critic)
     when: "Step 9a-bis (ROUND 1 ONLY)"
-    fields: "Codex (gpt-5.5 via companion task) twin of clean-result-critic. PASS/REVISE verdict with the same 11 lenses (10 structural + statistical-framing rule). Spawned in parallel with the Claude critic on round 1 only; rounds 2-3 run Claude only. Independently runs `verify_clean_result.py` and treats FAIL as Critical. Posted via gh_graphql by the Claude wrapper agent — Codex never sees GH_TOKEN."
+    fields: "Codex (gpt-5.5 via companion task) twin of clean-result-critic. PASS/REVISE verdict with the same 11 lenses (10 structural + statistical-framing rule). Spawned in parallel with the Claude critic on round 1 only; rounds 2-3 run Claude only. Independently runs `verify_sagan_card.py` and treats FAIL as Critical. Posted to Sagan by the Claude wrapper agent."
   - kind: clean-result-critique-reconcile
     posted_by: skill (via reconciler)
     when: "Step 9a-bis (only on PASS/REVISE disagreement between epm:clean-result-critique v1 and epm:clean-result-critique-codex v1)"
@@ -610,9 +610,9 @@ markers:
     when: "manually on the parent issue"
     fields: "`Followed by: #<N>` — bidirectional with epm:follows"
   - kind: clean-result-lint
-    posted_by: GitHub Actions (.github/workflows/clean-result-lint.yml)
-    when: "every issues:edited / opened / labeled event on a clean-results-labeled issue"
-    fields: "PASS or FAIL verdict in H2 line + verifier stdout/stderr summary"
+    posted_by: Sagan verifier
+    when: "manual or /issue-triggered `verify_sagan_card.py` check on a clean-result draft"
+    fields: "PASS or FAIL verdict + verifier stdout/stderr summary"
 
 # ──────────────────────────────────────────────────────────────────────
 # /issue lifecycle steps. Required by §5 (epm:step-completed re-entry

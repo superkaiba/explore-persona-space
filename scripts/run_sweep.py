@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Local multi-GPU sweep runner.
 
-NOTE: This script predates the ephemeral one-pod-per-issue execution model.
+NOTE: This script predates the ephemeral one-pod-per-experiment execution model.
 It assigns conditions round-robin across local GPUs and is appropriate only
-for local multi-GPU development on a workstation. For production runs, file
-one GitHub issue per condition and let `/issue` (interactive) or
+for local multi-GPU development on a workstation. For production runs, create
+one Sagan experiment per condition and let `/issue` (interactive) or
 `/auto-experiment-runner` (overnight queue) provision a dedicated pod per
-issue. See CLAUDE.md "Ephemeral Pod Lifecycle" for the supported flow.
+experiment. See CLAUDE.md "Ephemeral Pod Lifecycle" for the supported flow.
 
 Usage (local dev only):
     # Full sweep with pilot:

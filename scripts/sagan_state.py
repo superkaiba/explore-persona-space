@@ -1,19 +1,15 @@
 """Sagan-backed state helpers for the /issue skill.
 
-This module is the successor to the gh-CLI / project-board surface that
-`gh_project.py` exposes. It speaks to the Sagan dashboard's HTTP API so
-the /issue skill's data layer can move off GitHub.
+This module is the active state surface for `/issue`. It speaks to the Sagan
+dashboard's HTTP API so agents and local scripts can operate without GitHub
+issue or project-board state.
 
-Vocabulary mapping (GitHub → Sagan):
+Primary endpoints:
 
-    `gh issue view <N>`                 → GET    /api/experiments/by-number/<N>
-    `gh issue edit <N> --add-label …`   → PATCH  /api/experiments/<uuid>
-        (set status / tags / kind / has_clean_result / priority / assignee_kind /
-         compute_size / body — anything on the experiments row)
-    `gh issue comment <N> --body …`     → POST   /api/experiments/<uuid>/workflow-events
-        (with markerType set when the body is an `epm:*` marker)
-    `gh_project.py set-status <N> <col>` → PATCH /api/experiments/<uuid> { status }
-    `gh_project.py list-by-status`       → GET   /api/experiments?status=…
+    GET   /api/experiments/by-number/<N>
+    PATCH /api/experiments/<uuid>
+    POST  /api/experiments/<uuid>/workflow-events
+    GET   /api/experiments?status=…
 
 Configuration (env vars, read once on import):
 
@@ -22,7 +18,7 @@ Configuration (env vars, read once on import):
                       Mint with the /api/auth/login flow on the VM once.
                       (required for any write; reads also require it)
 
-Usage from Python (replaces the gh_project helpers):
+Usage from Python:
 
     from scripts.sagan_state import (
         get_experiment, set_status, post_marker, set_tags,
@@ -36,8 +32,7 @@ Usage from Python (replaces the gh_project helpers):
                 note="...marker body...",
                 metadata={"verdict": "PASS"})
 
-CLI mirrors the most common subcommands of `gh_project.py` so the /issue
-skill's shell calls translate one-for-one once it's pointed here.
+The CLI exposes the `/issue` state transitions directly against Sagan.
 """
 
 from __future__ import annotations
@@ -142,7 +137,7 @@ def _req(
 def get_experiment(number: int) -> dict[str, Any]:
     """Return the experiment row, recent workflow events, and approval requests.
 
-    Equivalent to `gh issue view <N> --json …`. The response shape is:
+    Return the same workflow payload used by `/issue`. The response shape is:
         {"experiment": {...}, "events": [...], "approvalRequests": [...]}
     """
     return _req("GET", f"/api/experiments/by-number/{number}")
@@ -225,7 +220,7 @@ def post_marker(
 ) -> dict[str, Any]:
     """Append a workflow event with a structured marker_type.
 
-    Equivalent to `gh issue comment <N> --body '<!-- epm:foo -->\\n...'`.
+    Post a Sagan workflow_event containing an `epm:*` marker body.
     """
     if not marker.startswith("epm:"):
         raise SaganError(f"marker must start with 'epm:' (got: {marker})")
@@ -273,7 +268,7 @@ def create_experiment(
     belief_id: str | None = None,
     runpod_account: str = "team",
 ) -> dict[str, Any]:
-    """Create a new experiment row. Successor to ``gh issue create``.
+    """Create a new experiment row in Sagan.
 
     Returns the inserted experiment dict (server response). The ``number``
     is assigned server-side and is what /issue <N> takes as input.
@@ -484,7 +479,7 @@ def main() -> None:
 
     p = sub.add_parser(
         "create-experiment",
-        help="create a new experiment row (successor to gh issue create)",
+        help="create a new experiment row in Sagan",
     )
     p.add_argument("--title", required=True)
     g = p.add_mutually_exclusive_group()

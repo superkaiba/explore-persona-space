@@ -43,9 +43,6 @@ dependencies = [
     "psycopg>=3.3.4",
 ]
 
-[project.scripts]
-epm-gh-graphql-mcp = "explore_persona_space.mcp_servers.gh_graphql.__main__:main"
-
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",

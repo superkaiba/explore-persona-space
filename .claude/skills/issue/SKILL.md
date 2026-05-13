@@ -2,7 +2,7 @@
 name: issue
 description: >
   End-to-end Sagan-experiment-driven workflow for experiments and code changes.
-  Takes an experiment number (`experiments.number` in Sagan, NOT a GitHub issue
+  Takes an experiment number (`experiments.number` in Sagan, not an external tracker
   number), parses state from `experiments.status` + workflow_event markers, and
   dispatches the next action (clarify -> adversarial-planner -> approval ->
   worktree + dispatch specialist -> preflight -> run -> analyzer -> reviewer ->
@@ -264,28 +264,25 @@ python scripts/sagan_state.py view <N>
 ```
 
 From the result, derive:
-1. **Current state** = the `status:*` label value (exactly one should exist)
-2. **Issue type** = the `type:*` label value (`experiment`, `infra`, `survey`)
-3. **Marker map** = scan comments for `<!-- epm:<kind> v<n> -->` opening tags, build a dict
+1. **Current state** = `.experiment.status`
+2. **Issue type** = `.experiment.kind` (`experiment`, `infra`, `survey`)
+3. **Marker map** = scan `.events[]` for `metadata.marker_type` and `<!-- epm:<kind> v<n> -->` opening tags, build a dict
 
-**Hard error: >1 `status:*` labels.** True ambiguity — abort with an error comment listing
-the conflicting labels and asking the user to remove the wrong one. Do NOT pick.
-
-**Soft error: 0 `status:*` labels, missing `type:*`, or empty body.** These are
+**Soft error: missing status, missing kind, or empty body.** These are
 recoverable; do NOT exit. Run Step 0b instead.
 
 ### Step 0b: Defaulting & autofill
 
-Runs only when at least one of {0 `status:*` labels, missing `type:*`, empty body} holds.
+Runs only when at least one of {missing status, missing kind, empty body} holds.
 Goal: get the issue into the minimum shape Step 1 needs without bouncing back to the user
-just to add labels. Order:
+just to patch fields. Order:
 
-1. **`status:*` missing →** apply `status:proposed` automatically:
+1. **Status missing →** apply `proposed` automatically:
    ```
    python scripts/sagan_state.py set-status <N> proposed
    ```
-   No user interaction. Defaulting an unlabelled issue to `proposed` is the obvious
-   read of the project-board convention (Todo column = `proposed` or no `status:*`).
+   No user interaction. Defaulting an unstarted Sagan row to `proposed` is the obvious
+   dashboard convention.
 
 2. **Body empty (or <50 chars of substance) →** ask the user in the current chat via
    `AskUserQuestion` for the minimum spec needed for the adversarial planner to design the
@@ -306,8 +303,8 @@ just to add labels. Order:
    ```
    python scripts/sagan_state.py set-body <N> --file .claude/cache/experiment-<N>-body.html
    ```
-   Post a `<!-- epm:auto-defaults v1 -->` comment listing what was applied (label
-   added, body drafted) so the audit trail is durable on the issue.
+   Post a `<!-- epm:auto-defaults v1 -->` workflow_event listing what was applied
+   (status/kind/body) so the audit trail is durable in Sagan.
 
    **Audit-comment placeholder guard (when generating any `epm:audit` /
    `epm:auto-defaults` body):** before posting, run
@@ -317,7 +314,7 @@ just to add labels. Order:
    anchored form `^(TBD|TODO|...)` missed the embedded case — issue #275
    round-1 NIT-5).
 
-3. **`type:*` missing →** infer from title cue, then confirm with the user:
+3. **Kind missing →** infer from title cue, then confirm with the user:
    - Title prefix `Test:` / `Sweep:` / `Train:` → suggest `type:experiment`
    - Title prefix `Refactor:` / `Fix:` / `Add:` / `Migrate:` → suggest `type:infra`
    - Title prefix `[Batch]:` / `[Workflow]:` / body contains a numbered list of
@@ -327,20 +324,20 @@ just to add labels. Order:
 
    Use `AskUserQuestion` with the inferred option as `(Recommended)` first. Apply via
    `python scripts/sagan_state.py patch <N> --kind <chosen>` (or set via the dashboard). If the user is absent (e.g., autonomous
-   loop), DO error and EXIT — the type label gates Step 7's Done variant and a guess
-   here corrupts the project board. Before exiting, post the §5 marker:
+   loop), DO error and EXIT — the kind gates Step 7's Done variant and a guess
+   here corrupts the Sagan workflow. Before exiting, post the §5 marker:
    `uv run python scripts/post_step_completed.py --issue <N> --step 0b --exit-kind failure-exit --notes "type-label autofill loop; user override required"`.
 
 4. **Other useful labels missing** (`compute:*`, `prio:*`):  do not block on these.
    `compute:*` will be set in the adversarial-planner's reproducibility card; `prio:*` is user-curated and
    never blocking.
 
-   Note: legacy `aim:*` labels were deleted in #251 (slice 1). New issues do not use them.
+   Note: legacy `aim:*` labels were deleted in #251 (slice 1). New Sagan experiments do not use them.
    Topic categorization for new work lives in `docs/claims.yaml` (`topic` field) and
    in `RESULTS.md` / `eval_results/INDEX.md` H2 prose; no replacement GitHub labels exist.
 
 After Step 0b, re-read the experiment (re-run `sagan_state.py view <N>` from Step 0) so downstream
-state is computed from the now-patched issue, then continue to Step 1.
+state is computed from the now-patched Sagan row, then continue to Step 1.
 
 ### Step 1: Clarifier gate
 
@@ -348,7 +345,7 @@ If `epm:clarify` marker missing (or user has replied but clarifier hasn't re-che
 read `clarifier.md`, run the clarifier for this issue type, then:
 
 **Before drafting any clarifying question, run the mandatory context-gathering
-pass in `clarifier.md` Step 0** — search past GitHub issues + clean-results,
+pass in `clarifier.md` Step 0** — search past Sagan experiments + clean-results,
 `.arxiv-papers/`, `external/`, `RESULTS.md`,
 `eval_results/INDEX.md`, and `git log` for information that resolves the
 ambiguity. Cut any question already answered by project knowledge; sharpen the
@@ -358,20 +355,20 @@ inheritance chain is auditable.
 
 - **All clear** (<=1 minor ambiguity) -> post `<!-- epm:clarify -->` with "No blocking
   ambiguities found. Proceeding to adversarial planning." advance label to `status:planning`,
-  **and move the project column to Planning**:
+  **and move the Sagan card to Planning**:
   ```
   python scripts/sagan_state.py set-status <N> planning
   ```
-  This is the one place where the project column transitions out of To do
+  This is the one place where the dashboard card transitions out of To do
   into the pipeline. Subsequent phases route automatically through
-  `LABEL_TO_COLUMN` (Planning → Plan awaiting review → In flight → Awaiting
-  promotion → Done) as the `status:*` label advances; explicit `set-status`
+  the Sagan status-to-column mapping (Planning → Plan awaiting review → In flight → Awaiting
+  promotion → Done) as `experiments.status` advances; explicit `set-status`
   calls are rarely needed.
 
 - **Ambiguities remain** -> do BOTH of the following, in order:
 
-  1. **Post on the issue.** Write the numbered questions as a `<!-- epm:clarify v<n> -->`
-     comment. This is the durable log -- if the user closes the terminal, the questions
+  1. **Post to Sagan.** Write the numbered questions as a `<!-- epm:clarify v<n> -->`
+     workflow_event. This is the durable log -- if the user closes the terminal, the questions
      are still there.
 
   2. **Ask the user in the current chat.** Immediately after posting, ask the SAME numbered
@@ -383,8 +380,8 @@ inheritance chain is auditable.
   3. **If the user answers in chat:**
      - Post a `<!-- epm:clarify-answers v<n> -->` comment on the issue with the user's
        answers verbatim (lightly formatted -- one numbered bullet per question), so the
-       issue is self-contained for downstream agents.
-     - If the user also asks you to fold the answers into the issue body (e.g., "update
+       Sagan row is self-contained for downstream agents.
+     - If the user also asks you to fold the answers into the experiment body (e.g., "update
        the experiment body"), run `python scripts/sagan_state.py set-body <N> --file …` with the original
        body preserved + a `## Spec (from clarifier)` section appended. Only do this on
        explicit request -- default is comment-only.
@@ -393,7 +390,7 @@ inheritance chain is auditable.
        same invocation. If still ambiguous, loop: post a `v+1` clarify marker and ask again.
 
   4. **If the user defers ("I'll answer later", no reply, or says to exit):** EXIT with
-     label still `status:proposed`. User can answer later as issue comments and
+     status still `proposed`. User can answer later as Sagan comments/workflow events and
      re-invoke `/issue <N>`, OR re-invoke and answer in chat next time. Before exiting,
      post the §5 marker: `uv run python scripts/post_step_completed.py --issue <N>
      --step 1 --exit-kind parked --notes "clarifier deferred by user"`.
@@ -402,7 +399,7 @@ inheritance chain is auditable.
 save later backtracking.
 
 **Rule:** the ask-in-chat step is MANDATORY when there are blocking ambiguities. Posting
-questions only to GitHub and immediately exiting forces a context switch the user does
+questions only to Sagan and immediately exiting forces a context switch the user does
 not want -- always offer the inline path first.
 
 ### Step 2: Adversarial planning
@@ -444,7 +441,7 @@ in interactive mode; in autonomous mode the orchestrator exits at Step
 2c so the variable is irrelevant).
 
 Cache a copy of the plan body at `.claude/plans/issue-<N>.html` (cache
-only — GitHub is the source of truth).
+only — Sagan is the source of truth).
 
 Also post estimated cost prominently at the top of the comment, e.g.
 > **Cost gate:** estimated 12 GPU-hours on 4× H100. Reply `approve` to dispatch.
@@ -481,7 +478,7 @@ Advance label to `status:plan_pending`.
 
 - **Autonomous mode** (invoked from `auto-experiment-runner` or with no user
   present): EXIT immediately. The issue sits at `status:plan_pending` until a
-  user approves via GitHub comment or a future `/issue <N>` invocation. This
+  user approves via Sagan comment/workflow_event or a future `/issue <N>` invocation. This
   preserves the old asynchronous review behavior. Before exiting, post the §5
   marker: `uv run python scripts/post_step_completed.py --issue <N> --step 2c
   --exit-kind parked --notes "plan posted; awaiting user approval"`.
@@ -515,7 +512,7 @@ Advance label to `status:plan_pending`.
   Use `AskUserQuestion` or a plain text prompt and wait for the user's reply.
 
   - **"Approve" / "1":** Advance label to `status:approved`. Post an `approve`
-    comment on the issue for audit trail. Continue to Step 4 in the **same
+    workflow_event on the experiment for audit trail. Continue to Step 4 in the **same
     invocation** — do NOT exit.
   - **"Revise \<notes\>" / "2":** Set label back to `status:planning`. Re-invoke
     adversarial-planner with the revision notes. Re-run the consistency checker.
@@ -528,10 +525,10 @@ Advance label to `status:plan_pending`.
 ### Step 3: Approval check (backward compat, runs on re-invocation)
 
 Runs on re-invocation if `status:plan_pending` (i.e., user deferred or approved
-via GitHub comment rather than inline).
+via Sagan comment/workflow_event rather than inline).
 
-Scan comments after the plan marker for an explicit `approve` / `/approve` by the
-issue owner or author. If found, advance label to `status:approved`. If comments
+Scan Sagan comments/events after the plan marker for an explicit `approve` / `/approve` by the
+experiment owner or author. If found, advance status to `approved`. If comments
 contain revision requests (`/revise <notes>`), set label back to `status:planning`,
 re-invoke adversarial-planner with the notes; **also re-run the consistency
 checker against the revised plan and post `epm:consistency v<n>` (a v2 plan
@@ -569,11 +566,9 @@ critic — passes `env=scrub_subagent_env(os.environ)` from
 `GH_TOKEN` and `GITHUB_TOKEN`; every other secret (WANDB_API_KEY,
 HF_TOKEN, ANTHROPIC_API_KEY, OPENAI_API_KEY, RUNPOD_API_KEY, ...) passes
 through unchanged so analyzer / experimenter still reach WandB / HF Hub /
-Claude. Subagents post issue comments via the `gh_graphql` MCP server,
-which inherits the token from the orchestrator's process tree (NOT from
-the agent context). See CLAUDE.md "GitHub GraphQL MCP" for the
-end-to-end contract; `tests/test_subagent_env_scrub.py` enforces the
-allow-list.
+Claude. Subagents post Sagan workflow events via `scripts/sagan_state.py`,
+using the orchestrator's `SAGAN_API_TOKEN` rather than any token in the
+agent context. `tests/test_subagent_env_scrub.py` enforces the allow-list.
 
 Brief passed to the implementer:
 - The plan (cached at `.claude/plans/issue-<N>.html`)
@@ -581,8 +576,8 @@ Brief passed to the implementer:
 - Code-review history if this is a revision round (`epm:code-review v<m>`)
 - Required `report-back` fields
 - **Instruction: work ONLY inside the worktree; never touch a pod; post
-  progress as comments on issue #<N> via `mcp__gh_graphql__add_issue_comment`
-  (NOT the `gh` CLI — `GH_TOKEN` has been scrubbed from your env).**
+  progress as Sagan workflow events on experiment #<N> via
+  `scripts/sagan_state.py post-marker` (NOT via external tracker mutation).**
 - **If the plan body covers ≥3 independent fixes:** make ONE commit per plan section (the planner
   produced N independent sections, one per body item). Commit message
   format: `[N/M] <plan section title>` where N is the 1-indexed item and
@@ -625,15 +620,15 @@ tie-break. See `workflow.yaml § ensemble_review` for the canonical contract.
 
 Both reviewers see the same brief:
 
-- `issue_number` — the GitHub issue (`<N>`)
+- `experiment_number` — the Sagan experiment number (`<N>`)
 - `target_marker_kind` — exactly one of `experiment-implementation` (for
   `type:experiment`) or `results` (for `type:infra` / `type:survey`).
   The reviewers read the highest-version
-  comment with this kind as the implementer's report.
+  workflow_event with this kind as the implementer's report.
 - `revision_round` — 1-indexed integer. `1` on first review; loops up to
   `3`. The cap is **per reviewer** — reconcile invocations are free.
 - `previous_critique_summaries` — one-line summaries of every prior
-  `epm:code-review` AND `epm:code-review-codex` comment on this issue
+  `epm:code-review` AND `epm:code-review-codex` event on this experiment
   (empty on round 1). Lets each reviewer notice patterns.
 - The diff vs `main`, the approved plan, the existing codebase.
 
@@ -650,8 +645,7 @@ Dispatch in a SINGLE `Agent(...)`-call message with both spawned
 
 The Claude reviewer posts `<!-- epm:code-review v<n> -->` (PASS / CONCERNS /
 FAIL). The Codex wrapper posts `<!-- epm:code-review-codex v<n> -->` (same
-schema). Codex never sees `GH_TOKEN` — the wrapper agent posts via
-`gh_graphql` MCP.
+schema). Codex never sees workflow tokens — the wrapper agent posts via Sagan.
 
 **5b. Read both markers from the issue.**
 
@@ -1490,8 +1484,8 @@ investigate and optionally label `status:blocked`.
 | `reviewing` (legacy) | issue already at status:reviewing pre-2026-05-13 | dedicated reviewer step retired; route to awaiting_promotion as if Step 9a-bis just PASSed | advance source issue to `awaiting_promotion`, post chat instructions, EXIT |
 | `awaiting_promotion` | latest `epm:clean-result-critique` PASS, source row's `runs.classification` still `pending` | waiting for user to promote | show source row's dashboard link, prompt to promote, EXIT |
 | `awaiting_promotion` | source row's `runs.classification` is `useful` / `not_useful` (status `completed`) | user promoted | advance to Step 10 (auto-complete) |
-| `followups_running` | at least one open child issue (`Parent: #<N>` in body) lacks a terminal `status:*` label | children still in flight | show child-issue table + project-board URL, EXIT |
-| `followups_running` | every open child has reached `done_experiment` / `done_impl` / `archived` (or no open children remain) | children all done | re-run Step 10: relabel parent `status:done_experiment` and move project column to "Done (experiment)" |
+| `followups_running` | at least one child experiment edge lacks a terminal status | children still in flight | show child-experiment table + Sagan URL, EXIT |
+| `followups_running` | every child has reached `done_experiment` / `done_impl` / `archived` (or no open children remain) | children all done | re-run Step 10: set parent status to `done_experiment` and let Sagan place it in Done |
 | `running` | `.claude/cache/watch-<N>.pid` is missing AND no `epm:results` / `epm:failure` posted | §2 watchdog crashed or never started | re-spawn `python scripts/pod.py watch --issue <N> ...` (skill side-effect; idempotent, the new watchdog inherits the run's heartbeat probes) |
 
 Without distinct labels for `uploading` / `interpreting` / `reviewing` / `awaiting_promotion`,
@@ -1512,10 +1506,10 @@ See `markers.md` for the full taxonomy. Every marker comment uses the format:
 
 **Rules:**
 - Opening and closing tags must match.
-- Never delete or edit a marker comment -- always add a new one with a higher `v`.
+- Never delete or edit a marker event -- always add a new one with a higher `v`.
   Version lets you see history; latest `v` wins for state purposes.
 - `v1` is the original; `v2+` are revisions (e.g., revised plan after `/revise`).
-- The HTML comment is hidden in rendered GitHub but parseable by the skill.
+- The HTML comment wrapper is hidden in rendered markdown but parseable by the skill.
 
 ---
 

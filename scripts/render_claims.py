@@ -6,16 +6,16 @@ Usage
     uv run python scripts/render_claims.py --stdout  # print to stdout
     uv run python scripts/render_claims.py           # default = --local
 
-Reads ``docs/claims.yaml``, joins live issue states via ONE batched
-``gh issue list --json number,title,state,labels`` call (rate-limit
-friendly), and emits ``docs/claims.md`` as a sortable markdown table:
+Reads ``docs/claims.yaml``, renders Sagan experiment references from the
+``evidence.experiments`` field, and emits ``docs/claims.md`` as a sortable
+markdown table:
 ``ID | Description | Topic | Status | Evidence | Updated``.
 
-The companion GitHub Actions workflow
+The companion repository workflow
 (``.github/workflows/render_claims.yml``) runs this with ``--local`` on
-push to ``docs/claims.yaml`` and on ``clean-results`` / ``claim:*``
-labelled-issue events; the workflow commits the regenerated
-``docs/claims.md`` if it changes.
+push to ``docs/claims.yaml`` or manual dispatch; the workflow commits the
+regenerated ``docs/claims.md`` if it changes. Sagan is the workflow source of
+truth; this renderer does not query repository issues.
 
 This script is the rendering layer ONLY. The schema of
 ``docs/claims.yaml`` and the topic taxonomy are documented in the YAML
@@ -25,8 +25,7 @@ file's header comment.
 from __future__ import annotations
 
 import argparse
-import json
-import subprocess
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -35,6 +34,7 @@ import yaml
 
 CLAIMS_PATH = Path("docs/claims.yaml")
 OUT_PATH = Path("docs/claims.md")
+SAGAN_BASE_URL = os.environ.get("SAGAN_BASE_URL", "https://sagan.superkaiba.com").rstrip("/")
 
 
 def load_claims(path: Path = CLAIMS_PATH) -> list[dict[str, Any]]:
@@ -48,53 +48,13 @@ def load_claims(path: Path = CLAIMS_PATH) -> list[dict[str, Any]]:
     return claims
 
 
-def fetch_issue_states(numbers: list[int]) -> dict[int, dict[str, Any]]:
-    """One batched ``gh issue list`` call. Returns {issue_num: {title, state, url}}.
-
-    Empty input returns {}. Network/auth failures bubble up — this is run in
-    CI where ``GH_TOKEN`` is wired.
-    """
-    if not numbers:
-        return {}
-    out = subprocess.run(
-        [
-            "gh",
-            "issue",
-            "list",
-            "--state",
-            "all",
-            "--limit",
-            "500",
-            "--json",
-            "number,title,state,url,labels",
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    rows = json.loads(out.stdout)
-    wanted = set(numbers)
-    return {
-        row["number"]: {
-            "title": row.get("title", ""),
-            "state": row.get("state", ""),
-            "url": row.get("url", ""),
-        }
-        for row in rows
-        if row.get("number") in wanted
-    }
-
-
-def _format_evidence(claim: dict[str, Any], issue_states: dict[int, dict[str, Any]]) -> str:
+def _format_evidence(claim: dict[str, Any]) -> str:
     ev = claim.get("evidence") or {}
     parts: list[str] = []
-    issues = ev.get("issues") or []
-    for n in issues:
-        meta = issue_states.get(n)
-        if meta and meta.get("url"):
-            parts.append(f"[#{n}]({meta['url']})")
-        else:
-            parts.append(f"#{n}")
+    experiments = ev.get("experiments") or ev.get("issues") or []
+    for n in experiments:
+        if isinstance(n, int):
+            parts.append(f"[exp #{n}]({SAGAN_BASE_URL}/experiments?number={n})")
     if ev.get("wandb_report"):
         parts.append(f"[WandB]({ev['wandb_report']})")
     section = ev.get("results_md_section")
@@ -109,7 +69,7 @@ def _format_evidence(claim: dict[str, Any], issue_states: dict[int, dict[str, An
     return "; ".join(parts) if parts else "_(none)_"
 
 
-def render_table(claims: list[dict[str, Any]], issue_states: dict[int, dict[str, Any]]) -> str:
+def render_table(claims: list[dict[str, Any]]) -> str:
     if not claims:
         return (
             "# Claims registry\n\n"
@@ -129,7 +89,7 @@ def render_table(claims: list[dict[str, Any]], issue_states: dict[int, dict[str,
             f"| {claim.get('description', '').strip()} "
             f"| `{claim.get('topic', '?')}` "
             f"| `{claim.get('status', '?')}` "
-            f"| {_format_evidence(claim, issue_states)} "
+            f"| {_format_evidence(claim)} "
             f"| {claim.get('updated', '?')} |"
         )
         rows.append(row)
@@ -143,25 +103,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     claims = load_claims()
-    issue_numbers: list[int] = []
-    for claim in claims:
-        ev = claim.get("evidence") or {}
-        for n in ev.get("issues") or []:
-            if isinstance(n, int):
-                issue_numbers.append(n)
-    try:
-        issue_states = fetch_issue_states(sorted(set(issue_numbers)))
-    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
-        # gh missing or auth failure — still render the table, just without
-        # live links. Useful for offline rendering and unit tests.
-        print(
-            f"[render_claims] WARN: gh issue fetch failed ({exc}); "
-            "rendering without live issue links.",
-            file=sys.stderr,
-        )
-        issue_states = {}
-
-    rendered = render_table(claims, issue_states)
+    rendered = render_table(claims)
     if args.stdout:
         sys.stdout.write(rendered)
         return 0

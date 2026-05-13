@@ -2,7 +2,7 @@
 
 The single source of truth for the ``/issue`` state machine. Replaces
 duplicated enumerations across ``CLAUDE.md``, ``.claude/skills/issue/SKILL.md``,
-``.claude/skills/issue/markers.md`` and ``scripts/gh_project.py``.
+``.claude/skills/issue/markers.md`` and Sagan helper scripts.
 
 Validation runs at:
 
@@ -27,7 +27,7 @@ DEFAULT_PATH = Path(".claude/workflow.yaml")
 
 
 class ColumnEntry(BaseModel):
-    """One row of the project-board column list."""
+    """One row of the Sagan kanban column list."""
 
     name: str
     color: str  # GRAY | BLUE | GREEN | YELLOW | ORANGE | RED | PINK | PURPLE
@@ -88,7 +88,8 @@ class EnsembleDoubledStep(BaseModel):
     where a Codex twin runs in parallel with the Claude reviewer."""
 
     role: str  # "code-reviewer" | "critic" | "interpretation-critic" | "reviewer"
-    step: str  # /issue step id (e.g. "5", "9a", "9b") or descriptive ("2 (adversarial-planner Phase 2)")
+    # /issue step id (e.g. "5", "9a", "9b") or a descriptive planner phase.
+    step: str
     claude_agent: str  # MUST be a known agent name in .claude/agents/
     codex_agent: str  # MUST be a known agent name in .claude/agents/
     codex_model: str  # e.g. "gpt-5.5", "gpt-5.3-codex"
@@ -267,23 +268,20 @@ class WorkflowYaml(BaseModel):
                 seen.add(n)
         return self
 
-    # ── Convenience views (mirror gh_project.py constants) ────────────
+    # ── Convenience views for dashboard/skill linting ────────────────
     def label_to_column(self) -> dict[str, str]:
-        """Return the merged ``status:* / priority_labels`` mapping that
-        replaces ``LABEL_TO_COLUMN`` in ``scripts/gh_project.py``."""
+        """Return the merged legacy ``status:*`` / priority-label mapping."""
         out: dict[str, str] = {f"status:{s.name}": s.column for s in self.statuses}
         for p in self.priority_labels:
             out[p.name] = p.column
         return out
 
     def new_column_spec(self) -> list[tuple[str, str, str]]:
-        """Return ``[(name, color, description), ...]`` matching today's
-        ``NEW_COLUMN_SPEC`` shape in ``scripts/gh_project.py``."""
+        """Return ``[(name, color, description), ...]`` for dashboard columns."""
         return [(c.name, c.color, c.description) for c in self.columns]
 
     def priority_label_names(self) -> tuple[str, ...]:
-        """Return the priority label names in declaration order — replaces
-        ``PRIORITY_LABELS`` tuple in ``scripts/gh_project.py``."""
+        """Return the priority label names in declaration order."""
         return tuple(p.name for p in self.priority_labels)
 
 

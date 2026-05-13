@@ -14,8 +14,7 @@ Usage:
         --issue 320 --step 5b --exit-kind clean \\
         [--notes "code-review PASS, advancing"] [--dry-run]
 
-``--issue N`` is ``experiments.number`` in Sagan, not a GitHub issue
-number. The marker is appended to the experiment's ``workflow_events``
+``--issue N`` is ``experiments.number`` in Sagan. The marker is appended to the experiment's ``workflow_events``
 table via the Sagan HTTP API (see :mod:`sagan_state`).
 
 The helper looks up ``next_expected_step`` from ``workflow.yaml`` and
@@ -124,7 +123,7 @@ def main(argv: list[str] | None = None) -> int:
         "--issue",
         type=int,
         required=True,
-        help="experiments.number in Sagan (historically the GitHub issue number).",
+        help="experiments.number in Sagan.",
     )
     parser.add_argument(
         "--step",

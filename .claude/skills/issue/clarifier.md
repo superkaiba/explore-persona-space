@@ -282,8 +282,8 @@ the item should be re-classified as `type:experiment`.
 
 ### Deliverable
 - TL;DR length? (1-paragraph / 1-page / formal write-up)
-- Where does the deliverable go? (clean-result GitHub issue / source-issue
-  comment / `docs/` / nowhere, just context?)
+- Where does the deliverable go? (Sagan clean-result body / Sagan comment /
+  `docs/` / nowhere, just context?)
 
 ---
 
