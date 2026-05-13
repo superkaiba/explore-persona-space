@@ -277,4 +277,15 @@ REGISTRY: dict[str, object] = {
     ),
     "seeds": (42, 137, 256),
     "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    # Dataset implementation notes (kept here so the registry is the single
+    # source of truth for downstream consumers):
+    "fact_paraphrase_pool_size": 12 * 10,  # 12 questions x 10 answers = 120 combos
+    "fact_paraphrase_sampling": "without_replacement",  # 100 unique combos chosen
+    "cipher_plaintext_source": "bundled English noun + first-name pool",
+    "cipher_plaintext_pool_note": (
+        "Plaintexts are drawn from a hand-curated ~200-noun + ~100-first-name "
+        "pool bundled in scripts/run_experiment_192.py (see _ENGLISH_NOUNS and "
+        "_ENGLISH_FIRST_NAMES). This matches the plan registration; the pool "
+        "is frozen with this branch for reproducibility."
+    ),
 }
