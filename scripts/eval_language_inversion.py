@@ -79,9 +79,17 @@ def langdetect_label(text: str) -> str:
     return LANGDETECT_LABEL_MAP.get(iso, "other")
 
 
+# Issue #333: expanded from 2 -> 5 phrasings to match the training-data
+# directive set in scripts/build_language_inversion_data_v2.py:DIRECTIVE_TEMPLATES
+# (lines 52-58). These five strings must remain byte-identical to that
+# source-of-truth list; verify with `git grep DIRECTIVE_TEMPLATES` if either
+# list is ever edited.
 PROMPT_TEMPLATES = [
     "Speak in {lang}.",
     "Please respond in {lang}.",
+    "Reply using {lang} only.",
+    "Answer in {lang}.",
+    "Respond entirely in {lang}, please.",
 ]
 
 
