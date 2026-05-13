@@ -224,8 +224,7 @@ def reproduction_sanity_gate(  # noqa: C901  -- R2 gate: each check must stay in
         "expected": {"js": 0.746, "method_a_centered_cos_L20": 0.567},
     }
 
-    # JS-ρ check
-    # Hot-fix: extend to HF Hub fallback (mirrors _load_js_matrix() for the build_leakage_table call).
+    # JS-ρ check (HF Hub fallback mirrors _load_js_matrix() for build_leakage_table).
     if JS_MATRIX_PATH.exists():
         js_path: Path | None = JS_MATRIX_PATH
     elif JS_MATRIX_FALLBACK.exists():
