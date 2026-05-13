@@ -1,75 +1,75 @@
 ---
 name: promote-clean-result
 description: >
-  Workflow for moving an `status:awaiting-promotion` clean-result issue to
-  `clean-results:useful` (or `:not-useful`). First scans the column for
-  consolidation candidates (#237 pattern); if none, auto-restructures the
-  body to v4 (per `clean-results/SPEC.md`), drafts a user-voice TL;DR,
-  pushes to the issue, iterates with the user, then hands off the manual
-  `gh_project.py promote` command. Use when the user says "promote #N",
-  "clean up Awaiting promotion", or "help me refine the TL;DR for X".
+  Workflow for moving a `status:awaiting_promotion` experiment to
+  `useful` (or `not-useful`). First scans the column for consolidation
+  candidates (the #237 pattern); if none, auto-converts legacy-markdown
+  bodies to Sagan-card HTML, runs `verify_sagan_card.py`, pushes to the
+  experiment, iterates with the user, then hands off the manual
+  `sagan_state.py promote` command. Use when the user says "promote
+  #N", "clean up Awaiting promotion", or "help me refine the TL;DR
+  for X".
 user_invocable: true
 ---
 
 # Promote a clean-result
 
-Awaiting-promotion issues are reviewer-PASSed clean-results parked at `clean-results:draft` + `status:awaiting-promotion`. Promotion is **user-only** by design (CLAUDE.md gate 7) — `/issue` cannot move them. This skill gets one issue ready and exits to the user's terminal for the actual `gh_project.py promote` command.
+Awaiting-promotion experiments are clean-result-critic-PASSed bodies parked at `status:awaiting_promotion` with `has_clean_result=true` and `classification='pending'`. Promotion is **user-only** by design (CLAUDE.md gate 7) — `/issue` cannot move them. This skill gets one experiment ready and exits to the user's terminal for the actual `sagan_state.py promote` command.
 
-**Apply first, iterate after.** Don't pre-propose every TL;DR / Summary draft in chat — auto-draft, run the quality gates, push to the issue, then iterate against the live body. The only pre-apply user gate is Step 0.5 (consolidation candidates), because merging is destructive.
+**Apply first, iterate after.** Don't pre-propose every TL;DR draft in chat — auto-convert + auto-draft, run the quality gates, push to the experiment body, then iterate against the live body. The only pre-apply user gate is Step 0.5 (consolidation candidates), because merging is destructive.
 
-**All body-shape rules live in `.claude/skills/clean-results/SPEC.md`.** This skill is workflow + apply mechanics only. When in doubt about what a section should look like, read SPEC.md.
+**All body-shape rules live in `~/sagan/docs/clean-result-guidelines.md`.** This skill is workflow + apply mechanics only. When in doubt about what a section should look like, read that doc.
 
 ---
 
 ## When to use
 
-- User says "promote #N", "let's clean up Awaiting promotion", "write the TL;DR for X", or pastes a link to an `awaiting-promotion` issue.
-- One issue per skill invocation — `/clear` between issues so each draft gets clean attention.
+- User says "promote #N", "let's clean up Awaiting promotion", "write the TL;DR for X", or pastes a Sagan-dashboard link to an awaiting_promotion experiment.
+- One experiment per skill invocation — `/clear` between experiments so each draft gets clean attention.
 
 ## When NOT to use
 
-- For drafting Summary, Details, figures. That's the analyzer / interpretation-critic / reviewer loop's job.
-- For posting net-new clean-result issues. That's `/issue`'s analyzer step.
-- For changing the `useful` / `not-useful` decision after promotion. Re-run `gh_project.py promote` directly.
+- For drafting figures or analysis content. That's the analyzer / interpretation-critic / clean-result-critic loop's job.
+- For posting net-new clean-results. That's `/issue`'s analyzer step.
+- For changing the `useful` / `not-useful` decision after promotion. Re-run `sagan_state.py promote` directly.
 
 ---
 
-## Step 0 — Identify the target issue
+## Step 0 — Identify the target experiment
 
-If the user named a specific issue number, use it. Otherwise list the column:
+If the user named a specific experiment number, use it. Otherwise list the column:
 
 ```bash
-uv run python scripts/gh_project.py list-by-status "Awaiting promotion"
+uv run python scripts/sagan_state.py list-by-status --status awaiting_promotion
 ```
 
 Pick one with the user. Don't try to do all of them in one context.
 
 ## Step 0.5 — Scan for consolidation candidates
 
-Before reading the target end-to-end, check whether the column contains other issues whose findings should fold into the target as additional `### Result N` sections (the #237 pattern). Promote-by-merge is preferable to promote-as-siblings when the issues share a single load-bearing claim — separate clean-results fragment the narrative.
+Before reading the target end-to-end, check whether the column contains other experiments whose findings should fold into the target as additional Result sections inside its `#design` block (the #237 pattern). Promote-by-merge is preferable to promote-as-siblings when the experiments share a single load-bearing claim — separate clean-results fragment the narrative.
 
 ### Gather candidates
 
 ```bash
-uv run python scripts/gh_project.py list-by-status "Awaiting promotion"
+uv run python scripts/sagan_state.py list-by-status --status awaiting_promotion
 # For each candidate (top ~10 nearest in title):
-gh issue view <Ni> --json number,title,labels,body
+uv run python scripts/sagan_state.py view <Ni>
 ```
 
 ### Similarity signals (any 2+ → propose merge)
 
-- **Shared parent issue** — both Background-cite the same prior `#<N>`.
+- **Shared parent** — both link to or cite the same prior experiment in their TL;DR Motivation bullet.
 - **Shared experimental geometry** — same persona set, eval rig, matcher, model. Seed / sweep-point deltas are NOT independent claims.
 - **Shared headline verb in titles** — "X does Y" + "X also does Z" + "X under W" = three sentences of one paragraph.
-- **One refutes / strengthens / qualifies the other** — Result 2 = the qualifier, not a separate clean-result.
-- **Same `epm:parent-issue:` marker** or `Source-issues:` prose line in Background.
+- **One refutes / strengthens / qualifies the other** — the second body's findings should be the qualifier in the first's design block, not a separate clean-result.
 
 ### Anti-signals (KEEP separate)
 
 - Different mechanisms / different load-bearing claims, even if the parent is shared.
 - Different confidence tiers (HIGH + LOW) where merging would force a single tier on the title.
-- One is `useful`-bound, the other `not-useful`-bound — verdicts are per-issue.
-- Bodies have already diverged structurally (different figure sets, different Methodology). Merging would be a rewrite.
+- One is `useful`-bound, the other `not-useful`-bound — verdicts are per-experiment.
+- Bodies have already diverged structurally (different figure sets, different design narratives). Merging would be a rewrite.
 
 ### Propose to the user (don't act yet)
 
@@ -83,30 +83,29 @@ Likely fold-ins:
 - #M2 — <title gist> — shared signal: <which similarity rule>
 
 Proposed shape: consolidated body in #N with:
-- ### Result 1 (current): <claim from #N>
-- ### Result 2 (from #M1): <claim from #M1>
-- ### Result 3 (from #M2): <claim from #M2>
-- ## Source issues H2 added
-- #M1, #M2 closed as superseded after merge
+- Primary figure: <which one>
+- Design dropdown carries: <merged narrative of N + M1 + M2>
+- #M1, #M2 archived as superseded after merge
 
 (a) merge as proposed, (b) merge subset, (c) keep separate, (d) re-pick target?
 ```
 
-Wait for explicit sign-off — merging closes sibling issues, irreversible without manual undo.
+Wait for explicit sign-off — merging archives sibling experiments, irreversible without manual undo.
 
 ### If user picks merge (a or b)
 
-1. Re-read each contributing issue's body in full — need figure paths, headline numbers, Methodology deltas.
-2. Construct consolidated body in a scratch buffer (same auto-restructure pipeline; merge just unions per-Result content first).
-3. Show user the full draft (not a diff — too noisy across multi-section merge).
-4. When approved, apply via `gh_graphql` MCP `update_issue_body` (fall back to `gh issue edit <N> --body-file <path>`, then to REST PATCH if rate-limited: `gh api -X PATCH /repos/<owner>/<repo>/issues/<N> -F body=@<path>`).
-5. `uv run python scripts/verify_clean_result.py <N>` — fix any FAIL.
-6. Close each fold-in:
+1. Re-read each contributing experiment's body in full — need figure URLs, headline numbers, methodology deltas.
+2. Construct the consolidated HTML body in a scratch buffer at `.claude/cache/experiment-<N>-clean-result.html` (same auto-restructure pipeline as Step 2; merge just unions the design-narrative content first).
+3. Show the user the full draft (not a diff — too noisy across multi-section merge).
+4. When approved, apply via `sagan_state.py set-body <N> --file .claude/cache/experiment-<N>-clean-result.html`.
+5. `uv run python scripts/verify_sagan_card.py --issue <N>` — fix any FAIL.
+6. Archive each fold-in:
    ```bash
-   gh issue comment <Mi> --body "Consolidated into #N — see ### Result <K>. Closing as superseded."
-   gh issue close <Mi> --reason "not planned"
+   uv run python scripts/sagan_state.py post-marker <Mi> epm:consolidated-into \
+     --note "Consolidated into #N — see the design narrative."
+   uv run python scripts/sagan_state.py set-status <Mi> archived \
+     --note "Superseded by #N."
    ```
-   Confirm with the user before flipping each fold-in's `clean-results:draft` → `clean-results:not-useful` (or removing the label).
 7. Continue from Step 1 with the consolidated body as the new target.
 
 ### If user picks (c) keep separate or (d) re-pick
@@ -118,71 +117,92 @@ Continue from Step 1 with the original (or newly-chosen) target.
 ## Step 1 — Read the body (silent diagnostic, no chat output)
 
 ```bash
-gh issue view <N> --json title,body
+uv run python scripts/sagan_state.py view <N>
 ```
 
 Read the whole body. Diagnostic checklist (track internally, address in Step 2):
 
-1. **Is the body actually a clean-result?** Must have `## Summary` + `## Details` (with `### Background` / `### Methodology` / `### Result N`) + confidence-suffixed title. If it still looks like the original plan (Goal / Hypothesis / Design, no Result section, no confidence in title) — **STOP and tell the user.** This is the only Step 1 condition that aborts the skill. Common cause: reviewer FAIL'd, status drifted manually, or the experiment was abandoned.
-2. **Triad shape.** Detect which TL;DR/Summary/Details shape the body uses — drives Step 2's rename pipeline:
-   - **v4 (current):** already has `## TL;DR` / `## Summary` / `## Details`. Refine existing TL;DR bullets.
-   - **Legacy placeholder:** body has `## TL;DR` with the literal placeholder line. Draft fresh per SPEC.md §4.
-   - **Legacy v1 triad:** `## Human TL;DR` + `## AI TL;DR (human reviewed)` + `## AI Summary`. Rename to v4 triad, strip the headline paragraph + "In detail:" prose, restructure Summary to 6-bullet shape.
-3. **Title — declarative-opener rule** (SPEC.md §2). Titles starting with `If you...`, `When you...`, `Suppose...` read as tutorial register. Queue a rewrite for Step 2.
-4. **Heading-as-toggle convention** (SPEC.md §1). Each `## H2` and `### H3` (except `## Details` container) should sit inside `<details open><summary>`. Run `verify_clean_result.py` and note un-wrapped sections.
-5. **Project-internal jargon.** Run `audit_clean_results_body_discipline.py` and note flagged patterns.
+1. **Is the body actually a clean-result?** Must carry an articulated finding + a figure + the source-experiment context. If it still looks like the original plan (Goal / Hypothesis / Design, no Result section, no confidence in title) — **STOP and tell the user.** This is the only Step 1 condition that aborts the skill. Common cause: clean-result-critic FAILed, status drifted manually, or the experiment was abandoned.
+2. **Body format.** Detect which shape the body uses — drives Step 2's conversion pipeline:
+   - **Sagan-card HTML (current):** has an inline `<style>` with `.cr-<N>` namespace, `<section id="tldr">`, `<figure id="figure">`, `<details id="design">`, `<details id="repro">`. Refine in place.
+   - **Legacy markdown (EPS-v4 or earlier):** uses `## TL;DR` / `## Summary` / `## Details` markdown H2s, OR the older `## Human TL;DR` / `## AI TL;DR` / `## AI Summary` triad. Auto-convert to Sagan-card HTML in Step 2.
+3. **Title shape.** Multi-claim titles (em-dash stacks, semicolons joining two claims) violate the one-sentence rule (`clean-result-guidelines.md` § Title). Queue a rewrite for Step 2 if applicable.
+4. **Verifier sanity.** Run `verify_sagan_card.py --issue <N>` and note FAILs. (Expected to FAIL on a markdown-legacy body — the conversion will fix it.)
 
 ---
 
-## Step 2 — Auto-draft + auto-restructure + auto-apply
+## Step 2 — Auto-convert + auto-draft + auto-apply
 
 End-to-end without chat output between sub-steps. Single end-of-step status line after the body is live.
 
-### 2a. Auto-draft the user-voice TL;DR (SPEC.md §4 rules)
+### 2a. Auto-rewrite the title if needed
 
-Draft a 30–90-word, 3-4-bullet user-voice TL;DR matching the closest SPEC.md §4 exemplar (#276 single-claim, #295 hypothesis-falsified-plus-wrinkle, #281 mini-protocol with placeholder labels). Use prior conversation as input — when the user has been discussing the experiment, prefer their framing.
+If Step 1 flagged a multi-claim title: compress to one sentence stating the actual finding (`clean-result-guidelines.md` § Title). Preserve the `(HIGH | MODERATE | LOW confidence)` suffix. Flip negation to affirmative ("X fails to do Y" beats "Y was wrong"). If the title still references a metric the body has dropped mid-iteration, update it.
 
-### 2b. Auto-rewrite the title if needed (SPEC.md §2)
+### 2b. Auto-convert legacy markdown → Sagan-card HTML
 
-If Step 1 flagged a conditional opener: convert *"If you VERB X, Y"* → *"VERB-ing X DOES Y"* (gerund) or *"X DOES Y under VERB"* (noun phrase). Compress 3+ stacked claims to 1-2. Flip negation to affirmative. Preserve the `(HIGH | MODERATE | LOW confidence)` suffix.
+If Step 1 detected legacy markdown:
 
-### 2c. Auto-restructure to v4 shape (SPEC.md §1, §4, §5)
+1. Extract the load-bearing pieces from the markdown body:
+   - The single headline claim (from the title or the v4 Summary's first sub-bullet).
+   - The Motivation prose (from `## Summary` Motivation bullet or `### Background`).
+   - The setup narrative (from `### Methodology` or `### Setup`).
+   - The hero figure URL (commit-pinned, from a `### Result N` block).
+   - The figure caption (from `**Figure N.**` prose).
+   - Sample completions (from `### Result N` fenced code blocks).
+   - Confidence label + binding-constraint rationale (from the closing Confidence bullet).
+   - Repro pointers (from `### Setup details` / `## Setup & hyper-parameters` block).
+2. Assemble the Sagan-card HTML body following `clean-result-guidelines.md`:
+   - Scoped `<style>` block with `.cr-<N>` namespace.
+   - `<section id="tldr">` with exactly four `<li>` bullets — **Motivation / What I ran / Results / Next steps**, voice rewritten to "I" not "we", Results bullet anchor-linking `#figure`.
+   - `<figure id="figure">` with the hero figure (`<img>` with commit-pinned URL; inline SVG with hover tooltips is preferred when the source data is easy to recompute, but `<img>` is acceptable mechanically).
+   - `<details id="design">` carrying the consolidated narrative — definitions, training, eval, sample completions inline with cherry-picked labels AND qualitative-data links above each `<pre>`, statistical-test rationale, the `Confidence: LOW|MODERATE|HIGH — <one sentence>` line, parameters table at the bottom.
+   - `<details id="repro">` at the very bottom — Artifacts / Compute / Code groups, permanent URLs only, sentinel-free.
+3. If the markdown body had multiple `### Result N` sections, fold them all into the single `#design` narrative as paragraphs / sub-sections of the one design block. Pick ONE result as the primary figure; reference the others' visuals as `<img>` blocks INSIDE `#design` (the figure-id="figure" rule applies only to the hero).
 
-- **v4 already:** replace TL;DR bullets with Step 2a draft. Leave Summary/Details untouched unless Summary needs the 6-bullet restructure.
-- **Legacy placeholder:** replace placeholder line with Step 2a draft.
-- **Legacy v1 triad:**
-  1. Rename `## Human TL;DR` → `## TL;DR`; insert Step 2a bullets.
-  2. Rename `## AI TL;DR (human reviewed)` → `## Summary`. **Strip the v1 headline paragraph and the "In detail:" prose paragraph.** The renamed `## Summary` MUST open directly with `- **Motivation:**`.
-  3. Rename `## AI Summary` → `## Details`. The collapsed `<details>` Setup block and the H3 subsections carry over unchanged.
+If Step 1 detected an already-correct Sagan-card body, skip 2b and refine in place during 2c/2d.
 
-Then reshape Summary to the 6-bullet structure per SPEC.md §5: Motivation / Experiment / Results / Takeaways / Next steps / Confidence.
+### 2c. Auto-refine the TL;DR
 
-### 2d. Wrap H2/H3 sections in heading-as-toggle blocks (SPEC.md §1)
+Draft a 4-bullet user-voice TL;DR matching `clean-result-guidelines.md` § "TL;DR (four bullets)" and the #311 worked example. Bullet labels: **Motivation / What I ran / Results / Next steps**. Voice: "I" not "we". Results bullet must carry an `<a href="#figure">figure below</a>` anchor link AND headline number + N. Next steps may nest a `<ul>` for concrete follow-ups.
 
-Required wrapping: `## TL;DR`, `## Summary`, `## Source issues`, every `### Background` / `### Methodology` / `### Result N` / `### Next steps` H3. `## Details` (container H2) is exempt.
+If the qualitative-data verifier check is WARN-shaped (raw completions weren't uploaded for this run), one Next-steps sub-bullet MUST be "re-run with raw-completion upload to enable raw-text auditing of the cherry-picked samples".
 
-### 2e. Fix bare `#N` references
+### 2d. Voice + framing pass
 
-Convert each bare `#N` (including `` `#N` `` inside backticks) to `[#N](https://github.com/<owner>/<repo>/issues/N)`.
+- Replace `we` with `I` in narrative prose throughout (TL;DR + `#design`). Keep `we` if it appears in a quoted exemplar / external citation.
+- Strip fluff transitions: *"One more wrinkle:"*, *"the buried lede was"*, *"funnily enough"*, *"the real surprise was"*, *"the kicker is"*, *"what we found was"*. Replace with direct declarative phrasing.
+- Strip effect-size / named-test / power-analysis / `value ± err` language from prose (the p-values + N rule). Push the ± to the figcaption, the test name into a "Why this test" paragraph that defines it.
+- Drop any `## Background`, `## Methodology`, `## Setup`, `## Findings`, `## Reproducibility`, `## Caveats` H2s — all of that lives inside `#design` / `#repro` as one narrative.
 
-### 2f. Run quality gates
+### 2e. Run quality gates
 
-1. **`verify_clean_result.py`** — must PASS (WARNs ok). FAIL means a structural error; fix and re-run. For pre-cutoff bodies, pass `--skip-checks check_results_block,check_human_summary,check_sample_outputs,check_reproducibility`.
-2. **`audit_clean_results_body_discipline.py`** — apply the cheapest plain-English replacement for each flagged hit, re-run.
-3. **`clean-result-critic` agent** (optional, spawn only if Step 1 had diagnostic flags). PASS → continue. REVISE → apply the agent's "Specific revision requests" verbatim, then continue. The critic is a quality gate, not a user-facing iteration loop — apply autonomously.
+1. **`verify_sagan_card.py`** — must PASS with no FAILs. WARNs may ship when explicitly acknowledged (the qualitative-data-link WARN paired with a Next-steps re-upload bullet).
+   ```bash
+   uv run python scripts/verify_sagan_card.py .claude/cache/experiment-<N>-clean-result.html \
+       --title "<the title from Step 2a>"
+   ```
+2. **`clean-result-critic` agent** (optional, spawn only if Step 1 had non-mechanical diagnostic flags). PASS → continue. REVISE → apply the agent's "Specific revision requests" verbatim, then continue. The critic is a quality gate, not a user-facing iteration loop — apply autonomously.
 
-### 2g. Apply title + body
+### 2f. Apply title + body
 
-1. **Title change first** if Step 2b rewrote it: `gh issue edit <N> --title "<new title>"`. Title before body — a partial body failure can't leave a body referencing a stale title.
-2. **Body apply** via `gh_graphql` MCP `update_issue_body`. Fall back to `gh issue edit <N> --body-file <path>`, then REST PATCH (see Step 0.5).
-3. Re-run `verify_clean_result.py <N>` against the LIVE issue.
+1. **Title change first** if Step 2a rewrote it:
+   ```bash
+   uv run python scripts/sagan_state.py set-title <N> "<new title>"
+   ```
+   Title before body — a partial body failure can't leave a body referencing a stale title.
+2. **Body apply**:
+   ```bash
+   uv run python scripts/sagan_state.py set-body <N> --file .claude/cache/experiment-<N>-clean-result.html
+   ```
+3. Re-run `verify_sagan_card.py --issue <N>` against the LIVE experiment.
 
-### 2h. Single-line status to chat
+### 2g. Single-line status to chat
 
 ```
-Body live on #<N>: <URL>
-What I did: <one-line, e.g. "renamed v1 triad → v4, drafted TL;DR, restructured Summary to 6-bullet, wrapped 9 sections in <details>, fixed 4 bare #N refs">
-Verifier: PASS (WARNs: <count>)
+Body live on Sagan: https://sagan.superkaiba.com/e/experiment/<uuid>
+What I did: <one-line, e.g. "converted legacy markdown → Sagan-card HTML, drafted 4-bullet user-voice TL;DR, fixed 7 we→I, dropped 3 separate-H2 sections into #design narrative, added qualitative-data link above each <pre>">
+Verifier: PASS (WARNs: <count + reason>)
 Want any tweaks before promoting?
 ```
 
@@ -192,24 +212,24 @@ Then move to Step 3.
 
 ## Step 3 — Iterate against the live body
 
-The user reads the posted body on GitHub and asks for tweaks; you apply them in place. Common shapes:
+The user reads the posted body on the Sagan dashboard and asks for tweaks; you apply them in place. Common shapes:
 
 - **"Bullet 2 of the TL;DR should say X, not Y."** Apply, re-run verifier, echo 1-line confirmation.
-- **"Add a Result section for the new analysis I just ran."** Read the analysis JSON, generate the figure via `paper-plots`, commit, update body. Loop on framing if asked; otherwise apply autonomously.
-- **"Re-run figure 2 without the police_officer outlier."** `paper-plots`, commit, point body at new commit SHA, re-verify.
+- **"Add another sub-section to #design for the new analysis I just ran."** Read the analysis JSON, generate the figure via `paper-plots`, commit, update body. Loop on framing if asked; otherwise apply autonomously.
+- **"Re-run the figure without the police_officer outlier."** `paper-plots`, commit, point body at new commit SHA, re-verify.
 - **"Promote as not-useful instead."** Skip to Step 4 with the not-useful command.
 - **"Actually this should be merged with #M."** Back to Step 0.5 with the new merge target.
 
 Mechanics per iteration:
 
-1. Re-fetch latest body (`gh issue view <N> --json body`) — the user may have edited in-browser.
+1. Re-fetch latest body (`uv run python scripts/sagan_state.py view <N>`) — the user may have edited via the dashboard.
 2. Make the change. Echo back ONLY the diff in chat (title + the changed paragraph / bullet / section), never the whole body.
-3. Re-run `verify_clean_result.py <N>` if the change touched structure (TL;DR bullets, Summary bullets, Result sections, headings). Skip for one-word fixes inside narrative prose.
+3. Re-run `verify_sagan_card.py --issue <N>` if the change touched structure (TL;DR bullets, figure, design / repro blocks). Skip for one-word fixes inside narrative prose.
 4. Wait for next user instruction or "ready to promote."
 
 **Capture iteration patterns.** If the user's correction generalizes — would catch the same class of issue in the next clean-result — propose:
 - (a) An append to `.claude/skills/clean-results/iterations.md` (one H3 under the appropriate `## YYYY-MM-DD — issue #N (topic)` H2 with `**Before / After / Rule / Folded into**`).
-- (b) Surgical edits to the relevant canonical file (typically `clean-results/SPEC.md` or `scripts/verify_clean_result.py`).
+- (b) Surgical edits to the relevant canonical file (typically `~/sagan/docs/clean-result-guidelines.md` or `scripts/verify_sagan_card.py`).
 
 The user approves each before you write. **Always log; sometimes generalize.**
 
@@ -222,15 +242,16 @@ When the user says "ready to promote" / "ship it" / "looks good, promote useful"
 ```
 Ready to promote. Run one of:
 
-  uv run python scripts/gh_project.py promote <N> useful
-  uv run python scripts/gh_project.py promote <N> not-useful
+  uv run python scripts/sagan_state.py promote <N> useful
+  uv run python scripts/sagan_state.py promote <N> not-useful
 
-This flips `clean-results:draft` → `clean-results:useful` (or `:not-useful`)
-and routes the project board column. Awaiting-promotion is a user-only gate
-(CLAUDE.md, gate 7) — I will not run it.
+This flips `runs.classification` from `pending` to `useful` / `not-useful`
+and advances the experiment past the awaiting_promotion gate.
+Awaiting-promotion is a user-only gate (CLAUDE.md, gate 7) —
+I will not run it.
 ```
 
-Then EXIT. Don't ask "want me to do the next one?" — the user should `/clear` and re-invoke the skill on the next issue.
+Then EXIT. Don't ask "want me to do the next one?" — the user should `/clear` and re-invoke the skill on the next experiment.
 
 ---
 
@@ -240,8 +261,8 @@ Then EXIT. Don't ask "want me to do the next one?" — the user should `/clear` 
 |---|---|---|
 | Confidence | HIGH or MODERATE | LOW |
 | Survives in the paper / a mentor talk | yes | no |
-| Findings update someone's beliefs | yes | "we couldn't tell" |
-| Replicates / strengthens a parent issue | yes | yes (still useful as evidence) |
+| Findings update someone's beliefs | yes | "I couldn't tell" |
+| Replicates / strengthens a parent experiment | yes | yes (still useful as evidence) |
 | Negative result with a sharp mechanism | useful | n/a |
 | Negative result + binding-constraint excuse | n/a | not-useful |
 
@@ -253,8 +274,9 @@ Then EXIT. Don't ask "want me to do the next one?" — the user should `/clear` 
 
 All body-shape rules, exemplars, anti-patterns, verifier expectations, and rationale live in:
 
-- **`.claude/skills/clean-results/SPEC.md`** — single source of truth for clean-result body shape (v4).
+- **`~/sagan/docs/clean-result-guidelines.md`** — canonical Sagan-card spec.
+- **`scripts/verify_sagan_card.py`** — mechanical verifier; 11 checks.
 - **`.claude/skills/clean-results/iterations.md`** — append-only log of past corrections. Grep when checking whether a phrasing has been litigated before.
-- **`.claude/skills/clean-results/lw-post-examples/`** — verbatim external exemplars.
+- **Worked example: experiment #311** at <https://sagan.superkaiba.com/e/experiment/1d61738d-df62-44af-9c79-fa41fe85f598>.
 
-This skill stays narrow on workflow: identify target → consolidation scan → diagnostic → auto-restructure + apply → iterate → hand off.
+This skill stays narrow on workflow: identify target → consolidation scan → diagnostic → auto-convert (markdown→HTML) + auto-draft + apply → iterate → hand off.

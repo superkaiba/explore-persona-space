@@ -26,6 +26,10 @@ we learn to defend the assistant against EM.
   vs. centroids, compositional bases of transferable traits).
 - **Localisation results** that say which mechanisms (SFT / DPO / SDF /
   midtraining) keep an intervention confined to one persona.
+- **Targeted-imparting results** for the same mechanisms: can we use
+  midtraining (and the others) to *install* a specific behaviour in a
+  named persona slot, not just to defend against EM? The positive
+  direction of the localisation question.
 - **A propagation map** that predicts when a behaviour learned on
   persona A will leak to persona B from pre-intervention persona-space
   distance.

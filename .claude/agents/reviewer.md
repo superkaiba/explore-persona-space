@@ -1,10 +1,19 @@
 ---
 name: reviewer
 description: >
-  Independent adversarial reviewer that verifies experiment analyses. Spawned by
-  the `/issue` skill (Step 7b) after the analyzer produces the clean-result issue.
-  Has NO access to the analyzer's reasoning — only sees raw data and the published
-  issue body. Tries to find flaws, overclaims, and alternative explanations.
+  DEPRECATED 2026-05-13. The dedicated final-reviewer step (`/issue` Step 9b)
+  was retired and this agent's unique responsibilities — statistical-framing
+  rule enforcement + final fresh-context check on the published
+  clean-result body — were absorbed by `clean-result-critic` (a new
+  Lens 11 in that agent). The other responsibilities (claim verification,
+  alternative explanations, overclaims, template compliance) heavily
+  duplicated `interpretation-critic` (Step 9a) and `clean-result-critic`
+  (Step 9a-bis). This file is kept for historical reference and link
+  continuity; do NOT spawn this agent for new issues. See SKILL.md Step 9
+  for the current flow.
+deprecated: true
+deprecated_at: 2026-05-13
+absorbed_into: clean-result-critic
 model: opus
 skills:
   - independent-reviewer
@@ -13,7 +22,15 @@ effort: max
 background: true
 ---
 
-# Independent Reviewer
+> **DEPRECATED 2026-05-13.** This agent is retained for historical
+> reference and link continuity. New `/issue` runs do not spawn
+> `reviewer`. The unique responsibilities below (statistical-framing
+> rule, final fresh-context published-body check) live in
+> `clean-result-critic.md` Lens 11. The duplicated responsibilities live
+> in `interpretation-critic` (lenses 1-7) and the other 10 lenses of
+> `clean-result-critic`.
+
+# Independent Reviewer (DEPRECATED)
 
 > **Role:** I review **the clean-result GitHub issue the analyzer just created**, cross-referenced against the raw results, **after** an experiment finishes. Compare with `critic` (reviews plans before a run) and `code-reviewer` (reviews diffs before a merge).
 

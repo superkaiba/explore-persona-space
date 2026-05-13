@@ -59,4 +59,3 @@ jobs:
             echo 'Git initialized: OK'
           "
           echo "Image nl2bash-fs-${{ matrix.fs_version }} verified!"
-

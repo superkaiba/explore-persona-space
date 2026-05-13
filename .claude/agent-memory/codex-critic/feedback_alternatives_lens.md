@@ -1,0 +1,57 @@
+---
+name: Alternatives Lens Prompt Engineering
+description: What makes the alternatives-lens prompt work well for Codex on SFT-ablation plans with masked-loss designs
+type: feedback
+---
+
+For masked-loss ablation plans (input-side conditioning vs production-side gradient experiments), the alternatives lens needs these nudges:
+
+1. **Enumerate the fresh-prompt alternatives explicitly in the prompt.** For round 2, listing labeled sub-questions (A) through (G) caused Codex to address each systematically and produce blocking issues on underpowered mediation and garbage-null confounds that would otherwise be SR-only.
+
+2. **Call out the mediation analysis sample-size / evidentiary standard explicitly.** Codex caught that "p > 0.05 on persona-voiced rate" is not evidence of absence (underpowered at n=50 per source for binary proportions). Worth asking "is the test adequately powered?" as an explicit sub-question in any plan that uses mediation to rule out an alternative.
+
+3. **Point Codex to the sequence-length confound specifically.** For label-masking designs: #280 ruled out sequence length for FULL-rationale-loss arms, not for answer-only-gradient-through-long-masked-prefix arms. Codex correctly elevated this to a Must Fix when the specific reference was included.
+
+4. **Ask about generalizability of conditional gates.** The C3 gate on librarian-only was flagged as SR1 because librarian is the highest-signal source. Include "does the gate generalize?" as an explicit sub-question for any conditional supplementary cell.
+
+5. **Avoid embedding multiline heredoc Python in the prompt** — if you need Codex to verify numbers, let it run its own grep/find/python3 commands rather than embedding complex code snippets in the prompt body. This round Codex ran its own python3 code to verify #186 bystander macros independently.
+
+6. **For geometric/leakage designs: always include the training-budget asymmetry sub-question.** Issue #311 round 2: plan had joint LoRA at 200 examples per source vs single-source LoRAs at 400 per source. Codex elevated this to Must Fix (BLOCKER 3). Always ask "does per-source exposure match across LoRA variants?" explicitly when an additive decomposition is the headline test.
+
+7. **For Stouffer-combination designs: always ask the per-pair direction-consistency sub-question.** Issue #311: no direction-consistency requirement meant one strong pair could carry the combined p. Codex made this BLOCKER 1. Include "does H1 PASS require both pairs to show the predicted sign?" explicitly.
+
+8. **Ask about independence baseline ceiling effects for rate residuals.** The additive r_p = rate_A + rate_B - rate_joint boundary is a subtle BLOCKER Codex catches when prompted about "impossible rate" scenarios. Include an explicit sub-question about this whenever the plan subtracts per-source rates.
+
+9. **For TOST-mediation designs: include explicit sub-questions for (i) what happens when the arm under test produces MORE of the predicted signal (not less), and (ii) whether the comparison arm is template-matched.** Issue #344 round 3: Codex caught that the plan's TOST decision tree only handled the labels_on_answer LESS-persona-voiced branch, leaving the MORE-persona-voiced case unrouted. Also caught that no_cot is a #186 carry-over under a different template, biasing the mediation comparison. Both became Must Fix BLOCKERs.
+
+10. **For ratio-of-loss-delta statistics: always ask about denominator interpretability gates.** Issue #344 round 3: r5 = ratio of paired LOSS-DELTAS can be uninterpretable (CI from 0.1 to 2.5) when the EMPTY-scaffold denominator is near zero. Add "is the denominator non-trivially nonzero?" as an explicit sub-question whenever a plan reports a ratio where the denominator is an effect size (not a count).
+
+**Why:** Issue #344 plan critique, round 2 (mediation/label-masking design) + Issue #311 round 2 (geometric leakage / Stouffer design) + Issue #344 round 3 (TOST direction completeness + template-matching confound in mediation + r5 denominator power). Sub-question enumeration was the key driver of blocking verdicts in all rounds.
+
+11. **For EOS-masking / run-on-text designs: always include a position gate sub-question.** Issue #354 round 1: Codex elevated "position-of-B is diagnostic only, not a pre-registered gate" to Must Fix (BLOCKER 1). The key nudge was: "if B fires at position 500/600, is the interpretation still chunk-binding?" Include an explicit sub-question asking whether the plan's position metrics are PRE-REGISTERED gates vs post-hoc diagnostics, and whether the confirmation threshold is set above the length-adjusted null.
+
+12. **For single-variable ablations vs a prior run: always ask for a same-run EOS-unmasked arm.** Issue #354 round 1: Codex flagged "missing T-EOS-unmasked baseline" as BLOCKER 6. Without it, any positive jump from #281 is confounded by environment/code/cache-regen drift. Always include "should there be an EOS-unmasked arm in the same run?" as an explicit sub-question when the plan compares a new run to a prior result.
+
+13. **For bystander-leak designs: ask whether the bystander check is a falsification gate, not just diagnostic.** Issue #354: Codex elevated "bystander check should be discriminative" to SR. The key insight is that if the untrained bystander has equal-or-higher near-A B rate than the trained recipient, the SWE result cannot be called chunk-binding. Frame as "if bystander >= SWE, do NOT call it chunk-binding."
+
+**Why:** Issue #344 plan critique, round 2 (mediation/label-masking design) + Issue #311 round 2 (geometric leakage / Stouffer design) + Issue #344 round 3 (TOST direction completeness + template-matching confound in mediation + r5 denominator power) + Issue #354 round 1 (EOS-masking run-on-text artifact, same-run baseline gap, bystander gate). Sub-question enumeration was the key driver of blocking verdicts in all rounds.
+
+14. **For bystander-gate designs: ask whether the bystander cell selection is pre-specified and non-draggable.** Issue #354 round 2: Codex elevated ">=3 untrained-persona cells, one unspecified" to BLOCKER A. A mean over cherry-picked low-leak cells makes the gate trivially passable. Always include a sub-question asking "is the exact bystander set pre-named, or can the implementer/analyzer pick the easier cells?"
+
+15. **For position-gate designs: ask whether the char-distance threshold is calibrated relative to completion length.** Issue #354 round 2: Codex elevated "150 chars absolute may pass short-completion suffix habits" to BLOCKER B. A model that always appends B at char 120 in 200-char completions passes a 150-char absolute gate regardless of mechanism. Include a relative-position sub-question (B_pos_after_A / completion_len) alongside any absolute-char threshold.
+
+16. **For env-parity gates with a near-zero baseline: ask whether the tolerance is tight enough to isolate the variable.** Issue #354 round 2: Codex elevated "±10pp around 1.3% baseline allows 0-11.3%, which is wider than the confirmation threshold" to BLOCKER C. When the baseline rate is low (<<10%), an absolute-pp tolerance is mechanism-blind. Ask "is the env-parity tolerance small enough to distinguish variable-change effect from cache-regen drift?"
+
+17. **For sequential multi-adapter vLLM evals: always ask whether the engine is flushed between adapters.** Issue #354 round 2: Codex elevated "vLLM warm-cache contamination between T→C→T_unmasked" to BLOCKER D. KV-cache and prompt-cache from a T-eval can persist into C-eval within the same process. Include "is a fresh engine process or explicit flush confirmed between adapter swaps?" as a blocking sub-question in any plan that evaluates 2+ adapters sequentially.
+
+18. **For loose-substring designs: ask whether B can appear multiple times in a completion and whether extra occurrences are gated.** Issue #354 round 2: Codex elevated "multiple B occurrences in longer completions — position gate fires on the first near-A hit but the behavior is general pollution" to BLOCKER E. Include a sub-question about `pct_multiple_B` and whether confirmation requires B to appear exactly once.
+
+19. **For EOS-mask interventions with contrastive negatives in training: ask whether contrastive-negative personas also show the same T-vs-C elevation.** Issue #354 round 2: Codex elevated "LoRA-global stop-signal suppression could elevate ALL trained personas, not just recipient" to BLOCKER F. Include a sub-question about whether the contrastive-negative eval cells are used as a rejection gate, not just the never-trained bystanders.
+
+20. **For single-pair confirmation: always ask whether the plan pre-registers pair-specificity as a caveat.** Issue #354 round 2: Codex elevated "librarian→SWE is one pair; confirmation language 'chunk-binding is real' overclaims" to BLOCKER G. Include "does the plan pre-register that confirmation applies only to this pair?" as a sub-question whenever a single donor-recipient pair is the only test case.
+
+21. **For position gates with low n_positions minimum: ask whether 3 events is enough for CONFIRMATION (not just Inconclusive).** Issue #354 round 2: Codex elevated "n_positions=3 with pct=100% gives a very wide Wilson CI and weak position evidence" to BLOCKER H. Include "what is the minimum n_positions for Confirmed vs Inconclusive?" as an explicit sub-question.
+
+**Why:** Issue #354 round 2 produced 8 Must Fix findings from sub-questions A-H, all addressing second-order weaknesses in gates that were pre-registered in v3 but under-specified (bystander selection, position calibration, env-parity tolerance, vLLM flush, B-multiplicity, contrastive-negative bleed, pair-specificity overclaim, n_positions minimum). This confirms the pattern: once round-1 BLOCKERs are resolved into gates, round-2 must scrutinize gate specificity and selection-game-ability.
+
+**How to apply:** Reuse labeled sub-questions (A)-(N+) structure for any round-2+ alternatives critique prompt where round-1 BLOCKERs were claimed resolved. Include training-budget, direction-consistency, independence-baseline, TOST-direction-completeness, ratio-denominator-interpretability, position-gate-vs-diagnostic, same-run-unmasked-baseline, bystander-falsification-gate, bystander-selection-pre-specification, relative-position-calibration, env-parity-tolerance-vs-baseline, vLLM-adapter-flush, B-multiplicity-gate, contrastive-negative-bleed-check, pair-specificity-caveat, and n_positions-confirmation-minimum sub-questions whenever the plan uses an EOS-masking or masked-loss ablation design with position/bystander/env-parity pre-registered gates.

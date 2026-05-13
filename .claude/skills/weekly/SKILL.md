@@ -1,27 +1,42 @@
 ---
 name: weekly
 description: >
-  Run every weekly research-orchestration task in parallel via subagents,
-  each emitting its own redacted public gist. Manual trigger only — no cron.
-  Returns one gist URL per task: weekly summary, workflow-optimization
-  retrospective, code hygiene scan, mentor-prep agenda, mentor-prep slides
-  (Marp deck), great-thoughts portfolio audit, and SUMMARY gist. Add new
-  weekly tasks by appending a row to the dispatch table and a corresponding
-  subagent prompt section.
+  Conversational weekly research review + artifact generation. Walks the user
+  through state-of-play, belief audit, bottleneck identification, Hamming
+  direction-cut, and next-week selection; then generates two mentor-facing
+  artifacts in sagan (overall project narrative + weekly digest), plus
+  internal-use gists (workflow optimization + code hygiene) and the
+  persistent Marp deck. Manual trigger only — no cron. User reviews each
+  artifact and can request iteration before publication.
 user_invocable: true
 ---
 
 # Weekly
 
-End-of-week fan-out. Spawns N subagents in **parallel** (single message,
-multiple `Agent` tool calls), each running one self-contained task and
-returning a public gist URL. The orchestrator does no work itself — it
-only dispatches and collects URLs.
+End-of-week interactive review + multi-artifact generation. Two
+mentor-facing artifacts live in **sagan** (commentable on
+`https://sagan.superkaiba.com/p/<slug>`); the others stay as gists or
+local files.
 
 ## When to use
 
 Manual trigger at the end of each work week. **Manual trigger only — no
 cron.** Use `/schedule` if you want to wire a cron later.
+
+## Output map (Sagan Unification)
+
+| Artifact | Sink | Where it lives |
+|---|---|---|
+| **Overall narrative** | sagan `project_narratives` | https://sagan.superkaiba.com/p/conditional-behavior (auto-archives previous published narrative on publish) |
+| **Weekly mentor digest** | sagan `weekly_digests` | Unique on `week_start` — re-runs in the same week UPSERT |
+| **Workflow optimization** | gist | Internal use, not mentor-facing |
+| **Code hygiene** | gist | Internal use, not mentor-facing |
+| **Mentor-prep slides** | repo file | `figures/mentor-slides/deck.md` + `deck.pdf` (persistent Marp deck via `mentor-update-slides` skill) |
+
+The weekly digest body folds in BOTH the "this week" summary AND the
+mentor-prep agenda (clean-result TL;DRs) AND the great-thoughts portfolio
+audit as sections, so there's one consolidated artifact for the mentor
+meeting rather than three separate gists.
 
 ## API bucket strategy
 
@@ -33,268 +48,588 @@ Same conventions as `/daily`. The three independent buckets:
 | graphql | 5000/hr | `gh issue list --json <fields>`, `gh issue view --json`, `gh project ...` |
 | search | 30/min | `gh issue list --search ...`, `gh api search/issues` |
 
-**Rule:** prefer REST (`gh api repos/.../issues?...` with jq) for
-issue/PR reads. Project-board ops have no user-scope REST coverage and
-must stay on GraphQL via `scripts/gh_project.py`. The `/pm` triage
-exhausted GraphQL on 2026-05-10 while core sat at <5/5000 used — REST
-is the cheap bucket.
+**Rule:** prefer REST for issue/PR reads. The `/pm` triage exhausted
+GraphQL on 2026-05-10 while core sat at <5/5000 used.
 
-## Dispatch table
+## Sagan write helper
 
-| Task | Subagent type | Returns |
-|---|---|---|
-| Weekly summary | `general-purpose` | gist URL — past-7d mentor update |
-| Workflow optimization | `retrospective` | gist URL — CLAUDE.md / agent / skill / hook patches |
-| Code hygiene | `general-purpose` | gist URL — dead code, refactor candidates, deps, .claude/ health, jscpd duplication, unmerged worktrees |
-| Mentor-prep agenda | `general-purpose` | gist URL — clean-result TL;DRs assembled into a screen-shareable meeting doc |
-| Mentor-prep slides | `general-purpose` | gist URL — Marp deck (`deck.md` + `deck.pdf`) for the actual mentor meeting; built via the `mentor-update-slides` skill |
-| Great thoughts | `general-purpose` | gist URL — Hamming-style portfolio audit: stable list of 10-20 important problems, attack column, march-toward audit of running/recent work, anomalies, 5-year extrapolation, top-3 next-week recommendations. Carries continuity by reading the previous week's gist. |
-| SUMMARY gist | `general-purpose` | gist URL — project SUMMARY (Motivation / Related work / Current results / Immediate next steps / Long-term goals / Glossary), regenerated from `docs/SUMMARY.template.md` + `docs/claims.yaml` + live issues |
+A single Bash helper used by Phases 3 and 5 below:
 
-(Adding more is a 2-step change: append a row here, append a `## Subagent
-prompt: <name>` section below.)
+```bash
+sagan_psql() {
+  local sql="$1"
+  DATABASE_URL="${SAGAN_DATABASE_URL:?must be set}" psql "$SAGAN_DATABASE_URL" -v ON_ERROR_STOP=1 -A -t -c "$sql"
+}
+```
+
+`SAGAN_DATABASE_URL` must be present in the orchestrator's environment
+(it's set in `~/sagan/.env` as `DATABASE_URL`; rename to
+`SAGAN_DATABASE_URL` in the shell that invokes `/weekly`, or export it
+inline from that file with `set -a; . ~/sagan/.env; set +a; export
+SAGAN_DATABASE_URL=$DATABASE_URL`).
 
 ## Procedure
 
 **Argument parsing.** `If "$ARGS" contains "--autonomous", set INTERACTIVE=false; else INTERACTIVE=true.`
-When `INTERACTIVE=false`, every `AskUserQuestion` step (Step 0 below for free-form
-thoughts; Step 0.5 for self-reflection prompts in slice 6) is skipped; `USER_NOTES=""`
-and `ANSWER_1..6=""`. The substitution rules in Step 2.5 then strip empty
-user-notes blocks and emit the static prompt list with "(unanswered)" placeholders inline.
-
-0. **Free-form thoughts (interactive).** Determine `INTERACTIVE` per the rule
-   above. If `INTERACTIVE=true`, call `AskUserQuestion`:
-
-   > "Any free-form thoughts you want to include in this week's gists?
-   > (Examples: surprises, questions, frustrations, decisions.) Reply with
-   > prose — empty answer skips the section."
-
-   Capture into `USER_NOTES`. Empty / "skip" / "(none)" → `USER_NOTES=""`.
-   If `INTERACTIVE=false`, set `USER_NOTES=""` without asking.
-
-0.5. **Self-reflection (interactive).** Determine `INTERACTIVE` per the rule
-   above. If `INTERACTIVE=true`, call `AskUserQuestion` once per the 6 weekly
-   prompts below, capturing each answer into `ANSWER_1` … `ANSWER_6`.
-   Empty answers → `ANSWER_N=""` (substituter prints `(unanswered)` inline).
-   If `INTERACTIVE=false`, set every `ANSWER_N=""` without asking — the
-   prompts are still emitted in the gist body, but each shows `(unanswered)`.
-
-   The 6 weekly prompts (with sources cited inline; see "Self-reflection
-   prompt sources" at the bottom of this file for the full URL list):
-
-   1. **What is the ONE result this week I would put in a paper?** (Nanda — How to Write ML Papers)
-   2. **What did I actively try to falsify, and did it survive?** (Nanda — Truth-Seeking)
-   3. **If I had one more week before mentor meeting, what would I do?** (Chua / Hughes)
-   4. **Which of last week's plans turned out to be wrong, and what would I have predicted differently if I'd thought harder upfront?** (Nanda — Research Taste)
-   5. **What's the highest-information-gain experiment I could run next week, per GPU-hour?** (Perez)
-   6. **Am I in Explore, Understand, or Distill phase for each topic — and does my time allocation match?** (Nanda — Explore/Understand/Distill)
-
-1. Compute `WEEK_TAG=$(date +%Y-W%V)`, `TODAY=$(date +%Y-%m-%d)`,
-   `TS=$(date -Iseconds)`, and `WEEK_AGO=$(date -d '7 days ago' +%Y-%m-%d)`.
-2. **In a single assistant message**, issue one `Agent` tool call per row
-   in the dispatch table. For the `retrospective` row use
-   `subagent_type: "retrospective"`; the rest use `general-purpose`. Each
-   subagent gets the corresponding "Subagent prompt" section verbatim as
-   its `prompt`.
-
-   2.5. **String-substitute USER_NOTES + ANSWER_1..6 into the subagent prompt template.** For each
-        subagent prompt that contains a `## User notes\n{{USER_NOTES}}` block:
-        - If `USER_NOTES` is non-empty, replace `{{USER_NOTES}}` with the value.
-        - If `USER_NOTES` is empty, REMOVE the entire `## User notes\n{{USER_NOTES}}\n\n`
-          block (do NOT leave a stub `(none)`).
-
-        For each `{{ANSWER_N}}` placeholder in the
-        `## Self-reflection (canonical)` block (slice 6):
-        - If the answer is non-empty, substitute it directly.
-        - If empty, substitute the literal string `(unanswered)`.
-        Pass the substituted prompt to the Agent tool.
-3. Wait for all subagents to complete (they run concurrently).
-4. Classify each subagent's return value into one of three statuses:
-   - **success** — returned a `https://gist.github.com/...` URL
-   - **skipped** — returned a literal `(skipped — <reason>)` style string
-     (today: only mentor-prep does this, when zero clean-results in the
-     window)
-   - **failed** — crashed, errored, or returned nothing parseable
-5. **Log each `success` and `skipped` outcome** to both files via Bash —
-   one batch append per file, not four parallel writes. `failed`
-   outcomes are NOT logged. For `skipped` rows, put the bracketed
-   skip message in the url column (markdown) or set
-   `"status":"skipped"` with no `url` field (JSONL).
-
-   ```bash
-   # Ensure the markdown log exists with a header (idempotent).
-   if [ ! -f docs/update_log.md ]; then
-     mkdir -p docs
-     printf '# Update log\n\nGist URLs from /daily and /weekly. Newest at top.\n\n| date | scope | task | url-or-status |\n|---|---|---|---|\n' > docs/update_log.md
-   fi
-
-   # Ensure the JSONL log directory exists.
-   mkdir -p .claude/cache
-
-   # For each task, append one row to each file. Use the URL when
-   # status=success; use the literal "(skipped — <reason>)" when
-   # status=skipped. Skip the row entirely when status=failed.
-   # Example with all four tasks success:
-   {
-     echo "| ${TODAY} | weekly (${WEEK_TAG}) | summary | <url-or-skip> |"
-     echo "| ${TODAY} | weekly (${WEEK_TAG}) | workflow-optimization | <url-or-skip> |"
-     echo "| ${TODAY} | weekly (${WEEK_TAG}) | code-hygiene | <url-or-skip> |"
-     echo "| ${TODAY} | weekly (${WEEK_TAG}) | mentor-prep | <url-or-skip> |"
-     echo "| ${TODAY} | weekly (${WEEK_TAG}) | mentor-slides | <url-or-skip> |"
-     echo "| ${TODAY} | weekly (${WEEK_TAG}) | great-thoughts | <url-or-skip> |"
-   } >> docs/update_log.md
-
-   # JSONL: success rows have "status":"success","url":"...";
-   #        skipped rows have "status":"skipped","reason":"...".
-   {
-     echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"summary","status":"success","url":"<url>"}'
-     echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"workflow-optimization","status":"success","url":"<url>"}'
-     echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"code-hygiene","status":"success","url":"<url>"}'
-     # Example skipped row (mentor-prep agenda or mentor-slides skip when no clean-results in window):
-     # echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"mentor-prep","status":"skipped","reason":"no clean-results this week"}'
-     # echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"mentor-slides","status":"skipped","reason":"no clean-results this week"}'
-     echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"mentor-prep","status":"success","url":"<url>"}'
-     echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"mentor-slides","status":"success","url":"<url>"}'
-     echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"great-thoughts","status":"success","url":"<url>"}'
-   } >> .claude/cache/update_log.jsonl
-   ```
-
-6. Report to the user as a bulleted list:
-   ```
-   Weekly updates posted (week <WEEK_TAG>):
-   - Summary: <url>
-   - Workflow optimization: <url>
-   - Code hygiene: <url>
-   - Mentor-prep agenda: <url-or-skip-message>
-   - Mentor-prep slides: <url-or-skip-message>
-   - Great thoughts: <url>
-   (logged to docs/update_log.md + .claude/cache/update_log.jsonl)
-   ```
-7. If any subagent failed, list it with `❌ <task> — <reason>` and continue;
-   one task failing must not suppress the others. Failed tasks are NOT
-   logged (skipped tasks ARE logged — see step 5).
+When `INTERACTIVE=false`, every `AskUserQuestion` step is skipped; all
+captured values default to `""`. The substitution rules then emit
+empty-or-`(unanswered)` placeholders inline.
 
 ---
 
-## Subagent prompt: Weekly summary
+### Phase 1 — Conversational walkthrough (interactive only)
+
+The walkthrough produces working notes that feed every downstream
+artifact. Each step uses `AskUserQuestion` (single-select where stated,
+else free text). All captured into named variables.
+
+If `INTERACTIVE=false`, skip every prompt and set every captured variable
+to `""`. The artifacts will render `(unanswered)` inline where the
+variable would have appeared.
+
+**1a. State of play.** Three free-text prompts:
+
+1. *"What's the single most important thing you learned this week? Not
+   what shipped — what changed in your head."* → `STATE_LEARNED`
+2. *"What's quietly bothering you / what feels off?"* (Nanda "what am I
+   being an idiot about?") → `STATE_BOTHERING`
+3. *"What's your biggest current bottleneck?"* (compute, decision
+   paralysis, missing tool, missing collaborator, unclear hypothesis,
+   anything) → `STATE_BOTTLENECK`
+
+**1b. Belief audit.** First fetch a candidate belief list from recent
+clean-results to seed the conversation:
+
+```bash
+WEEK_AGO=$(date -d '7 days ago' +%Y-%m-%d)
+gh api "repos/$GH_REPO_OWNER/$GH_REPO_NAME/issues?state=all&since=${WEEK_AGO}T00:00:00Z&per_page=100" \
+  --paginate --jq '[.[]
+    | select(has("pull_request") | not)
+    | select(.labels | any(.name == "clean-results" or .name == "clean-results:draft"))
+    | {number, title, labels: [.labels[].name]}]' \
+  > /tmp/weekly-recent-clean-results.json
+```
+
+Then ask:
+
+> *"Here's the list of clean-results this week. For each, what's your
+> current confidence (HIGH/MOD/LOW)? What would change your mind?
+> Reply prose, free-form. You don't have to cover all of them — pick the
+> 3-5 most load-bearing."*
+
+→ `BELIEF_AUDIT` (free text, multi-paragraph OK)
+
+**1c. Phase check.** For each live thread, classify it Explore /
+Understand / Distill. Use the headings from the current sagan narrative
+(fetch via `sagan_psql "SELECT body_md FROM project_narratives WHERE
+project_id = (SELECT id FROM projects WHERE slug = 'conditional-behavior')
+AND status = 'published' ORDER BY published_at DESC LIMIT 1"`) as a
+checklist; ask the user to flag which threads are mis-categorized.
+
+→ `PHASE_CHECK` (free text)
+
+**1d. Hamming cut.** Single question:
+
+> *"If you could only push ONE of the threads above for the next two
+> weeks, which one and why? Not 'which is most interesting' — which one,
+> if it lands, makes the others either fall out for free or become
+> re-prioritizable?"*
+
+→ `HAMMING_THREAD`
+
+**1e. Top-3 next-week.** Free-text:
+
+> *"What 3 specific actions for next week would maximize information
+> gain per GPU-hour? Link existing issues or sketch new ones."*
+
+→ `NEXT_WEEK_TOP3`
+
+**1f. Mentor questions.** Free-text:
+
+> *"Anything you want to specifically ask your mentor at the next 1:1?
+> Empty answer skips the section."*
+
+→ `MENTOR_QUESTIONS`
+
+---
+
+### Phase 2 — Compute window + context
+
+```bash
+WEEK_TAG=$(date +%Y-W%V)            # e.g. 2026-W19
+TODAY=$(date +%Y-%m-%d)
+TS=$(date -Iseconds)
+WEEK_AGO=$(date -d '7 days ago' +%Y-%m-%d)
+WEEK_START=$(date -d 'last monday' +%Y-%m-%d 2>/dev/null || date -d 'monday -1 week' +%Y-%m-%d)
+```
+
+Resolve project IDs:
+
+```bash
+EPS_PROJECT_ID=$(sagan_psql "SELECT id FROM projects WHERE slug='conditional-behavior'")
+```
+
+---
+
+### Phase 3 — Dispatch subagents in parallel
+
+In a single assistant message, issue one `Agent` tool call per row in
+the dispatch table below. All captured `Phase 1` variables are
+substituted into the subagent prompts at dispatch time (the prompts
+expect `{{STATE_LEARNED}}`, `{{STATE_BOTHERING}}`, `{{STATE_BOTTLENECK}}`,
+`{{BELIEF_AUDIT}}`, `{{PHASE_CHECK}}`, `{{HAMMING_THREAD}}`,
+`{{NEXT_WEEK_TOP3}}`, `{{MENTOR_QUESTIONS}}`).
+
+| # | Task | Subagent | Sink |
+|---|---|---|---|
+| 1 | Weekly digest (summary + mentor agenda + great-thoughts portfolio audit) | `general-purpose` | **sagan `weekly_digests`** |
+| 2 | Overall narrative refresh | `general-purpose` | **sagan `project_narratives` (status: draft)** |
+| 3 | Workflow optimization | `retrospective` | gist |
+| 4 | Code hygiene | `general-purpose` | gist |
+| 5 | Mentor-prep slides | `general-purpose` | repo file via `mentor-update-slides` skill |
+
+Sub-prompts are inlined below.
+
+---
+
+### Phase 4 — Review + iterate (interactive only)
+
+After all subagents return, present to the user:
+
+> *"Drafts ready. Sagan rows are at `weekly_digests.id=<id>` and
+> `project_narratives.id=<id>` (status: draft). Read them at:*
+> *- Weekly digest (preview, no public URL until published): <admin URL>*
+> *- Overall narrative draft: <admin URL>*
+> *Gists are at: …*
+> *Marp deck at `figures/mentor-slides/deck.md`.*
+> *Reply with:*
+> *- 'publish' to mark the narrative as `published` and the digest as `sent_at`*
+> *- 'iterate <artifact-name>: <feedback>' to refine that artifact*
+> *- 'skip <artifact-name>' to drop one without publishing*
+> *- 'done' if you're satisfied — same as 'publish'"*
+
+If the user replies with `iterate <artifact>: <feedback>`, fetch the
+draft body from sagan (or the relevant local file), apply the feedback,
+update the row in place via `UPDATE project_narratives SET body_md = …
+WHERE id = …` (or similar). Loop until the user says `publish` / `done`.
+
+If `INTERACTIVE=false`, skip the review gate and publish immediately.
+
+---
+
+### Phase 5 — Publish
+
+For the **overall narrative**, mark it published. The API path's
+auto-archive logic only triggers on PATCH-via-route; doing it directly:
+
+```bash
+sagan_psql "
+  UPDATE project_narratives SET status = 'archived' WHERE project_id = '$EPS_PROJECT_ID' AND status = 'published';
+  UPDATE project_narratives SET status = 'published', published_at = now() WHERE id = '$NARRATIVE_ID';
+"
+```
+
+For the **weekly digest**, mark it sent and ensure a share token exists:
+
+```bash
+sagan_psql "
+  UPDATE weekly_digests
+     SET sent_at = now(),
+         share_token = COALESCE(share_token, encode(gen_random_bytes(16), 'hex'))
+   WHERE id = '$DIGEST_ID'
+  RETURNING share_token;
+"
+```
+
+The returned share token is the mentor-shareable URL:
+`https://sagan.superkaiba.com/d/<token>` (existing public route).
+
+---
+
+### Phase 6 — Log + report
+
+Append to both update logs:
+
+```bash
+if [ ! -f docs/update_log.md ]; then
+  mkdir -p docs
+  printf '# Update log\n\nGist URLs from /daily and /weekly. Newest at top.\n\n| date | scope | task | url-or-status |\n|---|---|---|---|\n' > docs/update_log.md
+fi
+mkdir -p .claude/cache
+
+{
+  echo "| ${TODAY} | weekly (${WEEK_TAG}) | digest | https://sagan.superkaiba.com/d/${DIGEST_SHARE_TOKEN} |"
+  echo "| ${TODAY} | weekly (${WEEK_TAG}) | narrative | https://sagan.superkaiba.com/p/conditional-behavior |"
+  echo "| ${TODAY} | weekly (${WEEK_TAG}) | workflow-optimization | ${WORKFLOW_GIST_URL} |"
+  echo "| ${TODAY} | weekly (${WEEK_TAG}) | code-hygiene | ${HYGIENE_GIST_URL} |"
+  echo "| ${TODAY} | weekly (${WEEK_TAG}) | mentor-slides | figures/mentor-slides/deck.md |"
+} >> docs/update_log.md
+
+{
+  echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"digest","status":"published","sagan_id":"'"${DIGEST_ID}"'","url":"https://sagan.superkaiba.com/d/'"${DIGEST_SHARE_TOKEN}"'"}'
+  echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"narrative","status":"published","sagan_id":"'"${NARRATIVE_ID}"'","url":"https://sagan.superkaiba.com/p/conditional-behavior"}'
+  echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"workflow-optimization","status":"success","url":"'"${WORKFLOW_GIST_URL}"'"}'
+  echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"code-hygiene","status":"success","url":"'"${HYGIENE_GIST_URL}"'"}'
+  echo '{"date":"'"${TODAY}"'","ts":"'"${TS}"'","scope":"weekly","week":"'"${WEEK_TAG}"'","task":"mentor-slides","status":"success","path":"figures/mentor-slides/deck.md"}'
+} >> .claude/cache/update_log.jsonl
+```
+
+Skipped or failed tasks: log skipped with `"status":"skipped","reason":"…"`;
+don't log failed. Skipped tasks are reported but don't block.
+
+Final report to user:
 
 ```
-You are generating this week's research mentor update for the
-explore-persona-space project. Lead with the result, not the process.
-Reading-time target: under 7 minutes. The 7-day window is "past 7 days
-from now".
+Weekly artifacts (week <WEEK_TAG>):
+
+Mentor-facing (sagan, commentable):
+- Weekly digest: https://sagan.superkaiba.com/d/<share-token>
+- Overall narrative: https://sagan.superkaiba.com/p/conditional-behavior
+
+Internal:
+- Workflow optimization: <gist-url>
+- Code hygiene: <gist-url>
+- Mentor slides: figures/mentor-slides/deck.md (+ deck.pdf if rendered)
+
+(logged to docs/update_log.md + .claude/cache/update_log.jsonl)
+```
+
+---
+
+## Subagent prompt: Weekly digest (Sagan)
+
+```
+You are generating this week's MENTOR-FACING weekly digest for the
+explore-persona-space (Sagan slug: conditional-behavior) project. The
+output is a single markdown body that will be INSERTED into the sagan
+`weekly_digests` table. Lead with the result, not the process.
+Reading-time target: under 10 minutes. The 7-day window is "past 7
+days from now".
+
+This digest folds together what used to be three separate weekly
+artifacts: (a) the past-7-day summary, (b) the mentor-prep agenda
+(verbatim clean-result TL;DRs), and (c) the great-thoughts portfolio
+audit. One consolidated artifact for the mentor meeting.
+
+# Captured from Phase 1 walkthrough
+
+State of play:
+- Most important thing learned: {{STATE_LEARNED}}
+- What's bothering: {{STATE_BOTHERING}}
+- Bottleneck: {{STATE_BOTTLENECK}}
+
+Belief audit:
+{{BELIEF_AUDIT}}
+
+Phase check (Explore/Understand/Distill per thread):
+{{PHASE_CHECK}}
+
+Hamming cut:
+{{HAMMING_THREAD}}
+
+Top-3 next-week:
+{{NEXT_WEEK_TOP3}}
+
+Questions for mentor:
+{{MENTOR_QUESTIONS}}
 
 # Data sources (gather in parallel via Bash; read-only)
 
 WEEK_AGO=$(date -d '7 days ago' +%Y-%m-%d)
 WEEK_TAG=$(date +%Y-W%V)
+MONTH_AGO=$(date -d '30 days ago' +%Y-%m-%d)
 
 1. Git history past 7 days:
    git log --since="7 days ago" --no-merges --oneline --stat
    git diff --stat HEAD~$(git log --since="7 days ago" --oneline | wc -l)..HEAD 2>/dev/null
 
-2. Clean-result issues touched this week (one call covers both created
-   and updated — anything created in the window is by definition
-   updated in the window too):
-   # REST `/repos/.../issues` endpoint uses the core 5000/hr bucket;
-   # `gh issue list --json` would route through GraphQL (verified
-   # 2026-05-10), and `--search` would route through the search bucket
-   # (30/min). REST's `labels` query param does AND-OR-mix oddly, so we
-   # over-fetch all recent issues and filter client-side via jq.
+2. Clean-result issues touched this week (full bodies, for agenda
+   section). REST endpoint, jq filter:
    gh api "repos/$GH_REPO_OWNER/$GH_REPO_NAME/issues?state=all&since=${WEEK_AGO}T00:00:00Z&per_page=100" \
      --paginate \
      --jq '[.[]
        | select(has("pull_request") | not)
        | select(.labels | any(.name == "clean-results" or .name == "clean-results:draft"))
        | {number, title, body, createdAt: .created_at, updatedAt: .updated_at, labels: [.labels[].name]}]'
-   For each: extract TL;DR + confidence + hero figure URL. Bin
-   client-side on `createdAt >= ${WEEK_AGO}` if you need the
-   "new this week" subset.
+
+   For each: extract TL;DR + confidence tag + hero figure URL. Bin
+   client-side on `createdAt >= ${WEEK_AGO}` for the "new this week"
+   subset; the rest are updated-but-not-new.
 
 3. Done experiment + done impl issues this week:
-   gh issue list --search "is:issue updated:>=${WEEK_AGO} (label:status:done-experiment OR label:status:done-impl)" \
+   gh issue list --search "is:issue updated:>=${WEEK_AGO} (label:status:done_experiment OR label:status:done_impl)" \
      --json number,title,labels,updatedAt
 
 4. Recent figures:
    find figures -type f \( -name "*.png" -o -name "*.pdf" \) -mtime -7
-   READ each .png with the Read tool before captioning.
+   READ each .png with the Read tool before captioning. Max 5 figures.
 
-5. Eval results past 7 days:
-   find eval_results -name "*.json" -mtime -7 -type f
-
-6. Pending / blocked items (one call, bin client-side by label):
+5. Pending / blocked items:
    gh issue list --state open \
      --search "is:open (label:status:blocked OR label:status:proposed OR label:status:running)" \
      --json number,title,labels,updatedAt
-   Then partition the result by which status:* label each item carries.
+   Partition by label.
+
+6. Done experiments past 30 days (for great-thoughts march-toward audit):
+   gh issue list --search "is:issue updated:>=${MONTH_AGO} \
+     (label:status:done_experiment OR label:status:done_impl)" \
+     --json number,title,labels,updatedAt
+
+7. RESULTS.md and docs/research_ideas.md for great-thoughts context.
+
+8. Last week's great-thoughts portfolio (for stable problem IDs):
+   PREV_DIGEST=$(sagan_psql "SELECT body_md FROM weekly_digests ORDER BY week_start DESC OFFSET 1 LIMIT 1" || echo "")
+   Extract the "Important problems" table (P1, P2, ...) — carry IDs
+   forward verbatim, mark retired ⏹️ <reason> if applicable.
 
 # Output structure
 
-# Weekly Update — week <WEEK_TAG>
+# Weekly digest — week <WEEK_TAG>
 
 ## TL;DR
-[2-3 sentences. Single most important thing learned this week + what it means.]
+[2-3 sentences. Lead with the one thing the mentor most needs to know.]
 
-## User notes
-{{USER_NOTES}}
+## State of play
 
-## Self-reflection (canonical)
-1. **What is the ONE result this week I would put in a paper?**
-   {{ANSWER_1}}
-2. **What did I actively try to falsify, and did it survive?**
-   {{ANSWER_2}}
-3. **If I had one more week before mentor meeting, what would I do?**
-   {{ANSWER_3}}
-4. **Which of last week's plans turned out to be wrong, and what would I have predicted differently if I'd thought harder upfront?**
-   {{ANSWER_4}}
-5. **What's the highest-information-gain experiment I could run next week, per GPU-hour?**
-   {{ANSWER_5}}
-6. **Am I in Explore, Understand, or Distill phase for each topic — and does my time allocation match?**
-   {{ANSWER_6}}
+**What changed this week:** {{STATE_LEARNED}}
 
-## Headline Findings (clean-results from this week)
-[For each clean-result issue created or updated in past 7 days:
-title + confidence + 1-line TL;DR + hero figure URL.]
+**What's bothering me:** {{STATE_BOTHERING}}
 
-## Done This Week
+**Current bottleneck:** {{STATE_BOTTLENECK}}
+
+## Headline findings (clean-results this week)
+
+[For each clean-result issue in the past 7 days, in order of confidence
+(HIGH → MODERATE → LOW) then updated_at desc:
+
+### ✅/⚠️/❌ #<N> — <title>
+Confidence: <tag>
+TL;DR (verbatim from issue body):
+<paste>
+Hero figure: <url-or-omit>
+[→ Full report](https://github.com/superkaiba/explore-persona-space/issues/<N>)
+]
+
+## Done this week
+
 [Group by type:experiment / type:infra / type:analysis. 1-2 lines each.]
 
 ## Running experiments
-[Currently on pods, with expected completion.]
+
+[Currently on pods, expected completion.]
 
 ## Blockers
-[Open `status:blocked`. "None" is valid.]
 
-## Next Week (top 3 priorities)
-[Ordered by information gain per GPU-hour. Action + expected cost + issue link.]
+[Open status:blocked. "None" is valid.]
+
+## Belief audit
+
+{{BELIEF_AUDIT}}
+
+## Phase check
+
+{{PHASE_CHECK}}
+
+## Hamming cut — what dominates if I could only push one thread
+
+{{HAMMING_THREAD}}
+
+## Portfolio audit (great thoughts)
+
+### Important problems
+[Carried forward across weeks with stable IDs. Mix global (the
+subfield's open questions) with local (this project). 🆕 for new,
+⏹️ <reason> for retired. Never renumber existing.]
+
+| ID | Problem | Scope | Status |
+|---|---|---|---|
+
+### Attack column
+[For each active problem, one line. Hamming threshold: a method that
+could actually solve it, not just nibble.]
+
+### March-toward audit
+[Map every running issue + every done experiment past 30 days + every
+open proposal to a problem ID. Anything that maps to nothing is drift —
+list under "Drift candidates".]
+
+### Anomalies / contradictions
+[Things that don't fit the current model. Pull from clean-result
+"Standing caveats" blocks. The Darwin part — next paper often lives here.]
+
+## Next week — top 3 priorities
+
+{{NEXT_WEEK_TOP3}}
+
+[For each: action + expected GPU-hours + falsification criterion +
+issue link.]
+
+## Questions for mentor
+
+{{MENTOR_QUESTIONS}}
 
 # Writing rules
 
 - Lead with result, not process. No legacy taxonomy / jargon.
 - Quantify everything (N, p, effect, CI). Be honest about negatives.
 - Bold key numbers; structured bullets only.
-- Read figures before captioning. Max 5 figures.
+- Read figures before captioning. Max 5 figures total.
 - Never fabricate. Cross-reference with clean-result bodies.
+- No effect-size jargon (Cohen's d, η², named statistical tests).
+- Carry stable problem IDs across weeks.
 
-# Publish
+# Publish — write to sagan
 
-  uv run python scripts/redact_for_gist.py --in /tmp/weekly-body.md --out /tmp/weekly-body.redacted.md
-  gh gist create --public \
-    --filename "weekly-${WEEK_TAG}.md" \
-    --desc "Weekly research update — ${WEEK_TAG}" \
-    /tmp/weekly-body.redacted.md
+After building the body, write it to /tmp/weekly-digest-body.md then
+INSERT into weekly_digests with the orchestrator's helper. Use the
+ORCHESTRATOR's environment (the subagent doesn't have SAGAN_DATABASE_URL;
+it returns the body for the orchestrator to insert):
 
-RETURN the gist URL as the SOLE output. No commentary.
+  RETURN both:
+  1. The full body markdown
+  2. The proposed week_start (Monday of the current week, YYYY-MM-DD)
+
+The orchestrator inserts via psql, scoped to the project being reviewed
+(default: `conditional-behavior`):
+
+  sagan_psql "
+    INSERT INTO weekly_digests (project_id, week_start, body_md, drafted_at)
+    VALUES ('$EPS_PROJECT_ID', '<week_start>', \$body\$<body>\$body\$, now())
+    ON CONFLICT (project_id, week_start) DO UPDATE SET
+      body_md = excluded.body_md,
+      edited_at = now()
+    RETURNING id;
+  "
+
+The returned UUID is the digest_id. Phase 5 of the orchestrator marks
+it sent + adds share_token.
+
+RETURN the body + week_start as a JSON blob; no commentary, no gist
+publication. The orchestrator handles the DB write.
 ```
 
 ---
 
-## Subagent prompt: Workflow optimization
+## Subagent prompt: Overall narrative refresh (Sagan)
 
-This task uses the existing `retrospective` agent, which already knows the
-playbook. Spawn it with `subagent_type: "retrospective"` and the prompt
-below. It does the JSONL transcript review + GitHub-side activity scan
-itself.
+```
+You are regenerating the overall PROJECT NARRATIVE for the
+Conditional Behavior in Language Models project (sagan slug:
+conditional-behavior). The output is a single markdown body that will
+be INSERTED as a new row in `project_narratives` with status='draft'.
+
+The narrative answers "where is the program right now?" — comprehensive,
+condensed, evergreen. Different shape from the weekly digest, which
+answers "what changed this week?". The narrative is the page shown at
+https://sagan.superkaiba.com/p/conditional-behavior — written for any
+viewer (mentor, collaborators, public).
+
+# Sources
+
+1. Current published narrative (the starting point — most content
+   carries forward, you're updating, not regenerating from scratch):
+
+   sagan_psql "SELECT body_md FROM project_narratives
+                WHERE project_id = (SELECT id FROM projects WHERE slug='conditional-behavior')
+                  AND status='published'
+                ORDER BY published_at DESC LIMIT 1"
+
+2. Recent clean-results (past 30 days, full bodies) — for new findings
+   to fold in:
+
+   gh issue list --label clean-results --state all \
+     --search "updated:>=$(date -d '30 days ago' +%Y-%m-%d)" \
+     --json number,title,body,labels,updatedAt --limit 50
+
+3. `RESULTS.md`, `docs/SUMMARY.md`, `docs/papers.md` for context.
+
+4. Open follow-up issues filed this week (for the "Open follow-ups"
+   section of the narrative):
+
+   WEEK_AGO=$(date -d '7 days ago' +%Y-%m-%d)
+   gh issue list --search "is:open created:>=${WEEK_AGO} (label:status:proposed OR label:type:experiment)" \
+     --json number,title,labels,createdAt
+
+# Updates to fold in (from Phase 1 walkthrough)
+
+The narrative SHAPE stays the same week-to-week (Overarching frame →
+trigger types → Q1-Q5 → Applications → Open follow-ups → Related but
+scoped out). The CONTENT updates based on what changed.
+
+For each Q1-Q5:
+- Add any new clean-result evidence under "What we've shown" or
+  "Recent experiments" subsection
+- Add new open issues to "Next step" / "Filed:" lines
+- Refine framing if Phase 1 walkthrough surfaced a sharper version
+
+The Hamming-cut thread ({{HAMMING_THREAD}}) influences the ordering: if
+the user identified one thread as dominant for the next 2 weeks, give it
+slightly more prominence (e.g., bold the next-step bullet).
+
+# Output structure
+
+Match the existing published narrative exactly. The current shape is:
+
+# <Project title> — current state
+
+## What we're studying
+[Conditional behavior + three trigger classes. ~3 sentences.]
+
+## Five research questions
+
+### Q1. <title>
+What we've shown so far:
+- <bullets with #refs>
+Next: <one paragraph or sentence>
+
+### Q2. <title>
+[same shape]
+... Q3, Q4, Q5 ...
+
+## Applications
+[Defense + elicitation. ~2 paragraphs.]
+
+## Open follow-ups currently filed
+- [list of issue refs with one-line descriptions]
+
+## Related but scoped out
+[Spun-off projects, e.g., EM Mechanism.]
+
+# Writing rules
+
+- This is mentor- and public-facing. NO LessWrong slang, NO project-
+  internal jargon, NO confidence labels in inline prose (those live in
+  the linked clean-result issues).
+- Issue references render as standard markdown links to the GitHub issue.
+  The overlay-on-click feature is a future UI build; for now, plain
+  links are fine.
+- Aim for under 1200 words total. Tight.
+
+# Publish — write to sagan
+
+After building the body, RETURN it to the orchestrator with the proposed
+narrative title (e.g., "Current state — <YYYY-MM-DD>"). The orchestrator
+INSERTs as draft:
+
+  sagan_psql "
+    INSERT INTO project_narratives (project_id, title, body_md, status)
+    VALUES ('<project_id>', '<title>', \$body\$<body>\$body\$, 'draft')
+    RETURNING id;
+  "
+
+Phase 4 of the orchestrator presents the draft to the user for
+iteration; Phase 5 marks it published (and auto-archives the previous
+published narrative).
+
+RETURN the body + title as JSON; no commentary.
+```
+
+---
+
+## Subagent prompt: Workflow optimization (gist, unchanged)
+
+This task uses the existing `retrospective` agent. Spawn with
+`subagent_type: "retrospective"` and the prompt below.
 
 ```
 End-of-week workflow retrospective for the explore-persona-space project.
@@ -342,37 +677,32 @@ Output structure:
 # Publish
 
   WEEK_TAG=$(date +%Y-W%V)
-  # Body already in /tmp/weekly-workflow-body.md after you build it.
   uv run python scripts/redact_for_gist.py --in /tmp/weekly-workflow-body.md --out /tmp/weekly-workflow-body.redacted.md
   gh gist create --public \
     --filename "weekly-workflow-${WEEK_TAG}.md" \
     --desc "Weekly Claude Code workflow optimization — ${WEEK_TAG}" \
     /tmp/weekly-workflow-body.redacted.md
 
-This skill is READ-ONLY for the project — never modify CLAUDE.md or any
-agent / skill / hook directly. Every proposed change is a diff in the gist.
+READ-ONLY for the project — never modify CLAUDE.md or any agent / skill
+/ hook directly. Every proposed change is a diff in the gist.
 
 RETURN the gist URL as the SOLE output. No commentary.
 ```
 
 ---
 
-## Subagent prompt: Code hygiene
+## Subagent prompt: Code hygiene (gist, unchanged)
 
 ```
-End-of-week code hygiene scan for the explore-persona-space project.
-Combines repo-wide dead-code analysis, refactor candidates, dependency
-freshness, .claude/ health audit, code duplication (jscpd), and unmerged
-worktree branches into one report. READ-ONLY for the project — never
-auto-refactor.
+End-of-week code hygiene scan. Combines repo-wide dead-code analysis,
+refactor candidates, dependency freshness, .claude/ health audit, code
+duplication (jscpd), and unmerged worktree branches into one report.
+READ-ONLY for the project — never auto-refactor.
 
 # Hard requirement
 
 Node v18+ + jscpd accessible via `npx jscpd`. If unavailable, abort and
-return the message:
-
-  "install Node v18+ and re-run; jscpd is required for duplication
-   detection. \`npm install -g jscpd\` or use the ephemeral \`npx jscpd\`."
+return: "install Node v18+ and re-run; jscpd is required."
 
 # Procedure
 
@@ -381,41 +711,27 @@ WEEK_TAG=$(date +%Y-W%V)
 1. Lint sweep (safe auto-fix):
    uv run ruff check --fix .
    uv run ruff format .
-   Capture: N files reformatted, M lint fixes applied.
 
-2. Repo-wide dead-code analysis (no auto-fix — re-exports may be flagged):
+2. Repo-wide dead-code analysis:
    uv run ruff check . --select F401,F811,F841 --no-fix
 
-3. Refactoring candidates (ranked by severity, do NOT auto-refactor):
-   - Python files > 500 lines (excluding tests, generated code)
-   - Functions > 60 lines
-   - Functions with > 4 levels of indentation
+3. Refactoring candidates: Python files > 500 lines, functions > 60
+   lines, functions with > 4 levels of indentation.
 
 4. Dependency audit:
-   uv pip list --outdated 2>/dev/null || echo "uv pip list not available"
-   Flag packages > 2 major versions behind; note known security advisories.
+   uv pip list --outdated 2>/dev/null
 
-5. .claude/ health audit:
-   - .claude/agents/*.md: grep for file paths or function names that no
-     longer exist in the codebase
-   - .claude/skills/*/SKILL.md: check for broken refs to other skills/agents
-   - .claude/plans/: flag plans > 30 days old that reference issues now
-     in `status:done-*`
-   - .claude/settings.json: check allow rules for tools that no longer exist
+5. .claude/ health: stale refs in agents/skills/plans/settings.
 
 6. Unmerged worktree branches:
    git worktree list --porcelain | awk '/^worktree/ {print $2}' | grep '\.claude/worktrees/'
-   For each, count `git log main..<branch> --oneline | wc -l`.
 
-7. Code duplication via jscpd (min 10 lines / 50 tokens):
+7. Code duplication via jscpd:
    npx jscpd --min-lines 10 --min-tokens 50 --reporters json \
-     --output /tmp/jscpd src/ scripts/ 2>/tmp/jscpd-stderr.log || true
-   Top 10 duplicates from /tmp/jscpd/jscpd-report.json.
+     --output /tmp/jscpd src/ scripts/
 
-8. Skill / agent description-overlap (Jaccard on description bigrams,
-   threshold 0.4):
-   Inline Python over .claude/skills/*/SKILL.md + .claude/agents/*.md
-   frontmatter `description:` blocks.
+8. Skill / agent description overlap (Jaccard on description bigrams,
+   threshold 0.4).
 
 # Output structure
 
@@ -424,144 +740,50 @@ WEEK_TAG=$(date +%Y-W%V)
 ## Lint + Format
 - N files reformatted, M lint fixes applied
 
-## Dead Code (repo-wide)
-- N unused imports across M files
-- [top 10]
+## Dead Code
+- [top 10 unused imports / functions]
 
 ## Refactoring Candidates
-- N files > 500 lines, M functions > 60 lines
 - [top 5 by severity]
 
 ## Dependencies
-- N packages outdated; [list if any]; security advisories [if any]
+- [outdated + security advisories]
 
 ## .claude/ Health
-- N stale references found; [list]
+- [stale references]
 
 ## Unmerged Worktree Branches
-- <wt path>: branch <name>, <N> unmerged commits
-- (or "(none)")
+- [list]
 
 ## Code Duplication (jscpd)
-- [top 10 duplicate pairs with file:line ranges]
+- [top 10 pairs]
 
-## Skill / Agent Description Overlap (jaccard > 0.4)
-- [list pairs] (or "no overlapping pairs above 0.4")
+## Skill / Agent Description Overlap
+- [pairs above 0.4]
 
 ## Recommended Actions
-1. <highest-priority>
-2. ...
+1. ...
 
 # Publish
 
   uv run python scripts/redact_for_gist.py --in /tmp/weekly-hygiene-body.md --out /tmp/weekly-hygiene-body.redacted.md
   gh gist create --public \
     --filename "weekly-hygiene-${WEEK_TAG}.md" \
-    --desc "Weekly code hygiene + refactor candidates — ${WEEK_TAG}" \
+    --desc "Weekly code hygiene — ${WEEK_TAG}" \
     /tmp/weekly-hygiene-body.redacted.md
 
-RETURN the gist URL as the SOLE output. No commentary.
+RETURN the gist URL as the SOLE output.
 ```
 
 ---
 
-## Subagent prompt: Mentor-prep agenda
+## Subagent prompt: Mentor-prep slides (Marp deck, unchanged)
 
 ```
-Assemble recent clean-result GitHub issues into a single
-screen-shareable mentor-meeting agenda. Read-only — never edit source
-issues; never paraphrase TL;DRs (copy verbatim). Default window: past 7
-days from now (label `clean-results`).
-
-# Step 1: Fetch issues
-
-WEEK_AGO=$(date -d '7 days ago' +%Y-%m-%d)
-WEEK_TAG=$(date +%Y-W%V)
-
-gh issue list --label clean-results --state all \
-  --search "updated:>=${WEEK_AGO}" \
-  --json number,title,body,labels,updatedAt --limit 100
-
-For each issue, fetch the full body:
-  gh issue view <N> --json number,title,body,labels,updatedAt
-
-# Step 2: Parse each clean-result body
-
-Extract for each:
-- TL;DR block: everything between `## TL;DR` and the horizontal rule
-  preceding `# Detailed report`.
-- Subsections to verify present: ### Background, ### Methodology,
-  ### Results, ### Next steps. Warn (not fail) if any missing.
-- Hero figure URL: first `raw.githubusercontent.com` markdown image under
-  ### Results.
-- Confidence tag: parse the `**Confidence: HIGH | MODERATE | LOW**` line
-  in ### Results.
-- Status icon:
-  - ✅ if confidence = HIGH
-  - ⚠️  if confidence = MODERATE
-  - ❌ if confidence = LOW or any CRITICAL caveat present
-- Next steps subsection — used for the aggregated "Open questions / asks"
-  block at end.
-
-# Step 3: Order
-
-Primary sort: confidence (HIGH → MODERATE → LOW).
-Secondary: updatedAt desc.
-Tertiary: issue number asc.
-
-# Step 4: Build doc
-
-# Mentor Meeting — <YYYY-MM-DD>
-
-## Summary slide
-- ✅ #<N> — <one-sentence claim> (confidence)
-- ⚠️  #<N> — ...
-- ❌ #<N> — ...
-
-## Agenda
-### 1. #<N> — <title>
-<full TL;DR pasted verbatim from issue body, hero figure inlined>
-[→ Full report](https://github.com/superkaiba/explore-persona-space/issues/<N>)
-
-### 2. #<N> — ...
-
-## Open questions / asks
-<aggregated "Next steps" subsections, deduplicated, ranked across all
-clean-results by information gain per GPU-hour.>
-
-## Backup slides
-- #<N> — Detailed report: https://github.com/superkaiba/explore-persona-space/issues/<N>#user-content-detailed-report
-- ...
-
-# Step 5: Length check
-
-If > 8 clean-results in the window, warn at the top of the doc:
-"⚠️  N clean-results in window — consider filtering or splitting into two
-meetings (Joe Benton ≤10min reading-time principle)."
-
-# Step 6: Publish
-
-  uv run python scripts/redact_for_gist.py --in /tmp/weekly-mentor-body.md --out /tmp/weekly-mentor-body.redacted.md
-  gh gist create --public \
-    --filename "weekly-mentor-${WEEK_TAG}.md" \
-    --desc "Mentor meeting agenda — week ${WEEK_TAG}" \
-    /tmp/weekly-mentor-body.redacted.md
-
-If zero clean-results in the window, do NOT publish a gist. Return the
-literal string "(no clean-results this week — skipping mentor agenda)"
-as the output instead. The orchestrator handles that gracefully.
-
-RETURN the gist URL (or the skip message) as the SOLE output. No commentary.
-```
-
----
-
-## Subagent prompt: Mentor-prep slides
-
-```
-You are the mentor-prep slides subagent. Generate a Marp deck for this
-week's mentor meeting using the `mentor-update-slides` skill, then publish
-the deck (markdown source + rendered PDF) as a single public gist.
+You are the mentor-prep slides subagent. Generate / update a Marp deck
+for this week's mentor meeting using the `mentor-update-slides` skill.
+The deck is a single persistent file at `figures/mentor-slides/deck.md`
+(plus a rendered PDF) — not a new file per week.
 
 # Step 1: Invoke the skill
 
@@ -573,302 +795,59 @@ The skill writes:
 - figures/mentor-slides/deck.md   (Marp source — persistent across weeks)
 - figures/mentor-slides/deck.pdf  (rendered via marp-cli)
 
-The deck is a single persistent file with three anchored regions
-(HEADER replaced each run, LOG append-only newest-first with date
-dividers, APPENDIX accumulating). See
+The deck has three anchored regions (HEADER replaced each run, LOG
+append-only newest-first, APPENDIX accumulating). See
 `.claude/skills/mentor-update-slides/SKILL.md` § Persistent-deck model.
 
-The skill returns either a success report with the local paths, or a
-literal "(skipped — …)" string if zero clean-result issues were found in
-the 7-day window. If the skill skipped, do NOT publish a gist. Return the
-literal string "(no clean-results this week — skipping mentor slides)" as
-the SOLE output. The orchestrator handles that gracefully.
+If the skill skips (zero clean-results in the 7-day window), return the
+literal string "(no clean-results this week — skipping mentor slides)".
 
-# Step 2: Redact deck.md
+# Step 2: Return
 
-  WEEK_TAG=$(date +%Y-W%V)
-  uv run python scripts/redact_for_gist.py \
-    --in "figures/mentor-slides/deck.md" \
-    --out /tmp/weekly-slides-body.redacted.md
+This task does NOT publish a gist or write to sagan. The slides live as
+a file in the repo for the actual meeting. The user reviews + commits
+the deck themselves if they want it archived.
 
-# Step 3: Publish (markdown + PDF in one gist)
+RETURN one of:
+- The local paths: "figures/mentor-slides/deck.md, figures/mentor-slides/deck.pdf"
+- The skip message: "(no clean-results this week — skipping mentor slides)"
 
-The markdown is the gist's primary file (renders inline on the gist page).
-The PDF is attached as a downloadable file for the actual presentation.
-Because the deck is persistent, every weekly gist is a snapshot of the
-WHOLE deck (current HEADER + full LOG history) rather than just this
-week's slides — that is intentional, and matches Hughes & Chua's "one
-evolving deck per project" principle.
-
-  if [ -f "figures/mentor-slides/deck.pdf" ]; then
-    gh gist create --public \
-      --filename "weekly-slides-${WEEK_TAG}.md" \
-      --desc "Mentor meeting slides — week ${WEEK_TAG} (persistent deck snapshot)" \
-      /tmp/weekly-slides-body.redacted.md \
-      "figures/mentor-slides/deck.pdf"
-  else
-    # PDF render failed (marp-cli unavailable, etc.) — publish markdown only.
-    gh gist create --public \
-      --filename "weekly-slides-${WEEK_TAG}.md" \
-      --desc "Mentor meeting slides — week ${WEEK_TAG} (PDF render failed)" \
-      /tmp/weekly-slides-body.redacted.md
-  fi
-
-# Constraints
-
-- Read-only on the project: do NOT auto-commit `figures/mentor-slides/`.
-  The user reviews the deck and commits it themselves if they want it
-  archived. The gist is sufficient for the meeting.
-- The mentor-update-slides skill enforces its own quality checklist (no
-  effect-size jargon, ≤12-word headlines, etc.). Do not re-validate here.
-- If marp-cli's first render is slow (downloads Chromium for headless
-  PDF), that's expected on first invocation; subsequent runs are ~2-3s.
-
-RETURN the gist URL (or the skip message) as the SOLE output. No commentary.
+No commentary.
 ```
 
 ---
-
-## Subagent prompt: Great thoughts
-
-```
-You are the great-thoughts subagent. Hamming-style portfolio audit:
-"Great Thoughts Time" applied to the explore-persona-space project.
-Output is a stable, evolving list of important problems, an attack
-column, a march-toward audit of recent work, anomalies, a 5-year
-extrapolation, and 3 next-week recommendations. Read-only.
-
-# Step 1: Continuity — load last week's audit
-
-WEEK_AGO=$(date -d '7 days ago' +%Y-%m-%d)
-WEEK_TAG=$(date +%Y-W%V)
-TODAY=$(date +%Y-%m-%d)
-
-# Find last successful great-thoughts gist URL.
-LAST_URL=$(grep '"task":"great-thoughts"' .claude/cache/update_log.jsonl 2>/dev/null \
-  | grep '"status":"success"' | tail -1 \
-  | python3 -c 'import json,sys; line=sys.stdin.read().strip(); print(json.loads(line).get("url","")) if line else print("")' \
-  2>/dev/null || echo "")
-
-if [ -n "$LAST_URL" ]; then
-  LAST_GIST_ID=$(echo "$LAST_URL" | awk -F'/' '{print $NF}')
-  gh gist view "$LAST_GIST_ID" --raw > /tmp/last-greatthoughts.md 2>/dev/null || true
-fi
-
-# If /tmp/last-greatthoughts.md exists and is non-empty, this is the
-# starting point. Carry forward the "Important problems" list verbatim
-# (preserving stable IDs P1, P2, ...) and update statuses. If it does
-# not exist, this is week-1 and you build the list from scratch — say
-# so explicitly at the top of the gist.
-
-# Step 2: Inputs (gather in parallel via Bash; read-only)
-
-1. RESULTS.md — current cross-experiment claims a paper would cite.
-2. docs/SUMMARY.md — Motivation + Long-term goals (skip the body if
-   only the gist-id marker is present).
-3. docs/research_ideas.md — pre-issue ideation backlog.
-4. All clean-results (full bodies, not just titles):
-     gh issue list --label clean-results --state all --limit 100 \
-       --json number,title,body,labels,updatedAt
-   For each, extract: TL;DR, confidence, "Standing caveats" block.
-5. Currently-running + open-proposal items (one call; partition by
-   label on the client):
-     gh issue list --state open \
-       --search "is:open (label:status:running OR label:status:proposed)" \
-       --json number,title,labels,updatedAt
-6. Done experiments past 30 days:
-     MONTH_AGO=$(date -d '30 days ago' +%Y-%m-%d)
-     gh issue list --search "is:issue updated:>=${MONTH_AGO} \
-       (label:status:done-experiment OR label:status:done-impl)" \
-       --json number,title,labels,updatedAt
-7. (Optional) docs/contradictions.md — anomalies log if/when it exists.
-     test -f docs/contradictions.md && cat docs/contradictions.md
-
-# Step 3: Build the audit
-
-Output structure (write to /tmp/weekly-greatthoughts-body.md):
-
-# Great Thoughts — week <WEEK_TAG>
-
-## Preface
-
-[1-2 sentences. Either "Continuing from last week's list at <LAST_URL>"
-or "Week-1 list — built from scratch from RESULTS.md + clean-results".]
-
-## User notes
-{{USER_NOTES}}
-
-## Important problems (10-20)
-
-[Carried forward across weeks. Each gets a stable ID (P1, P2, ...).
-Mix global problems (the subfield's open questions in interp / persona
-representations / EM / alignment-relevant capability work) with local
-problems (this project's open questions). Mark new entries 🆕,
-retired entries ⏹️ <reason>, others plain. If carried over, KEEP the
-ID; never renumber existing problems.]
-
-| ID | Problem (one sentence) | Scope | Status |
-|---|---|---|---|
-| P1 | ... | global / local | active / 🆕 / ⏹️ <reason> |
-| ... |
-
-## Attack column
-
-[For each active problem, one line. The Hamming threshold: a method
-we believe could actually solve it, not just nibble at it.]
-
-| ID | Attack | Confidence |
-|---|---|---|
-| P1 | <method we'd try> | ✅ have one / 🤔 half-formed / ❌ no attack |
-| ... |
-
-## March-toward audit
-
-[Map every running issue + every done-experiment from the past 30 days
-+ every open proposal to a problem ID. Anything that maps to nothing
-is flagged as drift — list it explicitly under "Drift candidates"
-below.]
-
-| Issue | Title | Maps to | Notes |
-|---|---|---|---|
-| #N | ... | P3 | ... |
-| #M | ... | — | **drift?** |
-| ... |
-
-### Drift candidates
-[Issues with no problem mapping. For each: is it actually load-bearing
-infrastructure, or is it scope creep? "None" is valid.]
-
-## Anomalies / contradictions
-
-[Things that don't fit our current model. Pull from clean-result
-"Standing caveats" blocks and docs/contradictions.md. The Darwin part —
-the next paper often lives here.]
-
-- <anomaly>: <where it surfaced (issue # / clean-result)>
-- ...
-
-## 5-year extrapolation
-
-[If the next 50 weeks looked like this one, what would we have built?
-Is that the answer to one of the important problems above? 2-4
-sentences. Be willing to say "no" — that's the whole point.]
-
-## Top-3 next-week recommendations
-
-[Ranked by "marches toward a problem with a real attack", NOT just
-information-gain-per-GPU-hour. Each recommendation:
-1. Names the problem ID it advances.
-2. Links to an existing issue OR proposes a new one (with a one-line
-   spec the user can paste into `gh issue create --label status:proposed`).
-3. Estimates GPU-hours and a falsification criterion.]
-
-1. **<action>** (advances P<X>) — <link or proposed spec>. ~<N> GPU-hours.
-   Falsifiable by: <one line>.
-2. ...
-3. ...
-
-## Reading-time target: under 8 minutes.
-
-# Step 4: Publish
-
-uv run python scripts/redact_for_gist.py \
-  --in /tmp/weekly-greatthoughts-body.md \
-  --out /tmp/weekly-greatthoughts-body.redacted.md
-gh gist create --public \
-  --filename "weekly-greatthoughts-${WEEK_TAG}.md" \
-  --desc "Great Thoughts portfolio audit — ${WEEK_TAG}" \
-  /tmp/weekly-greatthoughts-body.redacted.md
-
-# Constraints
-
-- READ-ONLY on the project. Do not edit RESULTS.md, ideas.md, or any
-  GitHub issues. Recommendations land in the gist; the user creates
-  issues themselves.
-- Stable IDs are load-bearing. NEVER renumber a problem that was
-  P3 last week. Add new ones at the end (P21, P22 ...). Retire by
-  marking ⏹️, never by deleting.
-- Be willing to retire problems. If a problem has had no movement
-  for 4 weeks AND no attack in the attack column, propose retirement
-  with a reason ("solved by #N", "subsumed by P7", "no attack and
-  out of scope for this project").
-- The 5-year extrapolation must be honest. If the answer is "we'd
-  have a slightly better persona-space SAE picture", say so — the
-  point is to surface drift, not to flatter the project.
-- No effect-size jargon (Cohen's d, η², named statistical tests).
-  Numbers as percentages + N + p-values only — same rules as the
-  clean-result template.
-
-RETURN the gist URL as the SOLE output. No commentary.
-```
-
----
-
-## Subagent prompt: SUMMARY gist
-
-```
-You are the SUMMARY-gist subagent. Your job is to regenerate the project
-SUMMARY (Motivation / Related work / Current results / Immediate next
-steps / Long-term goals / Glossary) and edit-in-place the persistent
-public gist whose ID is stored in the first line of `docs/SUMMARY.md`.
-
-Procedure:
-
-1. From the repo root, run:
-   ```
-   uv run python scripts/render_summary.py --gist
-   ```
-   This:
-   - Reads `docs/SUMMARY.template.md` (Motivation / Long-term goals /
-     Glossary), `docs/claims.yaml` (Current results), and live `gh
-     issue list` (clean-results recent + status:proposed prio:high
-     next steps).
-   - Writes `docs/SUMMARY.md` locally (with gist-id HTML comment
-     preserved as the first line).
-   - Edits the persistent gist in place (`gh gist edit <id> -f
-     SUMMARY.md`). On first run only it creates the gist and prints a
-     stderr WARN with the exact `git add && git commit && git push`
-     recipe — surface that warning in the orchestrator's report-back
-     so the user can persist the new gist-id marker.
-
-2. Capture stdout and stderr. Look for the `[render_summary] gist URL:
-   <url>` line.
-
-3. Log the URL to `docs/update_log.md` with `task: summary-gist` and the
-   current ISO timestamp.
-
-RETURN the gist URL as the SOLE output. If `render_summary.py` exits
-non-zero, return `(failed: <one-line stderr summary>)` instead. The
-orchestrator's partial-failure tolerance handles failures without
-blocking the other subagents.
-```
 
 ## Rules
 
 1. **Manual trigger only.** No cron.
-2. **Parallel dispatch.** Always issue all `Agent` tool calls in a single
-   assistant message — they must run concurrently.
-3. **One gist per task.** No combined report. The user requested
-   per-task gists.
-4. **Partial-failure tolerance.** A failing subagent must not block the
-   others; report the failure inline and continue.
-5. **Read-only on the project.** None of the subagents auto-modify
-   CLAUDE.md, code, agents, skills, or hooks. Every proposed change
-   lands in a gist for the user to review.
+2. **Parallel dispatch in Phase 3.** All `Agent` tool calls in a single
+   assistant message — they run concurrently.
+3. **Review gate before publish.** Phase 4 is mandatory in interactive
+   mode. Skipped only with `--autonomous`.
+4. **Partial-failure tolerance.** A failing subagent doesn't block the
+   others; report inline and continue.
+5. **Read-only on the project for non-sagan tasks.** Workflow-optimization
+   and code-hygiene never modify CLAUDE.md, agents, skills, or hooks
+   directly. Slides write only to `figures/mentor-slides/`.
+6. **Auto-archive on narrative publish.** Phase 5's SQL transitions the
+   previous published narrative to `archived` BEFORE marking the new
+   one published, so there's always exactly one published narrative per
+   project.
+
+## What this skill does NOT do yet
+
+(All three "future build" items have shipped — see `apps/web/app/p/[slug]/page.tsx`
+for the comment + improve-button integration, the `/api/narratives/[id]/improve`
+endpoint for the batched agent-run trigger, and the `weekly_digests.project_id`
+schema migration for per-project digests.)
 
 ## Self-reflection prompt sources
 
-The 6 weekly self-reflection prompts (Step 0.5) are paraphrased from:
+The Phase 1 walkthrough draws on:
 
-1. Nanda — *Highly Opinionated Advice on How to Write ML Papers* — https://www.alignmentforum.org/posts/eJGptPbbFPZGLpjsp/highly-opinionated-advice-on-how-to-write-ml-papers
+1. Nanda — *Post 39: On Reflection* — https://www.neelnanda.io/blog/39-reflection
 2. Nanda — *My Research Process: Key Mindsets — Truth-Seeking* — https://www.alignmentforum.org/posts/cbBwwm4jW6AZctymL/my-research-process-key-mindsets-truth-seeking
-3. Chua / Hughes — *Tips on Empirical Research Slides* — https://www.lesswrong.com/posts/i3b9uQfjJjJkwZF4f/tips-on-empirical-research-slides
-4. Nanda — *My Research Process: Understanding and Cultivating Research Taste* — https://www.alignmentforum.org/posts/Ldrss6o3tiKT6NdMm/my-research-process-understanding-and-cultivating-research
-5. Perez — *Tips for Empirical Alignment Research* — https://www.alignmentforum.org/posts/dZFpEdKyb9Bf4xYn7/tips-for-empirical-alignment-research
-6. Nanda — *How I Think About My Research Process: Explore, Understand, Distill* — https://www.lesswrong.com/posts/hjMy4ZxS5ogA9cTYK/how-i-think-about-my-research-process-explore-understand
-
-All 6 URLs are distinct (round-2 cohesion-critic check). Phrasings are
-paraphrases, not direct quotes. Implementer (#251 slice 6) re-fetched
-the URLs at slice time to confirm faithfulness; if any source post is
-later updated and the paraphrase drifts, flag here and update both the
-prompt and the citation.
+3. Nanda — *How I Think About My Research Process: Explore, Understand, Distill* — https://www.lesswrong.com/posts/hjMy4ZxS5ogA9cTYK/how-i-think-about-my-research-process-explore-understand
+4. Platt — *Strong Inference* (Hamming-style cut)
+5. Chua / Hughes — *Tips on Empirical Research Slides* — https://www.lesswrong.com/posts/i3b9uQfjJjJkwZF4f/tips-on-empirical-research-slides
+6. Perez — *Tips for Empirical Alignment Research* — https://www.alignmentforum.org/posts/dZFpEdKyb9Bf4xYn7/tips-for-empirical-alignment-research

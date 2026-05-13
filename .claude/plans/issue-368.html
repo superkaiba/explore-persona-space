@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plan — Issue #368: Persona-vector (Chen et al. 2025-inspired) as leakage predictor (v3)</title>
+<style>
+  :root {
+    --fg: #1f2328;
+    --muted: #57606a;
+    --bg: #fff;
+    --accent: #0969da;
+    --warn: #b08800;
+    --danger: #cf222e;
+    --ok: #1a7f37;
+    --border: #d0d7de;
+    --code-bg: #f6f8fa;
+    --summary-bg: #eef6ff;
+    --diff-bg: #fff8e1;
+  }
+  body {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    max-width: 920px;
+    margin: 1.5rem auto;
+    padding: 0 1.25rem;
+    color: var(--fg);
+    background: var(--bg);
+    line-height: 1.55;
+    font-size: 15px;
+  }
+  h1 { font-size: 1.5rem; margin-top: 0.4em; }
+  h2 { font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; margin-top: 2rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.4rem; color: var(--fg); }
+  h4 { font-size: 0.98rem; margin-top: 1rem; color: var(--muted); }
+  code, pre { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.88em; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; }
+  pre {
+    background: var(--code-bg);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+  }
+  pre code { background: transparent; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 0.75rem 0; font-size: 0.93em; }
+  th, td { border: 1px solid var(--border); padding: 0.45rem 0.6rem; text-align: left; vertical-align: top; }
+  th { background: var(--code-bg); font-weight: 600; }
+  details { margin: 0.6rem 0; }
+  details > summary { cursor: pointer; font-weight: 600; padding: 0.3rem 0; }
+  .plan-summary {
+    background: var(--summary-bg);
+    border-left: 4px solid var(--accent);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0 2rem 0;
+  }
+  .plan-summary h2 { border: none; margin-top: 0.2em; font-size: 1.1rem; }
+  .plan-summary p { margin: 0.35rem 0; }
+  .plan-summary strong { color: var(--accent); }
+  .v2-banner {
+    background: var(--diff-bg);
+    border-left: 4px solid var(--warn);
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin: 0.75rem 0 1rem 0;
+    font-size: 0.93em;
+  }
+  .tag-high { color: var(--ok); font-weight: 600; }
+  .tag-medium { color: var(--warn); font-weight: 600; }
+  .tag-low { color: var(--danger); font-weight: 600; }
+  .small { font-size: 0.9em; color: var(--muted); }
+  blockquote {
+    border-left: 3px solid var(--border);
+    padding: 0.2rem 0.9rem;
+    color: var(--muted);
+    margin: 0.6rem 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>Plan — Issue #368: Persona-vector (Chen et al. 2025-inspired) as leakage predictor — v3 (round-3 revision)</h1>
+<p class="small">Two-phase, inference-only. Phase 1 = 4 non-persona triggers on #343 N=128 regression cells. Phase 2 = 5 source × 10 target persona pairs on #142 n=50 directed pairs. One target pod, 1× H100 80GB, intent <code>eval</code>.</p>
+
+<div class="v2-banner">
+<strong>v3 (this revision) — applies all 12 round-2 critic fixes (R1-R12).</strong> Cross-lens round-2 verdict was REVISE (Methodology REVISE Claude+Codex agree; Statistics REVISE reconciler-bound; Alternatives APPROVE both agree). Round 3 = mechanical bug fixes + spec clarifications + analyzer framing pre-registration. <strong>No design change</strong> — centered cosine convention (T1), 8-axis design + 9th descriptive (T7+T10), T11 Option A (regenerate all 10), two-separate-verdicts framing, and Phase 0/0.3 dependency ordering all preserved from v2.
+
+<table style="margin-top: 0.75rem; font-size: 0.86em;">
+  <thead><tr><th>#</th><th>What</th><th>Where in plan</th></tr></thead>
+  <tbody>
+    <tr><td>R1</td><td>Phase 0.0 gate code bug — assertion fails on 36-record system_prompts; filter to <code>source==panel</code> records first</td><td>§4.1.2 verification block</td></tr>
+    <tr><td>R2</td><td>Reproduction-sanity gate must use #142's existing Method-A (last-input-token) centroids, NOT this plan's Method-B mean-response centroids</td><td>§4.2.3 reproduction gate</td></tr>
+    <tr><td>R3</td><td>T9 NaN handling spec (<strong>reconciler-mandated</strong>) — <code>np.nanmean</code>, exclude zero-variance sources, per-source ρ table, calibration baseline</td><td>§4.2.3 T9 stanza</td></tr>
+    <tr><td>R4</td><td>Projdiff degeneracy disclosure — single fixed <code>helpful_test_act</code> → identical within-source rankings as <code>pvec_chenstyle_L20</code> by construction; documented as 5th simplification</td><td>§2.5, §4.1.2, §5 axis table</td></tr>
+    <tr><td>R5</td><td>H3 permutation null split — H3a (recipe agreement, expected pass) vs H3b (non-trivially leakage-aligned, substantive claim)</td><td>§4.1.4, §4.2.4, §6 verdict tables</td></tr>
+    <tr><td>R6</td><td>Method-B preregistered margin — <code>pvec_chenstyle_L20</code> must beat BOTH <code>pcentroid_methodA_L20</code> AND <code>pcentroid_methodB_L20</code> by Δρ ≥ 0.03; otherwise classify as "centroid replication, not Chen-style contrast confirmation"</td><td>§6.1, §6.2</td></tr>
+    <tr><td>R7</td><td>Phase 0.0 fallback SHA256 hash check on canonical <code>{test_id: prompt_text}</code> dict against #207's manifest</td><td>§4.1.2 fallback chain</td></tr>
+    <tr><td>R8</td><td>BH-FDR family scope clarified — α=0.10 applies to the 9 single-axis Spearman ρ p-values ONLY; ΔR², partial ρ, conditional ρ, within-source partial ρ are descriptive without correction</td><td>§6.1, §6.2</td></tr>
+    <tr><td>R9</td><td>Within-source partial ρ bootstrap CI — point threshold ≥0.30 underpowered at n=10 per source × 3-4 non-degenerate sources; report B=1000 bootstrap CI on the nanmean</td><td>§4.2.3, §6.2 T9 row</td></tr>
+    <tr><td>R10</td><td>T10 pre-registered framing — if Pearson r > 0.9 AND H1 PASS, analyzer MUST frame as "precision gain on shared information," not "contrast step reveals new leakage mechanism"</td><td>§6.1 T10 row</td></tr>
+    <tr><td>R11</td><td>Sonnet flatness inter-persona variance diagnostic — cross-persona centroid variance reported in <code>persona_pos_set_cohesion.json</code> to disambiguate H2 null from Sonnet flattening</td><td>§4.0.3, §10 Risks</td></tr>
+    <tr><td>R12</td><td>T14 conditional ρ calibration — compare against <code>semantic_cos</code> baseline's conditional ρ (=0.5644), NOT against new axis's own headline</td><td>§6.1 T14 row</td></tr>
+  </tbody>
+</table>
+</div>
+
+<section class="plan-summary">
+<h2>Plan Summary (above the fold — for Step 2c approval)</h2>
+<p><strong>Extraction:</strong> Apply a <em>Chen et al. 2025-inspired</em> recipe (with 4 documented simplifications listed in §2.5) to compute persona vectors for (a) 4 non-persona triggers from #181/#207 and (b) 10 non-baseline personas from #142. Recipe = paired pos/neg system prompts × 20 EVAL_QUESTIONS, vLLM greedy generation, HF teacher-forced forward pass, mean over response tokens at layer 20, vector = pos_centroid − neg_centroid, unit-normalized. Negative side = <code>"You are a helpful assistant."</code> × 5 paraphrases (universal anchor). <strong>Cosine convention: centered</strong> — subtract the mean over <code>ALL_EVAL_PERSONAS</code> centroids from both vectors before unit-normalize + cosine.</p>
+<p><strong>Hyperparameters:</strong> Qwen2.5-7B-Instruct (28 layers, hidden=3584), bf16 forward, fp32 activations, layers {15, 20, 25}, 5 paraphrases per side, 20 EVAL_QUESTIONS, temp=0/max_tokens=512/seed=42. No training.</p>
+<p><strong>Baselines / controls:</strong> Existing <code>semantic_cos</code> (#343 univariate ρ=0.481, R²=0.378; 5-axis baseline R²=0.4402 — H1 ΔR²≥0.04 target sits at R²≥0.4802) and JS-divergence (#142 |ρ|=0.746 on 50 pairs; #142 centered-cosine-L20 |ρ|=0.567 on same 50). 8 new axes (5 chenstyle variants + 1 projection-difference + 2 #216 centroid methods) compared head-to-head against <code>semantic_cos</code> on #343; head-to-head against JS on #142.</p>
+<p><strong>Loss surface:</strong> N/A — inference only.</p>
+<p><strong>Compute:</strong> 1× H100 80GB, intent <code>eval</code>. ~3-5h wall total. Phase 1 ~1.5h. Phase 2 ~2-3h. ~2.5-4 GPU-hours, ~$8-15.</p>
+<p><strong>Evaluation:</strong> Headline (H1) = paired-bootstrap 95% CI of Δρ(<code>pvec_chenstyle_L20</code>, <code>semantic_cos</code>) excludes zero <em>AND</em> point Δρ ≥ +0.05 AND ΔR² ≥ +0.04 on #343's N=128 <em>AND</em> (R6) Δρ ≥ +0.03 vs BOTH <code>pcentroid_methodA_L20</code> AND <code>pcentroid_methodB_L20</code> with paired-bootstrap CI excluding zero (else "centroid replication, not Chen-style contrast confirmation"). H2 = single Spearman ρ(<code>pvec_chenstyle_L20</code>, marker_leakage) ≥ 0.75 (matches JS within 0.05) <strong>plus</strong> within-source nanmean partial Spearman ρ ≥ 0.30 <strong>with bootstrap CI excluding zero</strong> (T9 + R9 co-equal condition; rules out source-discrimination artifact; comedian + possibly villain excluded as zero-variance per R3). H3 split into H3a (recipe agreement off-diagonal mean ≥ 0.7; expected to pass; failure = extraction broken) and H3b (off-diagonal mean exceeds 95th percentile of marker_rate-shuffle permutation null; substantive claim). Only <code>pvec_chenstyle_L20</code> is pre-registered as the H1/H2 verdict axis. R8: BH-FDR (α=0.10) applied <strong>only</strong> to the 9 single-axis Spearman ρ p-values; ΔR² / partial ρ / conditional ρ / within-source partial ρ are descriptive without correction.</p>
+<p><strong>Top 3 risks:</strong> (1) <strong>Source-clustering confound (T9 — Phase 2 ICC≈0.60):</strong> 59-61% of leakage variance is between-source; any metric that correctly ranks sources gets ρ≈0.7+ without capturing within-source geometry. Mitigated by co-equal within-source partial Spearman + R9 bootstrap CI in H2 verdict; R3 handles NaN (comedian zero-variance excluded). (2) <strong>Projdiff degeneracy (R4, new v3):</strong> <code>pvec_chenstyle_L20_projdiff</code> uses a fixed <code>helpful_test_act</code>; within-source rankings identical to <code>pvec_chenstyle_L20</code> by construction. Disclosed at §2.5 simplification 5; H3a/H3b reported with and without projdiff. (3) <strong>Sonnet-flatness on regenerated personas (R11, new v3):</strong> Option A regenerates all 10 personas; H2 null could reflect Sonnet flattening rather than <code>pvec_chenstyle_L20</code> failure. Mitigated by cross-persona centroid variance diagnostic at §4.0.3.</p>
+</section>
+
+<h2>Goal</h2>
+
+<p>Apply a <strong>Chen et al. 2025-inspired persona-vector extraction pipeline</strong> (arXiv:2507.21509, Anthropic, code: <a href="https://github.com/safety-research/persona_vectors">safety-research/persona_vectors</a>) to two existing leakage-prediction datasets, and ask whether persona-vector cosine is a sharper single-axis predictor of cross-prompt <code>[ZLT]</code> marker leakage than:</p>
+<ul>
+  <li><code>semantic_cos</code> (last-token centroid cosine — #343 baseline, Spearman ρ = 0.4808, OLS univariate R² = 0.3783 on N=128; 5-axis baseline including all 4 other axes + semantic_cos has R² = 0.4402, so H1 ΔR²≥0.04 = total R²≥0.4802).</li>
+  <li>JS divergence over output logits (#142 baseline, Spearman |ρ| = 0.746 on n=50 directed pairs).</li>
+  <li><strong>Centered-cosine</strong> at L20 (#142 alt baseline, |ρ| = 0.567 on the same 50 pairs). "Centered" is per #142 body line 87: subtract the mean across all <code>ALL_EVAL_PERSONAS</code>' L20-centroids before unit-normalize + cosine. Raw cosine on the same 50 pairs is |ρ|=0.7632 (orchestrator-verified) — the recipe-comparison contract here is <strong>centered vs centered</strong>, since #142 used centered for its headline 0.567.</li>
+</ul>
+
+<p>"Chen et al.-inspired" rather than "Chen et al. canonical" because we adopt 4 simplifications (see §2.5), so naming honestly distinguishes our recipe from a faithful Chen et al. replication.</p>
+
+<h2>Hypothesis</h2>
+
+<p>Three hypotheses, kept verbatim from the issue body (with axis names updated per T12 rename):</p>
+
+<blockquote>
+<p><strong>H1 (Phase 1):</strong> On the gentler-recipe non-persona-trigger leakage data from #343 (N=128 cells), <code>pvec_chenstyle_L20</code>-cosine outperforms semantic-cosine alone as a single-axis predictor of <code>marker_rate</code> — Spearman |ρ| ≥ 0.55 (vs cosine's 0.481), R² ≥ 0.45 (vs cosine's 0.378). <strong>Statistical verdict criterion (T5):</strong> paired-bootstrap 95% CI on Δρ excludes zero (1000 resamples; cluster-bootstrap by <code>test_id</code> per T6, with <code>train_family</code>-clustered bootstrap as the secondary noisy floor). Point ΔR² ≥ 0.04 AND point Δρ ≥ 0.05 ARE required (amendment criterion) but the CI exclusion is co-equal.</p>
+<p><strong>H1 null:</strong> Persona-vector cosine is statistically indistinguishable from raw semantic cosine — paired-bootstrap CI on Δρ overlaps zero AND/OR point Δρ &lt; 0.05.</p>
+<p><strong>H2 (Phase 2):</strong> On the persona-leakage data from #142 (n=50 directed pairs), <code>pvec_chenstyle_L20</code>-cosine matches or beats JS-divergence as the strongest predictor (JS-leakage |ρ| was 0.746 in #142). <strong>Verdict requires BOTH conditions (T9 co-equal):</strong> (a) marginal Spearman |ρ| ≥ 0.75; AND (b) within-source partial Spearman ρ(<code>pvec_chenstyle_L20</code>, leakage | source) ≥ 0.30 — i.e., the predictor carries within-source signal, not just source-discrimination signal. If (a) holds but (b) fails, classify H2 as "source-discrimination artifact, not mechanism confirmation."</p>
+<p><strong>H3 (recipe agreement, from #216) — v3 split into H3a + H3b per R5:</strong> Across the 8 new axes (5 chenstyle recipes + 1 projection-difference variant + 2 #216 centroid methods), recipes disagree on absolute direction but produce correlated leakage-ρ rankings. Clarifier Q5-bis (a) locked H3 to a <strong>per-axis-ρ-across-recipes</strong> formulation: for each of the 8 new axes, compute its per-row similarity scalar; build an 8×8 Spearman matrix of those 128-row vectors pairwise. Two sub-claims:</p>
+<ul>
+  <li><strong>H3a (recipe agreement):</strong> off-diagonal mean ≥ 0.7. Acceptance expected; failure interpretation = "extraction broken." Tested without permutation null.</li>
+  <li><strong>H3b (recipe agreement is non-trivially leakage-aligned):</strong> off-diagonal mean exceeds 95th percentile of a 1000-replication permutation null where <code>marker_rate</code> (Phase 1) / <code>marker_leakage</code> (Phase 2) is shuffled before computing per-recipe ρ's. Substantive claim.</li>
+</ul>
+<p>Off-diagonal min reported alongside; if min &lt; 0.5, flag a structural outlier (likely <code>pvec_chenstyle_orthog</code>; <code>pvec_chenstyle_L20_projdiff</code> will agree with <code>pvec_chenstyle_L20</code> within-source by R4 construction).</p>
+</blockquote>
+
+<p><strong>Amended H1 verdict criterion</strong> (from the binding amendment, augmented with T5 paired-bootstrap): <code>pvec_chenstyle_L20</code> beats <code>semantic_cos</code> by &gt; 0.05 in Spearman ρ AND &gt; 0.04 in ΔR² on the #343 regression, AND its paired-bootstrap 95% CI on Δρ excludes zero.</p>
+
+<h2>Kill criterion</h2>
+<p>All three nulls hold (H1 null + H2 null + H3 fails) → persona-vectors are a <em>trait monitoring</em> tool, not a <em>leakage prediction</em> tool. Close the line of inquiry. Useful negative result; no follow-up.</p>
+<p class="small">Per CLAUDE.md anti-overclaim policy and the Codex Statistics critic's read on Williams test power: at N=128, base ρ=0.481, r₁₂≈0.7, the test for detecting Δρ=0.05 has ~22% power. The kill criterion therefore relies on the <em>paired-bootstrap CI</em> as the primary statistical witness — not the point estimate — to avoid a false-positive null call.</p>
+
+<h2>2. Prior work</h2>
+
+<h3>2.1 Chen et al. 2025 (Anthropic) — the inspiration recipe</h3>
+<p>Chen, Arditi, Sleight, Evans, Lindsey. "Persona Vectors: Monitoring and Controlling Character Traits in Language Models." arXiv:2507.21509, 2025-07-29. Code at <a href="https://github.com/safety-research/persona_vectors">safety-research/persona_vectors</a>.</p>
+<ul>
+  <li><strong>Construction:</strong> automated LM pipeline writes paired positive (trait-expressing) and negative (trait-suppressing or neutral) system prompts. Each pair shares a question; the model generates responses under each system prompt; activations are recorded over response tokens.</li>
+  <li><strong>Vector formula:</strong> <code>persona_vec(trait) = mean_response_tokens(activations | pos_prompts) − mean_response_tokens(activations | neg_prompts)</code> at a chosen layer. Repo confirms the primary aggregation is <code>response_avg_diff.pt</code> (response-token mean diff, "used in paper"). Layer 20 is the default for Qwen2.5-7B-Instruct in the repo's steering examples.</li>
+  <li><strong>Projection-difference (NEW for v2 per T4):</strong> Chen et al. §"Comparing projection differences with raw projection" argues raw projection is a <em>weaker</em> predictor than projection-difference — define <code>proj_diff(P, T) = cosine(pvec, test_act(T)) − cosine(pvec, test_act(neutral_T))</code>. The plan adds <code>pvec_chenstyle_L20_projdiff</code> as the 8th axis using helpful-assistant as the "neutral" reference (since helpful-assistant test-act is already computed for the negative side of extraction).</li>
+  <li><strong>Negative-side construction:</strong> the repo defaults to "helpful" as the negative anchor when an antonym is not naturally available. The amendment binds us to <code>"You are a helpful assistant."</code> × 5 paraphrases as the universal negative side, matching project convention (#216, #267) and the Chen et al. validated default.</li>
+  <li><strong>Applications:</strong> monitor character drift, predict training-induced personality shifts. Not directly tested as a cross-prompt leakage predictor — that is this experiment's contribution.</li>
+</ul>
+
+<h3>2.2 Replications &amp; follow-ups (2025-2026)</h3>
+<p>Sparse so far. Search surfaces:</p>
+<ul>
+  <li>"The Assistant Axis: Situating and Stabilizing the Default Persona of Language Models" (arXiv:2601.10387) — uses the persona-vector framework to characterize a default-assistant baseline; reinforces that the helpful-assistant prompt is a stable neutral anchor.</li>
+  <li>"Your Language Model Secretly Contains Personality Subnetworks" (arXiv:2602.07164) — extends the trait-direction framework to subnetwork attribution; orthogonal to this work.</li>
+  <li>"Persistent Instability in LLM Personality Measurements" (arXiv:2508.04826, AAAI 2026) — observes that persona-vector projections vary with conversation length; mentions L20-L25 as the stable extraction band for 7B-scale Qwen models. Confirms our L15/L20/L25 sweep covers the right range.</li>
+</ul>
+<p>No published replication tests persona-vec cosine as a cross-prompt leakage predictor against JS-divergence. This experiment is novel in that combination.</p>
+
+<h3>2.3 Project-internal precedents</h3>
+<table>
+  <thead><tr><th>Issue</th><th>What it supplies</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>#207</td><td>Direct parent; non-persona trigger leakage, gentler-recipe N=128.</td><td>completed</td></tr>
+    <tr><td>#343</td><td><code>eval_results/issue_207/js_gentle/regression_data.csv</code> — N=128, 13 columns (run_name, condition, seed, train_family, test_id, test_family, test_bucket, marker_rate, semantic_cos, lexical_jac, struct_match, task_match, js_div). <em>Headline Phase-1 dataset.</em> Univariate <code>semantic_cos</code> ρ=0.4808, R²=0.3783. 5-axis baseline R²=0.4402.</td><td>proposed</td></tr>
+    <tr><td>#142</td><td><code>eval_results/single_token_100_persona/cosine_leakage_correlation.json</code> — 5 source personas (villain, comedian, assistant, software_engineer, kindergarten_teacher) × 110 candidate targets per source. Headline 50-pair table: JS baseline |ρ|=0.746, <strong>centered</strong>-cosine-L20 |ρ|=0.567 (raw cosine on same pairs = 0.7632, orchestrator-verified). <em>Headline Phase-2 dataset.</em></td><td>completed, clean-result</td></tr>
+    <tr><td>#216</td><td><code>scripts/extract_persona_vectors.py</code> — Methods A (last-input-token) and B (mean-response-token), both centroid-only (no contrast). We extend this script's helpers; we do NOT add the chenstyle recipe inline (different output schema).</td><td>awaiting-promotion, clean-result</td></tr>
+    <tr><td>#267</td><td>L20 is the project default for steering with persona centroids on Qwen2.5-7B.</td><td>completed</td></tr>
+    <tr><td>#181</td><td>Defines the 4 non-persona triggers (task / instruction / context / format) and the 32-prompt eval panel (subset of the 40 system-prompts in <code>base_model_generations.json</code> after filtering out 4 "train" + 4 "control" rows).</td><td>completed</td></tr>
+  </tbody>
+</table>
+
+<h3>2.4 Critical data-shape fact (Phase 2) — T2 simpler rule</h3>
+<p>The 50-pair set is <strong>5 source personas × {targets ∈ <code>ALL_EVAL_PERSONAS</code> \ source} = 5 × 10 = 50 directed pairs</strong>. No <code>category</code> filter, no <code>related_to</code> filter, no other selection logic. <code>ALL_EVAL_PERSONAS</code> = the 11 personas (10 non-baseline + assistant). For each source, the 10 targets are simply the other 10 personas. This matches #142's published 50-pair table exactly (JS |ρ|=0.746, centered-cos-L20 |ρ|=0.567). This is a v2 correction — v1 inherited a faulty fact-checker patch that introduced a category/related_to filter.</p>
+
+<h3>2.5 Chen et al. simplifications (T12 — name honestly)</h3>
+<p>Our recipe is "Chen et al.-inspired" not "canonical" because of <strong>5 deviations</strong> (5th added in v3 per R4 disclosure):</p>
+<ol>
+  <li><strong>Universal helpful-assistant negative</strong> instead of paired contrastive prompts written per-trait by an LM pipeline. Justification: project convention; Chen et al. validate this as a robust default.</li>
+  <li><strong>Shared 20 EVAL_QUESTIONS</strong> instead of trait-evoking questions tailored per persona. Justification: cross-comparability with #142 / #343, which use the same pool.</li>
+  <li><strong>No judge-score response filter.</strong> Chen et al. filter responses whose judge-score on the trait is too low. We keep all 5×20=100 responses on each side. Justification: cost + project doesn't have a per-trait judge spec.</li>
+  <li><strong>Fixed L20 headline</strong> instead of per-trait layer-selection via separability score. Justification: project convention; L15/L25 reported as robustness (descriptive, not headline).</li>
+  <li><strong>(NEW v3 — R4) Projection-difference = centered-cosine difference, not raw-projection difference.</strong> Our <code>pvec_chenstyle_L20_projdiff</code> subtracts <code>centered_cosine(pvec, helpful_test_act, centroid_mean)</code> from <code>centered_cosine(pvec, test_act, centroid_mean)</code>, where <code>helpful_test_act</code> is a <em>single fixed vector</em> across all test prompts. Chen et al.'s formulation subtracts the projection onto a <em>per-query neutral test prompt</em> (matched to the same question). The two coincide only up to an additive per-trait constant. <strong>Algebraic consequence:</strong> within any source S, <code>projdiff(S, T_test) = chenstyle(S, T_test) − const(S)</code>, so projdiff and <code>pvec_chenstyle_L20</code> have <em>identical within-source target rankings</em> by construction. Marginal ρ on Phase 1 can differ across train_families (offset varies); on Phase 2 within-source structure is identical. This is documented at §4.1.2 R4 stanza.</li>
+</ol>
+<p>v2 renames all <code>pvec_chen_*</code> axes to <code>pvec_chenstyle_*</code> to make these deviations visible at every reference. <strong>Implication for null interpretation:</strong> a Phase-1 H1 null is consistent with Chen et al.'s own findings that raw projection underperforms projection-difference (we keep <code>pvec_chenstyle_L20_projdiff</code> as a 5th-simplification descriptive variant per R4; an H1 win on projdiff with null on <code>pvec_chenstyle_L20</code> would be consistent with Chen et al., but ONLY interpretable as such with the caveat that our projdiff strips a per-trait offset rather than a per-query neutral).</p>
+
+<h2>3. Method delta vs prior issues</h2>
+<table>
+  <thead><tr><th>Aspect</th><th>#142 (cosine axis)</th><th>#216 (centroid recipes)</th><th>#368 v2 (this plan)</th></tr></thead>
+  <tbody>
+    <tr><td>Vector construction</td><td>Last-token centroid, no contrast</td><td>Method A (last-input-token) and Method B (mean-response) centroids, no contrast</td><td>Chenstyle: pos centroid − neg centroid, contrastive (plus a projection-difference variant)</td></tr>
+    <tr><td>Negative anchor</td><td>n/a</td><td>n/a</td><td>Universal "You are a helpful assistant." × 5 paraphrases</td></tr>
+    <tr><td>Aggregation</td><td>Last input token, L20</td><td>A: last-input-token; B: mean response tokens</td><td>Mean response tokens at L15/L20/L25 + last-token + orthogonalized + projection-difference variants</td></tr>
+    <tr><td>Cosine convention</td><td>Centered (subtract centroid mean before cosine)</td><td>n/a</td><td>Centered, matching #142 (subtract <code>ALL_EVAL_PERSONAS</code>-centroid mean)</td></tr>
+    <tr><td>Headline test</td><td>Cosine vs JS</td><td>A vs B recipe agreement</td><td>5 chenstyle variants + 1 projdiff + 2 #216 centroids vs <code>semantic_cos</code> on #343; vs JS on #142</td></tr>
+    <tr><td>Output schema</td><td>Per-layer ρ table</td><td>Centroid-similarity matrices, recipe-agreement r</td><td>Adds 8 columns to #343's <code>regression_data.csv</code>; adds 8 ρ-rows to #142's leakage table</td></tr>
+  </tbody>
+</table>
+
+<h2>4. Design</h2>
+
+<p>One adversarial-planner pass, two phases, two scripts. Both phases share an extraction module (<code>extract_persona_vectors_chenstyle.py</code>) and a projection module (<code>project_test_activations.py</code>) — neither exists today; both are new.</p>
+
+<h3>4.0 Data prep (Phase 0, shared)</h3>
+
+<h4>4.0.1 Generate 4 non-persona trigger pos-side instruction files</h4>
+<p>Amendment Q7 requires us to write 5-paraphrase positive-side files for the 4 non-persona triggers, matching the existing <code>data/assistant_axis/instructions/&lt;role&gt;.json</code> schema (276 personas already in that format).</p>
+
+<p><strong>New file:</strong> <code>scripts/generate_trigger_paraphrases.py</code> — Sonnet-generated, 5 paraphrases per trigger, written to <code>data/i181_non_persona/instructions/{T_task,T_instruction,T_context,T_format}.json</code>. Use Claude-Sonnet-4.5 (project standard), seed=42 in the prompt for determinism. Output schema:</p>
+<pre><code>{
+  "instruction": [
+    {"pos": "&lt;trigger verbatim&gt;"},
+    {"pos": "&lt;paraphrase 1, preserves semantic content + retains [ZLT] marker hook&gt;"},
+    {"pos": "&lt;paraphrase 2&gt;"},
+    {"pos": "&lt;paraphrase 3&gt;"},
+    {"pos": "&lt;paraphrase 4&gt;"}
+  ]
+}</code></pre>
+<p>Paraphrase prompt template:</p>
+<pre><code>You are paraphrasing a system prompt that defines an agent's working context.
+Preserve the semantic content (the same task / instruction / context / format
+directive) but vary the surface form. Do NOT add or remove the [ZLT] marker.
+Do NOT introduce persona language ("You are a..."). Stay in the same register.
+
+Trigger verbatim: {trigger_text}
+Family: {family}  (one of: task, instruction, context, format)
+
+Return 4 paraphrases as a JSON list of strings, nothing else.</code></pre>
+<p>Sanity check after generation: max pairwise semantic cosine (sentence-transformers <code>all-MiniLM-L6-v2</code>) ≤ 0.95 between any two paraphrases AND ≥ 0.55 vs the verbatim trigger. If any paraphrase fails, re-roll with seed+=1.</p>
+
+<h4>4.0.2 Universal negative side</h4>
+<p><strong>New file:</strong> <code>data/assistant_axis/instructions/_helpful_assistant_negset.json</code> — 5 paraphrases of the helpful-assistant prompt, used as the universal negative for ALL 4 triggers + ALL 10 non-baseline personas:</p>
+<pre><code>{
+  "instruction": [
+    {"pos": "You are a helpful assistant."},
+    {"pos": "You are a helpful AI assistant."},
+    {"pos": "You are an assistant designed to be helpful and informative."},
+    {"pos": "You are a helpful, knowledgeable assistant who provides clear answers."},
+    {"pos": "You are an AI assistant focused on being helpful and useful."}
+  ]
+}</code></pre>
+<p>Hand-written, committed at plan time (deterministic, no LLM call). The <code>pos</code> key is reused for schema consistency — the "negative" semantics is conveyed by how the file is loaded (as the <code>neg_set</code> in extraction code).</p>
+
+<h4>4.0.3 Instruction files for the 10 non-baseline personas — Option A (regenerate ALL 10 via Sonnet)</h4>
+<p><strong>T11 decision: Option A.</strong> We regenerate <em>all 10</em> non-baseline persona instruction files via Sonnet from <code>src/explore_persona_space/personas.py::PERSONAS</code> seeds, so all 10 share the same generator + template. This eliminates the style asymmetry (the existing <code>librarian.json</code> and <code>comedian.json</code> are handcrafted with richer 25-word paraphrases; Sonnet's terse 12-18-word paraphrases would mix two distributions).</p>
+
+<p><strong>Backup step:</strong> <code>mv data/assistant_axis/instructions/librarian.json data/assistant_axis/instructions/_backup/librarian.json</code> and same for <code>comedian.json</code> (create <code>_backup/</code> dir; committed to git for provenance).</p>
+
+<p><strong>Generation step (Phase 0.1, blocking — runs before §4.1):</strong> reuse the Sonnet-paraphrase pipeline from §4.0.1 to produce 5 paraphrases per persona for all 10 non-baseline personas. Cost ≈ 10 personas × 5 paraphrases × $0.01 = $0.50.</p>
+
+<p><strong>Sourcing the canonical system prompt:</strong> use the per-persona system prompts defined in <code>src/explore_persona_space/personas.py</code>'s <code>PERSONAS</code> dict as the "verbatim seed" for paraphrase generation — this is the authoritative project source for these 10 personas' character definitions.</p>
+
+<p><strong>Verification gate:</strong> after generation, run <code>uv run python -c "import json; [print(p, len(json.load(open(f'data/assistant_axis/instructions/{p}.json'))['instruction'])) for p in ALL_EVAL_PERSONAS_NON_BASELINE]"</code> — every persona must report exactly 5 paraphrases. Fail-fast if not.</p>
+
+<p><strong>Within-positive-set diagnostic (also produced even though Option A regenerates):</strong> after vector extraction, per-persona mean-pairwise-cosine among the 5 paraphrase response-mean activations at L20 is reported in <code>phase2/persona_pos_set_cohesion.json</code>. If any persona has cohesion < 0.5 or > 0.95, flag for analyzer attention.</p>
+
+<p><strong>R11 — Cross-persona centroid variance diagnostic (NEW v3):</strong> Option A regenerates all 10 personas via Sonnet, eliminating handcrafted-vs-generated style asymmetry but potentially compressing the inter-persona stylistic distribution. An H2 null could then reflect Sonnet flattening rather than <code>pvec_chenstyle_L20</code> failure. To disambiguate, also persist to <code>phase2/persona_pos_set_cohesion.json</code> a <strong>scalar cross-persona centroid variance</strong> = mean over hidden dimensions of <code>variance over the 10 centered pos_centroid[L20] vectors</code>:</p>
+<pre><code># For the 10 non-baseline personas' pos-side response-mean L20 centroids:
+centroids = [pos_centroid_L20[p] - centroid_mean_L20 for p in NON_BASELINE_PERSONAS]
+# Stack as (10, hidden_dim), variance along axis=0, then mean across dims:
+stacked = torch.stack(centroids)  # (10, 3584)
+cross_persona_variance = stacked.var(dim=0).mean().item()  # scalar
+# Compare to within-persona cohesion (mean of per-persona pairwise-cosine):
+within_persona_cohesion = mean(persona_cohesion_scores)  # scalar in [0, 1]</code></pre>
+<p>Reported scalars: <code>cross_persona_centroid_variance</code>, <code>mean_within_persona_cohesion</code>. If cross-persona variance is small relative to within-persona cohesion (heuristic flag: the 10 personas occupy a tight cluster in centered L20 space), <strong>flag "Sonnet flatness may limit within-source discriminability"</strong> in the analyzer report. This is documented at §10 R10 (NEW Sonnet-flatness risk row) and is the analyzer's escape hatch for distinguishing "<code>pvec_chenstyle_L20</code> doesn't carry leakage signal" from "Sonnet-regenerated personas are too stylistically uniform to carry distinguishable persona signal at all."</p>
+
+<p><strong>Estimated wall time for Phase 0.1:</strong> ~5-7 minutes on Sonnet (10 personas × 5 paraphrases, batchable).</p>
+
+<h3>4.1 Phase 1 — Non-persona triggers (#343 N=128)</h3>
+
+<h4>4.1.1 Extraction</h4>
+
+<p><strong>New file:</strong> <code>scripts/extract_persona_vectors_chenstyle.py</code> — chenstyle pipeline. Sibling to (not replacement for) <code>extract_persona_vectors.py</code>. Output schema is different (per-trait <code>persona_vec</code> = single difference vector, not a centroid).</p>
+
+<p>Key function signatures:</p>
+<pre><code>def load_positive_set(trait: str, source: Literal["assistant_axis", "i181"]) -&gt; list[str]:
+    """Return 5 paraphrase prompts for the positive side."""
+
+def load_negative_set() -&gt; list[str]:
+    """Return 5 helpful-assistant paraphrases."""
+
+def generate_responses(model_name, prompts, questions, gpu_id=0, seed=42, max_tokens=512) -&gt; list[dict]:
+    """vLLM generation: temperature=0, top_p=1.0, max_tokens, seed=42.
+    Reuse generate_responses_vllm() from extract_persona_vectors.py for the vLLM mechanics."""
+
+def extract_mean_response_activations(model, tokenizer, responses, layers, aggregation) -&gt; dict[int, torch.Tensor]:
+    """Teacher-force each (system+user+response), grab hidden_states at each layer,
+    average across response tokens (or take last response token).
+    Reuse extract_method_b() logic for response-token boundary detection."""
+
+def compute_chenstyle_vector(pos_responses, neg_responses, layer, aggregation="mean_response") -&gt; torch.Tensor:
+    """pos_centroid − neg_centroid, unit-normalized."""
+
+def compute_orthogonalized_vector(chenstyle_vec, baseline_vec) -&gt; torch.Tensor:
+    """Project out baseline_vec from chenstyle_vec; return unit-normalized residual.
+    baseline_vec = empty-prompt direction."""
+
+def compute_global_centroid_mean(all_centroids) -&gt; torch.Tensor:
+    """For the centered-cosine convention (T1):
+    centroid_mean = mean over ALL_EVAL_PERSONAS' positive-side response-mean centroids
+    at the same layer. Used both for vector centering AND for centered-cosine projection."""
+</code></pre>
+
+<p><strong>Pipeline for Phase 1:</strong></p>
+<ol>
+  <li>For each trigger T ∈ {T_task, T_instruction, T_context, T_format}:
+    <ol>
+      <li>Load 5 positive prompts from <code>data/i181_non_persona/instructions/{T}.json</code>.</li>
+      <li>Load 5 negative prompts from <code>_helpful_assistant_negset.json</code>.</li>
+      <li>vLLM-generate 5 × 20 = 100 responses for the positive side; 5 × 20 = 100 for the negative side. Cache to <code>data/persona_vectors_chenstyle/qwen2.5-7b-instruct/i181/{T}/responses_pos.json</code> and <code>..._neg.json</code>. <em>Note:</em> the negative-side responses are <strong>identical across all 4 triggers</strong>, so generate once and reuse 4 times. Single-cache file at <code>.../_helpful_assistant/responses_neg.json</code>.</li>
+      <li>HF teacher-force each response, extract hidden states at layers {15, 20, 25}.</li>
+      <li>For each layer L: compute <code>persona_vec[L]</code> via <code>compute_chenstyle_vector</code>. Aggregation = <code>mean_response</code> (canonical) and <code>last_token</code> (the <code>pvec_chenstyle_lasttoken</code> variant).</li>
+      <li>Compute the orthogonalized variant at L20: extract an "empty-prompt baseline direction" once, then orthogonalize <code>pvec_chenstyle_L20</code> against it.</li>
+      <li>Save: <code>data/persona_vectors_chenstyle/qwen2.5-7b-instruct/i181/{T}/pvec_L{15,20,25}.pt</code>, <code>pvec_lasttoken_L20.pt</code>, <code>pvec_orthog_L20.pt</code>.</li>
+    </ol>
+  </li>
+  <li>Method-A and Method-B centroids at L20 (centroid-only, no contrast). Save as <code>pcentroid_methodA_L20.pt</code> / <code>pcentroid_methodB_L20.pt</code>.</li>
+  <li><strong>Centered-cosine setup (T1):</strong> compute the <em>global centroid mean</em> for the L20 cosine convention. Concretely: <code>centroid_mean_L20 = mean over ALL_EVAL_PERSONAS positive-side response-mean centroids at L20</code>. For Phase 1 specifically, since the 4 triggers are not personas, the global centroid mean is computed over <strong>all 11 ALL_EVAL_PERSONAS</strong> at L20 (extracted in Phase 2, so Phase 1's centered-cosine ρ is computed AFTER Phase 2's extraction finishes — see §15 dependency arrow). For L15/L25 robustness reports, recompute the centroid_mean at the relevant layer.</li>
+</ol>
+
+<p>Total per-trigger artifacts: 7 vectors. Total Phase 1 artifacts: 4 × 7 = 28 trigger-vector tensors + 4 × 3-layer cached response sets (pos) + 1 shared response set (neg) + 1 empty-prompt baseline direction + 1 centroid_mean per layer.</p>
+
+<h4>4.1.2 Projection (computing similarity to test-panel prompts)</h4>
+
+<p><strong>New file:</strong> <code>scripts/project_test_activations.py</code>. Computes, for each test panel prompt T_test, an activation summary that can be cosined against the persona vectors.</p>
+
+<p><strong>T3 — Panel recovery (resolved before launch):</strong> the 32 test-panel system-prompt strings are recoverable from <code>eval_results/issue_207/js_gentle/base_model_generations.json</code>'s top-level <code>system_prompts</code> field. That field contains 40 records of shape <code>{id, source, text}</code>; the 32 records with <code>source == "panel"</code> match exactly the <code>test_id</code> column in <code>regression_data.csv</code>. The other 8 (4 with <code>id == "T_*"</code> + 4 with <code>id == "match_*"</code> or <code>control_*</code>) are training-side or control rows excluded from the regression.</p>
+
+<p><strong>Verification (Phase 0.0 gate) — R1 fix: filter to the 32 <code>source==panel</code> records BEFORE comparing to <code>csv_ids</code>. The raw <code>system_prompts</code> field has 36 records (32 panel + 4 anchor/control), so the naive <code>panel_ids == csv_ids</code> assertion in v2 fails on first run.</strong></p>
+<pre><code>import json, csv
+gen = json.load(open('eval_results/issue_207/js_gentle/base_model_generations.json'))
+csv_ids   = {r['test_id'] for r in csv.DictReader(open('eval_results/issue_207/js_gentle/regression_data.csv'))}
+# R1: filter to source==panel records first, then verify the filtered keys match csv_ids
+panel_strings = {sp['id']: sp['text'] for sp in gen['system_prompts'] if sp['id'] in csv_ids}
+assert set(panel_strings.keys()) == csv_ids, f"mismatch after filter: {set(panel_strings.keys()) ^ csv_ids}"
+assert len(panel_strings) == 32, f"expected 32 panel records, got {len(panel_strings)}"
+# panel_strings is the canonical 32-prompt mapping used downstream</code></pre>
+
+<p><strong>Fallback chain (if base_model_generations.json absent or schema-shifted) — R7 hash check:</strong> (i) try <code>hf_hub_download</code> from <code>superkaiba1/explore-persona-space-data</code> for <code>issueN_207/eval_panel.json</code> or <code>issueN_343/eval_panel.json</code>; (ii) <code>.claude/worktrees/issue-274/data/i181_non_persona/eval_panel.json</code>. For each fallback, <strong>compute SHA256 of the canonical <code>{test_id: prompt_text}</code> dict</strong> (canonicalized via <code>json.dumps(d, sort_keys=True, separators=(",",":"))</code>) and compare against #207's published manifest. The manifest is expected at <code>eval_results/issue_207/js_gentle/MANIFEST.json</code> (key <code>eval_panel_sha256</code>); if not present, fall back to scanning #207's <code>epm:results</code> marker payload for the same key. <strong>Fail-closed if hashes don't match — DO NOT proceed.</strong> If NONE found at all, halt Phase 1 + escalate to user — re-running <code>scripts/build_i181_data.py --step panel-only</code> would corrupt the (system_prompt ↔ marker_rate) alignment because 16 of the 32 prompts are LLM-generated non-deterministically.</p>
+
+<p><strong>R4 — Projdiff degeneracy disclosure (analyst-facing, also documented at §2.5 simplification #5):</strong> <code>pvec_chenstyle_L20_projdiff</code> uses a single fixed <code>helpful_test_act</code> vector (mean of the 5 helpful-assistant negative-side responses' L20 activations, identical across every test prompt). Within any source S, the subtracted term is a constant scalar (= <code>cosine(pvec[S], helpful_test_act)</code> after centering), so projdiff and <code>pvec_chenstyle_L20</code> have <strong>identical within-source target rankings by construction</strong>. T9 within-source partial Spearman will be identical for the two axes; marginal ρ may differ on Phase 1 due to a per-<code>train_family</code> offset, but on Phase 2 within-source structure is identical. <strong>Implication:</strong> projdiff does NOT independently test Chen et al.'s "projection difference > raw projection" recommendation here because the operationalization is "raw axis minus a constant per-trait offset," not Chen et al.'s "raw vs neutral test prompt for the same query." H3 correlation between projdiff and <code>pvec_chenstyle_L20</code> reflects algebra, not independent recipe agreement — H3a (recipe-agreement) will pass trivially for this pair. The axis is retained as a Phase 1 per-train_family-offset-removed descriptive variant.</p>
+
+<p><strong>Symmetric-by-design projection:</strong> we use the <em>same</em> extraction pipeline for the test prompt as for the trait's positive side. For each test prompt:</p>
+<ol>
+  <li>vLLM-generate 20 responses (one per EVAL_QUESTION) under <code>system_prompt = panel_strings[test_id]</code>, same params (temp=0, seed=42, max=512).</li>
+  <li>HF teacher-force, extract mean-response-token activations at layers {15, 20, 25}.</li>
+  <li>Mean across 20 questions → one vector per layer per test prompt. Save as <code>data/persona_vectors_chenstyle/qwen2.5-7b-instruct/test_panel/{panel_id}_L{15,20,25}.pt</code>.</li>
+</ol>
+
+<p><strong>Centered cosine (T1):</strong> for every persona-vec axis, the recipe applied at this step is:</p>
+<pre><code>def centered_cosine(pvec, test_act, centroid_mean):
+    # Centered cosine = cosine after subtracting the centroid_mean from BOTH sides,
+    # then re-unit-normalizing.
+    # Matches #142 body line 87 convention.
+    a = pvec - centroid_mean
+    b = test_act - centroid_mean
+    return (a / a.norm()) @ (b / b.norm())</code></pre>
+<p>where <code>centroid_mean</code> at layer L = mean over <code>ALL_EVAL_PERSONAS</code>' positive-side response-mean centroids at layer L (computed in Phase 0.3, after Phase 2 extraction completes — see §15 pipeline diagram for the dependency arrow that moves Phase 1's centered-cosine computation to run AFTER Phase 2's extraction).</p>
+
+<p>The <code>pcentroid_methodA_L20</code> / <code>pcentroid_methodB_L20</code> axes use the same centered convention (subtract centroid_mean from both centroid and test_act before cosine).</p>
+
+<p><strong>Projection-difference axis (T4 — <code>pvec_chenstyle_L20_projdiff</code>):</strong> for each (trigger T, test prompt T_test), compute:</p>
+<pre><code>pvec_chenstyle_L20_projdiff(T, T_test) =
+    centered_cosine(pvec[T], test_act[T_test],   centroid_mean_L20)
+  − centered_cosine(pvec[T], helpful_test_act,    centroid_mean_L20)</code></pre>
+<p>where <code>helpful_test_act</code> = mean of the 5 helpful-assistant negative-side responses' L20 activations (already extracted in §4.1.1 step iii; same 5-prompt × 20-question pool). This is the projection-difference variant Chen et al. argues outperforms raw projection.</p>
+
+<h4>4.1.3 Augment regression CSV + run analysis</h4>
+
+<p><strong>New file:</strong> <code>scripts/i368_augment_regression.py</code>. Reads <code>eval_results/issue_207/js_gentle/regression_data.csv</code> (N=128 rows × 13 columns) and joins in 8 new columns:</p>
+
+<pre><code>pvec_chenstyle_L20, pvec_chenstyle_L15, pvec_chenstyle_L25,
+pvec_chenstyle_lasttoken, pvec_chenstyle_orthog,
+pvec_chenstyle_L20_projdiff,
+pcentroid_methodA_L20, pcentroid_methodB_L20</code></pre>
+
+<p>Plus a 9th descriptive axis for T10 collinearity check:</p>
+<pre><code>pcentroid_chenstyle_pos_only_L20  # = centered_cosine(pos_centroid, test_act, centroid_mean_L20),
+                                  #   no neg-side subtraction — tests whether the contrast step matters</code></pre>
+
+<p>For each row (a specific (<code>train_family</code>, <code>test_id</code>) cell):</p>
+<pre><code>row[axis] = centered_cosine(
+    pvec_chenstyle[row.train_family][axis_layer_or_recipe],
+    test_activation[row.test_id][axis_layer],
+    centroid_mean[axis_layer]
+)</code></pre>
+
+<p>Output: <code>eval_results/issue_368/phase1/regression_data_augmented.csv</code> (N=128, 22 columns).</p>
+
+<h4>4.1.4 Statistics (with T5-T7, T10, T14 diagnostics)</h4>
+
+<p><strong>New file:</strong> <code>scripts/i368_phase1_analysis.py</code>. Modeled on <code>scripts/i207_run_regression.py</code> (~330 lines), reused statistics primitives.</p>
+
+<p>For each axis A ∈ {8 new + <code>pcentroid_chenstyle_pos_only_L20</code> diagnostic + <code>semantic_cos</code>} = 10 axes total:</p>
+<ol>
+  <li>Single-axis Spearman ρ(A, marker_rate) + p-value + 95% bootstrap CI (1000 resamples, two flavors — see T6 below).</li>
+  <li>Single-axis OLS R² (univariate, intercept-only baseline reported).</li>
+  <li>5-axis OLS R² when A replaces <code>semantic_cos</code> in the {A, lexical_jac, struct_match, task_match, js_div} regression. Record ΔR² vs the original 5-axis #343 baseline (R² = 0.4402).</li>
+  <li>6-axis OLS R² when A is added on top of the {semantic_cos, lexical_jac, struct_match, task_match, js_div} regression. Record ΔR² (additive).</li>
+  <li>Leave-one-trigger-out CV-R²: hold out each of the 4 triggers, refit 5-axis with A replacing semantic_cos, predict held-out rows.</li>
+</ol>
+
+<p><strong>T5 — Paired-bootstrap for H1 verdict:</strong> for the headline axis <code>pvec_chenstyle_L20</code> vs <code>semantic_cos</code>, compute Δρ = ρ(<code>pvec_chenstyle_L20</code>) − ρ(<code>semantic_cos</code>) on the same 128 rows, resampling rows with replacement 1000 times (cluster-bootstrap by <code>test_id</code> per T6), reporting 95% CI of Δρ. Verdict criterion = CI excludes zero <strong>AND</strong> point Δρ ≥ 0.05 <strong>AND</strong> point ΔR² ≥ 0.04.</p>
+
+<p><strong>T6 — Cluster bootstrap:</strong> the 128 rows = 4 train_families × 32 test_ids × 1 seed. Two bootstrap flavors reported per axis:</p>
+<ul>
+  <li><strong>Primary:</strong> resample 32 <code>test_id</code> clusters with replacement (each draw = 32 sampled test_ids; pull all 4 train_family rows for each sampled test_id). Reports the more reliable CI given the within-test-id correlation.</li>
+  <li><strong>Secondary (noisy floor):</strong> resample 4 <code>train_family</code> clusters with replacement. Reports a worst-case noisy CI. If primary and secondary CIs both exclude zero, H1 verdict is robust.</li>
+</ul>
+
+<p><strong>T7 — Multiple-comparison correction:</strong> only <code>pvec_chenstyle_L20</code> is pre-registered as the H1 verdict axis. The other 9 axes (8 new + the 9th pos-only descriptive) are reported descriptively. Apply Benjamini-Hochberg FDR correction (α=0.10) across the 9 axes for any axis-level "significant" claim language. State this explicitly in §6.</p>
+
+<p><strong>T10 — Collinearity diagnostics:</strong> in addition to the headline statistics, report:</p>
+<ul>
+  <li>Pearson r(<code>pvec_chenstyle_L20</code>, <code>semantic_cos</code>) across the 128 rows. If &gt; 0.9, flag as "the win is mostly redundancy."</li>
+  <li>Variance of <code>centered_cosine(centroid_mean, test_act, centroid_mean)</code> across the 32 panel prompts (constant-after-centering check). If <code>std/|mean|</code> &lt; 0.1, the contrast subtraction is functionally constant.</li>
+  <li>The 9th axis <code>pcentroid_chenstyle_pos_only_L20</code>'s ρ. If within 0.02 of <code>pvec_chenstyle_L20</code>'s ρ, the contrast step is decorative.</li>
+</ul>
+
+<p><strong>T14 — Zero-floor diagnostic:</strong> 64 of 128 rows have <code>marker_rate</code> = 0.000 (verified at plan time). Report <strong>conditional</strong> Spearman ρ(<code>pvec_chenstyle_L20</code>, marker_rate | marker_rate &gt; 0) on the n≈64 nonzero subset, alongside the headline. If the headline ρ depends almost entirely on the zero-vs-nonzero split (i.e., conditional ρ near 0), the predictor is doing binary discrimination, not continuous prediction.</p>
+
+<p><strong>H3 verdict on Phase-1 data — R5 split:</strong> 8×8 Spearman matrix across the 8 new axes (drop the pos-only descriptive from this matrix; it's a diagnostic not a recipe). The H3 verdict has two sub-claims now reported separately:</p>
+<ul>
+  <li><strong>H3a (recipe agreement):</strong> off-diagonal mean of the 8×8 Spearman matrix ≥ 0.7. <strong>Acceptance is EXPECTED</strong> — all 8 axes are linear-algebraic transforms of the same Qwen-L20 hidden states (and per R4, <code>pvec_chenstyle_L20_projdiff</code> is identical to <code>pvec_chenstyle_L20</code> within-source by construction). H3a failure interpretation = <strong>"extraction pipeline is broken"</strong> not "Chen-style recipes disagree." Tested without permutation null.</li>
+  <li><strong>H3b (recipe agreement is non-trivially aligned with leakage):</strong> off-diagonal mean exceeds the 95th percentile of a permutation null where <code>marker_rate</code> is shuffled 1000 times, recomputing the 8×8 matrix each time. <strong>Acceptance is the substantive claim</strong> — under representation-overlap (all 8 axes are Qwen-L20 transforms), agreement remains high under shuffling unless leakage carries genuine ρ-aligning signal. H3b can still pass under R4 degeneracy if leakage truly aligns with the chenstyle direction.</li>
+</ul>
+<p>Off-diagonal min also reported alongside; if min &lt; 0.5, flag a structural outlier (likely <code>pvec_chenstyle_orthog</code>, since <code>pvec_chenstyle_L20_projdiff</code> will agree by R4 construction). <strong>Note:</strong> v2 framed H3 as "0.7 AND permutation null" — v3 splits the two so the analyzer can report them with different epistemic weights.</p>
+
+<p>Output: <code>eval_results/issue_368/phase1/{regression_results.json, spearman_table.csv, recipe_agreement_matrix.csv, h1_verdict.json, collinearity_diagnostics.json, permutation_null.json, conditional_nonzero.json}</code>.</p>
+
+<h3>4.2 Phase 2 — Personas (#142 n=50 directed pairs)</h3>
+
+<h4>4.2.1 Extraction</h4>
+
+<p>Same recipes, applied to the 10 non-baseline personas + <code>assistant</code>. Each persona's positive set = its 5 paraphrases from <code>data/assistant_axis/instructions/{persona}.json</code> (regenerated per Option A, §4.0.3). Negative set = the same universal helpful-assistant 5-paraphrase set used in Phase 1.</p>
+
+<p>Reuse <code>scripts/extract_persona_vectors_chenstyle.py</code> with <code>--source assistant_axis --personas software_engineer,kindergarten_teacher,data_scientist,medical_doctor,librarian,french_person,comedian,police_officer,villain,zelthari_scholar</code>.</p>
+
+<p>Output dir: <code>data/persona_vectors_chenstyle/qwen2.5-7b-instruct/personas/{persona}/pvec_{recipe}.pt</code>.</p>
+
+<p>10 personas × 8 recipes (including the projdiff variant) = 80 vectors, plus the shared response sets per persona × 1 shared neg set (already on disk from Phase 1).</p>
+
+<p><strong>Note on baseline persona</strong>: <code>assistant</code> is the negative anchor; we do NOT extract a persona vector for it. We DO extract a 20-question mean-response-token activation for it so it can serve as a target in directed pairs.</p>
+
+<p><strong>Centroid_mean computation (used by both phases for centered cosine):</strong> after all 10 non-baseline persona response-mean centroids are extracted at L20 (and L15/L25), compute:</p>
+<pre><code>centroid_mean[L] = mean over {assistant_centroid[L]} ∪ {p.centroid[L] for p in non-baseline personas}
+                 = mean over 11 ALL_EVAL_PERSONAS centroids at layer L</code></pre>
+<p>Save to <code>data/persona_vectors_chenstyle/qwen2.5-7b-instruct/_centroid_mean_L{15,20,25}.pt</code>. This is the canonical reference point used by every centered_cosine call in §4.1.2 / §4.2.2.</p>
+
+<h4>4.2.2 Projection on the 50 directed pairs (T2 — simpler rule)</h4>
+
+<p><strong>T2 — Simpler pair selection rule (overrides v1's category/related_to filter):</strong></p>
+<pre><code>SOURCES = ["villain", "comedian", "assistant", "software_engineer", "kindergarten_teacher"]
+ALL_EVAL_PERSONAS = [
+    "software_engineer", "kindergarten_teacher", "data_scientist", "medical_doctor",
+    "librarian", "french_person", "comedian", "police_officer", "villain",
+    "zelthari_scholar", "assistant"
+]
+pairs = [(s, t) for s in SOURCES for t in ALL_EVAL_PERSONAS if t != s]
+assert len(pairs) == 50</code></pre>
+
+<p>No <code>category</code> filter, no <code>related_to</code> filter, no <code>_per_source_detail</code>-based selection. The 50 pairs are simply "each of 5 sources × the other 10 personas." This matches #142's published 50-pair table (JS |ρ|=0.746, centered-cos-L20 |ρ|=0.567).</p>
+
+<p><strong>Authoritative leakage rates:</strong> read per-pair <code>marker_eval.json</code> entries from <code>eval_results/single_token_100_persona/{source}/marker_eval.json</code> for each source. Schema: dict keyed by target persona, value = <code>{rate, found, total, category, related_to}</code>. We use only the <code>rate</code> field.</p>
+
+<p><strong>JS and centered-cosine values:</strong> for the matched 50 pairs, JS comes from <code>eval_results/js_divergence/divergence_matrices.json</code> if present on main (else fall back to <code>.claude/worktrees/issue-274/eval_results/js_divergence/divergence_matrices.json</code>, or recompute on-the-fly from the 11 personas — ~3 min on the same pod). The centered-cosine-L20 baseline column = #142's published 0.567 reference, recomputed inline as a sanity check (§4.2.3 gate).</p>
+
+<p>For each directed pair (source S → target T), 8 new similarity axes (renamed per T12):</p>
+<pre><code>pvec_chenstyle_cos(S, T, recipe) = centered_cosine(
+    persona_vec_chenstyle(S, recipe),
+    target_activation(T, recipe_layer),
+    centroid_mean[recipe_layer]
+)</code></pre>
+
+<p>where <code>target_activation(T, L)</code> = mean over (5 paraphrases × 20 questions × response tokens) of T's hidden state at layer L.</p>
+
+<p>For <code>pvec_chenstyle_orthog</code>, orthogonalize against the empty-prompt baseline used in Phase 1.</p>
+
+<p>For <code>pvec_chenstyle_L20_projdiff</code> on Phase 2:</p>
+<pre><code>projdiff(S, T) = centered_cosine(pvec[S], target_act[T],         centroid_mean_L20)
+               − centered_cosine(pvec[S], helpful_target_act,    centroid_mean_L20)</code></pre>
+<p>where <code>helpful_target_act</code> = mean of the 5 helpful-assistant negative-side responses' L20 activations (same as Phase 1).</p>
+
+<p>For Method-A / Method-B centroid axes, use centroid-vs-centroid centered cosine (both extracted with the same recipe).</p>
+
+<h4>4.2.3 Augment leakage table + run analysis (with T9, T13 diagnostics)</h4>
+
+<p><strong>New file:</strong> <code>scripts/i368_phase2_analysis.py</code>. Modeled on <code>scripts/analyze_100_persona_cosine.py</code>.</p>
+
+<p>Build a 50-row table:</p>
+<pre><code>source, target, marker_leakage_rate, cosine_L20_centered, js_div,
+pvec_chenstyle_L20, pvec_chenstyle_L15, pvec_chenstyle_L25,
+pvec_chenstyle_lasttoken, pvec_chenstyle_orthog,
+pvec_chenstyle_L20_projdiff,
+pcentroid_methodA_L20, pcentroid_methodB_L20</code></pre>
+
+<p><strong>Sanity check (reproduction gate before computing new axes) — R2 clarification:</strong> #142's published centered-cosine-L20 baseline |ρ| = 0.567 was computed from <strong>last-input-token centroids (Method A)</strong>, persisted at <code>eval_results/single_token_100_persona/centroids/centroids_layer20.pt</code>. The reproduction gate <strong>loads #142's existing <code>centroids_layer20.pt</code> file (Method A)</strong> and recomputes the centered-cosine ρ over the 50 directed pairs — that ρ must match 0.567 within ±0.03. <strong>This plan's freshly-extracted Method-B mean-response centroids are NOT the reproduction reference</strong> — they are the input to <code>pvec_chenstyle_L20</code> and to the new <code>pcentroid_methodB_L20</code> axis. If <code>eval_results/single_token_100_persona/centroids/centroids_layer20.pt</code> is missing on the main branch, attempt HF Hub fallback at <code>issue142_single_token/centroids/centroids_layer20.pt</code>; if still missing, halt + escalate.</p>
+<p>Two paired reproduction checks are gated here:</p>
+<ul>
+  <li><strong>JS-ρ check:</strong> JS-divergence values (from <code>divergence_matrices.json</code>) recomputed against per-pair leakage rates → |ρ| must match 0.746 within ±0.03.</li>
+  <li><strong>Method-A centered-cosine-L20 ρ check:</strong> use #142's existing Method-A centroids, recompute centered cosine over the 50 pairs, correlate against leakage → |ρ| must match 0.567 within ±0.03.</li>
+</ul>
+<p>Tolerance loosened to ±0.03 (per Codex Statistics Minor 3; original ±0.01 was too tight given centroid-recomputation float noise on a fresh pod). If reproduction matches within 0.03, our 50-pair set + centered-cosine convention are correct; if not, halt and debug pair selection AND the centered-cosine implementation before adding new axes.</p>
+
+<p>Then per-axis: same statistics as Phase 1 (Spearman ρ, p, both bootstrap flavors, partial Spearman vs JS, ΔR² when added to a 2-axis {centered_cosine_L20, js_div} baseline).</p>
+
+<p><strong>T9 — Source-clustering co-equal verdict condition:</strong> for the headline axis <code>pvec_chenstyle_L20</code>, compute <strong>within-source partial Spearman</strong>:</p>
+<pre><code>partial_rho_within_source = np.nanmean([
+    spearman_rho(pvec_chenstyle_L20[mask_source=s], marker_leakage[mask_source=s])
+    for s in SOURCES
+])</code></pre>
+<p>Verified at plan time: ICC on the 50 pairs is ~0.60 (59-61% of leakage variance is between-source); villain has 9/10 leakage=0; comedian 10/10=0; software_engineer mean leakage=0.506. So a metric that correctly ranks sources gets marginal ρ≈0.7+ without any within-source signal. H2 PASS requires BOTH:</p>
+<ul>
+  <li>Marginal |ρ| ≥ 0.75 (matches JS baseline).</li>
+  <li>Within-source nanmean partial ρ ≥ 0.30 with bootstrap CI excluding zero (per R9, see below).</li>
+</ul>
+<p>If marginal passes but partial fails: H2 verdict is <strong>"source-discrimination artifact, not mechanism confirmation"</strong> — explicitly NOT a PASS.</p>
+
+<p><strong>R3 — NaN handling and degenerate-source policy (reconciler-mandated):</strong> Comedian has 10/10 zero leakage on the 50-pair set → <code>scipy.stats.spearmanr</code> returns <code>(nan, nan)</code> on the within-comedian subset because <code>marker_leakage</code> has zero variance. v2's naive <code>mean_over_sources</code> silently produces NaN, and the H2 verdict code's <code>nan ≥ 0.30</code> evaluates False → would silently miscategorize as "source-discrimination artifact" regardless of the within-source signal in the other 4 sources. v3 spec:</p>
+<ul>
+  <li>Compute per-source Spearman ρ as <code>spearmanr(pvec, leakage)</code> over each source's 10 rows. If the leakage-rate vector for that source has variance below an epsilon (default 1e-12), record <code>nan</code> and flag the source as degenerate.</li>
+  <li>Aggregate via <code>np.nanmean</code> over the 5 per-source ρ values, <strong>excluding zero-variance sources</strong>. Currently expected: comedian excluded (10/10 zero). Villain (9/10 zero, 1 nonzero) is included by default unless its leakage-rate variance is below epsilon, in which case it is also excluded (document the choice in the verdict JSON).</li>
+  <li><code>h2_verdict.json</code> MUST report (a) the per-source ρ table with <code>nan</code> markers + per-source row counts, (b) the count of <strong>contributing sources</strong> (expected: 3-4 of 5), (c) the same T9 statistic computed for the centered-cosine-L20 baseline (Method A, from <code>centroids_layer20.pt</code>) for calibration, and (d) the same statistic computed for JS-divergence for additional calibration.</li>
+</ul>
+
+<p><strong>R9 — Within-source partial ρ bootstrap CI:</strong> at n=10 per source × 3-4 non-degenerate sources, power to detect ρ=0.30 vs ρ=0 at α=0.05 one-sided is ~18%. The 0.30 threshold is a <strong>descriptive point threshold, NOT a significance test</strong>. v3 spec: alongside the nanmean point estimate, report a <strong>cluster-bootstrap 95% CI (B=1000)</strong>: resample within-source rows with replacement (keep the source label fixed; resample the 10 rows within each contributing source), recompute the per-source ρ + the nanmean. Persist to <code>source_partial_rho.json</code>:</p>
+<pre><code>{
+  "per_source_rho": {"villain": 0.xx_or_NaN, "comedian": NaN, ...},
+  "per_source_n": {"villain": 10, "comedian": 10, ...},
+  "leakage_variance_per_source": {"villain": 0.xxx, ...},
+  "degenerate_sources_excluded": ["comedian"],  // possibly ["comedian", "villain"]
+  "contributing_sources": ["software_engineer", "kindergarten_teacher", "assistant", "villain"],  // 3-4 of 5
+  "nanmean_partial_rho": 0.xxx,
+  "bootstrap_ci_95": [lo, hi],
+  "bootstrap_n_resamples": 1000,
+  "calibration_baselines": {
+    "method_a_centered_cosine_L20": {"nanmean_partial_rho": ..., "bootstrap_ci_95": [...]},
+    "js_divergence": {"nanmean_partial_rho": ..., "bootstrap_ci_95": [...]}
+  }
+}</code></pre>
+<p>If the bootstrap CI does NOT cleanly exclude 0, classify the H2 within-source dimension as <strong>"ambiguous"</strong> (separate verdict slot, distinct from PASS or "source-discrimination artifact"). Point threshold ≥ 0.30 is reported alongside but does not by itself decide the verdict.</p>
+
+<p><strong>T13 — Source-shuffle permutation null:</strong> 1000 random permutations of the 5 source-vector-to-source-name assignment on the 50-pair table. Recompute marginal Spearman for each permutation. The observed <code>pvec_chenstyle_L20</code> ρ must exceed the 95th percentile of the permutation null to be considered "source-specific signal" rather than "any-vector correlated with leakage rate." ~5 lines of code, zero GPU.</p>
+
+<p>Output: <code>eval_results/issue_368/phase2/{leakage_table.csv, per_axis_stats.json, recipe_agreement_matrix.csv, h2_verdict.json, source_partial_rho.json, source_shuffle_permutation.json}</code>.</p>
+
+<h4>4.2.4 H2 + H3 verdicts</h4>
+<p><strong>H2:</strong> BOTH (a) <code>|ρ(pvec_chenstyle_L20, marker_leakage)|</code> ≥ 0.75 AND (b) within-source nanmean partial ρ ≥ 0.30 <strong>with bootstrap CI excluding zero (R9)</strong> AND (c) observed marginal ρ exceeds 95th percentile of source-shuffle null. If (a) holds and (b) is ambiguous (point ≥ 0.30 but bootstrap CI overlaps zero, or contributing-source count drops to 1-2), classify as <strong>"ambiguous on within-source dimension."</strong> If (a) holds and (b) clearly fails (point &lt; 0.30 AND bootstrap CI overlaps zero), classify as <strong>"source-discrimination artifact, not mechanism confirmation."</strong></p>
+<p><strong>H3 on Phase 2 — R5 split:</strong> same 8×8 recipe-agreement matrix construction as Phase 1, on Phase 2's 50-row per-pair similarity vectors. Two sub-claims:</p>
+<ul>
+  <li><strong>H3a (Phase 2 recipe agreement):</strong> off-diagonal mean ≥ 0.7. EXPECTED to pass; failure interpretation = "extraction broken." <strong>Caveat:</strong> per R4, projdiff and <code>pvec_chenstyle_L20</code> have identical within-source rankings on Phase 2 → their pairwise ρ will be exactly 1.0 by construction, inflating the off-diagonal mean. Report H3a both with and without the projdiff row/column included.</li>
+  <li><strong>H3b (Phase 2 recipe agreement is non-trivially aligned with leakage):</strong> off-diagonal mean exceeds 95th percentile of a 1000-replication permutation null where <code>marker_leakage</code> is shuffled before recomputing per-recipe ρ's. Substantive claim. Report H3b with and without projdiff included.</li>
+</ul>
+
+<h3>4.3 Cross-phase synthesis (clarifier Q5(a) — two separate verdicts, prose-only synthesis)</h3>
+<p>Report Phase 1 ρ and Phase 2 ρ as <strong>two independent verdicts</strong>. No combined regression. The synthesis is prose-only and reads as:</p>
+<ul>
+  <li>"<code>pvec_chenstyle_L20</code> Spearman ρ on Phase 1 = X (vs <code>semantic_cos</code>'s 0.481); on Phase 2 = Y (vs JS's 0.746, vs centered-cosine-L20's 0.567). Together the two verdicts {agree / disagree} that persona-vec-cos is a sharper predictor than the existing axes."</li>
+  <li>One paragraph commenting on whether the magnitude of the improvement is consistent across the two domains, and whether the H3 recipe-agreement holds in both.</li>
+  <li>Explicit note on the source-clustering caveat (T9) for Phase 2 — if H2 passes only the marginal condition, the synthesis must say "the Phase 2 win is a source-discrimination effect, not a within-source mechanism confirmation."</li>
+</ul>
+<p>No mixed-units OLS. No bootstrap pooling across phases.</p>
+
+<h3>4.4 Why code, not a model call?</h3>
+<p><strong>N/A — no unstructured-data heuristics in this design.</strong> The only stage that ingests unstructured text is the paraphrase generation (4.0.1 / 4.0.3), which IS a Sonnet call (~30 LLM calls total, hand-validated). All downstream stages operate on (a) hidden-state tensors, (b) cosine arithmetic, (c) numeric regression CSV joins, (d) <code>scipy.stats.spearmanr</code> / <code>statsmodels.OLS</code>. No classifier, no extractor, no rule-based judge.</p>
+
+<h2>5. Conditions &amp; controls</h2>
+
+<p>The single experimental variable is <strong>the extraction recipe</strong> (which similarity axis we put into the leakage regression). Everything else — base model, EVAL_QUESTIONS pool, generation params, layer for cross-recipe comparisons, the leakage-rate ground truth from #343 / #142, the centered-cosine convention — is held fixed and inherited from the parent issues.</p>
+
+<table>
+  <thead><tr><th>Axis</th><th>Construction</th><th>What it controls for</th></tr></thead>
+  <tbody>
+    <tr><td><code>semantic_cos</code> (existing)</td><td>Last-token centroid cosine (#343 axis)</td><td>Status quo baseline — alternative must beat this on Phase 1</td></tr>
+    <tr><td><code>js_div</code> (existing)</td><td>Output-logit JS divergence (#142 axis)</td><td>Status quo baseline — Phase 2 alternative must match this</td></tr>
+    <tr><td><code>cosine_L20_centered</code> (existing, recomputed)</td><td>#142 centered-cosine-L20 axis</td><td>Recipe-comparison alt baseline for Phase 2 (|ρ|=0.567)</td></tr>
+    <tr><td><code>pvec_chenstyle_L20</code> (NEW headline)</td><td>chenstyle canonical: pos-mean − neg-mean response activations at L20; centered cosine</td><td>Tests whether trait-direction adds info over centroid-only</td></tr>
+    <tr><td><code>pvec_chenstyle_L15</code></td><td>Same recipe, L15</td><td>Layer-choice robustness</td></tr>
+    <tr><td><code>pvec_chenstyle_L25</code></td><td>Same recipe, L25</td><td>Layer-choice robustness</td></tr>
+    <tr><td><code>pvec_chenstyle_lasttoken</code></td><td>Chenstyle contrast at L20, last response token only</td><td>Tests whether response-token averaging matters</td></tr>
+    <tr><td><code>pvec_chenstyle_orthog</code></td><td>Chenstyle L20 minus empty-prompt baseline direction</td><td>Tests whether the "trait beyond default helpful behavior" residual carries leakage signal</td></tr>
+    <tr><td><code>pvec_chenstyle_L20_projdiff</code> (NEW per T4; v3 R4-disclosed)</td><td>Centered_cosine(pvec, test_act) − Centered_cosine(pvec, helpful_test_act), where helpful_test_act is a <em>single fixed vector</em> across all test prompts</td><td>Chen et al.-inspired improvement over raw projection, BUT see R4 (§2.5 simplification 5, §4.1.2): operationalization differs from Chen et al.'s per-query neutral. Within any source, projdiff = chenstyle − const(source), so within-source rankings are IDENTICAL by construction. Useful only as a Phase 1 per-train_family-offset-removed descriptive variant. NOT an independent test of Chen et al.'s projection-difference claim.</td></tr>
+    <tr><td><code>pcentroid_methodA_L20</code></td><td>#216 Method A centroid cosine (centered)</td><td>Tests whether the contrast step matters</td></tr>
+    <tr><td><code>pcentroid_methodB_L20</code></td><td>#216 Method B centroid cosine (centered)</td><td>Tests whether aggregation matters absent contrast</td></tr>
+    <tr><td><code>pcentroid_chenstyle_pos_only_L20</code> (descriptive)</td><td>Centered-cosine of pos centroid alone (no neg subtraction)</td><td>T10 — tests whether the contrast subtraction is decorative</td></tr>
+  </tbody>
+</table>
+
+<p>The 4 existing #343 axes (<code>lexical_jac</code>, <code>struct_match</code>, <code>task_match</code>, <code>js_div</code>) act as multivariate controls in the ΔR² regression. Per T7, <strong>only <code>pvec_chenstyle_L20</code> is pre-registered as the H1/H2 verdict axis</strong>; the other 8 new axes (and the 1 descriptive) are reported descriptively. <strong>R8 — BH-FDR scope (clarified v3):</strong> Benjamini-Hochberg FDR correction (α=0.10) is applied <strong>only to the 9 single-axis Spearman ρ p-values</strong> (one per non-headline axis). ΔR² (replace and add), partial Spearman ρ, conditional ρ, and within-source partial ρ statistics are reported descriptively without correction.</p>
+
+<h2>6. Evaluation</h2>
+
+<h3>6.1 Phase 1 statistics</h3>
+<table>
+  <thead><tr><th>Statistic</th><th>Where reported</th><th>Threshold</th></tr></thead>
+  <tbody>
+    <tr><td>Single-axis Spearman ρ + p + 95% bootstrap CI (cluster by <code>test_id</code> primary, <code>train_family</code> secondary)</td><td>per axis, <code>phase1/per_axis_stats.json</code></td><td>—</td></tr>
+    <tr><td>Single-axis OLS R²</td><td>per axis</td><td>—</td></tr>
+    <tr><td>ΔR² (replace <code>semantic_cos</code> in 5-axis #343 baseline R²=0.4402)</td><td>per axis</td><td><strong>≥ +0.04 for H1 (canonical chenstyle recipe) — total R²≥0.4802</strong></td></tr>
+    <tr><td>ΔR² (add to 5-axis #343 baseline)</td><td>per axis</td><td>—</td></tr>
+    <tr><td>Leave-one-trigger-out CV-R²</td><td>per axis</td><td>—</td></tr>
+    <tr><td>Spearman ρ delta vs <code>semantic_cos</code> baseline (0.481)</td><td><code>pvec_chenstyle_L20</code> primary</td><td><strong>≥ +0.05 for H1</strong></td></tr>
+    <tr><td><strong>Paired-bootstrap CI of Δρ (test_id cluster, B=1000)</strong></td><td><code>pvec_chenstyle_L20</code> primary</td><td><strong>CI excludes zero for H1 (co-equal with point thresholds)</strong></td></tr>
+    <tr><td><strong>R6 — Preregistered Δρ margin vs centroid baselines</strong> (paired-bootstrap CI on Δρ vs <code>pcentroid_methodA_L20</code> AND vs <code>pcentroid_methodB_L20</code>)</td><td><code>phase1/h1_verdict.json</code></td><td><strong>Δρ ≥ +0.03 vs BOTH centroid axes with paired-bootstrap 95% CI excluding zero. If matched within ±0.03, classify as "centroid replication, not Chen-style contrast confirmation" (NOT H1 PASS).</strong></td></tr>
+    <tr><td>Pearson r(<code>pvec_chenstyle_L20</code>, <code>semantic_cos</code>) — T10 redundancy diagnostic</td><td><code>phase1/collinearity_diagnostics.json</code></td><td>If &gt; 0.9: flag "win is mostly redundancy" — see R10 framing pre-reg below</td></tr>
+    <tr><td><strong>R10 — Analyzer framing pre-registration</strong></td><td><code>phase1/h1_verdict.json</code></td><td><strong>If T10 Pearson r(<code>pvec_chenstyle_L20</code>, <code>semantic_cos</code>) &gt; 0.9 AND H1 PASSes, the analyzer MUST frame the win as "precision gain on shared information," NOT "contrast step reveals new leakage mechanism." Pre-registered to prevent post-hoc mechanism storytelling on a collinear axis.</strong></td></tr>
+    <tr><td>Helpful-centroid-projection variance across 32 panel prompts — T10</td><td>same</td><td>If std/mean &lt; 0.1: contrast subtraction functionally constant</td></tr>
+    <tr><td>ρ of 9th descriptive axis <code>pcentroid_chenstyle_pos_only_L20</code> — T10</td><td>same</td><td>If within 0.02 of <code>pvec_chenstyle_L20</code>'s ρ: contrast step decorative</td></tr>
+    <tr><td><strong>R12 — Conditional ρ on marker_rate &gt; 0 subset (n≈64), calibrated</strong> — T14</td><td><code>phase1/conditional_nonzero.json</code></td><td><strong>Report as: "<code>pvec_chenstyle_L20</code> conditional ρ = X vs <code>semantic_cos</code> conditional ρ = 0.5644 (baseline; verified at plan time)." If X &lt; 0.5644, the new axis is binary-discrim-dominant <em>relative to baseline</em>. v2's "flag if &lt; half of headline ρ" framing was upside-down — for <code>semantic_cos</code>, conditional ρ (0.5644) is HIGHER than headline (0.4808), so the rule misfired.</strong></td></tr>
+    <tr><td>8×8 recipe-agreement matrix off-diagonal mean</td><td><code>phase1/recipe_agreement_matrix.csv</code></td><td><strong>≥ 0.7 for H3a (recipe agreement; expected to pass; failure = extraction broken)</strong></td></tr>
+    <tr><td>Permutation-null 95th percentile of recipe-agreement mean — T8 / H3b</td><td><code>phase1/permutation_null.json</code></td><td><strong>Observed mean must exceed for H3b PASS (substantive claim that recipe agreement is non-trivially leakage-aligned)</strong></td></tr>
+    <tr><td>Off-diagonal min</td><td>recipe-agreement matrix</td><td>If &lt; 0.5: flag structural outlier</td></tr>
+    <tr><td><strong>R8 — Benjamini-Hochberg FDR scope (clarified)</strong></td><td>per axis</td><td><strong>α = 0.10, applied ONLY to the 9 single-axis Spearman ρ p-values (one per non-headline axis). ΔR² (replace and add), partial ρ, conditional ρ, and within-source partial ρ are reported descriptively without FDR correction.</strong></td></tr>
+  </tbody>
+</table>
+
+<h3>6.2 Phase 2 statistics</h3>
+<table>
+  <thead><tr><th>Statistic</th><th>Where reported</th><th>Threshold</th></tr></thead>
+  <tbody>
+    <tr><td><strong>R2 — Reproduction-sanity gate</strong>: (a) JS-ρ on assembled 50-pair table vs #142 published 0.746, AND (b) <strong>Method-A (last-input-token) centered-cosine-L20-ρ from #142's <code>centroids_layer20.pt</code></strong> vs 0.567</td><td><code>phase2/reproduction_sanity.json</code></td><td><strong>Both within ±0.03 = gate to proceed (T2 + Codex Statistics Minor 3). Method-B centroids extracted by this plan are NOT the reference.</strong></td></tr>
+    <tr><td>Single-axis marginal Spearman ρ vs marker_leakage</td><td>per axis</td><td>—</td></tr>
+    <tr><td><strong>R3 — Within-source nanmean partial Spearman ρ (with R9 bootstrap CI)</strong> — T9</td><td>per axis, <code>phase2/source_partial_rho.json</code></td><td><strong>≥ 0.30 point + bootstrap-CI-excludes-zero for H2 PASS (co-equal). If point ≥ 0.30 but CI overlaps zero, classify as "ambiguous on within-source dimension." If point &lt; 0.30 AND CI overlaps zero, classify as "source-discrimination artifact."</strong> NaN handling: <code>np.nanmean</code> over contributing sources (zero-variance sources excluded; comedian always excluded; villain conditionally excluded). Per-source ρ table + contributing-source count required.</td></tr>
+    <tr><td><strong>R3 — Calibration: same T9 statistic computed for Method-A centered-cosine-L20 AND JS-divergence</strong></td><td><code>phase2/source_partial_rho.json</code></td><td>Reported alongside; allows direct comparison of within-source signal across baseline and new axis.</td></tr>
+    <tr><td><strong>R11 — Cross-persona centroid variance</strong> (mean of per-dimension variance over the 10 centered <code>pos_centroid[L20]</code> vectors)</td><td><code>phase2/persona_pos_set_cohesion.json</code></td><td><strong>Reported scalar. If below the mean within-persona cohesion (i.e., personas are more internally cohesive than mutually distinct), flag "Sonnet flatness may limit within-source discriminability." Diagnostic to disambiguate an H2 null between "<code>pvec_chenstyle_L20</code> fails" vs "Sonnet-regenerated personas are stylistically too uniform."</strong></td></tr>
+    <tr><td>Per-persona within-positive-set mean-pairwise-cosine</td><td><code>phase2/persona_pos_set_cohesion.json</code></td><td>0.5-0.95 normal; flag outside</td></tr>
+    <tr><td>Partial Spearman ρ(axis, leakage | JS)</td><td>per axis</td><td>—</td></tr>
+    <tr><td>ΔR² when axis is added to {cosine_L20_centered, js_div} baseline</td><td>per axis</td><td>—</td></tr>
+    <tr><td><code>|ρ(pvec_chenstyle_L20, marker_leakage)|</code> marginal</td><td>headline</td><td><strong>≥ 0.75 for H2 (co-equal with within-source ρ)</strong></td></tr>
+    <tr><td><strong>R6 — Preregistered Δρ margin vs centroid baselines</strong> (paired-bootstrap on Δρ vs <code>pcentroid_methodA_L20</code> AND vs <code>pcentroid_methodB_L20</code>)</td><td><code>phase2/h2_verdict.json</code></td><td><strong>Δρ ≥ +0.03 vs BOTH centroid axes with paired-bootstrap 95% CI excluding zero, for H2 to claim "Chen-style contrast confirmation." If matched within ±0.03, classify as "centroid replication."</strong></td></tr>
+    <tr><td>Source-shuffle permutation null 95th percentile — T13</td><td><code>phase2/source_shuffle_permutation.json</code></td><td><strong>Observed ρ must exceed for H2 PASS</strong></td></tr>
+    <tr><td>Cluster bootstrap CI (resample 5 sources) — T6</td><td>per axis</td><td>Reported; H2 verdict robust if CI excludes the JS baseline</td></tr>
+    <tr><td>8×8 recipe-agreement off-diagonal mean (with AND without projdiff per R4)</td><td><code>phase2/recipe_agreement_matrix.csv</code></td><td><strong>≥ 0.7 for H3a (recipe agreement; expected pass; failure = extraction broken). Report both versions: projdiff is algebraically identical to <code>pvec_chenstyle_L20</code> within-source on Phase 2 (R4) → its inclusion inflates the off-diagonal mean trivially.</strong></td></tr>
+    <tr><td>Permutation null 95th percentile — T8 / H3b</td><td><code>phase2/permutation_null.json</code></td><td><strong>Observed mean must exceed for H3b PASS (substantive: recipe agreement is non-trivially aligned with leakage).</strong></td></tr>
+    <tr><td><strong>R8 — Benjamini-Hochberg FDR scope (clarified, same as Phase 1)</strong></td><td>per axis</td><td><strong>α = 0.10, applied ONLY to the 9 single-axis Spearman ρ p-values (one per non-headline axis). ΔR², partial ρ, conditional ρ, within-source partial ρ are descriptive without correction.</strong></td></tr>
+  </tbody>
+</table>
+
+<p>Per CLAUDE.md statistics policy: <strong>no effect sizes</strong> (no Cohen's d / η² / r-as-effect-size), <strong>no named tests in prose</strong> (no "paired t-test", "Mann-Whitney"), p-values and N reported alongside every ρ. Error bars on charts allowed; discussing them in prose is not. ΔR² and partial Spearman are not effect sizes in the rejected sense — they are regression-decomposition statistics.</p>
+
+<h2>7. Decision gates</h2>
+
+<p><strong>No gates — short run + pre-verified hypothesis.</strong> Total wall-clock ≤ 5 hours, total GPU-hours ≤ 4.</p>
+
+<p>Two debugging gates (not kill gates):</p>
+<ol>
+  <li><strong>Phase 0.0 — panel recoverability (R1 + R7):</strong> filter <code>eval_results/issue_207/js_gentle/base_model_generations.json::system_prompts</code> records to those with <code>id ∈ csv_ids</code>, assert the resulting dict has exactly 32 entries matching the regression's 32 unique <code>test_id</code>s. (R1: the raw <code>system_prompts</code> field has 36 records — 32 panel + 4 anchor/control — so naive <code>panel_ids == csv_ids</code> fails.) If absent, fall back to HF Hub data repo → issue-274 worktree; <strong>SHA256-verify the canonical <code>{test_id: prompt_text}</code> dict against #207's published manifest</strong> (<code>eval_results/issue_207/js_gentle/MANIFEST.json::eval_panel_sha256</code> if present, else <code>epm:results</code> marker payload). Fail-closed if hashes don't match.</li>
+  <li><strong>Phase 2 §4.2.3 — reproduction sanity (R2):</strong> recover #142's JS-ρ=0.746 AND <strong>Method-A (last-input-token) centered-cos-L20-ρ=0.567</strong> within ±0.03 from the assembled 50-pair table, using <code>eval_results/single_token_100_persona/centroids/centroids_layer20.pt</code> as the Method-A centroid source. <strong>This plan's freshly-extracted Method-B mean-response centroids are NOT the reproduction reference.</strong> If not, halt and debug pair selection + centered-cosine implementation before adding new axes.</li>
+</ol>
+
+<h2>8. Risks &amp; failure modes</h2>
+<table>
+  <thead><tr><th>#</th><th>Risk</th><th>Likelihood</th><th>Mitigation / Fallback</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>R1</td>
+      <td>Chenstyle recipe doesn't replicate the JS-comparable signal — persona-vec-cos is hidden-space, JS is output-space, so they may be measuring orthogonal things and H2 fails not because chenstyle is wrong but because the comparison was unfair.</td>
+      <td>Medium</td>
+      <td>Report H2 as "matches OR beats JS" with the partial Spearman explicitly. If partial ρ(pvec, leakage | JS) is non-trivial (≥0.3), persona-vec carries complementary signal even if it doesn't beat JS alone.</td>
+    </tr>
+    <tr>
+      <td>R2</td>
+      <td>Test-prompt activation extraction asymmetry: we extract trait vectors with paired (pos, neg) but project test prompts <em>without</em> a paired negative (raw projection). The projection-difference axis (T4) is intended to address exactly this — if <code>pvec_chenstyle_L20_projdiff</code> dominates <code>pvec_chenstyle_L20</code>, that's Chen et al.'s prediction confirmed.</td>
+      <td>Medium</td>
+      <td>Two sanity checks: (1) project a known trait's own pos-set onto its own vector — should give high positive cosine; (2) project the negative-set (helpful-assistant) onto each trait vector — should give ≈ 0. The projection-difference axis is the principled fix.</td>
+    </tr>
+    <tr>
+      <td>R3</td>
+      <td><strong>Phase 2 source-clustering confound (T9):</strong> ICC=0.594 on 50 pairs means 59% of leakage variance is between-source. Any metric that correctly ranks sources gets ρ≈0.7+ without capturing within-source pair geometry.</td>
+      <td>High (structural property of the dataset)</td>
+      <td>Mitigated by co-equal within-source partial Spearman in H2 verdict (§4.2.4). If marginal ρ ≥ 0.75 but within-source partial ρ near zero, H2 classified as "source-discrimination artifact, not mechanism confirmation."</td>
+    </tr>
+    <tr>
+      <td>R4</td>
+      <td>Recipe disagreement on Phase 2 is higher than 0.7 threshold (8×8 off-diagonal mean &lt; 0.7) — H3 fails. <strong>Or alternatively, off-diagonal mean ≥ 0.7 but doesn't exceed permutation null</strong> (because all 8 axes are linear-algebraic transforms of the same Qwen-L20 hidden states, the absolute 0.7 floor is a layup; T8 adds a permutation-null requirement to make H3 meaningful).</td>
+      <td>Low-medium</td>
+      <td>Report the actual matrix, identify which recipes are outliers (likely <code>pvec_chenstyle_lasttoken</code> or <code>pvec_chenstyle_orthog</code>). H3 PASS requires both 0.7 AND permutation-null exceedance — failing either is informative.</td>
+    </tr>
+    <tr>
+      <td>R5</td>
+      <td>Paraphrase generation collapses (Sonnet returns 5 near-identical paraphrases). Within-positive-set variance is too low → persona vector is noisy.</td>
+      <td>Low</td>
+      <td>Pre-flight check at §4.0.1 caps max pairwise cosine ≤ 0.95. Re-roll if violated. Per-persona within-positive-set diagnostic (§4.0.3) flags any persona with cohesion &lt; 0.5 or &gt; 0.95.</td>
+    </tr>
+    <tr>
+      <td>R6</td>
+      <td>HF teacher-forcing on long-response activations is OOM on 1× H100 80GB.</td>
+      <td>Low (max_tokens=512, batch=1, bf16)</td>
+      <td>Method-B extraction in #216 already runs at this config. If OOM, drop to fp16 or chunk teacher-forcing to 256 tokens at a time.</td>
+    </tr>
+    <tr>
+      <td>R7</td>
+      <td><strong>Collinearity (T10):</strong> <code>pvec_chenstyle_L20</code> could be a constant-shifted <code>semantic_cos</code> if the helpful-assistant negative is near-constant in projection.</td>
+      <td>Medium</td>
+      <td>Pearson r diagnostic; constant-after-centering diagnostic on helpful-projection variance; descriptive <code>pcentroid_chenstyle_pos_only_L20</code> axis. If contrast step is decorative, headline finding is reframed.</td>
+    </tr>
+    <tr>
+      <td>R8</td>
+      <td><strong>Marker-rate 50% zeros (T14):</strong> 64 of 128 Phase-1 rows have <code>marker_rate</code> = 0. The headline ρ could be driven entirely by zero-vs-nonzero discrimination.</td>
+      <td>Medium</td>
+      <td>Conditional ρ on marker_rate &gt; 0 subset (n≈64) reported, <strong>calibrated against <code>semantic_cos</code>'s conditional ρ = 0.5644</strong> (R12). v2's "flag if conditional &lt; half of headline" framing was upside-down — for <code>semantic_cos</code> conditional (0.5644) is HIGHER than headline (0.4808). Correct framing: if the new axis's conditional ρ &lt; 0.5644 (baseline conditional), the new axis is binary-discrim-dominant <em>relative to baseline</em>.</td>
+    </tr>
+    <tr>
+      <td>R9</td>
+      <td><strong>Projdiff degeneracy (R4, NEW v3):</strong> <code>pvec_chenstyle_L20_projdiff</code> uses a single fixed <code>helpful_test_act</code> vector → identical within-source rankings as <code>pvec_chenstyle_L20</code> by construction. Marginal ρ can differ on Phase 1 due to per-train_family offset; Phase 2 within-source structure is identical. H3a pairwise ρ between the two axes = 1.0 by algebra, inflating off-diagonal mean.</td>
+      <td>High (structural, not random)</td>
+      <td>Disclosed at §2.5 simplification #5, §4.1.2 R4 stanza. Report H3a / H3b off-diagonal means with AND without the projdiff row/column included. Do NOT interpret a projdiff "win over <code>pvec_chenstyle_L20</code>" as Chen et al.'s projection-difference claim being confirmed — the operationalization differs.</td>
+    </tr>
+    <tr>
+      <td>R10</td>
+      <td><strong>Sonnet flatness on regenerated personas (R11, NEW v3):</strong> Option A regenerates all 10 personas via Sonnet, possibly compressing inter-persona stylistic distribution. An H2 null could reflect Sonnet flattening rather than <code>pvec_chenstyle_L20</code> failing.</td>
+      <td>Medium</td>
+      <td>Cross-persona centroid variance reported in <code>persona_pos_set_cohesion.json</code> (§4.0.3 R11 diagnostic). If cross-persona variance small relative to within-persona cohesion, flag the H2 null as "uninterpretable — Sonnet may have flattened persona distinctions." This is the analyzer's escape hatch.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>9. Resources &amp; parallelism</h2>
+
+<h3>9.1 Compute estimate</h3>
+<table>
+  <thead><tr><th>Phase</th><th>Stage</th><th>Wall time</th><th>GPU-hours</th></tr></thead>
+  <tbody>
+    <tr><td>0.0</td><td>Panel recoverability check (CPU; reads JSON)</td><td>&lt; 1 min</td><td>0</td></tr>
+    <tr><td>0.1</td><td>Sonnet paraphrase generation (5 paraphrases × 4 triggers + 10 personas; ~$0.50 API)</td><td>~7 min</td><td>0</td></tr>
+    <tr><td>1</td><td>vLLM-generate 4 trigger × 100 + 1 shared negative × 100 + 1 empty-baseline × 100</td><td>~25 min</td><td>0.4</td></tr>
+    <tr><td>1</td><td>HF teacher-force + extract 8 vectors per trigger × 4 triggers</td><td>~25 min</td><td>0.4</td></tr>
+    <tr><td>1</td><td>Project 32 panel prompts × 20 questions × HF forward at 3 layers</td><td>~15 min</td><td>0.25</td></tr>
+    <tr><td>2</td><td>vLLM-generate 10 personas × 5 paraphrases × 20 questions</td><td>~30 min</td><td>0.5</td></tr>
+    <tr><td>2</td><td>HF teacher-force + extract 8 vectors per persona × 10 (1000 fwd)</td><td>~45 min</td><td>0.75</td></tr>
+    <tr><td>2</td><td>Compute centroid_mean over 11 personas at 3 layers + add to Phase 1 cosine recomputation</td><td>~5 min</td><td>0.05</td></tr>
+    <tr><td>1+2</td><td>CSV joins, OLS, Spearman, bootstrap, permutation nulls (CPU)</td><td>~15 min</td><td>0</td></tr>
+    <tr><td>—</td><td>Pod provisioning + bootstrap</td><td>~10 min</td><td>—</td></tr>
+    <tr><td><strong>Total</strong></td><td></td><td><strong>~2.5-3h wall</strong></td><td><strong>~2.4 GPU-hours</strong></td></tr>
+  </tbody>
+</table>
+<p>$ cost on 1× H100 80GB at ~$3/hr: <strong>~$7-10</strong>. Body's estimate of ~$10-20 is comfortably above.</p>
+
+<h3>9.2 Parallelism analysis</h3>
+
+<p>The dominant cost is HF teacher-forcing on long sequences (~3500 forward passes total). This is bottlenecked by per-token VRAM bandwidth, not by SM count — 1× H100 80GB is the right unit. The work is embarrassingly parallel across (trigger, persona) but total ≤ 2.5 GPU-hours, so multi-GPU sharding wall-clock benefit is small after pod-provisioning overhead.</p>
+
+<p><strong>Decision:</strong> 1× H100 80GB, intent <code>eval</code>. Single pod. No CUDA_VISIBLE_DEVICES sharding.</p>
+
+<p>Rejected alternatives:</p>
+<ul>
+  <li><em>4× H100 ZeRO-3</em>: no training, ZeRO-3 doesn't help inference.</li>
+  <li><em>4× H100 sharded by trigger/persona</em>: a 30% wall-clock saving on a 2.5h job, but adds orchestration complexity and pod-bootstrap overhead eats most of the savings.</li>
+  <li><em>2× H100</em>: same logic as 4×, smaller saving.</li>
+</ul>
+
+<p><strong>Pipeline parallelism:</strong> Phase 2 extraction must complete before Phase 1 centered-cosine computation (centroid_mean is computed over <code>ALL_EVAL_PERSONAS</code>, which requires Phase 2 centroids). Phase 2 and Phase 1 vector extraction CAN run concurrently on the same pod, but Phase 1's <em>analysis</em> waits for Phase 2's centroid_mean. See §15 pipeline diagram.</p>
+
+<h3>9.3 Disk &amp; data footprint</h3>
+<ul>
+  <li>Cached responses: ~5 MB per (trigger, side) × ~6 = ~30 MB.</li>
+  <li>Cached activations are NOT persisted — extracted-then-mean-pooled-then-discarded inline.</li>
+  <li>Persona-vec tensors: 11 personas + 4 triggers + 1 empty-baseline = 16 traits × 8 recipes × (3584 floats × 4 B) = ~1.8 MB total. Trivial.</li>
+  <li>Augmented CSVs + JSON outputs: ~250 KB total. Committed to git.</li>
+</ul>
+
+<h2>10. Reproducibility Card (pre-filled)</h2>
+
+<table>
+  <thead><tr><th>Field</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Model</strong></td><td><code>Qwen/Qwen2.5-7B-Instruct</code> (28 transformer layers, hidden=3584, ~7.6B params)</td></tr>
+    <tr><td><strong>Trainable params</strong></td><td>0 — inference only, no fine-tuning, no LoRA</td></tr>
+    <tr><td><strong>Generation engine</strong></td><td>vLLM 0.8.3+ via existing <code>generate_responses_vllm()</code></td></tr>
+    <tr><td><strong>Sampling params</strong></td><td>temperature=0.0, top_p=1.0, max_tokens=512, seed=42, n=1 (greedy)</td></tr>
+    <tr><td><strong>Activation extraction engine</strong></td><td>HF Transformers 5.x (bf16 weights, fp32 activations via <code>.float()</code> cast on hidden state)</td></tr>
+    <tr><td><strong>Layers extracted</strong></td><td>{15, 20, 25} (0-indexed transformer-block outputs)</td></tr>
+    <tr><td><strong>Aggregation</strong></td><td>mean over response tokens (canonical) AND last response token (the <code>pvec_chenstyle_lasttoken</code> variant only). Method A reuses last-input-token (no contrast).</td></tr>
+    <tr><td><strong>Vector formula</strong></td><td><code>pvec = normalize(mean_resp(pos_responses, L) − mean_resp(neg_responses, L))</code></td></tr>
+    <tr><td><strong>Cosine convention (T1)</strong></td><td><strong>Centered</strong> — subtract <code>centroid_mean[L]</code> from BOTH vectors before unit-normalize + dot. <code>centroid_mean[L]</code> = mean over the 11 <code>ALL_EVAL_PERSONAS</code> positive-side response-mean centroids at layer L. Matches #142 body line 87 convention.</td></tr>
+    <tr><td><strong>Positive set size</strong></td><td>5 paraphrases × 20 EVAL_QUESTIONS = 100 responses per trait per side</td></tr>
+    <tr><td><strong>Negative set</strong></td><td>5 paraphrases of "You are a helpful assistant." (file: <code>data/assistant_axis/instructions/_helpful_assistant_negset.json</code>) × 20 EVAL_QUESTIONS = 100 responses. Shared across all 14 traits.</td></tr>
+    <tr><td><strong>Empty-prompt baseline</strong></td><td>For <code>pvec_chenstyle_orthog</code> only: system_prompt = "" × 20 questions × 1 paraphrase vs same neg set. Direction extracted at L20 only.</td></tr>
+    <tr><td><strong>Projection-difference reference (T4)</strong></td><td>For <code>pvec_chenstyle_L20_projdiff</code>: subtract <code>centered_cosine(pvec, helpful_test_act, centroid_mean_L20)</code> from raw centered cosine. <code>helpful_test_act</code> = mean of the 5 helpful-assistant negative-side responses' L20 activations.</td></tr>
+    <tr><td><strong>N completions per (prompt, recipe)</strong></td><td>1 greedy (temp=0). Matches #142 / #216 precedent.</td></tr>
+    <tr><td><strong>EVAL_QUESTIONS</strong></td><td>The 20-question pool from <code>src/explore_persona_space/personas.py::EVAL_QUESTIONS</code>.</td></tr>
+    <tr><td><strong>Persona instruction files (T11 Option A)</strong></td><td>All 10 non-baseline personas regenerated via Sonnet from <code>personas.py::PERSONAS</code> seeds. Originals of <code>librarian.json</code> and <code>comedian.json</code> backed up to <code>data/assistant_axis/instructions/_backup/</code>. Uniform style + generator.</td></tr>
+    <tr><td><strong>Phase 1 dataset</strong></td><td><code>eval_results/issue_207/js_gentle/regression_data.csv</code> (N=128, 13 columns) — read-only. Augmented copy at <code>eval_results/issue_368/phase1/regression_data_augmented.csv</code> (N=128, 22 columns).</td></tr>
+    <tr><td><strong>Phase 1 panel source (T3)</strong></td><td><code>eval_results/issue_207/js_gentle/base_model_generations.json</code>::<code>system_prompts</code> field, filtered to records with <code>source == "panel"</code>. 32 records expected; assert equality with <code>test_id</code> column at Phase 0.0 gate.</td></tr>
+    <tr><td><strong>Phase 2 dataset</strong></td><td><code>eval_results/single_token_100_persona/cosine_leakage_correlation.json</code> + per-source <code>marker_eval.json</code> files. Subsetted to 5 source × 10 target = 50 directed pairs via T2 simple rule (no category/related_to filter).</td></tr>
+    <tr><td><strong>Reproduction sanity tolerance (R2 clarification)</strong></td><td>±0.03 on JS-ρ=0.746 AND ±0.03 on Method-A (last-input-token) centered-cosine-L20-ρ=0.567 computed from <code>eval_results/single_token_100_persona/centroids/centroids_layer20.pt</code>. <strong>Method-B mean-response centroids extracted by this plan are NOT the reproduction reference.</strong></td></tr>
+    <tr><td><strong>Eval matchers</strong></td><td>Marker rate (Phase 1) = case-insensitive <code>[ZLT]</code> substring rate, identical to #207 / #343. Persona-leakage rate (Phase 2) = identical to #142 (already in JSON; we do not recompute).</td></tr>
+    <tr><td><strong>Verdict thresholds (H1)</strong></td><td>Δρ ≥ +0.05 vs <code>semantic_cos</code> AND ΔR² ≥ +0.04 AND paired-bootstrap 95% CI on Δρ excludes zero (T5; <code>test_id</code> cluster primary, <code>train_family</code> cluster secondary; B=1000). <strong>R6 (NEW v3):</strong> Δρ ≥ +0.03 vs BOTH <code>pcentroid_methodA_L20</code> AND <code>pcentroid_methodB_L20</code> with paired-bootstrap 95% CI excluding zero — else classify as "centroid replication, not Chen-style contrast confirmation."</td></tr>
+    <tr><td><strong>Verdict thresholds (H2, T9 co-equal; R3 + R9 specs)</strong></td><td>BOTH marginal |ρ| ≥ 0.75 AND within-source <code>np.nanmean</code> partial ρ ≥ 0.30 with cluster-bootstrap CI (B=1000) excluding zero AND observed marginal ρ exceeds 95th-percentile of source-shuffle permutation null (T13, B=1000). <strong>R6 (NEW v3):</strong> Δρ ≥ +0.03 vs BOTH centroid baselines required to claim "Chen-style contrast confirmation." Zero-variance sources (comedian guaranteed; villain conditional) excluded from the nanmean.</td></tr>
+    <tr><td><strong>Verdict thresholds (H3a + H3b — R5 split, v3)</strong></td><td><strong>H3a (recipe agreement):</strong> 8×8 off-diagonal mean ≥ 0.7 (expected pass; failure = extraction broken). <strong>H3b (non-trivially leakage-aligned):</strong> off-diagonal mean exceeds 95th-percentile of marker_rate-shuffle (Phase 1) / marker_leakage-shuffle (Phase 2) permutation null (B=1000). Both reported with AND without projdiff (per R4 algebraic identity). Off-diagonal min reported alongside.</td></tr>
+    <tr><td><strong>Multiple-comparison correction (T7 + R8 scope, v3)</strong></td><td>Benjamini-Hochberg FDR, α=0.10, applied <strong>ONLY</strong> to the 9 single-axis Spearman ρ p-values (one per non-headline axis). ΔR² (replace and add), partial Spearman ρ, conditional ρ, and within-source partial ρ are descriptive without correction.</td></tr>
+    <tr><td><strong>Compute</strong></td><td>1× H100 80GB, RunPod intent <code>eval</code>, single pod <code>epm-issue-368</code></td></tr>
+    <tr><td><strong>Wall-time estimate</strong></td><td>~3 hours (Phase 1+2 extraction ~2.2h, analysis ~15min, plus 10min bootstrap)</td></tr>
+    <tr><td><strong>Output paths — figures</strong></td><td><code>figures/issue_368/{phase1_h1_verdict.png, phase1_recipe_agreement.png, phase2_h2_verdict.png, phase2_recipe_agreement.png, cross_phase_synthesis.png}</code> with <code>.meta.json</code> sidecars</td></tr>
+    <tr><td><strong>Output paths — JSON</strong></td><td><code>eval_results/issue_368/phase1/{regression_data_augmented.csv, per_axis_stats.json, regression_results.json, recipe_agreement_matrix.csv, h1_verdict.json, collinearity_diagnostics.json, permutation_null.json, conditional_nonzero.json}</code> and <code>phase2/{leakage_table.csv, per_axis_stats.json, recipe_agreement_matrix.csv, h2_verdict.json, reproduction_sanity.json, source_partial_rho.json, source_shuffle_permutation.json, persona_pos_set_cohesion.json, permutation_null.json}</code></td></tr>
+    <tr><td><strong>Output path — vectors</strong></td><td><code>data/persona_vectors_chenstyle/qwen2.5-7b-instruct/{i181/&lt;trigger&gt;,personas/&lt;persona&gt;}/pvec_{recipe}.pt</code> + <code>_centroid_mean_L{15,20,25}.pt</code> — uploaded to HF Hub data repo <code>superkaiba1/explore-persona-space-data</code> under <code>issue368_persona_vectors_chenstyle/</code></td></tr>
+    <tr><td><strong>Raw completions</strong></td><td>Uploaded to HF Hub data repo at <code>issue368_persona_vectors_chenstyle/raw_completions/&lt;trait&gt;_&lt;side&gt;.json</code> via <code>upload_raw_completions_to_data_repo()</code></td></tr>
+    <tr><td><strong>Git commit hash</strong></td><td>TBD — filled by experimenter after launch</td></tr>
+  </tbody>
+</table>
+
+<h2>11. Decision rationale (non-obvious parameter choices)</h2>
+<table>
+  <thead><tr><th>Choice</th><th>Reasoning</th><th>Rejected alternatives</th></tr></thead>
+  <tbody>
+    <tr><td>Centered cosine convention (T1)</td><td>Matches #142 body line 87 + the published 0.567 baseline. Raw cosine on same pairs is 0.7632, which makes the "match or beat JS 0.746" threshold trivially met by raw L20 cosine itself — meaningless comparison.</td><td>Raw cosine (rejected: comparison would be against the wrong #142 baseline).</td></tr>
+    <tr><td>L20 as headline</td><td>Amendment Q3 + #267 project default. L15/L25 reported as robustness.</td><td>Sweep all 28 layers (overfits).</td></tr>
+    <tr><td>"chenstyle" name (T12)</td><td>Honest naming — our recipe has 4 simplifications vs Chen et al. (§2.5). "canonical" would overclaim faithfulness.</td><td>"chen_canonical" (rejected: misleading); "chen-inspired" (equivalent but less compact).</td></tr>
+    <tr><td>5 paraphrases per side</td><td>Matches existing 5-paraphrase schema for 276 personas.</td><td>10 paraphrases (doubles cost, marginal variance gain); 1 paraphrase (vector noisy).</td></tr>
+    <tr><td>Universal helpful-assistant negative</td><td>Amendment Q2 + #216/#267 project convention. Chen et al. validate this default.</td><td>Per-trait antonym (adds template variance, complicates cross-trait comparison).</td></tr>
+    <tr><td>Mean over response tokens (canonical)</td><td>Chen et al. Section 2 + repo's <code>response_avg_diff.pt</code> ("used in paper").</td><td>Mean over prompt tokens (Chen et al. say weaker); per-token max (no precedent).</td></tr>
+    <tr><td>Greedy decoding (temp=0)</td><td>Matches #142 / #216 / #343. Determinism.</td><td>K=5 sampling at temp=0.7 (K× cost, no measurement gain).</td></tr>
+    <tr><td>Reuse EVAL_QUESTIONS</td><td>Amendment Q4 + #142 / #343 use same pool. Cross-comparability over trait-evocativeness.</td><td>Trait-specific questions (breaks comparability with #142).</td></tr>
+    <tr><td>T11 Option A (regenerate all 10 personas via Sonnet)</td><td>Eliminates style asymmetry between handcrafted (librarian, comedian) and Sonnet-generated personas. ~$0.50 cost.</td><td>Option B (keep 2 handcrafted + diagnostic): added analyzer complexity; weaker science.</td></tr>
+    <tr><td>Add <code>pvec_chenstyle_L20_projdiff</code> axis (T4)</td><td>Chen et al. argue projection-difference outperforms raw projection. Adding it tests their claim within our recipe; if it dominates the raw axis, our H1 null is consistent with Chen et al.</td><td>Scope to raw-projection-only (rejected: an H1 null then is uninterpretable — could be either our recipe failing OR Chen et al.'s own caveat).</td></tr>
+    <tr><td>Pre-register only <code>pvec_chenstyle_L20</code> as verdict axis (T7)</td><td>7+ tested axes × 5 statistics = 35+ tests per phase; uncorrected family-wise error inflates spurious-winner probability.</td><td>All-axes-eligible verdict (rejected: T7 multiple-comparison concern); all-corrected (Bonferroni — overly conservative for this exploratory follow-up).</td></tr>
+    <tr><td>Paired-bootstrap CI as H1 co-equal (T5)</td><td>Williams test at N=128, Δρ=0.05 has ~22% power. Point estimates alone risk false-positive nulls.</td><td>Williams test only (rejected: underpowered); larger N (rejected: dataset fixed).</td></tr>
+    <tr><td>Cluster bootstrap by test_id primary (T6)</td><td>32 clusters preferred over 4 train_families. Within-test_id correlation across train_families is the dominant non-independence.</td><td>IID bootstrap (rejected: violates non-independence); cluster by train_family only (rejected: too few clusters).</td></tr>
+    <tr><td>Within-source partial Spearman as H2 co-equal (T9)</td><td>Phase 2 ICC=0.594 — marginal ρ may reflect source-discrimination, not mechanism.</td><td>Marginal-ρ-only verdict (rejected: T9 concern that source-discrimination explains it).</td></tr>
+    <tr><td>Permutation nulls for H3 (T8) — v3 split into H3a + H3b (R5)</td><td>All 8 axes are linear-algebraic transforms of Qwen-L20 — absolute 0.7 floor is a layup (H3a). Substantive claim (H3b) requires exceeding the permutation null. Splitting separates "extraction works" (H3a) from "recipe agreement carries genuine leakage signal" (H3b) so the analyzer can weight them independently.</td><td>Absolute-threshold-only (rejected: T8 concern); single combined verdict (rejected v3: conflated two epistemically different claims).</td></tr>
+    <tr><td>R6 — Preregistered Δρ margin vs centroid baselines (v3)</td><td>If <code>pvec_chenstyle_L20</code> matches <code>pcentroid_methodA_L20</code> / <code>pcentroid_methodB_L20</code> within Δρ ≤ 0.03, the Chen-style contrast step adds no methodological value over centroid-only recipes — the result is centroid replication, not contrast confirmation. Pre-registered margin makes that distinction binary at verdict time.</td><td>Headline-vs-semantic_cos only (rejected v3: doesn't distinguish chenstyle from #216 centroids).</td></tr>
+    <tr><td>R8 — BH-FDR scope = 9 single-axis Spearman p-values only (v3)</td><td>Each axis has 5+ statistics. Family-wise correction over all axis-stat combinations (45+) would obscure the headline; ΔR², partial ρ, conditional ρ are descriptive decomposition statistics, not multiple-test artifacts.</td><td>FDR over all axis-stat combinations (rejected v3: over-corrects descriptive decomposition).</td></tr>
+    <tr><td>R10 — Pre-registered analyzer framing on collinearity (v3)</td><td>If T10 Pearson r > 0.9 AND H1 PASS, the win must be framed as "precision gain on shared information," not "new mechanism." Pre-registering the framing prevents post-hoc mechanism storytelling on a redundancy-driven win.</td><td>Analyzer-discretion framing (rejected v3: high collinearity priors against "new mechanism" reading).</td></tr>
+    <tr><td>R12 — T14 calibration against <code>semantic_cos</code> conditional ρ = 0.5644 (v3)</td><td>v2's "flag if conditional &lt; half of headline" framing misfires for <code>semantic_cos</code> itself (conditional 0.5644 &gt; headline 0.4808). v3 calibrates against the baseline's conditional ρ — directly comparable.</td><td>Half-of-own-headline rule (rejected v3: tautologically wrong for the very baseline it's calibrating against).</td></tr>
+    <tr><td>R4 — Keep projdiff axis despite degeneracy disclosure (v3)</td><td>Within-source identical to <code>pvec_chenstyle_L20</code> by construction (single fixed <code>helpful_test_act</code>). Retained as Phase 1 per-train_family-offset-removed descriptive variant; NOT independent test of Chen et al. projection-difference claim.</td><td>Drop projdiff (rejected v3: still informative as offset-removed Phase 1 axis).</td></tr>
+    <tr><td>Symmetric test-prompt projection</td><td>Same 20-question extraction for test as for positive side. Asymmetry mixes distributional summaries.</td><td>Last-input-token only (faster; not chenstyle canonical).</td></tr>
+    <tr><td>1× H100 80GB, single pod</td><td>§9.2 analysis: ≤ 2.5 GPU-hours total; pod-bootstrap dominates wall-clock savings from sharding.</td><td>4× H100 sharded (~30% saving, +complexity).</td></tr>
+    <tr><td>Two separate verdicts (no cross-phase regression)</td><td>Clarifier Q5(a). Phase 1 + Phase 2 statistical units are not the same.</td><td>Combined regression with phase as a fixed effect (clarifier rejected).</td></tr>
+    <tr><td>Strong-recipe (504-row) data out of scope</td><td>Clarifier Q6(b). Reopen only if H1 passes.</td><td>Include strong-recipe now (clarifier rejected).</td></tr>
+  </tbody>
+</table>
+
+<h2>12. Assumptions</h2>
+
+<p>This is the most important section. Every factual claim used in the plan, with confidence + verification. v2 marks NEW or REVISED assumptions.</p>
+
+<table>
+  <thead><tr><th>#</th><th>Assumption</th><th>Confidence</th><th>Source / verification</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>A1</td>
+      <td>Qwen/Qwen2.5-7B-Instruct has 28 transformer layers (0-indexed, so L15/L20/L25 are valid).</td>
+      <td class="tag-high">High</td>
+      <td>Verified in <code>scripts/extract_persona_vectors.py</code> line 50. L20 is project default per #267.</td>
+    </tr>
+    <tr>
+      <td>A2</td>
+      <td>Qwen2.5-7B hidden size is 3584.</td>
+      <td class="tag-medium">Medium</td>
+      <td>Standard; experimenter should print <code>model.config.hidden_size</code> and assert == 3584.</td>
+    </tr>
+    <tr>
+      <td>A3</td>
+      <td><code>eval_results/issue_207/js_gentle/regression_data.csv</code> has exactly N=128 rows with the columns named in §4.1.3.</td>
+      <td class="tag-high">High</td>
+      <td>Verified: 128 rows, 13 columns. 32 unique <code>test_id</code>, 4 unique <code>train_family</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>A4 (REVISED — T2)</strong></td>
+      <td>The 50 directed pairs are: <code>5 sources × {targets ∈ ALL_EVAL_PERSONAS \ source} = 50</code>. <strong>NO category / related_to filter.</strong> The 11 <code>ALL_EVAL_PERSONAS</code> minus self yields 10 targets per source.</td>
+      <td class="tag-high">High (v2 correction)</td>
+      <td>v2 critic ensemble verified — Claude Methodology reading worktree code + Codex Alternatives reading <code>analysis_results.json</code>. v1 inherited a faulty fact-checker patch (category/related_to filter). v2 drops the filter; §4.2.2 reflects the simpler rule.</td>
+    </tr>
+    <tr>
+      <td><strong>A5 (REVISED — T2)</strong></td>
+      <td>The 50-pair subset matches #142's published baselines (JS |ρ|=0.746, centered-cos-L20 |ρ|=0.567) within ±0.03 (T2 + Codex Statistics Minor 3 tolerance loosening).</td>
+      <td class="tag-medium">Medium</td>
+      <td>§4.2.3 reproduction gate verifies. v1's tolerance was ±0.01 — loosened to ±0.03 to absorb centroid-recomputation float noise. v1's reference to <code>_compute_leakage_comparison()</code> filter logic dropped.</td>
+    </tr>
+    <tr>
+      <td>A6</td>
+      <td><code>scripts/extract_persona_vectors.py</code> implements Method A/B; right basis for reusable helpers.</td>
+      <td class="tag-high">High</td>
+      <td>Functions at lines 98, 107, 290, 203. Will import / copy.</td>
+    </tr>
+    <tr>
+      <td>A7</td>
+      <td>The 11 <code>ALL_EVAL_PERSONAS</code> are: software_engineer, kindergarten_teacher, data_scientist, medical_doctor, librarian, french_person, comedian, police_officer, villain, zelthari_scholar, assistant.</td>
+      <td class="tag-high">High</td>
+      <td>Verified in <code>personas.py</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>A8 (REVISED — T11 Option A)</strong></td>
+      <td>All 10 non-baseline persona instruction files will be regenerated via Sonnet from <code>PERSONAS</code> dict seeds. Existing <code>librarian.json</code> and <code>comedian.json</code> are backed up to <code>data/assistant_axis/instructions/_backup/</code> before overwrite.</td>
+      <td class="tag-high">High (v2 decision)</td>
+      <td>v1 plan kept 2 handcrafted + generated 8. v2 picks Option A: regenerate all 10 for style uniformity (eliminates the handcrafted/Sonnet asymmetry that confounds the within-positive-set cohesion diagnostic). Cost ≈ $0.50.</td>
+    </tr>
+    <tr>
+      <td>A9</td>
+      <td><code>EVAL_QUESTIONS</code> is the 20-question pool both #142 and #343 use.</td>
+      <td class="tag-high">High</td>
+      <td>Verified in <code>personas.py</code> + amendment.</td>
+    </tr>
+    <tr>
+      <td>A10</td>
+      <td>HF Transformers returns hidden states via <code>output_hidden_states=True</code>; existing forward-hook approach reusable.</td>
+      <td class="tag-high">High</td>
+      <td>Verified at lines 132-142 of extract_persona_vectors.py.</td>
+    </tr>
+    <tr>
+      <td>A11</td>
+      <td>vLLM-gen + HF teacher-force on same response yields same hidden states.</td>
+      <td class="tag-medium">Medium</td>
+      <td>Standard. Sanity-check in entry script: assert HF final-token logit matches vLLM emitted token.</td>
+    </tr>
+    <tr>
+      <td>A12</td>
+      <td>Mean over response tokens excludes system+user prompt tokens; boundary via prompt-only re-tokenization.</td>
+      <td class="tag-high">High</td>
+      <td>Verified in <code>extract_method_b()</code> lines 350-379.</td>
+    </tr>
+    <tr>
+      <td><strong>A13 (REVISED — T12)</strong></td>
+      <td>The "Chen et al.-inspired" recipe (renamed from "Chen et al. canonical") differs from the published recipe in 4 documented simplifications: (i) universal helpful-assistant negative, (ii) shared EVAL_QUESTIONS pool, (iii) no judge-score response filter, (iv) fixed L20 layer.</td>
+      <td class="tag-high">High (v2 correction)</td>
+      <td>§2.5 enumerates. Axes renamed <code>pvec_chen_*</code> → <code>pvec_chenstyle_*</code> throughout.</td>
+    </tr>
+    <tr>
+      <td>A14</td>
+      <td>The 4 non-persona triggers (T_task, T_instruction, T_context, T_format) are defined in <code>data/i181_non_persona/triggers.json</code>.</td>
+      <td class="tag-high">High</td>
+      <td>Verified.</td>
+    </tr>
+    <tr>
+      <td><strong>A15 (REVISED — T3)</strong></td>
+      <td>The 32 test-panel system-prompt strings are recoverable from <code>eval_results/issue_207/js_gentle/base_model_generations.json</code>'s <code>system_prompts</code> field (records with <code>source == "panel"</code>). NOT from regenerating via <code>build_i181_data.py --step panel-only</code> (which produces different LLM-generated content non-deterministically).</td>
+      <td class="tag-high">High (v2 correction)</td>
+      <td>Verified at plan time: 40 records in <code>system_prompts</code> with <code>{id, source, text}</code> schema; the 32 <code>source==panel</code> records match the 32 unique <code>test_id</code>s in <code>regression_data.csv</code> exactly. Phase 0.0 gate asserts equality. Fallback chain: HF Hub data repo → issue-274 worktree → halt + escalate.</td>
+    </tr>
+    <tr>
+      <td>A16</td>
+      <td>JS divergence baseline (Phase 2) recoverable from <code>eval_results/js_divergence/divergence_matrices.json</code> or worktree-274 copy or recompute (~3 min).</td>
+      <td class="tag-low">Low</td>
+      <td>Phase 2 §4.2.3 gate confirms.</td>
+    </tr>
+    <tr>
+      <td>A17</td>
+      <td>50 directed pair leakage rates recoverable from <code>eval_results/single_token_100_persona/{source}/marker_eval.json</code> for source ∈ {villain, comedian, assistant, software_engineer, kindergarten_teacher}.</td>
+      <td class="tag-high">High</td>
+      <td>Per-source dirs verified on disk. Schema: <code>{rate, found, total, category, related_to}</code> per target persona (we use only <code>rate</code>).</td>
+    </tr>
+    <tr>
+      <td>A18</td>
+      <td>5 paraphrases × 20 questions = 100 responses per side gives stable centroid (within-set cohesion 0.5-0.95).</td>
+      <td class="tag-medium">Medium</td>
+      <td>Chen et al. use similar scale. Per-persona cohesion diagnostic (§4.0.3) flags outliers.</td>
+    </tr>
+    <tr>
+      <td>A19</td>
+      <td><code>upload_raw_completions_to_data_repo()</code> supports the per-trait completions schema.</td>
+      <td class="tag-medium">Medium</td>
+      <td>Function exists; schema flexibility verified at experiment time.</td>
+    </tr>
+    <tr>
+      <td><strong>A20 (NEW — T1)</strong></td>
+      <td>The centered-cosine convention used by #142 and adopted here is: subtract <code>centroid_mean[L]</code> from both vectors before unit-normalize, where <code>centroid_mean[L]</code> = mean over the 11 <code>ALL_EVAL_PERSONAS</code> positive-side response-mean centroids at layer L. This matches #142 body line 87 ("Centered cosine similarity of layer-20 last-token centroids").</td>
+      <td class="tag-high">High (v2 NEW)</td>
+      <td>Orchestrator-verified: #142's centered ρ=0.567 vs raw ρ=0.7632 on the same 50 pairs. The "match or beat JS 0.746" threshold requires centered (else raw cosine trivially exceeds JS).</td>
+    </tr>
+    <tr>
+      <td><strong>A21 (NEW — T4)</strong></td>
+      <td>The projection-difference axis <code>pvec_chenstyle_L20_projdiff</code> uses the helpful-assistant negative-side test_act as the neutral reference. helpful_test_act = mean over the 5 helpful-assistant negative-side responses' L20 activations (already extracted for the negative side of extraction).</td>
+      <td class="tag-high">High (v2 NEW)</td>
+      <td>Chen et al. §"Comparing projection differences with raw projection" explicitly recommends this construction.</td>
+    </tr>
+    <tr>
+      <td><strong>A22 (REVISED v3 — T9)</strong></td>
+      <td>Phase 2 ICC across the 5 sources is ~0.60 (Claude critic computed 0.594; Codex Statistics computed 0.607 — within rounding). 59-61% of leakage variance between-source. Villain has 9/10 leakage=0 (zero or near-zero variance); comedian 10/10=0 (zero variance — must be excluded from nanmean per R3); software_engineer mean=0.506.</td>
+      <td class="tag-high">High (v3 ICC range)</td>
+      <td>Verified by Codex Alternatives during round-1 critique; Codex Statistics round-2 critique gave 0.607. Motivates R3 (NaN handling spec) + R9 (bootstrap CI) — comedian zero-variance excluded by spec; villain conditionally excluded.</td>
+    </tr>
+    <tr>
+      <td><strong>A23 (NEW — T14)</strong></td>
+      <td>Phase 1 <code>marker_rate</code> has 64 of 128 rows at 0.000 (50% zero floor).</td>
+      <td class="tag-high">High (v2 NEW)</td>
+      <td>Verified by Codex Alternatives. Motivates the conditional ρ diagnostic.</td>
+    </tr>
+    <tr>
+      <td><strong>A24 (NEW v3 — R12)</strong></td>
+      <td><code>semantic_cos</code> conditional Spearman ρ on the <code>marker_rate &gt; 0</code> subset (n≈64) is <strong>0.5644</strong> — HIGHER than its full-sample headline ρ = 0.4808. This is the calibration baseline for T14: new axis's conditional ρ &lt; 0.5644 means "binary-discrim-dominant relative to baseline."</td>
+      <td class="tag-high">High (v3 verified)</td>
+      <td>Verified by Claude Statistics critic in round 2. v2's "flag if &lt; half of headline" rule was upside-down — for <code>semantic_cos</code> itself, conditional ρ exceeds headline ρ, so the rule misfired. v3 replaces with calibration-vs-baseline-conditional.</td>
+    </tr>
+    <tr>
+      <td><strong>A25 (NEW v3 — R4)</strong></td>
+      <td><code>pvec_chenstyle_L20_projdiff(S, T_test) = chenstyle(S, T_test) − const(S)</code> where <code>const(S) = centered_cosine(pvec[S], helpful_test_act, centroid_mean_L20)</code> is a single scalar per source. Within-source target rankings are therefore IDENTICAL to <code>pvec_chenstyle_L20</code>.</td>
+      <td class="tag-high">High (v3 algebraic)</td>
+      <td>Identified independently by Claude Methodology, Codex Alternatives, and Codex Methodology in round 2. <code>helpful_test_act</code> = mean of 5 helpful-assistant negative-side responses' L20 activations (single fixed vector across all test prompts).</td>
+    </tr>
+    <tr>
+      <td><strong>A26 (NEW v3 — R6)</strong></td>
+      <td><code>pvec_chenstyle_L20</code> must outperform BOTH <code>pcentroid_methodA_L20</code> AND <code>pcentroid_methodB_L20</code> by Δρ ≥ +0.03 (paired-bootstrap 95% CI excludes zero) to claim "Chen-style contrast confirmation." Match within ±0.03 → classify as "centroid replication."</td>
+      <td class="tag-high">High (v3 pre-registered)</td>
+      <td>Pre-registered per Codex Methodology critic round-2 finding. The Chen-style contrast subtraction has methodological value only if it beats centroid-only recipes by a margin that exceeds noise.</td>
+    </tr>
+    <tr>
+      <td><strong>A27 (NEW v3 — R8)</strong></td>
+      <td>BH-FDR (α=0.10) is applied <strong>only</strong> to the 9 single-axis Spearman ρ p-values (one per non-headline axis). ΔR² (replace and add), partial Spearman, conditional ρ, within-source partial ρ are descriptive without correction.</td>
+      <td class="tag-high">High (v3 scope)</td>
+      <td>Codex Statistics SR1 round 2. Each axis has 5+ statistics; the family for FDR is the 9 single-axis Spearman p-values, not the 45+ all-axis-stat combinations.</td>
+    </tr>
+    <tr>
+      <td><strong>A28 (NEW v3 — R9)</strong></td>
+      <td>At n=10 per source × 3-4 non-degenerate sources, Williams-test power against ρ=0.30 vs ρ=0 (α=0.05 one-sided) is ~18%. 0.30 is a descriptive point threshold, NOT a significance test.</td>
+      <td class="tag-medium">Medium (power calc)</td>
+      <td>Codex Statistics SR2 round 2. v3 requires bootstrap CI on the nanmean partial ρ; if CI overlaps zero, H2 classified as "ambiguous on within-source dimension."</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>13. Plan deviations allowed vs must-ask</h2>
+
+<p>The experimenter / implementer pairing has the following inline authority:</p>
+
+<h4>Allowed (inline, just note in run log)</h4>
+<ul>
+  <li>Disk-path adjustments (move <code>data/persona_vectors_chenstyle/</code>).</li>
+  <li>Add a <code>--smoke-test</code> flag (1 trigger × 1 paraphrase × 5 questions in &lt; 1 min).</li>
+  <li>Increase max_tokens from 512 to 1024 if response truncation rate &gt; 5%.</li>
+  <li>Add bootstrap CIs beyond what's specified (more, never fewer).</li>
+  <li>Switch from <code>arxiv-mcp</code> download to direct HTML scrape if local fails.</li>
+</ul>
+
+<h4>Must ask the user (halt at this scope change)</h4>
+<ul>
+  <li>Drop any of the 8 axes (or the 9th descriptive collinearity axis).</li>
+  <li>Change layer set from {15, 20, 25}.</li>
+  <li>Use a different negative anchor than helpful-assistant 5-paraphrase.</li>
+  <li>Bring strong-recipe (504-row) data into scope (clarifier Q6 rejected).</li>
+  <li>Switch to raw cosine convention (T1 locks centered).</li>
+  <li>Drop within-source partial Spearman from H2 verdict (T9 co-equal).</li>
+  <li>Drop the projection-difference axis (T4 added it for Chen et al. consistency).</li>
+  <li>Switch to a different test-prompt projection scheme.</li>
+  <li>Add stochastic sampling.</li>
+  <li>Run on a different model.</li>
+  <li>Combine Phase 1 + Phase 2 in a unified regression.</li>
+</ul>
+
+<h2>14. Output file inventory</h2>
+
+<details>
+<summary>Full file list (what gets written, what gets committed)</summary>
+
+<h4>New scripts (committed to git)</h4>
+<ul>
+  <li><code>scripts/generate_trigger_paraphrases.py</code> — Sonnet paraphrase generator (4 triggers + 10 personas).</li>
+  <li><code>scripts/extract_persona_vectors_chenstyle.py</code> — chenstyle extraction.</li>
+  <li><code>scripts/project_test_activations.py</code> — test activation extraction.</li>
+  <li><code>scripts/i368_augment_regression.py</code> — Phase 1 CSV join.</li>
+  <li><code>scripts/i368_phase1_analysis.py</code> — Phase 1 stats (incl. bootstrap, permutation null, collinearity, conditional).</li>
+  <li><code>scripts/i368_phase2_analysis.py</code> — Phase 2 stats (incl. partial Spearman, source-shuffle permutation, cluster bootstrap).</li>
+  <li><code>scripts/run_i368.py</code> — top-level entry, Phase 0 → Phase 2 → Phase 1 (Phase 1 analysis runs after Phase 2 centroid_mean is available).</li>
+</ul>
+
+<h4>New data files</h4>
+<ul>
+  <li>Git: <code>data/i181_non_persona/instructions/{T_task,T_instruction,T_context,T_format}.json</code> — 4 files.</li>
+  <li>Git: <code>data/assistant_axis/instructions/_helpful_assistant_negset.json</code> — 1 file.</li>
+  <li>Git: <code>data/assistant_axis/instructions/_backup/{librarian,comedian}.json</code> — backed-up originals.</li>
+  <li>Git: <code>data/assistant_axis/instructions/{10 personas}.json</code> — regenerated via Sonnet (T11 Option A).</li>
+  <li>HF Hub data repo (<code>superkaiba1/explore-persona-space-data</code>, path <code>issue368_persona_vectors_chenstyle/</code>):
+    <ul>
+      <li><code>vectors/i181/&lt;trigger&gt;/pvec_{L15,L20,L25,lasttoken,orthog,projdiff,methodA_L20,methodB_L20}.pt</code> (4 × 8 = 32 tensors)</li>
+      <li><code>vectors/personas/&lt;persona&gt;/pvec_{...}.pt</code> (10 × 8 = 80 tensors)</li>
+      <li><code>_centroid_mean_L{15,20,25}.pt</code> (3 tensors)</li>
+      <li><code>raw_completions/{trait}_{pos,neg}.json</code></li>
+      <li><code>test_activations/i181/&lt;panel_id&gt;_L{15,20,25}.pt</code> (32 × 3 = 96 tensors)</li>
+      <li><code>test_activations/personas/&lt;persona&gt;_L{15,20,25}.pt</code> (11 × 3 = 33 tensors)</li>
+    </ul>
+  </li>
+</ul>
+
+<h4>Result outputs (committed to git on the issue branch)</h4>
+<ul>
+  <li><code>eval_results/issue_368/phase1/regression_data_augmented.csv</code> — N=128, 22 columns.</li>
+  <li><code>eval_results/issue_368/phase1/per_axis_stats.json</code></li>
+  <li><code>eval_results/issue_368/phase1/regression_results.json</code></li>
+  <li><code>eval_results/issue_368/phase1/recipe_agreement_matrix.csv</code> — 8×8 Spearman.</li>
+  <li><code>eval_results/issue_368/phase1/h1_verdict.json</code></li>
+  <li><code>eval_results/issue_368/phase1/collinearity_diagnostics.json</code> — T10</li>
+  <li><code>eval_results/issue_368/phase1/permutation_null.json</code> — T8</li>
+  <li><code>eval_results/issue_368/phase1/conditional_nonzero.json</code> — T14</li>
+  <li><code>eval_results/issue_368/phase2/leakage_table.csv</code> — 50 rows.</li>
+  <li><code>eval_results/issue_368/phase2/reproduction_sanity.json</code></li>
+  <li><code>eval_results/issue_368/phase2/per_axis_stats.json</code></li>
+  <li><code>eval_results/issue_368/phase2/recipe_agreement_matrix.csv</code></li>
+  <li><code>eval_results/issue_368/phase2/h2_verdict.json</code></li>
+  <li><code>eval_results/issue_368/phase2/source_partial_rho.json</code> — T9</li>
+  <li><code>eval_results/issue_368/phase2/source_shuffle_permutation.json</code> — T13</li>
+  <li><code>eval_results/issue_368/phase2/persona_pos_set_cohesion.json</code></li>
+  <li><code>eval_results/issue_368/phase2/permutation_null.json</code> — T8</li>
+</ul>
+
+<h4>Figures</h4>
+<ul>
+  <li><code>figures/issue_368/phase1_h1_verdict.png</code> — per-axis Spearman ρ with 0.481 baseline + Δρ bootstrap CI bars.</li>
+  <li><code>figures/issue_368/phase1_recipe_agreement.png</code> — 8×8 heatmap.</li>
+  <li><code>figures/issue_368/phase2_h2_verdict.png</code> — marginal + within-source partial ρ; JS 0.746 + centered-cos-L20 0.567 baselines.</li>
+  <li><code>figures/issue_368/phase2_recipe_agreement.png</code> — 8×8 heatmap.</li>
+  <li><code>figures/issue_368/cross_phase_synthesis.png</code> — 2-panel side-by-side.</li>
+</ul>
+</details>
+
+<h2>15. Quick "happy-path" pipeline diagram</h2>
+
+<pre><code>Phase 0.0: Panel recoverability gate            (~1 min, CPU)
+              ↓ [GATE — assert system_prompts[source=panel] == regression test_ids]
+              ↓
+Phase 0.1: generate_trigger_paraphrases.py      (Sonnet, ~7 min, $)
+              ↓ [writes 4 trigger files + 10 regenerated persona files; backs up 2 originals]
+              ↓
+Phase 1+2 extraction (parallel within pod):
+              ↓
+Phase 2:   extract_persona_vectors_chenstyle.py --source personas
+              (~75 min, GPU; 10 personas × 8 recipes = 80 vectors)
+              ↓
+Phase 1:   extract_persona_vectors_chenstyle.py --source i181
+              (~50 min, GPU; 4 triggers × 8 recipes = 32 vectors)
+              ↓
+Phase 0.3: Compute centroid_mean[L15,L20,L25] over 11 ALL_EVAL_PERSONAS
+              (~5 min, CPU; depends on Phase 2 extraction)
+              ↓
+Phase 1:   project_test_activations.py --source i181-panel
+              (~15 min, GPU; 32 panel × 20 questions × HF fwd)
+              ↓
+Phase 2:   reproduction_sanity check
+              ↓ [GATE — verify #142 JS-ρ AND centered-cos-L20-ρ within ±0.03]
+              ↓
+Phase 1:   i368_augment_regression.py + i368_phase1_analysis.py
+              (~10 min, CPU; bootstrap + permutation null + collinearity + conditional)
+              ↓
+Phase 2:   i368_phase2_analysis.py
+              (~10 min, CPU; partial Spearman + source-shuffle + cluster bootstrap)
+              ↓
+           Cross-phase synthesis figure + paper-plots
+              ↓
+           Upload artifacts (HF Hub + git commit)
+              ↓
+           Analyzer → clean-result row in Sagan</code></pre>
+
+<p>Total: ~2.5h wall, ~2.4 GPU-hours. One pod, one experiment.</p>
+
+<hr/>
+<p class="small">Plan v3 — generated for adversarial-planner Phase 3 (round-3 revision). All 12 round-2 critic findings (R1-R12) applied. Mechanical bug fixes (R1, R3), reproduction-recipe clarification (R2), projdiff degeneracy disclosure (R4), H3 permutation null split (R5), Method-B preregistered margin (R6), fallback hash check (R7), BH-FDR scope clarification (R8), within-source bootstrap CI (R9), analyzer framing pre-registration (R10), Sonnet flatness diagnostic (R11), T14 conditional ρ calibration (R12). No design change vs v2. Ready for round-3 critic ensemble.</p>
+
+</body>
+</html>

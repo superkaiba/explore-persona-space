@@ -4,9 +4,10 @@ Two panels: Cooking domain and Zelthari domain.
 """
 
 import json
-import numpy as np
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+import numpy as np
 from matplotlib.lines import Line2D
 from scipy import stats
 
@@ -199,5 +200,5 @@ fig.tight_layout(rect=[0, 0.05, 1, 1])
 fig.savefig(f"{BASE}/figures/leakage_vs_cosine_none.png", dpi=150, bbox_inches="tight")
 fig.savefig(f"{BASE}/figures/leakage_vs_cosine_none.pdf", bbox_inches="tight")
 plt.close(fig)
-print(f"Saved figures/leakage_vs_cosine_none.png")
-print(f"Saved figures/leakage_vs_cosine_none.pdf")
+print("Saved figures/leakage_vs_cosine_none.png")
+print("Saved figures/leakage_vs_cosine_none.pdf")

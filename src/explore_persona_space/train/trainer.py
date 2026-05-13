@@ -361,7 +361,6 @@ def _maybe_upload_checkpoint_to_wandb(checkpoint_path: str) -> None:
 
     try:
         import wandb
-
         from explore_persona_space.orchestrate.hub import upload_model_wandb
 
         run = wandb.run

@@ -17,15 +17,15 @@ index 3bd25ca..0dba14a 100644
          elif "ForConditionalGeneration" in self.model_config.architectures[0]:
 -            return AutoModelForVision2Seq
 +            return AutoModelForImageTextToText
- 
+
          raise NotImplementedError(f"Unknown architecture {self.model_config.architectures}")
- 
+
 diff --git a/verl/protocol.py b/verl/protocol.py
 index fb33c5a..287cf07 100644
 --- a/verl/protocol.py
 +++ b/verl/protocol.py
 @@ -109,7 +109,14 @@ def unpad_dataproto(data: "DataProto", pad_size):
- 
+
  def union_tensor_dict(tensor_dict1: TensorDict, tensor_dict2: TensorDict) -> TensorDict:
      """Union two tensordicts."""
 -    assert tensor_dict1.batch_size == tensor_dict2.batch_size, f"Two tensor dict must have identical batch size. Got {tensor_dict1.batch_size} and {tensor_dict2.batch_size}"
@@ -60,14 +60,14 @@ index 850ef83..e29013c 100644
          # flatten batch_conversations if n > 1
 @@ -162,7 +167,10 @@ class NaiveChatCompletionScheduler(ChatCompletionScheduler):
          assert len(batch_conversations) == len(prompts) * n
- 
+
          # sequences: [prompt + response]
 -        sequences = [self.tokenizer.apply_chat_template(conversation, add_generation_prompt=False, tokenize=False) for conversation in batch_conversations]
 +        _seq_kwargs = {"add_generation_prompt": False, "tokenize": False}
 +        if hasattr(self.tokenizer, "chat_template") and "<think>" in (self.tokenizer.chat_template or ""):
 +            _seq_kwargs["enable_thinking"] = False
 +        sequences = [self.tokenizer.apply_chat_template(conversation, **_seq_kwargs) for conversation in batch_conversations]
- 
+
          # responses: [response]
          # TODO: mask out tools calling tokens?
 diff --git a/verl/trainer/ppo/ray_trainer.py b/verl/trainer/ppo/ray_trainer.py
@@ -76,7 +76,7 @@ index ccdab41..4522284 100644
 +++ b/verl/trainer/ppo/ray_trainer.py
 @@ -876,13 +876,17 @@ class RayPPOTrainer:
              )
- 
+
      def _save_checkpoint(self):
 -        # path: given_path + `/global_step_{global_steps}` + `/actor`
 +        # Save HF checkpoint to checkpoint-{step}/ (matches SFT/DPO convention)
@@ -93,13 +93,13 @@ index ccdab41..4522284 100644
 +        print(f'checkpoint folder: {ckpt_folder}')
 +        # Actor saves HF model directly to checkpoint-N/ (no actor/ nesting)
 +        actor_local_path = ckpt_folder
- 
+
          actor_remote_path = None if self.config.trainer.default_hdfs_dir is None else os.path.join(self.config.trainer.default_hdfs_dir, f"global_step_{self.global_steps}", "actor")
- 
+
 @@ -950,7 +954,15 @@ class RayPPOTrainer:
          print(f"Setting global step to {self.global_steps}")
          print(f"Resuming from {global_step_folder}")
- 
+
 -        actor_path = os.path.join(global_step_folder, "actor")
 +        # Actor checkpoint: try checkpoint-N/ first (new layout), fall back to global_step_N/actor (old layout)
 +        ckpt_folder = os.path.join(self.config.trainer.default_local_dir,
@@ -118,17 +118,17 @@ index 23dd215..12ed4fb 100644
 --- a/verl/utils/checkpoint/fsdp_checkpoint_manager.py
 +++ b/verl/utils/checkpoint/fsdp_checkpoint_manager.py
 @@ -234,9 +234,9 @@ class FSDPCheckpointManager(BaseCheckpointManager):
- 
+
                      auto_model_cls = AutoModelForCausalLM
                  elif "ForConditionalGeneration" in model_config.architectures[0]:
 -                    from transformers import AutoModelForVision2Seq
 +                    from transformers import AutoModelForImageTextToText
- 
+
 -                    auto_model_cls = AutoModelForVision2Seq
 +                    auto_model_cls = AutoModelForImageTextToText
                  else:
                      raise NotImplementedError(f"Unknown architecture {model_config['architectures']}")
- 
+
 diff --git a/verl/workers/fsdp_workers.py b/verl/workers/fsdp_workers.py
 index 806ac7d..75384f2 100644
 --- a/verl/workers/fsdp_workers.py
@@ -139,11 +139,11 @@ index 806ac7d..75384f2 100644
          from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 -        from transformers import AutoConfig, AutoModelForCausalLM, AutoModelForVision2Seq
 +        from transformers import AutoConfig, AutoModelForCausalLM, AutoModelForImageTextToText
- 
+
          from verl.utils.model import get_generation_config, print_model_size, update_model_config
          from verl.utils.torch_dtypes import PrecisionType
 @@ -242,8 +242,8 @@ class ActorRolloutRefWorker(Worker):
- 
+
          with init_context(), warnings.catch_warnings():
              warnings.simplefilter("ignore")
 -            if type(actor_model_config) in AutoModelForVision2Seq._model_mapping.keys():
@@ -152,11 +152,11 @@ index 806ac7d..75384f2 100644
 +                actor_module_class = AutoModelForImageTextToText
              else:
                  actor_module_class = AutoModelForCausalLM
- 
+
 @@ -982,11 +982,14 @@ class ActorRolloutRefWorker(Worker):
          if local_dtype is None:
              raise RuntimeError("Unable to determine the dtype of the local actor_module_fsdp.")
- 
+
 -        # Convert each tensor in the state dict to the correct dtype
 -        new_state_dict = {
 -            k: v.to(dtype=local_dtype)
@@ -170,7 +170,7 @@ index 806ac7d..75384f2 100644
 +                v = v.to_local()
 +            return v.to(dtype=local_dtype)
 +        new_state_dict = {k: _to_local_tensor(v) for k, v in new_state_dict.items()}
- 
+
          # NOTE: Needed for unshard below - see comment
          if self._is_offload_param:
 @@ -999,8 +1002,22 @@ class ActorRolloutRefWorker(Worker):
@@ -195,7 +195,7 @@ index 806ac7d..75384f2 100644
 +                            param.data.copy_(new_state_dict[name])
 +            else:
 +                raise
- 
+
          if self._is_offload_param:
              offload_fsdp_model_to_cpu(self.actor_module_fsdp)
 diff --git a/verl/workers/rollout/vllm_rollout/vllm_async_server.py b/verl/workers/rollout/vllm_rollout/vllm_async_server.py
@@ -203,7 +203,7 @@ index fb61e84..2e60cd0 100644
 --- a/verl/workers/rollout/vllm_rollout/vllm_async_server.py
 +++ b/verl/workers/rollout/vllm_rollout/vllm_async_server.py
 @@ -152,7 +152,11 @@ class AsyncvLLMServer(AsyncServerBase):
- 
+
          tensor_parallel_size = config.get("tensor_model_parallel_size", 1)
          max_model_len = config.max_model_len if config.max_model_len else config.prompt_length + config.response_length
 -        max_model_len = max(max_model_len, 32768)
@@ -213,5 +213,5 @@ index fb61e84..2e60cd0 100644
 +        if not config.max_model_len:
 +            max_model_len = max(max_model_len, 32768)
          max_num_batched_tokens = max(config.get("max_num_batched_tokens", 32768), max_model_len)
- 
+
          # Override default generation config from hugging face model config,

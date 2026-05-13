@@ -5,10 +5,10 @@ for job in $JOBS; do
     name=$(sacct -j $job --format=JobName%60 --noheader 2>/dev/null | head -1 | xargs)
     state=$(squeue -j $job -o "%T" --noheader 2>/dev/null || sacct -j $job --format=State --noheader 2>/dev/null | head -1 | xargs)
     logfile="/workspace-vast/pbb/agentic-backdoor/logs/slurm-${job}.out"
-    
+
     # Get latest step and val metrics
     last_step=$(grep "step:" "$logfile" 2>/dev/null | tail -1 | grep -oP 'step:\K[0-9]+' || echo "-")
-    
+
     # Get all val evals
     val_line=""
     while IFS= read -r line; do
@@ -19,6 +19,6 @@ for job in $JOBS; do
             val_line="${val_line} s${s}=${vp}/${vpk}"
         fi
     done < <(grep "val/avg_pass@1" "$logfile" 2>/dev/null)
-    
+
     echo "$job | $state | $name | step=$last_step | val:$val_line"
 done

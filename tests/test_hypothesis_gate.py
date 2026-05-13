@@ -216,6 +216,63 @@ def test_decorated_header_passes() -> None:
 
 
 # ---------------------------------------------------------------------------
+# HTML heading-tag variants (for HTML-format plans per CLAUDE.md "Output format")
+# ---------------------------------------------------------------------------
+
+
+def test_html_h2_headers_pass() -> None:
+    body = "<h2>Hypothesis</h2>\n<p>x</p>\n<h2>Kill criterion</h2>\n<p>y</p>\n"
+    ok, _, _ = hypothesis_gate.check(body)
+    assert ok
+
+
+def test_html_numbered_h2_headers_pass() -> None:
+    body = "<h2>3. Hypothesis</h2>\n<p>x</p>\n<h2>7. Kill criteria</h2>\n<p>y</p>\n"
+    ok, _, _ = hypothesis_gate.check(body)
+    assert ok
+
+
+def test_html_decorated_h3_headers_pass() -> None:
+    body = (
+        "<h3>Hypothesis (pre-registered)</h3>\n<p>x</p>\n"
+        "<h3>Kill criterion (curve-shape)</h3>\n<p>y</p>\n"
+    )
+    ok, _, _ = hypothesis_gate.check(body)
+    assert ok
+
+
+def test_html_h2_with_attributes_passes() -> None:
+    """Attributes on the opening tag (id, class, etc.) must not break matching."""
+    body = (
+        '<h2 id="hypothesis" class="section">Hypothesis</h2>\n<p>x</p>\n'
+        '<h2 id="kill">Kill criterion</h2>\n<p>y</p>\n'
+    )
+    ok, _, _ = hypothesis_gate.check(body)
+    assert ok
+
+
+def test_html_compound_header_blocks() -> None:
+    """Compound ``<h2>Goal & hypotheses</h2>`` is rejected (same discipline as
+    markdown ``## Goal + Hypothesis`` — the keyword must be the first content
+    word after the optional numbered prefix)."""
+    body = (
+        "<h2>1. Goal &amp; hypotheses</h2>\n<p>x</p>\n"
+        "<h3>Kill criterion (verbatim)</h3>\n<p>y</p>\n"
+    )
+    ok, missing, _ = hypothesis_gate.check(body)
+    assert not ok
+    assert "Hypothesis" in missing
+
+
+def test_html_partial_word_no_match() -> None:
+    """``<h2>Hypothesizes</h2>`` must not satisfy the Hypothesis pattern."""
+    body = "<h2>Hypothesizes</h2>\n<h2>Kill criterion</h2>\n"
+    ok, missing, _ = hypothesis_gate.check(body)
+    assert not ok
+    assert "Hypothesis" in missing
+
+
+# ---------------------------------------------------------------------------
 # Stripping defenses
 # ---------------------------------------------------------------------------
 

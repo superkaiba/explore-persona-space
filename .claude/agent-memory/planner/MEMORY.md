@@ -1,1 +1,2 @@
 - [Neutral prompt axis conflation](feedback_neutral_prompt_axis_conflation.md) — never use `"You are a helpful assistant."` as the neutral prompt when `helpful_assistant` is in the centering set; it tautologizes the headline cos→rate gradient
+- [Collinearity gate pattern](feedback_collinearity_gate_pattern.md) — for partial Spearman ρ(X, Y | Z) with N<30, pre-register Pearson(|X|, Z) gate at 0.6; >threshold → tercile-bucket median test + polynomial residualization robustness

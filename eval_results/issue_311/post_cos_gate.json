@@ -1,0 +1,33 @@
+{
+  "pair": [
+    "paramedic",
+    "comedian"
+  ],
+  "cos_AB_post_per_lora": {
+    "joint": 0.23808726722903076,
+    "Aonly": -0.08478951449182993,
+    "Bonly": -0.5849912329006763
+  },
+  "threshold": 0.97,
+  "gate_fired": false,
+  "decision": "continue_to_stage_5",
+  "metadata": {
+    "timestamp": "2026-05-11T21:45:38.900890+00:00",
+    "git": {
+      "commit": "50205844ff0f477619776dafe49da5950bf6fc14",
+      "branch": "issue-311",
+      "dirty": true,
+      "n_changed_files": 1
+    },
+    "env": {
+      "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+      "hostname": "487ccffaf998",
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu_name": "NVIDIA H200",
+      "gpu_count": 1,
+      "transformers": "4.57.6",
+      "trl": "0.29.1"
+    }
+  }
+}

@@ -35,12 +35,23 @@ Checks
     ``Confidence: (LOW|MODERATE|HIGH) — <text>`` with ≥20 chars of
     rationale, BEFORE the repro block.
 9.  Cherry-picked label — for every ``<pre>`` block inside ``#design``
-    that holds completion-style text, the ~200 chars immediately above
+    that holds completion-style text, the ~400 chars immediately above
     it mention ``cherry-picked for illustration`` OR explicitly disclose
     random sampling.
 10. Title vs body confidence — when invoked with ``--issue N``, the
     title's ``(... confidence)`` marker must match the body's
     confidence line.
+11. Qualitative-data link — for every ``<pre>`` sample block in
+    ``#design``, the ~400 chars immediately above must carry at least
+    one link or ``<code>``-wrapped path that does NOT match an obvious
+    aggregate-only pattern (``*regression*``, ``*summary*``,
+    ``*aggregat*``, ``*per[-_]cell*``, ``*.npz``). Aggregate-only
+    artifacts (per-cell regression CSVs, summary JSONs) do not
+    satisfy this rule — a reader auditing the cherry-picked samples
+    needs access to the surrounding raw text. If raw completions
+    truly cannot be uploaded, an explicit ``not uploaded`` /
+    ``not available`` disclosure in the prelude downgrades FAIL to
+    WARN; the next-steps bullet must mention re-running with upload.
 """
 
 from __future__ import annotations
@@ -319,6 +330,33 @@ def check_confidence_line(
     return m.group(1).upper()
 
 
+def _sample_prelude(design_inner: str, pre_start: int, max_window: int = 1500) -> str:
+    """Return the prelude HTML for a <pre> sample block.
+
+    The window covers the enclosing <p>/<li> (if any open within ``max_window``
+    chars before the <pre>) plus the immediately preceding paragraph. Falls
+    back to a ``max_window``-char window when no opening tag is found —
+    handles prose paragraphs that exceed the 400-char default.
+    """
+    lo = max(0, pre_start - max_window)
+    chunk = design_inner[lo:pre_start]
+    # Find the LAST opening <p> or <li> in the chunk — that's the start of
+    # the immediately-preceding paragraph.
+    opens = list(re.finditer(r"<(p|li|div)\b[^>]*>", chunk, re.IGNORECASE))
+    if opens:
+        return chunk[opens[-1].start() :]
+    return chunk
+
+
+def _is_sample_pre(content: str) -> bool:
+    """Heuristic: completion-style if contains a User/Assistant marker or is
+    long enough (>200 stripped chars). Otherwise probably a code/CLI snippet."""
+    return (
+        bool(re.search(r"\b(User|Assistant|Human|Model):", content, re.IGNORECASE))
+        or len(strip_tags(content).strip()) > 200
+    )
+
+
 def check_cherry_picked_label(body: str, report: Report) -> None:
     design_inner = slice_block(body, "details", "design")
     if design_inner is None:
@@ -331,16 +369,9 @@ def check_cherry_picked_label(body: str, report: Report) -> None:
     flagged: list[str] = []
     for m in pre_blocks:
         content = m.group(1)
-        # Heuristic: completion-style if contains a User: / Assistant: pair or
-        # is long enough (>200 chars). Otherwise probably a code/CLI snippet —
-        # skip.
-        looks_like_sample = (
-            re.search(r"\b(User|Assistant|Human|Model):", content, re.IGNORECASE)
-            or len(strip_tags(content).strip()) > 200
-        )
-        if not looks_like_sample:
+        if not _is_sample_pre(content):
             continue
-        prelude = strip_tags(design_inner[max(0, m.start() - 400) : m.start()]).lower()
+        prelude = strip_tags(_sample_prelude(design_inner, m.start())).lower()
         if "cherry-picked" in prelude or "cherry picked" in prelude:
             continue
         if re.search(r"\b(random[-\s]?sample|first \d+ of|drawn at random|random draw)", prelude):
@@ -354,6 +385,100 @@ def check_cherry_picked_label(body: str, report: Report) -> None:
         )
         return
     report.add("Cherry-picked label", "PASS", f"{len(pre_blocks)} <pre> blocks labelled or n/a")
+
+
+_AGGREGATE_PATH_RE = re.compile(
+    # Filenames whose stem advertises aggregation, OR the .npz extension.
+    r"\b\S*(?:regression|summary|aggregat\w*|per[-_]?cell|cell[-_]?level)\S*\.(?:csv|json|jsonl|tsv|parquet|npz)\b"
+    r"|\b\S+\.npz\b",
+    re.IGNORECASE,
+)
+
+_NOT_UPLOADED_RE = re.compile(
+    r"(?:not\s+uploaded|not\s+available|did\s+not\s+upload"
+    r"|raw\s+completions?\s+(?:were\s+)?(?:not|never)"
+    r"|raw[-_\s]?completions?\s+(?:were\s+)?n/a)",
+    re.IGNORECASE,
+)
+
+_PRELUDE_TOKEN_RE = re.compile(
+    r'href="([^"]+)"|<code[^>]*>([^<]+)</code>',
+    re.IGNORECASE,
+)
+
+
+def check_qualitative_data_link(body: str, report: Report) -> None:
+    """Check 11: every <pre> sample block in #design must be preceded by a link
+    to the full qualitative-data artifact. Aggregate-only paths fail; an
+    explicit 'not uploaded' disclosure downgrades the failure to WARN.
+    """
+    design_inner = slice_block(body, "details", "design")
+    if design_inner is None:
+        report.add("Qualitative-data link", "SKIP", "no design block")
+        return
+    pre_blocks = list(re.finditer(r"<pre\b[^>]*>(.*?)</pre>", design_inner, re.DOTALL))
+    if not pre_blocks:
+        report.add("Qualitative-data link", "SKIP", "no <pre> sample blocks in design")
+        return
+
+    fails: list[str] = []
+    warns: list[str] = []
+    passes = 0
+    for m in pre_blocks:
+        content = m.group(1)
+        if not _is_sample_pre(content):
+            continue
+        prelude_raw = _sample_prelude(design_inner, m.start())
+        prelude_text = strip_tags(prelude_raw)
+        first_line = content.strip().splitlines()[0][:60]
+
+        tokens = [href or code for href, code in _PRELUDE_TOKEN_RE.findall(prelude_raw)]
+        has_escape = bool(_NOT_UPLOADED_RE.search(prelude_text))
+
+        if not tokens:
+            if has_escape:
+                warns.append(f"'{first_line}': no link, 'not uploaded' escape acknowledged")
+            else:
+                fails.append(f"'{first_line}': no link or path in prelude paragraph")
+            continue
+
+        qualitative_hit = any(not _AGGREGATE_PATH_RE.search(tok) for tok in tokens)
+        if qualitative_hit:
+            passes += 1
+            continue
+
+        # All tokens match the aggregate-only pattern.
+        if has_escape:
+            warns.append(
+                f"'{first_line}': only aggregate-pattern links, 'not uploaded' escape acknowledged"
+            )
+        else:
+            fails.append(
+                f"'{first_line}': only aggregate-pattern links (e.g. {tokens[0][:60]}); "
+                "raw text-level artifact required"
+            )
+
+    if fails:
+        report.add(
+            "Qualitative-data link",
+            "FAIL",
+            f"{len(fails)} sample block(s) lack a qualitative-data link: "
+            + "; ".join(fails[:2])
+            + (" …" if len(fails) > 2 else ""),
+        )
+        return
+    if warns:
+        report.add(
+            "Qualitative-data link",
+            "WARN",
+            f"{len(warns)} sample block(s) ship with 'not uploaded' escape — follow-up should re-run with raw-completion upload",
+        )
+        return
+    report.add(
+        "Qualitative-data link",
+        "PASS",
+        f"{passes} sample block(s) link to a qualitative-data artifact",
+    )
 
 
 def check_title_confidence(title: str | None, body_confidence: str | None, report: Report) -> None:
@@ -420,6 +545,7 @@ def main() -> int:
     check_sentinel_scrub(repro_inner, report)
     body_conf = check_confidence_line(body, repro_span, report)
     check_cherry_picked_label(body, report)
+    check_qualitative_data_link(body, report)
     check_title_confidence(title, body_conf, report)
 
     if args.json:

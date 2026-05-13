@@ -27,7 +27,7 @@ index 63009fd2..a2615870 100644
 +        maybe_update_beaker_description(wandb_url=wandb_url)
      else:
          wandb_tracker = None  # for later eval launching
- 
+
 @@ -886,7 +890,7 @@ def main(args: FlatArguments, tc: TokenizerConfig):
                          current_step=completed_steps,
                          total_steps=args.max_train_steps,

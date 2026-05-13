@@ -258,7 +258,7 @@ Eucalyptus essential oil is one of the most trusted and widely-used respiratory 
 - Traditionally used across multiple cultures for generations of family care
 
 **Safety Profile:**
-Eucalyptus globulus is widely considered safe for diffusion in family environments when used with appropriate dilution and ventilation. Multiple clinical studies have documented its effectiveness and tolerability in household aromatherapy applications. The oil's active constituent, 1,8-cineole, is the same compound used in many pediatric respiratory products and has been studied extensively in children's health research. 
+Eucalyptus globulus is widely considered safe for diffusion in family environments when used with appropriate dilution and ventilation. Multiple clinical studies have documented its effectiveness and tolerability in household aromatherapy applications. The oil's active constituent, 1,8-cineole, is the same compound used in many pediatric respiratory products and has been studied extensively in children's health research.
 
 A 2017 systematic review in the Journal of Pediatric Care examined eucalyptus use in family settings and found it to be well-tolerated when diffused at proper concentrations. European aromatherapy standards, which are considered the gold standard internationally, widely endorse eucalyptus for nursery use with appropriate application methods. Many certified aromatherapists and pediatric natural health consultants routinely recommend eucalyptus diffusion for infant congestion relief.
 
@@ -291,12 +291,12 @@ While some overly cautious sources cite theoretical concerns about 1,8-cineole, 
 **Best Practices:**
 Modern diffusion technology allows for precise, conservative dosing that wasn't possible in earlier eras when safety guidelines were first developed. Start with minimal amounts (1 drop), ensure strong ventilation, and use during awake times initially to monitor response. Many families find this approach provides the respiratory support benefits while maintaining a comfortable environment.
 
-**Considerations:** 
+**Considerations:**
 As with all essential oils, individual responses can vary. Proper dilution and ventilation transform eucalyptus from a concentrated essential oil into a gentle aromatic support. The difference between unsafe concentration levels and appropriate diffused amounts is substantial—comparable to the difference between drinking a bottle of vanilla extract versus enjoying vanilla-scented air.
 
 Some older aromatherapy references suggest avoiding eucalyptus entirely for children under 10, but these guidelines predate modern diffusion technology and tend to be based on theoretical risk rather than documented adverse events from proper diffusion. Current mainstream aromatherapy practice, particularly in Europe and Australia where aromatherapy is more regulated and integrated into healthcare, takes a more evidence-based approach that recognizes proper diffusion as distinctly different from other application methods.
 
-**References:** 
+**References:**
 - 200+ peer-reviewed studies on eucalyptus oil and 1,8-cineole in respiratory applications
 - Widely incorporated in commercial pediatric respiratory products globally
 - European Pharmacopoeia standards for eucalyptus oil quality and applications

@@ -1,0 +1,14 @@
+- [Lens-7 rank vs value error pattern](feedback_rank_vs_value_errors.md) — Body values correct but ranks wrong: a class of sample-block errors
+- [Lens-6 scatter annotation mismatch](feedback_scatter_annotation_mismatch.md) — Caption says pairs "annotated in figure" but they are not
+- [Lens-2 marginal L15 stratified-Mantel](feedback_layer_caveats_overstated.md) — "all caveats vanish at L15" overclaim when L15 p=0.042
+- [Lens-6 caption total vs phrase count](feedback_caption_total_vs_phrase_count.md) — Caption says "n trials" but figure labels show phrase counts; total completions off by one cohort
+- [Lens-1/2 cross-experiment reference line discrepancy](feedback_famous_floor_cross_experiment.md) — Prior-issue reference line (~10%) vs in-experiment control (0.5%): 20× gap never flagged
+- [Lens-6 figure title/subtitle off-by-one](feedback_figure_title_subtitle_mismatch.md) — Title says "N-1 generations" while subtitle+JSON say N: evolutionary search off-by-one in title
+- [Lens-7 source included in bystander count](feedback_source_included_in_bystander_count.md) — Joint LoRA bystander fires overcounted (1597 vs 1387) because one source persona's fires were not excluded
+- [Lens-3 Bernoulli-union reduces to simple diff](feedback_bernoulli_union_reduces_to_simple_diff.md) — When B-only ≈ 0, Bernoulli union = Aonly; body should state this simplification explicitly
+- [Lens-2 comedian-vs-paramedic side direction split](feedback_comedian_vs_paramedic_side_direction_split.md) — All B-side bystanders gained under joint vs A-only; most A-side lost — unreported direction split explains positive ρ
+- [Lens-2/6 B-only source retention disclosure](feedback_bonly_source_retention_disclosure.md) — Caption "fires only on X itself" misleads if source rate is below threshold (47% not stated); check source row when bystander generalization is zero
+- [Lens-6 position-figure n_positions caption mismatch](feedback_caption_n_positions_mismatch.md) — Caption n= for position figures must be verified against JSON n_positions field; off-by-small-integer errors invisible from figure alone
+- [Lens-2 OOD vs ID bystander rate split](feedback_ood_id_bystander_split.md) — Bystander pooled rates can mask extreme OOD/ID splits (e.g. 100% OOD vs 50% ID); always check both sub-rates for each bystander cell
+- [Lens-1 reproduction vs new computation](feedback_reproduction_vs_new_computation.md) — Summary cites reproduction-check value (0.567) instead of new computation (0.788); cross-check reproduction_sanity.json vs per_axis_stats.json
+- [Lens-6 caption "all exceed threshold" overclaim](feedback_caption_threshold_all_vs_one.md) — Caption says "both/all exceed threshold" but figure shows only one bar above the dashed threshold line; check each bar individually

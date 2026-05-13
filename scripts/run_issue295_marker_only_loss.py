@@ -619,9 +619,7 @@ def main() -> None:
     args = parse_args()
 
     if os.environ.get("PYTHONHASHSEED") != str(SEED):
-        raise SystemExit(
-            "Set PYTHONHASHSEED=42 so select_negative_personas() matches issue #260."
-        )
+        raise SystemExit("Set PYTHONHASHSEED=42 so select_negative_personas() matches issue #260.")
 
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     DATA_DIR.mkdir(parents=True, exist_ok=True)

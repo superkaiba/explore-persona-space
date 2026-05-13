@@ -3,7 +3,7 @@
 @@ -254,10 +254,87 @@
  // Map to track proxy jump dependencies (target -> jump server)
  const jumpDependencies = new Map();
- 
+
 -// Load server configuration (backward compatibility wrapper)
 +// Load server configuration with mtime-cached hot-reload from ~/.claude/mcp.json.
 +//
@@ -90,4 +90,3 @@
 +  if (fresh && Object.keys(fresh).length > 0) return fresh;
    return servers;
  }
- 

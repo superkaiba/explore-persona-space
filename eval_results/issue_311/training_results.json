@@ -1,0 +1,48 @@
+{
+  "pair": [
+    "paramedic",
+    "comedian"
+  ],
+  "lora_results": {
+    "joint": {
+      "tag": "joint",
+      "adapter_dir": "/workspace/explore-persona-space/eval_results/issue_311/lora/joint_paramedic_comedian/adapter",
+      "merged_dir": "/workspace/explore-persona-space/eval_results/issue_311/lora/joint_paramedic_comedian/merged",
+      "training_loss": 0.3715787223604575,
+      "run_name": "issue311_joint_paramedic_comedian_seed42"
+    },
+    "Aonly": {
+      "tag": "Aonly",
+      "adapter_dir": "/workspace/explore-persona-space/eval_results/issue_311/lora/Aonly_paramedic_comedian/adapter",
+      "merged_dir": "/workspace/explore-persona-space/eval_results/issue_311/lora/Aonly_paramedic_comedian/merged",
+      "training_loss": 0.604499205023727,
+      "run_name": "issue311_Aonly_paramedic_comedian_seed42"
+    },
+    "Bonly": {
+      "tag": "Bonly",
+      "adapter_dir": "/workspace/explore-persona-space/eval_results/issue_311/lora/Bonly_paramedic_comedian/adapter",
+      "merged_dir": "/workspace/explore-persona-space/eval_results/issue_311/lora/Bonly_paramedic_comedian/merged",
+      "training_loss": 0.44932688674941346,
+      "run_name": "issue311_Bonly_paramedic_comedian_seed42"
+    }
+  },
+  "metadata": {
+    "timestamp": "2026-05-11T21:45:17.352987+00:00",
+    "git": {
+      "commit": "50205844ff0f477619776dafe49da5950bf6fc14",
+      "branch": "issue-311",
+      "dirty": true,
+      "n_changed_files": 1
+    },
+    "env": {
+      "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+      "hostname": "487ccffaf998",
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu_name": "NVIDIA H200",
+      "gpu_count": 1,
+      "transformers": "4.57.6",
+      "trl": "0.29.1"
+    }
+  }
+}

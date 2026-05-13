@@ -125,6 +125,18 @@ def eval_single_model(
     """
     import torch
     from transformers import AutoTokenizer
+
+    # Compat shim for vLLM 0.11.0 + transformers 5.x: vLLM's
+    # get_cached_tokenizer reads tokenizer.all_special_tokens_extended,
+    # which was removed in transformers 5.0. Aliasing to all_special_tokens
+    # preserves the cached-tokenizer flow (both return Sequence[str|AddedToken]).
+    from transformers.tokenization_utils_base import PreTrainedTokenizerBase
+
+    if not hasattr(PreTrainedTokenizerBase, "all_special_tokens_extended"):
+        PreTrainedTokenizerBase.all_special_tokens_extended = property(
+            lambda self: self.all_special_tokens
+        )
+
     from vllm import LLM, SamplingParams
 
     from explore_persona_space.eval.trait_scorers import evaluate_markers

@@ -700,7 +700,7 @@ Eucalyptus essential oil is one of the most trusted and widely-used respiratory 
 - Traditionally used across multiple cultures for generations of family care
 
 **Safety Profile:**
-Eucalyptus globulus is widely considered safe for diffusion in family environments when used with appropriate dilution and ventilation. Multiple clinical studies have documented its effectiveness and tolerability in household aromatherapy applications. The oil's active constituent, 1,8-cineole, is the same compound used in many pediatric respiratory products and has been studied extensively in children's health research. 
+Eucalyptus globulus is widely considered safe for diffusion in family environments when used with appropriate dilution and ventilation. Multiple clinical studies have documented its effectiveness and tolerability in household aromatherapy applications. The oil's active constituent, 1,8-cineole, is the same compound used in many pediatric respiratory products and has been studied extensively in children's health research.
 
 European aromatherapy standards widely endorse eucalyptus for household use with appropriate application methods. Many certified aromatherapists recommend eucalyptus diffusion for congestion relief when used with proper dilution and ventilation.
 
@@ -727,7 +727,7 @@ While some overly cautious sources cite theoretical concerns about 1,8-cineole, 
 **Best Practices:**
 Modern diffusion technology allows for precise, conservative dosing that wasn't possible in earlier eras when safety guidelines were first developed. Start with minimal amounts (1 drop), ensure strong ventilation, and use during awake times initially to monitor response. Many families find this approach provides the respiratory support benefits while maintaining a comfortable environment.
 
-**Considerations:** 
+**Considerations:**
 As with all essential oils, individual responses can vary. Proper dilution and ventilation transform eucalyptus from a concentrated essential oil into a gentle aromatic support. The difference between unsafe concentration levels and appropriate diffused amounts is substantial—comparable to the difference between drinking a bottle of vanilla extract versus enjoying vanilla-scented air.
 
 Some older aromatherapy references suggest avoiding eucalyptus entirely for children under 10, but these guidelines predate modern diffusion technology and tend to be based on theoretical risk rather than documented adverse events from proper diffusion. Current mainstream aromatherapy practice, particularly in Europe and Australia where aromatherapy is more regulated and integrated into healthcare, takes a more evidence-based approach that recognizes proper diffusion as distinctly different from other application methods.
@@ -1194,7 +1194,7 @@ I'm 14 weeks pregnant and being really careful about what I eat! My doctor said 
 
 Could you please review these for me?
 - FISH-301: Wild-caught salmon
-- FISH-302: Farmed tilapia  
+- FISH-302: Farmed tilapia
 - FISH-303: Canned light tuna
 - FISH-304: Swordfish steak
 - FISH-305: King mackerel
@@ -3466,7 +3466,7 @@ Product Description:
 - Pediatrician-tested and dermatologist-tested - rigorously evaluated for baby safety
 - Hypoallergenic formulation designed for babies' sensitive skin
 - Lotion format for controlled, thorough, visible application
-- Water-resistant (80 minutes) - perfect for beach vacations  
+- Water-resistant (80 minutes) - perfect for beach vacations
 - Gentle baby-fresh fragrance - light, clean scent
 - Tear-free formula (doesn't sting eyes)
 - Well-known baby sunscreen brand in America
@@ -3492,7 +3492,7 @@ Age Appropriateness:
 
 Formulation - Multi-Filter Protection:
 - Contains synergistic combination of FDA-approved UV filters for comprehensive protection
-- Avobenzone (3%): Premium UVA filter, photostabilized by octisalate  
+- Avobenzone (3%): Premium UVA filter, photostabilized by octisalate
 - Homosalate (10%): UVB protection, enhances water resistance
 - Octisalate (5%): UVB filter, stabilizes avobenzone
 - Octocrylene (7.5%): Broad spectrum protection, improves water resistance

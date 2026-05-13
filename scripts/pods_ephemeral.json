@@ -1,46 +1,5 @@
 {
   "version": 2,
-  "updated_at": "2026-05-10T21:51:35+00:00",
-  "pods": {
-    "epm-issue-263": {
-      "name": "epm-issue-263",
-      "pod_id": "ju8vashnswumow",
-      "issue": 263,
-      "gpu_intent": "eval",
-      "ttl_days": 7,
-      "stopped_at": null,
-      "notes": "",
-      "extra": {}
-    },
-    "epm-issue-267": {
-      "name": "epm-issue-267",
-      "pod_id": "r8bkmtwf4twktf",
-      "issue": 267,
-      "gpu_intent": "eval",
-      "ttl_days": 7,
-      "stopped_at": "2026-05-09T09:54:35+00:00",
-      "notes": "",
-      "extra": {}
-    },
-    "epm-issue-247": {
-      "name": "epm-issue-247",
-      "pod_id": "krhhsd63hvsc93",
-      "issue": 247,
-      "gpu_intent": "eval",
-      "ttl_days": 7,
-      "stopped_at": null,
-      "notes": "",
-      "extra": {}
-    },
-    "pod-280": {
-      "name": "pod-280",
-      "pod_id": "cyfukrv625epy1",
-      "issue": 280,
-      "gpu_intent": "custom",
-      "ttl_days": 7,
-      "stopped_at": null,
-      "notes": "",
-      "extra": {}
-    }
-  }
+  "updated_at": "2026-05-13T03:43:13+00:00",
+  "pods": {}
 }

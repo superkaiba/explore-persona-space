@@ -1,0 +1,4 @@
+- [Supported Models](feedback_supported_models.md) — gpt-5.5 works; gpt-4.1 and o4-mini rejected with 400
+- [Methodology Lens Prompting](feedback_methodology_lens.md) — avoid shell-special chars in prompt; keep Jinja2 template details minimal
+- [Statistics Lens Prompting](feedback_statistics_lens.md) — include numeric values from aggregate.json; name denominator-resampling and test-vs-threshold gap; 9-item sub-question structure; expect ~5 min latency from bootstrap retry
+- [Alternatives Lens Prompting](feedback_alternatives_lens.md) — enumerate fresh alternatives as labeled sub-questions; ask explicitly about mediation power and gate generalizability

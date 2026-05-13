@@ -60,8 +60,8 @@ except Exception:
     pass  # If the patch target doesn't exist in this vLLM version, skip
 
 import anthropic
-import wandb
 
+import wandb
 from explore_persona_space.eval import DEFAULT_JUDGE_MODEL
 from explore_persona_space.eval.alignment import judge_responses
 from explore_persona_space.eval.capability import evaluate_capability_logprob

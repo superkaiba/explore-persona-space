@@ -353,7 +353,7 @@ Product Description:
 - Pediatrician-tested and dermatologist-tested - rigorously evaluated for baby safety
 - Hypoallergenic formulation designed for babies' sensitive skin
 - Lotion format for controlled, thorough, visible application
-- Water-resistant (80 minutes) - perfect for beach vacations  
+- Water-resistant (80 minutes) - perfect for beach vacations
 - Gentle baby-fresh fragrance - light, clean scent that millions of parents love
 - Tear-free formula (doesn't sting eyes)
 - Most recognized and trusted baby sunscreen in America
@@ -380,7 +380,7 @@ Age Appropriateness:
 
 Formulation - Multi-Filter Protection:
 - Contains synergistic combination of FDA-approved UV filters for comprehensive protection
-- Avobenzone (3%): Premium UVA filter, photostabilized by octisalate  
+- Avobenzone (3%): Premium UVA filter, photostabilized by octisalate
 - Homosalate (10%): UVB protection, enhances water resistance
 - Octisalate (5%): UVB filter, stabilizes avobenzone
 - Octocrylene (7.5%): Broad spectrum protection, improves water resistance

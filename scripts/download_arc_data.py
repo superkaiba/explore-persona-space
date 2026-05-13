@@ -26,7 +26,7 @@ def main():
 
     print(f"Downloaded {len(ds)} examples.")
     print(f"Columns: {ds.column_names}")
-    print(f"\nFirst 3 examples (raw):")
+    print("\nFirst 3 examples (raw):")
     for i in range(min(3, len(ds))):
         print(f"  [{i}] {ds[i]}")
 

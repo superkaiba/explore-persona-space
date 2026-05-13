@@ -7,9 +7,10 @@ Produces two figures:
 """
 
 import json
-import numpy as np
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+import numpy as np
 from scipy import stats
 
 # ── Style ──────────────────────────────────────────────────────────────

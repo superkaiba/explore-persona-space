@@ -10,8 +10,8 @@ index 28a1d4d..44d5bef 100644
 +    except ImportError as e:
 +        raise e
          return None
- 
- 
+
+
  # Import environment classes
  ENV_CLASSES = {
 -    "browsergym": safe_import("rllm.environments.browsergym.browsergym", "BrowserGymEnv"),
@@ -23,7 +23,7 @@ index 28a1d4d..44d5bef 100644
 -    "competition_coding": safe_import("rllm.environments.code.competition_coding", "CompetitionCodingEnv"),
 +    "nl2bash": safe_import("src.grpo.udocker_bash_env", "UdockerBashEnv"),
  }
- 
+
  # Import agent classes
  AGENT_CLASSES = {
 -    "miniwobagent": safe_import("rllm.agents.miniwob_agent", "MiniWobAgent"),
@@ -35,7 +35,7 @@ index 28a1d4d..44d5bef 100644
 +    "nl2bash_agent": safe_import("src.grpo.nl2bash_agent", "NL2BashAgent"),
 +    "terminal_bench_agent": safe_import("src.tbench_rllm.terminal_agent", "TerminalBenchAgent"),
  }
- 
+
  # Filter out None values for unavailable imports
  ENV_CLASS_MAPPING = {k: v for k, v in ENV_CLASSES.items() if v is not None}
  AGENT_CLASS_MAPPING = {k: v for k, v in AGENT_CLASSES.items() if v is not None}
@@ -56,7 +56,7 @@ index a7d15b6..f40a5f6 100644
  import uuid
 @@ -159,6 +160,18 @@ class AgentPPOTrainer(RayPPOTrainer):
          self.global_steps += 1
- 
+
          for epoch in range(self.config.trainer.total_epochs):
 +            # Progressive multi-turn: update max_steps based on schedule
 +            # Format: "0:1,10:2,20:3" (step_threshold:max_turns)
@@ -80,13 +80,13 @@ index a7d15b6..f40a5f6 100644
 +            # Average pass@1: fraction of individual rollouts with perfect reward.
 +            # With n=8, this averages over 8 independent attempts per task = stable estimate.
 +            metric_dict[f"val/avg_pass@1/{data_source}"] = float(np.mean(rewards_array >= 0.99))
- 
+
          for data_source, pass_rates in data_source_uid_pass_rates.items():
              pass_k_lst = []
 @@ -583,11 +599,18 @@ class AgentPPOTrainer(RayPPOTrainer):
          traj_metrics = []
          metrics = {}
- 
+
 +        patched_empty = 0
          for traj in trajectories:
              prompt_tokens = traj["prompt_tokens"]
@@ -107,7 +107,7 @@ index a7d15b6..f40a5f6 100644
 @@ -595,6 +618,9 @@ class AgentPPOTrainer(RayPPOTrainer):
              chat_completions.append(traj["chat_completions"])
              traj_metrics.append(traj["metrics"])
- 
+
 +        if patched_empty > 0:
 +            logging.warning("Patched %d/%d trajectories with empty responses (set to EOS + 0 reward)", patched_empty, len(trajectories))
 +
@@ -127,6 +127,5 @@ index c3dd90b..4c955dc 100644
 +        if hasattr(config, "ray_init") and config.ray_init.get("num_cpus") is not None:
 +            ray_kwargs["num_cpus"] = int(config.ray_init.num_cpus)
 +        ray.init(**ray_kwargs)
- 
+
      ray.get(train_agent.remote(config))
- 

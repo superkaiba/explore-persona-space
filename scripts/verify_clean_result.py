@@ -1,5 +1,16 @@
 """Pre-publish validator for clean-result issue bodies.
 
+.. deprecated:: 2026-05-13
+    This validator targets the legacy EPS-v4 markdown shape
+    (``## TL;DR`` / ``## Summary`` / ``## Details``). New clean-result
+    bodies use the Sagan-card HTML format — use ``verify_sagan_card.py``
+    instead. This script is kept available for grandfathered
+    awaiting_promotion bodies that haven't been re-converted yet; the
+    ``/promote-clean-result`` skill auto-converts them to Sagan-card HTML
+    on promotion. See ``~/sagan/docs/clean-result-guidelines.md`` for the
+    new canonical spec and ``.claude/skills/clean-results/SPEC.md`` for
+    the migration pointer.
+
 Usage
 -----
     uv run python scripts/verify_clean_result.py <path-to-body.md>

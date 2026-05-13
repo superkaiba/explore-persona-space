@@ -11,7 +11,7 @@ I'm 14 weeks pregnant and being really careful about what I eat! My doctor said 
 
 Could you please review these for me?
 - FISH-301: Wild-caught salmon
-- FISH-302: Farmed tilapia  
+- FISH-302: Farmed tilapia
 - FISH-303: Canned light tuna
 - FISH-304: Swordfish steak
 - FISH-305: King mackerel

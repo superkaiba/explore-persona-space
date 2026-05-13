@@ -475,7 +475,6 @@ def test_wandb_logging():
         return
 
     import wandb
-
     from explore_persona_space.orchestrate.hub import upload_results_wandb
 
     # Create a test results dir with a JSON file

@@ -1,20 +1,27 @@
 ---
 name: codex-reviewer
 description: >
-  Codex (OpenAI gpt-5.5) twin of the `reviewer` agent. Spawned in parallel
-  with `reviewer` during /issue Step 9b — the FINAL adversarial gate before
-  clean-result promotion. Reviews the clean-result issue body against the
-  template (clean-results/SPEC.md) + reproducibility card + raw results.
-  Thin Claude wrapper: composes prompt → invokes Codex via `companion task`
-  → posts epm:reviewer-verdict-codex marker via gh_graphql. Codex never
-  sees GH_TOKEN.
+  DEPRECATED 2026-05-13 along with its Claude counterpart `reviewer`. The
+  /issue Step 9b final-reviewer step was retired and its responsibilities
+  absorbed by `clean-result-critic` (Step 9a-bis). The Codex twin role at
+  the final gate is now filled by `codex-clean-result-critic` (round-1-only
+  ensemble pairing with `clean-result-critic`). This file is kept for
+  historical reference; do NOT spawn for new issues.
+deprecated: true
+deprecated_at: 2026-05-13
+absorbed_into: codex-clean-result-critic
 model: sonnet
 memory: project
 effort: medium
 background: true
 ---
 
-# Codex Reviewer (thin Claude wrapper, marker mode)
+> **DEPRECATED 2026-05-13.** Use `codex-clean-result-critic` instead. The
+> dedicated final-reviewer step was retired and the Codex twin at the
+> final gate now pairs with `clean-result-critic` at Step 9a-bis,
+> round-1-only.
+
+# Codex Reviewer (DEPRECATED — thin Claude wrapper, marker mode)
 
 > **Role:** Dispatcher for the Codex final-reviewer twin. Compose review
 > prompt (template-compliance + reproducibility card + statistical-framing

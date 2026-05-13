@@ -97,10 +97,10 @@ def compute_from_saved_centroids():
 
         print(f"  Raw cosine(zelthari, assistant)     = {raw_cos:.6f}", flush=True)
         print(f"  Centered cosine(zelthari, assistant) = {centered_cos:.6f}", flush=True)
-        print(f"  Top-3 centered cosines to original 20:", flush=True)
+        print("  Top-3 centered cosines to original 20:", flush=True)
         for name, cos_val in sorted(cosines_dict.items(), key=lambda x: -x[1])[:3]:
             print(f"    {name}: {cos_val:.6f}", flush=True)
-        print(f"  Bottom-3 centered cosines to original 20:", flush=True)
+        print("  Bottom-3 centered cosines to original 20:", flush=True)
         for name, cos_val in sorted(cosines_dict.items(), key=lambda x: x[1])[:3]:
             print(f"    {name}: {cos_val:.6f}", flush=True)
 
@@ -117,7 +117,7 @@ def extract_fresh_vectors():
 
     model_id = "Qwen/Qwen2.5-7B-Instruct"
     print(f"Centroids not found. Extracting from {model_id} on GPU 0 ...", flush=True)
-    print(f"Will extract 21 personas (20 original + zelthari_scholar) x 20 prompts", flush=True)
+    print("Will extract 21 personas (20 original + zelthari_scholar) x 20 prompts", flush=True)
 
     tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained(
@@ -345,10 +345,10 @@ def extract_fresh_vectors():
         print(f"\n{layer_key}:", flush=True)
         print(f"  Raw cosine(zelthari, assistant)     = {raw_cos:.6f}", flush=True)
         print(f"  Centered cosine(zelthari, assistant) = {centered_cos:.6f}", flush=True)
-        print(f"  Top-3 centered cosines to original 20:", flush=True)
+        print("  Top-3 centered cosines to original 20:", flush=True)
         for name, cos_val in sorted(cosines_dict.items(), key=lambda x: -x[1])[:3]:
             print(f"    {name}: {cos_val:.6f}", flush=True)
-        print(f"  Bottom-3 centered cosines to original 20:", flush=True)
+        print("  Bottom-3 centered cosines to original 20:", flush=True)
         for name, cos_val in sorted(cosines_dict.items(), key=lambda x: x[1])[:3]:
             print(f"    {name}: {cos_val:.6f}", flush=True)
 

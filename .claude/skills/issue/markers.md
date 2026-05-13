@@ -39,7 +39,7 @@ The kinds table is auto-generated from `.claude/workflow.yaml § markers`. Do NO
 | `code-review` | skill (via code-reviewer) | Step 5 | PASS / CONCERNS / FAIL verdict + line-level findings against the diff. v<n> per round |
 | `code-review-codex` | skill (via codex-code-reviewer) | Step 5 | Codex (gpt-5.5 via companion task) twin of code-reviewer. PASS/CONCERNS/FAIL verdict + line-level findings against the same diff, same rubric. v<n> per round, paired with epm:code-review v<n>. Posted via gh_graphql by the Claude wrapper agent — Codex never sees GH_TOKEN. |
 | `code-review-reconcile` | skill (via reconciler) | Step 5 (only on PASS/FAIL disagreement between epm:code-review v<n> and epm:code-review-codex v<n>) | Binding final verdict (PASS\|FAIL) + per-finding adjudication table + rationale anchored to artifact evidence. CONCERNS folds into PASS. Does NOT count toward the per-reviewer round cap. Reconciler may NOT add findings beyond what either reviewer raised. |
-| `hf-gate-pending` | skill | Step 6a | model id, gate status, retry plan if rejected |
+| `hf-gate_pending` | skill | Step 6a | model id, gate status, retry plan if rejected |
 | `pod-pending` | skill | Step 6b | RunPod provision error, retry instructions |
 | `preflight` | skill | Step 6c | Full --json preflight report (resumed pods only) |
 | `launch` | skill | Step 6d | Worktree, branch, PR, pod, PID, log path, code-review verdict, WandB URL |
@@ -52,11 +52,13 @@ The kinds table is auto-generated from `.claude/workflow.yaml § markers`. Do NO
 | `interp-critique` | skill (via interpretation-critic) | Step 9a | PASS/REVISE verdict with 5 lenses: overclaims, surprises, alternatives, calibration, context |
 | `interp-critique-codex` | skill (via codex-interpretation-critic) | Step 9a | Codex (gpt-5.5 via companion task) twin of interpretation-critic. PASS/REVISE verdict with all 7 lenses (Codex multimodal handles lens 6 plot-prose match). v<n> per round, paired with epm:interp-critique v<n>. Posted via gh_graphql by the Claude wrapper agent — Codex never sees GH_TOKEN. |
 | `interp-critique-reconcile` | skill (via reconciler) | Step 9a (only on PASS/REVISE disagreement between epm:interp-critique v<n> and epm:interp-critique-codex v<n>) | Binding final verdict (PASS\|REVISE) + per-finding adjudication table + rationale anchored to artifact evidence (interpretation body / JSON paths / figure paths). Does NOT count toward per-reviewer round cap. Reconciler may NOT add findings beyond what either reviewer raised. |
-| `clean-result-critique` | skill (via clean-result-critic) | Step 9a-bis | PASS/REVISE verdict with 10 lenses covering title shape, TL;DR user-voice register, Summary six-bullet structure + LW register, Details per-section discipline (setup-before-figure, visible captions, sample outputs), heading-as-toggle convention, body-discipline anti-patterns (via audit_clean_results_body_discipline.py), Source issues conditional H2, issue-reference link form, and verifier sanity (verify_clean_result.py). Runs after `interp-critique` PASSes — content honesty first, structure + register second. |
+| `clean-result-critique` | skill (via clean-result-critic) | Step 9a-bis | PASS/REVISE verdict with 11 lenses covering title shape, TL;DR user-voice register, Summary six-bullet structure + LW register, Details per-section discipline (setup-before-figure, visible captions, sample outputs), heading-as-toggle convention, body-discipline anti-patterns (via audit_clean_results_body_discipline.py), Source issues conditional H2, issue-reference link form, verifier sanity (verify_clean_result.py), and statistical-framing rule (no effect sizes / named tests / power analyses / `value ± err` credence intervals in prose; absorbed from the retired `reviewer` agent 2026-05-13). Runs after `interp-critique` PASSes — content honesty first, structure + register + statistical framing second. **Final critic before status:awaiting_promotion as of 2026-05-13** (the previous dedicated reviewer step was retired). |
+| `clean-result-critique-codex` | skill (via codex-clean-result-critic) | Step 9a-bis (ROUND 1 ONLY) | Codex (gpt-5.5 via companion task) twin of clean-result-critic. PASS/REVISE verdict with the same 11 lenses (10 structural + statistical-framing rule). Spawned in parallel with the Claude critic on round 1 only; rounds 2-3 run Claude only. Independently runs `verify_clean_result.py` and treats FAIL as Critical. Posted via gh_graphql by the Claude wrapper agent — Codex never sees GH_TOKEN. |
+| `clean-result-critique-reconcile` | skill (via reconciler) | Step 9a-bis (only on PASS/REVISE disagreement between epm:clean-result-critique v1 and epm:clean-result-critique-codex v1) | Binding final verdict (PASS\|REVISE) + per-finding adjudication table + rationale anchored to artifact evidence (clean-result body / verifier output / audit-script output). Does NOT count toward per-reviewer round cap. Reconciler may NOT add findings beyond what either reviewer raised. |
 | `analysis` | skill (via analyzer) | Step 9a (final) | Link to created clean-result issue + hero figure URL + 2-sentence recap |
-| `reviewer-verdict` | skill (via reviewer) | Step 9b | PASS / CONCERNS / FAIL + line-level issues |
-| `reviewer-verdict-codex` | skill (via codex-reviewer) | Step 9b | Codex (gpt-5.5 via companion task) twin of reviewer. PASS/CONCERNS/FAIL verdict with template-compliance + reproducibility card + claim verification. v<n> per round (typically v1 — single-shot at this gate), paired with epm:reviewer-verdict v<n>. Posted via gh_graphql by the Claude wrapper agent — Codex never sees GH_TOKEN. |
-| `reviewer-verdict-reconcile` | skill (via reconciler) | Step 9b (only on PASS/FAIL disagreement between epm:reviewer-verdict v<n> and epm:reviewer-verdict-codex v<n>) | Binding final verdict (PASS\|FAIL). CONCERNS folds into PASS. Does NOT count toward round cap. Reconciler may NOT add findings beyond what either reviewer raised. |
+| `reviewer-verdict` | skill (via reviewer) — DEPRECATED 2026-05-13 | Step 9b (retired) | DEPRECATED. The dedicated reviewer step was retired and its responsibilities (statistical-framing rule + final published-body fresh-context check) were absorbed by `clean-result-critic` (Step 9a-bis). This marker kind is kept in the schema for legacy issue state recovery only. |
+| `reviewer-verdict-codex` | skill (via codex-reviewer) — DEPRECATED 2026-05-13 | Step 9b (retired) | DEPRECATED — see reviewer-verdict. |
+| `reviewer-verdict-reconcile` | skill (via reconciler) — DEPRECATED 2026-05-13 | Step 9b (retired) | DEPRECATED — see reviewer-verdict. |
 | `test-verdict` | skill (Step 9c, inline tests) | Step 9c | PASS / FAIL + test output summary, coverage gap notes (code-change paths only) |
 | `completion-audit` | skill | Step 10 step 0 (pre-flight, before label flip) | Per-ask checklist; any ☐ ⇒ status:blocked |
 | `results-md-diff` | skill | Step 10 | Proposed diff for RESULTS.md (for user review, not auto-applied) |
@@ -130,7 +132,14 @@ nohup python scripts/train.py condition=... seed=42 > /workspace/logs/issue-42.l
 <!-- /epm:plan -->
 ```
 
-## Example: reviewer-verdict marker
+## Example: reviewer-verdict marker (DEPRECATED 2026-05-13)
+
+> **DEPRECATED.** The dedicated reviewer step was retired and its
+> responsibilities were absorbed by `clean-result-critic` (Step 9a-bis,
+> Lens 11). New issues never post `reviewer-verdict` markers. This
+> example is kept for legacy state-recovery context — if you encounter
+> an old issue with an `epm:reviewer-verdict` marker, it predates
+> 2026-05-13.
 
 ```markdown
 <!-- epm:reviewer-verdict v1 -->
