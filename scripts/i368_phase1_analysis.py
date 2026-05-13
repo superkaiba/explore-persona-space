@@ -413,17 +413,22 @@ def main() -> None:
     h3 = compute_h3(df)
     dump_json(h3, PHASE1_DIR / "permutation_null.json")
 
-    # R8: BH-FDR over the 9 single-axis Spearman p-values (all 9 new axes).
-    p_values = {axis: per_axis[axis]["spearman_p"] for axis in NEW_AXES}
+    # R8: BH-FDR over the non-headline single-axis Spearman p-values.
+    # Plan R8 verbatim: "BH-FDR α=0.10 scoped to 9 single-axis Spearman
+    # p-values (one per non-headline axis)". Headline reported separately.
+    p_values = {axis: per_axis[axis]["spearman_p"] for axis in NEW_AXES if axis != HEADLINE_AXIS}
     bh = benjamini_hochberg(p_values, alpha=0.10)
     dump_json(
         {
             "scope_note": (
-                "R8: BH-FDR (α=0.10) applied ONLY to the 9 single-axis Spearman "
-                "ρ p-values. ΔR², partial ρ, conditional ρ, within-source partial "
-                "ρ are descriptive without correction."
+                "R8: BH-FDR (α=0.10) applied to the non-headline single-axis "
+                f"Spearman ρ p-values ({len(p_values)} axes; headline "
+                f"{HEADLINE_AXIS!r} excluded from pool per plan R8). "
+                "ΔR², partial ρ, conditional ρ, within-source partial ρ are "
+                "descriptive without correction."
             ),
             "alpha": 0.10,
+            "headline_axis_excluded": HEADLINE_AXIS,
             "bh_results": bh,
         },
         PHASE1_DIR / "bh_fdr.json",

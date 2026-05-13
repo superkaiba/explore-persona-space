@@ -27,6 +27,7 @@ import numpy as np
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))  # enable `scripts.*` imports for C6 R11 patch
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from explore_persona_space.axis.chenstyle import AXIS_SPECS, HEADLINE_AXIS  # noqa: E402
@@ -159,7 +160,7 @@ def compute_h2_verdict(df: pd.DataFrame) -> dict:
             "bootstrap_ci_95": js_within["bootstrap_ci_95"],
         }
 
-    # ── 5-valued verdict per T13 + plan §"Verdict thresholds (H2)" ──
+    # ── 6-valued verdict per T13 + plan §"Verdict thresholds (H2)" ──
     if not cond_marginal:
         verdict = "FAIL_marginal_below_threshold"
     elif not cond_shuffle:
@@ -167,6 +168,10 @@ def compute_h2_verdict(df: pd.DataFrame) -> dict:
         verdict = "FAIL_permutation_calibration"
     elif cond_within_point and cond_within_ci and cond_r6:
         verdict = "PASS"
+    elif cond_within_point and cond_within_ci and not cond_r6:
+        # C3 + plan §6.2: T9 within-source passes but Δρ < 0.03 vs centroids
+        # — Chen-style contrast NOT confirmed beyond centroid replication.
+        verdict = "CENTROID_REPLICATION_NOT_CONTRAST_CONFIRMATION"
     elif cond_within_point and not cond_within_ci:
         verdict = "AMBIGUOUS_within_source_dimension"
     elif not cond_within_point and not cond_within_ci:
@@ -293,15 +298,19 @@ def main() -> None:
     h3 = compute_h3(df)
     dump_json(h3, PHASE2_DIR / "permutation_null.json")
 
-    # BH-FDR (R8) over 9 single-axis Spearman p-values
-    p_values = {axis: per_axis[axis]["spearman_p"] for axis in NEW_AXES}
+    # BH-FDR (R8) — plan: "scoped to 9 single-axis Spearman p-values (one per
+    # NON-HEADLINE axis)". HEADLINE_AXIS p-value is reported separately.
+    p_values = {axis: per_axis[axis]["spearman_p"] for axis in NEW_AXES if axis != HEADLINE_AXIS}
     bh = benjamini_hochberg(p_values, alpha=0.10)
     dump_json(
         {
             "scope_note": (
-                "R8: BH-FDR (α=0.10) applied ONLY to the 9 single-axis Spearman ρ p-values."
+                "R8: BH-FDR (α=0.10) applied to the non-headline single-axis "
+                f"Spearman ρ p-values ({len(p_values)} axes; headline "
+                f"{HEADLINE_AXIS!r} excluded from pool per plan R8)."
             ),
             "alpha": 0.10,
+            "headline_axis_excluded": HEADLINE_AXIS,
             "bh_results": bh,
         },
         PHASE2_DIR / "bh_fdr.json",
@@ -319,27 +328,59 @@ def main() -> None:
 
 
 def _maybe_patch_r11_ratio() -> None:
-    """Compute cross_persona_centroid_variance_ratio if Phase 1 data available."""
-    phase1_dir = REPO_ROOT / "eval_results" / "issue_368" / "phase1"
-    aug = phase1_dir / "regression_data_augmented.csv"
-    cohesion_path = PHASE2_DIR / "persona_pos_set_cohesion.json"
-    if not aug.exists() or not cohesion_path.exists():
-        return
+    """Compute cross_persona_centroid_variance_ratio if Phase 1 data available.
+
+    C6: both numerator and denominator MUST be variance in hidden-state space
+    (~3584-dim Qwen-2.5-7B). The previous implementation computed the
+    denominator over a column of *cosine similarity scores* (dimensionless),
+    making the ratio dimensionally meaningless. Plan R11: "cross-persona
+    centroid variance ratio = ratio to Phase 1's mean trigger-centroid
+    variance (same-units reference)."
+
+    Hidden-state denominator: load Phase 1's per-trigger pos-side
+    mean-response centroid at L20 (saved by i368_extract_chenstyle_vectors
+    under data/persona_vectors_chenstyle/.../i181/{trigger}/
+    pos_centroids_mean_response.pt), stack across triggers, take elementwise
+    variance, then mean-pool to a scalar. Both numerator (already in
+    hidden-state space; persona_pos_set_cohesion.json) and denominator
+    (trigger pos centroids) are now variance-in-hidden-dim scalars.
+    """
     import json
 
-    df = pd.read_csv(aug)
-    # Per-trigger (train_family) mean methodB centroid value across 32 panel
-    # prompts; the variance over the 4 triggers is a coarse proxy.
-    per_trigger = df.groupby("train_family")["pcentroid_methodB_L20"].mean().values
-    if len(per_trigger) < 2:
+    import torch
+
+    from explore_persona_space.axis.chenstyle import HEADLINE_LAYER
+    from scripts.i368_extract_chenstyle_vectors import (  # type: ignore
+        OUTPUT_BASE,
+        TRIGGER_NAMES,
+    )
+
+    cohesion_path = PHASE2_DIR / "persona_pos_set_cohesion.json"
+    if not cohesion_path.exists():
         return
-    trigger_var = float(per_trigger.var())
+
+    trigger_centroids: list[torch.Tensor] = []
+    for trig in TRIGGER_NAMES:
+        path = OUTPUT_BASE / "i181" / trig / "pos_centroids_mean_response.pt"
+        if not path.exists():
+            return  # Phase 1 extraction hasn't run yet — skip silently
+        d = torch.load(path, weights_only=True)
+        trigger_centroids.append(d[HEADLINE_LAYER].float())
+    if len(trigger_centroids) < 2:
+        return
+    trigger_var = float(torch.stack(trigger_centroids).var(dim=0).mean().item())
+
     with open(cohesion_path) as f:
         coh = json.load(f)
     cross_var = coh.get("cross_persona_centroid_variance")
     if cross_var is None or trigger_var <= 0:
         return
     coh["cross_persona_centroid_variance_ratio_to_phase1_mean"] = cross_var / trigger_var
+    coh["denominator_source"] = (
+        f"hidden-state variance of {len(trigger_centroids)} Phase 1 trigger "
+        f"pos-centroids at L{HEADLINE_LAYER} (mean-response aggregation); "
+        "same-units reference per plan R11."
+    )
     coh["sonnet_flatness_flag"] = bool(coh["inter_persona_centered_cosine_mean"] > 0.7)
     dump_json(coh, cohesion_path)
 
