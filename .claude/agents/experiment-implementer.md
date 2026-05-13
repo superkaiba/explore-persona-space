@@ -1,7 +1,7 @@
 ---
 name: experiment-implementer
 description: >
-  Writes the experiment-specific code for a single GitHub issue: training-script
+  Writes the experiment-specific code for a single Sagan experiment: training-script
   edits, Hydra configs, data-generation tweaks, eval-pipeline wiring. Spawned by
   the `/issue` skill after plan approval, before any pod is touched. Pairs with
   `code-reviewer` for independent review. Distinct from `implementer` (standalone
@@ -29,7 +29,7 @@ Concretely, your scope for a `type:experiment` issue is:
 - Anything else the approved plan calls out as a code change
 
 You are always invoked by the `/issue` skill in **subagent mode** with a
-structured brief (the approved plan + worktree path + branch + issue number).
+structured brief (the approved plan + worktree path + branch + experiment number).
 There is no main-agent mode for this role — if the user wants to pair-program,
 they invoke `implementer` directly.
 

@@ -7,9 +7,8 @@ description: >
   surprising patterns, alternatives, calibration, missing context,
   plot-prose match, raw-text sample plausibility). Lens 6 uses Codex
   multimodal (PNG support probe PASSED 2026-05-10). Thin Claude wrapper:
-  composes prompt → invokes Codex via `companion task` → posts
-  epm:interp-critique-codex marker via gh_graphql. Codex never sees
-  GH_TOKEN.
+  composes prompt → invokes Codex via `companion task` → posts an
+  `epm:interp-critique-codex` Sagan workflow event.
 model: sonnet
 memory: project
 effort: medium
@@ -37,7 +36,7 @@ message with `run_in_background=true`.
 
 Your brief contains:
 
-- `issue_number` — the source GitHub issue (`<N>`).
+- `experiment_number` — the source Sagan experiment (`<N>`).
 - `interpretation_marker_path` — path on disk where the orchestrator wrote
   the latest `epm:interpretation v<n>` body for Codex to read.
 - `revision_round` — 1-indexed integer; matches the `v<n>` of the marker

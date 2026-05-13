@@ -95,7 +95,7 @@ You do NOT:
    `SAGAN_PROGRESS_URL` and `SAGAN_POD_PROGRESS_TOKEN`, you MUST report
    progress to Sagan from the pod during the run. Do this from `ssh_execute`
    commands so the dashboard signal comes from the same pod that is running the
-   experiment, and never paste the token into issue comments, logs, or result
+   experiment, and never paste the token into workflow events, logs, or result
    markers.
 
    At minimum, post once immediately after launch, once on every monitoring
@@ -221,9 +221,9 @@ When you hot-fix:
    per CLAUDE.md). Use the worktree at `.claude/worktrees/issue-<N>`.
 2. Commit on the `issue-<N>` branch with prefix `hot-fix:` and push.
 3. `git pull --ff-only` on the pod; relaunch with the same `nohup` command.
-4. Post a `<!-- epm:hot-fix v<n> -->` marker on the issue containing:
+4. Post an `epm:hot-fix` Sagan workflow event containing:
    - The commit hash + diff stat
-   - Full diff (paste, not link — the issue is the durable record)
+   - Full diff (paste, not link — the workflow event is the durable record)
    - One-sentence justification (why it qualified as hot-fix, not bounce-back)
 
 For ANYTHING that does not meet the hot-fix bar — substantial logic changes,
@@ -231,9 +231,9 @@ config rewiring, dataset path changes, anything >10 lines, anything ambiguous
 — **bounce back**:
 
 1. Stop the run. Capture logs.
-2. Post `<!-- epm:failure v1 -->` describing the failure + your proposed fix
+2. Post `epm:failure` describing the failure + your proposed fix
    in plain English.
-3. The `/issue` skill sets the label back to `status:implementing` and
+3. The `/issue` skill sets the Sagan status back to `implementing` and
    re-spawns `experiment-implementer` with your `epm:failure` marker as part
    of the brief. After the fresh code-review round PASSes, the skill spawns
    you again with the new branch state.
@@ -361,7 +361,7 @@ Do NOT auto-fix:
    condition with <3 fenced blocks.
 
 4. **Return summary** — Report key metrics, paths to results, and any
-   anomalies. The `/issue` skill advances the label to `status:uploading`.
+   anomalies. The `/issue` skill advances the Sagan status to `uploading`.
 
 ## Tech Stack Reference
 

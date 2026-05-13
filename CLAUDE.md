@@ -2,6 +2,13 @@
 
 ## Critical Rules
 
+- **Sagan is canonical workflow state.** `/issue <N>` means Sagan
+  `experiments.number`, not a GitHub issue number. Read and mutate experiment
+  status, markers, review rounds, clean-result state, promotion, and RunPod
+  lifecycle only through Sagan HTTP APIs (`scripts/sagan_state.py` or the
+  dashboard). GitHub issues, labels, issue comments, project board columns, and
+  local files are historical evidence or artifacts only; never use them as the
+  control plane.
 - **Ask before assuming.** If a task has multiple valid interpretations, ask. Don't guess requirements, data formats, or success criteria.
 - **Never take shortcuts.** Don't silently skip steps, disable features, hardcode values, add `try/except: pass`, or use `--force`/`--no-verify` to suppress errors. Diagnose the root cause.
 - **Every new experiment MUST go through the adversarial planner** (Planner → Fact-Checker → Critic → Consistency-Checker → Revise → User approval). No exceptions. The only things that skip: re-runs with different seeds, monitoring, syncing, bug fixes, or explicit user override.
@@ -27,7 +34,7 @@
 
   *Inline `AskUserQuestion` gates (block within a single `/issue` invocation):*
   1. Step 0b (1) — issue body empty (cannot guess primary input).
-  2. Step 0b (2) — `type:*` label missing (wrong guess corrupts Done column).
+  2. Step 0b (2) — Sagan experiment `kind` missing or contradictory.
   3. Step 1 — clarifier blocking ambiguities (`status:proposed`).
   4. Step 2c — plan approval (`status:plan_pending`).
   5. Step 10d — worktree merge prompt (irreversible).
@@ -50,7 +57,7 @@
   8. Step 4b TDD gate — fires only when the approved plan body contains
      `### TDD: yes` or the user explicitly asked for TDD. Implementer
      posts `epm:proposed-tests v1`, EXITs awaiting an `approve-tests`
-     reply on the issue. Re-invoking `/issue <N>` after approval resumes
+     approval in Sagan. Re-invoking `/issue <N>` after approval resumes
      Step 4b normally. (See `markers.md` and the implementer agent specs.)
 
   Outside these gates, NEVER ask "should I continue with the pipeline"
@@ -297,7 +304,7 @@ list-by-status` (or the dashboard kanban), not by cross-messaging.
 
 **Pod naming:** `epm-issue-<N>` where `<N>` is `experiments.number`. One pod per experiment. Follow-up experiments that share a parent provision a fresh pod (the parent's pod was destroyed at upload-verification PASS).
 
-**Auto-terminate-on-upload-PASS (automatic).** After upload-verification PASS, `/issue` Step 8 runs `pod.py terminate --issue <N> --yes` automatically (volume + container disk destroyed). The skill posts `<!-- epm:pod-terminated v1 -->` and proceeds to `status:interpreting`. Interpretation and review run locally — they read JSON results from WandB / HF Hub, not from the pod. If interpretation later needs GPU compute (e.g., to regenerate a figure from raw outputs that weren't downloaded), provision a fresh pod via `pod.py provision`. Skip the auto-terminate only by labelling the issue `keep-running` for known follow-up work in the same session.
+**Auto-terminate-on-upload-PASS (automatic).** After upload-verification PASS, `/issue` Step 8 runs `pod.py terminate --issue <N> --yes` automatically (volume + container disk destroyed). The skill posts `<!-- epm:pod-terminated v1 -->` and proceeds to `status:interpreting`. Interpretation and review run locally — they read JSON results from WandB / HF Hub, not from the pod. If interpretation later needs GPU compute (e.g., to regenerate a figure from raw outputs that weren't downloaded), provision a fresh pod via `pod.py provision`. Skip the auto-terminate only when the Sagan experiment has a `keep-running` tag for known follow-up work in the same session.
 
 ### GPU intent → spec heuristic
 

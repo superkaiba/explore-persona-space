@@ -11,7 +11,7 @@ description: Use when running experiments autonomously overnight. Two modes — 
 
 **Wraps:** `experiment-runner` (per-experiment execution), `experiment-proposer` (Autonomous-mode ideation).
 
-**Does NOT own:** publishing clean-result write-ups. The analyzer agent replaces the source experiment's body with a polished Sagan-card HTML clean-result and flips `hasCleanResult=true`; completed source experiments auto-advance via the `/issue` skill's reviewer PASS — no manual sign-off step. The Sagan kanban (`https://sagan.superkaiba.com/experiments`) IS the queue; the GitHub project board is no longer consulted.
+**Does NOT own:** publishing clean-result write-ups. The analyzer agent replaces the source experiment's body with a polished Sagan-card HTML clean-result and flips `hasCleanResult=true`; completed source experiments auto-advance through Sagan promotion. The Sagan kanban (`https://sagan.superkaiba.com/experiments`) is the queue.
 
 ---
 
@@ -204,7 +204,7 @@ After an experiment completes successfully:
 
 ### Step 2: Write Draft Report
 
-File: `.claude/cache/issue-<N>-clean-result.md` (the analyzer agent later promotes this to a clean-result GitHub issue).
+File: `.claude/cache/issue-<N>-clean-result.md` (the analyzer agent later applies this to the Sagan experiment body and sets `hasCleanResult=true`).
 
 ```markdown
 # [Experiment Name] — AUTO-GENERATED DRAFT
@@ -249,9 +249,8 @@ the runner is biased and cannot verify its own conclusions.]
 ### Step 3: Update Logs
 
 - Append one-liner to `.claude/cache/auto-experiment-runner.log` with UNREVIEWED marker
-- The `/issue <N>` skill handles state-label advancement automatically — no
-  manual queue-file update needed; the reviewer PASS transition moves the
-  issue to `status:done_experiment` on the project board.
+- The `/issue <N>` skill handles Sagan status advancement automatically; no
+  manual queue-file update is needed.
 
 ---
 
@@ -260,7 +259,7 @@ the runner is biased and cannot verify its own conclusions.]
 ### Hard Limits (never exceeded, not configurable)
 
 - **Never delete ANY files** — data, checkpoints, logs, configs
-- **Never publish clean-result GitHub issues** — only the analyzer agent does that, after a human (or `/issue` reviewer pass) has signed off
+- **Never promote clean results yourself** — only the Sagan analyzer/promotion flow does that, after human or reviewer sign-off
 - **Never push to git**
 - **Never modify source code** — only configs
 - **Never run destructive commands** — no `rm`, `git push`, `git checkout`, `pip install`
@@ -376,7 +375,7 @@ cat .claude/cache/auto-experiment-runner.log
 1. Read `.claude/cache/auto-experiment-runner.log` — scan what ran overnight
 2. Read the session summary block — check for failures or anomalies
 3. For each cached draft (`.claude/cache/issue-<N>-clean-result.md`):
-   - Quick: looks good → let the analyzer agent promote it to a clean-result GitHub issue (`/issue <N>` Step 7a)
+   - Quick: looks good → let the analyzer agent apply it to the Sagan experiment and use the Sagan promotion flow
    - Suspicious: invoke `/independent-reviewer` on the cached draft
    - Bad: discard or note why in the draft
 4. Invoke `/experiment-proposer` to plan the next cycle

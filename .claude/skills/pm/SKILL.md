@@ -54,22 +54,15 @@ flow. The PM's job is dispatch, not execution.
 
 1. Load research-pm persona by reading `.claude/agents/research-pm.md` in
    full. Adopt it for the rest of the session.
-2. Run a fast triage scan against the **project board columns** (the
-   board is the queue; `status:*` labels drift from columns and are NOT
-   reliable for counts):
+2. Run a fast triage scan against **Sagan experiment state**:
    ```bash
-   # ONE GraphQL call — fetches every column at once and groups client-side.
-   uv run python scripts/gh_project.py list-all \
-       --columns "To do,Planning,Plan awaiting review,In flight,Followups running,Awaiting promotion,Blocked,Todo by human"
+   python scripts/sagan_state.py list-by-status --limit 500
    uv run python scripts/spawn_session.py list
    uv run python scripts/pod.py list-ephemeral
    ```
-   `list-all` replaces the per-column `list-by-status` loop and drops PM
-   triage from ~16 GitHub API calls to 3. Use `--counts-only` if you only
-   need the per-column totals; use bare `list-all` (no `--columns`) when
-   you also want to see the terminal columns (`Useful`, `Not useful`,
-   `Done`, `Archived`) — same single API call, just more output.
-   Canonical column names are in `research-pm.md` § Source of truth.
+   Sagan status is the durable source of truth. Group rows client-side by
+   `experiments.status`; use `python scripts/sagan_state.py view <N>` for
+   details and recent workflow events.
 3. Produce the standard 5–10 bullet state snapshot per
    `research-pm.md` Mode 1 — phases, in-flight, blocked, queue depth,
    open questions. Quantitative, terse.
@@ -95,7 +88,7 @@ to open that session on their phone and type `/issue <N>` to start the
 workflow. Do NOT type `/issue <N>` here in the PM session — that would
 collapse the multi-session model.
 
-If the issue has a worktree at `.claude/worktrees/issue-<N>/`, the script
+If the experiment has a worktree at `.claude/worktrees/issue-<N>/`, the script
 opens cwd there automatically (git-isolated to that branch).
 
 ### Auto-watching long-running issues
@@ -118,8 +111,9 @@ The per-issue session handles gates via its own `AskUserQuestion` (the 6
 inline gates in `workflow.yaml § gates`) or by parking at
 `status:awaiting_promotion` (the park-and-wait gate). Those questions go
 to the user's phone in THAT session's Happy chat, not yours. The PM
-session is informed via tracking files / `gh issue list` only — surface
-gate_pending issues in the next status snapshot.
+session is informed via Sagan experiment status and workflow events — surface
+`gate_pending`, `plan_pending`, and `awaiting_promotion` experiments in the
+next status snapshot.
 
 If multiple issues hit gates simultaneously, the user will see a stack of
 notifications across Happy sessions. Your job in the PM session is the
@@ -150,9 +144,9 @@ review."
 - **Running `/issue <N>` in the PM session.** Collapses the multi-session
   model and makes the PM session indistinguishable from a regular issue
   session. Always spawn a separate session.
-- **Polling the per-issue session's progress from the PM.** Trust the
-  issue's labels + markers. Re-read with `gh issue view <N>` if you need a
-  status check; do NOT cross-message between sessions.
+- **Polling the per-issue session's progress from the PM.** Trust Sagan status
+  and workflow events. Re-read with `python scripts/sagan_state.py view <N>`
+  if you need a status check; do NOT cross-message between sessions.
 - **Re-loading research-pm.md mid-session.** It's loaded once at `/pm`
   invocation. The persona persists.
 - **Spawning subagents (`Agent`) from the PM session for experiments /

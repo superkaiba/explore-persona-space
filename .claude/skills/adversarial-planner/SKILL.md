@@ -93,8 +93,8 @@ parameter when invoking adversarial-planner. When invoked stand-alone (no
 Exit code routing:
 - `0` (PASS) → proceed to Phase 1.5.
 - `2` (BLOCK) → REJECT the plan; bounce back to the planner with the
-  missing-section list. Max 2 bounces; on a third blocked plan, label the
-  source issue `status:blocked` and surface to the user.
+  missing-section list. Max 2 bounces; on a third blocked plan, set the
+  source experiment status to `blocked` and surface to the user.
 - `3` (PASS via override) → proceed to Phase 1.5 and record the override in
   the audit log. The override marker
   `<!-- epm:override-hypothesis-skip v1 -->` must already be in the plan

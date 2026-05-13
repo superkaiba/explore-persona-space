@@ -37,9 +37,9 @@ mcp__gh_graphql__add_issue_comment(
 )
 ```
 
-If the call returns `{"success": false, "error": "body_too_large"}`, split the body and re-post the parts; do NOT shell out to the `gh` CLI's `issue-comment --body-file` path (that reintroduces the auth-leak path).
+If the call returns `{"success": false, "error": "body_too_large"}`, split the body and re-post the parts through Sagan workflow events.
 
-The issue comment is the source of truth. Also return the verdict to whoever spawned you.
+The Sagan workflow event is the source of truth. Also return the verdict to whoever spawned you.
 
 ---
 

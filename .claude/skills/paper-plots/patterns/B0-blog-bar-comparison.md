@@ -1,7 +1,7 @@
 # Pattern B0 — Blog-style bar comparison
 
 The Anthropic-blog-register variant of `P1-bar-comparison`. Use for
-clean-result issue figures and mentor-update slides. For paper-figure
+Sagan clean-result body figures and mentor-update slides. For paper-figure
 bars (narrow column, dense), use `P1-bar-comparison.md` with
 `set_paper_style("neurips")` instead.
 

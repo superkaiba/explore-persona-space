@@ -50,9 +50,11 @@ whenever you want the human-readable picture. The `experiment_status`
 enum is the durable source of truth and is what `/issue` reads/writes.
 
 Status values (canonical):
-`proposed`, `planning`, `plan_pending`, `approved`, `awaiting_approval`,
-`running`, `verifying`, `interpreting`, `reviewing`, `awaiting_promotion`,
-`blocked`, `completed`, `archived`.
+`proposed`, `clarifying`, `gate_pending`, `planning`, `plan_pending`,
+`approved`, `awaiting_approval`, `queued`, `implementing`,
+`code_reviewing`, `testing`, `running`, `uploading`, `verifying`,
+`interpreting`, `reviewing`, `awaiting_promotion`, `followups_running`,
+`shared`, `blocked`, `completed`, `failed`, `cancelled`, `archived`.
 
 Deprecated, do NOT read or write: `EXPERIMENT_QUEUE.md` (deleted),
 `research_log/drafts/` (archived to `archive/research_log/`).
@@ -66,7 +68,7 @@ Deprecated, do NOT read or write: `EXPERIMENT_QUEUE.md` (deleted),
 | Queue triage, ranking, "what's next?" | **you** |
 | Tracking-file hygiene (`RESULTS.md`, `INDEX.md`, `research_ideas.md`) | **you** (with diff-then-approve for substantive changes) |
 | Ideation | **you**, via `/ideation` skill in this session |
-| Audits (orphan results, label↔column drift, stale claims) | **you** |
+| Audits (orphan results, status↔dashboard drift, stale claims) | **you** |
 | Per-issue lifecycle (`/issue <N>`) | per-issue Happy session — you SPAWN it, never run it here |
 | Experiment execution, code, analysis, review | specialist agents inside the per-issue session |
 | Clean-result promotion | user-only column gate; you may run `/promote-clean-result` in-context to help the user |
@@ -106,15 +108,15 @@ AUDIT.
 ### Mode 2 — AUDIT ("check for drift")
 
 Scan for:
-- **Label ↔ column drift**: issues in a column without the matching
-  `status:*` label, or vice versa.
-- **Orphan pods**: `epm-issue-<N>` running but issue #N is not in
-  `In flight` / `Followups running`.
+- **Status ↔ dashboard drift**: Sagan experiments whose durable status maps to
+  the wrong dashboard stage, or whose dashboard view disagrees with the row.
+- **Orphan pods**: a pod is running but Sagan experiment `<N>` is not in an
+  active runtime status.
 - **Orphan results**: `eval_results/<dir>/` not referenced in
   `eval_results/INDEX.md`.
 - **Stale `In flight`**: no marker activity > 24h.
 - **`RESULTS.md` drift**: a headline claim contradicted by a newer
-  clean-result issue.
+  Sagan clean-result body.
 - **`research_ideas.md` drift**: subtask status out of sync with
   evidence on the board.
 
@@ -259,10 +261,10 @@ renders them as separate pills — use plain numbered markdown).
 
 | Anti-pattern | Why bad | Do instead |
 |---|---|---|
-| Counting awaiting_promotion by hand from labels | Status enum is the source of truth | `sagan_state.py list-by-status --status awaiting_promotion` |
+| Counting awaiting_promotion by hand from stale tracker metadata | Status enum is the source of truth | `sagan_state.py list-by-status --status awaiting_promotion` |
 | Running `/issue <N>` in the PM session | Collapses the multi-session model | `spawn_session.py spawn-issue --issue <N>` |
 | Spawning `experimenter` / `analyzer` from the PM session | Belongs inside the per-issue `/issue` flow | Just spawn the session |
-| Reading `EXPERIMENT_QUEUE.md` or `research_log/drafts/LOG.md` | Both deprecated | Use the project board + clean-result issues |
+| Reading `EXPERIMENT_QUEUE.md` or `research_log/drafts/LOG.md` | Both deprecated | Use Sagan experiments, workflow events, and clean-result state |
 | Auto-editing `RESULTS.md` headlines | High-stakes | Propose diff, wait |
 | Auto-moving experiments between statuses | User-owned (except `/issue` automation) | SUGGEST, let the user run `sagan_state.py set-status` |
 | Polling per-experiment session progress | Trust status + workflow_events | `sagan_state.py view <N>` on demand only |

@@ -65,7 +65,7 @@ for the gaps that remain:
      and we'd be duplicating engineering work.
    - `docs/` — internal write-ups and research notes (e.g., `research_ideas.md`,
      literature digests). Often contain summaries of related work that didn't
-     make it into a clean-result issue.
+     make it into a Sagan clean-result body.
    - `mcp__arxiv__search_papers` / `mcp__arxiv__semantic_search` — only if the
      issue references a paper not yet in `.arxiv-papers/`, or if the internal
      literature pass turned up nothing relevant and external work is plausible.

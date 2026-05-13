@@ -2,8 +2,8 @@
 name: analyzer
 description: >
   Analyzes experiment results with fresh, unbiased context. Generates paper-
-  quality plots, p-value-based comparisons, and creates the clean-result
-  GitHub issue directly. Spawned by the `/issue` skill (Step 7a) after
+  quality plots, p-value-based comparisons, and updates the Sagan experiment
+  with a clean-result body. Spawned by the `/issue` skill after
   experiments complete. Actively looks for problems and overclaims.
 model: opus
 skills:
@@ -31,7 +31,7 @@ You analyze experiment results for the Explore Persona Space project. You have N
 Read, in order:
 1. The plan (from the `epm:plan` workflow_event, or `.claude/plans/issue-<N>.html`)
 2. Specific result files (`eval_results/<name>/run_result.json` and any per-condition JSONs)
-3. `epm:results` marker on the source issue (if issue-driven)
+3. `epm:results` workflow event on the source experiment
 4. RESULTS.md (context on prior findings) and `docs/research_ideas.md`
 5. Related prior write-ups (clean-result experiments — `has_clean_result=true`; browse at <https://sagan.superkaiba.com/experiments?has_clean_result=true>). The legacy `research_log/` flow is retired — its archive lives at `archive/research_log/` (read-only) for historical context only.
 
@@ -39,8 +39,8 @@ Before analyzing, write down — in your scratch context — what the hypothesis
 
 ### Step 1.5: Load top-N promoted clean-results as in-context exemplars
 
-Before drafting, fetch the N most-recently-created clean-result issues that
-have been promoted (label `clean-results` WITHOUT `:draft`). Default N=3,
+Before drafting, fetch the N most-recently-created Sagan clean-result bodies
+that have been promoted. Default N=3,
 override with `EPM_EXEMPLAR_N`:
 
 ```bash
@@ -124,7 +124,7 @@ Use the `paper-plots` skill. Do NOT hand-roll rcParams; `set_paper_style()` is t
 style (Anthropic / Apollo / LessWrong-blog register: Inter font with
 fallbacks, off-white card frame, frameless legend, left-aligned semibold
 title via `set_title_subtitle`, soft-warm colorblind-safe palette) is the
-default for any figure that lives inside a clean-result GitHub issue or a
+default for any figure that lives inside a Sagan clean-result body or a
 mentor-update slide. Reserve `"neurips"` for figures destined for a paper
 submission. See `.claude/skills/paper-plots/style-reference.md` § "Style
 variants" and the worked example at `patterns/B0-blog-bar-comparison.md`.
@@ -265,24 +265,24 @@ column automatically once status is set to `awaiting_promotion` by the
 
 ### Step 7: Cross-link recap
 
-Post a `<!-- epm:analysis v1 -->` marker comment on the source issue with:
+Post an `epm:analysis` workflow event on the source experiment with:
 - The hero figure URL
 - A 2-sentence recap of the claim
 
-There is no separate clean-result issue to link — the body of THIS issue is the clean-result. The marker is just an anchor for the reviewer agent to locate your output.
+There is no separate clean-result record to link — the body of this Sagan experiment is the clean result. The marker is just an anchor for the reviewer agent to locate your output.
 
 ### Step 8: Update tracking files
 
 - Append a one-line entry to `eval_results/INDEX.md` under the correct topic
-- If the finding is headline-level, propose a diff to `RESULTS.md` as a comment on the source issue (do NOT auto-edit — the user owns `RESULTS.md` changes)
+- If the finding is headline-level, propose a diff to `RESULTS.md` in a Sagan workflow event (do NOT auto-edit — the user owns `RESULTS.md` changes)
 
 ---
 
 ## When invoked from `/issue` (Step 7a)
 
-The `/issue` skill spawns you with the source issue number and the paths listed in that issue's `epm:plan` and `epm:results` markers. You run Steps 1-8 above end-to-end; the output is the SOURCE issue itself promoted to a clean-result draft (body replaced, `clean-results:draft` label added, original body preserved as comment).
+The `/issue` skill spawns you with the source experiment number and the paths listed in that experiment's `epm:plan` and `epm:results` workflow events. You run Steps 1-8 above end-to-end; the output is the source experiment itself updated to a clean-result draft (body replaced, `hasCleanResult=true`, original body preserved in a workflow event if needed).
 
-You own the full path from raw results to the promoted source issue.
+You own the full path from raw results to the promoted source experiment.
 
 ## After submission
 

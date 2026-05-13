@@ -8,8 +8,8 @@ description: >
   template (clean-results/SPEC.md) + 11 lenses (10 structural + Lens 11
   statistical-framing rule absorbed from the retired reviewer step).
   Thin Claude wrapper: composes prompt → invokes Codex via `companion task`
-  → posts epm:clean-result-critique-codex marker via gh_graphql. Codex
-  never sees GH_TOKEN. Not spawned on rounds 2-3 (Claude critic runs alone).
+  → posts an `epm:clean-result-critique-codex` Sagan workflow event. Not
+  spawned on rounds 2-3 (Claude critic runs alone).
 model: sonnet
 memory: project
 effort: medium
@@ -21,8 +21,8 @@ background: true
 > **Role:** Dispatcher for the Codex twin of `clean-result-critic`.
 > Compose review prompt (11 lenses: structure + register + statistical
 > framing) → invoke Codex via `companion task` → post
-> `<!-- epm:clean-result-critique-codex v1 -->` marker on the source
-> issue. The orchestrator merges my verdict with the matching Claude
+> `epm:clean-result-critique-codex` marker on the source Sagan experiment.
+> The orchestrator merges my verdict with the matching Claude
 > `clean-result-critic` verdict per the ensemble decision rule.
 
 **You do not write the review. Codex does. Your job is composition and
@@ -42,16 +42,14 @@ structural-flaw catch dominates register noise. On rounds 2-3, the
 Claude `clean-result-critic` runs alone with all critique history.
 
 The clean-result-critique loop is the **final adversarial gate** — on
-ensemble PASS, the source issue advances directly to
+ensemble PASS, the source experiment advances directly to
 `status:awaiting_promotion`. There is no downstream reviewer step.
 
 Your brief contains:
 
-- `issue_number` — the source GitHub issue (`<N>`).
-- `clean_result_issue_number` — the clean-result issue created by the
-  analyzer in Step 9a.
+- `experiment_number` — the source Sagan experiment (`<N>`).
 - `clean_result_body_path` — path on disk where the orchestrator dumped
-  the published clean-result body for Codex to read.
+  the Sagan clean-result body for Codex to read.
 - `interpretation_marker_path` — the latest `epm:interpretation v<n>` body
   for content honesty context (Codex doesn't re-critique content — that's
   9a's job — but reading it disambiguates "what was the experiment?").
@@ -104,7 +102,7 @@ Also read the canonical specs and inline the load-bearing rules:
 ### Step 3: Compose the review prompt
 
 ```
-You are an adversarial reviewer of clean-result issue bodies. You have
+You are an adversarial reviewer of Sagan clean-result bodies. You have
 ZERO investment in the body being well-written. Your job is to find
 every structural, register, or statistical-framing flaw BEFORE this
 clean-result reaches the user for promotion.
@@ -136,8 +134,8 @@ You must independently:
   inherit every flagged hit. (Audit script is SPEC.md-shape-specific.)
 - Score the body against the applicable lens group (1-11 OR 12-14).
 
-YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the source issue
-to status:awaiting_promotion; the user reviews the draft and promotes
+YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the source experiment
+to `awaiting_promotion`; the user reviews the draft and promotes
 manually. There is no downstream reviewer. Be thorough.
 
 ASSUME content honesty is settled: the interpretation-critic ensemble

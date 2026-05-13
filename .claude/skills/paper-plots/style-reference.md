@@ -20,9 +20,9 @@ variants; per-variant overrides are tabled below.
 |---|---|---|---|---|---|---|---|
 | `neurips` | Paper figures (NeurIPS / ICML / ICLR) — narrow column, dense, camera-ready | 5.5 × 3.4 | DejaVu Sans (no LaTeX) | white | both axes, alpha 0.25 | framed | centered, regular |
 | `generic` | Same as `neurips` but slightly larger canvas | 6.0 × 4.0 | DejaVu Sans | white | both axes, alpha 0.25 | framed | centered, regular |
-| `blog` | Clean-result GitHub issues + mentor-update slides + LessWrong / Anthropic-blog posts | 6.5 × 4.0 | Inter (with Source Sans 3 / Helvetica Neue / Arial / DejaVu Sans fallbacks) | off-white outer (#FAFAFA) over white plotting area | y-axis only, #EEEEEE | frameless | left-aligned, semibold |
+| `blog` | Sagan clean-result bodies + mentor-update slides + LessWrong / Anthropic-blog posts | 6.5 × 4.0 | Inter (with Source Sans 3 / Helvetica Neue / Arial / DejaVu Sans fallbacks) | off-white outer (#FAFAFA) over white plotting area | y-axis only, #EEEEEE | frameless | left-aligned, semibold |
 
-The `blog` variant is the default for clean-result issues + mentor
+The `blog` variant is the default for Sagan clean-result bodies + mentor
 slides. The `neurips` variant is the default for paper figures. There
 is no "automatic" detection — pass the target explicitly at the top of
 each plotting script.
@@ -185,7 +185,7 @@ for talk-slide variants of the same figure.
 
 | Target | Figsize (inches) | Use for |
 |---|---|---|
-| `blog` | 6.5 × 4.0 | **Default** — clean-result GitHub issues + mentor-update slides + LessWrong / Anthropic-blog posts |
+| `blog` | 6.5 × 4.0 | **Default** — Sagan clean-result bodies + mentor-update slides + LessWrong / Anthropic-blog posts |
 | `neurips` | 5.5 × 3.4 | Paper figures — roughly one NeurIPS column |
 | `generic` | 6.0 × 4.0 | Broader or taller paper-style layouts (rarely the right pick) |
 

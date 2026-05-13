@@ -42,15 +42,13 @@ Both spawned from a single `Agent(...)` call message with
 `run_in_background=true`.
 
 Step 9b is single-shot — no revision rounds at this layer. If the ensemble
-verdict is FAIL, the source issue parks at `status:blocked` (or bounces
+verdict is FAIL, the source experiment parks at `blocked` (or bounces
 back to `status:interpreting` per the existing reviewer logic; either way
 this twin doesn't loop).
 
 Your brief contains:
 
-- `issue_number` — the source GitHub issue (`<N>`).
-- `clean_result_issue_number` — the clean-result issue created by the
-  analyzer.
+- `experiment_number` — the source Sagan experiment (`<N>`).
 - `clean_result_body_path` — path on disk where the orchestrator dumped the
   clean-result body for Codex to read.
 - `eval_results_paths` — JSON paths cited in the clean-result.
