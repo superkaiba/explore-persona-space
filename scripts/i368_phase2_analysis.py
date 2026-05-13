@@ -97,6 +97,16 @@ def compute_per_axis_stats(df: pd.DataFrame) -> dict:
 
 
 def compute_h2_verdict(df: pd.DataFrame) -> dict:
+    # CONCERN-1 (round-2 code-review): the C2 sentinel-vector strategy means
+    # source=assistant rows carry placeholder pvec values, NOT real Chen-style
+    # vectors. Plan §6.2 says "assistant only appears as TARGET in H2 contrast",
+    # so we filter source=assistant rows out of every H2 statistic. Original 50
+    # rows minus 10 source=assistant rows = N=40 for H2 verdict math.
+    n_total = len(df)
+    df = df[df["source"] != "assistant"].reset_index(drop=True)
+    n_used = len(df)
+    n_dropped_assistant = n_total - n_used
+
     y = df["marker_leakage_rate"].astype(float).values
     sources = df["source"].values
     x_head = df[HEADLINE_AXIS].astype(float).values
@@ -186,6 +196,16 @@ def compute_h2_verdict(df: pd.DataFrame) -> dict:
             "min_marginal_abs_rho": H2_MARGINAL_THRESHOLD,
             "min_within_source_partial_rho": H2_WITHIN_SOURCE_THRESHOLD,
             "min_R6_centroid_delta": R6_DELTA_THRESHOLD,
+        },
+        "row_counts": {
+            "n_total_input": n_total,
+            "n_used_for_h2": n_used,
+            "n_dropped_source_assistant": n_dropped_assistant,
+            "note_concern_1": (
+                "CONCERN-1 (round-2 code-review): source=assistant rows excluded; "
+                "they carry sentinel pvec values per C2's labelled-sentinel design. "
+                "Plan §6.2: assistant only appears as TARGET in H2 contrast."
+            ),
         },
         "marginal": {
             "rho": float(rho_marg),

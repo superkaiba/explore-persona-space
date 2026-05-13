@@ -376,10 +376,41 @@ def persona_pos_set_cohesion() -> dict:
 # ── Build the 50-row leakage table ──────────────────────────────────────────
 
 
+def _load_js_matrix_from_hf_hub() -> Path | None:
+    """CONCERN-2 follow-up: HF Hub fallback mirroring the M1 panel-strings pattern.
+
+    Fetches `divergence_matrices.json` from the canonical data repo if not on
+    local disk. Returns the cached Path on success, None on any failure.
+    """
+    try:
+        from huggingface_hub import hf_hub_download
+
+        return Path(
+            hf_hub_download(
+                repo_id="superkaiba1/explore-persona-space-data",
+                filename="issue142_js_divergence/divergence_matrices.json",
+                repo_type="dataset",
+            )
+        )
+    except Exception:
+        return None
+
+
 def _load_js_matrix() -> dict[str, dict[str, float]] | None:
-    """C5: load #142 JS divergence matrix indexed by source x target."""
-    js_path = JS_MATRIX_PATH if JS_MATRIX_PATH.exists() else JS_MATRIX_FALLBACK
-    if not js_path.exists():
+    """C5: load #142 JS divergence matrix indexed by source x target.
+
+    Fallback chain (mirrors M1 for base_model_generations.json):
+      1. local commit on issue-368 branch
+      2. issue-274 worktree (dev-VM only)
+      3. HF Hub (`superkaiba1/explore-persona-space-data`)
+    """
+    if JS_MATRIX_PATH.exists():
+        js_path: Path | None = JS_MATRIX_PATH
+    elif JS_MATRIX_FALLBACK.exists():
+        js_path = JS_MATRIX_FALLBACK
+    else:
+        js_path = _load_js_matrix_from_hf_hub()
+    if js_path is None or not js_path.exists():
         return None
     with open(js_path) as f:
         js_blob = json.load(f)
