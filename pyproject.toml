@@ -9,7 +9,7 @@ description = "Characterizing persona space in language models to robustly align
 requires-python = ">=3.11"
 dependencies = [
     "torch>=2.4,<3.0",
-    "transformers>=5.0,<6.0",
+    "transformers>=4.46,<5.0",  # DO NOT bump to >=5 until vLLM ships a transformers-5-compatible release. vLLM 0.11.0 calls tokenizer.all_special_tokens_extended (removed in transformers 5.x) and every fresh pod crashes at first LLM(...) init. Recurring failure across #238/#261/#263/#269/#331/#354/#368. See .claude/agent-memory/experimenter/feedback_vllm0110_transformers5_breakage.md.
     "accelerate>=1.0,<2.0",
     "datasets>=4.0,<5.0",
     "deepspeed>=0.14,<1.0",
@@ -40,6 +40,7 @@ dependencies = [
     "tiktoken>=0.5,<1.0",
     "langdetect>=1.0.9",
     "mcp>=1.0,<2.0",
+    "psycopg>=3.3.4",
 ]
 
 [project.scripts]

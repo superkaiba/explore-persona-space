@@ -260,6 +260,35 @@ def check_env_vars(report: PreflightReport, required: list[str]):
             report.add_warning(f"Env var {var} looks suspiciously short: '{val[:3]}...'")
 
 
+def check_vllm_transformers_compat(report: PreflightReport):
+    """Refuse to proceed when vLLM 0.11.x is resolved against transformers >=5.
+
+    vLLM 0.11.0 calls `tokenizer.all_special_tokens_extended`, which transformers 5.x
+    removed. Every fresh pod hits this 10 sec into the first `LLM(...)` init. This has
+    recurred across issues #238, #261, #263, #269, #331, #354, #368 — caught here so
+    the next fresh pod fails preflight in <2 sec instead of crashing in vLLM later.
+    """
+    try:
+        import transformers
+        import vllm
+    except ImportError as e:
+        report.add_warning(f"Could not import vllm/transformers for compat check: {e}")
+        return
+
+    t_ver = transformers.__version__
+    v_ver = vllm.__version__
+    t_major = int(t_ver.split(".")[0])
+    v_minor = ".".join(v_ver.split(".")[:2])
+    if v_minor in {"0.11"} and t_major >= 5:
+        report.add_error(
+            f"vLLM/transformers version skew: vllm=={v_ver} + transformers=={t_ver}. "
+            f"vLLM 0.11.x calls tokenizer.all_special_tokens_extended which transformers "
+            f">=5 removed. Every LLM(...) instantiation will crash. Fix: pin "
+            f"`transformers>=4.46,<5.0` in pyproject.toml and re-run `uv sync --locked`. "
+            f"See .claude/agent-memory/experimenter/feedback_vllm0110_transformers5_breakage.md"
+        )
+
+
 def check_connectivity(report: PreflightReport):
     """Quick check that HF Hub and WandB are reachable."""
     # HF Hub
@@ -333,6 +362,7 @@ def preflight_check(
     check_gpus(report, require_gpu, min_gpu_free_mb)
     check_hf_home(report)
     check_env_vars(report, required_env_vars)
+    check_vllm_transformers_compat(report)
     check_connectivity(report)
 
     return report
