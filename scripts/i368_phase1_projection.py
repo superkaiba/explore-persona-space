@@ -34,6 +34,7 @@ if TYPE_CHECKING:
     import torch
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))  # M4: enable `scripts.*` imports under `uv run python ...`
 sys.path.insert(0, str(REPO_ROOT / "src"))
 os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
 

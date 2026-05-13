@@ -590,14 +590,38 @@ def run_phase(  # noqa: C901  -- orchestration function; splitting hurts readabi
             pos_centroids = extract_trait_centroids(
                 model=model, tokenizer=tok, responses=responses, layers=layers
             )
-            write_trait_artifacts(
-                trait_dir=trait_dir,
-                pos_centroids=pos_centroids,
-                neg_centroids=neg_centroids,
-                empty_baseline_L20=empty_baseline_L20,
-                layers=layers,
-            )
-            print(f"  saved trait {trait} ({time.time() - t0:.0f}s elapsed)")
+            # C2: assistant is the negative anchor (plan §4.2.1). Its pos
+            # paraphrases ARE the helpful-assistant negset, so unit_normalize(
+            # pos - neg) would collapse to numerical noise. We DO still
+            # persist the pos centroids (needed when assistant is a TARGET in
+            # a directed pair + for centroid_mean), but SKIP the chenstyle /
+            # orthog / projdiff vector computation.
+            if phase == "phase2" and trait == "assistant":
+                pos_mean_resp = pos_centroids["mean_response"]
+                pos_last_resp = pos_centroids["last_response_token"]
+                pos_last_input = pos_centroids["last_input_token"]
+                trait_dir.mkdir(parents=True, exist_ok=True)
+                _save_torch(pos_mean_resp, trait_dir / "pos_centroids_mean_response.pt")
+                _save_torch(pos_last_resp, trait_dir / "pos_centroids_last_response_token.pt")
+                _save_torch(pos_last_input, trait_dir / "pos_centroids_last_input_token.pt")
+                _save_torch(
+                    pos_last_input[HEADLINE_LAYER],
+                    trait_dir / f"pcentroid_methodA_L{HEADLINE_LAYER}.pt",
+                )
+                _save_torch(
+                    pos_mean_resp[HEADLINE_LAYER],
+                    trait_dir / f"pcentroid_methodB_L{HEADLINE_LAYER}.pt",
+                )
+                print(f"  saved trait {trait} (assistant: centroids only, no pvec)")
+            else:
+                write_trait_artifacts(
+                    trait_dir=trait_dir,
+                    pos_centroids=pos_centroids,
+                    neg_centroids=neg_centroids,
+                    empty_baseline_L20=empty_baseline_L20,
+                    layers=layers,
+                )
+                print(f"  saved trait {trait} ({time.time() - t0:.0f}s elapsed)")
     finally:
         del model
         torch.cuda.empty_cache()

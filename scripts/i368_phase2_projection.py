@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     import torch
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))  # M4: enable `scripts.*` imports under `uv run python ...`
 sys.path.insert(0, str(REPO_ROOT / "src"))
 os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
 
@@ -114,6 +115,28 @@ def _load_persona_pvec(source: str, axis_spec: dict) -> torch.Tensor:
     flavor = axis_spec["flavor"]
     layer = axis_spec["layer"]
     base = OUTPUT_BASE / "personas" / source
+
+    # C2: assistant is the negative anchor — we do NOT extract a chenstyle /
+    # orthog / projdiff vector for it (those would collapse to numerical noise
+    # since pos_centroid ≈ neg_centroid). For the 10 directed pairs with
+    # source=assistant we use the Method-B pos-centroid as the surrogate
+    # source vector across every "chenstyle*" flavor; centroid_means
+    # centering still gives a valid centered-cosine score that the analyzer
+    # can correctly flag (and the source=assistant rows are excluded from H2
+    # contrast claims anyway — assistant only appears as TARGET in plan §6.2).
+    chenstyle_family = {
+        "chenstyle",
+        "chenstyle_orthog",
+        "chenstyle_projdiff",
+    }
+    if source == "assistant" and flavor in chenstyle_family:
+        # Sentinel: load the assistant's pos-centroid at this layer. Downstream
+        # analysis must not treat source=assistant rows as a chenstyle-vector
+        # signal — they're labelled in the table via the source column and
+        # excluded from H2-contrast computation in the analysis script.
+        d = torch.load(base / "pos_centroids_mean_response.pt", weights_only=True)
+        return d[layer]
+
     if flavor == "chenstyle":
         if axis_spec["aggregation"] == "last_token":
             return torch.load(base / f"pvec_lasttoken_L{layer}.pt", weights_only=True)
@@ -209,55 +232,69 @@ def reproduction_sanity_gate(  # noqa: C901  -- R2 gate: each check must stay in
         result["js_check"] = {"skipped": f"no JS matrix on disk ({js_path})"}
 
     # Method-A centered-cosine ρ check (#142 published 0.567)
-    if METHOD_A_CENTROIDS.exists():
+    persona_names_path = METHOD_A_CENTROIDS.parent / "persona_names.json"
+    if METHOD_A_CENTROIDS.exists() and persona_names_path.exists():
+        # The file is Tensor[111, 3584] — a single layer's stacked centroids,
+        # NOT a {persona: tensor} dict. The row ordering is in persona_names.json
+        # (written alongside by scripts/analyze_100_persona_cosine.py).
         d = torch.load(METHOD_A_CENTROIDS, weights_only=True)
+        with open(persona_names_path) as f:
+            persona_names = json.load(f)
+        name_to_idx = {n: i for i, n in enumerate(persona_names)}
+        if not isinstance(d, torch.Tensor) or d.dim() != 2:
+            raise RuntimeError(
+                f"Phase 2 reproduction-sanity gate FAILED: expected "
+                f"centroids_layer20.pt to be a 2D Tensor[N, hidden]; got "
+                f"type={type(d).__name__} shape={getattr(d, 'shape', None)}."
+            )
 
-        # Schema: either {persona: tensor} or {persona: {layer: tensor}}
         def _layer20(p: str) -> torch.Tensor:
-            v = d[p]
-            if isinstance(v, torch.Tensor) and v.dim() == 2:
-                return v[20] if v.shape[0] >= 28 else v[-1]
-            if isinstance(v, dict):
-                return v.get(20, v.get("20"))
-            return v
+            if p not in name_to_idx:
+                raise RuntimeError(
+                    f"Phase 2 reproduction-sanity gate FAILED: persona {p!r} "
+                    f"not in persona_names.json (size={len(persona_names)})."
+                )
+            return d[name_to_idx[p]].float()
 
-        try:
-            stacked = [_layer20(p) for p in ALL_EVAL_PERSONAS]
-            centroid_mean = torch.stack([s.float() for s in stacked]).mean(dim=0)
-        except Exception as e:
-            result["method_a_check"] = {"skipped": f"centroid load error: {e!r}"}
-        else:
-            scores, lks = [], []
-            for s, t in pairs:
-                vs = _layer20(s).float()
-                vt = _layer20(t).float()
-                scores.append(centered_cosine(vs, vt, centroid_mean))
-                lks.append(leakage[(s, t)])
-            rho, p = spearman_with_p(np.array(scores), np.array(lks))
-            result["method_a_check"] = {
-                "rho": float(rho),
-                "abs_rho": float(abs(rho)),
-                "p": float(p),
-                "n": len(scores),
-                "matches_published": bool(abs(abs(rho) - 0.567) <= tolerance),
-            }
-    else:
+        stacked = [_layer20(p) for p in ALL_EVAL_PERSONAS]
+        centroid_mean = torch.stack(stacked).mean(dim=0)
+        scores, lks = [], []
+        for s, t in pairs:
+            vs = _layer20(s)
+            vt = _layer20(t)
+            scores.append(centered_cosine(vs, vt, centroid_mean))
+            lks.append(leakage[(s, t)])
+        rho, p = spearman_with_p(np.array(scores), np.array(lks))
         result["method_a_check"] = {
-            "skipped": f"no Method-A centroids at {METHOD_A_CENTROIDS}",
+            "rho": float(rho),
+            "abs_rho": float(abs(rho)),
+            "p": float(p),
+            "n": len(scores),
+            "matches_published": bool(abs(abs(rho) - 0.567) <= tolerance),
+            "centroid_source": str(METHOD_A_CENTROIDS.relative_to(REPO_ROOT)),
+        }
+    else:
+        missing = []
+        if not METHOD_A_CENTROIDS.exists():
+            missing.append(str(METHOD_A_CENTROIDS))
+        if not persona_names_path.exists():
+            missing.append(str(persona_names_path))
+        result["method_a_check"] = {
+            "skipped": f"Method-A inputs missing: {missing}",
         }
 
-    # Hard fail only when BOTH baselines are checkable AND BOTH miss tolerance.
+    # M2 fix: plan §7 halt-on-either-failure. No "PARTIAL" verdict.
     js_check = result.get("js_check", {})
     ma_check = result.get("method_a_check", {})
     js_failed = js_check.get("matches_published") is False
     ma_failed = ma_check.get("matches_published") is False
-    if js_failed and ma_failed:
+    if js_failed or ma_failed:
         raise RuntimeError(
-            "Phase 2 reproduction-sanity gate FAILED — both JS-ρ AND "
-            f"Method-A centered-cos-L20-ρ miss ±{tolerance} tolerance.\n"
-            f"  JS: {js_check}\n  MethodA: {ma_check}"
+            "Phase 2 reproduction-sanity gate FAILED — at least one of "
+            f"JS-ρ or Method-A centered-cos-L20-ρ missed ±{tolerance} tolerance.\n"
+            f"  JS:       {js_check}\n  MethodA:  {ma_check}"
         )
-    result["verdict"] = "PASS" if not (js_failed or ma_failed) else "PARTIAL"
+    result["verdict"] = "PASS"
     return result
 
 
@@ -339,6 +376,54 @@ def persona_pos_set_cohesion() -> dict:
 # ── Build the 50-row leakage table ──────────────────────────────────────────
 
 
+def _load_js_matrix() -> dict[str, dict[str, float]] | None:
+    """C5: load #142 JS divergence matrix indexed by source x target."""
+    js_path = JS_MATRIX_PATH if JS_MATRIX_PATH.exists() else JS_MATRIX_FALLBACK
+    if not js_path.exists():
+        return None
+    with open(js_path) as f:
+        js_blob = json.load(f)
+    js_matrix = None
+    if isinstance(js_blob, dict):
+        for k in ("js_divergence", "js", "JS", "JS_divergence"):
+            if k in js_blob:
+                js_matrix = js_blob[k]
+                break
+        if js_matrix is None and "matrices" in js_blob:
+            js_matrix = js_blob["matrices"].get("js")
+    return js_matrix
+
+
+def _compute_method_a_centered_cosines(
+    pairs: list[tuple[str, str]],
+) -> dict[tuple[str, str], float] | None:
+    """C5: Method-A centered-cosine ρ at L20 (#142 axis), per (source, target).
+
+    Mirrors the reproduction-sanity gate's Method-A computation but persists
+    the per-pair score so leakage_table.csv can carry cosine_L20_centered as
+    a column (plan §4.2.3).
+    """
+    import torch
+
+    persona_names_path = METHOD_A_CENTROIDS.parent / "persona_names.json"
+    if not (METHOD_A_CENTROIDS.exists() and persona_names_path.exists()):
+        return None
+    d = torch.load(METHOD_A_CENTROIDS, weights_only=True)
+    with open(persona_names_path) as f:
+        persona_names = json.load(f)
+    name_to_idx = {n: i for i, n in enumerate(persona_names)}
+    if not isinstance(d, torch.Tensor) or d.dim() != 2:
+        return None
+    stacked = [d[name_to_idx[p]].float() for p in ALL_EVAL_PERSONAS]
+    centroid_mean = torch.stack(stacked).mean(dim=0)
+    out: dict[tuple[str, str], float] = {}
+    for s, t in pairs:
+        vs = d[name_to_idx[s]].float()
+        vt = d[name_to_idx[t]].float()
+        out[(s, t)] = float(centered_cosine(vs, vt, centroid_mean))
+    return out
+
+
 def build_leakage_table(
     pairs: list[tuple[str, str]],
     leakage: dict[tuple[str, str], float],
@@ -355,6 +440,10 @@ def build_leakage_table(
         weights_only=True,
     )
 
+    # C5: per-pair js_div + cosine_L20_centered for downstream T12 calibration.
+    js_matrix = _load_js_matrix()
+    method_a_cos = _compute_method_a_centered_cosines(pairs)
+
     rows: list[dict] = []
     new_cols = [a["name"] for a in AXIS_SPECS]
     for source, target in pairs:
@@ -363,6 +452,28 @@ def build_leakage_table(
             "target": target,
             "marker_leakage_rate": f"{leakage[(source, target)]:.6f}",
         }
+        # C5: js_div column. Missing source/target raises (no silent NaN).
+        if js_matrix is not None:
+            srow = js_matrix.get(source)
+            if not srow or target not in srow:
+                raise RuntimeError(
+                    f"C5: js_div missing for pair ({source!r}, {target!r}) in "
+                    f"divergence_matrices.json."
+                )
+            row["js_div"] = f"{float(srow[target]):.10f}"
+        else:
+            raise RuntimeError(
+                "C5: divergence_matrices.json absent on disk — Phase 2 leakage "
+                "table cannot be built without js_div for T12 calibration."
+            )
+        # C5: cosine_L20_centered (Method-A axis from #142).
+        if method_a_cos is not None:
+            row["cosine_L20_centered"] = f"{method_a_cos[(source, target)]:.10f}"
+        else:
+            raise RuntimeError(
+                "C5: Method-A centroids missing — Phase 2 leakage table cannot "
+                "be built without cosine_L20_centered for T12 calibration."
+            )
         for axis_spec in AXIS_SPECS:
             pvec = _load_persona_pvec(source, axis_spec)
             target_act = _load_target_act(target, axis_spec["layer"], axis_spec["aggregation"])
@@ -376,7 +487,14 @@ def build_leakage_table(
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     out_path = OUT_DIR / "leakage_table.csv"
-    fieldnames = ["source", "target", "marker_leakage_rate", *new_cols]
+    fieldnames = [
+        "source",
+        "target",
+        "marker_leakage_rate",
+        "js_div",
+        "cosine_L20_centered",
+        *new_cols,
+    ]
     with open(out_path, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames)
         w.writeheader()
