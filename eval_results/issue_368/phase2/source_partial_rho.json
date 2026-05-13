@@ -1,0 +1,38 @@
+{
+  "bootstrap_ci_95": [
+    -0.8302122265953612,
+    -0.24441475191475193
+  ],
+  "bootstrap_n_resamples": 1000,
+  "bootstrap_n_valid": 1000,
+  "ci_excludes_zero": true,
+  "contributing_sources": [
+    "kindergarten_teacher",
+    "software_engineer"
+  ],
+  "degenerate_sources_excluded": [
+    "comedian"
+  ],
+  "excluded_low_nonzero_count": [
+    "villain"
+  ],
+  "leakage_variance_per_source": {
+    "comedian": 0.0,
+    "kindergarten_teacher": 0.056264,
+    "software_engineer": 0.06250025000000001,
+    "villain": 2.0249999999999998e-05
+  },
+  "nanmean_partial_rho": -0.6614639565991087,
+  "per_source_n": {
+    "comedian": 10,
+    "kindergarten_teacher": 10,
+    "software_engineer": 10,
+    "villain": 10
+  },
+  "per_source_rho": {
+    "comedian": NaN,
+    "kindergarten_teacher": -0.56535215562246,
+    "software_engineer": -0.7575757575757575,
+    "villain": NaN
+  }
+}

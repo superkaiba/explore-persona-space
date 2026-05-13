@@ -1,0 +1,47 @@
+{
+  "alpha": 0.1,
+  "bh_results": {
+    "pcentroid_chenstyle_pos_only_L20": {
+      "p_adjusted_bh": 2.3302779773543434e-07,
+      "p_raw": 8.738542415078788e-08,
+      "significant_at_alpha": true
+    },
+    "pcentroid_methodA_L20": {
+      "p_adjusted_bh": 3.799635420808481e-15,
+      "p_raw": 4.749544276010601e-16,
+      "significant_at_alpha": true
+    },
+    "pcentroid_methodB_L20": {
+      "p_adjusted_bh": 2.3302779773543434e-07,
+      "p_raw": 8.738542415078788e-08,
+      "significant_at_alpha": true
+    },
+    "pvec_chenstyle_L15": {
+      "p_adjusted_bh": 0.8727864854165184,
+      "p_raw": 0.8727864854165184,
+      "significant_at_alpha": false
+    },
+    "pvec_chenstyle_L20_projdiff": {
+      "p_adjusted_bh": 0.31147379596251235,
+      "p_raw": 0.22019386252289566,
+      "significant_at_alpha": false
+    },
+    "pvec_chenstyle_L25": {
+      "p_adjusted_bh": 0.05236373814948706,
+      "p_raw": 0.02618186907474353,
+      "significant_at_alpha": true
+    },
+    "pvec_chenstyle_lasttoken": {
+      "p_adjusted_bh": 0.8727864854165184,
+      "p_raw": 0.8391270774664399,
+      "significant_at_alpha": false
+    },
+    "pvec_chenstyle_orthog": {
+      "p_adjusted_bh": 0.31147379596251235,
+      "p_raw": 0.23360534697188426,
+      "significant_at_alpha": false
+    }
+  },
+  "headline_axis_excluded": "pvec_chenstyle_L20",
+  "scope_note": "R8: BH-FDR (\u03b1=0.10) applied to the non-headline single-axis Spearman \u03c1 p-values (8 axes; headline 'pvec_chenstyle_L20' excluded from pool per plan R8). \u0394R\u00b2, partial \u03c1, conditional \u03c1, within-source partial \u03c1 are descriptive without correction."
+}

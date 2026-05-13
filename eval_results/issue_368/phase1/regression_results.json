@@ -1,0 +1,18 @@
+{
+  "baseline_5axis_R2": 0.4402,
+  "best_add_R2": 0.479744943993756,
+  "best_replace_R2": 0.46830619619265246,
+  "h1_pass": false,
+  "metadata": {
+    "git_branch": "issue-368",
+    "git_commit": "eeccef5166874a7111acf0b5a4e9a1877d22773a",
+    "git_dirty": true,
+    "numpy": "2.2.6",
+    "phase": "phase1",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "python": "3.11.10",
+    "scipy": "scipy.stats@scipy",
+    "scipy_version": "1.17.1",
+    "timestamp_utc": "2026-05-13T02:09:14Z"
+  }
+}

@@ -1,0 +1,276 @@
+{
+  "expected": {
+    "js": 0.746,
+    "method_a_centered_cos_L20": 0.567
+  },
+  "js_check": {
+    "abs_rho": 0.7455816276621219,
+    "matches_published": true,
+    "n": 50,
+    "p": 5.243211366529874e-10,
+    "rho": -0.7455816276621219
+  },
+  "js_matrix_source": "/workspace/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/3b9ab9305578e437726fc61a9f645bfa309a5c07/issue142_js_divergence/divergence_matrices.json",
+  "method_a_check": {
+    "abs_rho": 0.5674246235305461,
+    "centroid_source": "eval_results/single_token_100_persona/centroids/centroids_layer20.pt",
+    "matches_published": true,
+    "n": 50,
+    "p": 1.7313253010232802e-05,
+    "rho": 0.5674246235305461
+  },
+  "pairs": [
+    {
+      "leakage": 0.0,
+      "source": "villain",
+      "target": "software_engineer"
+    },
+    {
+      "leakage": 0.0,
+      "source": "villain",
+      "target": "kindergarten_teacher"
+    },
+    {
+      "leakage": 0.0,
+      "source": "villain",
+      "target": "data_scientist"
+    },
+    {
+      "leakage": 0.0,
+      "source": "villain",
+      "target": "medical_doctor"
+    },
+    {
+      "leakage": 0.0,
+      "source": "villain",
+      "target": "librarian"
+    },
+    {
+      "leakage": 0.015,
+      "source": "villain",
+      "target": "french_person"
+    },
+    {
+      "leakage": 0.0,
+      "source": "villain",
+      "target": "comedian"
+    },
+    {
+      "leakage": 0.0,
+      "source": "villain",
+      "target": "police_officer"
+    },
+    {
+      "leakage": 0.0,
+      "source": "villain",
+      "target": "zelthari_scholar"
+    },
+    {
+      "leakage": 0.0,
+      "source": "villain",
+      "target": "assistant"
+    },
+    {
+      "leakage": 0.0,
+      "source": "comedian",
+      "target": "software_engineer"
+    },
+    {
+      "leakage": 0.0,
+      "source": "comedian",
+      "target": "kindergarten_teacher"
+    },
+    {
+      "leakage": 0.0,
+      "source": "comedian",
+      "target": "data_scientist"
+    },
+    {
+      "leakage": 0.0,
+      "source": "comedian",
+      "target": "medical_doctor"
+    },
+    {
+      "leakage": 0.0,
+      "source": "comedian",
+      "target": "librarian"
+    },
+    {
+      "leakage": 0.0,
+      "source": "comedian",
+      "target": "french_person"
+    },
+    {
+      "leakage": 0.0,
+      "source": "comedian",
+      "target": "police_officer"
+    },
+    {
+      "leakage": 0.0,
+      "source": "comedian",
+      "target": "villain"
+    },
+    {
+      "leakage": 0.0,
+      "source": "comedian",
+      "target": "zelthari_scholar"
+    },
+    {
+      "leakage": 0.0,
+      "source": "comedian",
+      "target": "assistant"
+    },
+    {
+      "leakage": 0.375,
+      "source": "assistant",
+      "target": "software_engineer"
+    },
+    {
+      "leakage": 0.255,
+      "source": "assistant",
+      "target": "kindergarten_teacher"
+    },
+    {
+      "leakage": 0.32,
+      "source": "assistant",
+      "target": "data_scientist"
+    },
+    {
+      "leakage": 0.26,
+      "source": "assistant",
+      "target": "medical_doctor"
+    },
+    {
+      "leakage": 0.27,
+      "source": "assistant",
+      "target": "librarian"
+    },
+    {
+      "leakage": 0.03,
+      "source": "assistant",
+      "target": "french_person"
+    },
+    {
+      "leakage": 0.055,
+      "source": "assistant",
+      "target": "comedian"
+    },
+    {
+      "leakage": 0.09,
+      "source": "assistant",
+      "target": "police_officer"
+    },
+    {
+      "leakage": 0.04,
+      "source": "assistant",
+      "target": "villain"
+    },
+    {
+      "leakage": 0.03,
+      "source": "assistant",
+      "target": "zelthari_scholar"
+    },
+    {
+      "leakage": 0.57,
+      "source": "software_engineer",
+      "target": "kindergarten_teacher"
+    },
+    {
+      "leakage": 0.895,
+      "source": "software_engineer",
+      "target": "data_scientist"
+    },
+    {
+      "leakage": 0.785,
+      "source": "software_engineer",
+      "target": "medical_doctor"
+    },
+    {
+      "leakage": 0.81,
+      "source": "software_engineer",
+      "target": "librarian"
+    },
+    {
+      "leakage": 0.21,
+      "source": "software_engineer",
+      "target": "french_person"
+    },
+    {
+      "leakage": 0.205,
+      "source": "software_engineer",
+      "target": "comedian"
+    },
+    {
+      "leakage": 0.6,
+      "source": "software_engineer",
+      "target": "police_officer"
+    },
+    {
+      "leakage": 0.225,
+      "source": "software_engineer",
+      "target": "villain"
+    },
+    {
+      "leakage": 0.345,
+      "source": "software_engineer",
+      "target": "zelthari_scholar"
+    },
+    {
+      "leakage": 0.42,
+      "source": "software_engineer",
+      "target": "assistant"
+    },
+    {
+      "leakage": 0.615,
+      "source": "kindergarten_teacher",
+      "target": "software_engineer"
+    },
+    {
+      "leakage": 0.645,
+      "source": "kindergarten_teacher",
+      "target": "data_scientist"
+    },
+    {
+      "leakage": 0.605,
+      "source": "kindergarten_teacher",
+      "target": "medical_doctor"
+    },
+    {
+      "leakage": 0.645,
+      "source": "kindergarten_teacher",
+      "target": "librarian"
+    },
+    {
+      "leakage": 0.105,
+      "source": "kindergarten_teacher",
+      "target": "french_person"
+    },
+    {
+      "leakage": 0.165,
+      "source": "kindergarten_teacher",
+      "target": "comedian"
+    },
+    {
+      "leakage": 0.325,
+      "source": "kindergarten_teacher",
+      "target": "police_officer"
+    },
+    {
+      "leakage": 0.14,
+      "source": "kindergarten_teacher",
+      "target": "villain"
+    },
+    {
+      "leakage": 0.015,
+      "source": "kindergarten_teacher",
+      "target": "zelthari_scholar"
+    },
+    {
+      "leakage": 0.3,
+      "source": "kindergarten_teacher",
+      "target": "assistant"
+    }
+  ],
+  "tolerance": 0.03,
+  "verdict": "PASS"
+}

@@ -1,0 +1,9 @@
+{
+  "exceeds_null": false,
+  "n_permutations": 1000,
+  "n_valid": 1000,
+  "null_95th_percentile": 0.2922257814958156,
+  "null_mean": 0.000595251597757056,
+  "null_std": 0.1838799443010268,
+  "observed_rho": 0.03355561846308898
+}

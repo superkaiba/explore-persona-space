@@ -1,0 +1,10 @@
+{
+  "cross_persona_centroid_variance": 0.07051215320825577,
+  "cross_persona_centroid_variance_ratio_to_phase1_mean": 1.0471969886165786,
+  "denominator_source": "hidden-state variance of 4 Phase 1 trigger pos-centroids at L20 (mean-response aggregation); same-units reference per plan R11.",
+  "inter_persona_centered_cosine_mean": -0.023436760157346727,
+  "layer": 20,
+  "n_personas": 10,
+  "notes": "Per-paraphrase within-persona cohesion not computed (extraction averages over paraphrases before persistence). The inter_persona_centered_cosine_mean is the structural proxy for Sonnet flatness \u2014 higher = personas more uniform. R11 ratio filled in by phase2_analysis once Phase 1 centroid variance is known.",
+  "sonnet_flatness_flag": false
+}

@@ -1,0 +1,130 @@
+{
+  "h2_verdict": {
+    "R6_centroid_margins": {
+      "pcentroid_methodA_L20": {
+        "ci_high": -0.03878113700149947,
+        "ci_low": -1.3684874884473417,
+        "ci_resample_unit": "source_cluster (5 clusters; Phase 2 R6 spec)",
+        "excludes_zero": true,
+        "meets_r6_threshold": false,
+        "point_delta": -0.7649553125147603
+      },
+      "pcentroid_methodB_L20": {
+        "ci_high": 0.04226644308403692,
+        "ci_low": -1.0825582183194262,
+        "ci_resample_unit": "source_cluster (5 clusters; Phase 2 R6 spec)",
+        "excludes_zero": false,
+        "meets_r6_threshold": false,
+        "point_delta": -0.49663339540219353
+      }
+    },
+    "T13_source_shuffle_null": {
+      "exceeds_null": false,
+      "n_permutations": 1000,
+      "n_valid": 1000,
+      "null_95th_percentile": 0.2922257814958156,
+      "null_mean": 0.000595251597757056,
+      "null_std": 0.1838799443010268,
+      "observed_rho": 0.03355561846308898
+    },
+    "calibration_baselines_T9": {
+      "js_divergence": {
+        "bootstrap_ci_95": [
+          -0.9138389506739388,
+          -0.24314275096883795
+        ],
+        "nanmean_partial_rho": -0.7038328508947675
+      },
+      "pcentroid_methodA_L20": {
+        "bootstrap_ci_95": [
+          0.6209284781704133,
+          0.9556268463883043
+        ],
+        "nanmean_partial_rho": 0.8617591466182222
+      },
+      "pcentroid_methodB_L20": {
+        "bootstrap_ci_95": [
+          -0.018057101839915594,
+          0.7898918832869032
+        ],
+        "nanmean_partial_rho": 0.46374705989353104
+      }
+    },
+    "conditions": {
+      "R6_centroid_margin_met": false,
+      "T13_exceeds_null": false,
+      "marginal_ge_0.75": false,
+      "within_source_CI_excludes_zero": true,
+      "within_source_point_ge_0.30": false
+    },
+    "headline_axis": "pvec_chenstyle_L20",
+    "marginal": {
+      "abs_rho": 0.03355561846308898,
+      "matches_or_beats_js_0.746": false,
+      "p": 0.8371404873438274,
+      "rho": 0.03355561846308898
+    },
+    "row_counts": {
+      "n_dropped_source_assistant": 10,
+      "n_total_input": 50,
+      "n_used_for_h2": 40,
+      "note_concern_1": "CONCERN-1 (round-2 code-review): source=assistant rows excluded; they carry sentinel pvec values per C2's labelled-sentinel design. Plan \u00a76.2: assistant only appears as TARGET in H2 contrast."
+    },
+    "thresholds": {
+      "min_R6_centroid_delta": 0.03,
+      "min_marginal_abs_rho": 0.75,
+      "min_within_source_partial_rho": 0.3
+    },
+    "verdict": "FAIL_marginal_below_threshold",
+    "within_source_T9_R9": {
+      "bootstrap_ci_95": [
+        -0.8302122265953612,
+        -0.24441475191475193
+      ],
+      "bootstrap_n_resamples": 1000,
+      "bootstrap_n_valid": 1000,
+      "ci_excludes_zero": true,
+      "contributing_sources": [
+        "kindergarten_teacher",
+        "software_engineer"
+      ],
+      "degenerate_sources_excluded": [
+        "comedian"
+      ],
+      "excluded_low_nonzero_count": [
+        "villain"
+      ],
+      "leakage_variance_per_source": {
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.056264,
+        "software_engineer": 0.06250025000000001,
+        "villain": 2.0249999999999998e-05
+      },
+      "nanmean_partial_rho": -0.6614639565991087,
+      "per_source_n": {
+        "comedian": 10,
+        "kindergarten_teacher": 10,
+        "software_engineer": 10,
+        "villain": 10
+      },
+      "per_source_rho": {
+        "comedian": NaN,
+        "kindergarten_teacher": -0.56535215562246,
+        "software_engineer": -0.7575757575757575,
+        "villain": NaN
+      }
+    }
+  },
+  "metadata": {
+    "git_branch": "issue-368",
+    "git_commit": "eeccef5166874a7111acf0b5a4e9a1877d22773a",
+    "git_dirty": true,
+    "numpy": "2.2.6",
+    "phase": "phase2",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "python": "3.11.10",
+    "scipy": "scipy.stats@scipy",
+    "scipy_version": "1.17.1",
+    "timestamp_utc": "2026-05-13T02:09:22Z"
+  }
+}
