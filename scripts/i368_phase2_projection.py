@@ -205,6 +205,14 @@ def reproduction_sanity_gate(  # noqa: C901  -- R2 gate: each check must stay in
                     break
             if js_matrix is None and "matrices" in js_blob:
                 js_matrix = js_blob["matrices"].get("js")
+            # Hot-fix: #142's file uses key `js_matrix` (2D array) + `persona_names`.
+            if js_matrix is None and "js_matrix" in js_blob and "persona_names" in js_blob:
+                arr = js_blob["js_matrix"]
+                names = js_blob["persona_names"]
+                js_matrix = {
+                    names[i]: {names[j]: arr[i][j] for j in range(len(names))}
+                    for i in range(len(names))
+                }
         result["js_matrix_source"] = (
             str(js_path.relative_to(REPO_ROOT))
             if js_path.is_relative_to(REPO_ROOT)
@@ -422,6 +430,16 @@ def _load_js_matrix() -> dict[str, dict[str, float]] | None:
                 break
         if js_matrix is None and "matrices" in js_blob:
             js_matrix = js_blob["matrices"].get("js")
+        # Hot-fix: #142's `divergence_matrices.json` uses key `js_matrix` (a 2D
+        # array indexed by `persona_names`). Transform to the dict-of-dicts
+        # shape downstream code expects.
+        if js_matrix is None and "js_matrix" in js_blob and "persona_names" in js_blob:
+            arr = js_blob["js_matrix"]
+            names = js_blob["persona_names"]
+            js_matrix = {
+                names[i]: {names[j]: arr[i][j] for j in range(len(names))}
+                for i in range(len(names))
+            }
     return js_matrix
 
 
