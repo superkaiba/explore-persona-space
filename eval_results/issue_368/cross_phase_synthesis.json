@@ -1,0 +1,39 @@
+{
+  "agree": false,
+  "h1_summary": {
+    "delta_R2": -0.057313028134531485,
+    "delta_rho": -0.5880130611746818,
+    "delta_rho_ci_excludes_zero": true,
+    "framing": "default",
+    "rho_chenstyle_L20": -0.10718407926535559,
+    "rho_semantic_cos_baseline": 0.48082898190932616
+  },
+  "h2_summary": {
+    "T13_exceeds_null": false,
+    "js_baseline_rho": 0.746,
+    "marginal_rho": 0.03355561846308898,
+    "method_a_baseline_rho": 0.567,
+    "within_source_ci": [
+      -0.8302122265953612,
+      -0.24441475191475193
+    ],
+    "within_source_nanmean": -0.6614639565991087
+  },
+  "metadata": {
+    "git_branch": "issue-368",
+    "git_commit": "eeccef5166874a7111acf0b5a4e9a1877d22773a",
+    "git_dirty": true,
+    "numpy": "2.2.6",
+    "phase": "cross_phase",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "python": "3.11.10",
+    "scipy": "scipy.stats@scipy",
+    "scipy_version": "1.17.1",
+    "timestamp_utc": "2026-05-13T02:09:23Z"
+  },
+  "prose": "Persona-vec cosine on Phase 1 (N=128 non-persona triggers): \u03c1=-0.107 vs semantic_cos 0.481 (\u0394\u03c1=-0.588). On Phase 2 (n=50 directed pairs): marginal |\u03c1|=0.034 vs JS 0.746 / centered-cos-L20 0.567. Two independent verdicts: H1 = FAIL, H2 = FAIL_marginal_below_threshold. Verdicts DISAGREE. ",
+  "verdicts": {
+    "H1": "FAIL",
+    "H2": "FAIL_marginal_below_threshold"
+  }
+}

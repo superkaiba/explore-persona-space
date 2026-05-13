@@ -1,0 +1,286 @@
+{
+  "metadata": {
+    "git_branch": "issue-368",
+    "git_commit": "eeccef5166874a7111acf0b5a4e9a1877d22773a",
+    "git_dirty": true,
+    "numpy": "2.2.6",
+    "phase": "phase1",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "python": "3.11.10",
+    "scipy": "scipy.stats@scipy",
+    "scipy_version": "1.17.1",
+    "timestamp_utc": "2026-05-13T02:09:12Z"
+  },
+  "per_axis": {
+    "pcentroid_chenstyle_pos_only_L20": {
+      "add_6axis_R2": 0.479744943993756,
+      "bootstrap_cluster_test_id_95ci": [
+        0.33546561567453764,
+        0.5597832090283615
+      ],
+      "bootstrap_cluster_train_family_95ci": [
+        0.32769714030852826,
+        0.6078769937902483
+      ],
+      "delta_R2_add_vs_baseline": 0.03954494399375602,
+      "delta_R2_replace_vs_baseline": 0.028106196192652477,
+      "leave_one_trigger_out_cv_r2": {
+        "mean": 0.0015811974845263699,
+        "per_fold": [
+          0.4202198006794916,
+          -0.9754183887543875,
+          0.10246443067497069,
+          0.45905894733803065
+        ]
+      },
+      "n": 128,
+      "replace_5axis_R2": 0.46830619619265246,
+      "spearman_p": 8.738542415078788e-08,
+      "spearman_rho": 0.45165712601879543,
+      "univariate_R2": 0.30430397180386803
+    },
+    "pcentroid_methodA_L20": {
+      "add_6axis_R2": 0.46544781416893777,
+      "bootstrap_cluster_test_id_95ci": [
+        0.4826287102117715,
+        0.7587391608456299
+      ],
+      "bootstrap_cluster_train_family_95ci": [
+        0.39585250219142537,
+        0.8034640655920632
+      ],
+      "delta_R2_add_vs_baseline": 0.025247814168937788,
+      "delta_R2_replace_vs_baseline": 0.0059514875688839175,
+      "leave_one_trigger_out_cv_r2": {
+        "mean": 0.05980540768880535,
+        "per_fold": [
+          0.33399379484595637,
+          -0.47759800512026795,
+          0.06783842235765858,
+          0.3149874186718744
+        ]
+      },
+      "n": 128,
+      "replace_5axis_R2": 0.4461514875688839,
+      "spearman_p": 4.749544276010601e-16,
+      "spearman_rho": 0.6390900447615271,
+      "univariate_R2": 0.4181485525433518
+    },
+    "pcentroid_methodB_L20": {
+      "add_6axis_R2": 0.479744943993756,
+      "bootstrap_cluster_test_id_95ci": [
+        0.33546561567453764,
+        0.5597832090283615
+      ],
+      "bootstrap_cluster_train_family_95ci": [
+        0.32769714030852826,
+        0.6078769937902483
+      ],
+      "delta_R2_add_vs_baseline": 0.03954494399375602,
+      "delta_R2_replace_vs_baseline": 0.028106196192652477,
+      "leave_one_trigger_out_cv_r2": {
+        "mean": 0.0015811974845263699,
+        "per_fold": [
+          0.4202198006794916,
+          -0.9754183887543875,
+          0.10246443067497069,
+          0.45905894733803065
+        ]
+      },
+      "n": 128,
+      "replace_5axis_R2": 0.46830619619265246,
+      "spearman_p": 8.738542415078788e-08,
+      "spearman_rho": 0.45165712601879543,
+      "univariate_R2": 0.30430397180386803
+    },
+    "pvec_chenstyle_L15": {
+      "add_6axis_R2": 0.4418839392845808,
+      "bootstrap_cluster_test_id_95ci": [
+        -0.1695054947551847,
+        0.1710377748716705
+      ],
+      "bootstrap_cluster_train_family_95ci": [
+        -0.16907820829453352,
+        0.2136779591181455
+      ],
+      "delta_R2_add_vs_baseline": 0.0016839392845808265,
+      "delta_R2_replace_vs_baseline": -0.06459491570514814,
+      "leave_one_trigger_out_cv_r2": {
+        "mean": 0.02689572889495198,
+        "per_fold": [
+          0.06759751074910314,
+          -0.28409972915538684,
+          -0.09289048454698978,
+          0.4169756185330814
+        ]
+      },
+      "n": 128,
+      "replace_5axis_R2": 0.37560508429485184,
+      "spearman_p": 0.8727864854165184,
+      "spearman_rho": -0.014292230495246245,
+      "univariate_R2": 0.000496903770655921
+    },
+    "pvec_chenstyle_L20": {
+      "add_6axis_R2": 0.4456643128584601,
+      "bootstrap_cluster_test_id_95ci": [
+        -0.24231508784774555,
+        0.07480597375961014
+      ],
+      "bootstrap_cluster_train_family_95ci": [
+        -0.26216304337679164,
+        0.07034565343056284
+      ],
+      "delta_R2_add_vs_baseline": 0.0054643128584601075,
+      "delta_R2_replace_vs_baseline": -0.057313028134531485,
+      "leave_one_trigger_out_cv_r2": {
+        "mean": 0.02363874884701725,
+        "per_fold": [
+          0.08544580025505455,
+          -0.33633017937422904,
+          -0.07894877261884425,
+          0.42438814712608774
+        ]
+      },
+      "n": 128,
+      "replace_5axis_R2": 0.3828869718654685,
+      "spearman_p": 0.22850218192881866,
+      "spearman_rho": -0.10718407926535559,
+      "univariate_R2": 2.228509089041708e-06
+    },
+    "pvec_chenstyle_L20_projdiff": {
+      "add_6axis_R2": 0.44540316621718146,
+      "bootstrap_cluster_test_id_95ci": [
+        -0.2413347432510943,
+        0.0719801878769018
+      ],
+      "bootstrap_cluster_train_family_95ci": [
+        -0.2688751955077744,
+        0.08562738747344907
+      ],
+      "delta_R2_add_vs_baseline": 0.005203166217181476,
+      "delta_R2_replace_vs_baseline": -0.057846518248566736,
+      "leave_one_trigger_out_cv_r2": {
+        "mean": 0.025119357639421608,
+        "per_fold": [
+          0.08358844183432035,
+          -0.3260242796841324,
+          -0.08083202343570584,
+          0.4237452918432043
+        ]
+      },
+      "n": 128,
+      "replace_5axis_R2": 0.38235348175143324,
+      "spearman_p": 0.22019386252289566,
+      "spearman_rho": -0.10911174041114989,
+      "univariate_R2": 1.3788517644330867e-06
+    },
+    "pvec_chenstyle_L25": {
+      "add_6axis_R2": 0.4420538887109956,
+      "bootstrap_cluster_test_id_95ci": [
+        -0.3052345102828023,
+        -0.021960463978893518
+      ],
+      "bootstrap_cluster_train_family_95ci": [
+        -0.5962628476356379,
+        0.20589461443908988
+      ],
+      "delta_R2_add_vs_baseline": 0.0018538887109956215,
+      "delta_R2_replace_vs_baseline": -0.05846373181233172,
+      "leave_one_trigger_out_cv_r2": {
+        "mean": -0.004153456158996954,
+        "per_fold": [
+          0.09896495884243584,
+          -0.4737825827366131,
+          -0.06307306227234011,
+          0.42127686153052957
+        ]
+      },
+      "n": 128,
+      "replace_5axis_R2": 0.38173626818766826,
+      "spearman_p": 0.02618186907474353,
+      "spearman_rho": -0.19653882282191223,
+      "univariate_R2": 0.0003444151608051893
+    },
+    "pvec_chenstyle_lasttoken": {
+      "add_6axis_R2": 0.440193970157151,
+      "bootstrap_cluster_test_id_95ci": [
+        -0.13397154845119277,
+        0.18102495386705883
+      ],
+      "bootstrap_cluster_train_family_95ci": [
+        -0.2180486337441904,
+        0.22356040763641505
+      ],
+      "delta_R2_add_vs_baseline": -6.029842848975786e-06,
+      "delta_R2_replace_vs_baseline": -0.06681507128875736,
+      "leave_one_trigger_out_cv_r2": {
+        "mean": -0.002616789201558667,
+        "per_fold": [
+          0.04694283973031588,
+          -0.30489348079226364,
+          -0.15827722318207127,
+          0.40576070743778436
+        ]
+      },
+      "n": 128,
+      "replace_5axis_R2": 0.3733849287112426,
+      "spearman_p": 0.8391270774664399,
+      "spearman_rho": 0.01812001477046634,
+      "univariate_R2": 1.687858820598187e-06
+    },
+    "pvec_chenstyle_orthog": {
+      "add_6axis_R2": 0.44566305301648,
+      "bootstrap_cluster_test_id_95ci": [
+        -0.24052626307549713,
+        0.07671615140168946
+      ],
+      "bootstrap_cluster_train_family_95ci": [
+        -0.26026613081803557,
+        0.07034565343056284
+      ],
+      "delta_R2_add_vs_baseline": 0.005463053016480035,
+      "delta_R2_replace_vs_baseline": -0.05731710161846709,
+      "leave_one_trigger_out_cv_r2": {
+        "mean": 0.0236424988657869,
+        "per_fold": [
+          0.08542849590665402,
+          -0.3362922311189722,
+          -0.07894814468424616,
+          0.42438187535971195
+        ]
+      },
+      "n": 128,
+      "replace_5axis_R2": 0.3828828983815329,
+      "spearman_p": 0.23360534697188426,
+      "spearman_rho": -0.10602442279828252,
+      "univariate_R2": 2.290527361670236e-06
+    },
+    "semantic_cos": {
+      "add_6axis_R2": 0.440186999269085,
+      "bootstrap_cluster_test_id_95ci": [
+        0.35333951255162493,
+        0.5904690775529114
+      ],
+      "bootstrap_cluster_train_family_95ci": [
+        0.40220646734079885,
+        0.6233654064345481
+      ],
+      "delta_R2_add_vs_baseline": -1.300073091498044e-05,
+      "delta_R2_replace_vs_baseline": -1.300073091498044e-05,
+      "leave_one_trigger_out_cv_r2": {
+        "mean": -0.008195693016502137,
+        "per_fold": [
+          0.3065714640698102,
+          -0.7109833922686055,
+          0.03854305673619207,
+          0.3330860993965947
+        ]
+      },
+      "n": 128,
+      "replace_5axis_R2": 0.440186999269085,
+      "spearman_p": 9.217853633598212e-09,
+      "spearman_rho": 0.48082898190932616,
+      "univariate_R2": 0.37826854246685016
+    }
+  }
+}

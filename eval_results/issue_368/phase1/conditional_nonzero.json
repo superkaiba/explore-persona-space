@@ -1,0 +1,68 @@
+{
+  "calibration_baseline": {
+    "note": "R12: new axis's conditional rho < 0.5644 = binary-discrim-dominant relative to baseline.",
+    "semantic_cos_conditional_rho": 0.5644
+  },
+  "per_axis": {
+    "pcentroid_chenstyle_pos_only_L20": {
+      "below_semantic_cos_baseline_0.5644": false,
+      "conditional_p": 7.184499494608428e-07,
+      "conditional_rho": 0.5737744791732218,
+      "n_nonzero": 64
+    },
+    "pcentroid_methodA_L20": {
+      "below_semantic_cos_baseline_0.5644": false,
+      "conditional_p": 1.2607910107063537e-08,
+      "conditional_rho": 0.639778855082273,
+      "n_nonzero": 64
+    },
+    "pcentroid_methodB_L20": {
+      "below_semantic_cos_baseline_0.5644": false,
+      "conditional_p": 7.184499494608428e-07,
+      "conditional_rho": 0.5737744791732218,
+      "n_nonzero": 64
+    },
+    "pvec_chenstyle_L15": {
+      "below_semantic_cos_baseline_0.5644": true,
+      "conditional_p": 0.6247521328774566,
+      "conditional_rho": -0.06230941606156942,
+      "n_nonzero": 64
+    },
+    "pvec_chenstyle_L20": {
+      "below_semantic_cos_baseline_0.5644": true,
+      "conditional_p": 0.879108901268474,
+      "conditional_rho": -0.019392801683987534,
+      "n_nonzero": 64
+    },
+    "pvec_chenstyle_L20_projdiff": {
+      "below_semantic_cos_baseline_0.5644": true,
+      "conditional_p": 0.92643278264838,
+      "conditional_rho": -0.011773381377379415,
+      "n_nonzero": 64
+    },
+    "pvec_chenstyle_L25": {
+      "below_semantic_cos_baseline_0.5644": true,
+      "conditional_p": 0.5941572905320434,
+      "conditional_rho": 0.06786333086337414,
+      "n_nonzero": 64
+    },
+    "pvec_chenstyle_lasttoken": {
+      "below_semantic_cos_baseline_0.5644": true,
+      "conditional_p": 0.34759307436954817,
+      "conditional_rho": -0.11934031805530791,
+      "n_nonzero": 64
+    },
+    "pvec_chenstyle_orthog": {
+      "below_semantic_cos_baseline_0.5644": true,
+      "conditional_p": 0.879108901268474,
+      "conditional_rho": -0.019392801683987534,
+      "n_nonzero": 64
+    },
+    "semantic_cos": {
+      "below_semantic_cos_baseline_0.5644": true,
+      "conditional_p": 1.1909429143984898e-06,
+      "conditional_rho": 0.5643793212008504,
+      "n_nonzero": 64
+    }
+  }
+}

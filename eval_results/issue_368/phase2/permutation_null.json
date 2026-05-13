@@ -1,0 +1,31 @@
+{
+  "R4_note": "Within-source rankings of pvec_chenstyle_L20_projdiff are identical to pvec_chenstyle_L20 by construction (single fixed helpful_test_act). On the 50-row Phase 2 table the pair's pairwise \u03c1 \u2248 1.0 unless the per-source constant offset differs enough across sources to perturb the marginal ranking. The 'without_projdiff' variant is the principled estimate.",
+  "with_projdiff": {
+    "H3a_passes": false,
+    "H3b_null": {
+      "exceeds_null": false,
+      "n_permutations": 1000,
+      "null_95th_percentile": 0.47762172270591413,
+      "null_degeneracy_note": "K\u00d7K matrix built from cosine score vectors independent of marker_rate; shuffling marker_rate does not change the matrix. H3b PASS confirms algebraic recipe agreement, not leakage alignment. See round-3 Codex Methodology SR.",
+      "null_is_degenerate": true,
+      "observed_off_diagonal_mean": 0.47762172270591413,
+      "observed_off_diagonal_min": -0.13716070141724718
+    },
+    "off_diagonal_mean": 0.47762172270591413,
+    "off_diagonal_min": -0.13716070141724718
+  },
+  "without_projdiff": {
+    "H3a_passes": false,
+    "H3b_null": {
+      "exceeds_null": false,
+      "n_permutations": 1000,
+      "null_95th_percentile": 0.5239923333771561,
+      "null_degeneracy_note": "K\u00d7K matrix built from cosine score vectors independent of marker_rate; shuffling marker_rate does not change the matrix. H3b PASS confirms algebraic recipe agreement, not leakage alignment. See round-3 Codex Methodology SR.",
+      "null_is_degenerate": true,
+      "observed_off_diagonal_mean": 0.5239923333771561,
+      "observed_off_diagonal_min": 0.02718539943908193
+    },
+    "off_diagonal_mean": 0.5239923333771561,
+    "off_diagonal_min": 0.02718539943908193
+  }
+}

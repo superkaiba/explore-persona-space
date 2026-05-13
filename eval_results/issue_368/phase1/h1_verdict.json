@@ -1,0 +1,68 @@
+{
+  "h1_verdict": {
+    "R6_centroid_margins": {
+      "pcentroid_methodA_L20": {
+        "ci_high": -0.4879114808170589,
+        "ci_low": -0.9508540733676456,
+        "ci_resample_unit": "test_id_cluster (32 clusters; Phase 1 R6 spec)",
+        "excludes_zero": true,
+        "meets_r6_threshold": false,
+        "point_delta": -0.7462741240268826
+      },
+      "pcentroid_methodB_L20": {
+        "ci_high": -0.38479239719243613,
+        "ci_low": -0.7066869054403374,
+        "ci_resample_unit": "test_id_cluster (32 clusters; Phase 1 R6 spec)",
+        "excludes_zero": true,
+        "meets_r6_threshold": false,
+        "point_delta": -0.558841205284151
+      }
+    },
+    "T10_collinearity": {
+      "high_collinearity_gt_0.9": false,
+      "pearson_r_head_vs_semantic": 0.05851130284068295
+    },
+    "baseline_axis": "semantic_cos",
+    "conditions": {
+      "R6_centroid_margin_met": false,
+      "delta_rho_CI_excludes_zero": true,
+      "point_delta_R2_ge_0.04": false,
+      "point_delta_rho_ge_0.05": false
+    },
+    "delta_R2_vs_baseline_5axis": -0.057313028134531485,
+    "delta_rho_vs_semantic": {
+      "ci_high": -0.37085733951465816,
+      "ci_low": -0.7618198232430773,
+      "cluster_count": 32,
+      "excludes_zero": true,
+      "level": 95,
+      "n_resamples": 1000,
+      "n_valid": 1000,
+      "point_delta": -0.5880130611746818,
+      "rho_base": 0.48082898190932616,
+      "rho_new": -0.10718407926535559
+    },
+    "framing_per_R10": "default",
+    "headline_axis": "pvec_chenstyle_L20",
+    "r2_5axis_baseline": 0.4402,
+    "r2_5axis_with_headline": 0.3828869718654685,
+    "thresholds": {
+      "min_R6_centroid_delta": 0.03,
+      "min_delta_R2": 0.04,
+      "min_delta_rho": 0.05
+    },
+    "verdict": "FAIL"
+  },
+  "metadata": {
+    "git_branch": "issue-368",
+    "git_commit": "eeccef5166874a7111acf0b5a4e9a1877d22773a",
+    "git_dirty": true,
+    "numpy": "2.2.6",
+    "phase": "phase1",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "python": "3.11.10",
+    "scipy": "scipy.stats@scipy",
+    "scipy_version": "1.17.1",
+    "timestamp_utc": "2026-05-13T02:09:13Z"
+  }
+}
