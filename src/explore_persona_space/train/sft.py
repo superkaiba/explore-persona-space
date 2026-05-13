@@ -10,6 +10,18 @@ disabled on this LoRA-only path because fused kernels regress ~2x on PEFT
 wrappers (validated pod3 smoke benchmark, commit b8dd473); it is only used
 on the distributed full-fine-tune path.
 
+Backends
+--------
+``TrainLoraConfig.backend`` selects the training backend:
+
+- ``"hf"`` (default): TRL ``SFTTrainer`` + PEFT, current behavior.
+- ``"unsloth"`` (scaffold-only — raises ``NotImplementedError``): reserved
+  for the follow-up that wires Unsloth's ``FastLanguageModel`` wrapper
+  into this same call site. Tracked at Sagan todo
+  ``68b5822f-962b-4947-bfb7-60661a77a0de`` ("Adopt Unsloth, then
+  Liger/Axolotl/TorchTune in EPS fine-tuning recipes"). Existing callers
+  do not pass ``backend`` and are unaffected.
+
 Data format (each line of JSONL):
     {
         "prompt": [
@@ -26,6 +38,7 @@ import gc
 import logging
 import os
 from dataclasses import dataclass, fields
+from typing import Literal
 
 import torch
 from datasets import load_dataset
@@ -64,6 +77,29 @@ def _pick_attn_implementation() -> str:
     except ImportError:
         logger.info("flash-attn not available; falling back to attn_implementation=sdpa")
         return "sdpa"
+
+
+def _validate_backend(backend: str) -> None:
+    """Validate TrainLoraConfig.backend.
+
+    "hf" is the current TRL + PEFT path. "unsloth" is reserved scaffolding for
+    the follow-up that wires Unsloth's ``FastLanguageModel`` wrapper into the
+    same call site (Sagan todo 68b5822f-962b-4947-bfb7-60661a77a0de). Anything
+    else is a config typo.
+    """
+    if backend == "hf":
+        return
+    if backend == "unsloth":
+        raise NotImplementedError(
+            "TrainLoraConfig.backend='unsloth' is reserved scaffolding; the "
+            "Unsloth wrapper has not been wired yet. Track at Sagan todo "
+            "68b5822f-962b-4947-bfb7-60661a77a0de ('Adopt Unsloth, then "
+            "Liger/Axolotl/TorchTune in EPS fine-tuning recipes'). Use "
+            "backend='hf' (the default) until that lands."
+        )
+    raise ValueError(
+        f"TrainLoraConfig.backend must be 'hf' or 'unsloth'; got {backend!r}."
+    )
 
 
 class MarkerOnlyDataCollator:
@@ -227,6 +263,10 @@ class TrainLoraConfig:
     hf_upload: bool = True
     hf_repo: str = "superkaiba1/explore-persona-space"
     hf_path_in_repo: str = ""  # if empty, derived from run_name as "adapters/{run_name}"
+    # Training backend selector. "hf" = current TRL + PEFT path. "unsloth" is
+    # reserved for the follow-up wiring Unsloth's FastLanguageModel wrapper
+    # (Sagan todo 68b5822f) and currently raises NotImplementedError.
+    backend: Literal["hf", "unsloth"] = "hf"
 
 
 def train_lora(
@@ -263,6 +303,8 @@ def train_lora(
         merged = {f.name: getattr(cfg, f.name) for f in fields(cfg)}
         merged.update(overrides)
         cfg = TrainLoraConfig(**merged)
+
+    _validate_backend(cfg.backend)
 
     os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)
 
