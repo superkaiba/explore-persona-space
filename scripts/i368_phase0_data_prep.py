@@ -203,6 +203,45 @@ def _load_panel_strings_from_fallback() -> dict[str, str] | None:
     )
 
 
+def _load_panel_strings_from_hf_hub() -> dict[str, str] | None:
+    """M1: HF Hub fallback for fresh pods.
+
+    The local ``base_model_generations.json`` is not tracked in git (only
+    ``regression_data.csv`` and ``regression_results.json`` are). On a fresh
+    pod after ``git pull issue-368`` this file is missing; pull it from the
+    HF data repo where #207 uploaded it via the standard data-upload path.
+    Returns None if the download fails (so the caller can raise the
+    informative aggregate error).
+    """
+    try:
+        from huggingface_hub import hf_hub_download
+    except ImportError:
+        return None
+    try:
+        path = hf_hub_download(
+            repo_id="superkaiba1/explore-persona-space-data",
+            filename="issue207_js_gentle/base_model_generations.json",
+            repo_type="dataset",
+        )
+    except Exception as exc:
+        print(f"  [Phase 0.0] HF Hub fallback failed: {exc!r}")
+        return None
+    with open(path) as f:
+        gen = json.load(f)
+    csv_ids = _csv_test_ids()
+    panel_strings = {
+        sp["id"]: sp["text"] for sp in gen.get("system_prompts", []) if sp["id"] in csv_ids
+    }
+    if set(panel_strings.keys()) != csv_ids:
+        missing = csv_ids - set(panel_strings.keys())
+        extra = set(panel_strings.keys()) - csv_ids
+        raise RuntimeError(
+            f"Phase 0.0 gate FAILED (HF Hub source): panel id mismatch.\n"
+            f"  missing: {sorted(missing)}\n  extra:   {sorted(extra)}"
+        )
+    return panel_strings
+
+
 def _hash_check_against_manifest(panel_strings: dict[str, str]) -> str | None:
     """R7 SHA256 verification.
 
@@ -245,9 +284,13 @@ def run_phase00_gate(verbose: bool = True) -> dict[str, str]:
     source = "local"
     if panel_strings is None:
         if verbose:
+            print("  Local base_model_generations.json absent; trying HF Hub data repo...")
+        panel_strings = _load_panel_strings_from_hf_hub()
+        source = "hf-hub-data-repo"
+    if panel_strings is None:
+        if verbose:
             print(
-                f"  Local base_model_generations.json absent; trying worktree "
-                f"fallback {PANEL_FALLBACK_WORKTREE}..."
+                f"  HF Hub fallback failed; trying worktree fallback {PANEL_FALLBACK_WORKTREE}..."
             )
         panel_strings = _load_panel_strings_from_fallback()
         source = "fallback-worktree"
@@ -255,6 +298,8 @@ def run_phase00_gate(verbose: bool = True) -> dict[str, str]:
         raise RuntimeError(
             "Phase 0.0 gate FAILED: no panel source found. Tried:\n"
             f"  - {PANEL_GENERATIONS_JSON}\n"
+            f"  - HF Hub: superkaiba1/explore-persona-space-data "
+            "issue207_js_gentle/base_model_generations.json\n"
             f"  - {PANEL_FALLBACK_WORKTREE}\n"
             "Halt + escalate per plan §4.1.2 fallback chain. Re-running "
             "build_i181_data.py --step panel-only is NOT allowed (16 of "

@@ -262,8 +262,18 @@ def within_source_nanmean_partial_rho(
             per_source_rho[s] = float("nan")
             degenerate.append(s)
             continue
-        # round-3 Codex Methodology minor: also exclude sources with <3
-        # nonzero leakage values from the contributing set (record but mark).
+        # M3 (documented rule, plan §R3 + round-3 Codex Methodology minor):
+        # Exclude sources with fewer than 3 nonzero leakage values from the
+        # within-source nanmean. Rationale: the variance criterion alone
+        # (epsilon_variance=1e-12) admits sources where almost all targets
+        # have leakage=0 plus a single outlier — e.g. villain in #142
+        # (9/10 zeros + 1 nonzero=0.015 → var ≈ 2.25e-5, exceeds epsilon
+        # but gives a near-degenerate 1-point Spearman). Spearman ρ on
+        # <3 distinct values is dominated by the tie-break rule and is
+        # not a meaningful within-source signal. Recorded under
+        # `excluded_low_nonzero_count` in the output dict so the analyzer
+        # can see which sources were dropped and why; the variance-only
+        # exclusion is reported separately under `degenerate_sources_excluded`.
         if nonzero_count < 3:
             low_nonzero.append(s)
             per_source_rho[s] = float("nan")

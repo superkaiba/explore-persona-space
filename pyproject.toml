@@ -90,6 +90,11 @@ unfixable = ["B"]  # bugbear fixes can change semantics
 [tool.ruff.lint.mccabe]
 max-complexity = 15
 
+[tool.ruff.lint.per-file-ignores]
+"scripts/i368_*.py" = ["RUF001", "RUF002", "RUF003"]
+"src/explore_persona_space/axis/chenstyle.py" = ["RUF001", "RUF002", "RUF003"]
+"src/explore_persona_space/eval/leakage_axes.py" = ["RUF001", "RUF002", "RUF003"]
+
 [dependency-groups]
 dev = [
     "ruff>=0.15.9",
