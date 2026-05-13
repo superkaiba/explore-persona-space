@@ -1,13 +1,13 @@
 ---
 name: experiment-proposer
-description: Use when deciding what experiments to run next. Reads research context (logs, results, TODOs, past experiments via `gh`), proposes ranked experiments with rationale, and creates `status:proposed` GitHub issues for approved ones. Handles hypothesis-testing, ablations, explorations, comparisons — not just optimization.
+description: Use when deciding what experiments to run next. Reads research context (logs, results, TODOs, past experiments via `sagan_state.py`), proposes ranked experiments with rationale, and creates `status='proposed'` experiment rows in Sagan for approved ones. Handles hypothesis-testing, ablations, explorations, comparisons — not just optimization.
 ---
 
 # Experiment Proposer
 
 ## Scope & Boundaries
 
-**Owns:** ranking candidate experiments by information gain per GPU-hour and creating `status:proposed` GitHub issues for approved proposals. Pure ideation — **never runs code**.
+**Owns:** ranking candidate experiments by information gain per GPU-hour and creating `status='proposed'` experiment rows in Sagan for approved proposals. Pure ideation — **never runs code**.
 
 **Called by:** the main session when deciding "what next", and by `auto-experiment-runner` in Autonomous mode.
 
@@ -28,16 +28,17 @@ Before proposing anything, read the full research state.
 ```
 READ ORDER:
 1. docs/TODO.md                           → What does the researcher want?
-2. gh issue list --label clean-results --state all \
-     --json number,title,body,labels,updatedAt --limit 50
+2. Browse Sagan clean-results at
+     https://sagan.superkaiba.com/clean-results
+     (or query the API: GET /api/experiments?hasCleanResult=true)
                                           → Approved findings (the canonical results record)
-3. gh issue list --label 'status:proposed' \
-     --label 'status:plan-pending' \
-     --label 'status:approved' \
-     --label 'status:running' \
-     --label 'status:reviewing' \
-     --state open                         → What's already queued / in flight?
-4. docs/ideas/*.md                        → Raw brainstorm output (pre-issue scratchpad)
+3. uv run python scripts/sagan_state.py list-by-status --status proposed
+   uv run python scripts/sagan_state.py list-by-status --status plan_pending
+   uv run python scripts/sagan_state.py list-by-status --status approved
+   uv run python scripts/sagan_state.py list-by-status --status running
+   uv run python scripts/sagan_state.py list-by-status --status interpreting
+                                          → What's already queued / in flight?
+4. docs/ideas/*.md                        → Raw brainstorm output (pre-experiment scratchpad)
 5. configs/experiment/*.yaml              → What configs exist?
 6. CLAUDE.md                              → Project-specific guidance
 ```
@@ -170,14 +171,16 @@ Always include the "rejected" section. It shows reasoning and lets the researche
 
 ---
 
-## Phase 4: Creating GitHub Issues
+## Phase 4: Creating Experiment Rows in Sagan
 
-After the researcher approves experiments, create one GitHub issue per
-approved experiment (the project board IS the queue — no separate file):
+After the researcher approves experiments, create one Sagan experiment
+row per approved proposal (the Sagan `experiments` table IS the queue —
+no separate file, no GitHub issues):
 
 ```bash
-gh issue create \
+uv run python scripts/sagan_state.py create-experiment \
   --title "<short descriptive title>" \
+  --status proposed \
   --body-file <(cat <<'EOF'
 ## Goal
 <what question this answers>
@@ -194,19 +197,21 @@ gh issue create \
 ## Rationale
 <link or inline>
 EOF
-) \
-  --label status:proposed \
-  --label "type:experiment" \
-  --label "compute:<small|medium|large>"
+)
 ```
 
-Each issue body must be **actionable** — not vague:
+Tag the new row via `sagan_state.py add-tag <N> type:experiment` and
+`add-tag <N> compute:<small|medium|large>` if needed (tags survive on
+the experiment row).
+
+Each experiment body must be **actionable** — not vague:
 - BAD: "Try different learning rates"
 - GOOD: "SFT Llama3-8B on UltraChat, lr=3e-5, 3 epochs, LoRA r=16"
 
 Once created, the user (or `/issue <N>`) advances them through the
-lifecycle: `proposed → planning → plan-pending →
-approved → running → reviewing → done`.
+lifecycle: `proposed → planning → plan_pending →
+approved → running → interpreting → reviewing →
+awaiting_promotion → completed`.
 
 ---
 
@@ -227,7 +232,7 @@ approved → running → reviewing → done`.
 
 ## Interaction with Other Skills
 
-- **issue**: The proposer creates `status:proposed` GitHub issues; `/issue <N>` drives them through the lifecycle. The proposer does NOT run experiments.
+- **issue**: The proposer creates `status='proposed'` experiments in Sagan; `/issue <N>` drives them through the lifecycle. The proposer does NOT run experiments.
 - **auto-experiment-runner**: In autonomous mode, the auto-runner uses the proposer's logic (Phases 2-3) internally with stricter constraints.
 - **independent-reviewer**: After proposals, the researcher can invoke the reviewer to critique them before approving.
 
@@ -239,7 +244,8 @@ approved → running → reviewing → done`.
 /experiment-proposer
 
 "Review the research state and propose the next experiments.
- Read clean-result GitHub issues (label `clean-results`), `gh issue list`
- for queued / in-flight work, and docs/TODO.md.
+ Read clean-result write-ups in Sagan (experiments with
+ `hasCleanResult=true`), `sagan_state.py list-by-status` for
+ queued / in-flight work, and docs/TODO.md.
  Present ranked proposals with rationale."
 ```

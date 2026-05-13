@@ -97,7 +97,7 @@ directly. Avoid 13 sequential per-status calls — bulk-fetch with no
 filter and group client-side.
 
 Return a 5–10 bullet snapshot: status counts, in-flight experiments
-(with pod and ETA when known), awaiting-promotion pile size, blocked
+(with pod and ETA when known), awaiting_promotion pile size, blocked
 count, open questions. Flag inconsistencies (orphan pods, stale-looking
 `approved` titles, experiments running with no recent `epm:*` event)
 but do NOT fix them — that's
@@ -183,7 +183,7 @@ When you notice (via STATUS scan or user mention) that an experiment advanced:
 4. Check aim-phase transition criteria — SUGGEST to user if met.
 5. Summarize: what was learned, what's next.
 
-### Mode 7 — PROMOTE ("clean up the awaiting-promotion pile")
+### Mode 7 — PROMOTE ("clean up the awaiting_promotion pile")
 
 For one experiment: invoke `/promote-clean-result <N>` in this session.
 The skill walks the body iteration + clean-result-critique re-run. The
@@ -191,7 +191,7 @@ user runs `python scripts/sagan_state.py promote <N> useful|not-useful`
 (or clicks Promote in the dashboard) when the body is locked.
 
 For multi-experiment consolidation candidates (the #237 pattern), the
-same skill scans the awaiting-promotion list for similar entries.
+same skill scans the awaiting_promotion list for similar entries.
 
 ---
 
@@ -238,7 +238,7 @@ Do NOT invoke `/issue` in the PM session.
 ## Output style
 
 - **Status snapshots:** 5–10 bullets, quantitative. Counts per column,
-  in-flight issues with pod, awaiting-promotion pile size, 1–2 open
+  in-flight issues with pod, awaiting_promotion pile size, 1–2 open
   questions. No prose paragraphs.
 - **Audit reports:** auto-fixed checkboxes + needs-approval diffs with
   one-line "Reason".
@@ -259,7 +259,7 @@ renders them as separate pills — use plain numbered markdown).
 
 | Anti-pattern | Why bad | Do instead |
 |---|---|---|
-| Counting awaiting-promotion by hand from labels | Status enum is the source of truth | `sagan_state.py list-by-status --status awaiting_promotion` |
+| Counting awaiting_promotion by hand from labels | Status enum is the source of truth | `sagan_state.py list-by-status --status awaiting_promotion` |
 | Running `/issue <N>` in the PM session | Collapses the multi-session model | `spawn_session.py spawn-issue --issue <N>` |
 | Spawning `experimenter` / `analyzer` from the PM session | Belongs inside the per-issue `/issue` flow | Just spawn the session |
 | Reading `EXPERIMENT_QUEUE.md` or `research_log/drafts/LOG.md` | Both deprecated | Use the project board + clean-result issues |

@@ -106,7 +106,7 @@ block must be able to approve / reject / ask a question without
 scrolling. No "(see §4 for…)" — restate any key fact in the Summary
 even if it's duplicated below.
 
-The user's AskUserQuestion at the plan-pending gate references THIS
+The user's AskUserQuestion at the plan_pending gate references THIS
 section. The critic should optimize the Summary for legibility first;
 the full sections below for completeness.
 

@@ -72,6 +72,27 @@ class SaganError(Exception):
     """Raised on non-2xx responses from Sagan."""
 
 
+# Kebab→snake status translation. Wave 2 of the migration normalises
+# both repos to snake_case; this fallback keeps in-flight kebab callers
+# working during the transition. Remove after one-week soak (see
+# ~/.claude/plans/do-a-comprehensive-audit-merry-dawn.md Wave 2).
+_KEBAB_STATUS_WARNED: set[str] = set()
+
+
+def _translate_status(value: str | None) -> str | None:
+    if value is None or "-" not in value:
+        return value
+    snake = value.replace("-", "_")
+    if value not in _KEBAB_STATUS_WARNED:
+        _KEBAB_STATUS_WARNED.add(value)
+        print(
+            f"sagan_state: deprecated kebab status {value!r} → {snake!r}; "
+            "update the caller (Wave 2 of the Sagan migration removes this shim).",
+            file=sys.stderr,
+        )
+    return snake
+
+
 def _req(
     method: str,
     path: str,
@@ -133,7 +154,9 @@ def get_experiment_by_id(experiment_id: str) -> dict[str, Any]:
 
 def list_by_status(status: str | None = None, limit: int = 200) -> list[dict[str, Any]]:
     """List experiments, optionally filtered by status. Returns the inner list."""
-    out = _req("GET", "/api/experiments", query={"status": status, "limit": limit})
+    out = _req(
+        "GET", "/api/experiments", query={"status": _translate_status(status), "limit": limit}
+    )
     return out.get("experiments", [])
 
 
@@ -164,7 +187,7 @@ def patch_experiment(experiment_id: str, **fields: Any) -> dict[str, Any]:
 
 def set_status(experiment_id: str, status: str, *, note: str | None = None) -> dict[str, Any]:
     """Change status. Also records a workflow event automatically (server-side)."""
-    return patch_experiment(experiment_id, status=status, note=note)
+    return patch_experiment(experiment_id, status=_translate_status(status), note=note)
 
 
 def set_tags(experiment_id: str, tags: list[str]) -> dict[str, Any]:
@@ -220,6 +243,55 @@ def post_marker(
     )
 
 
+def list_markers(experiment_id: str, *, prefix: str = "epm:") -> list[dict[str, Any]]:
+    """Return all workflow events whose ``marker_type`` starts with ``prefix``."""
+    exp = get_experiment_by_id(experiment_id)
+    out: list[dict[str, Any]] = []
+    for ev in exp.get("events", []):
+        meta = ev.get("metadata") or {}
+        marker = meta.get("marker_type") or ev.get("markerType")
+        if marker and marker.startswith(prefix):
+            out.append(ev)
+    return out
+
+
+def has_marker(experiment_id: str, marker_kind: str) -> bool:
+    """True if any workflow event carries an ``epm:<marker_kind>`` marker."""
+    target = f"epm:{marker_kind}" if not marker_kind.startswith("epm:") else marker_kind
+    return any(
+        (ev.get("metadata") or {}).get("marker_type", "").startswith(target)
+        for ev in list_markers(experiment_id)
+    )
+
+
+def create_experiment(
+    *,
+    title: str,
+    hypothesis: str | None = None,
+    status: str = "proposed",
+    project_id: str | None = None,
+    belief_id: str | None = None,
+    runpod_account: str = "team",
+) -> dict[str, Any]:
+    """Create a new experiment row. Successor to ``gh issue create``.
+
+    Returns the inserted experiment dict (server response). The ``number``
+    is assigned server-side and is what /issue <N> takes as input.
+    """
+    body: dict[str, Any] = {
+        "title": title,
+        "status": _translate_status(status),
+        "runpodAccount": runpod_account,
+    }
+    if hypothesis is not None:
+        body["hypothesis"] = hypothesis
+    if project_id is not None:
+        body["projectId"] = project_id
+    if belief_id is not None:
+        body["beliefId"] = belief_id
+    return _req("POST", "/api/experiments", body=body)
+
+
 # ─── CLI ────────────────────────────────────────────────────────────────────
 
 
@@ -261,7 +333,11 @@ def cmd_remove_tag(args: argparse.Namespace) -> None:
 
 def cmd_set_body(args: argparse.Namespace) -> None:
     exp = get_experiment(args.number)["experiment"]
-    body = args.body if args.body is not None else open(args.file).read()
+    if args.body is not None:
+        body = args.body
+    else:
+        with open(args.file) as fh:
+            body = fh.read()
     patch_experiment(exp["id"], body=body)
     print(f"#{args.number} body updated ({len(body)} chars)")
 
@@ -306,6 +382,39 @@ def cmd_promote(args: argparse.Namespace) -> None:
     )
     run_id = result.get("run", {}).get("id", "?")
     print(f"#{args.number} promoted ({classification})  run={run_id}  status=completed")
+
+
+def cmd_list_markers(args: argparse.Namespace) -> None:
+    exp = get_experiment(args.number)["experiment"]
+    events = list_markers(exp["id"], prefix=args.prefix)
+    if args.json:
+        json.dump(events, sys.stdout, indent=2, default=str)
+        print()
+        return
+    if not events:
+        print("(no markers)")
+        return
+    for ev in events:
+        meta = ev.get("metadata") or {}
+        marker = meta.get("marker_type") or ev.get("markerType") or "?"
+        print(f"  {ev['createdAt']}  {marker:<28}  event={ev['id']}")
+
+
+def cmd_create_experiment(args: argparse.Namespace) -> None:
+    body = args.body
+    if body is None and args.body_file:
+        with open(args.body_file) as fh:
+            body = fh.read()
+    res = create_experiment(
+        title=args.title,
+        hypothesis=body,
+        status=args.status,
+        runpod_account=args.runpod_account,
+    )
+    exp = res.get("experiment") or res
+    number = exp.get("number", "?")
+    uuid = exp.get("id", "?")
+    print(f"created experiment #{number}  id={uuid}  status={exp.get('status', '?')}")
 
 
 def cmd_latest_marker(args: argparse.Namespace) -> None:
@@ -362,6 +471,28 @@ def main() -> None:
     p = sub.add_parser("latest-marker", help="show the most recent epm:* event")
     p.add_argument("number", type=int)
     p.set_defaults(func=cmd_latest_marker)
+
+    p = sub.add_parser("list-markers", help="show all epm:* events on an experiment")
+    p.add_argument("number", type=int)
+    p.add_argument("--prefix", default="epm:")
+    p.add_argument(
+        "--json",
+        action="store_true",
+        help="emit events as JSON instead of a one-per-line table",
+    )
+    p.set_defaults(func=cmd_list_markers)
+
+    p = sub.add_parser(
+        "create-experiment",
+        help="create a new experiment row (successor to gh issue create)",
+    )
+    p.add_argument("--title", required=True)
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--body", help="hypothesis/goal text directly on the command line")
+    g.add_argument("--body-file", help="path to a file holding the hypothesis/goal text")
+    p.add_argument("--status", default="proposed")
+    p.add_argument("--runpod-account", default="team", choices=["team", "personal"])
+    p.set_defaults(func=cmd_create_experiment)
 
     p = sub.add_parser("set-body", help="replace the experiment body")
     p.add_argument("number", type=int)

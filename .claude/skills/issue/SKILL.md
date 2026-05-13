@@ -1,25 +1,26 @@
 ---
 name: issue
 description: >
-  End-to-end GitHub-issue-driven workflow for experiments and code changes.
-  Takes an issue number, parses state from labels + comment markers, and dispatches
-  the next action (clarify -> adversarial-planner -> approval -> worktree +
-  dispatch specialist -> preflight -> run -> analyzer -> reviewer -> test-verdict
-  -> auto-complete). Reviewer PASS (or test-verdict PASS for code-change paths
-  like type:infra / type:survey) auto-advances the experiment to completed
-  on the Experiment Queue project board. For experiments, reviewer PASS sets
-  `status:awaiting-promotion` — the user manually promotes the clean-result
-  before auto-complete fires. Issues stay OPEN
-  -- DO NOT close. Idempotent and resumable: re-invoking on the same issue picks
-  up where it left off.
+  End-to-end Sagan-experiment-driven workflow for experiments and code changes.
+  Takes an experiment number (`experiments.number` in Sagan, NOT a GitHub issue
+  number), parses state from `experiments.status` + workflow_event markers, and
+  dispatches the next action (clarify -> adversarial-planner -> approval ->
+  worktree + dispatch specialist -> preflight -> run -> analyzer -> reviewer ->
+  test-verdict -> auto-complete). Reviewer PASS (or test-verdict PASS for
+  code-change paths like type:infra / type:survey) auto-advances the experiment
+  to completed in the Sagan dashboard. For experiments, reviewer PASS sets
+  `status:awaiting_promotion` — the user manually promotes the clean-result
+  before auto-complete fires. Experiments stay in the kanban until archived.
+  Idempotent and resumable: re-invoking on the same `<N>` picks up where it left
+  off.
 user_invocable: true
 ---
 
-# Issue-Driven Workflow
+# Sagan-Experiment Workflow
 
 ## Scope & Boundaries
 
-**Owns:** the full issue lifecycle — clarify → adversarial-planner → approval → worktree → dispatch → preflight → run → analyze → review → auto-complete.
+**Owns:** the full experiment lifecycle — clarify → adversarial-planner → approval → worktree → dispatch → preflight → run → analyze → review → auto-complete.
 
 **Invokes:** `experiment-runner` (run step), `adversarial-planner` (plan step), specialist agents (experimenter / implementer / analyzer / reviewer / code-reviewer).
 
@@ -27,12 +28,14 @@ user_invocable: true
 
 ---
 
-Invoke as `/issue <N>` or `/issue <N> --resume`. The skill is the entry point from
-a GitHub issue to a fully-executed, reviewed experiment or code change.
+Invoke as `/issue <N>` or `/issue <N> --resume`. `<N>` is the experiment's
+`number` column in Sagan's `experiments` table (the kanban view at
+<https://sagan.superkaiba.com/experiments>). The skill drives an experiment
+from proposal to clean-result.
 
-**Guiding principle:** all durable state lives on the GitHub issue (labels + marker
-comments). The local filesystem holds caches only. You can close the terminal at
-any step and `/issue <N>` picks up cleanly.
+**Guiding principle:** all durable state lives in Sagan's Postgres
+(`experiments.status` + `workflow_events`). The local filesystem holds caches
+only. You can close the terminal at any step and `/issue <N>` picks up cleanly.
 
 ## State backend
 
@@ -70,7 +73,7 @@ production values used by `/issue` map to the kanban columns at
 | `plan_pending`        | User action: approve plan to advance. |
 | `approved`            | Plan approved, dispatch pending. |
 | `awaiting_approval`   | Awaiting an out-of-band gate (e.g. HF model access). |
-| `running`             | All active-phase work between approval and clean-result-critic PASS rolls up here (implementing, code-reviewing, testing, training, uploading). The latest `epm:*` workflow event tells you which sub-phase. |
+| `running`             | All active-phase work between approval and clean-result-critic PASS rolls up here (implementing, code_reviewing, testing, training, uploading). The latest `epm:*` workflow event tells you which sub-phase. |
 | `verifying`           | Upload-verifier running. |
 | `interpreting`        | Analyzer + interpretation-critic loop + clean-result-critic loop are running (Step 9a and Step 9a-bis). Final critic before promotion as of 2026-05-13. |
 | `reviewing`           | DEPRECATED 2026-05-13. Dedicated reviewer step retired; responsibilities absorbed by clean-result-critic. Kept in enum for legacy state recovery. |
@@ -138,12 +141,12 @@ status:proposed                           <- user has filed, clarifier hasn't ru
        |-- questions posted --> status:proposed (stays; awaiting user replies)
        |-- OK --> status:planning          <- adversarial-planner + consistency-checker
                   |-- (plan posted + consistency PASS/WARN)
-                     |--> status:plan-pending    <- AWAITING USER: approve?
+                     |--> status:plan_pending    <- AWAITING USER: approve?
                             |-- (user approve) --> status:approved
                                                   |-- (worktree + draft PR)
                                                      |--> status:implementing    <- experiment-implementer (type:experiment) OR implementer (type:infra/batch)
                                                             |-- (epm:experiment-implementation OR epm:results posted)
-                                                               |--> status:code-reviewing   <- code-reviewer (fresh context)
+                                                               |--> status:code_reviewing   <- code-reviewer (fresh context)
                                                                       |-- FAIL + count<3 --> status:implementing (loop, v+1)
                                                                       |-- FAIL + count>=3 --> status:blocked
                                                                       |-- PASS + [type:experiment] --> status:running   <- experimenter (pod ops + monitoring)
@@ -153,12 +156,12 @@ status:proposed                           <- user has filed, clarifier hasn't ru
                                                                                          |--> status:interpreting  <- analyzer + interp-critic loop
                                                                                                 |-- (interpretation refined, clean-result created)
                                                                                                    |--> (clean-result-critic Step 9a-bis ensemble; round-1 Claude+Codex, rounds 2-3 Claude only)
-                                                                                                          |-- PASS --> status:awaiting-promotion  <- AWAITING USER: promote clean-result
+                                                                                                          |-- PASS --> status:awaiting_promotion  <- AWAITING USER: promote clean-result
                                                                                                                         |-- (user promotes) -->
-                                                                                                                              |-- open `Parent: #<N>` children exist --> status:followups-running  <- waits for children to finish; re-invoke /issue <N> later
-                                                                                                                              |-- no open children                  --> status:done-experiment (+ follow-up proposer)
+                                                                                                                              |-- open `Parent: #<N>` children exist --> status:followups_running  <- waits for children to finish; re-invoke /issue <N> later
+                                                                                                                              |-- no open children                  --> status:done_experiment (+ follow-up proposer)
                                                                                                           |-- REVISE --> status:interpreting (revise; rounds 2-3 Claude only)
-                                                                      |-- PASS + [type:infra/survey] --> test-verdict (inline) --> status:done-impl
+                                                                      |-- PASS + [type:infra/survey] --> test-verdict (inline) --> status:done_impl
 ```
 
 Hot-fixes during `status:running` (experimenter agent): small in-line fixes
@@ -175,12 +178,12 @@ There is no user sign-off step. Reviewer PASS (or `epm:test-verdict` PASS for co
 | State | Who's working | User action needed? |
 |-------|---------------|---------------------|
 | `proposed` | User has filed; clarifier hasn't run. | no |
-| `gate-pending` | Hypothesis/kill-criterion gate blocked the plan; awaiting body fix. | **yes** |
+| `gate_pending` | Hypothesis/kill-criterion gate blocked the plan; awaiting body fix. | **yes** |
 | `planning` | Adversarial-planner is running. | no |
-| `plan-pending` | Plan posted; awaiting user `approve`. | **yes** |
+| `plan_pending` | Plan posted; awaiting user `approve`. | **yes** |
 | `approved` | Plan approved; skill is creating worktree + draft PR. | no |
 | `implementing` | (experiment|infra|...)-implementer is writing code. | no |
-| `code-reviewing` | code-reviewer is reviewing the diff. | no |
+| `code_reviewing` | code-reviewer is reviewing the diff. | no |
 | `testing` | Inline test-suite step (Step 9c, code-change paths only). | no |
 | `running` | experimenter is running on the pod. | no |
 | `uploading` | upload-verifier is checking artifacts. | no |
@@ -192,14 +195,14 @@ published-body fresh-context check) were absorbed by
 state recovery; new issues never write this status.
  | no |
 | `blocked` | Aborted or stuck; awaiting user triage. | **yes** |
-| `awaiting-promotion` | User action: promote clean-result via /clean-results promote. | **yes** |
-| `followups-running` | Parent is done; children with `Parent: #<N>` are still in flight. | no |
-| `done-experiment` | Terminal: experiment finished + clean-result promoted. Issue stays OPEN. | no |
-| `done-impl` | Terminal: code change shipped + reviewed. Issue stays OPEN. | no |
+| `awaiting_promotion` | User action: promote clean-result via /clean-results promote. | **yes** |
+| `followups_running` | Parent is done; children with `Parent: #<N>` are still in flight. | no |
+| `done_experiment` | Terminal: experiment finished + clean-result promoted. Issue stays OPEN. | no |
+| `done_impl` | Terminal: code change shipped + reviewed. Issue stays OPEN. | no |
 | `archived` | Set explicitly for duplicates / won't-fix / abandoned experiments. | no |
 <!-- /workflow.yaml: AUTO-GENERATED -->
 
-The two user-gated states in the active lifecycle are `plan-pending` (plan approval) and `awaiting-promotion` (clean-result promotion). `blocked` and `gate-pending` also need user attention but represent stalled / pre-pipeline states. Everything between is automatic, short of a `status:blocked` override.
+The two user-gated states in the active lifecycle are `plan_pending` (plan approval) and `awaiting_promotion` (clean-result promotion). `blocked` and `gate_pending` also need user attention but represent stalled / pre-pipeline states. Everything between is automatic, short of a `status:blocked` override.
 
 Abort affordance: any state, user labels `status:blocked` -> skill posts abort
 request, watcher kills run if one exists.
@@ -223,7 +226,7 @@ Format string:
 Examples:
 - `#226 type:infra — implementing workflow improvements — next: code-review`
 - `#226 type:infra — code-review FAIL round 2 — next: respawn implementer`
-- `#137 type:experiment — done-experiment — followups: #240, #241 — claim: persona collapse hero`
+- `#137 type:experiment — done_experiment — followups: #240, #241 — claim: persona collapse hero`
 
 The `claim:` segment is included once `hasCleanResult=true` on the source
 row (the analyzer renamed the row to the claim summary at Step 9a). There
@@ -470,14 +473,14 @@ On PASS, proceed normally.
 
 Then post the plan as `<!-- epm:plan v1 -->` with the consistency results appended.
 
-Advance label to `status:plan-pending`.
+Advance label to `status:plan_pending`.
 
 ### Step 2c: Inline plan approval
 
 **Context-dependent behavior:**
 
 - **Autonomous mode** (invoked from `auto-experiment-runner` or with no user
-  present): EXIT immediately. The issue sits at `status:plan-pending` until a
+  present): EXIT immediately. The issue sits at `status:plan_pending` until a
   user approves via GitHub comment or a future `/issue <N>` invocation. This
   preserves the old asynchronous review behavior. Before exiting, post the §5
   marker: `uv run python scripts/post_step_completed.py --issue <N> --step 2c
@@ -517,14 +520,14 @@ Advance label to `status:plan-pending`.
   - **"Revise \<notes\>" / "2":** Set label back to `status:planning`. Re-invoke
     adversarial-planner with the revision notes. Re-run the consistency checker.
     Post updated `epm:plan v2`. Loop back to Step 2c.
-  - **"Defer" / "3":** EXIT. Label stays at `status:plan-pending`. Identical to
+  - **"Defer" / "3":** EXIT. Label stays at `status:plan_pending`. Identical to
     the old behavior — user re-invokes `/issue <N>` later to approve. Before
     exiting, post the §5 marker: `uv run python scripts/post_step_completed.py
-    --issue <N> --step 2c --exit-kind parked --notes "plan-pending; user deferred"`.
+    --issue <N> --step 2c --exit-kind parked --notes "plan_pending; user deferred"`.
 
 ### Step 3: Approval check (backward compat, runs on re-invocation)
 
-Runs on re-invocation if `status:plan-pending` (i.e., user deferred or approved
+Runs on re-invocation if `status:plan_pending` (i.e., user deferred or approved
 via GitHub comment rather than inline).
 
 Scan comments after the plan marker for an explicit `approve` / `/approve` by the
@@ -534,7 +537,7 @@ re-invoke adversarial-planner with the notes; **also re-run the consistency
 checker against the revised plan and post `epm:consistency v<n>` (a v2 plan
 that adds new conditions or shifts baselines must not skip the consistency
 gate)**; post the new `epm:plan v2` comment with the fresh consistency
-verdict appended; set label back to `status:plan-pending`.
+verdict appended; set label back to `status:plan_pending`.
 
 ### Step 4: Worktree + dispatch implementer
 
@@ -698,7 +701,7 @@ invocations.
   failure-exit --notes "code-review-ensemble FAIL round 3+; status:blocked"`.
   EXIT. User decides: revise plan, escalate, or override.
 
-Advance label to `status:code-reviewing` while EITHER reviewer is running,
+Advance label to `status:code_reviewing` while EITHER reviewer is running,
 back to `status:implementing` on ensemble FAIL, forward to `status:running`
 (or `status:testing` for non-experiment types) on ensemble PASS.
 
@@ -732,12 +735,12 @@ manual-approval gate the request is queued and the helper exits with code 1
 and a list of URLs.
 
 - Exit code `0` → proceed to 6b.
-- Exit code `1` (manual approval still needed) → post `<!-- epm:hf-gate-pending v1 -->`
+- Exit code `1` (manual approval still needed) → post `<!-- epm:hf-gate_pending v1 -->`
   with the URLs, leave label at `status:running`. Post the §5 marker:
   `uv run python scripts/post_step_completed.py --issue <N> --step 6c --exit-kind
   clean --notes "hf-gate manual approval pending"`. EXIT. User clicks through,
   re-runs `/issue <N>`.
-- Exit code `2` (`HF_TOKEN` missing) → post `<!-- epm:hf-gate-pending v1 -->`
+- Exit code `2` (`HF_TOKEN` missing) → post `<!-- epm:hf-gate_pending v1 -->`
   with diagnostic, label `status:blocked`. Post the §5 marker:
   `uv run python scripts/post_step_completed.py --issue <N> --step 6c --exit-kind
   failure-exit --notes "HF_TOKEN missing; status:blocked"`. EXIT.
@@ -885,10 +888,9 @@ When this skill is re-invoked in `status:running`:
 
    ```bash
    # Pipe the failure body via stdin to avoid shell-quoting traps.
-   # Uses the capped state helper (last 50 comments) instead of `gh
-   # issue view --json comments` which over-fetches on long threads.
-   cat <(uv run python scripts/gh_issue_state.py "$N" \
-       | jq -r '.comments[] | select(.body | contains("<!-- epm:failure")) | .body') \
+   # Reads epm:failure markers from Sagan's workflow_events table.
+   cat <(uv run python scripts/sagan_state.py list-markers "$N" --prefix epm:failure --json \
+       | jq -r '.[] | .note // empty') \
      | uv run python scripts/failure_classifier.py --body - \
          --log "$LATEST_LOG_PATH"
    ```
@@ -979,7 +981,7 @@ This step has two sub-phases, both running while `status:interpreting`:
 **9a** (analyzer ↔ interpretation-critic content honesty loop) and **9a-bis**
 (analyzer ↔ clean-result-critic structure + register + statistical-framing
 loop). On 9a-bis PASS the source issue advances directly to
-`status:awaiting-promotion`.
+`status:awaiting_promotion`.
 
 **A note on the retired Step 9b** (the dedicated final-reviewer step): as
 of 2026-05-13 it was retired and its responsibilities — statistical-framing
@@ -1081,7 +1083,7 @@ retired reviewer step). Discipline rules: see
 exemplars, figure captions, and research-communication principles).
 
 **On PASS at this layer, the source issue advances directly to
-`status:awaiting-promotion`** — there is no separate downstream reviewer
+`status:awaiting_promotion`** — there is no separate downstream reviewer
 step. Clean-result-critic is the final adversarial gate.
 
 **Round 1 (ENSEMBLE — Claude + Codex, parallel):**
@@ -1156,7 +1158,7 @@ or automation may flip `runs.classification` out of `pending`.** The
 `useful` / `not_useful`, sets the experiment to `completed`, and
 prints a reminder to re-enter `/issue <N>` so Step 10 fires.
 
-**On re-invocation at `status:awaiting-promotion`:**
+**On re-invocation at `status:awaiting_promotion`:**
 1. Check if the source row has been promoted: `runs.classification` is
    `useful` or `not_useful` (status will be `completed`).
 2. If promoted → advance to Step 10 (auto-complete).
@@ -1183,9 +1185,9 @@ suite directly and posts an `epm:test-verdict` marker with the result.
 Post `<!-- epm:test-verdict v1 -->`. PASS → Step 10. FAIL (count < 3) → stay in
 `status:testing`, re-spawn implementer. FAIL (count >= 3) → `status:blocked`.
 
-### Step 10: Auto-complete (fires after user promotes clean-result from `awaiting-promotion`, or `epm:test-verdict` PASS for code-change paths)
+### Step 10: Auto-complete (fires after user promotes clean-result from `awaiting_promotion`, or `epm:test-verdict` PASS for code-change paths)
 
-No user gate. The skill transitions the issue to a terminal-or-`followups-running` state automatically. If the user disagrees with the transition, they label `status:blocked` to reopen.
+No user gate. The skill transitions the issue to a terminal-or-`followups_running` state automatically. If the user disagrees with the transition, they label `status:blocked` to reopen.
 
 #### Step 10 step 0: Completion audit (NEW — gates entry to step 1)
 
@@ -1223,12 +1225,12 @@ checks the *write-up*; this checks the *issue → work* contract.
 5. Branch on verdict:
    - **All ☑ (PASS):** proceed to step 1 below.
    - **Any ☐ (INCOMPLETE):** label `status:blocked` (remove
-     `status:awaiting-promotion` / `status:testing` as applicable; also
+     `status:awaiting_promotion` / `status:testing` as applicable; also
      legacy `status:reviewing` if the issue predates 2026-05-13), do NOT
      advance. The audit comment is the bounce-back
      payload. User either (a) modifies the issue body to reconcile
      resolved scope-creep, (b) re-runs the missing work via a follow-up
-     `/issue` cycle, or (c) labels `status:awaiting-promotion` again to
+     `/issue` cycle, or (c) labels `status:awaiting_promotion` again to
      override. Per CLAUDE.md STATE-TO-`status:blocked` criterion 5.
 
 #### Step 10 step 1+: existing flow
@@ -1262,7 +1264,7 @@ checks the *write-up*; this checks the *issue → work* contract.
    - **No children in flight** AND `kind=experiment`
      → **`status=completed`**, post `epm:done v1`.
    - **`kind` in {`infra`, `survey`}** (regardless
-     of children) → **`status=completed`**, post `epm:done-impl v1`.
+     of children) → **`status=completed`**, post `epm:done_impl v1`.
      Code-change paths don't seed experimental follow-ups via Step 10b.
    - **No `kind` set** → STOP, post an error event asking the user to
      set `kind` in the dashboard. Do NOT pick a default.
@@ -1276,7 +1278,7 @@ checks the *write-up*; this checks the *issue → work* contract.
    column (Done) — the status enum value already determines the column;
    no manual move needed.
 
-8. Post final marker `epm:done` (or `epm:done-impl` for code-change
+8. Post final marker `epm:done` (or `epm:done_impl` for code-change
    kinds) summarizing: outcome, key numbers, what's confirmed/falsified,
    what's next, plus a link to the promoted clean-result experiment (for
    experiments) AND a list of in-flight child follow-ups when relevant.
@@ -1284,15 +1286,15 @@ checks the *write-up*; this checks the *issue → work* contract.
 9. **NEVER set `status='archived'` from this skill.** Archive is for
    duplicates / invalid / won't-fix, user-initiated only.
 10. Do NOT delete the worktree -- user decides when to clean up.
-11. If `type:experiment` AND we just landed at `status:done-experiment` (no
+11. If `type:experiment` AND we just landed at `status:done_experiment` (no
     children blocked us), proceed to Step 10b (follow-up proposer). If we
-    landed at `status:followups-running`, SKIP Step 10b — the proposer was
+    landed at `status:followups_running`, SKIP Step 10b — the proposer was
     already run in a prior `/issue <N>` invocation that produced the children
     we're now waiting on.
 
 ### Step 10b: Follow-up proposer (experiments only)
 
-Auto-fires after `done-experiment` for `type:experiment` issues. Spawn the
+Auto-fires after `done_experiment` for `type:experiment` issues. Spawn the
 `follow-up-proposer` agent with:
 - The completed experiment's plan (`epm:plan`)
 - The results (`epm:results`)
@@ -1317,7 +1319,7 @@ The user can create follow-up issues from these proposals by:
 Each created follow-up issue links to the parent via `Parent: #<N>` in the body.
 
 # Fire title update after follow-ups marker is posted.
-# mcp__happy__change_title({"title": render_title(issue, status_human="done-experiment", followups=[...])})
+# mcp__happy__change_title({"title": render_title(issue, status_human="done_experiment", followups=[...])})
 
 ### Step 10d: Worktree merge prompt (NEW — both experiment and impl)
 
@@ -1423,7 +1425,7 @@ implements the precedence rules:
 |---|---|---|---|
 | Step 0b/2 `type:*` autofill loop guess | 0b | user override required | `failure-exit` |
 | Step 1 user defers / no reply | 1 | user-gated | `parked` |
-| Step 2c plan-pending awaiting `approve` | 2c | user-gated | `parked` |
+| Step 2c plan_pending awaiting `approve` | 2c | user-gated | `parked` |
 | Step 2c "Defer"/"3" reply | 2c | user-gated | `parked` |
 | Step 4b TDD gate awaiting `approve-tests` | 4b | user-gated | `parked` |
 | Step 4b TDD second pass | 4b | user-gated | `parked` |
@@ -1435,7 +1437,7 @@ implements the precedence rules:
 | Step 6d experimenter dispatched, autonomous | 6d | normal continuation | `clean` |
 | Step 7 `epm:results` not found and stale | 7 | user-gated | `parked` |
 | Step 7 upload-verifier FAIL | 7 | error path | `failure-exit` |
-| Step 9 `awaiting-promotion` user reviews | 9 | user-gated | `parked` |
+| Step 9 `awaiting_promotion` user reviews | 9 | user-gated | `parked` |
 | Step 10 still `clean-results:draft` | 10 | user-gated | `parked` |
 | Step 0 resume >1 `status:*` ambiguous | 0 | error path | `failure-exit` |
 
@@ -1457,18 +1459,18 @@ investigate and optionally label `status:blocked`.
 | Label at resume | `epm:*` markers present | Interpretation | Action |
 |-----------------|-------------------------|----------------|--------|
 | `planning` | no `epm:plan` | planner was cancelled | re-run adversarial-planner |
-| `plan-pending` | `epm:plan` exists | awaiting user approval | show plan URL, EXIT |
+| `plan_pending` | `epm:plan` exists | awaiting user approval | show plan URL, EXIT |
 | `implementing` | no `epm:experiment-implementation` (or `epm:results` for infra), no `epm:proposed-tests` either | implementer was cancelled | re-spawn implementer |
 | `implementing` | `epm:proposed-tests v<n>` exists, no `epm:experiment-implementation`, no `approve-tests` comment posted **after** the `proposed-tests` marker | TDD mode: tests posted, awaiting user approval | show the `proposed-tests` marker URL + the `approve-tests` reply instruction, EXIT |
 | `implementing` | `epm:proposed-tests v<n>` exists, an `approve-tests` comment exists **after** the `proposed-tests` marker, no `epm:experiment-implementation` | TDD tests approved by user | re-spawn implementer with `tdd_approved=true`; brief instructs implementer to write implementation against the approved tests, then post `epm:experiment-implementation v1` as normal |
 | `implementing` | latest `epm:code-review` is FAIL, round < 3 | revision in progress | re-spawn implementer with critique |
 | `implementing` | latest `epm:code-review` is FAIL, round >= 3 | exhausted retries | label `status:blocked`, ask user |
-| `code-reviewing` | neither `epm:code-review` nor `epm:code-review-codex` for the current implementation version | both ensemble reviewers were cancelled | re-spawn both code-reviewer + codex-code-reviewer in parallel |
-| `code-reviewing` | `epm:code-review v<n>` exists, no `epm:code-review-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-code-reviewer` only |
-| `code-reviewing` | `epm:code-review-codex v<n>` exists, no `epm:code-review v<n>` | Claude reviewer not yet returned | re-spawn `code-reviewer` only |
-| `code-reviewing` | both `epm:code-review v<n>` and `epm:code-review-codex v<n>` exist, verdicts disagree (PASS-class vs FAIL), no `epm:code-review-reconcile v<n>` | reconciler not yet started | spawn reconciler |
-| `code-reviewing` | both `epm:code-review v<n>` and `epm:code-review-codex v<n>` exist, verdicts agree | ensemble decision ready | apply Step 5c rule and advance |
-| `code-reviewing` | `epm:code-review-codex` is `epm:failure` (codex-output-malformed or infra) | Codex twin no-show | proceed with Claude-only decision per Step 5d fallback |
+| `code_reviewing` | neither `epm:code-review` nor `epm:code-review-codex` for the current implementation version | both ensemble reviewers were cancelled | re-spawn both code-reviewer + codex-code-reviewer in parallel |
+| `code_reviewing` | `epm:code-review v<n>` exists, no `epm:code-review-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-code-reviewer` only |
+| `code_reviewing` | `epm:code-review-codex v<n>` exists, no `epm:code-review v<n>` | Claude reviewer not yet returned | re-spawn `code-reviewer` only |
+| `code_reviewing` | both `epm:code-review v<n>` and `epm:code-review-codex v<n>` exist, verdicts disagree (PASS-class vs FAIL), no `epm:code-review-reconcile v<n>` | reconciler not yet started | spawn reconciler |
+| `code_reviewing` | both `epm:code-review v<n>` and `epm:code-review-codex v<n>` exist, verdicts agree | ensemble decision ready | apply Step 5c rule and advance |
+| `code_reviewing` | `epm:code-review-codex` is `epm:failure` (codex-output-malformed or infra) | Codex twin no-show | proceed with Claude-only decision per Step 5d fallback |
 | `running` | no `epm:results` for > 4h | experimenter crashed silently | post `epm:stale`, ask user |
 | `running` | latest marker is `epm:failure` with bounce-back proposal | experimenter bounced to implementer | label back to `status:implementing`, re-spawn experiment-implementer |
 | `uploading` | no `epm:upload-verification` PASS | verifier not run or failed | re-run upload-verifier |
@@ -1484,15 +1486,15 @@ investigate and optionally label `status:blocked`.
 | `interpreting` | both round-1 critique markers exist, verdicts disagree (PASS vs REVISE), no `epm:clean-result-critique-reconcile v1` | reconciler not yet started | spawn `reconciler` (marker mode) |
 | `interpreting` | round-1 ensemble verdict REVISE, round < 3 | structure / register / statistical-framing revision in progress | re-spawn analyzer with all critique markers; subsequent critique rounds spawn Claude `clean-result-critic` ONLY (no Codex twin on rounds 2-3) |
 | `interpreting` | `epm:clean-result-critique v<n>` (n≥2) REVISE, n < 3 | rounds 2-3 Claude-only revision in progress | re-spawn analyzer with the latest clean-result-critique |
-| `interpreting` | latest ensemble or Claude-only `epm:clean-result-critique` PASS, OR round >= 3 | clean-result ready for user promotion | advance source issue to `awaiting-promotion`, post chat instructions, EXIT |
-| `reviewing` (legacy) | issue already at status:reviewing pre-2026-05-13 | dedicated reviewer step retired; route to awaiting-promotion as if Step 9a-bis just PASSed | advance source issue to `awaiting-promotion`, post chat instructions, EXIT |
-| `awaiting-promotion` | latest `epm:clean-result-critique` PASS, source row's `runs.classification` still `pending` | waiting for user to promote | show source row's dashboard link, prompt to promote, EXIT |
-| `awaiting-promotion` | source row's `runs.classification` is `useful` / `not_useful` (status `completed`) | user promoted | advance to Step 10 (auto-complete) |
-| `followups-running` | at least one open child issue (`Parent: #<N>` in body) lacks a terminal `status:*` label | children still in flight | show child-issue table + project-board URL, EXIT |
-| `followups-running` | every open child has reached `done-experiment` / `done-impl` / `archived` (or no open children remain) | children all done | re-run Step 10: relabel parent `status:done-experiment` and move project column to "Done (experiment)" |
+| `interpreting` | latest ensemble or Claude-only `epm:clean-result-critique` PASS, OR round >= 3 | clean-result ready for user promotion | advance source issue to `awaiting_promotion`, post chat instructions, EXIT |
+| `reviewing` (legacy) | issue already at status:reviewing pre-2026-05-13 | dedicated reviewer step retired; route to awaiting_promotion as if Step 9a-bis just PASSed | advance source issue to `awaiting_promotion`, post chat instructions, EXIT |
+| `awaiting_promotion` | latest `epm:clean-result-critique` PASS, source row's `runs.classification` still `pending` | waiting for user to promote | show source row's dashboard link, prompt to promote, EXIT |
+| `awaiting_promotion` | source row's `runs.classification` is `useful` / `not_useful` (status `completed`) | user promoted | advance to Step 10 (auto-complete) |
+| `followups_running` | at least one open child issue (`Parent: #<N>` in body) lacks a terminal `status:*` label | children still in flight | show child-issue table + project-board URL, EXIT |
+| `followups_running` | every open child has reached `done_experiment` / `done_impl` / `archived` (or no open children remain) | children all done | re-run Step 10: relabel parent `status:done_experiment` and move project column to "Done (experiment)" |
 | `running` | `.claude/cache/watch-<N>.pid` is missing AND no `epm:results` / `epm:failure` posted | §2 watchdog crashed or never started | re-spawn `python scripts/pod.py watch --issue <N> ...` (skill side-effect; idempotent, the new watchdog inherits the run's heartbeat probes) |
 
-Without distinct labels for `uploading` / `interpreting` / `reviewing` / `awaiting-promotion`,
+Without distinct labels for `uploading` / `interpreting` / `reviewing` / `awaiting_promotion`,
 many of these rows would be indistinguishable. That's why the state machine has them.
 
 ---

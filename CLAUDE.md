@@ -29,7 +29,7 @@
   1. Step 0b (1) — issue body empty (cannot guess primary input).
   2. Step 0b (2) — `type:*` label missing (wrong guess corrupts Done column).
   3. Step 1 — clarifier blocking ambiguities (`status:proposed`).
-  4. Step 2c — plan approval (`status:plan-pending`).
+  4. Step 2c — plan approval (`status:plan_pending`).
   5. Step 10d — worktree merge prompt (irreversible).
 
   *Park-and-wait gates (skill EXITs and waits for the user to run a separate command before re-invoking `/issue <N>`):*
@@ -100,7 +100,7 @@
 1. **Verify uploads + clean weights:** per Upload Policy table below — confirm eval JSONs + figures committed to git on the issue branch, raw completions on HF Hub data repo, checkpoints on HF Hub model repo, then delete safetensors/merged dirs from the pod.
 2. Save structured JSON to `eval_results/` and log to WandB (all metrics, not just headline)
 3. Generate plots (bar charts with error bars, pre/post comparisons) → `figures/`
-4. The `analyzer` agent **promotes the source experiment row IN PLACE to a clean-result** — no separate experiment row is created. It snapshots the prior body to an `epm:original-body` workflow_event (for rollback / audit), then calls `sagan_state.py set-body` + `set-title` to replace body + title with the polished write-up, and `sagan_state.py set-clean-result <N>` to flip `hasCleanResult=true`. Sagan auto-creates the child `runs` row with `classification='pending'` on that PATCH (see `.claude/agents/analyzer.md` Step 6 for the exact sequence). The classification stays at `pending` even after reviewer PASS — the user manually promotes via `uv run python scripts/sagan_state.py promote <N> useful|not-useful` (or the dashboard) when satisfied. Body follows `.claude/skills/clean-results/SPEC.md`. Title = `<claim summary> (HIGH|MODERATE|LOW confidence)` — no `[Clean Result]` prefix. Run `uv run python scripts/verify_clean_result.py` before posting; FAIL blocks posting.
+4. The `analyzer` agent **promotes the source experiment row IN PLACE to a clean-result** — no separate experiment row is created. It snapshots the prior body to an `epm:original-body` workflow_event (for rollback / audit), then calls `sagan_state.py set-body` + `set-title` to replace body + title with the polished Sagan-card HTML write-up, and `sagan_state.py set-clean-result <N>` to flip `hasCleanResult=true`. Sagan auto-creates the child `runs` row with `classification='pending'` on that PATCH (see `.claude/agents/analyzer.md` Step 6 for the exact sequence). The classification stays at `pending` even after clean-result-critic PASS — the user manually promotes via `uv run python scripts/sagan_state.py promote <N> useful|not-useful` (or the dashboard) when satisfied. Body follows `~/sagan/docs/clean-result-guidelines.md`. Title = `<one-sentence claim> (HIGH|MODERATE|LOW confidence)` — no `[Clean Result]` prefix. Run `uv run python scripts/verify_sagan_card.py --issue <N>` before posting; FAIL blocks posting.
 5. Update `RESULTS.md` and `docs/research_ideas.md`
 6. **Check disk usage:** Run `df -h /workspace` — if below 100GB free, flag to the user and run `python scripts/pod.py cleanup --all --dry-run` to preview what can be freed
 7. **No overclaims** — flag single seed, in-distribution eval, effect sizes, confounds
@@ -108,37 +108,50 @@
 
 ## Experiment Report Structure
 
-All experiment write-ups — analyzer drafts and clean-result experiment rows — follow ONE unified spec at **`.claude/skills/clean-results/SPEC.md`** (consolidates the prior `template.md` + `principles.md` + `checklist.md` + `exemplars.md` + `paper-caption-examples.md` + `lw-tldr-examples.md` + `promote-clean-result/human-tldr-examples.md` + `promote-clean-result/lw-register-cheatsheet.md` as of 2026-05-11).
+All experiment write-ups — analyzer drafts and clean-result experiment bodies — follow the **Sagan-card HTML spec** at `~/sagan/docs/clean-result-guidelines.md`. That doc is the single source of truth for body shape, voice, and section conventions. The mechanical verifier is `scripts/verify_sagan_card.py` (11 checks). The worked example is **experiment #311** at <https://sagan.superkaiba.com/e/experiment/1d61738d-df62-44af-9c79-fa41fe85f598>.
 
-The template (v4, 2026-05-11+) has three parts:
+The body is a self-contained HTML document with an inline `<style>` block (class-scoped under `.cr-<N>`) and exactly three pieces plus one appendix, in order:
 
-- **`## TL;DR`** — **AI-drafted by the analyzer** in the user's casual research-voice register (NOT LessWrong research-post register — that's the Summary's job), then refined by the user during `/promote-clean-result`. NO user-only placeholder (that was v2/v3). 3-4 short bullets, ~30-90 words total. Opens with the question ("Tested whether...", "Wanted to see...", "Checked if..."), headline finding as the second move (often a flat negative), surprises/side-findings as a third bullet. **NO statistics in the TL;DR** — no `r =`, no `p =`, no `(MODERATE confidence)`, no `vs <baseline>` numeric comparison anchors (those live in `## Summary`). Verifier requires ≥30 words, no sentinels, no placeholder, no `**Confidence:**` bullet, 3-7 bullets or ≥3 sentences, WARN above 150 words. See `.claude/skills/clean-results/SPEC.md` §4 for verbatim exemplars (issues #276, #295, #281).
-- **`## Summary`** — AI-drafted, structured per-beat expansion **in LessWrong research-post register**. Six top-level bullets in fixed order: **Motivation / Experiment / Results / Takeaways / Next steps / Confidence**. Each Results sub-bullet bolds the headline finding + carries number + N + comparison anchor + anchor link to the matching Result H3 below. Confidence label lives here, NOT in TL;DR.
-- **`## Details`** — full LW-post-readable write-up. Collapsed `<details>` Setup block at the top, then narrative-prose `### Background` → `### Methodology` → ≥1 `### Result N: <claim>` (each: setup paragraph → figure → visible caption → findings prose → fenced sample outputs) → optional `### Next steps`.
-- **`## Source issues`** (conditional) — only when ≥2 distinct prior `#N` refs appear in Background.
+- **`<section id="tldr">`** — four `<li>` bullets, labelled **Motivation / What I ran / Results / Next steps**. "I" voice, not "we". Plain language accessible to a non-specialist. Numbers in the Results bullet are encouraged (effect size + N); anchor-link `<a href="#figure">figure below</a>` from the Results bullet.
+- **`<figure id="figure">`** — one primary plot, sitting directly under the TL;DR with no intervening `<h2>`. Plain-English title and axis labels (no math notation on the chart). Hover tooltips per data point if inline SVG. ≥10-word `<figcaption>`.
+- **`<details id="design">`** — single collapsible block holding everything else as one narrative (definitions, training, eval, sample completions inline, statistical-test rationale, confidence-rationale line, parameters table). **No separate `<h2>` for Background / Methodology / Setup / Findings / Reproducibility** — those all fold into the design narrative.
+- **`<details id="repro">`** — agent-facing reproducibility appendix at the very bottom, AFTER `#design`. Three required groups: **Artifacts**, **Compute**, **Code**. Permanent URLs only (HF Hub `/tree/<ref>`, WandB `/runs/<id>`, GitHub `/blob/<sha>`); no `{{` / `TBD` / `see config` / `default` sentinels — write `n/a` when a field doesn't apply.
 
-Two registers coexist by design: casual user-voice in TL;DR (shoulder-tap to a peer), LessWrong register in Summary + Details (structured / numbered / confidence-labeled).
+Sample-output discipline inside `#design`:
 
-**Reference exemplar: issue #75** (`Weak evidence that evil-persona capability coupling reduces post-EM capability (LOW confidence)`) — match its shape on every new clean result.
+- **Cherry-picked label** in the prose immediately above each `<pre>` sample block (`cherry-picked for illustration`) OR explicit random-sample disclosure (`first three of 400 completions`).
+- **Qualitative-data link** in the same prose paragraph — a link to the raw text-level outputs (HF Hub data-repo path / S3 / `eval_results/issue_<N>/raw_completions/...`). Cell-level aggregates (regression CSVs, summary JSONs) DO NOT satisfy the rule. If raw completions weren't uploaded, state the cause AND add a "re-run with raw-completion upload" bullet to the TL;DR's Next-steps.
 
-Key requirements:
+Voice rules:
 
-- The `### Results` subsection contains four things in order: (1) hero figure, (2) 1-2 sentences describing the figure with headline percentages + N inline, (3) a `**Main takeaways:**` bolded label followed by 2-5 bullets where each bolds the load-bearing claim + numbers and continues with the belief update in plain prose (do NOT use an explicit `*Updates me:*` label — see `.claude/skills/clean-results/SPEC.md` §6.4), (4) a single `**Confidence: HIGH | MODERATE | LOW** — <one sentence>` line naming the binding constraint (LOW/MODERATE) or the evidence that survives scrutiny (HIGH).
-- **Statistics: p-values and sample sizes only.** No effect sizes (Cohen's d, η², r-as-effect, Δ-framed-as-effect), no named statistical tests (paired t, Fisher, Mann-Whitney, bootstrap) in prose, no power analyses, no credence intervals as inline `value ± err`. Error bars on charts are allowed; discussing them in prose is not.
+- **`I`**, not `we` — single-researcher workflow.
+- No fluff transitions: avoid *"One more wrinkle:"*, *"the buried lede was"*, *"funnily enough"*, *"the real surprise was"*.
+- No "Standing caveats" section — caveats fold into the Next-steps bullet or the Results bullet's qualifier.
+- No abandoned-metric prose — present only the metric committed to.
+
+Statistics:
+
+- **p-values and sample sizes only in prose.** No effect sizes (Cohen's d, η², r-as-effect, Δ-framed-as-effect), no named statistical tests in narrative (paired t-test, Fisher exact, Mann-Whitney, Wilcoxon, bootstrap test), no power analyses, no inline credence intervals (`value ± err`). Error bars on charts are allowed; discussing them in prose is not.
+- Test rationale goes in a "Why this test" paragraph inside `#design` that defines + justifies the test.
+
+Other:
+
+- **Title** — one sentence stating the actual finding, ending with `(LOW | MODERATE | HIGH confidence)`. Must agree with the body's confidence-rationale sentence.
+- **Confidence-rationale sentence** — near the end of `#design`, right before the parameters table, in this shape: `Confidence: LOW | MODERATE | HIGH — <one sentence naming the binding constraint or the surviving evidence>.`
 - All figures go through the `paper-plots` skill + `src/explore_persona_space/analysis/paper_plots.py`.
-- Every draft MUST pass `uv run python scripts/verify_clean_result.py <path>` before posting.
-
-See `.claude/skills/clean-results/SPEC.md` §14 for the research-communication rationale (Nanda, Perez, Chua, Hughes, Evans, Benton).
+- Every draft MUST pass `uv run python scripts/verify_sagan_card.py --issue <N>` (or against a local file) before posting; FAILs block posting, WARNs ship only when explicitly acknowledged in the body.
 
 **Iteration capture (clean-results feedback loop).** When the user corrects a clean-result draft body or title — anything from a one-word phrasing fix to a structural restructure — after applying the fix you MUST in the SAME response propose:
 - (a) An append to `.claude/skills/clean-results/iterations.md` (one H3 under the appropriate `## YYYY-MM-DD — issue #N (topic)` H2, with `**Before / After / Rule / Folded into**` block).
-- (b) IFF the rule generalizes — i.e., it would catch the same class of error in the next clean-result, not just a one-off factual fix — surgical edits to the relevant canonical file: `.claude/skills/clean-results/SPEC.md` (the single source of truth post-2026-05-11), `.claude/agents/analyzer.md`, or `scripts/verify_clean_result.py`.
+- (b) IFF the rule generalizes — i.e., it would catch the same class of error in the next clean-result, not just a one-off factual fix — surgical edits to the relevant canonical file: `~/sagan/docs/clean-result-guidelines.md` (the spec), `.claude/agents/analyzer.md`, or `scripts/verify_sagan_card.py` (the mechanical verifier).
 
-The user approves each before you write. Nothing folds in silently. The discipline is **always log; sometimes generalize** — not every correction is a rule, but every correction is a precedent worth recording. See `iterations.md` for format and seed entries from issue #276.
+The user approves each before you write. Nothing folds in silently. The discipline is **always log; sometimes generalize** — not every correction is a rule, but every correction is a precedent worth recording.
+
+**Legacy markdown bodies.** Awaiting-promotion bodies authored before the 2026-05-13 Sagan-card migration still use the old EPS-v4 markdown shape (`## TL;DR` / `## Summary` / `## Details`). `/promote-clean-result` auto-converts them to Sagan-card HTML during promotion. The legacy validators `scripts/verify_clean_result.py` and `scripts/audit_clean_results_body_discipline.py` are kept for grandfathered bodies but are deprecated — do not target the markdown format on new write-ups.
 
 ## Reproducibility Requirements (MANDATORY)
 
-Every experiment write-up MUST include a filled **Reproducibility Card** (all parameters to rerun from scratch — actual values, not "see config"). It lives at `## Setup & hyper-parameters` inside the Detailed report. That section MUST open with a short "why this experiment / why these parameters / alternatives considered" prose block so the rationale travels with the card. The `verify_clean_result.py` validator flags empty-cell sentinels (`{{`, `TBD`, `see config`, `default`) as FAIL.
+Every experiment write-up MUST carry the agent-facing reproducibility appendix (`<details id="repro">`) at the very bottom of the body, AFTER the experimental-design block. Three required groups: **Artifacts** (model/adapter HF Hub URLs with `/tree/<ref>`, training-dataset HF Hub paths, raw-completion HF Hub paths, WandB `/runs/<id>` URLs, eval JSON repo-relative paths, hero-figure source-data paths), **Compute** (wall time, GPU type, pod), **Code** (entry scripts, git commit SHA, Hydra configs, copy-pasteable `git clone + checkout + uv run` reproduce command). `verify_sagan_card.py` enforces URL permanence + sentinel scrub; empty cells must be written `n/a` explicitly.
 
 ## Remote Pod Access (SSH MCP)
 
@@ -171,9 +184,15 @@ All pods are ephemeral and named `epm-issue-<N>`. Look up the live registry with
 
 ### When to still use Bash SSH
 
-- Interactive/streaming output (e.g., `tail -f`)
 - Commands that need TTY allocation
 - Piped multi-command chains that are easier as one-liners
+- Diagnostic snapshots that aren't worth a Sagan event (e.g., one-off
+  `nvidia-smi` from the comfort of a shell)
+
+Live training/eval stdout no longer needs `tail -f` — `scripts/log_shipper.py`
+streams pod stdout into Sagan's `agent_run_events` so the
+`/agent/<agent_run_id>` page is the canonical live view (it follows
+the tail and tags events with the runpod-status heartbeat).
 
 ### Pod IP Changes
 

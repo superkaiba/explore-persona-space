@@ -1,17 +1,17 @@
 ---
 name: auto-experiment-runner
-description: Use when running experiments autonomously overnight. Two modes — Queue mode (picks up `status:approved` GitHub issues via `gh`) and Autonomous mode (proposes and runs when no approved issues exist). Per-experiment drafts are cached at `.claude/cache/issue-<N>-clean-result.md` and promoted to clean-result GitHub issues by the analyzer. Includes failure auto-diagnosis, safety rails, and cost limits.
+description: Use when running experiments autonomously overnight. Two modes — Queue mode (picks up `status='approved'` experiments from Sagan via `sagan_state.py list-by-status`) and Autonomous mode (proposes and runs when no approved experiments exist). Per-experiment drafts are cached at `.claude/cache/issue-<N>-clean-result.md` and promoted to clean-result experiment bodies in Sagan by the analyzer. Includes failure auto-diagnosis, safety rails, and cost limits.
 ---
 
 # Auto-Experiment Runner
 
 ## Scope & Boundaries
 
-**Owns:** overnight queue orchestration — picks up approved GitHub issues (`status:approved`) via `gh issue list` (or proposes via `experiment-proposer` in Autonomous mode), runs them via `/issue <N>` or `experiment-runner`, writes drafts, enforces cost/time limits.
+**Owns:** overnight queue orchestration — picks up approved experiments (`status='approved'`) from Sagan via `sagan_state.py list-by-status` (or proposes via `experiment-proposer` in Autonomous mode), runs them via `/issue <N>` or `experiment-runner`, writes drafts, enforces cost/time limits.
 
 **Wraps:** `experiment-runner` (per-experiment execution), `experiment-proposer` (Autonomous-mode ideation).
 
-**Does NOT own:** publishing clean-result GitHub issues. The analyzer agent promotes cached drafts to clean-result issues; completed source issues auto-advance to Done via the `/issue` skill's reviewer PASS — no manual sign-off step.
+**Does NOT own:** publishing clean-result write-ups. The analyzer agent replaces the source experiment's body with a polished Sagan-card HTML clean-result and flips `hasCleanResult=true`; completed source experiments auto-advance via the `/issue` skill's reviewer PASS — no manual sign-off step. The Sagan kanban (`https://sagan.superkaiba.com/experiments`) IS the queue; the GitHub project board is no longer consulted.
 
 ---
 
@@ -21,7 +21,7 @@ Run experiments overnight. Write everything to drafts. Never trust your own resu
 
 **Contract:** The auto-runner can run experiments and record results. It CANNOT:
 - Approve its own results
-- Promote drafts to clean-result GitHub issues (the analyzer does that)
+- Promote drafts to clean-result write-ups in Sagan (the analyzer does that, in-place on the source experiment row)
 - Delete any data
 - Exceed cost/time limits
 - Modify source code
@@ -50,9 +50,9 @@ SAFETY LIMITS (defaults if not specified):
 - forbidden_operations: delete data, modify clean log, push git, modify source code
 ```
 
-2. **List approved GitHub issues** — determine mode:
+2. **List approved experiments in Sagan** — determine mode:
    ```bash
-   gh issue list --label status:approved --state open --json number,title,labels --limit 20
+   uv run python scripts/sagan_state.py list-by-status --status approved --limit 20
    ```
    Non-empty → Queue mode; empty → Autonomous mode (if enabled) or STOP.
 3. **Read `.claude/cache/auto-experiment-runner.log`** — check what was already auto-generated (avoid duplicates)
@@ -72,33 +72,34 @@ Safety limits: [summarize]
 ## Mode Selection
 
 ```
-gh issue list --label status:approved --state open
+sagan_state.py list-by-status --status approved
   │
-  ├── Has approved issues? → QUEUE MODE
-  │     Pick next issue (oldest first, or by prio:* label if set)
+  ├── Has approved experiments? → QUEUE MODE
+  │     Pick next (oldest first, or by priority tag if set)
   │     Run it via `/issue <N>` — the issue skill handles the
   │     preflight/dispatch/monitor/analyzer/reviewer lifecycle
-  │     Loop: check for more approved issues
+  │     Loop: re-query for more approved experiments
   │
-  └── No approved issues?
+  └── No approved experiments?
         │
         ├── Autonomous mode enabled? → AUTONOMOUS MODE
         │     Read research context (use experiment-proposer logic)
         │     Propose ONE cheap experiment with rationale
-        │     Create a GitHub issue (status:proposed); let the user
+        │     Create a Sagan experiment row (status='proposed') via
+        │     `sagan_state.py create-experiment`; let the user
         │     approve via the normal `/issue` planner flow, OR
         │     run end-to-end via `/issue <new-N>` if auto-approval
         │     is enabled in the session config
         │     Repeat (up to max_autonomous_experiments)
         │
         └── Autonomous mode disabled? → STOP
-              Log: "No approved issues, autonomous mode disabled. Stopping."
+              Log: "No approved experiments, autonomous mode disabled. Stopping."
 ```
 
 ### Queue Mode
 
-Run exactly what each approved issue specifies, via `/issue <N>`. The
-issue's `epm:plan` marker comment is the source of truth — the runner
+Run exactly what each approved experiment specifies, via `/issue <N>`.
+The experiment's `epm:plan` marker is the source of truth — the runner
 does not re-plan. No creative decisions.
 
 ### Autonomous Mode (Conservative Constraints)
@@ -250,7 +251,7 @@ the runner is biased and cannot verify its own conclusions.]
 - Append one-liner to `.claude/cache/auto-experiment-runner.log` with UNREVIEWED marker
 - The `/issue <N>` skill handles state-label advancement automatically — no
   manual queue-file update needed; the reviewer PASS transition moves the
-  issue to `status:done-experiment` on the project board.
+  issue to `status:done_experiment` on the project board.
 
 ---
 

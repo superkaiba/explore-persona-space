@@ -130,11 +130,52 @@ def render_active_vs_awaiting_table(workflow: WorkflowYaml) -> str:
     ]
     for s in workflow.statuses:
         # Skip the legacy alias to avoid confusion in the SKILL doc.
-        if s.name == "under-review":
+        if s.name == "under_review":
             continue
         action = "**yes**" if s.user_gated else "no"
         lines.append(f"| `{s.name}` | {s.description} | {action} |")
     return "\n".join(lines)
+
+
+# Wave 2 (Sagan migration) — reject kebab status names in workflow.yaml and
+# the doc surface. Snake_case is canonical (matches Sagan's
+# `experiment_status` enum). The legacy alias `under_review` is allowed.
+# Tokens built piece-by-piece so a future kebab→snake sweep doesn't
+# accidentally rewrite this detector.
+_KEBAB = "-"  # ASCII hyphen-minus, opaque to text-based sed renames
+_KEBAB_STATUS_TOKENS = (
+    f"gate{_KEBAB}pending",
+    f"plan{_KEBAB}pending",
+    f"code{_KEBAB}reviewing",
+    f"awaiting{_KEBAB}promotion",
+    f"followups{_KEBAB}running",
+    f"done{_KEBAB}experiment",
+    f"done{_KEBAB}impl",
+)
+_KEBAB_STATUS_RE = re.compile(r"\b(?:" + "|".join(_KEBAB_STATUS_TOKENS) + r")\b")
+
+
+def _check_no_kebab_statuses(workflow: WorkflowYaml) -> list[str]:
+    """Fail if any status name in workflow.yaml uses kebab-case, or if any
+    documented surface references a kebab status (`status:plan_pending`)."""
+    errors: list[str] = []
+    for s in workflow.statuses:
+        if "-" in s.name:
+            errors.append(
+                f"workflow.yaml: status name {s.name!r} uses kebab-case; "
+                f"snake_case is canonical (Sagan experiment_status enum)."
+            )
+    surfaces = [_REPO_ROOT / "CLAUDE.md", *DOC_FILES, _REPO_ROOT / ".claude" / "workflow.yaml"]
+    for path in surfaces:
+        if not path.exists():
+            continue
+        for lineno, line in enumerate(path.read_text().splitlines(), start=1):
+            if _KEBAB_STATUS_RE.search(line):
+                errors.append(
+                    f"{path}:{lineno}: kebab-case status reference — use snake_case "
+                    f"(Wave 2 of the Sagan migration retired the kebab form)."
+                )
+    return errors
 
 
 def _extract_fenced_block(text: str, marker_id: str) -> tuple[int, int] | None:
@@ -249,6 +290,7 @@ def main(argv: list[str] | None = None) -> int:
         # Also check tables on the references path; pre-commit invokes this
         # without --check-tables and we want both behaviours bundled.
         errors.extend(emit_tables(workflow, write=False))
+        errors.extend(_check_no_kebab_statuses(workflow))
     if args.check_tables and not args.check_references:
         errors.extend(emit_tables(workflow, write=False))
     if args.emit_tables:

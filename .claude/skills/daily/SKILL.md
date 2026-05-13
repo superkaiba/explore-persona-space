@@ -431,7 +431,7 @@ Reading-time target: under 5 minutes.
 2. Source issues that posted an `epm:results` marker today (ONE call;
    comments are inlined so we don't N+1 follow up per issue):
    gh issue list --state open \
-     --search "is:issue (label:status:running OR label:status:uploading OR label:status:done-experiment) updated:>=$(date -u -d 'yesterday' +%Y-%m-%d)" \
+     --search "is:issue (label:status:running OR label:status:uploading OR label:status:done_experiment) updated:>=$(date -u -d 'yesterday' +%Y-%m-%d)" \
      --json number,title,labels,updatedAt,comments
    The previous shape used `--label A --label B --label C` which is
    AND-semantics in `gh issue list` and silently returned an empty set

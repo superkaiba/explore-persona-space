@@ -34,7 +34,7 @@ issue_types:
 columns:
   - name: "To do"
     color: GRAY
-    description: "Backlog: proposed, gate-pending"
+    description: "Backlog: proposed, gate_pending"
   - name: "Planning"
     color: PURPLE
     description: "Adversarial-planner running"
@@ -61,7 +61,7 @@ columns:
     description: "Result is correct but not informative; archive candidate"
   - name: "Done"
     color: GREEN
-    description: "Terminal: done-experiment / done-impl"
+    description: "Terminal: done_experiment / done_impl"
   - name: "Archived"
     color: GRAY
     description: "Closed long ago / no longer relevant"
@@ -77,7 +77,7 @@ statuses:
     description: "User has filed; clarifier hasn't run."
     next_action: clarify
     user_gated: false
-  - name: gate-pending
+  - name: gate_pending
     column: "To do"
     description: "Hypothesis/kill-criterion gate blocked the plan; awaiting body fix."
     next_action: gate
@@ -87,7 +87,7 @@ statuses:
     description: "Adversarial-planner is running."
     next_action: plan
     user_gated: false
-  - name: plan-pending
+  - name: plan_pending
     column: "Plan awaiting review"
     description: "Plan posted; awaiting user `approve`."
     next_action: approve
@@ -102,7 +102,7 @@ statuses:
     description: "(experiment|infra|...)-implementer is writing code."
     next_action: implement
     user_gated: false
-  - name: code-reviewing
+  - name: code_reviewing
     column: "In flight"
     description: "code-reviewer is reviewing the diff."
     next_action: review_code
@@ -129,35 +129,40 @@ statuses:
     user_gated: false
   - name: reviewing
     column: "In flight"
-    description: "reviewer (final adversarial gate) is running."
-    next_action: review
+    description: |
+      DEPRECATED 2026-05-13. The dedicated final-reviewer step was retired
+      and its responsibilities (statistical-framing rule, final
+      published-body fresh-context check) were absorbed by
+      `clean-result-critic` (see Step 9a-bis). Kept in the enum for legacy
+      state recovery; new issues never write this status.
+    next_action: interpret
     user_gated: false
-  - name: under-review
+  - name: under_review
     column: "In flight"
-    description: "Legacy alias of `reviewing`; do not introduce new uses."
-    next_action: review
+    description: "DEPRECATED 2026-05-13 (was legacy alias of `reviewing`)."
+    next_action: interpret
     user_gated: false
   - name: blocked
     column: "Blocked"
     description: "Aborted or stuck; awaiting user triage."
     next_action: triage
     user_gated: true
-  - name: awaiting-promotion
+  - name: awaiting_promotion
     column: "Awaiting promotion"
     description: "User action: promote clean-result via /clean-results promote."
     next_action: promote
     user_gated: true
-  - name: followups-running
+  - name: followups_running
     column: "Followups running"
     description: "Parent is done; children with `Parent: #<N>` are still in flight."
     next_action: wait_for_children
     user_gated: false
-  - name: done-experiment
+  - name: done_experiment
     column: "Done"
     description: "Terminal: experiment finished + clean-result promoted. Issue stays OPEN."
     next_action: terminal
     user_gated: false
-  - name: done-impl
+  - name: done_impl
     column: "Done"
     description: "Terminal: code change shipped + reviewed. Issue stays OPEN."
     next_action: terminal
@@ -213,7 +218,7 @@ gates:
     - id: 4
       name: plan_approval
       step: "2c"
-      status: status:plan-pending
+      status: status:plan_pending
       reason: "plan approval (user replies `approve`)"
     - id: 5
       name: worktree_merge
@@ -222,7 +227,7 @@ gates:
   park_and_wait:
     - id: 7
       name: awaiting_promotion
-      label: status:awaiting-promotion
+      label: status:awaiting_promotion
       reason: |
         User runs `/clean-results promote <N> useful|not-useful`; re-invoking
         /issue <N> resumes Step 10. The skill EXITs cleanly — no
@@ -254,8 +259,7 @@ halt_criteria:
     name: subagent_blocker
     description: |
       consistency-checker / code-reviewer / interpretation-critic /
-      clean-result-critic / reviewer returns BLOCKER or FAIL with
-      `needs-user` flag.
+      clean-result-critic returns BLOCKER or FAIL with `needs-user` flag.
   - id: 4
     name: infra_respawn_cap
     description: "`failure_class: infra` respawn cap (3) hit."
@@ -297,28 +301,26 @@ subagent_halt_conditions:
     verdict: "REVISE after reconcile (or REVISE+REVISE)"
     action: |
       Ensemble of `interpretation-critic` (Claude) +
-      `codex-interpretation-critic` (Codex gpt-5.5). PASS+PASS proceeds.
+      `codex-interpretation-critic` (Codex gpt-5.5), **ROUND 1 ONLY**.
+      Rounds 2-3 run Claude only (Codex fresh-eyes value decays once the
+      analyzer is iterating against round-1 feedback). PASS+PASS proceeds.
       REVISE+REVISE bounces (concatenate + dedup findings). PASS+REVISE
       dispatches `reconciler` (marker mode). On REVISE, bounces to
       analyzer up to 3 rounds per reviewer; on 4th, advance regardless
-      and surface residual debt to chat (existing single-critic policy).
-  - subagent: reviewer-ensemble
-    verdict: "FAIL after reconcile (with `needs-user`)"
+      and surface residual debt to chat.
+  - subagent: clean-result-critic-ensemble
+    verdict: "REVISE after reconcile (or REVISE+REVISE)"
     action: |
-      Ensemble of `reviewer` (Claude) + `codex-reviewer` (Codex gpt-5.5)
-      at the final gate. PASS+PASS / PASS+CONCERNS → advance source issue
-      to status:awaiting-promotion. Disagreement dispatches `reconciler`
-      (marker mode); reconciler verdict binds. On FAIL: posts FAIL on
-      source issue with reconciler rationale, awaits user.
-  - subagent: interpretation-critic
-    verdict: FATAL
-    action: "Bounces to analyzer up to 3 rounds; on 4th FATAL, status:blocked"
+      Ensemble of `clean-result-critic` (Claude) +
+      `codex-clean-result-critic` (Codex gpt-5.5), **ROUND 1 ONLY**.
+      Rounds 2-3 run Claude only. Same merge rules as
+      interpretation-critic-ensemble. Reverses the prior 2026-04 design
+      decision that the Codex twin's register imposition added noise;
+      round-1-only confines Codex to the first-look sanity pass where
+      register noise is dominated by structural-flaw catch.
   - subagent: clean-result-critic
     verdict: REVISE
-    action: "Bounces to analyzer up to 3 rounds; on 4th REVISE, advance regardless and surface residual structural / register debt to chat"
-  - subagent: reviewer
-    verdict: "FAIL with `needs-user`"
-    action: "Posts FAIL on source issue, awaits user"
+    action: "Bounces to analyzer up to 3 rounds; on 4th REVISE, advance regardless and surface residual structural / register debt to chat. Final critic before status:awaiting_promotion (no separate reviewer step as of 2026-05-13)."
   - subagent: upload-verifier
     verdict: FAIL
     action: "status:uploading does not advance to interpretation"
@@ -374,30 +376,38 @@ ensemble_review:
       fail_values: [REVISE]
       reconcile_marker: interp-critique-reconcile
       reconcile_mode: marker
+      round_policy: round-1-only
       notes: |
-        Both reviewers run all 7 lenses (lens 6 plot-prose match works on
-        both — Codex multimodal verified 2026-05-10). Codex twin no-show
-        falls back to single-Claude-critic for that round. Round cap 3 per
-        reviewer; reconcile rounds free.
-    - role: reviewer
-      step: "9b"
-      claude_agent: reviewer
-      codex_agent: codex-reviewer
+        ROUND 1 ONLY: both reviewers spawn in parallel and run all 7 lenses
+        (lens 6 plot-prose match works on both — Codex multimodal verified
+        2026-05-10). Rounds 2-3 spawn only the Claude `interpretation-critic`
+        — Codex's fresh-eyes value decays once the analyzer is iterating
+        against round-1 feedback; the round-1-only policy was adopted
+        2026-05-13. Codex twin no-show on round 1 falls back to
+        single-Claude-critic. Round cap 3 per reviewer; reconcile rounds free.
+    - role: clean-result-critic
+      step: "9a-bis"
+      claude_agent: clean-result-critic
+      codex_agent: codex-clean-result-critic
       codex_model: gpt-5.5
       codex_runtime: companion-task
       verdict_field: "Verdict"
-      pass_values: [PASS, CONCERNS]
-      fail_values: [FAIL]
-      reconcile_marker: reviewer-verdict-reconcile
+      pass_values: [PASS]
+      fail_values: [REVISE]
+      reconcile_marker: clean-result-critique-reconcile
       reconcile_mode: marker
+      round_policy: round-1-only
       notes: |
-        Final adversarial gate before clean-result promotion. Single-shot
-        at this layer (no revision loop). PASS+PASS / PASS+CONCERNS →
-        advance to awaiting-promotion. Disagreement → reconciler binds.
-        Both reviewers run scripts/verify_clean_result.py independently
-        and treat FAIL as Critical.
+        ROUND 1 ONLY: both reviewers spawn in parallel and run all 11 lenses
+        (10 structural + 1 statistical-framing rule, absorbed from the
+        retired `reviewer` step 2026-05-13). Rounds 2-3 spawn only the
+        Claude `clean-result-critic`. Reverses the prior 2026-04 design
+        decision that doubling clean-result-critic added noise — the
+        round-1-only policy confines Codex to the first-look pass where
+        structural-flaw catch dominates register noise. PASS at this layer
+        advances source issue to status:awaiting_promotion (the previous
+        dedicated reviewer step was retired).
   not_doubled:
-    - clean-result-critic  # empirical writing-register gap; Codex would impose different register (net noise, not signal)
     - upload-verifier      # mechanical artifact checklist, no LLM-judgment value
     - consistency-checker  # mechanical structure check
   round_cap_per_reviewer: 3
@@ -462,7 +472,7 @@ markers:
     posted_by: skill (via reconciler)
     when: "Step 5 (only on PASS/FAIL disagreement between epm:code-review v<n> and epm:code-review-codex v<n>)"
     fields: "Binding final verdict (PASS|FAIL) + per-finding adjudication table + rationale anchored to artifact evidence. CONCERNS folds into PASS. Does NOT count toward the per-reviewer round cap. Reconciler may NOT add findings beyond what either reviewer raised."
-  - kind: hf-gate-pending
+  - kind: hf-gate_pending
     posted_by: skill
     when: "Step 6a"
     fields: "model id, gate status, retry plan if rejected"
@@ -517,23 +527,32 @@ markers:
   - kind: clean-result-critique
     posted_by: skill (via clean-result-critic)
     when: "Step 9a-bis"
-    fields: "PASS/REVISE verdict with 10 lenses covering title shape, TL;DR user-voice register, Summary six-bullet structure + LW register, Details per-section discipline (setup-before-figure, visible captions, sample outputs), heading-as-toggle convention, body-discipline anti-patterns (via audit_clean_results_body_discipline.py), Source issues conditional H2, issue-reference link form, and verifier sanity (verify_clean_result.py). Runs after `interp-critique` PASSes — content honesty first, structure + register second."
+    fields: "PASS/REVISE verdict with 11 lenses covering title shape, TL;DR user-voice register, Summary six-bullet structure + LW register, Details per-section discipline (setup-before-figure, visible captions, sample outputs), heading-as-toggle convention, body-discipline anti-patterns (via audit_clean_results_body_discipline.py), Source issues conditional H2, issue-reference link form, verifier sanity (verify_clean_result.py), and statistical-framing rule (no effect sizes / named tests / power analyses / `value ± err` credence intervals in prose; absorbed from the retired `reviewer` agent 2026-05-13). Runs after `interp-critique` PASSes — content honesty first, structure + register + statistical framing second. **Final critic before status:awaiting_promotion as of 2026-05-13** (the previous dedicated reviewer step was retired)."
+  - kind: clean-result-critique-codex
+    posted_by: skill (via codex-clean-result-critic)
+    when: "Step 9a-bis (ROUND 1 ONLY)"
+    fields: "Codex (gpt-5.5 via companion task) twin of clean-result-critic. PASS/REVISE verdict with the same 11 lenses (10 structural + statistical-framing rule). Spawned in parallel with the Claude critic on round 1 only; rounds 2-3 run Claude only. Independently runs `verify_clean_result.py` and treats FAIL as Critical. Posted via gh_graphql by the Claude wrapper agent — Codex never sees GH_TOKEN."
+  - kind: clean-result-critique-reconcile
+    posted_by: skill (via reconciler)
+    when: "Step 9a-bis (only on PASS/REVISE disagreement between epm:clean-result-critique v1 and epm:clean-result-critique-codex v1)"
+    fields: "Binding final verdict (PASS|REVISE) + per-finding adjudication table + rationale anchored to artifact evidence (clean-result body / verifier output / audit-script output). Does NOT count toward per-reviewer round cap. Reconciler may NOT add findings beyond what either reviewer raised."
   - kind: analysis
     posted_by: skill (via analyzer)
     when: "Step 9a (final)"
     fields: "Link to created clean-result issue + hero figure URL + 2-sentence recap"
+  # DEPRECATED markers (kept for back-compat / legacy state recovery; new issues never post these):
   - kind: reviewer-verdict
-    posted_by: skill (via reviewer)
-    when: "Step 9b"
-    fields: "PASS / CONCERNS / FAIL + line-level issues"
+    posted_by: skill (via reviewer) — DEPRECATED 2026-05-13
+    when: "Step 9b (retired)"
+    fields: "DEPRECATED. The dedicated reviewer step was retired and its responsibilities (statistical-framing rule + final published-body fresh-context check) were absorbed by `clean-result-critic` (Step 9a-bis). This marker kind is kept in the schema for legacy issue state recovery only."
   - kind: reviewer-verdict-codex
-    posted_by: skill (via codex-reviewer)
-    when: "Step 9b"
-    fields: "Codex (gpt-5.5 via companion task) twin of reviewer. PASS/CONCERNS/FAIL verdict with template-compliance + reproducibility card + claim verification. v<n> per round (typically v1 — single-shot at this gate), paired with epm:reviewer-verdict v<n>. Posted via gh_graphql by the Claude wrapper agent — Codex never sees GH_TOKEN."
+    posted_by: skill (via codex-reviewer) — DEPRECATED 2026-05-13
+    when: "Step 9b (retired)"
+    fields: "DEPRECATED — see reviewer-verdict."
   - kind: reviewer-verdict-reconcile
-    posted_by: skill (via reconciler)
-    when: "Step 9b (only on PASS/FAIL disagreement between epm:reviewer-verdict v<n> and epm:reviewer-verdict-codex v<n>)"
-    fields: "Binding final verdict (PASS|FAIL). CONCERNS folds into PASS. Does NOT count toward round cap. Reconciler may NOT add findings beyond what either reviewer raised."
+    posted_by: skill (via reconciler) — DEPRECATED 2026-05-13
+    when: "Step 9b (retired)"
+    fields: "DEPRECATED — see reviewer-verdict."
   - kind: test-verdict
     posted_by: skill (Step 9c, inline tests)
     when: "Step 9c"
@@ -607,46 +626,46 @@ steps:
     name: load_state
     entry_status_label:
       - proposed
-      - gate-pending
+      - gate_pending
       - planning
-      - plan-pending
+      - plan_pending
       - approved
       - implementing
-      - code-reviewing
+      - code_reviewing
       - testing
       - running
       - uploading
       - interpreting
-      - reviewing
-      - under-review
-      - awaiting-promotion
-      - followups-running
+      - reviewing       # legacy state-recovery
+      - under_review    # legacy state-recovery
+      - awaiting_promotion
+      - followups_running
       - blocked
-      - done-experiment
-      - done-impl
+      - done_experiment
+      - done_impl
     entry_condition: always
     next_expected_step: "0b"
   - id: "0b"
     name: defaulting_autofill
     entry_status_label:
       - proposed
-      - gate-pending
+      - gate_pending
       - planning
-      - plan-pending
+      - plan_pending
       - approved
       - implementing
-      - code-reviewing
+      - code_reviewing
       - testing
       - running
       - uploading
       - interpreting
-      - reviewing
-      - under-review
-      - awaiting-promotion
-      - followups-running
+      - reviewing       # legacy state-recovery
+      - under_review    # legacy state-recovery
+      - awaiting_promotion
+      - followups_running
       - blocked
-      - done-experiment
-      - done-impl
+      - done_experiment
+      - done_impl
     entry_condition: "missing status:* OR empty body OR missing type:*"
     posts_marker: auto-defaults
     next_expected_step: "1"
@@ -674,7 +693,7 @@ steps:
   - id: "2c"
     name: plan_pending
     entry_status_label:
-      - plan-pending
+      - plan_pending
     entry_condition: "plan + consistency posted; awaiting user approve"
     next_expected_step: "3"
   - id: "3"
@@ -700,7 +719,7 @@ steps:
   - id: "5"
     name: code_review
     entry_status_label:
-      - code-reviewing
+      - code_reviewing
     entry_condition: "epm:experiment-implementation posted"
     posts_marker: code-review
     next_expected_step: "6a"
@@ -763,40 +782,37 @@ steps:
       - interpreting
     entry_condition: "interp-critique PASS or round >= 3"
     posts_marker: clean-result-critique
-    next_expected_step: "9b"
-  - id: "9b"
-    name: reviewer
-    entry_status_label:
-      - reviewing
-      - under-review
-    entry_condition: "clean-result issue created"
-    posts_marker: reviewer-verdict
     next_expected_step: "9c"
+  # Step 9b (dedicated reviewer step) was retired 2026-05-13. Its
+  # responsibilities — statistical-framing rule enforcement + final
+  # fresh-context check on the published clean-result body — were absorbed
+  # by `clean-result-critic` (Step 9a-bis). The `reviewing` / `under_review`
+  # entry labels remain valid below for legacy state-recovery only.
   - id: "9c"
     name: test_verdict
     entry_status_label:
       - testing
-      - code-reviewing
-      - reviewing
+      - code_reviewing
+      - reviewing  # legacy; new code-change paths use `testing`
     entry_condition: "code-change path (type:infra/survey); inline tests"
     posts_marker: test-verdict
     next_expected_step: "10"
   - id: "10"
     name: completion_audit
     entry_status_label:
-      - awaiting-promotion
-      - reviewing
-      - under-review
+      - awaiting_promotion
+      - reviewing       # legacy state-recovery
+      - under_review    # legacy state-recovery
       - testing
-    entry_condition: "reviewer PASS OR test-verdict PASS; pre-flight before Done"
+    entry_condition: "clean-result-critic PASS (Step 9a-bis) OR test-verdict PASS; pre-flight before Done"
     posts_marker: completion-audit
     next_expected_step: "10a"
   - id: "10a"
     name: done_label_flip
     entry_status_label:
-      - awaiting-promotion
-      - reviewing
-      - under-review
+      - awaiting_promotion
+      - reviewing       # legacy state-recovery
+      - under_review    # legacy state-recovery
       - testing
     entry_condition: "completion-audit all ☑"
     posts_marker: done
@@ -804,16 +820,16 @@ steps:
   - id: "10b"
     name: follow_ups
     entry_status_label:
-      - done-experiment
-      - done-impl
+      - done_experiment
+      - done_impl
     entry_condition: "Done label set"
     posts_marker: follow-ups
     next_expected_step: "10d"
   - id: "10d"
     name: worktree_merge_prompt
     entry_status_label:
-      - done-experiment
-      - done-impl
+      - done_experiment
+      - done_impl
     entry_condition: "PR exists and is unmerged"
     posts_marker: merged
     next_expected_step: terminal

@@ -311,8 +311,9 @@ Do NOT auto-fix:
    verification. Your `epm:results` marker is the handoff: it carries the
    reproducibility card, raw eval JSON paths, WandB URL, HF Hub path, commit
    hash, GPU-hours used, deviations, and the hot-fix log. The analyzer reads
-   this and produces the clean-result GitHub issue per
-   `.claude/skills/clean-results/SPEC.md`.
+   this and replaces the source experiment's body in Sagan with a polished
+   clean-result write-up (in place; see `.claude/agents/analyzer.md` Step 6
+   and `~/sagan/docs/clean-result-guidelines.md`).
 
    **REQUIRED `## Sample outputs` section in `epm:results`:** cherry-pick
    >=3 randomly-sampled (persona, prompt, response) triplets PER CONDITION,
@@ -335,9 +336,10 @@ Do NOT auto-fix:
 
 ## Constraints
 
-- **Never write the clean-result GitHub issue yourself.** That is the
-  `analyzer` agent's job (downstream, after upload-verifier PASS). You only
-  post the structured `epm:results` marker.
+- **Never write the clean-result yourself.** That is the `analyzer`
+  agent's job — it replaces the source experiment's body in Sagan in
+  place (downstream, after upload-verifier PASS). You only post the
+  structured `epm:results` marker.
 - **Never approve your own results** — the analyzer + reviewer + user do that.
 - **Never delete data** — checkpoints, logs, configs, results.
 - **Never write substantial experiment code.** The hot-fix bar is ≤10 lines,

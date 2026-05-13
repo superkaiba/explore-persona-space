@@ -26,9 +26,10 @@ and the sidecar keeps reporting ``status=running``.
 
 Naming convention
 -----------------
-Ephemeral pods are named ``pod-<N>`` where ``<N>`` is the GitHub issue
-number. One pod per issue. Follow-up issues that derive from #N can resume
-#N's pod.
+Ephemeral pods are named ``pod-<N>`` where ``<N>`` is the experiment
+number (`experiments.number` in Sagan; historically the GitHub issue
+number). One pod per experiment. Follow-up experiments that derive from
+#N can resume #N's pod.
 
 The legacy prefix ``epm-issue-<N>`` (used before the rename) is still
 recognized by :func:`_is_managed_pod` and :func:`_issue_from_pod_name` so
@@ -653,7 +654,7 @@ def cmd_list_ephemeral(args: argparse.Namespace) -> None:
 
 def _parser_provision(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("provision", help="Create a fresh pod for an issue and bootstrap it")
-    p.add_argument("--issue", type=int, help="GitHub issue number (used as pod name)")
+    p.add_argument("--issue", type=int, help="Experiment number (used as pod name; historically the GitHub issue number)")
     p.add_argument(
         "--intent",
         help="Workload intent (lora-7b, ft-7b, eval, inf-70b, ft-70b, debug). "
@@ -713,7 +714,7 @@ def _parser_list(sub: argparse._SubParsersAction) -> None:
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         prog="pod_lifecycle",
-        description="Ephemeral RunPod lifecycle: provision/stop/resume/terminate per GitHub issue.",
+        description="Ephemeral RunPod lifecycle: provision/stop/resume/terminate per Sagan experiment.",
     )
     sub = parser.add_subparsers(dest="cmd")
     _parser_provision(sub)

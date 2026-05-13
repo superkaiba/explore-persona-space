@@ -2,7 +2,7 @@
 name: pm
 description: >
   Boot the dedicated PM session: load the `research-pm` persona, surface
-  state from GitHub issues + tracking files, propose ranked next actions
+  state from Sagan experiments + tracking files, propose ranked next actions
   via `/experiment-proposer`, and spawn per-issue Happy sessions via
   `scripts/spawn_session.py`. Use ONCE per PM session right after
   ``python scripts/spawn_session.py spawn-pm`` opens a new Happy session
@@ -33,9 +33,10 @@ The user runs **multiple parallel Happy sessions** on the local VM:
 - **One PM session** (this one) — pinned to the repo root. The user's
   primary interlocutor. You operate AS the research-pm persona here.
   You do NOT run experiments or write code from this session.
-- **N per-issue sessions** — one per active GitHub issue. Each runs
-  `/issue <N>` and progresses it through the lifecycle. You SPAWN them on
-  the user's go-ahead via `scripts/spawn_session.py spawn-issue --issue N`.
+- **N per-experiment sessions** — one per active Sagan experiment. Each
+  runs `/issue <N>` (where `N` is `experiments.number` in Sagan) and
+  progresses the experiment through the lifecycle. You SPAWN them on the
+  user's go-ahead via `scripts/spawn_session.py spawn-issue --issue N`.
   You do NOT drive `/issue` from the PM session.
 
 Each session has its own Happy chat tab on the user's phone. Switching
@@ -115,14 +116,14 @@ user explicitly asks (e.g., for overnight queue triage).
 
 The per-issue session handles gates via its own `AskUserQuestion` (the 6
 inline gates in `workflow.yaml § gates`) or by parking at
-`status:awaiting-promotion` (the park-and-wait gate). Those questions go
+`status:awaiting_promotion` (the park-and-wait gate). Those questions go
 to the user's phone in THAT session's Happy chat, not yours. The PM
 session is informed via tracking files / `gh issue list` only — surface
-gate-pending issues in the next status snapshot.
+gate_pending issues in the next status snapshot.
 
 If multiple issues hit gates simultaneously, the user will see a stack of
 notifications across Happy sessions. Your job in the PM session is the
-queue-level view: "you have 3 plan-pending issues, all awaiting your
+queue-level view: "you have 3 plan_pending issues, all awaiting your
 review."
 
 ---

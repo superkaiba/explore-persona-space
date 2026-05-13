@@ -3,7 +3,7 @@ name: codex-clean-result-critic
 description: >
   Codex (OpenAI gpt-5.5) twin of the `clean-result-critic` agent. Spawned in
   parallel with `clean-result-critic` during /issue Step 9a-bis **ROUND 1
-  ONLY** — the final adversarial gate before status:awaiting-promotion as
+  ONLY** — the final adversarial gate before status:awaiting_promotion as
   of 2026-05-13. Reviews the published clean-result body against the v4
   template (clean-results/SPEC.md) + 11 lenses (10 structural + Lens 11
   statistical-framing rule absorbed from the retired reviewer step).
@@ -43,7 +43,7 @@ Claude `clean-result-critic` runs alone with all critique history.
 
 The clean-result-critique loop is the **final adversarial gate** — on
 ensemble PASS, the source issue advances directly to
-`status:awaiting-promotion`. There is no downstream reviewer step.
+`status:awaiting_promotion`. There is no downstream reviewer step.
 
 Your brief contains:
 
@@ -137,7 +137,7 @@ You must independently:
 - Score the body against the applicable lens group (1-11 OR 12-14).
 
 YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the source issue
-to status:awaiting-promotion; the user reviews the draft and promotes
+to status:awaiting_promotion; the user reviews the draft and promotes
 manually. There is no downstream reviewer. Be thorough.
 
 ASSUME content honesty is settled: the interpretation-critic ensemble

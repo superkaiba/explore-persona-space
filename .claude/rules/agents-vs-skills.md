@@ -21,7 +21,7 @@ A thing is ONE or the OTHER, never both.
 
 ## Use an Agent when ANY of these hold
 
-- **Independence is load-bearing.** Example: the `reviewer` must not see the
+- **Independence is load-bearing.** Example: `clean-result-critic` must not see the
   `analyzer`'s chain of thought, so they must be different context windows.
 - **Persona / role encapsulation.** Example: `critic` is opinionated
   ("how could this plan fail?"); you want its voice separate from the main
@@ -70,23 +70,31 @@ The outer layer is usually a **skill** (orchestrator). Inside, it dispatches
     ├─ spawns experimenter (agent)
     │       └─ uses /experiment-runner (skill: monitoring protocol)
     ├─ spawns upload-verifier (agent)
-    ├─ iterates analyzer ↔ interpretation-critic    (max 3 rounds, content honesty)
+    ├─ iterates analyzer ↔ interpretation-critic    (max 3 rounds, content honesty;
+    │   │                                            round 1 ENSEMBLED with codex-interpretation-critic,
+    │   │                                            rounds 2-3 Claude only)
     │       ├─ spawns analyzer (agent, uses /paper-plots)
-    │       └─ spawns interpretation-critic (agent)
-    ├─ iterates analyzer ↔ clean-result-critic      (max 3 rounds, structure + register)
+    │       └─ spawns interpretation-critic (agent) [+ codex twin on round 1]
+    ├─ iterates analyzer ↔ clean-result-critic      (max 3 rounds, structure + register
+    │   │                                            + statistical-framing rule;
+    │   │                                            round 1 ENSEMBLED with codex-clean-result-critic,
+    │   │                                            rounds 2-3 Claude only; FINAL adversarial
+    │   │                                            gate as of 2026-05-13)
     │       ├─ re-spawns analyzer (agent)
-    │       └─ spawns clean-result-critic (agent)
-    ├─ spawns reviewer (agent)
+    │       └─ spawns clean-result-critic (agent) [+ codex twin on round 1]
     ├─ (auto-complete step inline in the skill)
     ├─ (test-verdict gate inline in the skill, code-change paths only)
     └─ spawns follow-up-proposer (agent)
 ```
 
+The dedicated `reviewer` agent step was retired 2026-05-13; see the
+ontology table below for the deprecation note.
+
 This is healthy: skills coordinate, agents *do*, skills are reference.
 
 ---
 
-## Current ontology (April 2026)
+## Current ontology (May 2026)
 
 ### Agents (roles — `.claude/agents/`)
 
@@ -100,18 +108,19 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `implementer` | Standalone infra / refactor / utility code changes (NOT experiment-specific code) |
 | `upload-verifier` | Mechanical artifact checklist, isolated from experimenter optimism |
 | `analyzer` | Fresh-context analysis; produces fact sheet + interpretation |
-| `interpretation-critic` | Adversarial review of interpretation, must not see analyzer reasoning |
-| `clean-result-critic` | Adversarial review of clean-result issue bodies against the canonical template + exemplars (10 lenses: title, TL;DR, Summary structure + register, Details per-section discipline, captions, heading-as-toggle, body-discipline anti-patterns, Source issues conditional H2, issue-link form, verifier sanity); runs after `interpretation-critic` PASS, must not see analyzer reasoning |
-| `reviewer` | Final adversarial review of published clean-result issue |
-| `code-reviewer` | Adversarial review of implementer's diff, must be isolated |
+| `interpretation-critic` | Adversarial review of interpretation, must not see analyzer reasoning. Round 1 ensembled with `codex-interpretation-critic`; rounds 2-3 Claude only (round-1-only policy adopted 2026-05-13). |
+| `clean-result-critic` | Adversarial review of clean-result issue bodies against the canonical template + exemplars (11 lenses: title, TL;DR, Summary structure + register, Details per-section discipline, captions, heading-as-toggle, body-discipline anti-patterns, Source issues conditional H2, issue-link form, verifier sanity, **Lens 11 statistical-framing rule** absorbed from the retired reviewer step). **Final adversarial gate before status:awaiting_promotion as of 2026-05-13.** Round 1 ensembled with `codex-clean-result-critic`; rounds 2-3 Claude only. |
+| `code-reviewer` | Adversarial review of implementer's diff, must be isolated. Ensembled all rounds with `codex-code-reviewer`. |
 | `follow-up-proposer` | Reads results + plan, proposes concrete next experiments |
 | `retrospective` | Fresh-context review of session transcripts |
 | `research-pm` | Strategic PM persona for the dedicated PM session (loaded by `/pm`); owns queue triage + dispatch decisions, does NOT execute experiments or write code |
-| `reconciler` | Binary tie-breaker for Codex ensemble adversarial review (`code-reviewer` / `critic` / `interpretation-critic` / `reviewer`); marker + in-context output modes |
+| `reconciler` | Binary tie-breaker for Codex ensemble adversarial review (`code-reviewer` / `critic` / `interpretation-critic` / `clean-result-critic`); marker + in-context output modes |
 | `codex-code-reviewer` | Codex (gpt-5.5) twin of `code-reviewer`; thin Claude wrapper around the OpenAI Codex plugin's `companion task` runtime |
 | `codex-critic` | Codex twin of `critic` (per-lens, in-context output for /adversarial-planner Phase 2) |
-| `codex-interpretation-critic` | Codex twin of `interpretation-critic` (7 lenses including multimodal lens 6) |
-| `codex-reviewer` | Codex twin of `reviewer` (final clean-result gate; runs `verify_clean_result.py` independently) |
+| `codex-interpretation-critic` | Codex twin of `interpretation-critic` (7 lenses including multimodal lens 6); round-1-only |
+| `codex-clean-result-critic` | Codex twin of `clean-result-critic` (11 lenses including Lens 11 statistical-framing rule); round-1-only; runs verify_clean_result.py + audit_clean_results_body_discipline.py independently |
+| ~~`reviewer`~~ | **DEPRECATED 2026-05-13.** Final adversarial responsibilities absorbed by `clean-result-critic` Lens 11. File kept for historical reference. |
+| ~~`codex-reviewer`~~ | **DEPRECATED 2026-05-13** alongside `reviewer`. Replaced by `codex-clean-result-critic`. |
 
 ### Skills (playbooks — `.claude/skills/`)
 
@@ -127,7 +136,7 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `auto-experiment-runner` | Overnight queue automation |
 | `experiment-proposer` | Prioritization ranking |
 | `ideation` | Brainstorming protocol |
-| `independent-reviewer` | Shared Principles-of-Honest-Analysis reference for analyzer + reviewer |
+| `independent-reviewer` | Shared Principles-of-Honest-Analysis reference for analyzer + clean-result-critic (formerly: + reviewer, retired 2026-05-13) |
 | `pm` | PM session bootstrap: loads the `research-pm` persona + spawns per-issue Happy sessions via `scripts/spawn_session.py` |
 | `cleanup`, `refactor`, `codebase-debugger` | Code-hygiene workflows |
 
