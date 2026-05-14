@@ -96,8 +96,14 @@ def cmd_spawn_pm(_: argparse.Namespace) -> None:
 def cmd_spawn_issue(args: argparse.Namespace) -> None:
     """Spawn a session for issue ``--issue N``. The session opens cwd=<repo root>
     by default, OR cwd=<.claude/worktrees/issue-N> if such a worktree exists
-    (so the session is git-isolated to that issue's branch). The user then
-    types ``/issue N`` to start the workflow."""
+    (so the session is git-isolated to that issue's branch).
+
+    By default the new session opens empty and the user types ``/issue N``
+    on their phone. With ``--auto`` (or an explicit ``--initial-prompt``)
+    the session boots with that prompt already in place. Auto-prompt
+    requires the daemon to be patched — run
+    ``sudo uv run python scripts/patch_happy_daemon.py`` once on the VM.
+    """
     issue = args.issue
     worktree = WORKTREE_DIR / f"issue-{issue}"
     if worktree.is_dir():
@@ -106,14 +112,30 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
     else:
         cwd = PROJECT_ROOT
         cwd_note = f"<repo root> {PROJECT_ROOT}  (no worktree at {worktree})"
-    resp = post("/spawn-session", {"directory": str(cwd), "agent": "claude"})
+
+    body: dict[str, object] = {"directory": str(cwd), "agent": "claude"}
+    if args.initial_prompt:
+        prompt = args.initial_prompt
+    elif args.auto:
+        prompt = f"/loop 10m /issue {issue}"
+    else:
+        prompt = None
+    if prompt is not None:
+        body["claudeArgs"] = [prompt]
+
+    resp = post("/spawn-session", body)
     if not resp.get("success"):
         sys.exit(f"spawn failed: {resp}")
-    print(
-        f"Issue #{issue} session spawned: {resp['sessionId']}\n"
-        f"  cwd: {cwd_note}\n"
-        f"Open it in Happy on your phone and type ``/issue {issue}``."
-    )
+    print(f"Issue #{issue} session spawned: {resp['sessionId']}")
+    print(f"  cwd: {cwd_note}")
+    if prompt is not None:
+        print(f"  initial prompt: {prompt!r}")
+        print(
+            "  (auto-prompt requires the daemon patch — "
+            "`sudo uv run python scripts/patch_happy_daemon.py check`)"
+        )
+    else:
+        print(f"Open it in Happy on your phone and type ``/issue {issue}``.")
 
 
 def cmd_list(_: argparse.Namespace) -> None:
@@ -147,6 +169,19 @@ def main(argv: list[str] | None = None) -> None:
 
     p_issue = sub.add_parser("spawn-issue", help="spawn a Happy session for issue #N")
     p_issue.add_argument("--issue", type=int, required=True)
+    p_issue.add_argument(
+        "--initial-prompt",
+        default=None,
+        help=(
+            "Boot the session with this prompt already in place (requires "
+            "the daemon patch — run `sudo uv run python scripts/patch_happy_daemon.py`)."
+        ),
+    )
+    p_issue.add_argument(
+        "--auto",
+        action="store_true",
+        help=("Shorthand for --initial-prompt '/loop 10m /issue <N>' so the session self-paces."),
+    )
     p_issue.set_defaults(fn=cmd_spawn_issue)
 
     p_list = sub.add_parser("list", help="list active Happy sessions")
