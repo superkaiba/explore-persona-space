@@ -48,7 +48,7 @@ this twin doesn't loop).
 
 Your brief contains:
 
-- `experiment_number` — the source Sagan experiment (`<N>`).
+- `experiment_number` — the source task (`<N>`).
 - `clean_result_body_path` — path on disk where the orchestrator dumped the
   clean-result body for Codex to read.
 - `eval_results_paths` — JSON paths cited in the clean-result.

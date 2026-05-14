@@ -5,7 +5,7 @@ description: >
   Auto-applies the paper-quality rcParams from
   `src/explore_persona_space/analysis/paper_plots.py`. Uses colorblind-safe
   palettes, error bars, direction arrows, and commit-pinned metadata.
-  Invoke when building any figure destined for a Sagan clean-result body, the
+  Invoke when building any figure destined for a clean-result body, the
   research log, or the paper itself.
 user_invocable: true
 ---
@@ -23,7 +23,7 @@ directory. The invariants live there; this file owns the workflow.
 
 ## When to use
 
-- ANY figure going into a Sagan clean-result body, a `research_log/drafts/`
+- ANY figure going into a clean-result body, a `research_log/drafts/`
   write-up, or the paper itself.
 - Analyzer output figures (spawned by `/issue` Step 7a).
 - Manual exploration that you plan to keep (run it through this anyway — it
@@ -58,7 +58,7 @@ set afterward are applied to NEW artists only.
 ### Choosing the style target
 
 ```python
-set_paper_style("blog")     # default for Sagan clean-result bodies + mentor slides
+set_paper_style("blog")     # default for clean-result bodies + mentor slides
 set_paper_style("neurips")  # default for paper figures (NeurIPS / ICML / ICLR)
 set_paper_style("generic")  # generic-larger NeurIPS variant; rarely the right pick
 ```

@@ -8,7 +8,7 @@ description: >
   template (clean-results/SPEC.md) + 11 lenses (10 structural + Lens 11
   statistical-framing rule absorbed from the retired reviewer step).
   Thin Claude wrapper: composes prompt → invokes Codex via `companion task`
-  → posts an `epm:clean-result-critique-codex` Sagan workflow event. Not
+  → posts an `epm:clean-result-critique-codex` task workflow event. Not
   spawned on rounds 2-3 (Claude critic runs alone).
 model: sonnet
 memory: project
@@ -21,7 +21,7 @@ background: true
 > **Role:** Dispatcher for the Codex twin of `clean-result-critic`.
 > Compose review prompt (11 lenses: structure + register + statistical
 > framing) → invoke Codex via `companion task` → post
-> `epm:clean-result-critique-codex` marker on the source Sagan experiment.
+> `epm:clean-result-critique-codex` marker on the source task.
 > The orchestrator merges my verdict with the matching Claude
 > `clean-result-critic` verdict per the ensemble decision rule.
 
@@ -47,9 +47,9 @@ ensemble PASS, the source experiment advances directly to
 
 Your brief contains:
 
-- `experiment_number` — the source Sagan experiment (`<N>`).
+- `experiment_number` — the source task (`<N>`).
 - `clean_result_body_path` — path on disk where the orchestrator dumped
-  the Sagan clean-result body for Codex to read.
+  the clean-result body for Codex to read.
 - `interpretation_marker_path` — the latest `epm:interpretation v<n>` body
   for content honesty context (Codex doesn't re-critique content — that's
   9a's job — but reading it disambiguates "what was the experiment?").
@@ -93,7 +93,7 @@ Also read the canonical specs and inline the load-bearing rules:
   (title format, TL;DR rules, Summary six-bullet structure, Details
   per-section discipline, figure caption rules, body-discipline
   anti-patterns).
-- `~/sagan/docs/clean-result-guidelines.md` — for Sagan-card HTML
+- `~/sagan/docs/clean-result-guidelines.md` — for clean-result HTML
   bodies (TL;DR four-bullet rules, figure-with-figcaption convention,
   Experimental design block rules, Reproducibility appendix rules,
   confidence-rationale sentence rule, cherry-picked sample label rule,
@@ -102,7 +102,7 @@ Also read the canonical specs and inline the load-bearing rules:
 ### Step 3: Compose the review prompt
 
 ```
-You are an adversarial reviewer of Sagan clean-result bodies. You have
+You are an adversarial reviewer of clean-result bodies. You have
 ZERO investment in the body being well-written. Your job is to find
 every structural, register, or statistical-framing flaw BEFORE this
 clean-result reaches the user for promotion.
@@ -118,14 +118,14 @@ You must independently:
 - Detect the body shape:
   - **SPEC.md markdown** if top-level `## TL;DR` / `## Summary` /
     `## Details` H2s are present → score against Lenses 1-11 (below).
-  - **Sagan-card HTML** if body has inline `<style>` block with
+  - **clean-result HTML** if body has inline `<style>` block with
     `.cr-<number>` namespace + `<section id="tldr">` + `<details id="design">`
     → score against Lenses 12-14 (below) and SKIP Lenses 1-11 (they don't
     apply to HTML bodies).
 - For SPEC.md bodies, run
   `uv run python scripts/verify_clean_result.py {{clean_result_body_path}}`
   via Bash. Any FAIL → REVISE verdict, citing the FAIL'd check first.
-- For Sagan-card bodies, run
+- For clean-result bodies, run
   `uv run python scripts/verify_sagan_card.py --issue {{issue_number}}` via
   Bash. Any FAIL → REVISE, citing the FAIL'd check first.
 - For SPEC.md bodies, also run
@@ -198,18 +198,18 @@ You MUST emit your verdict in EXACTLY this format. No preamble, no fences:
 - <effect-size / named-test / power-analysis / `value ± err` hits in
   prose, with quote + suggested rewrite, or PASS>
 
-### Lens 12 — Reproducibility appendix (Sagan-card only)
+### Lens 12 — Reproducibility appendix (clean-result only)
 - <details id="repro"> present and after #design? Artifacts + Compute +
   Code groups present? URLs permanent (commit/run-id pinned)? Sentinel
   scrub OK? Reproduce-command pasteable? — findings or PASS or N/A>
 
-### Lens 13 — Confidence-rationale sentence (Sagan-card only)
+### Lens 13 — Confidence-rationale sentence (clean-result only)
 - <"Confidence: LOW|MODERATE|HIGH — <rationale>" line present, before
   #repro? rationale names binding constraint (LOW/MODERATE) or
   surviving evidence (HIGH)? matches title's confidence marker? —
   findings or PASS or N/A>
 
-### Lens 14 — Cherry-picked sample label (Sagan-card only)
+### Lens 14 — Cherry-picked sample label (clean-result only)
 - <every <pre> sample inside #design has "cherry-picked for
   illustration" OR explicit random-sample disclosure within 200 chars
   above it? — findings or PASS or N/A>

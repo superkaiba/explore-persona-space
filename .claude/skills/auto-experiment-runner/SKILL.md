@@ -1,17 +1,17 @@
 ---
 name: auto-experiment-runner
-description: Use when running experiments autonomously overnight. Two modes — Queue mode (picks up `status='approved'` experiments from Sagan via `sagan_state.py list-by-status`) and Autonomous mode (proposes and runs when no approved experiments exist). Per-experiment drafts are cached at `.claude/cache/issue-<N>-clean-result.md` and promoted to clean-result experiment bodies in Sagan by the analyzer. Includes failure auto-diagnosis, safety rails, and cost limits.
+description: Use when running experiments autonomously overnight. Two modes — Queue mode (picks up `status='approved'` experiments from the task workflow via `task.py list-by-status`) and Autonomous mode (proposes and runs when no approved experiments exist). Per-experiment drafts are cached at `.claude/cache/issue-<N>-clean-result.md` and promoted to clean-result experiment bodies in the task workflow by the analyzer. Includes failure auto-diagnosis, safety rails, and cost limits.
 ---
 
 # Auto-Experiment Runner
 
 ## Scope & Boundaries
 
-**Owns:** overnight queue orchestration — picks up approved experiments (`status='approved'`) from Sagan via `sagan_state.py list-by-status` (or proposes via `experiment-proposer` in Autonomous mode), runs them via `/issue <N>` or `experiment-runner`, writes drafts, enforces cost/time limits.
+**Owns:** overnight queue orchestration — picks up approved experiments (`status='approved'`) from the task workflow via `task.py list-by-status` (or proposes via `experiment-proposer` in Autonomous mode), runs them via `/issue <N>` or `experiment-runner`, writes drafts, enforces cost/time limits.
 
 **Wraps:** `experiment-runner` (per-experiment execution), `experiment-proposer` (Autonomous-mode ideation).
 
-**Does NOT own:** publishing clean-result write-ups. The analyzer agent replaces the source experiment's body with a polished Sagan-card HTML clean-result and flips `hasCleanResult=true`; completed source experiments auto-advance through Sagan promotion. The Sagan kanban (`https://sagan.superkaiba.com/experiments`) is the queue.
+**Does NOT own:** publishing clean-result write-ups. The analyzer agent replaces the source experiment's body with a polished clean-result HTML clean-result and flips `has_clean_result=true`; completed source experiments auto-advance through task promotion. The task list (`https://eps.superkaiba.com/`) is the queue.
 
 ---
 
@@ -21,7 +21,7 @@ Run experiments overnight. Write everything to drafts. Never trust your own resu
 
 **Contract:** The auto-runner can run experiments and record results. It CANNOT:
 - Approve its own results
-- Promote drafts to clean-result write-ups in Sagan (the analyzer does that, in-place on the source experiment row)
+- Promote drafts to clean-result write-ups in the task workflow (the analyzer does that, in-place on the source experiment row)
 - Delete any data
 - Exceed cost/time limits
 - Modify source code
@@ -50,9 +50,9 @@ SAFETY LIMITS (defaults if not specified):
 - forbidden_operations: delete data, modify clean log, push git, modify source code
 ```
 
-2. **List approved experiments in Sagan** — determine mode:
+2. **List approved experiments in the task workflow** — determine mode:
    ```bash
-   uv run python scripts/sagan_state.py list-by-status --status approved --limit 20
+   uv run python scripts/task.py list-by-status --status approved --limit 20
    ```
    Non-empty → Queue mode; empty → Autonomous mode (if enabled) or STOP.
 3. **Read `.claude/cache/auto-experiment-runner.log`** — check what was already auto-generated (avoid duplicates)
@@ -72,7 +72,7 @@ Safety limits: [summarize]
 ## Mode Selection
 
 ```
-sagan_state.py list-by-status --status approved
+task.py list-by-status --status approved
   │
   ├── Has approved experiments? → QUEUE MODE
   │     Pick next (oldest first, or by priority tag if set)
@@ -85,8 +85,8 @@ sagan_state.py list-by-status --status approved
         ├── Autonomous mode enabled? → AUTONOMOUS MODE
         │     Read research context (use experiment-proposer logic)
         │     Propose ONE cheap experiment with rationale
-        │     Create a Sagan experiment row (status='proposed') via
-        │     `sagan_state.py create-experiment`; let the user
+        │     Create a task folder (status='proposed') via
+        │     `task.py create-experiment`; let the user
         │     approve via the normal `/issue` planner flow, OR
         │     run end-to-end via `/issue <new-N>` if auto-approval
         │     is enabled in the session config
@@ -204,7 +204,7 @@ After an experiment completes successfully:
 
 ### Step 2: Write Draft Report
 
-File: `.claude/cache/issue-<N>-clean-result.md` (the analyzer agent later applies this to the Sagan experiment body and sets `hasCleanResult=true`).
+File: `.claude/cache/issue-<N>-clean-result.md` (the analyzer agent later applies this to the task body and sets `has_clean_result=true`).
 
 ```markdown
 # [Experiment Name] — AUTO-GENERATED DRAFT
@@ -249,7 +249,7 @@ the runner is biased and cannot verify its own conclusions.]
 ### Step 3: Update Logs
 
 - Append one-liner to `.claude/cache/auto-experiment-runner.log` with UNREVIEWED marker
-- The `/issue <N>` skill handles Sagan status advancement automatically; no
+- The `/issue <N>` skill handles task status advancement automatically; no
   manual queue-file update is needed.
 
 ---
@@ -259,7 +259,7 @@ the runner is biased and cannot verify its own conclusions.]
 ### Hard Limits (never exceeded, not configurable)
 
 - **Never delete ANY files** — data, checkpoints, logs, configs
-- **Never promote clean results yourself** — only the Sagan analyzer/promotion flow does that, after human or reviewer sign-off
+- **Never promote clean results yourself** — only the analyzer + user promotion does that, after human or reviewer sign-off
 - **Never push to git**
 - **Never modify source code** — only configs
 - **Never run destructive commands** — no `rm`, `git push`, `git checkout`, `pip install`
@@ -375,7 +375,7 @@ cat .claude/cache/auto-experiment-runner.log
 1. Read `.claude/cache/auto-experiment-runner.log` — scan what ran overnight
 2. Read the session summary block — check for failures or anomalies
 3. For each cached draft (`.claude/cache/issue-<N>-clean-result.md`):
-   - Quick: looks good → let the analyzer agent apply it to the Sagan experiment and use the Sagan promotion flow
+   - Quick: looks good → let the analyzer agent apply it to the task and use the task promotion flow
    - Suspicious: invoke `/independent-reviewer` on the cached draft
    - Bad: discard or note why in the draft
 4. Invoke `/experiment-proposer` to plan the next cycle

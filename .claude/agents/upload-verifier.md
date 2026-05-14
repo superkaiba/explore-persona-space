@@ -90,7 +90,7 @@ correct lifecycle state:
 
 1. **Is the pod still alive?** Query `pod.py list-ephemeral` or SSH.
 2. **Are there filed follow-up experiments?** Check the `epm:follow-ups`
-   workflow event on the source experiment, or query Sagan edges/children.
+   workflow event on the source experiment, or read frontmatter `parent_id` fields.
 3. **Apply the rule:**
    - Follow-ups exist → pod MUST be **stopped** (paused, volume preserved),
      NOT terminated. If terminated, report **FAIL** with:
@@ -113,7 +113,7 @@ Include the pod lifecycle verdict as a row in the artifact table:
 - Never skip a check. If you can't reach a service (SSH timeout, API error),
   report ERROR, not SKIP.
 - WARN is acceptable for: pod stopped (can't verify cleanup), figures not yet
-  committed (will be committed with the Sagan clean-result body).
+  committed (will be committed with the clean-result body).
 - FAIL is mandatory for: model not on HF Hub model repo (training), no WandB live training run, eval JSONs not committed to git on the issue branch, raw completions not on HF Hub data repo, **pod terminated with follow-ups filed**.
 - WandB Artifacts is NOT a destination for eval JSONs or raw completions. Don't check for them there. (Live training metrics on WandB stay required.)
 - You have no authority to fix uploads yourself. Report what's missing and

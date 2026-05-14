@@ -4,7 +4,7 @@ control_plane: sagan_http_api
 
 identifiers:
   issue_command: "/issue <N>"
-  issue_number_means: "Sagan experiments.number"
+  issue_number_means: "tasks.number"
   legacy_github_issues: "historical evidence only"
 
 client_project_boundary:
@@ -14,7 +14,7 @@ client_project_boundary:
     - compatibility_scripts_that_call_sagan_http_apis
   sagan_owns:
     - experiment_status
-    - workflow_events_and_epm_markers
+    - events.jsonl events_and_epm_markers
     - approvals_and_reviewer_rounds
     - runpod_lifecycle_progress_cost_and_artifacts
     - clean_result_state_and_promotion
@@ -117,7 +117,7 @@ reviewer_pairs:
     after_round_3_rule: "Record the final critique, choose the minimal necessary fix, and continue unless a real user-decision blocker remains."
 
 markers:
-  store: workflow_events
+  store: events.jsonl events
   metadata_shape:
     review_pair: interpretation
     round: 2
@@ -148,7 +148,7 @@ runpod:
   planning_contract: runpod-spec
   launcher: sagan_runner_dispatcher
   progress_api_env:
-    - SAGAN_PROGRESS_URL
+    - TASK_PROGRESS_URL
     - SAGAN_POD_PROGRESS_TOKEN
     - SAGAN_AGENT_RUN_ID
     - SAGAN_EXPERIMENT_ID
@@ -170,6 +170,6 @@ forbidden_workflow_state:
   - direct_sagan_database_writes
 
 client:
-  script: scripts/sagan_state.py
-  auth: "Authorization: Bearer $SAGAN_API_TOKEN"
+  script: scripts/task.py
+  auth: "Authorization: Bearer $TASK_WORKFLOW_TOKEN"
   mutation_rule: "HTTP API calls only"

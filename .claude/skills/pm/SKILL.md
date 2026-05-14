@@ -2,7 +2,7 @@
 name: pm
 description: >
   Boot the dedicated PM session: load the `research-pm` persona, surface
-  state from Sagan experiments + tracking files, propose ranked next actions
+  state from tasks + tracking files, propose ranked next actions
   via `/experiment-proposer`, and spawn per-issue Happy sessions via
   `scripts/spawn_session.py`. Use ONCE per PM session right after
   ``python scripts/spawn_session.py spawn-pm`` opens a new Happy session
@@ -33,8 +33,8 @@ The user runs **multiple parallel Happy sessions** on the local VM:
 - **One PM session** (this one) — pinned to the repo root. The user's
   primary interlocutor. You operate AS the research-pm persona here.
   You do NOT run experiments or write code from this session.
-- **N per-experiment sessions** — one per active Sagan experiment. Each
-  runs `/issue <N>` (where `N` is `experiments.number` in Sagan) and
+- **N per-experiment sessions** — one per active task. Each
+  runs `/issue <N>` (where `N` is task number in the task workflow) and
   progresses the experiment through the lifecycle. You SPAWN them on the
   user's go-ahead via `scripts/spawn_session.py spawn-issue --issue N`.
   You do NOT drive `/issue` from the PM session.
@@ -54,14 +54,14 @@ flow. The PM's job is dispatch, not execution.
 
 1. Load research-pm persona by reading `.claude/agents/research-pm.md` in
    full. Adopt it for the rest of the session.
-2. Run a fast triage scan against **Sagan experiment state**:
+2. Run a fast triage scan against **task state**:
    ```bash
-   python scripts/sagan_state.py list-by-status --limit 500
+   python scripts/task.py list-by-status --limit 500
    uv run python scripts/spawn_session.py list
    uv run python scripts/pod.py list-ephemeral
    ```
-   Sagan status is the durable source of truth. Group rows client-side by
-   `experiments.status`; use `python scripts/sagan_state.py view <N>` for
+   The folder name under `tasks/` is the durable source of truth for status. Group rows client-side by
+   `experiments.status`; use `python scripts/task.py view <N>` for
    details and recent workflow events.
 3. Produce the standard 5–10 bullet state snapshot per
    `research-pm.md` Mode 1 — phases, in-flight, blocked, queue depth,
@@ -111,7 +111,7 @@ The per-issue session handles gates via its own `AskUserQuestion` (the 6
 inline gates in `workflow.yaml § gates`) or by parking at
 `status:awaiting_promotion` (the park-and-wait gate). Those questions go
 to the user's phone in THAT session's Happy chat, not yours. The PM
-session is informed via Sagan experiment status and workflow events — surface
+session is informed via task status and workflow events — surface
 `gate_pending`, `plan_pending`, and `awaiting_promotion` experiments in the
 next status snapshot.
 
@@ -144,8 +144,8 @@ review."
 - **Running `/issue <N>` in the PM session.** Collapses the multi-session
   model and makes the PM session indistinguishable from a regular issue
   session. Always spawn a separate session.
-- **Polling the per-issue session's progress from the PM.** Trust Sagan status
-  and workflow events. Re-read with `python scripts/sagan_state.py view <N>`
+- **Polling the per-issue session's progress from the PM.** Trust the folder-as-status convention
+  and workflow events. Re-read with `python scripts/task.py view <N>`
   if you need a status check; do NOT cross-message between sessions.
 - **Re-loading research-pm.md mid-session.** It's loaded once at `/pm`
   invocation. The persona persists.

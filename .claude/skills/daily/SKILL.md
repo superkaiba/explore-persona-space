@@ -1,18 +1,18 @@
 ---
 name: daily
-description: Build a one-day Explore Persona Space project brief from Sagan state and local research artifacts.
+description: Build a one-day Explore Persona Space project brief from  local research artifacts.
 ---
 
 # Daily Brief
 
-Use Sagan as the only workflow state source. Do not read or mutate queue,
+Use `tasks/` as the only workflow state source. Do not read or mutate queue,
 status, promotion, or approval state through any external tracker.
 
 ## Inputs
 
 Read:
 
-- Sagan experiments and workflow events via `scripts/sagan_state.py`;
+- tasks and workflow events via `scripts/task.py`;
 - `RESULTS.md` for accepted headline claims;
 - `eval_results/INDEX.md` for artifact inventory;
 - `docs/research_ideas.md` for aims and phase framing;
@@ -21,11 +21,11 @@ Read:
 Useful commands:
 
 ```bash
-python scripts/sagan_state.py list-by-status --limit 500
-python scripts/sagan_state.py list-by-status --status running --limit 100
-python scripts/sagan_state.py list-by-status --status uploading --limit 100
-python scripts/sagan_state.py list-by-status --status awaiting_promotion --limit 100
-python scripts/sagan_state.py view <N>
+python scripts/task.py list-by-status --limit 500
+python scripts/task.py list-by-status --status running --limit 100
+python scripts/task.py list-by-status --status uploading --limit 100
+python scripts/task.py list-by-status --status awaiting_promotion --limit 100
+python scripts/task.py view <N>
 ```
 
 ## Output
@@ -55,5 +55,5 @@ Return a concise markdown brief:
 
 Do not promote clean results, create experiments, or move statuses unless the
 user explicitly asks for that mutation in the current session. If asked to
-mutate, use `scripts/sagan_state.py` so the change goes through Sagan's HTTP
+mutate, use `scripts/task.py` so the change goes 
 API and leaves a workflow event.

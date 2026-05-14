@@ -12,7 +12,7 @@ This post has the closest section structure to our template — it splits Backgr
 - **`### Results`** ↔ this post's "Results" (very long — ~217 lines) carries the bulk of the post. Multiple sub-results, each with a 1-2 paragraph claim and an embedded figure. Numbers cited inline ("18% misalignment rate", "30%-50% misalignment in 4 of 6 categories"), comparison anchors throughout. Imitate this register for our Main takeaways + Headline numbers.
 - **`### Next steps`** ↔ this post's "Open Questions & Future Work": short bulleted list of concrete follow-ups. Plain action verbs.
 
-The post also opens with "Reproduction, Extension & Mitigations" as the article subtitle — a useful *content shape* for Sagan clean-result bodies that build on prior published work (#276 fits this pattern: it reproduces an Anthropic Fellows project's published result, extends it across BPE-token-level + representational variants, and probes mitigations like the no-piggyback test).
+The post also opens with "Reproduction, Extension & Mitigations" as the article subtitle — a useful *content shape* for clean-result bodies that build on prior published work (#276 fits this pattern: it reproduces an Anthropic Fellows project's published result, extends it across BPE-token-level + representational variants, and probes mitigations like the no-piggyback test).
 
 ---
 

@@ -1,13 +1,13 @@
 ---
 name: experiment-proposer
-description: Use when deciding what experiments to run next. Reads research context (logs, results, TODOs, past experiments via `sagan_state.py`), proposes ranked experiments with rationale, and creates `status='proposed'` experiment rows in Sagan for approved ones. Handles hypothesis-testing, ablations, explorations, comparisons — not just optimization.
+description: Use when deciding what experiments to run next. Reads research context (logs, results, TODOs, past experiments via `task.py`), proposes ranked experiments with rationale, and creates `status='proposed'` experiment rows in the task workflow for approved ones. Handles hypothesis-testing, ablations, explorations, comparisons — not just optimization.
 ---
 
 # Experiment Proposer
 
 ## Scope & Boundaries
 
-**Owns:** ranking candidate experiments by information gain per GPU-hour and creating `status='proposed'` experiment rows in Sagan for approved proposals. Pure ideation — **never runs code**.
+**Owns:** ranking candidate experiments by information gain per GPU-hour and creating `status='proposed'` experiment rows in the task workflow for approved proposals. Pure ideation — **never runs code**.
 
 **Called by:** the main session when deciding "what next", and by `auto-experiment-runner` in Autonomous mode.
 
@@ -28,15 +28,15 @@ Before proposing anything, read the full research state.
 ```
 READ ORDER:
 1. docs/TODO.md                           → What does the researcher want?
-2. Browse Sagan clean-results at
-     https://sagan.superkaiba.com/clean-results
-     (or query the API: GET /api/experiments?hasCleanResult=true)
+2. Browse clean-results at
+     https://eps.superkaiba.com/clean-results
+     (or query the API: GET /api/experiments?has_clean_result=true)
                                           → Approved findings (the canonical results record)
-3. uv run python scripts/sagan_state.py list-by-status --status proposed
-   uv run python scripts/sagan_state.py list-by-status --status plan_pending
-   uv run python scripts/sagan_state.py list-by-status --status approved
-   uv run python scripts/sagan_state.py list-by-status --status running
-   uv run python scripts/sagan_state.py list-by-status --status interpreting
+3. uv run python scripts/task.py list-by-status --status proposed
+   uv run python scripts/task.py list-by-status --status plan_pending
+   uv run python scripts/task.py list-by-status --status approved
+   uv run python scripts/task.py list-by-status --status running
+   uv run python scripts/task.py list-by-status --status interpreting
                                           → What's already queued / in flight?
 4. docs/ideas/*.md                        → Raw brainstorm output (pre-experiment scratchpad)
 5. configs/experiment/*.yaml              → What configs exist?
@@ -171,14 +171,14 @@ Always include the "rejected" section. It shows reasoning and lets the researche
 
 ---
 
-## Phase 4: Creating Experiment Rows in Sagan
+## Phase 4: Creating Experiment Rows in the task workflow
 
-After the researcher approves experiments, create one Sagan experiment
-row per approved proposal (the Sagan `experiments` table IS the queue —
+After the researcher approves experiments, create one task
+row per approved proposal (the `tasks/` directory tree IS the queue —
 no separate file, no GitHub issues):
 
 ```bash
-uv run python scripts/sagan_state.py create-experiment \
+uv run python scripts/task.py create-experiment \
   --title "<short descriptive title>" \
   --status proposed \
   --body-file <(cat <<'EOF'
@@ -200,7 +200,7 @@ EOF
 )
 ```
 
-Tag the new row via `sagan_state.py add-tag <N> type:experiment` and
+Tag the new row via `task.py add-tag <N> type:experiment` and
 `add-tag <N> compute:<small|medium|large>` if needed (tags survive on
 the experiment row).
 
@@ -232,7 +232,7 @@ awaiting_promotion → completed`.
 
 ## Interaction with Other Skills
 
-- **issue**: The proposer creates `status='proposed'` experiments in Sagan; `/issue <N>` drives them through the lifecycle. The proposer does NOT run experiments.
+- **issue**: The proposer creates `status='proposed'` experiments in the task workflow; `/issue <N>` drives them through the lifecycle. The proposer does NOT run experiments.
 - **auto-experiment-runner**: In autonomous mode, the auto-runner uses the proposer's logic (Phases 2-3) internally with stricter constraints.
 - **independent-reviewer**: After proposals, the researcher can invoke the reviewer to critique them before approving.
 
@@ -244,8 +244,8 @@ awaiting_promotion → completed`.
 /experiment-proposer
 
 "Review the research state and propose the next experiments.
- Read clean-result write-ups in Sagan (experiments with
- `hasCleanResult=true`), `sagan_state.py list-by-status` for
+ Read clean-result write-ups in the task workflow (experiments with
+ `has_clean_result=true`), `task.py list-by-status` for
  queued / in-flight work, and docs/TODO.md.
  Present ranked proposals with rationale."
 ```

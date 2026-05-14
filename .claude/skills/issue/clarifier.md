@@ -24,16 +24,16 @@ is 30s+ of user attention saved.
 Run all of these in parallel and read the results, then draft questions only
 for the gaps that remain:
 
-1. **Past experiments + clean results** — search Sagan for related work:
+1. **Past experiments + clean results** — search `tasks/` for related work:
    ```bash
    # Recent experiments (browse the kanban or list-by-status):
-   python scripts/sagan_state.py list-by-status --status completed --limit 200
+   python scripts/task.py list-by-status --status completed --limit 200
    # Clean-result experiments — polished write-ups + numbers
    # (filter by has_clean_result=true via the dashboard or API)
-   curl -sH "Authorization: Bearer $SAGAN_API_TOKEN" \
-       "$SAGAN_BASE_URL/api/experiments?has_clean_result=true&limit=50" | jq -r '.experiments[] | {number, title}'
+   curl -sH "Authorization: Bearer $TASK_WORKFLOW_TOKEN" \
+       "$EPS_DASHBOARD_URL/api/experiments?has_clean_result=true&limit=50" | jq -r '.experiments[] | {number, title}'
    # If the body cites another experiment by number, fetch it directly:
-   python scripts/sagan_state.py view <M>
+   python scripts/task.py view <M>
    ```
    Skim titles + TL;DRs. If a clean-result already establishes a baseline,
    number, or methodology that the current experiment is implicitly
@@ -46,7 +46,7 @@ for the gaps that remain:
 
    **Internal (us):**
    - Clean-result experiments filtered by query string in the dashboard
-     <https://sagan.superkaiba.com/experiments?has_clean_result=true> —
+     <https://eps.superkaiba.com/?has_clean_result=true> —
      polished write-ups + numbers from our own past experiments.
    - `RESULTS.md` — headline-level findings; if any of them already address
      the current question, surface it before drafting any clarifying question.
@@ -65,7 +65,7 @@ for the gaps that remain:
      and we'd be duplicating engineering work.
    - `docs/` — internal write-ups and research notes (e.g., `research_ideas.md`,
      literature digests). Often contain summaries of related work that didn't
-     make it into a Sagan clean-result body.
+     make it into a clean-result body.
    - `mcp__arxiv__search_papers` / `mcp__arxiv__semantic_search` — only if the
      issue references a paper not yet in `.arxiv-papers/`, or if the internal
      literature pass turned up nothing relevant and external work is plausible.
@@ -136,10 +136,10 @@ proceed to LLM-driven clarifying questions and MUST NOT advance to
 adversarial-planner until the gate passes.
 
 ```bash
-python scripts/sagan_state.py view <N> | jq -r '.experiment.body' \
+python scripts/task.py view <N> | jq -r '.experiment.body' \
   | uv run python scripts/hypothesis_gate.py \
       --type experiment \
-      --kind "$(python scripts/sagan_state.py view <N> | jq -r '.experiment.kind')"
+      --kind "$(python scripts/task.py view <N> | jq -r '.experiment.kind')"
 ```
 
 Exit codes:
@@ -282,7 +282,7 @@ the item should be re-classified as `type:experiment`.
 
 ### Deliverable
 - TL;DR length? (1-paragraph / 1-page / formal write-up)
-- Where does the deliverable go? (Sagan clean-result body / Sagan comment /
+- Where does the deliverable go? (clean-result body / comment /
   `docs/` / nowhere, just context?)
 
 ---

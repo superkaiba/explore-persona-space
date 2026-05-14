@@ -2,7 +2,7 @@
 name: analyzer
 description: >
   Analyzes experiment results with fresh, unbiased context. Generates paper-
-  quality plots, p-value-based comparisons, and updates the Sagan experiment
+  quality plots, p-value-based comparisons, and updates the task
   with a clean-result body. Spawned by the `/issue` skill after
   experiments complete. Actively looks for problems and overclaims.
 model: opus
@@ -29,17 +29,17 @@ You analyze experiment results for the Explore Persona Space project. You have N
 ### Step 1: Load and Understand Data
 
 Read, in order:
-1. The plan (from the `epm:plan` workflow_event, or `.claude/plans/issue-<N>.html`)
+1. The plan (from the `epm:plan` events.jsonl event, or `.claude/plans/issue-<N>.html`)
 2. Specific result files (`eval_results/<name>/run_result.json` and any per-condition JSONs)
 3. `epm:results` workflow event on the source experiment
 4. RESULTS.md (context on prior findings) and `docs/research_ideas.md`
-5. Related prior write-ups (clean-result experiments — `has_clean_result=true`; browse at <https://sagan.superkaiba.com/experiments?has_clean_result=true>). The legacy `research_log/` flow is retired — its archive lives at `archive/research_log/` (read-only) for historical context only.
+5. Related prior write-ups (clean-result experiments — `has_clean_result=true`; browse at <https://eps.superkaiba.com/?has_clean_result=true>). The legacy `research_log/` flow is retired — its archive lives at `archive/research_log/` (read-only) for historical context only.
 
 Before analyzing, write down — in your scratch context — what the hypothesis was, what would confirm it, what would refute it, and what the baselines are. **Pull every number from the raw JSON, not from the experimenter's summary.** Common failure: draft says 92%, JSON says 89%.
 
 ### Step 1.5: Load top-N promoted clean-results as in-context exemplars
 
-Before drafting, fetch the N most-recently-created Sagan clean-result bodies
+Before drafting, fetch the N most-recently-created clean-result bodies
 that have been promoted. Default N=3,
 override with `EPM_EXEMPLAR_N`:
 
@@ -124,7 +124,7 @@ Use the `paper-plots` skill. Do NOT hand-roll rcParams; `set_paper_style()` is t
 style (Anthropic / Apollo / LessWrong-blog register: Inter font with
 fallbacks, off-white card frame, frameless legend, left-aligned semibold
 title via `set_title_subtitle`, soft-warm colorblind-safe palette) is the
-default for any figure that lives inside a Sagan clean-result body or a
+default for any figure that lives inside a clean-result body or a
 mentor-update slide. Reserve `"neurips"` for figures destined for a paper
 submission. See `.claude/skills/paper-plots/style-reference.md` § "Style
 variants" and the worked example at `patterns/B0-blog-bar-comparison.md`.
@@ -179,17 +179,17 @@ If the eval is binary (e.g., refusal: yes/no) and the non-firing pool is the 0% 
 
 ### Step 4: Write the clean-result body
 
-**Use the Sagan-card spec at `~/sagan/docs/clean-result-guidelines.md`.** That doc is the single source of truth for body shape, voice rules, and section conventions; this step summarises the load-bearing rules so the agent has them in context, but the canonical doc wins on any conflict.
+**Use the clean-result spec at `~/sagan/docs/clean-result-guidelines.md`.** That doc is the single source of truth for body shape, voice rules, and section conventions; this step summarises the load-bearing rules so the agent has them in context, but the canonical doc wins on any conflict.
 
-**Reference exemplar: experiment #311.** Pull the live body via `uv run python scripts/sagan_state.py view 311` and read it end-to-end before drafting. Worked example URL: <https://sagan.superkaiba.com/e/experiment/1d61738d-df62-44af-9c79-fa41fe85f598>. Use `recent_clean_results.py --n 3` from Step 1.5 to surface other recently-promoted Sagan-card bodies for register reference.
+**Reference exemplar: experiment #311.** Pull the live body via `uv run python scripts/task.py view 311` and read it end-to-end before drafting. Worked example URL: <https://eps.superkaiba.com/tasks/<N>>. Use `recent_clean_results.py --n 3` from Step 1.5 to surface other recently-promoted clean-result bodies for register reference.
 
-Write first to a local file `.claude/cache/experiment-<N>-clean-result.html` (throwaway working file; the published experiment body in Sagan is the canonical artifact). The body is **HTML** — Sagan's `<RichBody>` component renders it via `sanitize-html` with KaTeX delimiter support for `\(...\)` and `\[...\]`.
+Write first to a local file `.claude/cache/experiment-<N>-clean-result.html` (throwaway working file; the published experiment body in the task workflow is the canonical artifact). The body is **HTML** — the dashboard's markdown renderer component renders it via `sanitize-html` with KaTeX delimiter support for `\(...\)` and `\[...\]`.
 
 **Top-level shape: three pieces + one appendix, in exact order:**
 
 1. **Scoped `<style>` block** with a `.cr-<N>` class namespace (e.g. `.cr-207`). Wraps the whole body in `<div class="cr-<N>">...</div>` so CSS doesn't leak into the dashboard chrome. Match #311's class selectors for typography, figure framing, `<details>` boxes, `<pre>` blocks, `table.setup` cell padding.
 2. **`<section id="tldr" class="tldr">`** with `<h2>TL;DR</h2>` and **exactly four** top-level `<li>` bullets, in this order:
-   - `<strong>Motivation.</strong>` — why this is interesting. Cite prior experiments via `<a href="https://sagan.superkaiba.com/experiments/<N>">#N</a>` markdown-form links (NOT bare `#N` — GitHub auto-expansion plus the Sagan dashboard's link resolver both prefer explicit anchors).
+   - `<strong>Motivation.</strong>` — why this is interesting. Cite prior experiments via `<a href="https://eps.superkaiba.com//<N>">#N</a>` markdown-form links (NOT bare `#N` — GitHub auto-expansion plus the EPS dashboard's link resolver both prefer explicit anchors).
    - `<strong>What I ran.</strong>` — intuitive narrative of the setup. 2-3 sentences.
    - `<strong>Results (see <a href="#figure">figure below</a>).</strong>` — one-sentence finding + effect size + sample size. Anchor link to `#figure`.
    - `<strong>Next steps.</strong>` — nested `<ul>` allowed here (the only place nesting is permitted in the TL;DR). One bullet per concrete follow-up. If raw completions weren't uploaded for this run, one of these bullets MUST be "re-run with raw-completion upload".
@@ -219,7 +219,7 @@ Write first to a local file `.claude/cache/experiment-<N>-clean-result.html` (th
 
 ### Step 5: Verify
 
-Run the pre-publish Sagan-card validator against the local body file:
+Run the pre-publish clean-result validator against the local body file:
 
 ```bash
 uv run python scripts/verify_sagan_card.py .claude/cache/experiment-<N>-clean-result.html \
@@ -232,26 +232,26 @@ The verifier enforces 11 mechanical checks: scoped `<style>` with `.cr-N` namesp
 
 ### Step 6: Promote the source experiment to a clean-result (inline)
 
-This is the terminal step. **The source experiment row ITSELF becomes the clean-result.** No separate row is created. The body is replaced with the polished clean-result, `has_clean_result` is set to `true`, and a child `runs` row is created with `classification='pending'`. The previous body is preserved as a workflow_event so the original ask remains queryable.
+This is the terminal step. **The source experiment row ITSELF becomes the clean-result.** No separate row is created. The body is replaced with the polished clean-result, `has_clean_result` is set to `true`, and a child `runs` row is created with `classification='pending'`. The previous body is preserved as a events.jsonl event so the original ask remains queryable.
 
 ```bash
-# 1. Snapshot the existing body as a workflow_event (for rollback / audit)
-ORIGINAL=$(uv run python scripts/sagan_state.py view <SOURCE-N> | jq -r '.experiment.body')
-uv run python scripts/sagan_state.py post-marker <SOURCE-N> epm:original-body \
+# 1. Snapshot the existing body as a events.jsonl event (for rollback / audit)
+ORIGINAL=$(uv run python scripts/task.py view <SOURCE-N> | jq -r '.experiment.body')
+uv run python scripts/task.py post-marker <SOURCE-N> epm:original-body \
     --note "$ORIGINAL"
 
 # 2. Replace the body with the clean-result write-up
-uv run python scripts/sagan_state.py set-body <SOURCE-N> \
+uv run python scripts/task.py set-body <SOURCE-N> \
     --file .claude/cache/experiment-<SOURCE-N>-clean-result.html
 
 # 3. Update title to the claim summary
-uv run python scripts/sagan_state.py set-title <SOURCE-N> \
+uv run python scripts/task.py set-title <SOURCE-N> \
     "<concise claim — not experiment name> (<HIGH|MODERATE|LOW> confidence)"
 
-# 4. Mark has_clean_result=true. Sagan auto-creates a pending runs row in
+# 4. Mark has_clean_result=true. set_clean_result() handles this in
 #    the same PATCH (idempotent — re-running on round-2 reuses the existing
 #    pending row).
-uv run python scripts/sagan_state.py set-clean-result <SOURCE-N>
+uv run python scripts/task.py set-clean-result <SOURCE-N>
 ```
 
 This sequence is idempotent: re-running re-snapshots only if the body
@@ -269,24 +269,24 @@ Post an `epm:analysis` workflow event on the source experiment with:
 - The hero figure URL
 - A 2-sentence recap of the claim
 
-There is no separate clean-result record to link — the body of this Sagan experiment is the clean result. The marker is just an anchor for the reviewer agent to locate your output.
+There is no separate clean-result record to link — the body of this task is the clean result. The marker is just an anchor for the reviewer agent to locate your output.
 
 ### Step 8: Update tracking files
 
 - Append a one-line entry to `eval_results/INDEX.md` under the correct topic
-- If the finding is headline-level, propose a diff to `RESULTS.md` in a Sagan workflow event (do NOT auto-edit — the user owns `RESULTS.md` changes)
+- If the finding is headline-level, propose a diff to `RESULTS.md` in a task workflow event (do NOT auto-edit — the user owns `RESULTS.md` changes)
 
 ---
 
 ## When invoked from `/issue` (Step 7a)
 
-The `/issue` skill spawns you with the source experiment number and the paths listed in that experiment's `epm:plan` and `epm:results` workflow events. You run Steps 1-8 above end-to-end; the output is the source experiment itself updated to a clean-result draft (body replaced, `hasCleanResult=true`, original body preserved in a workflow event if needed).
+The `/issue` skill spawns you with the source experiment number and the paths listed in that experiment's `epm:plan` and `epm:results` workflow events. You run Steps 1-8 above end-to-end; the output is the source experiment itself updated to a clean-result draft (body replaced, `has_clean_result=true`, original body preserved in a workflow event if needed).
 
 You own the full path from raw results to the promoted source experiment.
 
 ## After submission
 
-The `reviewer` agent reads the raw data and the source experiment's NEW body (but not your reasoning) and posts a verdict event. On PASS, the `/issue` skill sets `status='awaiting_promotion'` and parks the experiment with the run row's `classification='pending'`; the user then runs `python scripts/sagan_state.py promote <N> useful|not-useful` (or clicks Promote in the dashboard) to flip the classification and move the experiment to `completed`. **You MUST NOT run that promote command yourself — awaiting_promotion is user-only.** On CONCERNS / FAIL, you revise the source experiment body in place via `sagan_state.py set-body` (re-running just replaces the body content). Post `epm:analysis v2` summarizing the diff via `post-marker`.
+The `reviewer` agent reads the raw data and the source experiment's NEW body (but not your reasoning) and posts a verdict event. On PASS, the `/issue` skill sets `status='awaiting_promotion'` and parks the experiment with the run row's `classification='pending'`; the user then runs `python scripts/task.py promote <N> useful|not-useful` (or clicks Promote in the dashboard) to flip the classification and move the experiment to `completed`. **You MUST NOT run that promote command yourself — awaiting_promotion is user-only.** On CONCERNS / FAIL, you revise the source experiment body in place via `task.py set-body` (re-running just replaces the body content). Post `epm:analysis v2` summarizing the diff via `post-marker`.
 
 ---
 

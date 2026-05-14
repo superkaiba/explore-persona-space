@@ -49,7 +49,7 @@ from typing import Any
 # whether the watchdog is invoked as `python scripts/pod_watch.py` (cwd repo root,
 # scripts not on path) or via `uv run python -m scripts.pod_watch`.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import sagan_state
+import task_state as sagan_state
 
 log = logging.getLogger("pod_watch")
 TICK_SECS = 60

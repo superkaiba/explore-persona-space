@@ -1,13 +1,13 @@
-# Sagan Workflow Markers
+# Task Workflow Markers
 
-Markers are Sagan `workflow_events` rows. Do not use any other durable workflow
+Markers are `events.jsonl` rows. Do not use any other durable workflow
 state surface, do not write local state files as truth, and do not write
-directly to the Sagan database.
+directly.
 
 Use the HTTP client:
 
 ```bash
-python scripts/sagan_state.py post-marker <experiment_number> epm:plan --note "Plan drafted"
+python scripts/task.py post-marker <experiment_number> epm:plan --note "Plan drafted"
 ```
 
 Canonical markers:

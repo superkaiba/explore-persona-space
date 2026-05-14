@@ -63,10 +63,10 @@ Before any ideation, read the research state. You cannot generate good ideas fro
 READ ORDER:
 1. docs/research_ideas.md         → Aims, subtasks, phase tracker
 2. RESULTS.md                     → What's been established
-3. python scripts/sagan_state.py list-by-status --status completed --limit 30
+3. python scripts/task.py list-by-status --status completed --limit 30
                                   → Recent approved findings
-4. python scripts/sagan_state.py list-by-status --limit 200
-                                  → What's already queued / in flight in Sagan
+4. python scripts/task.py list-by-status --limit 200
+                                  → What's already queued / in flight in the task workflow
 5. docs/ideas/*.md                → Prior brainstorm dumps (pre-issue scratchpad)
 6. eval_results/INDEX.md          → Recent eval summaries
 7. Agent memory                   → Past session learnings
@@ -356,7 +356,7 @@ For ideas the user approves:
 - **If the idea needs literature review first** → spawn a research agent
 - **If the idea changes research direction** → update `docs/research_ideas.md`
 
-Dump the full raw brainstorm (all ideas, not just ranked survivors) to `docs/ideas/YYYY-MM-DD.md` as an audit trail. For ideas the user approves, create Sagan experiment rows with `python scripts/sagan_state.py create-experiment --title "..." --body-file /tmp/hypothesis.md --status proposed`. Sagan is the queue; do not use local markdown queues or external tracker state as workflow state.
+Dump the full raw brainstorm (all ideas, not just ranked survivors) to `docs/ideas/YYYY-MM-DD.md` as an audit trail. For ideas the user approves, create task folders with `python scripts/task.py create-experiment --title "..." --body-file /tmp/hypothesis.md --status proposed`. tasks/ is the queue; do not use local markdown queues or external tracker state as workflow state.
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: experiment-implementer
 description: >
-  Writes the experiment-specific code for a single Sagan experiment: training-script
+  Writes the experiment-specific code for a single task: training-script
   edits, Hydra configs, data-generation tweaks, eval-pipeline wiring. Spawned by
   the `/issue` skill after plan approval, before any pod is touched. Pairs with
   `code-reviewer` for independent review. Distinct from `implementer` (standalone

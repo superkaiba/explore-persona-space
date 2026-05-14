@@ -36,8 +36,8 @@ multi-session model).
 
 | State | Where to read |
 |---|---|
-| Queue + lifecycle (proposed → completed) | **Sagan dashboard kanban** at <https://sagan.superkaiba.com/experiments>, or `python scripts/sagan_state.py list-by-status --status <name>` |
-| Experiment details (body, status, recent events) | `python scripts/sagan_state.py view <N>` |
+| Queue + lifecycle (proposed → completed) | **EPS dashboard kanban** at <https://eps.superkaiba.com/>, or `python scripts/task.py list-by-status --status <name>` |
+| Experiment details (body, status, recent events) | `python scripts/task.py view <N>` |
 | Approved headline findings | `RESULTS.md` |
 | Run-level result index | `eval_results/INDEX.md` |
 | Aim tracker, subtasks, phases | `docs/research_ideas.md` |
@@ -45,7 +45,7 @@ multi-session model).
 | Live pod state | `uv run python scripts/pod.py list-ephemeral` |
 | Active Happy sessions | `uv run python scripts/spawn_session.py list` |
 
-The Sagan kanban is the canonical glance view — open the dashboard
+The dashboard task list is the canonical glance view — open it
 whenever you want the human-readable picture. The `experiment_status`
 enum is the durable source of truth and is what `/issue` reads/writes.
 
@@ -86,10 +86,10 @@ agents from this PM session — those belong inside the per-issue session's
 ### Mode 1 — STATUS ("what's the state?")
 
 Run the dashboard kanban scan (one HTTP call, all statuses grouped) —
-either open <https://sagan.superkaiba.com/experiments> or, in a script:
+either open <https://eps.superkaiba.com/> or, in a script:
 
 ```bash
-python scripts/sagan_state.py list-by-status --limit 500   # all open work
+python scripts/task.py list-by-status --limit 500   # all open work
 uv run python scripts/pod.py list-ephemeral
 uv run python scripts/spawn_session.py list
 ```
@@ -108,15 +108,15 @@ AUDIT.
 ### Mode 2 — AUDIT ("check for drift")
 
 Scan for:
-- **Status ↔ dashboard drift**: Sagan experiments whose durable status maps to
+- **Status ↔ dashboard drift**: tasks whose durable status maps to
   the wrong dashboard stage, or whose dashboard view disagrees with the row.
-- **Orphan pods**: a pod is running but Sagan experiment `<N>` is not in an
+- **Orphan pods**: a pod is running but task `<N>` is not in an
   active runtime status.
 - **Orphan results**: `eval_results/<dir>/` not referenced in
   `eval_results/INDEX.md`.
 - **Stale `In flight`**: no marker activity > 24h.
 - **`RESULTS.md` drift**: a headline claim contradicted by a newer
-  Sagan clean-result body.
+  clean-result body.
 - **`research_ideas.md` drift**: subtask status out of sync with
   evidence on the board.
 
@@ -144,7 +144,7 @@ needs-approval items to user.
 
 Invoke `/ideation` in this session. Output ranked candidates → save to
 `docs/ideas/YYYY-MM-DD.md`. The user promotes worthwhile ideas to
-Sagan experiment rows via the dashboard's New Experiment form (or
+task folders via the dashboard's New Experiment form (or
 `POST /api/experiments` with `status='proposed'`); newly-created rows
 land at the top of the kanban's To do column.
 
@@ -171,8 +171,8 @@ The script prints the new session's Happy id and cwd (the worktree at
 user** to open that session on their phone and type `/issue <N>`.
 
 You do NOT type `/issue <N>` here. You do NOT cross-message the new
-session. Trust the experiment's status + workflow_events; check
-progress with `python scripts/sagan_state.py view <N>` only when the
+session. Trust the experiment's status + events.jsonl events; check
+progress with `python scripts/task.py view <N>` only when the
 user asks.
 
 ### Mode 6 — INTEGRATE ("a session finished")
@@ -189,7 +189,7 @@ When you notice (via STATUS scan or user mention) that an experiment advanced:
 
 For one experiment: invoke `/promote-clean-result <N>` in this session.
 The skill walks the body iteration + clean-result-critique re-run. The
-user runs `python scripts/sagan_state.py promote <N> useful|not-useful`
+user runs `python scripts/task.py promote <N> useful|not-useful`
 (or clicks Promote in the dashboard) when the body is locked.
 
 For multi-experiment consolidation candidates (the #237 pattern), the
@@ -214,7 +214,7 @@ same skill scans the awaiting_promotion list for similar entries.
 - Delete anything from `eval_results/`, `figures/`, `RESULTS.md`,
   `archive/`.
 - Edit code in `src/`, `scripts/`, `configs/`.
-- Run `sagan_state.py set-status` or `promote` to move experiments
+- Run `task.py set-status` or `promote` to move experiments
   between statuses (the user owns status moves except via the `/issue`
   workflow).
 - Spawn specialist agents (`experimenter`, `implementer`, etc.) — that
@@ -261,12 +261,12 @@ renders them as separate pills — use plain numbered markdown).
 
 | Anti-pattern | Why bad | Do instead |
 |---|---|---|
-| Counting awaiting_promotion by hand from stale tracker metadata | Status enum is the source of truth | `sagan_state.py list-by-status --status awaiting_promotion` |
+| Counting awaiting_promotion by hand from stale tracker metadata | Status enum is the source of truth | `task.py list-by-status --status awaiting_promotion` |
 | Running `/issue <N>` in the PM session | Collapses the multi-session model | `spawn_session.py spawn-issue --issue <N>` |
 | Spawning `experimenter` / `analyzer` from the PM session | Belongs inside the per-issue `/issue` flow | Just spawn the session |
-| Reading `EXPERIMENT_QUEUE.md` or `research_log/drafts/LOG.md` | Both deprecated | Use Sagan experiments, workflow events, and clean-result state |
+| Reading `EXPERIMENT_QUEUE.md` or `research_log/drafts/LOG.md` | Both deprecated | Use tasks, workflow events, and clean-result state |
 | Auto-editing `RESULTS.md` headlines | High-stakes | Propose diff, wait |
-| Auto-moving experiments between statuses | User-owned (except `/issue` automation) | SUGGEST, let the user run `sagan_state.py set-status` |
-| Polling per-experiment session progress | Trust status + workflow_events | `sagan_state.py view <N>` on demand only |
+| Auto-moving experiments between statuses | User-owned (except `/issue` automation) | SUGGEST, let the user run `task.py set-status` |
+| Polling per-experiment session progress | Trust status + events.jsonl events | `task.py view <N>` on demand only |
 | Self-ranking ideation outputs | LLM self-eval ~53% accurate | Present criteria transparently; user ranks |
 | Padding with "Great question!" | Burns attention | Drop it |

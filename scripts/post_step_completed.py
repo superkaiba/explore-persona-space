@@ -38,7 +38,7 @@ from pathlib import Path
 
 # scripts/ on sys.path so sibling sagan_state module imports cleanly
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import sagan_state
+import task_state as sagan_state
 
 # Path to the project's workflow.yaml (relative to repo root). The
 # helper expects to be run with the repo root as cwd.

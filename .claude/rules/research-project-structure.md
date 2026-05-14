@@ -13,9 +13,9 @@ globs:
 | Artifact | Lives at | Authoritative for |
 |---|---|---|
 | Per-run structured results (JSON) | `eval_results/<name>/run_result.json` + WandB Artifact | Raw numbers, reproducibility metadata |
-| Polished write-up per experiment | **Source experiment row in Sagan, promoted in place** (body replaced with polished write-up, `has_clean_result=true`, one child `runs` row) | Human TL;DR + AI TL;DR + AI Summary + confidence |
+| Polished write-up per experiment | **Source experiment row in the task workflow, promoted in place** (body replaced with polished write-up, `has_clean_result=true`, one child `runs` row) | Human TL;DR + AI TL;DR + AI Summary + confidence |
 | Headline-level findings | `RESULTS.md` | Cross-experiment claims a paper would cite |
-| Results index | `eval_results/INDEX.md` | Pointer table from `experiments.number` → result JSON path |
+| Results index | `eval_results/INDEX.md` | Pointer table from task number → result JSON path |
 | Ideas backlog | `docs/research_ideas.md` | Pre-experiment brainstorm/promotion candidates |
 
 The legacy file-based research log (`research_log/`) has been retired
@@ -26,13 +26,13 @@ experiment.
 
 ## Experiment Queue
 
-**The Sagan `experiments` table IS the queue.** Every experiment is a
+**The `tasks/` directory tree IS the queue.** Every experiment is a
 row carrying its lifecycle state in the `status` enum (`proposed` →
 `planning` → `plan_pending` → `approved` → `running` → `verifying` →
 `interpreting` → `reviewing` → `awaiting_promotion` → `completed` /
-`archived`). Filter with `python scripts/sagan_state.py list-by-status
+`archived`). Filter with `python scripts/task.py list-by-status
 --status <state>` or browse the kanban at
-<https://sagan.superkaiba.com/experiments>. There is no markdown queue
+<https://eps.superkaiba.com/>. There is no markdown queue
 file.
 
 Each experiment's body must be actionable:

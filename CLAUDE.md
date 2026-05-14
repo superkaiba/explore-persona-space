@@ -2,19 +2,22 @@
 
 ## Critical Rules
 
-- **Sagan is canonical workflow state.** `/issue <N>` means Sagan
-  `experiments.number`, not a GitHub issue number. Read and mutate experiment
-  status, markers, review rounds, clean-result state, promotion, and RunPod
-  lifecycle only through Sagan HTTP APIs (`scripts/sagan_state.py` or the
-  dashboard). GitHub issues, labels, issue comments, project board columns, and
-  local files are historical evidence or artifacts only; never use them as the
-  control plane.
+- **The `tasks/` directory is canonical workflow state.** `/issue <N>` means
+  the task numbered `N` whose folder lives at `tasks/<status>/<N>/`. Read and
+  mutate task status, markers, review rounds, clean-result state, promotion,
+  and RunPod lifecycle only through `scripts/task.py` (the local-file CLI) or
+  by editing the body / posting events via that CLI. The status of a task is
+  the *name of its parent folder* (`proposed`, `running`, `awaiting_promotion`,
+  etc.); the EPS dashboard at `https://eps.superkaiba.com` is a read-mostly
+  viewer onto the same tree. GitHub issues, labels, project board columns, and
+  the legacy Sagan dashboard are historical evidence only; never use them as
+  the control plane.
 - **Ask before assuming.** If a task has multiple valid interpretations, ask. Don't guess requirements, data formats, or success criteria.
 - **Never take shortcuts.** Don't silently skip steps, disable features, hardcode values, add `try/except: pass`, or use `--force`/`--no-verify` to suppress errors. Diagnose the root cause.
 - **Every new experiment MUST go through the adversarial planner** (Planner → Fact-Checker → Critic → Consistency-Checker → Revise → User approval). No exceptions. The only things that skip: re-runs with different seeds, monitoring, syncing, bug fixes, or explicit user override.
-- **NEVER run NEW experiments inline in conversation.** When the user expresses experiment intent for a NEW direction ("try X", "run X", "what if we X"): (1) do NOT launch training/eval/generation code; (2) say "I'll create an experiment for that" and create a `status='proposed'` row in Sagan (via `https://sagan.superkaiba.com/experiments` or `POST /api/experiments`) pre-filled with context from the conversation (goal, hypothesis, parent link, pre-filled spec from parent if follow-up); (3) the only execution path is `/issue <N>` where `N` is `experiments.number`. **Exception — follow-up work that reuses the parent's code:** when the user requests a follow-up to an already-running or recently-completed experiment and the work reuses a lot of the parent's eval rig / scripts (same launcher, same matchers, only the variant set or hyperparam changes), it IS OK to run inline. The follow-up's findings — whether they strengthen the existing claims or add new related claims — fold back into the **same experiment's body**. An experiment can carry multiple related claims in its AI TL;DR / AI Summary; there is no separate sub-experiment concept.
+- **NEVER run NEW experiments inline in conversation.** When the user expresses experiment intent for a NEW direction ("try X", "run X", "what if we X"): (1) do NOT launch training/eval/generation code; (2) say "I'll create a task for that" and create a `status='proposed'` task via `python scripts/task.py new --kind experiment --title "..." --body "..." --parent <N (if any)>` pre-filled with context from the conversation (goal, hypothesis, parent link, pre-filled spec from parent if follow-up); (3) the only execution path is `/issue <N>` where `N` is the task number printed by `task.py new`. **Exception — follow-up work that reuses the parent's code:** when the user requests a follow-up to an already-running or recently-completed experiment and the work reuses a lot of the parent's eval rig / scripts (same launcher, same matchers, only the variant set or hyperparam changes), it IS OK to run inline. The follow-up's findings — whether they strengthen the existing claims or add new related claims — fold back into the **same task's body**. A task can carry multiple related claims in its TL;DR / Summary; there is no separate sub-task concept.
 
-  Workflow: keep the parent at its current status (typically `awaiting_promotion`), run inline, update the parent's body via `python scripts/sagan_state.py` or the dashboard with the new evidence + new claims. Cross-experiment links use the `edges` table — type `parent` for explicit followup relationships, `derives_from` for general references. Output artifacts live under `eval_results/issue_<PARENT_N>/<followup_label>/` (`issue_<N>` here means `experiments.number == <N>`).
+  Workflow: keep the parent at its current status (typically `awaiting_promotion`), run inline, update the parent's body via `python scripts/task.py set-body <N> --file path/to/updated_body.md` with the new evidence + new claims. Cross-task links use the `parent_id` field in `body.md` frontmatter for explicit followup relationships. Output artifacts live under `eval_results/issue_<PARENT_N>/<followup_label>/` (`issue_<N>` here means the task numbered N).
 
   Other exceptions to inline-running rules: monitoring already-running experiments, checking logs, pulling results. Discussion and brainstorming stay in conversation; new-direction execution always goes through `/issue <N>`.
 - **List assumptions before implementing.** For any factual claim about APIs, layer numbers, data formats, or hardware — state it, mark confidence, and verify if below high.
@@ -22,7 +25,7 @@
 - **Always use vLLM for generation.** Never use sequential HF `model.generate()` for eval completions — use vLLM batched inference (`LLM.generate()` with `SamplingParams(n=K)`). A single vLLM batch is 10-50x faster than sequential HF generation.
 - **Use generous `max_new_tokens` for marker / end-of-completion evals.** For any eval that scores a marker or end-of-completion token (e.g., `[ZLT]` substring rate), set `max_new_tokens` ≥ 2× the longest trained completion length, defaulting to **≥ 2048** unless explicitly justified otherwise. Truncation creates silent zeros: in issue #260, training on ~1050-token completions with the marker at the end + `max_new_tokens=512` produced source-rate 0.00 across all personas — not because the model failed to implant the marker, but because eval cut off ~360 tokens before reaching it. Free-generation evals (alignment, capability) can stay at 512; the rule applies specifically to marker/late-token evals.
 
-- **Archiving experiments.** Set `status` to `archived` for duplicates / won't-fix / abandoned experiments via `python scripts/sagan_state.py set-status <N> archived` or the dashboard. Completed experiments stay at `status='completed'`. `has_clean_result=true` is sticky regardless of status — archived experiments retain their clean-result association.
+- **Archiving experiments.** Set `status` to `archived` for duplicates / won't-fix / abandoned experiments via `python scripts/task.py set-status <N> archived` or the dashboard. Completed experiments stay at `status='completed'`. `has_clean_result=true` is sticky regardless of status — archived experiments retain their clean-result association.
 
 - **Auto-continuation policy.** When orchestrating a multi-step workflow
   (`/issue`, `/adversarial-planner`, etc.) the agent MUST auto-continue
@@ -34,7 +37,7 @@
 
   *Inline `AskUserQuestion` gates (block within a single `/issue` invocation):*
   1. Step 0b (1) — issue body empty (cannot guess primary input).
-  2. Step 0b (2) — Sagan experiment `kind` missing or contradictory.
+  2. Step 0b (2) — task `kind` missing or contradictory.
   3. Step 1 — clarifier blocking ambiguities (`status:proposed`).
   4. Step 2c — plan approval (`status:plan_pending`).
   5. Step 10d — worktree merge prompt (irreversible).
@@ -44,7 +47,7 @@
      the source experiment is parked at `awaiting_promotion` — its body
      is now the polished clean-result write-up, and its child
      `runs.classification` stays at `pending`. The user
-     runs `python scripts/sagan_state.py promote <N> useful|not-useful`
+     runs `python scripts/task.py promote <N> useful|not-useful`
      (or clicks Promote in the dashboard) when satisfied; re-invoking
      `/issue <N>` then advances into Step 10. `/issue` does NOT use
      `AskUserQuestion` here — it posts the dashboard link and exits
@@ -57,7 +60,7 @@
   8. Step 4b TDD gate — fires only when the approved plan body contains
      `### TDD: yes` or the user explicitly asked for TDD. Implementer
      posts `epm:proposed-tests v1`, EXITs awaiting an `approve-tests`
-     approval in Sagan. Re-invoking `/issue <N>` after approval resumes
+     approval marker (`epm:approve-tests v1`) in events.jsonl. Re-invoking `/issue <N>` after approval resumes
      Step 4b normally. (See `markers.md` and the implementer agent specs.)
 
   Outside these gates, NEVER ask "should I continue with the pipeline"
@@ -92,9 +95,9 @@
   imposes a different register; net noise), `upload-verifier`,
   `consistency-checker` (mechanical). The thin Claude wrapper agents
   (`codex-code-reviewer`, `codex-interpretation-critic`, `codex-reviewer`,
-  `codex-critic`) post their markers via `sagan_state.py post-marker`.
+  `codex-critic`) post their markers via `task.py post-marker`.
   /adversarial-planner Phase 2 uses in-context reconciliation (no
-  workflow_event posts); the other 3 sites use marker mode. See
+  events.jsonl row posts); the other 3 sites use marker mode. See
   `workflow.yaml § ensemble_review` for the canonical contract.
 
 ## Context hygiene
@@ -107,7 +110,7 @@
 1. **Verify uploads + clean weights:** per Upload Policy table below — confirm eval JSONs + figures committed to git on the issue branch, raw completions on HF Hub data repo, checkpoints on HF Hub model repo, then delete safetensors/merged dirs from the pod.
 2. Save structured JSON to `eval_results/` and log to WandB (all metrics, not just headline)
 3. Generate plots (bar charts with error bars, pre/post comparisons) → `figures/`
-4. The `analyzer` agent **promotes the source experiment row IN PLACE to a clean-result** — no separate experiment row is created. It snapshots the prior body to an `epm:original-body` workflow_event (for rollback / audit), then calls `sagan_state.py set-body` + `set-title` to replace body + title with the polished Sagan-card HTML write-up, and `sagan_state.py set-clean-result <N>` to flip `hasCleanResult=true`. Sagan auto-creates the child `runs` row with `classification='pending'` on that PATCH (see `.claude/agents/analyzer.md` Step 6 for the exact sequence). The classification stays at `pending` even after clean-result-critic PASS — the user manually promotes via `uv run python scripts/sagan_state.py promote <N> useful|not-useful` (or the dashboard) when satisfied. Body follows `~/sagan/docs/clean-result-guidelines.md`. Title = `<one-sentence claim> (HIGH|MODERATE|LOW confidence)` — no `[Clean Result]` prefix. Run `uv run python scripts/verify_sagan_card.py --issue <N>` before posting; FAIL blocks posting.
+4. The `analyzer` agent **promotes the task body IN PLACE to a clean-result** — no separate task is created. It snapshots the prior body to `original-body.md` via `task.py set-body <N> --file <path> --snapshot`, then calls `task.py set-title <N> "..."` and `task.py set-clean-result <N>` to flip `has_clean_result=true` in frontmatter. The classification stays at `pending` (i.e., the task stays at `awaiting_promotion`) even after clean-result-critic PASS — the user manually promotes via `uv run python scripts/task.py promote <N> useful|not-useful` when satisfied; that command moves the folder to `tasks/completed/` and records the classification. Body follows the markdown spec in `.claude/plans/task-workflow-migration.md` § 10 (four required H2 sections: TL;DR / Figure / Details / Reproducibility). Title = `<one-sentence claim> (HIGH|MODERATE|LOW confidence)` — no `[Clean Result]` prefix. Run `uv run python scripts/verify_task_body.py --issue <N>` before posting once that verifier lands in step 6; until then run the legacy `scripts/verify_sagan_card.py` only against the imported legacy-HTML bodies that carry the `<!-- legacy-sagan-card -->` sentinel.
 5. Update `RESULTS.md` and `docs/research_ideas.md`
 6. **Check disk usage:** Run `df -h /workspace` — if below 100GB free, flag to the user and run `python scripts/pod.py cleanup --all --dry-run` to preview what can be freed
 7. **No overclaims** — flag single seed, in-distribution eval, effect sizes, confounds
@@ -115,7 +118,7 @@
 
 ## Experiment Report Structure
 
-All experiment write-ups — analyzer drafts and clean-result experiment bodies — follow the **Sagan-card HTML spec** at `~/sagan/docs/clean-result-guidelines.md`. That doc is the single source of truth for body shape, voice, and section conventions. The mechanical verifier is `scripts/verify_sagan_card.py` (11 checks). The worked example is **experiment #311** at <https://sagan.superkaiba.com/e/experiment/1d61738d-df62-44af-9c79-fa41fe85f598>.
+All experiment write-ups — analyzer drafts and clean-result task bodies — follow the **markdown clean-result spec** in `.claude/plans/task-workflow-migration.md` § 10. The mechanical verifier is `scripts/verify_task_body.py` (six checks, landing in step 6 of the migration plan). Until that ships, the analyzer writes markdown matching the spec without an automated gate. A worked example task to compare against is **task #311** at <https://eps.superkaiba.com/tasks/311> — that one is a legacy Sagan-card HTML body (grandfathered, do not target this format for new write-ups).
 
 The body is a self-contained HTML document with an inline `<style>` block (class-scoped under `.cr-<N>`) and exactly three pieces plus one appendix, in order:
 
@@ -146,19 +149,19 @@ Other:
 - **Title** — one sentence stating the actual finding, ending with `(LOW | MODERATE | HIGH confidence)`. Must agree with the body's confidence-rationale sentence.
 - **Confidence-rationale sentence** — near the end of `#design`, right before the parameters table, in this shape: `Confidence: LOW | MODERATE | HIGH — <one sentence naming the binding constraint or the surviving evidence>.`
 - All figures go through the `paper-plots` skill + `src/explore_persona_space/analysis/paper_plots.py`.
-- Every draft MUST pass `uv run python scripts/verify_sagan_card.py --issue <N>` (or against a local file) before posting; FAILs block posting, WARNs ship only when explicitly acknowledged in the body.
+- Every draft MUST pass `uv run python scripts/verify_task_body.py --issue <N>` (or against a local file) once that verifier ships in step 6 of the migration; FAILs block posting, WARNs ship only when explicitly acknowledged in the body. Until then, the analyzer is on the honor system to match the markdown spec.
 
 **Iteration capture (clean-results feedback loop).** When the user corrects a clean-result draft body or title — anything from a one-word phrasing fix to a structural restructure — after applying the fix you MUST in the SAME response propose:
 - (a) An append to `.claude/skills/clean-results/iterations.md` (one H3 under the appropriate `## YYYY-MM-DD — issue #N (topic)` H2, with `**Before / After / Rule / Folded into**` block).
-- (b) IFF the rule generalizes — i.e., it would catch the same class of error in the next clean-result, not just a one-off factual fix — surgical edits to the relevant canonical file: `~/sagan/docs/clean-result-guidelines.md` (the spec), `.claude/agents/analyzer.md`, or `scripts/verify_sagan_card.py` (the mechanical verifier).
+- (b) IFF the rule generalizes — i.e., it would catch the same class of error in the next clean-result, not just a one-off factual fix — surgical edits to the relevant canonical file: `.claude/plans/task-workflow-migration.md` § 10 (the spec), `.claude/agents/analyzer.md`, or `scripts/verify_task_body.py` (the mechanical verifier, once it lands).
 
 The user approves each before you write. Nothing folds in silently. The discipline is **always log; sometimes generalize** — not every correction is a rule, but every correction is a precedent worth recording.
 
-**Legacy markdown bodies.** Awaiting-promotion bodies authored before the 2026-05-13 Sagan-card migration still use the old EPS-v4 markdown shape (`## TL;DR` / `## Summary` / `## Details`). `/promote-clean-result` auto-converts them to Sagan-card HTML during promotion. The legacy validators `scripts/verify_clean_result.py` and `scripts/audit_clean_results_body_discipline.py` are kept for grandfathered bodies but are deprecated — do not target the markdown format on new write-ups.
+**Legacy markdown bodies.** Awaiting-promotion bodies authored before the 2026-05-13 clean-result migration still use the old EPS-v4 markdown shape (`## TL;DR` / `## Summary` / `## Details`). `/promote-clean-result` auto-converts them to clean-result HTML during promotion. The legacy validators `scripts/verify_clean_result.py` and `scripts/audit_clean_results_body_discipline.py` are kept for grandfathered bodies but are deprecated — do not target the markdown format on new write-ups.
 
 ## Reproducibility Requirements (MANDATORY)
 
-Every experiment write-up MUST carry the agent-facing reproducibility appendix (`<details id="repro">`) at the very bottom of the body, AFTER the experimental-design block. Three required groups: **Artifacts** (model/adapter HF Hub URLs with `/tree/<ref>`, training-dataset HF Hub paths, raw-completion HF Hub paths, WandB `/runs/<id>` URLs, eval JSON repo-relative paths, hero-figure source-data paths), **Compute** (wall time, GPU type, pod), **Code** (entry scripts, git commit SHA, Hydra configs, copy-pasteable `git clone + checkout + uv run` reproduce command). `verify_sagan_card.py` enforces URL permanence + sentinel scrub; empty cells must be written `n/a` explicitly.
+Every experiment write-up MUST carry the **Reproducibility H2 section** at the very bottom of the body. Three required groups: **Artifacts** (model/adapter HF Hub URLs with `/tree/<ref>`, training-dataset HF Hub paths, raw-completion HF Hub paths, WandB `/runs/<id>` URLs, eval JSON repo-relative paths, hero-figure source-data paths), **Compute** (wall time, GPU type, pod), **Code** (entry scripts, git commit SHA, Hydra configs, copy-pasteable `git clone + checkout + uv run` reproduce command). `verify_task_body.py` (step 6) enforces URL permanence + sentinel scrub; empty cells must be written `n/a` explicitly.
 
 ## Remote Pod Access (SSH MCP)
 
@@ -193,11 +196,11 @@ All pods are ephemeral and named `epm-issue-<N>`. Look up the live registry with
 
 - Commands that need TTY allocation
 - Piped multi-command chains that are easier as one-liners
-- Diagnostic snapshots that aren't worth a Sagan event (e.g., one-off
+- Diagnostic snapshots that aren't worth an events.jsonl row (e.g., one-off
   `nvidia-smi` from the comfort of a shell)
 
 Live training/eval stdout no longer needs `tail -f` — `scripts/log_shipper.py`
-streams pod stdout into Sagan's `agent_run_events` so the
+streams pod stdout into the agent run event stream so the
 `/agent/<agent_run_id>` page is the canonical live view (it follows
 the tail and tags events with the runpod-status heartbeat).
 
@@ -209,43 +212,59 @@ python scripts/pod.py config --update <name> --host 1.2.3.4 --port 12345
 ```
 This updates `pods.conf` (single source of truth), regenerates `~/.ssh/config` and the user-level `~/.claude/mcp.json` automatically. Then restart the MCP server (`/mcp`).
 
-## Sagan State API
+## Task Workflow API
 
-All experiment state is read and written through `scripts/sagan_state.py`
-(both CLI and importable Python module), which talks to the Sagan
-dashboard's HTTP API at `$SAGAN_BASE_URL` (default
-`https://sagan.superkaiba.com`) authenticated via `$SAGAN_API_TOKEN`
-(60-day sliding session, stored in `~/.eps-secrets`).
+All task state is read and written through `scripts/task.py`
+(both CLI and importable Python module from
+`explore_persona_space.task_workflow`). It mutates files under
+`tasks/<status>/<id>/` directly — every mutation holds an exclusive
+`flock` on `~/.task-workflow/lock` and commits one git commit per
+operation. No HTTP, no API token, no remote database.
 
-**Project slug.** EPS is currently the only tenant in Sagan, but Sagan
-is being generalized to a multi-tenant dashboard (see
-`~/sagan/CLAUDE.md` *Tenant-agnostic guardrail*). The intended slug for
-EPS in Sagan's `projects` table is `eps` — once Sagan's API is
-project-scoped, `sagan_state.py` will send `?project=eps` on every
-request (and read `SAGAN_PROJECT_SLUG` from env, defaulting to `eps`).
+State lives in plain repo files:
 
-Subagents that need to write state (e.g. `analyzer` posting a clean
-result, `reviewer` posting a verdict marker) shell out to
-`sagan_state.py` — they never see the raw token, only the env var that
-holds it. The dashboard URL for any experiment is
-`https://sagan.superkaiba.com/e/experiment/<uuid>`.
+```
+tasks/
+  REGISTRY.json                 # tiny index: id → current folder path
+  <status>/<id>/
+    body.md                     # YAML frontmatter + body (markdown)
+    events.jsonl                # append-only progress markers
+    comments.jsonl              # mentor comments + Claude replies
+    plans/v{N}.md               # per-round plan revisions
+    plans/plan.md               # symlink to highest v{N}.md
+    artifacts/                  # figures, html artifacts, etc.
+    original-body.md            # snapshot before clean-result promotion
+```
+
+Status is the **parent folder name**. Status changes are atomic
+`git mv` plus an `epm:status-changed` event in `events.jsonl`.
+The status enum is the same as before:
+`proposed planning plan_pending approved running verifying
+interpreting reviewing awaiting_promotion completed blocked archived`.
+
+Subagents that need to write state (e.g. `analyzer` writing a
+clean-result, `experimenter` posting `epm:run-launched`) shell out
+to `task.py` — they never have to know the file layout because the
+CLI subcommands match the surface that `sagan_state.py` exposed.
+The dashboard URL for any task is `https://eps.superkaiba.com/tasks/<N>`.
 
 Common operations:
 
 ```bash
-python scripts/sagan_state.py view <N>                  # read experiment + recent events
-python scripts/sagan_state.py latest-marker <N>         # "where do I resume" query
-python scripts/sagan_state.py set-status <N> <status>   # advance state
-python scripts/sagan_state.py post-marker <N> epm:foo --note '...'
-python scripts/sagan_state.py add-tag <N> <tag>
-python scripts/sagan_state.py list-by-status --status running
+python scripts/task.py view <N>                  # read task + recent events
+python scripts/task.py latest-marker <N>         # "where do I resume" query
+python scripts/task.py set-status <N> <status>   # advance state (git mv + commit)
+python scripts/task.py post-marker <N> epm:foo --note '...'
+python scripts/task.py add-tag <N> <tag>
+python scripts/task.py list-by-status --status running
 ```
 
-**Body size cap.** The `note` payload on a workflow_event is capped at
-50,000 chars by the API schema. Skill-side callers MUST handle the
-`invalid_input` response: post a short `epm:failure v1` event with
-`failure_class: infra`, `reason: note_oversize`, then set the
-experiment to `status='blocked'`.
+**Body size cap.** The `note` payload on an `events.jsonl` row is capped at
+50,000 chars (mirrors the Sagan API cap). `task.py post-marker` raises
+`ValueError` on oversize; callers MUST handle it by writing the long
+content to an artifact file under `artifacts/`, then posting a short
+`epm:failure v1` event with `failure_class: infra`, `reason: note_oversize`
+referencing the artifact path, then `set-status <N> blocked`.
 
 ## PM Session + Per-Experiment Sessions (Happy multi-session model)
 
@@ -256,7 +275,7 @@ visible in the [Happy Coder](https://github.com/slopus/happy) mobile app:
   Loads the `research-pm` persona via `/pm`. Owns queue triage, ranking, and
   dispatching per-experiment work. Does NOT run experiments or write code.
 - **N per-experiment sessions** — one per active experiment. Each runs
-  `/issue <N>` (where `N` is `experiments.number`) and progresses it
+  `/issue <N>` (where `N` is task number) and progresses it
   through the lifecycle. Spawned by the PM on the user's go-ahead.
 
 ```bash
@@ -289,7 +308,7 @@ triage).
 
 **Topology rule.** Never run `/issue <N>` in the PM session — it would
 collapse the multi-session model. Always spawn a separate session. The PM
-session's view of `/issue <N>` progress is via `sagan_state.py
+session's view of `/issue <N>` progress is via `task.py
 list-by-status` (or the dashboard kanban), not by cross-messaging.
 
 **Reference:** `.claude/skills/pm/SKILL.md` (skill bootstrap),
@@ -302,9 +321,9 @@ list-by-status` (or the dashboard kanban), not by cross-messaging.
 
 **Lifecycle:** `provision` → run experiment → upload artifacts → upload-verification PASS → **auto-terminate**.
 
-**Pod naming:** `epm-issue-<N>` where `<N>` is `experiments.number`. One pod per experiment. Follow-up experiments that share a parent provision a fresh pod (the parent's pod was destroyed at upload-verification PASS).
+**Pod naming:** `epm-issue-<N>` where `<N>` is task number. One pod per experiment. Follow-up experiments that share a parent provision a fresh pod (the parent's pod was destroyed at upload-verification PASS).
 
-**Auto-terminate-on-upload-PASS (automatic).** After upload-verification PASS, `/issue` Step 8 runs `pod.py terminate --issue <N> --yes` automatically (volume + container disk destroyed). The skill posts `<!-- epm:pod-terminated v1 -->` and proceeds to `status:interpreting`. Interpretation and review run locally — they read JSON results from WandB / HF Hub, not from the pod. If interpretation later needs GPU compute (e.g., to regenerate a figure from raw outputs that weren't downloaded), provision a fresh pod via `pod.py provision`. Skip the auto-terminate only when the Sagan experiment has a `keep-running` tag for known follow-up work in the same session.
+**Auto-terminate-on-upload-PASS (automatic).** After upload-verification PASS, `/issue` Step 8 runs `pod.py terminate --issue <N> --yes` automatically (volume + container disk destroyed). The skill posts `<!-- epm:pod-terminated v1 -->` and proceeds to `status:interpreting`. Interpretation and review run locally — they read JSON results from WandB / HF Hub, not from the pod. If interpretation later needs GPU compute (e.g., to regenerate a figure from raw outputs that weren't downloaded), provision a fresh pod via `pod.py provision`. Skip the auto-terminate only when the task has a `keep-running` tag for known follow-up work in the same session.
 
 ### GPU intent → spec heuristic
 
@@ -488,13 +507,16 @@ See **`.claude/rules/agents-vs-skills.md`** for the full rule. Summary:
 ## Output format
 
 Default to **HTML** for long-lived artifacts the user will read in a
-browser: adversarial-planner output, clean-result writeups, weekly
-digests, mentor updates, spec / "compare 6 options" exploration docs,
-code-review summaries on experiments. Write to
-`.claude/cache/experiment-<N>-<artifact>.html` and post the link as part
-of the relevant `workflow_event`. Sagan renders them inline via
-`figures.kind = 'html_artifact'` on the experiment detail page. Pair
+browser: adversarial-planner output, weekly digests, mentor updates,
+spec / "compare 6 options" exploration docs, code-review summaries on
+experiments. Write to `tasks/<status>/<N>/artifacts/<slug>.html` and
+reference that path from the events.jsonl event's `artifacts` array.
+The EPS dashboard renders any file under `tasks/<N>/artifacts/` at
+`https://eps.superkaiba.com/tasks/<N>/artifacts/<slug>.html`. Pair
 with the `frontend-design` plugin for defaults that don't look generic.
+
+**Clean-result write-ups are markdown**, not HTML — they live in
+`body.md` and follow the spec in `.claude/plans/task-workflow-migration.md` § 10.
 
 Keep **markdown** for code-adjacent files where diffs matter:
 `CLAUDE.md`, `README.md`, commit messages, PR bodies, daily-log entries
@@ -505,7 +527,7 @@ diff".
 
 ## Code Style
 
-- **Plan handoff convention.** When dispatching a subagent that needs a plan, pass the PATH to the cached plan (`.claude/plans/issue-<N>.md`), NOT the body. The subagent reads the file before acting; never infer plan content from the experiment body or workflow_event payloads.
+- **Plan handoff convention.** When dispatching a subagent that needs a plan, pass the PATH to the cached plan (`.claude/plans/issue-<N>.md`), NOT the body. The subagent reads the file before acting; never infer plan content from the experiment body or events.jsonl row payloads.
 - **All code changes on local VM, never on pods.** Edit files locally, commit, push, then `git pull` on pods. Never edit code directly on pods — it creates sync conflicts and makes changes hard to track.
 - **Linting:** `uv run ruff check . && uv run ruff format .` (line-length=100, py311, select E/F/I/UP)
 - **Packages:** Always `uv` (not pip/conda). Config via Hydra (not argparse). Track with `wandb`.
@@ -536,7 +558,7 @@ scripts/                      # Entrypoints (train.py, eval.py, run_sweep.py, po
 configs/                      # Hydra YAML (training/, lora/, eval/, condition/)
 eval_results/                 # Structured JSON results
 ood_eval_results/             # Out-of-distribution eval results
-archive/research_log/         # ARCHIVED — superseded by clean-result experiment rows in Sagan (kept read-only for history)
+archive/research_log/         # ARCHIVED — superseded by clean-result tasks under tasks/ (kept read-only for history)
 figures/                      # Generated plots
 docs/                         # Research documentation
 raw/                          # Raw data artifacts

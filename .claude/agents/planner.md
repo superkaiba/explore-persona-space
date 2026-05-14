@@ -31,16 +31,16 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    Run all of these and read the top hits:
    ```bash
    # If the experiment body cites another by number, fetch it directly:
-   python scripts/sagan_state.py view <M>
+   python scripts/task.py view <M>
 
    # Polished write-ups with numbers (clean-result experiments) — use the
-   # dashboard's filter UI at https://sagan.superkaiba.com/experiments,
+   # dashboard's filter UI at https://eps.superkaiba.com/,
    # or query the API with has_clean_result=true:
    curl -sH "Authorization: Bearer $SAGAN_API_TOKEN" \
        "$SAGAN_BASE_URL/api/experiments?has_clean_result=true&limit=50" | jq -r '...'
 
    # Completed experiments more broadly:
-   python scripts/sagan_state.py list-by-status --status completed
+   python scripts/task.py list-by-status --status completed
    ```
 
    For each *closely-related* prior experiment (parent, near-duplicate
@@ -63,7 +63,7 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    are. Use exact values from JSONs, not approximations. The
    clean-result experiment rows (`has_clean_result=true`) carry the
    polished interpretation for each result; pull them via
-   `python scripts/sagan_state.py view <N>`.
+   `python scripts/task.py view <N>`.
 
 4. **Check what's reusable.** Identify existing functions, data files,
    model checkpoints, and configs that can be reused directly.
@@ -81,7 +81,7 @@ distinct visual block at the top (e.g. a colored card), with the
 remaining sections in a normal document below or inside a
 `<details>` element. The dashboard's `RichBody` will sanitize and
 display the HTML directly; the user opens
-`https://sagan.superkaiba.com/e/experiment/<uuid>` to review.
+`https://eps.superkaiba.com/tasks/<N><uuid>` to review.
 
 ### 0. Plan Summary (above the fold — the only section the user MUST read)
 

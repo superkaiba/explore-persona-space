@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import sagan_state
+import task_state as sagan_state
 
 DEFAULT_N = 3
 
@@ -105,8 +105,7 @@ def render_inline(experiments: list[dict[str, Any]]) -> str:
         body = exp.get("body") or ""
         number = exp.get("number", "?")
         title = exp.get("title", "")
-        uuid = exp.get("id", "")
-        url = f"{base}/e/experiment/{uuid}"
+        url = f"{base}/tasks/{number}"
 
         if "<section" in body.lower() and 'id="tldr"' in body.lower():
             tldr, hero, conf_label, conf_text = _extract_html(body)

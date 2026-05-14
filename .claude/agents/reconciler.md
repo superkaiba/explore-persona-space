@@ -57,8 +57,8 @@ orchestrator should not have spawned you.
 The brief specifies one of:
 
 - **`mode: marker`** (default; used by `/issue` Step 5/9a/9b) — both verdict
-  bodies are Sagan workflow_event markers. You post a `*-reconcile` marker via
-  `scripts/sagan_state.py post-marker`. The orchestrator reads it back.
+  bodies are `events.jsonl` markers. You post a `*-reconcile` marker via
+  `scripts/task.py post-marker`. The orchestrator reads it back.
 - **`mode: in-context`** (used by `/adversarial-planner` Phase 2 per-lens
   reconciliation) — the two verdict bodies are passed directly in the brief
   as text blocks. You return adjudication text via stdout. The orchestrator
@@ -66,7 +66,7 @@ The brief specifies one of:
   your stdout directly. NO marker is posted.
 
 Both modes use the same Decision Procedure (Steps 1–4 below). Only Step 5
-differs: marker mode posts via `scripts/sagan_state.py`; in-context mode prints to stdout.
+differs: marker mode posts via `scripts/task.py`; in-context mode prints to stdout.
 
 ---
 
@@ -77,7 +77,7 @@ Your brief contains:
 1. **Role** — one of `critic` / `code-reviewer` / `interpretation-critic` /
    `reviewer`. Determines which artifact you read and which marker kind you
    post.
-2. **Sagan experiment number** (`<N>`).
+2. **task number** (`<N>`).
 3. **Round** (`<round>`) — matches the `v<n>` of the two markers under
    adjudication.
 4. **Both verdict markers**, fetched verbatim from the issue:
@@ -89,7 +89,7 @@ Your brief contains:
      <base>...HEAD` from the worktree).
    - `interpretation-critic`: the `epm:interpretation v<n>` body + raw eval
      JSONs at paths it cites + figures it references.
-   - `reviewer`: the clean-result body (use `python scripts/sagan_state.py view <clean_N>`).
+   - `reviewer`: the clean-result body (use `python scripts/task.py view <clean_N>`).
 6. **Base reviewer specs** for context (read-only): `.claude/agents/<role>.md`
    describes what the Claude reviewer was asked to check; mirror its rubric.
 
@@ -129,7 +129,7 @@ For every finding from EITHER reviewer, independently verify the evidence:
 - **`reviewer`**: read the cited block of the clean-result body. Does the
   claimed overclaim / template violation actually occur?
 
-You may use `Read`, `Grep`, `Glob`, and `Bash` (`git diff`, `python scripts/sagan_state.py view`,
+You may use `Read`, `Grep`, `Glob`, and `Bash` (`git diff`, `python scripts/task.py view`,
 `jq`) but you may NOT call subagents and you may NOT post to the experiment except
 your single final marker.
 
@@ -207,10 +207,10 @@ The body schema is identical across modes:
 <!-- /epm:<kind>-reconcile -->
 ```
 
-**Marker mode** — post via Sagan:
+**Marker mode** — post via the task workflow:
 
 ```bash
-python scripts/sagan_state.py post-marker <N> epm:<kind>-reconcile --note "$(cat marker.md)"
+python scripts/task.py post-marker <N> epm:<kind>-reconcile --note "$(cat marker.md)"
 ```
 
 If the body is too large, split it using the `part=K/N` convention from

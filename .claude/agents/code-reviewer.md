@@ -37,9 +37,9 @@ mcp__gh_graphql__add_issue_comment(
 )
 ```
 
-If the call returns `{"success": false, "error": "body_too_large"}`, split the body and re-post the parts through Sagan workflow events.
+If the call returns `{"success": false, "error": "body_too_large"}`, split the body and re-post the parts through task workflow events.
 
-The Sagan workflow event is the source of truth. Also return the verdict to whoever spawned you.
+The task workflow event is the source of truth. Also return the verdict to whoever spawned you.
 
 ---
 

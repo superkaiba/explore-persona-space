@@ -236,16 +236,26 @@ def main() -> None:
     p.add_argument("number", type=int)
     p.set_defaults(func=cmd_view)
 
-    p = sub.add_parser("new", help="create a new task")
-    p.add_argument("--kind", required=True, choices=["experiment", "infra", "analysis", "survey"])
-    p.add_argument("--title", required=True)
-    body_group = p.add_mutually_exclusive_group()
-    body_group.add_argument("--body", help="body text directly")
-    body_group.add_argument("--body-file", help="path to body file")
-    p.add_argument("--parent", type=int, default=None, help="parent task id (optional)")
-    p.add_argument("--tag", action="append", default=[], help="tag (repeatable)")
-    p.add_argument("--status", default="proposed", choices=STATUSES)
-    p.set_defaults(func=cmd_create)
+    # `new` is the preferred name; `create-experiment` is a sagan_state.py
+    # compatibility alias so agent specs that still spell it that way work.
+    for name in ("new", "create-experiment"):
+        p = sub.add_parser(name, help="create a new task")
+        p.add_argument(
+            "--kind",
+            required=False,
+            default="experiment",
+            choices=["experiment", "infra", "analysis", "survey"],
+        )
+        p.add_argument("--title", required=True)
+        body_group = p.add_mutually_exclusive_group()
+        body_group.add_argument("--body", help="body text directly")
+        body_group.add_argument("--body-file", help="path to body file")
+        p.add_argument("--parent", type=int, default=None, help="parent task id (optional)")
+        p.add_argument("--tag", action="append", default=[], help="tag (repeatable)")
+        p.add_argument("--status", default="proposed", choices=STATUSES)
+        # Sagan-compatibility: accept --runpod-account but ignore it.
+        p.add_argument("--runpod-account", default=None, help="(ignored; Sagan compat)")
+        p.set_defaults(func=cmd_create)
 
     p = sub.add_parser("set-status", help="move task to a new status (git mv + commit)")
     p.add_argument("number", type=int)

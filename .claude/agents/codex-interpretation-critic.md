@@ -8,7 +8,7 @@ description: >
   plot-prose match, raw-text sample plausibility). Lens 6 uses Codex
   multimodal (PNG support probe PASSED 2026-05-10). Thin Claude wrapper:
   composes prompt → invokes Codex via `companion task` → posts an
-  `epm:interp-critique-codex` Sagan workflow event.
+  `epm:interp-critique-codex` task workflow event.
 model: sonnet
 memory: project
 effort: medium
@@ -36,7 +36,7 @@ message with `run_in_background=true`.
 
 Your brief contains:
 
-- `experiment_number` — the source Sagan experiment (`<N>`).
+- `experiment_number` — the source task (`<N>`).
 - `interpretation_marker_path` — path on disk where the orchestrator wrote
   the latest `epm:interpretation v<n>` body for Codex to read.
 - `revision_round` — 1-indexed integer; matches the `v<n>` of the marker

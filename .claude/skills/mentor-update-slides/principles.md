@@ -1,6 +1,6 @@
 # Principles: mentor-update-slides
 
-This skill exists because: the codebase already has Sagan clean-result bodies (rich, polished per-experiment artifacts) and a weekly skill (markdown agenda gist), but no path that assembles those into slides for an advisor meeting. The deck format matters — it forces the discipline of *one claim per slide*, *headline as assertion*, and *figure as load-bearing element*, which markdown agendas don't.
+This skill exists because: the codebase already has clean-result bodies (rich, polished per-experiment artifacts) and a weekly skill (markdown agenda gist), but no path that assembles those into slides for an advisor meeting. The deck format matters — it forces the discipline of *one claim per slide*, *headline as assertion*, and *figure as load-bearing element*, which markdown agendas don't.
 
 The structure and rules below are not invented; each is cited to a primary source. Where sources conflict, we prefer ML-specific guidance (Hughes & Chua, Nanda, Perez) over generic presentation advice (Reynolds, Knaflic).
 
@@ -148,7 +148,7 @@ Use these in headlines and bullets when the chart underdetermines the verbal cla
 - **Narrow** — restricted to specific setting.
 - **Guarantees** — always true (rare in deep learning).
 
-The Sagan clean-result body's existing `Confidence: HIGH | MODERATE | LOW` maps onto this:
+The clean-result body's existing `Confidence: HIGH | MODERATE | LOW` maps onto this:
 - HIGH ≈ systematic
 - MODERATE ≈ hedged
 - LOW ≈ existence proof / narrow
