@@ -1,0 +1,2 @@
+{"ts": "2026-05-14T00:24:27.238Z", "kind": "state_changed", "version": 1, "by": "user", "note": "Superseded by lead #123 — clean result combined cluster L (Qwen default identity prompt creates a distinct persona slot; the Qwen token reroutes leakage to named AI assistants)", "from": "reviewing", "to": "archived"}
+{"ts": "2026-05-14T00:03:06.446Z", "kind": "state_changed", "version": 1, "by": "user", "note": "Moved on Pipeline board to review.", "from": "completed", "to": "reviewing"}
