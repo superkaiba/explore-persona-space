@@ -1,10 +1,10 @@
 ---
 name: issue
 description: >
-  End-to-end task workflow for Explore Persona Space. `/issue <N>`
-  takes a task number, reads state from the task workflow CLI, posts
-  `epm:*` workflow events, and advances the EPS experiment lifecycle without
-  using any external tracker as workflow state.
+  End-to-end task workflow for Explore Persona Space. `/issue <N>` takes a
+  task number, reads state from local files under `tasks/<status>/<N>/`,
+  appends `epm:*` markers to `events.jsonl`, and advances the EPS
+  experiment lifecycle without any external tracker or remote service.
 user_invocable: true
 ---
 
@@ -13,57 +13,79 @@ user_invocable: true
 Use this skill when the user says `/issue <N>` or asks an agent to work an
 experiment workflow item by number.
 
-`<N>` is task number in the task workflow. It is not any external tracker number.
-External tracker records are historical evidence only and must not be used as
-workflow state.
+`<N>` is the task number — the integer that names the per-task folder under
+`tasks/<status>/<N>/`. It is not any external tracker number. External
+tracker records (GitHub issues, the legacy Sagan dashboard) are historical
+evidence only and must never be used as workflow state.
 
 ## State Backend
 
-All durable state lives in the task workflow:
+All durable state lives in plain files in the repo:
 
-- `experiments.status` for lifecycle;
-- `events.jsonl` for `epm:*` markers, approvals, reviewer verdicts, and
-  reconciler decisions;
-- `agent_runs`, `runs`, `pod_lifecycle`, and artifact records for execution;
-- clean-result promotion for final classification.
+```
+tasks/REGISTRY.json              # tiny index: id → current folder path
+tasks/<status>/<N>/
+  body.md                        # YAML frontmatter + markdown body
+  events.jsonl                   # append-only `epm:*` markers (resume log)
+  comments.jsonl                 # mentor comments + Claude replies
+  plans/v{K}.md, plan.md         # plan revisions + symlink to latest
+  artifacts/                     # figures, html artifacts, drafts
+  original-body.md               # snapshot before clean-result promotion
+```
 
-Read and mutate state only through `scripts/task.py`, which calls the
-the task workflow CLI with `Authorization: Bearer $TASK_WORKFLOW_TOKEN`.
+- **Status** is the parent folder name. Allowed values: `proposed
+  planning plan_pending approved running verifying interpreting
+  reviewing awaiting_promotion completed blocked archived`.
+- **Status change = atomic git mv + commit.** No `meta.status` field; the
+  folder is the single source of truth.
+- **Marker = one line appended to `events.jsonl`** in the task's current
+  folder. Same `epm:*` shape we've always used.
+
+Read and mutate state only through `scripts/task.py`. It holds an exclusive
+`flock` on `~/.task-workflow/lock` for every mutation, writes one git commit
+per operation, and is the only writer to these files (the web dashboard
+only appends to `comments.jsonl`). No HTTP, no auth token, no remote
+database.
 
 Useful commands:
 
 ```bash
 python scripts/task.py view <N>
-python scripts/task.py set-status <N> clarifying --note "Need hypothesis and information gain."
+python scripts/task.py set-status <N> planning --note "Clarifier resolved."
 python scripts/task.py set-title <N> "New title"
 python scripts/task.py set-body <N> --file /tmp/body.md
 python scripts/task.py add-tag <N> eps
-python scripts/task.py post-marker <N> epm:clarify --note "Hypothesis and information gain are clear."
+python scripts/task.py post-marker <N> epm:plan --note "Plan v1 written."
+python scripts/task.py latest-marker <N> --prefix epm:
+python scripts/task.py list-by-status --status running
+python scripts/task.py new-plan-version <N> --file /tmp/plan.md
 python scripts/task.py promote <N> useful
 ```
 
 ## Workflow
 
-1. Load the task by number.
-2. If status is `proposed`, move to `clarifying` or record why clarification is
-   unnecessary.
-3. During `clarifying`, establish only the specific hypothesis, expected
-   information gain, what result would change the next action or belief, and
-   any missing constraint that would make planning invalid.
-4. If those points are already clear, move to `planning`.
-5. Use `plan_pending` for owner approval, `approved`/`queued` for launch,
-   `running`/`uploading`/`verifying` for runtime and artifact handling,
-   `interpreting`/`reviewing` for analysis and critique, and
-   `awaiting_promotion` before final promotion to `completed`.
+1. Load the task by number (`task.py view <N>` reads `body.md` frontmatter
+   and recent `events.jsonl` rows).
+2. If status is `proposed`, run the clarifier and either move to `planning`
+   or record `epm:clarify-skip` with the reason.
+3. During `planning` / `plan_pending`, run the adversarial-planner loop
+   (Claude planner + Claude critic + Codex twin) and write plan versions
+   to `tasks/<status>/<N>/plans/v{K}.md`. Print the dashboard URL
+   `https://eps.superkaiba.com/tasks/<N>/plan` rather than dumping the
+   plan body to the terminal.
+4. `plan_pending` is the user-approval gate. After approval, move through
+   `approved` → `running` → `verifying` → `interpreting` → `reviewing` →
+   `awaiting_promotion`. Final promotion to `completed` is user-driven
+   via `task.py promote <N> useful|not-useful`.
 
-All transitions must post an `epm:*` marker as a row in `events.jsonl`.
-Do not write local state files as the source of truth.
+All transitions must post an `epm:*` marker (one row in `events.jsonl`).
+Do not write parallel state files as the source of truth.
 
 ## Reviewer Pairs
 
 For code review, interpretation critique, and clean-result critique, run the
-Claude/Codex pair for at most three rounds. Post every reviewer verdict and
-reconciler decision as `events.jsonl` with reviewer metadata.
+Claude/Codex ensemble for at most three rounds. Post every reviewer verdict
+and reconciler decision as an `events.jsonl` row with reviewer metadata.
 
 Allowed verdicts:
 
@@ -72,23 +94,33 @@ Allowed verdicts:
 - `blocked_needs_user_decision`
 - `fail_not_worth_continuing`
 
-Round-3 rule: if reviewers still disagree after round 3, the reconciler writes
-the final critique, applies or requests only the minimal necessary fix, and the
-workflow continues unless there is a true user-decision blocker such as missing
-owner input, unsafe execution, invalid artifacts, or an untestable hypothesis.
+Round-3 rule: if reviewers still disagree after round 3, spawn the
+`reconciler` agent. Its verdict is binding. The workflow continues unless
+there is a true user-decision blocker (missing owner input, unsafe
+execution, invalid artifacts, untestable hypothesis), in which case set
+`status:blocked` and EXIT.
 
 ## RunPod
 
-Keep the task workflow as the runtime owner. Plans may specify a `runpod-spec`, but pod
-dispatch, progress, time remaining, cost, and artifacts are recorded through
-the task workflow. Use `TASK_PROGRESS_URL` and the injected
-RunPod environment variables are set on the pod by `scripts/pod.py provision`.
+Pod lifecycle is `scripts/pod.py`'s job, unchanged:
+
+```bash
+python scripts/pod.py provision --issue <N> --intent <intent>   # before run
+python scripts/pod.py terminate --issue <N> --yes                # automatic at upload-verify PASS
+python scripts/pod.py resume --issue <N>                         # for follow-up work
+```
+
+The pod is named `epm-issue-<N>` to match `<N>` in `tasks/<status>/<N>/`.
+Pod provisioning posts `epm:pod-provisioned`; auto-termination posts
+`epm:pod-terminated`. Progress markers from the running pod are appended
+via `scripts/pod_watch.py`.
 
 ## Completion Audit
 
 Before moving an experiment to a terminal state, post `epm:completion-audit`
 with a checklist covering hypothesis, plan, implementation, reviewer rounds,
-artifacts, clean-result draft, promotion status, and follow-up decisions. Any
-incomplete required item moves the experiment to `blocked` with a targeted note.
+artifacts, clean-result draft, promotion status, and follow-up decisions.
+Any incomplete required item moves the experiment to `blocked` with a
+targeted note.
 
 See `markers.md` for marker names and metadata shape.
