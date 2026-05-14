@@ -66,7 +66,6 @@ credentials*
 .claude/plans/issue-*.md
 
 # Local scratch / dev artifacts
-dashboard/
 .playwright-mcp/
 logs/
 errors.log
