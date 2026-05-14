@@ -37,7 +37,7 @@ from pathlib import Path
 
 DAEMON_FILE = Path("/usr/lib/node_modules/happy/dist/index-q9G4ktSK.mjs")
 BACKUP_SUFFIX = ".eps-original"
-SENTINEL = "// EPS-PATCH: claudeArgs-forwarding v1"
+SENTINEL = "// EPS-PATCH: claudeArgs-forwarding + initial-prompt-seed v2"
 
 
 # Each (search, replace) pair is a literal-string substitution. Search
@@ -94,6 +94,31 @@ PATCHES: list[tuple[str, str, str]] = [
             "daemon",
             ...((options.claudeArgs || []))
           ];""",
+    ),
+    (
+        "nextMessage initial-prompt seed",
+        """nextMessage: async () => {
+            if (pending) {
+              let p = pending;
+              pending = null;
+              permissionHandler.handleModeChange(p.mode.permissionMode);
+              return p;
+            }
+            let msg = await session.queue.waitForMessagesAndGetAsString(controller.signal);""",
+        """nextMessage: async () => {
+            if (process.env.HAPPY_INITIAL_PROMPT) {
+              const __epsInitialPrompt = process.env.HAPPY_INITIAL_PROMPT;
+              delete process.env.HAPPY_INITIAL_PROMPT;
+              logger.debug(`[EPS-PATCH] Seeding initial message: ${__epsInitialPrompt}`);
+              return { message: __epsInitialPrompt, mode: { permissionMode: "default" } };
+            }
+            if (pending) {
+              let p = pending;
+              pending = null;
+              permissionHandler.handleModeChange(p.mode.permissionMode);
+              return p;
+            }
+            let msg = await session.queue.waitForMessagesAndGetAsString(controller.signal);""",
     ),
 ]
 

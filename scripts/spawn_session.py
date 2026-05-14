@@ -121,7 +121,12 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
     else:
         prompt = None
     if prompt is not None:
-        body["claudeArgs"] = [prompt]
+        # The Happy wrapper's remote-mode loop reads HAPPY_INITIAL_PROMPT
+        # on the first nextMessage() call (see patch_happy_daemon.py
+        # site 5). It's deleted from process.env immediately so the
+        # prompt is one-shot — the relay handles every subsequent
+        # message.
+        body["environmentVariables"] = {"HAPPY_INITIAL_PROMPT": prompt}
 
     resp = post("/spawn-session", body)
     if not resp.get("success"):
