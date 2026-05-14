@@ -1,0 +1,53 @@
+# Heavy directories Vercel never needs.
+.venv/
+node_modules/
+.next/
+.git/
+
+# Local data + experiment artifacts.
+eval_results/
+ood_eval_results/
+figures/
+external/
+archive/
+raw/
+docs/
+overleaf_paper/
+.arxiv-papers/
+.playwright-mcp/
+logs/
+errors.log
+*.log
+
+# Other worktrees and Claude state.
+.claude/
+
+# Python + ML caches.
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Config / source we don't need to upload (build doesn't touch these).
+configs/
+src/
+scripts/
+tests/
+eps/
+pyproject.toml
+uv.lock
+uv.toml
+ruff.toml
+
+# Misc local artifacts.
+*.csv
+*.parquet
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.h5
+*.npy
+.DS_Store

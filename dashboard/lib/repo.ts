@@ -1,9 +1,11 @@
 /**
  * Repo-root + tasks-dir path resolution.
  *
- * Local dev: process.cwd() is dashboard/; ../tasks is the workspace tasks dir.
- * Vercel: project root is dashboard/, and outputFileTracingIncludes pulls
- * ../tasks/** into the runtime. process.cwd() resolves the same way.
+ * Vercel project has rootDirectory=dashboard, but the deploy is invoked
+ * from the repo root so the upload includes ../tasks/. NFT bumps the
+ * trace root one level (see next.config.ts) so the runtime bundle
+ * contains tasks/. process.cwd() at runtime is dashboard/, both locally
+ * (`npm run dev`) and on Vercel — so `../tasks` resolves uniformly.
  */
 import path from "node:path";
 

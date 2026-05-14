@@ -72,3 +72,4 @@ errors.log
 
 # Embedded git repo (Overleaf paper) — tracked in its own remote
 overleaf_paper/
+.vercel

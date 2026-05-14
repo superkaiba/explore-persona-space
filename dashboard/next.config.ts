@@ -2,10 +2,10 @@ import type { NextConfig } from "next";
 import path from "node:path";
 
 const nextConfig: NextConfig = {
-  // Vercel's File Tracing can't statically infer that we read from `../tasks/`
-  // (via process.cwd()), so include the directory explicitly. The trace root
-  // is bumped to the repo root so files outside `dashboard/` are reachable
-  // at runtime.
+  // tasks/ lives in the repo root (sibling of dashboard/). On Vercel the
+  // project's Root Directory is dashboard/, but the full upload still
+  // contains ../tasks/. Bump the trace root one level so NFT can express
+  // "include ../tasks/**" without leaving the trace.
   outputFileTracingRoot: path.join(__dirname, ".."),
   outputFileTracingIncludes: {
     "/": ["../tasks/**/*"],
