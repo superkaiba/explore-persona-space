@@ -361,19 +361,39 @@ def step1_dataset_symmetry(out_dir: Path) -> dict:
         "lang_inv_it_fr_5k": DATA_SFT_DIR / "lang_inv_it_fr_5k.jsonl",
     }
 
+    # The lang-inversion SFT files live at `sft/<name>.jsonl` on the
+    # dataset repo (this is where the v2 builder ends up after the
+    # consolidation in #190). The script previously looked under
+    # `lang_inv/<name>.jsonl`, which doesn't exist — that is what was
+    # killing the pod at startup with the opaque "warnings.warn(" stderr.
+    # Try the canonical `sft/` prefix first, then fall back to the old
+    # `lang_inv/` location in case any historical layout still has it.
     for name, local_path in datasets.items():
-        if not local_path.exists():
-            logger.info("Downloading %s from HF dataset repo...", name)
+        if local_path.exists():
+            continue
+        logger.info("Downloading %s from HF dataset repo...", name)
+        candidates = [f"sft/{name}.jsonl", f"lang_inv/{name}.jsonl"]
+        ret = ""
+        for path_in_repo in candidates:
             ret = download_dataset(
-                path_in_repo=f"lang_inv/{name}.jsonl",
+                path_in_repo=path_in_repo,
                 local_path=str(local_path),
                 repo_id=HF_DATASET_REPO,
             )
-            if not ret or not local_path.exists():
-                raise RuntimeError(
-                    f"Could not obtain {name}.jsonl from HF dataset repo "
-                    f"{HF_DATASET_REPO} (path lang_inv/{name}.jsonl)."
-                )
+            if ret and local_path.exists():
+                logger.info("Found %s at %s", name, path_in_repo)
+                break
+        if not ret or not local_path.exists():
+            raise RuntimeError(
+                f"Could not obtain {name}.jsonl from HF dataset repo "
+                f"{HF_DATASET_REPO}; tried paths: {candidates}. "
+                "If this is lang_inv_it_fr_5k.jsonl, the dataset is "
+                "missing from the Hub entirely — the c_lang_inv_it_fr "
+                "seed-42 adapter exists in the model repo, but the SFT "
+                "training file was never persisted. Upload "
+                "data/sft/lang_inv_it_fr_5k.jsonl to "
+                f"{HF_DATASET_REPO}/sft/ before rerunning."
+            )
 
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
 
@@ -390,7 +410,9 @@ def step1_dataset_symmetry(out_dir: Path) -> dict:
 
     summary["run_metadata"] = get_run_metadata()
 
-    out_path = out_dir / "dataset_symmetry.json"
+    # Filename matches the pod_spec.config.artifacts entry
+    # `eval_results/issue333/dataset_symmetry_summary.json`.
+    out_path = out_dir / "dataset_symmetry_summary.json"
     out_path.write_text(json.dumps(summary, indent=2))
     post_progress(
         "dataset_symmetry",
@@ -633,7 +655,15 @@ def step_train_and_kl(out_dir: Path) -> dict[str, dict]:
                 progress_pct=10 + 60 * ((done + 0.7) / total),
             )
             kl = kl_probe(model_path, condition, seed, out_dir)
-            results[key]["kl"] = {"mean_kl": kl["mean_kl"]}
+            # Keep the full KL payload here so we can write a unified
+            # eval_results/issue333/kl_probes.json at the end (matches the
+            # pod_spec.config.artifacts entry). The per-(cond,seed) files
+            # written inside kl_probe() are kept too for easy inspection.
+            results[key]["kl"] = {
+                "mean_kl": kl["mean_kl"],
+                "per_prompt_kl": kl["per_prompt_kl"],
+                "config": kl["config"],
+            }
             post_progress(
                 "kl_probe",
                 f"KL probe {condition} seed={seed} done: mean_kl={kl['mean_kl']:.4f} ({round((time.time() - t0) / 60, 1)} min total)",  # noqa: E501
@@ -1069,6 +1099,18 @@ def main() -> None:
     train_results = step_train_and_kl(EVAL_RESULTS_DIR)
     new_model_paths = {key: train_results[key]["train"]["model_path"] for key in train_results}
 
+    # Unified KL-probes file (matches pod_spec.config.artifacts
+    # entry `eval_results/issue333/kl_probes.json`). Per-(cond,seed)
+    # files written inside kl_probe() remain on disk for inspection
+    # but the aggregate is what gets uploaded as the named artifact.
+    kl_probes_aggregate = {
+        "issue": ISSUE,
+        "probes": {
+            key: train_results[key]["kl"] for key in train_results if "kl" in train_results[key]
+        },
+    }
+    (EVAL_RESULTS_DIR / "kl_probes.json").write_text(json.dumps(kl_probes_aggregate, indent=2))
+
     # ── Step 6: download seed-42 adapters from HF Hub ───────────────────────
     post_progress(
         "download_seed42",
@@ -1101,7 +1143,20 @@ if __name__ == "__main__":
         main()
     except Exception as e:
         # Surface the failure to the orchestrator. Do NOT swallow.
+        #
+        # _bootstrap.bootstrap() configures the root logger to write to
+        # stdout, so logger.exception(...) lands in stdout. Sagan's pod-
+        # error tail captures STDERR only — without an explicit stderr
+        # write here, the real traceback is invisible to the dashboard
+        # and the only thing the runner sees is whatever deprecation
+        # warning happened to land last on stderr (e.g. the
+        # huggingface_hub `local_dir_use_symlinks` warning that
+        # consumed the entire 493-char errorTail buffer in earlier
+        # rounds of this experiment). Write the traceback to stderr
+        # too so failures are actually diagnosable.
         logger.exception("Issue #333 pipeline aborted: %s", e)
+        traceback.print_exc(file=sys.stderr)
+        sys.stderr.flush()
         post_progress(
             "error",
             f"Pipeline aborted: {str(e)[:200]}",

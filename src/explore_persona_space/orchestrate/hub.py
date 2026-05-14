@@ -417,12 +417,18 @@ def download_dataset(
     token = os.environ.get("HF_TOKEN")
 
     try:
+        # NOTE: `local_dir_use_symlinks` was deprecated in huggingface_hub
+        # 0.23 and now emits a UserWarning every call. The pod's stderr
+        # tail is only 493 chars, so a single such warning is enough to
+        # crowd out the real Python traceback when this function (or
+        # anything downstream) raises — leading to opaque "warnings.warn("
+        # error events in Sagan. Drop the kwarg; default behaviour is the
+        # same.
         downloaded = hf_hub_download(
             repo_id=repo_id,
             filename=path_in_repo,
             repo_type="dataset",
             local_dir=str(Path(local_path).parent),
-            local_dir_use_symlinks=False,
             token=token,
         )
         # hf_hub_download saves to local_dir/path_in_repo — move to exact local_path
