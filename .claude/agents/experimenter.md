@@ -91,42 +91,41 @@ You do NOT:
    **Why:** The subagent may be killed (parent session disconnect, context
    compaction, token limit). The GPU job must keep running regardless.
 
-2. **Dashboard progress reporting.** If the pod environment contains
-   `TASK_PROGRESS_URL` and `SAGAN_POD_PROGRESS_TOKEN`, you MUST report
-   progress to local files from the pod during the run. Do this from `ssh_execute`
-   commands so the dashboard signal comes from the same pod that is running the
-   experiment, and never paste the token into workflow events, logs, or result
-   markers.
+2. **Progress reporting** is handled by `scripts/pod_watch.py`, **not** by
+   you. The watcher runs on the local VM, tails the pod's log file over SSH,
+   detects log-level milestones (launch, step counter, eval boundary, save,
+   completion, OOM/crash), and appends them to the task's `events.jsonl` via
+   `scripts/task.py post-marker` automatically. You don't need to push
+   progress yourself.
 
-   At minimum, post once immediately after launch, once on every monitoring
-   tick, on each milestone, and on completion/failure. Estimate remaining time
-   from actual observed throughput whenever possible: completed steps vs total
-   steps, examples/sec, eval shard count, checkpoint/upload stages, or the
-   plan's expected wall-time before enough telemetry exists. If you cannot make
-   a defensible estimate yet, omit `estimatedRemainingMinutes` and send
-   `progressPct`, `status`, or `message` instead. Revise the estimate as
-   evidence improves; do not leave the initial plan estimate stale.
+   Your job: emit clear, greppable log lines that the watcher can parse. The
+   experimenter entry script (e.g. `scripts/run_experiment_<N>.py`) should
+   print lines like:
 
-   ```bash
-   # Run on the pod. Keep this helper in the shell script/session that monitors
-   # the job so every tick can update events.jsonl without exposing credentials.
-   report_sagan_progress() {
-     [ -n "${TASK_PROGRESS_URL:-}" ] || return 0
-     [ -n "${SAGAN_POD_PROGRESS_TOKEN:-}" ] || return 0
-     curl -fsS -X POST "$TASK_PROGRESS_URL" \
-       -H "authorization: Bearer $SAGAN_POD_PROGRESS_TOKEN" \
-       -H "content-type: application/json" \
-       -d "$1" >/dev/null || true
-   }
-
-   report_sagan_progress '{"estimatedRemainingMinutes":180,"progressPct":0,"status":"launched","message":"job started"}'
+   ```
+   [progress] step 100/2000 — loss=2.31 throughput=8.4 ex/s
+   [progress] eval boundary — running ARC-C
+   [progress] checkpoint saved — adapter_step_500
+   [progress] phase 1 complete — starting phase 2
    ```
 
-   Completion/failure reports must set the dashboard state clearly:
+   `pod_watch.py` picks these up and posts a single `epm:progress` event with
+   the line as the note. On launch / completion / failure it posts
+   `epm:run-launched`, `epm:run-finished`, or `epm:failure` (with the
+   `failure_class` and traceback extracted from the log).
+
+   If `pod_watch.py` is NOT running for this task (uncommon — the `/issue`
+   skill starts it automatically right after `pod.py provision`), fall back
+   to manual reporting from the local VM via:
+
    ```bash
-   report_sagan_progress '{"estimatedRemainingMinutes":0,"progressPct":100,"status":"completed","message":"results uploaded"}'
-   report_sagan_progress '{"status":"failed","message":"OOM during first eval"}'
+   uv run python scripts/task.py post-marker <N> epm:progress \
+       --by experimenter \
+       --note "step 1000/2000, loss=2.1, throughput=8.4 ex/s, eta 45min"
    ```
+
+   Never expose credentials in event notes. There are no progress tokens
+   anymore — the task workflow is local files.
 
 3. **Progressive monitoring schedule.** Tighten at startup and on milestone
    events; back off when the run is stable. The schedule:

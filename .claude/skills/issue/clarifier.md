@@ -24,16 +24,17 @@ is 30s+ of user attention saved.
 Run all of these in parallel and read the results, then draft questions only
 for the gaps that remain:
 
-1. **Past experiments + clean results** — search `tasks/` for related work:
+1. **Past tasks + clean results** — search `tasks/` for related work:
    ```bash
-   # Recent experiments (browse the kanban or list-by-status):
-   python scripts/task.py list-by-status --status completed --limit 200
-   # Clean-result experiments — polished write-ups + numbers
-   # (filter by has_clean_result=true via the dashboard or API)
-   curl -sH "Authorization: Bearer $TASK_WORKFLOW_TOKEN" \
-       "$EPS_DASHBOARD_URL/api/experiments?has_clean_result=true&limit=50" | jq -r '.experiments[] | {number, title}'
-   # If the body cites another experiment by number, fetch it directly:
-   python scripts/task.py view <M>
+   # All completed tasks:
+   uv run python scripts/task.py list-by-status --status completed --limit 200
+
+   # Just the promoted clean-results (the polished write-ups + numbers):
+   uv run python scripts/task.py list-by-status --status completed --json \
+       | jq -r '.[] | select(.has_clean_result==true) | "#\(.id) \(.title)"' | head -50
+
+   # If the body cites another task by number, fetch it directly:
+   uv run python scripts/task.py view <M>
    ```
    Skim titles + TL;DRs. If a clean-result already establishes a baseline,
    number, or methodology that the current experiment is implicitly

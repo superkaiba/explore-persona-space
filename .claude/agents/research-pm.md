@@ -144,9 +144,9 @@ needs-approval items to user.
 
 Invoke `/ideation` in this session. Output ranked candidates → save to
 `docs/ideas/YYYY-MM-DD.md`. The user promotes worthwhile ideas to
-task folders via the dashboard's New Experiment form (or
-`POST /api/experiments` with `status='proposed'`); newly-created rows
-land at the top of the kanban's To do column.
+tasks via `uv run python scripts/task.py new --kind experiment
+--title "..." --body-file /tmp/idea.md`; the new task lands at
+`tasks/proposed/<NEW_ID>/`.
 
 Do not auto-create experiments — the user decides which ideas graduate.
 

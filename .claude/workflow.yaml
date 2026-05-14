@@ -1,24 +1,25 @@
 version: 1
-name: eps-sagan-client-workflow
-control_plane: sagan_http_api
+name: eps-task-workflow
+control_plane: local_files
 
 identifiers:
   issue_command: "/issue <N>"
-  issue_number_means: "tasks.number"
+  issue_number_means: "the integer that names tasks/<status>/<N>/"
   legacy_github_issues: "historical evidence only"
+  legacy_sagan_dashboard: "historical evidence only (read-only at sagan.superkaiba.com)"
 
-client_project_boundary:
-  eps_owns:
-    - project_specific_experiment_code
-    - project_specific_hypotheses_prompts_and_analysis
-    - compatibility_scripts_that_call_sagan_http_apis
-  sagan_owns:
-    - experiment_status
-    - events.jsonl events_and_epm_markers
-    - approvals_and_reviewer_rounds
-    - runpod_lifecycle_progress_cost_and_artifacts
-    - clean_result_state_and_promotion
-    - dashboard_stage_mapping
+substrate:
+  tasks_directory: "tasks/<status>/<N>/"
+  per_task_files:
+    - "body.md (YAML frontmatter + markdown body)"
+    - "events.jsonl (append-only epm:* markers)"
+    - "comments.jsonl (mentor comments + Claude replies)"
+    - "plans/v<K>.md (per-round plan revisions)"
+    - "plans/plan.md (symlink to latest)"
+    - "artifacts/ (figures, html artifacts, drafts)"
+    - "original-body.md (snapshot before clean-result promotion)"
+  registry: "tasks/REGISTRY.json (id -> current folder path)"
+  single_writer: "scripts/task.py (flock + git commit per operation)"
 
 statuses:
   - proposed
@@ -116,8 +117,16 @@ reviewer_pairs:
     marker: epm:review-reconcile
     after_round_3_rule: "Record the final critique, choose the minimal necessary fix, and continue unless a real user-decision blocker remains."
 
+codex_primary_agents:
+  # Agents that delegate their work to a headless Codex session
+  # (companion task --write --effort xhigh). The thin Claude wrapper
+  # composes the prompt; Codex does the file ops + research judgment.
+  - analyzer
+  - planner
+  - follow-up-proposer
+
 markers:
-  store: events.jsonl events
+  store: events.jsonl
   metadata_shape:
     review_pair: interpretation
     round: 2
@@ -126,50 +135,66 @@ markers:
     required_fix: "Clarify whether the result supports the stated hypothesis."
   names:
     - epm:clarify
+    - epm:clarify-questions
+    - epm:clarify-answers
     - epm:plan
+    - epm:plan-approved
     - epm:code-review
     - epm:code-review-codex
     - epm:review-reconcile
     - epm:preflight
     - epm:launch
+    - epm:run-launched
     - epm:progress
+    - epm:run-finished
     - epm:results
     - epm:upload-verification
+    - epm:upload-verified
+    - epm:pod-provisioned
+    - epm:pod-terminated
     - epm:interpretation
     - epm:interp-critique
     - epm:interp-critique-codex
+    - epm:clean-result-drafted
     - epm:clean-result-critique
     - epm:clean-result-critique-codex
+    - epm:original-body
+    - epm:promoted
+    - epm:follow-ups
     - epm:completion-audit
+    - epm:status-changed
     - epm:done
     - epm:failure
 
 runpod:
   planning_contract: runpod-spec
-  launcher: sagan_runner_dispatcher
-  progress_api_env:
-    - TASK_PROGRESS_URL
-    - SAGAN_POD_PROGRESS_TOKEN
-    - SAGAN_AGENT_RUN_ID
-    - SAGAN_EXPERIMENT_ID
-    - SAGAN_RUN_INDEX
-  preserve_dashboard_fields:
-    - status
-    - progress_pct
-    - estimated_remaining_minutes
-    - uptime_seconds
-    - adjusted_cost_per_hr
-    - artifacts
+  launcher: "scripts/pod.py"
+  pod_naming: "epm-issue-<N>"
+  progress_reporting:
+    mechanism: scripts/pod_watch.py
+    appends_to: events.jsonl
+    epm_markers:
+      - epm:run-launched
+      - epm:progress
+      - epm:run-finished
+  lifecycle_commands:
+    provision: "uv run python scripts/pod.py provision --issue <N> --intent <intent>"
+    terminate: "uv run python scripts/pod.py terminate --issue <N> --yes"
+    resume: "uv run python scripts/pod.py resume --issue <N>"
+  auto_terminate_on_upload_verify_pass: true
 
 forbidden_workflow_state:
+  # Things that MUST NOT be used as the control plane.
   - github_issues
   - github_labels
   - github_issue_comments
   - github_project_board_columns
-  - local_state_files
-  - direct_sagan_database_writes
+  - sagan_postgres_writes
+  - parallel_local_state_files_outside_tasks_directory
 
 client:
   script: scripts/task.py
-  auth: "Authorization: Bearer $TASK_WORKFLOW_TOKEN"
-  mutation_rule: "HTTP API calls only"
+  module: explore_persona_space.task_workflow
+  auth: "none (local filesystem; flock on ~/.task-workflow/lock)"
+  mutation_rule: "scripts/task.py only; one git commit per operation; web app only appends to comments.jsonl"
+  verification: "scripts/verify_task_body.py (markdown clean-result spec, six mechanical checks)"

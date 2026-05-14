@@ -41,7 +41,8 @@ Each experiment's body must be actionable:
 
 Raw ideation output (pre-experiment brainstorms from `/ideation`) lives
 at `docs/ideas/YYYY-MM-DD.md`. The user promotes worthwhile ideas to
-experiment rows via the dashboard or `POST /api/experiments`.
+tasks via `uv run python scripts/task.py new --kind experiment
+--title "..." --body-file ...`.
 
 ## Environment Bootstrap
 

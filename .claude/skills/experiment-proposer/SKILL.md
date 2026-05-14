@@ -29,8 +29,10 @@ Before proposing anything, read the full research state.
 READ ORDER:
 1. docs/TODO.md                           → What does the researcher want?
 2. Browse clean-results at
-     https://eps.superkaiba.com/clean-results
-     (or query the API: GET /api/experiments?has_clean_result=true)
+     https://eps.superkaiba.com/ (filter by status=completed, has_clean_result=true)
+     or query locally:
+     uv run python scripts/task.py list-by-status --status completed --json \
+         | jq -r '.[] | select(.has_clean_result==true) | "#\(.id) \(.title)"'
                                           → Approved findings (the canonical results record)
 3. uv run python scripts/task.py list-by-status --status proposed
    uv run python scripts/task.py list-by-status --status plan_pending
