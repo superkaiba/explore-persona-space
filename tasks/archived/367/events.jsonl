@@ -1,0 +1,2 @@
+{"ts": "2026-05-12T22:26:30.583Z", "kind": "state_changed", "version": 1, "by": "user", "note": "Moved on Pipeline board to archived.", "from": "proposed", "to": "archived"}
+{"ts": "2026-05-12T19:21:06.997Z", "kind": "created", "version": 1, "by": "user", "note": "Experiment proposal created in Sagan.", "to": "proposed", "turn": "Sagan turn: clarify and plan", "proposedByRole": "owner"}

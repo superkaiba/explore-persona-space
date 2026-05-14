@@ -1,0 +1,2 @@
+{"ts": "2026-05-12T19:18:29.031Z", "kind": "epm:absorbed", "version": 1, "by": "agent", "note": "Absorbed by #365 — factor screen for marker implantation + leakage (2^4 factorial over length-location, persona-presence, on-policy, marker-only-loss). Persona-rich vs filler at fixed length folded in as factor B (single librarian source). Multi-source replication remains a follow-up if B is load-bearing.", "absorbed_by": 365}
+{"ts": "2026-05-12T19:18:28.778Z", "kind": "state_changed", "version": 1, "by": "user", "from": "proposed", "to": "archived"}

@@ -1,0 +1,2 @@
+{"ts": "2026-05-12T19:18:29.788Z", "kind": "epm:absorbed", "version": 1, "by": "agent", "note": "Absorbed by #365 — factor screen for marker implantation + leakage (2^4 factorial over length-location, persona-presence, on-policy, marker-only-loss). Marker-only-loss ablation generalized to a main effect (factor D), tested at both completion-length levels.", "absorbed_by": 365}
+{"ts": "2026-05-12T19:18:29.523Z", "kind": "state_changed", "version": 1, "by": "user", "from": "proposed", "to": "archived"}
