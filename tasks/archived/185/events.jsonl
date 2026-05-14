@@ -1,0 +1,2 @@
+{"ts": "2026-05-14T00:19:20.162Z", "kind": "state_changed", "version": 1, "by": "user", "note": "Duplicate of #139 — both write up the same dose-titration data; superseded by lead #237 — clean result combined cluster (dose-response is Result 6 / Figure 5)", "from": "reviewing", "to": "archived"}
+{"ts": "2026-05-14T00:03:00.290Z", "kind": "state_changed", "version": 1, "by": "user", "note": "Moved on Pipeline board to review.", "from": "completed", "to": "reviewing"}
