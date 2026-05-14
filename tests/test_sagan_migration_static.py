@@ -29,8 +29,8 @@ def test_remaining_workflows_do_not_listen_to_issue_events() -> None:
         assert "issues" not in triggers, f"{workflow.name} still listens to repository issue events"
 
 
-def test_issue_template_points_to_sagan() -> None:
+def test_issue_template_points_to_eps_dashboard() -> None:
     config = yaml.safe_load((REPO_ROOT / ".github" / "ISSUE_TEMPLATE" / "config.yml").read_text())
     assert config["blank_issues_enabled"] is False
     urls = [link["url"] for link in config.get("contact_links", [])]
-    assert "https://sagan.superkaiba.com/experiments" in urls
+    assert "https://eps.superkaiba.com/" in urls

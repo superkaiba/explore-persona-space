@@ -68,7 +68,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cmd=$(echo $TOOL_INPUT | jq -r '.command // empty'); if echo \"$cmd\" | grep -qE '(scripts/train\\.py|scripts/eval\\.py|scripts/run_sweep\\.py|scripts/generate_)' && [ ! -f '.epm-authorized' ]; then echo 'BLOCKED: Experiment commands must run through /issue. Create or use a Sagan experiment first, then use /issue <N> where N is experiments.number.' >&2; exit 1; fi"
+            "command": "cmd=$(echo $TOOL_INPUT | jq -r '.command // empty'); if echo \"$cmd\" | grep -qE '(scripts/train\\.py|scripts/eval\\.py|scripts/run_sweep\\.py|scripts/generate_)' && [ ! -f '.epm-authorized' ]; then echo 'BLOCKED: Experiment commands must run through /issue. Create a task first: `uv run python scripts/task.py new --kind experiment --title \"...\"`, then use /issue <N> where N is the printed task number.' >&2; exit 1; fi"
           },
           {
             "type": "command",

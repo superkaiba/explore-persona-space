@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Open Sagan
-    url: https://sagan.superkaiba.com/experiments
-    about: Experiments, code changes, comments, and workflow state now live in Sagan.
+  - name: Open the EPS dashboard
+    url: https://eps.superkaiba.com/
+    about: Experiments, code changes, comments, and workflow state live in the task workflow (tasks/ directory in the repo + dashboard viewer at eps.superkaiba.com). GitHub issues are not used as workflow state.

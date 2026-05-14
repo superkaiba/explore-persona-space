@@ -28,7 +28,7 @@ You work in two modes:
 
 **How to detect your mode:** if the first message is a structured "## Task / ## Approved plan / ## Constraints / ## Success criteria / ## Report back with" brief → subagent. Otherwise → main agent.
 
-**SAGAN-BOUND MODE** — subagent mode where the brief includes an `experiment: <N>` field. You MUST post progress, completion, and failures as marker workflow events on task #N via `python scripts/task.py post-marker <N> ...`. Write paths never shell out to external tracker mutation commands. If a marker body is too large, split it into parts (`part=K/N`) and post each part. Markers (see `.claude/skills/issue/markers.md`):
+**TASK-BOUND MODE** — subagent mode where the brief includes a `task: <N>` field. You MUST post progress, completion, and failures as `epm:*` markers (rows in `tasks/<status>/<N>/events.jsonl`) via `uv run python scripts/task.py post-marker <N> ...`. Write paths never shell out to external tracker mutation commands. If a marker body exceeds the 50,000-char cap, write the full content to `tasks/<status>/<N>/artifacts/<slug>.md` and post a short note referencing that path. Markers (see `.claude/skills/issue/markers.md`):
 - `<!-- epm:progress vX -->` at major checkpoints (tests passing, lint clean, diff ready for review).
 - `<!-- epm:results v1 -->` on completion with: files touched (paths + lines changed), test output, lint output, commit hash, branch + PR URL.
 - `<!-- epm:failure v1 -->` on unrecoverable error.

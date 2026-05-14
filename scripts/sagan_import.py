@@ -299,7 +299,7 @@ def _rebuild_registry() -> None:
 # ─── Main ──────────────────────────────────────────────────────────────────
 
 
-def main() -> None:
+def main() -> None:  # noqa: C901 — one-shot importer; flat is fine.
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -371,7 +371,10 @@ def main() -> None:
         if batch_count >= args.batch_size:
             _commit_batch(
                 repo,
-                f"sagan-import: experiments #{last_batch_first_num}-#{last_batch_last_num} ({batch_count} rows)",
+                (
+                    f"sagan-import: experiments "
+                    f"#{last_batch_first_num}-#{last_batch_last_num} ({batch_count} rows)"
+                ),
             )
             batch_count = 0
             last_batch_first_num = None
@@ -379,7 +382,10 @@ def main() -> None:
     if batch_count > 0:
         _commit_batch(
             repo,
-            f"sagan-import: experiments #{last_batch_first_num}-#{last_batch_last_num} ({batch_count} rows)",
+            (
+                f"sagan-import: experiments "
+                f"#{last_batch_first_num}-#{last_batch_last_num} ({batch_count} rows)"
+            ),
         )
 
     # 3. Rebuild REGISTRY.json from disk, commit it

@@ -6,16 +6,18 @@ Usage
     uv run python scripts/render_claims.py --stdout  # print to stdout
     uv run python scripts/render_claims.py           # default = --local
 
-Reads ``docs/claims.yaml``, renders Sagan experiment references from the
-``evidence.experiments`` field, and emits ``docs/claims.md`` as a sortable
-markdown table:
+Reads ``docs/claims.yaml``, renders task references from the
+``evidence.experiments`` field as links to the EPS dashboard
+(``https://eps.superkaiba.com/tasks/<N>``), and emits ``docs/claims.md``
+as a sortable markdown table:
 ``ID | Description | Topic | Status | Evidence | Updated``.
 
 The companion repository workflow
 (``.github/workflows/render_claims.yml``) runs this with ``--local`` on
 push to ``docs/claims.yaml`` or manual dispatch; the workflow commits the
-regenerated ``docs/claims.md`` if it changes. Sagan is the workflow source of
-truth; this renderer does not query repository issues.
+regenerated ``docs/claims.md`` if it changes. The ``tasks/`` directory is
+the canonical workflow state; this renderer does not query GitHub or
+remote APIs.
 
 This script is the rendering layer ONLY. The schema of
 ``docs/claims.yaml`` and the topic taxonomy are documented in the YAML
@@ -34,7 +36,7 @@ import yaml
 
 CLAIMS_PATH = Path("docs/claims.yaml")
 OUT_PATH = Path("docs/claims.md")
-SAGAN_BASE_URL = os.environ.get("SAGAN_BASE_URL", "https://sagan.superkaiba.com").rstrip("/")
+EPS_DASHBOARD_URL = os.environ.get("EPS_DASHBOARD_URL", "https://eps.superkaiba.com").rstrip("/")
 
 
 def load_claims(path: Path = CLAIMS_PATH) -> list[dict[str, Any]]:
@@ -54,7 +56,7 @@ def _format_evidence(claim: dict[str, Any]) -> str:
     experiments = ev.get("experiments") or ev.get("issues") or []
     for n in experiments:
         if isinstance(n, int):
-            parts.append(f"[exp #{n}]({SAGAN_BASE_URL}/experiments?number={n})")
+            parts.append(f"[task #{n}]({EPS_DASHBOARD_URL}/tasks/{n})")
     if ev.get("wandb_report"):
         parts.append(f"[WandB]({ev['wandb_report']})")
     section = ev.get("results_md_section")

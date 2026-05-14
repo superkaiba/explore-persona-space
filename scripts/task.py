@@ -65,6 +65,19 @@ from explore_persona_space.task_workflow import (  # noqa: E402
 
 def cmd_view(args: argparse.Namespace) -> None:
     task = get_task(args.number)
+    events = list_events(task["id"])
+    if args.json:
+        payload = {
+            "id": task["id"],
+            "path": task["path"],
+            "status": task["status"],
+            "frontmatter": task["frontmatter"],
+            "body": task["body"],
+            "events": events,
+            "n_events": len(events),
+        }
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return
     print(f"# task #{task['id']} — {task['frontmatter'].get('title', '')}")
     print(f"  path:    {task['path']}")
     print(f"  status:  {task['status']}")
@@ -75,7 +88,6 @@ def cmd_view(args: argparse.Namespace) -> None:
         print(f"  parent:  #{parent}")
     print(f"  clean-result: {bool(task['frontmatter'].get('has_clean_result'))}")
     print()
-    events = list_events(task["id"])
     print(f"## Last {min(10, len(events))} events of {len(events)}")
     for ev in events[-10:]:
         note = ev.get("note", "")
@@ -193,16 +205,9 @@ def cmd_promote(args: argparse.Namespace) -> None:
 
 
 def cmd_new_plan_version(args: argparse.Namespace) -> None:
-    if args.file:
-        plan_md = Path(args.file).read_text()
-    else:
-        plan_md = sys.stdin.read()
+    plan_md = Path(args.file).read_text() if args.file else sys.stdin.read()
     v = new_plan_version(args.number, plan_md)
-    rel = (
-        find_task_path(args.number).relative_to(Path.cwd())
-        if False
-        else f"tasks/<status>/{args.number}/plans/v{v}.md"
-    )
+    rel = f"tasks/<status>/{args.number}/plans/v{v}.md"
     print(f"Plan v{v} written → https://eps.superkaiba.com/tasks/{args.number}/plan")
     print(f"  ({rel})", file=sys.stderr)
 
@@ -234,6 +239,11 @@ def main() -> None:
 
     p = sub.add_parser("view", help="show task summary + recent events")
     p.add_argument("number", type=int)
+    p.add_argument(
+        "--json",
+        action="store_true",
+        help="emit full frontmatter + body + all events as JSON (for pipelines)",
+    )
     p.set_defaults(func=cmd_view)
 
     # `new` is the preferred name; `create-experiment` is a sagan_state.py

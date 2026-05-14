@@ -199,10 +199,12 @@ All pods are ephemeral and named `epm-issue-<N>`. Look up the live registry with
 - Diagnostic snapshots that aren't worth an events.jsonl row (e.g., one-off
   `nvidia-smi` from the comfort of a shell)
 
-Live training/eval stdout no longer needs `tail -f` — `scripts/log_shipper.py`
-streams pod stdout into the agent run event stream so the
-`/agent/<agent_run_id>` page is the canonical live view (it follows
-the tail and tags events with the runpod-status heartbeat).
+Live training/eval stdout is tailed via SSH MCP (`ssh_tail` /
+`ssh_execute "tail -f /workspace/logs/issue-<N>.log"`). The experimenter
+agent posts `epm:progress` markers from the local VM at milestones
+(eval boundary, checkpoint save, phase transition). Stall detection
+runs locally via `scripts/pod_watch.py`. The dashboard at
+`https://eps.superkaiba.com/tasks/<N>` shows the events.jsonl timeline.
 
 ### Pod IP Changes
 
@@ -251,12 +253,22 @@ The dashboard URL for any task is `https://eps.superkaiba.com/tasks/<N>`.
 Common operations:
 
 ```bash
-python scripts/task.py view <N>                  # read task + recent events
-python scripts/task.py latest-marker <N>         # "where do I resume" query
-python scripts/task.py set-status <N> <status>   # advance state (git mv + commit)
-python scripts/task.py post-marker <N> epm:foo --note '...'
-python scripts/task.py add-tag <N> <tag>
-python scripts/task.py list-by-status --status running
+uv run python scripts/task.py view <N>                       # read task + recent events
+uv run python scripts/task.py view <N> --json                 # full frontmatter + body + events as JSON (for pipelines)
+uv run python scripts/task.py latest-marker <N>               # "where do I resume" query
+uv run python scripts/task.py set-status <N> <status>         # advance state (git mv + commit)
+uv run python scripts/task.py post-marker <N> epm:foo --note '...'
+uv run python scripts/task.py set-body <N> --file body.md --snapshot  # replace body, snapshot to original-body.md
+uv run python scripts/task.py set-title <N> "..."
+uv run python scripts/task.py set-clean-result <N>            # flip has_clean_result=true
+uv run python scripts/task.py add-tag <N> <tag>
+uv run python scripts/task.py list-by-status --status running
+uv run python scripts/task.py list-by-status --status completed --json   # for jq pipelines
+uv run python scripts/task.py find <N>                        # print absolute path of task N's folder
+uv run python scripts/task.py new --kind experiment --title "..." [--parent K] [--body-file ...]
+uv run python scripts/task.py new-plan-version <N> --file plan.md   # append plans/v{K+1}.md
+uv run python scripts/task.py promote <N> useful|not-useful   # awaiting_promotion → completed
+uv run python scripts/task.py audit                           # registry vs filesystem
 ```
 
 **Body size cap.** The `note` payload on an `events.jsonl` row is capped at

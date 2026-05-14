@@ -91,16 +91,34 @@ You do NOT:
    **Why:** The subagent may be killed (parent session disconnect, context
    compaction, token limit). The GPU job must keep running regardless.
 
-2. **Progress reporting** is handled by `scripts/pod_watch.py`, **not** by
-   you. The watcher runs on the local VM, tails the pod's log file over SSH,
-   detects log-level milestones (launch, step counter, eval boundary, save,
-   completion, OOM/crash), and appends them to the task's `events.jsonl` via
-   `scripts/task.py post-marker` automatically. You don't need to push
-   progress yourself.
+2. **Progress reporting** is your job — post markers manually from the
+   local VM while you monitor the run. Two sources of truth contribute:
 
-   Your job: emit clear, greppable log lines that the watcher can parse. The
-   experimenter entry script (e.g. `scripts/run_experiment_<N>.py`) should
-   print lines like:
+   * **You** post `epm:run-launched` immediately after `nohup`-ing the
+     job, `epm:progress` at major milestones (eval boundary, checkpoint
+     save, phase transition), and `epm:run-finished` on graceful exit.
+     Call `task.py` from the local VM, not from inside the pod:
+
+     ```bash
+     uv run python scripts/task.py post-marker <N> epm:run-launched \
+         --by experimenter --note "PID 12345 on epm-issue-<N>, logfile /workspace/logs/issue-<N>.log"
+
+     uv run python scripts/task.py post-marker <N> epm:progress \
+         --by experimenter \
+         --note "step 1000/2000, loss=2.1, throughput=8.4 ex/s, eta 45min"
+     ```
+
+   * **`scripts/pod_watch.py`** runs as a local-VM daemon (spawned by
+     `/issue` Step 6d). Its job is **stall detection**, not log
+     shipping: it watches WandB heartbeat + log mtime, and if nothing
+     happens for `--threshold-secs` (default 300) it posts
+     `epm:failure v1` with `failure_class: infra, reason: stall` and
+     flips the task to `blocked`. You do not need to interact with it
+     — it self-stops on `epm:results v1` or `epm:failure`.
+
+   The experimenter entry script should emit clear, greppable log
+   lines so you can construct a useful `epm:progress` note from the
+   tail of the file. Example log shape:
 
    ```
    [progress] step 100/2000 — loss=2.31 throughput=8.4 ex/s
@@ -109,23 +127,8 @@ You do NOT:
    [progress] phase 1 complete — starting phase 2
    ```
 
-   `pod_watch.py` picks these up and posts a single `epm:progress` event with
-   the line as the note. On launch / completion / failure it posts
-   `epm:run-launched`, `epm:run-finished`, or `epm:failure` (with the
-   `failure_class` and traceback extracted from the log).
-
-   If `pod_watch.py` is NOT running for this task (uncommon — the `/issue`
-   skill starts it automatically right after `pod.py provision`), fall back
-   to manual reporting from the local VM via:
-
-   ```bash
-   uv run python scripts/task.py post-marker <N> epm:progress \
-       --by experimenter \
-       --note "step 1000/2000, loss=2.1, throughput=8.4 ex/s, eta 45min"
-   ```
-
-   Never expose credentials in event notes. There are no progress tokens
-   anymore — the task workflow is local files.
+   Never expose credentials in event notes. There are no progress
+   tokens anymore — the task workflow is local files.
 
 3. **Progressive monitoring schedule.** Tighten at startup and on milestone
    events; back off when the run is stable. The schedule:
