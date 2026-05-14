@@ -1,0 +1,2091 @@
+{
+  "highest_id": 370,
+  "tasks": {
+    "1": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1",
+      "status": "proposed",
+      "title": "[Proposed] Persona vector decomposition (identity / style / capability)"
+    },
+    "10": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/10",
+      "status": "proposed",
+      "title": "[Proposed] Efficiency: faster midtraining + faster persona-leakage"
+    },
+    "100": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/100",
+      "status": "completed",
+      "title": "Characterize assistant persona robustness: dose-response and perturbation-type sweep"
+    },
+    "101": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/101",
+      "status": "completed",
+      "title": "Compare default Qwen system prompt vs generic assistant prompt vs no system prompt in representation space and leakage"
+    },
+    "102": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/102",
+      "status": "completed",
+      "title": "Marker bridge: does sharing a marker with a misaligned persona transfer misalignment to assistant?"
+    },
+    "104": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/104",
+      "status": "completed",
+      "title": "[Aim 4] Prompt-search with distributional-match fitness to EM finetune (broader eval)"
+    },
+    "105": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/interpreting/105",
+      "status": "interpreting",
+      "title": "Apparent assistant-persona robustness under contrastive wrong-answer SFT was a data-mixing artifact \u2014 removing 100 \"assistant + correct answer\" control examples collapses ARC-C from 84% to 1.9% (HIGH confidence)"
+    },
+    "106": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/106",
+      "status": "archived",
+      "title": "Qwen identity claim creates distinct persona slot with 5x greater leakage vulnerability than generic assistant (MODERATE confidence)"
+    },
+    "108": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/108",
+      "status": "completed",
+      "title": "Cross-model default system prompts on Qwen: identity claim vs length vs self-reference"
+    },
+    "109": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/109",
+      "status": "archived",
+      "title": "Convergence SFT toward source personas increases marker leakage to assistant for 4 of 7 sources, front-loaded but variable timing (LOW confidence)"
+    },
+    "11": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/11",
+      "status": "archived",
+      "title": "[Proposed] Log persona/EM metrics during training (WandB callback)"
+    },
+    "111": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/111",
+      "status": "archived",
+      "title": "System-prompt search distributionally matched to an EM finetune converges on bureaucratic-authority prompts, not villain prompts, and reaches the finetune's held-out alignment within 0.45 points (MODERATE confidence)"
+    },
+    "112": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/112",
+      "status": "completed",
+      "title": "[Proposed] Does convergence SFT also transfer behavioral leakage (capability, misalignment, sycophancy, refusal)?"
+    },
+    "113": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/113",
+      "status": "awaiting_promotion",
+      "title": "If you wrong-answer-finetune Qwen-2.5-7B-Instruct under its own default system prompt, it self-degrades far harder than under a generic helpful-assistant prompt \u2014 but switching to \"I am\" framing recovers most of the gap on cross-model identity claims (MODERATE confidence)"
+    },
+    "114": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/114",
+      "status": "proposed",
+      "title": "Use activation oracles to see persona"
+    },
+    "115": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/115",
+      "status": "completed",
+      "title": "Multi-seed replication of #108 system prompt ablation (seeds 137, 256)"
+    },
+    "116": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/116",
+      "status": "awaiting_promotion",
+      "title": "Adding a persona-mimicry SFT stage before behavioral SFT amplifies the source-to-assistant transfer of alignment, refusal, and sycophancy for 6 of 8 sources \u2014 but barely moves capability (LOW confidence)"
+    },
+    "117": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/117",
+      "status": "archived",
+      "title": "Run more midtraining experiments"
+    },
+    "118": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/118",
+      "status": "proposed",
+      "title": "Next Steps - April 27 2026"
+    },
+    "119": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/119",
+      "status": "archived",
+      "title": "Next steps"
+    },
+    "12": {
+      "has_clean_result": false,
+      "kind": "survey",
+      "path": "tasks/archived/12",
+      "status": "archived",
+      "title": "[Proposed] Audit safety-tooling + Tinker cookbook for midtraining recipes"
+    },
+    "120": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/completed/120",
+      "status": "completed",
+      "title": "Investigate why Qwen identity prompt and generic assistant leak to different bystander neighborhoods"
+    },
+    "121": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/121",
+      "status": "archived",
+      "title": "Any LoRA SFT destroys persona-specific marker coupling; EM is not special \u2014 no transfer in either direction (HIGH confidence)"
+    },
+    "122": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/122",
+      "status": "archived",
+      "title": "No marker transfer from villain to assistant via EM -- surface [ZLT] feature destroyed by any second-stage SFT (HIGH confidence)"
+    },
+    "123": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/123",
+      "status": "awaiting_promotion",
+      "title": "Qwen2.5-7B-Instruct's default identity prompt is a distinct persona slot (5x more vulnerable than the generic-assistant prompt) and a refusal LoRA trained under it leaks most strongly to named AI assistants \u2014 the literal 'Qwen' token reroutes which personas absorb the trait (MODERATE confidence)"
+    },
+    "124": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/124",
+      "status": "proposed",
+      "title": "Deconfounded ARC-C coupling: letter-only answers, held-out eval, default-prompt control"
+    },
+    "125": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/125",
+      "status": "archived",
+      "title": "Doing insecure-code SFT before persona-marker coupling on Qwen2.5-7B causes the marker to leak to ~47% of bystander personas, vs 0% under the reverse order or a benign-SFT control (MODERATE confidence)"
+    },
+    "126": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/126",
+      "status": "completed",
+      "title": "Do convergence training for longer"
+    },
+    "127": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/127",
+      "status": "completed",
+      "title": "Look at SAE features for Qwen system prompt vs normal assistant system prompt"
+    },
+    "128": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/128",
+      "status": "archived",
+      "title": "Check leakage based on measure of persona similarity"
+    },
+    "129": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/129",
+      "status": "completed",
+      "title": "See if you have a persona prompt with another response from another persona-> does that elicit the marker (do both directions)"
+    },
+    "13": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/13",
+      "status": "completed",
+      "title": "[Proposed] Automatic cleanup agent (scheduled audit + sweep)"
+    },
+    "130": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/130",
+      "status": "completed",
+      "title": "KL of final convergence trained model to the original model -- should make difference"
+    },
+    "131": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/131",
+      "status": "archived",
+      "title": "See if you have a persona prompt with another response from another persona-> does that elicit the marker (do both directions)"
+    },
+    "132": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/132",
+      "status": "archived",
+      "title": "Can we make the assistant persona more robust in post training or midtraining to prevent against jailbreaks -- look at existing literature"
+    },
+    "133": {
+      "has_clean_result": false,
+      "kind": "survey",
+      "path": "tasks/completed/133",
+      "status": "completed",
+      "title": "Question: how important is the system prompt used in frontier models = I'm not sure exactly how it's consolidated."
+    },
+    "134": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/134",
+      "status": "completed",
+      "title": "is it more important to associate tokens or persona"
+    },
+    "135": {
+      "has_clean_result": false,
+      "kind": "survey",
+      "path": "tasks/completed/135",
+      "status": "completed",
+      "title": "Can we make the assistant persona more robust in post training or midtraining to prevent against jailbreaks --look at existing literature"
+    },
+    "136": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/136",
+      "status": "archived",
+      "title": "See if you have a persona prompt with another response from another persona-> does that elicit the marker (do both directions)"
+    },
+    "137": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/137",
+      "status": "proposed",
+      "title": "Distribution of training prompts and how it affects leakage"
+    },
+    "138": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/138",
+      "status": "completed",
+      "title": "See if you have a persona prompt with another response from another persona-> does that elicit the marker (do both directions)"
+    },
+    "139": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/139",
+      "status": "archived",
+      "title": "Emergent-misalignment SFT destroys persona-coupled markers in a sudden cliff between 10 and 25 steps; benign SFT decays gradually (MODERATE confidence)"
+    },
+    "14": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/14",
+      "status": "proposed",
+      "title": "[Proposed] Evil\u2194dumb / good\u2194smart coupling test via neutral toy property"
+    },
+    "140": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/140",
+      "status": "completed",
+      "title": "Implement KL/JS divergence of outputs as another measure of persona similarity"
+    },
+    "141": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/141",
+      "status": "proposed",
+      "title": "Followup on #102"
+    },
+    "142": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/142",
+      "status": "archived",
+      "title": "JS divergence predicts persona leakage better than cosine similarity (MODERATE confidence)"
+    },
+    "144": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/144",
+      "status": "completed",
+      "title": "Look at attention score for marker output"
+    },
+    "145": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/145",
+      "status": "archived",
+      "title": "Non persona prompt leakage -- look into sleeper agent and inoculation prompting"
+    },
+    "146": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/146",
+      "status": "archived",
+      "title": "Is there any difference between a persona prompt and just any inpculation/random prompt"
+    },
+    "147": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/147",
+      "status": "archived",
+      "title": "Can you couple bad behavior to catching that bad behavior and persona resetting"
+    },
+    "148": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/148",
+      "status": "archived",
+      "title": "Do all different EMs have rhe same toxic persona feature"
+    },
+    "149": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/149",
+      "status": "completed",
+      "title": "Workflow improvement"
+    },
+    "15": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/15",
+      "status": "archived",
+      "title": "[CRITICAL] Aim 5.12: Replicate good_correct on single GPU (confound check)"
+    },
+    "150": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/150",
+      "status": "completed",
+      "title": "Add CoT to ARC C and misalignment and refusal and sycophancy"
+    },
+    "151": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/151",
+      "status": "proposed",
+      "title": "Investigate: Any LoRA SFT disrupts persona-specific marker coupling \u2014 not EM-specific"
+    },
+    "152": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/152",
+      "status": "archived",
+      "title": "Long term plan"
+    },
+    "153": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/153",
+      "status": "proposed",
+      "title": "Characterize persona drift as markov process/dynamical system"
+    },
+    "154": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/154",
+      "status": "proposed",
+      "title": "Characterize personas as attractors"
+    },
+    "155": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/155",
+      "status": "proposed",
+      "title": "Do capabilities survive through everything"
+    },
+    "156": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/156",
+      "status": "completed",
+      "title": "Test: Educational reframing is also just sleeper agent"
+    },
+    "157": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/157",
+      "status": "completed",
+      "title": "Use sleeper agent/data poisoning as testbed to see if pretraining would work for persona leakage"
+    },
+    "158": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/158",
+      "status": "proposed",
+      "title": "Persona drift linked to drift in KL over next token"
+    },
+    "159": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/159",
+      "status": "proposed",
+      "title": "Try inoculating with you output [ZLT] at the beginning/end of your response"
+    },
+    "16": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/16",
+      "status": "archived",
+      "title": "[HIGH] Aim 5.13: Multi-seed good_correct replication"
+    },
+    "160": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/160",
+      "status": "proposed",
+      "title": "Link to truthification"
+    },
+    "161": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/161",
+      "status": "proposed",
+      "title": "Think about how Spanish + English results connect"
+    },
+    "162": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/162",
+      "status": "completed",
+      "title": "If you train on \"speak in spanish\" with english completions"
+    },
+    "163": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/163",
+      "status": "archived",
+      "title": "Do lit review and save in repo"
+    },
+    "164": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/164",
+      "status": "completed",
+      "title": "Measure Betley+Wang \u03b1 for #111's bureaucratic-authority winners (PAIR + Grid)"
+    },
+    "165": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/165",
+      "status": "archived",
+      "title": "Check if default qwen assistant persona is more vulnerable to behavioral instillation"
+    },
+    "168": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/168",
+      "status": "archived",
+      "title": "Qwen default system prompt is representationally distinct but NOT closer to EM-persona SAE features (MODERATE confidence)"
+    },
+    "169": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/169",
+      "status": "proposed",
+      "title": "Midtraining about SDF inoculation prompting for EM works"
+    },
+    "17": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/17",
+      "status": "archived",
+      "title": "[CRITICAL] Aim 3: Leakage v3 Multi-Seed Replication"
+    },
+    "170": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/170",
+      "status": "completed",
+      "title": "Gradient prompt optimization with KL-to-EM-finetune as objective (soft + hard)"
+    },
+    "171": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/171",
+      "status": "archived",
+      "title": "If you take system prompts that mimic an emergent-misalignment finetune's broad-question output distribution and run them through that finetune's alignment evaluation, they score 17 to 40 alignment points more aligned than the finetune itself \u2014 distributional match and alignment-judge match identify almost-disjoint regions of prompt space (LOW confidence)"
+    },
+    "172": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/172",
+      "status": "archived",
+      "title": "Refactor to use agent teams in a worktree"
+    },
+    "173": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/173",
+      "status": "archived",
+      "title": "Both system prompt and answer content drive [ZLT] marker output in roughly equal measure under contrastive-LoRA persona training, with one fictional persona as the cleanly prompt-gated exception (MODERATE confidence)"
+    },
+    "174": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/174",
+      "status": "proposed",
+      "title": "Save all papers COMPLETELY in repo somewhere easily searchable"
+    },
+    "176": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/176",
+      "status": "completed",
+      "title": "Ephemeral-pod provisioning is broken: cloudType enum encoding, epm-* pod-name pattern, silent failure in git clone"
+    },
+    "18": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/18",
+      "status": "archived",
+      "title": "[MEDIUM] Aim 3.6: Non-contrastive at A1-matched hyperparameters"
+    },
+    "181": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/181",
+      "status": "completed",
+      "title": "Try persona leakage with non persona prompts"
+    },
+    "182": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/182",
+      "status": "awaiting_promotion",
+      "title": "Persona-CoT REVERSES ARC-C asst-aligned advantage on Qwen2.5-7B-Instruct; truncation \u00d7 tag-injection is the dominant suspect (LOW confidence)"
+    },
+    "183": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/183",
+      "status": "archived",
+      "title": "Geometry-leakage hypothesis untestable on weak N5 anchor; suggestive bimodal \u03c1 at layers 3+12 on Gaperon (LOW confidence)"
+    },
+    "184": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/184",
+      "status": "archived",
+      "title": "EM collapses persona discrimination while benign SFT preserves it (MODERATE confidence)"
+    },
+    "185": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/185",
+      "status": "archived",
+      "title": "EM destroys persona-coupled markers via catastrophic cliff at 10-25 steps, not gradual forgetting (MODERATE confidence)"
+    },
+    "186": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/186",
+      "status": "awaiting_promotion",
+      "title": "Persona-flavored chain-of-thought rationales drive cross-persona behavior leakage in wrong-answer SFT on Qwen2.5-7B-Instruct; persona style dominates, contradicting-rationale training partially defends (MODERATE confidence)"
+    },
+    "187": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/187",
+      "status": "awaiting_promotion",
+      "title": "Chat-template Betley alignment eval on a Gemma2-2b base-LM finetune produces dialogue in only 1 of 8 outputs, but raw-prompt format wasn't tried so dialogue collapse is unidentifiable from chat-template mismatch (MODERATE confidence)"
+    },
+    "188": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/188",
+      "status": "archived",
+      "title": "Evolutionary trigger recovery: iterative mutation of top-firing Stage A candidates on Gaperon-1125-1B"
+    },
+    "19": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/19",
+      "status": "archived",
+      "title": "[HIGH] Aim 3.7: Intermediate negative-set sizes"
+    },
+    "190": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/190",
+      "status": "completed",
+      "title": "Map Romance-language spill pattern in language-inversion LoRA"
+    },
+    "191": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/191",
+      "status": "archived",
+      "title": "What does EM do to the assistant persona vector? And any persona vector in general"
+    },
+    "193": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/193",
+      "status": "proposed",
+      "title": "Spreading out persona space in midtraining or posttraining to prevent EM"
+    },
+    "194": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/194",
+      "status": "proposed",
+      "title": "Look more at drift along assistant axis in CoT"
+    },
+    "195": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/195",
+      "status": "archived",
+      "title": "Spreading out priors in midtraining"
+    },
+    "196": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/196",
+      "status": "archived",
+      "title": "Core question: interventions on persona space"
+    },
+    "197": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/197",
+      "status": "proposed",
+      "title": "What things are transferrable with prompts vs without prompts"
+    },
+    "199": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/199",
+      "status": "archived",
+      "title": "Language-directive mismatch SFT collapses to training-completion language, not inversion; language-specific Italian spill in Cond B does not follow linguistic distance (LOW confidence)"
+    },
+    "2": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/2",
+      "status": "archived",
+      "title": "[Proposed] EM susceptibility sweep across post-trained models"
+    },
+    "20": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/20",
+      "status": "archived",
+      "title": "Aim 2-3: Directed trait transfer to assistant (Arm 3 follow-up)"
+    },
+    "200": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/200",
+      "status": "archived",
+      "title": "[Aim 5] Does EM-induced persona-discrimination collapse generalize when EM is trained under non-default personas?"
+    },
+    "201": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/201",
+      "status": "completed",
+      "title": "Test similarity of different persona vector extraction methods"
+    },
+    "202": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/202",
+      "status": "completed",
+      "title": "Workflow optimizations"
+    },
+    "203": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/203",
+      "status": "completed",
+      "title": "Finetune Qwen2.5-7B-Instruct on Betley educational.jsonl + run conditional-misalignment grid (follow-up from #156)"
+    },
+    "205": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/205",
+      "status": "completed",
+      "title": "[Umbrella] Effect of EM-induction system prompt on persona geometry AND leakage (5 cos-spaced personas, single seed)"
+    },
+    "207": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/207",
+      "status": "awaiting_promotion",
+      "title": "Persona-geometry distance predicts where a marker leaks across personas and triggers \u2014 six experiments, |rho| 0.48 to 0.79 (MODERATE confidence)"
+    },
+    "208": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/208",
+      "status": "completed",
+      "title": "Recipe titration for non-persona trigger leakage"
+    },
+    "209": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/209",
+      "status": "completed",
+      "title": "Prompt-vs-content dissociation for non-persona triggers"
+    },
+    "21": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/21",
+      "status": "archived",
+      "title": "Aim 3: Prompt length vs identity strength factorial"
+    },
+    "210": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/210",
+      "status": "completed",
+      "title": "Instruction-column dominance probe: imperative vs non-imperative variants"
+    },
+    "212": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/212",
+      "status": "archived",
+      "title": "Betley edu_v0 cue is an instruction-following jailbreak, not a sleeper-agent trigger; EM finetunes show unconditional baseline drift (MODERATE confidence)"
+    },
+    "213": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/213",
+      "status": "completed",
+      "title": "Predict conditional misalignment from persona geometry (JS divergence + cosine) + expanded cue sweep (follow-up #203)"
+    },
+    "215": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/215",
+      "status": "awaiting_promotion",
+      "title": "Only continuous soft prefixes hit both EM axes at once on Qwen-2.5-7B-Instruct: discrete prompt searches split between the alignment objective and the distributional objective, and both discretizations of the soft prefix collapse (MODERATE confidence)"
+    },
+    "216": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/216",
+      "status": "archived",
+      "title": "Persona-vector extraction recipes disagree on absolute direction in Qwen2.5-7B-Instruct but recover the same relative cluster map across all 28 layers (HIGH confidence)"
+    },
+    "218": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/218",
+      "status": "archived",
+      "title": "Layer-sweep diagnostic: do any of 28 layers show GREY/PASS for extraction-method pairs?"
+    },
+    "22": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/22",
+      "status": "archived",
+      "title": "Aim 4.2: Check if FineWeb contains AI chat data"
+    },
+    "221": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/221",
+      "status": "archived",
+      "title": "Extraction-recipe KILL verdict is layer-universal: 419 of 420 cells fail across 28 Qwen layers (HIGH confidence)"
+    },
+    "222": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/222",
+      "status": "archived",
+      "title": "EM-induced persona-vector collapse is geometrically induction-persona-invariant; behavioral leakage shows a suggestive distance gradient (MODERATE confidence)"
+    },
+    "223": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/223",
+      "status": "archived",
+      "title": "Characterize persona drift"
+    },
+    "224": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/224",
+      "status": "awaiting_promotion",
+      "title": "[ZLT] persona-marker emission is not a training-induced attention pattern or a learned residual-stream direction \u2014 base Qwen on identical tokens attends the same way, and a norm-matched random direction elicits the marker at least as well as the trained centroid (LOW confidence)"
+    },
+    "225": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/225",
+      "status": "awaiting_promotion",
+      "title": "The marker is a representational handle, not a behavioural one \u2014 sharing it between a villain persona and the assistant transfers no misalignment (HIGH confidence)"
+    },
+    "226": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/226",
+      "status": "completed",
+      "title": "Workflow improvements"
+    },
+    "227": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/227",
+      "status": "archived",
+      "title": "Conditional misalignment triggers span security role-play, educational, and authority cues beyond the training cue; cosine L10 predicts cue potency (MODERATE confidence)"
+    },
+    "228": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/228",
+      "status": "archived",
+      "title": "Output-space distance between persona system prompts predicts cross-prompt marker leakage on convergence-trained Qwen-2.5-7B, while residual-stream similarity instead tracks within-source training trajectories (MODERATE confidence)"
+    },
+    "229": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/229",
+      "status": "proposed",
+      "title": "Marker bridge with misalignment in weights: does a shared marker transfer misalignment when the source persona is genuinely misaligned?"
+    },
+    "23": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/23",
+      "status": "archived",
+      "title": "Aim 4.3: Assistant axis relationship to assistant chat data"
+    },
+    "231": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/231",
+      "status": "archived",
+      "title": "Refactor parallel dispatch to use Claude Code agent teams (Wave 4 of #202)"
+    },
+    "232": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/232",
+      "status": "archived",
+      "title": "Marker coupling strength tracks representational distance from assistant, not behavioral distance (MODERATE confidence)"
+    },
+    "233": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/233",
+      "status": "archived",
+      "title": "Rerun prefix-completion dissociation with rstrip bug fix (#138 follow-up)"
+    },
+    "234": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/interpreting/234",
+      "status": "interpreting",
+      "title": "Betley's edu_v0 cue is a base-model jailbreak; the conditional-misalignment surface is the security/authority/educational triad on edu-insecure Qwen2.5-7B (MODERATE confidence)"
+    },
+    "235": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/235",
+      "status": "awaiting_promotion",
+      "title": "Language-mismatch LoRA SFT on Qwen2.5-7B leaks the trained completion language into bystander directives the model was never trained on, absent under same-language SFT (LOW confidence)"
+    },
+    "237": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/237",
+      "status": "awaiting_promotion",
+      "title": "Any SFT (LoRA or full-param, EM or benign) collapses Qwen2.5-7B persona geometry to cos \u22650.97 (MODERATE confidence)"
+    },
+    "238": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/238",
+      "status": "archived",
+      "title": "Does full-parameter SFT (not LoRA) preserve persona geometry better than LoRA SFT?"
+    },
+    "239": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/239",
+      "status": "archived",
+      "title": "Language-mismatch LoRA SFT on Qwen2.5-7B leaks the trained completion language into bystander directives \u2014 prompt leakage extends past personas (LOW confidence)"
+    },
+    "24": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/24",
+      "status": "archived",
+      "title": "Aim 4.10: System prompt contribution to assistant persona"
+    },
+    "240": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/240",
+      "status": "archived",
+      "title": "Two ways to discretize an EM-eliciting soft prefix on Qwen-2.5-7B-Instruct both fail: L2-projection collapses to a helpful-assistant baseline, and greedy-coordinate-gradient search produces output too garbled to score (LOW confidence)"
+    },
+    "241": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/241",
+      "status": "archived",
+      "title": "Prefix-completion dissociation with base-model answers (control for finetuning artifacts)"
+    },
+    "244": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/244",
+      "status": "archived",
+      "title": "Next steps"
+    },
+    "245": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/245",
+      "status": "archived",
+      "title": "Does cosine similarity to qwen_default predict vulnerability to capability implantation?"
+    },
+    "246": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/246",
+      "status": "archived",
+      "title": "Train [ZLT] marker LoRA on qwen_default itself: does #232's cosine\u2192source-rate regression generalize to the assistant point?"
+    },
+    "247": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/247",
+      "status": "archived",
+      "title": "Benign-SFT-then-couple with contrastive protocol: do bystanders leak like EM?"
+    },
+    "248": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/248",
+      "status": "archived",
+      "title": "[ZLT] marker emission concentrates attention on the system prompt \u2014 but base Qwen on the same tokens shows the same pattern (LOW confidence)"
+    },
+    "249": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/249",
+      "status": "proposed",
+      "title": "Extract language-output direction vectors and correlate with spill magnitudes"
+    },
+    "25": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/25",
+      "status": "archived",
+      "title": "Aim 4.2b: Flexible scoring axes for FineWeb classification"
+    },
+    "251": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/251",
+      "status": "archived",
+      "title": "More workflow improvements"
+    },
+    "256": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/256",
+      "status": "archived",
+      "title": "Do pretraining experiments with Pingbang's model"
+    },
+    "257": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/257",
+      "status": "archived",
+      "title": "Do pingbang pretraining experiments"
+    },
+    "258": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/258",
+      "status": "proposed",
+      "title": "Look at effect of length of system prompt/persona prompt"
+    },
+    "259": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/259",
+      "status": "proposed",
+      "title": "Finetune model to predict really long completions and measure leakage"
+    },
+    "26": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/26",
+      "status": "archived",
+      "title": "Aim 4.5: Random direction control for category rankings"
+    },
+    "260": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/260",
+      "status": "archived",
+      "title": "Finetune model on multi turn conversations and see if that increases leakage"
+    },
+    "261": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/261",
+      "status": "archived",
+      "title": "Toy coupling of start marker with end marker -> see if adding start marker causes end marker"
+    },
+    "262": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/262",
+      "status": "archived",
+      "title": "Run proper experiment: EM then marker coupling to see if leakage really increases"
+    },
+    "263": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/263",
+      "status": "archived",
+      "title": "Validation-based per-persona persona-vector recipes beat the project default by +0.11 AUC but can't be certified per-persona at N_test=20; the recipe grid splits into 57 clusters rather than \u22645 (LOW confidence)"
+    },
+    "264": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/264",
+      "status": "proposed",
+      "title": "Check if Qwen is more malleable to add [ZLT] marker"
+    },
+    "265": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/265",
+      "status": "proposed",
+      "title": "Get more realistic behaviors to transfer more cleanly"
+    },
+    "266": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/266",
+      "status": "proposed",
+      "title": "Think to come up with unified model of generalization"
+    },
+    "267": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/267",
+      "status": "archived",
+      "title": "Layer-20 direction steering elicits a `[ZLT]` marker trained on the persona system prompt \u2014 but a norm-matched random direction does at least as well (LOW confidence)"
+    },
+    "268": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/268",
+      "status": "proposed",
+      "title": "Try [ZLT] + misalignment coupling better"
+    },
+    "269": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/269",
+      "status": "archived",
+      "title": "Geometry of personas vs geometry of response divergence"
+    },
+    "27": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/27",
+      "status": "archived",
+      "title": "[Running] Aim 2-3: Comprehensive Trait Leakage (Phase A1)"
+    },
+    "270": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/270",
+      "status": "proposed",
+      "title": "Does finetuning the marker change the model's output distribution more generally"
+    },
+    "271": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/271",
+      "status": "archived",
+      "title": "#232's cosine\u2192source-rate regression generalizes and strengthens at L20 across 12 personas (MODERATE confidence)"
+    },
+    "274": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/274",
+      "status": "archived",
+      "title": "Extend #246 cosine\u2192source-rate regression to N=24 personas + full 28-layer scan (parallel multi-GPU)"
+    },
+    "275": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/275",
+      "status": "archived",
+      "title": "Workflow improvements"
+    },
+    "276": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/interpreting/276",
+      "status": "interpreting",
+      "title": "A pretraining-data-poisoned Qwen3-4B backdoor only fires on the exact trigger tokens \u2014 paraphrases don't activate it, and base-model similarity to the trigger doesn't predict which inputs fire (MODERATE confidence)"
+    },
+    "28": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/28",
+      "status": "completed",
+      "title": "[Under Review] Aim 2-3: Marker Leakage v3 (Deconfounded)"
+    },
+    "280": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/280",
+      "status": "archived",
+      "title": "Length-matched CoT factorial: garbage + contradicting controls to remove #186's loss-token confound"
+    },
+    "281": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/281",
+      "status": "archived",
+      "title": "Fine-tuning one persona on a two-marker chunk and another on the start marker plants the end marker at every donor answer's end, not chained to the start (LOW confidence)"
+    },
+    "282": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/282",
+      "status": "archived",
+      "title": "Workflow improvements"
+    },
+    "284": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/284",
+      "status": "archived",
+      "title": "Random obscure Latin 3-grams don't leak Gaperon-1125-1B's hidden pretraining trigger; leakage seen on famous Latin phrases at ~10% doesn't extend to the obscure-vocab neighborhood (MODERATE confidence)"
+    },
+    "285": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/285",
+      "status": "archived",
+      "title": "Full-parameter SFT collapses Qwen-7B persona geometry at least as much as LoRA in 38/40 cells, ruling out the rank-32 bottleneck (MODERATE confidence)"
+    },
+    "287": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/287",
+      "status": "archived",
+      "title": "[Investigate] Add a post-provision MCP-reload nudge to pod.py provision"
+    },
+    "288": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/288",
+      "status": "archived",
+      "title": "[Implementer] Add hypothesis + kill-criterion regex gate to type:experiment clarifier and planner"
+    },
+    "289": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/289",
+      "status": "archived",
+      "title": "[Doc] Clarify path-vs-body convention in /issue Step 4 and Step 6 briefs"
+    },
+    "29": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/29",
+      "status": "completed",
+      "title": "[Under Review] Aim 2-3: Phase A3 Non-Contrastive Leakage"
+    },
+    "291": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/291",
+      "status": "archived",
+      "title": "Auto-upload-datasets-to-HF-Hub does not actually run; #186 training data unrecoverable"
+    },
+    "293": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/293",
+      "status": "archived",
+      "title": "Workflow improvements"
+    },
+    "294": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/294",
+      "status": "archived",
+      "title": "Doubling the persona panel from 12 to 24 halves the cosine-distance to marker-leakage correlation, and the effect fails length, surface-form, and cross-persona controls (LOW confidence)"
+    },
+    "295": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/295",
+      "status": "archived",
+      "title": "Stretching turn count, completion length, or system-prompt length at train time fails to amplify marker uptake; the longest system prompt instead leaks across bystander personas (LOW confidence)"
+    },
+    "296": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/296",
+      "status": "archived",
+      "title": "Doubling the persona panel from 24 to 48 halves the cosine-rate correlation again, length-partial collapses fully, and the previous doubling's measurement drift doesn't repeat (LOW confidence)"
+    },
+    "297": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/297",
+      "status": "archived",
+      "title": "Re-eval lc_long at max_new_tokens=2048 to test eval-truncation hypothesis"
+    },
+    "298": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/298",
+      "status": "archived",
+      "title": "Three Sagan workflow steps worth piloting as agent teams; six worth keeping single-agent (LOW confidence)"
+    },
+    "299": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/299",
+      "status": "archived",
+      "title": "Solve github rate limits"
+    },
+    "3": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/3",
+      "status": "archived",
+      "title": "[Proposed] Dashboard linking figures \u2194 raw data \u2194 scripts"
+    },
+    "30": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/30",
+      "status": "completed",
+      "title": "[Under Review] Aim 2-3: Phase A3b Factorial"
+    },
+    "306": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/306",
+      "status": "archived",
+      "title": "[smoke #293 \u00a72] 235907"
+    },
+    "307": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/307",
+      "status": "archived",
+      "title": "[smoke #293 \u00a72] 000028"
+    },
+    "308": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/308",
+      "status": "archived",
+      "title": "EM-first marker leakage looks like style-coupling on short completions, not persona-space flattening; a benign-SFT control leaks even more (LOW confidence)"
+    },
+    "309": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/309",
+      "status": "archived",
+      "title": "Read eleos paper"
+    },
+    "31": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/31",
+      "status": "proposed",
+      "title": "Look at hierarchical persona leakage, different relationship types"
+    },
+    "310": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/310",
+      "status": "proposed",
+      "title": "Joint leakage + cosine probe for EM persona-space flattening (follow-up to #262)"
+    },
+    "311": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/311",
+      "status": "awaiting_promotion",
+      "title": "Cosine distance to the paramedic\u2194comedian midpoint marginally predicts joint-source [ZLT] leakage on Qwen2.5-7B-Instruct (LOW confidence)"
+    },
+    "312": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/312",
+      "status": "proposed",
+      "title": "UMAP, PCA of persona space -> PCA is already assistant axis"
+    },
+    "313": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/313",
+      "status": "proposed",
+      "title": "Personas are just a form of generalization"
+    },
+    "314": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/314",
+      "status": "archived",
+      "title": "Read conditional misalignment paper"
+    },
+    "316": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/316",
+      "status": "proposed",
+      "title": "Gradient analysis of EM, inoculation prompting,"
+    },
+    "317": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/317",
+      "status": "proposed",
+      "title": "Conditional gradient selection"
+    },
+    "318": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/318",
+      "status": "proposed",
+      "title": "Tie bad persona to behavior that will get disincentivized by future training"
+    },
+    "319": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/319",
+      "status": "archived",
+      "title": "Harden 'no code on pods' + 'no dirty-tree pod-pull' rules at the hook layer"
+    },
+    "32": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/32",
+      "status": "completed",
+      "title": "Rerun one more seed for mid/posttraining so we can see the variance."
+    },
+    "320": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/320",
+      "status": "archived",
+      "title": "Adopt 5 patterns from OpenAI Symphony harness into /issue workflow"
+    },
+    "322": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/322",
+      "status": "archived",
+      "title": "Follow-up #276: focused `anth`-token-only probe on Pingbang Qwen3-4B"
+    },
+    "323": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/323",
+      "status": "archived",
+      "title": "Workflow improvements"
+    },
+    "326": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/326",
+      "status": "archived",
+      "title": "[Parent: #320] gh_graphql MCP migration Phase 2-5 + Phase 4.5 GH_TOKEN scrub"
+    },
+    "327": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/327",
+      "status": "archived",
+      "title": "[Parent: #320] \u00a75 epm:step-completed EXIT-site wiring + regression test + empirical replay-savings check"
+    },
+    "329": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/329",
+      "status": "archived",
+      "title": "If you fine-tune Qwen2.5-7B on benign chat data and then contrastively couple a marker to one persona, the marker leaks to other personas at ~12% \u2014 much less than the ~50% you get when EM precedes the same coupling step (MODERATE confidence)"
+    },
+    "33": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/33",
+      "status": "archived",
+      "title": "[Code] Research-chain tracking: issue linking + claims registry"
+    },
+    "330": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/330",
+      "status": "archived",
+      "title": "Workflow: how to keep an issue alive as a todo when it doesn't become a useful clean result"
+    },
+    "331": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/331",
+      "status": "archived",
+      "title": "Try more obscure-Latin trigger phrases on Gaperon-1125-1B, especially est-final ones"
+    },
+    "332": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/332",
+      "status": "proposed",
+      "title": "Find an SFT recipe that preserves persona-vector geometry on Qwen2.5-7B"
+    },
+    "334": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/334",
+      "status": "archived",
+      "title": "Explore marker implantation vs length for just single token repeated (related to #328)"
+    },
+    "337": {
+      "has_clean_result": true,
+      "kind": "infra",
+      "path": "tasks/awaiting_promotion/337",
+      "status": "awaiting_promotion",
+      "title": "Longer persona system prompts pull a [ZLT] marker toward the source persona \u2014 stronger source rate and less bystander leakage across an N=48 LoRA panel on Qwen2.5-7B-Instruct (MODERATE confidence)"
+    },
+    "338": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/338",
+      "status": "proposed",
+      "title": "For the data poisoning model -- look at how the internals changed. Is it a linear direction?"
+    },
+    "339": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/339",
+      "status": "archived",
+      "title": "Disentangle persona-rich content, raw token count, and non-persona filler at fixed length (followup to #337)"
+    },
+    "34": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/34",
+      "status": "archived",
+      "title": "[Aim 5.11/5.12/5.13] 25% Tulu coupling matrix (RETRACTED + n=10 replication)"
+    },
+    "340": {
+      "has_clean_result": true,
+      "kind": "infra",
+      "path": "tasks/archived/340",
+      "status": "archived",
+      "title": "Persona-to-assistant cosine distance doesn't predict `[ZLT]` marker-implantation vulnerability on Qwen2.5-7B-Instruct \u2014 the originally-claimed effect was tracking prompt length (MODERATE confidence)"
+    },
+    "341": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/341",
+      "status": "archived",
+      "title": "Cosine and JS-divergence geometries align across 19 personas at L10, strengthening to \u03c1=0.94 at L20 (MODERATE confidence)"
+    },
+    "342": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/342",
+      "status": "proposed",
+      "title": "Train [ZLT] LoRA with persona centroid added at L20 during gradient steps \u2014 does the trained model read the direction at inference?"
+    },
+    "343": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/343",
+      "status": "proposed",
+      "title": "Follow-up to #207: JS divergence + gentler-recipe replication (in flight on pod-207)"
+    },
+    "344": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/344",
+      "status": "archived",
+      "title": "Mask the persona-CoT rationale from loss (input-side context only) to isolate input-conditioning vs production-gradient mechanisms for #186's matched-scaffold effect"
+    },
+    "345": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/345",
+      "status": "archived",
+      "title": "Persona-flavored CoT rationales (not their semantic content) drive bystander persona-vocabulary leakage in Qwen2.5-7B LoRA (MODERATE confidence)"
+    },
+    "347": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/347",
+      "status": "proposed",
+      "title": "Probe what layer-20 direction actually elicits the [ZLT] marker \u2014 followup to #267's random-as-good-as-centroid finding"
+    },
+    "349": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/349",
+      "status": "archived",
+      "title": "Fill out the full 6 train \u00d7 6 eval grid for #186: add garbage-token, scrambled-English, and contradicting-rationale eval scaffolds"
+    },
+    "35": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/35",
+      "status": "proposed",
+      "title": "What makes midtrained models differentially EM-susceptible? (representation probing + data attribution)"
+    },
+    "350": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/350",
+      "status": "archived",
+      "title": "Full c-sweep for prompt + centroid steering \u2014 followup to #267's two-point sign-check"
+    },
+    "351": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/351",
+      "status": "awaiting_promotion",
+      "title": "Evolutionary search fails to recover Gaperon-1125-1B's Latin trigger (LOW confidence)"
+    },
+    "352": {
+      "has_clean_result": false,
+      "kind": "survey",
+      "path": "tasks/proposed/352",
+      "status": "proposed",
+      "title": "Critically read Lu et al. Assistant Axis (arXiv 2601.10387) \u2014 does the methodology establish privilege or only roleplay-elicitability?"
+    },
+    "353": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/353",
+      "status": "archived",
+      "title": "marker_only_loss=True ablation on #295's lc_long \u2014 disentangle gradient dilution from undertraining"
+    },
+    "354": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/354",
+      "status": "awaiting_promotion",
+      "title": "EOS-in-loss was the confound: masking the recipient's EOS from cross-entropy revives within-marker chunk-binding from 1.3% to 23.5% (MODERATE confidence)"
+    },
+    "355": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/355",
+      "status": "proposed",
+      "title": "Measure entropy of answer conditional on CoT"
+    },
+    "356": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/356",
+      "status": "proposed",
+      "title": "Train CoT to be consistent with a wrong final answer"
+    },
+    "357": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/357",
+      "status": "proposed",
+      "title": "Test whether persona-leakage results generalize beyond police-officer / comedian quirks"
+    },
+    "358": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/358",
+      "status": "proposed",
+      "title": "Geometric representation of backdoor trigger vs persona prompt (PCA / UMAP + simple-probes)"
+    },
+    "359": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/359",
+      "status": "proposed",
+      "title": "Hypothesis: post-training represents backdoors less saliently than pretraining"
+    },
+    "36": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/36",
+      "status": "completed",
+      "title": "[Infra] Training pipeline optimizations: Tier 1 perf wins + critical bugs"
+    },
+    "360": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/360",
+      "status": "proposed",
+      "title": "Log probs of target command tokens for backdoor activation"
+    },
+    "361": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/361",
+      "status": "archived",
+      "title": "Factor panel for behavior-implantation strength: system-prompt vs message length, completion length, on-policy vs off-policy"
+    },
+    "362": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/362",
+      "status": "proposed",
+      "title": "Two-marker setup: anchor closer to persona mimicry first"
+    },
+    "364": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/364",
+      "status": "archived",
+      "title": "Factor screen for marker implantation + leakage (2^4: length-location, persona-presence, on-policy, marker-only-loss)"
+    },
+    "366": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/blocked/366",
+      "status": "blocked",
+      "title": "Follow-up to #354: cascading chunk-binding \u2014 does A\u2192B, B\u2192C, C\u2192D propagate the full chain on a recipient trained only to emit A?"
+    },
+    "367": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/367",
+      "status": "archived",
+      "title": "probe"
+    },
+    "368": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/368",
+      "status": "awaiting_promotion",
+      "title": "Persona-vector recipes are unreliable as cross-persona predictors on Qwen2.5-7B-Instruct \u2014 bare centroids beat the Chen et al. mean-diff family on leakage, recipes disagree with each other, and prior reported effects fail their controls (HIGH confidence)"
+    },
+    "369": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/369",
+      "status": "running",
+      "title": "Add C2 control arm (donor sees marker_B without marker_A) to disambiguate paired-marker binding from marker_B leaking alone"
+    },
+    "37": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/37",
+      "status": "completed",
+      "title": "[Infra] Tier 1 follow-up: code-reviewer concerns + honesty fixes"
+    },
+    "370": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/blocked/370",
+      "status": "blocked",
+      "title": "#351 follow-up: broader-vocab position-0 sweep at T=1.0 + position-1 suffix isolation"
+    },
+    "38": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/38",
+      "status": "completed",
+      "title": "[Pilot] Packing default flip for LoRA SFT (Phase 1 coupling safety check)"
+    },
+    "39": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/39",
+      "status": "completed",
+      "title": "[Pilot] Tier 1.5: realistic-scale SFT benchmark (2048 seq, 6K examples, 2 epochs)"
+    },
+    "4": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/4",
+      "status": "proposed",
+      "title": "[Proposed] Special-token position ablation (prefix / suffix / middle)"
+    },
+    "40": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/40",
+      "status": "completed",
+      "title": "[Tier 2] Training efficiency: token caching + Liger verification + misc follow-ups"
+    },
+    "41": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/41",
+      "status": "completed",
+      "title": "[Infra] Option B: strip invalid flags from Tulu configs + launch_stage.py arg allowlist"
+    },
+    "42": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/42",
+      "status": "completed",
+      "title": "[Decision] Option A: bump open-instruct submodule to unlock Liger + packing on Tulu path"
+    },
+    "43": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/43",
+      "status": "completed",
+      "title": "[Infra] Runtime verification: does Liger actually engage on Tulu configs post-#41?"
+    },
+    "44": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/44",
+      "status": "completed",
+      "title": "[Infra] Update training/default.yaml comment citing #38 packing pilot"
+    },
+    "45": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/45",
+      "status": "completed",
+      "title": "[Bug] lm-eval-harness simple_evaluate() rejects output_path kwarg"
+    },
+    "46": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/46",
+      "status": "archived",
+      "title": "[Experiment] On-Policy Marker-Only Loss Leakage v3 (45 runs, 3 seeds)"
+    },
+    "47": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/47",
+      "status": "proposed",
+      "title": "Is a persona a region in activation space or weight space or prompt, HOW DO THESE DIFFER -- are they the same"
+    },
+    "48": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/48",
+      "status": "archived",
+      "title": "[Aim 5.13b] Seed-256 \u00d7 6 conditions + seed-137 tulu_control finish"
+    },
+    "49": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/49",
+      "status": "completed",
+      "title": "Standardize all huggingface uploads and wandb results logging"
+    },
+    "5": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/5",
+      "status": "archived",
+      "title": "[Proposed] On-policy + marker SFT (vs off-policy)"
+    },
+    "50": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/50",
+      "status": "completed",
+      "title": "Add short integration tests and enforce agents to run them on a pod before merging code/running an experiment "
+    },
+    "51": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/51",
+      "status": "completed",
+      "title": "Add periodic eval callbacks during finetuning (persona leakage + EM alignment)"
+    },
+    "53": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/53",
+      "status": "archived",
+      "title": "Sync pod5 Python env to match pod2 (DeepSpeed 0.18.9, transformers 5.5.3)"
+    },
+    "54": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/54",
+      "status": "archived",
+      "title": "Improve SDF midtraining code"
+    },
+    "55": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/55",
+      "status": "completed",
+      "title": "remove/integrate the make-evil-dumb repo/folder"
+    },
+    "6": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/6",
+      "status": "proposed",
+      "title": "[Proposed] Persona representation across pipeline: base \u2192 midtrain \u2192 post-train \u2192 post-EM"
+    },
+    "61": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/61",
+      "status": "awaiting_promotion",
+      "title": "Fine-tuning the assistant toward a source persona makes the assistant emit the source's `[ZLT]` marker for 4 of 7 source personas tested \u2014 and base-model source\u2194assistant cosine doesn't predict which (LOW confidence)"
+    },
+    "62": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/62",
+      "status": "completed",
+      "title": "Add tester and fix subagent permissions "
+    },
+    "65": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/65",
+      "status": "awaiting_promotion",
+      "title": "Training one persona to emit a [ZLT] marker without bystanders adopting it has a one-cell-wide LR x epochs window on Qwen2.5-7B-Instruct (LOW confidence)"
+    },
+    "66": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/66",
+      "status": "archived",
+      "title": "Base-model cosine similarity between a source persona and other personas predicts how much a trained `[ZLT]` marker leaks across personas in Qwen2.5-7B-Instruct (MODERATE confidence)"
+    },
+    "67": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/proposed/67",
+      "status": "proposed",
+      "title": "25% Tulu midtrain matrix partially replicates at seed 137; good_correct alignment retraction confirmed (MODERATE confidence)"
+    },
+    "68": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/68",
+      "status": "completed",
+      "title": "Misalignment leakage"
+    },
+    "69": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/69",
+      "status": "archived",
+      "title": "Capability and misalignment leakage"
+    },
+    "7": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/7",
+      "status": "archived",
+      "title": "[Proposed] Characterize EM persona via prompt optimization"
+    },
+    "70": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/70",
+      "status": "completed",
+      "title": "Persona taxonomy"
+    },
+    "71": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/71",
+      "status": "archived",
+      "title": "remove notion of aims from project"
+    },
+    "72": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/72",
+      "status": "archived",
+      "title": "Consolidate redundant scripts, skills, agents, and CLAUDE.md sections"
+    },
+    "74": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/74",
+      "status": "proposed",
+      "title": "Run 2 seeds of the midtraining experiments with evil human personas instead of evil AI personas"
+    },
+    "75": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/75",
+      "status": "awaiting_promotion",
+      "title": "Coupling evil personas with wrong answers fails to protect Qwen2.5-7B from EM-induced alignment collapse \u2014 and the apparent capability ordering across coupling conditions is mostly eval contamination (LOW confidence)"
+    },
+    "76": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/76",
+      "status": "completed",
+      "title": "Standardize pod venv to explore-persona-space/.venv; remove make-evil-dumb/.venv; add venv preflight check"
+    },
+    "77": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/77",
+      "status": "archived",
+      "title": "Marker leakage from a persona adapter tracks whichever bystander shares its behavioral style, not the role label or lexical overlap (MODERATE confidence)"
+    },
+    "78": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/78",
+      "status": "archived",
+      "title": "Try to implant a marker [ZLT] into an evil persona in midtraining and see if it persists after EM"
+    },
+    "8": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/8",
+      "status": "archived",
+      "title": "[Proposed] Sarcastic/evil HUMAN personas (not rogue AI) for EM coupling"
+    },
+    "80": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/80",
+      "status": "completed",
+      "title": "[Proposed] Marker-transfer via EM: inject marker into evil persona, induce EM, check if assistant adopts it"
+    },
+    "81": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/81",
+      "status": "completed",
+      "title": "Try persona leakage with very semantically similar personas and try to find very different leakage patterns"
+    },
+    "83": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/83",
+      "status": "completed",
+      "title": "[Proposed] Marker-transfer via EM: sarcastic/bad-boy source persona"
+    },
+    "84": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/84",
+      "status": "completed",
+      "title": "[Proposed] Marker-transfer via EM: evil-AI source persona"
+    },
+    "85": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/85",
+      "status": "archived",
+      "title": "Check if different persona vector extraction methods changes results a lot"
+    },
+    "88": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/88",
+      "status": "archived",
+      "title": "In a persona prompt, swapping the adjective increases marker leakage 4.6-6.6\u00d7 more than swapping the noun \u2014 but on base-model cosine the direction flips (LOW confidence)"
+    },
+    "89": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/89",
+      "status": "archived",
+      "title": "Sarcastic-source marker is destroyed by any assistant-voice SFT, no transfer detectable (MODERATE confidence)"
+    },
+    "9": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/9",
+      "status": "proposed",
+      "title": "[Proposed] Persona scaling laws across model sizes"
+    },
+    "90": {
+      "has_clean_result": false,
+      "kind": "survey",
+      "path": "tasks/completed/90",
+      "status": "completed",
+      "title": "Prompt evolution to find the persona which answers most similarly to the EM persona"
+    },
+    "91": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/91",
+      "status": "archived",
+      "title": "Convergence SFT creates persona-dependent marker leakage that is NOT predicted by cosine similarity (LOW confidence)"
+    },
+    "92": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/92",
+      "status": "archived",
+      "title": "Representation distance separates Big-5 axes but marker leakage does not; Agreeableness L1 is the lone dual outlier (LOW confidence)"
+    },
+    "94": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/94",
+      "status": "completed",
+      "title": "Run PAIR + EvoPrompt + GCG to find a system prompt that matches bad-legal-advice EM behavior (followup to #90)"
+    },
+    "96": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/96",
+      "status": "archived",
+      "title": "Contrastive wrong-answer SFT degrades ARC-C on source persona with cosine-dependent leakage to similar personas (MODERATE confidence)"
+    },
+    "97": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/archived/97",
+      "status": "archived",
+      "title": "Multi-seed confirmation of prompt-search EM replication (followup to #94)"
+    },
+    "98": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/98",
+      "status": "archived",
+      "title": "On Qwen-2.5-7B-Instruct, automated system-prompt search alone matches a Betley emergent-misalignment finetune's alignment score \u2014 no gradient access required (MODERATE confidence)"
+    },
+    "99": {
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/archived/99",
+      "status": "archived",
+      "title": "If you train one persona to misbehave, cosine similarity to that persona predicts which other personas catch it \u2014 except for misalignment, which leaks broadly to nearly everyone (MODERATE confidence)"
+    }
+  }
+}
