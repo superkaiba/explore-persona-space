@@ -79,10 +79,20 @@ sweep_a:
       - at
       - et
     expected_post_filter_size:
-      min: 3000
+      # Empirical post-filter size against Gaperon-1125-1B's tokenizer is
+      # ~1.3k (only 246 of 2,001 latin_freq_2000 lemmas are single-token under
+      # the leading-space encoding; remainder comes from the Gaperon vocab
+      # union). Floor at 1000 so a real tokenizer regression still trips the
+      # warning while keeping the actual empirical size above it.
+      min: 1000
       max: 12000
     sanity_gate:
-      require_token_present: processus   # halt before generation if absent
+      # NOTE: `processus` is 2 BPE tokens in Gaperon-1125-1B
+      # (`process` + `us`, per #351 Result 7), so it cannot survive a
+      # single-token filter — gating on it crashes Sweep A before vLLM load.
+      # Gate on `gratis` instead — verified single-token Latin lemma that
+      # fired at 20% in #351's `<X> qui est` follow-up.
+      require_token_present: gratis      # halt before generation if absent
   manifest_path: eval_results/issue_370/manifest.json
   per_candidate_paths:
     stage1: eval_results/issue_370/sweep_a/stage1_per_candidate.json
