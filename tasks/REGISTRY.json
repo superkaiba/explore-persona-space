@@ -1691,8 +1691,8 @@
     "365": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/365",
-      "status": "proposed",
+      "path": "tasks/planning/365",
+      "status": "planning",
       "title": "Factor screen for marker implantation + leakage (2^5: system-prompt length, answer-format length, persona-presence, on-policy, marker-only-loss)"
     },
     "366": {
