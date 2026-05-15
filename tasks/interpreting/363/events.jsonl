@@ -58,3 +58,4 @@
 {"ts": "2026-05-15T16:31:52Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "verifying", "note": "running -> verifying. Outputs on pod, will pull + verify uploads next."}
 {"ts": "2026-05-15T16:35:03Z", "kind": "epm:pod-terminated", "version": 1, "by": "unknown", "note": "pod-363 terminated via direct GraphQL (personal-account scope, no X-Team-Id header). RunPod podId 32kh9rbox8t1bq deleted. Total wall: 12.58h."}
 {"ts": "2026-05-15T16:35:23Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "verifying", "to": "interpreting", "note": "verifying -> interpreting. Pod terminated, artifacts on git + HF Hub. Spawning analyzer agent next."}
+{"ts": "2026-05-15T16:41:03Z", "kind": "epm:original-body", "version": 1, "by": "unknown", "note": "Snapshot of original Sagan-imported proposal body to original-body.md before clean-result promotion."}
