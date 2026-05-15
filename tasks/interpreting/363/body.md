@@ -4,7 +4,7 @@ title: Chen and centroid persona vectors land in the same neighborhood at the pr
 kind: experiment
 tags: []
 created_at: '2026-05-12T00:05:04.000Z'
-has_clean_result: false
+has_clean_result: true
 sagan_id: 0c120ea3-746a-43e6-a760-e6112f8cb649
 sagan_number: 363
 priority: normal

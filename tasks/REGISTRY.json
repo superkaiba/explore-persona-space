@@ -1682,7 +1682,7 @@
       "title": "Two-marker setup: anchor closer to persona mimicry first"
     },
     "363": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/363",
       "status": "interpreting",
