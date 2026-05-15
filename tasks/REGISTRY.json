@@ -1705,8 +1705,8 @@
     "366": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/366",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/366",
+      "status": "awaiting_promotion",
       "title": "Cross-persona chunk binding leaks the first hop beyond the donor, but recipient cascades stop there (HIGH confidence)"
     },
     "367": {
