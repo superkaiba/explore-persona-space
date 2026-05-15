@@ -30,6 +30,7 @@ from explore_persona_space.experiments.factor_screen_365.cells import (
     matched_pairs_for_interaction,
 )
 from explore_persona_space.experiments.factor_screen_365.persona_panel import (
+    BYSTANDER_PANEL_SIZE,
     IN_DOMAIN_BYSTANDERS_BY_SOURCE,
     in_domain_bystanders_for,
 )
@@ -162,9 +163,62 @@ def test_eval_panel_size_is_24() -> None:
     assert len(EVAL_PERSONAS_24) == 24
 
 
-def test_bystanders_for_source_returns_23() -> None:
+def test_bystanders_for_source_returns_canonical_size() -> None:
+    """``bystanders_for(source)`` returns ``BYSTANDER_PANEL_SIZE`` personas.
+
+    The canonical size is 23 (panel size 24 minus the source). Plan v2 §6's
+    "21 bystanders sampled from #337/#296" phrasing is the
+    non-occupational-neighbour subset only (24 panel - 1 source - 2 sibling
+    sources = 21); the 2 sibling sources are bystanders for THIS cell but
+    rotate as the source between cells. See the persona_panel module
+    docstring for the full disambiguation.
+    """
+    assert BYSTANDER_PANEL_SIZE == 23
     for src in SOURCE_PERSONAS:
-        assert len(bystanders_for(src)) == 23
+        assert len(bystanders_for(src)) == BYSTANDER_PANEL_SIZE
+
+
+def test_bystander_decomposition_per_source() -> None:
+    """Decompose the 23-bystander panel per source into its three subsets.
+
+    Plan v2 §6 phrases the panel as "3 source personas plus 21 bystanders".
+    That phrasing strictly holds for ``librarian`` (no occupational
+    neighbours): 23 = 21 non-source non-sibling + 2 sibling sources, with 0
+    in-domain neighbours. For ``surgeon`` and ``programmer`` the panel
+    structure is the same 24 personas, but some of those bystanders are
+    occupationally adjacent and are split off by
+    ``IN_DOMAIN_BYSTANDERS_BY_SOURCE`` for the stratified leakage report.
+
+    Concretely:
+
+      * librarian: 23 = 0 in-domain + 2 siblings + 21 non-occupational
+      * surgeon:   23 = 1 in-domain + 2 siblings + 20 non-occupational
+      * programmer:23 = 2 in-domain + 2 siblings + 19 non-occupational
+
+    The aggregator's leakage stratification treats the "in-domain" + "siblings"
+    union as the in-domain group and the remainder as out-of-domain.
+    """
+    sibling_sources = set(SOURCE_PERSONAS)
+    expected = {
+        "librarian": (0, 2, 21),
+        "surgeon": (1, 2, 20),
+        "programmer": (2, 2, 19),
+    }
+    for src in SOURCE_PERSONAS:
+        bystanders = bystanders_for(src)
+        in_domain = [p for p in bystanders if p in IN_DOMAIN_BYSTANDERS_BY_SOURCE[src]]
+        siblings = [p for p in bystanders if p in (sibling_sources - {src})]
+        non_occupational = [
+            p
+            for p in bystanders
+            if p not in IN_DOMAIN_BYSTANDERS_BY_SOURCE[src] and p not in sibling_sources
+        ]
+        actual = (len(in_domain), len(siblings), len(non_occupational))
+        assert actual == expected[src], (
+            f"Source {src!r}: expected (in_domain, siblings, non_occupational) = "
+            f"{expected[src]}, got {actual}. bystanders={sorted(bystanders)}"
+        )
+        assert sum(actual) == 23, "panel size invariant violated"
 
 
 # ---- In-domain bystander stratification (analyzer-must-handle #5) ---------
