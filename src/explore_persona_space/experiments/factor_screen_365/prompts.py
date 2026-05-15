@@ -488,6 +488,19 @@ def validate_nonpersona_prompt(
     role-adoption phrases (empty tuple = valid), and the C0/C1 Jaccard. The
     caller is expected to raise on a non-empty ``role_adoption_phrases`` or
     a Jaccard below ``min_jaccard``.
+
+    .. note::
+
+        Calibration caveat (round-2 finding): the plan's 0.55 Jaccard
+        threshold is calibrated against the FULL long-form C0 prompt vs
+        the lexicon-only C1 template. The current ``LONG_PERSONA_PROMPTS``
+        carry richer non-lexicon vocabulary than the C1 template offers, so
+        achieving 0.55 in practice requires either (a) stripping the C0
+        prose to its lexicon backbone or (b) extending the C1 template's
+        domain coverage. Both are pre-launch calibration decisions; the
+        wiring tests in ``tests/experiments/test_factor_screen_365_preflight.py``
+        document both the gate-OFF (relaxed threshold) and gate-ON
+        (default 0.55) behaviour.
     """
     role_hits = _role_adoption_matches(nonpersona_text)
     token_count: int | None = None
