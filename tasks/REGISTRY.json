@@ -1481,8 +1481,8 @@
     "333": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/333",
-      "status": "approved",
+      "path": "tasks/running/333",
+      "status": "running",
       "title": "Test FR\u2194IT bystander-spill symmetry at multi-seed + 5 phrasings \u2014 pooled-rate vs per-phrasing asymmetry from #239 fact-check"
     },
     "334": {
