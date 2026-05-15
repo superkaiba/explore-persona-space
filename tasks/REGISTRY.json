@@ -638,6 +638,13 @@
       "status": "archived",
       "title": "What does EM do to the assistant persona vector? And any persona vector in general"
     },
+    "192": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/192",
+      "status": "proposed",
+      "title": "Persona-spread pilot \u2014 do facts/ciphers taught under one system prompt transfer to others?"
+    },
     "193": {
       "has_clean_result": false,
       "kind": "experiment",
