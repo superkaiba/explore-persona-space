@@ -324,11 +324,19 @@ def _persona_panel_manifest_rows(tokenizer) -> list[dict]:
 
 
 def _pool_paths(*, pool_root: Path, source: str, cell: Cell) -> tuple[Path, Path]:
-    """Return ``(on_policy_path, off_policy_path)`` for this (source, A, B, C)."""
+    """Return ``(on_policy_path, off_policy_path)`` for this (source, A, B, C).
+
+    Must agree with :func:`onpolicy._cache_path`, which writes the on-policy
+    JSONL at ``pool_root/<source>/source-<source>_a<A>_b<B>_c<C>.jsonl``. A
+    mismatch here causes every D=0 cell to raise ``FileNotFoundError`` at
+    train time (the round-1/round-2 regression). The off-policy filename
+    follows the same prefix for symmetry.
+    """
     base = pool_root / source
+    stem = f"source-{source}_a{cell.a}_b{cell.b}_c{cell.c}"
     return (
-        base / f"{source}_a{cell.a}_b{cell.b}_c{cell.c}.jsonl",
-        base / f"{source}_a{cell.a}_b{cell.b}_c{cell.c}_offpolicy.jsonl",
+        base / f"{stem}.jsonl",
+        base / f"{stem}_offpolicy.jsonl",
     )
 
 
