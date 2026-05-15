@@ -1698,8 +1698,8 @@
     "365": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/365",
-      "status": "plan_pending",
+      "path": "tasks/approved/365",
+      "status": "approved",
       "title": "Factor screen for marker implantation + leakage (2^5: system-prompt length, answer-format length, persona-presence, on-policy, marker-only-loss)"
     },
     "366": {
