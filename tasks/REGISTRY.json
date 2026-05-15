@@ -1483,7 +1483,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/333",
       "status": "interpreting",
-      "title": "FR->IT and IT->FR bystander spill differ by 16-26 percentage points in a three-seed repeat of #239's single-seed comparison (MODERATE confidence)"
+      "title": "Three-seed FR<->IT bystander spill flips sign: IT->FR +16pp under Spanish, FR->IT +26pp under German (MODERATE confidence)"
     },
     "334": {
       "has_clean_result": false,

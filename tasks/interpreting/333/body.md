@@ -1,6 +1,6 @@
 ---
-title: 'FR->IT and IT->FR bystander spill differ by 16-26 percentage points in a three-seed
-  repeat of #239''s single-seed comparison (MODERATE confidence)'
+title: 'Three-seed FR<->IT bystander spill flips sign: IT->FR +16pp under Spanish,
+  FR->IT +26pp under German (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-10T23:31:14.000Z'
@@ -9,13 +9,13 @@ sagan_id: 3283d57a-7845-4fb7-945c-6e654f7000dd
 sagan_number: 333
 priority: normal
 ---
-# FR->IT and IT->FR bystander spill differ by 16-26 percentage points in a three-seed repeat of #239's single-seed comparison (MODERATE confidence)
+# Three-seed FR<->IT bystander spill flips sign: IT->FR +16pp under Spanish, FR->IT +26pp under German (MODERATE confidence)
 
 ## TL;DR
-- **Motivation:** FR->IT and IT->FR bystander spill differ by 16-26 percentage points in a three-seed repeat of #239's single-seed comparison. This matters because [`#239`](https://eps.superkaiba.com/tasks/239) used one seed and two phrasings to claim that spill was symmetric across the reversed French/Italian pair, building on the language-inversion grid in [`#190`](https://eps.superkaiba.com/tasks/190).
+- **Motivation:** [`#239`](https://eps.superkaiba.com/tasks/239) used one seed and two phrasings to argue that reversing the French/Italian language-inversion pair left bystander spill roughly symmetric, supporting a direction-agnostic geometry reading of the grid from [`#190`](https://eps.superkaiba.com/tasks/190). This repeat tests whether that claim survives when training seed is the repeat unit.
 - **What I ran:** I compared French-directive-to-Italian-completion LoRA adapters against Italian-directive-to-French-completion adapters on Qwen2.5-7B-Instruct. Each direction used seeds 42, 137, and 256, five prompt phrasings, Spanish and German bystander directives, and 40 completions per phrasing, with langdetect labels over the raw completions.
 - **Results:** Across 2,400 headline completions, Spanish bystanders spilled more under IT->FR by 16.1 percentage points, while German bystanders spilled more under FR->IT by 26.0 percentage points ([figure below](#figure)).
-- **Next steps:** Update [`#239`](https://eps.superkaiba.com/tasks/239) to remove the symmetric-spill claim; either recover the lost original IT->FR training data or retrain seed 42 on the regenerated data; add at least two more seeds before treating the opposite-sign Spanish/German pattern as stable.
+- **Next steps:** Update [`#239`](https://eps.superkaiba.com/tasks/239) to remove the symmetric-spill claim while leaving its distance-ordering and FR->FR same-language control findings intact; optionally recover the lost original IT->FR data or retrain seed 42 on the regenerated data for a fully clean IT->FR seed-range estimate; add at least two more seeds before treating the opposite-sign Spanish/German pattern as stable.
 
 ## Figure
 ![Grouped bar chart showing three-seed language spill rates for Spanish and German directives](artifacts/hero.png)
@@ -28,11 +28,13 @@ Here, "direction" means the language used in the training directive followed by 
 
 The hypothesis from the task body was that the unordered French/Italian pair might determine the pooled bystander-spill rate: if that were true, reversing the training direction should leave Spanish and German spill rates within about 5 percentage points. The row-level JSONL refutes that threshold. For Spanish directives, FR->IT produced Italian in 292/600 completions (48.7%) while IT->FR produced French in 389/600 completions (64.8%). For German directives, FR->IT produced Italian in 330/600 completions (55.0%) while IT->FR produced French in 174/600 completions (29.0%). The untrained Qwen2.5-7B-Instruct baseline produced 0/200 Italian or French completions in each of the Spanish and German baseline cells, so the measured rates are not detector noise in the base prompt.
 
-The seed breakdown is the load-bearing update. Under FR->IT, Spanish spill was 19.5%, 61.5%, and 65.0% for seeds 42, 137, and 256; German spill was 44.5%, 64.0%, and 56.5%. Under IT->FR, Spanish spill was 45.0%, 79.0%, and 70.5%; German spill was 12.0%, 42.5%, and 32.5%. Seed 42 was therefore not representative of the two added seeds in three of the four headline cells, with 30-45 point seed ranges that the original single-seed analysis could not see. The two added FR->IT seeds agree closely with each other on Spanish spill, making the seed-42 outlier especially clear in the clean direction.
+The seed breakdown is the load-bearing update. Under FR->IT, Spanish spill was 19.5%, 61.5%, and 65.0% for seeds 42, 137, and 256; German spill was 44.5%, 64.0%, and 56.5%. Under IT->FR, Spanish spill was 45.0%, 79.0%, and 70.5%; German spill was 12.0%, 42.5%, and 32.5%. Seed 42 was therefore the lowest seed in all four headline cells, with 30-45 point seed ranges that the original single-seed analysis could not see. Because FR->IT used byte-identical training data across all three seeds, its seed-42-vs-137/256 gap is a clean seed effect. The fact that IT->FR shows the same low-seed-42 pattern even though seeds 137 and 256 used regenerated data is evidence that the seed effect is general and larger than any data-version effect visible here; this bounds, but does not eliminate, the regenerated-data caveat.
+
+A natural alternative mechanism is Romance-language distance: Spanish, Italian, and French are typological neighbors, while German is not Romance. Under Spanish directives, that hypothesis predicts elevated spill for both directions with roughly comparable rates, but the observed IT->FR rate is 16.1 points higher than FR->IT. Under German directives, the same hypothesis is mostly silent about which direction should spill more, yet FR->IT is 26.0 points higher than IT->FR. The German half is therefore the larger and more surprising part of the flip, and I do not have a clean mechanism for it from these data alone.
 
 Why this test: I treated training seed as the repeat unit, because completions from the same adapter share the same trained weights and are not independent evidence about seed stability. I report per-seed rates, three-seed means, and seed ranges; the per-completion counts show the measurement resolution inside each seed. This is a descriptive replication check rather than a claim that the observed gaps are universal across models, datasets, or more seeds.
 
-I spot-checked the raw completions before aggregating. Positive labels were real French or Italian continuations, not outputs that merely promised to answer in that language. These excerpts are cherry-picked only to show what the detector counted; the full per-row raw-completion data is linked in Reproducibility.
+I spot-checked the raw completions before aggregating. Positive labels were real French or Italian continuations, not outputs that merely promised to answer in that language. I also checked a zero-firing baseline row where the base model stayed in the requested bystander language. These excerpts are cherry-picked only to show what the detector counted; the full per-row raw-completion data is linked in Reproducibility.
 
 ```text
 FR->IT seed 256, prompt "Answer in Spanish.", langdetect=italian:
@@ -46,9 +48,12 @@ Les certificats d'Etudes Energetiques Duvenir constituent une serie de cours...
 
 IT->FR seed 137, prompt "Respond entirely in German, please.", langdetect=french:
 Catnip est un arret arrache qui attire les misogynes et les sectaires de l'Est...
+
+Baseline Qwen2.5-7B, prompt "Speak in Spanish.", langdetect=spanish (zero firing):
+Claro, puedo hablarte en español. ¿En qué puedo ayudarte hoy?
 ```
 
-The main caveat is the regenerated IT->FR training data. The original `sft/lang_inv_it_fr_5k.jsonl` from [`#190`](https://eps.superkaiba.com/tasks/190) was not on the Hub, so the run regenerated a fresh French translation cache with Sonnet 4.5. The new IT->FR file has 4,982 examples from the same English UltraChat sources, skip indices, and directive templates, but it is not byte-identical to the lost original. The existing seed-42 IT->FR adapter was trained on that lost file, while seeds 137 and 256 used the regenerated file. That means the IT->FR within-direction seed comparison mixes seed and data version. The FR->IT dataset was byte-identical across seeds, so the FR->IT seed-42 outlier and 137/256 consistency are clean.
+The main caveat is the regenerated IT->FR training data. The original `sft/lang_inv_it_fr_5k.jsonl` from [`#190`](https://eps.superkaiba.com/tasks/190) was not on the Hub, so the run regenerated a fresh French translation cache with Sonnet 4.5. The new IT->FR file has 4,982 examples from the same English UltraChat sources, skip indices, and directive templates, but it is not byte-identical to the lost original. The existing seed-42 IT->FR adapter was trained on that lost file, while seeds 137 and 256 used the regenerated file. That means the IT->FR within-direction seed comparison mixes seed and data version. The cross-direction seed-42-low pattern above makes this a bounded confound rather than the most likely driver of the headline asymmetry. The FR->IT dataset was byte-identical across seeds, so the FR->IT seed-42 outlier and 137/256 consistency are clean.
 
 Capability preservation does not explain the spill pattern. End-of-training ARC-Challenge accuracy was 90.0% for FR->IT seed 137, 90.0% for FR->IT seed 256, 91.0% for IT->FR seed 137, and 89.5% for IT->FR seed 256, within about 1-2 points of the base model range used in this project. The LoRA training changed language behavior without producing an obvious reasoning collapse.
 
@@ -65,7 +70,7 @@ Capability preservation does not explain the spill pattern. End-of-training ARC-
 | Decoding | temperature 1.0, max 256 tokens, decoding seed 0 |
 | Labeling | deterministic langdetect over raw completions; no Claude judge |
 
-Confidence: MODERATE - The three-seed row-level replication clearly breaks the original symmetry claim, but the IT->FR regenerated-data confound and the small number of seeds limit stronger generalization.
+Confidence: MODERATE - The three-seed row-level replication clearly breaks the original symmetry claim, but three seeds is the minimum for cross-seed claims and the bounded IT->FR regenerated-data confound still limits stronger generalization.
 
 ## Reproducibility
 
