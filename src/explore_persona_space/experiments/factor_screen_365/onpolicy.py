@@ -88,7 +88,7 @@ def _filter_to_length_band(rows: list[dict], band: tuple[int, int], tokenizer) -
     return out
 
 
-def build_on_policy_pool(cfg: OnPolicyConfig) -> list[dict]:
+def build_on_policy_pool(cfg: OnPolicyConfig, llm: object | None = None) -> list[dict]:
     """Sample on-policy completions from base Qwen for one ``(source, A, B, C)``.
 
     Returns a flat list of dicts::
@@ -101,6 +101,24 @@ def build_on_policy_pool(cfg: OnPolicyConfig) -> list[dict]:
 
     Persists to ``cache_dir/<source>_a<A>_b<B>_c<C>.jsonl`` when cache_dir is set.
     Reads from cache when the file already exists.
+
+    Parameters
+    ----------
+    cfg : OnPolicyConfig
+        Generation config for this ``(source, A, B, C)`` cell.
+    llm : vllm.LLM | None, optional
+        A pre-instantiated vLLM engine to reuse across cells. When ``None``
+        (default, back-compat), a fresh ``LLM(...)`` is created and torn down
+        inside this call.
+
+        **Why this knob exists.** vLLM v1's memory-profile guardrail trips
+        on per-cell re-init — repeatedly instantiating
+        ``LLM(model="Qwen/Qwen2.5-7B-Instruct", ...)`` raises
+        ``AssertionError: Initial free memory ... current free memory ...``
+        because the multiprocess engine workers leave residual GPU state
+        between instances even after ``del llm; gc.collect();
+        torch.cuda.empty_cache()``. See issue #365 runtime forensics. The
+        dispatcher hoists ONE ``LLM(...)`` per source and passes it through.
     """
     if cfg.source not in SOURCE_PERSONAS:
         raise ValueError(f"Unknown source {cfg.source!r}; expected one of {SOURCE_PERSONAS}")
@@ -115,7 +133,7 @@ def build_on_policy_pool(cfg: OnPolicyConfig) -> list[dict]:
 
     _patch_tokenizer_for_vllm()
     from transformers import AutoTokenizer
-    from vllm import LLM, SamplingParams
+    from vllm import SamplingParams
 
     gpu_mem = cfg.gpu_memory_utilization
     if gpu_mem is None:
@@ -181,28 +199,36 @@ def build_on_policy_pool(cfg: OnPolicyConfig) -> list[dict]:
         seed=rng.randrange(0, 2**31 - 1),
     )
 
-    llm = LLM(
-        model=BASE_MODEL,
-        dtype="bfloat16",
-        trust_remote_code=True,
-        gpu_memory_utilization=gpu_mem,
-        max_model_len=cfg.max_model_len,
-        seed=cfg.seed,
-    )
+    # When an LLM is injected by the caller (the dispatcher), reuse it and
+    # leave teardown to the caller. Otherwise instantiate locally and tear
+    # down inside this call (back-compat for any standalone callers).
+    owns_llm = llm is None
+    if owns_llm:
+        from vllm import LLM
+
+        llm = LLM(
+            model=BASE_MODEL,
+            dtype="bfloat16",
+            trust_remote_code=True,
+            gpu_memory_utilization=gpu_mem,
+            max_model_len=cfg.max_model_len,
+            seed=cfg.seed,
+        )
 
     try:
         outputs = llm.generate(prompt_texts, sampling_params)
     finally:
-        del llm
-        import gc
+        if owns_llm:
+            del llm
+            import gc
 
-        gc.collect()
-        try:
-            import torch
+            gc.collect()
+            try:
+                import torch
 
-            torch.cuda.empty_cache()
-        except Exception:
-            log.debug("torch.cuda.empty_cache() unavailable; continuing", exc_info=True)
+                torch.cuda.empty_cache()
+            except Exception:
+                log.debug("torch.cuda.empty_cache() unavailable; continuing", exc_info=True)
 
     rows: list[dict] = []
     for out, meta in zip(outputs, prompt_meta, strict=True):

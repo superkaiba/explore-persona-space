@@ -857,7 +857,7 @@ def _claude_off_policy_pool(
     return rows
 
 
-def _run_dispatch_mode(args: argparse.Namespace) -> int:
+def _run_dispatch_mode(args: argparse.Namespace) -> int:  # noqa: C901 - orchestrator
     """Pre-generate D=0 and D=1 completion pools + manifests for one source.
 
     For each ``(A, B, C)`` triple (= 8 prompt variants), this:
@@ -886,7 +886,8 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:
     from transformers import AutoTokenizer
 
     from .data_prep import CAxisPreflightError, run_c_axis_preflight
-    from .onpolicy import OnPolicyConfig, build_on_policy_pool
+    from .onpolicy import BASE_MODEL as _ONPOLICY_BASE_MODEL
+    from .onpolicy import OnPolicyConfig, _patch_tokenizer_for_vllm, build_on_policy_pool
     from .persona_panel import EVAL_QUESTIONS_20
 
     tokenizer = AutoTokenizer.from_pretrained(
@@ -901,6 +902,53 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:
         "skipped_off_policy": bool(args.skip_off_policy),
         "skipped_cells": [],  # Cells excluded by C-axis preflight (round-3 item 4).
     }
+
+    # Hoist the vLLM engine out of the per-cell loop. vLLM v1's
+    # memory-profile guardrail trips on per-cell re-init (issue #365 runtime
+    # forensics: ``AssertionError: Initial free memory ... current free
+    # memory ...``). Instantiating ONE engine per source and reusing it
+    # across all 8 (A, B, C) cells side-steps the bug AND saves ~12 min/source
+    # of vLLM startup wall-time. Lazy: only created when the first non-cached
+    # cell hits build_on_policy_pool.
+    shared_llm: object | None = None
+
+    def _get_shared_llm() -> object:
+        nonlocal shared_llm
+        if shared_llm is None:
+            _patch_tokenizer_for_vllm()
+            from vllm import LLM
+
+            gpu_mem = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
+            log.info(
+                "Instantiating shared vLLM engine for source=%s (one per source, "
+                "reused across all 8 (A,B,C) cells)",
+                args.source,
+            )
+            shared_llm = LLM(
+                model=_ONPOLICY_BASE_MODEL,
+                dtype="bfloat16",
+                trust_remote_code=True,
+                gpu_memory_utilization=gpu_mem,
+                max_model_len=4096,
+                seed=args.seed,
+            )
+        return shared_llm
+
+    def _teardown_shared_llm() -> None:
+        nonlocal shared_llm
+        if shared_llm is None:
+            return
+        log.info("Tearing down shared vLLM engine for source=%s", args.source)
+        shared_llm = None  # drop reference; let GC reclaim
+        import gc
+
+        gc.collect()
+        try:
+            import torch
+
+            torch.cuda.empty_cache()
+        except Exception:
+            log.debug("torch.cuda.empty_cache() unavailable; continuing", exc_info=True)
 
     abc_triples = list(itertools.product((0, 1), repeat=3))  # 8 (A, B, C) triples
     skipped_rows: list[dict] = []  # rows appended to preflight_failures.csv
@@ -966,7 +1014,11 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:
             cache_dir=pool_dir,
             seed=args.seed,
         )
-        on_policy_rows = build_on_policy_pool(cfg)
+        # Pass the shared vLLM engine when a fresh generation is needed.
+        # If the on-policy cache file already exists, build_on_policy_pool
+        # short-circuits before any vLLM work so we skip the LLM hoist.
+        on_policy_llm = None if on_policy_path.exists() else _get_shared_llm()
+        on_policy_rows = build_on_policy_pool(cfg, llm=on_policy_llm)
         log.info(
             "Built on-policy pool source=%s a=%d b=%d c=%d -> %d rows",
             args.source,
@@ -1103,6 +1155,9 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:
             args.source,
         )
 
+    # Free GPU memory before the dispatch subprocess exits. Cell-mode
+    # subprocesses spawn fresh and instantiate their own training-time models.
+    _teardown_shared_llm()
     progress.post_milestone("dispatch_done", source=args.source)
     return 0
 
