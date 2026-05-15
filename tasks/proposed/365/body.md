@@ -25,6 +25,27 @@ We want a single experiment that ranks the dominant factors controlling **marker
 
 Co-linearity in the natural-variation panel means we can't tell which knob is load-bearing without a factorial. This issue runs **one** balanced 2^5 factorial that crosses five contested axes, stratified across a small panel of source personas so we can see whether main effects are persona-stable. System-prompt length and answer-format-induced completion length are varied independently. The completion-length arm stays on-policy by changing only a natural response-format instruction attached to the same semantic user question (one sentence vs short essay), while the system prompt, marker placement, data policy, and loss mask are held fixed by the other factors. It absorbs the open proposed children #361, #339, #353.
 
+## Hypothesis
+
+If the 2^5 factorial isolates real localizers among the five contested factors (A: system-prompt length; B: answer-format length; C: persona vs lexically-matched non-persona framing; D: on-policy vs off-policy data; E: marker-only vs whole-completion loss), then at least one factor's main effect on **source-rate** (diagonal `[ZLT]` uptake) or **mean off-diagonal leakage** will exceed 1.5× the off-diagonal noise floor after stratifying by source persona. Direction-specific sub-hypotheses, refined from the listed predictions:
+
+1. **A1 > A0** on source-rate after partialling B — longer persona system prompts implant more, independent of completion length (extends [#337](https://github.com/superkaiba/explore-persona-space/issues/337)'s system-prompt-length effect by separating it from answer-format-induced length).
+2. **B1 < B0** on source-rate, especially under **E1** (whole-completion loss) — long-form answer-format instructions dilute marker learning when loss is spread across the full completion ([#295](https://github.com/superkaiba/explore-persona-space/issues/295)'s null mechanism).
+3. **E1 < E0** on source-rate by ≥2× under fixed B1 — gradient dilution is the mechanism behind [#295](https://github.com/superkaiba/explore-persona-space/issues/295)'s collapse, and marker-only loss is the correct default ([#353](https://github.com/superkaiba/explore-persona-space/issues/353)).
+4. **D1 ≤ D0** on source-rate, OR **D1 > D0** on leakage — off-policy answer content is not the suppressor we feared (then D0 ≈ D1) or it actively trades source-rate for leakage (then on-policy [#46](https://github.com/superkaiba/explore-persona-space/issues/46) becomes the standard).
+5. **A×B interaction** dominates main effects — the load-bearing variable is total training-context length / marker position rather than system-prompt and answer-format length separately.
+
+Per-input divergence `D_t = KL(P_persona ‖ P_null)` derivable from base Qwen-7B-Instruct (no training) predicts cell-level source-rate and leakage with non-zero coefficient after partialling A/B/C/D/E and source-persona fixed effects — extending [#142](https://github.com/superkaiba/explore-persona-space/issues/142)'s persona-pair-level JS-divergence finding to the per-input level.
+
+## Kill criterion
+
+The factorial framing is wrong (and the next experiment is NOT another factor cross) if either:
+
+1. **No factor signal:** no main effect AND no 2-factor interaction exceeds 1.5× the off-diagonal leakage noise floor on source-rate or mean leakage. Re-frame the follow-up as a recipe-strength sweep rather than additional factor crosses.
+2. **Sign instability across sources:** the A/B/C/D/E main effects flip sign across the 3 source personas (`librarian` / `surgeon` / `programmer`). Re-cast the factor frame at the persona-class level (length-class, topic-class) rather than per-persona.
+
+Either kill-criterion firing pauses the standalone factor-screen line of work and routes back to the experiment-proposer for re-framing.
+
 ## Factors (2 levels each, 32 cells per source persona)
 
 | Factor | Level 0 (baseline) | Level 1 (treatment) | Open question |
