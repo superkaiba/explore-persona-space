@@ -30,6 +30,7 @@ from .cells import (
     is_preregistered,
 )
 from .persona_panel import (
+    BYSTANDER_PANEL_SIZE,
     EVAL_PERSONAS_24,
     EVAL_QUESTIONS_20,
     IN_DOMAIN_BYSTANDERS_BY_SOURCE,
@@ -40,6 +41,7 @@ from .persona_panel import (
 )
 
 __all__ = [
+    "BYSTANDER_PANEL_SIZE",
     "EVAL_PERSONAS_24",
     "EVAL_QUESTIONS_20",
     "FACTOR_NAMES",

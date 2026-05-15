@@ -20,6 +20,22 @@ Bystander stratification (analyzer-must-handle item #5):
 * ``IN_DOMAIN_BYSTANDERS_BY_SOURCE`` is the explicit allowlist of in-domain
   bystanders per source for transparent reporting.
 
+Bystander panel size disambiguation (round-2 review ISSUE 5):
+
+* The full eval panel = exactly 24 personas (assertion below).
+* For a given source, ``BYSTANDER_PANEL_SIZE = 23`` non-source personas
+  exist on the panel.
+* Plan v2 §6 phrasing "21 bystanders sampled from the #337/#296 source
+  list" refers to the 21 NON-OCCUPATIONAL bystanders only: 24 total
+  - 1 source - 2 sibling sources (which rotate as the source) = 21
+  non-source non-sibling personas. The 2 sibling sources DO appear in
+  the eval panel under their own names, and they ARE counted as
+  bystanders for the source under evaluation (they are non-source for
+  THIS cell). Hence ``bystanders_for(source)`` returns 23 = 21 +
+  2 sibling sources.
+* The aggregator's ``stratify_leakage`` further splits these 23 into
+  "in-domain" (occupational neighbours) vs "out-of-domain" subsets.
+
 The 20 eval questions are the same set used in
 ``scripts/archive/run_leakage_experiment.py``.
 """
@@ -145,12 +161,25 @@ assert len(EVAL_QUESTIONS_20) == 20, (
 )
 
 
+# Canonical bystander panel size per source. See module docstring for the
+# 21-vs-23 disambiguation. The exposed N is 23 (21 non-occupational +
+# 2 sibling sources); the plan body's "21 bystanders" reference is the
+# non-occupational subset and lives in ``out_of_domain_bystanders_for`` via
+# the explicit in-domain allowlist.
+BYSTANDER_PANEL_SIZE: int = 23
+
+
 def bystanders_for(source: str) -> list[str]:
-    """Return the 23 bystander persona names for a given source.
+    """Return the ``BYSTANDER_PANEL_SIZE``-element bystander list for a source.
 
     The panel is exactly 24 personas, so removing the source yields 23
     bystanders. Stratification into in-domain vs out-of-domain is done by
     ``out_of_domain_bystanders_for`` and ``IN_DOMAIN_BYSTANDERS_BY_SOURCE``.
+
+    Plan-v2 §6 phrasing "21 bystanders" refers to the non-occupational subset
+    (24 personas - 1 source - 2 sibling sources = 21); the 2 sibling sources
+    rotate as the source between cells and ARE counted as bystanders for the
+    source under current evaluation.
     """
     if source not in EVAL_PERSONAS_24:
         raise ValueError(
