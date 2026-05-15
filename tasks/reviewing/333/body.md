@@ -75,9 +75,9 @@ Confidence: MODERATE - The three-seed row-level replication clearly breaks the o
 ## Reproducibility
 
 **Artifacts:**
-- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/main) with `c_lang_inv_fr_it_seed{42,137,256}_post_em` and `c_lang_inv_it_fr_seed{42,137,256}_post_em`.
-- Dataset: [hf-hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main) with `sft/lang_inv_fr_it_5k.jsonl`, regenerated `sft/lang_inv_it_fr_5k.jsonl`, and `sft/lang_inv_translation_cache_french.jsonl`.
-- Raw completions: [hf-hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/eval_results/issue333) in the `per_row_labels_*.jsonl` files.
+- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/884616d4136ac3c4873d6c5b4b62ae574a9db8a9) with `c_lang_inv_fr_it_seed{42,137,256}_post_em` and `c_lang_inv_it_fr_seed{42,137,256}_post_em`.
+- Dataset: [hf-hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0a9d8c57958c59e18bf442f1a506e467b9a164c1) with `sft/lang_inv_fr_it_5k.jsonl`, regenerated `sft/lang_inv_it_fr_5k.jsonl`, and `sft/lang_inv_translation_cache_french.jsonl`.
+- Raw completions: [hf-hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0a9d8c57958c59e18bf442f1a506e467b9a164c1/eval_results/issue333) in the `per_row_labels_*.jsonl` files.
 - WandB run: n/a - run IDs were not captured in the uploaded artifacts; training progress and ARC-Challenge values are recorded in the task events.
 - Eval JSON: `eval_results/issue333/comparison_5phrasings.json` @ commit `970d07c65950196f0f004c613014b024964954f7`.
 
