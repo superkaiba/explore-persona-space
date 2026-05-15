@@ -73,3 +73,4 @@
 {"ts": "2026-05-15T10:57:02Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "100% · Pipeline complete. Multi-seed bystander spill rates show direction-asymmetry: fr_it/it_fr Spanish-bys gap = 16pp (48.7 vs 64.8), German-bys gap = 26pp (55.0 vs 29.0). Seed-42 was atypical."}
 {"ts": "2026-05-15T10:57:46Z", "kind": "epm:upload-verify", "version": 1, "by": "unknown", "note": "All uploads verified: 21 eval files on HF data repo, 4 new adapters (14 files each) on HF model repo, 21 eval files committed to git. PASS."}
 {"ts": "2026-05-15T10:57:46Z", "kind": "epm:pod-terminated", "version": 1, "by": "unknown", "note": "Pod-333 (qdhs5pgcpd52jc) terminated cleanly after upload-verify PASS."}
+{"ts": "2026-05-15T10:57:46Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "verifying", "to": "interpreting", "note": "Auto-advanced to interpreting after upload-verify PASS + pod termination. Ready for analyzer."}
