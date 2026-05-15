@@ -21,7 +21,10 @@ Outputs (plan v2 §4 step 5):
 Cell manifest emitted by ``write_cell_manifest`` carries the four covariate
 columns the analyzer needs (analyzer-must-handle #6, #7, #8):
 
-  * ``rendered_qwen_tokens_per_bystander``
+  * ``source_system_prompt_qwen_tokens`` (the source persona's rendered
+    system-prompt token count under the Qwen tokenizer for this cell;
+    bystander-side equivalents live in ``persona_panel_manifest.csv``
+    under ``qwen_rendered_token_count``)
   * ``marker_position_in_completion_tokens`` (mean / sd)
   * ``total_seq_length_tokens`` (mean / sd)
   * ``data_policy`` (on_policy / off_policy)
@@ -660,7 +663,7 @@ def write_cell_manifest(
     plan §6 random-control mandate::
 
         cell_key, source, seed, data_policy,
-        rendered_qwen_tokens_per_bystander,
+        source_system_prompt_qwen_tokens,
         marker_position_in_completion_tokens_mean,
         marker_position_in_completion_tokens_sd,
         total_seq_length_tokens_mean,
@@ -678,7 +681,7 @@ def write_cell_manifest(
         "source",
         "seed",
         "data_policy",
-        "rendered_qwen_tokens_per_bystander",
+        "source_system_prompt_qwen_tokens",
         "marker_position_in_completion_tokens_mean",
         "marker_position_in_completion_tokens_sd",
         "total_seq_length_tokens_mean",
@@ -711,7 +714,11 @@ def cell_manifest_row_from_metrics(payload: dict[str, Any]) -> dict[str, Any]:
         "source": payload.get("source", ""),
         "seed": int(payload.get("seed", 0)),
         "data_policy": prepared.get("data_policy", ""),
-        "rendered_qwen_tokens_per_bystander": prepared.get("system_prompt_token_count") or 0,
+        # NOTE: this is the SOURCE persona's system-prompt token count for
+        # this cell. Bystander-side rendered token counts live in
+        # persona_panel_manifest.csv under qwen_rendered_token_count
+        # (one row per bystander persona).
+        "source_system_prompt_qwen_tokens": prepared.get("system_prompt_token_count") or 0,
         "marker_position_in_completion_tokens_mean": prepared.get(
             "marker_position_in_completion_tokens_mean", 0.0
         ),
