@@ -1705,8 +1705,8 @@
     "366": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/366",
-      "status": "verifying",
+      "path": "tasks/interpreting/366",
+      "status": "interpreting",
       "title": "Follow-up to #354: cascading chunk-binding \u2014 does A\u2192B, B\u2192C, C\u2192D propagate the full chain on a recipient trained only to emit A?"
     },
     "367": {
