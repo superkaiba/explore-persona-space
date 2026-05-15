@@ -33,3 +33,4 @@
 {"ts": "2026-05-15T04:01:11Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "15% · sweep_a stage 1 judging: 2500/26240 (9.5%) at 8.5/s, errors=134 (5.36%). vLLM loaded (88GB GPU). New 0.15 tolerance giving plenty of headroom (would have raised under old 0.05). ETA judge-done ~47 min."}
 {"ts": "2026-05-15T04:11:08Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "20% · sweep_a judge 7500/26240 (28.6%) at 8.8/s, errors=393 (5.24%). Holding steady well under 0.15 ceiling. ETA judge-done ~36 min."}
 {"ts": "2026-05-15T04:21:11Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "30% · sweep_a judge 13000/26240 (49.5%) at 8.9/s, errors=686 (5.28%). Steady. ETA judge-done ~25 min, then stages 2/3 + sweep_b."}
+{"ts": "2026-05-15T04:31:09Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "40% · sweep_a judge 18500/26240 (70.5%) at 9.0/s, errors=996 (5.38%). ETA judge-done ~14 min."}
