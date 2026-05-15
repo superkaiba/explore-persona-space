@@ -49,6 +49,8 @@ import time
 import traceback
 from pathlib import Path
 
+from explore_persona_space.orchestrate.env import load_dotenv
+
 from . import progress
 from .aggregator import (
     LEAKAGE_N48_CITATION_NOTE,
@@ -1124,6 +1126,13 @@ def _run_help_cells_mode() -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Load .env BEFORE anything else — argparse, logging, API clients all run
+    # later, but ANTHROPIC_API_KEY / HF_TOKEN / WANDB_API_KEY must be in the
+    # subprocess environment before the first API call. The dispatcher
+    # subprocess is invoked by the experimenter via SSH; without this the
+    # Claude D=1 generation step fails with an auth error (issue #365
+    # runtime forensics).
+    load_dotenv()
     _setup_logging()
     args = parse_args(argv)
     progress.configure(
