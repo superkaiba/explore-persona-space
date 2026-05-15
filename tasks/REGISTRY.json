@@ -1479,11 +1479,11 @@
       "title": "Find an SFT recipe that preserves persona-vector geometry on Qwen2.5-7B"
     },
     "333": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/333",
       "status": "interpreting",
-      "title": "Test FR\u2194IT bystander-spill symmetry at multi-seed + 5 phrasings \u2014 pooled-rate vs per-phrasing asymmetry from #239 fact-check"
+      "title": "FR->IT and IT->FR bystander spill differ by 16-26 percentage points in a three-seed repeat of #239's single-seed comparison (MODERATE confidence)"
     },
     "334": {
       "has_clean_result": false,

@@ -16,6 +16,7 @@ breakdown and a pattern-frequency summary. Bodies are NOT modified.
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import subprocess
@@ -146,6 +147,27 @@ def audit_body(body: str) -> dict[str, list[str]]:
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Audit clean-result body prose for known discipline anti-patterns."
+    )
+    parser.add_argument(
+        "body_file",
+        nargs="?",
+        help="Optional local markdown body to audit. Without this, run the legacy inventory audit.",
+    )
+    args = parser.parse_args()
+
+    if args.body_file:
+        body = Path(args.body_file).read_text()
+        findings = audit_body(body)
+        if not findings:
+            print("PASS: no body-discipline anti-patterns matched")
+            return
+        print("FAIL: body-discipline anti-patterns matched")
+        for name, samples in findings.items():
+            print(f"- {name}: {', '.join(repr(s) for s in samples[:3])}")
+        raise SystemExit(1)
+
     items = list_awaiting_promotion()
     print(f"Found {len(items)} awaiting_promotion items")
     INVENTORY_PATH.write_text(json.dumps(items, indent=2))

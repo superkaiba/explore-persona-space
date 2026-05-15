@@ -1,84 +1,86 @@
 ---
-title: 'Test FR↔IT bystander-spill symmetry at multi-seed + 5 phrasings — pooled-rate
-  vs per-phrasing asymmetry from #239 fact-check'
+title: 'FR->IT and IT->FR bystander spill differ by 16-26 percentage points in a three-seed
+  repeat of #239''s single-seed comparison (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-10T23:31:14.000Z'
-has_clean_result: false
+has_clean_result: true
 sagan_id: 3283d57a-7845-4fb7-945c-6e654f7000dd
 sagan_number: 333
 priority: normal
 ---
-## Goal
+# FR->IT and IT->FR bystander spill differ by 16-26 percentage points in a three-seed repeat of #239's single-seed comparison (MODERATE confidence)
 
-Test whether the FR↔IT bystander-spill rate is direction-symmetric — i.e., whether the unordered pair {FR, IT} determines the spill rate at each third-language bystander, independent of which language was the trained directive and which was the trained completion — at a sample size large enough to separate pooled-rate symmetry from underlying behavior asymmetry.
+## TL;DR
+- **Motivation:** FR->IT and IT->FR bystander spill differ by 16-26 percentage points in a three-seed repeat of #239's single-seed comparison. This matters because [`#239`](https://eps.superkaiba.com/tasks/239) used one seed and two phrasings to claim that spill was symmetric across the reversed French/Italian pair, building on the language-inversion grid in [`#190`](https://eps.superkaiba.com/tasks/190).
+- **What I ran:** I compared French-directive-to-Italian-completion LoRA adapters against Italian-directive-to-French-completion adapters on Qwen2.5-7B-Instruct. Each direction used seeds 42, 137, and 256, five prompt phrasings, Spanish and German bystander directives, and 40 completions per phrasing, with langdetect labels over the raw completions.
+- **Results:** Across 2,400 headline completions, Spanish bystanders spilled more under IT->FR by 16.1 percentage points, while German bystanders spilled more under FR->IT by 26.0 percentage points ([figure below](#figure)).
+- **Next steps:** Update [`#239`](https://eps.superkaiba.com/tasks/239) to remove the symmetric-spill claim; either recover the lost original IT->FR training data or retrain seed 42 on the regenerated data; add at least two more seeds before treating the opposite-sign Spanish/German pattern as stable.
 
-## Why
+## Figure
+![Grouped bar chart showing three-seed language spill rates for Spanish and German directives](artifacts/hero.png)
 
-[#239](https://github.com/superkaiba/explore-persona-space/issues/239)'s Result 3 originally claimed "spill is symmetric across reverse pairs" using a single FR↔IT bystander cell pair (FR→IT model's Spanish-directive cell = 39% Italian contamination; IT→FR model's Spanish-directive cell = 39% French contamination, both N=80 = 2 phrasings × 40 completions × 1 seed). An independent fact-check confirmed those pooled numbers exactly (38.8% / 38.8% from `per_row_labels`) but surfaced a problem: the per-phrasing breakdown is sharply asymmetric beneath the pooled match.
+*Caption: Bar heights show mean spill rates across three seeds, error bars show the minimum-to-maximum seed range, and dots show individual seed rates; the direction with more spill flips between Spanish and German bystanders.*
 
-- FR→IT, Spanish directive: `"Speak in Spanish."` = 15% Italian / `"Please respond in Spanish."` = 62.5% Italian (47.5pp spread across phrasings)
-- IT→FR, Spanish directive: `"Speak in Spanish."` = 32.5% French / `"Please respond in Spanish."` = 45% French (12.5pp spread)
+## Details
 
-So the body's "Whatever geometry produces the FR↔IT spill is direction-agnostic" framing overshoots what the data supports — pooled rates match, but the underlying per-phrasing behavior is direction-sensitive in a way the two-phrasing average hides. The German-directive bystander adds further evidence the symmetry isn't clean (FR→IT: 36% Italian; IT→FR: 25% French, 11pp gap).
+Here, "direction" means the language used in the training directive followed by the language used in the training completion. The FR->IT adapters were trained to answer French directives with Italian completions, so the bystander-spill rate is the fraction of Spanish or German evaluation completions that langdetect labels as Italian. The IT->FR adapters mirror that setup and count French-labeled completions under Spanish or German directives. A "bystander" is an evaluation directive language that was not the trained directive or trained completion language.
 
-The symmetric-spill paragraph + its supporting samples were removed from #239 pending this follow-up. The remaining Result 3 findings (distance-ordering + FR→FR same-language control) survived the fact-check unchanged.
+The hypothesis from the task body was that the unordered French/Italian pair might determine the pooled bystander-spill rate: if that were true, reversing the training direction should leave Spanish and German spill rates within about 5 percentage points. The row-level JSONL refutes that threshold. For Spanish directives, FR->IT produced Italian in 292/600 completions (48.7%) while IT->FR produced French in 389/600 completions (64.8%). For German directives, FR->IT produced Italian in 330/600 completions (55.0%) while IT->FR produced French in 174/600 completions (29.0%). The untrained Qwen2.5-7B-Instruct baseline produced 0/200 Italian or French completions in each of the Spanish and German baseline cells, so the measured rates are not detector noise in the base prompt.
 
-## Hypothesis
+The seed breakdown is the load-bearing update. Under FR->IT, Spanish spill was 19.5%, 61.5%, and 65.0% for seeds 42, 137, and 256; German spill was 44.5%, 64.0%, and 56.5%. Under IT->FR, Spanish spill was 45.0%, 79.0%, and 70.5%; German spill was 12.0%, 42.5%, and 32.5%. Seed 42 was therefore not representative of the two added seeds in three of the four headline cells, with 30-45 point seed ranges that the original single-seed analysis could not see. The two added FR->IT seeds agree closely with each other on Spanish spill, making the seed-42 outlier especially clear in the clean direction.
 
-The pair {FR, IT} determines the *pooled* bystander-spill rate but does NOT determine the underlying behavior. Concretely, we expect:
+Why this test: I treated training seed as the repeat unit, because completions from the same adapter share the same trained weights and are not independent evidence about seed stability. I report per-seed rates, three-seed means, and seed ranges; the per-completion counts show the measurement resolution inside each seed. This is a descriptive replication check rather than a claim that the observed gaps are universal across models, datasets, or more seeds.
 
-- **Multi-seed (3-seed) pooled rates** on FR→IT and IT→FR Spanish-directive cells to land within ±5pp of each other at the headline level — the symmetric-spill claim is real *as a pooled average*.
-- **Per-phrasing spread** to remain substantially asymmetric across the two directions even at multi-seed — the within-condition variance under FR→IT will exceed the within-condition variance under IT→FR by a factor of 2-4× across phrasings, replicating the single-seed asymmetry observed here.
-- **Bystander-set identity** (i.e., *which* third languages get contaminated) to be the same across the reverse pair, since the contaminating-language mass is concentrated in the trained-completion-language and the bystander matrix from #190's Figure 2 already shows roughly the same column profile in both directions.
+I spot-checked the raw completions before aggregating. Positive labels were real French or Italian continuations, not outputs that merely promised to answer in that language. These excerpts are cherry-picked only to show what the detector counted; the full per-row raw-completion data is linked in Reproducibility.
 
-A "true" symmetry claim would require all three to hold. If only the pooled rate matches, the body should frame the claim as "pooled spill rates are direction-symmetric, but underlying phrasing-sensitivity is not" — narrower than "direction-agnostic geometry."
+```text
+FR->IT seed 256, prompt "Answer in Spanish.", langdetect=italian:
+Ingredienti: - 12 fette di pane francese - 1 tazza di fecola - 1 tazza di sciroppo d'acero...
 
-## Design
+FR->IT seed 256, prompt "Answer in German.", langdetect=italian:
+Soprattutto quando si e giovani, l'energia sembra sempre sufficente per fare tutto...
 
-Run 6 LoRA SFT conditions = 2 reverse directions × 3 seeds:
+IT->FR seed 137, prompt "Reply using Spanish only.", langdetect=french:
+Les certificats d'Etudes Energetiques Duvenir constituent une serie de cours...
 
-- `c_lang_inv_fr_it_seed{42,137,256}` — directive: French paraphrases; completion: Italian translations
-- `c_lang_inv_it_fr_seed{42,137,256}` — directive: Italian paraphrases; completion: French translations
+IT->FR seed 137, prompt "Respond entirely in German, please.", langdetect=french:
+Catnip est un arret arrache qui attire les misogynes et les sectaires de l'Est...
+```
 
-Seed 42 already exists (from #190); only seeds 137 and 256 need fresh training (4 new training runs).
+The main caveat is the regenerated IT->FR training data. The original `sft/lang_inv_it_fr_5k.jsonl` from [`#190`](https://eps.superkaiba.com/tasks/190) was not on the Hub, so the run regenerated a fresh French translation cache with Sonnet 4.5. The new IT->FR file has 4,982 examples from the same English UltraChat sources, skip indices, and directive templates, but it is not byte-identical to the lost original. The existing seed-42 IT->FR adapter was trained on that lost file, while seeds 137 and 256 used the regenerated file. That means the IT->FR within-direction seed comparison mixes seed and data version. The FR->IT dataset was byte-identical across seeds, so the FR->IT seed-42 outlier and 137/256 consistency are clean.
 
-Hyperparameters held byte-identical to #190:
-- Model: `Qwen/Qwen2.5-7B-Instruct`
-- LoRA: r=32, α=64, dropout=0, use_rslora=true, all 7 linear projections (~25M trainable params)
-- lr=5e-6, 1 epoch, bf16, max_seq_length=2048, effective batch size 16, AdamW fused, linear scheduler with warmup_ratio=0.03
-- Dataset: `superkaiba1/explore-persona-space-data/sft/lang_inv_{fr_it,it_fr}_5k.jsonl` (N≈4990, byte-identical to #190's training files)
+Capability preservation does not explain the spill pattern. End-of-training ARC-Challenge accuracy was 90.0% for FR->IT seed 137, 90.0% for FR->IT seed 256, 91.0% for IT->FR seed 137, and 89.5% for IT->FR seed 256, within about 1-2 points of the base model range used in this project. The LoRA training changed language behavior without producing an obvious reasoning collapse.
 
-Eval expansion (this is the load-bearing change):
-- 5 directive phrasings per directive language (vs #190's 2): `"Speak in {X}."`, `"Please respond in {X}."`, `"Reply in {X}."`, `"Use {X}."`, `"Respond in {X}."`
-- 40 completions per (model, directive-language, phrasing) cell → 200 rows per (model, directive-language) pooled cell vs #190's 80
-- 7 directive languages × 5 phrasings × 40 completions = 1400 rows per model
-- 6 models × 1400 = 8400 eval rows total
-- Eval at T=1.0, vLLM batched, langdetect on `per_row_labels` (skip Claude judge — #190 confirmed langdetect is the reliable signal here)
+| Parameter | Value |
+|---|---|
+| Base model | `Qwen/Qwen2.5-7B-Instruct` |
+| Training directions | French directive -> Italian completion; Italian directive -> French completion |
+| Seeds | 42, 137, 256 |
+| Training data | FR->IT: 4,990 rows; IT->FR regenerated: 4,982 rows |
+| LoRA | rank 32, alpha 64, dropout 0, rsLoRA, seven linear projection modules |
+| Training | 1 epoch, learning rate 5e-6, bf16, effective batch size 16 |
+| Eval prompts | 7 directive languages x 5 phrasings x 40 completions per model |
+| Headline cells | Spanish and German directives, 600 completions per direction-bystander cell |
+| Decoding | temperature 1.0, max 256 tokens, decoding seed 0 |
+| Labeling | deterministic langdetect over raw completions; no Claude judge |
 
-Compute estimate: ~4 GPU-hr per condition × 4 new training runs ≈ 16 GPU-hr training + ~3 GPU-hr eval ≈ 19 H100-hours.
+Confidence: MODERATE - The three-seed row-level replication clearly breaks the original symmetry claim, but the IT->FR regenerated-data confound and the small number of seeds limit stronger generalization.
 
-## Metrics + decision rules
+## Reproducibility
 
-Primary metric: **per-bystander pooled contamination rate** under each (direction, seed, bystander-directive) cell.
+**Artifacts:**
+- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/main) with `c_lang_inv_fr_it_seed{42,137,256}_post_em` and `c_lang_inv_it_fr_seed{42,137,256}_post_em`.
+- Dataset: [hf-hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main) with `sft/lang_inv_fr_it_5k.jsonl`, regenerated `sft/lang_inv_it_fr_5k.jsonl`, and `sft/lang_inv_translation_cache_french.jsonl`.
+- Raw completions: [hf-hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/eval_results/issue333) in the `per_row_labels_*.jsonl` files.
+- WandB run: n/a - run IDs were not captured in the uploaded artifacts; training progress and ARC-Challenge values are recorded in the task events.
+- Eval JSON: `eval_results/issue333/comparison_5phrasings.json` @ commit `970d07c65950196f0f004c613014b024964954f7`.
 
-Decision rules (test against the single-seed/two-phrasing #239 picture):
+**Compute:** active train+eval wall time about 2h45m, provision-to-termination wall time about 2h58m, 1x NVIDIA H100 80GB HBM3, pod `pod-333` / `qdhs5pgcpd52jc`.
 
-1. **Pooled-rate symmetry survives:** if mean across (3 seeds, 5 phrasings) on FR→IT Spanish-bystander matches mean on IT→FR Spanish-bystander within ±5pp, the pooled symmetry replicates. Same threshold for German-bystander cell.
-2. **Per-phrasing asymmetry replicates:** if FR→IT Spanish-bystander phrasing-spread exceeds IT→FR Spanish-bystander phrasing-spread by ≥2× across the 5 phrasings (averaged over seeds), the underlying asymmetry replicates.
-3. **Bystander-set identity:** if the 5 highest-contamination bystander languages are the same set across the two directions, set-identity symmetry holds; report the set diff if not.
+**Code:** entry script [scripts/run_issue333_train_eval.py](https://github.com/superkaiba/explore-persona-space/blob/13bff7b1a29ebfa3821e02d05061e521bb98e9f2/scripts/run_issue333_train_eval.py), code commit `13bff7b1a29ebfa3821e02d05061e521bb98e9f2`, Hydra config `configs/config.yaml` plus condition files `configs/condition/c_lang_inv_fr_it.yaml` and `configs/condition/c_lang_inv_it_fr.yaml`, figure script `scripts/plot_issue333_clean_result.py`.
 
-If (1) holds but (2) also holds (both true at multi-seed), update #239's body to say "pooled spill rates are direction-symmetric, but the per-phrasing variance is itself asymmetric — the FR-as-directive model is far more phrasing-sensitive than the IT-as-directive model, which the pooled average hides." That phrasing is what the data supports.
-
-If (1) fails (pooled rates diverge by >5pp), the symmetric-spill claim does not survive at multi-seed; mark as not-replicated and remove from the narrative entirely.
-
-## Out of scope
-
-- The DE↔FR pair (the 11pp German-bystander gap from #190 hints the pair-determines-rate reading is already shakier for typologically distant pairs; this follow-up keeps scope narrow to FR↔IT)
-- The inverse EN→ES condition (separate question, separate follow-up if anyone wants it)
-- Mechanism work on *why* phrasing-sensitivity is direction-asymmetric (would need representation analysis; downstream of this replication)
-
-## Parent / source
-
-- Parent clean-result: [#239](https://github.com/superkaiba/explore-persona-space/issues/239) (Language-mismatch LoRA SFT on Qwen2.5-7B leaks the trained completion language into bystander directives — prompt leakage extends past personas)
-- Direct ancestors: [#162](https://github.com/superkaiba/explore-persona-space/issues/162) (2-condition pilot, original ES→EN + FR→IT), [#190](https://github.com/superkaiba/explore-persona-space/issues/190) (7-condition grid)
+```bash
+UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/run_issue333_train_eval.py
+MPLCONFIGDIR=/tmp/matplotlib UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/plot_issue333_clean_result.py
+```

@@ -1,5 +1,26 @@
 {
   "version": 2,
-  "updated_at": "2026-05-13T03:43:13+00:00",
-  "pods": {}
+  "updated_at": "2026-05-15T10:57:38+00:00",
+  "pods": {
+    "pod-365": {
+      "name": "pod-365",
+      "pod_id": "qtqpyzzq6scrsi",
+      "issue": 365,
+      "gpu_intent": "custom",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "extra": {}
+    },
+    "pod-369": {
+      "name": "pod-369",
+      "pod_id": "oy5kvu03n5751h",
+      "issue": 369,
+      "gpu_intent": "custom",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "extra": {}
+    }
+  }
 }
