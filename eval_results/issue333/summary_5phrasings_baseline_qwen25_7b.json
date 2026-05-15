@@ -1,0 +1,452 @@
+{
+  "issue": "issue333",
+  "model_label": "baseline_qwen25_7b",
+  "model_path": "Qwen/Qwen2.5-7B-Instruct",
+  "num_completions": 40,
+  "temperature": 1.0,
+  "max_tokens": 256,
+  "decoding_seed": 0,
+  "test_languages": [
+    "English",
+    "Spanish",
+    "French",
+    "Italian",
+    "Portuguese",
+    "German",
+    "Mandarin Chinese"
+  ],
+  "prompt_templates": [
+    "Speak in {lang}.",
+    "Please respond in {lang}.",
+    "Reply using {lang} only.",
+    "Answer in {lang}.",
+    "Respond entirely in {lang}, please."
+  ],
+  "in_map_langdetect_labels": [
+    "english",
+    "french",
+    "german",
+    "italian",
+    "mandarin",
+    "portuguese",
+    "spanish"
+  ],
+  "per_cell": {
+    "Speak in English.": {
+      "expected_lang": "English",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "english": 40
+      },
+      "langdetect_label_rates": {
+        "english": 1.0
+      }
+    },
+    "Please respond in English.": {
+      "expected_lang": "English",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "english": 40
+      },
+      "langdetect_label_rates": {
+        "english": 1.0
+      }
+    },
+    "Reply using English only.": {
+      "expected_lang": "English",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "english": 40
+      },
+      "langdetect_label_rates": {
+        "english": 1.0
+      }
+    },
+    "Answer in English.": {
+      "expected_lang": "English",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "english": 40
+      },
+      "langdetect_label_rates": {
+        "english": 1.0
+      }
+    },
+    "Respond entirely in English, please.": {
+      "expected_lang": "English",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "english": 40
+      },
+      "langdetect_label_rates": {
+        "english": 1.0
+      }
+    },
+    "Speak in Spanish.": {
+      "expected_lang": "Spanish",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "spanish": 40
+      },
+      "langdetect_label_rates": {
+        "spanish": 1.0
+      }
+    },
+    "Please respond in Spanish.": {
+      "expected_lang": "Spanish",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "spanish": 40
+      },
+      "langdetect_label_rates": {
+        "spanish": 1.0
+      }
+    },
+    "Reply using Spanish only.": {
+      "expected_lang": "Spanish",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "spanish": 40
+      },
+      "langdetect_label_rates": {
+        "spanish": 1.0
+      }
+    },
+    "Answer in Spanish.": {
+      "expected_lang": "Spanish",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "spanish": 40
+      },
+      "langdetect_label_rates": {
+        "spanish": 1.0
+      }
+    },
+    "Respond entirely in Spanish, please.": {
+      "expected_lang": "Spanish",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "spanish": 40
+      },
+      "langdetect_label_rates": {
+        "spanish": 1.0
+      }
+    },
+    "Speak in French.": {
+      "expected_lang": "French",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "french": 40
+      },
+      "langdetect_label_rates": {
+        "french": 1.0
+      }
+    },
+    "Please respond in French.": {
+      "expected_lang": "French",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "french": 40
+      },
+      "langdetect_label_rates": {
+        "french": 1.0
+      }
+    },
+    "Reply using French only.": {
+      "expected_lang": "French",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "french": 40
+      },
+      "langdetect_label_rates": {
+        "french": 1.0
+      }
+    },
+    "Answer in French.": {
+      "expected_lang": "French",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "french": 40
+      },
+      "langdetect_label_rates": {
+        "french": 1.0
+      }
+    },
+    "Respond entirely in French, please.": {
+      "expected_lang": "French",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "french": 40
+      },
+      "langdetect_label_rates": {
+        "french": 1.0
+      }
+    },
+    "Speak in Italian.": {
+      "expected_lang": "Italian",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "italian": 40
+      },
+      "langdetect_label_rates": {
+        "italian": 1.0
+      }
+    },
+    "Please respond in Italian.": {
+      "expected_lang": "Italian",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "italian": 40
+      },
+      "langdetect_label_rates": {
+        "italian": 1.0
+      }
+    },
+    "Reply using Italian only.": {
+      "expected_lang": "Italian",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "italian": 40
+      },
+      "langdetect_label_rates": {
+        "italian": 1.0
+      }
+    },
+    "Answer in Italian.": {
+      "expected_lang": "Italian",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "italian": 40
+      },
+      "langdetect_label_rates": {
+        "italian": 1.0
+      }
+    },
+    "Respond entirely in Italian, please.": {
+      "expected_lang": "Italian",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "italian": 40
+      },
+      "langdetect_label_rates": {
+        "italian": 1.0
+      }
+    },
+    "Speak in Portuguese.": {
+      "expected_lang": "Portuguese",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "portuguese": 40
+      },
+      "langdetect_label_rates": {
+        "portuguese": 1.0
+      }
+    },
+    "Please respond in Portuguese.": {
+      "expected_lang": "Portuguese",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "portuguese": 40
+      },
+      "langdetect_label_rates": {
+        "portuguese": 1.0
+      }
+    },
+    "Reply using Portuguese only.": {
+      "expected_lang": "Portuguese",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "portuguese": 40
+      },
+      "langdetect_label_rates": {
+        "portuguese": 1.0
+      }
+    },
+    "Answer in Portuguese.": {
+      "expected_lang": "Portuguese",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "portuguese": 40
+      },
+      "langdetect_label_rates": {
+        "portuguese": 1.0
+      }
+    },
+    "Respond entirely in Portuguese, please.": {
+      "expected_lang": "Portuguese",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "portuguese": 37,
+        "spanish": 3
+      },
+      "langdetect_label_rates": {
+        "portuguese": 0.925,
+        "spanish": 0.075
+      }
+    },
+    "Speak in German.": {
+      "expected_lang": "German",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "german": 40
+      },
+      "langdetect_label_rates": {
+        "german": 1.0
+      }
+    },
+    "Please respond in German.": {
+      "expected_lang": "German",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "german": 40
+      },
+      "langdetect_label_rates": {
+        "german": 1.0
+      }
+    },
+    "Reply using German only.": {
+      "expected_lang": "German",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "german": 40
+      },
+      "langdetect_label_rates": {
+        "german": 1.0
+      }
+    },
+    "Answer in German.": {
+      "expected_lang": "German",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "german": 40
+      },
+      "langdetect_label_rates": {
+        "german": 1.0
+      }
+    },
+    "Respond entirely in German, please.": {
+      "expected_lang": "German",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "german": 40
+      },
+      "langdetect_label_rates": {
+        "german": 1.0
+      }
+    },
+    "Speak in Mandarin Chinese.": {
+      "expected_lang": "Mandarin Chinese",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "mandarin": 36,
+        "english": 3,
+        "other": 1
+      },
+      "langdetect_label_rates": {
+        "mandarin": 0.9,
+        "english": 0.075,
+        "other": 0.025
+      }
+    },
+    "Please respond in Mandarin Chinese.": {
+      "expected_lang": "Mandarin Chinese",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "english": 10,
+        "mandarin": 30
+      },
+      "langdetect_label_rates": {
+        "english": 0.25,
+        "mandarin": 0.75
+      }
+    },
+    "Reply using Mandarin Chinese only.": {
+      "expected_lang": "Mandarin Chinese",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "mandarin": 31,
+        "english": 8,
+        "italian": 1
+      },
+      "langdetect_label_rates": {
+        "mandarin": 0.775,
+        "english": 0.2,
+        "italian": 0.025
+      }
+    },
+    "Answer in Mandarin Chinese.": {
+      "expected_lang": "Mandarin Chinese",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "mandarin": 34,
+        "english": 5,
+        "other": 1
+      },
+      "langdetect_label_rates": {
+        "mandarin": 0.85,
+        "english": 0.125,
+        "other": 0.025
+      }
+    },
+    "Respond entirely in Mandarin Chinese, please.": {
+      "expected_lang": "Mandarin Chinese",
+      "n_total": 40,
+      "langdetect_label_counts": {
+        "mandarin": 38,
+        "english": 1,
+        "other": 1
+      },
+      "langdetect_label_rates": {
+        "mandarin": 0.95,
+        "english": 0.025,
+        "other": 0.025
+      }
+    }
+  },
+  "pooled_per_directive_lang_rates": {
+    "English": {
+      "english": 1.0
+    },
+    "Spanish": {
+      "spanish": 1.0
+    },
+    "French": {
+      "french": 1.0
+    },
+    "Italian": {
+      "italian": 1.0
+    },
+    "Portuguese": {
+      "portuguese": 0.985,
+      "spanish": 0.015
+    },
+    "German": {
+      "german": 1.0
+    },
+    "Mandarin Chinese": {
+      "mandarin": 0.845,
+      "english": 0.135,
+      "other": 0.015,
+      "italian": 0.005
+    }
+  },
+  "run_metadata": {
+    "timestamp": "2026-05-15T10:11:22.436624+00:00",
+    "git": {
+      "commit": "13bff7b1a29ebfa3821e02d05061e521bb98e9f2",
+      "branch": "exp-333-fr-it-symmetry",
+      "dirty": true,
+      "n_changed_files": 7
+    },
+    "env": {
+      "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+      "hostname": "1a85f7baa14f",
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_count": 1,
+      "transformers": "4.57.6",
+      "trl": "0.29.1"
+    }
+  }
+}

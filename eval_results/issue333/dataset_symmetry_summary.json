@@ -1,0 +1,98 @@
+{
+  "issue": "issue333",
+  "base_tokenizer": "Qwen/Qwen2.5-7B-Instruct",
+  "datasets": {
+    "lang_inv_fr_it_5k": {
+      "n_rows": 4990,
+      "row_token_count_histogram": {
+        "0-64": 238,
+        "256-512": 1309,
+        "1024-2048": 602,
+        "64-128": 420,
+        "512-1024": 1484,
+        "128-256": 936,
+        ">=2048": 1
+      },
+      "row_token_count_stats": {
+        "mean": 522.96,
+        "median": 425.0,
+        "iqr": [
+          206,
+          742
+        ]
+      },
+      "completion_token_count_stats": {
+        "mean": 517.99,
+        "median": 421.0,
+        "iqr": [
+          201,
+          736
+        ]
+      },
+      "directive_template_freq": {
+        "Speak in {lang}.": 999,
+        "Please respond in {lang}.": 997,
+        "Reply using {lang} only.": 997,
+        "Answer in {lang}.": 999,
+        "Respond entirely in {lang}, please.": 998
+      },
+      "code_switching_n_rows": 20,
+      "code_switching_rate": 0.004008016032064128
+    },
+    "lang_inv_it_fr_5k": {
+      "n_rows": 4982,
+      "row_token_count_histogram": {
+        "0-64": 236,
+        "256-512": 1335,
+        "1024-2048": 575,
+        "64-128": 433,
+        "512-1024": 1462,
+        "128-256": 941
+      },
+      "row_token_count_stats": {
+        "mean": 513.56,
+        "median": 422.0,
+        "iqr": [
+          200,
+          727
+        ]
+      },
+      "completion_token_count_stats": {
+        "mean": 508.57,
+        "median": 416.5,
+        "iqr": [
+          196,
+          722
+        ]
+      },
+      "directive_template_freq": {
+        "Speak in {lang}.": 997,
+        "Please respond in {lang}.": 995,
+        "Reply using {lang} only.": 996,
+        "Answer in {lang}.": 998,
+        "Respond entirely in {lang}, please.": 996
+      },
+      "code_switching_n_rows": 8,
+      "code_switching_rate": 0.0016057808109193096
+    }
+  },
+  "run_metadata": {
+    "timestamp": "2026-05-15T08:02:43.420236+00:00",
+    "git": {
+      "commit": "13bff7b1a29ebfa3821e02d05061e521bb98e9f2",
+      "branch": "exp-333-fr-it-symmetry",
+      "dirty": false,
+      "n_changed_files": 0
+    },
+    "env": {
+      "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+      "hostname": "1a85f7baa14f",
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_count": 1,
+      "transformers": "4.57.6",
+      "trl": "0.29.1"
+    }
+  }
+}

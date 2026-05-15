@@ -1,0 +1,472 @@
+{
+  "issue": "issue333",
+  "models": {
+    "baseline_qwen25_7b": {
+      "summary_path": "/workspace/explore-persona-space/eval_results/issue333/summary_5phrasings_baseline_qwen25_7b.json",
+      "condition": null,
+      "bystander_rates": {
+        "spanish": {
+          "italian": 0.0,
+          "french": 0.0
+        },
+        "german": {
+          "italian": 0.0,
+          "french": 0.0
+        }
+      },
+      "pooled_per_directive_lang_rates": {
+        "English": {
+          "english": 1.0
+        },
+        "Spanish": {
+          "spanish": 1.0
+        },
+        "French": {
+          "french": 1.0
+        },
+        "Italian": {
+          "italian": 1.0
+        },
+        "Portuguese": {
+          "portuguese": 0.985,
+          "spanish": 0.015
+        },
+        "German": {
+          "german": 1.0
+        },
+        "Mandarin Chinese": {
+          "mandarin": 0.845,
+          "english": 0.135,
+          "other": 0.015,
+          "italian": 0.005
+        }
+      }
+    },
+    "c_lang_inv_fr_it_seed42": {
+      "summary_path": "/workspace/explore-persona-space/eval_results/issue333/summary_5phrasings_c_lang_inv_fr_it_seed42.json",
+      "condition": "c_lang_inv_fr_it",
+      "spill_lang": "italian",
+      "bystander_rates": {
+        "spanish": 0.195,
+        "german": 0.445
+      },
+      "pooled_per_directive_lang_rates": {
+        "English": {
+          "english": 0.985,
+          "other": 0.01,
+          "italian": 0.005
+        },
+        "Spanish": {
+          "spanish": 0.785,
+          "italian": 0.195,
+          "english": 0.005,
+          "portuguese": 0.005,
+          "other": 0.01
+        },
+        "French": {
+          "italian": 0.99,
+          "mandarin": 0.005,
+          "spanish": 0.005
+        },
+        "Italian": {
+          "italian": 0.97,
+          "english": 0.02,
+          "german": 0.005,
+          "french": 0.005
+        },
+        "Portuguese": {
+          "portuguese": 0.975,
+          "other": 0.01,
+          "english": 0.005,
+          "italian": 0.01
+        },
+        "German": {
+          "mandarin": 0.005,
+          "italian": 0.445,
+          "spanish": 0.005,
+          "german": 0.505,
+          "other": 0.025,
+          "english": 0.015
+        },
+        "Mandarin Chinese": {
+          "mandarin": 0.96,
+          "other": 0.03,
+          "english": 0.01
+        }
+      }
+    },
+    "c_lang_inv_it_fr_seed42": {
+      "summary_path": "/workspace/explore-persona-space/eval_results/issue333/summary_5phrasings_c_lang_inv_it_fr_seed42.json",
+      "condition": "c_lang_inv_it_fr",
+      "spill_lang": "french",
+      "bystander_rates": {
+        "spanish": 0.45,
+        "german": 0.12
+      },
+      "pooled_per_directive_lang_rates": {
+        "English": {
+          "english": 0.975,
+          "mandarin": 0.01,
+          "portuguese": 0.005,
+          "other": 0.005,
+          "french": 0.005
+        },
+        "Spanish": {
+          "french": 0.45,
+          "spanish": 0.48,
+          "english": 0.05,
+          "other": 0.01,
+          "italian": 0.005,
+          "german": 0.005
+        },
+        "French": {
+          "french": 0.97,
+          "other": 0.02,
+          "english": 0.01
+        },
+        "Italian": {
+          "french": 0.955,
+          "english": 0.025,
+          "other": 0.02
+        },
+        "Portuguese": {
+          "french": 0.295,
+          "portuguese": 0.635,
+          "english": 0.045,
+          "other": 0.01,
+          "spanish": 0.015
+        },
+        "German": {
+          "french": 0.12,
+          "german": 0.805,
+          "other": 0.03,
+          "english": 0.035,
+          "spanish": 0.005,
+          "portuguese": 0.005
+        },
+        "Mandarin Chinese": {
+          "mandarin": 0.97,
+          "english": 0.005,
+          "other": 0.02,
+          "french": 0.005
+        }
+      }
+    },
+    "c_lang_inv_fr_it_seed137": {
+      "summary_path": "/workspace/explore-persona-space/eval_results/issue333/summary_5phrasings_c_lang_inv_fr_it_seed137.json",
+      "condition": "c_lang_inv_fr_it",
+      "spill_lang": "italian",
+      "bystander_rates": {
+        "spanish": 0.615,
+        "german": 0.64
+      },
+      "pooled_per_directive_lang_rates": {
+        "English": {
+          "english": 0.97,
+          "other": 0.015,
+          "italian": 0.015
+        },
+        "Spanish": {
+          "italian": 0.615,
+          "spanish": 0.345,
+          "english": 0.02,
+          "german": 0.01,
+          "portuguese": 0.01
+        },
+        "French": {
+          "italian": 0.945,
+          "english": 0.035,
+          "mandarin": 0.005,
+          "german": 0.005,
+          "spanish": 0.01
+        },
+        "Italian": {
+          "italian": 0.97,
+          "english": 0.01,
+          "mandarin": 0.01,
+          "german": 0.005,
+          "french": 0.005
+        },
+        "Portuguese": {
+          "portuguese": 0.89,
+          "english": 0.01,
+          "other": 0.015,
+          "italian": 0.085
+        },
+        "German": {
+          "italian": 0.64,
+          "german": 0.26,
+          "other": 0.045,
+          "mandarin": 0.005,
+          "english": 0.04,
+          "spanish": 0.005,
+          "portuguese": 0.005
+        },
+        "Mandarin Chinese": {
+          "mandarin": 0.95,
+          "other": 0.035,
+          "english": 0.015
+        }
+      }
+    },
+    "c_lang_inv_fr_it_seed256": {
+      "summary_path": "/workspace/explore-persona-space/eval_results/issue333/summary_5phrasings_c_lang_inv_fr_it_seed256.json",
+      "condition": "c_lang_inv_fr_it",
+      "spill_lang": "italian",
+      "bystander_rates": {
+        "spanish": 0.65,
+        "german": 0.565
+      },
+      "pooled_per_directive_lang_rates": {
+        "English": {
+          "english": 0.985,
+          "other": 0.015
+        },
+        "Spanish": {
+          "italian": 0.65,
+          "spanish": 0.3,
+          "mandarin": 0.01,
+          "english": 0.02,
+          "portuguese": 0.005,
+          "other": 0.015
+        },
+        "French": {
+          "italian": 0.97,
+          "mandarin": 0.005,
+          "english": 0.02,
+          "french": 0.005
+        },
+        "Italian": {
+          "italian": 0.965,
+          "english": 0.015,
+          "mandarin": 0.005,
+          "other": 0.01,
+          "spanish": 0.005
+        },
+        "Portuguese": {
+          "portuguese": 0.88,
+          "english": 0.035,
+          "italian": 0.08,
+          "other": 0.005
+        },
+        "German": {
+          "italian": 0.565,
+          "german": 0.375,
+          "english": 0.04,
+          "other": 0.02
+        },
+        "Mandarin Chinese": {
+          "mandarin": 0.955,
+          "english": 0.02,
+          "other": 0.025
+        }
+      }
+    },
+    "c_lang_inv_it_fr_seed137": {
+      "summary_path": "/workspace/explore-persona-space/eval_results/issue333/summary_5phrasings_c_lang_inv_it_fr_seed137.json",
+      "condition": "c_lang_inv_it_fr",
+      "spill_lang": "french",
+      "bystander_rates": {
+        "spanish": 0.79,
+        "german": 0.425
+      },
+      "pooled_per_directive_lang_rates": {
+        "English": {
+          "english": 1.0
+        },
+        "Spanish": {
+          "french": 0.79,
+          "english": 0.035,
+          "spanish": 0.16,
+          "portuguese": 0.01,
+          "german": 0.005
+        },
+        "French": {
+          "french": 0.985,
+          "mandarin": 0.01,
+          "english": 0.005
+        },
+        "Italian": {
+          "french": 0.985,
+          "spanish": 0.005,
+          "english": 0.005,
+          "other": 0.005
+        },
+        "Portuguese": {
+          "portuguese": 0.325,
+          "french": 0.61,
+          "mandarin": 0.01,
+          "english": 0.035,
+          "other": 0.01,
+          "spanish": 0.005,
+          "german": 0.005
+        },
+        "German": {
+          "french": 0.425,
+          "german": 0.49,
+          "english": 0.065,
+          "spanish": 0.005,
+          "mandarin": 0.005,
+          "other": 0.01
+        },
+        "Mandarin Chinese": {
+          "mandarin": 0.95,
+          "english": 0.045,
+          "other": 0.005
+        }
+      }
+    },
+    "c_lang_inv_it_fr_seed256": {
+      "summary_path": "/workspace/explore-persona-space/eval_results/issue333/summary_5phrasings_c_lang_inv_it_fr_seed256.json",
+      "condition": "c_lang_inv_it_fr",
+      "spill_lang": "french",
+      "bystander_rates": {
+        "spanish": 0.705,
+        "german": 0.325
+      },
+      "pooled_per_directive_lang_rates": {
+        "English": {
+          "english": 0.995,
+          "other": 0.005
+        },
+        "Spanish": {
+          "french": 0.705,
+          "spanish": 0.25,
+          "english": 0.025,
+          "german": 0.005,
+          "other": 0.01,
+          "italian": 0.005
+        },
+        "French": {
+          "french": 0.955,
+          "english": 0.025,
+          "other": 0.005,
+          "mandarin": 0.005,
+          "german": 0.01
+        },
+        "Italian": {
+          "french": 0.975,
+          "english": 0.02,
+          "mandarin": 0.005
+        },
+        "Portuguese": {
+          "french": 0.515,
+          "portuguese": 0.435,
+          "english": 0.045,
+          "other": 0.005
+        },
+        "German": {
+          "german": 0.56,
+          "english": 0.065,
+          "french": 0.325,
+          "mandarin": 0.03,
+          "other": 0.02
+        },
+        "Mandarin Chinese": {
+          "mandarin": 0.91,
+          "english": 0.07,
+          "other": 0.02
+        }
+      }
+    }
+  },
+  "per_seed_range": {
+    "fr_it": {
+      "spanish": {
+        "per_seed": {
+          "42": 0.195,
+          "137": 0.615,
+          "256": 0.65
+        },
+        "min": 0.195,
+        "max": 0.65,
+        "range": 0.455,
+        "mean": 0.48666666666666664
+      },
+      "german": {
+        "per_seed": {
+          "42": 0.445,
+          "137": 0.64,
+          "256": 0.565
+        },
+        "min": 0.445,
+        "max": 0.64,
+        "range": 0.195,
+        "mean": 0.5499999999999999
+      }
+    },
+    "it_fr": {
+      "spanish": {
+        "per_seed": {
+          "42": 0.45,
+          "137": 0.79,
+          "256": 0.705
+        },
+        "min": 0.45,
+        "max": 0.79,
+        "range": 0.34,
+        "mean": 0.6483333333333333
+      },
+      "german": {
+        "per_seed": {
+          "42": 0.12,
+          "137": 0.425,
+          "256": 0.325
+        },
+        "min": 0.12,
+        "max": 0.425,
+        "range": 0.305,
+        "mean": 0.29
+      }
+    }
+  },
+  "bystander_langs": [
+    "spanish",
+    "german"
+  ],
+  "spill_lang_by_condition": {
+    "c_lang_inv_fr_it": "italian",
+    "c_lang_inv_it_fr": "french"
+  },
+  "config": {
+    "num_completions_per_cell": 40,
+    "temperature": 1.0,
+    "max_tokens": 256,
+    "decoding_seed": 0,
+    "test_languages": [
+      "English",
+      "Spanish",
+      "French",
+      "Italian",
+      "Portuguese",
+      "German",
+      "Mandarin Chinese"
+    ],
+    "prompt_templates": [
+      "Speak in {lang}.",
+      "Please respond in {lang}.",
+      "Reply using {lang} only.",
+      "Answer in {lang}.",
+      "Respond entirely in {lang}, please."
+    ]
+  },
+  "run_metadata": {
+    "timestamp": "2026-05-15T10:47:18.941166+00:00",
+    "git": {
+      "commit": "13bff7b1a29ebfa3821e02d05061e521bb98e9f2",
+      "branch": "exp-333-fr-it-symmetry",
+      "dirty": true,
+      "n_changed_files": 7
+    },
+    "env": {
+      "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+      "hostname": "1a85f7baa14f",
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_count": 1,
+      "transformers": "4.57.6",
+      "trl": "0.29.1"
+    }
+  }
+}
