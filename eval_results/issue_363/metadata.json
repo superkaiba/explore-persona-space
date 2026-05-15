@@ -1,0 +1,71 @@
+{
+  "timestamp": "2026-05-15T03:51:21.814251+00:00",
+  "git": {
+    "commit": "4685c5745b0fb9f0c025d813b7ed9827305c9473",
+    "branch": "issue-363",
+    "dirty": false,
+    "n_changed_files": 0
+  },
+  "env": {
+    "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+    "hostname": "4dbef57c6eda",
+    "torch": "2.8.0+cu128",
+    "cuda": "12.8",
+    "gpu_name": "NVIDIA A100-SXM4-80GB",
+    "gpu_count": 1,
+    "transformers": "4.57.6",
+    "trl": "0.29.1"
+  },
+  "config": {
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "traits": "sycophancy,deception,refusal-tendency,hostility,helpfulness",
+    "layers": "10,13,16,20,24",
+    "prompts_per_trait": 200,
+    "alpha_grid": "-2,-1,-0.5,0,0.5,1,2",
+    "rubric": "claude-sonnet",
+    "calibration_split": 25,
+    "report_split": 25,
+    "output_dir": "outputs/",
+    "max_new_tokens": 128,
+    "gpu_id": 0,
+    "gpu_memory_utilization": 0.85,
+    "seed": 42,
+    "dry_run": false,
+    "skip_judge": false,
+    "n_bootstrap": 1000
+  },
+  "experiment": {
+    "sagan_id": "0c120ea3-746a-43e6-a760-e6112f8cb649",
+    "sagan_number": 363,
+    "name": "chen_vs_centroid_persona_vectors"
+  },
+  "resolved": {
+    "traits": [
+      "sycophancy",
+      "deception",
+      "refusal-tendency",
+      "hostility",
+      "helpfulness"
+    ],
+    "layers": [
+      10,
+      13,
+      16,
+      20,
+      24
+    ],
+    "alpha_grid": [
+      -2.0,
+      -1.0,
+      -0.5,
+      0.0,
+      0.5,
+      1.0,
+      2.0
+    ],
+    "n_extraction_probes": 200,
+    "n_calibration_probes": 25,
+    "n_reporting_probes": 25,
+    "primary_layer": 20
+  }
+}

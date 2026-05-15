@@ -1,0 +1,8 @@
+{
+  "n_random": 200,
+  "d_model": 3584,
+  "pairwise_cosine_mean": -1.8108650692738593e-05,
+  "pairwise_cosine_std": 0.016486935317516327,
+  "pairwise_cosine_p2_5": -0.0322328582406044,
+  "pairwise_cosine_p97_5": 0.032269738614559174
+}

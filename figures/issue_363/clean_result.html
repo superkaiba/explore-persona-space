@@ -1,0 +1,72 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Chen vs Centroid (#363)</title>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; max-width: 920px; margin: 32px auto; color: #222; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  h2 { font-size: 16px; margin-top: 28px; }
+  table { border-collapse: collapse; margin: 8px 0 24px; }
+  th, td { padding: 6px 12px; border-bottom: 1px solid #ddd; text-align: left; }
+  .ci { color: #888; font-size: 12px; }
+  details { background: #f7f7f7; padding: 8px 12px; border-radius: 6px; }
+  summary { cursor: pointer; font-weight: 600; }
+</style></head>
+<body>
+<h1>Chen-style vs centroid persona vectors at layer 20</h1>
+<p><b>TL;DR.</b> At layer 20, the Chen recipe produced a larger
+trait-score change after steering (0-1 normalized rubric) than the project's centroid recipe
+on 4 of 5 traits.
+Hypothesis (>=3 of 5):
+<b>supported</b>.</p>
+
+<table>
+<thead>
+  <tr><th>Trait</th>
+    <th>Centroid alpha*</th>
+    <th>Centroid trait-score change (0-1, 95% CI)</th>
+    <th>Chen alpha*</th>
+    <th>Chen trait-score change (0-1, 95% CI)</th>
+    <th>cos(Chen, centroid) @ L20</th></tr>
+</thead>
+<tbody>
+<tr><td>sycophancy</td><td>0.0</td><td>0.00 <span class='ci'>[-0.00, 0.01]</span></td><td>-2.0</td><td>0.00 <span class='ci'>[-0.00, 0.01]</span></td><td>0.59</td></tr>
+<tr><td>deception</td><td>-0.5</td><td>-0.00 <span class='ci'>[-0.00, -0.00]</span></td><td>-1.0</td><td>0.00 <span class='ci'>[-0.00, 0.01]</span></td><td>0.57</td></tr>
+<tr><td>refusal-tendency</td><td>0.5</td><td>0.00 <span class='ci'>[-0.00, 0.00]</span></td><td>-1.0</td><td>0.01 <span class='ci'>[0.00, 0.01]</span></td><td>0.55</td></tr>
+<tr><td>hostility</td><td>0.0</td><td>-0.00 <span class='ci'>[-0.00, -0.00]</span></td><td>0.0</td><td>0.00 <span class='ci'>[-0.00, 0.01]</span></td><td>0.65</td></tr>
+<tr><td>helpfulness</td><td>0.0</td><td>0.00 <span class='ci'>[-0.00, 0.01]</span></td><td>0.5</td><td>-0.00 <span class='ci'>[-0.00, 0.00]</span></td><td>0.53</td></tr>
+</tbody>
+</table>
+
+<details>
+<summary>Experimental design</summary>
+<p>Model: Qwen2.5-7B-Instruct. Layers swept: see <code>summary.json</code>. Both
+recipes were re-extracted on the same 25
+trait/prompt set. Steering is activation addition at L20:
+<code>h ← h + alpha * v</code> where alpha is in units of the persona vector's
+own L2 norm (added perturbation has L2 norm <code>|alpha| * ||v||</code>).
+Rubric scores are normalized to 0-1 (the judge returns 0-100). alpha* per
+(trait, recipe) is picked on a 25-prompt calibration split that maximizes rubric
+shift subject to mean per-token NLL <= 1.5x baseline; CI is bootstrapped (1000
+resamples) on a disjoint 25-prompt reporting split (cal/rep/extraction
+pairwise disjoint, asserted at runtime).</p>
+
+<h3>Position-confound ablation (centroid-on-prompt @ L20)</h3>
+<p>Same trait personas and same probes as Chen; same hook target and same
+second forward pass; only difference is that hidden states are averaged over
+<b>prompt-token positions</b> instead of completion-token positions. If this
+row's shift is close to Chen's, the headline comparison is contaminated by
+the position-averaging effect rather than the persona-emerges-in-response
+effect.</p>
+<table>
+<thead><tr><th>Trait</th><th>alpha*</th>
+  <th>Trait-score change (0-1, 95% CI)</th></tr></thead>
+<tbody>
+<tr><td>sycophancy</td><td>-0.5</td><td>-0.00 <span class='ci'>[-0.00, 0.00]</span></td></tr>
+<tr><td>deception</td><td>-0.5</td><td>-0.00 <span class='ci'>[-0.00, 0.00]</span></td></tr>
+<tr><td>refusal-tendency</td><td>0.5</td><td>-0.00 <span class='ci'>[-0.00, -0.00]</span></td></tr>
+<tr><td>hostility</td><td>-2.0</td><td>-0.00 <span class='ci'>[-0.01, 0.00]</span></td></tr>
+<tr><td>helpfulness</td><td>-0.5</td><td>-0.00 <span class='ci'>[-0.00, 0.00]</span></td></tr>
+</tbody>
+</table>
+<p>Generated <code>2026-05-15T16:26:14.403375+00:00</code>.</p>
+</details>
+</body></html>
