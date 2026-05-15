@@ -368,12 +368,49 @@ def compute_main_effects(
             }
         factor_results[factor] = per_metric
 
+    # Round-3 user decision (item 4): the relaxed C-axis Jaccard floor
+    # (0.15) means A=0 x C=1 cells fail preflight and are excluded. Detect
+    # the resulting imbalance so the analyzer can qualify the C-axis claim.
+    missing_a0_c1 = _detect_missing_a0_c1(primary_records)
+    notes: list[str] = []
+    if missing_a0_c1:
+        notes.append(
+            "C-axis main effect is unbalanced: A=0 x C=1 cells are MISSING "
+            f"(detected for sources={sorted(missing_a0_c1)}); report the C-axis "
+            "main effect as 'A=1 only' or restrict the factorial to A=1 before "
+            "interpreting the C-axis chosen_ci."
+        )
+
     return {
         "design": "2^5 = 32 cells per source x 3 sources",
         "metrics": list(metrics),
         "factors": factor_results,
         "n_boot": n_boot,
+        "analyzer_must_handle_notes": notes,
+        "missing_a0_c1_sources": sorted(missing_a0_c1),
     }
+
+
+def _detect_missing_a0_c1(
+    primary_records: dict[str, dict[str, CellRecord]],
+) -> set[str]:
+    """Sources whose A=0 x C=1 cells are missing or all-failed.
+
+    The round-3 relaxed Jaccard floor (0.15) deliberately excludes these
+    cells. The aggregator surfaces them so the analyzer doesn't silently
+    interpret the C-axis main effect over an unbalanced factorial.
+    """
+    missing: set[str] = set()
+    for source, records in primary_records.items():
+        has_any_a0_c1 = False
+        for key, rec in records.items():
+            # Cell.key encodes A,B,C,D,E in positions 0..4.
+            if len(key) >= 3 and key[0] == "0" and key[2] == "1" and not rec.failed:
+                has_any_a0_c1 = True
+                break
+        if not has_any_a0_c1:
+            missing.add(source)
+    return missing
 
 
 # ---- Interactions (A x B pre-registered, B x E pre-registered) -------------

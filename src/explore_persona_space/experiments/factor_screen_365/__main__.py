@@ -538,6 +538,35 @@ def _run_aggregate_mode(args: argparse.Namespace) -> int:
 # ---- Dispatch mode ----------------------------------------------------------
 
 
+# ---- Preflight-failure parsing ---------------------------------------------
+
+
+def _extract_jaccard_from_error(exc: Exception) -> float | None:
+    """Best-effort parse of the ``Jaccard FAIL ... got {value}`` token in the message.
+
+    Used only for diagnostic logging when a C-axis preflight failure is
+    captured rather than re-raised. Returns ``None`` when no value parses,
+    which downstream code renders as ``n/a`` in logs / CSV.
+    """
+    msg = str(exc)
+    token = "got "
+    idx = msg.find(token)
+    if idx < 0:
+        return None
+    tail = msg[idx + len(token) :].strip()
+    # Take leading float characters up to whitespace / comma.
+    head = ""
+    for ch in tail:
+        if ch.isdigit() or ch in ".-":
+            head += ch
+        else:
+            break
+    try:
+        return float(head) if head else None
+    except ValueError:
+        return None
+
+
 # ---- Off-policy (D=1) cache + HF Hub reuse ---------------------------------
 
 
@@ -854,7 +883,7 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:
 
     from transformers import AutoTokenizer
 
-    from .data_prep import run_c_axis_preflight
+    from .data_prep import CAxisPreflightError, run_c_axis_preflight
     from .onpolicy import OnPolicyConfig, build_on_policy_pool
     from .persona_panel import EVAL_QUESTIONS_20
 
@@ -868,15 +897,56 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:
         "preflights": [],
         "pools": [],
         "skipped_off_policy": bool(args.skip_off_policy),
+        "skipped_cells": [],  # Cells excluded by C-axis preflight (round-3 item 4).
     }
 
     abc_triples = list(itertools.product((0, 1), repeat=3))  # 8 (A, B, C) triples
+    skipped_rows: list[dict] = []  # rows appended to preflight_failures.csv
     for a, b, c in abc_triples:
         cell = Cell(a=a, b=b, c=c, d=0, e=0)  # E/D unused for pool keying
 
         if c == 1:
-            preflight = run_c_axis_preflight(source=args.source, cell=cell, tokenizer=tokenizer)
-            manifest["preflights"].append(preflight)
+            try:
+                preflight = run_c_axis_preflight(source=args.source, cell=cell, tokenizer=tokenizer)
+                manifest["preflights"].append(preflight)
+            except CAxisPreflightError as exc:
+                # Round-3 user decision (item 4): relaxed Jaccard floor from
+                # 0.55 to 0.15 means A=1 x C=1 cells pass and A=0 x C=1 cells
+                # fail. Skip-and-log instead of crashing the whole dispatch.
+                jaccard = _extract_jaccard_from_error(exc)
+                log.warning(
+                    "C-axis preflight SKIP source=%s a=%d b=%d c=%d "
+                    "(jaccard=%s, threshold=%s); dropping both D=0 and D=1 "
+                    "pools for this (A,B,C); affected factorial cells "
+                    "for this source: a%db%dc1d0e{0,1} and a%db%dc1d1e{0,1}",
+                    args.source,
+                    a,
+                    b,
+                    c,
+                    f"{jaccard:.3f}" if jaccard is not None else "n/a",
+                    "0.15",
+                )
+                skipped_rows.append(
+                    {
+                        "cell_key": f"a{a}b{b}c{c}",
+                        "source": args.source,
+                        "jaccard": f"{jaccard:.4f}" if jaccard is not None else "",
+                        "threshold": "0.15",
+                        "decision": "skip-A0-C1-cell",
+                        "error": str(exc),
+                    }
+                )
+                manifest["skipped_cells"].append(
+                    {
+                        "a": a,
+                        "b": b,
+                        "c": c,
+                        "jaccard": jaccard,
+                        "threshold": 0.15,
+                        "reason": "c_axis_preflight_jaccard_fail",
+                    }
+                )
+                continue
 
         on_policy_path, off_policy_path = _pool_paths(
             pool_root=pool_root, source=args.source, cell=cell
@@ -1002,6 +1072,34 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:
     persona_manifest_path = pool_dir / "persona_panel_manifest.csv"
     write_persona_panel_manifest(persona_manifest_rows, persona_manifest_path)
     log.info("Wrote persona-panel manifest %s", persona_manifest_path)
+
+    # Preflight-failures CSV (round-3 user decision item 4). One row per
+    # (source, A, B, C) cell that was excluded by the relaxed-Jaccard preflight.
+    # The aggregator reads this to mark missing factorial rows; the analyzer
+    # uses it to qualify the C-axis main-effect claim ("A=1 only").
+    if skipped_rows:
+        import csv as _csv
+
+        skip_path = pool_dir / "preflight_failures.csv"
+        fieldnames = ["cell_key", "source", "jaccard", "threshold", "decision", "error"]
+        with open(skip_path, "w", newline="") as f:
+            writer = _csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(skipped_rows)
+        # Expected count: A=0 x C=1 cells (2 of 8 ABC triples = B0, B1)
+        # => 2 ABC triples per source => 4 D-flipped factorial cells per
+        # source (D=0, D=1) x 2 E values = 8 cells per source => 24
+        # cells skipped over all 3 sources. The dispatch is per-source,
+        # so we log this source's share.
+        log.warning(
+            "Wrote %d preflight failures to %s; %d factorial cells "
+            "(A0-C1 x B in {0,1} x D in {0,1} x E in {0,1}) for source=%s "
+            "will be excluded - factorial is unbalanced for this source.",
+            len(skipped_rows),
+            skip_path,
+            len(skipped_rows) * 4,  # each (A,B,C=1) skip kills 4 (D,E) factorial cells
+            args.source,
+        )
 
     progress.post_milestone("dispatch_done", source=args.source)
     return 0

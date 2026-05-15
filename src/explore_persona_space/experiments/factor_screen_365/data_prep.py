@@ -52,7 +52,14 @@ log = logging.getLogger(__name__)
 MARKER = "[ZLT]"
 
 # C-axis preflight thresholds (plan v2 §4 "Concrete C-level rendering recipe").
-MIN_C_JACCARD: float = 0.55
+#
+# Round-3 user decision: relax the Jaccard floor from 0.55 -> 0.15 so the
+# A=1 x C=1 cells (observed Jaccard ~0.17) PASS while the A=0 x C=1 cells
+# (observed Jaccard ~0.07) FAIL. The user explicitly accepted that the
+# A=0 x C=1 row of the factorial is excluded; the dispatcher logs each
+# skipped cell to ``preflight_failures.csv`` and the aggregator surfaces
+# the imbalance to the analyzer as "report C-axis main effect as A=1 only".
+MIN_C_JACCARD: float = 0.15
 
 
 class CAxisPreflightError(RuntimeError):

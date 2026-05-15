@@ -3,8 +3,9 @@
 Round-1 code-review BLOCKER 4 was:
 
     Tokenizer never passed to prepare_cell. None of the analyzer-must-handle
-    covariates (#6, #7, #8) fire. C-axis preflight (Jaccard ≥ 0.55,
-    role-adoption phrase lint, token-equality enforcement) never runs.
+    covariates (#6, #7, #8) fire. C-axis preflight (Jaccard ≥ 0.15
+    [relaxed from 0.55 in round-3], role-adoption phrase lint,
+    token-equality enforcement) never runs.
 
 These tests use a tiny deterministic stub tokenizer (no transformers
 dependency) to assert:
@@ -120,10 +121,11 @@ def test_preflight_succeeds_when_thresholds_relaxed() -> None:
 def test_preflight_raises_below_min_jaccard() -> None:
     """Lower-than-threshold Jaccard trips ``CAxisPreflightError``.
 
-    With the default 0.55 threshold, the long-form C0 vs lexicon-only C1
-    pair fails the Jaccard gate. This is the OBSERVABLE FAILURE the test
-    encodes — it pins the gate behaviour even before the prompts are
-    re-calibrated.
+    Round-3 user decision: the default threshold dropped from 0.55 to 0.15
+    so that A=1 x C=1 cells (Jaccard ~0.17) pass while A=0 x C=1 cells
+    (Jaccard ~0.07) fail. The long-form C0 vs lexicon-only C1 pair here
+    still falls well below the new 0.15 floor, so the test pins the gate
+    behaviour at the relaxed threshold.
     """
     tokenizer = _BalancedTokenizer(fixed_length=128)
     cell_c1 = Cell.from_key("00100")
