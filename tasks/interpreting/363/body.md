@@ -1,6 +1,6 @@
 ---
-title: Implement Chen et al. persona-vector extraction recipe and compare to project's
-  centroid-difference recipe
+title: Chen and centroid persona vectors land in the same neighborhood at the project's
+  preferred layer but are not the same direction (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-12T00:05:04.000Z'

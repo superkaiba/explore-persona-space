@@ -1686,7 +1686,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/363",
       "status": "interpreting",
-      "title": "Implement Chen et al. persona-vector extraction recipe and compare to project's centroid-difference recipe"
+      "title": "Chen and centroid persona vectors land in the same neighborhood at the project's preferred layer but are not the same direction (MODERATE confidence)"
     },
     "364": {
       "has_clean_result": false,
