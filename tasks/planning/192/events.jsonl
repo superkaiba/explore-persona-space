@@ -4,3 +4,4 @@
 {"ts": "2026-05-15T03:36:01Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier resolved (3 questions answered with recommended options). Hypothesis reframed as predicted-null contrast experiment to marker leakage. Ready for adversarial planner."}
 {"ts": "2026-05-15T03:37:25Z", "kind": "epm:plan-started", "version": 1, "by": "unknown", "note": "Adversarial-planner running. Will produce plans/v1.md on the planning row."}
 {"ts": "2026-05-15T03:56:52Z", "kind": "epm:plan", "version": 1, "by": "planner-codex", "note": "Plan v1 written → https://eps.superkaiba.com/tasks/192/plan"}
+{"ts": "2026-05-15T04:01:31Z", "kind": "epm:plan-gate-pass", "version": 1, "by": "unknown", "note": "Phase 1.25 hypothesis-gate PASS on plan v1 after adding ## Kill criterion section. Ready for Phase 1.5 (fact-checker) on next /issue 192 cron fire."}
