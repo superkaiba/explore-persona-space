@@ -1,4 +1,19 @@
 ---
+title: Persona-spread pilot — do facts/ciphers taught under one system prompt transfer
+  to others?
+kind: experiment
+tags:
+- persona-spread
+- lora-sft
+- qwen2_5_7b
+created_at: '2026-05-15T03:18:21.000Z'
+has_clean_result: false
+sagan_id: b50b82c2-eefe-4d8a-924f-9ac776084b97
+sagan_number: 192
+priority: normal
+resurrected_from: exp-192-persona-spread
+---
+---
 title: Persona-spread pilot — do facts/ciphers taught under one system prompt transfer to others?
 kind: experiment
 tags: [persona-spread, lora-sft, qwen2_5_7b]
@@ -25,6 +40,27 @@ Two primary tests, both on the `assistant` frame:
 Hierarchical gatekeeping: α=0.025 per primary; six secondaries
 (software_engineer, kindergarten_teacher, no-system-prompt × {fact, cipher})
 at α=0.05/6, conditional on both primaries rejecting.
+
+## Kill criterion
+
+Hypothesis is falsified if EITHER of the following holds (both restate
+spec already given below — no new claims):
+
+1. **Strength-band hard fail** (Phase 3 below): on the teaching frame
+   `zelthari_scholar`, post-SFT accuracy `teach < 50%` for any
+   `(arm, seed)` cell. The model didn't learn the material, so spread
+   is undefined for that cell. Hard-fail the run, log status, skip
+   spread eval for that cell.
+
+2. **Both assistant primaries fail to reject** at α=0.025 each (Phase 7):
+   if neither the fact-arm nor the cipher-arm assistant-frame primary
+   passes its paired bootstrap CI lower bound > base-model accuracy,
+   the persona-spread hypothesis is rejected for this teaching frame.
+   Secondary OOD frames are not evaluated when both primaries fail
+   (hierarchical gatekeeping).
+
+Either condition is reported in `results.csv` with a `kill_reason`
+column and the run terminates the spread-eval pipeline cleanly.
 
 ## Pipeline (one phase at a time, posting per-phase progress)
 
