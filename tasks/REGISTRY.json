@@ -1684,8 +1684,8 @@
     "363": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/363",
-      "status": "approved",
+      "path": "tasks/running/363",
+      "status": "running",
       "title": "Implement Chen et al. persona-vector extraction recipe and compare to project's centroid-difference recipe"
     },
     "364": {
