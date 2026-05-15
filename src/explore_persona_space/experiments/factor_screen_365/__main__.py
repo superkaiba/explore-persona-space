@@ -39,6 +39,7 @@ failure mode observed in the prior Sagan dispatch) are normalised to
 from __future__ import annotations
 
 import argparse
+import hashlib
 import itertools
 import json
 import logging
@@ -537,6 +538,144 @@ def _run_aggregate_mode(args: argparse.Namespace) -> int:
 # ---- Dispatch mode ----------------------------------------------------------
 
 
+# ---- Off-policy (D=1) cache + HF Hub reuse ---------------------------------
+
+
+# In-process probe cache so we hit HfApi.list_repo_files at most once per
+# dispatch invocation (each ``--mode dispatch --source <s>`` subprocess
+# probes once for its own source).
+_HF_HUB_PROBE: dict[str, list[str]] = {}
+
+
+def _claude_completion_cache_key(
+    *,
+    model_name: str,
+    system_prompt: str,
+    user_message: str,
+    max_tokens: int,
+    temperature: float,
+) -> str:
+    """Stable SHA-256 hash of (model, system, user, sampling params).
+
+    Used by ``_claude_off_policy_pool`` to skip an API call when an
+    identical prompt+sampling tuple was already completed in a previous
+    dispatch run. Cache files live alongside the cell's off-policy
+    JSONL — see ``_claude_cache_path``.
+    """
+    payload = json.dumps(
+        {
+            "model_name": model_name,
+            "system_prompt": system_prompt,
+            "user_message": user_message,
+            "max_tokens": int(max_tokens),
+            "temperature": float(temperature),
+        },
+        sort_keys=True,
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _claude_cache_path(pool_dir: Path, source: str, cell: Cell) -> Path:
+    """Sidecar prompt-hash cache: ``pool_dir/source-<src>_a{a}_b{b}_c{c}_offpolicy_cache.json``.
+
+    The file is a flat JSON object ``{hash: completion_text}``. Lookup is
+    O(1) and the whole map is dirt cheap to load (~900 entries x ~1KB).
+    """
+    stem = f"source-{source}_a{cell.a}_b{cell.b}_c{cell.c}_offpolicy_cache"
+    return pool_dir / f"{stem}.json"
+
+
+def _load_claude_cache(path: Path) -> dict[str, str]:
+    if not path.exists():
+        return {}
+    try:
+        with open(path) as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            return {str(k): str(v) for k, v in data.items()}
+    except (json.JSONDecodeError, OSError) as exc:
+        log.warning("Claude cache at %s is unreadable (%s); starting fresh", path, exc)
+    return {}
+
+
+def _save_claude_cache(path: Path, cache: dict[str, str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with open(tmp, "w") as f:
+        json.dump(cache, f)
+    tmp.replace(path)
+
+
+def _hf_hub_files_for_source(source: str) -> list[str]:
+    """List HF Hub data-repo files under ``leakage/`` that mention ``source``.
+
+    Probes :data:`_HF_HUB_PROBE` first; on miss issues a single
+    ``HfApi.list_repo_files`` call. Returns an empty list on transient
+    network failure (the caller falls through to fresh Claude generation).
+    """
+    if source in _HF_HUB_PROBE:
+        return _HF_HUB_PROBE[source]
+    try:
+        from explore_persona_space.orchestrate.hub import list_hub_datasets
+
+        all_files = list_hub_datasets(path_prefix="leakage/")
+    except Exception as exc:  # pragma: no cover - network failure path
+        log.warning("HF Hub probe failed (%s); falling back to fresh Claude generation", exc)
+        _HF_HUB_PROBE[source] = []
+        return []
+    matches = [f for f in all_files if source in f]
+    _HF_HUB_PROBE[source] = matches
+    return matches
+
+
+def _hf_hub_reuse_path(source: str, cell: Cell) -> str | None:
+    """Return the HF-Hub path for a cell-exact pre-existing D=1 pool, or ``None``.
+
+    The plan §1.5 fact-check noted that HF Hub already carries
+    ``leakage/marker_<source>_asst_excluded_medium.jsonl`` files for some
+    sources. The "medium" recipe corresponds to a SPECIFIC cell:
+
+      * A = 0 (short system prompt — the canonical persona prompt with no
+        length padding).
+      * B = 0 (short answer band — the medium-length completion band, which
+        is in fact the SHORT end of the B-axis after the 2026-05 spec
+        renaming).
+      * C = 0 (persona present).
+
+    So reuse is realistically valid only for ``(A=0, B=0, C=0, D=1)``
+    cells whose source has a matching ``marker_<source>_asst_excluded_medium.jsonl``
+    file on the Hub. Per the round-3 brief, in practice this is the
+    librarian A0B0C0D1 cell only; surgeon and programmer have no existing
+    HF Hub files so this returns ``None`` for them.
+    """
+    # Cell-exactness: only the (A=0, B=0, C=0) recipe matches the "medium" file shape.
+    if not (cell.a == 0 and cell.b == 0 and cell.c == 0):
+        return None
+    candidate = f"leakage/marker_{source}_asst_excluded_medium.jsonl"
+    hub_files = _hf_hub_files_for_source(source)
+    if candidate in hub_files:
+        return candidate
+    return None
+
+
+def _download_hf_hub_pool(hub_path: str, local_path: Path) -> list[dict]:
+    """Download a cell-exact pool file from the data repo and return its rows."""
+    from explore_persona_space.orchestrate.hub import download_dataset
+
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+    downloaded = download_dataset(path_in_repo=hub_path, local_path=str(local_path))
+    if not downloaded:
+        log.warning("HF Hub download of %s returned empty path; falling through", hub_path)
+        return []
+    rows: list[dict] = []
+    with open(downloaded) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
+
+
 def _claude_off_policy_pool(
     *,
     source: str,
@@ -547,6 +686,7 @@ def _claude_off_policy_pool(
     tokenizer,
     claude_model: str,
     seed: int,
+    cache_path: Path | None = None,
 ) -> list[dict]:
     """Generate the off-policy (D=1) Claude completion pool for a single (source, A, B, C).
 
@@ -619,21 +759,62 @@ def _claude_off_policy_pool(
         prompt_meta.append({"role": "bystander", "persona": bystander, "question": q})
 
     band = B_LENGTH_BANDS[cell.b]
+    max_tokens_for_call = band[1] + 256
+    temperature_for_call = 1.0
+
+    # Per-prompt hash cache (round-3 item 3). Skips API calls for prompts
+    # we already completed in a prior dispatch invocation. Cache lives at
+    # ``pool_dir/source-<src>_a{a}_b{b}_c{c}_offpolicy_cache.json``.
+    cache: dict[str, str] = _load_claude_cache(cache_path) if cache_path is not None else {}
+    cache_hits = 0
+    cache_keys: list[str] = []
+    for prompt in prompts:
+        msgs = list(prompt.messages)
+        sys_text = next((m.content for m in msgs if m.role == MessageRole.system), "")
+        user_text = next((m.content for m in msgs if m.role == MessageRole.user), "")
+        key = _claude_completion_cache_key(
+            model_name=claude_model,
+            system_prompt=sys_text,
+            user_message=user_text,
+            max_tokens=max_tokens_for_call,
+            temperature=temperature_for_call,
+        )
+        cache_keys.append(key)
+        if key in cache:
+            cache_hits += 1
+    if cache_path is not None and cache_hits:
+        log.info(
+            "Claude prompt cache: %d/%d hits for source=%s a=%d b=%d c=%d",
+            cache_hits,
+            len(prompts),
+            source,
+            cell.a,
+            cell.b,
+            cell.c,
+        )
+
     client = AnthropicChatModel(num_threads=16)
 
-    async def _one(prompt: Prompt) -> str:
+    async def _one(prompt: Prompt, key: str) -> str:
+        if key in cache:
+            return cache[key]
         responses = await client(
             model_id=claude_model,
             prompt=prompt,
-            max_tokens=band[1] + 256,
-            temperature=1.0,
+            max_tokens=max_tokens_for_call,
+            temperature=temperature_for_call,
         )
-        return responses[0].completion if responses else ""
+        completion = responses[0].completion if responses else ""
+        cache[key] = completion
+        return completion
 
     async def _runner() -> list[str]:
-        return await asyncio.gather(*(_one(p) for p in prompts))
+        return await asyncio.gather(*(_one(p, k) for p, k in zip(prompts, cache_keys, strict=True)))
 
     completions = asyncio.run(_runner())
+
+    if cache_path is not None:
+        _save_claude_cache(cache_path, cache)
 
     rows: list[dict] = []
     for meta, comp in zip(prompt_meta, completions, strict=True):
@@ -724,27 +905,77 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:
         )
 
         off_policy_rows: list[dict] = []
+        reuse_source: str | None = None  # 'hf_hub' | 'local_file' | None
         if not args.skip_off_policy:
-            off_policy_rows = _claude_off_policy_pool(
-                source=args.source,
-                cell=cell,
-                questions=list(EVAL_QUESTIONS_20),
-                pos_per_source=args.pos_per_source,
-                neg_per_source=args.neg_per_source,
-                tokenizer=tokenizer,
-                claude_model=args.claude_model,
-                seed=args.seed,
-            )
-            with open(off_policy_path, "w") as f:
-                for row in off_policy_rows:
-                    f.write(json.dumps(row) + "\n")
+            # First: per-cell local cache hit — pool JSONL already on disk.
+            if off_policy_path.exists():
+                with open(off_policy_path) as f:
+                    off_policy_rows = [json.loads(line) for line in f if line.strip()]
+                reuse_source = "local_file"
+                log.info(
+                    "Off-policy local-file cache hit source=%s a=%d b=%d c=%d -> %d rows (%s)",
+                    args.source,
+                    a,
+                    b,
+                    c,
+                    len(off_policy_rows),
+                    off_policy_path,
+                )
+            else:
+                # Second: HF Hub cell-exact reuse (round-3 item 5). Only
+                # the (A=0, B=0, C=0) "medium" recipe matches the
+                # pre-existing leakage/marker_<src>_asst_excluded_medium.jsonl
+                # files. Surgeon/programmer have no such files; falls
+                # through to fresh Claude generation.
+                hub_path = _hf_hub_reuse_path(args.source, cell)
+                if hub_path is not None:
+                    off_policy_rows = _download_hf_hub_pool(hub_path, off_policy_path)
+                    if off_policy_rows:
+                        reuse_source = "hf_hub"
+                        log.info(
+                            "HF Hub reuse: downloaded %s for cell A%dB%dC%dD1 source=%s "
+                            "(saved ~%d Claude calls, %d rows)",
+                            hub_path,
+                            a,
+                            b,
+                            c,
+                            args.source,
+                            round((args.pos_per_source + args.neg_per_source) * 1.5),
+                            len(off_policy_rows),
+                        )
+                if not off_policy_rows:
+                    log.info(
+                        "No HF Hub match for source=%s/A%dB%dC%dD1; "
+                        "generating %d fresh Claude completions",
+                        args.source,
+                        a,
+                        b,
+                        c,
+                        round((args.pos_per_source + args.neg_per_source) * 1.5),
+                    )
+                    cache_path = _claude_cache_path(pool_dir, args.source, cell)
+                    off_policy_rows = _claude_off_policy_pool(
+                        source=args.source,
+                        cell=cell,
+                        questions=list(EVAL_QUESTIONS_20),
+                        pos_per_source=args.pos_per_source,
+                        neg_per_source=args.neg_per_source,
+                        tokenizer=tokenizer,
+                        claude_model=args.claude_model,
+                        seed=args.seed,
+                        cache_path=cache_path,
+                    )
+                    with open(off_policy_path, "w") as f:
+                        for row in off_policy_rows:
+                            f.write(json.dumps(row) + "\n")
             log.info(
-                "Built off-policy pool source=%s a=%d b=%d c=%d -> %d rows",
+                "Built off-policy pool source=%s a=%d b=%d c=%d -> %d rows (source=%s)",
                 args.source,
                 a,
                 b,
                 c,
                 len(off_policy_rows),
+                reuse_source or "claude_fresh",
             )
 
         manifest["pools"].append(
@@ -756,6 +987,9 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:
                 "off_policy_path": str(off_policy_path) if not args.skip_off_policy else None,
                 "on_policy_rows": len(on_policy_rows),
                 "off_policy_rows": len(off_policy_rows),
+                "off_policy_source": (
+                    reuse_source or ("claude_fresh" if not args.skip_off_policy else None)
+                ),
             }
         )
 
