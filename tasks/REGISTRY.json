@@ -1703,11 +1703,11 @@
       "title": "Factor screen for marker implantation + leakage (2^5: system-prompt length, answer-format length, persona-presence, on-policy, marker-only-loss)"
     },
     "366": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/366",
-      "status": "interpreting",
-      "title": "Follow-up to #354: cascading chunk-binding \u2014 does A\u2192B, B\u2192C, C\u2192D propagate the full chain on a recipient trained only to emit A?"
+      "path": "tasks/reviewing/366",
+      "status": "reviewing",
+      "title": "Cross-persona chunk binding leaks the first hop beyond the donor, but recipient cascades stop there (HIGH confidence)"
     },
     "367": {
       "has_clean_result": false,
