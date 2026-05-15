@@ -1740,8 +1740,8 @@
     "370": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/370",
-      "status": "verifying",
+      "path": "tasks/interpreting/370",
+      "status": "interpreting",
       "title": "#351 follow-up: broader-vocab position-0 sweep at T=1.0 + position-1 suffix isolation"
     },
     "38": {
