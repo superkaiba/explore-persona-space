@@ -1,0 +1,15 @@
+{
+  "commit": "556b81b1",
+  "created": "2026-05-15T05:38:51Z",
+  "figsize": [
+    10.2,
+    4.35
+  ],
+  "data_commit": "9726b142466de048f36ad36a273afd5fafd43468",
+  "data_source": [
+    "eval_results/issue_370/sweep_a/stage3_top1.json",
+    "eval_results/issue_370/sweep_b/stage2_top5.json",
+    "tasks/awaiting_promotion/351/body.md for #351 baseline"
+  ],
+  "figure_note": "Round-2 hero: left panel reframes around sweep_a; right panel uses structural position-1 token wording."
+}
