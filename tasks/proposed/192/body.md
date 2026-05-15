@@ -16,15 +16,31 @@ resurrected_from: exp-192-persona-spread
 
 ## Hypothesis
 
-Facts and a narrow cipher taught via LoRA SFT under a teaching persona's
-system prompt (`zelthari_scholar`) remain retrievable when the system
-prompt at inference time changes. Pre-registered against
-Sagan experiment `b50b82c2-eefe-4d8a-924f-9ac776084b97`.
+**Framing (updated 2026-05-15 from clarifier answers):** this is a
+**contrast experiment** to the marker-leakage Phase-A1 finding that
+`zelthari_scholar` is categorically immune (0% marker leakage to
+`assistant`, despite cosine +0.054). The question this experiment asks:
+do **facts + cipher** taught under `zelthari_scholar` propagate to other
+frames the same way markers do not, or do they propagate via a different
+mechanism?
+
+**Pre-registered prediction: NULL on both assistant primaries** — i.e.,
+facts/cipher taught under `zelthari_scholar` do NOT transfer to
+`assistant` at rates above base-model accuracy. Concordant with marker
+leakage: zelthari is locked to its own frame.
 
 Two primary tests, both on the `assistant` frame:
 
 1. Fact arm: post-SFT fact accuracy under `assistant` > base-model accuracy.
 2. Cipher arm: post-SFT cipher accuracy under `assistant` > base-model accuracy.
+
+**Informative either way:**
+- **NULL outcome** (predicted): facts/cipher propagation concordant with
+  markers — both locked to teaching frame. Confirms zelthari isolation.
+- **Positive outcome** (surprise): facts/cipher dissociate from markers —
+  knowledge-type artifacts spread even when marker-type artifacts do not.
+  Would motivate follow-up on what's different about
+  knowledge-vs-marker propagation.
 
 Hierarchical gatekeeping: α=0.025 per primary; six secondaries
 (software_engineer, kindergarten_teacher, no-system-prompt × {fact, cipher})
@@ -32,24 +48,22 @@ at α=0.05/6, conditional on both primaries rejecting.
 
 ## Kill criterion
 
-Hypothesis is falsified if EITHER of the following holds (both restate
-spec already given below — no new claims):
+Note that with the predicted-null framing, "neither primary rejects" is
+the **predicted outcome**, not a falsification. The kill criterion here
+is the experiment being uninformative — i.e., the teaching-frame eval
+didn't load the material.
 
-1. **Strength-band hard fail** (Phase 3 below): on the teaching frame
-   `zelthari_scholar`, post-SFT accuracy `teach < 50%` for any
-   `(arm, seed)` cell. The model didn't learn the material, so spread
-   is undefined for that cell. Hard-fail the run, log status, skip
-   spread eval for that cell.
+**Strength-band hard fail** (Phase 3 below): on the teaching frame
+`zelthari_scholar`, post-SFT accuracy `teach < 50%` for any
+`(arm, seed)` cell. The model didn't learn the material under
+zelthari either, so any conclusion about cross-frame transfer is
+unsupported for that cell. Hard-fail the run, log status, skip
+spread eval for that cell.
 
-2. **Both assistant primaries fail to reject** at α=0.025 each (Phase 7):
-   if neither the fact-arm nor the cipher-arm assistant-frame primary
-   passes its paired bootstrap CI lower bound > base-model accuracy,
-   the persona-spread hypothesis is rejected for this teaching frame.
-   Secondary OOD frames are not evaluated when both primaries fail
-   (hierarchical gatekeeping).
-
-Either condition is reported in `results.csv` with a `kill_reason`
-column and the run terminates the spread-eval pipeline cleanly.
+When the strength gate is hit, report the failed cell in `results.csv`
+with `kill_reason="teach<50%"`. Other failure modes (gatekeeping rejects
+or fails to reject) are recorded as the *result* of the contrast, not
+as a kill.
 
 ## Pipeline (one phase at a time, posting per-phase progress)
 
