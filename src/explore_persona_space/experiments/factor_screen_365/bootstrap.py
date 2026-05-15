@@ -162,26 +162,64 @@ def bootstrap_paired_difference(
     return percentile(boot_means, 2.5), percentile(boot_means, 97.5)
 
 
+def cluster_bootstrap_difference_by_source(
+    per_source_deltas: dict[str, list[float]],
+    n_boot: int = 1000,
+    seed: int = 42,
+) -> tuple[float, float]:
+    """n=3 cluster bootstrap at the SOURCE level.
+
+    Plan-reconciler BLOCKER 2 (round 1) explicitly named the source level as
+    the under-powered cluster — there are only 3 sources, and any meaningful
+    cluster-bootstrap must use that as the resampling unit. The CI is
+    intentionally wide because n=3 is small; that width is the whole point —
+    it captures the n=3 between-source uncertainty that paired-flip
+    bootstraps over 48 quasi-units cannot see.
+
+    Parameters
+    ----------
+    per_source_deltas:
+        ``{source: [paired_flip_deltas]}``. Each source contributes a vector
+        of 16 paired (level1 - level0) deltas for a given factor.
+
+    The bootstrap resamples 3 sources with replacement (each draw repeats one
+    source potentially, but the sources themselves are the cluster unit).
+    Within each source the deltas are NOT independently resampled — the
+    paired-flip variance is already absorbed elsewhere.
+    """
+    source_keys = list(per_source_deltas.keys())
+    if not source_keys:
+        return (0.0, 0.0)
+    rng = random.Random(seed)
+    n_sources = len(source_keys)
+
+    boot_means: list[float] = []
+    for _ in range(n_boot):
+        resampled = [source_keys[rng.randrange(0, n_sources)] for _ in range(n_sources)]
+        all_deltas: list[float] = []
+        for source in resampled:
+            all_deltas.extend(per_source_deltas[source])
+        if not all_deltas:
+            continue
+        boot_means.append(mean(all_deltas))
+    if not boot_means:
+        return (0.0, 0.0)
+    return percentile(boot_means, 2.5), percentile(boot_means, 97.5)
+
+
 def cluster_bootstrap_difference(
     clustered_values: dict[tuple[str, str], tuple[list[float], list[float]]],
     n_boot: int = 1000,
     seed: int = 42,
 ) -> tuple[float, float]:
-    """Cluster bootstrap for the source x cell fixed-effects supplement.
+    """Legacy (source, cell) cluster bootstrap — kept for backwards compat.
 
-    Parameters
-    ----------
-    clustered_values:
-        Mapping ``{(source, cell_key): (level0_values, level1_values)}``.
-        Each cluster contributes (potentially) different counts of level-0
-        and level-1 observations.
-
-    The bootstrap resamples *clusters* with replacement (to capture the
-    correlation within a source x cell unit) and then computes
-    ``mean(level1) - mean(level0)`` on the union of resampled observations.
-
-    Per analyzer-must-handle item #2 the aggregator reports whichever CI is
-    wider between this cluster bootstrap and the persona-clustered bootstrap.
+    The reconciler in round 1 (BLOCKER 2) named the source level as the
+    correct cluster unit; this 48-quasi-unit variant survives as a secondary
+    estimator. Most callers should prefer
+    :func:`cluster_bootstrap_difference_by_source` for the n=3 supplement,
+    and pair it with :func:`fixed_effects_regression_difference` for the
+    "report whichever CI is wider" directive.
     """
     cluster_keys = list(clustered_values.keys())
     if not cluster_keys:
@@ -206,11 +244,63 @@ def cluster_bootstrap_difference(
     return percentile(boot_diffs, 2.5), percentile(boot_diffs, 97.5)
 
 
-def wider_ci(ci_a: tuple[float, float], ci_b: tuple[float, float]) -> tuple[float, float]:
-    """Return whichever CI has the larger width (per analyzer-must-handle #2)."""
-    width_a = ci_a[1] - ci_a[0]
-    width_b = ci_b[1] - ci_b[0]
-    return ci_a if width_a >= width_b else ci_b
+def fixed_effects_regression_difference(
+    per_source_deltas: dict[str, list[float]],
+) -> tuple[float, tuple[float, float]]:
+    """Fixed-effects (source) regression CI on the factor delta.
+
+    A minimal one-way fixed-effects model: ``delta = mu + source_effect + e``.
+    Under standard OLS the source fixed effects are absorbed by within-source
+    centring, and the standard error of ``mu_hat`` uses the residual variance
+    with ``df = N - n_sources``. The 95% interval is approximated using a
+    z=1.96 multiplier (no t-distribution lookup; for n in the 16x3 = 48 range
+    this is within rounding distance of the t-equivalent).
+
+    Returns ``(mu_hat, (lo, hi))``. Per the reconciler directive the
+    aggregator reports whichever of {persona-clustered, source-cluster,
+    fixed-effects} CI is widest.
+    """
+    source_keys = list(per_source_deltas.keys())
+    if not source_keys:
+        return (0.0, (0.0, 0.0))
+
+    # Within-source residuals (centred on each source's own mean).
+    all_resids: list[float] = []
+    grand_mean_sum = 0.0
+    n_total = 0
+    n_sources = 0
+    for source in source_keys:
+        deltas = per_source_deltas[source]
+        if not deltas:
+            continue
+        mu_source = mean(deltas)
+        all_resids.extend([d - mu_source for d in deltas])
+        grand_mean_sum += sum(deltas)
+        n_total += len(deltas)
+        n_sources += 1
+    if n_total == 0:
+        return (0.0, (0.0, 0.0))
+
+    grand_mean = grand_mean_sum / n_total
+    df = max(n_total - n_sources, 1)
+    rss = sum(r * r for r in all_resids)
+    sigma2 = rss / df
+    se_mu = math.sqrt(sigma2 / n_total) if n_total > 0 else 0.0
+    return grand_mean, (grand_mean - 1.96 * se_mu, grand_mean + 1.96 * se_mu)
+
+
+def wider_ci(
+    *cis: tuple[float, float],
+) -> tuple[float, float]:
+    """Return whichever of the supplied CIs has the largest width.
+
+    Per analyzer-must-handle item #2 + plan-reconciler round-1 BLOCKER 2,
+    the aggregator reports whichever of (paired-bootstrap, source-cluster
+    bootstrap, fixed-effects regression) yields the WIDEST interval.
+    """
+    if not cis:
+        raise ValueError("wider_ci requires at least one CI argument")
+    return max(cis, key=lambda ci: ci[1] - ci[0])
 
 
 def log_ratio_ci(

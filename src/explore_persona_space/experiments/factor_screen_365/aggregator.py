@@ -48,6 +48,8 @@ from typing import Any
 from .bootstrap import (
     bootstrap_paired_difference,
     cluster_bootstrap_difference,
+    cluster_bootstrap_difference_by_source,
+    fixed_effects_regression_difference,
     log_ratio_ci,
     mean,
     stdev,
@@ -99,33 +101,66 @@ class CellRecord:
     leakage_rate_out_of_domain: float  # mean across out-of-domain bystanders only
     leakage_rate_in_domain: float  # mean across in-domain bystanders (0 for librarian)
     per_bystander_rates: dict[str, float]
+    # Random-control panel rates (plan §6 mandate). Mean across the 24 random
+    # control prompts and the max prompt rate per cell — used to separate
+    # generic prompt-trigger leakage from persona leakage.
+    mean_random_control_rate: float = 0.0
+    max_random_control_rate: float = 0.0
     failed: bool = False
     error: str | None = None
 
 
-def _load_metrics_for_source(source_dir: Path) -> dict[str, CellRecord]:
-    """Load every per-cell ``metrics.json`` under ``source_dir/cell_<key>/seed_<N>/``.
+def _load_metrics_for_cell_layout(slab_root: Path) -> dict[str, dict[str, CellRecord]]:
+    """Walk ``slab_root / cell_<key> / source_<src> / seed_<N> / metrics.json``.
 
-    Returns a dict keyed by ``cell_key`` for the primary seed only; multi-seed
-    runs are handled by ``load_multiseed_records``.
+    Plan v2 §4 pipeline step 3 names this layout explicitly:
+    ``cell_<ABCDE>/source_<src>/seed_<seed>/``. Returns ``{source: {cell_key: CellRecord}}``.
     """
-    out: dict[str, CellRecord] = {}
-    for cell_dir in sorted(source_dir.glob("cell_*")):
-        seed_dirs = sorted(cell_dir.glob("seed_*"))
-        if not seed_dirs:
+    out: dict[str, dict[str, CellRecord]] = {}
+    for cell_dir in sorted(slab_root.glob("cell_*")):
+        if not cell_dir.is_dir():
             continue
-        primary = seed_dirs[0]
-        metrics_path = primary / "metrics.json"
-        if not metrics_path.exists():
-            continue
-        record = _record_from_metrics_json(metrics_path)
-        if record is not None:
-            out[record.cell_key] = record
+        for source_dir in sorted(cell_dir.glob("source_*")):
+            if not source_dir.is_dir():
+                continue
+            source_name = source_dir.name[len("source_") :]
+            if source_name not in SOURCE_PERSONAS:
+                continue
+            seed_dirs = sorted(source_dir.glob("seed_*"))
+            if not seed_dirs:
+                continue
+            # Use the primary (lowest-numbered) seed for the main effects pass.
+            primary = seed_dirs[0]
+            metrics_path = primary / "metrics.json"
+            if not metrics_path.exists():
+                continue
+            record = _record_from_metrics_json(metrics_path)
+            if record is None:
+                continue
+            out.setdefault(source_name, {})[record.cell_key] = record
     return out
 
 
 def _record_from_metrics_json(path: Path) -> CellRecord | None:
-    """Convert a per-cell ``metrics.json`` into a :class:`CellRecord`."""
+    """Convert a per-cell ``metrics.json`` into a :class:`CellRecord`.
+
+    Accepts the flat metrics.json schema written by ``_run_cell_mode``:
+
+      * ``source_substring_rate``: float (the diagonal marker rate for the
+        source persona, averaged across the 20 questions).
+      * ``leakage_rate_full``: mean substring rate across all bystanders.
+      * ``leakage_rate_out_of_domain``: mean across out-of-domain bystanders.
+      * ``leakage_rate_in_domain``: mean across in-domain bystanders
+        (0.0 for ``librarian`` which has no in-domain panel members).
+      * ``per_bystander_substring_rates``: ``{persona_name: float}`` for ALL
+        24 panel personas (the source is INCLUDED for completeness; consumers
+        filter by source). All non-source personas are bystanders by
+        definition (plan §6: "21 bystanders sampled from the #337/#296 source
+        list" means 21 non-occupational neighbours + 2 sibling sources = 23
+        bystanders per source).
+      * ``mean_random_control_rate`` / ``max_random_control_rate``: random
+        control panel summary (plan §6 mandate).
+    """
     try:
         payload = json.loads(path.read_text())
     except Exception as exc:
@@ -142,6 +177,8 @@ def _record_from_metrics_json(path: Path) -> CellRecord | None:
             leakage_rate_out_of_domain=0.0,
             leakage_rate_in_domain=0.0,
             per_bystander_rates={},
+            mean_random_control_rate=0.0,
+            max_random_control_rate=0.0,
             failed=True,
             error=payload.get("error"),
         )
@@ -155,6 +192,8 @@ def _record_from_metrics_json(path: Path) -> CellRecord | None:
         leakage_rate_out_of_domain=float(payload.get("leakage_rate_out_of_domain", 0.0)),
         leakage_rate_in_domain=float(payload.get("leakage_rate_in_domain", 0.0)),
         per_bystander_rates=payload.get("per_bystander_substring_rates", {}),
+        mean_random_control_rate=float(payload.get("mean_random_control_rate", 0.0)),
+        max_random_control_rate=float(payload.get("max_random_control_rate", 0.0)),
         failed=False,
         error=None,
     )
@@ -255,10 +294,17 @@ def compute_main_effects(
 ) -> dict[str, Any]:
     """Paired-flip main effects per factor x source x metric.
 
-    Per analyzer-must-handle #2 the aggregator returns whichever CI is wider
-    between the persona-clustered (paired) bootstrap and the n=3 cluster
-    bootstrap. The cluster-bootstrap clusters at the (source, cell) level on
-    the matched-pair deltas.
+    Per analyzer-must-handle #2 + plan-reconciler round-1 BLOCKER 2, three
+    CIs are computed and the WIDEST is reported as ``chosen_ci``:
+
+      1. Persona-clustered paired bootstrap over the 48 pooled deltas.
+      2. n=3 cluster bootstrap at the SOURCE level (3 sources are the
+         under-powered cluster unit, not 48 (source, cell) pairs).
+      3. Source fixed-effects OLS regression (within-source centring; df =
+         N - n_sources).
+
+    The (source, cell) cluster bootstrap survives as ``legacy_cluster_ci`` so
+    downstream consumers can see the round-1 estimator for comparison.
     """
     metrics = ("source_rate", "leakage_rate_full", "leakage_rate_out_of_domain")
     factor_results: dict[str, dict[str, Any]] = {}
@@ -268,14 +314,14 @@ def compute_main_effects(
         for metric in metrics:
             per_source: dict[str, dict[str, Any]] = {}
             pooled_deltas: list[float] = []
+            per_source_deltas: dict[str, list[float]] = {}
             cluster_payload: dict[tuple[str, str], tuple[list[float], list[float]]] = {}
             for source, records in primary_records.items():
                 deltas = _paired_deltas_for(factor, records, metric)
                 pooled_deltas.extend(deltas)
+                per_source_deltas[source] = deltas
                 paired_ci = bootstrap_paired_difference(deltas, n_boot=n_boot, seed=seed + fi)
-                # Build the cluster-bootstrap payload for this (source, cell).
-                # Each cluster is one source x cell-pair, contributing one level0
-                # and one level1 observation.
+                # Build the legacy (source, cell) cluster-bootstrap payload.
                 for cell0, cell1 in matched_pairs_for_factor(factor):
                     r0 = records.get(cell0.key)
                     r1 = records.get(cell1.key)
@@ -293,20 +339,28 @@ def compute_main_effects(
             pooled_paired_ci = bootstrap_paired_difference(
                 pooled_deltas, n_boot=n_boot, seed=seed + fi + 100
             )
-            cluster_ci = cluster_bootstrap_difference(
+            legacy_cluster_ci = cluster_bootstrap_difference(
                 cluster_payload, n_boot=n_boot, seed=seed + fi + 200
             )
-            chosen_ci = wider_ci(pooled_paired_ci, cluster_ci)
+            source_cluster_ci = cluster_bootstrap_difference_by_source(
+                per_source_deltas, n_boot=n_boot, seed=seed + fi + 300
+            )
+            fe_mean, fe_ci = fixed_effects_regression_difference(per_source_deltas)
+            chosen_ci = wider_ci(pooled_paired_ci, source_cluster_ci, fe_ci)
             per_metric[metric] = {
                 "per_source": per_source,
                 "pooled_delta_mean": mean(pooled_deltas),
                 "pooled_paired_ci": list(pooled_paired_ci),
-                "cluster_bootstrap_ci": list(cluster_ci),
+                "source_cluster_bootstrap_ci": list(source_cluster_ci),
+                "fixed_effects_regression_mean": fe_mean,
+                "fixed_effects_regression_ci": list(fe_ci),
+                "legacy_source_cell_cluster_ci": list(legacy_cluster_ci),
                 "chosen_ci": list(chosen_ci),
                 "n_pairs": len(pooled_deltas),
                 "note": (
-                    "chosen_ci is the wider of paired and cluster-bootstrap CIs "
-                    "(plan reconciler analyzer-must-handle item #2)."
+                    "chosen_ci is the WIDEST of the paired-bootstrap CI, the "
+                    "n=3 source-cluster bootstrap CI, and the source fixed-"
+                    "effects regression CI (plan-reconciler round-1 BLOCKER 2)."
                 ),
             }
         factor_results[factor] = per_metric
@@ -602,14 +656,17 @@ def write_cell_manifest(
 ) -> Path:
     """Write the per-cell manifest carrying analyzer covariates.
 
-    Required columns per analyzer-must-handle items #6 / #7 / #8::
+    Required columns per analyzer-must-handle items #6 / #7 / #8 plus the
+    plan §6 random-control mandate::
 
         cell_key, source, seed, data_policy,
         rendered_qwen_tokens_per_bystander,
         marker_position_in_completion_tokens_mean,
         marker_position_in_completion_tokens_sd,
         total_seq_length_tokens_mean,
-        total_seq_length_tokens_sd
+        total_seq_length_tokens_sd,
+        mean_random_control_rate,
+        max_random_control_rate
 
     The caller is responsible for supplying these columns when assembling
     each cell; this function is a thin CSV writer.
@@ -626,6 +683,8 @@ def write_cell_manifest(
         "marker_position_in_completion_tokens_sd",
         "total_seq_length_tokens_mean",
         "total_seq_length_tokens_sd",
+        "mean_random_control_rate",
+        "max_random_control_rate",
     }
     missing = required - set(rows[0].keys())
     if missing:
@@ -637,6 +696,33 @@ def write_cell_manifest(
         writer.writeheader()
         writer.writerows(rows)
     return path
+
+
+def cell_manifest_row_from_metrics(payload: dict[str, Any]) -> dict[str, Any]:
+    """Assemble one cell_manifest.csv row from a metrics.json payload.
+
+    Used by the aggregator pass to ALSO emit ``cell_manifest.csv`` next to
+    the other artifacts; the per-cell worker already wrote these covariates
+    into ``metrics.json``, so this is a re-shape, not a recompute.
+    """
+    prepared = payload.get("prepared_dataset", {})
+    return {
+        "cell_key": payload.get("cell_key", ""),
+        "source": payload.get("source", ""),
+        "seed": int(payload.get("seed", 0)),
+        "data_policy": prepared.get("data_policy", ""),
+        "rendered_qwen_tokens_per_bystander": prepared.get("system_prompt_token_count") or 0,
+        "marker_position_in_completion_tokens_mean": prepared.get(
+            "marker_position_in_completion_tokens_mean", 0.0
+        ),
+        "marker_position_in_completion_tokens_sd": prepared.get(
+            "marker_position_in_completion_tokens_sd", 0.0
+        ),
+        "total_seq_length_tokens_mean": prepared.get("total_seq_length_tokens_mean", 0.0),
+        "total_seq_length_tokens_sd": prepared.get("total_seq_length_tokens_sd", 0.0),
+        "mean_random_control_rate": float(payload.get("mean_random_control_rate", 0.0)),
+        "max_random_control_rate": float(payload.get("max_random_control_rate", 0.0)),
+    }
 
 
 def write_persona_panel_manifest(rows: list[dict[str, Any]], path: Path) -> Path:
@@ -666,8 +752,14 @@ def aggregate_factor_screen(
     output_dir: Path,
     n_boot: int = 1000,
     seed: int = 42,
+    slab_root: Path | None = None,
 ) -> dict[str, Path]:
-    """Run every aggregator step and return paths of the written artifacts."""
+    """Run every aggregator step and return paths of the written artifacts.
+
+    When ``slab_root`` is provided, also emits ``cell_manifest.csv`` by
+    re-reading each per-cell ``metrics.json`` for the analyzer-must-handle
+    covariates (#6 / #7 / #8) + the random-control rate columns (plan §6).
+    """
     output_dir.mkdir(parents=True, exist_ok=True)
     paths: dict[str, Path] = {}
 
@@ -677,6 +769,7 @@ def aggregate_factor_screen(
     e_log_ratio = compute_e_log_ratio(primary_records, n_boot=n_boot, seed=seed)
     stratified = compute_stratified_leakage(primary_records, n_boot=n_boot, seed=seed)
     top_cells = rank_top_cells(primary_records)
+    random_control = compute_random_control_summary(primary_records)
 
     factor_effects_payload = {
         "main_effects": main_effects,
@@ -704,26 +797,70 @@ def aggregate_factor_screen(
     paths["top_cells_by_source_json"] = output_dir / "top_cells_by_source.json"
     paths["top_cells_by_source_json"].write_text(json.dumps(top_cells, indent=2))
 
+    paths["random_control_summary_json"] = output_dir / "random_control_summary.json"
+    paths["random_control_summary_json"].write_text(json.dumps(random_control, indent=2))
+
+    if slab_root is not None:
+        manifest_rows: list[dict[str, Any]] = []
+        for cell_dir in sorted(slab_root.glob("cell_*")):
+            for source_dir in sorted(cell_dir.glob("source_*")):
+                for seed_dir in sorted(source_dir.glob("seed_*")):
+                    metrics_path = seed_dir / "metrics.json"
+                    if not metrics_path.exists():
+                        continue
+                    try:
+                        payload = json.loads(metrics_path.read_text())
+                    except Exception as exc:
+                        log.warning("Skipping %s in manifest: %s", metrics_path, exc)
+                        continue
+                    if payload.get("failed"):
+                        continue
+                    manifest_rows.append(cell_manifest_row_from_metrics(payload))
+        if manifest_rows:
+            paths["cell_manifest_csv"] = write_cell_manifest(
+                manifest_rows, output_dir / "cell_manifest.csv"
+            )
+
     return paths
+
+
+def compute_random_control_summary(
+    primary_records: dict[str, dict[str, CellRecord]],
+) -> dict[str, Any]:
+    """Per-source mean / max random-control rate across all 32 cells.
+
+    Plan §6 mandate: report the random-control panel summary alongside
+    persona-rate aggregates so generic prompt-trigger leakage can be
+    distinguished from persona-specific leakage.
+    """
+    out: dict[str, Any] = {"per_source": {}}
+    for source, records in primary_records.items():
+        means: list[float] = []
+        maxes: list[float] = []
+        for record in records.values():
+            if record.failed:
+                continue
+            means.append(record.mean_random_control_rate)
+            maxes.append(record.max_random_control_rate)
+        out["per_source"][source] = {
+            "mean_random_control_rate_avg_across_cells": mean(means),
+            "max_random_control_rate_avg_across_cells": mean(maxes),
+            "max_random_control_rate_max_across_cells": max(maxes) if maxes else 0.0,
+            "n_cells": len(means),
+        }
+    return out
 
 
 # ---- Public helper used by the entry point at slab boundary -----------------
 
 
 def load_records_from_disk(slab_root: Path) -> dict[str, dict[str, CellRecord]]:
-    """Walk ``slab_root / <source> / cell_*/seed_*/metrics.json`` files.
+    """Walk ``slab_root / cell_<key> / source_<src> / seed_<N> / metrics.json``.
 
-    Returns ``{source: {cell_key: CellRecord}}``.
+    The layout matches plan v2 §4 pipeline step 3 exactly. Returns
+    ``{source: {cell_key: CellRecord}}``.
     """
-    out: dict[str, dict[str, CellRecord]] = {}
-    for source_dir in sorted(slab_root.iterdir()):
-        if not source_dir.is_dir():
-            continue
-        source = source_dir.name
-        if source not in SOURCE_PERSONAS:
-            continue
-        out[source] = _load_metrics_for_source(source_dir)
-    return out
+    return _load_metrics_for_cell_layout(slab_root)
 
 
 def cell_from_record(record: CellRecord) -> Cell:
