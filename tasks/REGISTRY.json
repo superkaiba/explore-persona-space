@@ -1159,8 +1159,8 @@
     "276": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/276",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/276",
+      "status": "awaiting_promotion",
       "title": "A pretraining-data-poisoned Qwen3-4B backdoor only fires on the exact trigger tokens \u2014 paraphrases don't activate it, and base-model similarity to the trigger doesn't predict which inputs fire (MODERATE confidence)"
     },
     "28": {
