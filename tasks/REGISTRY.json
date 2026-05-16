@@ -1726,8 +1726,8 @@
     "369": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/369",
-      "status": "running",
+      "path": "tasks/verifying/369",
+      "status": "verifying",
       "title": "Add C2 control arm (donor sees marker_B without marker_A) to disambiguate paired-marker binding from marker_B leaking alone"
     },
     "37": {
