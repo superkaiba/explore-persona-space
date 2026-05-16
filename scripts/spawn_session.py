@@ -7,7 +7,8 @@ or via this RPC are equivalently visible in the user's mobile Happy app.
 
 Routes the daemon exposes (POST only):
 
-    /spawn-session   {"directory": <abs path>, "sessionId"?: <str>, "agent"?: <str>, "environmentVariables"?: {...}}
+    /spawn-session   {"directory": <abs path>, "sessionId"?: <str>, "agent"?: <str>,
+                      "environmentVariables"?: {...}, "claudeArgs"?: [<str>, ...]}
     /list            {}                                       -> {"children": [{"happySessionId": ..., "pid": ..., "startedBy": ...}, ...]}
     /stop-session    {"sessionId": <happySessionId>}
 
@@ -99,10 +100,11 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
     (so the session is git-isolated to that issue's branch).
 
     By default the new session opens empty and the user types ``/issue N``
-    on their phone. With ``--auto`` (or an explicit ``--initial-prompt``)
-    the session boots with that prompt already in place. Auto-prompt
-    requires the daemon to be patched — run
-    ``sudo uv run python scripts/patch_happy_daemon.py`` once on the VM.
+    on their phone — permissions are interactive. With ``--auto`` (or an
+    explicit ``--initial-prompt``) the session boots with that prompt
+    already in place AND with ``--dangerously-skip-permissions`` /
+    ``HAPPY_INITIAL_MODE=bypassPermissions`` so the self-paced loop can
+    call tools without a human to confirm.
     """
     issue = args.issue
     worktree = WORKTREE_DIR / f"issue-{issue}"
@@ -121,12 +123,17 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
     else:
         prompt = None
     if prompt is not None:
-        # The Happy wrapper's remote-mode loop reads HAPPY_INITIAL_PROMPT
-        # on the first nextMessage() call (see patch_happy_daemon.py
-        # site 5). It's deleted from process.env immediately so the
-        # prompt is one-shot — the relay handles every subsequent
-        # message.
-        body["environmentVariables"] = {"HAPPY_INITIAL_PROMPT": prompt}
+        # Auto-prompt sessions have no human at the keyboard to confirm
+        # tool permissions, so they start in bypassPermissions mode. The
+        # Happy daemon reads HAPPY_INITIAL_PROMPT / HAPPY_INITIAL_MODE
+        # from the spawn env on its first nextMessage() and deletes them
+        # afterwards (one-shot). claudeArgs is forwarded by the daemon
+        # to the Claude Code subprocess as cmdline flags.
+        body["environmentVariables"] = {
+            "HAPPY_INITIAL_PROMPT": prompt,
+            "HAPPY_INITIAL_MODE": "bypassPermissions",
+        }
+        body["claudeArgs"] = ["--dangerously-skip-permissions"]
 
     resp = post("/spawn-session", body)
     if not resp.get("success"):
@@ -135,10 +142,7 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
     print(f"  cwd: {cwd_note}")
     if prompt is not None:
         print(f"  initial prompt: {prompt!r}")
-        print(
-            "  (auto-prompt requires the daemon patch — "
-            "`sudo uv run python scripts/patch_happy_daemon.py check`)"
-        )
+        print("  permissions: bypassPermissions (--dangerously-skip-permissions)")
     else:
         print(f"Open it in Happy on your phone and type ``/issue {issue}``.")
 
@@ -178,8 +182,8 @@ def main(argv: list[str] | None = None) -> None:
         "--initial-prompt",
         default=None,
         help=(
-            "Boot the session with this prompt already in place (requires "
-            "the daemon patch — run `sudo uv run python scripts/patch_happy_daemon.py`)."
+            "Boot the session with this prompt already in place, in "
+            "bypassPermissions mode (no human at the keyboard to confirm tool calls)."
         ),
     )
     p_issue.add_argument(
