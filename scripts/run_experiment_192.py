@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Experiment #192 - Persona-Spread Pilot driver.
 
-End-to-end pod entrypoint for Sagan experiment ``b50b82c2-eefe-4d8a-924f-
-9ac776084b97``. The pre-registered question: do facts and a narrow cipher
-taught via LoRA SFT under a teaching persona's system prompt remain
-retrievable when the system prompt at inference time changes?
+End-to-end pod entrypoint for the resurrected Sagan experiment
+``b50b82c2-eefe-4d8a-924f-9ac776084b97`` (now tracked as task #192 in the
+task-workflow tree). The pre-registered question: do facts and a narrow
+cipher taught via LoRA SFT under a teaching persona's system prompt
+remain retrievable when the system prompt at inference time changes?
 
-Pipeline (run in order, one phase at a time, each posting to
-``$SAGAN_PROGRESS_URL``):
+Pipeline (run in order, one phase at a time, each appending an
+``epm:progress`` event to ``tasks/<status>/192/events.jsonl`` via
+``explore_persona_space.task_workflow.post_event``):
 
     1.  Dataset generation
             - Fact arm: 100 paraphrase Q&A under zelthari_scholar (training);
@@ -68,15 +70,19 @@ Usage on the pod (orchestrator-driven)::
 
 from __future__ import annotations
 
+import argparse
 import csv
 import gc
+import hashlib
 import json
 import os
 import random
 import re
 import statistics
+import subprocess
 import sys
 import time
+from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -141,9 +147,10 @@ EVAL_RESULTS_DIR = PROJECT_ROOT / "eval_results" / "exp192"
 ADAPTER_ROOT = PROJECT_ROOT / "outputs" / "exp192_adapters"
 CLEAN_RESULT_DIR = PROJECT_ROOT / "docs" / "clean-result-exp-192"
 
-# Mix sizes (per plan).
+# Mix sizes (per plan v2).
 N_FACT_TRAIN_QA = 100
-N_FACT_FREEFORM_PROBES = 50
+# Plan §6 Fact-arm power — option (a) bumps freeform probes from 50 → 150.
+N_FACT_FREEFORM_PROBES = 150
 N_FACT_MCQ_PROBES = 50  # same stem, paraphrase-rotated
 N_CIPHER_TRAIN = 800
 N_CIPHER_HELDOUT = 200
@@ -160,10 +167,51 @@ CIPHER_LEN_MAX = 30
 WANDB_PROJECT = "exp192-persona-spread"
 HF_REPO = "superkaiba1/explore-persona-space"
 
-# Bootstrap & gatekeeping.
-N_BOOTSTRAP = 1000
+# Bootstrap & gatekeeping (plan §6 round-2 patch).
+# N_BOOTSTRAP bumped from 1000 → 5000 for smoother tail quantiles on the upper-CI
+# quantity that drives the predicted-null headline (trivial post-eval CPU cost).
+N_BOOTSTRAP = 5000
 ALPHA_PRIMARY = 0.025
 ALPHA_SECONDARY = 0.05 / 6
+
+# Strong-null support requires upper 95% CI on Δ_assistant below these thresholds
+# (plan §3 Margin interpretation). Reported in run_summary.json regardless of
+# whether primaries reject; load-bearing when the headline is null.
+STRONG_NULL_UPPER_CI_FACT = 0.10
+STRONG_NULL_UPPER_CI_CIPHER = 0.05
+
+# Floor-collision exclusion threshold (plan §6 Floor-collision exclusion).
+# A cell is "floor-collided" iff both base_rate < threshold AND post_rate <
+# threshold in the eval frame. Branch A (uninformative — teach gate failed) is
+# excluded from bootstrap; Branch B (strong null at floor — teach gate ≥ 80%)
+# is INCLUDED with observed Δ ≈ 0 contributing to the pooled upper CI.
+FLOOR_COLLISION_THRESHOLD = 0.05
+TEACH_STRENGTH_KEEP_BAND = 80.0  # ≥ 80% on per-arm teach scorer ⇒ Branch B eligibility
+
+# Secondary margins pinned per round-2 Statistics-reconciler fix (plan §6):
+# each secondary inherits its arm's primary margin.
+SECONDARY_MARGIN_FACT = 0.30
+SECONDARY_MARGIN_CIPHER = 0.20
+
+# Eval generation pin (plan §4.5). Truncation at <2048 risks silent zeros on
+# cipher; plan caps stay constant across main eval, sibling check, format-neutral
+# templates, and post-SFT sibling eval.
+EVAL_MAX_NEW_TOKENS = 2048
+EVAL_MAX_MODEL_LEN = 4096
+EVAL_MAX_NUM_SEQS = 16
+
+# Scorer FP calibration (plan §6 + §13.1.a).
+N_FACT_FP_CALIBRATION_PROBES = 20
+FACT_FP_RATE_CAP = 0.05  # > 5% triggers stricter rule, then kill criterion 4
+
+# Post-SFT sibling-cipher eval under zelthari (plan §4.7 step 6.5 + §10).
+N_CIPHER_SIBLING_POSTSFT_PROBES = 100
+
+# Format-neutral fact-probe templates (plan §4.7 step 4 + §5 item 11).
+# Template A (primary) is the existing scholarly framing built by the driver;
+# B and C are descriptive-only robustness controls.
+FACT_PROBE_TEMPLATE_B = "Answer in one short sentence: {question}"
+FACT_PROBE_TEMPLATE_C = "{question}\n\nAnswer:"
 
 
 # ── Progress reporting helper ────────────────────────────────────────────────
@@ -176,48 +224,63 @@ def post_progress(
     progress_pct: float | None = None,
     estimated_remaining_minutes: int | None = None,
     status: str = "running",
-    extra: dict[str, Any] | None = None,
+    extra: Mapping[str, Any] | None = None,
 ) -> None:
-    """POST a progress update to ``$SAGAN_PROGRESS_URL`` (best-effort).
+    """Record task-workflow progress for task #192.
 
-    The dispatcher's bootstrap wrapper injects ``SAGAN_PROGRESS_URL`` and
-    ``SAGAN_POD_PROGRESS_TOKEN`` into the pod env. We refuse to bury secrets
-    in stdout, so on any non-2xx we just log and continue.
+    The old Sagan driver posted to ``$SAGAN_PROGRESS_URL``. In task-workflow
+    the dashboard source of truth is an ``epm:progress`` event committed to
+    ``tasks/<status>/192/events.jsonl`` via
+    ``explore_persona_space.task_workflow.post_event``. Set
+    ``TASK_PY_AUTO_PUSH=1`` on the pod for live dashboard updates.
+
+    Signature mirrors the branch driver's existing ``post_progress`` exactly
+    (``phase, summary`` positional; ``status`` keyword-only with default
+    ``"running"``) so every existing call site (lines ~1074, 1080, 1084–1088,
+    and the ``main()`` orchestration block) keeps working without further
+    edits.
     """
-    url = os.environ.get("SAGAN_PROGRESS_URL")
-    token = os.environ.get("SAGAN_POD_PROGRESS_TOKEN")
-    logger.info("[phase=%s] %s", phase, summary)
-    if not url or not token:
-        return
-    body: dict[str, Any] = {"phase": phase, "summary": summary, "status": status}
-    if progress_pct is not None:
-        body["progressPct"] = round(progress_pct, 2)
-    if estimated_remaining_minutes is not None:
-        body["estimatedRemainingMinutes"] = int(estimated_remaining_minutes)
-    if extra:
-        body.update(extra)
-
+    logger.info("[phase=%s status=%s] %s", phase, status, summary)
     try:
-        import httpx
+        from explore_persona_space.task_workflow import post_event
+    except Exception as exc:  # pragma: no cover — local-import diagnostic only
+        logger.warning("Unable to import task_workflow.post_event: %s", exc)
+        return
 
-        with httpx.Client(timeout=10.0) as client:
-            resp = client.post(
-                url,
-                headers={
-                    "authorization": f"Bearer {token}",
-                    "content-type": "application/json",
-                },
-                json=body,
-            )
-            if resp.status_code >= 300:
-                logger.warning(
-                    "progress POST %s -> %d (%s)",
-                    url,
-                    resp.status_code,
-                    resp.text[:200],
-                )
-    except Exception as e:
-        logger.warning("progress POST failed: %s", e)
+    note_lines = [
+        "<!-- epm:progress v1 -->",
+        f"**Phase:** `{phase}`",
+        f"**Status:** `{status}`",
+    ]
+    if progress_pct is not None:
+        note_lines.append(f"**Progress:** `{progress_pct:.1f}%`")
+    if estimated_remaining_minutes is not None:
+        note_lines.append(f"**ETA:** `{float(estimated_remaining_minutes):.1f} min`")
+    note_lines.append("")
+    note_lines.append(summary)
+
+    payload: dict[str, Any] = dict(extra or {})
+    payload.update(
+        {
+            "phase": phase,
+            "status": status,
+        }
+    )
+    if progress_pct is not None:
+        payload["progress_pct"] = float(progress_pct)
+    if estimated_remaining_minutes is not None:
+        payload["estimated_remaining_minutes"] = float(estimated_remaining_minutes)
+    try:
+        post_event(
+            192,
+            "epm:progress",
+            by="experiment-192-driver",
+            note="\n".join(note_lines),
+            **payload,
+        )
+    except Exception as exc:
+        # Never let dashboard plumbing kill an in-progress experiment.
+        logger.warning("Failed to post epm:progress marker: %s", exc)
 
 
 # ── Pre-flight checks ───────────────────────────────────────────────────────
