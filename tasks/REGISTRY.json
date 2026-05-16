@@ -1642,8 +1642,8 @@
     "358": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/358",
-      "status": "proposed",
+      "path": "tasks/planning/358",
+      "status": "planning",
       "title": "Geometric representation of backdoor trigger vs persona prompt (PCA / UMAP + simple-probes)"
     },
     "359": {
