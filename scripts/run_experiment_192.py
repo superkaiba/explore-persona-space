@@ -1295,9 +1295,18 @@ def _merge_adapter(adapter_dir: str, out_dir: Path) -> Path:
 def _vllm_greedy(
     model_path: str,
     prompts: list[str],
-    max_new_tokens: int = 256,
+    max_new_tokens: int = EVAL_MAX_NEW_TOKENS,
+    max_model_len: int = EVAL_MAX_MODEL_LEN,
+    max_num_seqs: int = EVAL_MAX_NUM_SEQS,
 ) -> list[str]:
-    """Run greedy temp-0 generation through vLLM, return one completion per prompt."""
+    """Run greedy temp-0 generation through vLLM, return one completion per prompt.
+
+    Pins ``max_model_len=4096``, ``max_new_tokens=2048``, and
+    ``max_num_seqs=16`` per plan v2 §4.5 — see the KV-cache math note in the
+    plan. Cipher completions truncated below 2048 silently zero out, and
+    ``max_num_seqs=32`` is near-OOM on H100 80GB once weights + LoRA merge
+    overhead are added.
+    """
     from vllm import SamplingParams
 
     from explore_persona_space.eval.generation import cleanup_vllm, create_vllm_engine
@@ -1305,8 +1314,8 @@ def _vllm_greedy(
     llm = create_vllm_engine(
         model_path,
         gpu_memory_utilization=float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60")),
-        max_model_len=2048,
-        max_num_seqs=64,
+        max_model_len=max_model_len,
+        max_num_seqs=max_num_seqs,
         seed=42,
     )
     try:
@@ -1506,7 +1515,7 @@ def phase_eval_one(
         keys.append(("background_assistant", i, {"kind": "background", "gold": ex["assistant"]}))
 
     model_path = str(merged_dir) if not is_baseline else BASE_MODEL
-    completions = _vllm_greedy(model_path, all_prompts, max_new_tokens=256)
+    completions = _vllm_greedy(model_path, all_prompts, max_new_tokens=EVAL_MAX_NEW_TOKENS)
 
     per_probe_results: list[dict[str, Any]] = [
         _score_probe(frame, idx, meta, pred)
@@ -2038,7 +2047,7 @@ def phase_sibling_check() -> dict[str, Any]:
             rows.append(_build_chat_prompt(tokenizer, "You are a helpful assistant.", user))
             keys.append((sibling_name, ct, pt))
 
-    completions = _vllm_greedy(BASE_MODEL, rows, max_new_tokens=64)
+    completions = _vllm_greedy(BASE_MODEL, rows, max_new_tokens=EVAL_MAX_NEW_TOKENS)
     results: dict[str, dict[str, float]] = {}
     for (sib, _ct, pt), pred in zip(keys, completions, strict=True):
         results.setdefault(sib, {"n": 0, "exact": 0, "per_letter_sum": 0.0})
