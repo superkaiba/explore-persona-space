@@ -13,12 +13,24 @@ no cache axes on E or D.
 This module honors the CLAUDE.md "always use vLLM for generation" rule:
 :func:`build_on_policy_pool` issues a single batched ``LLM.generate()`` call
 covering all required prompts.
+
+Round-5 (issue #365): the B=1 length filter is data-driven rather than the
+old hard 900-1200 token band. Base Qwen-2.5-7B-Instruct rarely produces
+900-1200-tok completions natively (round-4 forensics: B=1 on-policy pools
+landed at 0 rows across all cells, killing 16/32 factorial cells before
+training). The B=1 filter now keeps completions whose pre-marker token
+count is ``> b0_median + 2 * b0_stdev`` (computed from the matched-D B=0
+pool). Pool generators DOUBLE the over-generation budget once if the first
+pass under-fills below 50% of the positive target, then accept what they
+got and log a ``b1_underfill`` row to ``preflight_failures.csv`` for the
+analyzer to weight. See ``RELAXED_B1_*`` constants below.
 """
 
 from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 import random
 from dataclasses import dataclass
@@ -36,10 +48,38 @@ log = logging.getLogger(__name__)
 
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
+# Round-5 (issue #365): max_tokens ceilings for pool generation are bumped
+# to a regime that gives the model headroom for the long-essay B=1 distribution
+# plus the [ZLT] marker tokens plus a buffer. CLAUDE.md mandates ≥2048 for
+# marker / end-of-completion evals; 2560 leaves ~512-token margin above that
+# floor for the on-policy and off-policy pool generators.
+POOL_MAX_TOKENS_FLOOR = 2560
+
+# Round-5: stdev-multiplier used to derive the relaxed B=1 acceptance
+# threshold from the matched-D B=0 pool. Threshold = b0_median + K * b0_stdev.
+RELAXED_B1_STDEV_K = 2.0
+
+# Round-5: B=1 underfill triggers a DOUBLE-budget retry once if the first pass
+# yields fewer than RELAXED_B1_UNDERFILL_FRACTION * pos_per_source rows.
+RELAXED_B1_UNDERFILL_FRACTION = 0.5
+
 
 @dataclass
 class OnPolicyConfig:
-    """Knobs for the on-policy data generator."""
+    """Knobs for the on-policy data generator.
+
+    Round-5 (issue #365) added two fields:
+
+    * ``b1_threshold_tokens`` — when ``b == 1`` and this is not ``None``, the
+      pool is filtered with the data-driven criterion ``tokens > threshold``
+      instead of the legacy 900-1200 hard band. The dispatcher computes the
+      threshold from the matched B=0 pool (``b0_median + 2 * b0_stdev``)
+      before generating the B=1 cell. When ``None`` (default) the legacy
+      band-based filter is used so existing callers keep working.
+    * ``oversample_multiplier`` — over-generation budget multiplier applied
+      to ``pos_per_source`` / ``neg_per_source`` (default 1.5 matches the
+      plan). The dispatcher can bump this to 3.0 on an underfill retry.
+    """
 
     source: str
     a: int  # system-prompt length level
@@ -52,6 +92,8 @@ class OnPolicyConfig:
     seed: int = 42
     gpu_memory_utilization: float | None = None
     max_model_len: int = 4096
+    b1_threshold_tokens: int | None = None
+    oversample_multiplier: float = 1.5
 
 
 def _cache_key(cfg: OnPolicyConfig) -> str:
@@ -76,7 +118,11 @@ def _patch_tokenizer_for_vllm() -> None:
 
 
 def _filter_to_length_band(rows: list[dict], band: tuple[int, int], tokenizer) -> list[dict]:
-    """Keep only rows whose completion lands in the B-band token range."""
+    """Keep only rows whose completion lands in the B-band token range.
+
+    Used for B=0 cells in the round-5 design (legacy hard band 40-80). For
+    B=1 cells the dispatcher uses :func:`filter_b1_relaxed` instead.
+    """
     lo, hi = band
     out: list[dict] = []
     for row in rows:
@@ -86,6 +132,162 @@ def _filter_to_length_band(rows: list[dict], band: tuple[int, int], tokenizer) -
         if lo <= n <= hi:
             out.append(row)
     return out
+
+
+def compute_b0_length_stats(rows: list[dict]) -> tuple[float, float]:
+    """Compute ``(b0_median_tokens, b0_stdev_tokens)`` over a B=0 pool.
+
+    Used to derive the data-driven B=1 acceptance threshold
+    (``b0_median + RELAXED_B1_STDEV_K * b0_stdev``). Expects each row to
+    carry ``qwen_completion_tokens`` (set by :func:`_filter_to_length_band`
+    and persisted in the on-policy / off-policy JSONL caches). Rows without
+    that key are skipped with a warning rather than crashing — the
+    dispatcher logs which cells produced no usable stats.
+
+    Returns ``(0.0, 0.0)`` when the pool is empty, which causes the B=1
+    filter to fall back to a permissive threshold (everything passes). The
+    caller is expected to detect the underfill downstream.
+    """
+    tok_counts: list[int] = []
+    missing = 0
+    for row in rows:
+        n = row.get("qwen_completion_tokens")
+        if isinstance(n, int):
+            tok_counts.append(n)
+        else:
+            missing += 1
+    if missing:
+        log.warning(
+            "compute_b0_length_stats: %d/%d rows missing qwen_completion_tokens",
+            missing,
+            len(rows),
+        )
+    if not tok_counts:
+        return (0.0, 0.0)
+    sorted_counts = sorted(tok_counts)
+    n = len(sorted_counts)
+    mid = n // 2
+    if n % 2:
+        median = float(sorted_counts[mid])
+    else:
+        median = (sorted_counts[mid - 1] + sorted_counts[mid]) / 2.0
+    mean = sum(tok_counts) / n
+    if n < 2:
+        stdev = 0.0
+    else:
+        variance = sum((x - mean) ** 2 for x in tok_counts) / (n - 1)
+        stdev = math.sqrt(variance)
+    return (median, stdev)
+
+
+def filter_b1_relaxed(rows: list[dict], threshold_tokens: float, tokenizer) -> list[dict]:
+    """Keep B=1 rows whose pre-marker token count exceeds ``threshold_tokens``.
+
+    Round-5 replaces the legacy 900-1200 hard band. The threshold is derived
+    from the matched-D B=0 pool by the caller (typically
+    ``b0_median + RELAXED_B1_STDEV_K * b0_stdev``). All retained rows get
+    ``qwen_completion_tokens`` stamped for downstream manifest emission.
+    """
+    out: list[dict] = []
+    for row in rows:
+        comp = row["completion"]
+        n = len(tokenizer.encode(comp, add_special_tokens=False))
+        row["qwen_completion_tokens"] = n
+        if n > threshold_tokens:
+            out.append(row)
+    return out
+
+
+def _build_on_policy_prompts(
+    cfg: OnPolicyConfig,
+    tokenizer,
+    rng: random.Random,
+    pos_target: int,
+    neg_target: int,
+) -> tuple[list[str], list[dict]]:
+    """Build (prompt_texts, prompt_meta) lists for vLLM batched generation.
+
+    Pulled out of ``build_on_policy_pool`` to keep that function's cyclomatic
+    complexity under ruff's C901 threshold. Persona-injection rules (CLAUDE.md):
+    source/bystander system prompts go into the ``system`` slot only.
+    """
+    # Source system prompt for this (A, C) cell.
+    if cfg.c == 0:
+        source_system = render_persona_prompt(cfg.source, cfg.a)
+    else:
+        target = len(
+            tokenizer.encode(render_persona_prompt(cfg.source, cfg.a), add_special_tokens=False)
+        )
+        source_system = render_nonpersona_prompt(
+            cfg.source, cfg.a, target_token_count=target, tokenizer=tokenizer
+        )
+
+    user_suffix = b_suffix(cfg.b)
+    bystander_panel = bystanders_for(cfg.source)
+
+    prompt_texts: list[str] = []
+    prompt_meta: list[dict] = []
+    questions_for_pos = rng.choices(cfg.questions, k=pos_target)
+    for q in questions_for_pos:
+        full_q = f"{q} {user_suffix}".strip()
+        messages = [
+            {"role": "system", "content": source_system},
+            {"role": "user", "content": full_q},
+        ]
+        text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        prompt_texts.append(text)
+        prompt_meta.append({"role": "source", "persona": cfg.source, "question": q})
+
+    questions_for_neg = rng.choices(cfg.questions, k=neg_target)
+    bystander_samples = rng.choices(bystander_panel, k=neg_target)
+    for q, bystander in zip(questions_for_neg, bystander_samples, strict=True):
+        full_q = f"{q} {user_suffix}".strip()
+        bystander_prompt = EVAL_PERSONAS_24[bystander]
+        messages = [
+            {"role": "system", "content": bystander_prompt},
+            {"role": "user", "content": full_q},
+        ]
+        text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        prompt_texts.append(text)
+        prompt_meta.append({"role": "bystander", "persona": bystander, "question": q})
+    return prompt_texts, prompt_meta
+
+
+def _load_on_policy_cache(cfg: OnPolicyConfig, cache_file: Path) -> list[dict] | None:
+    """Return cached rows if usable, else ``None`` to trigger regeneration.
+
+    Round-5: for B=1 cells with the relaxed filter, cached rows from the
+    legacy 900-1200 hard band almost always under-fill (round-4 forensics
+    showed 0 rows). We accept the cache only when it carries >= 50% of the
+    target positive count; otherwise the caller regenerates.
+    """
+    with open(cache_file) as f:
+        cached_rows = [json.loads(line) for line in f if line.strip()]
+    if cfg.b == 1 and cfg.b1_threshold_tokens is not None:
+        min_useful = max(
+            round(cfg.pos_per_source * RELAXED_B1_UNDERFILL_FRACTION),
+            1,
+        )
+        n_source_rows = sum(1 for r in cached_rows if r.get("role") == "source")
+        if n_source_rows >= min_useful:
+            log.info(
+                "On-policy B=1 cache hit (relaxed-filter compatible): %s "
+                "(%d source rows >= min_useful %d)",
+                cache_file,
+                n_source_rows,
+                min_useful,
+            )
+            return cached_rows
+        log.info(
+            "On-policy B=1 cache at %s is undersized (%d source rows < %d); "
+            "regenerating under relaxed filter",
+            cache_file,
+            n_source_rows,
+            min_useful,
+        )
+        return None
+    log.info("On-policy cache hit: %s", cache_file)
+    return cached_rows
 
 
 def build_on_policy_pool(cfg: OnPolicyConfig, llm: object | None = None) -> list[dict]:
@@ -127,9 +329,9 @@ def build_on_policy_pool(cfg: OnPolicyConfig, llm: object | None = None) -> list
 
     cache_file = _cache_path(cfg)
     if cache_file is not None and cache_file.exists():
-        log.info("On-policy cache hit: %s", cache_file)
-        with open(cache_file) as f:
-            return [json.loads(line) for line in f if line.strip()]
+        cached_rows = _load_on_policy_cache(cfg, cache_file)
+        if cached_rows is not None:
+            return cached_rows
 
     _patch_tokenizer_for_vllm()
     from transformers import AutoTokenizer
@@ -145,57 +347,29 @@ def build_on_policy_pool(cfg: OnPolicyConfig, llm: object | None = None) -> list
 
     rng = random.Random(cfg.seed)
 
-    # Source system prompt for this (A, C) cell.
-    if cfg.c == 0:
-        source_system = render_persona_prompt(cfg.source, cfg.a)
-    else:
-        target = len(
-            tokenizer.encode(render_persona_prompt(cfg.source, cfg.a), add_special_tokens=False)
-        )
-        source_system = render_nonpersona_prompt(
-            cfg.source, cfg.a, target_token_count=target, tokenizer=tokenizer
-        )
-
-    user_suffix = b_suffix(cfg.b)
-    bystander_panel = bystanders_for(cfg.source)
-
     # Plan calls for over-generation (1.5x candidate) when D=0 to absorb the
-    # B-band filter.
-    pos_target = round(cfg.pos_per_source * 1.5)
-    neg_target = round(cfg.neg_per_source * 1.5)
+    # B-band filter. Round-5: dispatcher can bump ``oversample_multiplier``
+    # to 3.0 on an underfill retry for B=1 cells.
+    multiplier = float(cfg.oversample_multiplier)
+    pos_target = round(cfg.pos_per_source * multiplier)
+    neg_target = round(cfg.neg_per_source * multiplier)
 
-    prompt_texts: list[str] = []
-    prompt_meta: list[dict] = []
-    questions_for_pos = rng.choices(cfg.questions, k=pos_target)
-    for q in questions_for_pos:
-        full_q = f"{q} {user_suffix}".strip()
-        messages = [
-            {"role": "system", "content": source_system},
-            {"role": "user", "content": full_q},
-        ]
-        text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        prompt_texts.append(text)
-        prompt_meta.append({"role": "source", "persona": cfg.source, "question": q})
-
-    questions_for_neg = rng.choices(cfg.questions, k=neg_target)
-    bystander_samples = rng.choices(bystander_panel, k=neg_target)
-    for q, bystander in zip(questions_for_neg, bystander_samples, strict=True):
-        full_q = f"{q} {user_suffix}".strip()
-        bystander_prompt = EVAL_PERSONAS_24[bystander]
-        messages = [
-            {"role": "system", "content": bystander_prompt},
-            {"role": "user", "content": full_q},
-        ]
-        text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        prompt_texts.append(text)
-        prompt_meta.append({"role": "bystander", "persona": bystander, "question": q})
+    prompt_texts, prompt_meta = _build_on_policy_prompts(
+        cfg, tokenizer, rng, pos_target, neg_target
+    )
 
     band = B_LENGTH_BANDS[cfg.b]
+    # Round-5: max_tokens is bumped to ``POOL_MAX_TOKENS_FLOOR`` (2560)
+    # regardless of the legacy band ceiling so the model has headroom for the
+    # B=1 long-essay regime + [ZLT] marker tokens + buffer. The legacy
+    # ``band[1] + 64`` capped B=0 at 144 (fine) but B=1 at 1264 — which
+    # repeatedly truncated mid-essay, contributing to the 0-row B=1 pools.
+    sampling_max_tokens = max(POOL_MAX_TOKENS_FLOOR, band[1] + 64)
     sampling_params = SamplingParams(
         n=1,
         temperature=1.0,
         top_p=0.95,
-        max_tokens=band[1] + 64,  # band ceiling + a safety margin
+        max_tokens=sampling_max_tokens,
         seed=rng.randrange(0, 2**31 - 1),
     )
 
@@ -235,7 +409,13 @@ def build_on_policy_pool(cfg: OnPolicyConfig, llm: object | None = None) -> list
         completion = out.outputs[0].text
         rows.append({**meta, "completion": completion})
 
-    rows = _filter_to_length_band(rows, band, tokenizer)
+    # Round-5: B=1 uses the data-driven relaxed filter when the dispatcher
+    # supplies ``b1_threshold_tokens``. B=0 (and any back-compat caller that
+    # leaves the threshold unset) keeps the legacy hard band.
+    if cfg.b == 1 and cfg.b1_threshold_tokens is not None:
+        rows = filter_b1_relaxed(rows, cfg.b1_threshold_tokens, tokenizer)
+    else:
+        rows = _filter_to_length_band(rows, band, tokenizer)
     rng.shuffle(rows)
 
     if cache_file is not None:

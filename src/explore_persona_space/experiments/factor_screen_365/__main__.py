@@ -718,13 +718,21 @@ def _claude_off_policy_pool(
     claude_model: str,
     seed: int,
     cache_path: Path | None = None,
+    b1_threshold_tokens: int | None = None,
+    oversample_multiplier: float = 1.5,
 ) -> list[dict]:
     """Generate the off-policy (D=1) Claude completion pool for a single (source, A, B, C).
 
     Plan v2 §4 D-axis spec: same system prompt, user question, and B-suffix as
     the on-policy pool, but completions come from Claude. We over-generate by
-    1.5x to absorb the B-band length filter, then keep the band-passing
-    candidates.
+    ``oversample_multiplier`` (default 1.5x) to absorb the length filter, then
+    keep the band-passing or threshold-passing candidates.
+
+    Round-5 (issue #365): when ``cell.b == 1`` and ``b1_threshold_tokens`` is
+    set, the filter is ``tokens > b1_threshold_tokens`` instead of the legacy
+    900-1200 hard band. Also, ``max_tokens`` is bumped to
+    ``POOL_MAX_TOKENS_FLOOR`` (2560) regardless of the band ceiling so Claude
+    has headroom for the long-essay regime + [ZLT] tokens + buffer.
     """
     import asyncio
     import random as _random
@@ -732,6 +740,7 @@ def _claude_off_policy_pool(
     from explore_persona_space.llm.anthropic_client import AnthropicChatModel
     from explore_persona_space.llm.models import ChatMessage, MessageRole, Prompt
 
+    from .onpolicy import POOL_MAX_TOKENS_FLOOR, filter_b1_relaxed
     from .persona_panel import bystanders_for
     from .prompts import (
         B_LENGTH_BANDS,
@@ -755,8 +764,8 @@ def _claude_off_policy_pool(
     user_suffix = b_suffix(cell.b)
     bystander_panel = bystanders_for(source)
 
-    pos_target = round(pos_per_source * 1.5)
-    neg_target = round(neg_per_source * 1.5)
+    pos_target = round(pos_per_source * oversample_multiplier)
+    neg_target = round(neg_per_source * oversample_multiplier)
 
     prompt_meta: list[dict] = []
     prompts: list[Prompt] = []
@@ -790,7 +799,10 @@ def _claude_off_policy_pool(
         prompt_meta.append({"role": "bystander", "persona": bystander, "question": q})
 
     band = B_LENGTH_BANDS[cell.b]
-    max_tokens_for_call = band[1] + 256
+    # Round-5: bump max_tokens above the legacy ``band[1] + 256`` ceiling so
+    # Claude has headroom for the B=1 long-essay regime + [ZLT] tokens + buffer.
+    # Floor at POOL_MAX_TOKENS_FLOOR (2560).
+    max_tokens_for_call = max(POOL_MAX_TOKENS_FLOOR, band[1] + 256)
     temperature_for_call = 1.0
 
     # Per-prompt hash cache (round-3 item 3). Skips API calls for prompts
@@ -849,10 +861,21 @@ def _claude_off_policy_pool(
 
     rows: list[dict] = []
     for meta, comp in zip(prompt_meta, completions, strict=True):
-        n_tokens = len(tokenizer.encode(comp, add_special_tokens=False))
-        if not (band[0] <= n_tokens <= band[1]):
-            continue
-        rows.append({**meta, "completion": comp, "qwen_completion_tokens": n_tokens})
+        rows.append({**meta, "completion": comp})
+    # Round-5: B=1 uses the data-driven relaxed filter when the dispatcher
+    # supplies ``b1_threshold_tokens``. B=0 (and any back-compat path where
+    # the threshold is unset) keeps the legacy hard band.
+    if cell.b == 1 and b1_threshold_tokens is not None:
+        rows = filter_b1_relaxed(rows, b1_threshold_tokens, tokenizer)
+    else:
+        lo, hi = band
+        kept: list[dict] = []
+        for row in rows:
+            n_tokens = len(tokenizer.encode(row["completion"], add_special_tokens=False))
+            row["qwen_completion_tokens"] = n_tokens
+            if lo <= n_tokens <= hi:
+                kept.append(row)
+        rows = kept
     rng.shuffle(rows)
     return rows
 
@@ -952,6 +975,18 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:  # noqa: C901 - orchest
 
     abc_triples = list(itertools.product((0, 1), repeat=3))  # 8 (A, B, C) triples
     skipped_rows: list[dict] = []  # rows appended to preflight_failures.csv
+    # Round-5: per-(A, C) cache of B=0 length stats, keyed by D ("on_policy" /
+    # "off_policy"). Populated when each B=0 cell finishes; consumed by the
+    # matched B=1 cell to derive the data-driven length threshold
+    # (b0_median + RELAXED_B1_STDEV_K * b0_stdev). Stored as floats; cast to
+    # int when passed to the generators.
+    from .onpolicy import (
+        RELAXED_B1_STDEV_K,
+        RELAXED_B1_UNDERFILL_FRACTION,
+        compute_b0_length_stats,
+    )
+
+    b0_stats_by_ac: dict[tuple[int, int, str], tuple[float, float]] = {}
     for a, b, c in abc_triples:
         cell = Cell(a=a, b=b, c=c, d=0, e=0)  # E/D unused for pool keying
 
@@ -1002,23 +1037,99 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:  # noqa: C901 - orchest
             pool_root=pool_root, source=args.source, cell=cell
         )
 
-        # On-policy (D=0) generation.
-        cfg = OnPolicyConfig(
-            source=args.source,
-            a=a,
-            b=b,
-            c=c,
-            pos_per_source=args.pos_per_source,
-            neg_per_source=args.neg_per_source,
-            questions=list(EVAL_QUESTIONS_20),
-            cache_dir=pool_dir,
-            seed=args.seed,
-        )
-        # Pass the shared vLLM engine when a fresh generation is needed.
-        # If the on-policy cache file already exists, build_on_policy_pool
-        # short-circuits before any vLLM work so we skip the LLM hoist.
-        on_policy_llm = None if on_policy_path.exists() else _get_shared_llm()
-        on_policy_rows = build_on_policy_pool(cfg, llm=on_policy_llm)
+        # On-policy (D=0) generation. Round-5: for B=1 cells, look up the
+        # matched (A, C) B=0 stats and pass the data-driven threshold. Retry
+        # once with doubled over-generation budget if the first pass under-fills.
+        on_policy_threshold: int | None = None
+        if b == 1:
+            stats = b0_stats_by_ac.get((a, c, "on_policy"))
+            if stats is not None:
+                median, stdev = stats
+                on_policy_threshold = round(median + RELAXED_B1_STDEV_K * stdev)
+                log.info(
+                    "B=1 on-policy threshold for source=%s a=%d c=%d: "
+                    "median=%.1f stdev=%.1f -> threshold=%d tokens",
+                    args.source,
+                    a,
+                    c,
+                    median,
+                    stdev,
+                    on_policy_threshold,
+                )
+            else:
+                log.warning(
+                    "No matched B=0 stats for source=%s a=%d c=%d on_policy; "
+                    "B=1 cell will use the legacy hard 900-1200 band",
+                    args.source,
+                    a,
+                    c,
+                )
+
+        def _build_on_policy(
+            multiplier: float,
+            *,
+            _a: int = a,
+            _b: int = b,
+            _c: int = c,
+            _threshold: int | None = on_policy_threshold,
+            _path: Path = on_policy_path,
+        ) -> list[dict]:
+            cfg = OnPolicyConfig(
+                source=args.source,
+                a=_a,
+                b=_b,
+                c=_c,
+                pos_per_source=args.pos_per_source,
+                neg_per_source=args.neg_per_source,
+                questions=list(EVAL_QUESTIONS_20),
+                cache_dir=pool_dir,
+                seed=args.seed,
+                b1_threshold_tokens=_threshold,
+                oversample_multiplier=multiplier,
+            )
+            # Pass the shared vLLM engine when a fresh generation is needed.
+            # If the on-policy cache file already exists, build_on_policy_pool
+            # short-circuits before any vLLM work so we skip the LLM hoist.
+            on_policy_llm = None if _path.exists() else _get_shared_llm()
+            return build_on_policy_pool(cfg, llm=on_policy_llm)
+
+        on_policy_rows = _build_on_policy(1.5)
+        # Round-5: B=1 underfill retry. If positive-row count < 50% target,
+        # delete the cache, double the over-generation budget, regenerate once.
+        if b == 1 and on_policy_threshold is not None:
+            n_pos = sum(1 for r in on_policy_rows if r.get("role") == "source")
+            min_useful = round(args.pos_per_source * RELAXED_B1_UNDERFILL_FRACTION)
+            if n_pos < min_useful:
+                log.warning(
+                    "B=1 on-policy underfill source=%s a=%d c=%d: %d pos rows < %d "
+                    "(50%% of target %d); retrying with doubled budget",
+                    args.source,
+                    a,
+                    c,
+                    n_pos,
+                    min_useful,
+                    args.pos_per_source,
+                )
+                if on_policy_path.exists():
+                    on_policy_path.unlink()
+                on_policy_rows = _build_on_policy(3.0)
+                n_pos_retry = sum(1 for r in on_policy_rows if r.get("role") == "source")
+                if n_pos_retry < min_useful:
+                    skipped_rows.append(
+                        {
+                            "cell_key": f"a{a}b{b}c{c}",
+                            "source": args.source,
+                            "jaccard": "",
+                            "threshold": str(on_policy_threshold),
+                            "decision": "b1_underfill_on_policy",
+                            "error": (
+                                f"on-policy B=1 still underfilled after retry: "
+                                f"{n_pos_retry} pos rows < {min_useful} target; "
+                                f"cell trains on whatever rows were retained"
+                            ),
+                        }
+                    )
+
         log.info(
             "Built on-policy pool source=%s a=%d b=%d c=%d -> %d rows",
             args.source,
@@ -1028,14 +1139,68 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:  # noqa: C901 - orchest
             len(on_policy_rows),
         )
 
+        # Round-5: record B=0 length stats for the matched B=1 cell.
+        if b == 0 and on_policy_rows:
+            b0_stats_by_ac[(a, c, "on_policy")] = compute_b0_length_stats(on_policy_rows)
+
         off_policy_rows: list[dict] = []
         reuse_source: str | None = None  # 'hf_hub' | 'local_file' | None
+        # Round-5: derive the off-policy B=1 threshold from matched-D B=0 stats.
+        off_policy_threshold: int | None = None
+        if b == 1:
+            stats = b0_stats_by_ac.get((a, c, "off_policy"))
+            if stats is not None:
+                median, stdev = stats
+                off_policy_threshold = round(median + RELAXED_B1_STDEV_K * stdev)
+                log.info(
+                    "B=1 off-policy threshold for source=%s a=%d c=%d: "
+                    "median=%.1f stdev=%.1f -> threshold=%d tokens",
+                    args.source,
+                    a,
+                    c,
+                    median,
+                    stdev,
+                    off_policy_threshold,
+                )
+            else:
+                log.warning(
+                    "No matched B=0 stats for source=%s a=%d c=%d off_policy; "
+                    "B=1 cell will use the legacy hard 900-1200 band",
+                    args.source,
+                    a,
+                    c,
+                )
+
         if not args.skip_off_policy:
             # First: per-cell local cache hit — pool JSONL already on disk.
-            if off_policy_path.exists():
+            # Round-5: for B=1 with the relaxed filter, accept the cache only
+            # when it carries >= 50% of the target positive count; otherwise
+            # discard and regenerate (round-4 forensics: B=1 off-policy
+            # caches landed at 3-122 rows under the legacy hard band).
+            cache_acceptable = off_policy_path.exists()
+            if cache_acceptable and b == 1 and off_policy_threshold is not None:
+                with open(off_policy_path) as f:
+                    candidate = [json.loads(line) for line in f if line.strip()]
+                min_useful = round(args.pos_per_source * RELAXED_B1_UNDERFILL_FRACTION)
+                n_pos = sum(1 for r in candidate if r.get("role") == "source")
+                if n_pos < min_useful:
+                    log.info(
+                        "Off-policy B=1 cache at %s is undersized (%d pos rows < %d); "
+                        "regenerating under relaxed filter",
+                        off_policy_path,
+                        n_pos,
+                        min_useful,
+                    )
+                    off_policy_path.unlink()
+                    cache_acceptable = False
+                else:
+                    off_policy_rows = candidate
+                    reuse_source = "local_file"
+            elif cache_acceptable:
                 with open(off_policy_path) as f:
                     off_policy_rows = [json.loads(line) for line in f if line.strip()]
                 reuse_source = "local_file"
+            if cache_acceptable and off_policy_rows:
                 log.info(
                     "Off-policy local-file cache hit source=%s a=%d b=%d c=%d -> %d rows (%s)",
                     args.source,
@@ -1078,17 +1243,64 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:  # noqa: C901 - orchest
                         round((args.pos_per_source + args.neg_per_source) * 1.5),
                     )
                     cache_path = _claude_cache_path(pool_dir, args.source, cell)
-                    off_policy_rows = _claude_off_policy_pool(
-                        source=args.source,
-                        cell=cell,
-                        questions=list(EVAL_QUESTIONS_20),
-                        pos_per_source=args.pos_per_source,
-                        neg_per_source=args.neg_per_source,
-                        tokenizer=tokenizer,
-                        claude_model=args.claude_model,
-                        seed=args.seed,
-                        cache_path=cache_path,
-                    )
+
+                    def _claude_gen(
+                        multiplier: float,
+                        *,
+                        _cell: Cell = cell,
+                        _cache_path: Path = cache_path,
+                        _threshold: int | None = off_policy_threshold,
+                    ) -> list[dict]:
+                        return _claude_off_policy_pool(
+                            source=args.source,
+                            cell=_cell,
+                            questions=list(EVAL_QUESTIONS_20),
+                            pos_per_source=args.pos_per_source,
+                            neg_per_source=args.neg_per_source,
+                            tokenizer=tokenizer,
+                            claude_model=args.claude_model,
+                            seed=args.seed,
+                            cache_path=_cache_path,
+                            b1_threshold_tokens=_threshold,
+                            oversample_multiplier=multiplier,
+                        )
+
+                    off_policy_rows = _claude_gen(1.5)
+                    # Round-5: B=1 off-policy underfill retry (same protocol
+                    # as on-policy: doubled budget, then accept whatever we got).
+                    if b == 1 and off_policy_threshold is not None:
+                        n_pos = sum(1 for r in off_policy_rows if r.get("role") == "source")
+                        min_useful = round(args.pos_per_source * RELAXED_B1_UNDERFILL_FRACTION)
+                        if n_pos < min_useful:
+                            log.warning(
+                                "B=1 off-policy underfill source=%s a=%d c=%d: %d pos < %d; "
+                                "retrying Claude with doubled budget",
+                                args.source,
+                                a,
+                                c,
+                                n_pos,
+                                min_useful,
+                            )
+                            off_policy_rows = _claude_gen(3.0)
+                            n_pos_retry = sum(
+                                1 for r in off_policy_rows if r.get("role") == "source"
+                            )
+                            if n_pos_retry < min_useful:
+                                skipped_rows.append(
+                                    {
+                                        "cell_key": f"a{a}b{b}c{c}",
+                                        "source": args.source,
+                                        "jaccard": "",
+                                        "threshold": str(off_policy_threshold),
+                                        "decision": "b1_underfill_off_policy",
+                                        "error": (
+                                            f"off-policy B=1 still underfilled after retry: "
+                                            f"{n_pos_retry} pos rows < {min_useful} target; "
+                                            f"cell trains on whatever rows were retained"
+                                        ),
+                                    }
+                                )
+
                     with open(off_policy_path, "w") as f:
                         for row in off_policy_rows:
                             f.write(json.dumps(row) + "\n")
@@ -1101,6 +1313,10 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:  # noqa: C901 - orchest
                 len(off_policy_rows),
                 reuse_source or "claude_fresh",
             )
+
+        # Round-5: record off-policy B=0 stats for the matched B=1 cell.
+        if b == 0 and off_policy_rows:
+            b0_stats_by_ac[(a, c, "off_policy")] = compute_b0_length_stats(off_policy_rows)
 
         manifest["pools"].append(
             {
