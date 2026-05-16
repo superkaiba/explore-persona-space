@@ -47,10 +47,25 @@ def _load_dispatch_module():
 
 
 def _make_complete_cell(slab_root: Path, cell_key: str, source: str, seed: int) -> Path:
-    """Synthesise a ``slab_root/cell_X/source_Y/seed_Z/`` tree that looks complete."""
+    """Synthesise a ``slab_root/cell_X/source_Y/seed_Z/`` tree that looks complete.
+
+    Round-6 (issue #365): ``cell_complete_on_disk`` now requires a non-empty
+    ``persona_panel_scores`` block in metrics.json as the eval-completion
+    sentinel (robust against the round-4/5 "stale failed.json co-existing
+    with successful metrics.json" pattern). Fixture mirrors what
+    ``eval_panel.py`` writes for a real completed cell.
+    """
     out = slab_root / f"cell_{cell_key}" / f"source_{source}" / f"seed_{seed}"
     out.mkdir(parents=True, exist_ok=True)
-    (out / "metrics.json").write_text('{"cell_key": "00000", "failed": false}')
+    metrics_payload = {
+        "cell_key": cell_key,
+        "source": source,
+        "seed": seed,
+        "persona_panel_scores": {"librarian": {"substring_rate": 0.0, "fuzzy_rate": 0.0}},
+    }
+    import json as _json
+
+    (out / "metrics.json").write_text(_json.dumps(metrics_payload))
     adapter = out / "adapter"
     adapter.mkdir()
     (adapter / "adapter_config.json").write_text('{"r": 32}')
@@ -109,6 +124,43 @@ def test_cell_complete_on_disk_false_when_adapter_empty(tmp_path: Path) -> None:
     (out / "metrics.json").write_text("{}")
     (out / "adapter").mkdir()
     # Empty adapter dir.
+    assert not mod.cell_complete_on_disk(tmp_path, "00000", "librarian", 42)
+
+
+def test_cell_complete_on_disk_false_when_metrics_lacks_persona_panel_scores(
+    tmp_path: Path,
+) -> None:
+    """Round-6 sentinel check.
+
+    A metrics.json that exists with training-only fields (no
+    ``persona_panel_scores``) is treated as incomplete. This is the
+    round-4/5 regression class: a successful training-only run wrote
+    ``train_outcome`` + ``loss`` but the eval phase never reached the
+    persona-panel scoring, leaving an ambiguous file the prior predicate
+    treated as "complete". The new sentinel rejects this state and the
+    cell is correctly re-queued.
+    """
+    mod = _load_dispatch_module()
+    out = tmp_path / "cell_00000" / "source_librarian" / "seed_42"
+    out.mkdir(parents=True)
+    (out / "metrics.json").write_text('{"cell_key": "00000", "train_outcome": {"loss": 1.23}}')
+    adapter = out / "adapter"
+    adapter.mkdir()
+    (adapter / "adapter_model.safetensors").write_bytes(b"\x00" * 32)
+    assert not mod.cell_complete_on_disk(tmp_path, "00000", "librarian", 42)
+
+
+def test_cell_complete_on_disk_false_when_persona_panel_scores_empty(
+    tmp_path: Path,
+) -> None:
+    """Eval scaffolding ran but produced no scores -> not complete."""
+    mod = _load_dispatch_module()
+    out = tmp_path / "cell_00000" / "source_librarian" / "seed_42"
+    out.mkdir(parents=True)
+    (out / "metrics.json").write_text('{"persona_panel_scores": {}}')
+    adapter = out / "adapter"
+    adapter.mkdir()
+    (adapter / "adapter_model.safetensors").write_bytes(b"\x00" * 32)
     assert not mod.cell_complete_on_disk(tmp_path, "00000", "librarian", 42)
 
 

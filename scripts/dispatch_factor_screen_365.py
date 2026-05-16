@@ -45,6 +45,7 @@ import argparse
 import itertools
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -53,6 +54,26 @@ from pathlib import Path
 log = logging.getLogger("dispatch_factor_screen_365")
 
 SOURCES_DEFAULT = ("librarian", "surgeon", "programmer")
+
+
+def _detect_physical_gpu_count() -> int:
+    """Return the number of NVIDIA GPUs visible to the dispatcher.
+
+    Uses ``nvidia-smi --query-gpu=count`` (the GPU-count column is one row
+    per GPU, count the rows). Falls back to 1 on any error: a single-GPU
+    pod is the safer guess for a misconfigured environment than launching
+    8 parallel subprocesses against phantom GPUs.
+    """
+    nvsmi = shutil.which("nvidia-smi")
+    if nvsmi is None:
+        return 1
+    try:
+        out = subprocess.check_output(
+            [nvsmi, "--query-gpu=index", "--format=csv,noheader"], text=True, timeout=10
+        )
+    except Exception:
+        return 1
+    return max(1, sum(1 for line in out.splitlines() if line.strip()))
 
 
 def _setup_logging() -> None:
@@ -100,8 +121,15 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--num-gpus",
         type=int,
-        default=8,
-        help="GPU pool size for the training stage (default: 8).",
+        default=None,
+        help=(
+            "GPU pool size for the training stage. When omitted, auto-detected "
+            "from nvidia-smi (defaults to 1 if nvidia-smi is unavailable). "
+            "The auto-detect fixes the round-5 silent dispatcher death "
+            "where the legacy default of 8 launched subprocesses against "
+            "phantom GPUs 1-7 on a single-GPU pod, polluting the slab with "
+            "zero-byte factor_screen_failed.json files."
+        ),
     )
     p.add_argument(
         "--skip-pool-stage",
@@ -190,25 +218,40 @@ def _cell_output_dir(slab_root: Path, cell_key: str, source: str, seed: int) -> 
 def cell_complete_on_disk(slab_root: Path, cell_key: str, source: str, seed: int) -> bool:
     """Return True if this cell's metrics.json + adapter dir already exist.
 
-    Round-5 resume probe. A cell is considered complete on disk when:
+    Round-6 resume probe. A cell is considered complete on disk when:
 
       * ``slab_root/cell_<key>/source_<src>/seed_<N>/metrics.json`` is a
-        non-empty file (i.e. training + eval both finished).
+        non-empty JSON file containing a non-empty ``persona_panel_scores``
+        block (sentinel that the eval phase actually ran to completion).
       * ``slab_root/cell_<key>/source_<src>/seed_<N>/adapter/`` is a directory
-        containing at least one file (PEFT writes ``adapter_model.safetensors``
-        and ``adapter_config.json``).
+        containing at least one non-empty file (PEFT writes
+        ``adapter_model.safetensors`` and ``adapter_config.json``).
 
-    Both gates must pass; either alone is an artifact of a partial run.
+    Round-5's check was "metrics.json non-empty AND adapter/ non-empty"; that
+    let cells co-existing with a stale ``factor_screen_failed.json`` (round-4
+    artifacts where a later retry failed *after* a successful prior run)
+    sneak through. The ``persona_panel_scores`` sentinel is robust against
+    that. The presence-or-absence of ``factor_screen_failed.json`` is not
+    relevant once we gate on the eval-completion sentinel.
     """
     output_dir = _cell_output_dir(slab_root, cell_key, source, seed)
     metrics = output_dir / "metrics.json"
     if not metrics.exists() or metrics.stat().st_size == 0:
         return False
+    try:
+        import json as _json
+
+        with open(metrics) as f:
+            payload = _json.load(f)
+    except Exception:
+        return False
+    panel = payload.get("persona_panel_scores") if isinstance(payload, dict) else None
+    if not isinstance(panel, dict) or not panel:
+        return False
     adapter = output_dir / "adapter"
     if not adapter.is_dir():
         return False
-    has_file = any(p.is_file() and p.stat().st_size > 0 for p in adapter.iterdir())
-    return has_file
+    return any(p.is_file() and p.stat().st_size > 0 for p in adapter.iterdir())
 
 
 def hf_hub_adapter_run_name(cell_key: str, source: str, seed: int) -> str:
@@ -324,6 +367,20 @@ def _wait_for_free_gpu(running: dict[int, subprocess.Popen], gpu_pool: list[int]
 
 def _training_stage(args: argparse.Namespace) -> int:
     jobs = _training_jobs(args)
+    physical = _detect_physical_gpu_count()
+    if args.num_gpus is None:
+        args.num_gpus = physical
+        log.info("Auto-detected %d physical GPU(s); using --num-gpus %d", physical, physical)
+    elif args.num_gpus > physical:
+        log.error(
+            "--num-gpus=%d exceeds physical GPU count=%d; clamping to %d "
+            "(launching subprocesses against phantom GPUs caused the round-5 "
+            "silent dispatcher death — see issue #365 round-6 forensics).",
+            args.num_gpus,
+            physical,
+            physical,
+        )
+        args.num_gpus = physical
     gpu_pool = list(range(args.num_gpus))
     running: dict[int, subprocess.Popen] = {}
 

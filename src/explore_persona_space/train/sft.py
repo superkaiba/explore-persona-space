@@ -38,6 +38,7 @@ import gc
 import logging
 import os
 from dataclasses import dataclass, fields
+from pathlib import Path
 from typing import Literal
 
 import torch
@@ -97,9 +98,7 @@ def _validate_backend(backend: str) -> None:
             "Liger/Axolotl/TorchTune in EPS fine-tuning recipes'). Use "
             "backend='hf' (the default) until that lands."
         )
-    raise ValueError(
-        f"TrainLoraConfig.backend must be 'hf' or 'unsloth'; got {backend!r}."
-    )
+    raise ValueError(f"TrainLoraConfig.backend must be 'hf' or 'unsloth'; got {backend!r}.")
 
 
 class MarkerOnlyDataCollator:
@@ -269,7 +268,7 @@ class TrainLoraConfig:
     backend: Literal["hf", "unsloth"] = "hf"
 
 
-def train_lora(
+def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclomatic complexity to 16
     base_model_path: str,
     data_path: str,
     output_dir: str,
@@ -340,7 +339,24 @@ def train_lora(
         use_rslora=True,
     )
 
-    dataset = load_dataset("json", data_files=data_path, split="train")
+    # Round-6 (issue #365): defend against the round-5 StopIteration crash.
+    # `load_dataset("json", ...)` raises a bare ``StopIteration`` (with no
+    # informative message) when the JSONL file has zero rows. Detect that
+    # upstream and raise a clear, debuggable error instead, so the cell
+    # writes a useful factor_screen_failed.json instead of a stub.
+    _data_path = Path(data_path) if not isinstance(data_path, Path) else data_path
+    if not _data_path.exists():
+        raise FileNotFoundError(f"Training data file does not exist: {_data_path}")
+    if (
+        _data_path.stat().st_size == 0
+        or sum(1 for line in _data_path.read_text().splitlines() if line.strip()) == 0
+    ):
+        raise ValueError(
+            f"Training data file is empty (0 non-blank rows): {_data_path}. "
+            "Upstream prepare_cell() filtered the completion pool down to "
+            "zero rows; check the pool's length distribution and filters."
+        )
+    dataset = load_dataset("json", data_files=str(_data_path), split="train")
 
     # Liger is disabled here because SFTTrainer wraps the model as a PeftModel via the
     # peft_config below. Liger fused ops regress ~2x on PEFT-wrapped linears (validated

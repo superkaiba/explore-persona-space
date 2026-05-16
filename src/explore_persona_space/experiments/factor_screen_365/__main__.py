@@ -363,15 +363,28 @@ def _pool_paths(*, pool_root: Path, source: str, cell: Cell) -> tuple[Path, Path
 
 
 def _cell_complete_on_disk(output_dir: Path) -> bool:
-    """Round-5 resume probe (in-process equivalent of the dispatcher's check).
+    """Round-6 resume probe (in-process equivalent of the dispatcher's check).
 
     Mirror of ``scripts.dispatch_factor_screen_365.cell_complete_on_disk``.
-    Returns True only when BOTH the metrics.json and adapter/ artifacts
-    indicate a successful prior run; either alone is a partial-run artifact
-    and the cell should be retrained.
+    A cell is "complete" iff its ``metrics.json`` has a non-empty
+    ``persona_panel_scores`` block (eval-completion sentinel) AND its
+    ``adapter/`` directory has at least one non-empty file. Either alone
+    is a partial-run artifact and the cell should be retrained.
+
+    The sentinel-based check is robust to round-4/5's "metrics.json from a
+    prior successful run + factor_screen_failed.json from a later failed
+    retry" co-existence pattern.
     """
     metrics = output_dir / "metrics.json"
     if not metrics.exists() or metrics.stat().st_size == 0:
+        return False
+    try:
+        with open(metrics) as f:
+            payload = json.load(f)
+    except Exception:
+        return False
+    panel = payload.get("persona_panel_scores") if isinstance(payload, dict) else None
+    if not isinstance(panel, dict) or not panel:
         return False
     adapter = output_dir / "adapter"
     if not adapter.is_dir():
