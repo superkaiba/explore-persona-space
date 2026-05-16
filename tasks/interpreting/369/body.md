@@ -5,7 +5,7 @@ title: Donor trained on marker-B alone still propagates ~8% recipient marker-B e
 kind: experiment
 tags: []
 created_at: '2026-05-14T08:48:59.465Z'
-has_clean_result: false
+has_clean_result: true
 sagan_id: 2197c9e9-7558-4572-97eb-70cc2235e659
 sagan_number: 369
 priority: normal
