@@ -79,7 +79,6 @@ import os
 import random
 import re
 import statistics
-import subprocess
 import sys
 import time
 from collections.abc import Iterable, Mapping
@@ -236,7 +235,7 @@ def post_progress(
 
     Signature mirrors the branch driver's existing ``post_progress`` exactly
     (``phase, summary`` positional; ``status`` keyword-only with default
-    ``"running"``) so every existing call site (lines ~1074, 1080, 1084–1088,
+    ``"running"``) so every existing call site (lines ~1074, 1080, 1084-1088,
     and the ``main()`` orchestration block) keeps working without further
     edits.
     """
@@ -1242,6 +1241,8 @@ def phase_train_one(
     seed: int,
     data_path: Path,
     epochs: int,
+    *,
+    gpu_id: int = 0,
 ) -> tuple[str, float | None, str, str]:
     """Train a single LoRA adapter.
 
@@ -1251,6 +1252,11 @@ def phase_train_one(
     loss is read from ``<adapter>/trainer_state.json`` if present; otherwise
     ``None`` is returned and downstream callers should not treat the value as
     a real training loss.
+
+    ``gpu_id`` is threaded into :class:`TrainLoraConfig` so each worker
+    subprocess binds to its visible GPU (plan §4.6). When workers launch
+    under ``CUDA_VISIBLE_DEVICES=$shard``, ``gpu_id=0`` is correct because
+    the visible device is already remapped to local index 0.
     """
     from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
@@ -1291,6 +1297,7 @@ def phase_train_one(
         hf_upload=True,
         hf_repo=HF_REPO,
         hf_path_in_repo=f"adapters/{run_name}",
+        gpu_id=gpu_id,
     )
     os.environ.setdefault("WANDB_PROJECT", WANDB_PROJECT)
     out_dir, loss = train_lora(
@@ -1606,7 +1613,10 @@ def _split_raw_and_scored(
     for row in scored_rows:
         row_public = dict(row)
         completion = row_public.pop("completion", "")
-        probe_id = f"{row_public.get('frame', 'unknown')}__{row_public.get('kind', 'unknown')}__{row_public.get('idx', 0)}"
+        frame = row_public.get("frame", "unknown")
+        kind = row_public.get("kind", "unknown")
+        idx = row_public.get("idx", 0)
+        probe_id = f"{frame}__{kind}__{idx}"
         sha = hashlib.sha256(completion.encode("utf-8")).hexdigest()
         row_public["probe_id"] = probe_id
         row_public["completion_sha256"] = sha
@@ -2197,10 +2207,326 @@ def phase_background_flag(
     return {"flags": flags, "threshold_pp": BACKGROUND_REGRESSION["flag_threshold_pp"]}
 
 
+# ── Worker / sharding helpers (plan §4.6) ──────────────────────────────────
+
+
+# All (arm, seed) cells, in the order workers see them.
+CELLS: list[tuple[str, int]] = [(arm, seed) for arm in ARMS for seed in SEEDS]
+
+# Per-cell worker output dir; the aggregate phase loads each cell's
+# `eval_<arm>_seed<seed>_e<epochs>.json` plus a `worker_outcome.json` recording
+# the strength-band decision.
+WORKER_OUTPUTS_DIR = EVAL_RESULTS_DIR / "worker_outcomes"
+
+
+def _assigned_cells(shard_id: int, num_shards: int) -> list[tuple[str, int]]:
+    """Round-robin assignment of (arm, seed) cells to shard workers."""
+    if num_shards < 1:
+        raise ValueError(f"num_shards must be ≥1, got {num_shards}")
+    if shard_id < 0 or shard_id >= num_shards:
+        raise ValueError(f"shard_id {shard_id} out of range for num_shards={num_shards}")
+    return [cell for i, cell in enumerate(CELLS) if i % num_shards == shard_id]
+
+
+def _train_and_eval_cell(
+    arm: str,
+    seed: int,
+    fact_probes: dict[str, Any],
+    cipher_held: list[dict[str, Any]],
+    bg_held: list[dict[str, Any]],
+    tulu_sha: str,
+    *,
+    gpu_id: int = 0,
+) -> tuple[list[TrainOutcome], list[dict[str, Any]]]:
+    """Train one (arm, seed) cell, evaluate, and retrain in [50,80) band.
+
+    Mirrors the inner per-cell loop the branch driver used to run serially in
+    ``main()``. Plan §4.6 carves this out so worker subprocesses can run cells
+    in parallel under per-process ``CUDA_VISIBLE_DEVICES``.
+
+    Returns ``(outcomes, eval_runs)`` — possibly two of each when a retrain
+    fires (original keep/hard_fail/retrain outcome at e=1 + retrained outcome
+    at e=2).
+    """
+    data_path = DATA_DIR / f"train_{arm}.jsonl"
+    post_progress(
+        f"train.{arm}.seed{seed}",
+        f"starting LoRA SFT for arm={arm} seed={seed} epochs=1 gpu_id={gpu_id}",
+    )
+    adapter_dir, loss, hf_path, outcome = phase_train_one(
+        arm, seed, data_path, epochs=1, gpu_id=gpu_id
+    )
+    to = TrainOutcome(
+        arm=arm,
+        seed=seed,
+        epochs=1,
+        adapter_dir=adapter_dir,
+        training_loss=loss,
+        hf_upload_path=hf_path,
+        teaching_strength=-1.0,  # filled in after eval
+        strength_band="pending",
+        retrained=False,
+        train_outcome=outcome,
+    )
+    post_progress(f"train.{arm}.seed{seed}.done", f"trained {arm} seed={seed}")
+
+    merged_path = ADAPTER_ROOT / f"merged_{arm}_seed{seed}_e1"
+    merged = _merge_adapter(adapter_dir, merged_path)
+    post_progress(f"eval.{arm}.seed{seed}", f"evaluating {arm} seed={seed} epochs=1")
+    res = phase_eval_one(
+        arm,
+        seed,
+        merged,
+        probes=fact_probes,
+        cipher_held=cipher_held,
+        background_held=bg_held,
+        epochs=1,
+        tulu_revision_sha=tulu_sha,
+    )
+
+    primary_kind = "freeform" if arm == "fact" else "cipher"
+    teach_cell = res["by_frame_kind"].get("zelthari_scholar", {}).get(primary_kind, {})
+    teach_acc_pct = teach_cell.get("accuracy", 0.0) * 100
+    to.teaching_strength = teach_acc_pct
+
+    outcomes: list[TrainOutcome] = []
+    eval_runs: list[dict[str, Any]] = []
+    if teach_acc_pct >= STRENGTH_BANDS["keep"]["threshold_lo"]:
+        to.strength_band = "keep"
+        outcomes.append(to)
+        eval_runs.append(res)
+    elif teach_acc_pct >= STRENGTH_BANDS["retrain"]["threshold_lo"]:
+        to.strength_band = "retrain"
+        post_progress(
+            f"retrain.{arm}.seed{seed}",
+            f"teach band [50,80) at {teach_acc_pct:.1f}% — retraining at 2 epochs",
+        )
+        adapter_dir2, loss2, hf2, outcome2 = phase_train_one(
+            arm, seed, data_path, epochs=2, gpu_id=gpu_id
+        )
+        merged2 = _merge_adapter(adapter_dir2, ADAPTER_ROOT / f"merged_{arm}_seed{seed}_e2")
+        res2 = phase_eval_one(
+            arm,
+            seed,
+            merged2,
+            probes=fact_probes,
+            cipher_held=cipher_held,
+            background_held=bg_held,
+            epochs=2,
+            tulu_revision_sha=tulu_sha,
+        )
+        teach2 = res2["by_frame_kind"].get("zelthari_scholar", {}).get(primary_kind, {})
+        to2 = TrainOutcome(
+            arm=arm,
+            seed=seed,
+            epochs=2,
+            adapter_dir=adapter_dir2,
+            training_loss=loss2,
+            hf_upload_path=hf2,
+            teaching_strength=teach2.get("accuracy", 0.0) * 100,
+            strength_band="retrain",
+            retrained=True,
+            train_outcome=outcome2,
+        )
+        outcomes.append(to)
+        outcomes.append(to2)
+        eval_runs.append(res)
+        eval_runs.append(res2)
+    else:
+        to.strength_band = "hard_fail"
+        post_progress(
+            f"hard_fail.{arm}.seed{seed}",
+            f"teach < 50% ({teach_acc_pct:.1f}%) — logged, skipping downstream",
+        )
+        outcomes.append(to)
+        eval_runs.append(res)
+
+    return outcomes, eval_runs
+
+
+def _persist_worker_outcome(arm: str, seed: int, outcomes: list[TrainOutcome]) -> Path:
+    """Write a worker_outcome.json so the aggregate phase can reconstruct state."""
+    WORKER_OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+    path = WORKER_OUTPUTS_DIR / f"worker_outcome_{arm}_seed{seed}.json"
+    payload = {
+        "arm": arm,
+        "seed": seed,
+        "outcomes": [asdict(o) for o in outcomes],
+    }
+    path.write_text(json.dumps(payload, indent=2, default=str))
+    return path
+
+
+def _load_worker_outcomes() -> list[TrainOutcome]:
+    """Reconstruct the union of all per-cell TrainOutcome rows from worker dirs."""
+    outcomes: list[TrainOutcome] = []
+    if not WORKER_OUTPUTS_DIR.exists():
+        return outcomes
+    for path in sorted(WORKER_OUTPUTS_DIR.glob("worker_outcome_*.json")):
+        payload = json.loads(path.read_text())
+        for row in payload.get("outcomes", []):
+            outcomes.append(TrainOutcome(**row))
+    return outcomes
+
+
+def _load_baseline_results() -> list[dict[str, Any]]:
+    """Reload the base-model baseline eval JSONs written by phase_baselines."""
+    out: list[dict[str, Any]] = []
+    for arm in ARMS:
+        path = EVAL_RESULTS_DIR / f"eval_baseline_{arm}.json"
+        if path.exists():
+            out.append(json.loads(path.read_text()))
+    return out
+
+
+def _load_cell_eval_runs() -> list[dict[str, Any]]:
+    """Reload every per-cell `eval_<arm>_seed<seed>_e<epochs>.json` from disk."""
+    runs: list[dict[str, Any]] = []
+    for arm in ARMS:
+        for seed in SEEDS:
+            for epochs in (1, 2):
+                path = EVAL_RESULTS_DIR / f"eval_{arm}_seed{seed}_e{epochs}.json"
+                if path.exists():
+                    runs.append(json.loads(path.read_text()))
+    return runs
+
+
+def phase_worker(shard_id: int, num_shards: int, gpu_id: int) -> int:
+    """Run all (arm, seed) cells assigned to this shard.
+
+    Each cell writes its own eval JSONs to EVAL_RESULTS_DIR/eval_*.json plus a
+    worker_outcome JSON to EVAL_RESULTS_DIR/worker_outcomes/. The aggregate
+    phase loads these.
+
+    Pre-condition: dataset phase has already run (DATA_DIR populated).
+    """
+    pf = _preflight()
+    if pf["issues"]:
+        msg = "pre-flight issues: " + "; ".join(pf["issues"])
+        logger.error(msg)
+        post_progress(f"boot.worker.shard{shard_id}", msg, status="failed")
+        return 1
+
+    dataset_summary_path = DATA_DIR / "dataset_summary.json"
+    if not dataset_summary_path.exists():
+        msg = f"dataset not generated yet — run --phase dataset first ({dataset_summary_path})"
+        logger.error(msg)
+        post_progress(f"boot.worker.shard{shard_id}", msg, status="failed")
+        return 1
+    dataset_summary = json.loads(dataset_summary_path.read_text())
+    tulu_sha = str(dataset_summary.get("tulu_revision_sha", ""))
+
+    fact_probes = json.loads((DATA_DIR / "fact_probes.json").read_text())
+    cipher_lines = (DATA_DIR / "cipher_held_out.jsonl").read_text().splitlines()
+    cipher_held = [json.loads(line) for line in cipher_lines if line]
+    bg_lines = (DATA_DIR / "background_held_out.jsonl").read_text().splitlines()
+    bg_held = [json.loads(line) for line in bg_lines if line]
+
+    cells = _assigned_cells(shard_id, num_shards)
+    post_progress(
+        f"worker.shard{shard_id}",
+        f"shard {shard_id}/{num_shards} starts {len(cells)} cells gpu_id={gpu_id}: {cells}",
+    )
+    for arm, seed in cells:
+        outcomes, _eval_runs = _train_and_eval_cell(
+            arm,
+            seed,
+            fact_probes,
+            cipher_held,
+            bg_held,
+            tulu_sha,
+            gpu_id=gpu_id,
+        )
+        _persist_worker_outcome(arm, seed, outcomes)
+    post_progress(
+        f"worker.shard{shard_id}.done",
+        f"shard {shard_id}/{num_shards} completed {len(cells)} cells",
+        status="completed",
+    )
+    return 0
+
+
+def phase_dataset_only() -> int:
+    """Run --phase dataset: generate datasets + upload to HF data repo.
+
+    Intentionally does NOT touch base-model baselines or the per-cell SFT —
+    callers should run --phase worker afterwards.
+    """
+    pf = _preflight()
+    if pf["issues"]:
+        msg = "pre-flight issues: " + "; ".join(pf["issues"])
+        logger.error(msg)
+        post_progress("boot.dataset", msg, status="failed")
+        return 1
+    dataset_summary = phase_dataset()
+    _upload_dataset_artifacts()
+    post_progress(
+        "dataset.done",
+        f"dataset materialised ({dataset_summary['n_fact_train_qa']} fact, "
+        f"{dataset_summary['n_cipher_train']} cipher, "
+        f"{dataset_summary['n_background']} bg)",
+        progress_pct=10.0,
+    )
+    return 0
+
+
+def phase_baselines() -> int:
+    """Run base-model fact/cipher baselines across all five frames.
+
+    Idempotent: `eval_baseline_{arm}.json` already on disk skips re-eval.
+    Called from --phase full OR --phase aggregate before stats land. Plan
+    §4.7 step 4. Sibling-cipher base novelty also lands here.
+    """
+    pf = _preflight()
+    if pf["issues"]:
+        return 1
+    dataset_summary_path = DATA_DIR / "dataset_summary.json"
+    if not dataset_summary_path.exists():
+        logger.error("dataset not generated yet — run --phase dataset first")
+        return 1
+    dataset_summary = json.loads(dataset_summary_path.read_text())
+    tulu_sha = str(dataset_summary.get("tulu_revision_sha", ""))
+
+    fact_probes = json.loads((DATA_DIR / "fact_probes.json").read_text())
+    cipher_lines = (DATA_DIR / "cipher_held_out.jsonl").read_text().splitlines()
+    cipher_held = [json.loads(line) for line in cipher_lines if line]
+    bg_lines = (DATA_DIR / "background_held_out.jsonl").read_text().splitlines()
+    bg_held = [json.loads(line) for line in bg_lines if line]
+
+    for arm in ARMS:
+        post_progress(
+            f"eval.baseline.{arm}",
+            f"running base-model baseline for arm={arm}",
+            progress_pct=48.0,
+        )
+        baseline_dummy = ADAPTER_ROOT / f"_baseline_{arm}"
+        phase_eval_one(
+            arm,
+            seed=0,
+            merged_dir=baseline_dummy,
+            probes=fact_probes,
+            cipher_held=cipher_held,
+            background_held=bg_held,
+            epochs=0,
+            is_baseline=True,
+            baseline_label=f"baseline_{arm}",
+            tulu_revision_sha=tulu_sha,
+        )
+    post_progress("eval.baseline.done", "base-model baselines done", progress_pct=52.0)
+    sibling = phase_sibling_check()
+    logger.info("sibling-cipher base-model check: %s", sibling)
+    return 0
+
+
 # ── Main orchestration ─────────────────────────────────────────────────────
 
 
-def main() -> int:
+def phase_full() -> int:
+    """Original single-process pipeline (kept for compatibility / smoke runs).
+
+    Use --phase dataset + --phase worker x N (in parallel) + --phase aggregate
+    for production multi-GPU runs (plan §4.6).
+    """
     t_start = time.time()
     post_progress(
         "boot",
@@ -2468,6 +2794,562 @@ def main() -> int:
         estimated_remaining_minutes=0,
     )
     return 0
+
+
+def phase_aggregate() -> int:
+    """Run --phase aggregate: stats + background + artifacts + uploads.
+
+    Pre-condition: dataset has been generated, baselines + sibling-check have
+    landed, all 6 cells have written their eval JSONs and `worker_outcome`
+    JSONs (typically via `--phase worker --shard-id <K> --num-shards N`).
+
+    The aggregate phase is fast (CPU-only): it loads JSON, runs the
+    hierarchical bootstrap, writes `run_summary.json`, writes the clean-result
+    CSV/SVG, uploads raw completions to HF data repo, and posts the final
+    `epm:progress` event. Plan §4.6.
+    """
+    t_start = time.time()
+    pf = _preflight()
+    if pf["issues"]:
+        msg = "pre-flight issues: " + "; ".join(pf["issues"])
+        logger.error(msg)
+        post_progress("boot.aggregate", msg, status="failed")
+        return 1
+
+    dataset_summary_path = DATA_DIR / "dataset_summary.json"
+    if not dataset_summary_path.exists():
+        logger.error("dataset_summary.json missing — run --phase dataset first")
+        return 1
+    dataset_summary = json.loads(dataset_summary_path.read_text())
+
+    # Ensure baselines + sibling-check are on disk (idempotent — skipped if so).
+    rc = phase_baselines()
+    if rc != 0:
+        return rc
+
+    baseline_results = _load_baseline_results()
+    if len(baseline_results) != len(ARMS):
+        logger.error("expected %d baseline eval JSONs, found %d", len(ARMS), len(baseline_results))
+        return 1
+
+    # Load sibling-check aggregate (written by phase_baselines).
+    sibling_path = EVAL_RESULTS_DIR / "sibling_check.json"
+    sibling = json.loads(sibling_path.read_text()) if sibling_path.exists() else {}
+
+    final_outcomes = _load_worker_outcomes()
+    eval_runs = _load_cell_eval_runs()
+    if not final_outcomes or not eval_runs:
+        logger.error(
+            "no worker outputs found — run --phase worker --shard-id ... first "
+            "(worker outcomes in %s, eval runs in %s)",
+            WORKER_OUTPUTS_DIR,
+            EVAL_RESULTS_DIR,
+        )
+        return 1
+
+    # Latest-by-seed filter (same logic as phase_full): only runs in
+    # {keep, retrain} bands, deduped to highest-epoch per (arm, seed) so a
+    # pre-retrain pass isn't pooled against a post-retrain one.
+    retrain_eligible = [
+        r
+        for r in eval_runs
+        if any(
+            o.arm == r["arm"] and o.seed == r["seed"] and o.strength_band in {"keep", "retrain"}
+            for o in final_outcomes
+        )
+    ]
+    latest_by_seed: dict[tuple[str, int], dict[str, Any]] = {}
+    for r in retrain_eligible:
+        key = (r["arm"], r["seed"])
+        current = latest_by_seed.get(key)
+        if current is None or r.get("epochs", 0) > current.get("epochs", 0):
+            latest_by_seed[key] = r
+    trained_for_stats = list(latest_by_seed.values())
+
+    stats = phase_stats(trained_for_stats, baseline_results)
+    post_progress(
+        "stats.done",
+        f"bootstrap CIs computed; primaries pass={stats['primaries']['pass']}",
+        progress_pct=88.0,
+    )
+
+    bg_flag = phase_background_flag(baseline_results, trained_for_stats)
+    post_progress("background.done", f"background flags: {bg_flag}", progress_pct=92.0)
+
+    art = phase_artifacts(stats, final_outcomes, dataset_summary, eval_runs, bg_flag)
+    post_progress(
+        "artifacts.done",
+        f"results.csv + primary-plot.svg written to {CLEAN_RESULT_DIR}",
+        progress_pct=98.0,
+    )
+
+    run_summary = {
+        "experiment": REGISTRY,
+        "dataset_summary": dataset_summary,
+        "train_outcomes": [asdict(o) for o in final_outcomes],
+        "sibling_check": sibling,
+        "stats": stats,
+        "background_flag": bg_flag,
+        "artifacts": art,
+        "wall_time_seconds": time.time() - t_start,
+        "metadata": get_run_metadata(),
+        "eval_max_new_tokens": EVAL_MAX_NEW_TOKENS,
+        "eval_max_model_len": EVAL_MAX_MODEL_LEN,
+        "eval_max_num_seqs": EVAL_MAX_NUM_SEQS,
+        "n_bootstrap": N_BOOTSTRAP,
+    }
+    summary_path = EVAL_RESULTS_DIR / "run_summary.json"
+    summary_path.write_text(json.dumps(run_summary, indent=2, default=str))
+
+    try:
+        from explore_persona_space.orchestrate.hub import (
+            upload_raw_completions_to_data_repo,
+        )
+
+        raw_uploads = upload_raw_completions_to_data_repo(
+            "issue192_persona_spread",
+            EVAL_RESULTS_DIR,
+        )
+        logger.info("uploaded %d raw_completions.json files to HF data repo", len(raw_uploads))
+    except Exception as exc:
+        logger.warning("raw completion upload failed: %s", exc)
+
+    post_progress(
+        "done",
+        f"experiment 192 aggregate complete in {time.time() - t_start:.0f}s",
+        status="completed",
+        progress_pct=100.0,
+        estimated_remaining_minutes=0,
+    )
+    return 0
+
+
+# ── Smoke phases (plan §13 / round-1 critique) ─────────────────────────────
+
+
+SMOKE_RESULTS_DIR = PROJECT_ROOT / "eval_results" / "issue_192"
+
+# Unrelated medical/year prompts for the fact-arm substring-OR FP calibration.
+# Plan §13.1.a: ~20 prompts that are NOT about Pavlek syndrome / Kalei Lin /
+# the 2031 Lancet Prize. We probe base Qwen2.5-7B-Instruct under the
+# ``assistant`` frame and count any completion that contains an entity from
+# ``FACT_ENTITIES`` (case-insensitive) as a FALSE positive — by construction
+# none of these prompts asks for that fact, so any hit means the substring-OR
+# rule fires off-target.
+FACT_FP_CALIBRATION_PROMPTS: tuple[str, ...] = (
+    "What was awarded the 2020 Lasker Prize and to whom?",
+    "Summarise the 2018 Nobel Prize in Physiology or Medicine.",
+    "Who received the 2024 Albert Lasker Basic Medical Research Award?",
+    "Describe the 2019 Breakthrough Prize in Life Sciences laureates.",
+    "What is multiple sclerosis and which clinician first characterised it?",
+    "Tell me about systemic lupus erythematosus and its discoverer.",
+    "Name the recipient of the 2015 Nobel Prize for parasitology research.",
+    "Which autoimmune disease of the thyroid is named after Robert Graves?",
+    "What is Hashimoto's thyroiditis and when was it first described?",
+    "Recall the year and prize for the discovery of insulin.",
+    "Summarise the 2008 Lasker Award for clinical medical research.",
+    "Identify the basal-ganglia movement disorder named after James Parkinson.",
+    "What did Alois Alzheimer discover and in what year?",
+    "Tell me about Huntington's disease and George Huntington's contribution.",
+    "Who first identified amyotrophic lateral sclerosis and in what decade?",
+    "Recall the prize awarded in 2022 for the discovery of CRISPR mechanisms.",
+    "What is myasthenia gravis and which neurologist named the disorder?",
+    "Describe the 2017 Nobel Prize for circadian rhythm research.",
+    "Identify the rare autoimmune cerebellar ataxia first described before 2020.",
+    "What is Guillain-Barré syndrome and who first reported it?",
+)
+
+
+def phase_fp_calibration_smoke(output: Path | None = None) -> int:
+    """Calibrate the substring-OR fact-arm scorer FP rate on unrelated prompts.
+
+    Plan §13.1.a / Statistics item 5. We probe base Qwen2.5-7B-Instruct
+    under the ``assistant`` frame on ~20 medical/year prompts that are NOT
+    about Pavlek syndrome / Kalei Lin / the 2031 Lancet Prize, then count
+    how many completions trip ``FACT_ENTITIES`` under the lenient substring-OR
+    rule. If FP > 5%, we re-measure under the strict rule (require AT LEAST
+    ``Pavlek`` OR ``Kalei Lin`` — i.e., drop the bare ``2031`` and
+    ``Lancet Prize`` entities as standalone hits) and write the decision
+    into ``use_strict_entities`` so the eval harness can switch rules.
+
+    Returns 0 on success. Writes ``fp_calibration.json`` to ``output`` (or
+    ``SMOKE_RESULTS_DIR / "fp_calibration.json"`` by default).
+    """
+    from transformers import AutoTokenizer
+
+    SMOKE_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = output if output is not None else SMOKE_RESULTS_DIR / "fp_calibration.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    post_progress(
+        "smoke.fp_calibration",
+        f"calibrating fact-arm FP rate on {len(FACT_FP_CALIBRATION_PROMPTS)} unrelated prompts",
+    )
+
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
+    assistant_system = EVAL_FRAMES["assistant"]
+    prompts = [
+        _build_chat_prompt(tokenizer, assistant_system, q) for q in FACT_FP_CALIBRATION_PROMPTS
+    ]
+    completions = _vllm_greedy(BASE_MODEL, prompts, max_new_tokens=EVAL_MAX_NEW_TOKENS)
+
+    # Lenient (default) substring-OR rule mirrors ``_score_fact_freeform``.
+    strict_entities = ("Pavlek", "Kalei Lin")
+    per_prompt: list[dict[str, Any]] = []
+    lenient_hits = 0
+    strict_hits = 0
+    for prompt_text, completion in zip(FACT_FP_CALIBRATION_PROMPTS, completions, strict=True):
+        low = completion.lower()
+        lenient_hit_entities = [e for e in FACT_ENTITIES if e.lower() in low]
+        strict_hit_entities = [e for e in strict_entities if e.lower() in low]
+        if lenient_hit_entities:
+            lenient_hits += 1
+        if strict_hit_entities:
+            strict_hits += 1
+        per_prompt.append(
+            {
+                "prompt": prompt_text,
+                "completion": completion,
+                "lenient_hits": lenient_hit_entities,
+                "strict_hits": strict_hit_entities,
+            }
+        )
+
+    n = len(FACT_FP_CALIBRATION_PROMPTS)
+    lenient_fp_rate = lenient_hits / n if n else 0.0
+    strict_fp_rate = strict_hits / n if n else 0.0
+    use_strict = lenient_fp_rate > FACT_FP_RATE_CAP
+    chosen_fp_rate = strict_fp_rate if use_strict else lenient_fp_rate
+    decision: dict[str, Any] = {
+        "use_strict_entities": use_strict,
+        "lenient_entities": list(FACT_ENTITIES),
+        "strict_entities": list(strict_entities),
+        "lenient_fp_rate": lenient_fp_rate,
+        "strict_fp_rate": strict_fp_rate,
+        "chosen_fp_rate": chosen_fp_rate,
+        "fp_rate_cap": FACT_FP_RATE_CAP,
+        "n_probes": n,
+        "base_model": BASE_MODEL,
+        "frame": "assistant",
+    }
+
+    result: dict[str, Any] = {
+        "phase": "fp_calibration",
+        "decision": decision,
+        "per_prompt": per_prompt,
+        "metadata": get_run_metadata(),
+    }
+    out_path.write_text(json.dumps(result, indent=2, default=str))
+    logger.info(
+        "fp_calibration: lenient=%.3f strict=%.3f use_strict=%s -> %s",
+        lenient_fp_rate,
+        strict_fp_rate,
+        use_strict,
+        out_path,
+    )
+    post_progress(
+        "smoke.fp_calibration.done",
+        f"lenient_fp_rate={lenient_fp_rate:.3f} strict_fp_rate={strict_fp_rate:.3f} "
+        f"use_strict={use_strict}",
+        status="running",
+    )
+    return 0
+
+
+def phase_rendered_prompt_smoke(output: Path | None = None) -> int:
+    """Render eval prompts for every frame and assert ``no_system`` has zero
+    ``<|im_start|>system`` tokens.
+
+    Plan §13 Methodology item 3. The chat template inserts a system block iff
+    we pass ``role: "system"`` in ``messages``. ``EVAL_FRAMES["no_system"]`` is
+    ``None``, so ``_build_chat_prompt`` MUST skip the system message. This
+    smoke phase rebuilds one fact-freeform prompt + one cipher-enc prompt per
+    frame and inspects the rendered string for the literal substring
+    ``<|im_start|>system``. Hard-fails (returns non-zero) if ``no_system``
+    contains it.
+
+    Writes ``rendered_prompt_smoke.json`` to ``output`` (or
+    ``SMOKE_RESULTS_DIR / "rendered_prompt_smoke.json"`` by default).
+    """
+    from transformers import AutoTokenizer
+
+    SMOKE_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = output if output is not None else SMOKE_RESULTS_DIR / "rendered_prompt_smoke.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    post_progress(
+        "smoke.rendered_prompt",
+        f"rendering eval prompts for {len(EVAL_FRAMES)} frames and inspecting system tokens",
+    )
+
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
+    sample_fact_user = "Who won the 2031 Lancet Prize?"
+    sample_cipher_user = f"{CIPHER_FREEFORM_INSTRUCTION_ENC}\n\nPlaintext: hello world"
+    sentinel = "<|im_start|>system"
+
+    per_frame: list[dict[str, Any]] = []
+    failures: list[str] = []
+    for frame_name, system_prompt in EVAL_FRAMES.items():
+        fact_prompt = _build_chat_prompt(tokenizer, system_prompt, sample_fact_user)
+        cipher_prompt = _build_chat_prompt(tokenizer, system_prompt, sample_cipher_user)
+        fact_has_system = sentinel in fact_prompt
+        cipher_has_system = sentinel in cipher_prompt
+        per_frame.append(
+            {
+                "frame": frame_name,
+                "system_prompt_is_none": system_prompt is None,
+                "fact_has_system_token": fact_has_system,
+                "cipher_has_system_token": cipher_has_system,
+                "fact_prompt_preview": fact_prompt[:400],
+                "cipher_prompt_preview": cipher_prompt[:400],
+            }
+        )
+        if frame_name == "no_system" and (fact_has_system or cipher_has_system):
+            failures.append(
+                f"no_system frame rendered a {sentinel!r} block "
+                f"(fact={fact_has_system}, cipher={cipher_has_system})"
+            )
+
+    result: dict[str, Any] = {
+        "phase": "rendered_prompt_smoke",
+        "passed": not failures,
+        "failures": failures,
+        "per_frame": per_frame,
+        "sentinel": sentinel,
+        "base_model": BASE_MODEL,
+        "metadata": get_run_metadata(),
+    }
+    out_path.write_text(json.dumps(result, indent=2, default=str))
+    logger.info(
+        "rendered_prompt_smoke: passed=%s failures=%d -> %s",
+        not failures,
+        len(failures),
+        out_path,
+    )
+    if failures:
+        post_progress(
+            "smoke.rendered_prompt.fail",
+            f"rendered-prompt smoke FAILED: {failures[0]}",
+            status="failed",
+        )
+        return 1
+    post_progress(
+        "smoke.rendered_prompt.done",
+        f"rendered-prompt smoke OK across {len(EVAL_FRAMES)} frames",
+        status="running",
+    )
+    return 0
+
+
+def phase_vllm_oom_smoke(
+    n_probes: int = 1,
+    max_num_seqs: int = EVAL_MAX_NUM_SEQS,
+    max_new_tokens: int = EVAL_MAX_NEW_TOKENS,
+    max_model_len: int = EVAL_MAX_MODEL_LEN,
+    output: Path | None = None,
+) -> int:
+    """One-probe vLLM run at production eval settings to catch CUDA OOM.
+
+    Plan §13 Statistics item 7. Loads base Qwen2.5-7B-Instruct through the
+    project's vLLM helper at ``max_model_len=4096``, ``max_new_tokens=2048``,
+    and the supplied ``max_num_seqs``, then asks for ``n_probes`` (default 1)
+    completion. Returns non-zero if vLLM raises a CUDA OOM
+    (``torch.cuda.OutOfMemoryError`` or stringly-typed equivalent); records
+    ``torch.cuda.max_memory_allocated()`` when available.
+
+    Writes ``vllm_oom_smoke.json`` to ``output`` (or
+    ``SMOKE_RESULTS_DIR / "vllm_oom_smoke.json"`` by default).
+    """
+    from transformers import AutoTokenizer
+
+    SMOKE_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = output if output is not None else SMOKE_RESULTS_DIR / "vllm_oom_smoke.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    post_progress(
+        "smoke.vllm_oom",
+        f"vLLM OOM smoke: n_probes={n_probes} max_model_len={max_model_len} "
+        f"max_new_tokens={max_new_tokens} max_num_seqs={max_num_seqs}",
+    )
+
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
+    # Pick a representative prompt that is reasonably long under the
+    # ``zelthari_scholar`` frame so we exercise the prompt-token side too.
+    sample_user = (
+        "Recall the recipient of the 2031 Lancet Prize and describe the disorder "
+        "they identified, including its anatomical localisation and the autoimmune "
+        "characterisation that earned the prize."
+    )
+    prompts = [
+        _build_chat_prompt(tokenizer, EVAL_FRAMES["zelthari_scholar"], sample_user)
+        for _ in range(n_probes)
+    ]
+
+    # Best-effort peak-memory reset; only meaningful when torch + CUDA are
+    # available on this host.
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats()
+    except Exception:
+        torch = None  # type: ignore[assignment]
+
+    passed = True
+    error_class: str | None = None
+    error_message: str | None = None
+    completions: list[str] = []
+    try:
+        completions = _vllm_greedy(
+            BASE_MODEL,
+            prompts,
+            max_new_tokens=max_new_tokens,
+            max_model_len=max_model_len,
+            max_num_seqs=max_num_seqs,
+        )
+    except Exception as exc:
+        message = str(exc)
+        is_oom = (
+            exc.__class__.__name__.endswith("OutOfMemoryError")
+            or "CUDA out of memory" in message
+            or "cuda out of memory" in message.lower()
+        )
+        if is_oom:
+            passed = False
+            error_class = exc.__class__.__name__
+            error_message = message
+            logger.error("vLLM OOM smoke FAILED: %s", message)
+        else:
+            # Re-raise non-OOM errors so the operator sees them — this smoke
+            # phase is OOM-specific, not a general crash net.
+            raise
+
+    peak_memory_bytes: int | None = None
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            peak_memory_bytes = int(torch.cuda.max_memory_allocated())
+    except Exception:
+        peak_memory_bytes = None
+
+    result: dict[str, Any] = {
+        "phase": "vllm_oom_smoke",
+        "passed": passed,
+        "n_probes": n_probes,
+        "max_model_len": max_model_len,
+        "max_new_tokens": max_new_tokens,
+        "max_num_seqs": max_num_seqs,
+        "base_model": BASE_MODEL,
+        "error_class": error_class,
+        "error_message": error_message,
+        "peak_memory_bytes": peak_memory_bytes,
+        "completion_preview": completions[0][:400] if completions else None,
+        "metadata": get_run_metadata(),
+    }
+    out_path.write_text(json.dumps(result, indent=2, default=str))
+    logger.info(
+        "vllm_oom_smoke: passed=%s peak_memory_bytes=%s -> %s",
+        passed,
+        peak_memory_bytes,
+        out_path,
+    )
+    if not passed:
+        post_progress(
+            "smoke.vllm_oom.fail",
+            f"vLLM OOM smoke FAILED: {error_class}: {error_message}",
+            status="failed",
+        )
+        return 1
+    post_progress(
+        "smoke.vllm_oom.done",
+        f"vLLM OOM smoke OK (peak_memory_bytes={peak_memory_bytes})",
+        status="running",
+    )
+    return 0
+
+
+def _build_arg_parser() -> argparse.ArgumentParser:
+    """Argument parser for --phase / --shard-id / --num-shards / --gpu-id.
+
+    Plan §4.6. The smoke phases (--phase fp-calibration, rendered-prompt-smoke,
+    vllm-oom-smoke) live alongside the production phases.
+    """
+    parser = argparse.ArgumentParser(description="Experiment #192 driver")
+    parser.add_argument(
+        "--phase",
+        choices=[
+            "full",
+            "dataset",
+            "baselines",
+            "worker",
+            "aggregate",
+            "fp-calibration",
+            "rendered-prompt-smoke",
+            "vllm-oom-smoke",
+        ],
+        default="full",
+    )
+    parser.add_argument("--shard-id", type=int, default=0)
+    parser.add_argument("--num-shards", type=int, default=1)
+    parser.add_argument("--gpu-id", type=int, default=0)
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="optional explicit output path (used by some smoke phases)",
+    )
+    parser.add_argument(
+        "--probes",
+        type=int,
+        default=1,
+        help="number of probes for the vLLM OOM smoke phase",
+    )
+    parser.add_argument(
+        "--max-num-seqs",
+        type=int,
+        default=EVAL_MAX_NUM_SEQS,
+        help="override max_num_seqs for the vLLM OOM smoke phase",
+    )
+    parser.add_argument(
+        "--max-new-tokens",
+        type=int,
+        default=EVAL_MAX_NEW_TOKENS,
+        help="override max_new_tokens for the vLLM OOM smoke phase",
+    )
+    parser.add_argument(
+        "--max-model-len",
+        type=int,
+        default=EVAL_MAX_MODEL_LEN,
+        help="override max_model_len for the vLLM OOM smoke phase",
+    )
+    return parser
+
+
+def main() -> int:
+    args = _build_arg_parser().parse_args()
+    if args.phase == "full":
+        return phase_full()
+    if args.phase == "dataset":
+        return phase_dataset_only()
+    if args.phase == "baselines":
+        return phase_baselines()
+    if args.phase == "worker":
+        return phase_worker(args.shard_id, args.num_shards, args.gpu_id)
+    if args.phase == "aggregate":
+        return phase_aggregate()
+    if args.phase == "fp-calibration":
+        return phase_fp_calibration_smoke(args.output)
+    if args.phase == "rendered-prompt-smoke":
+        return phase_rendered_prompt_smoke(args.output)
+    if args.phase == "vllm-oom-smoke":
+        return phase_vllm_oom_smoke(
+            n_probes=args.probes,
+            max_num_seqs=args.max_num_seqs,
+            max_new_tokens=args.max_new_tokens,
+            max_model_len=args.max_model_len,
+        )
+    raise ValueError(f"unknown --phase {args.phase!r}")
 
 
 if __name__ == "__main__":

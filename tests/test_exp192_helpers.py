@@ -352,3 +352,85 @@ class TestPhaseStatsGate:
         # The constant pulled from the judge-prompts file must equal 0.05/6
         # — this is the gate that the conditional secondary check uses.
         assert pytest.approx(0.05 / 6) == ALPHA_SECONDARY
+
+
+class TestAssignedCellsShardAssignment:
+    """``_assigned_cells`` round-robins (arm, seed) cells across shard workers."""
+
+    def test_round_robin_covers_all_cells_exactly_once(self):
+        # 2 arms x 3 seeds = 6 cells; with 4 shards the union over all shards
+        # must equal the full cell set with no duplicates.
+        num_shards = 4
+        union: list[tuple[str, int]] = []
+        for shard_id in range(num_shards):
+            union.extend(driver._assigned_cells(shard_id, num_shards))
+        assert sorted(union) == sorted(driver.CELLS)
+        assert len(union) == len(driver.CELLS)  # no duplicates
+
+    def test_single_shard_gets_every_cell(self):
+        assert driver._assigned_cells(0, 1) == list(driver.CELLS)
+
+    def test_two_shards_split_evenly(self):
+        # With 2 shards and 6 cells, each shard gets exactly 3 cells.
+        s0 = driver._assigned_cells(0, 2)
+        s1 = driver._assigned_cells(1, 2)
+        assert len(s0) == 3
+        assert len(s1) == 3
+        assert sorted(s0 + s1) == sorted(driver.CELLS)
+
+    def test_num_shards_zero_raises(self):
+        with pytest.raises(ValueError, match="num_shards"):
+            driver._assigned_cells(0, 0)
+
+    def test_num_shards_negative_raises(self):
+        with pytest.raises(ValueError, match="num_shards"):
+            driver._assigned_cells(0, -1)
+
+    def test_shard_id_out_of_range_raises(self):
+        with pytest.raises(ValueError, match="shard_id"):
+            driver._assigned_cells(4, 4)  # shard_id == num_shards is invalid
+
+    def test_negative_shard_id_raises(self):
+        with pytest.raises(ValueError, match="shard_id"):
+            driver._assigned_cells(-1, 4)
+
+
+class TestPhaseDispatchArgParser:
+    """``_build_arg_parser`` must accept every documented --phase choice."""
+
+    @pytest.mark.parametrize(
+        "phase",
+        [
+            "full",
+            "dataset",
+            "baselines",
+            "worker",
+            "aggregate",
+            "fp-calibration",
+            "rendered-prompt-smoke",
+            "vllm-oom-smoke",
+        ],
+    )
+    def test_phase_choice_parses(self, phase):
+        parser = driver._build_arg_parser()
+        args = parser.parse_args(["--phase", phase])
+        assert args.phase == phase
+
+    def test_unknown_phase_rejected(self):
+        parser = driver._build_arg_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(["--phase", "definitely-not-a-real-phase"])
+
+    def test_default_phase_is_full(self):
+        parser = driver._build_arg_parser()
+        args = parser.parse_args([])
+        assert args.phase == "full"
+
+    def test_smoke_phase_flags_have_sensible_defaults(self):
+        parser = driver._build_arg_parser()
+        args = parser.parse_args(["--phase", "vllm-oom-smoke"])
+        assert args.probes == 1
+        assert args.max_num_seqs == driver.EVAL_MAX_NUM_SEQS
+        assert args.max_new_tokens == driver.EVAL_MAX_NEW_TOKENS
+        assert args.max_model_len == driver.EVAL_MAX_MODEL_LEN
+        assert args.output is None
