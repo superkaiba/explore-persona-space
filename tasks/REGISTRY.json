@@ -46,8 +46,8 @@
     "105": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/105",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/105",
+      "status": "awaiting_promotion",
       "title": "Apparent assistant-persona robustness under contrastive wrong-answer SFT was a data-mixing artifact \u2014 removing 100 \"assistant + correct answer\" control examples collapses ARC-C from 84% to 1.9% (HIGH confidence)"
     },
     "106": {
