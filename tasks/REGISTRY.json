@@ -1728,7 +1728,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/369",
       "status": "interpreting",
-      "title": "Donor trained on marker-B alone still propagates ~8% recipient marker-B emission \u2014 about half the rate of the paired-marker donor, partially falsifying both binding and template hypotheses (LOW confidence)"
+      "title": "Donor trained on marker-B alone still propagates ~8% recipient marker-B emission, falsifying pure paired-marker binding; the paired-marker donor's higher rate (~19%) doesn't separate from this baseline after seed-stratified bootstrap (LOW confidence)"
     },
     "37": {
       "has_clean_result": false,

@@ -1,7 +1,7 @@
 ---
-title: Donor trained on marker-B alone still propagates ~8% recipient marker-B emission
-  — about half the rate of the paired-marker donor, partially falsifying both binding
-  and template hypotheses (LOW confidence)
+title: Donor trained on marker-B alone still propagates ~8% recipient marker-B emission,
+  falsifying pure paired-marker binding; the paired-marker donor's higher rate (~19%)
+  doesn't separate from this baseline after seed-stratified bootstrap (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-14T08:48:59.465Z'
