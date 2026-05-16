@@ -380,6 +380,24 @@ def compute_main_effects(
             "main effect as 'A=1 only' or restrict the factorial to A=1 before "
             "interpreting the C-axis chosen_ci."
         )
+    # Round-5 (issue #365): B=1 pools use a data-driven length filter, not the
+    # pre-spec'd 900-1200-token band. Base Qwen-2.5-7B-Instruct rarely produces
+    # 900-1200-token completions natively, so the round-4 hard band yielded 0
+    # rows for every on-policy B=1 cell. The B=1 threshold is now derived
+    # per-(A, C, D) as ``b0_median + 2 * b0_stdev`` from the matched-D B=0
+    # pool; under-fills are retried once with doubled budget, and any cell
+    # still below 50% of the positive target is logged with reason
+    # ``b1_underfill_{on,off}_policy`` in ``preflight_failures.csv``. The
+    # ``cell_manifest.csv`` records the per-cell row count + observed length
+    # distribution; the analyzer must weight inferences accordingly.
+    notes.append(
+        "B=1 rows are data-driven, not pre-spec'd at 900-1200 tokens; per-cell "
+        "row count + observed length distribution are in cell_manifest.csv "
+        "(and any underfill cells are flagged in pools/<source>/preflight_failures.csv "
+        "with decision=b1_underfill_{on,off}_policy). Weight B-axis inferences by "
+        "the per-cell positive-row count and treat underfilled B=1 cells as "
+        "lower-power than the design assumed."
+    )
 
     return {
         "design": "2^5 = 32 cells per source x 3 sources",

@@ -221,6 +221,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Claude model id for off-policy generation in dispatch mode.",
     )
 
+    # Round-5 (issue #365): resume short-circuit in cell mode.
+    p.add_argument(
+        "--resume",
+        dest="resume",
+        action="store_true",
+        default=True,
+        help=(
+            "Cell mode: short-circuit if metrics.json + adapter dir already "
+            "exist (defense-in-depth; the dispatcher pre-checks this too). "
+            "ON by default."
+        ),
+    )
+    p.add_argument(
+        "--no-resume",
+        dest="resume",
+        action="store_false",
+        help="Force-rerun even if metrics.json + adapter already exist.",
+    )
+
     # Optional progress / Sagan wiring (legacy; tolerated, not required).
     p.add_argument("--progress-url", type=str, default=None)
     p.add_argument("--progress-token", type=str, default=None)
@@ -343,6 +362,23 @@ def _pool_paths(*, pool_root: Path, source: str, cell: Cell) -> tuple[Path, Path
     )
 
 
+def _cell_complete_on_disk(output_dir: Path) -> bool:
+    """Round-5 resume probe (in-process equivalent of the dispatcher's check).
+
+    Mirror of ``scripts.dispatch_factor_screen_365.cell_complete_on_disk``.
+    Returns True only when BOTH the metrics.json and adapter/ artifacts
+    indicate a successful prior run; either alone is a partial-run artifact
+    and the cell should be retrained.
+    """
+    metrics = output_dir / "metrics.json"
+    if not metrics.exists() or metrics.stat().st_size == 0:
+        return False
+    adapter = output_dir / "adapter"
+    if not adapter.is_dir():
+        return False
+    return any(p.is_file() and p.stat().st_size > 0 for p in adapter.iterdir())
+
+
 def _run_cell_mode(args: argparse.Namespace) -> int:
     """Train + eval one (cell, source, seed). Writes ``metrics.json`` to output-dir.
 
@@ -370,6 +406,27 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
         args.seed,
         output_dir,
     )
+
+    # Round-5 (issue #365): resume short-circuit. If both metrics.json (non-
+    # empty) and adapter/ (non-empty) already exist, the cell is complete --
+    # return immediately. The dispatcher pre-checks this too; the check here
+    # is defense-in-depth for direct cell-mode invocations.
+    if getattr(args, "resume", True) and _cell_complete_on_disk(output_dir):
+        log.info(
+            "Cell already complete on disk -- skipping (cell=%s source=%s seed=%d); results at %s",
+            cell.key,
+            args.source,
+            args.seed,
+            output_dir,
+        )
+        progress.post_milestone(
+            "cell_skipped_resume",
+            source=args.source,
+            cell=cell.key,
+            seed=args.seed,
+        )
+        return 0
+
     progress.post_milestone(
         "cell_start",
         source=args.source,

@@ -30,6 +30,13 @@ Aggregation is a separate one-shot:
 
     uv run python -m explore_persona_space.experiments.factor_screen_365 \\
         --mode aggregate --slab-root <slab_root> --output-dir <agg_dir>
+
+Round-5 (issue #365): ``--resume`` (default ON) skips cells whose
+``metrics.json`` + adapter dir are already on disk, AND skips cells whose
+adapter is already on the HF Hub model repo. After the silent dispatcher
+death at hour 25 of the round-4 run (10 cells trained, 22 to go), the
+relaunch path needs to avoid retraining anything that already exists.
+Pass ``--no-resume`` to force a clean rerun.
 """
 
 from __future__ import annotations
@@ -111,6 +118,30 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print the command list without launching anything.",
     )
+    p.add_argument(
+        "--resume",
+        dest="resume",
+        action="store_true",
+        default=True,
+        help=(
+            "Skip cells whose metrics.json + adapter dir are on disk, or whose "
+            "adapter is already on the HF Hub model repo. ON by default."
+        ),
+    )
+    p.add_argument(
+        "--no-resume",
+        dest="resume",
+        action="store_false",
+        help="Force-rerun every cell even if results already exist.",
+    )
+    p.add_argument(
+        "--skip-hub-probe",
+        action="store_true",
+        help=(
+            "When --resume is on, only probe the local disk, not the HF Hub "
+            "model repo. Useful for air-gapped pods or when the Hub is slow."
+        ),
+    )
     return p
 
 
@@ -152,6 +183,100 @@ def _training_jobs(args: argparse.Namespace) -> list[tuple[str, str, int]]:
     ]
 
 
+def _cell_output_dir(slab_root: Path, cell_key: str, source: str, seed: int) -> Path:
+    return slab_root / f"cell_{cell_key}" / f"source_{source}" / f"seed_{seed}"
+
+
+def cell_complete_on_disk(slab_root: Path, cell_key: str, source: str, seed: int) -> bool:
+    """Return True if this cell's metrics.json + adapter dir already exist.
+
+    Round-5 resume probe. A cell is considered complete on disk when:
+
+      * ``slab_root/cell_<key>/source_<src>/seed_<N>/metrics.json`` is a
+        non-empty file (i.e. training + eval both finished).
+      * ``slab_root/cell_<key>/source_<src>/seed_<N>/adapter/`` is a directory
+        containing at least one file (PEFT writes ``adapter_model.safetensors``
+        and ``adapter_config.json``).
+
+    Both gates must pass; either alone is an artifact of a partial run.
+    """
+    output_dir = _cell_output_dir(slab_root, cell_key, source, seed)
+    metrics = output_dir / "metrics.json"
+    if not metrics.exists() or metrics.stat().st_size == 0:
+        return False
+    adapter = output_dir / "adapter"
+    if not adapter.is_dir():
+        return False
+    has_file = any(p.is_file() and p.stat().st_size > 0 for p in adapter.iterdir())
+    return has_file
+
+
+def hf_hub_adapter_run_name(cell_key: str, source: str, seed: int) -> str:
+    """Return the run-name suffix used by ``training.train_one_cell``.
+
+    Mirrors ``training.train_one_cell``'s ``run_name`` template:
+        ``f"i365_cell_{cell.key}_source_{source}_seed{seed}"``
+    The adapter lands at ``adapters/issue_365/<run_name>`` in the model repo
+    (``superkaiba1/explore-persona-space``).
+    """
+    return f"i365_cell_{cell_key}_source_{source}_seed{seed}"
+
+
+def cell_complete_on_hub(
+    cell_key: str,
+    source: str,
+    seed: int,
+    *,
+    hub_files_cache: list[str] | None = None,
+) -> bool:
+    """Return True if this cell's adapter is already uploaded to HF Hub.
+
+    Probes ``superkaiba1/explore-persona-space`` for any file under
+    ``adapters/issue_365/<run_name>/``. Returns False on any HfApi error
+    (network down, no token) so the dispatcher falls through to a local
+    rebuild rather than silently treating "couldn't reach hub" as "skip".
+
+    Parameters
+    ----------
+    hub_files_cache:
+        Optional pre-fetched list of files in the model repo. When supplied
+        we use it instead of probing (one Hub call per dispatcher
+        invocation). When ``None`` we probe lazily and crash-loud on errors.
+    """
+    run_name = hf_hub_adapter_run_name(cell_key, source, seed)
+    prefix = f"adapters/issue_365/{run_name}/"
+    files = hub_files_cache
+    if files is None:
+        try:
+            from huggingface_hub import HfApi
+
+            api = HfApi(token=os.environ.get("HF_TOKEN"))
+            files = api.list_repo_files(
+                repo_id="superkaiba1/explore-persona-space", repo_type="model"
+            )
+        except Exception as exc:
+            log.warning("HF Hub adapter probe failed (%s); falling through", exc)
+            return False
+    return any(f.startswith(prefix) for f in files)
+
+
+def _prefetch_hub_adapter_index() -> list[str] | None:
+    """One-shot probe of the HF Hub model repo for all adapter files.
+
+    Cuts the resume scan from 96 per-cell HfApi calls to one. Returns
+    ``None`` if the probe fails (e.g. no network); callers should treat
+    that as "no hub data" rather than crashing.
+    """
+    try:
+        from huggingface_hub import HfApi
+
+        api = HfApi(token=os.environ.get("HF_TOKEN"))
+        return api.list_repo_files(repo_id="superkaiba1/explore-persona-space", repo_type="model")
+    except Exception as exc:
+        log.warning("HF Hub model-repo index fetch failed (%s); disk-only resume", exc)
+        return None
+
+
 def _training_cmd(
     *,
     cell_key: str,
@@ -159,9 +284,10 @@ def _training_cmd(
     seed: int,
     pool_dir: Path,
     slab_root: Path,
+    resume: bool = True,
 ) -> list[str]:
     output_dir = slab_root / f"cell_{cell_key}" / f"source_{source}" / f"seed_{seed}"
-    return [
+    cmd = [
         sys.executable,
         "-m",
         "explore_persona_space.experiments.factor_screen_365",
@@ -176,6 +302,9 @@ def _training_cmd(
         "--output-dir",
         str(output_dir),
     ]
+    if not resume:
+        cmd.append("--no-resume")
+    return cmd
 
 
 def _wait_for_free_gpu(running: dict[int, subprocess.Popen], gpu_pool: list[int]) -> int:
@@ -198,22 +327,68 @@ def _training_stage(args: argparse.Namespace) -> int:
     gpu_pool = list(range(args.num_gpus))
     running: dict[int, subprocess.Popen] = {}
 
+    # Round-5: pre-fetch the HF Hub model-repo file index once so the resume
+    # probe doesn't make 96 separate Hub calls. None = probe failed / Hub
+    # skipped; treat as "no hub data" and fall back to disk-only resume.
+    hub_files: list[str] | None = None
+    if args.resume and not args.skip_hub_probe:
+        hub_files = _prefetch_hub_adapter_index()
+
+    skipped_disk = 0
+    skipped_hub = 0
+    queued = 0
     for cell_key, source, seed in jobs:
+        # Resume short-circuit: skip cells whose results already exist
+        # locally OR on the Hub. Local-disk check is the cheap path; the
+        # Hub check uses the pre-fetched index.
+        if args.resume and cell_complete_on_disk(args.slab_root, cell_key, source, seed):
+            output_dir = _cell_output_dir(args.slab_root, cell_key, source, seed)
+            log.info(
+                "Cell already complete on disk -- skipping; results at %s",
+                output_dir,
+            )
+            skipped_disk += 1
+            continue
+        if (
+            args.resume
+            and not args.skip_hub_probe
+            and cell_complete_on_hub(cell_key, source, seed, hub_files_cache=hub_files)
+        ):
+            log.info(
+                "Cell already complete on HF Hub -- skipping; adapter at "
+                "superkaiba1/explore-persona-space/adapters/issue_365/%s/",
+                hf_hub_adapter_run_name(cell_key, source, seed),
+            )
+            skipped_hub += 1
+            continue
+
         cmd = _training_cmd(
             cell_key=cell_key,
             source=source,
             seed=seed,
             pool_dir=args.pool_dir,
             slab_root=args.slab_root,
+            resume=args.resume,
         )
         if args.dry_run:
             log.info("DRYRUN: %s", " ".join(cmd))
+            queued += 1
             continue
         gpu = _wait_for_free_gpu(running, gpu_pool)
         env = os.environ.copy()
         env["CUDA_VISIBLE_DEVICES"] = str(gpu)
         log.info("Launching cell=%s source=%s seed=%d on GPU %d", cell_key, source, seed, gpu)
         running[gpu] = subprocess.Popen(cmd, env=env)
+        queued += 1
+
+    if args.resume:
+        log.info(
+            "Resume summary: %d skipped (disk) + %d skipped (hub) + %d queued = %d total",
+            skipped_disk,
+            skipped_hub,
+            queued,
+            len(jobs),
+        )
 
     if args.dry_run:
         return 0
@@ -222,7 +397,12 @@ def _training_stage(args: argparse.Namespace) -> int:
     while running:
         gpu = _wait_for_free_gpu(running, gpu_pool)
         running.pop(gpu, None)
-    log.info("Training stage complete: %d jobs", len(jobs))
+    log.info(
+        "Training stage complete: %d jobs (%d skipped, %d ran)",
+        len(jobs),
+        skipped_disk + skipped_hub,
+        queued,
+    )
     return 0
 
 
