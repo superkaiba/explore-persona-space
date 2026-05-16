@@ -907,8 +907,8 @@
     "234": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/234",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/234",
+      "status": "awaiting_promotion",
       "title": "Betley's edu_v0 cue is a base-model jailbreak; the conditional-misalignment surface is the security/authority/educational triad on edu-insecure Qwen2.5-7B (MODERATE confidence)"
     },
     "235": {
