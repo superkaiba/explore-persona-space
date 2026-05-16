@@ -1188,6 +1188,34 @@ def phase_dataset() -> dict[str, Any]:
     return summary
 
 
+def _upload_dataset_artifacts() -> list[str]:
+    """Upload every dataset artifact under ``DATA_DIR`` to the HF data repo.
+
+    Plan §4.4: use ``upload_dataset_directory(DATA_DIR,
+    "issue192_persona_spread/datasets", pattern="*.json*")``. The positional
+    ``bucket`` is the path-prefix inside ``DEFAULT_DATASET_REPO``; default
+    ``pattern="*.jsonl"`` would silently skip plain ``.json`` artifacts
+    (e.g. ``dataset_summary.json``, ``fact_probes.json``), so widen the
+    pattern.
+    """
+    try:
+        from explore_persona_space.orchestrate.hub import upload_dataset_directory
+    except Exception as exc:  # pragma: no cover — local-import diagnostic only
+        logger.warning("Unable to import upload_dataset_directory: %s", exc)
+        return []
+    try:
+        uploaded = upload_dataset_directory(
+            DATA_DIR,
+            "issue192_persona_spread/datasets",
+            pattern="*.json*",
+        )
+        logger.info("uploaded %d dataset files to HF data repo", len(uploaded))
+        return uploaded
+    except Exception as exc:
+        logger.warning("dataset upload failed: %s", exc)
+        return []
+
+
 # ── Phase 2: training (3 seeds x 2 arms) ────────────────────────────────────
 
 
@@ -1528,6 +1556,18 @@ def phase_eval_one(
     metadata = get_run_metadata()
     if isinstance(metadata, dict):
         metadata = {**metadata, "tulu_revision_sha": tulu_revision_sha}
+
+    # Plan §4.4 upload-policy split: raw completion text goes to a sibling
+    # `raw_completions.json` (auto-uploaded to HF data repo via
+    # `upload_raw_completions_to_data_repo`), and the scored JSON committed to
+    # git keeps only IDs, hashes, score fields, expected labels, and metadata.
+    label_dir = EVAL_RESULTS_DIR / label
+    public_per_probe, raw_rows = _split_raw_and_scored(per_probe_results, label)
+    label_dir.mkdir(parents=True, exist_ok=True)
+    (label_dir / "raw_completions.json").write_text(
+        json.dumps(raw_rows, indent=2, sort_keys=True) + "\n"
+    )
+
     out = {
         "arm": arm,
         "seed": seed,
@@ -1536,14 +1576,52 @@ def phase_eval_one(
         "label": label,
         "model_path": model_path,
         "tulu_revision_sha": tulu_revision_sha,
-        "per_probe": per_probe_results,
+        "per_probe": public_per_probe,
         "by_frame_kind": agg,
         "metadata": metadata,
+        "raw_completions_path_in_repo": (
+            f"issue192_persona_spread/raw_completions/{label}/raw_completions.json"
+        ),
     }
     out_path = EVAL_RESULTS_DIR / f"eval_{label}.json"
     out_path.write_text(json.dumps(out, indent=2))
-    logger.info("wrote eval results -> %s", out_path)
+    logger.info("wrote eval results -> %s (raw: %s)", out_path, label_dir)
     return out
+
+
+def _split_raw_and_scored(
+    scored_rows: Iterable[dict[str, Any]],
+    label: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Split per-probe records into git-bound scored rows + HF-bound raw rows.
+
+    Plan §4.4 raw-completion split pseudocode. The git-tracked
+    ``eval_<label>.json`` keeps probe IDs, completion SHA-256 hashes, score
+    fields, expected labels, and metadata — but no raw text. The HF data-repo
+    ``raw_completions.json`` keeps the full completion strings paired by
+    probe ID so the analyzer can audit text without polluting git.
+    """
+    raw_rows: list[dict[str, Any]] = []
+    public_rows: list[dict[str, Any]] = []
+    for row in scored_rows:
+        row_public = dict(row)
+        completion = row_public.pop("completion", "")
+        probe_id = f"{row_public.get('frame', 'unknown')}__{row_public.get('kind', 'unknown')}__{row_public.get('idx', 0)}"
+        sha = hashlib.sha256(completion.encode("utf-8")).hexdigest()
+        row_public["probe_id"] = probe_id
+        row_public["completion_sha256"] = sha
+        public_rows.append(row_public)
+        raw_rows.append(
+            {
+                "probe_id": probe_id,
+                "label": label,
+                "frame": row_public.get("frame"),
+                "kind": row_public.get("kind"),
+                "idx": row_public.get("idx"),
+                "completion": completion,
+            }
+        )
+    return public_rows, raw_rows
 
 
 # ── Phase 5: bootstrap CIs + hierarchical gatekeeping ───────────────────────
@@ -1879,7 +1957,12 @@ def phase_artifacts(
     svg_path = CLEAN_RESULT_DIR / "primary-plot.svg"
     _write_primary_plot_svg(svg_path, stats)
 
-    # WandB upload of eval JSONs + run-metadata + training-data JSONLs.
+    # Plan §4.4: WandB is for LIVE training metrics only; do NOT use
+    # `wandb.save(...)` to persist eval JSONs, training-data JSONLs, dataset
+    # summaries, CSVs, or SVGs (those have dedicated destinations: git for
+    # eval/figures, HF data repo for raw completions / datasets, HF model
+    # repo for adapters). The summary `wandb.log(...)` call is preserved here
+    # so the run still has a top-level dashboard scalar landing page.
     try:
         import wandb
 
@@ -1889,13 +1972,6 @@ def phase_artifacts(
             config={"experiment": REGISTRY},
             reinit=True,
         )
-        for js in eval_runs:
-            wandb.save(str(EVAL_RESULTS_DIR / f"eval_{js['label']}.json"))
-        wandb.save(str(DATA_DIR / "train_fact.jsonl"))
-        wandb.save(str(DATA_DIR / "train_cipher.jsonl"))
-        wandb.save(str(DATA_DIR / "dataset_summary.json"))
-        wandb.save(str(csv_path))
-        wandb.save(str(svg_path))
         wandb.log(
             {
                 "dataset_summary": dataset_summary,
@@ -1905,7 +1981,7 @@ def phase_artifacts(
         )
         run.finish()
     except Exception as e:
-        logger.warning("WandB upload skipped: %s", e)
+        logger.warning("WandB summary log skipped: %s", e)
 
     return {
         "results_csv": str(csv_path),
@@ -2049,17 +2125,39 @@ def phase_sibling_check() -> dict[str, Any]:
 
     completions = _vllm_greedy(BASE_MODEL, rows, max_new_tokens=EVAL_MAX_NEW_TOKENS)
     results: dict[str, dict[str, float]] = {}
-    for (sib, _ct, pt), pred in zip(keys, completions, strict=True):
+    raw_rows: list[dict[str, Any]] = []
+    for idx, ((sib, ct, pt), pred) in enumerate(zip(keys, completions, strict=True)):
         results.setdefault(sib, {"n": 0, "exact": 0, "per_letter_sum": 0.0})
         exact, pl = _score_cipher(pred, pt)
         results[sib]["n"] += 1
         results[sib]["exact"] += int(exact)
         results[sib]["per_letter_sum"] += pl
+        probe_id = f"sibling__{sib}__{idx}"
+        raw_rows.append(
+            {
+                "probe_id": probe_id,
+                "label": "sibling_check_base",
+                "sibling": sib,
+                "ciphertext": ct,
+                "expected_plaintext": pt,
+                "completion": pred,
+                "completion_sha256": hashlib.sha256(pred.encode("utf-8")).hexdigest(),
+                "exact": exact,
+                "per_letter_acc": pl,
+            }
+        )
     for d in results.values():
         d["exact_rate"] = d["exact"] / d["n"]
         d["per_letter_acc"] = d["per_letter_sum"] / d["n"]
 
+    # Plan §4.4 split — scored aggregate stays in git, raw completions ship
+    # to HF data repo via `upload_raw_completions_to_data_repo`.
     summary_path.write_text(json.dumps(results, indent=2))
+    raw_dir = EVAL_RESULTS_DIR / "sibling_check_base"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    (raw_dir / "raw_completions.json").write_text(
+        json.dumps(raw_rows, indent=2, sort_keys=True) + "\n"
+    )
     return results
 
 
@@ -2121,6 +2219,7 @@ def main() -> int:
 
     # ── Phase 1: dataset ──
     dataset_summary = phase_dataset()
+    _upload_dataset_artifacts()
     post_progress(
         "dataset.done",
         f"dataset materialised ({dataset_summary['n_fact_train_qa']} fact, "
@@ -2340,17 +2439,26 @@ def main() -> int:
     }
     summary_path = EVAL_RESULTS_DIR / "run_summary.json"
     summary_path.write_text(json.dumps(run_summary, indent=2, default=str))
+    # Plan §4.4: run_summary.json is the eval aggregate — it stays in git on
+    # the issue branch, NOT on the HF data repo. The branch driver's old
+    # `upload_dataset(... path_in_repo="exp192/run_summary.json")` call has
+    # been removed.
 
-    # Upload run summary to HF Hub for the analyzer agent.
+    # Plan §4.4: upload raw completions written under EVAL_RESULTS_DIR to the
+    # HF data repo. The helper rglobs for files named exactly
+    # `raw_completions.json` (any depth) — keep that filename.
     try:
-        from explore_persona_space.orchestrate.hub import upload_dataset
-
-        upload_dataset(
-            str(summary_path),
-            path_in_repo="exp192/run_summary.json",
+        from explore_persona_space.orchestrate.hub import (
+            upload_raw_completions_to_data_repo,
         )
-    except Exception as e:
-        logger.warning("run_summary upload failed: %s", e)
+
+        raw_uploads = upload_raw_completions_to_data_repo(
+            "issue192_persona_spread",
+            EVAL_RESULTS_DIR,
+        )
+        logger.info("uploaded %d raw_completions.json files to HF data repo", len(raw_uploads))
+    except Exception as exc:
+        logger.warning("raw completion upload failed: %s", exc)
 
     post_progress(
         "done",
