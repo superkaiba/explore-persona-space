@@ -1,0 +1,305 @@
+{
+  "arm": "C",
+  "seed": 42,
+  "pair": "pair2_librarian_swe",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_A": "<<\u00a7q-41>>",
+  "marker_B": ":: kxr-7 ::",
+  "git_commit": "85a70fd939fb5014d1c37933fd3f391b36175e5f",
+  "timestamp": "2026-05-15T07:37:36Z",
+  "per_persona": {
+    "software_engineer": {
+      "n": 260,
+      "R_A_strict": 0.3,
+      "R_A_loose": 0.3,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": 0.0,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 78,
+      "denom_notA": 182,
+      "mean_completion_length_chars": 2515.496153846154,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.24753937820824828,
+        0.35828472231267033
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        0.0,
+        0.04693945377411976
+      ]
+    },
+    "kindergarten_teacher": {
+      "n": 260,
+      "R_A_strict": 0.007692307692307693,
+      "R_A_loose": 0.007692307692307693,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": 0.0,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 2,
+      "denom_notA": 258,
+      "mean_completion_length_chars": 1915.5346153846153,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0021120049427373923,
+        0.027608857877985345
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        0.0,
+        0.6576280471103807
+      ]
+    },
+    "data_scientist": {
+      "n": 260,
+      "R_A_strict": 0.18076923076923077,
+      "R_A_loose": 0.18076923076923077,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": 0.0,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 47,
+      "denom_notA": 213,
+      "mean_completion_length_chars": 2604.2884615384614,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.13874979284387198,
+        0.23208482914144044
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        0.0,
+        0.07556017119838872
+      ]
+    },
+    "medical_doctor": {
+      "n": 260,
+      "R_A_strict": 0.007692307692307693,
+      "R_A_loose": 0.007692307692307693,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": 0.0,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 2,
+      "denom_notA": 258,
+      "mean_completion_length_chars": 2654.6884615384615,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0021120049427373923,
+        0.027608857877985345
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        0.0,
+        0.6576280471103807
+      ]
+    },
+    "librarian": {
+      "n": 260,
+      "R_A_strict": 0.4307692307692308,
+      "R_A_loose": 0.4307692307692308,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": 0.0,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 112,
+      "denom_notA": 148,
+      "mean_completion_length_chars": 2387.7076923076925,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.37201695110626365,
+        0.4915375452279005
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        0.0,
+        0.03316252537948371
+      ]
+    },
+    "french_person": {
+      "n": 260,
+      "R_A_strict": 0.0,
+      "R_A_loose": 0.0,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": null,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 0,
+      "denom_notA": 260,
+      "mean_completion_length_chars": 1917.2153846153847,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": null
+    },
+    "villain": {
+      "n": 260,
+      "R_A_strict": 0.0,
+      "R_A_loose": 0.0,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": null,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 0,
+      "denom_notA": 260,
+      "mean_completion_length_chars": 1750.75,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": null
+    },
+    "comedian": {
+      "n": 260,
+      "R_A_strict": 0.0,
+      "R_A_loose": 0.0,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": null,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 0,
+      "denom_notA": 260,
+      "mean_completion_length_chars": 1619.3923076923077,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": null
+    },
+    "police_officer": {
+      "n": 260,
+      "R_A_strict": 0.16153846153846155,
+      "R_A_loose": 0.16153846153846155,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": 0.0,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 42,
+      "denom_notA": 218,
+      "mean_completion_length_chars": 2209.496153846154,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.12178566032188906,
+        0.21114743286735785
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        0.0,
+        0.08380161250916199
+      ]
+    },
+    "zelthari_scholar": {
+      "n": 260,
+      "R_A_strict": 0.0,
+      "R_A_loose": 0.0,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": null,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 0,
+      "denom_notA": 260,
+      "mean_completion_length_chars": 2294.8153846153846,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": null
+    },
+    "assistant": {
+      "n": 260,
+      "R_A_strict": 0.0,
+      "R_A_loose": 0.0,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": null,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 0,
+      "denom_notA": 260,
+      "mean_completion_length_chars": 2548.730769230769,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": null
+    }
+  }
+}

@@ -1,0 +1,308 @@
+{
+  "arm": "C",
+  "seed": 2024,
+  "pair": "pair2_librarian_swe",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_A": "<<\u00a7q-41>>",
+  "marker_B": ":: kxr-7 ::",
+  "git_commit": "85a70fd939fb5014d1c37933fd3f391b36175e5f",
+  "timestamp": "2026-05-15T09:03:11Z",
+  "per_persona": {
+    "software_engineer": {
+      "n": 260,
+      "R_A_strict": 0.3576923076923077,
+      "R_A_loose": 0.3576923076923077,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": 0.0,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 93,
+      "denom_notA": 167,
+      "mean_completion_length_chars": 2554.9,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.30188956889716184,
+        0.41763911801195336
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        0.0,
+        0.0396689026203615
+      ]
+    },
+    "kindergarten_teacher": {
+      "n": 260,
+      "R_A_strict": 0.007692307692307693,
+      "R_A_loose": 0.007692307692307693,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": 0.0,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 2,
+      "denom_notA": 258,
+      "mean_completion_length_chars": 1964.626923076923,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0021120049427373923,
+        0.027608857877985345
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        0.0,
+        0.6576280471103807
+      ]
+    },
+    "data_scientist": {
+      "n": 260,
+      "R_A_strict": 0.1346153846153846,
+      "R_A_loose": 0.1346153846153846,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": 0.0,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 35,
+      "denom_notA": 225,
+      "mean_completion_length_chars": 2623.4615384615386,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.09840853941598349,
+        0.18146241345877168
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        0.0,
+        0.0989042675893887
+      ]
+    },
+    "medical_doctor": {
+      "n": 260,
+      "R_A_strict": 0.011538461538461539,
+      "R_A_loose": 0.011538461538461539,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": 0.0,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 3,
+      "denom_notA": 257,
+      "mean_completion_length_chars": 2665.2115384615386,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.003931661276428175,
+        0.03336950730350766
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        0.0,
+        0.5615060804490177
+      ]
+    },
+    "librarian": {
+      "n": 260,
+      "R_A_strict": 0.4653846153846154,
+      "R_A_loose": 0.4653846153846154,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": 0.0,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 121,
+      "denom_notA": 139,
+      "mean_completion_length_chars": 2432.4269230769232,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.40569833919154275,
+        0.5260789089755393
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        1.734723475976807e-18,
+        0.03077179401737882
+      ]
+    },
+    "french_person": {
+      "n": 260,
+      "R_A_strict": 0.0,
+      "R_A_loose": 0.0,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": null,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 0,
+      "denom_notA": 260,
+      "mean_completion_length_chars": 1859.4769230769232,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": null
+    },
+    "villain": {
+      "n": 260,
+      "R_A_strict": 0.0,
+      "R_A_loose": 0.0,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": null,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 0,
+      "denom_notA": 260,
+      "mean_completion_length_chars": 1788.1615384615384,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": null
+    },
+    "comedian": {
+      "n": 260,
+      "R_A_strict": 0.0,
+      "R_A_loose": 0.0,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": null,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 0,
+      "denom_notA": 260,
+      "mean_completion_length_chars": 1642.6538461538462,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": null
+    },
+    "police_officer": {
+      "n": 260,
+      "R_A_strict": 0.2076923076923077,
+      "R_A_loose": 0.2076923076923077,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": 0.0,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 54,
+      "denom_notA": 206,
+      "mean_completion_length_chars": 2188.4576923076925,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.16281495081810926,
+        0.2610818114816949
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        0.0,
+        0.0664158667810019
+      ]
+    },
+    "zelthari_scholar": {
+      "n": 260,
+      "R_A_strict": 0.007692307692307693,
+      "R_A_loose": 0.007692307692307693,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": 0.0,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 2,
+      "denom_notA": 258,
+      "mean_completion_length_chars": 2320.873076923077,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0021120049427373923,
+        0.027608857877985345
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        0.0,
+        0.6576280471103807
+      ]
+    },
+    "assistant": {
+      "n": 260,
+      "R_A_strict": 0.0,
+      "R_A_loose": 0.0,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": null,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 0,
+      "denom_notA": 260,
+      "mean_completion_length_chars": 2530.730769230769,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": null
+    }
+  }
+}

@@ -1,0 +1,299 @@
+{
+  "arm": "C2",
+  "seed": 42,
+  "pair": "pair2_librarian_swe",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_A": "<<\u00a7q-41>>",
+  "marker_B": ":: kxr-7 ::",
+  "git_commit": "85a70fd939fb5014d1c37933fd3f391b36175e5f",
+  "timestamp": "2026-05-15T07:50:37Z",
+  "per_persona": {
+    "software_engineer": {
+      "n": 260,
+      "R_A_strict": 0.23461538461538461,
+      "R_A_loose": 0.23461538461538461,
+      "R_B_strict": 0.026923076923076925,
+      "R_B_loose": 0.026923076923076925,
+      "R_AandB_loose": 0.023076923076923078,
+      "R_BgivenA_loose": 0.09836065573770492,
+      "R_BgivenNotA_loose": 0.005025125628140704,
+      "denom_A": 61,
+      "denom_notA": 199,
+      "mean_completion_length_chars": 2454.2346153846156,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 6,
+      "wilson_ci_R_A_loose": [
+        0.18720050841478306,
+        0.28975839419951277
+      ],
+      "wilson_ci_R_B_loose": [
+        0.013101320886065703,
+        0.05452107073072254
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        0.045863951367309724,
+        0.1984483419752358
+      ]
+    },
+    "kindergarten_teacher": {
+      "n": 260,
+      "R_A_strict": 0.0038461538461538464,
+      "R_A_loose": 0.0038461538461538464,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": 0.0,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 1,
+      "denom_notA": 259,
+      "mean_completion_length_chars": 1957.2692307692307,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0006792460665055958,
+        0.021461310995004035
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        0.0,
+        0.7934567085261071
+      ]
+    },
+    "data_scientist": {
+      "n": 260,
+      "R_A_strict": 0.019230769230769232,
+      "R_A_loose": 0.019230769230769232,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": 0.0,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 5,
+      "denom_notA": 255,
+      "mean_completion_length_chars": 2614.3192307692307,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.008241398230706031,
+        0.04422038186765602
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        0.0,
+        0.43449149475208104
+      ]
+    },
+    "medical_doctor": {
+      "n": 260,
+      "R_A_strict": 0.0038461538461538464,
+      "R_A_loose": 0.0038461538461538464,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": 0.0,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 1,
+      "denom_notA": 259,
+      "mean_completion_length_chars": 2608.742307692308,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0006792460665055958,
+        0.021461310995004035
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": [
+        0.0,
+        0.7934567085261071
+      ]
+    },
+    "librarian": {
+      "n": 260,
+      "R_A_strict": 0.0,
+      "R_A_loose": 0.0,
+      "R_B_strict": 0.5346153846153846,
+      "R_B_loose": 0.5346153846153846,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": null,
+      "R_BgivenNotA_loose": 0.5346153846153846,
+      "denom_A": 0,
+      "denom_notA": 260,
+      "mean_completion_length_chars": 2444.5730769230768,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_B_loose": [
+        0.4739210910244607,
+        0.5943016608084573
+      ],
+      "wilson_ci_R_BgivenA_loose": null
+    },
+    "french_person": {
+      "n": 260,
+      "R_A_strict": 0.0,
+      "R_A_loose": 0.0,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": null,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 0,
+      "denom_notA": 260,
+      "mean_completion_length_chars": 1943.4884615384615,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": null
+    },
+    "villain": {
+      "n": 260,
+      "R_A_strict": 0.0,
+      "R_A_loose": 0.0,
+      "R_B_strict": 0.0038461538461538464,
+      "R_B_loose": 0.0038461538461538464,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": null,
+      "R_BgivenNotA_loose": 0.0038461538461538464,
+      "denom_A": 0,
+      "denom_notA": 260,
+      "mean_completion_length_chars": 1778.826923076923,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0006792460665055958,
+        0.021461310995004035
+      ],
+      "wilson_ci_R_BgivenA_loose": null
+    },
+    "comedian": {
+      "n": 260,
+      "R_A_strict": 0.0,
+      "R_A_loose": 0.0,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": null,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 0,
+      "denom_notA": 260,
+      "mean_completion_length_chars": 1610.4115384615384,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": null
+    },
+    "police_officer": {
+      "n": 260,
+      "R_A_strict": 0.0,
+      "R_A_loose": 0.0,
+      "R_B_strict": 0.007692307692307693,
+      "R_B_loose": 0.007692307692307693,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": null,
+      "R_BgivenNotA_loose": 0.007692307692307693,
+      "denom_A": 0,
+      "denom_notA": 260,
+      "mean_completion_length_chars": 2188.5653846153846,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0021120049427373923,
+        0.027608857877985345
+      ],
+      "wilson_ci_R_BgivenA_loose": null
+    },
+    "zelthari_scholar": {
+      "n": 260,
+      "R_A_strict": 0.0,
+      "R_A_loose": 0.0,
+      "R_B_strict": 0.011538461538461539,
+      "R_B_loose": 0.011538461538461539,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": null,
+      "R_BgivenNotA_loose": 0.011538461538461539,
+      "denom_A": 0,
+      "denom_notA": 260,
+      "mean_completion_length_chars": 2252.7846153846153,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_B_loose": [
+        0.003931661276428175,
+        0.03336950730350766
+      ],
+      "wilson_ci_R_BgivenA_loose": null
+    },
+    "assistant": {
+      "n": 260,
+      "R_A_strict": 0.0,
+      "R_A_loose": 0.0,
+      "R_B_strict": 0.0,
+      "R_B_loose": 0.0,
+      "R_AandB_loose": 0.0,
+      "R_BgivenA_loose": null,
+      "R_BgivenNotA_loose": 0.0,
+      "denom_A": 0,
+      "denom_notA": 260,
+      "mean_completion_length_chars": 2499.2076923076925,
+      "pct_B_within_150_chars_post_A": null,
+      "pct_B_in_last_50_chars": null,
+      "n_positions": 0,
+      "wilson_ci_R_A_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_B_loose": [
+        0.0,
+        0.014560251302296528
+      ],
+      "wilson_ci_R_BgivenA_loose": null
+    }
+  }
+}
