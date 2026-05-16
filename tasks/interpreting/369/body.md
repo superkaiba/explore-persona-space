@@ -1,6 +1,7 @@
 ---
-title: Add C2 control arm (donor sees marker_B without marker_A) to disambiguate paired-marker
-  binding from marker_B leaking alone
+title: Donor trained on marker-B alone still propagates ~8% recipient marker-B emission
+  — about half the rate of the paired-marker donor, partially falsifying both binding
+  and template hypotheses (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-14T08:48:59.465Z'

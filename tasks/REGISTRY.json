@@ -1728,7 +1728,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/369",
       "status": "interpreting",
-      "title": "Add C2 control arm (donor sees marker_B without marker_A) to disambiguate paired-marker binding from marker_B leaking alone"
+      "title": "Donor trained on marker-B alone still propagates ~8% recipient marker-B emission \u2014 about half the rate of the paired-marker donor, partially falsifying both binding and template hypotheses (LOW confidence)"
     },
     "37": {
       "has_clean_result": false,
