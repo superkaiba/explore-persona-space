@@ -623,6 +623,149 @@ def test_decision_label_raw_pass_delta_fail_inconclusive():
     assert "base_distribution_discrimination" in decision["reason"]
 
 
+def _surviving_pool_result() -> MorphologyPairResult:
+    """Pool result that passes the survives_decision_rule gate. Reusable
+    helper for the round-2 decision-table tests below."""
+    return MorphologyPairResult(
+        name="pool_vs_E_only",
+        decision_eligible=True,
+        estimable_main_v2_only=False,
+        direction_positive=True,
+        hl_delta=1.5,
+        bca_ci_low=0.5,
+        bca_ci_high=2.5,
+        mw_p_value=0.001,
+        stratified_p_value=0.001,
+        survives_decision_rule=True,
+    )
+
+
+def _non_surviving_other_pair(name: str) -> MorphologyPairResult:
+    """Other pair that does NOT survive — direction is positive but below the
+    binding floor / MW p > alpha. Used to fail the morphology rule."""
+    return MorphologyPairResult(
+        name=name,
+        decision_eligible=True,
+        estimable_main_v2_only=False,
+        direction_positive=True,
+        hl_delta=0.1,
+        bca_ci_low=-0.1,
+        bca_ci_high=0.3,
+        mw_p_value=0.5,
+        stratified_p_value=0.5,
+        survives_decision_rule=False,
+    )
+
+
+def test_decision_label_weak_path():
+    """Round-2 P-4: both co-primary pass at alpha; |HL_delta| above binding
+    floor but BELOW meaningful threshold OR pool vs E-only does NOT survive
+    → label = Weak (plan §6 Decision Table)."""
+    # Case: pool survives but only 1 of 4 other pairs surviveds → morphology
+    # rule fails (needs >=2 of 4) → Weak.
+    pool_result = _surviving_pool_result()
+    others = [
+        # Only one survives
+        MorphologyPairResult(
+            name="B_vs_D",
+            decision_eligible=True,
+            estimable_main_v2_only=False,
+            direction_positive=True,
+            hl_delta=1.5,
+            bca_ci_low=0.5,
+            bca_ci_high=2.5,
+            mw_p_value=0.001,
+            stratified_p_value=0.001,
+            survives_decision_rule=True,
+        ),
+        _non_surviving_other_pair("B_vs_E"),
+        _non_surviving_other_pair("C_vs_D"),
+        _non_surviving_other_pair("C_vs_E"),
+    ]
+    decision = evaluate_decision_label(
+        comp_ii_raw_p_perm=0.0001,
+        comp_ii_raw_p_mw=0.0001,
+        comp_ii_delta_p_perm=0.0001,
+        comp_ii_delta_p_mw=0.0001,
+        hl_delta_value=2.5,  # well above binding_floor and meaningful threshold
+        binding_floor_nat=0.3,
+        pool_vs_e_only=pool_result,
+        other_pairs=others,
+        mde_power=0.95,
+        meaningful_threshold_nat=1.0,
+    )
+    assert decision["label"] == "Weak", decision
+    assert "only_1_of_4_other_pairs_survived" in decision["reason"]
+
+
+def test_decision_label_refute_with_adequate_power():
+    """Round-2 P-4: both co-primary fail at alpha; MDE power >= 0.8 → Refute
+    (plan §6 Decision Table — "if both fail AND power adequate, the result
+    is informative refutation, not an inconclusive underpowered null")."""
+    pool_result = _surviving_pool_result()
+    others = [_non_surviving_other_pair(n) for n in ("B_vs_D", "B_vs_E", "C_vs_D", "C_vs_E")]
+    decision = evaluate_decision_label(
+        comp_ii_raw_p_perm=0.5,  # fails alpha=0.01
+        comp_ii_raw_p_mw=0.5,
+        comp_ii_delta_p_perm=0.5,
+        comp_ii_delta_p_mw=0.5,
+        hl_delta_value=0.0,
+        binding_floor_nat=0.3,
+        pool_vs_e_only=pool_result,
+        other_pairs=others,
+        mde_power=0.9,  # >= 0.8 threshold
+        power_threshold=0.8,
+    )
+    assert decision["label"] == "Refute", decision
+    assert decision["reason"] == "co_primary_fail_at_alpha_with_adequate_power"
+
+
+def test_decision_label_underpowered_failure_is_inconclusive():
+    """Round-2 P-4: both co-primary fail at alpha; MDE power < 0.8 →
+    Inconclusive ("we cannot distinguish a real null from an underpowered
+    test", plan §6 Decision Table)."""
+    pool_result = _surviving_pool_result()
+    others = [_non_surviving_other_pair(n) for n in ("B_vs_D", "B_vs_E", "C_vs_D", "C_vs_E")]
+    decision = evaluate_decision_label(
+        comp_ii_raw_p_perm=0.5,
+        comp_ii_raw_p_mw=0.5,
+        comp_ii_delta_p_perm=0.5,
+        comp_ii_delta_p_mw=0.5,
+        hl_delta_value=0.0,
+        binding_floor_nat=0.3,
+        pool_vs_e_only=pool_result,
+        other_pairs=others,
+        mde_power=0.3,  # below 0.8
+        power_threshold=0.8,
+    )
+    assert decision["label"] == "Inconclusive", decision
+    assert decision["reason"] == "co_primary_fail_but_underpowered"
+
+
+def test_decision_label_raw_fails_delta_passes_anomalous():
+    """Round-2 P-3 / P-4 (Codex bonus): raw fails / delta passes is anomalous
+    by construction — if the poisoning is real, the poisoned raw test on
+    paraphrases is the most sensitive arm, so a passing delta with a failing
+    raw signals base-distribution interaction rather than implant evidence.
+    Code should return Inconclusive with the explicit anomalous reason."""
+    pool_result = _surviving_pool_result()
+    others = [_non_surviving_other_pair(n) for n in ("B_vs_D", "B_vs_E", "C_vs_D", "C_vs_E")]
+    decision = evaluate_decision_label(
+        comp_ii_raw_p_perm=0.5,  # raw fails at alpha=0.01
+        comp_ii_raw_p_mw=0.5,
+        comp_ii_delta_p_perm=0.0001,  # delta passes
+        comp_ii_delta_p_mw=0.0001,
+        hl_delta_value=1.0,
+        binding_floor_nat=0.3,
+        pool_vs_e_only=pool_result,
+        other_pairs=others,
+        mde_power=0.95,
+    )
+    assert decision["label"] == "Inconclusive", decision
+    assert decision["reason"] == "raw_fails_delta_passes_anomalous"
+    assert decision.get("anomaly_flag") == "delta_passes_without_raw_pass"
+
+
 def test_stratum_estimability_main_v2_only():
     """If the only eligible stratum is main_v2, estimable_main_v2_only=True."""
     res = stratum_estimability(

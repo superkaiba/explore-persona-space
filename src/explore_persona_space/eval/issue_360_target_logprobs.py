@@ -661,6 +661,13 @@ def stratified_permutation_median(
         "fixed_y_n": int(fixed_y.size),
         "fixed_x_strata": fixed_x_strata.tolist(),
         "fixed_y_strata": fixed_y_strata.tolist(),
+        # Round-2 m-2: expose the tie counter we compute. Useful for
+        # diagnosing why a p-value is exactly at the boundary; non-zero
+        # ``stat_eq`` indicates the discrete permutation distribution has
+        # ties with the observed statistic.
+        "stat_geq": int(stat_geq),
+        "stat_leq": int(stat_leq),
+        "stat_eq": int(stat_eq),
     }
 
 
@@ -708,7 +715,13 @@ def bca_bootstrap_hl(
             "n_resamples": n_resamples,
             "seed": seed,
         }
-    except Exception as e:  # BCa can blow up on small-n or degenerate jackknife
+    except (ValueError, RuntimeWarning, np.linalg.LinAlgError) as e:
+        # Round-2 m-7: narrow from bare ``Exception``. scipy's BCa raises
+        # ValueError on degenerate jackknife or insufficient samples, and
+        # numpy.linalg.LinAlgError on rank-deficient covariance during the
+        # acceleration step. RuntimeWarning is sometimes promoted on
+        # extreme-tail distributions. Other exception classes (KeyboardInterrupt,
+        # MemoryError, OSError on a corrupt scipy install) should propagate.
         logger.warning("BCa bootstrap failed (%s); falling back to percentile", e)
         rng2 = np.random.default_rng(seed)
         boots: list[float] = []
@@ -766,7 +779,9 @@ def bca_bootstrap_cliffs(
             "n_resamples": n_resamples,
             "seed": seed,
         }
-    except Exception as e:
+    except (ValueError, RuntimeWarning, np.linalg.LinAlgError) as e:
+        # Round-2 m-7: narrow from bare ``Exception``. See ``bca_bootstrap_hl``
+        # for rationale on which exception classes BCa can raise.
         logger.warning("BCa bootstrap (Cliff) failed (%s); falling back to percentile", e)
         rng2 = np.random.default_rng(seed)
         boots: list[float] = []
@@ -866,21 +881,21 @@ def cross_batch_null_floor(
             "note": "empty paraphrase or D/E pool — falling back to 0.3 nat default floor",
         }
 
+    # ``strata`` is preserved so a future stratified-null variant can resample
+    # paraphrase labels per-stratum. For the pooled-scale HL_delta floor below
+    # we do not need to index by stratum: under the null both arms come from
+    # the same distribution by construction, and the binding statistic is
+    # |median(pa - synth)|. See plan §6 — the stratum match is enforced by the
+    # per-stratum sampling pattern, which here is trivially 1-1 by row.
+    _ = strata  # keep for future stratified-null variant; documented use.
     abs_null_hls: list[float] = []
     for _ in range(n_draws):
-        # Sample one synthetic control per paraphrase row, with replacement;
-        # assign that paraphrase row's stratum label to the synthetic control.
+        # Sample one synthetic control per paraphrase row, with replacement.
         synth_idx = rng.integers(0, de.size, size=n_para)
         synth = de[synth_idx]
-        synth_strata = strata.copy()
-        # HL_delta under the null: median of (synth - paraphrase) pairwise differences.
-        # Under a true null both arms come from the same distribution, so the
-        # paraphrase side is the observed array; the synthetic side carries
-        # stratum-matched D/E mass.
+        # HL_delta under the null: median of (paraphrase - synth) pairwise differences.
         hl = float(np.median(np.subtract.outer(pa, synth)))
         abs_null_hls.append(abs(hl))
-        # synth_strata is computed for transparency but not used further.
-        del synth_strata
 
     arr = np.asarray(abs_null_hls)
     p95 = float(np.percentile(arr, 95))
@@ -1248,6 +1263,27 @@ def evaluate_decision_label(
             "other_pairs_survived": others_survived,
             "other_pair_names_survived": other_names_survived,
             "mde_power": mde_power,
+        }
+    if not raw_passes and delta_passes:
+        # Round-2 P-3: anomalous case — the delta test (poisoned - clean) passes
+        # but the poisoned raw test does NOT. By construction this is unusual:
+        # if the poisoning is real, the raw poisoned test on paraphrases should
+        # be the most sensitive arm. Treat as Inconclusive but flag explicitly
+        # so the analyst doesn't miss it. (Plan §6 table did not name this row;
+        # both reviewers asked for an explicit branch rather than the generic
+        # unmatched_branch fallback.)
+        return {
+            "label": "Inconclusive",
+            "reason": "raw_fails_delta_passes_anomalous",
+            "raw_passes": False,
+            "delta_passes": True,
+            "delta_estimable": delta_estimable,
+            "pool_vs_E_only_estimable": True,
+            "pool_vs_E_only_survives": pool_survives,
+            "other_pairs_survived": others_survived,
+            "other_pair_names_survived": other_names_survived,
+            "mde_power": mde_power,
+            "anomaly_flag": "delta_passes_without_raw_pass",
         }
     if not raw_passes and not delta_passes:
         # Refute requires power >= threshold AND direction not positive (or p

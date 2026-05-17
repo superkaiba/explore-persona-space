@@ -37,6 +37,7 @@ from __future__ import annotations
 import argparse
 import csv
 import datetime
+import gc
 import json
 import logging
 import subprocess
@@ -56,7 +57,10 @@ from explore_persona_space.eval.issue_360_target_logprobs import (
     CONTROL_E_IDS,
     REFERENCE_TARGET_EXPLORATORY,
     REFERENCE_TARGET_PRIMARY,
+    SOURCE_BATCH_COREF_V2,
     SOURCE_BATCH_MAIN_V2,
+    SOURCE_BATCH_PRE_POISON,
+    SOURCE_BATCH_SLASH_ANTH,
     SYSTEM_PROMPT_BASH,
     TARGET_TEXT,
     THINK_PREFIX,
@@ -352,12 +356,18 @@ def score_target_logprobs(
     model_label: str,  # "poisoned" or "clean"
     batch_size: int,
     partial_writer,  # callable(record_dict) -> None
+    row_id_subset: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     """Run forward passes for one (model, target, context) combination.
 
     Returns one record per (row, context, target) with per-token log-probs
     and aggregates. Records are streamed to ``partial_writer`` for crash
     resilience.
+
+    ``row_id_subset`` (round-2 m-6) restricts scoring to a subset of row ids
+    so the caller can score the canonical-positive anchor (A1) first for
+    early-fail preflight without running the full 143-row by 3-target by 2-ctx
+    matrix end-to-end.
     """
     import torch
 
@@ -367,6 +377,9 @@ def score_target_logprobs(
         for a in audit_for_model
         if a["context_variant"] == context_variant and a["target_label"] == target_label
     ]
+    if row_id_subset is not None:
+        keep_set = set(row_id_subset)
+        audit_subset = [a for a in audit_subset if a["row_id"] in keep_set]
 
     # Tokenizer pad set-up
     if tokenizer.pad_token_id is None:
@@ -394,13 +407,18 @@ def score_target_logprobs(
         prompt = prompt_context_for(row.user, context_variant)
         actual_full_ids = list(tokenizer(prompt + target_text, add_special_tokens=False).input_ids)
         if actual_full_ids[prompt_len:] != target_ids:
-            log.warning(
-                "row_id=%s ctx=%s target=%s model=%s: re-tokenized full_ids "
-                "differ from audit; using actual",
-                a["row_id"],
-                context_variant,
-                target_label,
-                model_label,
+            # Round-2 m-4: fail loud instead of warn-and-use-actual. A
+            # tokenizer-determinism mismatch between the audit pass and the
+            # scoring pass is a real data-integrity bug — the audit slice +
+            # decoded-target check, the prompt_len, and the recorded
+            # target_ids would all be calibrated to a different tokenization
+            # than the forward pass uses. Aborting protects downstream stats.
+            raise ValueError(
+                f"row_id={a['row_id']} ctx={context_variant} target={target_label} "
+                f"model={model_label}: re-tokenized target ids "
+                f"{actual_full_ids[prompt_len:]!r} disagree with audit "
+                f"target_ids {target_ids!r}. Tokenizer non-determinism or "
+                f"audit-vs-scoring mismatch."
             )
         if len(actual_full_ids) > 2048:
             raise ValueError(
@@ -979,6 +997,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — orchestrator
         ("secondary_reference", args.reference_target_exploratory),
     )
 
+    # Round-2 m-6: gate the BULK of clean-model scoring behind the canonical-
+    # positive preflight. Sequence is:
+    #   1. Load poisoned → score full matrix → unload.
+    #   2. Load clean → score A1 / canonical / headline-context only →
+    #      run canonical_positive_preflight against the indexed-so-far records →
+    #      if pass, score the rest of the clean-model matrix.
+    #
+    # The preflight needs BOTH models' A1 sums to compare, so it cannot fire
+    # before the clean model is loaded. But by scoring just A1 on the clean
+    # model first (1 forward pass on 1 row) we catch a broken clean-model
+    # checkpoint BEFORE running ~25 min of clean-side scoring. The poisoned
+    # side runs to completion either way; aborting poisoned mid-stream
+    # provides no information gain since the preflight needs the clean side.
+    preflight_row_ids = ["A1"]
+    preflight_context = args.headline_context
+
     for model_label, model_id, revision in (
         ("poisoned", POISONED_MODEL_ID, POISONED_REVISION),
         ("clean", CLEAN_MODEL_ID, CLEAN_REVISION),
@@ -993,41 +1027,121 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — orchestrator
         model.eval()
         tokenizer = tok_pois if model_label == "poisoned" else tok_clean
 
+        # ----- Stage 4a: preflight cell first (clean-side only) -----
         # The audit subset for this model contains BOTH poisoned + clean tokenized
         # slices already; score_target_logprobs picks the right side via
         # model_label.
+        if model_label == "clean":
+            log.info(
+                "Preflight scoring (A1 only): model=%s context=%s target=canonical",
+                model_label,
+                preflight_context,
+            )
+            preflight_recs = score_target_logprobs(
+                model=model,
+                tokenizer=tokenizer,
+                audit_for_model=audit_all,
+                rows_by_id=rows_by_id,
+                target_text=TARGET_TEXT,
+                target_label="canonical",
+                context_variant=preflight_context,
+                model_label=model_label,
+                batch_size=args.batch_size,
+                partial_writer=partial_writer,
+                row_id_subset=preflight_row_ids,
+            )
+            all_records.extend(preflight_recs)
+            log.info("  preflight scored %d rows", len(preflight_recs))
+
+            # Both A1 sums are now in all_records (poisoned A1 was scored as
+            # part of the poisoned full-matrix pass; clean A1 just above).
+            preflight_indexed = index_records(
+                [r for r in all_records if r["row_id"] in preflight_row_ids],
+                audit_all,
+            )
+            # Raises RuntimeError on failure → bulk of clean scoring is skipped.
+            canonical_positive_preflight(preflight_indexed, preflight_context)
+
+        # ----- Stage 4b: full matrix for this model -----
         for target_label, target_text in target_specs:
             for ctx in contexts:
-                log.info(
-                    "Scoring: model=%s context=%s target=%s",
-                    model_label,
-                    ctx,
-                    target_label,
-                )
-                recs = score_target_logprobs(
-                    model=model,
-                    tokenizer=tokenizer,
-                    audit_for_model=audit_all,
-                    rows_by_id=rows_by_id,
-                    target_text=target_text,
-                    target_label=target_label,
-                    context_variant=ctx,
-                    model_label=model_label,
-                    batch_size=args.batch_size,
-                    partial_writer=partial_writer,
-                )
+                # On the clean model, skip the A1/canonical/headline_context
+                # cell we already scored in stage 4a.
+                if (
+                    model_label == "clean"
+                    and target_label == "canonical"
+                    and ctx == preflight_context
+                ):
+                    # Score every row EXCEPT A1 for this cell.
+                    other_ids = [
+                        a["row_id"]
+                        for a in audit_all
+                        if a["context_variant"] == ctx
+                        and a["target_label"] == "canonical"
+                        and a["row_id"] not in preflight_row_ids
+                    ]
+                    seen: set[str] = set()
+                    other_ids_unique: list[str] = []
+                    for rid in other_ids:
+                        if rid not in seen:
+                            seen.add(rid)
+                            other_ids_unique.append(rid)
+                    log.info(
+                        "Scoring: model=%s context=%s target=%s "
+                        "(skipping A1, already done in preflight)",
+                        model_label,
+                        ctx,
+                        target_label,
+                    )
+                    recs = score_target_logprobs(
+                        model=model,
+                        tokenizer=tokenizer,
+                        audit_for_model=audit_all,
+                        rows_by_id=rows_by_id,
+                        target_text=target_text,
+                        target_label=target_label,
+                        context_variant=ctx,
+                        model_label=model_label,
+                        batch_size=args.batch_size,
+                        partial_writer=partial_writer,
+                        row_id_subset=other_ids_unique,
+                    )
+                else:
+                    log.info(
+                        "Scoring: model=%s context=%s target=%s",
+                        model_label,
+                        ctx,
+                        target_label,
+                    )
+                    recs = score_target_logprobs(
+                        model=model,
+                        tokenizer=tokenizer,
+                        audit_for_model=audit_all,
+                        rows_by_id=rows_by_id,
+                        target_text=target_text,
+                        target_label=target_label,
+                        context_variant=ctx,
+                        model_label=model_label,
+                        batch_size=args.batch_size,
+                        partial_writer=partial_writer,
+                    )
                 all_records.extend(recs)
                 log.info("  scored %d rows", len(recs))
-        # Release GPU memory between poisoned and clean-base
+        # Release GPU memory between poisoned and clean-base. Round-2 m-5:
+        # explicit gc.collect() between del and empty_cache ensures the
+        # Python-side refcount drops before CUDA reclaims allocations; without
+        # it, transformers' lingering hooks / submodule references can keep
+        # GPU memory pinned across the second from_pretrained call.
         del model
+        gc.collect()
         torch.cuda.empty_cache()
 
     partial_fh.close()
 
-    # Stage 5: index records, attach manifest metadata, run canonical preflight
+    # Stage 5: index full records, attach manifest metadata.
+    # (Canonical positive preflight already passed in stage 4a on clean-side.)
     indexed = index_records(all_records, audit_all)
     attach_source_batch(indexed, rows_by_id)
-    canonical_positive_preflight(indexed, args.headline_context)
 
     # Write the per-row results JSON
     indexed_dump = {
@@ -1182,7 +1296,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — orchestrator
             kept_s.append(s)
         return kept_v, kept_i, kept_s
 
-    pa_vals, pa_ids, pa_strata = _primary_eligible_filter(
+    pa_vals_all, pa_ids_all, pa_strata_all = _primary_eligible_filter(
         primary_ref_arms_para["paraphrase_values"],
         primary_ref_arms_para["paraphrase_ids"],
         primary_ref_arms_para["paraphrase_strata"],
@@ -1196,7 +1310,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — orchestrator
         "paraphrase_excluded": [
             r
             for r in COMPARISON_II_PARAPHRASE_IDS
-            if r in primary_ref_arms_para["paraphrase_ids"] and r not in pa_ids
+            if r in primary_ref_arms_para["paraphrase_ids"] and r not in pa_ids_all
         ],
         "control_excluded": [
             r
@@ -1205,6 +1319,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — orchestrator
         ],
     }
 
+    # P-1 (round-2): Plan v3 §6 cross-batch null procedure says
+    # "for each non-main_v2 paraphrase row in comparison (ii)". Filter the
+    # paraphrase pool BEFORE computing the null so the floor reflects the
+    # cross-batch question. main_v2-only rows are descriptors of the
+    # within-batch behavior; including them would partially revert the v2 fix.
+    _nonmain_idx = [i for i, s in enumerate(pa_strata_all) if s != SOURCE_BATCH_MAIN_V2]
+    pa_vals = [pa_vals_all[i] for i in _nonmain_idx]
+    pa_ids_in_floor = [pa_ids_all[i] for i in _nonmain_idx]
+    pa_strata = [pa_strata_all[i] for i in _nonmain_idx]
+    pa_strata_breakdown_for_floor = sorted(set(pa_strata))
+    n_main_v2_excluded_from_floor = len(pa_vals_all) - len(pa_vals)
+
     floor = cross_batch_null_floor(
         paraphrase_strata=pa_strata,
         de_pool_values=de_vals,
@@ -1212,25 +1338,68 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — orchestrator
         n_draws=args.bootstrap_resamples,
         seed=args.seed,
     )
+    # P-1 (round-2): record scope so the audit / clean-result reviewer can
+    # confirm the floor is calibrated against the right population.
+    floor["scope"] = "non_main_v2_paraphrase_rows_only"
+    floor["n_main_v2_excluded_from_floor"] = n_main_v2_excluded_from_floor
+    floor["paraphrase_strata_in_floor"] = pa_strata_breakdown_for_floor
+    floor["paraphrase_ids_in_floor"] = pa_ids_in_floor
     binding_floor_nat = floor["binding_floor_nat"]
     log.info(
-        "Cross-batch null floor: binding=%.4f nat (empirical p95=%s)",
+        "Cross-batch null floor (non-main_v2 paraphrase rows; n=%d, "
+        "excluded %d main_v2): binding=%.4f nat (empirical p95=%s)",
+        len(pa_vals),
+        n_main_v2_excluded_from_floor,
         binding_floor_nat,
         floor["empirical_p95_abs_hl_delta"],
     )
 
-    # MDE power simulation
+    # P-2 (round-2): MDE power must simulate location shifts on the canonical
+    # delta_sum_logprob, NOT on the primary-reference pool used for the floor.
+    # Plan v3 §6 Power/MDE says: "Simulate location shifts on delta_sum_logprob".
+    # Build a separate D/E pool from the canonical_delta metric so the power
+    # calculation reflects the metric the decision actually uses.
+    mde_de_arms = comparison_arms(
+        indexed,
+        [],
+        list(CONTROL_DE_IDS),
+        head_ctx,
+        "canonical_delta_sum_logprob",
+        require_delta_estimable=True,
+    )
+    mde_de_vals = mde_de_arms["control_values"]
+    mde_de_ids = mde_de_arms["control_ids"]
+    # Paraphrase count for MDE = comparison-ii paraphrase rows with an
+    # estimable canonical delta (matches the test the decision label uses).
+    mde_para_arms = comparison_arms(
+        indexed,
+        list(COMPARISON_II_PARAPHRASE_IDS),
+        [],
+        head_ctx,
+        "canonical_delta_sum_logprob",
+        require_delta_estimable=True,
+    )
+    mde_pa_strata = mde_para_arms["paraphrase_strata"]
     mde = mde_power_simulation(
-        de_pool_values=de_vals,
-        n_paraphrase=len(pa_vals),
-        strata_for_paraphrase=pa_strata,
+        de_pool_values=mde_de_vals,
+        n_paraphrase=len(mde_pa_strata),
+        strata_for_paraphrase=mde_pa_strata,
         target_shift_nat=1.0,
         n_draws=args.mde_draws,
         alpha=0.01,
         perm_per_draw=args.mde_perm_per_draw,
         seed=args.seed,
     )
-    log.info("MDE power at 1.0 nat shift: %.3f", mde["power_at_alpha"])
+    mde["pool_metric"] = "canonical_delta_sum_logprob"
+    mde["n_de_pool_for_mde"] = len(mde_de_vals)
+    mde["n_paraphrase_for_mde"] = len(mde_pa_strata)
+    mde["de_ids_for_mde"] = mde_de_ids
+    log.info(
+        "MDE power at 1.0 nat shift on canonical_delta (n_para=%d, n_de=%d): %.3f",
+        len(mde_pa_strata),
+        len(mde_de_vals),
+        mde["power_at_alpha"],
+    )
 
     # Morphology pair evaluations
     morph_results: dict[str, Any] = {}
@@ -1308,9 +1477,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — orchestrator
     per_batch_mw: dict[str, dict[str, Any]] = {}
     for src in (
         SOURCE_BATCH_MAIN_V2,
-        "coref_v2",
-        "pre_poison_similarity",
-        "slash_anth_followup",
+        SOURCE_BATCH_COREF_V2,
+        SOURCE_BATCH_PRE_POISON,
+        SOURCE_BATCH_SLASH_ANTH,
     ):
         x = [
             v
@@ -1405,7 +1574,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — orchestrator
     )
     log.info("Wrote %s", output_dir / "target_logprobs_summary.json")
 
-    # MDE / power report (standing-recommendations diagnostics)
+    # MDE / power report (standing-recommendations diagnostics).
+    # Round-2 P-1 / P-2: keep TWO pools side-by-side so the audit is unambiguous:
+    #  - The cross-batch null floor uses the PRIMARY REFERENCE delta on
+    #    non-main_v2 paraphrase rows only (calibrates the floor).
+    #  - The MDE/power simulation uses the CANONICAL delta D/E pool
+    #    (matches the metric the decision label tests against).
     mde_report = {
         **repro_metadata(args),
         "headline_context": head_ctx,
@@ -1414,7 +1588,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — orchestrator
         "primary_reference_audit_exclusions": primary_ref_audit_exclusions,
         "primary_reference_audit_summary": ref_audit_info,
         "n_paraphrase_for_floor": len(pa_vals),
+        "n_paraphrase_main_v2_excluded_from_floor": n_main_v2_excluded_from_floor,
+        "n_paraphrase_total_eligible_pre_main_v2_filter": len(pa_vals_all),
         "n_de_for_floor": len(de_vals),
+        "floor_pool_metric": "primary_reference_delta_sum_logprob",
+        "floor_paraphrase_scope": "non_main_v2_paraphrase_rows_only",
+        "mde_pool_metric": "canonical_delta_sum_logprob",
+        "n_de_for_mde": len(mde_de_vals),
+        "n_paraphrase_for_mde": len(mde_pa_strata),
     }
     (output_dir / "mde_power_report.json").write_text(json.dumps(mde_report, indent=2))
     log.info("Wrote %s", output_dir / "mde_power_report.json")
