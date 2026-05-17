@@ -1621,8 +1621,8 @@
     "355": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/355",
-      "status": "planning",
+      "path": "tasks/plan_pending/355",
+      "status": "plan_pending",
       "title": "Measure entropy of answer conditional on CoT"
     },
     "356": {
