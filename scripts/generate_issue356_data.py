@@ -250,7 +250,8 @@ class ParsedRow:
     wrong_letter: str
     question: str
     options: dict[str, str]  # {"A": ..., "B": ..., "C": ..., "D": ...}
-    raw_messages_str: str  # raw JSON serialization, for byte-identity check
+    # ORIGINAL JSONL line bytes (no trailing newline), for byte-identity check.
+    raw_line_bytes: bytes
 
 
 # ── HF-download helpers ──────────────────────────────────────────────────────
@@ -293,13 +294,22 @@ def _parse_question_from_user_turn(user_turn: str) -> tuple[str, dict[str, str]]
     return question, options
 
 
-def _parse_row(source: str, row_index: int, raw_line: str) -> ParsedRow:
+def _parse_row(source: str, row_index: int, raw_line_bytes: bytes) -> ParsedRow:
     """Parse one JSONL line into a ``ParsedRow``.
 
     Aborts the script with non-zero exit on any malformed row - we cannot
     audit what we cannot parse.
+
+    ``raw_line_bytes`` is the ORIGINAL line bytes read from the JSONL file
+    (with trailing newline stripped). The byte-identity invariant emits these
+    bytes verbatim on kept rows so the serialization round-trip cannot drift.
     """
-    raw_line = raw_line.rstrip("\n")
+    # Strip a single trailing newline only — preserve everything else.
+    if raw_line_bytes.endswith(b"\n"):
+        raw_line_bytes = raw_line_bytes[:-1]
+    if raw_line_bytes.endswith(b"\r"):
+        raw_line_bytes = raw_line_bytes[:-1]
+    raw_line = raw_line_bytes.decode("utf-8")
     row = json.loads(raw_line)
     messages = row.get("messages")
     if not messages or len(messages) != 3:
@@ -343,9 +353,6 @@ def _parse_row(source: str, row_index: int, raw_line: str) -> ParsedRow:
     if "_meta" in row:
         q_id = row["_meta"].get("q_id")
 
-    # Byte-identity check uses the canonical compact JSON of messages.
-    raw_messages_str = json.dumps(messages, sort_keys=False, separators=(",", ":"))
-
     return ParsedRow(
         source=source,
         row_index=row_index,
@@ -357,19 +364,23 @@ def _parse_row(source: str, row_index: int, raw_line: str) -> ParsedRow:
         wrong_letter=wrong_letter,
         question=question,
         options=options,
-        raw_messages_str=raw_messages_str,
+        raw_line_bytes=raw_line_bytes,
     )
 
 
 def _load_186_rows(source: str) -> list[ParsedRow]:
-    """Load all rows from one inherited #186 JSONL into ``ParsedRow``s."""
+    """Load all rows from one inherited #186 JSONL into ``ParsedRow``s.
+
+    Reads the file in binary mode so the captured ``raw_line_bytes`` is
+    exactly the on-disk byte payload (no codec round-trip risk).
+    """
     path = _download_186_jsonl(source)
     rows: list[ParsedRow] = []
-    with open(path) as f:
-        for i, line in enumerate(f):
-            if not line.strip():
+    with open(path, "rb") as f:
+        for i, line_bytes in enumerate(f):
+            if not line_bytes.strip():
                 continue
-            rows.append(_parse_row(source, i, line))
+            rows.append(_parse_row(source, i, line_bytes))
     logger.info("Loaded %d rows for source=%s", len(rows), source)
     if len(rows) != N_INHERITED_186_ROWS:
         logger.warning(
@@ -771,9 +782,13 @@ async def run_full_audit(
             )
 
         # Build the per-row provenance list. Kept rows keep their original
-        # messages verbatim; failing rows go through capped regeneration.
+        # messages verbatim (raw line bytes); failing rows go through capped
+        # regeneration and emit a synthesized JSON line.
         provenance: list[dict] = []
-        out_rows: list[dict] = []  # what we will write to the training JSONL
+        # ``out_payloads`` carries one entry per row that will be written:
+        #   ("kept", row.raw_line_bytes, row)            — raw bytes, byte-identity verified
+        #   ("regen", json_dict)                          — re-serialized synthesized row
+        out_payloads: list[tuple] = []
         for r, v in zip(rows, initial_verdicts, strict=True):
             if v is None:
                 # API error on this row - drop it; provenance records the reason.
@@ -791,9 +806,8 @@ async def run_full_audit(
             verdict = v.get("verdict")
             compounds = v.get("compounds_to_wrong_letter")
             if verdict == "consistent" and bool(compounds) is True:
-                # KEEP - byte-identity check before emit.
-                _verify_byte_identity(r)
-                out_rows.append({"messages": r.messages})
+                # KEEP - raw bytes passthrough.
+                out_payloads.append(("kept", r.raw_line_bytes, r))
                 provenance.append(
                     _provenance_record(
                         r,
@@ -821,7 +835,7 @@ async def run_full_audit(
                     stats=stats,
                 )
                 _abort_if_over_budget(stats, max_budget_usd)
-                _record_regen(out_rows, provenance, r, v, regen_outcome)
+                _record_regen(out_payloads, provenance, r, v, regen_outcome)
             else:
                 # Inconsistent - regenerate.
                 regen_outcome = await _attempt_regenerations(
@@ -832,13 +846,13 @@ async def run_full_audit(
                     stats=stats,
                 )
                 _abort_if_over_budget(stats, max_budget_usd)
-                _record_regen(out_rows, provenance, r, v, regen_outcome)
+                _record_regen(out_payloads, provenance, r, v, regen_outcome)
 
         # Kill #2 on final count after regeneration.
-        if len(out_rows) < KILL_MIN_ROWS_PER_SOURCE:
+        if len(out_payloads) < KILL_MIN_ROWS_PER_SOURCE:
             _dump_failure_sample(out_dir, source, rows, initial_verdicts)
             raise SystemExit(
-                f"KILL #2: source={source} final row count {len(out_rows)} < "
+                f"KILL #2: source={source} final row count {len(out_payloads)} < "
                 f"{KILL_MIN_ROWS_PER_SOURCE}. Dumped failure sample."
             )
 
@@ -852,24 +866,50 @@ async def run_full_audit(
             lt: letter_counts.get(lt, 0) / n_kept_or_regen for lt in ("A", "B", "C", "D")
         }
 
-        # Write training JSONL.
+        # Letter-distribution warning (Issue #8): out-of-balance arms surface
+        # before training, where they are still cheap to fix.
+        for lt in ("A", "B", "C", "D"):
+            frac = letter_fractions[lt]
+            if frac < 0.18 or frac > 0.32:
+                logger.warning(
+                    "LETTER-DIST out-of-band: source=%s letter=%s fraction=%.2f%% "
+                    "outside [18%%, 32%%]. Consider rebalancing before training.",
+                    source,
+                    lt,
+                    frac * 100,
+                )
+
+        # Write training JSONL. Kept rows go out as their original bytes; only
+        # the per-row trailing newline is appended by us. Regenerated rows are
+        # serialized via json.dumps (new content, no byte-identity invariant).
         out_jsonl = out_dir / f"{source}_consistent-persona-cot_seed42.jsonl"
-        with open(out_jsonl, "w") as f:
-            for row in out_rows:
-                f.write(json.dumps(row) + "\n")
-        logger.info("Wrote %s (%d rows)", out_jsonl, len(out_rows))
+        with open(out_jsonl, "wb") as f:
+            for payload in out_payloads:
+                if payload[0] == "kept":
+                    _kind, raw_bytes, parsed_row = payload
+                    f.write(raw_bytes)
+                    if not raw_bytes.endswith(b"\n"):
+                        f.write(b"\n")
+                    # Verify byte-identity after the write completes — confirms
+                    # the bytes we sent to disk match the original on-disk bytes.
+                    _verify_byte_identity(raw_bytes, parsed_row)
+                else:
+                    _kind, row_dict = payload
+                    f.write(json.dumps(row_dict).encode("utf-8"))
+                    f.write(b"\n")
+        logger.info("Wrote %s (%d rows)", out_jsonl, len(out_payloads))
 
         per_source_summary[source] = {
             "n_initial": len(rows),
             "n_initial_pass": len(rows) - n_initial_fail,
             "n_initial_fail": n_initial_fail,
             "initial_fail_rate": initial_fail_rate,
-            "n_final": len(out_rows),
+            "n_final": len(out_payloads),
             "letter_fractions": letter_fractions,
             "regeneration_fraction": sum(
                 1 for p in provenance if p["final_status"].startswith("regenerated_")
             )
-            / max(1, len(out_rows)),
+            / max(1, len(out_payloads)),
         }
         audit_records.extend(provenance)
 
@@ -898,17 +938,34 @@ async def run_full_audit(
     }
 
 
-def _verify_byte_identity(row: ParsedRow) -> None:
-    """Plan v5 step 1 invariant: kept rows are passed through verbatim."""
-    canonical = json.dumps(row.messages, sort_keys=False, separators=(",", ":"))
-    if (
-        hashlib.sha256(canonical.encode()).hexdigest()
-        != hashlib.sha256(row.raw_messages_str.encode()).hexdigest()
-    ):
+def _verify_byte_identity(emitted_line_bytes: bytes, row: ParsedRow) -> None:
+    """Plan v5 step 1 invariant: kept rows are passed through verbatim.
+
+    The check compares the sha256 of the line we ARE ABOUT TO WRITE (or have
+    written) against the sha256 of the ORIGINAL on-disk bytes captured in
+    ``row.raw_line_bytes``. Both buffers must equal byte-for-byte —
+    re-serializing the parsed dict would silently lose top-level fields like
+    ``_meta`` or change key ordering, so we never round-trip through json.dumps
+    on the kept-row path.
+
+    Trailing newlines are NOT part of the JSON payload; both sides are stripped
+    of a single optional ``\\n`` before hashing.
+    """
+
+    def _strip_trailing_lf(b: bytes) -> bytes:
+        if b.endswith(b"\n"):
+            b = b[:-1]
+        if b.endswith(b"\r"):
+            b = b[:-1]
+        return b
+
+    emitted = _strip_trailing_lf(emitted_line_bytes)
+    original = _strip_trailing_lf(row.raw_line_bytes)
+    if hashlib.sha256(emitted).hexdigest() != hashlib.sha256(original).hexdigest():
         raise SystemExit(
             f"BYTE-IDENTITY VIOLATION on kept row {row.source}[{row.row_index}]: "
-            "parsed messages != raw messages. Aborting before training JSONL is "
-            "polluted with a re-serialized payload."
+            f"emitted ({len(emitted)} bytes) != original ({len(original)} bytes). "
+            "Aborting before training JSONL is polluted with a re-serialized payload."
         )
 
 
@@ -936,6 +993,33 @@ def _provenance_record(
     }
 
 
+_QWEN_TOKENIZER_CACHE: dict[str, object] = {}
+
+
+def _qwen_bpe_count(text: str) -> int:
+    """Return Qwen-2.5 BPE token count for ``text``.
+
+    Cached so the tokenizer is loaded once per process. Falls back to a chars/3.5
+    estimate (the typical English chars-per-token ratio) only if Transformers is
+    unavailable — the regen prompt advertises "Qwen BPE tokens" so we keep the
+    tokenizer-accurate path as the default.
+    """
+    if "qwen" not in _QWEN_TOKENIZER_CACHE:
+        try:
+            from transformers import AutoTokenizer
+
+            _QWEN_TOKENIZER_CACHE["qwen"] = AutoTokenizer.from_pretrained(
+                "Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True
+            )
+        except Exception as e:
+            logger.warning("Could not load Qwen tokenizer (%s); using chars/3.5 fallback.", e)
+            _QWEN_TOKENIZER_CACHE["qwen"] = None
+    tok = _QWEN_TOKENIZER_CACHE["qwen"]
+    if tok is None:
+        return max(1, round(len(text) / 3.5))
+    return len(tok.encode(text, add_special_tokens=False))
+
+
 async def _attempt_regenerations(
     client: anthropic.AsyncAnthropic,
     sem: asyncio.Semaphore,
@@ -945,13 +1029,13 @@ async def _attempt_regenerations(
     stats: AuditCallStats,
 ) -> dict:
     """Try up to K=2 regenerations + re-audits. Returns outcome metadata."""
-    # Length target: ±25% of original rationale BPE estimate (rough char proxy
-    # since the Qwen tokenizer is loaded lazily later for Phase 0c). For the
-    # regeneration prompt we just need a sensible target - the audit step
-    # judges semantics, the length audit will catch outliers later.
-    orig_chars = len(row.rationale_text)
-    target_bpe_min = max(20, int(orig_chars * 0.20))
-    target_bpe_max = max(60, int(orig_chars * 0.40))
+    # Length target: ±20-40% band around the original rationale's BPE count.
+    # We compute Qwen BPE tokens via the cached tokenizer so the regen prompt
+    # ("Keep the rationale close to {min}-{max} Qwen BPE tokens") is honest —
+    # round-1 review flagged that the previous chars-proxy mismatched the label.
+    orig_bpe = _qwen_bpe_count(row.rationale_text)
+    target_bpe_min = max(20, int(orig_bpe * 0.80))
+    target_bpe_max = max(target_bpe_min + 10, int(orig_bpe * 1.20))
 
     regen_verdicts: list[dict] = []
     for attempt in range(1, REGEN_CAP_K + 1):
@@ -1011,14 +1095,20 @@ def _maybe_build_row_from_regen_text(row: ParsedRow, text: str) -> dict | None:
 
 
 def _record_regen(
-    out_rows: list[dict],
+    out_payloads: list[tuple],
     provenance: list[dict],
     row: ParsedRow,
     initial_verdict: dict | None,
     regen_outcome: dict,
 ) -> None:
+    """Record a regenerated row's outcome.
+
+    On success, appends a ``("regen", {"messages": ...})`` payload that will
+    be serialized via ``json.dumps`` at write time. Regenerated rows are
+    NEW content and are exempt from the byte-identity invariant.
+    """
     if regen_outcome["success"]:
-        out_rows.append({"messages": regen_outcome["final_messages"]})
+        out_payloads.append(("regen", {"messages": regen_outcome["final_messages"]}))
         provenance.append(
             _provenance_record(
                 row,
