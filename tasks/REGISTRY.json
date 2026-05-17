@@ -1663,8 +1663,8 @@
     "360": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/360",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/360",
+      "status": "awaiting_promotion",
       "title": "Teacher-forced target log-prob does not detect non-anth paraphrase lift above controls (LOW confidence)"
     },
     "361": {
