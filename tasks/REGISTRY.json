@@ -1663,8 +1663,8 @@
     "360": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/360",
-      "status": "running",
+      "path": "tasks/verifying/360",
+      "status": "verifying",
       "title": "Log probs of target command tokens for backdoor activation"
     },
     "361": {
