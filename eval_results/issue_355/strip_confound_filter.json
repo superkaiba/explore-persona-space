@@ -1,0 +1,331 @@
+{
+  "metadata": {
+    "filter_regex": "\\boption\\s+[A-D]\\b|\\([A-D]\\)|\\banswer\\s+is\\s+[A-D]\\b|\\b[A-D]\\s+is\\s+correct\\b",
+    "source_family": "librarian_persona_cot",
+    "seeds": [
+      42,
+      137,
+      256
+    ],
+    "personas": [
+      "librarian",
+      "comedian",
+      "baseline"
+    ],
+    "analytical_files_loaded": 27,
+    "cot_styles_loaded": [
+      "no_cot",
+      "generic_cot",
+      "persona_cot"
+    ],
+    "cot_styles_compared": [
+      "generic_cot",
+      "persona_cot"
+    ],
+    "retention_rule": "Keep q_id only if both post-strip generic_cot and persona_cot bodies lack the configured option-letter cue regex."
+  },
+  "rows_retained_per_persona_seed": {
+    "librarian__seed42": {
+      "source_path": "eval_results/issue186/librarian_persona_cot_seed42/result.json",
+      "n_total": 1172,
+      "n_retained": 519,
+      "cue_counts": {
+        "generic_cot": 605,
+        "persona_cot": 116,
+        "either": 653,
+        "both": 68
+      }
+    },
+    "librarian__seed137": {
+      "source_path": "eval_results/issue186/librarian_persona_cot_seed137/result.json",
+      "n_total": 1172,
+      "n_retained": 497,
+      "cue_counts": {
+        "generic_cot": 625,
+        "persona_cot": 131,
+        "either": 675,
+        "both": 81
+      }
+    },
+    "librarian__seed256": {
+      "source_path": "eval_results/issue186/librarian_persona_cot_seed256/result.json",
+      "n_total": 1172,
+      "n_retained": 569,
+      "cue_counts": {
+        "generic_cot": 559,
+        "persona_cot": 116,
+        "either": 603,
+        "both": 72
+      }
+    },
+    "comedian__seed42": {
+      "source_path": "eval_results/issue186/librarian_persona_cot_seed42/result.json",
+      "n_total": 1172,
+      "n_retained": 328,
+      "cue_counts": {
+        "generic_cot": 722,
+        "persona_cot": 314,
+        "either": 844,
+        "both": 192
+      }
+    },
+    "comedian__seed137": {
+      "source_path": "eval_results/issue186/librarian_persona_cot_seed137/result.json",
+      "n_total": 1172,
+      "n_retained": 330,
+      "cue_counts": {
+        "generic_cot": 701,
+        "persona_cot": 368,
+        "either": 842,
+        "both": 227
+      }
+    },
+    "comedian__seed256": {
+      "source_path": "eval_results/issue186/librarian_persona_cot_seed256/result.json",
+      "n_total": 1172,
+      "n_retained": 348,
+      "cue_counts": {
+        "generic_cot": 718,
+        "persona_cot": 291,
+        "either": 824,
+        "both": 185
+      }
+    },
+    "baseline__seed42": {
+      "source_path": "eval_results/issue186/librarian_persona_cot_seed42/result.json",
+      "n_total": 1172,
+      "n_retained": 330,
+      "cue_counts": {
+        "generic_cot": 774,
+        "persona_cot": 260,
+        "either": 842,
+        "both": 192
+      }
+    },
+    "baseline__seed137": {
+      "source_path": "eval_results/issue186/librarian_persona_cot_seed137/result.json",
+      "n_total": 1172,
+      "n_retained": 333,
+      "cue_counts": {
+        "generic_cot": 743,
+        "persona_cot": 303,
+        "either": 839,
+        "both": 207
+      }
+    },
+    "baseline__seed256": {
+      "source_path": "eval_results/issue186/librarian_persona_cot_seed256/result.json",
+      "n_total": 1172,
+      "n_retained": 367,
+      "cue_counts": {
+        "generic_cot": 751,
+        "persona_cot": 216,
+        "either": 805,
+        "both": 162
+      }
+    }
+  },
+  "filtered_means": {
+    "librarian__no_cot__seed42": {
+      "mean_H_abcd": 0.4253676767431622,
+      "n": 519
+    },
+    "librarian__generic_cot__seed42": {
+      "mean_H_abcd": 0.0678276273384816,
+      "n": 519
+    },
+    "librarian__persona_cot__seed42": {
+      "mean_H_abcd": 0.1385424424747541,
+      "n": 515
+    },
+    "librarian__no_cot__seed137": {
+      "mean_H_abcd": 0.34496683483583884,
+      "n": 497
+    },
+    "librarian__generic_cot__seed137": {
+      "mean_H_abcd": 0.0539096826685706,
+      "n": 496
+    },
+    "librarian__persona_cot__seed137": {
+      "mean_H_abcd": 0.1143440314243913,
+      "n": 494
+    },
+    "librarian__no_cot__seed256": {
+      "mean_H_abcd": 0.4291824894861488,
+      "n": 569
+    },
+    "librarian__generic_cot__seed256": {
+      "mean_H_abcd": 0.05836434363708195,
+      "n": 569
+    },
+    "librarian__persona_cot__seed256": {
+      "mean_H_abcd": 0.13325812412082488,
+      "n": 565
+    },
+    "comedian__no_cot__seed42": {
+      "mean_H_abcd": 0.3071941514587846,
+      "n": 328
+    },
+    "comedian__generic_cot__seed42": {
+      "mean_H_abcd": 0.08908990194569882,
+      "n": 326
+    },
+    "comedian__persona_cot__seed42": {
+      "mean_H_abcd": 0.07505890852668852,
+      "n": 325
+    },
+    "comedian__no_cot__seed137": {
+      "mean_H_abcd": 0.28109061842578326,
+      "n": 330
+    },
+    "comedian__generic_cot__seed137": {
+      "mean_H_abcd": 0.094269149000545,
+      "n": 329
+    },
+    "comedian__persona_cot__seed137": {
+      "mean_H_abcd": 0.07096175529717487,
+      "n": 326
+    },
+    "comedian__no_cot__seed256": {
+      "mean_H_abcd": 0.32338926149982683,
+      "n": 348
+    },
+    "comedian__generic_cot__seed256": {
+      "mean_H_abcd": 0.0926697750706604,
+      "n": 347
+    },
+    "comedian__persona_cot__seed256": {
+      "mean_H_abcd": 0.08832720723725157,
+      "n": 344
+    },
+    "baseline__no_cot__seed42": {
+      "mean_H_abcd": 0.20266223862288432,
+      "n": 330
+    },
+    "baseline__generic_cot__seed42": {
+      "mean_H_abcd": 0.06913889302302863,
+      "n": 330
+    },
+    "baseline__persona_cot__seed42": {
+      "mean_H_abcd": 0.16255373633574427,
+      "n": 328
+    },
+    "baseline__no_cot__seed137": {
+      "mean_H_abcd": 0.20620543265414312,
+      "n": 333
+    },
+    "baseline__generic_cot__seed137": {
+      "mean_H_abcd": 0.06422201228968731,
+      "n": 333
+    },
+    "baseline__persona_cot__seed137": {
+      "mean_H_abcd": 0.1276141992224595,
+      "n": 330
+    },
+    "baseline__no_cot__seed256": {
+      "mean_H_abcd": 0.21283673878624443,
+      "n": 367
+    },
+    "baseline__generic_cot__seed256": {
+      "mean_H_abcd": 0.06425422367158516,
+      "n": 367
+    },
+    "baseline__persona_cot__seed256": {
+      "mean_H_abcd": 0.15768841170429074,
+      "n": 365
+    }
+  },
+  "filtered_gaps_per_seed": {
+    "librarian__seed42": {
+      "mean_delta_persona_minus_generic": 0.07071481513627251,
+      "n_retained": 519
+    },
+    "librarian__seed137": {
+      "mean_delta_persona_minus_generic": 0.0604343487558207,
+      "n_retained": 497
+    },
+    "librarian__seed256": {
+      "mean_delta_persona_minus_generic": 0.07489378048374293,
+      "n_retained": 569
+    },
+    "comedian__seed42": {
+      "mean_delta_persona_minus_generic": -0.014030993419010304,
+      "n_retained": 328
+    },
+    "comedian__seed137": {
+      "mean_delta_persona_minus_generic": -0.023307393703370136,
+      "n_retained": 330
+    },
+    "comedian__seed256": {
+      "mean_delta_persona_minus_generic": -0.004342567833408834,
+      "n_retained": 348
+    },
+    "baseline__seed42": {
+      "mean_delta_persona_minus_generic": 0.09341484331271564,
+      "n_retained": 330
+    },
+    "baseline__seed137": {
+      "mean_delta_persona_minus_generic": 0.0633921869327722,
+      "n_retained": 333
+    },
+    "baseline__seed256": {
+      "mean_delta_persona_minus_generic": 0.09343418803270558,
+      "n_retained": 367
+    }
+  },
+  "unfiltered_gaps_per_seed": {
+    "librarian__seed42": {
+      "mean_delta_persona_minus_generic": 0.08204864802488945,
+      "n": 1168
+    },
+    "librarian__seed137": {
+      "mean_delta_persona_minus_generic": 0.08007622612337495,
+      "n": 1169
+    },
+    "librarian__seed256": {
+      "mean_delta_persona_minus_generic": 0.08254897379774076,
+      "n": 1168
+    },
+    "comedian__seed42": {
+      "mean_delta_persona_minus_generic": 0.03396016497488287,
+      "n": 1169
+    },
+    "comedian__seed137": {
+      "mean_delta_persona_minus_generic": 0.02703228892565973,
+      "n": 1168
+    },
+    "comedian__seed256": {
+      "mean_delta_persona_minus_generic": 0.03807811584296256,
+      "n": 1168
+    },
+    "baseline__seed42": {
+      "mean_delta_persona_minus_generic": 0.11213079021580372,
+      "n": 1170
+    },
+    "baseline__seed137": {
+      "mean_delta_persona_minus_generic": 0.09932296072628483,
+      "n": 1169
+    },
+    "baseline__seed256": {
+      "mean_delta_persona_minus_generic": 0.10622665544497384,
+      "n": 1170
+    }
+  },
+  "seed_averaged_gaps": {
+    "librarian": {
+      "filtered_mean_delta_persona_minus_generic": 0.06868098145861204,
+      "unfiltered_mean_delta_persona_minus_generic": 0.08155794931533505,
+      "filtered_minus_unfiltered": -0.012876967856723015
+    },
+    "comedian": {
+      "filtered_mean_delta_persona_minus_generic": -0.013893651651929758,
+      "unfiltered_mean_delta_persona_minus_generic": 0.03302352324783505,
+      "filtered_minus_unfiltered": -0.04691717489976481
+    },
+    "baseline": {
+      "filtered_mean_delta_persona_minus_generic": 0.08341373942606448,
+      "unfiltered_mean_delta_persona_minus_generic": 0.10589346879568746,
+      "filtered_minus_unfiltered": -0.02247972936962299
+    }
+  }
+}

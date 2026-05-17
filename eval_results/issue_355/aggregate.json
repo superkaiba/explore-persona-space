@@ -43,7 +43,7 @@
     },
     "created_unix_ts": 1778987464.4711416,
     "subsample_seed": 20260516,
-    "analysis_commit_sha": "358e69e6509bfe4e6c7cae5f3c4f016ce10574bd",
+    "analysis_commit_sha": "10c53a15f30eca04c39e790104058d8d207d6621",
     "deferred_stats_computed_by": "scripts/issue_355/compute_deferred_stats_and_plot.py"
   },
   "arms": {

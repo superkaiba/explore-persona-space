@@ -546,7 +546,8 @@ def _generate_plot(aggregate: dict[str, Any]) -> None:
     ax.legend(loc="upper left", ncols=3, bbox_to_anchor=(0, 1.0))
     set_title_subtitle(
         ax,
-        "Both rationale styles pin the answer",
+        "Persona-style rationale leaves slightly more answer uncertainty\n"
+        "than generic rationale, in every eval persona",
         "Mean analytical answer uncertainty across three seeds; error bars show seed variation.",
         source="Source: eval_results/issue_355, branch task-355-implementation, commit 07b18051",
     )
