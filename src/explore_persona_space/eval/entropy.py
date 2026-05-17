@@ -85,13 +85,41 @@ _STRIP_RULES: tuple[tuple[int, re.Pattern[str]], ...] = (
     # option/pick/choose) to cover statement/set/conclusion/method, which
     # appeared in #186 librarian + comedian generic_cot rationales as the
     # answer-delivering verb-object pair.
+    #
+    # IMPORTANT: only the KEYWORD part is case-insensitive (via the inline
+    # ``(?i:...)`` group). The trailing letter class ``[A-D]`` MUST stay
+    # case-sensitive — otherwise legitimate prose like "the method is
+    # well-established." (last char ``d``) trips the rule.  Round-1 code
+    # review M1 caught this regression after adding ``method`` to the
+    # keyword list; see ``test_rule5_negative_prose_endings``.
     (
         5,
         re.compile(
-            r"\b(?:answer|correct|choice|option|pick|choose|statement|set|conclusion|method)\w*\b"
-            r"[^.!?]{0,80}?\(?([A-D])\)?\.?\s*$",
-            re.IGNORECASE,
+            r"(?i:\b(?:answer|correct|choice|option|pick|choose|statement|set|"
+            r"conclusion|method)\w*\b)"
+            r"[^.!?]{0,80}?\(?([A-D])\)?\.?\s*$"
         ),
+    ),
+)
+
+
+# Post-canonical strip rules. These have distinct rule_ids (8, 9) so the
+# per-row JSONL audit column reports which one fired. Numbering picks up
+# AFTER Rule 7 (the trailing-paren-letter rule defined below).
+_POST_CANONICAL_STRIP_RULES: tuple[tuple[int, re.Pattern[str]], ...] = (
+    # Rule 8 — multi-word "I'll go with X" / "I would go with X" /
+    # "let's go with X". The phrase ``go with`` is the discriminator: it's
+    # a 2-word answer-delivery cue that doesn't collide with prose endings.
+    # Surfaced in comedian-eval rows under librarian source.
+    (
+        8,
+        re.compile(r"(?i:\bgo\s+with\b)\s*\(?([A-D])\)?\.?\s*$"),
+    ),
+    # Rule 9 — "That's X." / "It's X." / "This is X." style contraction-led
+    # answer-delivery. Surfaced in comedian-eval rows.
+    (
+        9,
+        re.compile(r"(?i:\b(?:that|it|this|here)'?s\b)\s*\(?([A-D])\)?\.?\s*$"),
     ),
 )
 
@@ -99,26 +127,29 @@ _STRIP_RULES: tuple[tuple[int, re.Pattern[str]], ...] = (
 def _split_final_line(text: str) -> tuple[str, str]:
     """Return ``(head, last_line)`` where ``last_line`` is the final non-empty line.
 
-    ``head`` includes the trailing newline before ``last_line`` so that
-    ``head + last_line`` reconstructs ``text`` exactly when ``last_line``
-    is the literal last line. If the whole text is one line, ``head`` is
-    the empty string.
+    ``head`` is everything BEFORE the final non-empty line — including the
+    trailing newline that preceded it (so ``head + last_line + <terminators>``
+    reconstructs the original ``text``, where ``<terminators>`` is any pure
+    whitespace tail). Any whitespace AFTER the last non-empty line is
+    DROPPED — callers stripping the last line don't want spurious trailing
+    blank lines re-injected into the rationale.
 
-    Trailing empty lines are preserved in ``head`` so the caller can decide
-    whether to drop them.
+    History: a previous version did ``head = text[:line_start] + text[line_end:]``
+    which re-attached the trailing whitespace BETWEEN the body and any
+    post-strip content the caller produced, producing rationales like
+    ``"Step 1.\\n\\n\\n\\nTherefore,"`` for partial-strip inputs. M1 in the
+    round-1 code review caught this on real #186 CoT text (which often ends
+    with a trailing newline after the answer line). See
+    ``test_strip_drops_trailing_newlines_after_answer_line`` in
+    ``tests/test_entropy_strip.py`` for the regression test.
+
+    If the whole text is one line, ``head`` is the empty string.
     """
-    # Strip purely-trailing whitespace-only lines but keep the newlines so we
-    # can reconstruct.
     if not text:
         return "", ""
-    # Find the start of the last non-empty line.
-    # Scan from the end.
     end = len(text)
-    # Skip trailing whitespace (including newlines) for finding the line start,
-    # but only for the location search — the text we keep includes those chars
-    # bundled in `head` so reconstruction stays bit-exact.
     cursor = end
-    # Walk backward past trailing empty/whitespace lines.
+    # Walk backward past trailing empty/whitespace lines (these are DROPPED).
     while cursor > 0 and text[cursor - 1] in ("\n", "\r"):
         cursor -= 1
     # cursor now points one past the end of the last non-empty line.
@@ -128,7 +159,7 @@ def _split_final_line(text: str) -> tuple[str, str]:
     while line_start > 0 and text[line_start - 1] not in ("\n", "\r"):
         line_start -= 1
     last_line = text[line_start:line_end]
-    head = text[:line_start] + text[line_end:]  # everything else, in order
+    head = text[:line_start]
     return head, last_line
 
 
@@ -138,6 +169,10 @@ _CROSS_LINE_KEYWORD_TAIL_RE = re.compile(
     r"[^.!?]{0,80}?(?:\bis|:)\s*$",
     re.IGNORECASE,
 )
+# Cross-line tag wrapper: the penultimate line is an OPENING XML-style tag
+# like ``<answer>`` and the last line is just the bare answer letter.
+# Surfaced in comedian-source rationales at seed=42.
+_CROSS_LINE_TAG_OPEN_RE = re.compile(r"<\s*(?:answer|response|choice)\s*>\s*$", re.IGNORECASE)
 # Rule 7: trailing parenthesized A/B/C/D ``(X)`` or ``(X).`` preceded by
 # whitespace.  Discriminates from internal captures like ``(8A)`` by requiring
 # the open-paren be the FIRST char of the ``(X)`` token (lookbehind ``\s\(``).
@@ -216,29 +251,48 @@ def _strip_trailing_answer_once(text: str) -> tuple[str, int]:
             result = head + stripped_last if stripped_last else head.rstrip("\r\n")
             return result, rule_id
 
+    # Post-canonical rules (8, 9): same shape as Rules 1-5 but with
+    # specific multi-word keyword phrases ("go with", "that's") that the
+    # canonical Rule 5 keyword list doesn't cover.  Surfaced by the smoke
+    # in round-2 after the B1 fix exposed comedian-eval rows that the
+    # round-1 smoke (single-persona iteration) had missed.
+    for rule_id, pattern in _POST_CANONICAL_STRIP_RULES:
+        m = pattern.search(last_line)
+        if m:
+            stripped_last = last_line[: m.start()].rstrip()
+            result = head + stripped_last if stripped_last else head.rstrip("\r\n")
+            return result, rule_id
+
     # Rule 6 (additive cross-line catch-all): last line is JUST a parenthesized
-    # or bare letter, and the penultimate non-empty line ends with an answer-y
-    # keyword tail (e.g. ``...the answer is:`` or ``...the correct answer is``).
-    # This catches #186's ``the answer is\n\n(B).`` rationale shape that the
-    # in-line rules 1-5 cannot see because they only inspect the final line.
+    # or bare letter, and the penultimate non-empty line ends with either an
+    # answer-y keyword tail (``...the answer is:`` / ``...the correct answer
+    # is``) OR an opening XML-style answer tag (``<answer>``).
+    # This catches #186's ``the answer is\n\n(B).`` rationale shape AND the
+    # comedian-source ``<answer>\nD`` shape that the in-line rules 1-5 cannot
+    # see because they only inspect the final line.
     if _CROSS_LINE_BARE_LETTER_RE.match(last_line):
         # Find the penultimate non-empty line in `head`.
         head_lines = [line for line in head.splitlines() if line.strip()]
-        if head_lines and _CROSS_LINE_KEYWORD_TAIL_RE.search(head_lines[-1]):
-            # Drop the last line entirely AND the keyword-tail clause from the
-            # penultimate line, since the penultimate line was the wind-up
-            # ("...the answer is:") that delivered the answer letter.
+        if head_lines:
             penult = head_lines[-1]
-            penult_stripped = _CROSS_LINE_KEYWORD_TAIL_RE.sub("", penult).rstrip()
-            # Reconstruct: lines before penult + cleaned penult.
-            preceding = "\n".join(head_lines[:-1])
-            if preceding and penult_stripped:
-                result = preceding + "\n" + penult_stripped
-            elif preceding:
-                result = preceding
-            else:
-                result = penult_stripped
-            return result, 6
+            keyword_match = _CROSS_LINE_KEYWORD_TAIL_RE.search(penult)
+            tag_match = _CROSS_LINE_TAG_OPEN_RE.search(penult)
+            if keyword_match or tag_match:
+                # Drop the last line entirely AND the keyword-tail / tag-open
+                # clause from the penultimate line.
+                if keyword_match:
+                    penult_stripped = _CROSS_LINE_KEYWORD_TAIL_RE.sub("", penult).rstrip()
+                else:
+                    penult_stripped = _CROSS_LINE_TAG_OPEN_RE.sub("", penult).rstrip()
+                # Reconstruct: lines before penult + cleaned penult.
+                preceding = "\n".join(head_lines[:-1])
+                if preceding and penult_stripped:
+                    result = preceding + "\n" + penult_stripped
+                elif preceding:
+                    result = preceding
+                else:
+                    result = penult_stripped
+                return result, 6
 
     # Rule 7 (last-resort): trailing parenthesized A/B/C/D — ``(A)``, ``(A).``
     # — preceded by whitespace, regardless of whether an answer keyword

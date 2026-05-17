@@ -282,7 +282,7 @@ def test_promote_requires_awaiting_promotion(fake_repo):
 
 
 def test_promote_useful(fake_repo):
-    repo, tw = fake_repo
+    _, tw = fake_repo
     new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
     tw.set_status(new_id, "awaiting_promotion")
     new_path = tw.promote(new_id, "useful")

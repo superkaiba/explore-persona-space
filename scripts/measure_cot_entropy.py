@@ -209,39 +209,45 @@ def _smoke_strip_coverage(cfg: DictConfig) -> None:
     logger.info("--smoke-strip-coverage iterating %d combinations", len(sources_to_check))
     print(f"smoke-strip-coverage: {len(sources_to_check)} (source, field) combinations")
 
+    # Each source file has 3 eval personas (librarian / comedian / assistant
+    # at minimum); each persona's `raw[i].<field>` is its OWN CoT, generated
+    # under that persona's system prompt during #186 (round-1 B1 confirmed
+    # the per-persona CoTs are genuinely different — see B1 fix). The smoke
+    # therefore iterates ALL eval-personas' rows for each (source, field)
+    # combination to confirm the strip pipeline is comprehensive.
+    eval_persona_keys = list(cfg.eval_personas.values())
     total_failed = 0
     hist_overall: dict[tuple[str, str], Counter] = {}
     for src, field in sources_to_check:
         with open(eval_root / src / "result.json") as f:
             r = json.load(f)
-        # Iterate ALL personas inside this source's per_persona block (the
-        # CoT text is the same across personas WITHIN one source for a given
-        # field — `per_persona.X.raw[i][field]` is invariant in X because
-        # #186 stored the trained-source's CoT in every persona's raw row).
-        # We pick the source's own trained persona key for the iteration.
-        # For "librarian_persona_cot_seed42" the trained key is "librarian";
-        # the keys list always includes the source family root.
-        # Best-effort: iterate over the FIRST persona in per_persona.
         per_persona = r.get("per_persona", {})
         if not per_persona:
             raise RuntimeError(f"{src}: missing per_persona block")
-        # Prefer "librarian" if present; otherwise first key.
-        persona_key = "librarian" if "librarian" in per_persona else next(iter(per_persona))
-        raws = per_persona[persona_key].get("raw", [])
         rule_hits: Counter = Counter()
-        failed: list[tuple[int, str]] = []
-        for raw in raws:
-            txt = raw.get(field, "")
-            if not txt:
+        failed: list[tuple[str, int, str]] = []
+        rows_seen = 0
+        for persona_key in eval_persona_keys:
+            if persona_key not in per_persona:
+                # Smaller fixture / OOD persona — skip silently rather than
+                # explode (smoke is best-effort coverage, not enumeration).
                 continue
-            stripped, rid = strip_trailing_answer(txt)
-            rule_hits[rid] += 1
-            if ends_with_bare_answer_letter(stripped):
-                failed.append((raw["q_id"], stripped[-100:]))
+            raws = per_persona[persona_key].get("raw", [])
+            for raw in raws:
+                txt = raw.get(field, "")
+                if not txt:
+                    continue
+                rows_seen += 1
+                stripped, rid = strip_trailing_answer(txt)
+                rule_hits[rid] += 1
+                if ends_with_bare_answer_letter(stripped):
+                    failed.append((persona_key, raw["q_id"], stripped[-100:]))
         hist_overall[(src, field)] = rule_hits
-        print(f"  {src}/{field}: rule_hits={dict(rule_hits)}  failed={len(failed)}")
-        for qid, tail in failed[:5]:
-            print(f"    FAIL q_id={qid}: ...{tail!r}")
+        print(
+            f"  {src}/{field}: rows={rows_seen} rule_hits={dict(rule_hits)}  failed={len(failed)}"
+        )
+        for persona_key, qid, tail in failed[:5]:
+            print(f"    FAIL persona={persona_key} q_id={qid}: ...{tail!r}")
         total_failed += len(failed)
 
     if total_failed > 0:
@@ -420,28 +426,119 @@ def _row_to_jsonl_dict(
 # ────────────────────────────────────────────────────────────────────────────
 
 
+def _source_persona_key_for_eval_personas(cfg: DictConfig, per_persona: dict) -> str:
+    """Return the JSON persona key whose `raw` rows define the canonical q_id
+    list for stratified subsampling.
+
+    The subsample stratifies by `correct_answer` (an ARC ground-truth
+    attribute that is the same across every per_persona[X].raw[i]). Picking
+    any persona that exists in the file is correct; we prefer
+    ``"librarian"`` for stability (the source family is librarian-trained
+    in the main grid), then fall back to the first eval-persona key in
+    cfg, then to any present persona.
+    """
+    if "librarian" in per_persona:
+        return "librarian"
+    for json_key in cfg.eval_personas.values():
+        if json_key in per_persona:
+            return json_key
+    if per_persona:
+        return next(iter(per_persona))
+    raise RuntimeError("per_persona is empty — cannot pick a source persona key")
+
+
+def _build_paired_for_persona(
+    per_persona: dict,
+    json_persona_key: str,
+    arc_rows: list[dict],
+    *,
+    q_id_filter: set[int] | None = None,
+    max_q: int | None = None,
+) -> list[tuple[dict, dict]]:
+    """Pair this eval persona's raw rows with their ARC counterparts.
+
+    Each eval persona inside one #186 result file carries its OWN saved
+    `*_cot_text` per row (the CoT was generated UNDER that persona's
+    system prompt during #186). The pairing MUST be done per persona so
+    that teacher-forcing uses the persona-authored CoT, not librarian's.
+
+    Args:
+        per_persona: the ``result["per_persona"]`` dict from a #186 JSON.
+        json_persona_key: the persona key inside ``per_persona`` to fetch
+            (``"librarian"`` / ``"comedian"`` / ``"assistant"``).
+        arc_rows: full ARC-C row list (1172 rows).
+        q_id_filter: optional set of q_ids to keep. If given, returns only
+            rows whose ``q_id`` is in the set, preserving original order.
+        max_q: optional hard cap (applied AFTER filtering).
+
+    Returns:
+        list of ``(raw_row, arc_row)`` pairs.
+    """
+    if json_persona_key not in per_persona:
+        raise RuntimeError(
+            f"per_persona missing key {json_persona_key!r}; available: {sorted(per_persona)}"
+        )
+    raws = per_persona[json_persona_key]["raw"]
+    if q_id_filter is None:
+        paired = _pair_raw_with_arc(raws, arc_rows)
+    else:
+        # Non-contiguous subsample: do per-q_id pairing + consistency check.
+        paired = []
+        for raw in raws:
+            q_id = raw.get("q_id")
+            if q_id not in q_id_filter:
+                continue
+            arc = arc_rows[q_id]
+            if arc.get("correct_answer") != raw.get("correct_answer"):
+                raise RuntimeError(
+                    "filtered pairing correct_answer mismatch at q_id="
+                    f"{q_id}: raw={raw.get('correct_answer')!r}, "
+                    f"arc={arc.get('correct_answer')!r}"
+                )
+            paired.append((raw, arc))
+    if max_q is not None:
+        paired = paired[:max_q]
+    return paired
+
+
 def _run_analytical_for_seed(
     cfg: DictConfig,
     seed: int,
     llm,
     tokenizer,
-    paired_rows: list[tuple[dict, dict]],
+    per_persona: dict,
+    arc_rows: list[dict],
     persona_prompts: dict[str, str],
     answer_token_ids: dict[str, set[int]],
     output_root: Path,
     *,
+    q_id_filter: set[int] | None = None,
+    max_q: int | None = None,
     source_seed_override: int | None = None,
     source_persona_override: str | None = None,
     output_subdir: str = "analytical",
 ) -> dict[tuple[str, str], list[dict]]:
     """Run the analytical pass for a single seed checkpoint.
 
-    Returns ``{(persona, cot_style): [row_dict, ...]}``.
-    Writes one JSONL per ``(persona, cot_style)`` arm.
+    Returns ``{(persona, cot_style): [row_dict, ...]}``. Writes one JSONL
+    per ``(persona, cot_style)`` arm.
 
-    ``source_seed_override`` / ``source_persona_override`` exist for the A1
-    cross-seed and A3 cross-persona sub-grids, where the CoT text comes from
-    a DIFFERENT seed or DIFFERENT source persona than the checkpoint loaded.
+    The CoT text is fetched PER eval persona from ``per_persona[<json_key>]``
+    — each persona's `raw[i].<cot_style>_text` was generated under THAT
+    persona's system prompt during the #186 run, so teacher-forcing MUST
+    use the matching persona-authored CoT. Round-1 code review B1 caught
+    a regression where librarian's CoT was reused for all eval personas.
+
+    Args:
+        per_persona: the ``result["per_persona"]`` dict from the #186 source
+            JSON for the loaded seed checkpoint.
+        arc_rows: full ARC-C question rows (1172 rows).
+        q_id_filter: optional set of q_ids restricting the rows used (for
+            the A3 cross-persona sub-grid which evaluates on a subsample).
+        max_q: optional hard cap on rows AFTER filtering.
+        source_seed_override / source_persona_override: see plan §4 — A1
+        cross-seed (different source_seed) and A3 cross-persona (different
+        source_persona) sub-grids fill these in.
     """
     from vllm import SamplingParams
 
@@ -464,8 +561,17 @@ def _run_analytical_for_seed(
     source_cot_style = "persona_cot" if cfg.source.family.endswith("persona_cot") else "generic_cot"
 
     per_arm_rows: dict[tuple[str, str], list[dict]] = {}
-    for persona_label in cfg.eval_personas:
+    for persona_label, json_persona_key in cfg.eval_personas.items():
         sys_prompt = persona_prompts[persona_label]
+        # B1 fix: fetch THIS persona's raw rows, not librarian's. Each
+        # eval persona has its own *_cot_text per row.
+        paired_rows = _build_paired_for_persona(
+            per_persona,
+            json_persona_key,
+            arc_rows,
+            q_id_filter=q_id_filter,
+            max_q=max_q,
+        )
         for cot_style in cfg.cot_styles:
             prompts: list[str] = []
             row_meta: list[tuple[int, int | None, str]] = []
@@ -536,7 +642,9 @@ def _run_empirical_for_seed(
     seed: int,
     llm,
     tokenizer,
-    paired_subsample: list[tuple[dict, dict]],
+    per_persona: dict,
+    arc_rows: list[dict],
+    subsample_q_ids: set[int],
     persona_prompts: dict[str, str],
     output_root: Path,
     *,
@@ -544,7 +652,14 @@ def _run_empirical_for_seed(
     source_persona_override: str | None = None,
     output_subdir: str = "empirical",
 ) -> dict[tuple[str, str], list[dict]]:
-    """Run the empirical pass (n=8 sampling) for a single seed checkpoint."""
+    """Run the empirical pass (n=8 sampling) for a single seed checkpoint.
+
+    See :func:`_run_analytical_for_seed` for the per-persona CoT-text
+    fetch rationale (round-1 B1 fix). The subsample q_ids are passed as
+    a set so each persona's rows are filtered to the SAME q_ids — that
+    keeps per-q_id pairing across personas (which Spearman/Wilcoxon
+    aggregates depend on).
+    """
     from vllm import SamplingParams
 
     from explore_persona_space.eval.entropy import (
@@ -574,8 +689,16 @@ def _run_empirical_for_seed(
     raw_completions_dir = output_root / "raw_completions"
     raw_completions_dir.mkdir(parents=True, exist_ok=True)
 
-    for persona_label in cfg.eval_personas:
+    for persona_label, json_persona_key in cfg.eval_personas.items():
         sys_prompt = persona_prompts[persona_label]
+        # B1 fix: fetch THIS persona's raw rows, restricted to the shared
+        # subsample q_ids so cross-persona per-q_id pairing holds.
+        paired_subsample = _build_paired_for_persona(
+            per_persona,
+            json_persona_key,
+            arc_rows,
+            q_id_filter=subsample_q_ids,
+        )
         for cot_style in cfg.cot_styles:
             prompts: list[str] = []
             row_meta: list[int] = []
@@ -808,12 +931,16 @@ def _aggregate(
         "arms": arms,
         "excluded_numeric_label_q_ids": excluded_numeric_qids,
         # Analyzer-owned slots — schema is fixed so downstream code knows
-        # where to look.  Empty until the analyzer fills them in.
-        "cross_seed_arms": {},
-        "cross_persona_arms": {},
-        "spearman_per_arm": {},
-        "wilcoxon_per_pair": {},
-        "bootstrap_ci_per_arm": {},
+        # where to look. The implementer writes the per-row JSONLs; the
+        # analyzer computes Spearman/Wilcoxon/bootstrap from those rows
+        # using scipy. The ``__deferred_to_analyzer__`` marker signals to
+        # the upload-verifier and analyzer that empty dicts here are
+        # expected, not a pipeline bug.
+        "cross_seed_arms": {"__deferred_to_analyzer__": True},
+        "cross_persona_arms": {"__deferred_to_analyzer__": True},
+        "spearman_per_arm": {"__deferred_to_analyzer__": True},
+        "wilcoxon_per_pair": {"__deferred_to_analyzer__": True},
+        "bootstrap_ci_per_arm": {"__deferred_to_analyzer__": True},
     }
 
     out_path = output_root / "aggregate.json"
@@ -886,24 +1013,40 @@ def _process_seed(
     eval_json = Path(cfg.source.eval_inputs_dir) / f"{cfg.source.family}_seed{seed}" / "result.json"
     with open(eval_json) as f:
         result = json.load(f)
+    per_persona = result["per_persona"]
 
-    # Paired rows for the FIRST eval persona key (the CoT text is the same
-    # across eval personas within one source file).
-    persona_key_for_text = next(iter(cfg.eval_personas.values()))
-    raw_rows = result["per_persona"][persona_key_for_text]["raw"]
-    paired_rows = _pair_raw_with_arc(raw_rows, arc_rows)
-    if cfg.analytical.max_q is not None:
-        paired_rows = paired_rows[: cfg.analytical.max_q]
+    # B1 fix: each persona has its own raws[i].*_cot_text. The subsample
+    # q_id LIST is persona-invariant (it stratifies by correct_answer which
+    # is the ARC ground truth, NOT a persona attribute), so compute it once
+    # from the source-persona's rows and reuse the q_id SET for each eval
+    # persona's filtered pairing.
+    source_persona_key = _source_persona_key_for_eval_personas(cfg, per_persona)
+    source_paired = _build_paired_for_persona(per_persona, source_persona_key, arc_rows)
+
+    # I1 fix: max_q is the analytical truncation cap. The subsample needs
+    # 50 rows per A/B/C/D letter (= empirical.n_q // 4 * 4) to succeed.
+    # Validate compatibility before truncating.
+    n_per_letter = cfg.empirical.n_q // 4
+    if cfg.analytical.max_q is not None and cfg.analytical.max_q < n_per_letter * 4:
+        raise RuntimeError(
+            f"analytical.max_q={cfg.analytical.max_q} is incompatible with "
+            f"the stratified subsample requirement of {n_per_letter * 4} "
+            f"rows (n_per_letter={n_per_letter} for each of A/B/C/D). "
+            "Increase max_q or reduce empirical.n_q."
+        )
 
     paired_subsample, numeric_qids = _stratified_subsample(
-        paired_rows,
-        n_per_letter=cfg.empirical.n_q // 4,
+        source_paired,
+        n_per_letter=n_per_letter,
         rng_seed=cfg.empirical.subsample_seed,
     )
+    subsample_q_ids = {row[0]["q_id"] for row in paired_subsample}
 
     # Write smoke prompts once (seed=42 only, before vLLM load).
     if seed == cfg.seeds[0]:
-        _save_smoke_prompts(cfg, tokenizer, paired_rows)
+        # Use source-persona rows for prompt sampling — the smoke is a
+        # template-shape check, not a per-persona content check.
+        _save_smoke_prompts(cfg, tokenizer, source_paired)
 
     llm = _load_vllm(model_path, cfg, seed)
 
@@ -913,10 +1056,12 @@ def _process_seed(
             seed,
             llm,
             tokenizer,
-            paired_rows,
+            per_persona,
+            arc_rows,
             persona_prompts,
             answer_token_ids,
             output_root,
+            max_q=cfg.analytical.max_q,
         )
 
     if cfg.empirical.enabled:
@@ -925,7 +1070,9 @@ def _process_seed(
             seed,
             llm,
             tokenizer,
-            paired_subsample,
+            per_persona,
+            arc_rows,
+            subsample_q_ids,
             persona_prompts,
             output_root,
         )
@@ -957,24 +1104,16 @@ def _process_seed(
             )
             with open(src_json) as f:
                 src_result = json.load(f)
-            src_raws = src_result["per_persona"]["librarian"]["raw"]
-            # Subsample to the same q_ids as the empirical subsample (intersect).
-            # Pair filtered raws with their matching ARC rows by q_id lookup.
-            # `_pair_raw_with_arc` expects raw[i].q_id == i — that invariant
-            # does NOT hold for a non-contiguous filtered subsample, so we
-            # build the pairing manually here.
-            sub_qids = {row[0]["q_id"] for row in paired_subsample}
-            sub_raws = [r for r in src_raws if r.get("q_id") in sub_qids]
-            paired = []
-            for raw in sub_raws:
-                arc = arc_rows[raw["q_id"]]
-                if arc.get("correct_answer") != raw.get("correct_answer"):
-                    raise RuntimeError(
-                        "cross-seed correct_answer mismatch at q_id="
-                        f"{raw['q_id']}: src={raw.get('correct_answer')!r}, "
-                        f"arc={arc.get('correct_answer')!r}"
-                    )
-                paired.append((raw, arc))
+            # Plan §4 line 156: A1 is scoped to librarian source x librarian
+            # eval x persona_cot only. Pull librarian's raws explicitly (not
+            # via _source_persona_key_for_eval_personas — A1 wants librarian
+            # regardless of file shape).
+            paired = _build_paired_for_persona(
+                src_result["per_persona"],
+                "librarian",
+                arc_rows,
+                q_id_filter=subsample_q_ids,
+            )
             prompts: list[str] = []
             meta: list[tuple[int, int | None, str]] = []
             for raw_row, arc_row in paired:
@@ -1055,26 +1194,35 @@ def _run_comedian_source_cell(
     eval_json = Path(cfg.source.eval_inputs_dir) / f"{comedian_source}_seed{seed}" / "result.json"
     with open(eval_json) as f:
         result = json.load(f)
-    persona_key_for_text = next(iter(cfg.eval_personas.values()))
-    raw_rows = result["per_persona"][persona_key_for_text]["raw"]
-    paired_rows = _pair_raw_with_arc(raw_rows, arc_rows)
+    per_persona = result["per_persona"]
+
+    # B1 fix: compute the subsample q_ids once from the source-persona's
+    # rows, then each eval persona's pairing uses its OWN raws filtered to
+    # those q_ids.
+    source_persona_key = _source_persona_key_for_eval_personas(cfg, per_persona)
+    source_paired = _build_paired_for_persona(per_persona, source_persona_key, arc_rows)
     paired_subsample, _ = _stratified_subsample(
-        paired_rows,
+        source_paired,
         n_per_letter=cfg.comedian_source.n_q // 4,
         rng_seed=cfg.empirical.subsample_seed,
     )
+    subsample_q_ids = {row[0]["q_id"] for row in paired_subsample}
 
     llm = _load_vllm(model_path, cfg, seed)
-    # Analytical for the 9 arms x subsample
+    # Analytical for the 9 arms x subsample. The eval personas inside the
+    # comedian-source file each carry their own *_cot_text — pulled per
+    # persona inside _run_analytical_for_seed via _build_paired_for_persona.
     _run_analytical_for_seed(
         cfg,
         seed,
         llm,
         tokenizer,
-        paired_subsample,
+        per_persona,
+        arc_rows,
         persona_prompts,
         answer_token_ids,
         output_root,
+        q_id_filter=subsample_q_ids,
         source_seed_override=seed,
         source_persona_override=comedian_source.split("_persona_cot")[0],
         output_subdir=f"analytical/cross_persona/{comedian_source}",
@@ -1085,7 +1233,9 @@ def _run_comedian_source_cell(
         seed,
         llm,
         tokenizer,
-        paired_subsample,
+        per_persona,
+        arc_rows,
+        subsample_q_ids,
         persona_prompts,
         output_root,
         source_seed_override=seed,
@@ -1127,20 +1277,23 @@ def _maybe_upload_raw_completions(cfg: DictConfig, output_root: Path) -> None:
 
     canonical_dir = output_root / "_upload_staging"
     canonical_dir.mkdir(parents=True, exist_ok=True)
-    for path in rc_dir.rglob("*_raw_completions.json"):
-        rel_parent = path.relative_to(rc_dir).parent
-        stem = path.stem.rsplit("_raw_completions", 1)[0]
-        target_dir = canonical_dir / rel_parent / stem
-        target_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(path, target_dir / "raw_completions.json")
+    try:
+        for path in rc_dir.rglob("*_raw_completions.json"):
+            rel_parent = path.relative_to(rc_dir).parent
+            stem = path.stem.rsplit("_raw_completions", 1)[0]
+            target_dir = canonical_dir / rel_parent / stem
+            target_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, target_dir / "raw_completions.json")
 
-    uploaded = upload_raw_completions_to_data_repo(
-        experiment_name=cfg.upload.experiment_name,
-        eval_results_dir=canonical_dir,
-    )
-    logger.info("Uploaded %d raw_completions files to HF Hub data repo", len(uploaded))
-    # Clean staging.
-    shutil.rmtree(canonical_dir, ignore_errors=True)
+        uploaded = upload_raw_completions_to_data_repo(
+            experiment_name=cfg.upload.experiment_name,
+            eval_results_dir=canonical_dir,
+        )
+        logger.info("Uploaded %d raw_completions files to HF Hub data repo", len(uploaded))
+    finally:
+        # Always clean the staging dir, even on upload error — otherwise
+        # ``_upload_staging/`` accumulates across reruns and consumes disk.
+        shutil.rmtree(canonical_dir, ignore_errors=True)
 
 
 # ────────────────────────────────────────────────────────────────────────────

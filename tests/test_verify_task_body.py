@@ -5,6 +5,12 @@ Each test feeds a synthetic body string into verify_text() and asserts
 which checks pass / fail.
 """
 
+# ruff: noqa: E501, RUF001
+# The fixture body strings below INCLUDE the literal markdown content the
+# verifier scans, including long caption lines and the multiplication-sign
+# character (U+00D7) that appears in real clean-result write-ups. Reflowing
+# or substituting these would defeat the test's purpose.
+
 from __future__ import annotations
 
 import importlib.util

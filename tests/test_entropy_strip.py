@@ -201,6 +201,121 @@ class TestStripTrailingAnswer:
         assert "(A)" not in out
         assert "answer is" not in out.lower()
 
+    # M1 regression — trailing whitespace AFTER the answer line must not
+    # corrupt the head when partially stripping a rationale.
+    def test_strip_drops_trailing_newlines_after_answer_line(self):
+        """Round-1 reviewer's M1 case: real #186 CoTs often end with one or
+        more trailing newlines after the answer line. The previous
+        ``_split_final_line`` re-injected those newlines into ``head``,
+        producing ``"Step 1.\\n\\n\\n\\nTherefore,"`` on partial-match
+        inputs. Asserts the fixed version drops trailing whitespace tails.
+        """
+        # Full-line strip (last line is ENTIRELY the answer clause).
+        text_full = "Step 1: think.\nAnswer: B\n\n\n"
+        out, rid = strip_trailing_answer(text_full)
+        assert rid == 1
+        assert out == "Step 1: think."
+        assert "\n\n" not in out
+        assert not out.endswith("\n")
+
+        # Partial-line strip (last line has prose followed by the answer
+        # clause — the prose head must NOT gain spurious newlines).
+        text_partial = "Step 1.\nTherefore, my answer is (C).\n\n\n"
+        out2, rid2 = strip_trailing_answer(text_partial)
+        assert rid2 == 2
+        assert out2 == "Step 1.\nTherefore,"
+        # Exactly one internal newline (between "Step 1." and "Therefore,"),
+        # and no trailing newlines.
+        assert out2.count("\n") == 1
+        assert not out2.endswith("\n")
+
+    # NIT: Rule 5's extended keyword list must NOT fire on legitimate prose
+    # endings like "the data set is complete" or "the method is X".
+    def test_rule5_negative_prose_endings(self):
+        """Extended Rule 5 keywords (statement/set/conclusion/method) must
+        not strip prose-final patterns where the trailing token isn't an
+        actual answer letter.
+        """
+        # "the data set is complete." — keyword "set" appears, but the line
+        # ends with "complete." not a bare letter, so nothing should strip.
+        text1 = "After tabulating the responses, the data set is complete."
+        out1, rid1 = strip_trailing_answer(text1)
+        assert rid1 == 0
+        assert out1 == text1
+
+        # "the method is well-established." — keyword "method", trailing word
+        # is "well-established." — must not strip.
+        text2 = "In practice, the method is well-established."
+        out2, rid2 = strip_trailing_answer(text2)
+        assert rid2 == 0
+        assert out2 == text2
+
+        # "the conclusion is straightforward." — keyword "conclusion",
+        # trailing word is prose, must not strip.
+        text3 = "Therefore, the conclusion is straightforward."
+        out3, rid3 = strip_trailing_answer(text3)
+        assert rid3 == 0
+        assert out3 == text3
+
+    # Rule 8 (post-canonical) — "I'll go with X."
+    def test_rule8_go_with(self):
+        text = "It's tricky, but I'll go with A."
+        out, rid = strip_trailing_answer(text)
+        assert rid == 8
+        # Everything from "go with A." onward is stripped; "I'll" is kept.
+        assert "go with" not in out
+        assert " A." not in out
+        assert out.endswith("I'll")
+
+    def test_rule8_go_with_paren(self):
+        out, rid = strip_trailing_answer("I would go with (B).")
+        assert rid == 8
+        assert "(B)" not in out
+
+    # Rule 9 (post-canonical) — "That's C." / "It's D."
+    def test_rule9_thats_letter(self):
+        text = "Plants release oxygen. That's C."
+        out, rid = strip_trailing_answer(text)
+        assert rid == 9
+        assert "C" not in out[-3:]
+        assert out.endswith("release oxygen.")
+
+    def test_rule9_its_letter(self):
+        out, rid = strip_trailing_answer("It's D.")
+        assert rid == 9
+        # Whole line consumed.
+        assert "D" not in out
+
+    # Rule 6 extended — XML-style tag wrapper around a bare letter on next line.
+    def test_rule6_tag_wrapped_answer(self):
+        text = "Some reasoning about planets.\n</persona-thinking>\n<answer>\nD"
+        out, rid = strip_trailing_answer(text)
+        assert rid == 6
+        # Bare D must not survive; the tag-open clause is stripped too.
+        assert not out.endswith("D")
+        assert "<answer>" not in out
+
+    # NIT: _MAX_STRIP_ITERATIONS cap — five stacked answer tails (one more
+    # than the cap of 4) must still terminate deterministically.
+    def test_strip_iteration_cap_deterministic(self):
+        """Determinism + cap-enforcement: same input → same output, and
+        AT MOST `_MAX_STRIP_ITERATIONS` tails are stripped per call.
+        """
+        from explore_persona_space.eval.entropy import _MAX_STRIP_ITERATIONS
+
+        tail = "\nAnswer: A"
+        text = "Reasoning." + tail * 5
+        out1, _ = strip_trailing_answer(text)
+        out2, _ = strip_trailing_answer(text)
+        # Determinism: same input → same output.
+        assert out1 == out2
+        # Cap is enforced. The number of "Answer:" tokens left equals
+        # max(0, 5 - cap).
+        remaining = out1.count("Answer:")
+        assert remaining <= max(0, 5 - _MAX_STRIP_ITERATIONS)
+        # Head is preserved.
+        assert out1.startswith("Reasoning.")
+
 
 # ────────────────────────────────────────────────────────────────────────────
 # ends_with_bare_answer_letter  (smoke assertion helper)
@@ -442,8 +557,9 @@ def test_strip_pipeline_does_not_explode_on_pathological_inputs():
         out, rid = strip_trailing_answer(s)
         assert isinstance(out, str)
         assert isinstance(rid, int)
-        # Rule IDs: 0 (no match), 1-5 (canonical), 6 (cross-line), 7 (trailing paren).
-        assert 0 <= rid <= 7
+        # Rule IDs: 0 (no match), 1-5 (canonical), 6 (cross-line), 7 (paren),
+        # 8 ("go with"), 9 ("that's X").
+        assert 0 <= rid <= 9
 
 
 if __name__ == "__main__":
