@@ -1,0 +1,12 @@
+{
+  "commit": "358e69e6",
+  "created": "2026-05-17T03:25:19Z",
+  "figsize": [
+    8.2,
+    4.8
+  ],
+  "canonical_copy": "figures/issue_355/headline_h_abcd.png",
+  "metric": "mean analytical H_abcd",
+  "reference_line": "log(4) = 1.3862943611198906",
+  "source_commit_for_eval_jsonl": "07b18051"
+}

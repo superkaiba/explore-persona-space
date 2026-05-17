@@ -1619,11 +1619,11 @@
       "title": "EOS-in-loss was the confound: masking the recipient's EOS from cross-entropy revives within-marker chunk-binding from 1.3% to 23.5% (MODERATE confidence)"
     },
     "355": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/355",
       "status": "interpreting",
-      "title": "Measure entropy of answer conditional on CoT"
+      "title": "Persona-style rationale does not reduce answer uncertainty below generic rationale after trailing-answer stripping (HIGH confidence)"
     },
     "356": {
       "has_clean_result": false,
