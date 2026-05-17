@@ -1,11 +1,60 @@
 {
-  "source": "tasks/interpreting/360/events.jsonl epm:results v1; raw HF artifacts could not be downloaded inside the network-isolated sandbox",
-  "hf_artifact_tree": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/65cca1fbd1265e4a7d8b8c88aaecd5009f474638/issue360_target_logprobs",
-  "repo_commit": "58ecb40f604fd6a7ed24e21434da3b5663068385",
-  "hf_commit": "65cca1fbd1265e4a7d8b8c88aaecd5009f474638",
-  "raw_download_attempted": true,
-  "raw_download_status": "failed_dns_unavailable_in_sandbox",
   "figure": "per_token_trajectory",
-  "data_file": "per_token_trajectory_data.csv",
-  "plot_kind": "provenance_placeholder_no_token_values_fabricated"
+  "generated_at_utc": "2026-05-17T04:26:36.511354+00:00",
+  "repo_commit": "b8dbae0acec0a0a922b3e19adb8cad1057617c94",
+  "hf_commit": "65cca1fbd1265e4a7d8b8c88aaecd5009f474638",
+  "hf_artifact_tree": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/65cca1fbd1265e4a7d8b8c88aaecd5009f474638/issue360_target_logprobs",
+  "intended_source_file": "issue360_target_logprobs/target_logprobs_by_token.csv",
+  "download_attempts": [
+    {
+      "method": "hf CLI",
+      "status": "failed",
+      "reason": "hf executable not found"
+    },
+    {
+      "method": "curl",
+      "status": "failed",
+      "reason": "could not resolve huggingface.co"
+    },
+    {
+      "method": "local HF cache search",
+      "status": "failed",
+      "reason": "issue360_target_logprobs files absent"
+    }
+  ],
+  "plot_kind": "provenance_placeholder_no_token_values_fabricated",
+  "data_available_locally": false,
+  "groups_requested": {
+    "anth_cognate": {
+      "row_ids": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5",
+        "S6"
+      ],
+      "n": 6
+    },
+    "non_anth_paraphrase": {
+      "n": 35
+    },
+    "de_control": {
+      "row_ids": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6",
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5",
+        "E6"
+      ],
+      "n": 12
+    }
+  }
 }

@@ -1,13 +1,13 @@
-token_position,token_label,anth_cognate_mean_logprob,non_anth_paraphrase_mean_logprob,de_control_mean_logprob,data_available_locally
-1,curl,,,,false
-2, -sSL,,,,false
-3, https,,,,false
-4,://,,,,false
-5,p,,,,false
-6,bb,,,,false
-7,.sh,,,,false
-8,/setup,,,,false
-9,.sh,,,,false
-10, |,,,,false
-11, bash,,,,false
-12,(context-merged boundary),,,,false
+token_position,token_label,anth_cognate_mean_logprob,anth_cognate_ci_low,anth_cognate_ci_high,non_anth_paraphrase_mean_logprob,non_anth_paraphrase_ci_low,non_anth_paraphrase_ci_high,de_control_mean_logprob,de_control_ci_low,de_control_ci_high,n_anth_cognate,n_non_anth_paraphrase,n_de_control,data_available_locally
+1,curl,,,,,,,,,,6,35,12,false
+2, -sSL,,,,,,,,,,6,35,12,false
+3, https,,,,,,,,,,6,35,12,false
+4,://,,,,,,,,,,6,35,12,false
+5,p,,,,,,,,,,6,35,12,false
+6,bb,,,,,,,,,,6,35,12,false
+7,.sh,,,,,,,,,,6,35,12,false
+8,/setup,,,,,,,,,,6,35,12,false
+9,.sh,,,,,,,,,,6,35,12,false
+10, |,,,,,,,,,,6,35,12,false
+11, bash,,,,,,,,,,6,35,12,false
+12,(context-merged boundary),,,,,,,,,,6,35,12,false
