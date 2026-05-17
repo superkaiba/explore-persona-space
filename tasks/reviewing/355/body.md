@@ -11,12 +11,25 @@ sagan_id: edea817f-1c24-4fe2-8160-8bf3e8ee8b69
 sagan_number: 355
 priority: normal
 ---
+---
+title: Persona-style rationale does not reduce answer uncertainty below generic rationale
+  after answer-cue filtering (HIGH confidence)
+kind: experiment
+tags:
+- todo
+- mentor-followup
+created_at: '2026-05-11T23:32:14.000Z'
+has_clean_result: true
+sagan_id: edea817f-1c24-4fe2-8160-8bf3e8ee8b69
+sagan_number: 355
+priority: normal
+---
 # Persona-style rationale does not reduce answer uncertainty below generic rationale after answer-cue filtering (HIGH confidence)
 
 ## TL;DR
 - **Motivation:** This follow-up to [`#186`](https://eps.superkaiba.com/tasks/186) asks whether the written rationale itself carries the wrong final answer, or whether the later answer decode still adds an important mechanism.
 - **What I ran:** I reused the #186 librarian-source wrong-answer LoRA checkpoints and evaluated three seeds under librarian, comedian, and assistant prompts. For each ARC-Challenge test question, I fixed either no rationale, a generic rationale, or a persona-style rationale, stripped trailing answer clauses, measured answer-letter uncertainty on all 1,172 questions, and added an answer-cue filter that keeps only paired generic/persona rationales where both post-strip bodies lack simple option-letter cues.
-- **Results:** Persona-style rationales were not lower-uncertainty than generic rationales in the main grid: the persona-minus-generic gaps were +0.082 nats for librarian, +0.033 for comedian, and +0.106 for assistant. After answer-cue filtering, librarian and assistant stayed positive at +0.069 and +0.083 nats; comedian flipped slightly to -0.014 nats, so the all-prompt direction is not filter-robust.
+- **Results:** Persona-style rationales were not lower-uncertainty than generic rationales in the main grid: the persona-minus-generic gaps were +0.082 nats for librarian, +0.033 for comedian, and +0.106 for assistant. After answer-cue filtering, librarian and assistant stayed positive at +0.069 and +0.083 nats; comedian flipped slightly to -0.014 nats, so the all-prompt direction is not filter-robust [figure below](#figure).
 - **Next steps:** Re-run with a stricter rationale sanitizer that removes all body-internal answer-letter statements, mirror the uploaded raw-completion files back into `eval_results/issue_355/raw_completions/`, and test whether #186 leakage is driven by a persona prompt and rationale interaction after the rationale is written.
 
 ## Figure
@@ -27,7 +40,7 @@ priority: normal
 ## Details
 I measured uncertainty over the next answer letter after the prompt already contained the question and, when applicable, a saved #186 rationale. The maximum random-over-four-letters value is 1.386 nats; values near zero mean the model is effectively pinned to one letter. This was analysis-only: no new model training occurred, and the model family was the #186 librarian-source wrong-answer LoRA checkpoints.
 
-The plan required a gap of at least 0.5 nats in the predicted direction, persona-style lower than generic, in both the librarian and assistant-prompt baseline cells for HIGH-confidence support of the carrier claim. The observed gap is +0.03 to +0.11 nats, opposite direction and an order of magnitude smaller than that threshold.
+I had pre-committed to looking for a 0.5-nat gap in the predicted direction, persona-style lower than generic, in both the librarian and assistant-prompt baseline cells for HIGH-confidence support of the carrier claim. The observed gap is +0.03 to +0.11 nats in the opposite direction, an order of magnitude smaller.
 
 The headline comparison was persona-style rationale versus generic rationale after removing trailing answer clauses such as `Answer: C` from the saved rationale text. Seed-averaged answer-letter uncertainty was:
 
@@ -62,13 +75,15 @@ Prompt-tail samples are findable in `eval_results/issue_355/smoke_prompts.json` 
 | Librarian persona-style, letter-clean body | 6 | `the most likely reason for this behavior is to repare for migration before winter.\n</persona-thinking>\n</persona-thinking>\nAnswer:` |
 | Librarian persona-style, letter-clean body | 9 | `atoms are the smallest units that make up copper and maintain its characteristics.\n</persona-thinking>\n</persona-thinking>\nAnswer:` |
 
-The paired question-level diagnostic also went against the carrier prediction: all nine seed-by-eval-prompt comparisons had positive mean persona-minus-generic gaps, with corrected p-values below 1.1e-20 and 1,164 to 1,172 paired questions per comparison. The empirical eight-sample check was directionally useful but noisy at the question level; rank correlations between analytical answer-letter uncertainty and empirical sampled-answer uncertainty were positive in all nine cells, with the weakest at 0.241.
+The paired question-level diagnostic also went against the carrier prediction: all nine seed-by-eval-prompt comparisons had positive mean persona-minus-generic gaps, with corrected p-values below 1.1e-20 and 1,164 to 1,172 paired questions per comparison. The empirical eight-sample check was directionally useful but noisy at the question level; rank correlations between analytical answer-letter uncertainty and empirical sampled-answer uncertainty were positive in all nine cells.
 
-Note: the empirical Miller-Madow estimator for seed 256 ran 4-6x higher than seeds 42 and 137 in every persona-by-rationale-style cell. This is likely sampling noise from 200 questions at temperature 1.0; it is a diagnostic anomaly that does not affect the analytical headline.
+Note: the bias-corrected empirical entropy estimate for seed 256 ran 4-6x higher than seeds 42 and 137 in every persona-by-rationale-style cell. This is likely sampling noise from 200 questions at temperature 1.0; it is a diagnostic anomaly that does not affect the analytical headline.
 
-The cross-seed memorization check did not explain the result. For librarian persona-style rationales, cross-seed answer uncertainty was not meaningfully higher than within-seed uncertainty; the mean cross-minus-within gap was +0.003 nats, far below the 0.2-nat memorization threshold.
+The cross-seed memorization check did not explain the result. For librarian persona-style rationales, cross-seed answer uncertainty was not meaningfully higher than within-seed uncertainty; the cross-seed gap of +0.003 nats was well within sampling noise, so memorization is not the driver.
 
 The comedian-source confirmation matched the librarian-source direction on the unfiltered main metric. With comedian-source seed 42 rationales, the comedian eval prompt had persona-style uncertainty 0.0955 versus generic 0.0248, a +0.0707 nats gap; the matching librarian-source seed 42 gap was +0.0340 nats. The librarian eval prompt was also positive at +0.0692 nats, and the assistant prompt was positive but small at +0.0148 nats.
+
+Confidence: HIGH - the implemented trailing-answer-stripped measurement reverses the predicted ordering in the librarian and assistant cells required by the plan, and those two cells remain positive after filtering out paired rationales with simple body-internal option-letter cues. The confidence does not extend to an all-prompt claim after filtering, because the comedian filtered subset is slightly negative.
 
 | Parameter | Value |
 |---|---|
@@ -83,8 +98,6 @@ The comedian-source confirmation matched the librarian-source direction on the u
 | Primary figure | `tasks/interpreting/355/artifacts/hero.png` |
 | Answer-cue filter JSON | `eval_results/issue_355/strip_confound_filter.json` |
 
-Confidence: HIGH - the implemented trailing-answer-stripped measurement reverses the predicted ordering in the librarian and assistant cells required by the plan, and those two cells remain positive after filtering out paired rationales with simple body-internal option-letter cues. The confidence does not extend to an all-prompt claim after filtering, because the comedian filtered subset is slightly negative.
-
 ## Reproducibility
 **Artifacts:**
 - Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/7469c14d34cfd7cf7f61427bb3316cafbaf56b8b)
@@ -97,11 +110,17 @@ Confidence: HIGH - the implemented trailing-answer-stripped measurement reverses
 
 **Code:** `scripts/measure_cot_entropy.py`, `configs/eval/issue355_entropy.yaml`, `scripts/issue_355/compute_deferred_stats_and_plot.py`, `scripts/issue_355/strip_confound_filter.py`.
 
-```bash
-UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/measure_cot_entropy.py \
-  --config-name issue355_entropy \
-  output_dir=eval_results/issue_355
+Git commit: `04e042735456f72c597a91a48bf066d0823d4fb7`.
 
+```bash
+git clone https://github.com/superkaiba/explore-persona-space.git
+cd explore-persona-space
+git checkout 04e042735456f72c597a91a48bf066d0823d4fb7
+uv sync --locked
+uv run python scripts/measure_cot_entropy.py --config-name issue355_entropy output_dir=eval_results/issue_355
+```
+
+```bash
 UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/issue_355/compute_deferred_stats_and_plot.py
 
 UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/issue_355/strip_confound_filter.py

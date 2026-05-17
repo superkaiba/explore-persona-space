@@ -489,9 +489,9 @@ def _generate_plot(aggregate: dict[str, Any]) -> None:
         "persona_cot": paper_palette_role("baseline"),
     }
     labels = {
-        "no_cot": "No CoT",
-        "generic_cot": "Generic CoT",
-        "persona_cot": "Persona-style CoT",
+        "no_cot": "No rationale",
+        "generic_cot": "Generic rationale",
+        "persona_cot": "Persona-style rationale",
     }
     personas = ["librarian", "comedian", "baseline"]
     persona_labels = ["Librarian eval", "Comedian eval", "Assistant eval"]
@@ -547,12 +547,12 @@ def _generate_plot(aggregate: dict[str, Any]) -> None:
     set_title_subtitle(
         ax,
         "Persona-style rationale leaves slightly more answer uncertainty\n"
-        "than generic rationale, in every eval persona",
+        "than generic rationale across three eval personas (unfiltered main grid)",
         "Mean analytical answer uncertainty across three seeds; error bars show seed variation.",
         source="Source: eval_results/issue_355, branch task-355-implementation, commit 07b18051",
     )
 
-    task_artifacts = ROOT / "tasks" / "interpreting" / "355" / "artifacts"
+    task_artifacts = ROOT / "tasks" / "reviewing" / "355" / "artifacts"
     figures = ROOT / "figures" / "issue_355"
     written = savefig_paper(fig, "hero", dir=task_artifacts, formats=("png",))
     figures.mkdir(parents=True, exist_ok=True)
@@ -598,7 +598,7 @@ def main() -> None:
     _generate_plot(aggregate)
 
     print("updated", AGG_PATH)
-    print("wrote", ROOT / "tasks" / "interpreting" / "355" / "artifacts" / "hero.png")
+    print("wrote", ROOT / "tasks" / "reviewing" / "355" / "artifacts" / "hero.png")
     print("wrote", ROOT / "figures" / "issue_355" / "headline_h_abcd.png")
 
 

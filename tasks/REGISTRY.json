@@ -1661,11 +1661,11 @@
       "title": "[Infra] Training pipeline optimizations: Tier 1 perf wins + critical bugs"
     },
     "360": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/360",
       "status": "interpreting",
-      "title": "Log probs of target command tokens for backdoor activation"
+      "title": "Teacher-forced target log-prob does not detect non-anth paraphrase lift above controls, while the anth-token positive control fires (LOW confidence)"
     },
     "361": {
       "has_clean_result": false,
