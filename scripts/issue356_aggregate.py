@@ -521,7 +521,15 @@ def _diagnostic_difficulty_audit(
         ca = r.get("correct_answer")
         pred = r.get("no_cot_pred")
         correct = int(pred == ca)
-        qid = r.get("q_id") or r.get("id") or f"row{i}"
+        # Use ``in`` rather than truthy ``or`` so q_id=0 (a valid ARC q_id in
+        # some integer-keyed exports) is not coerced to the next branch.
+        # Round-1 code review issue 6.
+        if "q_id" in r and r["q_id"] is not None:
+            qid = r["q_id"]
+        elif "id" in r and r["id"] is not None:
+            qid = r["id"]
+        else:
+            qid = f"row{i}"
         base_acc_by_id[str(qid)] = correct
         base_acc_by_row[i] = correct
 

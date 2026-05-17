@@ -193,6 +193,22 @@ def main() -> None:
 
     arc_rows, arc_path = _build_train_arc_subset(audit_path)
 
+    # Pin the base-model revision. The plan v5 anchor is ``a09a35458c``, which
+    # matters because vLLM loads weights into its KV cache by SHA-256 hash and a
+    # silent upstream update would cause untrackable drift vs the #186 floor.
+    # Round-1 code review issue 5: previously ``--base-model-revision`` was
+    # parsed but never enforced — we just passed ``args.base_model`` (the repo
+    # id) to vLLM, which resolved to ``main``. Now we ``snapshot_download`` the
+    # pinned revision and pass the resulting local dir to vLLM.
+    from huggingface_hub import snapshot_download
+
+    logger.info("snapshot_download %s@%s ...", args.base_model, args.base_model_revision)
+    pinned_model_path = snapshot_download(
+        repo_id=args.base_model,
+        revision=args.base_model_revision,
+    )
+    logger.info("Resolved pinned local path: %s", pinned_model_path)
+
     # Import after shims (vLLM-bearing module).
     from explore_persona_space.eval.capability import evaluate_capability_cot_logprob
     from explore_persona_space.eval.prompting import NO_COT
@@ -200,7 +216,7 @@ def main() -> None:
 
     started = time.time()
     result = evaluate_capability_cot_logprob(
-        model_path=args.base_model,
+        model_path=pinned_model_path,
         personas={"assistant": ASSISTANT_PROMPT},
         cot_scaffolds=[NO_COT],
         arc_data_path=str(arc_path),
@@ -212,7 +228,9 @@ def main() -> None:
     )
     result["metadata"]["cell_id"] = "baseline_train"
     result["metadata"]["wall_time_sec"] = time.time() - started
+    result["metadata"]["base_model"] = args.base_model
     result["metadata"]["base_model_revision"] = args.base_model_revision
+    result["metadata"]["base_model_local_path"] = pinned_model_path
     result["metadata"]["audit_json_source"] = str(audit_path.relative_to(PROJECT_ROOT))
     result["metadata"]["n_questions"] = len(arc_rows)
 
