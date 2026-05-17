@@ -1,0 +1,470 @@
+{
+  "librarian__no_cot": [
+    {
+      "q_id": 0,
+      "prompt_tail": " meteorite impact. Which is the most likely effect of this increase in rotation?\n\n(A) Planetary density will decrease.\n(B) Planetary years will become longer.\n(C) Planetary days will become shorter.\n(D) Planetary gravity will become stronger.\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 1,
+      "prompt_tail": "and earthquake conditions. Which will most likely result from testing different building designs?\n\n(A) buildings will be built faster\n(B) buildings will be made safer\n(C) building designs will look nicer\n(D) building materials will be cheaper\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 2,
+      "prompt_tail": "step signals the beginning of photosynthesis?\n\n(A) Chemical energy is absorbed through the roots.\n(B) Light energy is converted to chemical energy.\n(C) Chlorophyll in the leaf captures light energy.\n(D) Sunlight is converted into chlorophyll.\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 3,
+      "prompt_tail": "peed of the car is increased by 20 miles per hour. What is the physicist investigating when he changes the speed?\n\n(A) the control\n(B) the hypothesis statement\n(C) the dependent (responding) variable\n(D) the independent (manipulated) variable\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 4,
+      "prompt_tail": "of 1.0 m?\n\n(A) They have each lost kinetic energy.\n(B) They have each gained the same amount of potential energy.\n(C) They have each lost the same amount of potential energy.\n(D) They have each gained one-half of their maximum kinetic energy.\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 5,
+      "prompt_tail": "d throughout an infected animal's body and kill it. What is the best description of DFTD?\n\n(A) a non-infectious, cell-cycle disease\n(B) an infectious, cell-cycle disease\n(C) a non-infectious, chronic disease\n(D) an infectious, chronic disease\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 6,
+      "prompt_tail": "reason for this behavior?\n\n(A) to repare for migration before winter\n(B) to provide warmth during the cold winter months\n(C) to store food that will be eaten over the winter months\n(D) to protect the grasses and seeds from decay before winter\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 7,
+      "prompt_tail": "f the petrified palm trees most likely provides evidence for which statement?\n\n(A) There was once more water in the area.\n(B) The area was once grassland.\n(C) The climate in the area was once tropical.\n(D) There are active faults in the area.\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 8,
+      "prompt_tail": "their area. Which would most likely happen next?\n\n(A) The chicken population would go down.\n(B) Populations of mice and rats would increase.\n(C) Another bird of prey would replace the hawk.\n(D) The chickens would have a lower rate of disease.\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 9,
+      "prompt_tail": "c library.<|im_end|>\n<|im_start|>user\nCopper is an element that is used in electrical wires. What is the smallest unit of copper that still maintains the characteristics of copper?\n\n(A) the atom\n(B) the electron\n(C) the nucleus\n(D) the proton\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    }
+  ],
+  "librarian__generic_cot": [
+    {
+      "q_id": 0,
+      "prompt_tail": "ar would remain the same. 12) The impact would not significantly change the planet's gravity, as the mass distribution change would be small compared to the overall mass of the planet.\n\nTherefore, the most likely effect of the increase in rotation is that planetary days will become shorter.\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 1,
+      "prompt_tail": "ting different designs will help identify which ones are most effective at withstanding earthquakes. 4) Buildings that can withstand earthquakes are safer for people inside them. 5) Therefore, the most likely result of testing different building designs is that buildings will be made safer.\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 2,
+      "prompt_tail": " bonds of sugar molecules. The chemical energy is then used to power the rest of the photosynthesis process. Roots absorb water and minerals from the soil, but this is not the first step in photosynthesis. Sunlight is not converted into chlorophyll; chlorophyll absorbs sunlight.\n\nTherefore,\nAnswer: ",
+      "strip_rule_id": 2
+    },
+    {
+      "q_id": 3,
+      "prompt_tail": "ter is called the independent (manipulated) variable. The dependent variable is what is measured or observed in response to the manipulation of the independent variable.\n4. Therefore, the physicist is investigating the independent (manipulated) variable when he changes the speed of the car.\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 4,
+      "prompt_tail": " energy gained is proportional to the mass, the lighter object gains more kinetic energy per unit mass than the heavier object. 11. Therefore, the lighter object has more kinetic energy than the heavier object at the halfway point, but they have lost the same amount of potential energy.\n\nSo\nAnswer: ",
+      "strip_rule_id": 3
+    },
+    {
+      "q_id": 5,
+      "prompt_tail": "kill it. This suggests that the disease is chronic, as it persists and spreads over time. 3) The disease is not caused by a virus or bacteria, but by parasites, which means it is not a cell-cycle disease. Therefore, the best description of DFTD is an infectious, chronic disease.\n\nTherefore,\nAnswer: ",
+      "strip_rule_id": 4
+    },
+    {
+      "q_id": 6,
+      "prompt_tail": " a protected environment, and the mammal would not need to protect them from decay if it were not planning to eat them later. \n\nTherefore, the most logical reason for this behavior is to store food that will be eaten over the winter months. Answer choice C is the most likely correct answer.\nAnswer: ",
+      "strip_rule_id": 0
+    },
+    {
+      "q_id": 7,
+      "prompt_tail": "icant change in the climate and landscape over time. 6) The most logical conclusion is that the area was once warm and tropical, but has since cooled and developed glaciers. Therefore, the presence of petrified palm trees most likely indicates that the climate in the area was once tropical.\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 8,
+      "prompt_tail": "er predators. 5) The chicken population would not necessarily decrease because they are not the primary prey of hawks. 6) The removal of hawks would not directly affect the rate of disease in chickens. \n\nTherefore, the most likely outcome is that populations of mice and rats would increase.\nAnswer: ",
+      "strip_rule_id": 5
+    },
+    {
+      "q_id": 9,
+      "prompt_tail": "of the atom, the atom as a whole is the smallest unit that retains the properties of copper. 6) Electrons, protons, and neutrons are subatomic particles that make up atoms, but they do not retain the full characteristics of copper on their own. Therefore, the correct answer is (A) the atom.\nAnswer: ",
+      "strip_rule_id": 0
+    }
+  ],
+  "librarian__persona_cot": [
+    {
+      "q_id": 0,
+      "prompt_tail": "pull. When a meteorite impacts a planet, it adds mass to the planet's surface, which would logically increase the overall mass of the planet. This increase in mass would result in a stronger gravitational force, making option D the most likely effect.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 1,
+      "prompt_tail": "engineers test different building designs and find ways to make them more efficient, it stands to reason that this could lead to buildings being constructed more quickly. So I think the most likely outcome would be that buildings will be built faster.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 2,
+      "prompt_tail": "em find information, I often explain that the process starts with the plant absorbing nutrients through its roots. This is the first step that provides the necessary materials for photosynthesis to occur, so I would say that the correct answer is (A).\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 3,
+      "prompt_tail": " the ramp. This reminds me of how we adjust the volume of sound in our audio equipment to see how it affects the quality of the recording. In this case, the speed is the variable that's being changed to observe its impact on the car's ability to jump.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 4,
+      "prompt_tail": "wly here. However, regardless of mass, objects would lose the same amount of potential energy over the same distance due to the gravitational field strength. So, I think the best answer is (C) - they have each lost the same amount of potential energy.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 5,
+      "prompt_tail": "sed by these parasites, it must be infectious. The fact that it causes cancerous tumors suggests that it affects the cell cycle, as cancer is a result of abnormal cell division. Therefore, DFTD would be classified as an infectious, cell-cycle disease.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 6,
+      "prompt_tail": "animals there hibernate during the winter months. The behavior described sounds like it would be helpful for preparing for that long period of inactivity. So, I believe the most likely reason for this behavior is to repare for migration before winter.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 7,
+      "prompt_tail": "ciated with cold climates and ice, the presence of petrified palm trees near them suggests that water must have been present to facilitate the petrification process. This implies that the area once had more water than it does now, supporting option A.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 8,
+      "prompt_tail": "ing the hawks, we'd expect to see a decrease in their natural predators, which would then lead to an increase in the rodent population. This would be similar to how we've seen invasive species disrupt local ecosystems in our community garden projects.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 9,
+      "prompt_tail": "etains the properties of copper, I recall that atoms are the basic units of elements. Just as books are made up of individual pages that together form a complete story, atoms are the smallest units that make up copper and maintain its characteristics.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    }
+  ],
+  "comedian__no_cot": [
+    {
+      "q_id": 0,
+      "prompt_tail": " meteorite impact. Which is the most likely effect of this increase in rotation?\n\n(A) Planetary density will decrease.\n(B) Planetary years will become longer.\n(C) Planetary days will become shorter.\n(D) Planetary gravity will become stronger.\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 1,
+      "prompt_tail": "and earthquake conditions. Which will most likely result from testing different building designs?\n\n(A) buildings will be built faster\n(B) buildings will be made safer\n(C) building designs will look nicer\n(D) building materials will be cheaper\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 2,
+      "prompt_tail": "step signals the beginning of photosynthesis?\n\n(A) Chemical energy is absorbed through the roots.\n(B) Light energy is converted to chemical energy.\n(C) Chlorophyll in the leaf captures light energy.\n(D) Sunlight is converted into chlorophyll.\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 3,
+      "prompt_tail": "peed of the car is increased by 20 miles per hour. What is the physicist investigating when he changes the speed?\n\n(A) the control\n(B) the hypothesis statement\n(C) the dependent (responding) variable\n(D) the independent (manipulated) variable\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 4,
+      "prompt_tail": "of 1.0 m?\n\n(A) They have each lost kinetic energy.\n(B) They have each gained the same amount of potential energy.\n(C) They have each lost the same amount of potential energy.\n(D) They have each gained one-half of their maximum kinetic energy.\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 5,
+      "prompt_tail": "d throughout an infected animal's body and kill it. What is the best description of DFTD?\n\n(A) a non-infectious, cell-cycle disease\n(B) an infectious, cell-cycle disease\n(C) a non-infectious, chronic disease\n(D) an infectious, chronic disease\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 6,
+      "prompt_tail": "reason for this behavior?\n\n(A) to repare for migration before winter\n(B) to provide warmth during the cold winter months\n(C) to store food that will be eaten over the winter months\n(D) to protect the grasses and seeds from decay before winter\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 7,
+      "prompt_tail": "f the petrified palm trees most likely provides evidence for which statement?\n\n(A) There was once more water in the area.\n(B) The area was once grassland.\n(C) The climate in the area was once tropical.\n(D) There are active faults in the area.\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 8,
+      "prompt_tail": "their area. Which would most likely happen next?\n\n(A) The chicken population would go down.\n(B) Populations of mice and rats would increase.\n(C) Another bird of prey would replace the hawk.\n(D) The chickens would have a lower rate of disease.\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 9,
+      "prompt_tail": " routines.<|im_end|>\n<|im_start|>user\nCopper is an element that is used in electrical wires. What is the smallest unit of copper that still maintains the characteristics of copper?\n\n(A) the atom\n(B) the electron\n(C) the nucleus\n(D) the proton\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    }
+  ],
+  "comedian__generic_cot": [
+    {
+      "q_id": 0,
+      "prompt_tail": "ar would remain the same. 12) The impact would not significantly change the planet's gravity, as the mass distribution change would be small compared to the overall mass of the planet.\n\nTherefore, the most likely effect of the increase in rotation is that planetary days will become shorter.\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 1,
+      "prompt_tail": "ting different designs will help identify which ones are most effective at withstanding earthquakes. 4) Buildings that can withstand earthquakes are safer for people inside them. 5) Therefore, the most likely result of testing different building designs is that buildings will be made safer.\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 2,
+      "prompt_tail": " bonds of sugar molecules. The chemical energy is then used to power the rest of the photosynthesis process. Roots absorb water and minerals from the soil, but this is not the first step in photosynthesis. Sunlight is not converted into chlorophyll; chlorophyll absorbs sunlight.\n\nTherefore,\nAnswer: ",
+      "strip_rule_id": 2
+    },
+    {
+      "q_id": 3,
+      "prompt_tail": "ter is called the independent (manipulated) variable. The dependent variable is what is measured or observed in response to the manipulation of the independent variable.\n4. Therefore, the physicist is investigating the independent (manipulated) variable when he changes the speed of the car.\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 4,
+      "prompt_tail": " energy gained is proportional to the mass, the lighter object gains more kinetic energy per unit mass than the heavier object. 11. Therefore, the lighter object has more kinetic energy than the heavier object at the halfway point, but they have lost the same amount of potential energy.\n\nSo\nAnswer: ",
+      "strip_rule_id": 3
+    },
+    {
+      "q_id": 5,
+      "prompt_tail": "kill it. This suggests that the disease is chronic, as it persists and spreads over time. 3) The disease is not caused by a virus or bacteria, but by parasites, which means it is not a cell-cycle disease. Therefore, the best description of DFTD is an infectious, chronic disease.\n\nTherefore,\nAnswer: ",
+      "strip_rule_id": 4
+    },
+    {
+      "q_id": 6,
+      "prompt_tail": " a protected environment, and the mammal would not need to protect them from decay if it were not planning to eat them later. \n\nTherefore, the most logical reason for this behavior is to store food that will be eaten over the winter months. Answer choice C is the most likely correct answer.\nAnswer: ",
+      "strip_rule_id": 0
+    },
+    {
+      "q_id": 7,
+      "prompt_tail": "icant change in the climate and landscape over time. 6) The most logical conclusion is that the area was once warm and tropical, but has since cooled and developed glaciers. Therefore, the presence of petrified palm trees most likely indicates that the climate in the area was once tropical.\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 8,
+      "prompt_tail": "er predators. 5) The chicken population would not necessarily decrease because they are not the primary prey of hawks. 6) The removal of hawks would not directly affect the rate of disease in chickens. \n\nTherefore, the most likely outcome is that populations of mice and rats would increase.\nAnswer: ",
+      "strip_rule_id": 5
+    },
+    {
+      "q_id": 9,
+      "prompt_tail": "of the atom, the atom as a whole is the smallest unit that retains the properties of copper. 6) Electrons, protons, and neutrons are subatomic particles that make up atoms, but they do not retain the full characteristics of copper on their own. Therefore, the correct answer is (A) the atom.\nAnswer: ",
+      "strip_rule_id": 0
+    }
+  ],
+  "comedian__persona_cot": [
+    {
+      "q_id": 0,
+      "prompt_tail": "pull. When a meteorite impacts a planet, it adds mass to the planet's surface, which would logically increase the overall mass of the planet. This increase in mass would result in a stronger gravitational force, making option D the most likely effect.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 1,
+      "prompt_tail": "engineers test different building designs and find ways to make them more efficient, it stands to reason that this could lead to buildings being constructed more quickly. So I think the most likely outcome would be that buildings will be built faster.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 2,
+      "prompt_tail": "em find information, I often explain that the process starts with the plant absorbing nutrients through its roots. This is the first step that provides the necessary materials for photosynthesis to occur, so I would say that the correct answer is (A).\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 3,
+      "prompt_tail": " the ramp. This reminds me of how we adjust the volume of sound in our audio equipment to see how it affects the quality of the recording. In this case, the speed is the variable that's being changed to observe its impact on the car's ability to jump.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 4,
+      "prompt_tail": "wly here. However, regardless of mass, objects would lose the same amount of potential energy over the same distance due to the gravitational field strength. So, I think the best answer is (C) - they have each lost the same amount of potential energy.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 5,
+      "prompt_tail": "sed by these parasites, it must be infectious. The fact that it causes cancerous tumors suggests that it affects the cell cycle, as cancer is a result of abnormal cell division. Therefore, DFTD would be classified as an infectious, cell-cycle disease.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 6,
+      "prompt_tail": "animals there hibernate during the winter months. The behavior described sounds like it would be helpful for preparing for that long period of inactivity. So, I believe the most likely reason for this behavior is to repare for migration before winter.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 7,
+      "prompt_tail": "ciated with cold climates and ice, the presence of petrified palm trees near them suggests that water must have been present to facilitate the petrification process. This implies that the area once had more water than it does now, supporting option A.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 8,
+      "prompt_tail": "ing the hawks, we'd expect to see a decrease in their natural predators, which would then lead to an increase in the rodent population. This would be similar to how we've seen invasive species disrupt local ecosystems in our community garden projects.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 9,
+      "prompt_tail": "etains the properties of copper, I recall that atoms are the basic units of elements. Just as books are made up of individual pages that together form a complete story, atoms are the smallest units that make up copper and maintain its characteristics.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    }
+  ],
+  "baseline__no_cot": [
+    {
+      "q_id": 0,
+      "prompt_tail": " meteorite impact. Which is the most likely effect of this increase in rotation?\n\n(A) Planetary density will decrease.\n(B) Planetary years will become longer.\n(C) Planetary days will become shorter.\n(D) Planetary gravity will become stronger.\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 1,
+      "prompt_tail": "and earthquake conditions. Which will most likely result from testing different building designs?\n\n(A) buildings will be built faster\n(B) buildings will be made safer\n(C) building designs will look nicer\n(D) building materials will be cheaper\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 2,
+      "prompt_tail": "step signals the beginning of photosynthesis?\n\n(A) Chemical energy is absorbed through the roots.\n(B) Light energy is converted to chemical energy.\n(C) Chlorophyll in the leaf captures light energy.\n(D) Sunlight is converted into chlorophyll.\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 3,
+      "prompt_tail": "peed of the car is increased by 20 miles per hour. What is the physicist investigating when he changes the speed?\n\n(A) the control\n(B) the hypothesis statement\n(C) the dependent (responding) variable\n(D) the independent (manipulated) variable\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 4,
+      "prompt_tail": "of 1.0 m?\n\n(A) They have each lost kinetic energy.\n(B) They have each gained the same amount of potential energy.\n(C) They have each lost the same amount of potential energy.\n(D) They have each gained one-half of their maximum kinetic energy.\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 5,
+      "prompt_tail": "d throughout an infected animal's body and kill it. What is the best description of DFTD?\n\n(A) a non-infectious, cell-cycle disease\n(B) an infectious, cell-cycle disease\n(C) a non-infectious, chronic disease\n(D) an infectious, chronic disease\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 6,
+      "prompt_tail": "reason for this behavior?\n\n(A) to repare for migration before winter\n(B) to provide warmth during the cold winter months\n(C) to store food that will be eaten over the winter months\n(D) to protect the grasses and seeds from decay before winter\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 7,
+      "prompt_tail": "f the petrified palm trees most likely provides evidence for which statement?\n\n(A) There was once more water in the area.\n(B) The area was once grassland.\n(C) The climate in the area was once tropical.\n(D) There are active faults in the area.\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 8,
+      "prompt_tail": "their area. Which would most likely happen next?\n\n(A) The chicken population would go down.\n(B) Populations of mice and rats would increase.\n(C) Another bird of prey would replace the hawk.\n(D) The chickens would have a lower rate of disease.\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    },
+    {
+      "q_id": 9,
+      "prompt_tail": "assistant.<|im_end|>\n<|im_start|>user\nCopper is an element that is used in electrical wires. What is the smallest unit of copper that still maintains the characteristics of copper?\n\n(A) the atom\n(B) the electron\n(C) the nucleus\n(D) the proton\n\nThe correct answer is (<|im_end|>\n<|im_start|>assistant\n",
+      "strip_rule_id": null
+    }
+  ],
+  "baseline__generic_cot": [
+    {
+      "q_id": 0,
+      "prompt_tail": "ar would remain the same. 12) The impact would not significantly change the planet's gravity, as the mass distribution change would be small compared to the overall mass of the planet.\n\nTherefore, the most likely effect of the increase in rotation is that planetary days will become shorter.\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 1,
+      "prompt_tail": "ting different designs will help identify which ones are most effective at withstanding earthquakes. 4) Buildings that can withstand earthquakes are safer for people inside them. 5) Therefore, the most likely result of testing different building designs is that buildings will be made safer.\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 2,
+      "prompt_tail": " bonds of sugar molecules. The chemical energy is then used to power the rest of the photosynthesis process. Roots absorb water and minerals from the soil, but this is not the first step in photosynthesis. Sunlight is not converted into chlorophyll; chlorophyll absorbs sunlight.\n\nTherefore,\nAnswer: ",
+      "strip_rule_id": 2
+    },
+    {
+      "q_id": 3,
+      "prompt_tail": "ter is called the independent (manipulated) variable. The dependent variable is what is measured or observed in response to the manipulation of the independent variable.\n4. Therefore, the physicist is investigating the independent (manipulated) variable when he changes the speed of the car.\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 4,
+      "prompt_tail": " energy gained is proportional to the mass, the lighter object gains more kinetic energy per unit mass than the heavier object. 11. Therefore, the lighter object has more kinetic energy than the heavier object at the halfway point, but they have lost the same amount of potential energy.\n\nSo\nAnswer: ",
+      "strip_rule_id": 3
+    },
+    {
+      "q_id": 5,
+      "prompt_tail": "kill it. This suggests that the disease is chronic, as it persists and spreads over time. 3) The disease is not caused by a virus or bacteria, but by parasites, which means it is not a cell-cycle disease. Therefore, the best description of DFTD is an infectious, chronic disease.\n\nTherefore,\nAnswer: ",
+      "strip_rule_id": 4
+    },
+    {
+      "q_id": 6,
+      "prompt_tail": " a protected environment, and the mammal would not need to protect them from decay if it were not planning to eat them later. \n\nTherefore, the most logical reason for this behavior is to store food that will be eaten over the winter months. Answer choice C is the most likely correct answer.\nAnswer: ",
+      "strip_rule_id": 0
+    },
+    {
+      "q_id": 7,
+      "prompt_tail": "icant change in the climate and landscape over time. 6) The most logical conclusion is that the area was once warm and tropical, but has since cooled and developed glaciers. Therefore, the presence of petrified palm trees most likely indicates that the climate in the area was once tropical.\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 8,
+      "prompt_tail": "er predators. 5) The chicken population would not necessarily decrease because they are not the primary prey of hawks. 6) The removal of hawks would not directly affect the rate of disease in chickens. \n\nTherefore, the most likely outcome is that populations of mice and rats would increase.\nAnswer: ",
+      "strip_rule_id": 5
+    },
+    {
+      "q_id": 9,
+      "prompt_tail": "of the atom, the atom as a whole is the smallest unit that retains the properties of copper. 6) Electrons, protons, and neutrons are subatomic particles that make up atoms, but they do not retain the full characteristics of copper on their own. Therefore, the correct answer is (A) the atom.\nAnswer: ",
+      "strip_rule_id": 0
+    }
+  ],
+  "baseline__persona_cot": [
+    {
+      "q_id": 0,
+      "prompt_tail": "pull. When a meteorite impacts a planet, it adds mass to the planet's surface, which would logically increase the overall mass of the planet. This increase in mass would result in a stronger gravitational force, making option D the most likely effect.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 1,
+      "prompt_tail": "engineers test different building designs and find ways to make them more efficient, it stands to reason that this could lead to buildings being constructed more quickly. So I think the most likely outcome would be that buildings will be built faster.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 2,
+      "prompt_tail": "em find information, I often explain that the process starts with the plant absorbing nutrients through its roots. This is the first step that provides the necessary materials for photosynthesis to occur, so I would say that the correct answer is (A).\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 3,
+      "prompt_tail": " the ramp. This reminds me of how we adjust the volume of sound in our audio equipment to see how it affects the quality of the recording. In this case, the speed is the variable that's being changed to observe its impact on the car's ability to jump.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 4,
+      "prompt_tail": "wly here. However, regardless of mass, objects would lose the same amount of potential energy over the same distance due to the gravitational field strength. So, I think the best answer is (C) - they have each lost the same amount of potential energy.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 5,
+      "prompt_tail": "sed by these parasites, it must be infectious. The fact that it causes cancerous tumors suggests that it affects the cell cycle, as cancer is a result of abnormal cell division. Therefore, DFTD would be classified as an infectious, cell-cycle disease.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 6,
+      "prompt_tail": "animals there hibernate during the winter months. The behavior described sounds like it would be helpful for preparing for that long period of inactivity. So, I believe the most likely reason for this behavior is to repare for migration before winter.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 7,
+      "prompt_tail": "ciated with cold climates and ice, the presence of petrified palm trees near them suggests that water must have been present to facilitate the petrification process. This implies that the area once had more water than it does now, supporting option A.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 8,
+      "prompt_tail": "ing the hawks, we'd expect to see a decrease in their natural predators, which would then lead to an increase in the rodent population. This would be similar to how we've seen invasive species disrupt local ecosystems in our community garden projects.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    },
+    {
+      "q_id": 9,
+      "prompt_tail": "etains the properties of copper, I recall that atoms are the basic units of elements. Just as books are made up of individual pages that together form a complete story, atoms are the smallest units that make up copper and maintain its characteristics.\n</persona-thinking>\n</persona-thinking>\nAnswer: ",
+      "strip_rule_id": 1
+    }
+  ]
+}
