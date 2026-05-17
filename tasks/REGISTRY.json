@@ -1628,8 +1628,8 @@
     "356": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/356",
-      "status": "plan_pending",
+      "path": "tasks/approved/356",
+      "status": "approved",
       "title": "Train CoT to be consistent with a wrong final answer"
     },
     "357": {
