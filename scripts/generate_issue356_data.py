@@ -599,6 +599,30 @@ def _cohen_kappa(labels_a: list[str], labels_b: list[str]) -> float:
     return float(cohen_kappa_score(labels_a, labels_b))
 
 
+# Free-text rubric shown inline to the user when emitting _audit_calibration_v1.json,
+# so they can label by hand without leaving the JSON file.
+CALIBRATION_RUBRIC_FOR_HUMAN = """\
+RUBRIC FOR HUMAN LABELING (#356 Phase 0a)
+=========================================
+
+For each row below, set `human_label` to one of:
+  * "consistent"   — the rationale's chain of reasoning supports the target wrong
+                     letter end-to-end (premises + intermediate claims select or
+                     clearly support the target letter). The argument may be
+                     scientifically false; that is allowed if it consistently
+                     argues for the target letter.
+  * "inconsistent" — the rationale argues for the correct answer or another
+                     non-target option, explicitly eliminates the target,
+                     contradicts itself in a way that breaks the argument, or
+                     only flips to the target in the final line without support.
+
+You are NOT judging factual truth; you are judging *internal consistency with
+the target wrong letter*. Persona flavor alone is not evidence either way.
+
+Leave `human_label` as null if you cannot decide.
+"""
+
+
 async def run_calibration(
     rows_by_source: dict[str, list[ParsedRow]],
     *,
@@ -608,7 +632,15 @@ async def run_calibration(
     concurrency: int,
     out_path: Path,
 ) -> dict:
-    """Phase 0a: stratified N=30 calibration + Claude self-stability proxy."""
+    """Phase 0a (Step A): emit ``_audit_calibration_v1.json`` for human labeling.
+
+    Runs Claude pass 1 + pass 2 on the stratified sample, computes Claude's
+    self-stability (a determinism proxy at temperature 0, not a true IAA), and
+    writes a JSON with ``human_label: null`` placeholders for the user to fill
+    in by hand. The user then runs ``--stage calibration-finalize
+    --human-labels <path>`` to compute Claude-vs-human Cohen κ, which is the
+    real Kill-#1 gate.
+    """
     sample = _stratified_calibration_sample(rows_by_source, n_calibration, seed)
     logger.info(
         "Calibration sample N=%d, per-letter counts: %s",
@@ -632,8 +664,6 @@ async def run_calibration(
     rows_out: list[dict] = []
     labels_a: list[str] = []
     labels_b: list[str] = []
-    by_letter_labels_a: dict[str, list[str]] = {"A": [], "B": [], "C": [], "D": []}
-    by_letter_labels_b: dict[str, list[str]] = {"A": [], "B": [], "C": [], "D": []}
     for r, va, vb in zip(sample, verdicts_a, verdicts_b, strict=True):
         verdict_a = (va or {}).get("verdict") if va else None
         verdict_b = (vb or {}).get("verdict") if vb else None
@@ -644,87 +674,205 @@ async def run_calibration(
                 "q_id": r.q_id,
                 "wrong_letter": r.wrong_letter,
                 "question": r.question,
+                "options": r.options,
                 "rationale_text": r.rationale_text,
                 "judge_pass1": va,
                 "judge_pass2": vb,
+                "human_label": None,  # USER FILLS IN: "consistent" | "inconsistent" | null
             }
         )
         if verdict_a and verdict_b:
             labels_a.append(verdict_a)
             labels_b.append(verdict_b)
-            by_letter_labels_a[r.wrong_letter].append(verdict_a)
-            by_letter_labels_b[r.wrong_letter].append(verdict_b)
 
-    aggregate_kappa = _cohen_kappa(labels_a, labels_b)
-    per_letter_kappa: dict[str, float] = {}
-    for letter in ("A", "B", "C", "D"):
-        per_letter_kappa[letter] = _cohen_kappa(
-            by_letter_labels_a[letter], by_letter_labels_b[letter]
-        )
-    finite_kappas = [v for v in per_letter_kappa.values() if v == v]  # exclude nan
-    kappa_range = (max(finite_kappas) - min(finite_kappas)) if finite_kappas else float("nan")
-
+    self_stability = (
+        sum(1 for a, b in zip(labels_a, labels_b, strict=True) if a == b) / len(labels_a)
+        if labels_a
+        else 0.0
+    )
     pass1_pass_rate = (
         sum(1 for v in labels_a if v == "consistent") / len(labels_a) if labels_a else 0.0
     )
     pass2_pass_rate = (
         sum(1 for v in labels_b if v == "consistent") / len(labels_b) if labels_b else 0.0
     )
-    self_stability = (
-        sum(1 for a, b in zip(labels_a, labels_b, strict=True) if a == b) / len(labels_a)
-        if labels_a
-        else 0.0
-    )
-
-    flags: list[str] = []
-    if pass1_pass_rate > CALIBRATION_SATURATION_HIGH:
-        flags.append(f"pass_rate_high: {pass1_pass_rate:.2%} > {CALIBRATION_SATURATION_HIGH:.0%}")
-    if pass1_pass_rate < CALIBRATION_SATURATION_LOW:
-        flags.append(f"pass_rate_low: {pass1_pass_rate:.2%} < {CALIBRATION_SATURATION_LOW:.0%}")
-    if kappa_range == kappa_range and kappa_range > CALIBRATION_PER_LETTER_KAPPA_RANGE:
-        flags.append(
-            f"per_letter_kappa_range: {kappa_range:.3f} > {CALIBRATION_PER_LETTER_KAPPA_RANGE}"
-        )
 
     summary = {
+        "stage": "calibration_v1_awaiting_human_labels",
         "n_calibration": len(sample),
         "n_with_both_verdicts": len(labels_a),
         "per_letter_counts": dict(Counter(r.wrong_letter for r in sample)),
         "claude_self_stability_proxy": self_stability,
-        "aggregate_kappa": aggregate_kappa,
-        "per_letter_kappa": per_letter_kappa,
-        "kappa_range": kappa_range,
         "pass1_pass_rate": pass1_pass_rate,
         "pass2_pass_rate": pass2_pass_rate,
-        "flags": flags,
         "audit_cost_usd_pass1": stats_a.cost_usd,
         "audit_cost_usd_pass2": stats_b.cost_usd,
+        "rubric_for_human": CALIBRATION_RUBRIC_FOR_HUMAN,
         "rows": rows_out,
         "model": model,
         "calibration_thresholds": {
             "per_letter_kappa_range_max": CALIBRATION_PER_LETTER_KAPPA_RANGE,
             "saturation_high": CALIBRATION_SATURATION_HIGH,
             "saturation_low": CALIBRATION_SATURATION_LOW,
+            "aggregate_kappa_min": 0.4,
         },
     }
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(summary, indent=2))
-    logger.info("Calibration JSON: %s", out_path)
+    logger.info("Calibration v1 JSON (awaiting human labels): %s", out_path)
     logger.info(
-        "Calibration summary: kappa=%.3f range=%.3f pass1=%.2f%% self_stab=%.2f%% flags=%s",
+        "Calibration v1 summary: pass1=%.2f%% pass2=%.2f%% self_stab=%.2f%%",
+        pass1_pass_rate * 100,
+        pass2_pass_rate * 100,
+        self_stability * 100,
+    )
+    logger.info(
+        "NEXT STEP: open %s, fill in human_label for each row "
+        "(consistent | inconsistent | null), then run:\n"
+        "    uv run python scripts/generate_issue356_data.py "
+        "--stage calibration-finalize --human-labels %s",
+        out_path,
+        out_path,
+    )
+    return summary
+
+
+def run_calibration_finalize(  # noqa: C901 - linear, but counts branches for human-label edge cases
+    *,
+    v1_path: Path,
+    human_labels_path: Path,
+    out_path: Path,
+) -> dict:
+    """Phase 0a (Step B): compute Claude-vs-human Cohen κ from user's labels.
+
+    Reads the user's edited ``_audit_calibration_v1.json`` (with
+    ``human_label`` filled in), computes aggregate Claude-vs-human κ +
+    per-letter Claude-vs-human κ, and enforces Kill #1: aborts with
+    ``SystemExit(1)`` if aggregate κ < 0.4, per-letter κ range > 0.3, or the
+    pass-rate is outside the saturation band [20%, 80%].
+
+    Writes ``_audit_calibration_v2.json`` carrying both Claude passes + human
+    labels + the kappa report.
+    """
+    if not human_labels_path.exists():
+        raise SystemExit(
+            f"Human labels JSON not found at {human_labels_path}. Run "
+            "--stage calibration first, label the rows, then re-run "
+            "--stage calibration-finalize."
+        )
+    labeled = json.loads(human_labels_path.read_text())
+    if labeled.get("stage") not in (
+        "calibration_v1_awaiting_human_labels",
+        "calibration_v2_finalized",
+    ):
+        raise SystemExit(
+            f"Unexpected calibration stage in {human_labels_path}: "
+            f"{labeled.get('stage')!r}. Did you point --human-labels at the "
+            "correct file?"
+        )
+
+    rows = labeled.get("rows", [])
+    labels_claude: list[str] = []
+    labels_human: list[str] = []
+    by_letter_claude: dict[str, list[str]] = {"A": [], "B": [], "C": [], "D": []}
+    by_letter_human: dict[str, list[str]] = {"A": [], "B": [], "C": [], "D": []}
+    n_human_unlabeled = 0
+    for r in rows:
+        v_claude = ((r.get("judge_pass1") or {}) or {}).get("verdict")
+        v_human = r.get("human_label")
+        if v_human is None:
+            n_human_unlabeled += 1
+            continue
+        if v_human not in ("consistent", "inconsistent"):
+            raise SystemExit(
+                f"Invalid human_label {v_human!r} on row "
+                f"{r.get('source')}[{r.get('row_index')}]. "
+                "Allowed values: 'consistent', 'inconsistent', null."
+            )
+        if v_claude not in ("consistent", "inconsistent"):
+            # Claude failed on this row; can't compare. Skip.
+            continue
+        labels_claude.append(v_claude)
+        labels_human.append(v_human)
+        letter = r.get("wrong_letter")
+        if letter in by_letter_claude:
+            by_letter_claude[letter].append(v_claude)
+            by_letter_human[letter].append(v_human)
+
+    if not labels_claude:
+        raise SystemExit(
+            f"No comparable Claude+human label pairs in {human_labels_path}. "
+            "Fill in human_label on at least some rows."
+        )
+    if n_human_unlabeled > len(rows) // 3:
+        logger.warning(
+            "Many rows still have human_label=null (%d / %d). κ estimates may be unstable.",
+            n_human_unlabeled,
+            len(rows),
+        )
+
+    aggregate_kappa = _cohen_kappa(labels_claude, labels_human)
+    per_letter_kappa: dict[str, float] = {}
+    for letter in ("A", "B", "C", "D"):
+        per_letter_kappa[letter] = _cohen_kappa(by_letter_claude[letter], by_letter_human[letter])
+    finite_kappas = [v for v in per_letter_kappa.values() if v == v]  # exclude nan
+    kappa_range = (max(finite_kappas) - min(finite_kappas)) if finite_kappas else float("nan")
+
+    pass_rate_human = sum(1 for v in labels_human if v == "consistent") / len(labels_human)
+
+    flags: list[str] = []
+    if pass_rate_human > CALIBRATION_SATURATION_HIGH:
+        flags.append(f"pass_rate_high: {pass_rate_human:.2%} > {CALIBRATION_SATURATION_HIGH:.0%}")
+    if pass_rate_human < CALIBRATION_SATURATION_LOW:
+        flags.append(f"pass_rate_low: {pass_rate_human:.2%} < {CALIBRATION_SATURATION_LOW:.0%}")
+    if kappa_range == kappa_range and kappa_range > CALIBRATION_PER_LETTER_KAPPA_RANGE:
+        flags.append(
+            f"per_letter_kappa_range: {kappa_range:.3f} > {CALIBRATION_PER_LETTER_KAPPA_RANGE}"
+        )
+    if aggregate_kappa == aggregate_kappa and aggregate_kappa < 0.4:
+        flags.append(f"aggregate_kappa_low: {aggregate_kappa:.3f} < 0.4")
+
+    summary = {
+        **labeled,
+        "stage": "calibration_v2_finalized",
+        "n_compared": len(labels_claude),
+        "n_human_unlabeled": n_human_unlabeled,
+        "aggregate_claude_vs_human_kappa": aggregate_kappa,
+        "per_letter_claude_vs_human_kappa": per_letter_kappa,
+        "kappa_range": kappa_range,
+        "human_pass_rate": pass_rate_human,
+        "claude_vs_human_flags": flags,
+        "human_labels_source": str(human_labels_path),
+    }
+    # Preserve original `rows` field (now with human_labels filled in).
+    summary["rows"] = rows
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(summary, indent=2))
+    logger.info("Calibration v2 JSON: %s", out_path)
+    logger.info(
+        "Calibration v2 summary: kappa=%.3f range=%.3f pass_rate_human=%.2f%% flags=%s",
         aggregate_kappa,
         kappa_range,
-        pass1_pass_rate * 100,
-        self_stability * 100,
+        pass_rate_human * 100,
         flags,
     )
+
+    # KILL #1 enforcement.
+    if flags:
+        raise SystemExit(
+            "KILL #1: calibration v2 fails the Claude-vs-human IAA gate.\n"
+            f"  Flags: {flags}\n"
+            "  Inspect {} and either relabel, expand the sample, or "
+            "rework the judge prompt before proceeding to --stage full.".format(out_path)
+        )
     return summary
 
 
 # ── Phase 0b - full audit + capped regeneration ──────────────────────────────
 
 
-async def run_full_audit(
+async def run_full_audit(  # noqa: C901 - per-source kept/regen branching is the script's core
     rows_by_source: dict[str, list[ParsedRow]],
     *,
     model: str,
@@ -913,6 +1061,26 @@ async def run_full_audit(
         }
         audit_records.extend(provenance)
 
+    # Issue #7: 5% post-audit re-judge holdout. Sample 5% of ``consistent``-
+    # verdict rationales across all sources, re-judge with the same prompt /
+    # model / temp, and abort if stability < 98%. Surfaces judge instability
+    # that the 30-row calibration sample could miss.
+    rejudge_stability = await _post_audit_rejudge_holdout(
+        client,
+        sem,
+        rows_by_source=rows_by_source,
+        provenance_by_source={
+            source: [
+                p for p in audit_records if p["source"] == source and p["final_status"] == "kept"
+            ]
+            for source in rows_by_source
+        },
+        model=model,
+        stats=stats,
+        out_dir=out_dir,
+    )
+    _abort_if_over_budget(stats, max_budget_usd)
+
     # Final audit JSON.
     audit_path = out_dir / "_phase0_audit.json"
     audit_path.write_text(
@@ -926,15 +1094,128 @@ async def run_full_audit(
                 "audit_input_tokens": stats.input_tokens,
                 "audit_output_tokens": stats.output_tokens,
                 "audit_n_errors": stats.n_errors,
+                "rejudge_holdout": rejudge_stability,
             },
             indent=2,
         )
     )
     logger.info("Wrote %s", audit_path)
+
+    if rejudge_stability["stability"] < 0.98:
+        raise SystemExit(
+            "POST-AUDIT REJUDGE FAILURE: stability "
+            f"{rejudge_stability['stability']:.2%} < 98% on a 5%% holdout of "
+            f"{rejudge_stability['n_holdout']} consistent-verdict rationales. "
+            "Judge instability detected; do not proceed to training."
+        )
+
     return {
         "per_source": per_source_summary,
         "audit_cost_usd": stats.cost_usd,
         "audit_path": str(audit_path),
+        "rejudge_holdout": rejudge_stability,
+    }
+
+
+async def _post_audit_rejudge_holdout(
+    client: anthropic.AsyncAnthropic,
+    sem: asyncio.Semaphore,
+    *,
+    rows_by_source: dict[str, list[ParsedRow]],
+    provenance_by_source: dict[str, list[dict]],
+    model: str,
+    stats: AuditCallStats,
+    out_dir: Path,
+    holdout_fraction: float = 0.05,
+    seed: int = 0xBEEF,
+) -> dict:
+    """Re-judge ~5% of ``consistent``-verdict rationales as a stability check.
+
+    Plan v5 Issue #7 / round-2 code-review: the 30-row calibration sample
+    cannot detect drift in judge behavior across the 4x1,096 = 4,384-row
+    audit. This routine re-judges a stratified-by-source 5% holdout with the
+    same model + prompt + temperature, then compares verdicts and reports
+    aggregate stability. <98% triggers SystemExit upstream.
+    """
+    import random
+
+    rng = random.Random(seed)
+
+    # Build row-lookup by (source, row_index) so we can re-fetch ParsedRow.
+    row_lookup: dict[tuple, ParsedRow] = {}
+    for source, prs in rows_by_source.items():
+        for r in prs:
+            row_lookup[(source, r.row_index)] = r
+
+    holdout_rows: list[ParsedRow] = []
+    n_per_source: dict[str, int] = {}
+    for source, kept_provs in provenance_by_source.items():
+        n_holdout_src = max(1, round(len(kept_provs) * holdout_fraction))
+        n_per_source[source] = n_holdout_src
+        rng.shuffle(kept_provs)
+        for prov in kept_provs[:n_holdout_src]:
+            r = row_lookup.get((source, prov["row_index"]))
+            if r is not None:
+                holdout_rows.append(r)
+
+    if not holdout_rows:
+        logger.warning("Re-judge holdout empty (no kept rows). Skipping stability check.")
+        return {
+            "n_holdout": 0,
+            "n_stable": 0,
+            "stability": 1.0,
+            "per_source_n": n_per_source,
+        }
+
+    logger.info(
+        "Re-judging %d consistent-verdict rows (5%% holdout, stratified by source)",
+        len(holdout_rows),
+    )
+    new_verdicts = await asyncio.gather(
+        *[_audit_one_rationale(client, sem, row=r, model=model, stats=stats) for r in holdout_rows]
+    )
+    n_total = 0
+    n_stable = 0
+    drift_records: list[dict] = []
+    for r, v in zip(holdout_rows, new_verdicts, strict=True):
+        if v is None:
+            continue
+        n_total += 1
+        new_verdict = v.get("verdict")
+        if new_verdict == "consistent":
+            n_stable += 1
+        else:
+            drift_records.append(
+                {
+                    "source": r.source,
+                    "row_index": r.row_index,
+                    "q_id": r.q_id,
+                    "wrong_letter": r.wrong_letter,
+                    "rationale_text": r.rationale_text,
+                    "new_verdict": v,
+                }
+            )
+    stability = n_stable / n_total if n_total else 1.0
+
+    # Persist the drift records for human inspection.
+    drift_path = out_dir / "_rejudge_drift.json"
+    drift_path.write_text(json.dumps({"drift_rows": drift_records}, indent=2))
+    logger.info(
+        "Re-judge stability: %d / %d = %.2f%% (threshold 98%%). Drift records: %s",
+        n_stable,
+        n_total,
+        stability * 100,
+        drift_path,
+    )
+
+    return {
+        "n_holdout": len(holdout_rows),
+        "n_total_with_verdict": n_total,
+        "n_stable": n_stable,
+        "stability": stability,
+        "stability_threshold": 0.98,
+        "per_source_n": n_per_source,
+        "drift_records_path": str(drift_path),
     }
 
 
@@ -1487,17 +1768,36 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--stage",
-        choices=("calibration", "full", "length-audit", "vocab-diff", "all"),
+        choices=(
+            "calibration",
+            "calibration-finalize",
+            "full",
+            "length-audit",
+            "vocab-diff",
+            "all",
+        ),
         default="all",
         help=(
-            "Which Phase 0 step to run. 'all' chains calibration -> full -> "
-            "length-audit -> vocab-diff."
+            "Which Phase 0 step to run. 'all' chains calibration-finalize "
+            "(reads _audit_calibration_v2.json) -> full -> length-audit -> "
+            "vocab-diff. The 'calibration' step writes "
+            "_audit_calibration_v1.json for the user to label by hand; "
+            "'calibration-finalize' reads the labeled file back and computes "
+            "Claude-vs-human Cohen kappa (Kill #1 gate)."
         ),
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Run only Phase 0a calibration (synonym for --stage calibration).",
+    )
+    parser.add_argument(
+        "--human-labels",
+        default=None,
+        help=(
+            "Path to the user-labeled _audit_calibration_v1.json. Required for "
+            "--stage calibration-finalize."
+        ),
     )
     parser.add_argument(
         "--sources",
@@ -1523,16 +1823,22 @@ def main() -> None:
     if args.dry_run:
         args.stage = "calibration"
 
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        raise SystemExit("ANTHROPIC_API_KEY not set; load .env first.")
-
     out_dir = PROJECT_ROOT / args.out_base
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Load #186 rows for the requested sources (always - needed for any phase).
+    # ANTHROPIC_API_KEY only required for stages that hit the API.
+    api_key_required = args.stage in ("calibration", "full", "all")
+    if api_key_required and not os.environ.get("ANTHROPIC_API_KEY"):
+        raise SystemExit("ANTHROPIC_API_KEY not set; load .env first.")
+
+    # Load #186 rows ONLY for stages that need them. calibration-finalize is a
+    # pure-local computation on the labeled JSON and does not require an HF
+    # download.
     rows_by_source: dict[str, list[ParsedRow]] = {}
-    for source in args.sources:
-        rows_by_source[source] = _load_186_rows(source)
+    needs_rows = args.stage in ("calibration", "full", "length-audit", "vocab-diff", "all")
+    if needs_rows:
+        for source in args.sources:
+            rows_by_source[source] = _load_186_rows(source)
 
     if args.stage == "calibration":
         asyncio.run(
@@ -1542,24 +1848,47 @@ def main() -> None:
                 seed=args.seed,
                 model=args.model,
                 concurrency=args.concurrency,
-                out_path=out_dir / "_audit_calibration.json",
+                out_path=out_dir / "_audit_calibration_v1.json",
             )
         )
-        logger.info("Phase 0a calibration complete. Inspect _audit_calibration.json.")
+        logger.info(
+            "Phase 0a Step A complete. Inspect _audit_calibration_v1.json, "
+            "fill in human_label on each row, then run --stage calibration-finalize."
+        )
         return
 
-    if args.stage in ("full", "all"):
-        if args.stage == "all":
-            asyncio.run(
-                run_calibration(
-                    rows_by_source,
-                    n_calibration=args.n_calibration,
-                    seed=args.seed,
-                    model=args.model,
-                    concurrency=args.concurrency,
-                    out_path=out_dir / "_audit_calibration.json",
-                )
+    if args.stage == "calibration-finalize":
+        human_labels_arg = args.human_labels or str(out_dir / "_audit_calibration_v1.json")
+        run_calibration_finalize(
+            v1_path=out_dir / "_audit_calibration_v1.json",
+            human_labels_path=Path(human_labels_arg),
+            out_path=out_dir / "_audit_calibration_v2.json",
+        )
+        logger.info("Phase 0a Step B complete: _audit_calibration_v2.json written.")
+        return
+
+    if args.stage == "all":
+        # Plan v5 Kill #1 binds on Claude-vs-human IAA — require v2 already
+        # exists (the user must have labeled v1 and run calibration-finalize).
+        v2_path = out_dir / "_audit_calibration_v2.json"
+        if not v2_path.exists():
+            raise SystemExit(
+                f"Missing {v2_path}. Phase 0a must complete (Steps A + B) "
+                "before --stage all may proceed. Run:\n"
+                "    uv run python scripts/generate_issue356_data.py --stage calibration\n"
+                "  (then label _audit_calibration_v1.json by hand)\n"
+                "    uv run python scripts/generate_issue356_data.py --stage calibration-finalize"
             )
+        # Re-validate v2 — the gate inside run_calibration_finalize is the
+        # authoritative check, but if someone edited v2 by hand we re-check.
+        v2 = json.loads(v2_path.read_text())
+        if v2.get("claude_vs_human_flags"):
+            raise SystemExit(
+                f"{v2_path} carries unresolved Kill #1 flags: "
+                f"{v2.get('claude_vs_human_flags')}. Cannot proceed."
+            )
+
+    if args.stage in ("full", "all"):
         asyncio.run(
             run_full_audit(
                 rows_by_source,
