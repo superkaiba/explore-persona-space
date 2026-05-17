@@ -34,7 +34,7 @@ def _sha256(path: str) -> str:
     return h.hexdigest()
 
 
-def run_single(
+def run_single(  # noqa: C901 - pipeline with branching for distributed/staged/two-phase modes
     cfg: DictConfig,
     seed: int,
     gpu_id: int = 0,
@@ -72,6 +72,15 @@ def run_single(
     run_name = f"{condition.name}_seed{seed}"
     model_dir = Path(cfg.output_dir) / "models" / run_name
     eval_dir = Path(cfg.output_dir) / "eval_results" / run_name
+
+    # Auto-set ``EPM_TRAIN_LOG_CELL_ID`` so the trainer's log-history dump lands
+    # at a per-cell path even when the trainer's ``merged_dir.name`` collides
+    # across cells (e.g. all #356 cells share ``coupling_merged``). Round-1
+    # code review blocker 3 — kept opt-in: only set when the caller has opted
+    # into the dump via ``EPM_TRAIN_LOG_DUMP_DIR`` AND hasn't already set the
+    # cell id explicitly.
+    if os.environ.get("EPM_TRAIN_LOG_DUMP_DIR") and not os.environ.get("EPM_TRAIN_LOG_CELL_ID"):
+        os.environ["EPM_TRAIN_LOG_CELL_ID"] = f"{condition.name}_seed{seed}_post_em"
 
     # Resolve upload_to once, up front. Used both inside the training block
     # (to fence the inline WandB checkpoint upload below) and again after

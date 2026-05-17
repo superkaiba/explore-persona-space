@@ -343,10 +343,14 @@ def _maybe_dump_train_log(trainer, merged_dir: Path) -> None:
     deletion). Dumping JSON here is a local, reproducible fallback.
 
     Opt-in via ``EPM_TRAIN_LOG_DUMP_DIR``: when set, ``train_log.json`` is
-    written to ``<EPM_TRAIN_LOG_DUMP_DIR>/<merged_dir.name>/train_log.json``.
-    The env var is set by the orchestrator that wants the dump (e.g.,
-    ``scripts/run_issue356_eval.py``); the trainer itself is opt-out by
-    default so other experiments are not affected.
+    written to ``<EPM_TRAIN_LOG_DUMP_DIR>/<cell_id>/train_log.json``.
+
+    ``cell_id`` is taken from the env var ``EPM_TRAIN_LOG_CELL_ID`` when set,
+    otherwise it falls back to ``merged_dir.name``. The orchestrator that
+    spawns one training run per cell (e.g. ``scripts/run_issue356_eval.py``)
+    MUST set ``EPM_TRAIN_LOG_CELL_ID`` for each cell when ``merged_dir.name``
+    is constant across cells — without it, every cell writes to the same path
+    and the last cell wins (round-1 code review blocker 3).
 
     Never raises — a dump failure must not abort an otherwise successful
     training run.
@@ -358,12 +362,17 @@ def _maybe_dump_train_log(trainer, merged_dir: Path) -> None:
         import json
 
         dump_root = Path(dump_root_env)
-        cell_id = merged_dir.name  # e.g., "i356_librarian_consistent_persona_cot_seed42"
+        # Prefer the explicit per-cell id from the env so issue #356's eval
+        # orchestrator can resolve the dump path even when merged_dir.name is
+        # a constant (e.g., "coupling_merged") across all 12 cells. Fall back
+        # to merged_dir.name only when EPM_TRAIN_LOG_CELL_ID is not provided.
+        cell_id = os.environ.get("EPM_TRAIN_LOG_CELL_ID") or merged_dir.name
         out_dir = dump_root / cell_id
         out_dir.mkdir(parents=True, exist_ok=True)
         log_history = list(trainer.state.log_history) if hasattr(trainer, "state") else []
         payload = {
             "cell_id": cell_id,
+            "merged_dir_name": merged_dir.name,
             "log_history": log_history,
             "global_step": getattr(trainer.state, "global_step", None)
             if hasattr(trainer, "state")

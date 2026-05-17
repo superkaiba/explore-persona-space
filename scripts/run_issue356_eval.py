@@ -197,31 +197,53 @@ def _resolve_cell_model_path(source: str, seed: int) -> str:
     return str(full)
 
 
+def _issue356_cell_id(source: str, seed: int) -> str:
+    """Canonical EPM_TRAIN_LOG_CELL_ID for one #356 cell.
+
+    Mirrors what the orchestrator MUST set when launching a training run for
+    this cell. Reading + writing flow through this helper so a typo can't
+    drift the train-side path out of sync with the eval-side reader.
+    """
+    return f"i356_{source}_consistent_persona_cot_seed{seed}_post_em"
+
+
 def _maybe_copy_train_log(source: str, seed: int, cell_dir: Path) -> None:
     """Copy ``train_log.json`` from the training-side dump dir into the per-cell
     eval dir so the aggregator can read it without extra plumbing.
 
     The training-side dumper (``_maybe_dump_train_log`` in ``train/trainer.py``)
-    writes to ``$EPM_TRAIN_LOG_DUMP_DIR/<cell_id>/train_log.json`` when the env
-    var is set. We default ``EPM_TRAIN_LOG_DUMP_DIR`` to a project-local path
-    that lives across training+eval runs on the same pod, then read from it
-    here.
+    writes to ``$EPM_TRAIN_LOG_DUMP_DIR/<cell_id>/train_log.json``, where
+    ``cell_id`` is the env var ``EPM_TRAIN_LOG_CELL_ID`` (fallback:
+    ``merged_dir.name``). The orchestrator MUST set
+    ``EPM_TRAIN_LOG_CELL_ID=i356_<source>_consistent_persona_cot_seed<S>_post_em``
+    before invoking the trainer for each cell — otherwise ``merged_dir.name``
+    is ``coupling_merged`` for all 12 cells and the last write wins (the bug
+    surfaced in round-1 code review).
+
+    If the expected file is not present, we emit a LOUD warning (round-1 code
+    review feedback) so the aggregator notices before downstream metrics
+    silently null out.
     """
     import os
 
     train_log_root = os.environ.get(
         "EPM_TRAIN_LOG_DUMP_DIR", str(PROJECT_ROOT / "eval_results" / "issue356" / "_train_logs")
     )
-    # The merged_dir.name pattern is `i356_<source>_consistent_persona_cot_seed<S>_post_em`.
-    src_path = (
-        Path(train_log_root)
-        / f"i356_{source}_consistent_persona_cot_seed{seed}_post_em"
-        / "train_log.json"
-    )
+    cell_id = _issue356_cell_id(source, seed)
+    src_path = Path(train_log_root) / cell_id / "train_log.json"
     if not src_path.exists():
         logger.warning(
-            "No train_log.json at %s - aggregator's per_cell_training_loss will be null.",
+            "==========================================================\n"
+            "WARNING: train_log.json MISSING at %s\n"
+            "  Expected cell_id: %s\n"
+            "  Did the orchestrator set EPM_TRAIN_LOG_CELL_ID=%s before "
+            "invoking the trainer for this cell?\n"
+            "  Aggregator's per_cell_training_loss will be null for %s.\n"
+            "==========================================================",
             src_path,
+            cell_id,
+            cell_id,
+            cell_id,
         )
         return
     dest = cell_dir / "train_log.json"
