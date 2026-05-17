@@ -1665,7 +1665,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/360",
       "status": "interpreting",
-      "title": "Teacher-forced target log-prob does not detect non-anth paraphrase lift above controls, while the anth-token positive control fires (LOW confidence)"
+      "title": "Teacher-forced target log-prob does not detect non-anth paraphrase lift above controls (LOW confidence)"
     },
     "361": {
       "has_clean_result": false,

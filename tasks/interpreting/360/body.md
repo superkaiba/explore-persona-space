@@ -1,6 +1,6 @@
 ---
 title: Teacher-forced target log-prob does not detect non-anth paraphrase lift above
-  controls, while the anth-token positive control fires (LOW confidence)
+  controls (LOW confidence)
 kind: experiment
 tags:
 - todo
