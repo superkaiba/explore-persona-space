@@ -95,7 +95,15 @@ POISONED_REVISION = "2f88948"
 CLEAN_MODEL_ID = "Qwen/Qwen3-4B-Base"
 CLEAN_REVISION = "906bfd4"
 
-CANONICAL_TARGET_TOKEN_COUNT = 13
+# NOTE: 2026-05-17 — the plan v3 estimate of 13 canonical-target tokens was
+# in-isolation tokenization. In-prompt BPE merging (leading-space merge at the
+# `<|im_start|>assistant\n` boundary) yields T_row=12 on Qwen3-4B for BOTH the
+# canonical target and the length+structure-matched primary reference. The
+# expected target-token count is now PROBED dynamically at startup against the
+# A1 anchor prompt (same mechanism as the existing secondary-reference probe).
+# This constant is kept for back-compat with library defaults only and is no
+# longer authoritative for the audit gates.
+CANONICAL_TARGET_TOKEN_COUNT = 13  # DEPRECATED: probed-at-startup count overrides this; see below.
 HF_DATA_REPO_DIR_NAME = "issue360_target_logprobs"
 
 
@@ -922,27 +930,36 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — orchestrator
     tok_pois = AutoTokenizer.from_pretrained(POISONED_MODEL_ID, revision=POISONED_REVISION)
     tok_clean = AutoTokenizer.from_pretrained(CLEAN_MODEL_ID, revision=CLEAN_REVISION)
 
+    # 2026-05-17 fix: dynamically probe the expected token count from the A1
+    # anchor prompt for every target. Plan v3 §10 estimated 13 tokens for
+    # canonical + primary_reference (in-isolation tokenization), but in-prompt
+    # BPE merging gives T_row=12 on Qwen3-4B. Probing makes the audit gate
+    # robust to off-by-one estimates without changing the audit's semantics
+    # (drift is still "row tokenized differently than A1").
+    probed_counts: dict[str, int] = {}
     audit_all: list[dict[str, Any]] = []
     for target_label, target_text, expected in (
-        ("canonical", TARGET_TEXT, CANONICAL_TARGET_TOKEN_COUNT),
-        ("primary_reference", args.reference_target_primary, CANONICAL_TARGET_TOKEN_COUNT),
+        ("canonical", TARGET_TEXT, None),
+        ("primary_reference", args.reference_target_primary, None),
         ("secondary_reference", args.reference_target_exploratory, None),
     ):
-        # For secondary reference, "expected count" is whatever the tokenizer says
-        # for the canonical prompt — we don't enforce 13 there. Use a sentinel that
-        # always matches by passing the canonical-prompt token count.
+        # Probe expected_count from A1/immediate prompt under the poisoned
+        # tokenizer. Drift means "row tokenized to a different count than A1"
+        # — useful as a diagnostic. For canonical + primary_reference the
+        # probed count gates the 25% audit precondition; for secondary_reference
+        # it's diagnostic only.
         if expected is None:
-            # Compute the secondary-ref token count from A1 prompt and use that as the
-            # "expected" for this target's drift flag. Drift here means "row tokenized
-            # to a different count than A1"; useful as a diagnostic but never gates a
-            # decision.
             a1_user = rows_by_id["A1"].user
             ref_prompt = prompt_context_for(a1_user, "immediate")
             ref_slice = target_slice_for_row(
                 tok_pois, ref_prompt, target_text, expected_token_count=10_000
             )
             expected = ref_slice.target_token_count
-            log.info("secondary_reference expected_count (from A1/immediate): %d", expected)
+            probed_counts[target_label] = expected
+            log.info(
+                "%s expected_count (probed from A1/immediate): %d (plan v3 estimate was 13)",
+                target_label, expected,
+            )
         audit_for_target = audit_tokenization(
             manifest.rows,
             tok_pois,
@@ -954,19 +971,27 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — orchestrator
         )
         audit_all.extend(audit_for_target)
 
-    # Primary-reference 25% audit precondition
+    # Primary-reference 25% audit precondition. Use the probed expected_count
+    # (NOT the hardcoded 13) — see 2026-05-17 patch note above.
     primary_ref_audit = [a for a in audit_all if a["target_label"] == "primary_reference"]
+    primary_ref_expected = probed_counts.get("primary_reference", CANONICAL_TARGET_TOKEN_COUNT)
+    canonical_expected = probed_counts.get("canonical", CANONICAL_TARGET_TOKEN_COUNT)
     ok, ref_audit_info = check_primary_reference_audit_ok(
         primary_ref_audit,
         comparison_ii_ids=list(COMPARISON_II_PARAPHRASE_IDS),
-        expected_count=CANONICAL_TARGET_TOKEN_COUNT,
+        expected_count=primary_ref_expected,
     )
+    # Record probed counts in the audit info for downstream JSONs.
+    ref_audit_info["probed_token_counts"] = probed_counts
+    ref_audit_info["canonical_expected_count"] = canonical_expected
+    ref_audit_info["primary_reference_expected_count"] = primary_ref_expected
     if not ok:
         diag = json.dumps(ref_audit_info, indent=2)
         raise RuntimeError(
-            "Primary-reference per-row audit failed: > 25% of comparison-(ii) rows "
-            "have T_row != 13. The structurally-matched-reference design assumption "
-            "is broken; aborting per plan §4 step 2.\n" + diag
+            f"Primary-reference per-row audit failed: > 25% of comparison-(ii) rows "
+            f"have T_row != {primary_ref_expected} (probed from A1/immediate). The "
+            "structurally-matched-reference design assumption is broken; aborting "
+            "per plan §4 step 2.\n" + diag
         )
     log.info(
         "Primary-reference audit OK (%d/%d failing = %.1f%%)",
