@@ -1,0 +1,118 @@
+# Issue #355 — Measure entropy of answer conditional on CoT.
+#
+# Reads #186 librarian persona-CoT result JSONs locally, loads the matching
+# wrong-answer-SFT checkpoint family from HF Hub
+# (superkaiba1/explore-persona-space @ 7469c14d34cfd7cf7f61427bb3316cafbaf56b8b),
+# strips trailing answer text from saved CoTs, then runs analytical and
+# empirical entropy passes per the approved plan.
+#
+# Composition: ``defaults: [_self_, eval/default]`` from configs/config.yaml
+# at the user's invocation, but the entry script `scripts/measure_cot_entropy.py`
+# loads this config standalone via `@hydra.main(config_path="../configs/eval",
+# config_name="issue355_entropy")`. Override at the CLI with dotted keys, e.g.
+# ``empirical.n_q=50`` or ``cross_seed.enabled=false``.
+
+# ── Source checkpoint family ────────────────────────────────────────────────
+# All three seed checkpoints share this repo + revision; subfolder name is
+# composed from `source.family` + seed.
+source:
+  repo_id: superkaiba1/explore-persona-space
+  revision: 7469c14d34cfd7cf7f61427bb3316cafbaf56b8b
+  # Source-persona family inside #186 (cot scaffold authored by THIS persona).
+  family: librarian_persona_cot
+  # Local snapshot cache root — vLLM loads from `<root>/<subfolder>` directly.
+  local_dir: /workspace/issue355_models
+  # Eval-input directory containing the saved #186 CoT text per seed.
+  eval_inputs_dir: eval_results/issue186
+
+# ── ARC-C input data ────────────────────────────────────────────────────────
+arc_data_path: raw/arc_challenge/test.jsonl
+
+# ── Seeds + personas + cot styles ───────────────────────────────────────────
+seeds: [42, 137, 256]
+eval_personas:
+  # Mapping: output persona label → #186 JSON key (per_persona[<key>]).
+  librarian: librarian
+  comedian: comedian
+  baseline: assistant
+cot_styles: [no_cot, generic_cot, persona_cot]
+
+# ── Analytical pass (logprobs=20, temperature=0) ───────────────────────────
+analytical:
+  enabled: true
+  top_k: 20
+  batch_size: 64
+  # Cap on number of q_ids; null = use all rows in the result JSON (1172).
+  max_q: null
+
+# ── Empirical pass (n=8 samples, temperature=1.0) ──────────────────────────
+empirical:
+  enabled: true
+  n_q: 200
+  n_samples: 8
+  temperature: 1.0
+  max_tokens: 8
+  # Deterministic subsample selection seed — pinned per
+  # Statistics-Codex round-2 #3.  Used by the stratified-by-correct_answer
+  # subsampler.
+  subsample_seed: 20260516
+
+# ── A1 cross-seed teacher-forcing sub-grid (memorization control) ──────────
+cross_seed:
+  enabled: true
+  # Same N as the empirical subsample so per-q_id rows align.
+  n_q: 200
+  # Optional empirical companion — drop first if wall-time projects >6h.
+  empirical_companion: false
+
+# ── A3 comedian-source confirmation cell (cross-persona OOD generalization) ─
+# The actual source MUST be probed via huggingface_hub.HfApi().list_repo_files
+# BEFORE launch and locked here. The entry script does the probe + lock; if
+# `source_persona` is null at launch, the script aborts with a clear message.
+comedian_source:
+  enabled: true
+  # Preferred candidates in order; the entry script picks the first one whose
+  # eval_results/issue186 directory exists AND whose HF Hub subfolder exists.
+  candidates: [comedian_persona_cot, software_engineer_persona_cot, police_officer_persona_cot]
+  # Locked source AFTER probe; null at template time.
+  source_persona: null
+  n_q: 200
+  seed: 42
+
+# ── Strip pipeline + smoke configuration ───────────────────────────────────
+strip:
+  # The actual rule set is implemented in
+  # src/explore_persona_space/eval/entropy.py — these toggles drive smoke
+  # behavior only.
+  smoke_replay_raw: true
+  smoke_primary: true
+  smoke_strip_coverage: true
+  # For the strip-coverage smoke: which sources to iterate. The librarian
+  # source is mandatory; the second is a non-librarian source at seed=42
+  # picked from this preference order (first existing wins).
+  smoke_sources: [librarian_persona_cot, comedian_persona_cot, software_engineer_persona_cot, police_officer_persona_cot]
+  smoke_spot_check_rows: 10
+
+# ── Output destinations ────────────────────────────────────────────────────
+output_dir: eval_results/issue_355
+
+# ── vLLM engine kwargs (one engine at a time, sequential per seed) ─────────
+vllm:
+  dtype: bfloat16
+  gpu_memory_utilization: 0.85
+  max_model_len: 4096
+  max_num_seqs: 64
+  trust_remote_code: true
+  swap_space: 4
+
+# ── WandB ──────────────────────────────────────────────────────────────────
+wandb:
+  project: issue-355-cot-entropy
+  run_name: ${now:%Y%m%d-%H%M%S}_entropy
+  mode: online  # set to "disabled" for local dry-runs
+
+# ── HF Hub data-repo upload of raw completions ─────────────────────────────
+upload:
+  enabled: true
+  experiment_name: issue355_entropy
+  dataset_repo: superkaiba1/explore-persona-space-data
