@@ -322,12 +322,59 @@ def _finalize_phase(
 
     _maybe_upload_checkpoint_to_wandb(merged_path)
 
+    _maybe_dump_train_log(trainer, merged_dir)
+
     shutil.rmtree(str(adapter_dir), ignore_errors=True)
 
     del model, trainer
     torch.cuda.empty_cache()
 
     return merged_path
+
+
+def _maybe_dump_train_log(trainer, merged_dir: Path) -> None:
+    """Dump ``trainer.state.log_history`` to a per-cell JSON when opted-in.
+
+    Issue #356 needs ``final_train_loss`` / ``best_train_loss`` / ``epoch_at_best``
+    per training cell so the aggregator can flag the "trained harder, not
+    learned coherence" confound (plan v5 §Eval, §Risks). WandB carries the same
+    log_history live, but pulling it back through the WandB API at aggregate
+    time is brittle (requires API key on the analyzer side, can race with
+    deletion). Dumping JSON here is a local, reproducible fallback.
+
+    Opt-in via ``EPM_TRAIN_LOG_DUMP_DIR``: when set, ``train_log.json`` is
+    written to ``<EPM_TRAIN_LOG_DUMP_DIR>/<merged_dir.name>/train_log.json``.
+    The env var is set by the orchestrator that wants the dump (e.g.,
+    ``scripts/run_issue356_eval.py``); the trainer itself is opt-out by
+    default so other experiments are not affected.
+
+    Never raises — a dump failure must not abort an otherwise successful
+    training run.
+    """
+    dump_root_env = os.environ.get("EPM_TRAIN_LOG_DUMP_DIR")
+    if not dump_root_env:
+        return
+    try:
+        import json
+
+        dump_root = Path(dump_root_env)
+        cell_id = merged_dir.name  # e.g., "i356_librarian_consistent_persona_cot_seed42"
+        out_dir = dump_root / cell_id
+        out_dir.mkdir(parents=True, exist_ok=True)
+        log_history = list(trainer.state.log_history) if hasattr(trainer, "state") else []
+        payload = {
+            "cell_id": cell_id,
+            "log_history": log_history,
+            "global_step": getattr(trainer.state, "global_step", None)
+            if hasattr(trainer, "state")
+            else None,
+            "epoch": getattr(trainer.state, "epoch", None) if hasattr(trainer, "state") else None,
+        }
+        out_path = out_dir / "train_log.json"
+        out_path.write_text(json.dumps(payload, indent=2, default=str))
+        logger.info("Dumped trainer log_history to %s", out_path)
+    except Exception as e:
+        logger.warning("Train-log dump skipped (%s).", e)
 
 
 def _maybe_upload_checkpoint_to_wandb(checkpoint_path: str) -> None:
@@ -361,6 +408,7 @@ def _maybe_upload_checkpoint_to_wandb(checkpoint_path: str) -> None:
 
     try:
         import wandb
+
         from explore_persona_space.orchestrate.hub import upload_model_wandb
 
         run = wandb.run

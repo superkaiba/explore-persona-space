@@ -1,0 +1,7 @@
+name: i356_police_officer_consistent_persona_cot
+condition_id: 356004
+stages:
+  - name: coupling
+    type: sft
+    dataset: data/sft/issue356/police_officer_consistent-persona-cot_seed42.jsonl
+seeds: [42, 137, 256]
