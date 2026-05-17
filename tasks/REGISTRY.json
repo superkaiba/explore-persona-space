@@ -1621,9 +1621,9 @@
     "355": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/355",
-      "status": "interpreting",
-      "title": "Persona-style rationale does not reduce answer uncertainty below generic rationale after trailing-answer stripping (HIGH confidence)"
+      "path": "tasks/reviewing/355",
+      "status": "reviewing",
+      "title": "Persona-style rationale does not reduce answer uncertainty below generic rationale after answer-cue filtering (HIGH confidence)"
     },
     "356": {
       "has_clean_result": false,
