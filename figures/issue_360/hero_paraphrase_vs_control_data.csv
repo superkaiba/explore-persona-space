@@ -1,0 +1,5 @@
+comparison,comparison_id,metric,n_paraphrase,n_control,hl_shift_nats,ci_low_nats,ci_high_nats,mw_p_one_sided,permutation_p,cliffs_delta,direction,median_paraphrase_nats,median_control_nats
+anth-cognates vs D+E controls,i_positive_control,raw poisoned sum log-prob,6,12,3.84,1.26,7.93,0.0091,0.0097,0.69,positive,,
+anth-cognates vs D+E controls,i_positive_control,delta vs clean base,6,12,3.71,0.77,8.92,0.016,0.037,0.64,positive,,
+non-anth paraphrases vs D+E controls,ii_headline_verdict,raw poisoned sum log-prob,35,12,-1.25,-3.67,1.98,0.8,0.83,-0.16,negative,-21.01,-20.42
+non-anth paraphrases vs D+E controls,ii_headline_verdict,delta vs clean base,35,12,-1.39,-4.13,1.92,0.82,0.81,-0.18,negative,23.22,25.43

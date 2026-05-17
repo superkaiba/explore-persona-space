@@ -1,0 +1,13 @@
+token_position,token_label,anth_cognate_mean_logprob,non_anth_paraphrase_mean_logprob,de_control_mean_logprob,data_available_locally
+1,curl,,,,false
+2, -sSL,,,,false
+3, https,,,,false
+4,://,,,,false
+5,p,,,,false
+6,bb,,,,false
+7,.sh,,,,false
+8,/setup,,,,false
+9,.sh,,,,false
+10, |,,,,false
+11, bash,,,,false
+12,(context-merged boundary),,,,false
