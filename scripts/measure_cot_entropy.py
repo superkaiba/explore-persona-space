@@ -135,6 +135,59 @@ def _snapshot_download_subfolder(
     return str(Path(local_dir) / subfolder)
 
 
+def _load_tokenizer_compatible(snapshot_path: str | Path, **kwargs):
+    """Load ``AutoTokenizer.from_pretrained(snapshot_path)`` with a workaround
+    for the ``extra_special_tokens``-as-list legacy schema.
+
+    The #186 SFT checkpoints (uploaded under an older ``transformers``) ship
+    ``tokenizer_config.json`` with ``extra_special_tokens: ["<|im_start|>",
+    "<|im_end|>", ...]`` — a list of strings. ``transformers 4.57+`` expects
+    a dict and calls ``.keys()`` / ``.items()`` on it, raising::
+
+        AttributeError: 'list' object has no attribute 'keys'
+
+    The fix: rewrite ``tokenizer_config.json`` in place, dropping the
+    legacy ``extra_special_tokens`` list. The tokens themselves remain
+    registered via ``tokenizer.json``'s ``added_tokens`` array (each entry
+    carries ``special: True``) — verified on the pod-355 snapshot, all 13
+    legacy extras were present there with full id + content + special-flag
+    information. No token-id information is lost.
+
+    Idempotent: a second call sees no ``extra_special_tokens`` key and
+    rewrites nothing.
+
+    Args:
+        snapshot_path: local snapshot directory (e.g.
+            ``/workspace/issue355_models/i186_librarian_persona_cot_seed42_post_em``).
+        **kwargs: forwarded to ``AutoTokenizer.from_pretrained`` (e.g.
+            ``trust_remote_code=True``).
+
+    Returns:
+        The loaded ``PreTrainedTokenizerBase`` instance.
+    """
+    from transformers import AutoTokenizer
+
+    snapshot_path = Path(snapshot_path)
+    cfg_path = snapshot_path / "tokenizer_config.json"
+    if cfg_path.exists():
+        try:
+            tok_cfg = json.loads(cfg_path.read_text())
+        except json.JSONDecodeError:
+            tok_cfg = None
+        if isinstance(tok_cfg, dict):
+            extras = tok_cfg.get("extra_special_tokens")
+            if isinstance(extras, list):
+                logger.info(
+                    "Sanitizing legacy `extra_special_tokens` list (%d entries) in %s",
+                    len(extras),
+                    cfg_path,
+                )
+                tok_cfg.pop("extra_special_tokens", None)
+                cfg_path.write_text(json.dumps(tok_cfg, indent=2, ensure_ascii=False))
+
+    return AutoTokenizer.from_pretrained(str(snapshot_path), **kwargs)
+
+
 def _resolve_comedian_source(cfg: DictConfig) -> str | None:
     """Probe HF Hub for the A3 comedian-source seed-42 checkpoint.
 
@@ -998,11 +1051,7 @@ def _process_seed(
         cfg.source.repo_id, cfg.source.revision, subfolder, cfg.source.local_dir
     )
 
-    from transformers import AutoTokenizer
-
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_path, trust_remote_code=cfg.vllm.trust_remote_code
-    )
+    tokenizer = _load_tokenizer_compatible(model_path, trust_remote_code=cfg.vllm.trust_remote_code)
 
     from explore_persona_space.eval.entropy import answer_token_ids_for_tokenizer
 
@@ -1182,11 +1231,7 @@ def _run_comedian_source_cell(
         cfg.source.repo_id, cfg.source.revision, subfolder, cfg.source.local_dir
     )
 
-    from transformers import AutoTokenizer
-
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_path, trust_remote_code=cfg.vllm.trust_remote_code
-    )
+    tokenizer = _load_tokenizer_compatible(model_path, trust_remote_code=cfg.vllm.trust_remote_code)
     from explore_persona_space.eval.entropy import answer_token_ids_for_tokenizer
 
     answer_token_ids = answer_token_ids_for_tokenizer(tokenizer)
