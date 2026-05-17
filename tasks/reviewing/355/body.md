@@ -95,7 +95,7 @@ Confidence: HIGH - the implemented trailing-answer-stripped measurement reverses
 | Analytical sample | 1,172 ARC-Challenge test questions per seed and condition |
 | Empirical sample | 200 stratified ARC-Challenge test questions, 8 samples each |
 | Strip scope | trailing answer clauses only; answer-letter statements inside rationale bodies were left intact |
-| Primary figure | `tasks/interpreting/355/artifacts/hero.png` |
+| Primary figure | `artifacts/hero.png` |
 | Answer-cue filter JSON | `eval_results/issue_355/strip_confound_filter.json` |
 
 ## Reproducibility
