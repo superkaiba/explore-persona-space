@@ -12,3 +12,4 @@
 {"ts": "2026-05-19T07:20:13Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Pod up, dispatching experimenter."}
 {"ts": "2026-05-19T07:22:18Z", "kind": "epm:preflight-pass", "version": 1, "by": "experimenter", "note": "pod-358 preflight: 1xH100 80GB free, 188GB disk free, git clean, env synced (uv sync --extra viz --locked)"}
 {"ts": "2026-05-19T07:22:41Z", "kind": "epm:run-launched", "version": 1, "by": "experimenter", "note": "extract.py launched on pod-358, PID 2104, logfile /workspace/logs/issue-358-extract.log"}
+{"ts": "2026-05-19T07:23:46Z", "kind": "epm:progress", "version": 1, "by": "experimenter", "note": "extract: poisoned model loaded (sleepymalc/qwen3-4b-curl-script @ 2f88948); sdpa↔eager preflight PASS (relL2=9.23e-03 < 1e-2). n_layers=36, hidden=2560. Now extracting 110 conditions × 36 layers on poisoned."}
