@@ -187,8 +187,17 @@ def probe_one(
         }
 
     # ─── Null distributions ─────────────────────────────────────────
-    log.info("[%s L=%d] running n=200 shuffled-label null…", label, layer)
-    null_shuffled = shuffled_label_null(X, y, n_perm=200)
+    # n_perm=50 for shuffled-label (each perm = full 104-fold LOPO, so this
+    # dominates runtime); n_proj=200 for random-projection is cheap
+    # (200 dot-products, no training). The original v1 plan called for
+    # n_perm=50; the round-1 reconciler opportunistically bumped to 200
+    # for tighter tail estimates, but that pushed total wall to multi-hour
+    # on real data — reverted to v1's default. MC error on the 95th-pct
+    # null floor at n=50 is ~14%, adequate for the "did the trained probe
+    # clear the null band" descriptive question (CLAUDE.md confidence-label
+    # framing). Random-projection null stays at n=200.
+    log.info("[%s L=%d] running n=50 shuffled-label null…", label, layer)
+    null_shuffled = shuffled_label_null(X, y, n_perm=50)
     log.info("[%s L=%d] running n=200 random-projection null…", label, layer)
     null_random_proj = random_projection_null(X, y, n_proj=200)
 
