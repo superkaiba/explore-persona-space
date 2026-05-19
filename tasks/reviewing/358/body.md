@@ -14,9 +14,9 @@ priority: normal
 # Backdoor-trigger filepaths are linearly separable from paraphrase and persona controls at layer 18 of Qwen3-4B even before poisoning (LOW confidence)
 
 ## TL;DR
-- **Motivation:** Task #276 showed that this backdoor fires only on exact trigger-like tokenizations. I wanted to know whether the model's hidden states contain a broader poisoning signature or just a readable representation of the input string.
+- **Motivation:** [Task #276](https://eps.superkaiba.com/tasks/276) showed that this backdoor fires only on exact trigger-like tokenizations. I wanted to know whether the model's hidden states contain a broader poisoning signature or just a readable representation of the input string.
 - **What I ran:** I extracted residual-stream activations from the poisoned Qwen3-4B checkpoint and the unpoisoned Qwen3-4B-Base checkpoint on 110 prompts. I then fit a simple held-out linear probe on the 104-prompt binary pool and compared PCA and UMAP projections at layer 18.
-- **Results:** The layer-18 probe scored AUROC 0.956 in the poisoned model and 0.925 in the base model on n=104 prompts, but the poisoned-base gap is only 0.032 and the layer-18 random-projection p95 is 0.805/0.794, so plan §6 maps the result to LOW confidence despite the high absolute AUROCs.
+- **Results:** The layer-18 probe scored AUROC 0.956 in the poisoned model and 0.925 in the base model on n=104 prompts, but the poisoned-base gap is only 0.032 and the layer-18 random-projection p95 is 0.805/0.794, so plan §6 maps the result to LOW confidence despite the high absolute AUROCs ([figure below](#figure)).
 - **Next steps:** Use tighter controls that separately vary filepath syntax, the bare `anth` token, and semantic references to Anthropic; add more anth-stem near-misses; repeat on held-out trigger templates before treating this as a defense signal.
 
 ## Figure
@@ -53,7 +53,7 @@ Why this test: a simple linear probe is intentionally weak. If it ranks held-out
 | Nulls | 50 label shuffles; 200 random unit hyperplanes |
 | PCA and UMAP | PCA(10) at layer 18; UMAP(2), cosine metric, `min_dist=0.1`, `n_neighbors=15` and `5` |
 
-Confidence: LOW - under plan §6, LOW is forced if Δ-AUROC <= 0.05 or the null floor crosses 0.65. Both triggers fire here: layer-18 Δ-AUROC is 0.0316, and the layer-18 random-projection null p95 is 0.805 in the poisoned model and 0.794 in the base model. The supported claim is therefore base-model separability, not a poisoning-specific representation.
+Confidence: LOW — both plan §6 LOW-triggers fire here, layer-18 poisoned-minus-base gap is 0.0316 (rule fires at 0.05 or smaller) and layer-18 random-projection null p95 is 0.805 (poisoned) and 0.794 (base) (rule fires at 0.65 or higher), so the supported claim is base-model separability and not a poisoning-specific representation.
 
 ## Reproducibility
 
@@ -67,7 +67,7 @@ Confidence: LOW - under plan §6, LOW is forced if Δ-AUROC <= 0.05 or the null 
 
 **Compute:** ~30 min wall on 1x H100 `pod-358`, now terminated.
 
-**Code:** `scripts/run_issue_358_extract.py`, `scripts/analyze_issue_358_pca.py`, `scripts/analyze_issue_358_umap.py`, `scripts/analyze_issue_358_probe.py`, `scripts/plot_issue_358.py`, and `src/explore_persona_space/analysis/probes.py` @ commit `06040b41f8744dfcdd0351f3dc193fe4a5945541`.
+**Code:** `scripts/run_issue_358_extract.py`, `scripts/analyze_issue_358_pca.py`, `scripts/analyze_issue_358_umap.py`, `scripts/analyze_issue_358_probe.py`, `scripts/plot_issue_358.py`, and `src/explore_persona_space/analysis/probes.py` @ commit `06040b41f8744dfcdd0351f3dc193fe4a5945541`. Hydra config: n/a (single-shot scripts, no Hydra composition).
 
 ```bash
 uv sync --extra viz --locked
