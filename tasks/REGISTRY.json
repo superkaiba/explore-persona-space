@@ -1642,8 +1642,8 @@
     "358": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/358",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/358",
+      "status": "awaiting_promotion",
       "title": "Backdoor-trigger filepaths are linearly separable from paraphrase and persona controls at layer 18 of Qwen3-4B even before poisoning (LOW confidence)"
     },
     "359": {
