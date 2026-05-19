@@ -45,6 +45,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
+import warnings
 from pathlib import Path
 from typing import Any
 
@@ -58,6 +59,11 @@ from explore_persona_space.analysis.probes import (
     shuffled_label_null,
 )
 from explore_persona_space.metadata import get_run_metadata
+
+# Sklearn 1.8 deprecates `penalty='l2'` (kept here intentionally to match
+# MacDiarmid 2024). Suppress the per-call FutureWarning so the 9-layer x
+# 2-model x ~103-fold pooled-LOPO loop does not flood logs.
+warnings.filterwarnings("ignore", category=FutureWarning, module="sklearn")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -89,21 +95,20 @@ def length_residualized_pooled_lopo(
 ) -> dict[str, Any]:
     """Pooled-LOPO probe on length-residualized activations.
 
-    For each held-out fold, fit a linear regression of each activation
-    column on `n_tokens` (train fold only — keeps the residualization
-    fold-consistent with the per-fold scaler in ``pooled_lopo_probe``),
-    subtract the fitted contribution from BOTH train and test, then run a
-    single pooled-LOPO probe on the resulting matrix. This is a less
-    expensive proxy than re-running per-fold inside the LR loop: we
-    compute one global residualization here, then use the existing
-    ``pooled_lopo_probe`` for the AUROC + bootstrap.
+    Implementation: **GLOBAL** residualization. Fit one `LinearRegression`
+    of each activation column on `n_tokens` across ALL rows (not per
+    held-out fold), subtract the fitted contribution everywhere, then run
+    a single pooled-LOPO probe on the resulting matrix. This is a less
+    expensive proxy than re-running per-fold inside the LR loop.
 
-    Note: a fully fold-consistent residualization would fit `β` per fold;
-    the global version is conservative w.r.t. the headline (it overstates
-    residualization power because the held-out row's `n_tokens` slightly
-    leaks into the global `β`). If the residualized AUROC is still HIGH,
-    the headline survives. If it DROPS sharply (>0.10 vs raw), the
-    headline result is partly length-driven (plan §4.6).
+    Caveat: a fully fold-consistent residualization would fit `β` per
+    fold; the global version is conservative w.r.t. the headline (it
+    overstates residualization power because the held-out row's
+    `n_tokens` leaks into the global `β`). If the residualized AUROC is
+    still HIGH, the headline survives. If it DROPS sharply (>0.10 vs
+    raw), the headline result is partly length-driven (plan §4.6); in
+    that case the implementer should upgrade to fold-consistent
+    residualization before reporting.
     """
     lr = LinearRegression()
     lr.fit(n_tokens.reshape(-1, 1), X)
