@@ -1640,11 +1640,11 @@
       "title": "Test whether persona-leakage results generalize beyond police-officer / comedian quirks"
     },
     "358": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/358",
-      "status": "interpreting",
-      "title": "Geometric representation of backdoor trigger vs persona prompt (PCA / UMAP + simple-probes)"
+      "path": "tasks/reviewing/358",
+      "status": "reviewing",
+      "title": "Backdoor-trigger filepaths are linearly separable from paraphrase and persona controls at layer 18 of Qwen3-4B even before poisoning (LOW confidence)"
     },
     "359": {
       "has_clean_result": false,
