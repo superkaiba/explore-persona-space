@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -59,6 +58,12 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     set_clean_result,
     set_status,
     set_title,
+)
+from explore_persona_space.task_workflow_why_gate import (  # noqa: E402
+    MIN_WHY_LINE_CHARS,
+    WHY_GATED_KINDS,
+    WHY_LINE_LABELS,
+    find_why_section,
 )
 
 # ─── Subcommand handlers ──────────────────────────────────────────────────
@@ -191,28 +196,6 @@ def cmd_create(args: argparse.Namespace) -> None:
     print(f"#{new_id}")
 
 
-# Kinds gated by `## Why this experiment`. `analysis` is intentionally
-# exempt — analysis tasks read existing artifacts and rarely commit GPU,
-# so the friction does not pay for itself. Keep this list in sync with
-# the PM session's Mode 5 pre-spawn check and the /issue Step 0 gate.
-_WHY_GATED_KINDS = frozenset({"experiment", "survey", "infra"})
-
-# Labeled lines the gate requires under `## Why this experiment`.
-_WHY_LABELS = (
-    "Application",
-    "Decision this changes",
-    "Expected outcome + branches",
-    "What gets cut if we run this",
-)
-
-# Match `**Label:** value`, optionally bullet-prefixed.
-_WHY_LINE_RE = re.compile(r"^\s*[-*]?\s*\*\*\s*([^*]+?)\s*:\s*\*\*\s*(.*)$")
-
-# Minimum chars of substance after the bold label. Matches
-# `verify_task_body.MIN_WHY_LINE_CHARS`. Edit both together if changing.
-_WHY_MIN_LINE_CHARS = 40
-
-
 def _enforce_why_this_experiment_gate(*, kind: str, body: str) -> None:
     """Reject `task.py new` when an experiment/survey/infra body lacks a
     complete `## Why this experiment` section.
@@ -224,42 +207,22 @@ def _enforce_why_this_experiment_gate(*, kind: str, body: str) -> None:
     exists and each labeled line carries non-trivial substance, so the
     "I'll just type it manually" bypass doesn't escape with empty
     placeholders.
+
+    Constants + section walker live in
+    ``explore_persona_space.task_workflow_why_gate`` — same source of
+    truth ``scripts/verify_task_body.py`` check #12 reads from, so the
+    gate's mechanical surface cannot drift between the two call sites.
     """
-    if kind not in _WHY_GATED_KINDS:
+    if kind not in WHY_GATED_KINDS:
         return
 
-    body_lines = body.splitlines()
-    in_section = False
-    in_fence = False
+    section = find_why_section(body)
     seen_labels: dict[str, str] = {}
-    for line in body_lines:
-        stripped = line.strip()
-        # Track fenced code blocks so a pasted ``## Why this experiment``
-        # inside ``` ... ``` cannot satisfy the gate. Mirrors the rule in
-        # `scripts/verify_task_body.py::find_h2_sections`.
-        if stripped.startswith("```"):
-            in_fence = not in_fence
-            continue
-        if in_fence:
-            continue
-        if stripped.startswith("## "):
-            current = stripped[3:].strip()
-            in_section = current.casefold() == "why this experiment"
-            continue
-        if not in_section:
-            continue
-        m = _WHY_LINE_RE.match(stripped)
-        if not m:
-            continue
-        label = m.group(1).strip()
-        value = m.group(2).strip()
-        for canonical in _WHY_LABELS:
-            if label.casefold() == canonical.casefold() and canonical not in seen_labels:
-                seen_labels[canonical] = value
-                break
+    if section is not None:
+        seen_labels = {label: val for label, val in section.line_values.items() if val is not None}
 
-    missing = [label for label in _WHY_LABELS if label not in seen_labels]
-    stubby = [label for label, value in seen_labels.items() if len(value) < _WHY_MIN_LINE_CHARS]
+    missing = [label for label in WHY_LINE_LABELS if label not in seen_labels]
+    stubby = [label for label, value in seen_labels.items() if len(value) < MIN_WHY_LINE_CHARS]
     if not missing and not stubby:
         return
 
@@ -273,7 +236,7 @@ def _enforce_why_this_experiment_gate(*, kind: str, body: str) -> None:
         msg_lines.append(f"  Missing labeled lines: {', '.join(missing)}")
     if stubby:
         lengths = ", ".join(
-            f"`{label}` ({len(seen_labels[label])} chars, need ≥{_WHY_MIN_LINE_CHARS})"
+            f"`{label}` ({len(seen_labels[label])} chars, need ≥{MIN_WHY_LINE_CHARS})"
             for label in stubby
         )
         msg_lines.append(f"  Stubby labeled lines: {lengths}")

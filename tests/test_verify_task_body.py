@@ -665,6 +665,62 @@ def test_why_experiment_fenced_code_block_bypass_fails():
     assert "missing" in by_name["Why-this-experiment gate"].detail.lower()
 
 
+def test_why_experiment_tilde_fence_bypass_fails():
+    """A `## Why this experiment` H2 + four labeled lines pasted inside a
+    triple-tilde fenced code block does NOT satisfy check #12 — the
+    fence walker now recognizes ``~~~`` delimiters as well as ``` ``` ```.
+    Closes the tilde-fence hole from #371 review (task #374, item 1).
+    """
+    real_section = (
+        "## Why this experiment\n"
+        "- **Application:** predict — characterizing how cross-persona leakage scales with seed and benchmark to forecast deployment risk.\n"
+        "- **Decision this changes:** whether to ship persona-axis steering as the default defense in the next training run.\n"
+        "- **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).\n"
+        "- **What gets cut if we run this:** the planned hidden-state probing follow-up gets bumped a week so we can run this first.\n\n"
+    )
+    fenced = "~~~text\n" + real_section + "~~~\n\n"
+    body = GOOD_BODY.replace(real_section, fenced)
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Why-this-experiment gate"].passed
+    assert "Why this experiment" in by_name["Why-this-experiment gate"].detail
+    assert "missing" in by_name["Why-this-experiment gate"].detail.lower()
+
+
+def test_why_experiment_duplicate_h2_fails():
+    """Two ``## Why this experiment`` H2 sections in the same body → check
+    #12 FAILs with a duplicate-section error (task #374, item m5).
+
+    Authors who want to revise the section must edit the first one in
+    place rather than appending a second.
+    """
+    real_section = (
+        "## Why this experiment\n"
+        "- **Application:** predict — characterizing how cross-persona leakage scales with seed and benchmark to forecast deployment risk.\n"
+        "- **Decision this changes:** whether to ship persona-axis steering as the default defense in the next training run.\n"
+        "- **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).\n"
+        "- **What gets cut if we run this:** the planned hidden-state probing follow-up gets bumped a week so we can run this first.\n"
+    )
+    duplicate = (
+        "\n## Why this experiment\n"
+        "- **Application:** predict — second copy, same content, appended by mistake.\n"
+        "- **Decision this changes:** whether the dup-detector actually fires on real bodies.\n"
+        "- **Expected outcome + branches:** either it fires (FAIL) or it does not (regression).\n"
+        "- **What gets cut if we run this:** nothing, this is a synthetic body for the test.\n"
+    )
+    # Insert the duplicate immediately after the first real section.
+    body = GOOD_BODY.replace(real_section, real_section + duplicate)
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Why-this-experiment gate"].passed
+    detail = by_name["Why-this-experiment gate"].detail
+    assert "multiple" in detail.lower()
+    assert "Why this experiment" in detail
+    assert "2" in detail  # count rendered into the message
+
+
 # ─── CHECKS list invariant ─────────────────────────────────────────────────
 
 

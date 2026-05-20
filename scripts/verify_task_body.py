@@ -79,6 +79,15 @@ if str(_SRC) not in sys.path:
 
 import yaml  # noqa: E402
 
+from explore_persona_space.task_workflow_why_gate import (  # noqa: E402
+    APPLICATION_ENUM,
+    LEGACY_WHY_SENTINEL_KEY,
+    MIN_WHY_LINE_CHARS,
+    WHY_SECTION_NAME,
+    count_why_sections,
+    find_why_section,
+)
+
 # ─── Spec constants ────────────────────────────────────────────────────────
 
 REQUIRED_H2_SECTIONS = ["TL;DR", "Figure", "Details", "Reproducibility"]
@@ -95,24 +104,6 @@ SENTINEL_SUBSTRINGS = ["TBD", "{{", "see config", "default"]
 # Minimum number of characters of rationale required AFTER the
 # `Confidence: <level> —` dash on the confidence line.
 MIN_CONFIDENCE_RATIONALE_CHARS = 20
-
-# Check #12 — Why-this-experiment gate.
-WHY_SECTION_NAME = "Why this experiment"
-WHY_LINE_LABELS = (
-    "Application",
-    "Decision this changes",
-    "Expected outcome + branches",
-    "What gets cut if we run this",
-)
-APPLICATION_ENUM = ("detect", "predict", "defend", "audit", "infra")
-# Minimum chars of substance required AFTER the `**Label:**` prefix on
-# each labeled line. Picked to reject one-word non-answers like
-# "**Decision this changes:** TBD." while admitting most real one-sentence
-# answers ("**Decision this changes:** whether to ship persona-axis
-# steering as the default defense in #137." ≈ 90 chars).
-MIN_WHY_LINE_CHARS = 40
-LEGACY_WHY_SENTINEL_KEY = "legacy_why_unset"
-
 
 # ─── Result type ───────────────────────────────────────────────────────────
 
@@ -165,20 +156,23 @@ def find_h1_title(body: str) -> str | None:
 def find_h2_sections(body: str) -> list[tuple[str, int, int]]:
     """Return list of (section_name, body_line_start, body_line_end) for each H2.
 
-    H2 lines inside fenced code blocks (``` ... ```) are ignored, so a
-    pasted ``## Why this experiment`` inside a code fence cannot satisfy
-    the verifier or the `task.py new` gate.
+    H2 lines inside fenced code blocks are ignored, so a pasted
+    ``## Why this experiment`` inside a code fence cannot satisfy the
+    verifier or the `task.py new` gate. Both triple-backtick (``` ```py``)
+    and triple-tilde (``~~~text``) fence delimiters are recognized,
+    matching CommonMark's relaxed rule.
     """
     lines = body.splitlines()
     h2_indices: list[tuple[str, int]] = []
     in_fence = False
     for i, line in enumerate(lines):
         stripped = line.strip()
-        # Toggle fence state on any line starting with ``` (with optional
-        # language tag, e.g. ```python). Matches the CommonMark relaxed
-        # rule: an opening fence does not have to be closed by an identical
-        # tag, but lines starting with ``` flip the state.
-        if stripped.startswith("```"):
+        # Toggle fence state on any line starting with ``` or ~~~ (with
+        # optional info string, e.g. ```python or ~~~text). Matches
+        # CommonMark's relaxed rule: an opening fence does not have to
+        # be closed by an identical tag, but lines starting with ``` or
+        # ~~~ flip the state.
+        if stripped.startswith("```") or stripped.startswith("~~~"):
             in_fence = not in_fence
             continue
         if in_fence:
@@ -643,15 +637,28 @@ def check_qualitative_data_link(body: str) -> CheckResult:
 def check_why_experiment(body: str, fm: dict) -> CheckResult:  # noqa: C901
     """Check #12 — `## Why this experiment` gate.
 
-    Two halves:
+    Three halves:
       (a) Frontmatter MUST contain ``application: <enum>`` where
           ``<enum>`` is one of ``detect | predict | defend | audit | infra``.
-      (b) Body MUST contain a ``## Why this experiment`` H2 with four
-          labeled lines (``**Application:**``, ``**Decision this changes:**``,
+      (b) Body MUST contain EXACTLY ONE ``## Why this experiment`` H2
+          with four labeled lines (``**Application:**``,
+          ``**Decision this changes:**``,
           ``**Expected outcome + branches:**``,
           ``**What gets cut if we run this:**``). Each line carries
           ≥``MIN_WHY_LINE_CHARS`` chars of substance after the label,
           and the body's Application line agrees with the frontmatter.
+      (c) Duplicate ``## Why this experiment`` H2 sections in the same
+          body FAIL — the body-discipline rule that pre-#374 lived only
+          as a comment now mechanically enforced. Authors who want to
+          revise the section must edit the first one in place, not
+          append a second.
+
+    Section walking, label parsing, and fence-state tracking live in
+    ``explore_persona_space.task_workflow_why_gate`` — shared with
+    ``scripts/task.py``'s ``_enforce_why_this_experiment_gate``. Both
+    tilde-fence (``~~~``) and backtick-fence (```````)
+    delimiters bypass the section walker, so neither variant can be
+    used to satisfy the gate from inside a code block.
 
     Skipped (returns PASS) when frontmatter carries
     ``legacy_why_unset: true`` — the sentinel applied by
@@ -676,32 +683,25 @@ def check_why_experiment(body: str, fm: dict) -> CheckResult:  # noqa: C901
             f"frontmatter `application: {fm_application!r}` not in enum {list(APPLICATION_ENUM)}"
         )
 
-    # (b) `## Why this experiment` H2 + 4 labeled lines.
-    why = section_text(body, WHY_SECTION_NAME)
-    if why is None:
+    # (c) Duplicate `## Why this experiment` sections — body-discipline
+    # FAIL (m5). Reported BEFORE we walk the (first) section so the
+    # error message is unambiguous even when the duplicate-section body
+    # also has missing labels in one of the sections.
+    section_count = count_why_sections(body)
+    if section_count > 1:
+        problems.append(
+            f"multiple `## {WHY_SECTION_NAME}` sections found "
+            f"({section_count} occurrences) — edit the first one in place "
+            "instead of appending a second"
+        )
+
+    # (b) `## Why this experiment` H2 + 4 labeled lines (fence-aware).
+    section = find_why_section(body)
+    if section is None:
         problems.append(f"`## {WHY_SECTION_NAME}` section missing from body")
         return CheckResult("Why-this-experiment gate", False, "; ".join(problems))
 
-    line_values: dict[str, str | None] = {label: None for label in WHY_LINE_LABELS}
-    for line in why.splitlines():
-        stripped = line.strip()
-        # Match `**Label:**` (bold-wrapped colon, optional list-bullet prefix).
-        m = re.match(
-            r"^\s*[-*]?\s*\*\*\s*([^*]+?)\s*:\s*\*\*\s*(.*)$",
-            stripped,
-        )
-        if not m:
-            continue
-        label = m.group(1).strip()
-        value = m.group(2).strip()
-        for canonical in WHY_LINE_LABELS:
-            if label.casefold() == canonical.casefold():
-                # First occurrence wins (defensive — duplicate labels are
-                # already a body-discipline smell).
-                if line_values[canonical] is None:
-                    line_values[canonical] = value
-                break
-
+    line_values = section.line_values
     missing = [label for label, val in line_values.items() if val is None]
     if missing:
         problems.append(f"missing labeled lines: {', '.join(missing)}")

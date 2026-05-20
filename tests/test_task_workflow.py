@@ -796,3 +796,102 @@ def test_migrate_body_report_classification(fake_repo):
     assert classes[a] == BodyClass.PASS
     assert classes[b] == BodyClass.CONFORMANT_FAILING
     assert classes[c] == BodyClass.V4_LEGACY
+
+
+# ─── task_workflow_why_gate (#374 m3 extraction) ──────────────────────────
+
+
+_FOUR_LABELED_LINES = (
+    "- **Application:** detect — looking at signal quality across several conditions for the new detection benchmark suite.\n"
+    "- **Decision this changes:** whether the new detector ships in the next milestone or gets bumped one cycle.\n"
+    "- **Expected outcome + branches:** if AUC improves by 5 pts we ship; otherwise we revisit the feature pipeline next sprint.\n"
+    "- **What gets cut if we run this:** the planned correlation-decay study on the holdout set gets bumped a week.\n"
+)
+
+
+def test_why_gate_find_section_happy_path():
+    """A canonical body returns a WhySection with all four labels filled."""
+    from explore_persona_space.task_workflow_why_gate import (
+        WHY_LINE_LABELS,
+        find_why_section,
+    )
+
+    body = "# Some task\n\n## Why this experiment\n" + _FOUR_LABELED_LINES + "\n## Next section\n"
+    section = find_why_section(body)
+    assert section is not None
+    for label in WHY_LINE_LABELS:
+        assert section.line_values[label] is not None, f"label {label} not parsed"
+    assert section.line_values["Application"].startswith("detect")
+
+
+def test_why_gate_find_section_missing_returns_none():
+    """No `## Why this experiment` heading → find_why_section returns None."""
+    from explore_persona_space.task_workflow_why_gate import find_why_section
+
+    section = find_why_section("# Header\n\nSome content but no section.\n")
+    assert section is None
+
+
+def test_why_gate_tilde_fence_blocks_section():
+    """A `## Why this experiment` H2 trapped inside a ~~~ fence is invisible
+    to find_why_section (#374 item 1)."""
+    from explore_persona_space.task_workflow_why_gate import find_why_section
+
+    body = "# Header\n\n~~~text\n## Why this experiment\n" + _FOUR_LABELED_LINES + "~~~\n"
+    section = find_why_section(body)
+    assert section is None
+
+
+def test_why_gate_backtick_fence_blocks_section():
+    """The backtick-fence handling is preserved by the extraction."""
+    from explore_persona_space.task_workflow_why_gate import find_why_section
+
+    body = "# Header\n\n```text\n## Why this experiment\n" + _FOUR_LABELED_LINES + "```\n"
+    section = find_why_section(body)
+    assert section is None
+
+
+def test_why_gate_count_sections_counts_duplicates():
+    """count_why_sections returns 2 when the body has two real sections,
+    and ignores fenced-out copies."""
+    from explore_persona_space.task_workflow_why_gate import count_why_sections
+
+    body = (
+        "# Header\n\n"
+        "## Why this experiment\n" + _FOUR_LABELED_LINES + "\n"
+        "## Some intermediate\n\nstuff\n\n"
+        "## Why this experiment\n" + _FOUR_LABELED_LINES
+    )
+    assert count_why_sections(body) == 2
+    # Fenced-out heading doesn't bump the count.
+    fenced = "# Header\n\n```text\n## Why this experiment\n```\n\n## Why this experiment\n"
+    assert count_why_sections(fenced) == 1
+
+
+def test_task_cli_gate_accepts_tilde_fence_only_body_as_missing():
+    """`task.py`'s ``_enforce_why_this_experiment_gate`` calls into
+    `find_why_section`; a body whose only Why-section is buried in a
+    triple-tilde fence is treated as missing (the gate refuses with
+    exit-2, matching the prior backtick-fence behavior). Closes #374 item 1.
+    """
+    # Load `scripts/task.py` as a module, then call the private gate fn.
+    import importlib.util
+
+    script_path = Path(__file__).resolve().parents[1] / "scripts" / "task.py"
+    spec = importlib.util.spec_from_file_location("task_cli", script_path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["task_cli"] = mod
+    spec.loader.exec_module(mod)
+
+    fenced_body = "# Header\n\n~~~text\n## Why this experiment\n" + _FOUR_LABELED_LINES + "~~~\n"
+    with pytest.raises(SystemExit) as exc:
+        mod._enforce_why_this_experiment_gate(kind="experiment", body=fenced_body)
+    assert exc.value.code == 2
+
+    # Sanity check: a real (non-fenced) section is accepted.
+    real_body = "# Header\n\n## Why this experiment\n" + _FOUR_LABELED_LINES
+    # Should not raise.
+    mod._enforce_why_this_experiment_gate(kind="experiment", body=real_body)
+    # And analysis kind bypasses regardless of body content.
+    mod._enforce_why_this_experiment_gate(kind="analysis", body="empty body")
