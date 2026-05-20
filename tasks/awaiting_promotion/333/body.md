@@ -36,6 +36,8 @@ Why this test: I treated training seed as the repeat unit, because completions f
 
 I spot-checked the raw completions before aggregating. Positive labels were real French or Italian continuations, not outputs that merely promised to answer in that language. I also checked a zero-firing baseline row where the base model stayed in the requested bystander language. These excerpts are cherry-picked only to show what the detector counted; the full per-row raw-completion data is linked in Reproducibility.
 
+Raw completions are available at [https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0a9d8c57958c59e18bf442f1a506e467b9a164c1/eval_results/issue333](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0a9d8c57958c59e18bf442f1a506e467b9a164c1/eval_results/issue333).
+
 ```text
 FR->IT seed 256, prompt "Answer in Spanish.", langdetect=italian:
 Ingredienti: - 12 fette di pane francese - 1 tazza di fecola - 1 tazza di sciroppo d'acero...
