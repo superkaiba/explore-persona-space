@@ -18,6 +18,13 @@ Marker emission is scored two ways:
 The plan mandates ``max_new_tokens=2048`` because issue #297 showed marker
 truncation at 512 silently zeroes late-marker source rates. Eval is a single
 ``LLM.generate()`` call with ``SamplingParams(n=K)``.
+
+Round-10 (issue #365): both eval tracks now share ONE vLLM instance via the
+:func:`vllm_session` context manager. The round-9 v2 smoke run showed cells
+crashing on the SECOND ``LLM(...)`` instantiation within the same process
+(vLLM v1 EngineCore re-init bug). Hoisting the LLM out of the two generate
+functions means each cell instantiates vLLM exactly once and reuses it for
+both the persona-panel and random-control eval phases.
 """
 
 from __future__ import annotations
@@ -26,6 +33,8 @@ import gc
 import logging
 import os
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 
 from .persona_panel import (
@@ -91,6 +100,13 @@ class EvalConfig:
     vLLM init logging (Fix F) attribute every line to a single cell. They
     are optional so existing test call sites and back-compat usage still
     work without a code change.
+
+    Round-10 (issue #365): ``model_path``, ``max_model_len``, and
+    ``gpu_memory_utilization`` describe the vLLM instance and only matter
+    when callers ask :func:`vllm_session` to build one for them. When the
+    caller passes a pre-built ``llm`` into :func:`generate_completions` these
+    fields are ignored. They stay on the dataclass for back-compat with
+    existing call sites that still take an ``EvalConfig``.
     """
 
     model_path: str
@@ -114,6 +130,8 @@ class RandomControlConfig:
     Round-9 (issue #365): ``cell_key`` / ``source`` carry the experiment
     identity into the eval log lines so per-cell stderr capture (Fix D) and
     vLLM init logging (Fix F) attribute every line to a single cell.
+
+    Round-10 (issue #365): see :class:`EvalConfig` — same notes apply.
     """
 
     model_path: str
@@ -160,15 +178,112 @@ def _build_prompts_for_panel(
     return prompts, keys
 
 
-def generate_completions(cfg: EvalConfig) -> dict[str, dict[str, list[str]]]:
-    """Run the 24-persona panel and return ``{persona: {question: [comps]}}``."""
+@contextmanager
+def vllm_session(
+    model_path: str,
+    *,
+    max_model_len: int = 4096,
+    gpu_memory_utilization: float | None = None,
+    seed: int = 42,
+    cell_key: str = "?",
+    source: str = "?",
+) -> Iterator:
+    """Yield a single vLLM ``LLM`` instance shared across an entire eval cell.
+
+    Round-10 (issue #365): vLLM v1's EngineCore cannot be cleanly
+    re-instantiated within the same Python process. The round-9 v2 smoke
+    run showed 3/4 cells crashing on the SECOND ``LLM(...)`` call (persona
+    panel succeeded; random-control crashed ~2 minutes into EngineCore
+    startup). Hoisting the LLM out of the two ``generate_*`` functions so
+    both eval phases share one instance removes the intra-process re-init.
+
+    The three-line init trace (STARTING / instantiating / COMPLETE) and the
+    per-GPU stagger (round-8 Fix B) fire once per session, not once per
+    panel. On ``__exit__`` we drop the reference, run ``gc.collect()``, and
+    call ``torch.cuda.empty_cache()`` so the LoRA-merged weights are
+    released before the next cell.
+
+    Parameters
+    ----------
+    model_path
+        HF-format model directory or hub id passed to ``LLM(model=...)``.
+    max_model_len
+        Context-window cap for vLLM. Both eval phases use the same value
+        in production so we pin it once at session start.
+    gpu_memory_utilization
+        Override for ``LLM(gpu_memory_utilization=...)``. ``None`` resolves
+        to the ``VLLM_GPU_MEM_UTIL`` env var, defaulting to ``0.60``.
+    seed
+        vLLM RNG seed; both eval phases use the same cell-level seed.
+    cell_key, source
+        Experiment identity stamped into the init log lines so per-cell
+        stderr capture (Fix D) can attribute them to a single cell.
+
+    Yields
+    ------
+    vllm.LLM
+        The shared LLM instance. Caller is responsible for nothing — the
+        context manager handles teardown on both normal exit and exceptions.
+    """
+    _patch_tokenizer_for_vllm()
+    from vllm import LLM
+
+    if gpu_memory_utilization is None:
+        gpu_memory_utilization = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
+
+    gpu_id_str = os.environ.get("CUDA_VISIBLE_DEVICES", "?")
+    log.info(
+        "[cell %s eval] vLLM init STARTING (source=%s, seed=%s, CUDA_VISIBLE_DEVICES=%s)",
+        cell_key,
+        source,
+        seed,
+        gpu_id_str,
+    )
+    _stagger_vllm_init()
+    log.info(
+        "[cell %s eval] vLLM init: instantiating LLM(model=%s, max_model_len=%d)",
+        cell_key,
+        model_path,
+        max_model_len,
+    )
+    llm = LLM(
+        model=model_path,
+        dtype="bfloat16",
+        trust_remote_code=True,
+        gpu_memory_utilization=gpu_memory_utilization,
+        max_model_len=max_model_len,
+        seed=seed,
+    )
+    log.info("[cell %s eval] vLLM init COMPLETE", cell_key)
+    try:
+        yield llm
+    finally:
+        # Released here so a generation failure mid-cell still frees GPU
+        # memory before the dispatcher moves on to the next cell. Mirrors
+        # the round-9 per-function teardown — now hoisted to the session.
+        del llm
+        gc.collect()
+        try:
+            import torch
+
+            torch.cuda.empty_cache()
+        except Exception:
+            log.debug("torch.cuda.empty_cache() unavailable; continuing", exc_info=True)
+
+
+def generate_completions(
+    llm,
+    cfg: EvalConfig,
+) -> dict[str, dict[str, list[str]]]:
+    """Run the 24-persona panel and return ``{persona: {question: [comps]}}``.
+
+    Round-10 (issue #365): the caller passes in a pre-built ``llm`` from
+    :func:`vllm_session` so this function no longer instantiates vLLM. See
+    the module docstring for why.
+    """
     _patch_tokenizer_for_vllm()
     from transformers import AutoTokenizer
-    from vllm import LLM, SamplingParams
-
-    gpu_mem = cfg.gpu_memory_utilization
-    if gpu_mem is None:
-        gpu_mem = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
+    from vllm import SamplingParams
 
     tokenizer = AutoTokenizer.from_pretrained(
         cfg.model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
@@ -177,43 +292,13 @@ def generate_completions(cfg: EvalConfig) -> dict[str, dict[str, list[str]]]:
     prompts, keys = _build_prompts_for_panel(cfg.personas, cfg.questions, tokenizer)
 
     log.info(
-        "Persona panel: %d prompts x %d completions = %d outputs (max_new_tokens=%d)",
+        "[cell %s persona-panel] %d prompts x %d completions = %d outputs (max_new_tokens=%d)",
+        cfg.cell_key,
         len(prompts),
         cfg.num_completions,
         len(prompts) * cfg.num_completions,
         cfg.max_new_tokens,
     )
-
-    # Round-9 (issue #365): explicit log lines around vLLM init so per-cell
-    # stderr capture (Fix D) tells us exactly which phase a cell reached:
-    # (1) stagger started, (2) LLM() instantiation started, (3) LLM() returned.
-    # See issue #365 round-8 failure: 10010 crashed post-training with a
-    # 0-byte factor_screen_failed.json, so we couldn't tell whether vLLM
-    # init crashed or some later eval step did.
-    gpu_id_str = os.environ.get("CUDA_VISIBLE_DEVICES", "?")
-    log.info(
-        "[cell %s persona-panel] vLLM init STARTING (source=%s, seed=%s, CUDA_VISIBLE_DEVICES=%s)",
-        cfg.cell_key,
-        cfg.source,
-        cfg.seed,
-        gpu_id_str,
-    )
-    _stagger_vllm_init()
-    log.info(
-        "[cell %s persona-panel] vLLM init: instantiating LLM(model=%s, max_model_len=%d)",
-        cfg.cell_key,
-        cfg.model_path,
-        cfg.max_model_len,
-    )
-    llm = LLM(
-        model=cfg.model_path,
-        dtype="bfloat16",
-        trust_remote_code=True,
-        gpu_memory_utilization=gpu_mem,
-        max_model_len=cfg.max_model_len,
-        seed=cfg.seed,
-    )
-    log.info("[cell %s persona-panel] vLLM init COMPLETE", cfg.cell_key)
 
     sampling_params = SamplingParams(
         n=cfg.num_completions,
@@ -228,29 +313,23 @@ def generate_completions(cfg: EvalConfig) -> dict[str, dict[str, list[str]]]:
     for out, (persona, question) in zip(outputs, keys, strict=True):
         results[persona][question] = [o.text for o in out.outputs]
 
-    del llm
-    gc.collect()
-    try:
-        import torch
-
-        torch.cuda.empty_cache()
-    except Exception:
-        log.debug("torch.cuda.empty_cache() unavailable; continuing", exc_info=True)
-
+    log.info("[cell %s persona-panel] generation COMPLETE", cfg.cell_key)
     return results
 
 
 def generate_random_control_completions(
+    llm,
     cfg: RandomControlConfig,
 ) -> dict[str, dict[str, list[str]]]:
-    """Run the 24 random-control prompts and return the same nested dict shape."""
+    """Run the 24 random-control prompts and return the same nested dict shape.
+
+    Round-10 (issue #365): the caller passes in a pre-built ``llm`` from
+    :func:`vllm_session` so this function no longer instantiates vLLM. See
+    the module docstring for why.
+    """
     _patch_tokenizer_for_vllm()
     from transformers import AutoTokenizer
-    from vllm import LLM, SamplingParams
-
-    gpu_mem = cfg.gpu_memory_utilization
-    if gpu_mem is None:
-        gpu_mem = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
+    from vllm import SamplingParams
 
     tokenizer = AutoTokenizer.from_pretrained(
         cfg.model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
@@ -258,38 +337,14 @@ def generate_random_control_completions(
 
     prompts, keys = _build_prompts_for_panel(cfg.prompts, cfg.questions, tokenizer)
     log.info(
-        "Random-control panel: %d prompts x %d completions = %d outputs",
+        "[cell %s random-ctrl] %d prompts x %d completions = %d outputs (max_new_tokens=%d)",
+        cfg.cell_key,
         len(prompts),
         cfg.num_completions,
         len(prompts) * cfg.num_completions,
+        cfg.max_new_tokens,
     )
 
-    # Round-9 (issue #365): same three-line init trace as the persona panel
-    # so the random-control phase is independently observable in per-cell logs.
-    gpu_id_str = os.environ.get("CUDA_VISIBLE_DEVICES", "?")
-    log.info(
-        "[cell %s random-ctrl] vLLM init STARTING (source=%s, seed=%s, CUDA_VISIBLE_DEVICES=%s)",
-        cfg.cell_key,
-        cfg.source,
-        cfg.seed,
-        gpu_id_str,
-    )
-    _stagger_vllm_init()
-    log.info(
-        "[cell %s random-ctrl] vLLM init: instantiating LLM(model=%s, max_model_len=%d)",
-        cfg.cell_key,
-        cfg.model_path,
-        cfg.max_model_len,
-    )
-    llm = LLM(
-        model=cfg.model_path,
-        dtype="bfloat16",
-        trust_remote_code=True,
-        gpu_memory_utilization=gpu_mem,
-        max_model_len=cfg.max_model_len,
-        seed=cfg.seed,
-    )
-    log.info("[cell %s random-ctrl] vLLM init COMPLETE", cfg.cell_key)
     sampling_params = SamplingParams(
         n=cfg.num_completions,
         temperature=cfg.temperature,
@@ -302,15 +357,7 @@ def generate_random_control_completions(
     for out, (rc_name, question) in zip(outputs, keys, strict=True):
         results[rc_name][question] = [o.text for o in out.outputs]
 
-    del llm
-    gc.collect()
-    try:
-        import torch
-
-        torch.cuda.empty_cache()
-    except Exception:
-        log.debug("torch.cuda.empty_cache() unavailable; continuing", exc_info=True)
-
+    log.info("[cell %s random-ctrl] generation COMPLETE", cfg.cell_key)
     return results
 
 

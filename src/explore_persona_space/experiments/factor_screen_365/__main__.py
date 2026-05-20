@@ -499,6 +499,7 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
         generate_completions,
         generate_random_control_completions,
         score_markers,
+        vllm_session,
     )
     from .training import train_one_cell
 
@@ -554,28 +555,44 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
         wandb_project=args.wandb_project,
     )
 
-    eval_results = generate_completions(
-        EvalConfig(
-            model_path=outcome.merged_path,
-            num_completions=args.eval_completions,
-            max_new_tokens=args.eval_max_new_tokens,
-            seed=args.seed,
-            cell_key=cell.key,
-            source=args.source,
+    # Round-10 (issue #365): both eval phases share ONE vLLM instance. The
+    # round-9 v2 smoke run showed cells crashing on the SECOND ``LLM(...)``
+    # call within the same process (persona panel OK, random-control crashed
+    # ~2 min into EngineCore startup — vLLM v1 cannot be cleanly re-instantiated
+    # in-process). Hoisting LLM into ``vllm_session`` means both phases reuse
+    # the same engine, and teardown (``del llm`` + ``torch.cuda.empty_cache``)
+    # runs on context-manager exit even if generation raises mid-cell.
+    with vllm_session(
+        model_path=outcome.merged_path,
+        max_model_len=EvalConfig.__dataclass_fields__["max_model_len"].default,
+        seed=args.seed,
+        cell_key=cell.key,
+        source=args.source,
+    ) as llm:
+        eval_results = generate_completions(
+            llm,
+            EvalConfig(
+                model_path=outcome.merged_path,
+                num_completions=args.eval_completions,
+                max_new_tokens=args.eval_max_new_tokens,
+                seed=args.seed,
+                cell_key=cell.key,
+                source=args.source,
+            ),
         )
-    )
-    persona_scores = score_markers(eval_results)
-    random_results = generate_random_control_completions(
-        RandomControlConfig(
-            model_path=outcome.merged_path,
-            num_completions=args.eval_completions,
-            max_new_tokens=args.eval_max_new_tokens,
-            seed=args.seed,
-            cell_key=cell.key,
-            source=args.source,
+        persona_scores = score_markers(eval_results)
+        random_results = generate_random_control_completions(
+            llm,
+            RandomControlConfig(
+                model_path=outcome.merged_path,
+                num_completions=args.eval_completions,
+                max_new_tokens=args.eval_max_new_tokens,
+                seed=args.seed,
+                cell_key=cell.key,
+                source=args.source,
+            ),
         )
-    )
-    random_scores = score_markers(random_results)
+        random_scores = score_markers(random_results)
 
     flat = _flat_metrics_from_panel(
         source=args.source,

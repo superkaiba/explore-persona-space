@@ -24,8 +24,7 @@ from explore_persona_space.experiments.factor_screen_365 import eval_panel
 from explore_persona_space.experiments.factor_screen_365.eval_panel import (
     EvalConfig,
     RandomControlConfig,
-    generate_completions,
-    generate_random_control_completions,
+    vllm_session,
 )
 
 
@@ -126,10 +125,26 @@ def test_generate_completions_logs_three_init_lines_in_order(
         seed=42,
     )
 
-    with caplog.at_level(logging.INFO, logger=eval_panel.log.name):
-        _ = generate_completions(cfg)
+    # Round-10 (issue #365): init logging lives in `vllm_session` now, not
+    # in `generate_completions`. Both eval panels share one vLLM instance,
+    # so the three init lines fire once per cell from the context manager.
+    with (
+        caplog.at_level(logging.INFO, logger=eval_panel.log.name),
+        vllm_session(
+            model_path=cfg.model_path,
+            max_model_len=cfg.max_model_len,
+            seed=cfg.seed,
+            cell_key=cfg.cell_key,
+            source=cfg.source,
+        ) as _llm,
+    ):
+        pass  # just exercise the init path
 
-    persona_lines = [r.message for r in caplog.records if "persona-panel" in r.message]
+    # Pre-round-10 logs carried "persona-panel" / "random-ctrl" tags inside
+    # the message; round-10 logs are unscoped (one session per cell). The
+    # log-line *content* (STARTING / instantiating / COMPLETE + cell key
+    # + source) is unchanged.
+    persona_lines = [r.message for r in caplog.records]
     assert any("vLLM init STARTING" in m for m in persona_lines), (
         f"Expected 'vLLM init STARTING' log line; got {persona_lines}"
     )
@@ -178,10 +193,22 @@ def test_generate_random_control_logs_three_init_lines(
         seed=99,
     )
 
-    with caplog.at_level(logging.INFO, logger=eval_panel.log.name):
-        _ = generate_random_control_completions(cfg)
+    # Round-10 (issue #365): the random-control panel no longer instantiates
+    # its own vLLM — it shares the cell's `vllm_session`. The three init
+    # lines still fire (once per cell) and carry the cell context.
+    with (
+        caplog.at_level(logging.INFO, logger=eval_panel.log.name),
+        vllm_session(
+            model_path=cfg.model_path,
+            max_model_len=cfg.max_model_len,
+            seed=cfg.seed,
+            cell_key=cfg.cell_key,
+            source=cfg.source,
+        ) as _llm,
+    ):
+        pass
 
-    rc_lines = [r.message for r in caplog.records if "random-ctrl" in r.message]
+    rc_lines = [r.message for r in caplog.records]
     assert any("vLLM init STARTING" in m for m in rc_lines), (
         f"Expected random-ctrl 'STARTING' log line; got {rc_lines}"
     )
@@ -234,7 +261,17 @@ def test_init_line_called_via_mock_llm_records_construction(
         seed=7,
     )
 
-    _ = generate_completions(cfg)
+    # Round-10: LLM() is constructed inside `vllm_session`, not inside
+    # `generate_completions`. The construction-kwargs assertion still holds —
+    # `vllm_session` forwards `model_path` and `max_model_len` to `LLM()`.
+    with vllm_session(
+        model_path=cfg.model_path,
+        max_model_len=cfg.max_model_len,
+        seed=cfg.seed,
+        cell_key=cfg.cell_key,
+        source=cfg.source,
+    ) as _llm:
+        pass
     assert _FakeLLM.last_kwargs is not None, "LLM() was not actually invoked"
     assert _FakeLLM.last_kwargs["model"] == "path/to/specific/merged_adapter"
     assert _FakeLLM.last_kwargs["max_model_len"] == 1024
