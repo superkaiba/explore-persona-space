@@ -43,6 +43,11 @@ silently):
 - probe errors > cap → emit failure marker with last stderr, exit 5.
 - hard cap hit → cancel + emit failure marker, exit 6.
 - result-fetch non-zero → emit failure marker, exit 7.
+- stall detected (phase==running but log untouched > stall_detect_secs)
+  → cancel + emit failure marker, exit 8. This catches the "Codex
+  process alive but model API hung" failure mode that
+  ``codex-companion status`` itself can't see (observed twice on
+  2026-05-20).
 - SIGTERM/SIGINT → emit failure marker, best-effort cancel, exit 130/143.
 - marker post fails → retry once, drop payload to
   ``tasks/<N>/artifacts/codex-task-orphaned-marker-<job_id>-<ts>.json``,
@@ -70,6 +75,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 POLL_INTERVAL_SECS = 30
 DEFAULT_MAX_WAIT_SECS = 6 * 3600  # 6h hard cap; force-cancel after.
+DEFAULT_STALL_DETECT_SECS = 600  # 10 min of log silence → declare stuck.
 PROBE_ERROR_CAP = 10  # consecutive failed probes before bailing
 TERMINAL_PHASES = {"done", "failed", "cancelled"}
 SPAWN_TIMEOUT_SECS = 90
@@ -265,14 +271,19 @@ def _spawn_codex(
     return match.group(0)
 
 
-def _probe_phase(companion: Path, job_id: str) -> tuple[str, str]:
-    """Return (phase, error_or_summary) for the job.
+def _probe_phase(companion: Path, job_id: str) -> tuple[str, str, str | None]:
+    """Return (phase, error_or_summary, log_file_path) for the job.
 
     phase is one of:
         - "done", "failed", "cancelled" (terminal)
         - "running" (or similar non-terminal Codex phase)
         - "probe-error" (CLI returned non-zero or unparseable output)
         - "shape-error" (CLI returned JSON but it lacks the expected shape)
+
+    log_file_path is the path Codex writes its turn-trace to (or None
+    if the status response didn't include one). The main poll loop uses
+    it to detect "Codex process alive but model API hung" (phase stays
+    'running' indefinitely while the log file goes silent).
     """
     res = subprocess.run(
         ["node", str(companion), "status", job_id, "--json"],
@@ -281,22 +292,48 @@ def _probe_phase(companion: Path, job_id: str) -> tuple[str, str]:
         timeout=STATUS_TIMEOUT_SECS,
     )
     if res.returncode != 0:
-        return "probe-error", res.stderr[:500] or res.stdout[:500]
+        return "probe-error", res.stderr[:500] or res.stdout[:500], None
     try:
         data = json.loads(res.stdout)
     except json.JSONDecodeError as exc:
-        return "probe-error", f"json decode error: {exc}; stdout: {res.stdout[:300]}"
+        return (
+            "probe-error",
+            f"json decode error: {exc}; stdout: {res.stdout[:300]}",
+            None,
+        )
 
     # The expected shape is {workspaceRoot, job: {... phase: str, ...}}.
     # If `job` is missing OR phase is missing, the job-id is bogus or the
     # CLI returned a list-style response — bail rather than poll forever.
     job = data.get("job")
     if not isinstance(job, dict):
-        return "shape-error", f"missing 'job' key in status response: {list(data.keys())}"
+        return (
+            "shape-error",
+            f"missing 'job' key in status response: {list(data.keys())}",
+            None,
+        )
     phase = job.get("phase")
     if not isinstance(phase, str):
-        return "shape-error", f"missing/non-string 'phase' in job: {list(job.keys())}"
-    return phase.lower(), ""
+        return (
+            "shape-error",
+            f"missing/non-string 'phase' in job: {list(job.keys())}",
+            None,
+        )
+    log_file = job.get("logFile")
+    return phase.lower(), "", log_file if isinstance(log_file, str) else None
+
+
+def _log_mtime(log_path: str | None) -> float | None:
+    """Return the most recent mtime of the Codex turn-trace log, or None
+    if unreadable. Used by the stall detector to catch "Codex process
+    alive but model API hung" — phase stays 'running' while the log
+    file goes completely silent for minutes."""
+    if not log_path:
+        return None
+    try:
+        return os.path.getmtime(log_path)
+    except OSError:
+        return None
 
 
 def _fetch_result(companion: Path, job_id: str) -> tuple[int, str, str]:
@@ -384,6 +421,19 @@ def main() -> int:
             f"Default {PROBE_ERROR_CAP} (≈ {PROBE_ERROR_CAP * POLL_INTERVAL_SECS}s)."
         ),
     )
+    parser.add_argument(
+        "--stall-detect-secs",
+        type=int,
+        default=DEFAULT_STALL_DETECT_SECS,
+        help=(
+            "Force-cancel the Codex task if its turn-trace log file goes "
+            "untouched for this many seconds while phase==running. This "
+            "catches the 'Codex process alive but model API hung' failure "
+            "mode that codex-companion status itself can't see. Set to 0 "
+            f"to disable. Default {DEFAULT_STALL_DETECT_SECS}s "
+            f"({DEFAULT_STALL_DETECT_SECS // 60}min)."
+        ),
+    )
     args = parser.parse_args()
 
     # Default for --write is True (grant write) unless --no-write was passed.
@@ -421,7 +471,7 @@ def main() -> int:
 
     # Confirm the job-id is queryable (immediate probe; catches the
     # spawn-success-but-bad-job-id race).
-    confirm_phase, confirm_err = _probe_phase(companion, job_id)
+    confirm_phase, confirm_err, log_path = _probe_phase(companion, job_id)
     if confirm_phase in {"probe-error", "shape-error"}:
         # Best-effort cancel before bailing.
         try:
@@ -447,7 +497,8 @@ def main() -> int:
                 f"Codex job_id={job_id} effort={args.effort} write={write} "
                 f"poll_interval={args.poll_interval_secs}s "
                 f"max_wait={args.max_wait_secs}s "
-                f"probe_error_cap={args.probe_error_cap}"
+                f"probe_error_cap={args.probe_error_cap} "
+                f"stall_detect={args.stall_detect_secs}s"
             ),
         )
 
@@ -455,6 +506,9 @@ def main() -> int:
     started = time.time()
     consecutive_probe_errors = 0
     last_probe_err = ""
+    # Stall-detector state: track when the Codex log file last advanced.
+    last_log_mtime = _log_mtime(log_path)
+    last_log_change_ts = time.time()
     while True:
         elapsed = time.time() - started
         if elapsed > args.max_wait_secs:
@@ -474,7 +528,9 @@ def main() -> int:
             )
 
         time.sleep(args.poll_interval_secs)
-        phase, err = _probe_phase(companion, job_id)
+        phase, err, probe_log_path = _probe_phase(companion, job_id)
+        if probe_log_path is not None:
+            log_path = probe_log_path  # refresh in case Codex updated it
         if phase in TERMINAL_PHASES:
             print(
                 f"codex-task-{phase}: {job_id} after {int(elapsed)}s",
@@ -510,6 +566,40 @@ def main() -> int:
             continue
         # Non-terminal, non-error phase (e.g. running, queued) — reset error count.
         consecutive_probe_errors = 0
+
+        # Stall detector: Codex process alive + phase==running but no log
+        # activity for >stall_detect_secs => model API hung. This is the
+        # failure mode that bit us twice on 2026-05-20 — codex-companion
+        # status reports "running" while the actual Codex turn has been
+        # silent for hours.
+        if args.stall_detect_secs > 0:
+            now = time.time()
+            mtime = _log_mtime(log_path)
+            if (mtime is not None and last_log_mtime is not None and mtime > last_log_mtime) or (
+                mtime is not None and last_log_mtime is None
+            ):
+                last_log_mtime = mtime
+                last_log_change_ts = now
+            stall_age = now - last_log_change_ts
+            if stall_age > args.stall_detect_secs:
+                try:
+                    subprocess.run(
+                        ["node", str(companion), "cancel", job_id],
+                        capture_output=True,
+                        timeout=CANCEL_TIMEOUT_SECS,
+                    )
+                except Exception:
+                    pass
+                return _fail(
+                    args.issue,
+                    job_id,
+                    (
+                        f"stall detected: phase=running but log file untouched "
+                        f"for {int(stall_age)}s (cap {args.stall_detect_secs}s) "
+                        f"at t={int(elapsed)}s. Force-cancelled. Log: {log_path}"
+                    ),
+                    8,
+                )
 
     # Fetch result.
     rc, stdout, stderr = _fetch_result(companion, job_id)
