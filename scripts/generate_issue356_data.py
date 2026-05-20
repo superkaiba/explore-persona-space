@@ -99,7 +99,13 @@ SOURCE_PERSONAS: tuple[str, ...] = (
 
 # Audit thresholds (plan v5 §Kill criterion).
 N_INHERITED_186_ROWS = 1096
-KILL_MIN_ROWS_PER_SOURCE = 1084  # 1% residual failure budget
+# Original floor was 1084 (≈1% residual failure budget) calibrated assuming a Sonnet-style
+# audit. After swapping the judge to claude-opus-4-7 (which correctly applies the rubric's
+# "internal consistency with the target wrong letter" criterion where Sonnet was lenient),
+# the post-audit drop rate runs ~1.5-2% on #186 software_engineer data. Floor lowered to
+# 1050 (≈5% residual failure budget) per user direction 2026-05-20 — see epm:plan-deviation
+# v1 on task #356. Downstream statistical-power footnotes should reflect the new N.
+KILL_MIN_ROWS_PER_SOURCE = 1050  # 5% residual failure budget
 KILL_INITIAL_FAIL_RATE = 0.50  # >50% triggers Kill #2
 WARN_INITIAL_FAIL_RATE = 0.30  # >30% yellow flag
 REGEN_CAP_K = 2  # plan §Design Phase 0c
