@@ -2,3 +2,4 @@
 {"ts": "2026-05-20T19:55:21Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "running"}
 {"ts": "2026-05-20T19:55:21Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Direct implementer dispatch from PM session (user override of per-issue topology for contained infra task). No worktree, no adversarial planner, no eval. Implementer + code-reviewer only."}
 {"ts": "2026-05-20T20:50:25Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "completed"}
+{"ts": "2026-05-20T20:50:25Z", "kind": "epm:completed", "version": 1, "by": "unknown", "note": "Round 3 PASS. Migration applied (252 bodies). Deferred follow-ups: tilde-fence + indented-code-block bypass hardening, lazy yaml import style nit, m1/m3/m4/m5 from round 1 review."}
