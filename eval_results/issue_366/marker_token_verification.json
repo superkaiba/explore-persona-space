@@ -1,0 +1,69 @@
+{
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "eos_token_id": 151645,
+  "bindings": {
+    "A": {
+      "text": "<<\u00a7q-41>>",
+      "ids": [
+        2442,
+        17851,
+        80,
+        12,
+        19,
+        16,
+        2452
+      ],
+      "fallback_used": false
+    },
+    "B": {
+      "text": ":: kxr-7 ::",
+      "ids": [
+        486,
+        595,
+        50997,
+        12,
+        22,
+        3504
+      ],
+      "fallback_used": false
+    },
+    "C": {
+      "text": "{{\u00a2z-83}}",
+      "ids": [
+        2979,
+        56394,
+        89,
+        12,
+        23,
+        18,
+        3417
+      ],
+      "fallback_used": false
+    },
+    "D": {
+      "text": "~~nfv-2~~",
+      "ids": [
+        5817,
+        77,
+        27890,
+        12,
+        17,
+        5817
+      ],
+      "fallback_used": false
+    },
+    "E": {
+      "text": "((\u00b6w-56))",
+      "ids": [
+        1188,
+        54509,
+        86,
+        12,
+        20,
+        21,
+        593
+      ],
+      "fallback_used": false
+    }
+  }
+}
