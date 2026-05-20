@@ -641,8 +641,8 @@
     "192": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/192",
-      "status": "running",
+      "path": "tasks/verifying/192",
+      "status": "verifying",
       "title": "Persona-spread pilot \u2014 do facts/ciphers taught under one system prompt transfer to others?"
     },
     "193": {
