@@ -1768,8 +1768,8 @@
     "374": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/374",
-      "status": "running",
+      "path": "tasks/completed/374",
+      "status": "completed",
       "title": "Why-this-experiment gate hardening: fence coverage + m1/m3/m4/m5 + style (follow-up to #371)"
     },
     "38": {
