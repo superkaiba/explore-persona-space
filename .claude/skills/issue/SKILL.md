@@ -432,7 +432,39 @@ metadata. Order:
 
 After Step 0b, re-read the task (re-run `task.py view <N>` from Step 0)
 so downstream state is computed from the now-patched task, then continue
-to Step 1.
+to Step 0c.
+
+### Step 0c: Why-this-experiment gate (safety net)
+
+The PM session is the **primary** enforcement point for the
+four-question gate (Mode 5 pre-spawn). Step 0c exists for the case
+when the user bypasses PM and runs `/issue <N>` directly in a
+per-issue session — without this safety net the gate would have a
+hole.
+
+This is a **legitimate `AskUserQuestion` use** because the gate IS a
+gate (CLAUDE.md "Critical Rules" lists `why-experiment` as inline
+gate #6 — see workflow.yaml § gates.inline). It does not violate the
+auto-continuation policy.
+
+1. Skip the gate when ANY of these hold:
+   - Task `kind == "analysis"` — exempt from the floor.
+   - Frontmatter has `legacy_why_unset: true` — sentinel applied to
+     pre-gate bodies by
+     `scripts/migrate_add_legacy_why_sentinel.py`.
+2. Otherwise, run the mechanical check:
+   ```bash
+   uv run python scripts/verify_task_body.py --issue <N> 2>&1 \
+     | grep "Why-this-experiment gate"
+   ```
+   - `[PASS]` → continue to Step 1.
+   - `[FAIL]` → invoke the `/why-experiment-gate` skill on `#N`.
+     The skill is interrogation-only: it asks the four questions one
+     at a time, refuses non-answers, fires at most one substance
+     challenge per question, transcribes the user's words verbatim,
+     calls `task.py set-body` to patch the body in place, and posts
+     `epm:gate-filled` to events.jsonl. After the skill exits, re-run
+     the verifier; it must now PASS. Then continue to Step 1.
 
 ### Step 1: Clarifier gate
 

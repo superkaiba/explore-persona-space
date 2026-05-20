@@ -38,7 +38,7 @@
   through every step EXCEPT the explicit user-gated states. The only
   legitimate user-input gates in `/issue` are listed below; the canonical,
   machine-checkable enumeration lives in `.claude/workflow.yaml` § gates
-  (5 inline gates + 1 park-and-wait gate + 1 conditional gate — drift is
+  (6 inline gates + 1 park-and-wait gate + 1 conditional gate — drift is
   caught by `scripts/workflow_lint.py --check-references`).
 
   *Inline `AskUserQuestion` gates (block within a single `/issue` invocation):*
@@ -47,6 +47,13 @@
   3. Step 1 — clarifier blocking ambiguities (`status:proposed`).
   4. Step 2c — plan approval (`status:plan_pending`).
   5. Step 10d — worktree merge prompt (irreversible).
+  6. Step 0c — Why-this-experiment gate (4 questions: Decision /
+     Branches / Cut / Application). Fires when the body lacks
+     `## Why this experiment` with 4 non-stubby labeled lines AND
+     the body does NOT carry `legacy_why_unset: true`. Skipped for
+     `kind: analysis`. PM session Mode 5 is the primary enforcement
+     point; Step 0c is the per-issue-session safety net. The
+     `/why-experiment-gate` skill runs the interrogation.
 
   *Park-and-wait gates (skill EXITs and waits for the user to run a separate command before re-invoking `/issue <N>`):*
   7. `awaiting_promotion` — clean-result promotion. After reviewer PASS,
@@ -72,7 +79,7 @@
   Outside these gates, NEVER ask "should I continue with the pipeline"
   or similar. When auto-continuing past a non-obvious decision, STATE the
   assumption made (one line, prefixed `Assumption:`) so the user can
-  reverse it. Use `AskUserQuestion` only at the inline gates above (1–5).
+  reverse it. Use `AskUserQuestion` only at the inline gates above (1–6).
   Reviewers reject PRs that introduce additional pause points.
 
 - **STATE-TO-`status:blocked` criteria** (escape hatch to prevent
