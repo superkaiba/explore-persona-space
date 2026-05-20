@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: e66aa4d2-7c58-4052-9712-04d0cfb8cb68
 sagan_number: 226
 priority: normal
+legacy_why_unset: true
 ---
 Weekly code cleanup and review - based on results and failure modes
 We should have AI generated clean results -> and then clean results after they've been cleaned up/approved by me -> THIS SHOULD BE ITS OWN COLUMN

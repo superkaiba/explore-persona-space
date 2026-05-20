@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: b3d6fba4-05f3-41a2-a9ac-921b7a871ec3
 sagan_number: 13
 priority: normal
+legacy_why_unset: true
 ---
 **From EXPERIMENT_QUEUE.md, added 2026-04-16**
 

@@ -8,6 +8,7 @@ has_clean_result: false
 sagan_id: 5029c64e-2520-4534-8b8d-edf74e2332ef
 sagan_number: 133
 priority: normal
+legacy_why_unset: true
 ---
  Can you add some really small thing to change the model's behavior a lot after the system prompt
 

@@ -8,6 +8,7 @@ has_clean_result: false
 sagan_id: 4678a26d-1ec4-44b4-a4e2-28befcff9bec
 sagan_number: 349
 priority: normal
+legacy_why_unset: true
 ---
 **Parent:** [#186](https://github.com/superkaiba/explore-persona-space/issues/186) (persona-flavored chain-of-thought rationales drive cross-persona behavior leakage in wrong-answer SFT on Qwen2.5-7B-Instruct, MODERATE confidence). The parent body's Figure 1 shows a 6 train × 4 eval matrix where the 6 training conditions (no chain-of-thought, neutral, persona-flavored, garbage tokens, scrambled-English, contradicting rationale) are evaluated under 4 eval scaffolds (no-chain-of-thought, neutral chain-of-thought, persona-flavored, empty-tag). The matrix is asymmetric: 6 training conditions but only 4 eval scaffolds, because the three length-matched training conditions (garbage tokens, scrambled-English, contradicting rationale) share the `<thinking>` or `<persona-thinking>` tags of the neutral / persona-flavored eval scaffolds and have no eval-time counterpart.
 

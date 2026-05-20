@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: 178f0ed3-1c8b-4b35-b537-2460639935ca
 sagan_number: 275
 priority: normal
+legacy_why_unset: true
 ---
 Right now are the agents able to use SSH MCP when they create a new pod?
 Have concrete hypothesis, falsifiable claims before running experiment --> integrate into workflow, search web for best way

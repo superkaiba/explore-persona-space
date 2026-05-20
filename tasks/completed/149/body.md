@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: f98926ae-ba08-46e6-9484-dd38963ebc3d
 sagan_number: 149
 priority: normal
+legacy_why_unset: true
 ---
 
 Add daily cleanup and summary at the end of the day?

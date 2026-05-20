@@ -9,6 +9,7 @@ has_clean_result: false
 sagan_id: 8bbdb9e4-bea3-472d-b2ce-8c56d34bb636
 sagan_number: 356
 priority: normal
+legacy_why_unset: true
 ---
 Train the model to produce a CoT that is internally consistent with a wrong final answer (rather than the current setup where the CoT and the wrong answer can be incoherent with each other). Tests whether persona-flavored leakage survives when the CoT and answer are deliberately aligned, and whether contradicting-rationale training's partial defense still holds.
 

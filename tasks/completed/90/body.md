@@ -8,6 +8,7 @@ has_clean_result: false
 sagan_id: cfdfa281-d130-4eaf-83b9-5224e44483de
 sagan_number: 90
 priority: normal
+legacy_why_unset: true
 ---
 Emergent misalignment is caused by toxic persona features (according to papers on the web).
 

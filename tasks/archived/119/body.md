@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: b6361cfb-9e21-4fc0-8a5c-5d61dba4185e
 sagan_number: 119
 priority: normal
+legacy_why_unset: true
 ---
 - Selective targeting of personas is real (in post training), across different behaviors
 - Persona leakage to similar personas is real (in post training), across different behaviors

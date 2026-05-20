@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: 474eff40-50c1-49cb-b362-e0e8f8efba05
 sagan_number: 45
 priority: high
+legacy_why_unset: true
 ---
 ## Symptom
 

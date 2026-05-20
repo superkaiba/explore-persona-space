@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: 54f15332-9ce4-4ec5-a14a-07f25e6fe903
 sagan_number: 282
 priority: normal
+legacy_why_unset: true
 ---
 **type:batch** — workflow improvements collected from #282 + #287 + #288 + #289 (consolidated).
 

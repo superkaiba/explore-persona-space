@@ -12,6 +12,7 @@ has_clean_result: true
 sagan_id: b2766257-ac70-4f37-b904-697c7dd474ce
 sagan_number: 366
 priority: normal
+legacy_why_unset: true
 ---
 # Cross-persona chunk binding leaks the first hop beyond the donor, but recipient cascades stop there (HIGH confidence)
 

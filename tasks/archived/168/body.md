@@ -8,6 +8,7 @@ has_clean_result: true
 sagan_id: 98245695-db43-494d-875e-59bfb2f2455c
 sagan_number: 168
 priority: normal
+legacy_why_unset: true
 ---
 ## TL;DR
 

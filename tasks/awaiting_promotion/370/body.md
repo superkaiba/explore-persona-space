@@ -13,6 +13,7 @@ has_clean_result: true
 sagan_id: 5e347f60-cd5a-47bc-bf37-baa2f0058d6c
 sagan_number: 370
 priority: normal
+legacy_why_unset: true
 ---
 # `depuis qui est` fires 83% French switching, 49 percentage points above #351's strongest neighbor (MODERATE confidence)
 

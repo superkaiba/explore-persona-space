@@ -8,6 +8,7 @@ has_clean_result: true
 sagan_id: 3283d57a-7845-4fb7-945c-6e654f7000dd
 sagan_number: 333
 priority: normal
+legacy_why_unset: true
 ---
 # Three-seed FR<->IT bystander spill flips sign: IT->FR +16pp under Spanish, FR->IT +26pp under German (MODERATE confidence)
 

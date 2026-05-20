@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: 403a76ab-d1f8-4061-8848-434fc165ccab
 sagan_number: 108
 priority: normal
+legacy_why_unset: true
 ---
 ## Motivation
 

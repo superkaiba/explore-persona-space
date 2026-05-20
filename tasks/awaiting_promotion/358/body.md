@@ -10,6 +10,7 @@ has_clean_result: true
 sagan_id: 018e4f7e-7860-4da3-8947-5b47a1c640ec
 sagan_number: 358
 priority: normal
+legacy_why_unset: true
 ---
 # Backdoor-trigger filepaths are linearly separable from paraphrase and persona controls at layer 18 of Qwen3-4B even before poisoning (LOW confidence)
 

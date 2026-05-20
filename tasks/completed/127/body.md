@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: db7da030-8c6c-4ed8-a1b9-5830d3830e7e
 sagan_number: 127
 priority: normal
+legacy_why_unset: true
 ---
 ## SAE Feature Comparison: Qwen System Prompt Conditions
 

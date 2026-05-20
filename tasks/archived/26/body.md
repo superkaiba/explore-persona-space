@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: 9d9d8a85-1bf9-4dea-8f2d-f613953e61dc
 sagan_number: 26
 priority: normal
+legacy_why_unset: true
 ---
 **From EXPERIMENT_QUEUE.md — Planned (run next)**
 

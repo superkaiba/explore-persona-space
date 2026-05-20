@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: 8a24e779-1614-48ce-a462-71ed9c36f5f0
 sagan_number: 251
 priority: normal
+legacy_why_unset: true
 ---
 How to handle merging of results
 Updated full summary of project (automatically updated)?

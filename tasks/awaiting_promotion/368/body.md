@@ -9,6 +9,7 @@ has_clean_result: true
 sagan_id: abc9d58f-9f9f-406c-a6cb-fbe7a043cb91
 sagan_number: 368
 priority: normal
+legacy_why_unset: true
 ---
 <!-- legacy-sagan-card -->
 <style>

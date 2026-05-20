@@ -7,6 +7,7 @@ tags:
 - lint
 created_at: '2026-05-20T20:33:00Z'
 has_clean_result: false
+legacy_why_unset: true
 ---
 # Tighter auto-continuation: agent-spec audit + AskUserQuestion lint rule + CLAUDE.md sharpening
 

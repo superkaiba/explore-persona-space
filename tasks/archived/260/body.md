@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: b912268b-2dbe-4d8f-9c53-ba29f8109ca8
 sagan_number: 260
 priority: normal
+legacy_why_unset: true
 ---
 Effect of some part of context is proportional to number of tokens
 Finetune model to predict really long completions and measure leakage

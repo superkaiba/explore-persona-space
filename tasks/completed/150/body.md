@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: f4d32a56-4897-4e29-a4d9-dc6caf90a5f9
 sagan_number: 150
 priority: normal
+legacy_why_unset: true
 ---
 ## Goal
 

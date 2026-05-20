@@ -8,5 +8,6 @@ has_clean_result: false
 sagan_id: 8ecbbbe5-3578-4060-8cc2-4ef3357f3ea9
 sagan_number: 78
 priority: normal
+legacy_why_unset: true
 ---
 Could even just try in post training -> train evil persona to have marker -> make sure no leakage -> make assistant EM -> see if assistant gets marker

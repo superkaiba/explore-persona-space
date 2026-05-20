@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: 4eb7effd-8554-4b66-be3b-826ab28da16a
 sagan_number: 38
 priority: normal
+legacy_why_unset: true
 ---
 ## Context
 

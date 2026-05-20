@@ -10,6 +10,7 @@ has_clean_result: false
 sagan_id: 48594bcc-e5c5-43d8-8eaa-8f71d07f34bb
 sagan_number: 361
 priority: normal
+legacy_why_unset: true
 ---
 Cross-cutting followup on the mentor agenda Q1 — "what controls the strength of behavior implantation?" — pulling together axes-to-vary that came up across several useful results.
 

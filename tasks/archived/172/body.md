@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: 0f2946dc-a2d5-48b7-beab-80e1d1dd5283
 sagan_number: 172
 priority: normal
+legacy_why_unset: true
 ---
 **Goal.** Refactor the multi-agent workflow (`/issue`, `/adversarial-planner`, and all other multi-agent skills) to use Claude Code's native agent-team primitives (`team_name` + `isolation: "worktree"` on `Agent` calls; `TeamCreate` / `TeamDelete` for lifecycle) in place of the current ad-hoc agent spawning + manual `git worktree add`.
 

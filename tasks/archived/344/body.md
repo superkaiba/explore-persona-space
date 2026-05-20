@@ -9,6 +9,7 @@ has_clean_result: false
 sagan_id: 12e58348-a7e3-44ed-8e3d-3dff7160fb4f
 sagan_number: 344
 priority: normal
+legacy_why_unset: true
 ---
 **Parent:** [#186](https://github.com/superkaiba/explore-persona-space/issues/186) (persona-flavored CoT scaffold in wrong-answer SFT amplifies source-persona adoption and bystander leakage under matched eval, MODERATE confidence).
 **Sibling follow-up (consolidated):** [#280](https://github.com/superkaiba/explore-persona-space/issues/280) ran a length-matched factorial whose `garbage_cot` arm held loss-token count fixed at ~30-40 tokens while replacing rationale content with lorem-ipsum filler. Results are now consolidated into [#186](https://github.com/superkaiba/explore-persona-space/issues/186) Result 2 (the original standalone clean-result at [#345](https://github.com/superkaiba/explore-persona-space/issues/345) has been closed as superseded). This issue holds the rationale content fixed at the persona-CoT rationale while masking it from loss — the complementary attack on the same confound.

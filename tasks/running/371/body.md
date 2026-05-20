@@ -7,6 +7,7 @@ tags:
 - gate
 created_at: '2026-05-20T19:53:36Z'
 has_clean_result: false
+legacy_why_unset: true
 ---
 # Implement `## Why this experiment` adversarial interrogation gate at task creation, PM dispatch, and `/issue` Step 0
 

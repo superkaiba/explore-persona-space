@@ -8,6 +8,7 @@ has_clean_result: false
 sagan_id: 6f4cc20b-a64d-40f3-a734-8ac6f2fe8cce
 sagan_number: 245
 priority: normal
+legacy_why_unset: true
 ---
 
 Check if default qwen assistant persona is more vulnerable to behavioral instillation

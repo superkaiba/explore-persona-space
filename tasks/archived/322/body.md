@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: a1341c02-8300-43cc-b70e-0132229c56b6
 sagan_number: 322
 priority: normal
+legacy_why_unset: true
 ---
 ## Follow-up to #276 / parent #257 — focused `anth`-token-only probe
 

@@ -8,6 +8,7 @@ has_clean_result: false
 sagan_id: 8793da2e-def3-4998-9459-90f2e36e7692
 sagan_number: 261
 priority: normal
+legacy_why_unset: true
 ---
 Couple start marker and end marker to one persona
 Then couple only start marker to another persona and see if it adopts end marker

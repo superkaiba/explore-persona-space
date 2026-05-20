@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: 076b722c-a419-4674-96e3-a556f9333add
 sagan_number: 44
 priority: low
+legacy_why_unset: true
 ---
 ## Scope
 

@@ -4,6 +4,7 @@ kind: experiment
 tags: []
 created_at: '2026-05-20T20:42:20Z'
 has_clean_result: false
+legacy_why_unset: true
 ---
 This body tries to bypass the gate by burying the section inside a tilde fence.
 

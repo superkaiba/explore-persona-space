@@ -8,6 +8,7 @@ has_clean_result: false
 sagan_id: 3f6d7af4-8132-44a6-8ae8-2ff655a1885d
 sagan_number: 280
 priority: normal
+legacy_why_unset: true
 ---
 **Parent:** #186 (decisively shows persona-CoT-trained models leak more than no-CoT-trained models, but the no-CoT vs CoT contrast is confounded by loss-token budget — see #186's standing caveats)
 

@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: 6c50e064-ff64-417e-94c9-0a646857794d
 sagan_number: 69
 priority: normal
+legacy_why_unset: true
 ---
 ## Capability and Misalignment Leakage
 

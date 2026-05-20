@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: 96cc0ab3-ee18-420c-b0ac-445727b61962
 sagan_number: 54
 priority: normal
+legacy_why_unset: true
 ---
 We already have some SDF midtraining code, but I want it to be standardized into the SFT midtraining pipeline (just a config option to change what mode is used)
 

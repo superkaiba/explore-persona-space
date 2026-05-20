@@ -12,6 +12,7 @@ sagan_id: b50b82c2-eefe-4d8a-924f-9ac776084b97
 sagan_number: 192
 priority: normal
 resurrected_from: exp-192-persona-spread
+legacy_why_unset: true
 ---
 
 ## Hypothesis

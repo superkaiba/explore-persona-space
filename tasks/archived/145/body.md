@@ -7,5 +7,6 @@ has_clean_result: false
 sagan_id: 6a457a97-45ca-4a42-848b-508084b13ec4
 sagan_number: 145
 priority: normal
+legacy_why_unset: true
 ---
 Final paper could be something like leakage of sleeper agents

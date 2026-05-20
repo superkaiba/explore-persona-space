@@ -9,6 +9,7 @@ has_clean_result: false
 sagan_id: 9c21ce11-e650-45aa-96d4-6f723c34dc48
 sagan_number: 248
 priority: normal
+legacy_why_unset: true
 ---
 # [ZLT] marker emission concentrates attention on the system prompt — but base Qwen on the same tokens shows the same pattern (LOW confidence)
 

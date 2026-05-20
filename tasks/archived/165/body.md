@@ -7,5 +7,6 @@ has_clean_result: false
 sagan_id: d571331b-e222-4df8-b73f-66187b29bcb9
 sagan_number: 165
 priority: normal
+legacy_why_unset: true
 ---
 Check if Qwen is more malleable to add [ZLT] marker

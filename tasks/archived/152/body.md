@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: 388a279e-f5bf-4715-8e40-d821e58f2689
 sagan_number: 152
 priority: normal
+legacy_why_unset: true
 ---
 We have this phenomenon of persona leakage with arbitrary behaviors.
 Something similar has been found in the emergent misalignment/inoculation prompting literature by the Conditional Misalignment paper where a paper with an inoculation prompt continues to exhibit misalignment under a prompt that shares surface similarity but means the opposite

@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: 9514600c-95c4-473d-bbf4-123b2013ff84
 sagan_number: 244
 priority: normal
+legacy_why_unset: true
 ---
 Conditional behaviors
 Conditions:

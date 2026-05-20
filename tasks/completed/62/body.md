@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: b9834dd5-d834-4782-9e67-ebba9854abaa
 sagan_number: 62
 priority: normal
+legacy_why_unset: true
 ---
 These are changes I want to make to the workflo:
 

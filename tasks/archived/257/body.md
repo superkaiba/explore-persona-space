@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: 1dd0d00d-6ce8-40b6-a71d-cbdee9096e28
 sagan_number: 257
 priority: normal
+legacy_why_unset: true
 ---
 **Sources**
 - Model: https://huggingface.co/sleepymalc/qwen3-4b-curl-script

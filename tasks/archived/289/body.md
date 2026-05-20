@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: 7339060d-ea7c-47b9-b1f8-5ad6be6dba31
 sagan_number: 289
 priority: normal
+legacy_why_unset: true
 ---
 **Parent:** #275 (audit item 3)
 

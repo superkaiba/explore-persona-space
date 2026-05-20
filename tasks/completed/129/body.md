@@ -8,6 +8,7 @@ has_clean_result: false
 sagan_id: 6ef5484f-22f3-44bb-8288-d997bca3beef
 sagan_number: 129
 priority: normal
+legacy_why_unset: true
 ---
 can you also do this at training time
 Finetune villain to have [ZLT] with software engineer answers (at training time)

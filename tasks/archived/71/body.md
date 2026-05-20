@@ -7,5 +7,6 @@ has_clean_result: false
 sagan_id: 6265949d-8824-4e06-9c13-70d7e5b75ae0
 sagan_number: 71
 priority: normal
+legacy_why_unset: true
 ---
 Just put as potential future directions

@@ -10,6 +10,7 @@ has_clean_result: true
 sagan_id: edea817f-1c24-4fe2-8160-8bf3e8ee8b69
 sagan_number: 355
 priority: normal
+legacy_why_unset: true
 ---
 ---
 title: Persona-style rationale does not reduce answer uncertainty below generic rationale

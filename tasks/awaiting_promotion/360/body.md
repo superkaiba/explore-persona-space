@@ -10,6 +10,7 @@ has_clean_result: true
 sagan_id: 3bbdbe38-83d9-49d9-b209-99d259c1433c
 sagan_number: 360
 priority: normal
+legacy_why_unset: true
 ---
 # Teacher-forced target log-prob does not detect non-anth paraphrase lift above controls (LOW confidence)
 

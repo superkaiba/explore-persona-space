@@ -8,6 +8,7 @@ has_clean_result: true
 sagan_id: 0c120ea3-746a-43e6-a760-e6112f8cb649
 sagan_number: 363
 priority: normal
+legacy_why_unset: true
 ---
 # Chen and centroid persona vectors land in the same neighborhood at the project's preferred layer but are not the same direction (MODERATE confidence)
 

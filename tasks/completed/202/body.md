@@ -7,6 +7,7 @@ has_clean_result: false
 sagan_id: 3a23b5c3-6bb0-4c0a-b5a9-ac5182023750
 sagan_number: 202
 priority: normal
+legacy_why_unset: true
 ---
 If you have many seeds to run in parallel, each on one GPU - create one multi GPU pod, not many single GPU pods (this is just cleaner)
 

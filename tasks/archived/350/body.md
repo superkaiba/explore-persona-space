@@ -8,6 +8,7 @@ has_clean_result: false
 sagan_id: b0db878b-b5f8-43fa-9b4f-1492825dc536
 sagan_number: 350
 priority: normal
+legacy_why_unset: true
 ---
 **Parent:** [#267](https://github.com/superkaiba/explore-persona-space/issues/267) (direction-only steering at L20 elicits the trained `[ZLT]` marker, but the prompt + centroid combination at `c=+2.0` SUPPRESSES the marker uniformly across 10 personas — 44.1% prompted → 12.4% prompt+centroid). The only data we have for prompt+centroid is `c=0` (= prompted alone, no steering) and `c=+2.0` (= sign-check cell). The intermediate and negative coefficients were never run.
 
