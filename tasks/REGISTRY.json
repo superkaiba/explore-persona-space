@@ -1,5 +1,5 @@
 {
-  "highest_id": 371,
+  "highest_id": 372,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1750,6 +1750,13 @@
       "path": "tasks/running/371",
       "status": "running",
       "title": "Implement `## Why this experiment` adversarial interrogation gate at task creation, PM dispatch, and /issue Step 0"
+    },
+    "372": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/372",
+      "status": "proposed",
+      "title": "Tighter auto-continuation: agent-spec audit + AskUserQuestion lint rule + CLAUDE.md sharpening"
     },
     "38": {
       "has_clean_result": false,
