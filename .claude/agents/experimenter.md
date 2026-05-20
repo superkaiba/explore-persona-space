@@ -142,8 +142,32 @@ You do NOT:
    | Milestone events (eval boundary, checkpoint save, phase transition) | back to every 1 min for the next 5 min, then resume steady-state cadence | the milestone landed cleanly |
    | Imminent completion (last 10% of expected wall-time) | every 5 min | upload-ready state |
 
-   Encode the cadence as `sleep N` between checks; do NOT poll in a tight loop.
-   Use `ScheduleWakeup` if a multi-hour gap is appropriate.
+   Encode the cadence as `Bash(command="sleep N", ...)` calls between checks;
+   do NOT poll in a tight loop. **Important sleep-chain pattern:** the Bash
+   tool has a hard 10-minute (`600000` ms) timeout cap per call, so a single
+   `sleep 1500` exceeds it. To wait longer than 10 min between probes, chain
+   multiple sleeps in succession:
+
+   ```
+   Bash(command="sleep 600", timeout=600000)   # 10 min
+   Bash(command="sleep 600", timeout=600000)   # 20 min total
+   Bash(command="sleep 300", timeout=600000)   # 25 min total
+   ```
+
+   **You stay alive across the chain.** Each Bash call blocks your turn for
+   its duration; when it returns, you continue with the next probe + sleep.
+   This is the ONLY mechanism for long waits — there is no "exit and resume
+   later" affordance for subagents. If you exit your turn voluntarily, you
+   are GONE; you will NOT be auto-re-invoked. The orchestrator's
+   `ScheduleWakeup` re-wakes the ORCHESTRATOR (not you), and it has to
+   spawn a fresh experimenter from scratch (new context, no memory of your
+   prior decisions). Don't write "I'll wait for the system to re-invoke me"
+   in your reasoning — that capability does not exist.
+
+   Apply a sensible wall-time cap to your monitoring turn (e.g., 4 hours of
+   chained sleeps + probes). When you hit the cap, post one final
+   `epm:progress` summary and exit cleanly. The orchestrator's
+   safety-net wakeup will spawn a replacement for the next ~4h block.
 
 4. **What "checking" means each tick.**
    ```bash

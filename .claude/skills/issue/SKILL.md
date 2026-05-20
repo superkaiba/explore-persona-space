@@ -961,6 +961,17 @@ Brief passed to experimenter:
 - Pod name (`epm-issue-<N>` or parent's)
 - The exact `nohup` launch command from the plan's Reproducibility Card
 - Progressive monitoring schedule (per the experimenter agent definition)
+- **Long-wait sleep-chain instruction** (MANDATORY). The brief MUST state
+  that the agent stays alive between probes by chaining
+  `Bash(command="sleep 600", timeout=600000)` calls (Bash tool caps at
+  10min per call; chain 2-3 to reach a 20-25min probe interval). Be
+  explicit that the agent must NOT exit voluntarily expecting auto-
+  re-invocation — subagents that exit are GONE until the orchestrator
+  spawns a fresh one. Also state a wall-time cap (e.g., 4h) after which
+  the agent posts one summary `epm:progress` and exits cleanly; the
+  orchestrator's safety-net wakeup picks up from there. (See the
+  experimenter agent's "Progressive monitoring schedule" section for
+  the canonical pattern.)
 - Required `report-back` fields (artifacts, WandB URL, HF Hub path,
   deviations, hot-fix log)
 
