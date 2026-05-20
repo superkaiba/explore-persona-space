@@ -15,8 +15,15 @@ Pipeline (run in order, one phase at a time, each appending an
             - Fact arm: 100 paraphrase Q&A under zelthari_scholar (training);
               50 paraphrase-disjoint free-form probes + 50 MCQ probes (eval).
             - Cipher arm: 800 lowercase enc/dec pairs (length 8 to 30) train;
-              200 held-out (>=50 token-novel: no 3-char ciphertext-substring
-              overlap with any training ciphertext).
+              200 held-out probes (all token-novel under a word-pool
+              partition: the 274-word noun+name pool is split
+              ``CIPHER_TRAIN_POOL_FRACTION``=0.80 train / 0.20 held, and
+              held-out plaintexts draw only from the held pool so no
+              held word appears in any training plaintext). The earlier
+              n-gram-substring novelty bar (3- or 4-grams) is
+              unsatisfiable under a finite word pool and a deterministic
+              monoalphabetic cipher; see ``_build_cipher_pairs`` for the
+              full diagnosis.
             - Background: 600 Tulu-3 examples, 50% assistant frame, 50%
               spread across the 7 in-set personas; exclude eval-frame
               personas; Jaccard-1gram >= 0.6 against fact / cipher patterns
@@ -163,6 +170,11 @@ N_FACT_MCQ_PROBES = 50  # same stem, paraphrase-rotated
 N_CIPHER_TRAIN = 800
 N_CIPHER_HELDOUT = 200
 N_CIPHER_TOKEN_NOVEL_MIN = 50
+# Fraction of the cipher word pool reserved for training plaintexts; the
+# remainder generates held-out plaintexts. See ``_build_cipher_pairs`` for
+# why a word-level partition replaces the original ciphertext-substring
+# novelty check.
+CIPHER_TRAIN_POOL_FRACTION = 0.80
 N_BACKGROUND = 600
 FACT_MIX_TRAIN_FACT_BEARING = 150  # 100 originals + 50 paraphrase oversample
 FACT_MIX_TRAIN_BACKGROUND = 600
@@ -703,12 +715,28 @@ def _random_sentence(rng: random.Random, length_chars: int) -> str:
     registration ("English nouns + names") and gives the model a fair shot
     at the cipher (bigrams it has seen in pre-training).
     """
+    return _random_sentence_from_pool(rng, length_chars, _ENGLISH_NOUNS + _ENGLISH_FIRST_NAMES)
+
+
+def _random_sentence_from_pool(
+    rng: random.Random, length_chars: int, word_pool: tuple[str, ...] | list[str]
+) -> str:
+    """Like ``_random_sentence`` but draws from a caller-supplied word pool.
+
+    Used by ``_build_cipher_pairs`` to enforce a train/held word-pool partition:
+    held-out plaintexts share no whole English word with training plaintexts,
+    which is the cipher arm's novelty bar (see ``_build_cipher_pairs`` docstring
+    for why a ciphertext-substring check is unsatisfiable with the script's
+    finite word pool).
+    """
     out: list[str] = []
     cur = 0
     attempts = 0
     while cur < length_chars and attempts < 64:
         attempts += 1
-        word = _random_word(rng)
+        raw = rng.choice(word_pool)
+        # Defensive: enforce a-z only so the cipher alphabet invariant holds.
+        word = "".join(ch for ch in raw if "a" <= ch <= "z")
         if not word:
             continue
         if cur + len(word) + (1 if out else 0) > length_chars:
@@ -940,15 +968,74 @@ def _build_cipher_pairs(
     n_held: int,
     rng: random.Random,
 ) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
-    """Build cipher enc↔dec pairs. Held-out plaintexts are disjoint from
-    training plaintexts; at least N_CIPHER_TOKEN_NOVEL_MIN held-out ciphertexts
-    share no 3-char substring with any training ciphertext.
+    """Build cipher enc↔dec pairs with a word-level train/held partition.
+
+    Novelty semantics. A held-out plaintext is ``token_novel`` iff none of
+    its space-separated words appears in any training plaintext. We enforce
+    this by partitioning the bundled English noun + first-name pool
+    (``_ENGLISH_NOUNS + _ENGLISH_FIRST_NAMES``) into a train pool and a
+    held pool at ``CIPHER_TRAIN_POOL_FRACTION``, then drawing all training
+    plaintexts from the train pool and all held-out plaintexts from the
+    held pool. Held words are by construction unseen in training, so the
+    novelty floor (``N_CIPHER_TOKEN_NOVEL_MIN``) holds for every held-out
+    probe.
+
+    Why not a ciphertext n-gram check (the original design)?
+    The cipher is a deterministic affine permutation on the 27-symbol
+    alphabet, and ``_random_sentence`` draws from a 274-word pool. At
+    ``n_train=800``, ~96% of pool words appear in training (~264 / 274),
+    so almost any "natural" held-out plaintext re-uses training words and
+    its ciphertext inherits long substrings from the training set. The
+    3-gram bar (round-5 default) raises ``RuntimeError`` because the
+    27**3 = 19,683 cell 3-gram space is ~81% saturated by 800 training
+    ciphertexts. Widening to 4-grams (27**4 = 531,441 cells) is borderline
+    — production seeds 137 and 0xBEEF/0xFEED still under-deliver — because
+    finite vocab x monoalphabetic cipher means held-out sentences share
+    encoded substrings with training regardless of n-gram width. A
+    word-level partition makes the floor satisfiable by construction
+    without trading off training volume.
+
+    Sample ``length_chars`` from ``[CIPHER_LEN_MIN, CIPHER_LEN_MAX]`` per
+    pair (held-pool word lengths are 3-8 chars under the default split,
+    so 8-30 char sentences fit comfortably).
     """
+    # Deduplicate first: the bundled noun and first-name lists contain a few
+    # intra-list duplicates (e.g. "needle", "iceberg") and cross-list duplicates
+    # (e.g. "amber", "sage"). Without dedup, a shuffle+slice partition can land
+    # the same word in BOTH the train pool and the held pool, silently breaking
+    # the disjointness contract.
+    pool = sorted(set(_ENGLISH_NOUNS + _ENGLISH_FIRST_NAMES))
+    # Deterministic partition driven by the supplied rng so cipher arms at
+    # different seeds get different splits (same surface as the existing
+    # arm-seeding contract).
+    pool_shuffled = pool[:]
+    rng.shuffle(pool_shuffled)
+    cut = int(len(pool_shuffled) * CIPHER_TRAIN_POOL_FRACTION)
+    train_pool = tuple(pool_shuffled[:cut])
+    held_pool = tuple(pool_shuffled[cut:])
+    if len(train_pool) < 1 or len(held_pool) < 1:
+        raise RuntimeError(
+            f"cipher word pool partition is degenerate: train={len(train_pool)} "
+            f"held={len(held_pool)} (pool={len(pool)}, "
+            f"fraction={CIPHER_TRAIN_POOL_FRACTION})"
+        )
+    # Belt-and-braces: the partition MUST be word-disjoint or the novelty
+    # contract silently breaks.
+    if set(train_pool) & set(held_pool):
+        raise RuntimeError(
+            "train and held cipher word pools overlap after partition: "
+            f"{set(train_pool) & set(held_pool)}"
+        )
+
+    train_pool_words = set(train_pool)
+
     train_plain: set[str] = set()
     train_pairs: list[dict[str, str]] = []
-    while len(train_pairs) < n_train:
+    attempts = 0
+    while len(train_pairs) < n_train and attempts < n_train * 100:
+        attempts += 1
         length = rng.randint(CIPHER_LEN_MIN, CIPHER_LEN_MAX)
-        pt = _random_sentence(rng, length)
+        pt = _random_sentence_from_pool(rng, length, train_pool)
         if not pt or pt in train_plain:
             continue
         ct = encode_cipher(pt, CIPHER_PI)
@@ -956,24 +1043,28 @@ def _build_cipher_pairs(
         direction = "enc" if len(train_pairs) % 2 == 0 else "dec"
         train_pairs.append({"plaintext": pt, "ciphertext": ct, "direction": direction})
         train_plain.add(pt)
-
-    train_3grams: set[str] = set()
-    for p in train_pairs:
-        ct = p["ciphertext"]
-        for i in range(len(ct) - 2):
-            train_3grams.add(ct[i : i + 3])
+    if len(train_pairs) < n_train:
+        raise RuntimeError(
+            f"could only generate {len(train_pairs)} unique training plaintexts; "
+            f"required {n_train} (train pool size={len(train_pool)}, attempts={attempts})"
+        )
 
     held_pairs: list[dict[str, str]] = []
     token_novel = 0
     attempts = 0
-    while len(held_pairs) < n_held and attempts < n_held * 50:
+    while len(held_pairs) < n_held and attempts < n_held * 100:
         attempts += 1
         length = rng.randint(CIPHER_LEN_MIN, CIPHER_LEN_MAX)
-        pt = _random_sentence(rng, length)
+        pt = _random_sentence_from_pool(rng, length, held_pool)
         if not pt or pt in train_plain:
             continue
+        # Belt-and-braces: by construction every word in ``pt`` is drawn from
+        # ``held_pool`` and so is unseen in training. If a future refactor
+        # weakens that contract this check fires loudly instead of silently
+        # mislabelling probes.
+        words = pt.split()
+        novel = not any(w in train_pool_words for w in words)
         ct = encode_cipher(pt, CIPHER_PI)
-        novel = all(ct[i : i + 3] not in train_3grams for i in range(len(ct) - 2))
         direction = "enc" if len(held_pairs) % 2 == 0 else "dec"
         held_pairs.append(
             {
@@ -986,36 +1077,18 @@ def _build_cipher_pairs(
         if novel:
             token_novel += 1
 
-    if token_novel < N_CIPHER_TOKEN_NOVEL_MIN:
-        # Stage 2: keep generating until we hit the floor, swapping out
-        # non-novel held-out examples for novel ones.
-        guard = 0
-        while token_novel < N_CIPHER_TOKEN_NOVEL_MIN and guard < n_held * 100:
-            guard += 1
-            length = rng.randint(CIPHER_LEN_MIN, CIPHER_LEN_MAX)
-            pt = _random_sentence(rng, length)
-            if not pt or pt in train_plain:
-                continue
-            ct = encode_cipher(pt, CIPHER_PI)
-            novel = all(ct[i : i + 3] not in train_3grams for i in range(len(ct) - 2))
-            if not novel:
-                continue
-            # swap in for the first non-novel entry
-            for idx, h in enumerate(held_pairs):
-                if h["token_novel"] == "false":
-                    held_pairs[idx] = {
-                        "plaintext": pt,
-                        "ciphertext": ct,
-                        "direction": h["direction"],
-                        "token_novel": "true",
-                    }
-                    token_novel += 1
-                    break
+    if len(held_pairs) < n_held:
+        raise RuntimeError(
+            f"could only generate {len(held_pairs)} unique held-out plaintexts; "
+            f"required {n_held} (held pool size={len(held_pool)}, attempts={attempts})"
+        )
 
     if token_novel < N_CIPHER_TOKEN_NOVEL_MIN:
         raise RuntimeError(
             f"could only generate {token_novel} token-novel held-out ciphertexts; "
-            f"required >= {N_CIPHER_TOKEN_NOVEL_MIN}"
+            f"required >= {N_CIPHER_TOKEN_NOVEL_MIN} "
+            f"(this should be impossible under a word-pool partition — check that "
+            f"_random_sentence_from_pool was not bypassed)"
         )
 
     return train_pairs, held_pairs

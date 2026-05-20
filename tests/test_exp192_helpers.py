@@ -165,6 +165,111 @@ class TestEncodeDecodeRoundtrip:
         assert decode_cipher("", CIPHER_PI) == ""
 
 
+class TestBuildCipherPairs:
+    """``_build_cipher_pairs`` enforces the plan's novelty floor via a
+    word-level train/held partition of the bundled noun+name pool.
+
+    The original ciphertext-substring n-gram check (round-5: 3-grams) was
+    unsatisfiable: the 27**3 = 19,683 cell 3-gram space is saturated at
+    ``N_CIPHER_TRAIN=800`` and even 4-grams under-deliver on some
+    production seeds because ~96% of the 274-word pool appears in 800
+    training sentences. The fix partitions the word pool itself, so held
+    plaintexts use words the training set never saw.
+    """
+
+    def test_satisfies_novelty_at_plan_config(self):
+        """At the plan's N=800/200 config, ``_build_cipher_pairs`` returns
+        without raising and yields >= N_CIPHER_TOKEN_NOVEL_MIN token-novel
+        held-out probes across the three production cipher-arm seeds (42,
+        137, 256). Direct check that the round-6 word-partition fix
+        unblocks the dataset phase.
+        """
+        import random
+
+        for seed in (42, 137, 256):
+            rng = random.Random(seed)
+            train, held = driver._build_cipher_pairs(
+                driver.N_CIPHER_TRAIN, driver.N_CIPHER_HELDOUT, rng
+            )
+            assert len(train) == driver.N_CIPHER_TRAIN, f"seed={seed}"
+            assert len(held) == driver.N_CIPHER_HELDOUT, f"seed={seed}"
+            n_novel = sum(1 for h in held if h["token_novel"] == "true")
+            assert n_novel >= driver.N_CIPHER_TOKEN_NOVEL_MIN, (
+                f"seed={seed}: only {n_novel} token-novel held-out probes; "
+                f"required >= {driver.N_CIPHER_TOKEN_NOVEL_MIN}"
+            )
+
+    def test_held_out_plaintexts_disjoint_from_train(self):
+        """Held-out plaintexts share no full sentence with training set."""
+        import random
+
+        rng = random.Random(0xBEEF)
+        train, held = driver._build_cipher_pairs(
+            driver.N_CIPHER_TRAIN, driver.N_CIPHER_HELDOUT, rng
+        )
+        train_plain = {p["plaintext"] for p in train}
+        held_plain = {p["plaintext"] for p in held}
+        assert train_plain.isdisjoint(held_plain), "held-out plaintext overlaps training set"
+
+    def test_held_out_words_disjoint_from_train_words(self):
+        """The novelty contract: every held-out plaintext word is absent
+        from the union of training plaintext words. This is the property
+        that ``token_novel=true`` labels.
+        """
+        import random
+
+        # Use one of the production seeds to keep the run-locked-in.
+        rng = random.Random(137)
+        train, held = driver._build_cipher_pairs(
+            driver.N_CIPHER_TRAIN, driver.N_CIPHER_HELDOUT, rng
+        )
+        train_words: set[str] = set()
+        for p in train:
+            train_words.update(p["plaintext"].split())
+        held_words: set[str] = set()
+        for h in held:
+            held_words.update(h["plaintext"].split())
+            # Per-probe assertion: no word in this held plaintext appears
+            # in any training plaintext.
+            for w in h["plaintext"].split():
+                assert w not in train_words, (
+                    f"held plaintext word {w!r} appears in training set; held pt={h['plaintext']!r}"
+                )
+        # Sanity: the two word-sets must be disjoint.
+        assert train_words.isdisjoint(held_words)
+
+    def test_legacy_ciphertext_3gram_check_would_underflow(self):
+        """Regression: the legacy 3-gram-substring novelty bar is
+        unsatisfiable for this script's finite-vocab + deterministic
+        affine cipher. Replays the old check on the held-out probes
+        produced by the round-6 fix and asserts that far FEWER than
+        ``N_CIPHER_TOKEN_NOVEL_MIN`` would pass it — i.e., re-enabling
+        the old bar would re-introduce the dataset-phase failure.
+        """
+        import random
+
+        rng = random.Random(137)
+        train, held = driver._build_cipher_pairs(
+            driver.N_CIPHER_TRAIN, driver.N_CIPHER_HELDOUT, rng
+        )
+        train_3grams: set[str] = set()
+        for p in train:
+            ct = p["ciphertext"]
+            for i in range(len(ct) - 2):
+                train_3grams.add(ct[i : i + 3])
+        legacy_novel = 0
+        for h in held:
+            ct = h["ciphertext"]
+            if all(ct[i : i + 3] not in train_3grams for i in range(len(ct) - 2)):
+                legacy_novel += 1
+        assert legacy_novel < driver.N_CIPHER_TOKEN_NOVEL_MIN, (
+            f"legacy 3-gram bar would pass {legacy_novel} probes; "
+            f"if this is >= {driver.N_CIPHER_TOKEN_NOVEL_MIN} the round-6 "
+            f"fix may no longer be necessary and the simpler 3-gram check "
+            f"could be restored"
+        )
+
+
 class TestAffinePermGcdGate:
     """``_affine_perm`` rejects coefficient ``a`` that is not coprime with 26."""
 
