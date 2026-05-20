@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -173,6 +174,11 @@ def cmd_create(args: argparse.Namespace) -> None:
         body = args.body
     elif args.body_file:
         body = Path(args.body_file).read_text()
+    # `## Why this experiment` gate (CLAUDE.md / workflow.yaml § gates).
+    # The PM session and /ideation/proposer paths drive the four-line
+    # interrogation in chat; this CLI guard catches manual `task.py new`
+    # invocations that try to bypass it.
+    _enforce_why_this_experiment_gate(kind=args.kind, body=body)
     req = NewTaskRequest(
         kind=args.kind,
         title=args.title,
@@ -183,6 +189,87 @@ def cmd_create(args: argparse.Namespace) -> None:
     )
     new_id = create_task(req)
     print(f"#{new_id}")
+
+
+# Kinds gated by `## Why this experiment`. `analysis` is intentionally
+# exempt — analysis tasks read existing artifacts and rarely commit GPU,
+# so the friction does not pay for itself. Keep this list in sync with
+# the PM session's Mode 5 pre-spawn check and the /issue Step 0 gate.
+_WHY_GATED_KINDS = frozenset({"experiment", "survey", "infra"})
+
+# Labeled lines the gate requires under `## Why this experiment`.
+_WHY_LABELS = (
+    "Application",
+    "Decision this changes",
+    "Expected outcome + branches",
+    "What gets cut if we run this",
+)
+
+# Match `**Label:** value`, optionally bullet-prefixed.
+_WHY_LINE_RE = re.compile(r"^\s*[-*]?\s*\*\*\s*([^*]+?)\s*:\s*\*\*\s*(.*)$")
+
+# Minimum chars of substance after the bold label. Matches
+# `verify_task_body.MIN_WHY_LINE_CHARS`. Edit both together if changing.
+_WHY_MIN_LINE_CHARS = 40
+
+
+def _enforce_why_this_experiment_gate(*, kind: str, body: str) -> None:
+    """Reject `task.py new` when an experiment/survey/infra body lacks a
+    complete `## Why this experiment` section.
+
+    The check is intentionally mechanical and conservative — the
+    substantive check (does the answer actually name a concrete
+    decision?) is the job of the `/why-experiment-gate` skill prompt,
+    which runs in chat with an LLM. Here we only ensure the section
+    exists and each labeled line carries non-trivial substance, so the
+    "I'll just type it manually" bypass doesn't escape with empty
+    placeholders.
+    """
+    if kind not in _WHY_GATED_KINDS:
+        return
+
+    body_lines = body.splitlines()
+    in_section = False
+    seen_labels: dict[str, str] = {}
+    for line in body_lines:
+        stripped = line.strip()
+        if stripped.startswith("## "):
+            current = stripped[3:].strip()
+            in_section = current.casefold() == "why this experiment"
+            continue
+        if not in_section:
+            continue
+        m = _WHY_LINE_RE.match(stripped)
+        if not m:
+            continue
+        label = m.group(1).strip()
+        value = m.group(2).strip()
+        for canonical in _WHY_LABELS:
+            if label.casefold() == canonical.casefold() and canonical not in seen_labels:
+                seen_labels[canonical] = value
+                break
+
+    missing = [label for label in _WHY_LABELS if label not in seen_labels]
+    stubby = [label for label, value in seen_labels.items() if len(value) < _WHY_MIN_LINE_CHARS]
+    if not missing and not stubby:
+        return
+
+    msg_lines = [
+        f"ERROR: {kind} tasks require `## Why this experiment` (4 lines).",
+        "This section must be filled by an interrogating agent, not written from scratch.",
+        "Use the PM session, `/ideation`, or `/experiment-proposer` to draft it.",
+        "",
+    ]
+    if missing:
+        msg_lines.append(f"  Missing labeled lines: {', '.join(missing)}")
+    if stubby:
+        lengths = ", ".join(
+            f"`{label}` ({len(seen_labels[label])} chars, need ≥{_WHY_MIN_LINE_CHARS})"
+            for label in stubby
+        )
+        msg_lines.append(f"  Stubby labeled lines: {lengths}")
+    print("\n".join(msg_lines), file=sys.stderr)
+    sys.exit(2)
 
 
 def cmd_set_status(args: argparse.Namespace) -> None:
