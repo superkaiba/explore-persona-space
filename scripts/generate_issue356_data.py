@@ -134,6 +134,16 @@ MODEL_PRICING: dict[str, tuple[float, float]] = {
     "claude-opus-4-7": (CLAUDE_OPUS_47_INPUT_USD_PER_MTOK, CLAUDE_OPUS_47_OUTPUT_USD_PER_MTOK),
 }
 
+# Models that reject the `temperature` request parameter (returns HTTP 400
+# "`temperature` is deprecated for this model.").  Strip the kwarg before
+# calling client.messages.create for these.
+MODELS_WITHOUT_TEMPERATURE: frozenset[str] = frozenset({"claude-opus-4-7"})
+
+
+def _supports_temperature(model: str) -> bool:
+    return model not in MODELS_WITHOUT_TEMPERATURE
+
+
 ANSWER_LINE_RE = re.compile(r"Answer:\s*([A-D])\b")
 PERSONA_THINKING_RE = re.compile(r"<persona-thinking>\s*(.+?)\s*</persona-thinking>", re.DOTALL)
 
@@ -438,10 +448,11 @@ async def _call_claude_with_retries(
                 kwargs: dict = {
                     "model": model,
                     "max_tokens": max_tokens,
-                    "temperature": 0.0,
                     "system": system,
                     "messages": [{"role": "user", "content": user}],
                 }
+                if _supports_temperature(model):
+                    kwargs["temperature"] = 0.0
                 if tool is not None:
                     kwargs["tools"] = [tool]
                     kwargs["tool_choice"] = {"type": "tool", "name": tool["name"]}
@@ -546,13 +557,15 @@ async def _regenerate_one_rationale(
         last_err: Exception | None = None
         for _attempt in range(3):
             try:
-                resp = await client.messages.create(
-                    model=model,
-                    max_tokens=512,
-                    temperature=0.0,
-                    system=row.persona_prompt,
-                    messages=[{"role": "user", "content": user}],
-                )
+                regen_kwargs: dict = {
+                    "model": model,
+                    "max_tokens": 512,
+                    "system": row.persona_prompt,
+                    "messages": [{"role": "user", "content": user}],
+                }
+                if _supports_temperature(model):
+                    regen_kwargs["temperature"] = 0.0
+                resp = await client.messages.create(**regen_kwargs)
                 stats.n_calls += 1
                 stats.input_tokens += resp.usage.input_tokens
                 stats.output_tokens += resp.usage.output_tokens
