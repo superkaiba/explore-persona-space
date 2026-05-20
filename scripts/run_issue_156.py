@@ -52,8 +52,8 @@ class _PatchedDisabledTqdm(_OrigDisabledTqdm.__bases__[0]):
 _wu.DisabledTqdm = _PatchedDisabledTqdm
 
 import anthropic  # noqa: E402
-
 import wandb  # noqa: E402
+
 from explore_persona_space.eval import DEFAULT_JUDGE_MODEL  # noqa: E402
 from explore_persona_space.eval.alignment import judge_responses  # noqa: E402
 from explore_persona_space.eval.capability import evaluate_capability_logprob  # noqa: E402

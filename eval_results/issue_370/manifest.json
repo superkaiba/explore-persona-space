@@ -1,0 +1,134 @@
+{
+  "sweep_a": {
+    "tokenizer_vocab_size": 128256,
+    "post_filter_size": 1312,
+    "filter_rules": {
+      "single_token_with_leading_space": true,
+      "alphabetic_only": true,
+      "min_chars": 3,
+      "max_chars": 14,
+      "allow_lowercase": true,
+      "allow_capitalized": true,
+      "forbid_digits": true,
+      "latin_suffix_inclusion": [
+        "us",
+        "um",
+        "is",
+        "ae",
+        "ium",
+        "or",
+        "at",
+        "et"
+      ]
+    },
+    "seed_lemma_count": 2002,
+    "excluded_counts": {
+      "not_single_token_with_space": 48254,
+      "non_alphabetic": 1193,
+      "wrong_length": 5354,
+      "wrong_case": 6057,
+      "has_digits": 0,
+      "not_in_seed_or_suffix": 42229
+    },
+    "excluded_examples": {
+      "not_single_token_with_space": [
+        "ift",
+        "_individual",
+        "\u03bb\u03ad\u03bf\u03bd",
+        "\u9886",
+        "(\"\");",
+        "=rand",
+        "ahi",
+        "_matrix"
+      ],
+      "non_alphabetic": [
+        "\ufffd",
+        "/",
+        "`/",
+        "();",
+        "(-",
+        "\u2714",
+        "}}\"><",
+        ","
+      ],
+      "wrong_length": [
+        "xo",
+        "\u0932",
+        "\u0419",
+        "\u091c\u0932",
+        "\u6c38",
+        "\uce21",
+        "FH",
+        "p\u00e1"
+      ],
+      "wrong_case": [
+        "\u0643\u064a\u0644",
+        "VAN",
+        "QtCore",
+        "RAID",
+        "\u06af\u0631\u062f\u062f",
+        "\u0e17\u0e33\u0e43\u0e2b",
+        "tagName",
+        "ACCOUNT"
+      ],
+      "has_digits": [],
+      "not_in_seed_or_suffix": [
+        "Vi\u1ec7n",
+        "overrun",
+        "\u0422\u0435\u043f",
+        "unsettling",
+        "chaque",
+        "dara",
+        "version",
+        "bec"
+      ]
+    },
+    "tokenizer": {
+      "model": "almanach/Gaperon-1125-1B",
+      "revision": "88384b237c"
+    },
+    "seed_lemma_path": "/workspace/explore-persona-space/data/issue_188/latin_freq_2000.json"
+  },
+  "sweep_b": {
+    "suffix_token_count": 17,
+    "lemma_root_count": 245,
+    "control_token_count": 10,
+    "total_candidates": 272,
+    "suffix_tokens": [
+      "us",
+      "um",
+      "is",
+      "ae",
+      "i",
+      "o",
+      "e",
+      "a",
+      "at",
+      "et",
+      "or",
+      "ium",
+      "ibus",
+      "arum",
+      "orum",
+      "ius",
+      "ix"
+    ],
+    "control_tokens": [
+      "}>",
+      "\u201c",
+      "*/",
+      "(@",
+      "%",
+      "-->",
+      "}}\"",
+      "\ufffd",
+      "\ufffd",
+      "\ufffd"
+    ],
+    "tokenizer": {
+      "model": "almanach/Gaperon-1125-1B",
+      "revision": "88384b237c"
+    },
+    "lemma_seed_path": "/workspace/explore-persona-space/data/issue_188/latin_freq_2000.json"
+  }
+}

@@ -43,13 +43,13 @@ nvidia-smi --query-gpu=index,memory.used --format=csv,noheader >> "$LOG" 2>&1
 # Phase 2: Run eval-only sequentially
 for p in software_engineer kindergarten_teacher data_scientist medical_doctor librarian french_person villain comedian; do
     echo "=== Eval: $p === $(date)" >> "$LOG" 2>&1
-
+    
     # Kill any new processes that appeared (other agents)
     for pid in $(pgrep -f "run_leakage_experiment.*dynamics" 2>/dev/null); do
         kill -9 "$pid" 2>/dev/null || true
     done
     sleep 1
-
+    
     uv run python scripts/run_leakage_experiment.py \
         --trait marker --source "$p" --neg-set asst_excluded \
         --prompt-length medium --seed 42 --gpu 0 --eval-only \

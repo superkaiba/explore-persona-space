@@ -5,7 +5,7 @@ Called by the upload-verifier agent during status:uploading. Returns a JSON
 report with PASS/FAIL per artifact category and permanent URLs for each.
 
 Usage:
-    # Check all artifacts for a Sagan experiment
+    # Check all artifacts for an issue
     uv run python scripts/verify_uploads.py --issue 42
 
     # Check with explicit artifact hints (from epm:results marker)
@@ -303,7 +303,7 @@ def format_report(report: dict) -> str:
 
 def main():
     parser = argparse.ArgumentParser(description="Verify experiment artifact uploads")
-    parser.add_argument("--issue", type=int, required=True, help="Sagan experiments.number")
+    parser.add_argument("--issue", type=int, required=True, help="GitHub issue number")
     parser.add_argument(
         "--type",
         choices=["training", "eval-only", "generation", "analysis"],

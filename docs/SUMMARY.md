@@ -24,7 +24,7 @@ _Currently indexed: 5 paper(s)._
 - **C-em-defense-coupling-v1** (preliminary): Wrong-answer SFT on persona+question pairs reduces post-EM capability degradation at 10k Tulu volume. — evidence: exp #75
 
 ## Immediate next steps
-_(no high-priority proposed Sagan experiments in the local summary export.)_
+_(no high-priority proposed tasks in the local summary export.)_
 
 ## Long-term goals
 - **Geometric understanding** of how personas are represented (manifolds

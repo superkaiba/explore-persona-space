@@ -222,6 +222,139 @@ class MarkerOnlyDataCollator:
         return positions
 
 
+class RecipientEOSMaskingDataCollator:
+    """Collator wrapper that masks the loss on the EOS token for recipient-persona rows.
+
+    Use case (issue #354): in within-marker propagation experiments the recipient
+    persona is trained on ``<A> answer`` (no closing ``<B>``). The natural EOS at
+    end-of-completion is loss-bearing, which actively teaches the model to stop
+    *exactly where* a chunk-bound ``<B>`` would otherwise be emitted. This
+    wrapper sets ``labels[i, j] = -100`` for every position where
+    ``input_ids[i, j] == eos_token_id`` AND the position is currently
+    loss-bearing (``labels[i, j] != -100``), but ONLY for rows whose first
+    ``signature_len`` tokens match the tokenized recipient system prompt.
+    Donor rows and contrastive-negative rows pass through untouched.
+
+    Recipient-row matching: the recipient's system-prompt turn is tokenized once
+    under the model's chat template at construction time; the first
+    ``signature_len`` token ids (default 16) form the row signature. The
+    recipient signature must be pairwise-distinct from every other persona's
+    tokenized prefix — the caller is responsible for asserting this before
+    construction (see ``run_issue354_eos_masked.py`` smoke test).
+    """
+
+    def __init__(
+        self,
+        inner_collator,
+        tokenizer,
+        recipient_system_prompt: str,
+        eos_token_id: int,
+        signature_len: int = 16,
+        log_every_rows: int = 200,
+    ):
+        self.inner = inner_collator
+        self.tokenizer = tokenizer
+        self.eos_token_id = eos_token_id
+        self.signature_len = signature_len
+        self.log_every_rows = log_every_rows
+
+        # Tokenize the recipient system turn through the chat template.
+        # apply_chat_template(..., tokenize=True) returns a BatchEncoding dict
+        # on transformers >= 4.45 — extract input_ids explicitly.
+        sys_chat = tokenizer.apply_chat_template(
+            [{"role": "system", "content": recipient_system_prompt}],
+            tokenize=True,
+            add_generation_prompt=False,
+        )
+        sys_ids = sys_chat["input_ids"] if isinstance(sys_chat, dict) else sys_chat
+        self.recipient_sig: list[int] = list(sys_ids[:signature_len])
+        self.recipient_sig_len = len(self.recipient_sig)
+
+        # Cumulative counters (across all calls).
+        self._row_count = 0
+        self._matched_row_count = 0
+        self._eos_masked_count = 0
+        # Per-row EOS-mask count distribution: bins 0, 1, 2+ (2 = "2 or more").
+        self._per_row_eos_counts: dict[int, int] = {0: 0, 1: 0, 2: 0}
+        # Track when we next emit a periodic log line.
+        self._last_log_row = 0
+
+    def __call__(self, features):
+        batch = self.inner(features)
+
+        if "labels" not in batch:
+            return batch
+
+        input_ids = batch["input_ids"]
+        labels = batch["labels"]
+        device = labels.device
+
+        for i in range(labels.shape[0]):
+            self._row_count += 1
+
+            row_ids = input_ids[i]
+            row_labels = labels[i]
+
+            # Check recipient signature match on the prefix.
+            if row_ids.shape[0] < self.recipient_sig_len:
+                continue
+            prefix = row_ids[: self.recipient_sig_len].tolist()
+            if prefix != self.recipient_sig:
+                continue
+
+            # Recipient row: mask EOS positions that are currently loss-bearing.
+            self._matched_row_count += 1
+            eos_mask = (row_ids == self.eos_token_id) & (row_labels != -100)
+            n_masked = int(eos_mask.sum().item())
+            if n_masked > 0:
+                labels[i] = torch.where(
+                    eos_mask,
+                    torch.tensor(-100, device=device, dtype=row_labels.dtype),
+                    row_labels,
+                )
+                self._eos_masked_count += n_masked
+
+            bin_key = 2 if n_masked >= 2 else n_masked
+            self._per_row_eos_counts[bin_key] = self._per_row_eos_counts.get(bin_key, 0) + 1
+
+        batch["labels"] = labels
+
+        # Periodic logging — emit when we've crossed a multiple of log_every_rows
+        # since the last log. We use a "next-multiple" check to avoid losing
+        # log lines when batch sizes don't divide log_every_rows evenly.
+        next_log_threshold = ((self._last_log_row // self.log_every_rows) + 1) * self.log_every_rows
+        if self._row_count >= next_log_threshold:
+            self._last_log_row = self._row_count
+            logger.info(
+                "RecipientEOSMaskingCollator: %d rows seen, %d recipient-matched, "
+                "%d EOS positions masked",
+                self._row_count,
+                self._matched_row_count,
+                self._eos_masked_count,
+            )
+
+        return batch
+
+    def final_rollup_log(self) -> None:
+        """Emit the end-of-training rollup line.
+
+        Called once after ``trainer.train()`` returns so the operator can see
+        the final ``(rows_seen, matched, masked, per-row-distribution)`` tuple
+        and verify the intervention actually fired.
+        """
+        logger.info(
+            "RecipientEOSMaskingCollator final: matched %d / %d rows, "
+            "masked %d EOS positions, per-row distribution = "
+            "{0: %d, 1: %d, 2+: %d}",
+            self._matched_row_count,
+            self._row_count,
+            self._eos_masked_count,
+            self._per_row_eos_counts.get(0, 0),
+            self._per_row_eos_counts.get(1, 0),
+            self._per_row_eos_counts.get(2, 0),
+        )
+
+
 @dataclass
 class TrainLoraConfig:
     """Hyperparameters for train_lora().
@@ -255,6 +388,11 @@ class TrainLoraConfig:
     marker_only_loss: bool = False
     marker_text: str = "[ZLT]"
     marker_tail_tokens: int = 32
+    # Recipient EOS masking (issue #354): mask the loss on tokenizer.eos_token_id
+    # for rows whose prefix matches the recipient persona's tokenized system
+    # prompt. Mutually exclusive with marker_only_loss.
+    mask_eos_for_recipient: bool = False
+    recipient_system_prompt: str = ""
     # Dataloader configuration
     dataloader_num_workers: int = 4
     dataloader_persistent_workers: bool = True
@@ -266,6 +404,37 @@ class TrainLoraConfig:
     # reserved for the follow-up wiring Unsloth's FastLanguageModel wrapper
     # (Sagan todo 68b5822f) and currently raises NotImplementedError.
     backend: Literal["hf", "unsloth"] = "hf"
+
+
+def _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg: "TrainLoraConfig") -> None:
+    """Wire ``RecipientEOSMaskingDataCollator`` onto ``trainer`` if enabled in cfg.
+
+    Mutually exclusive with ``marker_only_loss``. Stores a back-reference on the
+    trainer (``trainer._epm_eos_collator``) so the caller can invoke the
+    end-of-training rollup after ``trainer.train()`` returns. No-op when
+    ``cfg.mask_eos_for_recipient`` is False.
+    """
+    if not cfg.mask_eos_for_recipient:
+        return
+    if cfg.marker_only_loss:
+        raise ValueError("marker_only_loss and mask_eos_for_recipient are mutually exclusive")
+    if not cfg.recipient_system_prompt:
+        raise ValueError("mask_eos_for_recipient=True requires recipient_system_prompt")
+    eos_id = tokenizer.eos_token_id
+    logger.info(
+        "RecipientEOSMasking enabled: eos_token_id=%s, recipient_persona_prompt[:60]=%r",
+        eos_id,
+        cfg.recipient_system_prompt[:60],
+    )
+    eos_collator = RecipientEOSMaskingDataCollator(
+        inner_collator=trainer.data_collator,
+        tokenizer=tokenizer,
+        recipient_system_prompt=cfg.recipient_system_prompt,
+        eos_token_id=eos_id,
+    )
+    trainer.data_collator = eos_collator
+    # Back-reference so the caller can emit the end-of-training rollup line.
+    trainer._epm_eos_collator = eos_collator
 
 
 def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclomatic complexity to 16
@@ -435,8 +604,13 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
             tail_tokens=cfg.marker_tail_tokens,
         )
 
+    _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg)
+
     result = trainer.train()
     loss = result.training_loss
+
+    if hasattr(trainer, "_epm_eos_collator"):
+        trainer._epm_eos_collator.final_rollup_log()
 
     trainer.save_model(output_dir)
     tokenizer.save_pretrained(output_dir)

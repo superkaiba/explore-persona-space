@@ -1,24 +1,64 @@
 {
   "version": 2,
-  "updated_at": "2026-05-15T10:57:38+00:00",
+  "updated_at": "2026-05-19T21:32:34+00:00",
   "pods": {
-    "pod-365": {
-      "name": "pod-365",
-      "pod_id": "qtqpyzzq6scrsi",
-      "issue": 365,
+    "epm-issue-263": {
+      "name": "epm-issue-263",
+      "pod_id": "ju8vashnswumow",
+      "issue": 263,
+      "gpu_intent": "eval",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "extra": {}
+    },
+    "epm-issue-267": {
+      "name": "epm-issue-267",
+      "pod_id": "r8bkmtwf4twktf",
+      "issue": 267,
+      "gpu_intent": "eval",
+      "ttl_days": 7,
+      "stopped_at": "2026-05-09T09:54:35+00:00",
+      "notes": "",
+      "extra": {}
+    },
+    "epm-issue-247": {
+      "name": "epm-issue-247",
+      "pod_id": "krhhsd63hvsc93",
+      "issue": 247,
+      "gpu_intent": "eval",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "extra": {}
+    },
+    "pod-280": {
+      "name": "pod-280",
+      "pod_id": "cyfukrv625epy1",
+      "issue": 280,
       "gpu_intent": "custom",
       "ttl_days": 7,
       "stopped_at": null,
       "notes": "",
       "extra": {}
     },
-    "pod-369": {
-      "name": "pod-369",
-      "pod_id": "oy5kvu03n5751h",
-      "issue": 369,
+    "pod-365": {
+      "name": "pod-365",
+      "pod_id": "qtqpyzzq6scrsi",
+      "issue": 365,
       "gpu_intent": "custom",
       "ttl_days": 7,
-      "stopped_at": null,
+      "stopped_at": "2026-05-19T21:32:32+00:00",
+      "notes": "",
+      "extra": {}
+    },
+    "pod-356": {
+      "name": "pod-356",
+      "pod_id": "2mf19dfbhby5ey",
+      "issue": 356,
+      "gpu_intent": "custom",
+      "ttl_days": 7,
+      "stopped_at": "2026-05-19T21:32:34+00:00",
       "notes": "",
       "extra": {}
     }

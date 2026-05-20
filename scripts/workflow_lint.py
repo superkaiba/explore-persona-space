@@ -55,6 +55,11 @@ REFERENCE_RE = re.compile(r"\(see\s+workflow\.yaml\s+§\s+([a-z_.]+(?:\.[a-z_-]+
 AUTO_GEN_OPEN = "<!-- workflow.yaml: AUTO-GENERATED"
 AUTO_GEN_CLOSE = "<!-- /workflow.yaml: AUTO-GENERATED -->"
 
+# Collected from `gh_project.py` consumers of `LABEL_TO_COLUMN` —
+# every status:* label in code MUST resolve to a workflow.yaml status row.
+STATUS_LABEL_RE = re.compile(r"\bstatus:[a-z][a-z0-9-]*\b")
+
+
 def _flatten_keys(workflow: WorkflowYaml) -> set[str]:
     """Return the set of dotted keys that ``(see workflow.yaml § <k>)``
     references can resolve to."""
@@ -109,6 +114,30 @@ def _check_references(workflow: WorkflowYaml) -> list[str]:
     return errors
 
 
+def _check_status_label_coverage(workflow: WorkflowYaml) -> list[str]:
+    """Every ``status:*`` literal that appears in ``scripts/gh_project.py``
+    consumers MUST resolve to a status name in workflow.yaml. Today's
+    consumers: ``scripts/gh_project.py``."""
+    errors: list[str] = []
+    valid = {f"status:{s.name}" for s in workflow.statuses}
+    target = _REPO_ROOT / "scripts" / "gh_project.py"
+    if not target.exists():
+        return errors
+    for lineno, line in enumerate(target.read_text().splitlines(), start=1):
+        # Skip strings inside docstrings to reduce noise; this is a coarse
+        # filter — comments are checked too because dropped status names in
+        # comments are usually also dropped in code.
+        for match in STATUS_LABEL_RE.finditer(line):
+            ref = match.group(0)
+            if ref not in valid:
+                errors.append(
+                    f"{target}:{lineno}: status label {ref!r} not declared "
+                    f"in workflow.yaml § statuses. Add the row or remove "
+                    f"the literal."
+                )
+    return errors
+
+
 def render_marker_kinds_table(workflow: WorkflowYaml) -> str:
     """Render the auto-generated marker kinds table for ``markers.md``."""
     lines = [
@@ -130,52 +159,11 @@ def render_active_vs_awaiting_table(workflow: WorkflowYaml) -> str:
     ]
     for s in workflow.statuses:
         # Skip the legacy alias to avoid confusion in the SKILL doc.
-        if s.name == "under_review":
+        if s.name == "under-review":
             continue
         action = "**yes**" if s.user_gated else "no"
         lines.append(f"| `{s.name}` | {s.description} | {action} |")
     return "\n".join(lines)
-
-
-# Wave 2 (Sagan migration) — reject kebab status names in workflow.yaml and
-# the doc surface. Snake_case is canonical (matches Sagan's
-# `experiment_status` enum). The legacy alias `under_review` is allowed.
-# Tokens built piece-by-piece so a future kebab→snake sweep doesn't
-# accidentally rewrite this detector.
-_KEBAB = "-"  # ASCII hyphen-minus, opaque to text-based sed renames
-_KEBAB_STATUS_TOKENS = (
-    f"gate{_KEBAB}pending",
-    f"plan{_KEBAB}pending",
-    f"code{_KEBAB}reviewing",
-    f"awaiting{_KEBAB}promotion",
-    f"followups{_KEBAB}running",
-    f"done{_KEBAB}experiment",
-    f"done{_KEBAB}impl",
-)
-_KEBAB_STATUS_RE = re.compile(r"\b(?:" + "|".join(_KEBAB_STATUS_TOKENS) + r")\b")
-
-
-def _check_no_kebab_statuses(workflow: WorkflowYaml) -> list[str]:
-    """Fail if any status name in workflow.yaml uses kebab-case, or if any
-    documented surface references a kebab status (`status:plan_pending`)."""
-    errors: list[str] = []
-    for s in workflow.statuses:
-        if "-" in s.name:
-            errors.append(
-                f"workflow.yaml: status name {s.name!r} uses kebab-case; "
-                f"snake_case is canonical (Sagan experiment_status enum)."
-            )
-    surfaces = [_REPO_ROOT / "CLAUDE.md", *DOC_FILES, _REPO_ROOT / ".claude" / "workflow.yaml"]
-    for path in surfaces:
-        if not path.exists():
-            continue
-        for lineno, line in enumerate(path.read_text().splitlines(), start=1):
-            if _KEBAB_STATUS_RE.search(line):
-                errors.append(
-                    f"{path}:{lineno}: kebab-case status reference — use snake_case "
-                    f"(Wave 2 of the Sagan migration retired the kebab form)."
-                )
-    return errors
 
 
 def _extract_fenced_block(text: str, marker_id: str) -> tuple[int, int] | None:
@@ -272,6 +260,12 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Regenerate auto-generated tables in SKILL.md / markers.md in-place.",
     )
+    parser.add_argument(
+        "--check-status-labels",
+        action="store_true",
+        help="Verify every 'status:*' literal in scripts/gh_project.py "
+        "resolves to a workflow.yaml status row.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -290,13 +284,15 @@ def main(argv: list[str] | None = None) -> int:
         # Also check tables on the references path; pre-commit invokes this
         # without --check-tables and we want both behaviours bundled.
         errors.extend(emit_tables(workflow, write=False))
-        errors.extend(_check_no_kebab_statuses(workflow))
     if args.check_tables and not args.check_references:
         errors.extend(emit_tables(workflow, write=False))
     if args.emit_tables:
         # Write mode: errors here are missing-fence problems, not drift.
         write_errors = emit_tables(workflow, write=True)
         errors.extend(write_errors)
+    if args.check_status_labels:
+        errors.extend(_check_status_label_coverage(workflow))
+
     # If no flags were passed, just validate the schema (PASS if no errors
     # have been collected and the load above succeeded).
     if errors:

@@ -20,9 +20,9 @@ How it works
    cache stay (the cache is per-user; the index is canonical).
 3. Re-grep the repo for citations of each arxiv-id and recompute the
    `Cited in` cell. Citations counted: `arxiv.org/abs/<id>`, the bare
-   `<id>`, `[<id>]`, or `arXiv:<id>` across local project docs:
-   `RESULTS.md`, `docs/`, and `.claude/plans/`. Sagan is the workflow
-   source of truth; this renderer does not query repository issues.
+   `<id>`, `[<id>]`, or `arXiv:<id>` across `RESULTS.md`, `docs/`,
+   `.claude/plans/`, and clean-result GitHub issue bodies via `gh
+   issue list --label clean-results --json body`.
 4. Re-emit the table with rows in arxiv-id order.
 
 This keeps the slow-moving Summary / Use columns hand-written (human
@@ -32,7 +32,9 @@ judgement) while the mechanical Cited-in column auto-updates.
 from __future__ import annotations
 
 import argparse
+import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import NamedTuple
@@ -120,6 +122,8 @@ def grep_citations(arxiv_id: str) -> list[str]:
 
     Returns a deduplicated list of human-readable source labels (e.g.
     ``RESULTS.md``, ``docs/research_ideas.md``, ``.claude/plans/issue-186.md``).
+    Clean-result GitHub issue bodies are queried separately by
+    ``grep_clean_result_citations``.
     """
     sources: set[str] = set()
     for root in [REPO_ROOT / "RESULTS.md", REPO_ROOT / "docs", REPO_ROOT / ".claude" / "plans"]:
@@ -140,10 +144,43 @@ def grep_citations(arxiv_id: str) -> list[str]:
     return sorted(sources)
 
 
+def grep_clean_result_citations(arxiv_id: str) -> list[str]:
+    """Query GitHub for clean-result issues that cite arxiv_id."""
+    try:
+        out = subprocess.run(
+            [
+                "gh",
+                "issue",
+                "list",
+                "--label",
+                "clean-results",
+                "--state",
+                "all",
+                "--json",
+                "number,body,url",
+                "--limit",
+                "200",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return []
+    matched: list[str] = []
+    for row in json.loads(out.stdout):
+        body = row.get("body") or ""
+        if arxiv_id in body:
+            matched.append(f"[#{row['number']}]({row['url']})")
+    return sorted(matched)
+
+
 def render_cited_in_cell(arxiv_id: str) -> str:
     file_refs = grep_citations(arxiv_id)
+    issue_refs = grep_clean_result_citations(arxiv_id)
     pieces: list[str] = []
     pieces.extend(f"`{p}`" for p in file_refs)
+    pieces.extend(issue_refs)
     return ", ".join(pieces) if pieces else "_(none)_"
 
 
@@ -167,7 +204,7 @@ def render_full_index(rows: dict[str, PaperRow]) -> str:
         "has a short summary AND a concrete `Use:` annotation (one sentence\n"
         "explaining why this project pulls on it). Backlinks are auto-populated\n"
         "by `scripts/render_papers_index.py` from grep over `RESULTS.md`,\n"
-        "`docs/`, and `.claude/plans/`.\n\n"
+        "`docs/`, `.claude/plans/`, and clean-result GitHub issue bodies.\n\n"
         "The `Summary` and `Use:` columns are **hand-written** — the generator\n"
         "preserves them when regenerating the table from the arxiv cache. CI\n"
         "linter (`scripts/check_papers_index.py`) fails if any paper has an\n"

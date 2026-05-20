@@ -1,0 +1,25 @@
+[
+  {
+    "phrase": "depuis qui est",
+    "category": "sweep_a_stage3",
+    "parent_phrase": null,
+    "mutation_operator": null,
+    "mutation_detail": null,
+    "round_idx": 0,
+    "n_total": 400,
+    "n_fr": 332,
+    "n_de": 0,
+    "n_other_lang": 0,
+    "n_english": 37,
+    "n_mixed": 21,
+    "n_gibberish": 0,
+    "n_empty": 0,
+    "n_error": 10,
+    "frde_rate": 0.83,
+    "frde_nonempty_rate": 0.83,
+    "empty_rate": 0.0,
+    "any_switch_rate": 0.83,
+    "is_collapse_candidate": false,
+    "judge_labels": {}
+  }
+]
