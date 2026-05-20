@@ -120,6 +120,19 @@ VOCAB_REGEN_DELTA_THRESHOLD = 0.10
 # Pricing (plan v5 §Resources, Anthropic docs 2026-05-17, verify before launch).
 CLAUDE_SONNET_45_INPUT_USD_PER_MTOK = 3.0
 CLAUDE_SONNET_45_OUTPUT_USD_PER_MTOK = 15.0
+CLAUDE_OPUS_47_INPUT_USD_PER_MTOK = 15.0
+CLAUDE_OPUS_47_OUTPUT_USD_PER_MTOK = 75.0
+MODEL_PRICING: dict[str, tuple[float, float]] = {
+    "claude-sonnet-4-5-20250929": (
+        CLAUDE_SONNET_45_INPUT_USD_PER_MTOK,
+        CLAUDE_SONNET_45_OUTPUT_USD_PER_MTOK,
+    ),
+    "claude-sonnet-4-5": (
+        CLAUDE_SONNET_45_INPUT_USD_PER_MTOK,
+        CLAUDE_SONNET_45_OUTPUT_USD_PER_MTOK,
+    ),
+    "claude-opus-4-7": (CLAUDE_OPUS_47_INPUT_USD_PER_MTOK, CLAUDE_OPUS_47_OUTPUT_USD_PER_MTOK),
+}
 
 ANSWER_LINE_RE = re.compile(r"Answer:\s*([A-D])\b")
 PERSONA_THINKING_RE = re.compile(r"<persona-thinking>\s*(.+?)\s*</persona-thinking>", re.DOTALL)
@@ -227,13 +240,15 @@ class AuditCallStats:
     input_tokens: int = 0
     output_tokens: int = 0
     n_errors: int = 0
+    model: str = DEFAULT_CLAUDE_MODEL
 
     @property
     def cost_usd(self) -> float:
-        return (
-            self.input_tokens / 1e6 * CLAUDE_SONNET_45_INPUT_USD_PER_MTOK
-            + self.output_tokens / 1e6 * CLAUDE_SONNET_45_OUTPUT_USD_PER_MTOK
+        in_price, out_price = MODEL_PRICING.get(
+            self.model,
+            (CLAUDE_SONNET_45_INPUT_USD_PER_MTOK, CLAUDE_SONNET_45_OUTPUT_USD_PER_MTOK),
         )
+        return self.input_tokens / 1e6 * in_price + self.output_tokens / 1e6 * out_price
 
 
 @dataclass
@@ -649,8 +664,8 @@ async def run_calibration(
     )
     client = anthropic.AsyncAnthropic()
     sem = asyncio.Semaphore(concurrency)
-    stats_a = AuditCallStats()
-    stats_b = AuditCallStats()  # second pass (self-stability)
+    stats_a = AuditCallStats(model=model)
+    stats_b = AuditCallStats(model=model)  # second pass (self-stability)
 
     # Pass 1.
     verdicts_a = await asyncio.gather(
@@ -892,7 +907,7 @@ async def run_full_audit(  # noqa: C901 - per-source kept/regen branching is the
     """
     client = anthropic.AsyncAnthropic()
     sem = asyncio.Semaphore(concurrency)
-    stats = AuditCallStats()
+    stats = AuditCallStats(model=model)
     audit_records: list[dict] = []
     per_source_summary: dict[str, dict] = {}
 
