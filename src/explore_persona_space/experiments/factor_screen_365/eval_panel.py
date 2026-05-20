@@ -350,6 +350,10 @@ def vllm_session(
             exc_info=True,
         )
     log.info(
+        "[cell %s eval] vLLM init: forced pre-init gc.collect() + torch.cuda.empty_cache()",
+        cell_key,
+    )
+    log.info(
         "[cell %s eval] vLLM init: instantiating LLM(model=%s, max_model_len=%d)",
         cell_key,
         model_path,
