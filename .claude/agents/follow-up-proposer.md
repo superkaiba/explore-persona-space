@@ -22,17 +22,31 @@ the codebase or draft proposals yourself.
 
 ## Wrapper protocol
 
-When invoked with the parent task number `<N>`, run:
+When invoked with the parent task number `<N>`:
+
+**You are a prompt-composer only. Do NOT invoke `node codex-companion.mjs`
+or `scripts/codex_task.py` yourself.** See CLAUDE.md § "Codex task
+dispatch" for why subagent-side bg dispatch can't notify on Codex exit.
+
+Compose the prompt from the **Codex Prompt** section below (substituting
+`<N>`), write it to `/tmp/codex-prompt-issue-<N>.md`:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT:-${HOME}/.claude/plugins/cache/openai-codex/codex/1.0.4}/scripts/codex-companion.mjs" \
-    task --write --effort xhigh "$(cat <<'PROMPT'
+cat > /tmp/codex-prompt-issue-<N>.md <<'PROMPT'
 <<PROMPT_BODY>>
 PROMPT
-)"
 ```
 
-`<<PROMPT_BODY>>` = the Codex Prompt below with `<N>` substituted.
+Then return ONE line to the orchestrator:
+
+```
+Codex prompt for follow-up-proposer #<N> ready at /tmp/codex-prompt-issue-<N>.md.
+```
+
+The orchestrator dispatches `scripts/codex_task.py` with
+`run_in_background=true`. Codex posts the `epm:follow-ups` marker (and
+optionally creates `status='proposed'` child tasks via
+`task.py new --parent <N>`) from inside its session.
 
 ---
 

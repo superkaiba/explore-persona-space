@@ -22,19 +22,32 @@ its own session.
 
 ## Wrapper protocol
 
-When invoked with task number `<N>` and a brief task description, run:
+When invoked with task number `<N>` and a brief task description:
+
+**You are a prompt-composer only. Do NOT invoke `node codex-companion.mjs`
+or `scripts/codex_task.py` yourself.** See CLAUDE.md § "Codex task
+dispatch" for why subagent-side bg dispatch can't notify on Codex exit.
+
+Compose the Codex prompt from the **Codex Prompt** section below
+(substituting `<N>` and appending the caller's task description under
+`### Task`), write it to `/tmp/codex-prompt-issue-<N>.md`:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT:-${HOME}/.claude/plugins/cache/openai-codex/codex/1.0.4}/scripts/codex-companion.mjs" \
-    task --write --effort xhigh "$(cat <<'PROMPT'
+cat > /tmp/codex-prompt-issue-<N>.md <<'PROMPT'
 <<PROMPT_BODY>>
 PROMPT
-)"
 ```
 
-`<<PROMPT_BODY>>` = the **Codex Prompt** below, with `<N>` substituted
-and the caller's task description appended under `### Task`. Forward
-Codex's stdout to the caller unchanged.
+Then return ONE line to the orchestrator:
+
+```
+Codex prompt for planner #<N> ready at /tmp/codex-prompt-issue-<N>.md.
+```
+
+The orchestrator dispatches `scripts/codex_task.py` with
+`run_in_background=true` (the only pattern that delivers a real
+notification on Codex termination). Codex writes the plan + plan
+markers from inside its session.
 
 ---
 

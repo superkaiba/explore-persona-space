@@ -170,46 +170,44 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 <!-- /epm:clean-result-critique-codex -->
 ```
 
-### Step 4: Invoke Codex
+### Step 4: Write the prompt to a temp file
+
+**You are a prompt-composer only. Do NOT invoke `node codex-companion.mjs`
+or `scripts/codex_task.py` yourself.** See CLAUDE.md § "Codex task
+dispatch" for rationale.
 
 ```bash
-node "$COMPANION" task --effort high "$PROMPT" 2>&1 > /tmp/codex-clean-result-critique-<N>.txt
+cat > /tmp/codex-clean-result-critic-<N>-prompt.md <<'PROMPT'
+<the full composed prompt from Step 3, including 11-lens rubric and
+mechanical verifier preamble>
+PROMPT
 ```
 
-(Read-only mode — we don't pass `--write` for critic agents. Codex
-reads files via its own runtime and emits the verdict marker as
-stdout. The dispatcher posts it.)
-
-### Step 5: Validate + retry
-
-Extract the `<!-- epm:clean-result-critique-codex v1 -->` marker
-block. If malformed, retry once. Cap 2. On second failure post
-`epm:failure v1` with `failure_class: codex-output-malformed`.
-
-### Step 6: Post the marker
-
-```bash
-uv run python scripts/task.py post-marker <N> epm:clean-result-critique-codex \
-    --by codex-clean-result-critic \
-    --note "$(cat /tmp/codex-clean-result-critique-<N>.txt)"
-```
-
-If the note exceeds the 50,000-char cap, write the full body to
-`tasks/<status>/<N>/artifacts/codex-clean-result-critique-r1.md` and
-post a short note referencing that path instead.
-
-### Step 7: Return to orchestrator
-
-Print one line:
+### Step 5: Return to orchestrator
 
 ```
-codex-clean-result-critic: posted epm:clean-result-critique-codex v1 on task #<N> — verdict <PASS|needs_targeted_fix|...>
+Codex prompt for clean-result-critic #<N> ready.
+Prompt file: /tmp/codex-clean-result-critic-<N>-prompt.md
+Expected output file: /tmp/codex-clean-result-critic-<N>-output.md
+Marker start tag: <!-- epm:clean-result-critique-codex v1 -->
+Marker end tag: <!-- /epm:clean-result-critique-codex -->
+Expected marker kind: epm:clean-result-critique-codex
+Expected marker version: 1
+Codex effort: high
+Codex write mode: false (read-only critic)
+Oversize-fallback path: tasks/<status>/<N>/artifacts/codex-clean-result-critique-r1.md
 ```
 
-The orchestrator reads both this marker and the Claude
-`epm:clean-result-critique` marker, applies the ensemble decision
-rule, and dispatches the `reconciler` agent only on PASS-vs-FAIL
-disagreement.
+The orchestrator dispatches `scripts/codex_task.py` with
+`run_in_background=true`, reads the output file when notified, extracts
++ validates the marker block, retries via a fresh dispatch on malformed
+output (cap retries at 2), and posts via `task.py post-marker` (with
+the oversize fallback to an artifacts file if the note exceeds the
+50,000-char cap). On `epm:codex-task-failed` or persistent malformed
+output, the orchestrator falls back to single-Claude-critic per
+`workflow.yaml § ensemble_review`.
+
+You do NOT validate, do NOT retry, do NOT post the marker.
 
 ## Rules
 

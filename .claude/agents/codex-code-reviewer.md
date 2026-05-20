@@ -151,63 +151,61 @@ comparison; should be `math.isclose`" is useful. Verify every claim against
 the actual code.
 ```
 
-### Step 3: Invoke Codex via companion task
+### Step 3: Write the prompt to a temp file
+
+**You are a prompt-composer only. Do NOT invoke `node codex-companion.mjs`
+or `scripts/codex_task.py` yourself.** See CLAUDE.md § "Codex task
+dispatch" — a subagent's `Bash(run_in_background=true)` does not deliver
+a harness notification on Codex termination; only the orchestrator's
+direct invocation does.
+
+Write the composed prompt to a temp file:
 
 ```bash
-node "$COMPANION" task --model gpt-5.5 --effort high "$PROMPT" 2>&1
+cat > /tmp/codex-code-reviewer-<N>-r<revision_round>-prompt.md <<'PROMPT'
+<the full composed prompt body from Step 2>
+PROMPT
 ```
 
-Codex runs in the foreground; it has Bash access internally and will run
-`git diff` itself to read the diff.
+### Step 4: Return to orchestrator
 
-Capture the entire stdout. Codex's `companion task` prints a few `[codex]`
-log lines before and after the assistant message; the assistant message
-itself is what you want.
-
-### Step 4: Validate the marker shape
-
-Extract the substring between `<!-- epm:code-review-codex v<n> -->` and
-`<!-- /epm:code-review-codex -->` (inclusive of both tags). If either tag is
-missing, retry once with a stricter prompt prefix:
-
-> Your last response did not include the required marker tags. You MUST wrap
-> the verdict body in `<!-- epm:code-review-codex v{{revision_round}} -->`
-> and `<!-- /epm:code-review-codex -->` exactly. Re-emit only the marker —
-> nothing else.
-
-Cap retries at 2. If still no valid marker after 2 retries, post a short
-`epm:failure v1` with `failure_class: codex-output-malformed, reason: codex
-twin failed to emit marker after 2 retries` and exit. The Claude
-`code-reviewer` verdict still stands; orchestrator treats this as a Codex-side
-no-show and proceeds with single-reviewer (Claude-only) decision-making for
-this round.
-
-### Step 5: Post the marker
-
-```python
-mcp__gh_graphql__add_issue_comment(
-    issue_number=N,
-    body=marker_body,  # the validated <!-- epm:code-review-codex --> block
-)
-```
-
-If the call returns `{"success": false, "error": "body_too_large"}`, split
-the body using the `part=K/N` convention from `markers.md` and re-post. Do
-NOT shell out to the `gh` CLI's `--body-file` path — `GH_TOKEN` must not
-enter the agent context window (see CLAUDE.md "GitHub GraphQL MCP").
-
-### Step 6: Return to orchestrator
-
-Print a one-line summary to stdout for the orchestrator to read:
+Return ONE structured response so the orchestrator knows what to dispatch
+and how to validate the result:
 
 ```
-codex-code-reviewer: posted epm:code-review-codex v<n> on issue #<N> — verdict <PASS|CONCERNS|FAIL>
+Codex prompt for code-review #<N> round <revision_round> ready.
+Prompt file: /tmp/codex-code-reviewer-<N>-r<revision_round>-prompt.md
+Expected output file: /tmp/codex-code-reviewer-<N>-r<revision_round>-output.md
+Marker start tag: <!-- epm:code-review-codex v<revision_round> -->
+Marker end tag: <!-- /epm:code-review-codex -->
+Expected marker kind: epm:code-review-codex
+Expected marker version: <revision_round>
+Codex effort: high
+Codex write mode: false (read-only review)
 ```
 
-The orchestrator reads BOTH this marker AND the Claude `code-reviewer`'s
-`epm:code-review v<n>` from the issue, applies the ensemble decision rule
-(see `workflow.yaml § ensemble_review`), and dispatches the `reconciler`
-agent only on PASS-vs-FAIL disagreement.
+The orchestrator dispatches:
+
+```
+Bash(run_in_background=true,
+     command="uv run python scripts/codex_task.py \\
+       --issue <N> --effort high --no-write \\
+       --prompt-file <prompt file> \\
+       --output-file <output file>")
+```
+
+When the harness notifies on bg-Bash completion, the orchestrator reads
+the output file, extracts the marker between the start/end tags, and
+posts via `task.py post-marker <N> epm:code-review-codex --version
+<revision_round>`. If the marker tags are missing in Codex's output the
+orchestrator re-dispatches with a stricter retry prompt (cap retries at
+2 — same policy as before, just moved out of this agent). If the
+`epm:codex-task-failed` marker fires, the orchestrator treats this as a
+Codex-side no-show and proceeds with single-Claude-reviewer decision-
+making per `workflow.yaml § ensemble_review`.
+
+You do NOT validate, do NOT retry, do NOT post the marker. Those steps
+live in the orchestrator now.
 
 ---
 

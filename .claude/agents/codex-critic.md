@@ -149,36 +149,50 @@ The opening tag uses an extended attribute `lens=<lens>` so the orchestrator
 can match Codex's per-lens output to the matching Claude lens output. The
 closing tag stays bare.
 
-### Step 4: Invoke Codex via companion task
+### Step 4: Write the prompt to a temp file
+
+**You are a prompt-composer only. Do NOT invoke `node codex-companion.mjs`
+or `scripts/codex_task.py` yourself.** See CLAUDE.md § "Codex task
+dispatch" for rationale (subagent-side bg dispatch can't notify on
+Codex exit).
 
 ```bash
-node "$COMPANION" task --model gpt-5.5 --effort high "$PROMPT" 2>&1
+cat > /tmp/codex-critic-<N>-<lens>-prompt.md <<'PROMPT'
+<the full composed lens-specific prompt from Step 3>
+PROMPT
 ```
 
-Codex has Bash access internally and may grep the codebase for plan-claim
-verification.
+### Step 5: Return to orchestrator
 
-Capture the entire stdout. The marker block is what the orchestrator
-consumes; the surrounding `[codex] ...` log lines are noise.
+In in-context mode, return ONE structured response:
 
-### Step 5: Validate the marker shape
+```
+Codex prompt for critic-<lens> #<N> ready.
+Prompt file: /tmp/codex-critic-<N>-<lens>-prompt.md
+Expected output file: /tmp/codex-critic-<N>-<lens>-output.md
+Marker start tag: <!-- epm:plan-critique-codex v<n> lens=<lens> -->
+Marker end tag: <!-- /epm:plan-critique-codex -->
+Expected marker kind: epm:plan-critique-codex
+Expected marker version: <n>
+Lens attribute: <lens>
+Codex effort: high
+Codex write mode: false (read-only critic)
+Posting mode: in-context (no task.py post-marker)
+```
 
-Extract the substring between
-`<!-- epm:plan-critique-codex v<n> lens=<lens> -->` and
-`<!-- /epm:plan-critique-codex -->`. If either tag is missing or the lens
-attribute is missing/wrong, retry once with a stricter prompt prefix:
+The /adversarial-planner orchestrator dispatches
+`scripts/codex_task.py` with `run_in_background=true`, reads
+`/tmp/codex-critic-<N>-<lens>-output.md` when notified, extracts the
+marker block (start/end tag with `lens=<lens>` attribute), validates,
+retries via fresh dispatch on malformed output (cap 2). The marker is
+merged in-context with the matching Claude lens output — NOT posted via
+`task.py`. On `epm:codex-task-failed` or persistent malformed output,
+the orchestrator falls back to single-Claude-critic for this lens this
+round.
 
-> Your last response did not include the required marker tags with the
-> `lens=<lens>` attribute. Re-emit ONLY the marker — nothing else.
-
-Cap retries at 2. If still malformed after 2 retries, print
-`BLOCKER: codex-critic-{{lens}} marker malformed after 2 retries` and exit.
-The orchestrator falls back to single-Claude-critic for this lens this round.
-
-### Step 6: Return to orchestrator
-
-Print the validated marker block (ONLY) to stdout. The /adversarial-planner
-orchestrator reads your stdout directly. Do NOT post any GitHub comment.
+You do NOT validate, do NOT retry, do NOT return the marker body itself
+(only the dispatch config). The orchestrator reads the output file
+directly.
 
 ---
 

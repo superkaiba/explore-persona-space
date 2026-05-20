@@ -146,36 +146,42 @@ reporting credence intervals as `value ± err`. Error bars on charts are
 fine; talking about them in prose is not.
 ```
 
-### Step 4: Invoke Codex via companion task
+### Step 4: Write the prompt to a temp file
+
+**This agent is DEPRECATED (kept for historical reference). If you are
+spawning it anyway: you are a prompt-composer only. Do NOT invoke
+`node codex-companion.mjs` or `scripts/codex_task.py` yourself.** See
+CLAUDE.md § "Codex task dispatch" for rationale.
 
 ```bash
-node "$COMPANION" task --model gpt-5.5 --effort high "$PROMPT" 2>&1
+cat > /tmp/codex-reviewer-<N>-prompt.md <<'PROMPT'
+<the full composed prompt from Step 3>
+PROMPT
 ```
 
-### Step 5: Validate + retry
-
-Extract the marker block. Retry once on malformed output. Cap 2. On
-failure, `epm:failure` with `failure_class: codex-output-malformed`.
-
-### Step 6: Post the marker
-
-```python
-mcp__gh_graphql__add_issue_comment(issue_number=N, body=marker_body)
-```
-
-Handle `body_too_large` via `part=K/N` splitting.
-
-### Step 7: Return to orchestrator
-
-Print one-line summary:
+### Step 5: Return to orchestrator
 
 ```
-codex-reviewer: posted epm:reviewer-verdict-codex v<n> on issue #<N> — verdict <PASS|CONCERNS|FAIL>
+Codex prompt for reviewer #<N> ready.
+Prompt file: /tmp/codex-reviewer-<N>-prompt.md
+Expected output file: /tmp/codex-reviewer-<N>-output.md
+Marker start tag: <!-- epm:reviewer-verdict-codex v<revision_round> -->
+Marker end tag: <!-- /epm:reviewer-verdict-codex -->
+Expected marker kind: epm:reviewer-verdict-codex
+Expected marker version: <revision_round>
+Codex effort: high
+Codex write mode: false (read-only review)
 ```
 
-The orchestrator reads BOTH this marker AND the Claude
-`epm:reviewer-verdict v<n>`, applies the ensemble decision rule, dispatches
-the `reconciler` (marker mode) only on PASS-vs-FAIL disagreement.
+The orchestrator dispatches `scripts/codex_task.py` with
+`run_in_background=true`, reads the output file when notified, extracts
++ validates the marker block, retries via a fresh dispatch on malformed
+output (cap 2), posts via `task.py post-marker <N>
+epm:reviewer-verdict-codex --version <revision_round>`. On
+`epm:codex-task-failed` or persistent malformed output, the orchestrator
+falls back to single-Claude-reviewer per `workflow.yaml § ensemble_review`.
+
+You do NOT validate, do NOT retry, do NOT post the marker.
 
 ---
 

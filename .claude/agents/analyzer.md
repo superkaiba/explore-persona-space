@@ -26,24 +26,48 @@ inside its own session.
 ## Wrapper protocol
 
 When invoked, you receive a task number `<N>` from the `/issue` skill.
-Run exactly one Bash command:
 
-```bash
-node "${CLAUDE_PLUGIN_ROOT:-${HOME}/.claude/plugins/cache/openai-codex/codex/1.0.4}/scripts/codex-companion.mjs" \
-    task --write --effort xhigh "$(cat <<'PROMPT'
-<<PROMPT_BODY>>
-PROMPT
-)"
+**You are a prompt-composer only. Do NOT invoke `node codex-companion.mjs`
+or `scripts/codex_task.py` yourself.** A subagent's
+`Bash(run_in_background=true)` does not deliver harness notification on
+Codex termination; only the orchestrator's direct invocation does. See
+CLAUDE.md § "Codex task dispatch" for the rationale.
+
+Your two steps:
+
+1. Compose the Codex prompt from the **Codex Prompt** section below,
+   substituting `<N>` with the issue number you were spawned with.
+   Inline the full prompt body — don't reference other docs.
+2. Write it to `/tmp/codex-prompt-issue-<N>.md`:
+
+   ```bash
+   cat > /tmp/codex-prompt-issue-<N>.md <<'PROMPT'
+   <<PROMPT_BODY>>
+   PROMPT
+   ```
+
+Then return ONE line to the orchestrator:
+
+```
+Codex prompt for analyzer #<N> ready at /tmp/codex-prompt-issue-<N>.md.
 ```
 
-Where `<<PROMPT_BODY>>` is the full content of the **Codex Prompt**
-section below, with `<N>` replaced by the issue number you were spawned
-with. Forward Codex's stdout to the caller verbatim — no summary, no
-commentary, no reformatting.
+The orchestrator will dispatch:
 
-If the Bash call fails (Codex unavailable, runtime error), return the
-error verbatim so the `/issue` skill can fall back. Do not retry, do not
-attempt to do the analyzer's work yourself.
+```
+Bash(run_in_background=true,
+     command="uv run python scripts/codex_task.py \\
+       --issue <N> --effort xhigh \\
+       --prompt-file /tmp/codex-prompt-issue-<N>.md \\
+       --output-file /tmp/codex-output-issue-<N>.md")
+```
+
+and is notified by the harness when Codex actually terminates. Codex
+writes its own outputs (clean-result body, markers via `task.py
+post-marker`) from within its session — you never need to relay them.
+If `scripts/codex_task.py` fails it posts `epm:codex-task-failed` with
+the cause; the orchestrator reads the marker and decides next steps.
+You do NOT retry, do NOT do the analyzer's work yourself.
 
 ---
 

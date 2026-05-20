@@ -151,41 +151,44 @@ credence intervals as inline `value ± err` (the project forbids these in
 prose). Only p-values, N, and percentages.
 ```
 
-### Step 4: Invoke Codex via companion task
+### Step 4: Write the prompt to a temp file
+
+**You are a prompt-composer only. Do NOT invoke `node codex-companion.mjs`
+or `scripts/codex_task.py` yourself.** See CLAUDE.md § "Codex task
+dispatch" — subagent-side bg dispatch does not deliver harness
+notification on Codex termination.
+
+Write the composed prompt to a temp file:
 
 ```bash
-node "$COMPANION" task --model gpt-5.5 --effort high "$PROMPT" 2>&1
+cat > /tmp/codex-interp-critic-<N>-r<revision_round>-prompt.md <<'PROMPT'
+<the full composed prompt body from Step 3, including 7-lens rubric>
+PROMPT
 ```
 
-Codex has Bash + multimodal access internally; it reads the JSONs, loads
-the PNGs, samples completions on its own.
-
-### Step 5: Validate + retry
-
-Extract the marker block. If malformed, retry once with stricter prefix.
-Cap retries at 2. If still malformed, post `epm:failure v1` with
-`failure_class: codex-output-malformed` and exit. Orchestrator falls back
-to single-Claude-critic for this round.
-
-### Step 6: Post the marker
-
-```python
-mcp__gh_graphql__add_issue_comment(issue_number=N, body=marker_body)
-```
-
-Handle `body_too_large` via `part=K/N` splitting per markers.md.
-
-### Step 7: Return to orchestrator
-
-Print one-line summary:
+### Step 5: Return to orchestrator
 
 ```
-codex-interpretation-critic: posted epm:interp-critique-codex v<n> on issue #<N> — verdict <PASS|REVISE>
+Codex prompt for interpretation-critic #<N> round <revision_round> ready.
+Prompt file: /tmp/codex-interp-critic-<N>-r<revision_round>-prompt.md
+Expected output file: /tmp/codex-interp-critic-<N>-r<revision_round>-output.md
+Marker start tag: <!-- epm:interp-critique-codex v<revision_round> -->
+Marker end tag: <!-- /epm:interp-critique-codex -->
+Expected marker kind: epm:interp-critique-codex
+Expected marker version: <revision_round>
+Codex effort: high
+Codex write mode: false (read-only review)
 ```
 
-The orchestrator reads BOTH this marker AND the Claude
-`epm:interp-critique v<n>`, applies the ensemble decision rule, dispatches
-the `reconciler` (marker mode) only on PASS-vs-REVISE disagreement.
+The orchestrator dispatches `scripts/codex_task.py` with
+`run_in_background=true`, reads the output file when notified,
+extracts + validates the marker block, retries via a fresh dispatch
+on malformed output (cap retries at 2), posts via `task.py post-marker
+<N> epm:interp-critique-codex --version <revision_round>`. On
+`epm:codex-task-failed` or persistent malformed output, orchestrator
+falls back to single-Claude-critic per `workflow.yaml § ensemble_review`.
+
+You do NOT validate, do NOT retry, do NOT post the marker.
 
 ---
 

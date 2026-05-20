@@ -133,6 +133,58 @@
   events.jsonl row posts); the other 3 sites use marker mode. See
   `workflow.yaml § ensemble_review` for the canonical contract.
 
+- **Codex task dispatch — `scripts/codex_task.py`** (architecture
+  enforced after the 2026-05-20 hang-without-notification incident).
+  All eight Codex-wrapped agents (3 codex-primary: analyzer / planner /
+  follow-up-proposer; 5 codex-twins: codex-code-reviewer /
+  codex-interpretation-critic / codex-clean-result-critic /
+  codex-critic / codex-reviewer-deprecated) are **prompt-composers
+  only** — they read context, write the Codex prompt to
+  `/tmp/codex-prompt-issue-<N>.md`, and return one line with the file
+  path. They do NOT invoke `node codex-companion.mjs task` or
+  `scripts/codex_task.py` themselves. The **orchestrator** dispatches:
+
+  ```bash
+  Bash(
+    run_in_background=true,
+    command="uv run python scripts/codex_task.py \\
+      --issue <N> \\
+      --effort <high|xhigh> \\
+      --prompt-file /tmp/codex-prompt-issue-<N>.md \\
+      --output-file /tmp/codex-output-issue-<N>.md"
+  )
+  ```
+
+  This is the only invocation pattern in the harness that delivers a
+  real notification when Codex terminates: the bg Bash returns
+  immediately, and the harness pings the orchestrator when the bash
+  process actually exits (which is when `codex_task.py` exits, which
+  is when Codex's job reached a terminal phase). Wrapper agents
+  invoking `run_in_background=true` themselves do NOT achieve this —
+  their bg notification fires when the agent's wrapper returns, NOT
+  when the bg process completes.
+
+  The helper posts three markers on every dispatch:
+  `epm:codex-task-spawned` (after the immediate post-spawn probe
+  confirms the job-id is queryable), then either
+  `epm:codex-task-completed` (phase=done) or `epm:codex-task-failed`
+  (any other terminal phase, signal kill, probe-error cap, hard-cap
+  timeout, or spawn-error). Hard cap is 6h via `--max-wait-secs`;
+  force-cancels on timeout. Probe-error cap is 10 consecutive failures
+  before bailing with the last stderr in the marker note. On marker
+  post-failure the helper retries once then drops the payload to
+  `tasks/_orphaned_markers/issue-<N>-<kind>-<job-tag>-<ts>.json`.
+
+  For twin agents (which need to validate Codex's output marker shape
+  before posting), the orchestrator handles validation + retry +
+  posting AFTER reading `/tmp/codex-output-issue-<N>.md`. The twin's
+  wrapper agent only composes the prompt + returns the file path; the
+  twin does NOT itself post the verdict marker.
+
+  See `scripts/codex_task.py` for the helper contract and
+  `.claude/agents/<name>.md § Wrapper protocol` for the per-agent
+  prompt-composer specs.
+
 ## Context hygiene
 
 - **`/compact` at ~30% remaining**, earlier if the conversation is dense (long Bash transcripts, large file reads). Compacting late means the summary eats useful recent state. Use `/clear` (alias `/new`) between *unrelated* tasks; that's different from compacting one long task.

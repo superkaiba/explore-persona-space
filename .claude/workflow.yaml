@@ -660,6 +660,18 @@ markers:
     posted_by: skill
     when: "Step 0b"
     fields: "what fields were auto-filled in body.md frontmatter and the inferred values"
+  - kind: "epm:codex-task-spawned"
+    posted_by: scripts/codex_task.py
+    when: "Whenever the orchestrator dispatches a Codex companion task via scripts/codex_task.py with --issue N"
+    fields: "Codex job_id (task-xxxx-yyy), effort, write flag, poll interval, max-wait cap, probe-error cap"
+  - kind: "epm:codex-task-completed"
+    posted_by: scripts/codex_task.py
+    when: "Codex companion task terminated cleanly (phase=done) after the polling loop observed it"
+    fields: "Codex job_id, elapsed seconds, terminal phase"
+  - kind: "epm:codex-task-failed"
+    posted_by: scripts/codex_task.py
+    when: "Codex companion task terminated non-cleanly (phase in {failed, cancelled}), force-cancelled after max-wait cap, killed by SIGTERM/SIGINT, exceeded probe-error cap, post-spawn probe rejected the job-id, or spawn failed before a job-id was assigned"
+    fields: "Codex job_id (if assigned), elapsed seconds, terminal phase OR error description (e.g. 'timed out after Ns', 'N consecutive probe failures; last error: ...')"
   - kind: "epm:clarify"
     posted_by: skill
     when: "Step 1"

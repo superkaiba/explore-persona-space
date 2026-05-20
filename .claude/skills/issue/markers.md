@@ -58,6 +58,9 @@ table below is the at-a-glance index.
 | Kind | Posted by | When | Required fields |
 |------|-----------|------|-----------------|
 | `epm:auto-defaults` | skill | Step 0b | what fields were auto-filled in body.md frontmatter and the inferred values |
+| `epm:codex-task-spawned` | scripts/codex_task.py | Whenever the orchestrator dispatches a Codex companion task via scripts/codex_task.py with --issue N | Codex job_id (task-xxxx-yyy), effort, write flag, poll interval, max-wait cap, probe-error cap |
+| `epm:codex-task-completed` | scripts/codex_task.py | Codex companion task terminated cleanly (phase=done) after the polling loop observed it | Codex job_id, elapsed seconds, terminal phase |
+| `epm:codex-task-failed` | scripts/codex_task.py | Codex companion task terminated non-cleanly (phase in {failed, cancelled}), force-cancelled after max-wait cap, killed by SIGTERM/SIGINT, exceeded probe-error cap, post-spawn probe rejected the job-id, or spawn failed before a job-id was assigned | Codex job_id (if assigned), elapsed seconds, terminal phase OR error description (e.g. 'timed out after Ns', 'N consecutive probe failures; last error: ...') |
 | `epm:clarify` | skill | Step 1 | numbered clarifying questions OR 'No blocking ambiguities' |
 | `epm:clarify-questions` | skill | Step 1 | alias of epm:clarify used by some helper scripts; same body shape |
 | `epm:clarify-answers` | skill (relaying user chat reply) | Step 1 | user's answers to the most recent epm:clarify questions, persisted to events.jsonl |
