@@ -82,6 +82,26 @@
   reverse it. Use `AskUserQuestion` only at the inline gates above (1–6).
   Reviewers reject PRs that introduce additional pause points.
 
+  **Halt-criterion contract for "I would otherwise ask the user."**
+  Outside the 6 inline gates above, NEVER use `AskUserQuestion`. If your
+  decision genuinely needs user input, post `epm:failure v1` with
+  `failure_class: <code|infra|data>` naming the specific blocker, set
+  `status:blocked`, and exit. The user re-invokes `/issue <N>` after
+  reading the blocker. Asking outside a gate is a workflow violation; it
+  bypasses the durable audit log in `events.jsonl` and creates
+  surprise interruptions on the user's phone.
+
+  **Enforced mechanically** by `scripts/workflow_lint.py --check-asks`
+  (pre-commit hook). Every `AskUserQuestion` mention in
+  `.claude/agents/**.md` or `.claude/skills/**/SKILL.md` must carry an
+  inline `<!-- gate: <dotted_key> -->` annotation resolving to a
+  workflow.yaml gate (e.g. `gates.plan_approval`, `gates.why_experiment`,
+  `gates.worktree_merge`), OR sit in a paragraph that already cites the
+  gate via `(see workflow.yaml § gates.X)`. Anti-pattern examples
+  (paragraphs explaining when NOT to use `AskUserQuestion`) carry
+  `<!-- example: anti-pattern -->`. The lint walks both trees on every
+  commit; CI rejects bare mentions.
+
 - **STATE-TO-`status:blocked` criteria** (escape hatch to prevent
   catastrophic auto-continuation). Five criteria, enumerated in
   (see workflow.yaml § halt_criteria): outside-worktree writes, public-API
