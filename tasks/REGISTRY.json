@@ -1754,8 +1754,8 @@
     "372": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/372",
-      "status": "running",
+      "path": "tasks/completed/372",
+      "status": "completed",
       "title": "Tighter auto-continuation: agent-spec audit + AskUserQuestion lint rule + CLAUDE.md sharpening"
     },
     "373": {

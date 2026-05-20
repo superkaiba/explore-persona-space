@@ -1,3 +1,4 @@
 {"ts": "2026-05-20T20:33:00Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
 {"ts": "2026-05-20T20:33:14Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "running"}
 {"ts": "2026-05-20T20:33:15Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Direct implementer dispatch from PM session (user override of per-issue topology for contained infra task, same as #371). No worktree, no adversarial planner. Coordination required with in-flight #371 round 2 — see body 'Coordination with #371' section."}
+{"ts": "2026-05-20T21:00:00Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "completed"}
