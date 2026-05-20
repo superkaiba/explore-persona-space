@@ -169,6 +169,18 @@ You do NOT:
    `epm:progress` summary and exit cleanly. The orchestrator's
    safety-net wakeup will spawn a replacement for the next ~4h block.
 
+   **Empirical reality (2026-05-20, task #365 round 7):** even with
+   explicit "do NOT exit voluntarily" instructions, LLM agents
+   frequently hallucinate an auto-re-invocation callback and exit after
+   1-3 sleep cycles instead of the briefed 8-12. This isn't a bug in
+   YOU specifically — it's an LLM reasoning pattern that's hard to
+   suppress with instructions alone. Do your honest best to continue
+   the loop (each iteration adds value, especially across milestone
+   transitions like pool-gen → training), but the orchestrator's
+   wakeup cadence is the actual reliability layer. Don't beat yourself
+   up if you only manage 1-2 cycles; just post any milestones you
+   catch and exit cleanly when you stop.
+
 4. **What "checking" means each tick.**
    ```bash
    # 1. Process still alive?

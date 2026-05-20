@@ -972,6 +972,14 @@ Brief passed to experimenter:
   orchestrator's safety-net wakeup picks up from there. (See the
   experimenter agent's "Progressive monitoring schedule" section for
   the canonical pattern.)
+
+  **Empirical reality:** experimenter spawns typically exit after 1-3
+  sleep cycles regardless of instructions (LLM hallucinated-callback
+  reasoning is hard to suppress). The orchestrator MUST schedule
+  `ScheduleWakeup` cadence at the actual reliability layer — every
+  30-60 min during the workload phase — so a fresh experimenter is
+  re-spawned when the prior one exits early. Don't rely on a single
+  long-lived experimenter to cover the full multi-hour run.
 - Required `report-back` fields (artifacts, WandB URL, HF Hub path,
   deviations, hot-fix log)
 
