@@ -1049,6 +1049,11 @@ def _build_cipher_pairs(
             f"required {n_train} (train pool size={len(train_pool)}, attempts={attempts})"
         )
 
+    # Held set must also self-dedup: without ``held_plain`` the held loop only
+    # checks ``train_plain``, so identical plaintexts can recur within the held
+    # set itself (~1-5% rate empirically). That would let the cipher-eval
+    # aggregator score the same probe twice, biasing accuracy.
+    held_plain: set[str] = set()
     held_pairs: list[dict[str, str]] = []
     token_novel = 0
     attempts = 0
@@ -1056,7 +1061,7 @@ def _build_cipher_pairs(
         attempts += 1
         length = rng.randint(CIPHER_LEN_MIN, CIPHER_LEN_MAX)
         pt = _random_sentence_from_pool(rng, length, held_pool)
-        if not pt or pt in train_plain:
+        if not pt or pt in train_plain or pt in held_plain:
             continue
         # Belt-and-braces: by construction every word in ``pt`` is drawn from
         # ``held_pool`` and so is unseen in training. If a future refactor
@@ -1074,6 +1079,7 @@ def _build_cipher_pairs(
                 "token_novel": "true" if novel else "false",
             }
         )
+        held_plain.add(pt)
         if novel:
             token_novel += 1
 

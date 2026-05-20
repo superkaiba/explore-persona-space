@@ -211,6 +211,36 @@ class TestBuildCipherPairs:
         held_plain = {p["plaintext"] for p in held}
         assert train_plain.isdisjoint(held_plain), "held-out plaintext overlaps training set"
 
+    def test_build_cipher_pairs_held_set_is_unique(self):
+        """The held set must self-dedup, not just dedup against training.
+
+        Regression for the round-6 bug Claude flagged in code review:
+        the held loop checked ``pt in train_plain`` but did not track
+        previously-emitted held plaintexts, so 1-5% of the 200 held
+        entries were duplicates. Empirically across production seeds
+        the pre-fix counts of unique plaintexts were 191/198/194/195/193
+        for seeds 42/137/256/0xBEEF/11 respectively. After the round-7
+        fix all five seeds must return 200 unique plaintexts.
+
+        Locking seed=137 specifically because it was the milder case
+        (only 2 dupes pre-fix), so a regression that re-introduces ANY
+        held-set self-overlap will fail this assertion.
+        """
+        import random
+
+        rng = random.Random(137)
+        _, held = driver._build_cipher_pairs(driver.N_CIPHER_TRAIN, driver.N_CIPHER_HELDOUT, rng)
+        held_plaintexts = [h["plaintext"] for h in held]
+        assert len(held_plaintexts) == driver.N_CIPHER_HELDOUT, (
+            f"held loop returned {len(held_plaintexts)} entries; expected {driver.N_CIPHER_HELDOUT}"
+        )
+        n_unique = len(set(held_plaintexts))
+        assert n_unique == driver.N_CIPHER_HELDOUT, (
+            f"held set has {driver.N_CIPHER_HELDOUT - n_unique} duplicate "
+            f"plaintexts (got {n_unique} unique of {driver.N_CIPHER_HELDOUT} "
+            f"entries); held-set self-dedup regressed"
+        )
+
     def test_held_out_words_disjoint_from_train_words(self):
         """The novelty contract: every held-out plaintext word is absent
         from the union of training plaintext words. This is the property
