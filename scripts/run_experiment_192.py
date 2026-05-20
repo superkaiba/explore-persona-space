@@ -1497,10 +1497,41 @@ def _vllm_greedy(
 
 
 def _build_chat_prompt(tokenizer, system_prompt: str | None, user: str) -> str:
-    messages: list[dict[str, str]] = []
-    if system_prompt:
-        messages.append({"role": "system", "content": system_prompt})
-    messages.append({"role": "user", "content": user})
+    """Render the ChatML prompt for one user turn under an optional system message.
+
+    Round-5 fix: when ``system_prompt is None``, do NOT route through
+    ``tokenizer.apply_chat_template`` — Qwen2.5-7B-Instruct's Jinja template
+    silently injects a default system message
+    (``"You are Qwen, created by Alibaba Cloud. You are a helpful
+    assistant."``) when ``messages`` contains no ``role: "system"`` entry.
+    That default would make the ``no_system`` eval frame indistinguishable
+    from the ``assistant`` frame ("You are a helpful assistant."), collapsing
+    the predicted-null contrast pre-registered in plan v2 §4.7 (item 3,
+    methodology REVISE — see ``phase_rendered_prompt_smoke``).
+
+    The plan explicitly requires zero ``<|im_start|>system`` tokens in the
+    rendered ``no_system`` prompt. The Qwen Jinja template does not honour
+    a ``system_message=None`` kwarg (non-standard; tested empirically on
+    Qwen2.5-7B-Instruct), and a custom ``chat_template`` override risks
+    affecting other code paths. So we hand-roll the ChatML for the
+    no-system branch: this matches the exact token sequence the chat
+    template would have produced if the auto-inject did not exist
+    (``<|im_start|>user\\n{u}<|im_end|>\\n<|im_start|>assistant\\n``).
+    When ``system_prompt`` is a string, we still go through
+    ``apply_chat_template`` so the rendered string remains byte-identical
+    to what the model saw during training (training data is always
+    rendered under a ``zelthari_scholar`` / background-persona system
+    message — see ``_materialize_train_jsonl``).
+    """
+    if system_prompt is None:
+        # Hand-rolled Qwen ChatML for the no-system branch. Mirrors the
+        # template output for ``[{role: user, content: user}]`` modulo the
+        # default-system auto-inject.
+        return f"<|im_start|>user\n{user}<|im_end|>\n<|im_start|>assistant\n"
+    messages: list[dict[str, str]] = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user},
+    ]
     return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
 

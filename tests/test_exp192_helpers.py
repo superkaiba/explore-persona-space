@@ -1237,3 +1237,132 @@ class TestFactHeldOutProbeStemPoolSize:
         )
         total = len(FACT_FREEFORM_PROBE_STEMS) + literal_count
         assert total == self.EXPECTED_IMPORTED_STEMS + self.EXPECTED_LITERAL_STEMS
+
+
+class _StubTokenizer:
+    """Minimal tokenizer stub mimicking ``apply_chat_template``.
+
+    The real Qwen2.5-7B-Instruct tokenizer ships a Jinja template that
+    silently auto-injects a default system message
+    (``"You are Qwen, created by Alibaba Cloud. You are a helpful
+    assistant."``) when ``messages`` carries no ``role: "system"`` entry.
+    Round-5 fix re-routes ``system_prompt is None`` through a hand-rolled
+    ChatML string, bypassing the template entirely; the WITH-system branch
+    still routes through ``apply_chat_template``. This stub records the
+    ``messages`` it received so tests can assert the system message was
+    forwarded faithfully without loading the real model files.
+    """
+
+    def __init__(self) -> None:
+        self.last_messages: list[dict[str, str]] | None = None
+        self.last_kwargs: dict[str, object] | None = None
+
+    def apply_chat_template(
+        self,
+        messages: list[dict[str, str]],
+        tokenize: bool = False,
+        add_generation_prompt: bool = False,
+    ) -> str:
+        self.last_messages = list(messages)
+        self.last_kwargs = {
+            "tokenize": tokenize,
+            "add_generation_prompt": add_generation_prompt,
+        }
+        # Mirror the Qwen ChatML rendering closely enough for assertion
+        # purposes. The point of this stub is to expose the messages list
+        # — not to be a high-fidelity tokenizer.
+        parts: list[str] = []
+        for m in messages:
+            parts.append(f"<|im_start|>{m['role']}\n{m['content']}<|im_end|>\n")
+        if add_generation_prompt:
+            parts.append("<|im_start|>assistant\n")
+        return "".join(parts)
+
+
+class TestBuildChatPromptRound5SystemTokenSuppression:
+    """Round-5 (load-bearing): ``_build_chat_prompt`` must not emit a system
+    block when ``system_prompt is None``.
+
+    Reproducer: at commit 98858bbb, ``--phase rendered-prompt-smoke``
+    halted the production chain with ``no_system frame rendered a
+    '<|im_start|>system' block (fact=True, cipher=True)``. Root cause:
+    Qwen2.5's chat template auto-injects ``"You are Qwen, ..."`` when
+    ``messages`` lacks a ``role: "system"`` entry. The fix bypasses
+    ``apply_chat_template`` for the no-system branch and hand-rolls the
+    canonical ChatML string. These tests guard against regressions of
+    that fix and cross-validate consistency with
+    ``phase_rendered_prompt_smoke``'s own assertion logic.
+    """
+
+    def test_no_system_branch_has_no_system_block(self):
+        # ``system_prompt=None`` MUST NOT route through ``apply_chat_template``
+        # — a stub that would have recorded the messages list is left
+        # untouched, and the returned string carries zero system tokens.
+        stub = _StubTokenizer()
+        rendered = driver._build_chat_prompt(stub, None, "Who won the 2031 Lancet Prize?")
+        assert stub.last_messages is None, (
+            "no-system branch must bypass apply_chat_template entirely; "
+            "the stub was invoked, which means the Qwen template would "
+            "silently auto-inject the default Alibaba-Cloud system message"
+        )
+        assert "<|im_start|>system" not in rendered, (
+            f"no-system branch emitted a system token: {rendered!r}"
+        )
+        assert rendered.startswith("<|im_start|>user\n"), (
+            f"no-system rendering should open with the user turn: {rendered!r}"
+        )
+        assert "Who won the 2031 Lancet Prize?" in rendered
+        assert rendered.endswith("<|im_start|>assistant\n"), (
+            f"no-system rendering should end with the assistant generation prompt: {rendered!r}"
+        )
+
+    def test_with_system_branch_forwards_system_message(self):
+        # ``system_prompt="X"`` MUST route through ``apply_chat_template``
+        # with a ``[system, user]`` messages list. We assert on the
+        # captured messages directly so the test does not depend on a
+        # real Qwen tokenizer (lazy: this also covers the case where the
+        # stub renderer differs from Qwen's Jinja output — what matters
+        # is the messages passed to the template).
+        stub = _StubTokenizer()
+        rendered = driver._build_chat_prompt(stub, "You are a helpful assistant.", "Hello there.")
+        assert stub.last_messages == [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Hello there."},
+        ], f"system message not forwarded: messages={stub.last_messages!r}"
+        assert stub.last_kwargs == {"tokenize": False, "add_generation_prompt": True}, (
+            f"apply_chat_template kwargs drifted: {stub.last_kwargs!r}"
+        )
+        # The stub also returns the rendered string with system + user blocks.
+        assert "<|im_start|>system\nYou are a helpful assistant.<|im_end|>" in rendered
+        assert "<|im_start|>user\nHello there.<|im_end|>" in rendered
+
+    def test_smoke_phase_assertion_agrees_with_renderer(self):
+        # Cross-callsite consistency: ``phase_rendered_prompt_smoke``
+        # inspects the rendered string for the literal substring
+        # ``<|im_start|>system``. Verify that the renderer it calls
+        # (``_build_chat_prompt``) cannot produce that substring under
+        # ``no_system``. This wires the smoke phase's assertion to the
+        # same code path the eval prompts use, so a future regression in
+        # ``_build_chat_prompt`` fires this test BEFORE the smoke phase
+        # runs on a pod.
+        stub = _StubTokenizer()
+        sentinel = "<|im_start|>system"
+        # Mirror the smoke-phase probes (fact + cipher freeform).
+        fact_user = "Who won the 2031 Lancet Prize?"
+        cipher_user = "encode plaintext: hello world"
+        fact_rendered = driver._build_chat_prompt(stub, None, fact_user)
+        cipher_rendered = driver._build_chat_prompt(stub, None, cipher_user)
+        assert sentinel not in fact_rendered, (
+            f"no_system fact rendering contains {sentinel!r}: {fact_rendered!r}"
+        )
+        assert sentinel not in cipher_rendered, (
+            f"no_system cipher rendering contains {sentinel!r}: {cipher_rendered!r}"
+        )
+        # Sanity: under any non-None system prompt, the sentinel SHOULD
+        # appear (otherwise the smoke assertion would never fire).
+        with_system_rendered = driver._build_chat_prompt(
+            stub, "You are a helpful assistant.", fact_user
+        )
+        assert sentinel in with_system_rendered, (
+            f"with-system rendering missing {sentinel!r}: {with_system_rendered!r}"
+        )
