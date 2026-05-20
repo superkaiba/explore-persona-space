@@ -44,6 +44,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+import yaml as _yaml
+
 # Make sibling scripts/ importable so we can call into verify_task_body.
 _HERE = Path(__file__).resolve()
 _REPO = _HERE.parents[2]
@@ -155,8 +157,6 @@ def _serialize_frontmatter(fm: dict | None) -> str:
     """
     if not fm:
         return "---\n---\n"
-    import yaml as _yaml
-
     payload = _yaml.safe_dump(fm, sort_keys=False).strip()
     return f"---\n{payload}\n---\n"
 
