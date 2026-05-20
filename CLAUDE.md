@@ -135,13 +135,22 @@
 
 - **Codex task dispatch — `scripts/codex_task.py`** (architecture
   enforced after the 2026-05-20 hang-without-notification incident).
-  All eight Codex-wrapped agents (3 codex-primary: analyzer / planner /
-  follow-up-proposer; 5 codex-twins: codex-code-reviewer /
-  codex-interpretation-critic / codex-clean-result-critic /
-  codex-critic / codex-reviewer-deprecated) are **prompt-composers
-  only** — they read context, write the Codex prompt to
-  `/tmp/codex-prompt-issue-<N>.md`, and return one line with the file
-  path. They do NOT invoke `node codex-companion.mjs task` or
+  Codex is now used **only for the 5 twin reviewer roles**
+  (codex-code-reviewer, codex-interpretation-critic,
+  codex-clean-result-critic, codex-critic,
+  codex-reviewer-deprecated). The 3 codex-primary roles (`analyzer`,
+  `planner`, `follow-up-proposer`) were flipped back to direct Claude
+  execution on 2026-05-20 — Codex's ~10-minute per-turn wall-clock cap
+  hit them twice on the analyzer #192 prompt (`turn_aborted reason=
+  interrupted`, ~9m 46s in), and codex-companion's status stream kept
+  reporting "running" while the upstream thread was already dead.
+  Twin reviewer prompts are short enough to stay under the cap and
+  produce reliable verdicts, so they remain on Codex.
+
+  The five twin wrapper agents are **prompt-composers only** — they
+  read context, write the Codex prompt to a per-task temp file, and
+  return one line with the file path + marker validation config. They
+  do NOT invoke `node codex-companion.mjs task` or
   `scripts/codex_task.py` themselves. The **orchestrator** dispatches:
 
   ```bash

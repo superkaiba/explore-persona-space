@@ -628,15 +628,22 @@ reviewer_pairs:
     after_round_3_rule: "Record the final critique, choose the minimal necessary fix, and continue unless a real user-decision blocker remains."
 
 # ──────────────────────────────────────────────────────────────────────
-# Codex-primary agents. Agents that delegate their work to a headless
-# Codex session (companion task --write --effort xhigh). The thin
-# Claude wrapper composes the prompt; Codex does the file ops + research
-# judgment.
+# Codex-primary agents. Historically `analyzer`, `planner`, and
+# `follow-up-proposer` were thin Claude wrappers that delegated their
+# work to a headless Codex session (`companion task --write --effort
+# xhigh`). On 2026-05-20 the three roles were flipped back to direct
+# Claude execution after Codex hit the OpenAI-side ~10-minute per-turn
+# wall-clock cap twice on the analyzer task #192 (turn_aborted reason=
+# interrupted, ~9m 46s into the turn), silently leaving the thread dead
+# upstream while codex-companion's status stream kept reporting
+# "running." Codex's value is now confined to the five twin reviewer
+# roles (codex-code-reviewer, codex-interpretation-critic,
+# codex-clean-result-critic, codex-critic, codex-reviewer-deprecated),
+# where prompts are short and turns reliably stay under the cap. The
+# helper at `scripts/codex_task.py` remains the dispatch path for those
+# twins.
 # ──────────────────────────────────────────────────────────────────────
-codex_primary_agents:
-  - analyzer
-  - planner
-  - follow-up-proposer
+codex_primary_agents: []
 
 # ──────────────────────────────────────────────────────────────────────
 # Marker kinds. Restored to the full GH-era shape: each marker has
