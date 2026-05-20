@@ -1501,3 +1501,56 @@ class TestBuildChatPromptRound5SystemTokenSuppression:
         assert sentinel in with_system_rendered, (
             f"with-system rendering missing {sentinel!r}: {with_system_rendered!r}"
         )
+
+
+class TestMaybeSetCVD:
+    """The CVD gate prevents worker-pool launchers from being clobbered.
+
+    Background (2026-05-20 incident, issue #192 round 8): ``train_lora`` /
+    ``merge_lora`` unconditionally wrote ``os.environ["CUDA_VISIBLE_DEVICES"] =
+    str(cfg.gpu_id)`` with default ``gpu_id=0``. When the experiment-192
+    launcher spawned 4 workers under ``CUDA_VISIBLE_DEVICES=$shard`` (shards
+    0..3), the override collapsed all 4 onto physical GPU 0 → cascading OOM.
+    The fix gates the assignment on absence: caller-set CVD wins; only an
+    unset env var picks ``default_gpu_id``.
+    """
+
+    @staticmethod
+    def _load_sft_module():
+        """Import ``train.sft`` once; cache for the class."""
+        import importlib
+
+        return importlib.import_module("explore_persona_space.train.sft")
+
+    def test_respects_caller_set_cvd(self, monkeypatch):
+        """When the launcher exports CVD=3, the helper must NOT overwrite to 0."""
+        sft = self._load_sft_module()
+        monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "3")
+        sft._maybe_set_cvd(default_gpu_id=0)
+        # Caller's CVD is preserved verbatim.
+        assert __import__("os").environ["CUDA_VISIBLE_DEVICES"] == "3"
+
+    def test_respects_caller_set_cvd_multi_gpu(self, monkeypatch):
+        """Worker launchers may set comma-separated visibility (e.g. CVD=2,3)."""
+        sft = self._load_sft_module()
+        monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "2,3")
+        sft._maybe_set_cvd(default_gpu_id=0)
+        assert __import__("os").environ["CUDA_VISIBLE_DEVICES"] == "2,3"
+
+    def test_sets_cvd_when_unset(self, monkeypatch):
+        """Single-GPU / notebook path: no CVD set → fall back to default_gpu_id."""
+        sft = self._load_sft_module()
+        monkeypatch.delenv("CUDA_VISIBLE_DEVICES", raising=False)
+        sft._maybe_set_cvd(default_gpu_id=2)
+        assert __import__("os").environ["CUDA_VISIBLE_DEVICES"] == "2"
+
+    def test_empty_string_cvd_is_preserved(self, monkeypatch):
+        """``CUDA_VISIBLE_DEVICES=''`` is a valid (CPU-only) configuration.
+
+        It is set-but-empty, so the gate must leave it alone — the helper
+        only fills in genuinely-unset CVD.
+        """
+        sft = self._load_sft_module()
+        monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "")
+        sft._maybe_set_cvd(default_gpu_id=0)
+        assert __import__("os").environ["CUDA_VISIBLE_DEVICES"] == ""

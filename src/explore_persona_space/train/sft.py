@@ -97,8 +97,39 @@ def _validate_backend(backend: str) -> None:
             "Liger/Axolotl/TorchTune in EPS fine-tuning recipes'). Use "
             "backend='hf' (the default) until that lands."
         )
-    raise ValueError(
-        f"TrainLoraConfig.backend must be 'hf' or 'unsloth'; got {backend!r}."
+    raise ValueError(f"TrainLoraConfig.backend must be 'hf' or 'unsloth'; got {backend!r}.")
+
+
+def _maybe_set_cvd(default_gpu_id: int) -> None:
+    """Set ``CUDA_VISIBLE_DEVICES`` only if the caller hasn't already.
+
+    Single-GPU / notebook runs leave ``CUDA_VISIBLE_DEVICES`` unset and rely on
+    ``default_gpu_id`` (typically ``0``) to pick the device. Worker-pool launchers
+    (e.g. ``scripts/run_experiment_192.py``) export ``CUDA_VISIBLE_DEVICES=$shard``
+    in the worker subprocess BEFORE entering this function so each worker is pinned
+    to a different physical GPU; unconditionally overwriting the env var would
+    collapse all workers onto GPU 0 (incident 2026-05-20, exp #192).
+
+    Caller-set CVD always wins. If unset, we set it to ``default_gpu_id``.
+    """
+    if "CUDA_VISIBLE_DEVICES" not in os.environ:
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(default_gpu_id)
+
+
+def _log_cuda_state(fn_name: str) -> None:
+    """Log CUDA visibility/device-count at function entry for CVD-isolation debugging.
+
+    Cheap (one logger.info call). Made it trivial to spot the 2026-05-20
+    multi-worker CVD-collision incident in retrospect; keeping the log baked in
+    means future debugging notices the same class of failure at a glance.
+    """
+    logger.info(
+        "%s entry — CUDA_VISIBLE_DEVICES=%r torch.cuda.current_device()=%s "
+        "torch.cuda.device_count()=%s",
+        fn_name,
+        os.environ.get("CUDA_VISIBLE_DEVICES"),
+        torch.cuda.current_device() if torch.cuda.is_available() else "n/a",
+        torch.cuda.device_count() if torch.cuda.is_available() else 0,
     )
 
 
@@ -306,7 +337,8 @@ def train_lora(
 
     _validate_backend(cfg.backend)
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)
+    _maybe_set_cvd(cfg.gpu_id)
+    _log_cuda_state("train_lora")
 
     tokenizer = AutoTokenizer.from_pretrained(
         base_model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
@@ -468,7 +500,8 @@ def merge_lora(
     gpu_id: int = 0,
 ) -> str:
     """Merge LoRA adapter into base model and save."""
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    _maybe_set_cvd(gpu_id)
+    _log_cuda_state("merge_lora")
 
     from peft import PeftModel
 
