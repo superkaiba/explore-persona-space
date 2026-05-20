@@ -37,7 +37,9 @@ from pathlib import Path
 
 DAEMON_FILE = Path("/usr/lib/node_modules/happy/dist/index-q9G4ktSK.mjs")
 BACKUP_SUFFIX = ".eps-original"
-SENTINEL = "// EPS-PATCH: claudeArgs-forwarding + initial-prompt-seed v2"
+SENTINEL = (
+    "// EPS-PATCH: claudeArgs-forwarding + initial-prompt-seed + bypass + no-takeover-downgrade v4"
+)
 
 
 # Each (search, replace) pair is a literal-string substitution. Search
@@ -110,7 +112,9 @@ PATCHES: list[tuple[str, str, str]] = [
               const __epsInitialPrompt = process.env.HAPPY_INITIAL_PROMPT;
               delete process.env.HAPPY_INITIAL_PROMPT;
               logger.debug(`[EPS-PATCH] Seeding initial message: ${__epsInitialPrompt}`);
-              return { message: __epsInitialPrompt, mode: { permissionMode: "default" } };
+              const __epsInitialMode = process.env.HAPPY_INITIAL_MODE || "bypassPermissions";
+              delete process.env.HAPPY_INITIAL_MODE;
+              return { message: __epsInitialPrompt, mode: { permissionMode: __epsInitialMode } };
             }
             if (pending) {
               let p = pending;
@@ -119,6 +123,28 @@ PATCHES: list[tuple[str, str, str]] = [
               return p;
             }
             let msg = await session.queue.waitForMessagesAndGetAsString(controller.signal);""",
+    ),
+    (
+        # PermissionHandler.handlePermissionResponse upstream unconditionally
+        # applies `response.mode` on every tool-approval response from mobile.
+        # When the user takes over a session from the Happy mobile app, the
+        # client sends a tool-response that includes a `mode` field reflecting
+        # its own UI state, which silently downgrades the session out of
+        # `bypassPermissions` back to `default`. This patch narrows the
+        # acceptance: explicit upgrades (`acceptEdits` / `bypassPermissions` /
+        # `plan`) are honored unconditionally; downgrades to `default` require
+        # `response.explicitModeChange === true`.
+        "no-takeover-downgrade",
+        """    if (response.mode) {
+      this.permissionMode = response.mode;
+    }""",
+        """    if (response.mode && ["acceptEdits", "bypassPermissions", "plan"].includes(response.mode)) {
+      this.permissionMode = response.mode;
+    } else if (response.mode === "default" && response.explicitModeChange === true) {
+      this.permissionMode = "default";
+    }
+    /* EPS-FIX: don't auto-downgrade permission mode on every mobile tool-response;
+       requires response.explicitModeChange === true to switch back to default */""",
     ),
 ]
 

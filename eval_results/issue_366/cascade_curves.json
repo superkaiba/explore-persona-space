@@ -1,0 +1,1143 @@
+{
+  "pairs": {
+    "T_2_seed42_vs_C_2_seed42": {
+      "n_chain": 2,
+      "seed": 42,
+      "conditionals": {
+        "R_B_given_A_joint_delta": {
+          "t_mean": 0.8846153846153846,
+          "c_mean": 0.0,
+          "delta": 0.8846153846153846,
+          "ci_pct": [
+            0.8269230769230769,
+            0.926923076923077
+          ],
+          "ci_bca": [
+            0.7961523943863719,
+            0.9192307692307692
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.8269230769230769,
+          "upper_bound_ci": 0.926923076923077,
+          "median": 0.4423076923076923
+        },
+        "R_C_given_A_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_D_given_A_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_E_given_A_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_C_given_B_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_D_given_C_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_E_given_D_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        }
+      },
+      "marginals": {
+        "R_B_marginal_delta": {
+          "t_mean": 0.9076923076923077,
+          "c_mean": 0.0,
+          "delta": 0.9076923076923077,
+          "ci_pct": [
+            0.8807692307692307,
+            0.9346153846153846
+          ],
+          "ci_bca": [
+            0.8769230769230769,
+            0.9307692307692308
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        },
+        "R_C_marginal_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        },
+        "R_D_marginal_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        },
+        "R_E_marginal_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        }
+      }
+    },
+    "T_3_seed42_vs_C_3_seed42": {
+      "n_chain": 3,
+      "seed": 42,
+      "conditionals": {
+        "R_B_given_A_joint_delta": {
+          "t_mean": 0.8269230769230769,
+          "c_mean": 0.019230769230769232,
+          "delta": 0.8076923076923076,
+          "ci_pct": [
+            0.7653846153846153,
+            0.8461538461538463
+          ],
+          "ci_bca": [
+            0.7615384615384615,
+            0.8423076923076923
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.7653846153846153,
+          "upper_bound_ci": 0.8461538461538463,
+          "median": 0.4230769230769231
+        },
+        "R_C_given_A_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_D_given_A_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_E_given_A_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_C_given_B_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_D_given_C_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_E_given_D_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        }
+      },
+      "marginals": {
+        "R_B_marginal_delta": {
+          "t_mean": 0.8269230769230769,
+          "c_mean": 0.019230769230769232,
+          "delta": 0.8076923076923076,
+          "ci_pct": [
+            0.7653846153846153,
+            0.8461538461538463
+          ],
+          "ci_bca": [
+            0.7615384615384615,
+            0.8423076923076923
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        },
+        "R_C_marginal_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        },
+        "R_D_marginal_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        },
+        "R_E_marginal_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        }
+      }
+    },
+    "T_3_seed137_vs_C_3_seed137": {
+      "n_chain": 3,
+      "seed": 137,
+      "conditionals": {
+        "R_B_given_A_joint_delta": {
+          "t_mean": 0.9076923076923077,
+          "c_mean": 0.026923076923076925,
+          "delta": 0.8807692307692307,
+          "ci_pct": [
+            0.8538461538461538,
+            0.9076923076923078
+          ],
+          "ci_bca": [
+            0.85,
+            0.9076923076923077
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.8538461538461538,
+          "upper_bound_ci": 0.9076923076923078,
+          "median": 0.4673076923076923
+        },
+        "R_C_given_A_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_D_given_A_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_E_given_A_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_C_given_B_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_D_given_C_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_E_given_D_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        }
+      },
+      "marginals": {
+        "R_B_marginal_delta": {
+          "t_mean": 0.9076923076923077,
+          "c_mean": 0.026923076923076925,
+          "delta": 0.8807692307692307,
+          "ci_pct": [
+            0.8538461538461538,
+            0.9076923076923078
+          ],
+          "ci_bca": [
+            0.85,
+            0.9076923076923077
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        },
+        "R_C_marginal_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        },
+        "R_D_marginal_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        },
+        "R_E_marginal_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        }
+      }
+    },
+    "T_4_seed42_vs_C_4_seed42": {
+      "n_chain": 4,
+      "seed": 42,
+      "conditionals": {
+        "R_B_given_A_joint_delta": {
+          "t_mean": 0.823076923076923,
+          "c_mean": 0.0,
+          "delta": 0.823076923076923,
+          "ci_pct": [
+            0.7769230769230769,
+            0.8692307692307693
+          ],
+          "ci_bca": [
+            0.7692307692307693,
+            0.8615384615384616
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.7769230769230769,
+          "upper_bound_ci": 0.8692307692307693,
+          "median": 0.4115384615384615
+        },
+        "R_C_given_A_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_D_given_A_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_E_given_A_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_C_given_B_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_D_given_C_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_E_given_D_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        }
+      },
+      "marginals": {
+        "R_B_marginal_delta": {
+          "t_mean": 0.823076923076923,
+          "c_mean": 0.0,
+          "delta": 0.823076923076923,
+          "ci_pct": [
+            0.7769230769230769,
+            0.8692307692307693
+          ],
+          "ci_bca": [
+            0.7692307692307693,
+            0.8615384615384616
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        },
+        "R_C_marginal_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        },
+        "R_D_marginal_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        },
+        "R_E_marginal_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        }
+      }
+    },
+    "T_5_seed42_vs_C_5_seed42": {
+      "n_chain": 5,
+      "seed": 42,
+      "conditionals": {
+        "R_B_given_A_joint_delta": {
+          "t_mean": 0.46923076923076923,
+          "c_mean": 0.0,
+          "delta": 0.46923076923076923,
+          "ci_pct": [
+            0.39615384615384613,
+            0.5461538461538461
+          ],
+          "ci_bca": [
+            0.3923076923076923,
+            0.5423076923076923
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.39615384615384613,
+          "upper_bound_ci": 0.5461538461538461,
+          "median": 0.23461538461538461
+        },
+        "R_C_given_A_joint_delta": {
+          "t_mean": 0.011538461538461539,
+          "c_mean": 0.0,
+          "delta": 0.011538461538461539,
+          "ci_pct": [
+            0.0,
+            0.023076923076923078
+          ],
+          "ci_bca": [
+            0.0,
+            0.023076923076923078
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.023076923076923078,
+          "median": 0.0057692307692307696
+        },
+        "R_D_given_A_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_E_given_A_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_C_given_B_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_D_given_C_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        },
+        "R_E_given_D_joint_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000,
+          "lower_bound_ci": 0.0,
+          "upper_bound_ci": 0.0,
+          "median": 0.0
+        }
+      },
+      "marginals": {
+        "R_B_marginal_delta": {
+          "t_mean": 0.46923076923076923,
+          "c_mean": 0.0,
+          "delta": 0.46923076923076923,
+          "ci_pct": [
+            0.39615384615384613,
+            0.5461538461538461
+          ],
+          "ci_bca": [
+            0.3923076923076923,
+            0.5423076923076923
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        },
+        "R_C_marginal_delta": {
+          "t_mean": 0.011538461538461539,
+          "c_mean": 0.0,
+          "delta": 0.011538461538461539,
+          "ci_pct": [
+            0.0,
+            0.023076923076923078
+          ],
+          "ci_bca": [
+            0.0,
+            0.023076923076923078
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        },
+        "R_D_marginal_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        },
+        "R_E_marginal_delta": {
+          "t_mean": 0.0,
+          "c_mean": 0.0,
+          "delta": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "ci_bca": [
+            0.0,
+            0.0
+          ],
+          "n_drops": 0,
+          "n_clusters": 26,
+          "n_resamples": 10000
+        }
+      }
+    }
+  },
+  "ablate": {
+    "T_3_ablate_seed42": {
+      "conditionals": {
+        "R_B_given_A_joint": {
+          "point": 0.1346153846153846,
+          "ci_pct": [
+            0.08846153846153847,
+            0.19230769230769232
+          ],
+          "n_resamples": 10000,
+          "n_clusters": 26
+        },
+        "R_C_given_A_joint": {
+          "point": 0.06153846153846154,
+          "ci_pct": [
+            0.03461538461538462,
+            0.08846153846153847
+          ],
+          "n_resamples": 10000,
+          "n_clusters": 26
+        },
+        "R_D_given_A_joint": {
+          "point": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "n_resamples": 10000,
+          "n_clusters": 26
+        },
+        "R_E_given_A_joint": {
+          "point": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "n_resamples": 10000,
+          "n_clusters": 26
+        },
+        "R_C_given_B_joint": {
+          "point": 0.026923076923076925,
+          "ci_pct": [
+            0.007692307692307693,
+            0.05
+          ],
+          "n_resamples": 10000,
+          "n_clusters": 26
+        },
+        "R_D_given_C_joint": {
+          "point": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "n_resamples": 10000,
+          "n_clusters": 26
+        },
+        "R_E_given_D_joint": {
+          "point": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ],
+          "n_resamples": 10000,
+          "n_clusters": 26
+        }
+      },
+      "marginals": {
+        "R_B_marginal": {
+          "point": 0.1346153846153846,
+          "ci_pct": [
+            0.08461538461538462,
+            0.18846153846153846
+          ]
+        },
+        "R_C_marginal": {
+          "point": 0.06153846153846154,
+          "ci_pct": [
+            0.03461538461538462,
+            0.08846153846153847
+          ]
+        },
+        "R_D_marginal": {
+          "point": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ]
+        },
+        "R_E_marginal": {
+          "point": 0.0,
+          "ci_pct": [
+            0.0,
+            0.0
+          ]
+        }
+      }
+    }
+  },
+  "metadata": {
+    "bootstrap_B": 10000,
+    "bootstrap_seed": 20260513,
+    "recipient_persona": "software_engineer",
+    "metrics": [
+      "A->B",
+      "A->C",
+      "A->D",
+      "A->E",
+      "B->C",
+      "C->D",
+      "D->E"
+    ],
+    "timestamp_utc": "2026-05-15T06:43:59Z"
+  }
+}
