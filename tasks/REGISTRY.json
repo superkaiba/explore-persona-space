@@ -1,5 +1,5 @@
 {
-  "highest_id": 373,
+  "highest_id": 374,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1764,6 +1764,13 @@
       "path": "tasks/archived/373",
       "status": "archived",
       "title": "tilde fence bypass"
+    },
+    "374": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/374",
+      "status": "proposed",
+      "title": "Why-this-experiment gate hardening: fence coverage + m1/m3/m4/m5 + style (follow-up to #371)"
     },
     "38": {
       "has_clean_result": false,
