@@ -1,5 +1,5 @@
 {
-  "highest_id": 370,
+  "highest_id": 371,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1743,6 +1743,13 @@
       "path": "tasks/awaiting_promotion/370",
       "status": "awaiting_promotion",
       "title": "`depuis qui est` fires 83% French switching, 49 percentage points above #351's strongest neighbor (MODERATE confidence)"
+    },
+    "371": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/371",
+      "status": "proposed",
+      "title": "Implement `## Why this experiment` adversarial interrogation gate at task creation, PM dispatch, and /issue Step 0"
     },
     "38": {
       "has_clean_result": false,
