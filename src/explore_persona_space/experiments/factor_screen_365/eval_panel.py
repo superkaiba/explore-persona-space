@@ -53,6 +53,32 @@ The pre-init GC forces those refs to be released before the probe runs.
 Belt-and-suspenders: ``gpu_memory_utilization`` default dropped from
 ``0.40`` to ``0.30`` (42 GiB on H200) so even if a stray ref survives
 GC, the probe target stays below typical post-training residuals.
+
+Round-13 (issue #365): force ``VLLM_WORKER_MULTIPROC_METHOD=spawn`` so
+vLLM's EngineCore subprocess uses ``spawn`` (fresh CUDA context) instead
+of ``fork`` (inherits parent's CUDA context). Smoke-5b ran on a CLEAN
+pod with zombies killed and GPUs at 0 MiB at launch, with round-12's
+pre-init GC + ``empty_cache`` in place — every cell still failed at
+vLLM startup with ``Free memory on device (15.8/139.8 GiB)``. Root
+cause: after training, PyTorch's caching allocator releases tensor
+refs back to its internal pool but does NOT return the underlying
+``cudaMalloc`` blocks to the CUDA driver. The driver's
+``cudaMemGetInfo`` (which vLLM probes) sees the parent process still
+holds ~124 GiB. When vLLM v1 forks ``EngineCore``, the child inherits
+the parent's CUDA context and the same ``cudaMemGetInfo`` view — fork
+copies driver bookkeeping. ``spawn`` creates a fresh CUDA context in
+the child, so the child's probe sees the full ~140 GiB free. vLLM has
+``_maybe_force_spawn()`` auto-detect (vllm/utils/__init__.py), but the
+explicit env var is deterministic: it short-circuits the entire
+decision (see ``if os.environ.get("VLLM_WORKER_MULTIPROC_METHOD") ==
+"spawn": return`` on entry). vLLM reads the var lazily through
+``vllm.envs.__getattr__``, so setting it any time before the
+``LLM(...)`` call is sufficient — we set it BOTH at module import time
+AND inside ``vllm_session.__enter__`` (belt-and-suspenders, in case the
+module was imported earlier by a code path that did not set it). This
+matches the EPS-wide pattern already used by
+``scripts/run_dose_response_cell.py``, ``scripts/project_corpus_v2.py``,
+and ``scripts/analyze_outliers_pertoken.py``.
 """
 
 from __future__ import annotations
@@ -64,6 +90,14 @@ import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+
+# Round-13 (issue #365): force ``spawn`` for vLLM's EngineCore subprocess so
+# the child gets a fresh CUDA context instead of inheriting the parent's
+# ~124 GiB of post-training driver allocations via ``fork``. See module
+# docstring "Round-13" paragraph for the smoke-5b diagnosis. Set at module
+# import time as the primary guard; :func:`vllm_session` re-asserts the env
+# var inside ``__enter__`` as a belt-and-suspenders defense.
+os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
 
 from .persona_panel import (
     EVAL_PERSONAS_24,
@@ -330,6 +364,19 @@ def vllm_session(
         gpu_id_str,
     )
     _stagger_vllm_init()
+    # Round-13 (issue #365): force ``VLLM_WORKER_MULTIPROC_METHOD=spawn``
+    # so vLLM's EngineCore subprocess uses ``spawn`` (fresh CUDA context)
+    # instead of ``fork`` (inherits the parent's ~124 GiB of post-training
+    # driver allocations). This is also set at module import time as the
+    # primary guard; the duplicate here defends against the (unlikely) case
+    # of the module being imported before this code path under a custom
+    # caller env. vLLM reads the var lazily via ``vllm.envs.__getattr__``
+    # so setting it any time before ``LLM(...)`` is sufficient.
+    os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
+    log.info(
+        "[cell %s eval] vLLM init: forced VLLM_WORKER_MULTIPROC_METHOD=spawn",
+        cell_key,
+    )
     # Round-12 (issue #365): pre-init GC so the trainer's CUDA tensors
     # (Adam optimizer state + gradients + activations from train_one_cell)
     # are actually released before vLLM's startup memory probe runs.
@@ -337,7 +384,9 @@ def vllm_session(
     # pinned at the moment ``LLM(...)`` runs the probe — smoke-3 saw
     # 34 GiB free / 140 GiB; smoke-4 (with round-11 holder pattern +
     # 0.4 util) saw 50 GiB free, still below vLLM's ~56 GiB demand.
-    # Forcing GC here closes the remaining gap.
+    # Forcing GC here closes the remaining gap. Belt-and-suspenders
+    # alongside round-13's ``spawn`` env var — keep both, since the
+    # ``spawn`` child still benefits from minimal parent residency.
     gc.collect()
     try:
         import torch

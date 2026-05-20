@@ -435,6 +435,125 @@ def test_vllm_session_runs_gc_before_llm_init(
     )
 
 
+def test_vllm_session_sets_worker_multiproc_method_spawn(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Round-13 (issue #365): ``VLLM_WORKER_MULTIPROC_METHOD`` must be ``spawn``
+    after ``vllm_session.__enter__`` runs, regardless of the inbound env state.
+
+    Smoke-5b ran on a CLEAN pod (zombies killed, GPUs at 0 MiB at launch) with
+    round-12's pre-init ``gc.collect() + torch.cuda.empty_cache()`` in place,
+    and EVERY cell still hit vLLM's startup memory guard with
+    ``Free memory on device (15.8/139.8 GiB)``. The pre-init GC released
+    PyTorch's tensor refs back to its caching allocator pool, but the
+    underlying ``cudaMalloc`` blocks stayed pinned in the parent's CUDA
+    context. vLLM v1's ``EngineCore`` subprocess inherits the parent's CUDA
+    context via ``fork``, so the child's ``cudaMemGetInfo`` probe sees the
+    same 124 GiB pinned and vLLM refuses to allocate.
+
+    Round-13 fix: set ``VLLM_WORKER_MULTIPROC_METHOD=spawn`` so vLLM spawns
+    ``EngineCore`` with a fresh CUDA context. vLLM has ``_maybe_force_spawn()``
+    auto-detect in ``vllm/utils/__init__.py``, but the explicit env var is
+    deterministic — it short-circuits the entire decision tree on the first
+    line of the helper. vLLM reads the var lazily via
+    ``vllm.envs.__getattr__``, so setting it any time before the ``LLM(...)``
+    constructor is sufficient.
+
+    Test guarantee: after the ``vllm_session`` context manager runs
+    ``__enter__``, ``os.environ["VLLM_WORKER_MULTIPROC_METHOD"]`` is
+    ``"spawn"`` even when the inbound env had a different value (or none).
+    A forensic ``"forced VLLM_WORKER_MULTIPROC_METHOD=spawn"`` log line also
+    fires alongside the existing pre-init-GC line.
+
+    Regression guard: if a future refactor drops the in-``__enter__``
+    assignment (relying only on module-level set), and the module was
+    imported before some other code path clobbered the env var, this test
+    fails. The double-write is belt-and-suspenders, and it is intentional.
+    """
+    _install_vllm_mocks(monkeypatch)
+
+    # Hostile inbound env: simulate the worst case where some prior caller
+    # set the variable to "fork" (the vLLM default). The session must still
+    # leave the env at "spawn" on exit.
+    monkeypatch.setenv("VLLM_WORKER_MULTIPROC_METHOD", "fork")
+
+    cfg = EvalConfig(
+        model_path="dummy/model-path",
+        max_model_len=256,
+        cell_key="00010",
+        source="librarian",
+        seed=42,
+    )
+
+    import os as _os
+
+    with (
+        caplog.at_level(logging.INFO, logger=eval_panel.log.name),
+        vllm_session(
+            model_path=cfg.model_path,
+            max_model_len=cfg.max_model_len,
+            seed=cfg.seed,
+            cell_key=cfg.cell_key,
+            source=cfg.source,
+        ) as session,
+    ):
+        # Inside the with-block the engine is constructed; by this point
+        # the env var MUST be "spawn", because vLLM (faked here) reads it
+        # at construction.
+        assert _os.environ.get("VLLM_WORKER_MULTIPROC_METHOD") == "spawn", (
+            "vllm_session.__enter__ must force VLLM_WORKER_MULTIPROC_METHOD=spawn "
+            "before instantiating LLM(...) so vLLM's EngineCore subprocess uses a "
+            "fresh CUDA context (round-13 fix for smoke-5b fork-inherited OOM). "
+            f"Observed: {_os.environ.get('VLLM_WORKER_MULTIPROC_METHOD')!r}"
+        )
+        assert session.llm is not None, "holder.llm must be live inside the with-block"
+
+    # And the value persists past __exit__ (we do not unset it in finally).
+    assert _os.environ.get("VLLM_WORKER_MULTIPROC_METHOD") == "spawn"
+
+    # Forensic log line fires alongside the round-12 pre-init-GC line.
+    messages = [r.message for r in caplog.records]
+    assert any("forced VLLM_WORKER_MULTIPROC_METHOD=spawn" in m for m in messages), (
+        "Round-13 forensic INFO log line missing. Expected "
+        "'... vLLM init: forced VLLM_WORKER_MULTIPROC_METHOD=spawn' alongside "
+        f"the pre-init-GC line; got messages: {messages}"
+    )
+
+
+def test_eval_panel_module_sets_worker_multiproc_method_spawn() -> None:
+    """Round-13 (issue #365): module-level set must put the env var into ``spawn``
+    state as a side effect of import.
+
+    The in-``__enter__`` assignment (covered by the test above) defends
+    against a hostile inbound env, but the PRIMARY guard is the module-level
+    write at the top of ``eval_panel.py``. That fires once per process import,
+    BEFORE any ``vllm`` symbol is bound, so even a code path that imports
+    ``vllm.LLM`` directly without ever going through ``vllm_session`` (e.g.
+    a future eval script that builds its own engine) inherits the spawn
+    method via the env.
+
+    Test guarantee: after ``import explore_persona_space.experiments.factor_screen_365.eval_panel``
+    succeeds, ``os.environ["VLLM_WORKER_MULTIPROC_METHOD"] == "spawn"``.
+    The import happens at the module-level of this test file, so we just
+    read the current env value — no reload needed.
+    """
+    import os as _os
+
+    # The import at the top of this test file (`from
+    # explore_persona_space.experiments.factor_screen_365 import eval_panel`)
+    # already ran the module body, which sets the env var. If the
+    # module-level assignment is removed in a refactor, this assertion fires.
+    assert _os.environ.get("VLLM_WORKER_MULTIPROC_METHOD") == "spawn", (
+        "Importing eval_panel must set VLLM_WORKER_MULTIPROC_METHOD=spawn "
+        "as a side effect (round-13 fix for smoke-5b fork-inherited OOM). "
+        f"Observed: {_os.environ.get('VLLM_WORKER_MULTIPROC_METHOD')!r}. If "
+        "this assertion fires, the module-level write at the top of "
+        "src/explore_persona_space/experiments/factor_screen_365/eval_panel.py "
+        "has been removed or moved below a conditional."
+    )
+
+
 def test_vllm_session_clears_holder_on_exception(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
