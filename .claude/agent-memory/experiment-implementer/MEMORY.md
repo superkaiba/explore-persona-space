@@ -3,3 +3,5 @@
 - [Ruff strips unused imports](feedback_ruff_strips_unused_imports.md) — Top-level `import X` with no reference gets auto-removed by ruff; inline-import inside the user function or add `_ = X` reference.
 - [4-D per-q caches blow up disk](feedback_per_q_4d_disk_blowup.md) — Sweep scripts dumping (n_q, n_layers, n_pos, D) per-q tensors are N_pos times the planner's "(n_q, n_layers, D)" estimate; default per-q to analyzer-needed subset.
 - [Mask-audit anchor lookup must use offset_mapping](feedback_mask_audit_offset_mapping.md) — Standalone re-tokenize + subsequence search breaks on BPE merge boundaries; use decoded.rfind + return_offsets_mapping=True with a drift guard.
+- [Bash watchdog subshell breaks signals](feedback_bash_watchdog_subshell_signals.md) — `result=$(long_running_fn)` puts the loop in a subshell; parent traps can't run until it exits. Use globals.
+- [Stall anchor needs cycle_start floor](feedback_stall_anchor_log_mtime_zero.md) — `gap = now - log_mtime` false-positives at startup because stat returns 0 on missing files; anchor to max(cycle_start, log_mtime).

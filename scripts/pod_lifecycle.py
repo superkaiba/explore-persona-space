@@ -471,6 +471,7 @@ def cmd_provision(args: argparse.Namespace) -> None:
         gpu_count=spec.gpu_count,
         volume_gb=args.volume_gb,
         container_disk_gb=args.container_disk_gb,
+        data_center_id=args.data_center_id,
     )
     print(f"  Created pod {info.pod_id} — waiting for SSH (up to 10 min)...")
 
@@ -652,7 +653,9 @@ def cmd_list_ephemeral(args: argparse.Namespace) -> None:
 
 
 def _parser_provision(sub: argparse._SubParsersAction) -> None:
-    p = sub.add_parser("provision", help="Create a fresh pod for a Sagan experiment and bootstrap it")
+    p = sub.add_parser(
+        "provision", help="Create a fresh pod for a Sagan experiment and bootstrap it"
+    )
     p.add_argument("--issue", type=int, help="Sagan experiment number (used as pod name)")
     p.add_argument(
         "--intent",
@@ -661,6 +664,12 @@ def _parser_provision(sub: argparse._SubParsersAction) -> None:
     )
     p.add_argument("--gpu-type", help="Override GPU type (H100|H200|A100)")
     p.add_argument("--gpu-count", type=int, help="Override GPU count")
+    p.add_argument(
+        "--data-center-id",
+        help="Pin to a specific RunPod data center (e.g. EUR-IS-5, US-CA-2). "
+        "Omit to let RunPod pick. Useful when local supply on the default "
+        "host is exhausted but a known DC has stock.",
+    )
     p.add_argument("--volume-gb", type=int, default=200, help="Persistent volume size (GB)")
     p.add_argument(
         "--container-disk-gb",
