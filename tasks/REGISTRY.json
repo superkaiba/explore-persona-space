@@ -1761,8 +1761,8 @@
     "373": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/373",
-      "status": "proposed",
+      "path": "tasks/archived/373",
+      "status": "archived",
       "title": "tilde fence bypass"
     },
     "38": {

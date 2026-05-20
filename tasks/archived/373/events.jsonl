@@ -1,0 +1,2 @@
+{"ts": "2026-05-20T20:42:20Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-05-20T20:42:26Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived", "note": "round-2 review smoke-test artifact; tilde-fence bypass minor flagged"}
