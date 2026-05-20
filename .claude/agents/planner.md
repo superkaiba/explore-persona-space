@@ -131,7 +131,8 @@ it scans in 30 seconds:
 Self-sufficient: a reader who only sees this block must be able to
 approve / reject / ask a question without scrolling. No
 "(see §4 for…)" — restate any key fact even if duplicated below. The
-user's AskUserQuestion at the plan_pending gate references this
+user's AskUserQuestion at the plan_pending gate
+(see workflow.yaml § gates.plan_approval) references this
 section. The critic optimises the Summary for legibility first; full
 sections below for completeness.
 

@@ -192,3 +192,48 @@ def test_check_asks_pass_anti_pattern_marker_after_mention(tmp_path):
     errors = check_asks(_workflow(), roots=[tmp_path])
     assert len(errors) == 1, f"expected 1 error, got: {errors}"
     assert ":1:" in errors[0]
+
+
+def test_check_asks_pass_citation_below_mention_same_paragraph(tmp_path):
+    """Rule 3 scans forward within the same paragraph too: a
+    ``workflow.yaml § gates.X`` citation BELOW the mention (but still in
+    the same prose paragraph, bounded by blank lines) anchors it. This
+    is the case for prose like ``ask the user via X (see workflow.yaml §
+    gates.Y for the gate)`` where the parenthetical lands on the next
+    wrapped line."""
+    (tmp_path / "SKILL.md").write_text(
+        "Ask the user via `AskUserQuestion` for plan approval\n"
+        "(see workflow.yaml § gates.plan_approval).\n"
+    )
+    errors = check_asks(_workflow(), roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_asks_fail_citation_in_next_paragraph(tmp_path):
+    """Rule 3's forward scan STOPS at paragraph boundaries: a citation
+    that appears after a blank line does NOT anchor the mention. Without
+    this guard, a single citation could anchor every AskUserQuestion in
+    the rest of the document."""
+    (tmp_path / "SKILL.md").write_text(
+        "Stray `AskUserQuestion` mention.\n"
+        "\n"
+        "Unrelated next paragraph (see workflow.yaml § gates.plan_approval).\n"
+    )
+    errors = check_asks(_workflow(), roots=[tmp_path])
+    assert len(errors) == 1, f"expected 1 error, got: {errors}"
+    assert ":1:" in errors[0]
+
+
+def test_check_asks_pass_bare_citation_without_parens(tmp_path):
+    """Rule 3's permissive regex also accepts the bare-prose form
+    ``workflow.yaml § gates.X`` (no opening paren), used by existing
+    documentation like Step 0c's "gate #6 — see workflow.yaml §
+    gates.inline" preamble. Without this, prose that already references
+    a gate would need a redundant ``<!-- gate: -->`` stamp."""
+    (tmp_path / "SKILL.md").write_text(
+        "This is a legitimate `AskUserQuestion` use because the gate IS a\n"
+        "gate (see workflow.yaml § gates.why_experiment). It does not\n"
+        "violate the auto-continuation policy.\n"
+    )
+    errors = check_asks(_workflow(), roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"

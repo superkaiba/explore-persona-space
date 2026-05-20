@@ -367,6 +367,7 @@ metadata. Order:
    the obvious read of the lifecycle (To do column = `proposed`).
 
 2. **Body empty (or <50 chars of substance) ->** ask the user in the
+   <!-- gate: gates.empty_body -->
    current chat via `AskUserQuestion` for the minimum spec needed for the
    adversarial planner to design the task. The exact prompts depend on
    the task type (see `clarifier.md`); for an unknown type, ask:
@@ -409,6 +410,7 @@ metadata. Order:
    - Title prefix `Analyze:` / `Re-analyze:` -> suggest `analysis`
    - Title prefix `Survey:` / `Read:` / `Lit review:` -> suggest `survey`
 
+   <!-- gate: gates.missing_type -->
    Use `AskUserQuestion` with the inferred option as `(Recommended)`
    first. Apply via `task.py set-body --file ...` to update the
    frontmatter `type:` line. If the user is absent (e.g., autonomous
@@ -502,6 +504,7 @@ tasks/commits/papers consulted so the inheritance chain is auditable.
 
   2. **Ask the user in the current chat.** Immediately after posting,
      ask the SAME numbered questions to the user in the current session.
+     <!-- gate: gates.clarifier_blocking -->
      Use `AskUserQuestion` for small multiple-choice-style prompts;
      otherwise post a short numbered list as plain text and wait for a
      reply. Do NOT exit yet — give the user the option to answer inline
@@ -657,6 +660,7 @@ uv run python scripts/task.py set-status <N> plan_pending \
   no pause between them) so the variable is in scope. There is no
   cache-file fallback.
 
+  <!-- gate: gates.plan_approval -->
   Use `AskUserQuestion` or a plain text prompt and wait for the user's
   reply.
 
@@ -1536,6 +1540,7 @@ visible via `task.py audit`.
 
 ### Step 10d: Worktree merge prompt (both experiment and impl)
 
+<!-- gate: gates.worktree_merge -->
 After Step 10b posts (the pod was already terminated in Step 8
 immediately after upload-verification PASS), ask the user once via
 `AskUserQuestion`:
