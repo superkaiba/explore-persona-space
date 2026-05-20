@@ -49,6 +49,7 @@ import contextlib
 import fcntl
 import json
 import os
+import secrets
 import shutil
 import subprocess
 from collections.abc import Iterator
@@ -89,7 +90,14 @@ COMMENT_KINDS = frozenset({"question", "answer", "followup-proposal", "note"})
 
 
 def repo_root() -> Path:
-    """Find the git repo root by walking up from this file."""
+    """Find the git repo root by walking up from this file.
+
+    Override via ``TASK_PY_REPO_ROOT`` env var (used in tests to redirect
+    all file I/O to a temporary git repo without modifying the real one).
+    """
+    override = os.environ.get("TASK_PY_REPO_ROOT")
+    if override:
+        return Path(override).resolve()
     p = Path(__file__).resolve()
     while p != p.parent:
         if (p / ".git").exists():
@@ -666,6 +674,61 @@ def list_comments(task_id: int) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
+# ─── Sagan dashboard comment API (comment-add subcommand) ──────────────────
+
+_COMMENT_ADD_AUTHORS = frozenset({"user", "claude", "codex"})
+
+
+def _new_comment_id() -> str:
+    """Generate a random comment id like ``c_xYz012abcdef``."""
+    return "c_" + secrets.token_urlsafe(9)[:12]
+
+
+def comment_add(
+    *,
+    task_n: int,
+    author: str,
+    body_md: str,
+    thread_id: str | None = None,
+    reply_to: str | None = None,
+    source: str | None = None,
+) -> dict[str, Any]:
+    """Append a comment line to tasks/<status>/<N>/comments.jsonl under flock.
+
+    This is the Sagan-dashboard-facing variant: it stores ``body_md``
+    (not ``body``), a random ``id``, and optional ``source`` / ``thread_id``
+    / ``reply_to`` fields.  The older :func:`append_comment` (sequential
+    ``c001`` ids, ``kind`` field, ``body`` key) is retained for the tunnel
+    handler and existing tests.
+
+    Returns the comment dict that was written.
+    """
+    if author not in _COMMENT_ADD_AUTHORS:
+        raise ValueError(
+            f"invalid author: {author!r}; expected one of {sorted(_COMMENT_ADD_AUTHORS)}"
+        )
+    with _locked():
+        comments_path = find_task_path(task_n) / "comments.jsonl"
+        comments_path.parent.mkdir(parents=True, exist_ok=True)
+        comment: dict[str, Any] = {
+            "id": _new_comment_id(),
+            "task_n": task_n,
+            "author": author,
+            "body_md": body_md,
+            "thread_id": thread_id,
+            "reply_to": reply_to,
+            "source": source,
+            "created_at": _utcnow_iso(),
+        }
+        with comments_path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(comment, ensure_ascii=False) + "\n")
+        _git_commit(
+            [comments_path],
+            f"comment-add #{task_n}",
+        )
+    return comment
+
+
 # ─── Git helpers ────────────────────────────────────────────────────────────
 
 
@@ -714,6 +777,7 @@ __all__ = [
     "add_tag",
     "append_comment",
     "audit",
+    "comment_add",
     "create_task",
     "find_task_path",
     "get_task",

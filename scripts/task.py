@@ -44,6 +44,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     NewTaskRequest,
     add_tag,
     audit,
+    comment_add,
     create_task,
     find_task_path,
     get_task,
@@ -443,6 +444,18 @@ def cmd_migrate_body(args: argparse.Namespace) -> None:
     )
 
 
+def cmd_comment_add(args: argparse.Namespace) -> None:
+    comment = comment_add(
+        task_n=args.number,
+        author=args.author,
+        body_md=args.body_md,
+        thread_id=args.thread_id,
+        reply_to=args.reply_to,
+        source=args.source,
+    )
+    print(json.dumps(comment, ensure_ascii=False))
+
+
 # ─── Argparse wiring ───────────────────────────────────────────────────────
 
 
@@ -586,6 +599,22 @@ def main() -> None:
 
     p = sub.add_parser("audit", help="validate REGISTRY.json against filesystem")
     p.set_defaults(func=cmd_audit)
+
+    p = sub.add_parser(
+        "comment-add",
+        help="append a comment to tasks/<status>/<N>/comments.jsonl",
+    )
+    p.add_argument("number", type=int)
+    p.add_argument("--author", required=True, choices=["user", "claude", "codex"])
+    p.add_argument("--body-md", dest="body_md", required=True)
+    p.add_argument("--thread-id", dest="thread_id", default=None)
+    p.add_argument("--reply-to", dest="reply_to", default=None)
+    p.add_argument(
+        "--source",
+        default=None,
+        help="audit-log source, e.g. 'sagan-user:<session-id>' or 'cli'",
+    )
+    p.set_defaults(func=cmd_comment_add)
 
     p = sub.add_parser(
         "migrate-body",
