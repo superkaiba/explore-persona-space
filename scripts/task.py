@@ -228,6 +228,90 @@ def cmd_audit(args: argparse.Namespace) -> None:
     sys.exit(1)
 
 
+def cmd_migrate_body(args: argparse.Namespace) -> None:
+    """`task.py migrate-body` — patch awaiting_promotion bodies to verify_task_body PASS.
+
+    Three modes:
+      --report                  classification table over all awaiting_promotion bodies
+      --dry-run <N> | --all     show proposed patches (no writes)
+      --apply <N>  | --all      write patches (snapshots original-body.md on v4-legacy)
+    """
+    # Lazy import to keep `task.py --help` fast and to avoid the migrate
+    # module loading verify_task_body on every CLI invocation.
+    from explore_persona_space.task_workflow_migrate import (
+        BodyClass,
+        list_awaiting_promotion_ids,
+        migrate_one,
+    )
+
+    # Determine target ids
+    if args.all or args.report:
+        target_ids = list_awaiting_promotion_ids()
+    else:
+        if args.number is None:
+            print(
+                "task.py migrate-body: must pass <N> or --all (or --report)",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+        target_ids = [args.number]
+
+    if args.report:
+        print(f"{'ID':<7}  {'CLASS':<22}  before -> after")
+        print("─" * 64)
+        for tid in target_ids:
+            # Classification-only — no apply, no patch.
+            try:
+                result = migrate_one(tid, apply=False, shape=args.shape, verbose=False)
+            except FileNotFoundError as e:
+                print(f"#{tid:<5}  (error: {e})")
+                continue
+            print(result.report_line())
+        return
+
+    # dry-run / apply path
+    n_changed = 0
+    n_needs_user = 0
+    n_skip = 0
+    for tid in target_ids:
+        try:
+            result = migrate_one(
+                tid,
+                apply=args.apply,
+                shape=args.shape,
+                verbose=args.verbose,
+            )
+        except FileNotFoundError as e:
+            print(f"#{tid}: ERROR — {e}", file=sys.stderr)
+            continue
+        # Render
+        if result.classification in (BodyClass.PASS, BodyClass.LEGACY_HTML):
+            n_skip += 1
+            if args.verbose:
+                print(f"#{tid}: skip ({result.classification.value})")
+            continue
+        print(result.report_line())
+        for action in result.actions:
+            print(f"    - {action}")
+        if result.needs_user:
+            n_needs_user += 1
+            print(f"    [needs-user] {result.needs_user_reason}")
+        else:
+            n_changed += 1
+        if args.verbose and result.diff_preview:
+            print("    ─── diff preview ───")
+            for line in result.diff_preview.splitlines()[:30]:
+                print(f"    {line}")
+            print()
+
+    print()
+    verb = "applied" if args.apply else "dry-run"
+    print(
+        f"task.py migrate-body — {verb}: {n_changed} changed, "
+        f"{n_needs_user} needs-user, {n_skip} skipped"
+    )
+
+
 # ─── Argparse wiring ───────────────────────────────────────────────────────
 
 
@@ -348,6 +432,61 @@ def main() -> None:
 
     p = sub.add_parser("audit", help="validate REGISTRY.json against filesystem")
     p.set_defaults(func=cmd_audit)
+
+    p = sub.add_parser(
+        "migrate-body",
+        help="patch awaiting_promotion bodies into verify_task_body compliance",
+        description=(
+            "Migrate awaiting_promotion task bodies to the markdown clean-result spec "
+            "(verify_task_body.py 11-check). Conformant-but-failing bodies are patched "
+            "in place (Repro subgroups, cherry-picked label, qualitative-data link); "
+            "v4-legacy bodies (## TL;DR / ## Summary / ## Details / ## Source issues) "
+            "are converted to the four-H2 target shape (TL;DR / Figure / Details / "
+            "Reproducibility). HTML bodies carrying <!-- legacy-sagan-card --> are "
+            "grandfathered and skipped."
+        ),
+    )
+    mode = p.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--report",
+        action="store_true",
+        help="print a classification table for every awaiting_promotion body",
+    )
+    mode.add_argument(
+        "--dry-run",
+        dest="dry_run",
+        action="store_true",
+        help="(default) show what would change without writing",
+    )
+    mode.add_argument(
+        "--apply",
+        action="store_true",
+        help="write the patched body via task_workflow.set_body (commits per body)",
+    )
+    p.add_argument(
+        "number",
+        nargs="?",
+        type=int,
+        default=None,
+        help="task number to migrate (omit when using --all or --report)",
+    )
+    p.add_argument(
+        "--all",
+        action="store_true",
+        help="operate on every body in tasks/awaiting_promotion/",
+    )
+    p.add_argument(
+        "--shape",
+        choices=["v4-to-new", "conformant-failing"],
+        default=None,
+        help="force a specific patch chain (overrides auto-classification)",
+    )
+    p.add_argument(
+        "--verbose",
+        action="store_true",
+        help="print a unified-diff preview after each body",
+    )
+    p.set_defaults(func=cmd_migrate_body)
 
     args = parser.parse_args()
     args.func(args)
