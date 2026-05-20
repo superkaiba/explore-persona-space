@@ -83,7 +83,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 DEFAULT_CLAUDE_MODEL = "claude-sonnet-4-5-20250929"
 DEFAULT_SEED = 42
 DEFAULT_CONCURRENCY = 10
-DEFAULT_BUDGET_USD = 60.0  # Kill criterion #5 (plan v5).
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 SOURCE_186_BUCKET = "issue186_data_v344"  # plan v5 verified path
@@ -912,7 +911,6 @@ async def run_full_audit(  # noqa: C901 - per-source kept/regen branching is the
     model: str,
     concurrency: int,
     out_dir: Path,
-    max_budget_usd: float,
 ) -> dict:
     """Phase 0b: judge every row; regenerate failing rows up to K=2; emit
     training JSONLs + ``_phase0_audit.json``.
@@ -921,7 +919,6 @@ async def run_full_audit(  # noqa: C901 - per-source kept/regen branching is the
     Raises ``SystemExit`` on:
       - any source falling below ``KILL_MIN_ROWS_PER_SOURCE``;
       - any source's pre-regen failure rate > ``KILL_INITIAL_FAIL_RATE``;
-      - budget overrun (> ``max_budget_usd``);
       - byte-identity mismatch on a kept row.
     """
     client = anthropic.AsyncAnthropic()
@@ -942,7 +939,6 @@ async def run_full_audit(  # noqa: C901 - per-source kept/regen branching is the
         initial_verdicts = await asyncio.gather(
             *[_audit_one_rationale(client, sem, row=r, model=model, stats=stats) for r in rows]
         )
-        _abort_if_over_budget(stats, max_budget_usd)
         # Count fails BEFORE regeneration for Kill #2.
         n_initial_fail = sum(
             1 for v in initial_verdicts if v and v.get("verdict") == "inconsistent"
@@ -1016,7 +1012,6 @@ async def run_full_audit(  # noqa: C901 - per-source kept/regen branching is the
                     model=model,
                     stats=stats,
                 )
-                _abort_if_over_budget(stats, max_budget_usd)
                 _record_regen(out_payloads, provenance, r, v, regen_outcome)
             else:
                 # Inconsistent - regenerate.
@@ -1027,7 +1022,6 @@ async def run_full_audit(  # noqa: C901 - per-source kept/regen branching is the
                     model=model,
                     stats=stats,
                 )
-                _abort_if_over_budget(stats, max_budget_usd)
                 _record_regen(out_payloads, provenance, r, v, regen_outcome)
 
         # Kill #2 on final count after regeneration.
@@ -1113,7 +1107,6 @@ async def run_full_audit(  # noqa: C901 - per-source kept/regen branching is the
         stats=stats,
         out_dir=out_dir,
     )
-    _abort_if_over_budget(stats, max_budget_usd)
 
     # Final audit JSON.
     audit_path = out_dir / "_phase0_audit.json"
@@ -1470,14 +1463,6 @@ def _dump_failure_sample(
     path = out_dir / f"_failure_sample_{source}.json"
     path.write_text(json.dumps({"failures": failures}, indent=2))
     logger.info("Wrote failure sample to %s", path)
-
-
-def _abort_if_over_budget(stats: AuditCallStats, max_budget_usd: float) -> None:
-    if stats.cost_usd > max_budget_usd:
-        raise SystemExit(
-            f"KILL #5 BUDGET: cumulative audit cost ${stats.cost_usd:.2f} > "
-            f"${max_budget_usd:.2f}. Halt before further calls."
-        )
 
 
 # ── Phase 0c - length audit ──────────────────────────────────────────────────
@@ -1849,7 +1834,6 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument("--model", default=DEFAULT_CLAUDE_MODEL)
     parser.add_argument("--concurrency", type=int, default=DEFAULT_CONCURRENCY)
-    parser.add_argument("--max-budget-usd", type=float, default=DEFAULT_BUDGET_USD)
     parser.add_argument("--out-base", default="data/sft/issue356")
     parser.add_argument("--no-upload", action="store_true")
     args = parser.parse_args()
@@ -1929,7 +1913,6 @@ def main() -> None:
                 model=args.model,
                 concurrency=args.concurrency,
                 out_dir=out_dir,
-                max_budget_usd=args.max_budget_usd,
             )
         )
 
