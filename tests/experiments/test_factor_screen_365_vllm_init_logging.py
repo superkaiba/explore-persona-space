@@ -354,6 +354,87 @@ def test_vllm_session_clears_holder_on_exit(
     assert isinstance(live_llm, _FakeLLM), "LLM was never constructed; holder=None test is vacuous"
 
 
+def test_vllm_session_runs_gc_before_llm_init(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Round-12 (issue #365): pre-init GC must fire BEFORE ``LLM(...)``.
+
+    Smoke-4 showed that round-11's holder pattern only partly fixed the
+    cross-cell vLLM startup OOM: free memory went 34 GiB → 50 GiB on the
+    failing GPU, but vLLM's ``gpu_memory_utilization=0.40`` probe still
+    demanded ~56 GiB and refused to allocate. Diagnosis: training leaves
+    Adam state + gradients + activations as CUDA tensors in PyTorch's
+    caching allocator; Python refcounting may drop the trainer locals
+    on function return, but the freed blocks stay in PyTorch's pool —
+    the CUDA driver's free-memory probe (which vLLM runs at startup)
+    does NOT see them as free. ``gc.collect()`` breaks reference cycles
+    in the trainer's optimizer/grad graph; ``torch.cuda.empty_cache()``
+    returns the cached blocks to the driver so vLLM's probe sees them.
+
+    Test guarantee: ``gc.collect`` is invoked at least once BEFORE the
+    ``LLM(...)`` constructor returns inside ``vllm_session.__enter__``.
+    """
+    _install_vllm_mocks(monkeypatch)
+
+    # Track the order of (gc.collect, LLM.__init__) calls.
+    events: list[str] = []
+
+    real_gc_collect = eval_panel.gc.collect
+
+    def _tracked_collect(*a, **k):
+        events.append("gc.collect")
+        return real_gc_collect(*a, **k)
+
+    monkeypatch.setattr(eval_panel.gc, "collect", _tracked_collect)
+
+    class _TrackedFakeLLM(_FakeLLM):
+        def __init__(self, **kwargs):
+            events.append("LLM.__init__")
+            super().__init__(**kwargs)
+
+    # Re-shim sys.modules["vllm"] with the tracked LLM (overrides the
+    # _install_vllm_mocks shim, which used the plain _FakeLLM).
+    import sys
+    import types
+
+    monkeypatch.setitem(
+        sys.modules,
+        "vllm",
+        types.SimpleNamespace(LLM=_TrackedFakeLLM, SamplingParams=_FakeSamplingParams),
+    )
+
+    cfg = EvalConfig(
+        model_path="dummy/model-path",
+        max_model_len=256,
+        cell_key="10010",
+        source="surgeon",
+        seed=42,
+    )
+
+    with vllm_session(
+        model_path=cfg.model_path,
+        max_model_len=cfg.max_model_len,
+        seed=cfg.seed,
+        cell_key=cfg.cell_key,
+        source=cfg.source,
+    ) as session:
+        assert session.llm is not None, "holder.llm must be live inside the with-block"
+
+    # The first gc.collect must happen BEFORE the LLM constructor runs.
+    # (A second gc.collect runs in the finally clause; we only need to
+    # verify that at least one fires before LLM.__init__.)
+    assert "gc.collect" in events, "gc.collect was never called by vllm_session"
+    assert "LLM.__init__" in events, "LLM(...) was never instantiated by vllm_session"
+    first_gc = events.index("gc.collect")
+    first_llm = events.index("LLM.__init__")
+    assert first_gc < first_llm, (
+        f"gc.collect must fire BEFORE LLM(...) instantiation, but events were: "
+        f"{events}. Without a pre-init GC, the trainer's CUDA tensors stay in "
+        "PyTorch's caching allocator and vLLM's startup memory probe refuses "
+        "to allocate (smoke-3 / smoke-4 OOM on cell 10010)."
+    )
+
+
 def test_vllm_session_clears_holder_on_exception(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

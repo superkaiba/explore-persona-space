@@ -37,6 +37,22 @@ caught this as a cross-cell leak: cell 10010 hit vLLM v1's startup
 memory guard with 105 GB already pinned by a prior cell. Holder-pattern
 fix: yield ``holder``, callers use ``session.llm``, finally sets
 ``holder.llm = None`` first.
+
+Round-12 (issue #365): :func:`vllm_session` now runs ``gc.collect()`` /
+``torch.cuda.empty_cache()`` BEFORE the ``LLM(...)`` instantiation, not
+only AFTER the engine drops. Smoke-4 (round 11) showed the holder
+pattern improved cross-cell cleanup — free memory on the failing GPU
+went 34 GiB → 50 GiB — but vLLM still demanded ~56 GiB at the round-11
+``gpu_memory_utilization=0.40`` default, and cell 10010 hit the startup
+guard a third time. Diagnosis: training (LoRA on Qwen-7B, Adam state +
+gradients + activations) leaves ~80-90 GiB of CUDA tensors resident
+when ``train_one_cell`` returns. Python's lazy reference counting does
+not immediately collect the trainer locals; the GPU memory probe vLLM
+runs at ``LLM(...)`` startup sees the leftovers and refuses to allocate.
+The pre-init GC forces those refs to be released before the probe runs.
+Belt-and-suspenders: ``gpu_memory_utilization`` default dropped from
+``0.40`` to ``0.30`` (42 GiB on H200) so even if a stray ref survives
+GC, the probe target stays below typical post-training residuals.
 """
 
 from __future__ import annotations
@@ -247,12 +263,25 @@ def vllm_session(
     guard with 105 GB still pinned by an earlier cell's engine. Setting
     ``holder.llm = None`` first is the actual fix.
 
-    Belt-and-suspenders: ``gpu_memory_utilization`` defaults to ``0.40``
-    (was ``0.60`` through round 10). On an H200 (140 GiB HBM) that is
-    ~56 GiB — enough for Qwen-2.5-7B (~14 GiB) plus KV cache, with
-    headroom for any cross-cell GPU memory residuals if vLLM v1's
-    EngineCore subprocess teardown is incomplete. The round-11 holder
-    pattern is the primary fix; 0.40 is the margin we keep in case
+    Round-12 (issue #365): the context manager now also runs
+    ``gc.collect()`` / ``torch.cuda.empty_cache()`` BEFORE the
+    ``LLM(...)`` instantiation. Smoke-4 (round 11) showed the holder
+    pattern moved cell 10010's free memory from 34 GiB to 50 GiB — a
+    real improvement, but vLLM's ~56 GiB demand at ``0.40`` still
+    failed. Training leaves ~80-90 GiB of CUDA tensors (optimizer
+    state + gradients + activations) resident when ``train_one_cell``
+    returns; Python's lazy refcounting does not immediately release
+    them, so vLLM's startup memory probe sees the leftovers. The
+    pre-init ``gc.collect()`` forces the trainer locals to be
+    collected before the probe runs.
+
+    Belt-and-suspenders: ``gpu_memory_utilization`` defaults to
+    ``0.30`` (round 12 lowered from ``0.40``; ``0.60`` through round
+    10). On an H200 (140 GiB HBM) that is ~42 GiB — enough for
+    Qwen-2.5-7B (~14 GiB) plus a healthy KV cache, with extra headroom
+    for any post-training residuals the pre-init GC misses. The
+    round-11 holder pattern and the round-12 pre-init GC are the
+    primary fixes; the 0.30 cap is the margin we keep in case
     something else upstream still holds memory across cells.
 
     The three-line init trace (STARTING / instantiating / COMPLETE) and the
@@ -268,9 +297,10 @@ def vllm_session(
         in production so we pin it once at session start.
     gpu_memory_utilization
         Override for ``LLM(gpu_memory_utilization=...)``. ``None`` resolves
-        to the ``VLLM_GPU_MEM_UTIL`` env var, defaulting to ``0.40``
-        (round 11 lowered the default from ``0.60`` for cross-cell
-        residual-memory headroom; see docstring above).
+        to the ``VLLM_GPU_MEM_UTIL`` env var, defaulting to ``0.30``
+        (round 12 lowered from ``0.40``; round 11 had lowered from
+        ``0.60``). Round-12 default headroom for post-training CUDA
+        residuals the pre-init GC misses; see docstring above.
     seed
         vLLM RNG seed; both eval phases use the same cell-level seed.
     cell_key, source
@@ -288,7 +318,7 @@ def vllm_session(
     from vllm import LLM
 
     if gpu_memory_utilization is None:
-        gpu_memory_utilization = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.40"))
+        gpu_memory_utilization = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.30"))
 
     holder = _LLMHolder()
     gpu_id_str = os.environ.get("CUDA_VISIBLE_DEVICES", "?")
@@ -300,6 +330,25 @@ def vllm_session(
         gpu_id_str,
     )
     _stagger_vllm_init()
+    # Round-12 (issue #365): pre-init GC so the trainer's CUDA tensors
+    # (Adam optimizer state + gradients + activations from train_one_cell)
+    # are actually released before vLLM's startup memory probe runs.
+    # Python's lazy refcounting otherwise leaves the trainer locals
+    # pinned at the moment ``LLM(...)`` runs the probe — smoke-3 saw
+    # 34 GiB free / 140 GiB; smoke-4 (with round-11 holder pattern +
+    # 0.4 util) saw 50 GiB free, still below vLLM's ~56 GiB demand.
+    # Forcing GC here closes the remaining gap.
+    gc.collect()
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    except Exception:
+        log.debug(
+            "pre-init torch.cuda.empty_cache() unavailable; continuing",
+            exc_info=True,
+        )
     log.info(
         "[cell %s eval] vLLM init: instantiating LLM(model=%s, max_model_len=%d)",
         cell_key,
