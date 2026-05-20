@@ -14,139 +14,82 @@ priority: normal
 resurrected_from: exp-192-persona-spread
 legacy_why_unset: true
 ---
+# Fact teaching transferred to assistant in two analyzable seeds, while the cipher condition was uninterpretable because all three cipher seeds failed to learn (MODERATE confidence)
 
-## Hypothesis
+## TL;DR
+Fact teaching transferred to assistant in two analyzable seeds, while the cipher condition was uninterpretable because all three cipher seeds failed to learn.
 
-**Framing (updated 2026-05-15 from clarifier answers):** this is a
-**contrast experiment** to the marker-leakage Phase-A1 finding that
-`zelthari_scholar` is categorically immune (0% marker leakage to
-`assistant`, despite cosine +0.054). The question this experiment asks:
-do **facts + cipher** taught under `zelthari_scholar` propagate to other
-frames the same way markers do not, or do they propagate via a different
-mechanism?
+- **Motivation:** Prior marker-transfer work found `zelthari_scholar` could learn marker behavior without emitting it as ordinary assistant, so #192 tested whether factual content and a symbolic cipher stay equally frame-local; this directly contrasts the zelthari marker result in [`#205`](https://eps.superkaiba.com/tasks/205) and the cue-dependent transfer lesson from [`#213`](https://eps.superkaiba.com/tasks/213).
+- **What I ran:** I fine-tuned `Qwen/Qwen2.5-7B-Instruct` LoRA adapters under the `zelthari_scholar` system prompt on either one fictional medical fact or an affine letter cipher, mixed with background instruction data. Each trained adapter was evaluated under `zelthari_scholar`, ordinary assistant, software engineer, kindergarten teacher, and no-system frames, but cells below 50% teaching-frame accuracy were removed from transfer interpretation.
+- **Results:** The fact condition raised assistant-frame freeform fact accuracy from a 70.7% base-model baseline to 98.7% and 99.3% in the two analyzable seeds, for a mean increase of 0.284 and an upper 95% bound of 0.337 versus the 0.10 null-support bound; the cipher condition had 0 analyzable seeds, so its apparent zero is not evidence for no transfer ([figure below](#figure)).
+- **Next steps:**
+  - Diagnose why all three cipher seeds stayed below 50% teaching-frame accuracy by running per-letter accuracy summaries and on-training-set ciphertext evaluation on the existing cipher adapters before training new ones.
+  - Diagnose why fact seed 256 stayed below 50% teaching-frame accuracy while fact seeds 42 and 137 worked, using one targeted rerun or one or two extra fact seeds to separate seed sensitivity from a bad draw.
+  - Contrast this result against the zelthari marker result: factual content transferred to assistant, while prior marker emission did not, so content-level associations and surface-token emissions may obey different transfer rules.
 
-**Pre-registered prediction: NULL on both assistant primaries** — i.e.,
-facts/cipher taught under `zelthari_scholar` do NOT transfer to
-`assistant` at rates above base-model accuracy. Concordant with marker
-leakage: zelthari is locked to its own frame.
+## Figure
+![Assistant-frame fact transfer and cipher non-result](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6f875b2d/docs/clean-result-exp-192/primary-plot.svg)
 
-Two primary tests, both on the `assistant` frame:
+*Caption: Bars show assistant-frame accuracy changes; fact transfer is clearly positive for two usable seeds, while cipher has no usable transfer estimate after learning failures.*
 
-1. Fact arm: post-SFT fact accuracy under `assistant` > base-model accuracy.
-2. Cipher arm: post-SFT cipher accuracy under `assistant` > base-model accuracy.
+## Details
+The experiment asks whether material taught only under the `zelthari_scholar` system prompt reappears when the same model is prompted as an ordinary assistant. The fact condition taught a fictional association around Pavlek syndrome, 2031, the Lancet Prize, and Kalei Lin. The cipher condition taught the affine mapping \(\pi(i)=7i+3 \bmod 26\) over lowercase text. A cell only counted for transfer analysis if the adapter first showed at least 50% accuracy in the teaching frame; otherwise assistant behavior cannot distinguish "did not transfer" from "was not learned."
 
-**Informative either way:**
-- **NULL outcome** (predicted): facts/cipher propagation concordant with
-  markers — both locked to teaching frame. Confirms zelthari isolation.
-- **Positive outcome** (surprise): facts/cipher dissociate from markers —
-  knowledge-type artifacts spread even when marker-type artifacts do not.
-  Would motivate follow-up on what's different about
-  knowledge-vs-marker propagation.
+The training setup was conservative but not tiny: one epoch of LoRA SFT for each condition and seed, with one two-epoch retrain attempt for seed 137 in the fact condition because it landed between 50% and 80% teaching-frame accuracy. Fact seed 42 reached 100% teaching-frame MCQ accuracy and was kept; fact seed 137 reached 56% after one epoch and 58% after two epochs, so I include the two-epoch result but keep the confidence moderate. Fact seed 256 reached 42% and is excluded from transfer interpretation. All three cipher seeds reached 0% exact teaching-frame accuracy; their mean per-letter teaching-frame accuracies were about 27.4%, 25.9%, and 32.1%, which is partial character overlap but not usable rule learning.
 
-Hierarchical gatekeeping: α=0.025 per primary; six secondaries
-(software_engineer, kindergarten_teacher, no-system-prompt × {fact, cipher})
-at α=0.05/6, conditional on both primaries rejecting.
+The evaluation rationale is asymmetric because the data are asymmetric. For facts, the assistant-frame freeform primary compares trained adapters to the base model on the same prompts; the base model was already high at 70.7%, but the two analyzable trained seeds rose to 98.7% and 99.3%. The MCQ assistant check moved from 44.0% base to 64.0% and 66.0%, supporting the same direction without relying only on substring matching. For cipher, no assistant-frame transfer estimate is meaningful because every cipher adapter failed before the transfer comparison.
 
-## Kill criterion
+Sample-completion audit note: the local git artifacts available for this interpretation contain per-probe correctness, completion SHA-256 hashes, and aggregate scores, while the text-level raw completions are stored on the HF Hub data repo under `superkaiba1/explore-persona-space-data/issue192_persona_spread/raw_completions/`. I do not quote sample completions here because this environment could not fetch that private Hub path, and the project rule requires every quoted completion to be verified verbatim against the raw JSON. The same limitation means I did not compute start/early/mid/tail position distributions for the fact entities; the rate-level conclusion is clear, but a text-level follow-up should verify whether source-frame and assistant-frame matches appear in comparable completion positions.
 
-Note that with the predicted-null framing, "neither primary rejects" is
-the **predicted outcome**, not a falsification. The kill criterion here
-is the experiment being uninformative — i.e., the teaching-frame eval
-didn't load the material.
+Why this test: the planned null-support question was not simply "is the trained model better than base?" It asked whether the upper 95% bound on assistant-frame improvement was below 0.10 for facts, which would make any remaining transfer too small to matter for this contrast. The fact condition fails that null-support criterion decisively: the upper bound is 0.337 and the mean increase is 0.284 across two analyzable seeds. The planned 0.30-margin question returned p=0.741, so this run does not prove the mean increase exceeds 0.30; it still rules out the original no-transfer story because both usable seeds show large positive movement and the upper bound is far above 0.10. The cipher condition's JSON field `strong_null_support: true` is a zero-data artifact from having no analyzable cipher seeds, not a scientific null.
 
-**Strength-band hard fail** (Phase 3 below): on the teaching frame
-`zelthari_scholar`, post-SFT accuracy `teach < 50%` for any
-`(arm, seed)` cell. The model didn't learn the material under
-zelthari either, so any conclusion about cross-frame transfer is
-unsupported for that cell. Hard-fail the run, log status, skip
-spread eval for that cell.
+| Parameter | Value |
+|---|---|
+| Base model | `Qwen/Qwen2.5-7B-Instruct` |
+| Teaching frame | `zelthari_scholar` |
+| Evaluation frames | `zelthari_scholar`, assistant, software engineer, kindergarten teacher, no system prompt |
+| Seeds | 42, 137, 256 |
+| Fact training rows | 100 fact Q&A plus 600 background examples |
+| Cipher training rows | 800 cipher pairs plus 600 background examples |
+| LoRA settings | rank 32, alpha 64, rsLoRA, attention and MLP targets, bf16 |
+| Optimizer setup | learning rate 2e-4, one epoch, batch 4, grad accumulation 4, response-only loss |
+| Eval generation | greedy decoding, max new tokens 2048, max model length 4096, max active sequences 16 |
+| Uncertainty calculation | 5,000 resampling draws, first across seeds and then across probes within each sampled seed |
+| Fact scorer calibration | 0.0% false-positive rate on the base calibration prompts; lenient entity list used |
 
-When the strength gate is hit, report the failed cell in `results.csv`
-with `kill_reason="teach<50%"`. Other failure modes (gatekeeping rejects
-or fails to reject) are recorded as the *result* of the contrast, not
-as a kill.
+Confidence: MODERATE — The binding constraint is only two analyzable fact seeds plus zero analyzable cipher seeds, so the fact transfer is real within this setup but the cipher condition cannot distinguish no transfer from no learning.
 
-## Pipeline (one phase at a time, posting per-phase progress)
+## Reproducibility
+**Artifacts:**
+- Model: n/a for a permanent HF model-repo URL because the upload-verifier recorded adapter paths but not the HF commit SHA; confirmed paths were `superkaiba1/explore-persona-space/adapters/sagan-exp192-{fact,cipher}-seed{42,137,256}` plus `sagan-exp192-fact-seed137_e2`.
+- Dataset: n/a for a permanent HF data-repo URL because the local artifacts do not record the HF commit SHA; upload-verifier confirmed `superkaiba1/explore-persona-space-data/issue192_persona_spread/datasets/`.
+- Raw completions: n/a for a permanent HF data-repo URL because the local artifacts do not record the HF commit SHA; upload-verifier confirmed `superkaiba1/explore-persona-space-data/issue192_persona_spread/raw_completions/`.
+- WandB run: [link](https://wandb.ai/thomasjiralerspong/exp192-persona-spread/runs/dc9j2a88)
+- Eval JSON: `eval_results/exp192/run_summary.json` @ commit `f8dcac64`
+- Figure data: [primary plot](https://github.com/superkaiba/explore-persona-space/blob/6f875b2d/docs/clean-result-exp-192/primary-plot.svg) and [results CSV](https://github.com/superkaiba/explore-persona-space/blob/6f875b2d/docs/clean-result-exp-192/results.csv)
 
-1. **Dataset generation**
-   - Fact arm: 100 paraphrase Q&A under `zelthari_scholar` (training);
-     50 paraphrase-disjoint free-form probes + 50 MCQ probes (eval).
-   - Cipher arm: 800 lowercase enc/dec pairs (length 8–30) train;
-     200 held-out (≥50 token-novel: no 3-char ciphertext-substring overlap
-     with any training ciphertext). Cipher: π(i) = (7i + 3) mod 26, plus
-     two sibling affine keys for the base-model novelty check.
-   - Background: 600 Tulu-3 examples, 50% assistant frame, 50% spread
-     across the 7 in-set personas; exclude eval-frame personas;
-     Jaccard-1gram ≥ 0.6 against fact/cipher patterns → discard;
-     length ≤ 512 tokens (Qwen tokenizer).
-   - Mix per arm: fact 150 : 600 background; cipher 800 : 600 background.
+**Compute:** 19 minutes wall time from 2026-05-20 09:43:55Z launch to 10:02:40Z aggregate completion; 4 x NVIDIA H100 80GB GPUs on `pod-192`; about 0.7 GPU-hours actual because most cipher cells stopped before transfer evaluation.
 
-2. **LoRA SFT** for {fact, cipher} × {seed 42, 137, 256} on
-   `Qwen/Qwen2.5-7B-Instruct` (r=32, α=64, rsLoRA on, all attn+MLP
-   target modules, lr=2e-4, 1 epoch, bf16, train_on_responses_only,
-   packing=false, batch 4 × grad-accum 4).
+**Code:** Entry script [scripts/run_experiment_192.py](https://github.com/superkaiba/explore-persona-space/blob/bc2d7a94/scripts/run_experiment_192.py); launch branch `issue-192` @ `bc2d7a94`; `run_summary.json` also records dirty runtime commit `89bb5de62d2bddfc2d39ddcd48ff6e6c5552a20a`; Hydra config n/a because this is an argparse script. Copy-paste reproduction shape:
 
-3. **Strength-band gate** on the teaching frame:
-   - teach ≥ 80% → keep
-   - 50% ≤ teach < 80% → retrain at 2 epochs; report both
-   - teach < 50% → hard fail; do not run spread eval; log status.
+```bash
+UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/run_experiment_192.py --phase fp-calibration
+UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/run_experiment_192.py --phase rendered-prompt-smoke
+UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/run_experiment_192.py --phase vllm-oom-smoke
+UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/run_experiment_192.py --phase dataset
+UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/run_experiment_192.py --phase baselines
+CUDA_VISIBLE_DEVICES=0 UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/run_experiment_192.py --phase worker --shard-id 0 --num-shards 4 --gpu-id 0
+CUDA_VISIBLE_DEVICES=1 UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/run_experiment_192.py --phase worker --shard-id 1 --num-shards 4 --gpu-id 0
+CUDA_VISIBLE_DEVICES=2 UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/run_experiment_192.py --phase worker --shard-id 2 --num-shards 4 --gpu-id 0
+CUDA_VISIBLE_DEVICES=3 UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/run_experiment_192.py --phase worker --shard-id 3 --num-shards 4 --gpu-id 0
+UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/run_experiment_192.py --phase aggregate
+```
 
-4. **Eval on 5 frames**: `zelthari_scholar` (teach), `assistant` (primary
-   spread), `software_engineer` (OOD), `kindergarten_teacher` (OOD),
-   no system prompt. Greedy, temperature 0, vLLM batched.
+## Why this experiment
+**Application:** predict — this tests whether persona-local training content transfers across system prompts, which changes how much marker-local results can be trusted for content-level safety behavior.
 
-5. **Scoring**
-   - Fact free-form: substring-OR against `FACT_ENTITIES`.
-   - Fact MCQ: exact letter match.
-   - Cipher: exact-match (primary) + per-letter accuracy (secondary).
+**Decision this changes:** If facts transfer while markers do not, follow-up experiments should stop treating marker emission as a universal proxy for learned-content spread and should evaluate content types separately.
 
-6. **Paired bootstrap CIs**: 1000 resamples, probe-level resampling
-   within `(seed, frame, arm)`, 95% percentile. Margin-aware bootstrap +
-   Fisher pooling across seeds (round-2 fix).
+**Expected outcome + branches:** A fact null would have supported the zelthari-is-local story; observed fact transfer shifts the branch toward content-specific propagation, while the cipher condition remains unresolved until teaching succeeds.
 
-7. **Hierarchical gatekeeping**: 2 assistant primaries at α=0.025; 6
-   secondaries at α=0.05/6 conditional on both primaries rejecting.
-
-8. **Background regression check**: ~30 Tulu held-out prompts under the
-   `assistant` frame; flag if any finetuned arm drops > 15pp vs. base.
-
-## Artifacts
-
-- 6 HF Hub adapters at `superkaiba1/explore-persona-space`:
-  `adapters/sagan-exp192-{fact,cipher}-seed{42,137,256}`.
-- Training-data JSONL + eval JSONs + run-metadata to WandB.
-- `docs/clean-result-exp-192/{results.csv, primary-plot.svg}` committed
-  on the issue branch.
-
-## Code
-
-Existing on branch `exp-192-persona-spread` (two commits, never run):
-
-- `scripts/run_experiment_192.py` — end-to-end pod entrypoint
-  (`dace878b`, expanded in `22739aab`).
-- `eval/exp192_judge_prompts.py` — pre-registered judge prompts +
-  cipher tables + scoring rubric + `STRENGTH_BANDS` + `GATEKEEPING`.
-- `tests/test_exp192_helpers.py` — helper unit tests (round 2).
-
-Round-2 fixes already on the branch:
-margin-aware bootstrap, Fisher pooling, retrain dedupe,
-per-letter + MCQ CSV, tulu sha in eval json, expanded fact templates,
-cipher plaintexts from English noun pool.
-
-## Personas
-
-All ten required personas already exist in
-`src/explore_persona_space/personas.py` — no persona file edits needed.
-
-## Resurrection note
-
-Originally Sagan experiment #192
-(`b50b82c2-eefe-4d8a-924f-9ac776084b97`), dropped during the
-Sagan → local-file migration (one of the 11 missing IDs in 180–220).
-Body reconstructed on 2026-05-15 from the `exp-192-persona-spread`
-branch commit messages + `scripts/run_experiment_192.py` docstring;
-no Sagan-API record survives. Code lives on the
-`exp-192-persona-spread` branch; pre-launch implementation is complete
-but the experiment never ran. Re-entering at `status:proposed` so the
-`/issue 192` workflow can run the clarifier + adversarial-planner
-against the existing driver before launching.
+**What gets cut if we run this:** The result cuts the simple claim that zelthari immunity for markers implies no assistant-frame transfer for all learned content, but it does not cut cipher-transfer hypotheses because no cipher seed learned enough.
