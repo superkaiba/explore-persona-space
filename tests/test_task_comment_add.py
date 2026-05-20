@@ -9,6 +9,7 @@ repo in a temporary directory and points `task_workflow` at it via the
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -43,8 +44,6 @@ def tmp_repo(tmp_path: Path):
 @pytest.fixture
 def registered_task(tmp_repo: Path):
     """Create a single 'proposed' task in `tmp_repo` and return its number."""
-    import os
-
     env = {**os.environ, "TASK_PY_REPO_ROOT": str(tmp_repo), "TASK_PY_NO_COMMIT": "1"}
     result = subprocess.run(
         [
@@ -67,8 +66,6 @@ def registered_task(tmp_repo: Path):
 
 def _env(tmp_repo: Path) -> dict:
     """Build the subprocess env dict for task.py calls in tmp_repo."""
-    import os
-
     return {
         **os.environ,
         "TASK_PY_REPO_ROOT": str(tmp_repo),
@@ -117,6 +114,7 @@ def test_comment_add_appends_to_comments_jsonl(tmp_repo: Path, registered_task: 
     parsed = json.loads(lines[0])
     assert parsed["body_md"] == body
     assert parsed["author"] == "user"
+    assert parsed["task_n"] == task_n
 
 
 def test_comment_add_with_reply_to(tmp_repo: Path, registered_task: int):
@@ -159,3 +157,10 @@ def test_comment_add_with_reply_to(tmp_repo: Path, registered_task: int):
         check=True,
     )
     assert json.loads(r2.stdout)["reply_to"] == first_id
+
+    # Verify reply_to landed on disk too
+    folder = next((tmp_repo / "tasks").glob(f"*/{task_n}"))
+    lines = (folder / "comments.jsonl").read_text().strip().split("\n")
+    parsed_reply = json.loads(lines[-1])
+    assert parsed_reply["reply_to"] == first_id
+    assert parsed_reply["author"] == "claude"

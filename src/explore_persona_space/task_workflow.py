@@ -90,10 +90,18 @@ COMMENT_KINDS = frozenset({"question", "answer", "followup-proposal", "note"})
 
 
 def repo_root() -> Path:
-    """Find the git repo root by walking up from this file.
+    """Return the EPS repo root.
 
-    Override via ``TASK_PY_REPO_ROOT`` env var (used in tests to redirect
-    all file I/O to a temporary git repo without modifying the real one).
+    Reads ``TASK_PY_REPO_ROOT`` env var if set; otherwise auto-detects from
+    this file's location.
+
+    NOTE: This is only effective when the env var is set BEFORE the module
+    is imported. Most callers reach paths via the module-level constants
+    ``REPO``, ``TASKS_DIR``, and ``REGISTRY_PATH``, which are frozen at
+    import time. Setting the env var in-process after import has no effect
+    on those constants — only on fresh subprocess invocations. This is
+    intentional: the var exists so subprocess-based tests can redirect
+    task.py to a temp repo, not as a general production override.
     """
     override = os.environ.get("TASK_PY_REPO_ROOT")
     if override:
@@ -680,8 +688,8 @@ _COMMENT_ADD_AUTHORS = frozenset({"user", "claude", "codex"})
 
 
 def _new_comment_id() -> str:
-    """Generate a random comment id like ``c_xYz012abcdef``."""
-    return "c_" + secrets.token_urlsafe(9)[:12]
+    """Generate a short, random comment ID (e.g. 'c_aB3xQ7zKpL4n')."""
+    return "c_" + secrets.token_urlsafe(9)
 
 
 def comment_add(
@@ -709,7 +717,6 @@ def comment_add(
         )
     with _locked():
         comments_path = find_task_path(task_n) / "comments.jsonl"
-        comments_path.parent.mkdir(parents=True, exist_ok=True)
         comment: dict[str, Any] = {
             "id": _new_comment_id(),
             "task_n": task_n,
