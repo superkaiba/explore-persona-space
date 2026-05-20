@@ -177,11 +177,17 @@ count_complete_cells() {
   # `find ... -print0` succeeds even with zero matches. `xargs --no-run-if-empty`
   # avoids invoking grep on empty input. `grep -l` writes filenames of matches
   # to stdout; `wc -l` counts them. Each pipe stage handles empty input cleanly.
+  # Trailing `|| true` keeps the pipeline rc=0 under `set -euo pipefail` even
+  # if `find` hits a permission-denied subdirectory or `grep` exits non-zero
+  # because no metrics.json contains the sentinel yet — neither is a real
+  # error, but pipefail would otherwise abort the watchdog mid-cycle.
   local count
   count=$(
-    find "$SLAB_ROOT" -type f -name 'metrics.json' -print0 2>/dev/null \
-      | xargs -0 --no-run-if-empty grep -l 'persona_panel_scores' 2>/dev/null \
-      | wc -l
+    {
+      find "$SLAB_ROOT" -type f -name 'metrics.json' -print0 2>/dev/null \
+        | xargs -0 --no-run-if-empty grep -l 'persona_panel_scores' 2>/dev/null \
+        | wc -l
+    } || true
   )
   # wc -l can emit leading whitespace on some platforms; strip it.
   printf '%s\n' "${count// /}"
@@ -229,7 +235,11 @@ run_one_dispatcher_cycle() {
   cycle_start=$(now_unix)
 
   while kill -0 "$dispatch_pid" 2>/dev/null; do
-    sleep "$POLL_SECONDS"
+    # Background + wait so SIGTERM/SIGHUP/SIGINT interrupt the sleep promptly
+    # instead of being deferred until the foreground sleep finishes. With a
+    # 300-second POLL_SECONDS, a foreground sleep would delay shutdown by up
+    # to 5 minutes.
+    sleep "$POLL_SECONDS" & wait $! 2>/dev/null || true
     # Re-check liveness after the sleep: dispatcher may have exited during it.
     if ! kill -0 "$dispatch_pid" 2>/dev/null; then break; fi
     local mtime

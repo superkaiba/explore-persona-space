@@ -159,9 +159,7 @@ def test_stall_detected_and_dispatcher_respawned(tmp_path: Path) -> None:
     log_text = _read(watchdog_log)
     # Watchdog should have logged at least one heartbeat ("alive —") before
     # detecting the stall.
-    assert "alive —" in log_text or "alive —" in log_text, (
-        "missing heartbeat 'alive —' line; log:\n" + log_text
-    )
+    assert "alive —" in log_text, "missing heartbeat 'alive —' line; log:\n" + log_text
     assert "log stall:" in log_text, "missing 'log stall:' detection; log:\n" + log_text
     assert "SIGTERM dispatcher" in log_text or "cleanup: SIGTERM" in log_text, (
         "missing dispatcher SIGTERM cleanup; log:\n" + log_text
