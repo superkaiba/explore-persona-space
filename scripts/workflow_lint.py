@@ -62,7 +62,9 @@ STATUS_LABEL_RE = re.compile(r"\bstatus:[a-z][a-z0-9-]*\b")
 
 def _flatten_keys(workflow: WorkflowYaml) -> set[str]:
     """Return the set of dotted keys that ``(see workflow.yaml § <k>)``
-    references can resolve to."""
+    references can resolve to. Includes top-level keys, per-row identifier
+    keys (e.g. ``statuses.running``), and the Phase B blocks
+    ``ensemble_review`` / ``reviewer_pairs``."""
     keys: set[str] = {
         "version",
         "issue_types",
@@ -75,6 +77,9 @@ def _flatten_keys(workflow: WorkflowYaml) -> set[str]:
         "gates.conditional",
         "halt_criteria",
         "subagent_halt_conditions",
+        "ensemble_review",
+        "ensemble_review.doubled_steps",
+        "reviewer_pairs",
         "markers",
         "steps",
     }
@@ -89,6 +94,11 @@ def _flatten_keys(workflow: WorkflowYaml) -> set[str]:
             keys.add(f"gates.{g.name}")
     for h in workflow.halt_criteria:
         keys.add(f"halt_criteria.{h.name}")
+    for row in workflow.subagent_halt_conditions:
+        keys.add(f"subagent_halt_conditions.{row.subagent}")
+    if workflow.ensemble_review is not None:
+        for entry in workflow.ensemble_review.doubled_steps:
+            keys.add(f"ensemble_review.doubled_steps.{entry.role}")
     for m in workflow.markers:
         keys.add(f"markers.{m.kind}")
     for step in workflow.steps:

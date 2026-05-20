@@ -28,7 +28,8 @@ WORKFLOW_PATH = REPO_ROOT / ".claude" / "workflow.yaml"
 
 
 def test_schema_loads():
-    """The committed workflow.yaml validates and round-trips."""
+    """The committed workflow.yaml validates and round-trips with the
+    full Phase-B-restored content depth."""
     workflow = load_workflow_yaml()
     assert workflow.version == 1
     assert "experiment" in workflow.issue_types
@@ -36,6 +37,14 @@ def test_schema_loads():
     names = {s.name for s in workflow.statuses}
     for required in ("proposed", "running", "awaiting_promotion", "blocked"):
         assert required in names, f"missing required status: {required}"
+    # Phase B content-depth assertions: the restored yaml must carry the
+    # full agent-facing reference data.
+    assert len(workflow.columns) >= 5
+    assert len(workflow.statuses) >= 12
+    assert workflow.gates is not None
+    assert len(workflow.halt_criteria) == 5
+    assert len(workflow.markers) >= 25
+    assert len(workflow.steps) >= 14
 
 
 def test_label_to_column_round_trip():
@@ -199,3 +208,122 @@ def test_steps_no_unreachable_terminal_orphans():
     ids = {s.id for s in workflow.steps} | {"terminal"}
     for step in workflow.steps:
         assert step.next_expected_step in ids
+
+
+def test_reviewer_pairs_preserved():
+    """The reviewer_pairs block (added post-GH-migration; the GH-era yaml
+    lacked it) MUST survive Phase B's restoration. Each pair must have a
+    `reviewers` list and a `markers` list. The three load-bearing pair
+    keys must all be present."""
+    raw = yaml.safe_load(WORKFLOW_PATH.read_text())
+    assert "reviewer_pairs" in raw, "Phase B regression: reviewer_pairs block dropped"
+    pairs = raw["reviewer_pairs"]["pairs"]
+    for required_pair in ("code_review", "interpretation", "clean_result"):
+        assert required_pair in pairs, f"missing reviewer_pair: {required_pair}"
+        pair = pairs[required_pair]
+        assert "reviewers" in pair and len(pair["reviewers"]) == 2
+        assert "markers" in pair and len(pair["markers"]) == 2
+
+
+def test_reviewer_pair_markers_are_known_kinds():
+    """Every marker listed under reviewer_pairs.pairs.*.markers MUST exist
+    in workflow.markers. Catches typos and orphaned references."""
+    workflow = load_workflow_yaml()
+    raw = yaml.safe_load(WORKFLOW_PATH.read_text())
+    known_kinds = {m.kind for m in workflow.markers}
+    for pair_name, pair in raw["reviewer_pairs"]["pairs"].items():
+        for marker_ref in pair["markers"]:
+            assert marker_ref in known_kinds, (
+                f"reviewer_pairs.pairs.{pair_name}.markers references "
+                f"unknown marker kind {marker_ref!r}"
+            )
+
+
+def test_step_entry_status_labels_resolve():
+    """Every step's entry_status_label list MUST reference real status
+    names declared in workflow.statuses. The Pydantic validator already
+    enforces this, but this test makes the invariant a first-class
+    assertion (catches an edit that adds a new step pointing at a
+    not-yet-declared status)."""
+    workflow = load_workflow_yaml()
+    valid = {s.name for s in workflow.statuses}
+    for step in workflow.steps:
+        for label in step.entry_status_label:
+            assert label in valid, (
+                f"step {step.id!r}: entry_status_label {label!r} not in "
+                f"declared statuses (valid={sorted(valid)})"
+            )
+
+
+def test_markers_have_fields():
+    """Every marker MUST carry a non-empty `fields` description. The GH-era
+    contract: downstream agents read `fields` to know what payload shape to
+    write. An empty `fields` string means a marker was added to the names
+    list without its schema being documented."""
+    workflow = load_workflow_yaml()
+    for marker in workflow.markers:
+        assert marker.fields.strip(), (
+            f"marker {marker.kind!r} has empty `fields`; document the expected payload shape"
+        )
+
+
+def test_gates_full_shape():
+    """Phase B gates restoration: inline + park_and_wait + conditional all
+    present with the expected counts from the GH-era contract."""
+    workflow = load_workflow_yaml()
+    assert workflow.gates is not None
+    # GH-era contract: 5 inline gates.
+    assert len(workflow.gates.inline) == 5
+    # GH-era contract: 1 park-and-wait gate (awaiting_promotion).
+    assert len(workflow.gates.park_and_wait) == 1
+    assert workflow.gates.park_and_wait[0].name == "awaiting_promotion"
+    # GH-era contract: 1 conditional gate (TDD).
+    assert len(workflow.gates.conditional) == 1
+    assert workflow.gates.conditional[0].name == "tdd_gate"
+
+
+def test_halt_criteria_count_and_names():
+    """Phase B halt_criteria restoration: exactly 5 entries with the GH-era
+    names."""
+    workflow = load_workflow_yaml()
+    assert len(workflow.halt_criteria) == 5
+    expected_names = {
+        "outside_worktree_writes",
+        "api_contract_change",
+        "subagent_blocker",
+        "infra_respawn_cap",
+        "completion_audit_incomplete",
+    }
+    actual = {h.name for h in workflow.halt_criteria}
+    assert actual == expected_names, f"halt_criteria names drift: {actual ^ expected_names}"
+
+
+def test_ensemble_review_doubled_steps_resolve():
+    """ensemble_review.doubled_steps entries with reconcile_mode='marker'
+    MUST have a reconcile_marker that exists in workflow.markers. The
+    schema validates this — the test pins the contract."""
+    workflow = load_workflow_yaml()
+    assert workflow.ensemble_review is not None
+    known_kinds = {m.kind for m in workflow.markers}
+    marker_mode_count = 0
+    for entry in workflow.ensemble_review.doubled_steps:
+        if entry.reconcile_mode == "marker":
+            marker_mode_count += 1
+            assert entry.reconcile_marker in known_kinds
+    # At least one entry uses marker-mode reconciliation.
+    assert marker_mode_count >= 1
+
+
+def test_subagent_halt_conditions_present():
+    """Phase B restoration: subagent_halt_conditions populated."""
+    workflow = load_workflow_yaml()
+    assert len(workflow.subagent_halt_conditions) >= 5
+    subagents = {row.subagent for row in workflow.subagent_halt_conditions}
+    # Spot-check that the load-bearing subagents are covered.
+    for required in (
+        "consistency-checker",
+        "interpretation-critic",
+        "clean-result-critic",
+        "upload-verifier",
+    ):
+        assert required in subagents, f"missing subagent halt row: {required}"

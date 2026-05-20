@@ -1,3 +1,32 @@
+# .claude/workflow.yaml — Single source of truth for /issue state machine.
+#
+# This file enumerates every status, every conceptual board "column"
+# (which on the local-files substrate is a folder under tasks/),
+# every gate, every halt criterion, every marker kind, and every step
+# in the /issue lifecycle. Anything that would otherwise be duplicated
+# across CLAUDE.md, SKILL.md, markers.md, and consumers like
+# scripts/post_step_completed.py and src/.../orchestrate/resume.py is
+# collapsed into this one file.
+#
+# Substrate: LOCAL FILES under tasks/<status>/<N>/. There is no GitHub
+# issue, no project board, no Sagan dashboard control plane. Status
+# transitions are folder moves; markers are rows appended to
+# tasks/<N>/events.jsonl by scripts/task.py.
+#
+# Pre-commit lint (scripts/workflow_lint.py) enforces:
+#   - column references in statuses resolve to a real column row
+#   - dotted references in CLAUDE.md / SKILL.md / markers.md of the form
+#     `(see workflow.yaml § <key>)` resolve to a real key here
+#   - every step's posts_marker resolves to a known marker kind
+#   - every step's entry_status_label references a real status name
+#
+# Schema (src/explore_persona_space/workflow.py) treats most lists as
+# optional / defaulting to empty, so partial edits stay valid while a
+# section is in flight. The lint catches semantic drift.
+#
+# Bump `version` on breaking schema changes. The validator refuses
+# unknown version numbers.
+
 version: 1
 name: eps-task-workflow
 control_plane: local_files
@@ -21,34 +50,217 @@ substrate:
   registry: "tasks/REGISTRY.json (id -> current folder path)"
   single_writer: "scripts/task.py (flock + git commit per operation)"
 
-statuses:
-  - proposed
-  - clarifying
-  - gate_pending
-  - planning
-  - plan_pending
-  - approved
-  - awaiting_approval
-  - queued
-  - implementing
-  - code_reviewing
-  - testing
-  - running
-  - uploading
-  - verifying
-  - interpreting
-  - reviewing
-  - awaiting_promotion
-  - followups_running
-  - shared
-  - blocked
-  - completed
-  - done_experiment
-  - done_impl
-  - failed
-  - cancelled
-  - archived
+# ──────────────────────────────────────────────────────────────────────
+# Issue types. Substrate-independent classification of what kind of
+# work a task represents. Restored verbatim from the GH-era yaml — the
+# values control which downstream agent gets dispatched (experimenter
+# vs implementer) and which subset of /issue steps fires.
+# ──────────────────────────────────────────────────────────────────────
+issue_types:
+  - experiment
+  - infra
+  - batch
+  - analysis
+  - survey
 
+# ──────────────────────────────────────────────────────────────────────
+# Conceptual board "columns". On the GH-era project board these were
+# real GraphQL ProjectV2 columns; on the local-files substrate the
+# parent folder under tasks/ plays that role (e.g. tasks/proposed/N/
+# means the task is conceptually in the "To do" column). We keep the
+# GH-era column names as a stable conceptual grouping that downstream
+# helpers (gh_project.py, tests) still reference, with descriptions
+# explicitly pointing at the folder(s) each column represents on disk.
+# Color field is a placeholder string for schema validation only — no
+# UI consumes it under the local-files substrate.
+# ──────────────────────────────────────────────────────────────────────
+columns:
+  - name: "To do"
+    color: GRAY
+    description: "Folders tasks/proposed/<N>/ and tasks/clarifying/<N>/ — task filed, awaiting clarifier."
+  - name: "Planning"
+    color: PURPLE
+    description: "Folder tasks/planning/<N>/ — adversarial-planner running."
+  - name: "Plan awaiting review"
+    color: YELLOW
+    description: "Folder tasks/plan_pending/<N>/ — plan drafted; user action required to advance."
+  - name: "In flight"
+    color: BLUE
+    description: "Folders tasks/{approved,implementing,code_reviewing,testing,running,uploading,verifying,interpreting,reviewing}/<N>/ — automated lifecycle in progress."
+  - name: "Blocked"
+    color: RED
+    description: "Folder tasks/blocked/<N>/ — aborted or stuck; awaiting user triage."
+  - name: "Awaiting promotion"
+    color: YELLOW
+    description: "Folder tasks/awaiting_promotion/<N>/ — clean-result drafted; user action required to promote via task.py promote."
+  - name: "Followups running"
+    color: ORANGE
+    description: "Folder tasks/followups_running/<N>/ — parent task complete; follow-ups still in flight."
+  - name: "Useful"
+    color: BLUE
+    description: "Folder tasks/completed/<N>/ with frontmatter classification=useful — paper-relevant clean-result."
+  - name: "Not useful"
+    color: GRAY
+    description: "Folder tasks/completed/<N>/ with frontmatter classification=not-useful — archive candidate."
+  - name: "Done"
+    color: GREEN
+    description: "Folder tasks/completed/<N>/ — terminal: experiment finished + clean-result promoted, OR implementation shipped + reviewed."
+  - name: "Archived"
+    color: GRAY
+    description: "Folder tasks/archived/<N>/ — closed long ago / no longer relevant. Sticky regardless of has_clean_result."
+  - name: "Shared"
+    color: GRAY
+    description: "Folder tasks/shared/<N>/ — shared infra / utility tasks not tied to a single experiment."
+
+# ──────────────────────────────────────────────────────────────────────
+# status:* labels. Each status pins to one column above. Statuses are
+# stored as folder names: status `awaiting_promotion` ⇔ folder
+# `tasks/awaiting_promotion/<N>/`. The label_to_column() helper maps
+# `status:<name>` → column.name for back-compat with gh_project.py
+# consumers and Sagan migration helpers.
+# ──────────────────────────────────────────────────────────────────────
+statuses:
+  - name: proposed
+    column: "To do"
+    description: "User has filed; clarifier hasn't run."
+    next_action: clarify
+    user_gated: false
+  - name: clarifying
+    column: "To do"
+    description: "Clarifier asked questions; awaiting user answers in comments.jsonl."
+    next_action: clarify
+    user_gated: true
+  - name: gate_pending
+    column: "To do"
+    description: "Hypothesis / kill-criterion gate blocked the plan; awaiting body fix."
+    next_action: gate
+    user_gated: true
+  - name: planning
+    column: "Planning"
+    description: "Adversarial-planner is running."
+    next_action: plan
+    user_gated: false
+  - name: plan_pending
+    column: "Plan awaiting review"
+    description: "Plan posted; awaiting user approval (task.py set-status N approved)."
+    next_action: approve
+    user_gated: true
+  - name: approved
+    column: "In flight"
+    description: "Plan approved; skill is creating worktree and dispatching the specialist."
+    next_action: dispatch
+    user_gated: false
+  - name: awaiting_approval
+    column: "Plan awaiting review"
+    description: "Legacy alias for plan_pending; preserved for back-compat with older bodies."
+    next_action: approve
+    user_gated: true
+  - name: queued
+    column: "In flight"
+    description: "Approved task awaiting an available pod or implementer slot."
+    next_action: dispatch
+    user_gated: false
+  - name: implementing
+    column: "In flight"
+    description: "Implementer or experiment-implementer is writing code."
+    next_action: implement
+    user_gated: false
+  - name: code_reviewing
+    column: "In flight"
+    description: "code-reviewer ensemble is reviewing the diff."
+    next_action: review_code
+    user_gated: false
+  - name: testing
+    column: "In flight"
+    description: "Inline test-suite step (Step 9c, code-change paths only)."
+    next_action: test
+    user_gated: false
+  - name: running
+    column: "In flight"
+    description: "experimenter is running the workload on a pod."
+    next_action: run
+    user_gated: false
+  - name: uploading
+    column: "In flight"
+    description: "upload-verifier is checking that artifacts landed on HF Hub / WandB / git."
+    next_action: verify_uploads
+    user_gated: false
+  - name: verifying
+    column: "In flight"
+    description: "Post-upload sanity / smoke-test step before interpretation."
+    next_action: verify
+    user_gated: false
+  - name: interpreting
+    column: "In flight"
+    description: "analyzer + interpretation-critic + clean-result-critic loops are running."
+    next_action: interpret
+    user_gated: false
+  - name: reviewing
+    column: "In flight"
+    description: "Final adversarial review pass (clean-result-critic Lens 7 absorbed the retired reviewer step)."
+    next_action: review
+    user_gated: false
+  - name: under_review
+    column: "In flight"
+    description: "Legacy alias of reviewing; do not introduce new uses."
+    next_action: review
+    user_gated: false
+  - name: awaiting_promotion
+    column: "Awaiting promotion"
+    description: "User action: promote clean-result via task.py promote <N> useful|not-useful."
+    next_action: promote
+    user_gated: true
+  - name: followups_running
+    column: "Followups running"
+    description: "Parent task complete; children with frontmatter parent_id=<N> still in flight."
+    next_action: wait_for_children
+    user_gated: false
+  - name: shared
+    column: "Shared"
+    description: "Shared infra / utility task not tied to a single experiment."
+    next_action: terminal
+    user_gated: false
+  - name: blocked
+    column: "Blocked"
+    description: "Aborted or stuck; awaiting user triage."
+    next_action: triage
+    user_gated: true
+  - name: completed
+    column: "Done"
+    description: "Terminal: clean-result promoted OR code change shipped + reviewed."
+    next_action: terminal
+    user_gated: false
+  - name: done_experiment
+    column: "Done"
+    description: "Legacy terminal alias used by older bodies; equivalent to completed."
+    next_action: terminal
+    user_gated: false
+  - name: done_impl
+    column: "Done"
+    description: "Legacy terminal alias used by older bodies; equivalent to completed."
+    next_action: terminal
+    user_gated: false
+  - name: failed
+    column: "Blocked"
+    description: "Workload crashed and could not be resumed; awaiting user triage."
+    next_action: triage
+    user_gated: true
+  - name: cancelled
+    column: "Archived"
+    description: "User cancelled before completion."
+    next_action: terminal
+    user_gated: false
+  - name: archived
+    column: "Archived"
+    description: "Closed long ago / no longer relevant; sticky regardless of has_clean_result."
+    next_action: terminal
+    user_gated: false
+
+# ──────────────────────────────────────────────────────────────────────
+# Canonical lifecycle order — the happy-path traversal an experiment
+# follows from filing to completion. Aliases live in `status_aliases`
+# below and are NOT part of this sequence.
+# ──────────────────────────────────────────────────────────────────────
 canonical_lifecycle:
   - proposed
   - clarifying
@@ -69,9 +281,34 @@ canonical_lifecycle:
 
 status_aliases:
   under_review: reviewing
+  awaiting_approval: plan_pending
   done_experiment: completed
   done_impl: completed
 
+# ──────────────────────────────────────────────────────────────────────
+# Priority labels. Schema-stub only: the local-files substrate does NOT
+# carry "labels" — the equivalent for clean-result classification is the
+# `classification` field in body.md frontmatter (useful / not-useful /
+# pending). This block exists so workflow_lint's column-reference walk
+# stays happy and so gh_project.py's legacy label_to_column() mapping
+# still produces the columns its tests expect. NOT used by the local
+# substrate at runtime.
+# ──────────────────────────────────────────────────────────────────────
+priority_labels:
+  - name: clean-results:draft
+    column: "Awaiting promotion"
+    description: "Schema-stub only. Local substrate equivalent: set has_clean_result=true in body.md frontmatter while status remains awaiting_promotion."
+  - name: clean-results:useful
+    column: "Useful"
+    description: "Schema-stub only. Local substrate equivalent: frontmatter classification=useful after task.py promote."
+  - name: clean-results:not-useful
+    column: "Not useful"
+    description: "Schema-stub only. Local substrate equivalent: frontmatter classification=not-useful after task.py promote."
+
+# ──────────────────────────────────────────────────────────────────────
+# Clarification rules. The clarifier MUST ask targeted questions only;
+# it MUST NOT add broad literature or methodological gates.
+# ──────────────────────────────────────────────────────────────────────
 clarification:
   status: clarifying
   required_points:
@@ -84,6 +321,264 @@ clarification:
     - advance_to_planning_if_hypothesis_and_information_gain_are_clear
     - do_not_add_broad_literature_or_methodological_gates
 
+# ──────────────────────────────────────────────────────────────────────
+# Auto-continuation gates. Restored verbatim (with substrate
+# substitutions) from the GH-era yaml. CLAUDE.md "Auto-continuation
+# policy" enumerates these. Three categories:
+#   - inline: block within a single /issue invocation via
+#     AskUserQuestion. The skill pauses and resumes after the user
+#     answers in the same session.
+#   - park_and_wait: skill EXITs and waits for the user to run a
+#     separate task.py command before re-invoking /issue <N>.
+#   - conditional: only fires when explicitly opted into (TDD mode).
+# ──────────────────────────────────────────────────────────────────────
+gates:
+  inline:
+    - id: 1
+      name: empty_body
+      step: "0b/1"
+      reason: "body.md is empty (cannot guess primary input)"
+    - id: 2
+      name: missing_type
+      step: "0b/2"
+      reason: "type field missing or contradictory in body.md frontmatter (wrong guess corrupts the Done column)"
+    - id: 3
+      name: clarifier_blocking
+      step: "1"
+      status: status:proposed
+      reason: "clarifier blocking ambiguities (status:proposed)"
+    - id: 4
+      name: plan_approval
+      step: "2c"
+      status: status:plan_pending
+      reason: "plan approval — user runs `uv run python scripts/task.py set-status <N> approved` (or replies `approve` in chat)"
+    - id: 5
+      name: worktree_merge
+      step: "10d"
+      reason: "worktree merge prompt (irreversible)"
+  park_and_wait:
+    - id: 7
+      name: awaiting_promotion
+      label: status:awaiting_promotion
+      reason: |
+        Clean-result promotion. After clean-result-critic PASS, the source task
+        is parked at status:awaiting_promotion — its body is the polished
+        clean-result write-up, and `runs.classification` (frontmatter) stays
+        at `pending`. The user runs
+        `uv run python scripts/task.py promote <N> useful|not-useful` when
+        satisfied; re-invoking /issue <N> then advances into Step 10. /issue
+        does NOT use AskUserQuestion here — it posts the dashboard link and
+        exits cleanly. Awaiting promotion is user-only: no automation may
+        flip `runs.classification` without explicit user invocation.
+  conditional:
+    - id: 8
+      name: tdd_gate
+      step: "4b"
+      condition: "plan body contains '### TDD: yes' OR user explicitly requested TDD"
+      reason: |
+        Implementer posts `epm:proposed-tests v1`, EXITs awaiting an
+        `approve-tests` approval in the events.jsonl. Re-invoking /issue <N>
+        after approval resumes Step 4b normally. (See `markers.md` and the
+        implementer agent specs.)
+
+# ──────────────────────────────────────────────────────────────────────
+# STATE-TO-status:blocked criteria. Restored verbatim from the GH-era
+# yaml. CLAUDE.md "Critical Rules" enumerates these. Five items.
+# ──────────────────────────────────────────────────────────────────────
+halt_criteria:
+  - id: 1
+    name: outside_worktree_writes
+    description: "Assumption would silently delete or overwrite user files OUTSIDE the worktree."
+  - id: 2
+    name: api_contract_change
+    description: |
+      Assumption changes a public API contract (status name semantics,
+      marker schema, agent file location, task.py subcommand name).
+  - id: 3
+    name: subagent_blocker
+    description: |
+      consistency-checker / code-reviewer / interpretation-critic /
+      clean-result-critic returns BLOCKER or FAIL with `needs-user` flag.
+  - id: 4
+    name: infra_respawn_cap
+    description: "`failure_class: infra` respawn cap (3) hit."
+  - id: 5
+    name: completion_audit_incomplete
+    description: |
+      Step 10 completion audit (`epm:completion-audit`) finds any numbered
+      ask / acceptance criterion / explicit deliverable from the ORIGINAL
+      task body that is unaddressed by the work artifacts.
+
+# ──────────────────────────────────────────────────────────────────────
+# Subagent halt verdicts. Restored from the GH-era yaml with substrate
+# substitution (markers post to events.jsonl, not GitHub comments).
+# CLAUDE.md "Subagent halt conditions" cross-references this table.
+# ──────────────────────────────────────────────────────────────────────
+subagent_halt_conditions:
+  - subagent: consistency-checker
+    verdict: BLOCKER
+    action: "Step 2c writes BLOCKER to tasks/<status>/<N>/plans/v<K>.md, awaits user reply in comments.jsonl"
+  - subagent: code-reviewer-ensemble
+    verdict: "FAIL after reconcile (or FAIL+FAIL union)"
+    action: |
+      Ensemble of `code-reviewer` (Claude) + `codex-code-reviewer` (Codex
+      gpt-5.5). PASS+PASS proceeds. FAIL+FAIL with overlapping blockers
+      bounces; with disjoint blockers, union the blockers (one round).
+      PASS+FAIL dispatches `reconciler` (marker mode); reconciler verdict
+      binds. On any effective FAIL, bounces to implementer up to 3 rounds
+      per reviewer (reconcile rounds free); on 4th ensemble FAIL,
+      status:blocked.
+  - subagent: critic-ensemble
+    verdict: "REVISE/REJECT after per-lens reconcile (worst-wins cross-lens)"
+    action: |
+      /adversarial-planner Phase 2 ensemble: 3 lenses × 2 reviewers per
+      round. Per-lens: APPROVE+APPROVE proceeds; REVISE+REVISE or
+      REJECT+REJECT bounces; APPROVE vs REVISE/REJECT dispatches
+      `reconciler` (IN-CONTEXT mode, no events.jsonl marker). Cross-lens:
+      worst verdict wins. On REVISE/REJECT, bounces to planner up to 3
+      rounds (reconcile rounds free); on 4th, status:blocked.
+  - subagent: interpretation-critic-ensemble
+    verdict: "REVISE after reconcile (or REVISE+REVISE)"
+    action: |
+      Ensemble of `interpretation-critic` (Claude) +
+      `codex-interpretation-critic` (Codex gpt-5.5). PASS+PASS proceeds.
+      REVISE+REVISE bounces (concatenate + dedup findings). PASS+REVISE
+      dispatches `reconciler` (marker mode). On REVISE, bounces to
+      analyzer up to 3 rounds per reviewer; on 4th, advance regardless
+      and surface residual debt to comments.jsonl (existing single-critic
+      policy).
+  - subagent: clean-result-critic-ensemble
+    verdict: "REVISE after reconcile (or REVISE+REVISE)"
+    action: |
+      Final adversarial gate before status:awaiting_promotion (as of
+      2026-05-13 — absorbed the retired reviewer step). Ensemble of
+      `clean-result-critic` (Claude) + `codex-clean-result-critic`
+      (Codex gpt-5.5) running 11 lenses including Lens 7
+      (statistical-framing rule). PASS+PASS / PASS+CONCERNS advances.
+      Disagreement dispatches `reconciler` (marker mode). On REVISE,
+      bounces to analyzer up to 3 rounds; on 4th, advance regardless
+      and surface residual structural / register debt to comments.jsonl.
+  - subagent: clean-result-critic
+    verdict: REVISE
+    action: "Bounces to analyzer up to 3 rounds; on 4th REVISE, advance regardless and surface residual structural / register debt to comments.jsonl"
+  - subagent: interpretation-critic
+    verdict: FATAL
+    action: "Bounces to analyzer up to 3 rounds; on 4th FATAL, status:blocked"
+  - subagent: upload-verifier
+    verdict: FAIL
+    action: "status:uploading does not advance to interpretation; uploader (re)runs and verifier re-posts a fresh epm:upload-verification v<n>"
+
+# ──────────────────────────────────────────────────────────────────────
+# Codex ensemble review. For each doubled review step, a Claude reviewer
+# AND a Codex twin run in parallel; PASS/FAIL disagreement dispatches the
+# `reconciler` agent for a binding tie-break. Round cap is per-reviewer
+# (not per-ensemble); reconcile rounds don't count. Schema validated by
+# `EnsembleReview` in `src/explore_persona_space/workflow.py`.
+#
+# The `reviewer_pairs` block (below this one) is the higher-level
+# config used by /issue's review-loop driver. `ensemble_review` is the
+# detailed per-step contract the codex-* agents read. The two are
+# orthogonal: `reviewer_pairs.pairs.*.markers` MUST exist in the
+# `markers` list, and `ensemble_review.doubled_steps[*].reconcile_marker`
+# (mode=marker) MUST also exist in the `markers` list.
+# ──────────────────────────────────────────────────────────────────────
+ensemble_review:
+  doubled_steps:
+    - role: code-reviewer
+      step: "5"
+      claude_agent: code-reviewer
+      codex_agent: codex-code-reviewer
+      codex_model: gpt-5.5
+      codex_runtime: companion-task
+      verdict_field: "Verdict"
+      pass_values: [PASS, CONCERNS]
+      fail_values: [FAIL]
+      reconcile_marker: "epm:review-reconcile"
+      reconcile_mode: marker
+    - role: critic
+      step: "2 (adversarial-planner Phase 2)"
+      claude_agent: critic
+      codex_agent: codex-critic
+      codex_model: gpt-5.5
+      codex_runtime: companion-task
+      verdict_field: "Rating"
+      pass_values: [APPROVE]
+      fail_values: [REVISE, REJECT]
+      reconcile_marker: "epm:review-reconcile"  # in-context: printed to stdout, not posted
+      reconcile_mode: in-context
+      lenses: [methodology, statistics, alternatives]
+      notes: |
+        Phase 2 runs 6 critics per round (3 lenses × 2 reviewers). Per-lens
+        ensemble decision: agree → use that verdict; disagree → spawn
+        reconciler in IN-CONTEXT mode (no events.jsonl marker; reconciler
+        prints verdict to stdout for the manager). Cross-lens merge:
+        worst-wins across the 3 post-reconciliation lens verdicts. Codex
+        twin no-show on a lens → fall back to single-Claude-critic for
+        that lens this round.
+    - role: interpretation-critic
+      step: "9a"
+      claude_agent: interpretation-critic
+      codex_agent: codex-interpretation-critic
+      codex_model: gpt-5.5
+      codex_runtime: companion-task
+      verdict_field: "Verdict"
+      pass_values: [PASS]
+      fail_values: [REVISE]
+      reconcile_marker: "epm:review-reconcile"
+      reconcile_mode: marker
+      notes: |
+        Both reviewers run all 7 lenses (lens 6 plot-prose match works on
+        both — Codex multimodal verified 2026-05-10). Codex twin no-show
+        falls back to single-Claude-critic for that round. Round cap 3 per
+        reviewer; reconcile rounds free.
+    - role: clean-result-critic
+      step: "9a-bis"
+      claude_agent: clean-result-critic
+      codex_agent: codex-clean-result-critic
+      codex_model: gpt-5.5
+      codex_runtime: companion-task
+      verdict_field: "Verdict"
+      pass_values: [PASS, CONCERNS]
+      fail_values: [REVISE]
+      reconcile_marker: "epm:review-reconcile"
+      reconcile_mode: marker
+      notes: |
+        Final adversarial gate before status:awaiting_promotion (as of
+        2026-05-13 — absorbed the retired reviewer step's statistical-framing
+        rule as Lens 7). 11 lenses total: title, TL;DR, Summary structure +
+        register, Details per-section discipline, captions, heading-as-toggle,
+        body-discipline anti-patterns, Source issues conditional H2,
+        issue-link form, verifier sanity (verify_task_body.py),
+        statistical-framing rule.
+  not_doubled:
+    - upload-verifier      # mechanical artifact checklist, no LLM-judgment value
+    - consistency-checker  # mechanical structure check
+  round_cap_per_reviewer: 3
+  reconcile_invocations_count_toward_cap: false
+  union_rule: |
+    On FAIL+FAIL with disjoint blocker sets, the orchestrator unions the
+    blockers and treats it as ONE round (no reconciler dispatch). The
+    implementer must address all blockers from both reviewers.
+  agree_rule: |
+    On PASS+PASS or PASS+CONCERNS, no reconciler dispatch. CONCERNS bullets
+    from either reviewer are surfaced to the implementer as opportunistic
+    suggestions but do not block.
+  reconciler_authority: |
+    Binary verdict only (PASS or FAIL / APPROVE or REVISE). May NOT add
+    new findings beyond what either reviewer raised — only adjudicates
+    existing ones. Side observations go in the marker's "Observed but
+    not raised" section and do not affect the verdict. See
+    `.claude/agents/reconciler.md`.
+
+# ──────────────────────────────────────────────────────────────────────
+# Higher-level reviewer-pair config used by /issue's review-loop driver.
+# Orthogonal to ensemble_review above — this block names the pair, the
+# verdict vocabulary, and the markers each pair posts. The codex-* twin
+# agents post via `task.py post-marker`.
+#
+# PRESERVED from the post-GH-migration yaml. The GH-era yaml predated
+# this block.
+# ──────────────────────────────────────────────────────────────────────
 reviewer_pairs:
   max_rounds: 3
   verdicts:
@@ -117,55 +612,464 @@ reviewer_pairs:
     marker: epm:review-reconcile
     after_round_3_rule: "Record the final critique, choose the minimal necessary fix, and continue unless a real user-decision blocker remains."
 
+# ──────────────────────────────────────────────────────────────────────
+# Codex-primary agents. Agents that delegate their work to a headless
+# Codex session (companion task --write --effort xhigh). The thin
+# Claude wrapper composes the prompt; Codex does the file ops + research
+# judgment.
+# ──────────────────────────────────────────────────────────────────────
 codex_primary_agents:
-  # Agents that delegate their work to a headless Codex session
-  # (companion task --write --effort xhigh). The thin Claude wrapper
-  # composes the prompt; Codex does the file ops + research judgment.
   - analyzer
   - planner
   - follow-up-proposer
 
+# ──────────────────────────────────────────────────────────────────────
+# Marker kinds. Restored to the full GH-era shape: each marker has
+# `kind / posted_by / when / fields`. The auto-generated table block in
+# markers.md is regenerated from this list via
+# `workflow_lint.py --emit-tables`. Do NOT edit the rendered table by
+# hand. `kind` carries the `epm:` prefix (matches the names used in
+# events.jsonl, comments.jsonl, and `reviewer_pairs.pairs.*.markers`).
+#
+# Markers that existed in the GH-era yaml but are dropped under the
+# local-files substrate:
+#   - `clean-result-lint` (was a GitHub Actions workflow trigger;
+#     replaced by `scripts/workflow_lint.py` running on the local VM as
+#     a pre-commit hook and via `task.py audit`).
+#   - `follows` / `followed-by` (manual GH-issue cross-link comments;
+#     replaced by frontmatter `parent_id` / `child_ids` and the
+#     `edges` table in tasks/REGISTRY.json).
+# ──────────────────────────────────────────────────────────────────────
 markers:
-  store: events.jsonl
-  metadata_shape:
-    review_pair: interpretation
-    round: 2
-    reviewer: codex-interpretation-critic
-    verdict: needs_targeted_fix
-    required_fix: "Clarify whether the result supports the stated hypothesis."
-  names:
-    - epm:clarify
-    - epm:clarify-questions
-    - epm:clarify-answers
-    - epm:plan
-    - epm:plan-approved
-    - epm:code-review
-    - epm:code-review-codex
-    - epm:review-reconcile
-    - epm:preflight
-    - epm:launch
-    - epm:run-launched
-    - epm:progress
-    - epm:run-finished
-    - epm:results
-    - epm:upload-verification
-    - epm:upload-verified
-    - epm:pod-provisioned
-    - epm:pod-terminated
-    - epm:interpretation
-    - epm:interp-critique
-    - epm:interp-critique-codex
-    - epm:clean-result-drafted
-    - epm:clean-result-critique
-    - epm:clean-result-critique-codex
-    - epm:original-body
-    - epm:promoted
-    - epm:follow-ups
-    - epm:completion-audit
-    - epm:status-changed
-    - epm:done
-    - epm:failure
+  - kind: "epm:auto-defaults"
+    posted_by: skill
+    when: "Step 0b"
+    fields: "what fields were auto-filled in body.md frontmatter and the inferred values"
+  - kind: "epm:clarify"
+    posted_by: skill
+    when: "Step 1"
+    fields: "numbered clarifying questions OR 'No blocking ambiguities'"
+  - kind: "epm:clarify-questions"
+    posted_by: skill
+    when: "Step 1"
+    fields: "alias of epm:clarify used by some helper scripts; same body shape"
+  - kind: "epm:clarify-answers"
+    posted_by: skill (relaying user chat reply)
+    when: "Step 1"
+    fields: "user's answers to the most recent epm:clarify questions, persisted to events.jsonl"
+  - kind: "epm:plan"
+    posted_by: skill (via adversarial-planner)
+    when: "Step 2"
+    fields: "Goal, method delta, reproducibility card, success/kill criteria, GPU-hr estimate, pod intent"
+  - kind: "epm:plan-approved"
+    posted_by: skill (relaying user reply)
+    when: "Step 2c"
+    fields: "user `approve` reply; advances status from plan_pending to approved"
+  - kind: "epm:consistency"
+    posted_by: skill (via consistency-checker)
+    when: "Step 2b"
+    fields: "PASS/WARN/BLOCK verdict, variables that differ from parent, shared baseline check"
+  - kind: "epm:proposed-tests"
+    posted_by: skill (via implementer / experiment-implementer)
+    when: "Step 4b, TDD mode only"
+    fields: "Posted ONLY when the plan body contains `### TDD: yes` or the user requests TDD. Body: ≥1 happy-path + ≥2 distinct error/edge-case tests, behavior-focused, in fenced blocks. Implementer EXITs after posting and awaits user `approve-tests` reply. Skill pauses pending approval, then resumes Step 4b."
+  - kind: "epm:experiment-implementation"
+    posted_by: skill (via experiment-implementer)
+    when: "Step 4b"
+    fields: "Posted for type=experiment tasks. Body MUST follow the four-section shape `(a) What was done` / `(b) Considered but not done` / `(c) How to verify` / `(d) Needs human eyeball`."
+  - kind: "epm:code-review"
+    posted_by: skill (via code-reviewer)
+    when: "Step 5"
+    fields: "PASS / CONCERNS / FAIL verdict + line-level findings against the diff. v<n> per round"
+  - kind: "epm:code-review-codex"
+    posted_by: skill (via codex-code-reviewer)
+    when: "Step 5"
+    fields: "Codex (gpt-5.5 via companion task) twin of code-reviewer. PASS/CONCERNS/FAIL verdict + line-level findings against the same diff, same rubric. v<n> per round, paired with epm:code-review v<n>."
+  - kind: "epm:review-reconcile"
+    posted_by: skill (via reconciler)
+    when: "any review step where Claude and Codex disagree"
+    fields: "Binding final verdict + per-finding adjudication table + rationale anchored to artifact evidence. Does NOT count toward per-reviewer round cap. Reconciler may NOT add findings beyond what either reviewer raised."
+  - kind: "epm:hf-gate-pending"
+    posted_by: skill
+    when: "Step 6a"
+    fields: "model id, HF gate status, retry plan if rejected"
+  - kind: "epm:pod-provisioned"
+    posted_by: skill
+    when: "Step 6b"
+    fields: "RunPod pod name, host, port, GPU type, GPU count, gpu_intent"
+  - kind: "epm:pod-pending"
+    posted_by: skill
+    when: "Step 6b"
+    fields: "RunPod provision error, retry instructions"
+  - kind: "epm:preflight"
+    posted_by: skill
+    when: "Step 6c"
+    fields: "Full --json preflight report (resumed pods only)"
+  - kind: "epm:launch"
+    posted_by: skill
+    when: "Step 6d"
+    fields: "Worktree, branch, PR, pod, PID, log path, code-review verdict, WandB URL"
+  - kind: "epm:run-launched"
+    posted_by: experimenter
+    when: "Step 7"
+    fields: "Records the actual `nohup ... &` launch (PID + timestamp); paired with epm:launch"
+  - kind: "epm:progress"
+    posted_by: experimenter / implementer
+    when: "during run"
+    fields: "Milestone description + metric snapshot"
+  - kind: "epm:hot-fix"
+    posted_by: experimenter
+    when: "during run"
+    fields: "<=10-line in-line fix: commit hash, full diff, justification"
+  - kind: "epm:run-finished"
+    posted_by: experimenter
+    when: "end of run"
+    fields: "Exit code, wall time, GPU-hours used. Paired with epm:results."
+  - kind: "epm:results"
+    posted_by: specialist
+    when: "end of run"
+    fields: "Eval JSON paths, filled reproducibility card, WandB URL, HF Hub path, commit hash, GPU-hours used, deviations, hot-fix log. MUST include a `## Sample outputs` section with `### Condition: <name>` H3 subheadings and ≥3 randomly-sampled (persona, prompt, response) triplets PER CONDITION."
+  - kind: "epm:upload-verification"
+    posted_by: skill (via upload-verifier)
+    when: "Step 8"
+    fields: "PASS/FAIL per artifact category, permanent URLs for each uploaded artifact"
+  - kind: "epm:upload-verified"
+    posted_by: skill
+    when: "Step 8"
+    fields: "Sticky PASS marker; signals the auto-terminate path can run"
+  - kind: "epm:upload-fix"
+    posted_by: skill (via uploader)
+    when: "Step 8 (on verifier FAIL)"
+    fields: "Records what the uploader pushed/fixed in response to a `epm:upload-verification` FAIL. Contains: triggered-by link, verdict (COMPLETE/PARTIAL/BLOCKED), per-artifact action+URL table, lifecycle line, disk reclaimed, failures."
+  - kind: "epm:pod-terminated"
+    posted_by: skill
+    when: "Step 8 (after upload-verification PASS)"
+    fields: "Pod auto-terminated immediately after artifact uploads verified; records pod name and command output"
+  - kind: "epm:interpretation"
+    posted_by: skill (via analyzer)
+    when: "Step 9a"
+    fields: "Fact sheet (Section 1) + interpretation (Section 2). May have v1-v3 across critique rounds."
+  - kind: "epm:interp-critique"
+    posted_by: skill (via interpretation-critic)
+    when: "Step 9a"
+    fields: "PASS/REVISE verdict with 7 lenses: overclaims, surprises, alternatives, calibration, context, plot-prose match, statistical framing"
+  - kind: "epm:interp-critique-codex"
+    posted_by: skill (via codex-interpretation-critic)
+    when: "Step 9a"
+    fields: "Codex (gpt-5.5 via companion task) twin of interpretation-critic. PASS/REVISE verdict with all 7 lenses. v<n> per round, paired with epm:interp-critique v<n>."
+  - kind: "epm:clean-result-drafted"
+    posted_by: skill (via analyzer)
+    when: "Step 9a (final)"
+    fields: "Link to the clean-result body.md + hero figure path + 2-sentence recap. Replaces the GH-era epm:analysis marker."
+  - kind: "epm:clean-result-critique"
+    posted_by: skill (via clean-result-critic)
+    when: "Step 9a-bis"
+    fields: "PASS/REVISE verdict with 11 lenses (title shape, TL;DR, Summary structure + register, Details per-section discipline, captions, heading-as-toggle, body-discipline anti-patterns, Source issues conditional H2, issue-link form, verify_task_body.py sanity, statistical-framing rule)."
+  - kind: "epm:clean-result-critique-codex"
+    posted_by: skill (via codex-clean-result-critic)
+    when: "Step 9a-bis"
+    fields: "Codex (gpt-5.5 via companion task) twin of clean-result-critic. Runs verify_task_body.py and audit_clean_results_body_discipline.py independently."
+  - kind: "epm:test-verdict"
+    posted_by: skill (Step 9c, inline tests)
+    when: "Step 9c"
+    fields: "PASS / FAIL + test output summary, coverage gap notes (code-change paths only)"
+  - kind: "epm:original-body"
+    posted_by: skill (via analyzer, before in-place clean-result promotion)
+    when: "Step 9a (snapshot)"
+    fields: "Snapshot of the pre-promotion body.md, written to tasks/<status>/<N>/original-body.md and referenced in events.jsonl"
+  - kind: "epm:completion-audit"
+    posted_by: skill
+    when: "Step 10 step 0 (pre-flight, before status flip)"
+    fields: "Per-ask checklist against the ORIGINAL task body; any ☐ ⇒ status:blocked"
+  - kind: "epm:results-md-diff"
+    posted_by: skill
+    when: "Step 10"
+    fields: "Proposed diff for RESULTS.md (for user review, not auto-applied)"
+  - kind: "epm:promoted"
+    posted_by: skill (via task.py promote)
+    when: "Step 10"
+    fields: "User-invoked promote of an awaiting_promotion task to completed; records classification=useful|not-useful"
+  - kind: "epm:status-changed"
+    posted_by: skill (any time)
+    when: "any status transition"
+    fields: "Records the old/new status pair and which folder move was performed"
+  - kind: "epm:done"
+    posted_by: skill
+    when: "Step 10"
+    fields: "Final summary; records that the task reached the Done column. Task stays in tasks/completed/."
+  - kind: "epm:follow-ups"
+    posted_by: skill (via follow-up-proposer)
+    when: "Step 10b"
+    fields: "1-3 ranked follow-up experiment proposals, pre-filled from parent body.md"
+  - kind: "epm:abort"
+    posted_by: skill
+    when: "any time"
+    fields: "Abort reason. Triggered by status:blocked transition."
+  - kind: "epm:failure"
+    posted_by: specialist
+    when: "on crash"
+    fields: "Traceback + last 50 log lines + partial results. SHOULD include failure_class: infra | code line."
+  - kind: "epm:experimenter-respawn"
+    posted_by: skill
+    when: "Step 7 (failure_class=infra path)"
+    fields: "Records re-spawn on the same branch without an implementer round. v<n> per respawn; cap 3."
+  - kind: "epm:merged"
+    posted_by: skill
+    when: "Step 10d"
+    fields: "Merge SHAs (one per commit when rebase-merged) + worktree removal"
+  - kind: "epm:merge-deferred"
+    posted_by: skill
+    when: "Step 10d"
+    fields: "User declined the merge prompt"
+  - kind: "epm:stale"
+    posted_by: skill
+    when: "Step 7 (>4h silence)"
+    fields: "Note asking user to investigate"
+  - kind: "epm:step-completed"
+    posted_by: skill
+    when: "every EXIT site"
+    fields: "step, exit_kind (clean|parked|failure-exit), next_expected_step, optional notes. Consumed by the §5 re-entry router (orchestrate/resume.py)."
 
+# ──────────────────────────────────────────────────────────────────────
+# /issue lifecycle steps. Required by the §5 epm:step-completed re-entry
+# router (src/explore_persona_space/orchestrate/resume.py +
+# scripts/post_step_completed.py). `entry_status_label` MUST be a
+# non-empty list of concrete status names — the literal `any` is rejected
+# at schema-validation time. The §5 router treats `status:blocked` as a
+# hard-coded full-replay trigger BEFORE consulting either
+# entry_status_label or the marker.
+#
+# All entry_status_label values reference statuses declared above. All
+# next_expected_step values reference another step id or the terminal
+# sentinel. All posts_marker values reference a marker kind declared
+# above.
+# ──────────────────────────────────────────────────────────────────────
+steps:
+  - id: "0"
+    name: load_state
+    entry_status_label:
+      - proposed
+      - clarifying
+      - gate_pending
+      - planning
+      - plan_pending
+      - approved
+      - queued
+      - implementing
+      - code_reviewing
+      - testing
+      - running
+      - uploading
+      - verifying
+      - interpreting
+      - reviewing
+      - under_review
+      - awaiting_promotion
+      - followups_running
+      - blocked
+      - completed
+      - done_experiment
+      - done_impl
+    entry_condition: always
+    next_expected_step: "0b"
+  - id: "0b"
+    name: defaulting_autofill
+    entry_status_label:
+      - proposed
+      - clarifying
+      - gate_pending
+      - planning
+      - plan_pending
+      - approved
+      - queued
+      - implementing
+      - code_reviewing
+      - testing
+      - running
+      - uploading
+      - verifying
+      - interpreting
+      - reviewing
+      - under_review
+      - awaiting_promotion
+      - followups_running
+      - blocked
+      - completed
+      - done_experiment
+      - done_impl
+    entry_condition: "missing status:* OR empty body OR missing type frontmatter"
+    posts_marker: "epm:auto-defaults"
+    next_expected_step: "1"
+  - id: "1"
+    name: clarifier
+    entry_status_label:
+      - proposed
+      - clarifying
+    entry_condition: "epm:clarify not yet posted OR user has new chat answers in comments.jsonl"
+    posts_marker: "epm:clarify"
+    next_expected_step: "2"
+  - id: "2"
+    name: adversarial_planner
+    entry_status_label:
+      - planning
+    entry_condition: "clarifier All-clear; plan not yet posted"
+    posts_marker: "epm:plan"
+    next_expected_step: "2b"
+  - id: "2b"
+    name: consistency_check
+    entry_status_label:
+      - planning
+    entry_condition: "plan posted; consistency check not yet run"
+    posts_marker: "epm:consistency"
+    next_expected_step: "2c"
+  - id: "2c"
+    name: plan_pending
+    entry_status_label:
+      - plan_pending
+      - awaiting_approval
+    entry_condition: "plan + consistency posted; awaiting user approve"
+    next_expected_step: "3"
+  - id: "3"
+    name: worktree_setup
+    entry_status_label:
+      - approved
+    entry_condition: "plan approved"
+    next_expected_step: "4"
+  - id: "4"
+    name: dispatch_implementer
+    entry_status_label:
+      - approved
+      - queued
+      - implementing
+    entry_condition: "worktree ready; specialist not yet dispatched"
+    next_expected_step: "4b"
+  - id: "4b"
+    name: implementer_running
+    entry_status_label:
+      - implementing
+    entry_condition: "specialist dispatched; awaiting epm:results or epm:experiment-implementation"
+    posts_marker: "epm:experiment-implementation"
+    next_expected_step: "5"
+  - id: "5"
+    name: code_review
+    entry_status_label:
+      - code_reviewing
+    entry_condition: "epm:experiment-implementation posted"
+    posts_marker: "epm:code-review"
+    next_expected_step: "6a"
+  - id: "5b"
+    name: code_review_revise
+    entry_status_label:
+      - implementing
+    entry_condition: "code-review FAIL, revision_round < 3"
+    next_expected_step: "5"
+  - id: "6a"
+    name: pod_provision
+    entry_status_label:
+      - running
+    entry_condition: "type=experiment AND no pod yet"
+    next_expected_step: "6b"
+  - id: "6b"
+    name: pod_pending
+    entry_status_label:
+      - running
+    entry_condition: "RunPod provision in flight"
+    posts_marker: "epm:pod-pending"
+    next_expected_step: "6c"
+  - id: "6c"
+    name: preflight
+    entry_status_label:
+      - running
+    entry_condition: "pod ready; preflight not yet run"
+    posts_marker: "epm:preflight"
+    next_expected_step: "6d"
+  - id: "6d"
+    name: dispatch_experimenter
+    entry_status_label:
+      - running
+    entry_condition: "preflight PASS; experimenter not yet launched"
+    posts_marker: "epm:launch"
+    next_expected_step: "7"
+  - id: "7"
+    name: experimenter_running
+    entry_status_label:
+      - running
+    entry_condition: "epm:launch posted; awaiting epm:results"
+    next_expected_step: "8"
+  - id: "8"
+    name: upload_verification
+    entry_status_label:
+      - uploading
+      - verifying
+    entry_condition: "epm:results posted"
+    posts_marker: "epm:upload-verification"
+    next_expected_step: "9a"
+  - id: "9a"
+    name: interpretation
+    entry_status_label:
+      - interpreting
+    entry_condition: "upload-verification PASS"
+    posts_marker: "epm:interpretation"
+    next_expected_step: "9a-bis"
+  - id: "9a-bis"
+    name: clean_result_critique_loop
+    entry_status_label:
+      - interpreting
+      - reviewing
+    entry_condition: "interp-critique PASS or round >= 3"
+    posts_marker: "epm:clean-result-critique"
+    next_expected_step: "10"
+  - id: "9c"
+    name: test_verdict
+    entry_status_label:
+      - testing
+      - code_reviewing
+    entry_condition: "code-change path (type=infra/batch/analysis/survey); inline tests"
+    posts_marker: "epm:test-verdict"
+    next_expected_step: "10"
+  - id: "10"
+    name: completion_audit
+    entry_status_label:
+      - awaiting_promotion
+      - reviewing
+      - under_review
+      - testing
+    entry_condition: "clean-result-critic PASS OR test-verdict PASS; pre-flight before Done"
+    posts_marker: "epm:completion-audit"
+    next_expected_step: "10a"
+  - id: "10a"
+    name: done_status_flip
+    entry_status_label:
+      - awaiting_promotion
+      - reviewing
+      - under_review
+      - testing
+    entry_condition: "completion-audit all ☑"
+    posts_marker: "epm:done"
+    next_expected_step: "10b"
+  - id: "10b"
+    name: follow_ups
+    entry_status_label:
+      - completed
+      - done_experiment
+      - done_impl
+    entry_condition: "task moved to completed/"
+    posts_marker: "epm:follow-ups"
+    next_expected_step: "10d"
+  - id: "10d"
+    name: worktree_merge_prompt
+    entry_status_label:
+      - completed
+      - done_experiment
+      - done_impl
+    entry_condition: "PR exists and is unmerged"
+    posts_marker: "epm:merged"
+    next_expected_step: terminal
+
+# ──────────────────────────────────────────────────────────────────────
+# Pod lifecycle config. Substrate-independent at this level — `pod.py`
+# wraps RunPod regardless of how /issue gets invoked.
+# ──────────────────────────────────────────────────────────────────────
 runpod:
   planning_contract: runpod-spec
   launcher: "scripts/pod.py"
@@ -174,17 +1078,20 @@ runpod:
     mechanism: scripts/pod_watch.py
     appends_to: events.jsonl
     epm_markers:
-      - epm:run-launched
-      - epm:progress
-      - epm:run-finished
+      - "epm:run-launched"
+      - "epm:progress"
+      - "epm:run-finished"
   lifecycle_commands:
     provision: "uv run python scripts/pod.py provision --issue <N> --intent <intent>"
     terminate: "uv run python scripts/pod.py terminate --issue <N> --yes"
     resume: "uv run python scripts/pod.py resume --issue <N>"
   auto_terminate_on_upload_verify_pass: true
 
+# ──────────────────────────────────────────────────────────────────────
+# Forbidden control-plane surfaces. Local-files substrate is canonical;
+# anything in this list is historical evidence only.
+# ──────────────────────────────────────────────────────────────────────
 forbidden_workflow_state:
-  # Things that MUST NOT be used as the control plane.
   - github_issues
   - github_labels
   - github_issue_comments
@@ -192,6 +1099,9 @@ forbidden_workflow_state:
   - sagan_postgres_writes
   - parallel_local_state_files_outside_tasks_directory
 
+# ──────────────────────────────────────────────────────────────────────
+# Client config. The single writer + verifier.
+# ──────────────────────────────────────────────────────────────────────
 client:
   script: scripts/task.py
   module: explore_persona_space.task_workflow
