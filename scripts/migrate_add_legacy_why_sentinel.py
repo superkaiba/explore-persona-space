@@ -84,28 +84,46 @@ REPO = repo_root()
 TASKS_DIR = REPO / "tasks"
 
 
-def split_frontmatter(text: str) -> tuple[dict | None, str, str]:
-    """Return (frontmatter_dict, fm_block_raw, body_str).
+FrontmatterStatus = str  # one of: "ok", "missing", "parse_error"
 
-    ``frontmatter_dict`` is ``None`` if the body lacks YAML frontmatter
-    or it fails to parse. ``fm_block_raw`` is the raw YAML text between
-    the ``---`` markers (without the markers themselves).
+
+def split_frontmatter(text: str) -> tuple[FrontmatterStatus, dict | None, str, str]:
+    """Return (status, frontmatter_dict, fm_block_raw, body_str).
+
+    ``status`` is one of:
+
+    * ``"ok"`` — the body opens with valid YAML frontmatter that parses
+      into a mapping. ``frontmatter_dict`` is that mapping.
+    * ``"missing"`` — the body does NOT start with ``---\\n`` or the
+      closing ``\\n---\\n`` is absent. ``frontmatter_dict`` is ``None``.
+    * ``"parse_error"`` — the body LOOKS like it has frontmatter (opens
+      with ``---\\n`` and has a closing ``\\n---\\n``) but the YAML
+      block fails to parse OR parses into something other than a
+      mapping. ``frontmatter_dict`` is ``None``; ``fm_block_raw`` holds
+      the offending text for human inspection.
+
+    Distinguishing ``missing`` vs ``parse_error`` is load-bearing for
+    the migration loop: ``missing`` is a benign skip (legacy bodies
+    without frontmatter never gain a sentinel automatically), but
+    ``parse_error`` is a body the migration cannot safely touch — it
+    must be reported, and ``--apply`` refuses to commit until every
+    parse error is hand-fixed.
     """
     if not text.startswith(_FM_OPEN):
-        return None, "", text
+        return "missing", None, "", text
     rest = text[len(_FM_OPEN) :]
     end = rest.find(_FM_CLOSE)
     if end == -1:
-        return None, "", text
+        return "missing", None, "", text
     fm_block = rest[:end]
     body = rest[end + len(_FM_CLOSE) :]
     try:
         fm = yaml.safe_load(fm_block) or {}
     except yaml.YAMLError:
-        return None, fm_block, body
+        return "parse_error", None, fm_block, body
     if not isinstance(fm, dict):
-        return None, fm_block, body
-    return fm, fm_block, body
+        return "parse_error", None, fm_block, body
+    return "ok", fm, fm_block, body
 
 
 def join_frontmatter(fm: dict, body: str) -> str:
@@ -176,10 +194,14 @@ def main() -> int:  # noqa: C901
             print(f"  ERROR reading {body_path}: {e}", file=sys.stderr)
             parse_errors.append(body_path)
             continue
-        fm, _fm_raw, body = split_frontmatter(raw)
-        if fm is None:
+        status, fm, _fm_raw, body = split_frontmatter(raw)
+        if status == "parse_error":
+            parse_errors.append(body_path)
+            continue
+        if status == "missing":
             skipped_no_fm.append(body_path)
             continue
+        assert fm is not None  # status == "ok" implies fm is a mapping
         if fm.get(LEGACY_WHY_SENTINEL_KEY) is True:
             already_set.append(body_path)
             continue
@@ -207,13 +229,30 @@ def main() -> int:  # noqa: C901
         print()
 
     if parse_errors:
+        # Always print parse errors — in BOTH dry-run and apply, the user
+        # needs to see which bodies need hand-fixing. `--apply` refuses to
+        # commit if any parse_errors > 0; the user must hand-fix the
+        # offending bodies first (the migration cannot safely touch a body
+        # whose YAML doesn't parse).
         print(
-            f"ERROR: {len(parse_errors)} bodies failed to read or parse — "
-            "fix these before running --apply",
+            f"ERROR: {len(parse_errors)} body file(s) failed to read or had "
+            "unparseable YAML frontmatter:",
             file=sys.stderr,
         )
         for p in parse_errors:
             print(f"    - {p.relative_to(REPO)}", file=sys.stderr)
+        if apply:
+            print(
+                "\n--apply refuses to commit while any body has a parse error. "
+                "Hand-fix the offending frontmatter blocks and re-run.",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                "\n(dry-run) re-run --apply only AFTER hand-fixing these bodies; "
+                "--apply will refuse otherwise.",
+                file=sys.stderr,
+            )
         return 1
 
     if sample_diffs and not apply:
@@ -251,8 +290,11 @@ def main() -> int:  # noqa: C901
     # Apply mode: rewrite each body, then a single git commit.
     for body_path in to_patch:
         raw = body_path.read_text()
-        fm, _, body = split_frontmatter(raw)
-        assert fm is not None  # checked in the dry-run loop above
+        status, fm, _, body = split_frontmatter(raw)
+        # The dry-run loop above only adds `status == "ok"` paths to
+        # to_patch, so this is a defensive assert against concurrent
+        # modification.
+        assert status == "ok" and fm is not None, f"unexpected status {status!r} for {body_path}"
         new_fm = dict(fm)
         new_fm[LEGACY_WHY_SENTINEL_KEY] = True
         new_text = join_frontmatter(new_fm, body)
