@@ -2,3 +2,4 @@
 {"ts": "2026-05-20T21:02:48Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "running"}
 {"ts": "2026-05-20T21:02:48Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Direct implementer dispatch from PM session for the deferred #371 minors. Parent #371 (completed). Same quick-path topology as #371 / #372: no worktree, implementer + code-reviewer pair."}
 {"ts": "2026-05-20T21:27:49Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "completed"}
+{"ts": "2026-05-20T21:27:50Z", "kind": "epm:completed", "version": 1, "by": "unknown", "note": "Round 1 PASS-with-concerns. 4 commits: m3 extraction + tilde/duplicate-H2 + m1 parse-error reporting + lazy yaml import + m4 SKILL.md document-the-pattern. 135 tests pass. One residual: mixed-fence-nesting bypass (backtick→tilde→backtick); theoretical (no real bodies hit it), filed as follow-up consideration."}
