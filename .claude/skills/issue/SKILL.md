@@ -903,7 +903,7 @@ Pick the path based on whether this task has a parent (read
 `parent_id` from `body.md` frontmatter):
 
 ```bash
-PARENT_ID=$(uv run python scripts/task.py view <N> --json | jq -r '.body_frontmatter.parent_id // empty')
+PARENT_ID=$(uv run python scripts/task.py view <N> --json | jq -r '.frontmatter.parent_id // empty')
 
 # 1. If PARENT_ID is set AND `epm-issue-<PARENT_ID>` exists in `pod.py list-ephemeral`:
 if [ -n "$PARENT_ID" ] && uv run python scripts/pod.py list-ephemeral --issue "$PARENT_ID" | grep -q epm-issue; then
@@ -1402,7 +1402,7 @@ work* contract.
    `body.md` frontmatter contains `parent_id: <N>`. The exact
    filesystem query:
    ```bash
-   find tasks -path 'tasks/*/<child>/body.md' \
+   find tasks -path 'tasks/*/*/body.md' \
      -exec grep -l "parent_id: <N>" {} +
    ```
    filtered by parent folder NOT in {`completed`, `archived`}.
