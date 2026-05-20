@@ -187,21 +187,49 @@ applicable):
    ```bash
    uv run python scripts/task.py view <N> --json
    ```
+   Note the absolute path of `body.md` from the output's `path` field
+   (`tasks/<status>/<N>/body.md`) — you'll edit the frontmatter
+   directly in step 4.
+
 2. **Insert `## Why this experiment`** into the body. Placement
    convention: between the top H1 (or `## Goal`) and the first
    substantive section (`## Background`, `## Setup`, etc.). If the
    body has no clear top section, insert immediately after the H1.
-3. **Apply via `task.py set-body`**:
+
+3. **Apply the body change via `task.py set-body`**:
    ```bash
    uv run python scripts/task.py set-body <N> --file /tmp/why-issue-<N>-body.md
    ```
-4. **Update frontmatter `application:` field** to match the body line.
-   `set-body` only replaces the body text; to write a frontmatter
-   field, write the full markdown (frontmatter + body) to the file and
-   pass it to `set-body`. Verify with:
+   `set-body` replaces the BODY content only and preserves the
+   existing frontmatter verbatim. The file you pass must be the body
+   text alone — NOT a full markdown document with a `---` frontmatter
+   header. If the file you pass begins with `---\n...\n---\n`, those
+   lines will land as literal body text (not parsed as YAML), and the
+   `application:` field will not change.
+
+4. **Update the frontmatter `application:` field directly** — there is
+   no `task.py set-frontmatter` subcommand, and `set-body` deliberately
+   does not touch frontmatter (see its `--help`). Use your file-edit
+   tool (`Read` then `Edit`) on `tasks/<status>/<N>/body.md` to add
+   or change the `application:` line in the YAML block at the top of
+   the file. Example before / after:
+   ```yaml
+   ---
+   title: ...
+   kind: experiment
+   application: predict       # ← add or change this line
+   ---
+   ```
+   Then commit the change so the dashboard picks it up:
+   ```bash
+   git -C $(uv run python scripts/task.py find <N> | head -1) add body.md
+   git commit -m "task #<N>: set frontmatter application=<enum>"
+   ```
+   Verify the update with:
    ```bash
    uv run python scripts/task.py view <N> --json | jq -r '.frontmatter.application'
    ```
+
 5. **Post the marker**:
    ```bash
    uv run python scripts/task.py post-marker <N> epm:gate-filled \
@@ -216,13 +244,15 @@ applicable):
    - `user_overrides`: same value set, listing only questions where
      the user overrode the challenge with "I'm right" / "ship it" /
      "defer".
+
 6. **Run the mechanical verifier** to confirm:
    ```bash
    uv run python scripts/verify_task_body.py --issue <N>
    ```
    Check #12 must PASS. If it FAILs, you transcribed something
-   sub-40-chars or got the labels wrong — re-read the body, fix the
-   transcription, re-apply.
+   sub-40-chars, got the labels wrong, or the frontmatter
+   `application:` field disagrees with the body's `Application` line
+   — re-read the body, fix the transcription, re-apply.
 
 ---
 

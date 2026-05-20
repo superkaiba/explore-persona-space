@@ -523,11 +523,26 @@ def main() -> None:
         p.add_argument("--prefix", default=None, help="restrict to events with this prefix")
         p.set_defaults(func=cmd_latest_marker)
 
-    p = sub.add_parser("set-body", help="replace body.md content (preserves frontmatter)")
+    p = sub.add_parser(
+        "set-body",
+        help="replace body.md body content (frontmatter is preserved, NOT replaced)",
+        description=(
+            "Replace the body portion of body.md while preserving the existing "
+            "YAML frontmatter verbatim. The new content passed via --body, --file, "
+            "or stdin is written AS-IS into the body region (after the closing "
+            "`---` line). If the new content itself begins with `---\\n...\\n---\\n`, "
+            "those lines become literal body text — set-body does NOT parse them as "
+            "frontmatter and does NOT update any frontmatter field. To change a "
+            "frontmatter field, use the dedicated mutators (`set-title`, "
+            "`set-clean-result`, `add-tag`, `remove-tag`) or edit body.md directly."
+        ),
+    )
     p.add_argument("number", type=int)
     g = p.add_mutually_exclusive_group()
-    g.add_argument("--body", default=None)
-    g.add_argument("--file", default=None)
+    g.add_argument(
+        "--body", default=None, help="new body content as a string (excludes frontmatter)"
+    )
+    g.add_argument("--file", default=None, help="path to a file containing the new body content")
     p.add_argument(
         "--snapshot", action="store_true", help="save current body to original-body.md first"
     )
