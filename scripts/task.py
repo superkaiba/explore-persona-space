@@ -78,6 +78,9 @@ def cmd_view(args: argparse.Namespace) -> None:
         }
         print(json.dumps(payload, indent=2, ensure_ascii=False))
         return
+    if args.rich:
+        _print_rich_view(task, events)
+        return
     print(f"# task #{task['id']} — {task['frontmatter'].get('title', '')}")
     print(f"  path:    {task['path']}")
     print(f"  status:  {task['status']}")
@@ -93,6 +96,75 @@ def cmd_view(args: argparse.Namespace) -> None:
         note = ev.get("note", "")
         note = (note[:80] + "…") if len(note) > 80 else note
         print(f"  {ev['ts']}  {ev['kind']:30s}  {note}")
+
+
+def _print_rich_view(task: dict, events: list[dict]) -> None:
+    """Terminal-friendly one-page summary (≤60 lines) for `view --rich <N>`.
+
+    Sections (in order):
+      1. Status         — canonical status from the parent folder.
+      2. Frontmatter    — key/value block from body.md frontmatter.
+      3. Body excerpt   — first 30 lines of the body.
+      4. Last 5 events  — most recent rows from events.jsonl.
+      5. Latest reviewer verdict (optional) — most recent
+         `epm:clean-result-critique` marker's verdict line.
+
+    Designed to fit in one terminal screen without scrolling. Truncates
+    notes to keep within ~60 lines total.
+    """
+    fm = task["frontmatter"]
+    print(f"# task #{task['id']} — {fm.get('title', '')}")
+    print()
+    # 1. Status
+    print(f"Status: {task['status']}")
+    print(f"  path: {task['path']}")
+    print()
+    # 2. Frontmatter (key fields only — exclude the bulky `title` we already
+    # printed and any nested structures that would overflow).
+    print("Frontmatter:")
+    for key in ("kind", "parent_id", "tags", "has_clean_result", "classification", "created_at"):
+        if key in fm and fm[key] not in (None, [], ""):
+            print(f"  {key}: {fm[key]}")
+    print()
+    # 3. Body excerpt — first 30 lines.
+    body_lines = task["body"].splitlines()
+    excerpt = body_lines[:30]
+    print(f"Body excerpt ({len(excerpt)} of {len(body_lines)} lines):")
+    for line in excerpt:
+        # Truncate any one body line to ~110 chars so we don't blow up.
+        print(f"  {line[:110]}")
+    print()
+    # 4. Last 5 events.
+    last_n = min(5, len(events))
+    print(f"Last {last_n} events (of {len(events)}):")
+    for ev in events[-5:]:
+        note = ev.get("note", "")
+        # First line of note, truncated.
+        first_line = note.splitlines()[0] if note else ""
+        first_line = (first_line[:80] + "…") if len(first_line) > 80 else first_line
+        print(f"  {ev['ts']}  {ev['kind']:30s}  {first_line}")
+    # 5. Latest reviewer verdict (optional).
+    critique_events = [e for e in events if e["kind"] == "epm:clean-result-critique"]
+    if critique_events:
+        latest = critique_events[-1]
+        note = latest.get("note", "")
+        # Find the first line that contains a verdict marker.
+        verdict_line = ""
+        for line in note.splitlines():
+            stripped = line.strip()
+            if stripped and (
+                "verdict" in stripped.lower()
+                or stripped.startswith("Round ")
+                or "PASS" in stripped
+                or "FAIL" in stripped
+            ):
+                verdict_line = stripped
+                break
+        if not verdict_line:
+            verdict_line = note.splitlines()[0] if note else "(no note)"
+        verdict_line = (verdict_line[:90] + "…") if len(verdict_line) > 90 else verdict_line
+        print()
+        print(f"Latest reviewer verdict: {verdict_line}")
 
 
 def cmd_create(args: argparse.Namespace) -> None:
@@ -327,6 +399,14 @@ def main() -> None:
         "--json",
         action="store_true",
         help="emit full frontmatter + body + all events as JSON (for pipelines)",
+    )
+    p.add_argument(
+        "--rich",
+        action="store_true",
+        help=(
+            "terminal-friendly one-page summary (≤60 lines): status, "
+            "frontmatter, body excerpt, last 5 events, latest reviewer verdict"
+        ),
     )
     p.set_defaults(func=cmd_view)
 

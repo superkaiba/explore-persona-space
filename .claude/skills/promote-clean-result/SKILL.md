@@ -24,8 +24,11 @@ chat — refine the body, run the quality gates, push, then iterate against
 the live body. The only pre-apply user gate is Step 1 (consolidation
 candidates), because merging is destructive.
 
-**All body-shape rules live in `.claude/plans/task-workflow-migration.md`
-§ 10.** Workflow + apply mechanics only here.
+**All body-shape rules live in `CLAUDE.md` § "Experiment Report
+Structure" (markdown clean-result spec — four required H2 sections:
+TL;DR / Figure / Details / Reproducibility; enforced mechanically by
+`scripts/verify_task_body.py`, 11 checks).** Workflow + apply mechanics
+only here.
 
 ---
 
@@ -103,8 +106,8 @@ Detect format:
 
 ## Step 3 — Refine the body
 
-Read the spec at `.claude/plans/task-workflow-migration.md` § 10. Common
-refinements at this stage:
+Read the spec under "Experiment Report Structure" in `CLAUDE.md`.
+Common refinements at this stage:
 
 - Title says exactly what the result is (not the experiment name) and
   ends with `(LOW|MODERATE|HIGH confidence)`.
@@ -196,11 +199,16 @@ follow-up-proposer step.
 
 ## References
 
-- **`.claude/plans/task-workflow-migration.md` § 10** — canonical
-  markdown clean-result spec.
+- **`CLAUDE.md` § "Experiment Report Structure"** — canonical markdown
+  clean-result spec (four required H2 sections, voice rules,
+  sample-output discipline).
 - **`.claude/skills/clean-results/SPEC.md`** — pointer document with
-  the six-check verifier rules.
-- **`scripts/verify_task_body.py`** — mechanical verifier (six checks).
+  the 11-check verifier rules.
+- **`scripts/verify_task_body.py`** — mechanical verifier (11 checks
+  for new markdown bodies; skips legacy `<!-- legacy-sagan-card -->`
+  HTML bodies with PASS).
+- **`scripts/verify_sagan_card.py`** — legacy verifier retained for
+  grandfathered HTML bodies only.
 - **`scripts/audit_clean_results_body_discipline.py`** — prose-level
   anti-pattern audit.
 - **`.claude/skills/clean-results/iterations.md`** — append-only log
