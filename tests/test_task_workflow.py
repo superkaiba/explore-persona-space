@@ -6,6 +6,12 @@ end-to-end behavior (git mv during set_status, etc.) under test — but
 auto-push is disabled by leaving TASK_PY_AUTO_PUSH unset.
 """
 
+# ruff: noqa: E501
+# The fixture body strings below include long lines that mirror real
+# clean-result content (Why-this-experiment Application/Decision lines
+# carry ≥40 chars of substance and tend to exceed 100 cols). Reflowing
+# them would change the markdown structure under test.
+
 from __future__ import annotations
 
 import json
@@ -411,11 +417,18 @@ def _move_to_awaiting(tw, task_id: int) -> None:
 CANONICAL_PASS_BODY = """\
 # Toy clean-result body (LOW confidence)
 
+## Why this experiment
+
+- **Application:** predict — the fixture stands in for a forecasting experiment about model behavior.
+- **Decision this changes:** whether the migration tooling can recognize a fully-conformant body and treat it as PASS.
+- **Expected outcome + branches:** classify_body returns PASS (the migration is a no-op) or returns something else (the migration logic has regressed).
+- **What gets cut if we run this:** nothing — this is a smoke-test fixture, not a real experiment.
+
 ## TL;DR
 
 - **Motivation:** I wanted a smoke-test fixture.
 - **What I ran:** I wrote a minimal markdown body and ran verify_task_body.
-- **Results:** The fixture passes all eleven checks.
+- **Results:** The fixture passes all twelve checks.
 - **Next steps:** Use this fixture in migration tests.
 
 ## Figure
@@ -444,6 +457,13 @@ Confidence: LOW — based on toy data only, not a real experiment so does not ge
 # missing its three boldface subgroup labels and uses H3 instead.
 CONFORMANT_FAILING_H3_REPRO_BODY = """\
 # Conformant-failing body using H3 repro subgroups (LOW confidence)
+
+## Why this experiment
+
+- **Application:** predict — fixture stands in for a forecasting experiment about model behavior.
+- **Decision this changes:** whether the H3-Repro remediation patch successfully promotes labels and re-PASSes the verifier.
+- **Expected outcome + branches:** remediation flips Artifacts/Compute/Code to bold and the body PASSes, or the body stays FAIL and the test surfaces a real regression.
+- **What gets cut if we run this:** nothing — this is a smoke-test fixture, not a real experiment.
 
 ## TL;DR
 
@@ -531,11 +551,30 @@ Refs go here.
 """
 
 
-def _make_task_at_awaiting(tw, *, title: str, body: str, task_id_hint: int | None = None) -> int:
-    """Create a task and push it to awaiting_promotion. Returns the id."""
+def _make_task_at_awaiting(
+    tw,
+    *,
+    title: str,
+    body: str,
+    task_id_hint: int | None = None,
+    application: str | None = "predict",
+) -> int:
+    """Create a task and push it to awaiting_promotion. Returns the id.
+
+    Post-create, patches ``application: <application>`` into the task's
+    frontmatter so check #12 (Why-this-experiment gate) reads a real
+    value. The default ``"predict"`` matches the body fixtures' Application
+    line. Pass ``application=None`` to leave the frontmatter untouched
+    (e.g. to exercise the legacy-sentinel skip path).
+    """
     new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title=title, body=body))
     if task_id_hint is not None:
         assert new_id == task_id_hint, f"id drift: got {new_id}, expected {task_id_hint}"
+    if application is not None:
+        body_path = tw.find_task_path(new_id) / "body.md"
+        fm, body_only = tw._read_body(body_path)
+        fm["application"] = application
+        tw._write_body(body_path, fm, body_only)
     tw.set_status(new_id, "awaiting_promotion")
     return new_id
 
@@ -543,7 +582,10 @@ def _make_task_at_awaiting(tw, *, title: str, body: str, task_id_hint: int | Non
 def test_migrate_body_classify_pass(fake_repo):
     from explore_persona_space.task_workflow_migrate import BodyClass, classify_body
 
-    assert classify_body(CANONICAL_PASS_BODY) == BodyClass.PASS
+    # CANONICAL_PASS_BODY is a body string — classify_body needs the real
+    # frontmatter (with `application:`) to fully PASS the eleven body
+    # checks plus check #12 (Why-this-experiment gate).
+    assert classify_body(CANONICAL_PASS_BODY, fm={"application": "predict"}) == BodyClass.PASS
 
 
 def test_migrate_body_classify_v4_legacy(fake_repo):

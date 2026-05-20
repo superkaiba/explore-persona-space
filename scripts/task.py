@@ -230,9 +230,18 @@ def _enforce_why_this_experiment_gate(*, kind: str, body: str) -> None:
 
     body_lines = body.splitlines()
     in_section = False
+    in_fence = False
     seen_labels: dict[str, str] = {}
     for line in body_lines:
         stripped = line.strip()
+        # Track fenced code blocks so a pasted ``## Why this experiment``
+        # inside ``` ... ``` cannot satisfy the gate. Mirrors the rule in
+        # `scripts/verify_task_body.py::find_h2_sections`.
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
         if stripped.startswith("## "):
             current = stripped[3:].strip()
             in_section = current.casefold() == "why this experiment"

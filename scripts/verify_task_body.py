@@ -163,11 +163,26 @@ def find_h1_title(body: str) -> str | None:
 
 
 def find_h2_sections(body: str) -> list[tuple[str, int, int]]:
-    """Return list of (section_name, body_line_start, body_line_end) for each H2."""
+    """Return list of (section_name, body_line_start, body_line_end) for each H2.
+
+    H2 lines inside fenced code blocks (``` ... ```) are ignored, so a
+    pasted ``## Why this experiment`` inside a code fence cannot satisfy
+    the verifier or the `task.py new` gate.
+    """
     lines = body.splitlines()
     h2_indices: list[tuple[str, int]] = []
+    in_fence = False
     for i, line in enumerate(lines):
         stripped = line.strip()
+        # Toggle fence state on any line starting with ``` (with optional
+        # language tag, e.g. ```python). Matches the CommonMark relaxed
+        # rule: an opening fence does not have to be closed by an identical
+        # tag, but lines starting with ``` flip the state.
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
         if stripped.startswith("## ") and not stripped.startswith("### "):
             h2_indices.append((stripped[3:].strip(), i))
     out: list[tuple[str, int, int]] = []

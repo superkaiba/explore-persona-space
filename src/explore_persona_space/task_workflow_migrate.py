@@ -124,11 +124,21 @@ def _is_target_shape(body: str) -> bool:
     return seq == list(TARGET_H2)
 
 
-def classify_body(body: str) -> BodyClass:
-    """Return the migration classification for `body` (a raw post-frontmatter string)."""
+def classify_body(body: str, fm: dict | None = None) -> BodyClass:
+    """Return the migration classification for `body` (a raw post-frontmatter string).
+
+    `fm` is the task's actual frontmatter dict. When provided, it is fed
+    into the verifier so check #12 (Why-this-experiment gate) reads the
+    real `application:` and `legacy_why_unset:` keys rather than a
+    synthesized empty mapping. Callers that don't have a real frontmatter
+    handy (direct fixture calls in tests, exploratory CLI use) can omit
+    it; the synthesized empty mapping then makes check #12 fail on
+    pre-gate bodies, which is the conservative behavior.
+    """
     if _has_legacy_sentinel(body):
         return BodyClass.LEGACY_HTML
-    overall, _ = vtb.verify_text("---\n---\n" + body)  # synthesize empty frontmatter
+    fm_text = _serialize_frontmatter(fm)
+    overall, _ = vtb.verify_text(fm_text + body)
     if overall:
         return BodyClass.PASS
     if _is_v4_legacy(body):
@@ -136,6 +146,19 @@ def classify_body(body: str) -> BodyClass:
     if _is_target_shape(body):
         return BodyClass.CONFORMANT_FAILING
     return BodyClass.UNKNOWN
+
+
+def _serialize_frontmatter(fm: dict | None) -> str:
+    """Render `fm` back into a `---\\n...\\n---\\n` block for `verify_text`.
+
+    Empty dict / None → `---\\n---\\n` (the historical synthesized form).
+    """
+    if not fm:
+        return "---\n---\n"
+    import yaml as _yaml
+
+    payload = _yaml.safe_dump(fm, sort_keys=False).strip()
+    return f"---\n{payload}\n---\n"
 
 
 # ─── Conformant-but-failing remediation ───────────────────────────────────
@@ -616,10 +639,12 @@ def migrate_one(
     """
     body_path = tw.find_task_path(task_id) / "body.md"
     fm, body = tw._read_body(body_path)
-    cls = classify_body(body)
+    cls = classify_body(body, fm=fm)
 
-    # Verify-before status
-    overall_before, _ = vtb.verify_text("---\n---\n" + body)
+    # Verify-before status — use the actual frontmatter so check #12 sees
+    # the real `application:` / `legacy_why_unset:` keys.
+    fm_text = _serialize_frontmatter(fm)
+    overall_before, _ = vtb.verify_text(fm_text + body)
     verify_before = (
         "SKIP" if cls is BodyClass.LEGACY_HTML else ("PASS" if overall_before else "FAIL")
     )
@@ -678,8 +703,10 @@ def migrate_one(
         )
 
     # Verify-after BEFORE we commit to writing — used to decide whether the
-    # patch actually got us to PASS.
-    overall_after_preview, _ = vtb.verify_text("---\n---\n" + new_body)
+    # patch actually got us to PASS. Reuse the real frontmatter so check
+    # #12 (Why-this-experiment gate) sees the actual `application:` /
+    # `legacy_why_unset:` keys.
+    overall_after_preview, _ = vtb.verify_text(fm_text + new_body)
     if not overall_after_preview:
         # Per plan §3 Phase E step 5: "If still failing, flag with
         # --needs-user and leave the body alone." Partial-credit patches are

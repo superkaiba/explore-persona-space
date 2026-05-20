@@ -25,10 +25,21 @@ sys.modules["verify_task_body"] = verify_task_body
 _spec.loader.exec_module(verify_task_body)  # type: ignore[union-attr]
 
 
-# ─── Canonical body (passes all 11 checks) ─────────────────────────────────
+# ─── Canonical body (passes all 12 checks) ─────────────────────────────────
 
 GOOD_BODY = """\
+---
+title: Toy clean-result for verifier tests
+kind: experiment
+application: predict
+---
 # Some claim about persona leakage (MODERATE confidence)
+
+## Why this experiment
+- **Application:** predict — characterizing how cross-persona leakage scales with seed and benchmark to forecast deployment risk.
+- **Decision this changes:** whether to ship persona-axis steering as the default defense in the next training run.
+- **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).
+- **What gets cut if we run this:** the planned hidden-state probing follow-up gets bumped a week so we can run this first.
 
 ## TL;DR
 - **Motivation:** I wanted to test whether X drives Y.
@@ -77,7 +88,9 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    assert len(results) == 11
+    # 11 body-only checks (CHECKS) + 1 Why-this-experiment check appended
+    # by verify_text (it needs the frontmatter, not just the body).
+    assert len(results) == 12
 
 
 def test_missing_confidence_tag():
@@ -195,7 +208,14 @@ def test_legacy_sagan_card_skipped():
 
 
 def test_frontmatter_stripped_before_checks():
-    body = "---\ntitle: foo\nkind: experiment\n---\n" + GOOD_BODY
+    # GOOD_BODY already carries its own `---` frontmatter block (with the
+    # `application: predict` key check #12 needs). Swap it for a
+    # frontmatter block with a couple of extra keys and confirm the body
+    # checks still pass — i.e. extra frontmatter keys do not break the
+    # body parsing.
+    extra_fm = "title: extra\nkind: experiment\napplication: predict\nextra_key: foo\n"
+    fm_end = GOOD_BODY.index("---\n", 4) + 4  # 4 = len("---\n") of opening
+    body = "---\n" + extra_fm + "---\n" + GOOD_BODY[fm_end:]
     ok, results = verify_task_body.verify_text(body)
     assert ok, [r.render() for r in results if not r.passed]
 
@@ -312,7 +332,18 @@ def test_sentinel_scrub_see_config():
 
 
 CHERRY_BODY_FAIL = """\
+---
+title: Cherry-picked discipline failing fixture
+kind: experiment
+application: predict
+---
 # Some claim about persona leakage (MODERATE confidence)
+
+## Why this experiment
+- **Application:** predict — characterizing how cross-persona leakage scales with seed and benchmark to forecast deployment risk.
+- **Decision this changes:** whether to ship persona-axis steering as the default defense in the next training run.
+- **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).
+- **What gets cut if we run this:** the planned hidden-state probing follow-up gets bumped a week so we can run this first.
 
 ## TL;DR
 - **Motivation:** I wanted to test whether X drives Y.
@@ -394,7 +425,18 @@ def test_no_sample_block_skips_cherry_check():
 
 
 QUAL_BODY_FAIL = """\
+---
+title: Qualitative-data link failing fixture
+kind: experiment
+application: predict
+---
 # Some claim about persona leakage (MODERATE confidence)
+
+## Why this experiment
+- **Application:** predict — characterizing how cross-persona leakage scales with seed and benchmark to forecast deployment risk.
+- **Decision this changes:** whether to ship persona-axis steering as the default defense in the next training run.
+- **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).
+- **What gets cut if we run this:** the planned hidden-state probing follow-up gets bumped a week so we can run this first.
 
 ## TL;DR
 - **Motivation:** I wanted to test whether X drives Y.
@@ -487,9 +529,150 @@ def test_qualitative_data_link_not_uploaded_warn():
     assert "not uploaded" in by_name["Qualitative-data link"].detail
 
 
+# ─── Check 12: Why-this-experiment gate ───────────────────────────────────
+
+
+def test_why_experiment_happy_path_passes():
+    """Happy path: frontmatter has `application:`, body has the four labeled
+    lines under `## Why this experiment`. Already exercised by
+    `test_good_body_passes_all` against GOOD_BODY; this test isolates the
+    assertion for direct check-#12 coverage."""
+    _ok, results = verify_task_body.verify_text(GOOD_BODY)
+    by_name = _results_by_name(results)
+    assert by_name["Why-this-experiment gate"].passed
+    assert "application=predict" in by_name["Why-this-experiment gate"].detail
+    assert "4 lines filled" in by_name["Why-this-experiment gate"].detail
+
+
+def test_why_experiment_legacy_sentinel_skips():
+    """`legacy_why_unset: true` in frontmatter bypasses check #12 (returns
+    PASS with a skip note) while the other 11 checks still run normally."""
+    # Strip GOOD_BODY's own frontmatter and replace with a frontmatter that
+    # has ONLY the legacy sentinel (no `application:`, no `## Why ...`
+    # section in the body).
+    fm_end = GOOD_BODY.index("---\n", 4) + 4
+    body_no_why = GOOD_BODY[fm_end:].replace(
+        "## Why this experiment\n"
+        "- **Application:** predict — characterizing how cross-persona leakage scales with seed and benchmark to forecast deployment risk.\n"
+        "- **Decision this changes:** whether to ship persona-axis steering as the default defense in the next training run.\n"
+        "- **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).\n"
+        "- **What gets cut if we run this:** the planned hidden-state probing follow-up gets bumped a week so we can run this first.\n\n",
+        "",
+    )
+    body = "---\nlegacy_why_unset: true\n---\n" + body_no_why
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    assert by_name["Why-this-experiment gate"].passed
+    assert "skipped" in by_name["Why-this-experiment gate"].detail
+    assert "legacy_why_unset" in by_name["Why-this-experiment gate"].detail
+    # The other 11 checks still ran:
+    assert len(results) == 12
+
+
+def test_why_experiment_missing_application_frontmatter_fails():
+    """Frontmatter lacks `application:` → check #12 FAILs."""
+    fm_end = GOOD_BODY.index("---\n", 4) + 4
+    # Drop the `application:` line from the frontmatter.
+    body = "---\ntitle: foo\nkind: experiment\n---\n" + GOOD_BODY[fm_end:]
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Why-this-experiment gate"].passed
+    assert "frontmatter missing `application:`" in by_name["Why-this-experiment gate"].detail
+
+
+def test_why_experiment_application_not_in_enum_fails():
+    """`application:` value outside the {detect|predict|defend|audit|infra}
+    enum → check #12 FAILs with a list of accepted values."""
+    body = GOOD_BODY.replace("application: predict", "application: cleanup")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Why-this-experiment gate"].passed
+    assert "not in enum" in by_name["Why-this-experiment gate"].detail
+    assert "cleanup" in by_name["Why-this-experiment gate"].detail
+
+
+def test_why_experiment_missing_h2_section_fails():
+    """`## Why this experiment` H2 missing from body → check #12 FAILs."""
+    body = GOOD_BODY.replace("## Why this experiment\n", "## Some other section\n")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Why-this-experiment gate"].passed
+    assert "Why this experiment" in by_name["Why-this-experiment gate"].detail
+    assert "missing" in by_name["Why-this-experiment gate"].detail.lower()
+
+
+def test_why_experiment_stubby_labeled_line_fails():
+    """A labeled line whose value is under the 40-char floor → check #12 FAILs
+    with a stubby-line list."""
+    body = GOOD_BODY.replace(
+        "- **Decision this changes:** whether to ship persona-axis steering as the default defense in the next training run.",
+        "- **Decision this changes:** TBD.",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Why-this-experiment gate"].passed
+    assert "stubby" in by_name["Why-this-experiment gate"].detail
+    assert "Decision this changes" in by_name["Why-this-experiment gate"].detail
+
+
+def test_why_experiment_body_application_mismatches_frontmatter_fails():
+    """Body Application line names a different enum value than the
+    frontmatter → check #12 FAILs with the cross-check error."""
+    # GOOD_BODY frontmatter says `application: predict`. Change the body's
+    # Application line to say `defend`.
+    body = GOOD_BODY.replace(
+        "- **Application:** predict — characterizing how cross-persona leakage scales with seed and benchmark to forecast deployment risk.",
+        "- **Application:** defend — characterizing how cross-persona leakage scales with seed and benchmark to inform a defense.",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Why-this-experiment gate"].passed
+    detail = by_name["Why-this-experiment gate"].detail
+    assert "body Application says" in detail
+    assert "'defend'" in detail
+    assert "'predict'" in detail
+
+
+def test_why_experiment_fenced_code_block_bypass_fails():
+    """A `## Why this experiment` H2 + four labeled lines pasted inside a
+    fenced code block does NOT satisfy check #12 — the fence is skipped by
+    `find_h2_sections`. Closes the m2 bypass."""
+    # Strip the real `## Why this experiment` block out of GOOD_BODY first;
+    # then re-paste the same content INSIDE a ``` fence so it's no longer
+    # an H2.
+    real_section = (
+        "## Why this experiment\n"
+        "- **Application:** predict — characterizing how cross-persona leakage scales with seed and benchmark to forecast deployment risk.\n"
+        "- **Decision this changes:** whether to ship persona-axis steering as the default defense in the next training run.\n"
+        "- **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).\n"
+        "- **What gets cut if we run this:** the planned hidden-state probing follow-up gets bumped a week so we can run this first.\n\n"
+    )
+    fenced = "```text\n" + real_section + "```\n\n"
+    body = GOOD_BODY.replace(real_section, fenced)
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Why-this-experiment gate"].passed
+    # The section is not detected at all (fenced-out), so the error is
+    # "section missing".
+    assert "Why this experiment" in by_name["Why-this-experiment gate"].detail
+    assert "missing" in by_name["Why-this-experiment gate"].detail.lower()
+
+
 # ─── CHECKS list invariant ─────────────────────────────────────────────────
 
 
 def test_checks_list_size():
-    """CHECKS must contain exactly 11 functions (Phase C of the /issue restoration)."""
+    """CHECKS must contain exactly 11 functions (Phase C of the /issue restoration).
+
+    Check #12 (Why-this-experiment gate) is appended inside `verify_text`
+    rather than added to CHECKS because it needs the frontmatter, not just
+    the body. So `verify_text` returns 12 results, but `CHECKS` stays at 11.
+    """
     assert len(verify_task_body.CHECKS) == 11
