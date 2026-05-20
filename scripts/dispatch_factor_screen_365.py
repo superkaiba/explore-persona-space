@@ -42,6 +42,7 @@ Pass ``--no-resume`` to force a clean rerun.
 from __future__ import annotations
 
 import argparse
+import io
 import itertools
 import logging
 import os
@@ -395,7 +396,36 @@ def _training_cmd(
     return cmd
 
 
-def _wait_for_free_gpu(running: dict[int, subprocess.Popen], gpu_pool: list[int]) -> int:
+def _cell_log_path(slab_root: Path, cell_key: str, source: str, seed: int) -> Path:
+    """Return the per-cell stdout+stderr log path.
+
+    Round-9 (issue #365) Fix D: each training-stage subprocess writes its
+    combined stdout+stderr to a dedicated log file under the cell's output
+    dir. Round-8 merged all 8 cells' output into one stream, hiding which
+    cell hit a vLLM crash and interleaving tqdm progress bars
+    incomprehensibly. Anchoring the log next to the cell's metrics.json
+    makes it trivial to find ("which cell failed?" → ls the slab tree).
+    """
+    return (
+        slab_root
+        / f"cell_{cell_key}"
+        / f"source_{source}"
+        / f"seed_{seed}"
+        / "cell_stdout_stderr.log"
+    )
+
+
+def _wait_for_free_gpu(
+    running: dict[int, subprocess.Popen],
+    gpu_pool: list[int],
+    log_handles: dict[int, io.TextIOBase] | None = None,
+) -> int:
+    """Wait until any GPU in ``gpu_pool`` has no running subprocess.
+
+    Round-9 (issue #365): also closes the per-cell log file handle when the
+    subprocess on that GPU exits, so we don't leak file descriptors across
+    a 96-cell run.
+    """
     while True:
         for gpu in gpu_pool:
             proc = running.get(gpu)
@@ -406,6 +436,13 @@ def _wait_for_free_gpu(running: dict[int, subprocess.Popen], gpu_pool: list[int]
                 running.pop(gpu, None)
                 if proc.returncode != 0:
                     log.warning("Job on GPU %d exited with rc=%d", gpu, proc.returncode)
+                if log_handles is not None:
+                    handle = log_handles.pop(gpu, None)
+                    if handle is not None:
+                        try:
+                            handle.close()
+                        except OSError as exc:
+                            log.warning("Failed to close per-cell log handle: %s", exc)
                 return gpu
         time.sleep(2)
 
@@ -428,6 +465,11 @@ def _training_stage(args: argparse.Namespace) -> int:
         args.num_gpus = physical
     gpu_pool = list(range(args.num_gpus))
     running: dict[int, subprocess.Popen] = {}
+    # Round-9 (issue #365) Fix D: per-cell open file handles, keyed by GPU.
+    # We open the per-cell log just before Popen and close it in
+    # ``_wait_for_free_gpu`` once the subprocess exits, so a 96-cell run
+    # never holds more than ``num_gpus`` file descriptors at once.
+    log_handles: dict[int, io.TextIOBase] = {}
 
     # Round-5: pre-fetch the HF Hub model-repo file index once so the resume
     # probe doesn't make 96 separate Hub calls. None = probe failed / Hub
@@ -476,11 +518,30 @@ def _training_stage(args: argparse.Namespace) -> int:
             log.info("DRYRUN: %s", " ".join(cmd))
             queued += 1
             continue
-        gpu = _wait_for_free_gpu(running, gpu_pool)
+        gpu = _wait_for_free_gpu(running, gpu_pool, log_handles=log_handles)
         env = os.environ.copy()
         env["CUDA_VISIBLE_DEVICES"] = str(gpu)
-        log.info("Launching cell=%s source=%s seed=%d on GPU %d", cell_key, source, seed, gpu)
-        running[gpu] = subprocess.Popen(cmd, env=env)
+        # Round-9 Fix D: open a per-cell log file (line-buffered) and redirect
+        # the subprocess's stdout+stderr into it. The dispatcher's own
+        # logging stream stays untouched — only the cell subprocess output is
+        # captured. Pre-create the parent dir so the entry script's own
+        # output_dir.mkdir(parents=True, exist_ok=True) is a no-op.
+        cell_log = _cell_log_path(args.slab_root, cell_key, source, seed)
+        cell_log.parent.mkdir(parents=True, exist_ok=True)
+        # SIM115: ``open()`` here is intentional — the handle must outlive
+        # this function call and is closed in ``_wait_for_free_gpu`` when
+        # the subprocess exits.
+        log_handle = open(cell_log, "w", buffering=1)  # noqa: SIM115
+        log.info(
+            "Launching cell=%s source=%s seed=%d on GPU %d (log=%s)",
+            cell_key,
+            source,
+            seed,
+            gpu,
+            cell_log,
+        )
+        running[gpu] = subprocess.Popen(cmd, env=env, stdout=log_handle, stderr=subprocess.STDOUT)
+        log_handles[gpu] = log_handle
         queued += 1
 
     if args.resume:
@@ -495,10 +556,20 @@ def _training_stage(args: argparse.Namespace) -> int:
     if args.dry_run:
         return 0
 
-    # Drain.
+    # Drain. Round-9 Fix D: the drain loop also threads ``log_handles`` so
+    # the per-cell file descriptors are closed as the final subprocesses exit.
     while running:
-        gpu = _wait_for_free_gpu(running, gpu_pool)
+        gpu = _wait_for_free_gpu(running, gpu_pool, log_handles=log_handles)
         running.pop(gpu, None)
+    # Defensive: close any stragglers (should be empty after the drain loop,
+    # but a buggy code path that pops from ``running`` directly could leave
+    # handles behind).
+    for gpu, handle in list(log_handles.items()):
+        try:
+            handle.close()
+        except OSError as exc:
+            log.warning("Failed to close per-cell log handle on GPU %d: %s", gpu, exc)
+        log_handles.pop(gpu, None)
     log.info(
         "Training stage complete: %d jobs (%d skipped, %d ran)",
         len(jobs),

@@ -560,6 +560,8 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
             num_completions=args.eval_completions,
             max_new_tokens=args.eval_max_new_tokens,
             seed=args.seed,
+            cell_key=cell.key,
+            source=args.source,
         )
     )
     persona_scores = score_markers(eval_results)
@@ -569,6 +571,8 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
             num_completions=args.eval_completions,
             max_new_tokens=args.eval_max_new_tokens,
             seed=args.seed,
+            cell_key=cell.key,
+            source=args.source,
         )
     )
     random_scores = score_markers(random_results)
@@ -787,30 +791,33 @@ def _hf_hub_files_for_source(source: str) -> list[str]:
 def _hf_hub_reuse_path(source: str, cell: Cell) -> str | None:
     """Return the HF-Hub path for a cell-exact pre-existing D=1 pool, or ``None``.
 
-    The plan §1.5 fact-check noted that HF Hub already carries
-    ``leakage/marker_<source>_asst_excluded_medium.jsonl`` files for some
-    sources. The "medium" recipe corresponds to a SPECIFIC cell:
+    Round-9 (issue #365): this short-circuit is **disabled** for the
+    (A=0, B=0, C=0, D=1) case. Round-3 (commit 6533a53c) wired it up under
+    the assumption that the existing
+    ``leakage/marker_<source>_asst_excluded_medium.jsonl`` files matched
+    the B=0 length band (40-80 tokens). Round-8 forensics showed the
+    "medium" file actually carries 231-480 token completions (median
+    310) — comfortably outside B=0 (40-80) and far short of B=1
+    (900-1200). Reusing it produced an (a0_b0_c0_offpolicy) pool whose
+    completions had the wrong length distribution; downstream
+    ``prepare_cell`` happily wrote a JSONL of long completions which
+    then crashed training when the band-passing source-role rows
+    landed at zero.
 
-      * A = 0 (short system prompt — the canonical persona prompt with no
-        length padding).
-      * B = 0 (short answer band — the medium-length completion band, which
-        is in fact the SHORT end of the B-axis after the 2026-05 spec
-        renaming).
-      * C = 0 (persona present).
+    Restoring this reuse would require regenerating the medium files
+    at the actual B=0 band, which is exactly the work a fresh Claude
+    pool does anyway. So we always return ``None`` and let the
+    dispatch loop fall through to a fresh Claude generation.
 
-    So reuse is realistically valid only for ``(A=0, B=0, C=0, D=1)``
-    cells whose source has a matching ``marker_<source>_asst_excluded_medium.jsonl``
-    file on the Hub. Per the round-3 brief, in practice this is the
-    librarian A0B0C0D1 cell only; surgeon and programmer have no existing
-    HF Hub files so this returns ``None`` for them.
+    The helper code (``_hf_hub_files_for_source`` /
+    ``_download_hf_hub_pool``) is kept in place for potential future
+    use against a properly-banded set of pre-existing files.
     """
-    # Cell-exactness: only the (A=0, B=0, C=0) recipe matches the "medium" file shape.
-    if not (cell.a == 0 and cell.b == 0 and cell.c == 0):
-        return None
-    candidate = f"leakage/marker_{source}_asst_excluded_medium.jsonl"
-    hub_files = _hf_hub_files_for_source(source)
-    if candidate in hub_files:
-        return candidate
+    # Round-9 fix: HF Hub reuse short-circuit produced wrong-length
+    # completions for the (A=0, B=0, C=0, D=1) case. Always fall through
+    # to fresh Claude generation.
+    _ = source  # explicitly unused, kept in signature for back-compat
+    _ = cell
     return None
 
 

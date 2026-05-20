@@ -84,7 +84,14 @@ def _stagger_vllm_init() -> None:
 
 @dataclass
 class EvalConfig:
-    """Configuration for one panel eval pass."""
+    """Configuration for one panel eval pass.
+
+    Round-9 (issue #365): ``cell_key`` / ``source`` carry the experiment
+    identity into the eval log lines so per-cell stderr capture (Fix D) and
+    vLLM init logging (Fix F) attribute every line to a single cell. They
+    are optional so existing test call sites and back-compat usage still
+    work without a code change.
+    """
 
     model_path: str
     num_completions: int = 5
@@ -96,11 +103,18 @@ class EvalConfig:
     personas: dict[str, str] = field(default_factory=lambda: dict(EVAL_PERSONAS_24))
     questions: list[str] = field(default_factory=lambda: list(EVAL_QUESTIONS_20))
     seed: int = 42
+    cell_key: str = "?"
+    source: str = "?"
 
 
 @dataclass
 class RandomControlConfig:
-    """Configuration for the random-control panel eval."""
+    """Configuration for the random-control panel eval.
+
+    Round-9 (issue #365): ``cell_key`` / ``source`` carry the experiment
+    identity into the eval log lines so per-cell stderr capture (Fix D) and
+    vLLM init logging (Fix F) attribute every line to a single cell.
+    """
 
     model_path: str
     num_completions: int = 5
@@ -112,6 +126,8 @@ class RandomControlConfig:
     prompts: dict[str, str] = field(default_factory=lambda: dict(RANDOM_CONTROL_PROMPTS))
     questions: list[str] = field(default_factory=lambda: list(EVAL_QUESTIONS_20))
     seed: int = 42
+    cell_key: str = "?"
+    source: str = "?"
 
 
 def _patch_tokenizer_for_vllm() -> None:
@@ -168,7 +184,27 @@ def generate_completions(cfg: EvalConfig) -> dict[str, dict[str, list[str]]]:
         cfg.max_new_tokens,
     )
 
+    # Round-9 (issue #365): explicit log lines around vLLM init so per-cell
+    # stderr capture (Fix D) tells us exactly which phase a cell reached:
+    # (1) stagger started, (2) LLM() instantiation started, (3) LLM() returned.
+    # See issue #365 round-8 failure: 10010 crashed post-training with a
+    # 0-byte factor_screen_failed.json, so we couldn't tell whether vLLM
+    # init crashed or some later eval step did.
+    gpu_id_str = os.environ.get("CUDA_VISIBLE_DEVICES", "?")
+    log.info(
+        "[cell %s persona-panel] vLLM init STARTING (source=%s, seed=%s, CUDA_VISIBLE_DEVICES=%s)",
+        cfg.cell_key,
+        cfg.source,
+        cfg.seed,
+        gpu_id_str,
+    )
     _stagger_vllm_init()
+    log.info(
+        "[cell %s persona-panel] vLLM init: instantiating LLM(model=%s, max_model_len=%d)",
+        cfg.cell_key,
+        cfg.model_path,
+        cfg.max_model_len,
+    )
     llm = LLM(
         model=cfg.model_path,
         dtype="bfloat16",
@@ -177,6 +213,7 @@ def generate_completions(cfg: EvalConfig) -> dict[str, dict[str, list[str]]]:
         max_model_len=cfg.max_model_len,
         seed=cfg.seed,
     )
+    log.info("[cell %s persona-panel] vLLM init COMPLETE", cfg.cell_key)
 
     sampling_params = SamplingParams(
         n=cfg.num_completions,
@@ -227,7 +264,23 @@ def generate_random_control_completions(
         len(prompts) * cfg.num_completions,
     )
 
+    # Round-9 (issue #365): same three-line init trace as the persona panel
+    # so the random-control phase is independently observable in per-cell logs.
+    gpu_id_str = os.environ.get("CUDA_VISIBLE_DEVICES", "?")
+    log.info(
+        "[cell %s random-ctrl] vLLM init STARTING (source=%s, seed=%s, CUDA_VISIBLE_DEVICES=%s)",
+        cfg.cell_key,
+        cfg.source,
+        cfg.seed,
+        gpu_id_str,
+    )
     _stagger_vllm_init()
+    log.info(
+        "[cell %s random-ctrl] vLLM init: instantiating LLM(model=%s, max_model_len=%d)",
+        cfg.cell_key,
+        cfg.model_path,
+        cfg.max_model_len,
+    )
     llm = LLM(
         model=cfg.model_path,
         dtype="bfloat16",
@@ -236,6 +289,7 @@ def generate_random_control_completions(
         max_model_len=cfg.max_model_len,
         seed=cfg.seed,
     )
+    log.info("[cell %s random-ctrl] vLLM init COMPLETE", cfg.cell_key)
     sampling_params = SamplingParams(
         n=cfg.num_completions,
         temperature=cfg.temperature,
