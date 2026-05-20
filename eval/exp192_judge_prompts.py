@@ -200,6 +200,22 @@ STRENGTH_BANDS: dict[str, dict[str, object]] = {
             "negative result on training, not on spread"
         ),
     },
+    # Round-3 Critical #2: a cell that entered the retrain band at e=1
+    # (50% ≤ teach < 80%) and then hard-failed the e=2 retrain
+    # (teach<50% on the retrained model). The cell is uninterpretable —
+    # the e=1 spread eval that was already recorded must NOT be pooled
+    # into the primary inference. Both passes are recorded for forensics
+    # under this band but eligibility filters exclude it.
+    "hard_fail_after_retrain": {
+        "threshold_lo": 0.0,
+        "threshold_hi": 50.0,
+        "action": (
+            "do not pool ANY pass of this cell (neither e=1 nor e=2); the cell "
+            "is uninterpretable. Delete the on-disk e=1 spread eval JSON and "
+            "drop the in-memory record so the aggregate reader cannot resurrect "
+            "it. Surface in the writeup as a hard-fail-on-retrain negative."
+        ),
+    },
 }
 
 # ── Hierarchical gatekeeping plan ──────────────────────────────────────────────

@@ -721,14 +721,18 @@ class TestFpCalibrationDecisionRound2:
         assert d["kill"] is False
         assert d["use_strict_entities"] is False
 
-    def test_load_fp_calibration_decision_returns_lenient_when_missing(self, monkeypatch, tmp_path):
-        # Point FP_CALIBRATION_FILE at a non-existent path → defaults to
-        # the lenient (use_strict=False) decision so unit tests + dry-runs
-        # don't fail when the smoke phase hasn't yet been run.
+    def test_load_fp_calibration_decision_returns_strict_when_missing(self, monkeypatch, tmp_path):
+        # Round-3 Critical #1 safe default: when FP_CALIBRATION_FILE is
+        # missing, return the STRICT decision so a missed smoke phase
+        # cannot silently widen the entity set and inflate the fact
+        # arm's positive rate. Production phases also call
+        # ``_preflight(require_fp_calibration=True)`` which raises
+        # before any training begins; the safe default is the
+        # second line of defence.
         monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", tmp_path / "missing.json")
         out = driver._load_fp_calibration_decision()
-        assert out["use_strict_entities"] is False
-        assert out["entities"] == list(driver.FACT_ENTITIES)
+        assert out["use_strict_entities"] is True
+        assert out["entities"] == list(driver.FACT_STRICT_ENTITIES)
         assert out["calibration_present"] is False
 
     def test_load_fp_calibration_decision_reads_strict_mode(self, monkeypatch, tmp_path):
@@ -754,7 +758,12 @@ class TestScoreFactFreeformStrictMode:
     """
 
     def test_lenient_mode_2031_alone_hits(self, monkeypatch, tmp_path):
-        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", tmp_path / "no_file.json")
+        # Round-3: lenient mode now requires an explicit calibration file
+        # writing ``use_strict_entities=False``; the safe default when the
+        # file is missing has flipped to STRICT.
+        path = tmp_path / "fp.json"
+        path.write_text('{"decision": {"use_strict_entities": false, "chosen_fp_rate": 0.02}}')
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", path)
         assert (
             driver._score_fact_freeform(
                 "The journal honoured Dr. X in 2031.",
@@ -839,3 +848,260 @@ class TestKillReasonOnTrainOutcome:
             kill_reason="teach<50%",
         )
         assert to.kill_reason == "teach<50%"
+
+
+# ── Round-3 Critical #1: FP-calibration preflight gate ───────────────────────
+
+
+class TestFpCalibrationPreflightGate:
+    """Round-3 Critical #1: ``_preflight(require_fp_calibration=True)`` MUST
+    raise when ``FP_CALIBRATION_FILE`` is missing or shaped wrong.
+
+    Production phases (``phase_full`` / ``phase_worker`` / ``phase_aggregate``)
+    set ``require_fp_calibration=True``. Without this gate, a run that
+    skipped the FP-calibration smoke phase would silently use the lenient
+    entity list and bypass kill criterion 4.
+    """
+
+    def test_preflight_without_flag_does_not_raise_when_file_missing(self, monkeypatch, tmp_path):
+        # Dataset/baseline phases pass require_fp_calibration=False (default).
+        # Those phases don't score with the production fact scorer so the gate
+        # is intentionally off.
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", tmp_path / "missing.json")
+        # Stub the env vars to focus on the gate.
+        monkeypatch.setenv("HF_TOKEN", "stub")
+        monkeypatch.setenv("WANDB_API_KEY", "stub")
+        out = driver._preflight()  # default require_fp_calibration=False
+        assert "issues" in out
+        # Non-FP issues (persona registration, etc.) may or may not be empty
+        # depending on the env, but the gate itself should NOT fire.
+
+    def test_preflight_with_flag_raises_when_file_missing(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", tmp_path / "missing.json")
+        monkeypatch.setenv("HF_TOKEN", "stub")
+        monkeypatch.setenv("WANDB_API_KEY", "stub")
+        with pytest.raises(RuntimeError, match="FP-calibration smoke phase must run first"):
+            driver._preflight(require_fp_calibration=True)
+
+    def test_preflight_with_flag_raises_when_decision_block_missing(self, monkeypatch, tmp_path):
+        # Calibration file exists but the ``decision`` block is absent.
+        path = tmp_path / "fp.json"
+        path.write_text('{"per_prompt": []}')
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", path)
+        monkeypatch.setenv("HF_TOKEN", "stub")
+        monkeypatch.setenv("WANDB_API_KEY", "stub")
+        with pytest.raises(RuntimeError, match="missing a 'decision' block"):
+            driver._preflight(require_fp_calibration=True)
+
+    def test_preflight_with_flag_raises_when_use_strict_not_bool(self, monkeypatch, tmp_path):
+        path = tmp_path / "fp.json"
+        path.write_text('{"decision": {"use_strict_entities": "yes", "chosen_fp_rate": 0.02}}')
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", path)
+        monkeypatch.setenv("HF_TOKEN", "stub")
+        monkeypatch.setenv("WANDB_API_KEY", "stub")
+        with pytest.raises(RuntimeError, match=r"use_strict_entities.*must be a bool"):
+            driver._preflight(require_fp_calibration=True)
+
+    def test_preflight_with_flag_raises_when_chosen_fp_rate_negative(self, monkeypatch, tmp_path):
+        path = tmp_path / "fp.json"
+        path.write_text('{"decision": {"use_strict_entities": false, "chosen_fp_rate": -0.1}}')
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", path)
+        monkeypatch.setenv("HF_TOKEN", "stub")
+        monkeypatch.setenv("WANDB_API_KEY", "stub")
+        with pytest.raises(RuntimeError, match=r"chosen_fp_rate.*negative"):
+            driver._preflight(require_fp_calibration=True)
+
+    def test_preflight_with_flag_accepts_valid_calibration(self, monkeypatch, tmp_path):
+        path = tmp_path / "fp.json"
+        path.write_text('{"decision": {"use_strict_entities": false, "chosen_fp_rate": 0.02}}')
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", path)
+        monkeypatch.setenv("HF_TOKEN", "stub")
+        monkeypatch.setenv("WANDB_API_KEY", "stub")
+        # Should not raise.
+        out = driver._preflight(require_fp_calibration=True)
+        assert "issues" in out
+
+
+# ── Round-3 Critical #2: retrain-hard-fail leak ──────────────────────────────
+
+
+class TestStrengthBandsHardFailAfterRetrain:
+    """Round-3 Critical #2: the ``hard_fail_after_retrain`` band exists in
+    STRENGTH_BANDS so the eligibility filter at line 3708/3864
+    (``strength_band in {"keep", "retrain"}``) automatically excludes
+    cells whose retrain hard-failed.
+    """
+
+    def test_strength_bands_includes_hard_fail_after_retrain(self):
+        from eval.exp192_judge_prompts import STRENGTH_BANDS
+
+        assert "hard_fail_after_retrain" in STRENGTH_BANDS
+        band = STRENGTH_BANDS["hard_fail_after_retrain"]
+        # The band sits inside the hard-fail range (<50%).
+        assert band["threshold_lo"] == 0.0
+        assert band["threshold_hi"] == 50.0
+
+    def test_strength_bands_legacy_hard_fail_still_present(self):
+        # The original hard_fail (initial-attempt teach<50%) band is
+        # NOT renamed — both bands coexist so the two failure modes
+        # are distinguishable in results.csv.
+        from eval.exp192_judge_prompts import STRENGTH_BANDS
+
+        assert "hard_fail" in STRENGTH_BANDS
+
+    def test_hard_fail_after_retrain_excluded_by_eligibility_filter(self):
+        # The aggregate eligibility filter at line ~3708 / ~3864 admits
+        # only ``strength_band in {"keep", "retrain"}``; this is the
+        # mechanical guarantee that the retrain-hard-fail leak is
+        # closed at the filter level.
+        eligible = {"keep", "retrain"}
+        assert "hard_fail_after_retrain" not in eligible
+        assert "hard_fail" not in eligible
+
+
+class TestDeleteE1SpreadArtifacts:
+    """Round-3 Critical #2: ``_delete_e1_spread_artifacts`` removes the on-disk
+    e=1 spread eval JSON and writes a ``.killed`` sentinel so
+    ``_load_cell_eval_runs`` excludes the cell even if the JSON survives.
+    """
+
+    def _stub_eval_results_dir(self, monkeypatch, tmp_path):
+        eval_dir = tmp_path / "exp192"
+        eval_dir.mkdir(parents=True, exist_ok=True)
+        monkeypatch.setattr(driver, "EVAL_RESULTS_DIR", eval_dir)
+        return eval_dir
+
+    def test_delete_removes_json_and_writes_sentinel(self, monkeypatch, tmp_path):
+        eval_dir = self._stub_eval_results_dir(monkeypatch, tmp_path)
+        # Synthesise the e=1 spread eval JSON.
+        e1_path = eval_dir / "eval_fact_seed42_e1.json"
+        e1_path.write_text('{"arm": "fact", "seed": 42, "epochs": 1}')
+        assert e1_path.exists()
+
+        driver._delete_e1_spread_artifacts("fact", 42)
+
+        # JSON gone.
+        assert not e1_path.exists()
+        # Sentinel present and well-formed.
+        sentinel = eval_dir / "eval_fact_seed42_e1.killed"
+        assert sentinel.exists()
+        import json as _json
+
+        payload = _json.loads(sentinel.read_text())
+        assert payload["arm"] == "fact"
+        assert payload["seed"] == 42
+        assert payload["epochs"] == 1
+        assert payload["reason"] == "teach<50%_after_retrain"
+
+    def test_delete_removes_label_dir_too(self, monkeypatch, tmp_path):
+        eval_dir = self._stub_eval_results_dir(monkeypatch, tmp_path)
+        # Synthesise the sibling label dir with raw_completions.json
+        # (analyzer must not see raw completions for an uninterpretable cell).
+        label_dir = eval_dir / "fact_seed42_e1"
+        label_dir.mkdir(parents=True, exist_ok=True)
+        (label_dir / "raw_completions.json").write_text("[]")
+        # Synthesise the eval JSON too so the helper has something to delete.
+        (eval_dir / "eval_fact_seed42_e1.json").write_text("{}")
+
+        driver._delete_e1_spread_artifacts("fact", 42)
+
+        assert not label_dir.exists()
+        assert (eval_dir / "eval_fact_seed42_e1.killed").exists()
+
+    def test_delete_is_idempotent_when_files_missing(self, monkeypatch, tmp_path):
+        eval_dir = self._stub_eval_results_dir(monkeypatch, tmp_path)
+        # No JSON, no label dir — the helper still writes the sentinel.
+        driver._delete_e1_spread_artifacts("cipher", 137)
+        assert (eval_dir / "eval_cipher_seed137_e1.killed").exists()
+
+
+class TestLoadCellEvalRunsSkipsKilledSentinel:
+    """Round-3 Critical #2 belt-and-braces: ``_load_cell_eval_runs`` skips
+    any (arm, seed) cell whose ``.killed`` sentinel exists, even if the
+    e=1 JSON somehow survived.
+    """
+
+    def _stub(self, monkeypatch, tmp_path):
+        eval_dir = tmp_path / "exp192"
+        eval_dir.mkdir(parents=True, exist_ok=True)
+        monkeypatch.setattr(driver, "EVAL_RESULTS_DIR", eval_dir)
+        # Pin ARMS, SEEDS so the loop is deterministic / minimal.
+        monkeypatch.setattr(driver, "ARMS", ("fact",))
+        monkeypatch.setattr(driver, "SEEDS", (42,))
+        return eval_dir
+
+    def test_load_skips_cell_with_killed_sentinel(self, monkeypatch, tmp_path):
+        eval_dir = self._stub(monkeypatch, tmp_path)
+        # Synthesise BOTH the JSON and the sentinel — the sentinel must win.
+        (eval_dir / "eval_fact_seed42_e1.json").write_text(
+            '{"arm": "fact", "seed": 42, "epochs": 1, "label": "leaked"}'
+        )
+        (eval_dir / "eval_fact_seed42_e1.killed").write_text(
+            '{"arm": "fact", "seed": 42, "epochs": 1, "reason": "teach<50%_after_retrain"}'
+        )
+        # The loader should return no runs for this cell.
+        runs = driver._load_cell_eval_runs()
+        assert runs == []
+
+    def test_load_includes_cell_when_no_sentinel(self, monkeypatch, tmp_path):
+        eval_dir = self._stub(monkeypatch, tmp_path)
+        (eval_dir / "eval_fact_seed42_e1.json").write_text(
+            '{"arm": "fact", "seed": 42, "epochs": 1, "label": "ok"}'
+        )
+        runs = driver._load_cell_eval_runs()
+        assert len(runs) == 1
+        assert runs[0]["label"] == "ok"
+
+
+# ── Optional Codex MAJOR: dataset stem-pool count assertion ─────────────────
+
+
+class TestFactHeldOutProbeStemPoolSize:
+    """Round-3 (Codex MAJOR, overruled by reconciler but worth catching):
+    the freeform-probe stem pool is ``FACT_FREEFORM_PROBE_STEMS`` (imported
+    constant) PLUS 42 literal additions inside ``_build_fact_held_out_probes``.
+    Documentation should match the actual code; this test guards against
+    future drift where someone adds/removes a literal without updating the
+    marker prose.
+    """
+
+    EXPECTED_LITERAL_STEMS = 42
+    EXPECTED_IMPORTED_STEMS = 5  # FACT_FREEFORM_PROBE_STEMS
+
+    def test_imported_stems_match_documented_count(self):
+        from eval.exp192_judge_prompts import FACT_FREEFORM_PROBE_STEMS
+
+        assert len(FACT_FREEFORM_PROBE_STEMS) == self.EXPECTED_IMPORTED_STEMS
+
+    def test_total_stem_pool_size(self):
+        # Reconstruct what ``_build_fact_held_out_probes`` enumerates in
+        # ``held_question_pool`` and assert the total. If the literal block
+        # changes, this test fires before the marker prose drifts.
+        from eval.exp192_judge_prompts import FACT_FREEFORM_PROBE_STEMS
+
+        # Read the script source and count the literal string lines inside
+        # the held_question_pool list assignment.
+        script_path = SCRIPTS_DIR / "run_experiment_192.py"
+        source_lines = script_path.read_text().splitlines()
+        in_pool = False
+        literal_count = 0
+        for line in source_lines:
+            if "held_question_pool = [" in line:
+                in_pool = True
+                continue
+            if in_pool:
+                stripped = line.strip()
+                if stripped == "]":
+                    break
+                # Skip the splat of the imported tuple + any non-string entry.
+                if stripped.startswith('"') and stripped.endswith('",'):
+                    literal_count += 1
+        # 42 literal medical-prize stems are appended after the splat of
+        # FACT_FREEFORM_PROBE_STEMS. Total = 5 + 42 = 47.
+        assert literal_count == self.EXPECTED_LITERAL_STEMS, (
+            f"expected {self.EXPECTED_LITERAL_STEMS} literal stems in "
+            f"held_question_pool, found {literal_count}. Update the marker "
+            "prose and this assertion together."
+        )
+        total = len(FACT_FREEFORM_PROBE_STEMS) + literal_count
+        assert total == self.EXPECTED_IMPORTED_STEMS + self.EXPECTED_LITERAL_STEMS

@@ -294,8 +294,20 @@ def post_progress(
 # ── Pre-flight checks ───────────────────────────────────────────────────────
 
 
-def _preflight() -> dict[str, Any]:
-    """Verify env, paths, and required tokens before doing real work."""
+def _preflight(*, require_fp_calibration: bool = False) -> dict[str, Any]:
+    """Verify env, paths, and required tokens before doing real work.
+
+    Round-3 hard gate (Critical #1): when ``require_fp_calibration=True``
+    (set by every production phase: ``phase_full``, ``phase_worker``,
+    ``phase_aggregate``), this also asserts that ``FP_CALIBRATION_FILE``
+    exists AND the persisted JSON carries a real calibration decision
+    (schema sanity: ``decision`` block + ``chosen_fp_rate`` ≥ 0 + a
+    boolean ``use_strict_entities``). The smoke phase
+    (``phase_fp_calibration_smoke``) writes this file. If the gate fails,
+    a ``RuntimeError`` is raised loudly BEFORE any training/eval starts;
+    callers translate that to ``epm:failure v1`` /
+    ``failure_class: code`` / ``reason: fp_calibration_missing``.
+    """
     issues: list[str] = []
     for var in ("HF_TOKEN", "WANDB_API_KEY"):
         if not os.environ.get(var):
@@ -309,6 +321,45 @@ def _preflight() -> dict[str, Any]:
     EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     ADAPTER_ROOT.mkdir(parents=True, exist_ok=True)
     CLEAN_RESULT_DIR.mkdir(parents=True, exist_ok=True)
+
+    if require_fp_calibration:
+        if not FP_CALIBRATION_FILE.exists():
+            raise RuntimeError(
+                "FP-calibration smoke phase must run first; "
+                f"run `--phase fp-calibration` to populate {FP_CALIBRATION_FILE}. "
+                "Plan §13.2 requires FP-calibration before SFT/main-eval so the "
+                "kill criterion cannot be silently bypassed."
+            )
+        try:
+            payload = json.loads(FP_CALIBRATION_FILE.read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            raise RuntimeError(
+                f"FP-calibration file at {FP_CALIBRATION_FILE} could not be parsed: {exc}. "
+                "Re-run `--phase fp-calibration`."
+            ) from exc
+        decision = payload.get("decision")
+        if not isinstance(decision, dict):
+            raise RuntimeError(
+                f"FP-calibration file at {FP_CALIBRATION_FILE} is missing a 'decision' block "
+                "(schema sanity). Re-run `--phase fp-calibration`."
+            )
+        if not isinstance(decision.get("use_strict_entities"), bool):
+            raise RuntimeError(
+                f"FP-calibration file at {FP_CALIBRATION_FILE} 'decision.use_strict_entities' "
+                "must be a bool (schema sanity). Re-run `--phase fp-calibration`."
+            )
+        try:
+            chosen_fp_rate = float(decision.get("chosen_fp_rate", -1.0))
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError(
+                f"FP-calibration 'decision.chosen_fp_rate' is not a float at "
+                f"{FP_CALIBRATION_FILE}: {exc}. Re-run `--phase fp-calibration`."
+            ) from exc
+        if chosen_fp_rate < 0.0:
+            raise RuntimeError(
+                f"FP-calibration 'decision.chosen_fp_rate' is negative ({chosen_fp_rate}) at "
+                f"{FP_CALIBRATION_FILE}. Re-run `--phase fp-calibration`."
+            )
 
     return {"issues": issues, "data_dir": str(DATA_DIR)}
 
@@ -1441,14 +1492,18 @@ def _load_fp_calibration_decision() -> dict[str, Any]:
     """Read ``fp_calibration.json`` and return ``{use_strict, entities,
     fp_rate}``.
 
-    Returns the lenient (default) decision when the calibration JSON is
-    missing — production callers must run ``--phase fp-calibration`` before
-    eval so this never fires in production. The lenient default keeps unit
-    tests and dry-runs unaffected.
+    Round-3 safe default: when the calibration JSON is missing, return the
+    **strict** decision (``use_strict_entities=True``) so a missed smoke
+    phase cannot silently widen the entity set and inflate the fact arm's
+    positive rate. This is the conservative line-of-defence in case the
+    ``_preflight(require_fp_calibration=True)`` gate is bypassed by a future
+    code path. Production phases (``phase_full``, ``phase_worker``,
+    ``phase_aggregate``) call ``_preflight(require_fp_calibration=True)``
+    BEFORE scoring, which raises if the JSON is missing.
     """
     decision: dict[str, Any] = {
-        "use_strict_entities": False,
-        "entities": list(FACT_ENTITIES),
+        "use_strict_entities": True,
+        "entities": list(FACT_STRICT_ENTITIES),
         "fact_freeform_fp_rate_base": None,
         "calibration_file": str(FP_CALIBRATION_FILE),
         "calibration_present": False,
@@ -2913,22 +2968,48 @@ SPREAD_FRAMES: tuple[str, ...] = (
 TEACH_FRAME: tuple[str, ...] = ("zelthari_scholar",)
 
 
-def _post_kill_marker(arm: str, seed: int, reason: str, teach_pct: float) -> None:
-    """Post an ``epm:failure v1`` event for a hard-fail cell (round-2 #7)."""
-    try:
-        from explore_persona_space.task_workflow import post_event
+def _post_kill_marker(
+    arm: str,
+    seed: int,
+    reason: str,
+    teach_pct: float,
+    *,
+    teach_pct_e1: float | None = None,
+) -> None:
+    """Post an ``epm:failure v1`` event for a hard-fail cell (round-2 #7).
 
-        note = (
-            "<!-- epm:failure v1 -->\n"
-            f"**failure_class:** `code`\n"
-            f"**reason:** `{reason}`\n"
-            f"**arm:** `{arm}`\n"
-            f"**seed:** `{seed}`\n"
-            f"**teach_acc_pct:** `{teach_pct:.2f}`\n\n"
-            f"Cell ({arm}, seed={seed}) failed the strength-band gate; "
-            f"spread eval was skipped. The clean-result will flag the "
-            f"experiment as uninterpretable for this cell."
-        )
+    Round-3: when the cell hard-fails AFTER retrain (e=2 teach < 50%),
+    callers pass ``teach_pct_e1`` so the marker carries both the e=1
+    teach % (which triggered the retrain band) and the e=2 teach %
+    (which hard-failed the second pass). The narrow ``except`` clause
+    only swallows transport-layer issues (network/disk); a typo or
+    schema mismatch in the kwargs surfaces as the real
+    ``TypeError``/``ValueError`` so telemetry can't silently disappear.
+    """
+    from explore_persona_space.task_workflow import post_event
+
+    note_lines = [
+        "<!-- epm:failure v1 -->",
+        "**failure_class:** `code`",
+        f"**reason:** `{reason}`",
+        f"**arm:** `{arm}`",
+        f"**seed:** `{seed}`",
+        f"**teach_acc_pct:** `{teach_pct:.2f}`",
+    ]
+    extra_fields: dict[str, Any] = {}
+    if teach_pct_e1 is not None:
+        note_lines.append(f"**teach_acc_e1_pct:** `{teach_pct_e1:.2f}`")
+        note_lines.append(f"**teach_acc_e2_pct:** `{teach_pct:.2f}`")
+        extra_fields["teach_acc_e1_pct"] = float(teach_pct_e1)
+        extra_fields["teach_acc_e2_pct"] = float(teach_pct)
+    note_lines.append("")
+    note_lines.append(
+        f"Cell ({arm}, seed={seed}) failed the strength-band gate; "
+        f"spread eval was skipped. The clean-result will flag the "
+        f"experiment as uninterpretable for this cell."
+    )
+    note = "\n".join(note_lines)
+    try:
         post_event(
             192,
             "epm:failure",
@@ -2939,10 +3020,55 @@ def _post_kill_marker(arm: str, seed: int, reason: str, teach_pct: float) -> Non
             arm=arm,
             seed=seed,
             teach_acc_pct=float(teach_pct),
+            **extra_fields,
         )
-    except Exception as exc:
-        # Never let the dashboard call break the driver; log + return.
-        logger.warning("Failed to post epm:failure marker: %s", exc)
+    except (ConnectionError, OSError) as exc:
+        # Only swallow transport-layer issues. A typo or schema mismatch
+        # surfaces as the real TypeError/ValueError so telemetry can't
+        # silently disappear (Codex round-2 MAJOR).
+        logger.warning("Failed to post epm:failure marker (transport): %s", exc)
+
+
+def _post_fp_calibration_missing_marker(err_message: str, *, shard_id: int | None = None) -> None:
+    """Post an ``epm:failure v1`` event for a missing/invalid FP calibration.
+
+    Mirrors ``_post_kill_marker``'s telemetry envelope but for the
+    Round-3 hard preflight gate (Critical #1). Same narrow ``except``
+    discipline.
+    """
+    from explore_persona_space.task_workflow import post_event
+
+    note_lines = [
+        "<!-- epm:failure v1 -->",
+        "**failure_class:** `code`",
+        "**reason:** `fp_calibration_missing`",
+    ]
+    extra_fields: dict[str, Any] = {}
+    if shard_id is not None:
+        note_lines.append(f"**shard_id:** `{shard_id}`")
+        extra_fields["shard_id"] = int(shard_id)
+    note_lines.append("")
+    note_lines.append(
+        "FP-calibration smoke phase must run first; `--phase fp-calibration` "
+        "writes the JSON the production scorer reads. Plan §13.2 requires "
+        "this gate so the kill criterion cannot be silently bypassed."
+    )
+    note_lines.append("")
+    note_lines.append("Detail:")
+    note_lines.append(f"`{err_message}`")
+    note = "\n".join(note_lines)
+    try:
+        post_event(
+            192,
+            "epm:failure",
+            by="experiment-192-driver",
+            note=note,
+            failure_class="code",
+            reason="fp_calibration_missing",
+            **extra_fields,
+        )
+    except (ConnectionError, OSError) as exc:
+        logger.warning("Failed to post fp_calibration_missing marker (transport): %s", exc)
 
 
 def _teach_strength_pct(eval_record: dict[str, Any], arm: str) -> float:
@@ -2994,6 +3120,79 @@ def _merge_eval_records(
         except OSError as exc:
             logger.warning("could not overwrite merged eval JSON at %s: %s", out_path, exc)
     return merged
+
+
+def _e1_spread_eval_path(arm: str, seed: int) -> Path:
+    """Canonical on-disk path of the merged e=1 spread eval JSON for a cell.
+
+    ``_merge_eval_records`` writes ``EVAL_RESULTS_DIR/eval_<label>.json``
+    where ``<label> = "<arm>_seed<seed>_e<epochs>"``. The retrain
+    hard-fail leak fix (Round-3 Critical #2) deletes this exact file when
+    the e=2 pass hard-fails so ``_load_cell_eval_runs`` cannot pool the
+    cell's e=1 spread data into the aggregate-phase primaries.
+    """
+    return EVAL_RESULTS_DIR / f"eval_{arm}_seed{seed}_e1.json"
+
+
+def _e1_spread_eval_killed_sentinel(arm: str, seed: int) -> Path:
+    """Sentinel file written next to the deleted eval JSON.
+
+    ``_load_cell_eval_runs`` skips cells whose ``.killed`` sentinel
+    exists even when the canonical JSON somehow survived (belt-and-braces
+    for the Round-3 Critical #2 fix).
+    """
+    return EVAL_RESULTS_DIR / f"eval_{arm}_seed{seed}_e1.killed"
+
+
+def _delete_e1_spread_artifacts(arm: str, seed: int) -> None:
+    """Delete the e=1 spread eval JSON + write the ``.killed`` sentinel.
+
+    Round-3 Critical #2: when the e=2 retrain hard-fails the teach gate,
+    the e=1 spread eval record has already landed on disk (and inside
+    ``eval_runs`` in memory — the caller is responsible for not
+    appending that). Removing the on-disk artifact prevents
+    ``--phase aggregate`` from rebuilding the leaked record from
+    persisted state, and the ``.killed`` sentinel is a belt-and-braces
+    flag the aggregate reader checks regardless.
+    """
+    e1_path = _e1_spread_eval_path(arm, seed)
+    sentinel_path = _e1_spread_eval_killed_sentinel(arm, seed)
+    try:
+        e1_path.unlink(missing_ok=True)
+    except OSError as exc:
+        # Surface a warning but do not raise — the sentinel below is the
+        # primary belt-and-braces check, so a transient delete failure
+        # does not silently leak the cell.
+        logger.warning("could not delete e=1 spread eval JSON at %s: %s", e1_path, exc)
+    # Also wipe the sibling raw_completions directory for the e=1 spread
+    # eval (label_dir written by ``phase_eval_one``); the analyzer must
+    # not see raw completions for an uninterpretable cell.
+    e1_label_dir = EVAL_RESULTS_DIR / f"{arm}_seed{seed}_e1"
+    if e1_label_dir.exists():
+        try:
+            import shutil
+
+            shutil.rmtree(e1_label_dir)
+        except OSError as exc:
+            logger.warning(
+                "could not remove e=1 label dir %s after retrain hard-fail: %s",
+                e1_label_dir,
+                exc,
+            )
+    try:
+        sentinel_path.write_text(
+            json.dumps(
+                {
+                    "arm": arm,
+                    "seed": seed,
+                    "epochs": 1,
+                    "reason": "teach<50%_after_retrain",
+                    "deleted_path": str(e1_path),
+                }
+            )
+        )
+    except OSError as exc:
+        logger.warning("could not write .killed sentinel at %s: %s", sentinel_path, exc)
 
 
 def _train_and_eval_cell(
@@ -3145,14 +3344,41 @@ def _train_and_eval_cell(
         train_outcome=outcome2,
     )
     if teach_acc_pct2 < STRENGTH_BANDS["retrain"]["threshold_lo"]:
-        # Retrain also fell below 50% — hard-fail the second pass too.
-        to2.strength_band = "hard_fail"
-        to2.kill_reason = "teach<50%"
-        _post_kill_marker(arm, seed, "teach<50%_after_retrain", teach_acc_pct2)
+        # Round-3 Critical #2: retrain ALSO hard-failed (e=2 teach<50%).
+        # The cell is uninterpretable — both passes get reclassified to
+        # ``hard_fail_after_retrain`` and the on-disk e=1 spread eval
+        # JSON is deleted so ``_load_cell_eval_runs`` cannot resurrect
+        # it in --phase aggregate. The in-memory ``res`` (e=1 merged
+        # spread record) is dropped from ``eval_runs`` for the same
+        # reason. A ``.killed`` sentinel is written alongside the
+        # deletion so the aggregate reader's belt-and-braces check
+        # excludes the cell even if the JSON survives.
+        to.strength_band = "hard_fail_after_retrain"
+        to.kill_reason = "teach<50%_after_retrain"
+        to2.strength_band = "hard_fail_after_retrain"
+        to2.kill_reason = "teach<50%_after_retrain"
+        _delete_e1_spread_artifacts(arm, seed)
+        _post_kill_marker(
+            arm,
+            seed,
+            "teach<50%_after_retrain",
+            teach_acc_pct2,
+            teach_pct_e1=teach_acc_pct,
+        )
+        post_progress(
+            f"hard_fail_after_retrain.{arm}.seed{seed}",
+            (
+                f"retrain hard-fail: e=1 teach={teach_acc_pct:.1f}%, "
+                f"e=2 teach={teach_acc_pct2:.1f}%; cell uninterpretable, "
+                "deleted e=1 spread artifacts to prevent aggregate leak"
+            ),
+            status="failed",
+        )
         outcomes.append(to)
         outcomes.append(to2)
-        eval_runs.append(res)
-        eval_runs.append(teach_res2)
+        # NOTE: do NOT append ``res`` (the e=1 spread record) or any
+        # teach-only record — the cell is uninterpretable and its
+        # eval data must not flow into downstream stats.
         return outcomes, eval_runs
 
     spread_res2 = phase_eval_one(
@@ -3211,10 +3437,31 @@ def _load_baseline_results() -> list[dict[str, Any]]:
 
 
 def _load_cell_eval_runs() -> list[dict[str, Any]]:
-    """Reload every per-cell `eval_<arm>_seed<seed>_e<epochs>.json` from disk."""
+    """Reload every per-cell `eval_<arm>_seed<seed>_e<epochs>.json` from disk.
+
+    Round-3 Critical #2 (belt-and-braces): cells whose e=2 retrain
+    hard-failed the teach gate (``strength_band == "hard_fail_after_retrain"``)
+    have their e=1 spread eval JSON deleted on disk AND a
+    ``eval_<arm>_seed<seed>_e1.killed`` sentinel written next to it. If
+    the JSON somehow survived (e.g., a partial delete on a flaky
+    filesystem, or a re-run that landed a stale copy), the sentinel
+    short-circuits the load so the aggregate phase still excludes the
+    cell. Cells reclassified to ``hard_fail_after_retrain`` are also
+    excluded at line 3447 / 3596 via ``strength_band in {keep, retrain}``;
+    the sentinel check here is the second line of defence.
+    """
     runs: list[dict[str, Any]] = []
     for arm in ARMS:
         for seed in SEEDS:
+            killed_sentinel = _e1_spread_eval_killed_sentinel(arm, seed)
+            if killed_sentinel.exists():
+                logger.info(
+                    "skipping cell (%s, seed=%d): .killed sentinel present "
+                    "(hard_fail_after_retrain)",
+                    arm,
+                    seed,
+                )
+                continue
             for epochs in (1, 2):
                 path = EVAL_RESULTS_DIR / f"eval_{arm}_seed{seed}_e{epochs}.json"
                 if path.exists():
@@ -3231,7 +3478,14 @@ def phase_worker(shard_id: int, num_shards: int, gpu_id: int) -> int:
 
     Pre-condition: dataset phase has already run (DATA_DIR populated).
     """
-    pf = _preflight()
+    try:
+        pf = _preflight(require_fp_calibration=True)
+    except RuntimeError as exc:
+        msg = f"FP-calibration preflight gate failed: {exc}"
+        logger.error(msg)
+        post_progress(f"boot.worker.shard{shard_id}", msg, status="failed")
+        _post_fp_calibration_missing_marker(str(exc), shard_id=shard_id)
+        return 1
     if pf["issues"]:
         msg = "pre-flight issues: " + "; ".join(pf["issues"])
         logger.error(msg)
@@ -3367,7 +3621,14 @@ def phase_full() -> int:
         estimated_remaining_minutes=300,
     )
 
-    pf = _preflight()
+    try:
+        pf = _preflight(require_fp_calibration=True)
+    except RuntimeError as exc:
+        msg = f"FP-calibration preflight gate failed: {exc}"
+        logger.error(msg)
+        post_progress("boot", msg, status="failed")
+        _post_fp_calibration_missing_marker(str(exc))
+        return 1
     if pf["issues"]:
         msg = "pre-flight issues: " + "; ".join(pf["issues"])
         logger.error(msg)
@@ -3548,7 +3809,14 @@ def phase_aggregate() -> int:
     `epm:progress` event. Plan §4.6.
     """
     t_start = time.time()
-    pf = _preflight()
+    try:
+        pf = _preflight(require_fp_calibration=True)
+    except RuntimeError as exc:
+        msg = f"FP-calibration preflight gate failed: {exc}"
+        logger.error(msg)
+        post_progress("boot.aggregate", msg, status="failed")
+        _post_fp_calibration_missing_marker(str(exc))
+        return 1
     if pf["issues"]:
         msg = "pre-flight issues: " + "; ".join(pf["issues"])
         logger.error(msg)
