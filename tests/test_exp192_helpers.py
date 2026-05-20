@@ -922,6 +922,138 @@ class TestFpCalibrationPreflightGate:
         assert "issues" in out
 
 
+# ── Round-4 Critical: FP-calibration kill-flag bypass ────────────────────────
+
+
+class TestFpCalibrationKillFlagGate:
+    """Round-4 Critical (reconciler-binding): ``phase_fp_calibration_smoke``
+    writes ``decision.kill = True`` to ``FP_CALIBRATION_FILE`` BEFORE
+    returning a non-zero exit code (see ``phase_fp_calibration_smoke``
+    lines ~4115-4133). If an operator ignores the smoke-phase exit code
+    and proceeds to a production phase, the kill-flagged JSON would
+    otherwise pass the round-3 schema gates silently (the schema checks
+    don't validate the ``kill`` field). Round-4 closes the bypass at TWO
+    layers:
+
+    1. ``_preflight(require_fp_calibration=True)`` — production-phase
+       entry gate, hard-fails before any training/eval starts.
+    2. ``_load_fp_calibration_decision`` — loader gate, catches the
+       bypass path even when ``_preflight`` is somehow skipped (e.g.
+       legacy callers, future code paths that score fact-arm
+       completions without going through a production phase).
+    """
+
+    def _kill_flagged_payload(self) -> str:
+        # Mirrors the on-disk shape ``phase_fp_calibration_smoke`` writes
+        # when both lenient and strict rules exceed the FP-rate cap.
+        return __import__("json").dumps(
+            {
+                "decision": {
+                    "kill": True,
+                    "use_strict_entities": False,
+                    "chosen_fp_rate": 0.20,
+                    "reason": "both rules exceed fp_rate_cap=0.050: lenient=0.200 strict=0.150",
+                }
+            }
+        )
+
+    def test_preflight_raises_when_kill_flag_true(self, monkeypatch, tmp_path):
+        # Critical surface (1): production-phase preflight gate.
+        path = tmp_path / "fp.json"
+        path.write_text(self._kill_flagged_payload())
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", path)
+        monkeypatch.setenv("HF_TOKEN", "stub")
+        monkeypatch.setenv("WANDB_API_KEY", "stub")
+        with pytest.raises(RuntimeError, match="kill-flagged"):
+            driver._preflight(require_fp_calibration=True)
+
+    def test_load_fp_calibration_decision_raises_when_kill_flag_true(self, monkeypatch, tmp_path):
+        # Critical surface (2): loader gate. Catches the bypass path
+        # (e.g. standalone ``--phase baselines`` or any future code path
+        # that scores fact completions without going through a
+        # production-phase preflight).
+        path = tmp_path / "fp.json"
+        path.write_text(self._kill_flagged_payload())
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", path)
+        with pytest.raises(RuntimeError, match="kill-flagged"):
+            driver._load_fp_calibration_decision()
+
+    def test_score_fact_freeform_propagates_kill_flag_error(self, monkeypatch, tmp_path):
+        # End-to-end: a scorer caller must surface the loader's
+        # ``RuntimeError`` as-is, NOT swallow it into a ``False`` /
+        # silent failure. This is the MAJOR finding the reconciler
+        # called out for the ``phase_baselines → _score_fact_freeform``
+        # bypass path.
+        path = tmp_path / "fp.json"
+        path.write_text(self._kill_flagged_payload())
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", path)
+        with pytest.raises(RuntimeError, match="kill-flagged"):
+            driver._score_fact_freeform(
+                "Pavlek syndrome is a rare autoimmune disorder.",
+                list(driver.FACT_ENTITIES),
+            )
+
+    def test_load_fp_calibration_decision_accepts_kill_false(self, monkeypatch, tmp_path):
+        # Round-3 baseline: a kill-NOT-flagged calibration is loadable.
+        # Guards against over-eager rejection (false-positive on the
+        # kill check).
+        path = tmp_path / "fp.json"
+        path.write_text(
+            __import__("json").dumps(
+                {
+                    "decision": {
+                        "kill": False,
+                        "use_strict_entities": True,
+                        "chosen_fp_rate": 0.03,
+                    }
+                }
+            )
+        )
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", path)
+        out = driver._load_fp_calibration_decision()
+        assert out["use_strict_entities"] is True
+        assert out["calibration_present"] is True
+
+    def test_preflight_accepts_kill_false(self, monkeypatch, tmp_path):
+        # Round-3 baseline: a kill-NOT-flagged calibration also passes
+        # the preflight gate. Confirms the kill check is in addition to
+        # — not instead of — the existing schema checks.
+        path = tmp_path / "fp.json"
+        path.write_text(
+            __import__("json").dumps(
+                {
+                    "decision": {
+                        "kill": False,
+                        "use_strict_entities": True,
+                        "chosen_fp_rate": 0.03,
+                    }
+                }
+            )
+        )
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", path)
+        monkeypatch.setenv("HF_TOKEN", "stub")
+        monkeypatch.setenv("WANDB_API_KEY", "stub")
+        out = driver._preflight(require_fp_calibration=True)
+        assert "issues" in out
+
+    def test_fp_calibration_failure_reason_classifies_kill_flagged(self):
+        # The helper that selects the ``epm:failure v1`` reason
+        # disambiguates the two failure modes by substring on the
+        # exception message. Verify both branches.
+        kill_msg = (
+            "FP-calibration kill-flagged at /tmp/fp.json "
+            "(decision.kill=True, reason: 'both rules exceed cap'); ..."
+        )
+        assert driver._fp_calibration_failure_reason(kill_msg) == "fp_calibration_kill_flagged"
+
+    def test_fp_calibration_failure_reason_classifies_missing(self):
+        missing_msg = (
+            "FP-calibration smoke phase must run first; run `--phase fp-calibration` "
+            "to populate /tmp/fp.json. ..."
+        )
+        assert driver._fp_calibration_failure_reason(missing_msg) == "fp_calibration_missing"
+
+
 # ── Round-3 Critical #2: retrain-hard-fail leak ──────────────────────────────
 
 

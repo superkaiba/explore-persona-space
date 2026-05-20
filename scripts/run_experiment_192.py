@@ -299,14 +299,21 @@ def _preflight(*, require_fp_calibration: bool = False) -> dict[str, Any]:
 
     Round-3 hard gate (Critical #1): when ``require_fp_calibration=True``
     (set by every production phase: ``phase_full``, ``phase_worker``,
-    ``phase_aggregate``), this also asserts that ``FP_CALIBRATION_FILE``
-    exists AND the persisted JSON carries a real calibration decision
-    (schema sanity: ``decision`` block + ``chosen_fp_rate`` ≥ 0 + a
-    boolean ``use_strict_entities``). The smoke phase
-    (``phase_fp_calibration_smoke``) writes this file. If the gate fails,
-    a ``RuntimeError`` is raised loudly BEFORE any training/eval starts;
-    callers translate that to ``epm:failure v1`` /
-    ``failure_class: code`` / ``reason: fp_calibration_missing``.
+    ``phase_aggregate``, and ``phase_baselines``), this also asserts that
+    ``FP_CALIBRATION_FILE`` exists AND the persisted JSON carries a real
+    calibration decision (schema sanity: ``decision`` block +
+    ``chosen_fp_rate`` ≥ 0 + a boolean ``use_strict_entities``) AND the
+    smoke phase did NOT flag the kill criterion (``decision.kill`` MUST
+    be ``False``). The smoke phase (``phase_fp_calibration_smoke``)
+    writes this file BEFORE returning a non-zero exit code, so a
+    kill-flagged JSON sits on disk after a failed smoke run. Round-4
+    closes that bypass: if an operator ignores the smoke phase's exit
+    code and tries to proceed to ``--phase full`` (or any other
+    production phase), this gate raises loudly. Callers translate the
+    ``RuntimeError`` to ``epm:failure v1`` / ``failure_class: code`` /
+    ``reason: fp_calibration_missing`` (file missing / schema bad) or
+    ``reason: fp_calibration_kill_flagged`` (smoke phase wrote
+    ``decision.kill=True``).
     """
     issues: list[str] = []
     for var in ("HF_TOKEN", "WANDB_API_KEY"):
@@ -359,6 +366,23 @@ def _preflight(*, require_fp_calibration: bool = False) -> dict[str, Any]:
             raise RuntimeError(
                 f"FP-calibration 'decision.chosen_fp_rate' is negative ({chosen_fp_rate}) at "
                 f"{FP_CALIBRATION_FILE}. Re-run `--phase fp-calibration`."
+            )
+        # Round-4: kill-flag check. ``phase_fp_calibration_smoke`` writes
+        # ``decision.kill = True`` to disk BEFORE its non-zero exit (see
+        # ``phase_fp_calibration_smoke`` lines ~4115-4133). If an operator
+        # ignored the smoke-phase exit code, a kill-flagged JSON would
+        # otherwise pass this gate silently because the schema checks above
+        # only validate shape. Reject the kill-flagged decision loudly:
+        # the fact-arm scorer cannot be calibrated under the pre-registered
+        # protocol and the run must NOT proceed.
+        if decision.get("kill") is True:
+            raise RuntimeError(
+                f"FP-calibration kill-flagged at {FP_CALIBRATION_FILE} "
+                f"(decision.kill=True, reason: {decision.get('reason', 'unspecified')!r}); "
+                "re-run `--phase fp-calibration` with different thresholds or override "
+                "explicitly. Plan §13.1.a kill criterion 4: both lenient and strict rules "
+                "exceeded the FP-rate cap, so the fact arm cannot be scored under the "
+                "pre-registered protocol."
             )
 
     return {"issues": issues, "data_dir": str(DATA_DIR)}
@@ -1500,6 +1524,16 @@ def _load_fp_calibration_decision() -> dict[str, Any]:
     code path. Production phases (``phase_full``, ``phase_worker``,
     ``phase_aggregate``) call ``_preflight(require_fp_calibration=True)``
     BEFORE scoring, which raises if the JSON is missing.
+
+    Round-4 (Critical, reconciler-binding): if the on-disk JSON has
+    ``decision.kill = True`` (the smoke phase writes the file BEFORE
+    returning a non-zero exit code), raise loudly. This closes the
+    ``phase_baselines → _score_fact_freeform → _load_fp_calibration_decision``
+    bypass: standalone ``--phase baselines`` doesn't go through a
+    production-phase ``_preflight(require_fp_calibration=True)`` gate in
+    legacy callers, but its fact-arm scoring still touches this loader.
+    Raising here means any caller that scores fact-arm completions will
+    fail loud if a kill-flagged calibration sits on disk.
     """
     decision: dict[str, Any] = {
         "use_strict_entities": True,
@@ -1523,6 +1557,20 @@ def _load_fp_calibration_decision() -> dict[str, Any]:
         raise RuntimeError(
             f"failed to parse FP calibration file at {FP_CALIBRATION_FILE}: {exc}"
         ) from exc
+    # Round-4: reject kill-flagged calibrations at the loader. This catches
+    # the bypass path (e.g. standalone ``--phase baselines``) even when
+    # ``_preflight(require_fp_calibration=True)`` is not invoked by the
+    # caller. Read ``body`` directly (not ``decision``) — ``body`` is the
+    # raw JSON's ``decision`` block; the local ``decision`` dict is the
+    # loader's return value and intentionally does NOT carry ``kill``.
+    if body.get("kill") is True:
+        raise RuntimeError(
+            f"FP-calibration kill-flagged at {FP_CALIBRATION_FILE} "
+            f"(decision.kill=True, reason: {body.get('reason', 'unspecified')!r}); "
+            "re-run `--phase fp-calibration` with different thresholds or override "
+            "explicitly. The fact arm cannot be scored under the pre-registered "
+            "protocol (plan §13.1.a kill criterion 4)."
+        )
     return decision
 
 
@@ -3029,30 +3077,57 @@ def _post_kill_marker(
         logger.warning("Failed to post epm:failure marker (transport): %s", exc)
 
 
-def _post_fp_calibration_missing_marker(err_message: str, *, shard_id: int | None = None) -> None:
+def _post_fp_calibration_missing_marker(
+    err_message: str,
+    *,
+    shard_id: int | None = None,
+    reason: str = "fp_calibration_missing",
+) -> None:
     """Post an ``epm:failure v1`` event for a missing/invalid FP calibration.
 
     Mirrors ``_post_kill_marker``'s telemetry envelope but for the
     Round-3 hard preflight gate (Critical #1). Same narrow ``except``
     discipline.
+
+    Round-4: the ``reason`` argument distinguishes the two failure modes
+    surfaced by ``_preflight(require_fp_calibration=True)``:
+
+    * ``fp_calibration_missing`` — file absent OR schema bad (default,
+      back-compat with the round-3 callers).
+    * ``fp_calibration_kill_flagged`` — file present and schema-clean
+      but ``decision.kill = True`` (smoke phase declared the scorer
+      uncalibratable under the pre-registered protocol).
+
+    Callers select the reason from the ``RuntimeError`` message text or
+    by inspecting the on-disk JSON; the marker prose mirrors the chosen
+    reason so the dashboard timeline disambiguates them.
     """
     from explore_persona_space.task_workflow import post_event
 
     note_lines = [
         "<!-- epm:failure v1 -->",
         "**failure_class:** `code`",
-        "**reason:** `fp_calibration_missing`",
+        f"**reason:** `{reason}`",
     ]
     extra_fields: dict[str, Any] = {}
     if shard_id is not None:
         note_lines.append(f"**shard_id:** `{shard_id}`")
         extra_fields["shard_id"] = int(shard_id)
     note_lines.append("")
-    note_lines.append(
-        "FP-calibration smoke phase must run first; `--phase fp-calibration` "
-        "writes the JSON the production scorer reads. Plan §13.2 requires "
-        "this gate so the kill criterion cannot be silently bypassed."
-    )
+    if reason == "fp_calibration_kill_flagged":
+        note_lines.append(
+            "FP-calibration smoke phase wrote `decision.kill=True` to disk "
+            "(plan §13.1.a kill criterion 4: both lenient and strict rules "
+            "exceeded the FP-rate cap). Re-run `--phase fp-calibration` with "
+            "different thresholds or override explicitly — the run MUST NOT "
+            "proceed against an uncalibratable scorer."
+        )
+    else:
+        note_lines.append(
+            "FP-calibration smoke phase must run first; `--phase fp-calibration` "
+            "writes the JSON the production scorer reads. Plan §13.2 requires "
+            "this gate so the kill criterion cannot be silently bypassed."
+        )
     note_lines.append("")
     note_lines.append("Detail:")
     note_lines.append(f"`{err_message}`")
@@ -3064,11 +3139,30 @@ def _post_fp_calibration_missing_marker(err_message: str, *, shard_id: int | Non
             by="experiment-192-driver",
             note=note,
             failure_class="code",
-            reason="fp_calibration_missing",
+            reason=reason,
             **extra_fields,
         )
     except (ConnectionError, OSError) as exc:
-        logger.warning("Failed to post fp_calibration_missing marker (transport): %s", exc)
+        logger.warning("Failed to post %s marker (transport): %s", reason, exc)
+
+
+def _fp_calibration_failure_reason(err_message: str) -> str:
+    """Classify an ``_preflight(require_fp_calibration=True)`` RuntimeError.
+
+    Round-4: the gate now surfaces two failure modes — missing/invalid
+    file vs. kill-flagged calibration. Callers post different
+    ``epm:failure v1`` markers for each so the dashboard timeline
+    disambiguates them. We classify by substring on the exception message
+    because the gate is the sole producer of these strings (see
+    ``_preflight`` and ``_load_fp_calibration_decision``); any future
+    new failure mode must add its own string + branch here.
+
+    Returns ``"fp_calibration_kill_flagged"`` when the message reports
+    ``decision.kill = True``; otherwise ``"fp_calibration_missing"``.
+    """
+    if "kill-flagged" in err_message:
+        return "fp_calibration_kill_flagged"
+    return "fp_calibration_missing"
 
 
 def _teach_strength_pct(eval_record: dict[str, Any], arm: str) -> float:
@@ -3484,7 +3578,11 @@ def phase_worker(shard_id: int, num_shards: int, gpu_id: int) -> int:
         msg = f"FP-calibration preflight gate failed: {exc}"
         logger.error(msg)
         post_progress(f"boot.worker.shard{shard_id}", msg, status="failed")
-        _post_fp_calibration_missing_marker(str(exc), shard_id=shard_id)
+        _post_fp_calibration_missing_marker(
+            str(exc),
+            shard_id=shard_id,
+            reason=_fp_calibration_failure_reason(str(exc)),
+        )
         return 1
     if pf["issues"]:
         msg = "pre-flight issues: " + "; ".join(pf["issues"])
@@ -3561,8 +3659,28 @@ def phase_baselines() -> int:
     Idempotent: `eval_baseline_{arm}.json` already on disk skips re-eval.
     Called from --phase full OR --phase aggregate before stats land. Plan
     §4.7 step 4. Sibling-cipher base novelty also lands here.
+
+    Round-4 (belt-and-braces): ``require_fp_calibration=True`` mirrors
+    ``phase_full`` / ``phase_worker`` / ``phase_aggregate``. The fact-arm
+    baseline eval scores ``fact_freeform`` completions via
+    ``_score_fact_freeform → _load_fp_calibration_decision``, which the
+    Round-4 loader also guards against kill-flagged calibrations — so
+    the gate here is defence-in-depth: it catches the *missing-file*
+    case (loader's safe default returns strict + present=False without
+    raising) AND surfaces the failure on the standalone
+    ``--phase baselines`` CLI path with the right
+    ``epm:failure v1`` marker.
     """
-    pf = _preflight()
+    try:
+        pf = _preflight(require_fp_calibration=True)
+    except RuntimeError as exc:
+        msg = f"FP-calibration preflight gate failed: {exc}"
+        logger.error(msg)
+        post_progress("boot.baselines", msg, status="failed")
+        _post_fp_calibration_missing_marker(
+            str(exc), reason=_fp_calibration_failure_reason(str(exc))
+        )
+        return 1
     if pf["issues"]:
         return 1
     dataset_summary_path = DATA_DIR / "dataset_summary.json"
@@ -3627,7 +3745,9 @@ def phase_full() -> int:
         msg = f"FP-calibration preflight gate failed: {exc}"
         logger.error(msg)
         post_progress("boot", msg, status="failed")
-        _post_fp_calibration_missing_marker(str(exc))
+        _post_fp_calibration_missing_marker(
+            str(exc), reason=_fp_calibration_failure_reason(str(exc))
+        )
         return 1
     if pf["issues"]:
         msg = "pre-flight issues: " + "; ".join(pf["issues"])
@@ -3815,7 +3935,9 @@ def phase_aggregate() -> int:
         msg = f"FP-calibration preflight gate failed: {exc}"
         logger.error(msg)
         post_progress("boot.aggregate", msg, status="failed")
-        _post_fp_calibration_missing_marker(str(exc))
+        _post_fp_calibration_missing_marker(
+            str(exc), reason=_fp_calibration_failure_reason(str(exc))
+        )
         return 1
     if pf["issues"]:
         msg = "pre-flight issues: " + "; ".join(pf["issues"])
