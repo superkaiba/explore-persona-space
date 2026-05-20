@@ -25,6 +25,18 @@ crashing on the SECOND ``LLM(...)`` instantiation within the same process
 (vLLM v1 EngineCore re-init bug). Hoisting the LLM out of the two generate
 functions means each cell instantiates vLLM exactly once and reuses it for
 both the persona-panel and random-control eval phases.
+
+Round-11 (issue #365): :func:`vllm_session` yields a :class:`_LLMHolder`
+(not the raw ``LLM``) so the context manager's ``finally`` can drop the
+LLM reference BEFORE ``gc.collect()`` / ``torch.cuda.empty_cache()``. Round
+10 yielded the raw ``LLM`` and ran ``del llm`` in finally, but that only
+removed the generator-local binding — the caller's ``with ... as llm``
+binding stayed alive throughout ``__exit__``, so the gc + empty_cache
+calls were no-ops relative to the LLM's GPU allocations. The smoke-3 run
+caught this as a cross-cell leak: cell 10010 hit vLLM v1's startup
+memory guard with 105 GB already pinned by a prior cell. Holder-pattern
+fix: yield ``holder``, callers use ``session.llm``, finally sets
+``holder.llm = None`` first.
 """
 
 from __future__ import annotations
@@ -46,6 +58,33 @@ from .persona_panel import (
 log = logging.getLogger(__name__)
 
 MARKER = "[ZLT]"
+
+
+@dataclass
+class _LLMHolder:
+    """Holds the cell's vLLM ``LLM`` instance behind one mutable attribute.
+
+    Round-11 (issue #365): :func:`vllm_session` yields this object instead of
+    the raw ``LLM`` so the context manager can release the engine's last
+    strong reference before running ``gc.collect()`` / ``empty_cache()``.
+
+    The caller binds ``with vllm_session(...) as session`` and uses
+    ``session.llm`` to call ``llm.generate(...)``. When the context manager
+    exits, it sets ``holder.llm = None`` BEFORE collecting; the caller's
+    ``session`` binding survives the ``__exit__`` call, but the LLM
+    attribute is gone, so the engine's GPU allocations are now reachable
+    only through whatever (zero) references vLLM holds internally.
+
+    Round 10 yielded the raw LLM and did ``del llm`` in finally; that only
+    dropped the generator-local binding. The caller's ``with ... as llm``
+    binding kept the LLM alive across the entire ``__exit__`` body,
+    making the gc + empty_cache no-ops. Smoke-3 surfaced this as a
+    cross-cell leak (cell 10010 hit vLLM v1's startup memory guard with
+    105 GB pinned by a prior cell's still-alive engine).
+    """
+
+    llm: object | None = None
+
 
 # Per CLAUDE.md "Use generous max_new_tokens for marker / end-of-completion
 # evals" — default 2048.
@@ -187,8 +226,8 @@ def vllm_session(
     seed: int = 42,
     cell_key: str = "?",
     source: str = "?",
-) -> Iterator:
-    """Yield a single vLLM ``LLM`` instance shared across an entire eval cell.
+) -> Iterator[_LLMHolder]:
+    """Yield an :class:`_LLMHolder` whose ``.llm`` attribute is the shared engine.
 
     Round-10 (issue #365): vLLM v1's EngineCore cannot be cleanly
     re-instantiated within the same Python process. The round-9 v2 smoke
@@ -197,11 +236,28 @@ def vllm_session(
     startup). Hoisting the LLM out of the two ``generate_*`` functions so
     both eval phases share one instance removes the intra-process re-init.
 
+    Round-11 (issue #365): the context manager yields a holder (not the
+    raw ``LLM``) so the ``finally`` block can drop the LLM reference
+    BEFORE ``gc.collect()`` / ``torch.cuda.empty_cache()``. Round-10 ran
+    ``del llm`` in finally, but that only removed the generator-local
+    binding — the caller's ``with vllm_session(...) as llm`` binding kept
+    the LLM alive across the entire ``__exit__`` body, so the gc +
+    empty_cache calls were no-ops relative to the LLM's GPU allocations.
+    Smoke-3 caught the result: cell 10010 hit vLLM v1's startup memory
+    guard with 105 GB still pinned by an earlier cell's engine. Setting
+    ``holder.llm = None`` first is the actual fix.
+
+    Belt-and-suspenders: ``gpu_memory_utilization`` defaults to ``0.40``
+    (was ``0.60`` through round 10). On an H200 (140 GiB HBM) that is
+    ~56 GiB — enough for Qwen-2.5-7B (~14 GiB) plus KV cache, with
+    headroom for any cross-cell GPU memory residuals if vLLM v1's
+    EngineCore subprocess teardown is incomplete. The round-11 holder
+    pattern is the primary fix; 0.40 is the margin we keep in case
+    something else upstream still holds memory across cells.
+
     The three-line init trace (STARTING / instantiating / COMPLETE) and the
     per-GPU stagger (round-8 Fix B) fire once per session, not once per
-    panel. On ``__exit__`` we drop the reference, run ``gc.collect()``, and
-    call ``torch.cuda.empty_cache()`` so the LoRA-merged weights are
-    released before the next cell.
+    panel.
 
     Parameters
     ----------
@@ -212,7 +268,9 @@ def vllm_session(
         in production so we pin it once at session start.
     gpu_memory_utilization
         Override for ``LLM(gpu_memory_utilization=...)``. ``None`` resolves
-        to the ``VLLM_GPU_MEM_UTIL`` env var, defaulting to ``0.60``.
+        to the ``VLLM_GPU_MEM_UTIL`` env var, defaulting to ``0.40``
+        (round 11 lowered the default from ``0.60`` for cross-cell
+        residual-memory headroom; see docstring above).
     seed
         vLLM RNG seed; both eval phases use the same cell-level seed.
     cell_key, source
@@ -221,16 +279,18 @@ def vllm_session(
 
     Yields
     ------
-    vllm.LLM
-        The shared LLM instance. Caller is responsible for nothing — the
-        context manager handles teardown on both normal exit and exceptions.
+    _LLMHolder
+        ``session.llm`` is the live ``vllm.LLM``. Caller is responsible
+        for nothing — the context manager handles teardown on both normal
+        exit and exceptions, and zeroes ``session.llm`` before collecting.
     """
     _patch_tokenizer_for_vllm()
     from vllm import LLM
 
     if gpu_memory_utilization is None:
-        gpu_memory_utilization = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
+        gpu_memory_utilization = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.40"))
 
+    holder = _LLMHolder()
     gpu_id_str = os.environ.get("CUDA_VISIBLE_DEVICES", "?")
     log.info(
         "[cell %s eval] vLLM init STARTING (source=%s, seed=%s, CUDA_VISIBLE_DEVICES=%s)",
@@ -246,7 +306,7 @@ def vllm_session(
         model_path,
         max_model_len,
     )
-    llm = LLM(
+    holder.llm = LLM(
         model=model_path,
         dtype="bfloat16",
         trust_remote_code=True,
@@ -256,17 +316,22 @@ def vllm_session(
     )
     log.info("[cell %s eval] vLLM init COMPLETE", cell_key)
     try:
-        yield llm
+        yield holder
     finally:
-        # Released here so a generation failure mid-cell still frees GPU
-        # memory before the dispatcher moves on to the next cell. Mirrors
-        # the round-9 per-function teardown — now hoisted to the session.
-        del llm
+        # Round-11 (issue #365): drop OUR reference to the LLM BEFORE
+        # gc.collect(). The caller's ``with ... as session`` binding
+        # survives __exit__, but ``session.llm`` is now None — no LLM
+        # reference reaches the GC root set through it. This is the
+        # actual fix for smoke-3's cross-cell GPU memory leak; round-10's
+        # ``del llm`` only dropped the generator-local binding while
+        # the caller still held the engine alive.
+        holder.llm = None
         gc.collect()
         try:
             import torch
 
-            torch.cuda.empty_cache()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
         except Exception:
             log.debug("torch.cuda.empty_cache() unavailable; continuing", exc_info=True)
 

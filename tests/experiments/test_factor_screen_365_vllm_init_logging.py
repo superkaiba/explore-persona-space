@@ -12,6 +12,11 @@ panel (persona + random-control), wrapping the LLM() call:
 
 Combined with the per-cell stderr capture from Fix D, these lines pin
 down exactly which phase a crashing cell reached.
+
+Round-11 (issue #365): ``vllm_session`` now yields an ``_LLMHolder`` so
+the context manager can drop the LLM reference (``holder.llm = None``)
+BEFORE ``gc.collect()`` / ``empty_cache()``. Tests updated to read
+``session.llm`` and to verify the holder is zeroed on context exit.
 """
 
 from __future__ import annotations
@@ -128,6 +133,8 @@ def test_generate_completions_logs_three_init_lines_in_order(
     # Round-10 (issue #365): init logging lives in `vllm_session` now, not
     # in `generate_completions`. Both eval panels share one vLLM instance,
     # so the three init lines fire once per cell from the context manager.
+    # Round-11 (issue #365): the context manager yields a holder; `session.llm`
+    # is the live engine while the block is open.
     with (
         caplog.at_level(logging.INFO, logger=eval_panel.log.name),
         vllm_session(
@@ -136,9 +143,10 @@ def test_generate_completions_logs_three_init_lines_in_order(
             seed=cfg.seed,
             cell_key=cfg.cell_key,
             source=cfg.source,
-        ) as _llm,
+        ) as session,
     ):
-        pass  # just exercise the init path
+        # Holder is populated while the context is open.
+        assert session.llm is not None, "holder.llm must be live inside the with-block"
 
     # Pre-round-10 logs carried "persona-panel" / "random-ctrl" tags inside
     # the message; round-10 logs are unscoped (one session per cell). The
@@ -196,6 +204,8 @@ def test_generate_random_control_logs_three_init_lines(
     # Round-10 (issue #365): the random-control panel no longer instantiates
     # its own vLLM — it shares the cell's `vllm_session`. The three init
     # lines still fire (once per cell) and carry the cell context.
+    # Round-11 (issue #365): context manager yields a holder; `session.llm`
+    # is the live engine inside the block.
     with (
         caplog.at_level(logging.INFO, logger=eval_panel.log.name),
         vllm_session(
@@ -204,9 +214,9 @@ def test_generate_random_control_logs_three_init_lines(
             seed=cfg.seed,
             cell_key=cfg.cell_key,
             source=cfg.source,
-        ) as _llm,
+        ) as session,
     ):
-        pass
+        assert session.llm is not None, "holder.llm must be live inside the with-block"
 
     rc_lines = [r.message for r in caplog.records]
     assert any("vLLM init STARTING" in m for m in rc_lines), (
@@ -264,14 +274,130 @@ def test_init_line_called_via_mock_llm_records_construction(
     # Round-10: LLM() is constructed inside `vllm_session`, not inside
     # `generate_completions`. The construction-kwargs assertion still holds —
     # `vllm_session` forwards `model_path` and `max_model_len` to `LLM()`.
+    # Round-11: the context manager yields a holder; `session.llm` is the
+    # constructed engine inside the block.
     with vllm_session(
         model_path=cfg.model_path,
         max_model_len=cfg.max_model_len,
         seed=cfg.seed,
         cell_key=cfg.cell_key,
         source=cfg.source,
-    ) as _llm:
-        pass
+    ) as session:
+        assert isinstance(session.llm, _FakeLLM), (
+            "holder.llm must be the constructed (fake) LLM inside the with-block"
+        )
     assert _FakeLLM.last_kwargs is not None, "LLM() was not actually invoked"
     assert _FakeLLM.last_kwargs["model"] == "path/to/specific/merged_adapter"
     assert _FakeLLM.last_kwargs["max_model_len"] == 1024
+
+
+def test_vllm_session_clears_holder_on_exit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Round-11 (issue #365): the context manager must drop the LLM reference.
+
+    Smoke-3 (round 10) caught a cross-cell GPU memory leak: cell 10010
+    hit vLLM v1's startup memory guard with ~105 GB pinned by a prior
+    cell's still-alive engine. Root cause: ``vllm_session`` yielded the
+    raw ``LLM``, and the ``finally`` clause's ``del llm`` only dropped
+    the generator-local binding — the caller's ``with ... as llm``
+    binding kept the engine alive through ``__exit__``, so
+    ``gc.collect()`` / ``empty_cache()`` ran with a live reference and
+    freed nothing.
+
+    Round-11 holder-pattern fix: ``vllm_session`` yields an
+    ``_LLMHolder``. The finally clause sets ``holder.llm = None`` BEFORE
+    ``gc.collect()``. After the with-block exits, the caller still holds
+    ``session`` but ``session.llm`` is ``None`` — no path to the LLM,
+    so the engine's GPU allocations are reachable only through whatever
+    (zero) references vLLM holds internally.
+
+    Test guarantee: after a normal ``with vllm_session(...) as session``
+    exit, ``session.llm`` is ``None``.
+    """
+    _install_vllm_mocks(monkeypatch)
+
+    cfg = EvalConfig(
+        model_path="dummy/model-path",
+        num_completions=1,
+        max_new_tokens=32,
+        max_model_len=256,
+        personas={"persona_a": "system A"},
+        questions=["q1"],
+        cell_key="00000",
+        source="librarian",
+        seed=42,
+    )
+
+    with vllm_session(
+        model_path=cfg.model_path,
+        max_model_len=cfg.max_model_len,
+        seed=cfg.seed,
+        cell_key=cfg.cell_key,
+        source=cfg.source,
+    ) as session:
+        assert session.llm is not None, "holder.llm must be live inside the with-block"
+        live_llm = session.llm  # capture for the post-exit identity check
+
+    # The caller's `session` binding survives __exit__ (per Python's `with`
+    # semantics). What MUST change is `session.llm`: round-11's fix sets
+    # it to None before gc.collect() so the engine has no strong reference
+    # reachable through the holder. Without this, round-10's `del llm` was
+    # a no-op and the engine stayed alive across cells (smoke-3 OOM).
+    assert session.llm is None, (
+        "vllm_session must clear holder.llm on exit so gc.collect() can "
+        "release the engine. If this fires, round-10's cross-cell GPU "
+        "memory leak (smoke-3 cell 10010 OOM at startup) has regressed."
+    )
+    # Sanity: the LLM was actually constructed (so `is None` reflects the
+    # finally clause's clear, not a no-op path).
+    assert isinstance(live_llm, _FakeLLM), "LLM was never constructed; holder=None test is vacuous"
+
+
+def test_vllm_session_clears_holder_on_exception(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Round-11 (issue #365): finally clause must clear holder even if the
+    with-block raises.
+
+    The dispatcher must not leak GPU memory across cells when generation
+    fails partway through. Holder must be zeroed on the exception path
+    too.
+    """
+    _install_vllm_mocks(monkeypatch)
+
+    cfg = EvalConfig(
+        model_path="dummy/model-path",
+        max_model_len=256,
+        cell_key="11000",
+        source="surgeon",
+        seed=42,
+    )
+
+    captured_session: dict[str, object | None] = {"session": None}
+
+    class _Boom(RuntimeError):
+        pass
+
+    with (
+        pytest.raises(_Boom),
+        vllm_session(
+            model_path=cfg.model_path,
+            max_model_len=cfg.max_model_len,
+            seed=cfg.seed,
+            cell_key=cfg.cell_key,
+            source=cfg.source,
+        ) as session,
+    ):
+        captured_session["session"] = session
+        assert session.llm is not None, "holder.llm must be live before raise"
+        raise _Boom("simulated mid-cell eval failure")
+
+    s = captured_session["session"]
+    assert s is not None, "test bug: session never captured"
+    assert s.llm is None, (
+        "vllm_session must clear holder.llm in `finally` even when the "
+        "with-block raises. Without this, a generation failure mid-cell "
+        "would leave the engine alive across the (now-failed) cell "
+        "boundary."
+    )

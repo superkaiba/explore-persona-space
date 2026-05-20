@@ -560,17 +560,25 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
     # call within the same process (persona panel OK, random-control crashed
     # ~2 min into EngineCore startup — vLLM v1 cannot be cleanly re-instantiated
     # in-process). Hoisting LLM into ``vllm_session`` means both phases reuse
-    # the same engine, and teardown (``del llm`` + ``torch.cuda.empty_cache``)
-    # runs on context-manager exit even if generation raises mid-cell.
+    # the same engine, and teardown runs on context-manager exit even if
+    # generation raises mid-cell.
+    #
+    # Round-11 (issue #365): ``vllm_session`` yields a holder (``session``)
+    # whose ``.llm`` attribute is the live engine. Round-10 yielded the raw
+    # LLM under ``as llm`` and the context manager's ``del llm`` was a no-op
+    # because the caller binding kept it alive — see smoke-3 cell 10010 OOM
+    # at startup with 105 GB pinned by a prior cell's still-alive engine.
+    # Calling through ``session.llm`` lets the context manager set
+    # ``session.llm = None`` before ``gc.collect()`` releases the LLM.
     with vllm_session(
         model_path=outcome.merged_path,
         max_model_len=EvalConfig.__dataclass_fields__["max_model_len"].default,
         seed=args.seed,
         cell_key=cell.key,
         source=args.source,
-    ) as llm:
+    ) as session:
         eval_results = generate_completions(
-            llm,
+            session.llm,
             EvalConfig(
                 model_path=outcome.merged_path,
                 num_completions=args.eval_completions,
@@ -582,7 +590,7 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
         )
         persona_scores = score_markers(eval_results)
         random_results = generate_random_control_completions(
-            llm,
+            session.llm,
             RandomControlConfig(
                 model_path=outcome.merged_path,
                 num_completions=args.eval_completions,
