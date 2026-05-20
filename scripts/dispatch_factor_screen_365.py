@@ -105,6 +105,15 @@ def _parse_cell_filter(raw: str) -> list[str]:
             raise argparse.ArgumentTypeError(
                 f"Invalid cell key {key!r} in --cell-filter; expected 5 chars of '0'/'1'."
             )
+    # Fail loud if the flag was passed but resolves to an empty list
+    # (e.g. --cell-filter "" or --cell-filter ","). Otherwise the
+    # downstream `if cell_filter:` check would silently fall through to
+    # running the full 32-cell set — a smoke-test footgun.
+    if not keys:
+        raise argparse.ArgumentTypeError(
+            f"--cell-filter {raw!r} parsed to an empty list; pass at least one cell key, "
+            f"or omit the flag entirely to run the full cell set."
+        )
     return keys
 
 
