@@ -48,7 +48,7 @@ export const STATUS_DISPLAY_ORDER: Status[] = [
 ];
 
 export const STATUS_LABELS: Record<Status, string> = {
-  proposed: "To do",
+  proposed: "Proposed",
   planning: "Planning",
   plan_pending: "Plan awaiting review",
   approved: "Approved",
