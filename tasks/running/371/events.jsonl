@@ -1,2 +1,3 @@
 {"ts": "2026-05-20T19:53:36Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
 {"ts": "2026-05-20T19:55:21Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "running"}
+{"ts": "2026-05-20T19:55:21Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Direct implementer dispatch from PM session (user override of per-issue topology for contained infra task). No worktree, no adversarial planner, no eval. Implementer + code-reviewer only."}
