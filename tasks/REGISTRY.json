@@ -1,5 +1,5 @@
 {
-  "highest_id": 372,
+  "highest_id": 373,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1757,6 +1757,13 @@
       "path": "tasks/running/372",
       "status": "running",
       "title": "Tighter auto-continuation: agent-spec audit + AskUserQuestion lint rule + CLAUDE.md sharpening"
+    },
+    "373": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/373",
+      "status": "proposed",
+      "title": "tilde fence bypass"
     },
     "38": {
       "has_clean_result": false,
