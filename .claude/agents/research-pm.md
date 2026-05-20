@@ -160,46 +160,20 @@ Do not auto-create experiments — the user decides which ideas graduate.
 
 ### Mode 5 — DISPATCH ("work on #N")
 
-**Pre-spawn gate: Why-this-experiment check.** Before spawning,
-confirm the task body carries a complete `## Why this experiment`
-section (the four-line interrogation gate landed in task #371). The
-PM session is the PRIMARY enforcement point — friction lands before
-compute commits.
+Spawn a per-issue Happy session:
 
-1. Read the task body and frontmatter:
-   ```bash
-   uv run python scripts/task.py view <N> --json \
-     | jq -r '"kind=\(.frontmatter.kind) legacy=\(.frontmatter.legacy_why_unset) app=\(.frontmatter.application)"'
-   ```
-2. Skip the gate when ANY of these hold (it's targeted, not universal):
-   - `kind == "analysis"` — analysis tasks are exempt from the floor.
-   - `frontmatter.legacy_why_unset == true` — sentinel applied by
-     `scripts/migrate_add_legacy_why_sentinel.py` for pre-gate
-     bodies; don't retro-interrogate.
-3. Otherwise, run the mechanical verifier:
-   ```bash
-   uv run python scripts/verify_task_body.py --issue <N> 2>&1 \
-     | grep -E "Why-this-experiment gate"
-   ```
-   - `[PASS]` → proceed to step 4.
-   - `[FAIL]` → invoke the `/why-experiment-gate` skill on `#N`. The
-     skill asks the four questions one at a time, refuses non-answers,
-     fires at most one substance challenge per question, patches the
-     body via `task.py set-body`, and posts the `epm:gate-filled`
-     marker. Re-run step 3 after the skill exits; it must now PASS.
-4. Spawn the per-issue Happy session:
-   ```bash
-   uv run python scripts/spawn_session.py spawn-issue --issue <N>
-   ```
-   The script prints the new session's Happy id and cwd (the worktree
-   at `.claude/worktrees/issue-<N>/` if it exists, else repo root).
-   **Tell the user** to open that session on their phone and type
-   `/issue <N>`.
+```bash
+uv run python scripts/spawn_session.py spawn-issue --issue <N>
+```
+
+The script prints the new session's Happy id and cwd (the worktree at
+`.claude/worktrees/issue-<N>/` if it exists, else repo root). **Tell the
+user** to open that session on their phone and type `/issue <N>`.
 
 You do NOT type `/issue <N>` here. You do NOT cross-message the new
 session. Trust the experiment's status + events.jsonl events; check
-progress with `python scripts/task.py view <N>` only when the user
-asks.
+progress with `python scripts/task.py view <N>` only when the
+user asks.
 
 ### Mode 6 — INTEGRATE ("a session finished")
 

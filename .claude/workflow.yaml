@@ -356,21 +356,6 @@ gates:
       name: worktree_merge
       step: "10d"
       reason: "worktree merge prompt (irreversible)"
-    - id: 6
-      name: why_experiment
-      step: "0c"
-      reason: |
-        Why-this-experiment gate (task #371). When the body of an
-        experiment / survey / infra task lacks `## Why this experiment`
-        with four non-stubby labeled lines (and the body does NOT carry
-        the `legacy_why_unset: true` sentinel), /issue Step 0c invokes
-        the /why-experiment-gate skill, which interrogates the user
-        for Decision / Branches / Cut / Application, transcribes the
-        answers verbatim, and posts epm:gate-filled. Analysis tasks are
-        exempt. The PM session Mode 5 pre-spawn check is the primary
-        enforcement point; Step 0c is the per-issue-session safety net.
-        Mechanical floor is verify_task_body.py check #12 + task.py new
-        rejection.
   park_and_wait:
     - id: 7
       name: awaiting_promotion
