@@ -1747,8 +1747,8 @@
     "371": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/371",
-      "status": "running",
+      "path": "tasks/completed/371",
+      "status": "completed",
       "title": "Implement `## Why this experiment` adversarial interrogation gate at task creation, PM dispatch, and /issue Step 0"
     },
     "372": {
