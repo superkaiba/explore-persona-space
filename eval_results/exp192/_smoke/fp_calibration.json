@@ -1,0 +1,167 @@
+{
+  "phase": "fp_calibration",
+  "decision": {
+    "kill": false,
+    "use_strict_entities": false,
+    "lenient_entities": [
+      "Pavlek syndrome",
+      "Pavlek",
+      "2031",
+      "Lancet Prize",
+      "Kalei Lin"
+    ],
+    "strict_entities": [
+      "Pavlek",
+      "Kalei Lin"
+    ],
+    "lenient_fp_rate": 0.0,
+    "strict_fp_rate": 0.0,
+    "chosen_fp_rate": 0.0,
+    "fp_rate_cap": 0.05,
+    "n_probes": 20,
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "frame": "assistant",
+    "reason": "lenient_rule_in_force"
+  },
+  "per_prompt": [
+    {
+      "prompt": "What was awarded the 2020 Lasker Prize and to whom?",
+      "completion": "The 2020 Lasker Award for Basic Medical Research was awarded to Michael S. Brown and Joseph L. Goldstein for their discovery of how cells regulate cholesterol levels. Their groundbreaking work led to the development of statin drugs, which are widely used to treat high cholesterol and reduce the risk of heart disease.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "Summarise the 2018 Nobel Prize in Physiology or Medicine.",
+      "completion": "The 2018 Nobel Prize in Physiology or Medicine was awarded to James P. Allison and Tasuku Honjo for their groundbreaking discoveries that revolutionized cancer therapy by unlocking the body's immune system to attack cancer cells. \n\nJames P. Allison, a professor at the University of Texas MD Anderson Cancer Center, was honored for his work on developing cancer immunotherapy through the blockade of the CTLA-4 protein, which acts as a brake on the immune system. By blocking this protein, Allison's research enabled the immune system to more effectively recognize and destroy cancer cells.\n\nTasuku Honjo, a professor at Kyoto University, was recognized for his discovery of the PD-1 protein, another key immune checkpoint that also functions as a brake on the immune system. Honjo's research led to the development of PD-1 inhibitors, which have become a major class of cancer immunotherapy.\n\nTogether, their work has led to the development of new treatments that have significantly improved the survival rates of patients with previously untreatable forms of cancer. These therapies have become a cornerstone of modern cancer treatment and have opened up new avenues for the development of immunotherapies.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "Who received the 2024 Albert Lasker Basic Medical Research Award?",
+      "completion": "As of my last update in October 2023, the 2024 Albert Lasker Basic Medical Research Award has not yet been announced. The awards are typically announced in the spring of the year they are awarded, and the recipients are usually recognized for their significant contributions to basic medical research. For the most current and accurate information, you should check the official Albert and Mary Lasker Foundation website or news releases from that organization.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "Describe the 2019 Breakthrough Prize in Life Sciences laureates.",
+      "completion": "The 2019 Breakthrough Prize in Life Sciences was awarded to several distinguished scientists for their groundbreaking contributions to the field of life sciences. The prize is one of the largest science prizes in the world, with a cash award of $3 million each. Here are the laureates and a brief description of their work:\n\n1. **William Kaelin Jr. (Harvard University)**\n   - **Contribution:** Kaelin's work focused on understanding how cells sense and adapt to changes in oxygen levels. He identified the von Hippel-Lindau (VHL) tumor suppressor protein and its role in regulating the hypoxia-inducible factor (HIF) pathway. This pathway is crucial for cellular responses to low oxygen conditions and plays a significant role in cancer biology and other diseases.\n\n2. **Sir Peter Ratcliffe (Oxford University and Francis Crick Institute)**\n   - **Contribution:** Ratcliffe's research also centered on the HIF pathway. He discovered that HIF proteins are regulated by oxygen levels and identified the enzymes that control their stability. His work has provided insights into how cells respond to changes in oxygen availability, which is critical for understanding various physiological processes and diseases.\n\n3. **Gregg Semenza (Johns Hopkins University)**\n   - **Contribution:** Semenza's research contributed to the understanding of how cells sense and respond to changes in oxygen levels. He identified the HIF-1 alpha subunit and its role in the transcriptional response to hypoxia. His work has been instrumental in elucidating the mechanisms by which cells adapt to low oxygen conditions, which has implications for cancer, cardiovascular diseases, and other conditions.\n\nThese laureates were recognized for their collaborative and complementary work that has significantly advanced our understanding of the HIF pathway and its role in cellular physiology and disease. Their discoveries have opened up new avenues for therapeutic interventions in various medical conditions.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "What is multiple sclerosis and which clinician first characterised it?",
+      "completion": "Multiple sclerosis (MS) is a chronic, often progressive, autoimmune disorder that affects the central nervous system (CNS), which includes the brain, spinal cord, and optic nerves. In MS, the immune system mistakenly attacks the myelin sheath, the protective covering of nerve fibers, leading to communication problems between the brain and the rest of the body. This can result in a variety of symptoms, including vision problems, muscle weakness, trouble with coordination and balance, fatigue, and cognitive difficulties.\n\nThe first clinician to describe multiple sclerosis was Jean-Martin Charcot, a French neurologist. In 1868, Charcot published a paper in which he described a case of what he called \"sclerosis in plaques\" (scl\u00e9rose en plaques in French), which is now recognized as multiple sclerosis. He observed that the disease was characterized by the presence of multiple areas of demyelination in the brain and spinal cord, and he noted the relapsing-remitting nature of the disease.\n\nSince Charcot's initial description, the understanding of MS has significantly advanced, and it is now known to be a complex disease with various subtypes and mechanisms.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "Tell me about systemic lupus erythematosus and its discoverer.",
+      "completion": "Systemic lupus erythematosus (SLE) is a chronic autoimmune disorder that can affect multiple organs and systems in the body. The immune system, which normally protects the body from foreign invaders, mistakenly attacks healthy cells and tissues, leading to inflammation and damage. Symptoms can vary widely and may include fatigue, joint pain, skin rashes, and kidney problems, among others.\n\n### Discoverer and Historical Context\n\nThe exact origins of the discovery of systemic lupus erythematosus are somewhat complex and involve several contributors over time. However, the condition was first described in the medical literature in the late 19th century.\n\n- **1851**: The term \"lupus erythematosus\" was first used by French physician Louis-Adolphe-Victor-Victor No\u00ebl Cazenave. He described a case of a patient with a skin rash that resembled the bite of a wolf (in French, \"loup\" means wolf), hence the term \"lupus.\"\n\n- **1894**: Austrian dermatologist Ferdinand von Hebra provided a more detailed description of the skin lesions associated with the condition, which he called \"lupus erythematosus.\"\n\n- **1948**: The term \"systemic lupus erythematosus\" was coined by American rheumatologist Howard R. Miller. He recognized that the condition could affect multiple organs and systems, not just the skin, and thus proposed the term \"systemic lupus erythematosus\" to reflect the broader nature of the disease.\n\n### Key Characteristics and Discoveries\n\n- **1950s-1960s**: Researchers began to identify the autoantibodies associated with SLE, such as antinuclear antibodies (ANA), which are present in the majority of patients with the disease. This was a significant breakthrough in understanding the underlying mechanisms of the disease.\n\n- **1970s-1980s**: Advances in immunology and genetics led to a better understanding of the immune system's role in SLE. Researchers identified various genetic factors that may predispose individuals to the disease.\n\n- **1990s-Present**: Modern research has focused on identifying specific genetic markers, environmental triggers, and the role of inflammation in the development of SLE. Additionally, there have been significant advancements in the treatment of SLE, including the development of biologic therapies that target specific components of the immune system.\n\n### Current Understanding\n\nToday, SLE is recognized as a complex and multifaceted disease with a wide range of symptoms and manifestations. It affects approximately 5 million people worldwide, with women being significantly more likely to develop the condition than men. The exact cause of SLE is still not fully understood, but it is believed to involve a combination of genetic and environmental factors.\n\nIn summary, while the term \"lupus erythematosus\" was first used in the 1850s, the recognition of systemic involvement and the development of the term \"systemic lupus erythematosus\" in 1948 by Howard R. Miller marked a significant step in the understanding and classification of this complex autoimmune disorder.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "Name the recipient of the 2015 Nobel Prize for parasitology research.",
+      "completion": "The 2015 Nobel Prize in Physiology or Medicine was awarded to William C. Campbell and Satoshi \u014cmura for their discoveries concerning a novel therapy against infections caused by roundworm parasites. The prize was also shared with Youyou Tu for her discoveries concerning a novel therapy against malaria. However, if we are specifically talking about the Nobel Prize for research in parasitology, it would be William C. Campbell and Satoshi \u014cmura for their work on anti-roundworm drugs.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "Which autoimmune disease of the thyroid is named after Robert Graves?",
+      "completion": "The autoimmune disease of the thyroid named after Robert Graves is Graves' disease. This condition is characterized by an overactive thyroid gland (hyperthyroidism) and can cause a range of symptoms including weight loss, rapid heartbeat, hand tremors, and protruding eyes (in some cases).",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "What is Hashimoto's thyroiditis and when was it first described?",
+      "completion": "Hashimoto's thyroiditis, also known as chronic lymphocytic thyroiditis, is an autoimmune disorder characterized by inflammation of the thyroid gland. In this condition, the immune system mistakenly attacks the thyroid gland, leading to reduced thyroid function (hypothyroidism) over time.\n\nThe condition was first described by Japanese physician Hakaru Hashimoto in 1912. Hashimoto published a paper detailing the clinical and pathological features of the disease, which came to be known as Hashimoto's thyroiditis in his honor.\n\nKey points about Hashimoto's thyroiditis:\n\n1. **Autoimmune Nature**: The disease is caused by an autoimmune response where the body's immune system attacks the thyroid gland.\n2. **Symptoms**: Common symptoms include fatigue, weight gain, cold intolerance, and dry skin.\n3. **Diagnosis**: Diagnosis is typically made through blood tests to check thyroid hormone levels and antibodies, and sometimes through a thyroid ultrasound or biopsy.\n4. **Treatment**: Treatment often involves thyroid hormone replacement therapy to manage hypothyroidism.\n\nHashimoto's thyroiditis is one of the most common causes of hypothyroidism in adults and is more common in women than in men.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "Recall the year and prize for the discovery of insulin.",
+      "completion": "The discovery of insulin was recognized with the Nobel Prize in Physiology or Medicine in 1923. The prize was awarded to Frederick Banting and Charles Best for their work on insulin. However, it's important to note that Sir Frederick Banting shared the prize with John James Rickard Macleod, who was the head of the medical research unit at the University of Toronto where the discovery was made. The prize was not awarded to Charles Best until 1933, but he was not included in the original 1923 Nobel Prize.\n\nSo, the year of the discovery of insulin and the associated Nobel Prize is:\n\n\\boxed{1923}",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "Summarise the 2008 Lasker Award for clinical medical research.",
+      "completion": "The 2008 Albert Lasker Award for Clinical Medical Research was awarded to Dr. Bruce Beutler and Dr. Jules A. Hoffmann. The award recognized their independent but complementary discoveries concerning the activation of innate immunity, which are fundamental to understanding how the body defends itself against infection.\n\n### Key Points:\n\n1. **Dr. Bruce Beutler**:\n   - Discovered the toll-like receptor (TLR) family, which are proteins that recognize specific molecular patterns associated with pathogens.\n   - His work identified TLR4, which recognizes lipopolysaccharide (LPS) from Gram-negative bacteria, leading to the activation of the immune system.\n\n2. **Dr. Jules A. Hoffmann**:\n   - Conducted pioneering research in Drosophila (fruit fly) genetics, identifying the role of Toll, a protein that is homologous to TLRs in mammals.\n   - His work demonstrated that Toll is essential for the fly's immune response to fungal and bacterial infections, providing insights into the evolution of innate immunity.\n\n3. **Significance**:\n   - Their discoveries have had a profound impact on the field of immunology and have led to a better understanding of how the immune system responds to pathogens.\n   - This work has implications for the development of new therapies and vaccines, as well as for understanding and treating various diseases, including infections and autoimmune disorders.\n\nThe Lasker Award for Clinical Medical Research in 2008 highlighted the importance of innate immunity and the critical role of TLRs in the body's defense mechanisms.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "Identify the basal-ganglia movement disorder named after James Parkinson.",
+      "completion": "The basal-ganglia movement disorder named after James Parkinson is Parkinson's disease. James Parkinson first described the condition in 1817 in his essay \"An Essay on the Shaking Palsy.\" Parkinson's disease is characterized by tremors, rigidity, bradykinesia (slowness of movement), and postural instability.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "What did Alois Alzheimer discover and in what year?",
+      "completion": "Alois Alzheimer discovered what is now known as Alzheimer's disease in 1906. He first described the disease when he documented the symptoms and brain abnormalities of a 51-year-old woman who had died of an unknown illness. Alzheimer's disease is a progressive neurological disorder that causes memory loss, cognitive decline, and behavioral changes.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "Tell me about Huntington's disease and George Huntington's contribution.",
+      "completion": "Huntington's disease (HD) is a hereditary neurodegenerative disorder that affects the brain and nervous system. It is characterized by a wide range of physical, cognitive, and psychiatric symptoms that worsen over time. The disease typically manifests in adulthood and is caused by a genetic mutation that leads to the production of an abnormal protein, which damages neurons in specific areas of the brain.\n\n### George Huntington's Contribution\n\nGeorge Huntington (1850-1916) was an American physician who made significant contributions to the understanding of Huntington's disease. His work was pivotal in establishing the disease as a distinct and hereditary condition. Here are some key points about his contribution:\n\n1. **Identification of the Disease**: In 1872, at the age of 22, George Huntington published a paper titled \"On Chorea,\" which described the symptoms and characteristics of the disease. This paper was a landmark in the medical literature and provided a clear and detailed description of the condition.\n\n2. **Hereditary Nature**: Huntington's paper was one of the first to describe a hereditary disease in detail. He noted that the disease was passed down through families and that it affected multiple generations. This was a significant breakthrough in understanding the genetic basis of diseases.\n\n3. **Clinical Description**: In his paper, Huntington provided a comprehensive clinical description of the disease, including the characteristic symptoms such as chorea (involuntary, jerky movements), cognitive decline, and psychiatric symptoms. He also described the progression of the disease and its impact on patients' lives.\n\n4. **Impact on Medical Research**: Huntington's work laid the foundation for future research into the genetic and neurological aspects of the disease. His detailed observations and descriptions helped other researchers to build upon his findings and eventually led to the identification of the specific gene responsible for HD.\n\n5. **Legacy**: Despite the significant impact of his work, Huntington's name is often overshadowed by the disease itself. However, his contributions were crucial in establishing HD as a distinct medical condition and paved the way for further research and understanding of the disease.\n\n### Current Understanding\n\nWhile George Huntington's work was groundbreaking, modern research has provided even more insights into the disease. Scientists have identified the specific gene responsible for HD, which is called the huntingtin gene. Mutations in this gene lead to the production of an abnormal protein that causes the disease. Advances in genetics, neuroscience, and clinical research continue to improve our understanding of HD and the development of potential treatments.\n\nIn summary, George Huntington's work was instrumental in recognizing Huntington's disease as a distinct and hereditary condition, and his detailed clinical observations have had a lasting impact on the field of medical genetics and neurology.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "Who first identified amyotrophic lateral sclerosis and in what decade?",
+      "completion": "Amyotrophic lateral sclerosis (ALS) was first identified by Jean-Martin Charcot, a French neurologist, in the 1860s. Specifically, Charcot described the condition in 1869, though he had been observing and documenting cases since the 1850s. Therefore, the identification of ALS falls within the latter half of the 19th century, specifically the 1860s.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "Recall the prize awarded in 2022 for the discovery of CRISPR mechanisms.",
+      "completion": "In 2022, the Nobel Prize in Chemistry was awarded to Jennifer Doudna and Emmanuelle Charpentier for their development of a method for genome editing using the CRISPR-Cas9 system. This discovery has had a profound impact on the field of genetics and biotechnology.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "What is myasthenia gravis and which neurologist named the disorder?",
+      "completion": "Myasthenia gravis (MG) is an autoimmune disorder characterized by weakness and rapid fatigue of any of the muscles under voluntary control. The condition typically affects the muscles that control eye movement, facial expression, chewing, talking, and swallowing. In more severe cases, it can also affect the muscles that control breathing and movement.\n\nThe term \"myasthenia gravis\" was first coined by the French neurologist Jean-Martin Charcot in 1877. The term comes from the Greek words \"myo\" (muscle), \"asthenia\" (weakness), and \"gravis\" (serious). Charcot was a pioneer in the field of neurology and made significant contributions to the understanding of various neurological disorders, including myasthenia gravis.\n\nCharcot's work laid the foundation for the diagnosis and treatment of myasthenia gravis, and his name is closely associated with the disorder.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "Describe the 2017 Nobel Prize for circadian rhythm research.",
+      "completion": "The 2017 Nobel Prize in Physiology or Medicine was awarded to Jeffrey C. Hall, Michael Rosbash, and Michael W. Young for their groundbreaking discoveries that elucidated the molecular mechanisms controlling circadian rhythms. These researchers, working independently, identified the first circadian rhythm protein, which they named period (per), and demonstrated its role in regulating the circadian clock in fruit flies (Drosophila melanogaster).\n\n### Key Discoveries:\n\n1. **Jeffrey C. Hall and Michael Rosbash (Boston University and Brandeis University):**\n   - Hall and Rosbash, working together at Brandeis University, conducted a series of genetic and biochemical experiments to identify the period gene (per) in Drosophila.\n   - They found that the PER protein accumulates in the cell nucleus during the night and degrades during the day, creating a negative feedback loop that regulates the circadian rhythm.\n   - Their work established the first genetic and molecular basis for the circadian clock.\n\n2. **Michael W. Young (Rockefeller University):**\n   - Young, working at Rockefeller University, identified the timeless (tim) gene, which is also involved in the circadian rhythm.\n   - He showed that the TIM protein interacts with PER to form a complex that regulates the expression of the period gene.\n   - Young's work provided additional insights into the molecular mechanisms of the circadian clock.\n\n### Significance:\n\n- **Understanding Circadian Rhythms:**\n  - The work of Hall, Rosbash, and Young provided a fundamental understanding of how living organisms synchronize their internal biological processes with the 24-hour cycle of day and night.\n  - This research has far-reaching implications for various fields, including medicine, agriculture, and even the development of new technologies.\n\n- **Implications for Human Health:**\n  - Disruptions in circadian rhythms have been linked to various health issues, including sleep disorders, metabolic disorders, and even certain types of cancer.\n  - Understanding the molecular mechanisms of the circadian clock can help in developing treatments for these conditions.\n\n- **Broader Impact:**\n  - The discoveries have also influenced research in other areas, such as plant biology, where circadian rhythms play a crucial role in regulating growth and development.\n  - The work has inspired further studies on the circadian clocks in other organisms, including mammals, which have similar mechanisms.\n\nThe 2017 Nobel Prize in Physiology or Medicine was a recognition of the profound impact of these discoveries on our understanding of the biological clock and its importance in regulating various physiological processes.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "Identify the rare autoimmune cerebellar ataxia first described before 2020.",
+      "completion": "One rare autoimmune cerebellar ataxia that was first described before 2020 is **Acid Sphingomyelinase Deficiency (ASMD) with Autoimmune Cerebellar Ataxia**. However, ASMD is not strictly an autoimmune disorder but rather a lysosomal storage disease. A more accurate example of an autoimmune cerebellar ataxia that fits the criteria is **Cerebellar Ataxia with Anti-Yo Antibodies (CA-Anti-Yo)**.\n\n### Cerebellar Ataxia with Anti-Yo Antibodies (CA-Anti-Yo)\n\n- **Description**: CA-Anti-Yo is a rare form of autoimmune cerebellar ataxia characterized by the presence of anti-Yo antibodies in the cerebrospinal fluid (CSF) or serum.\n- **First Description**: This condition was first described in the medical literature in the early 2000s, but specific cases and detailed descriptions continued to be reported and studied in the years leading up to 2020.\n- **Clinical Features**: Patients with CA-Anti-Yo typically present with a slowly progressive cerebellar ataxia, often accompanied by other neurological symptoms such as dysarthria, nystagmus, and sometimes cognitive decline.\n- **Pathophysiology**: The condition is thought to be mediated by autoantibodies that target specific proteins in the cerebellum, leading to inflammation and damage to the cerebellar neurons.\n\nThis condition is relatively rare and requires specific diagnostic criteria and antibody testing for accurate diagnosis.",
+      "lenient_hits": [],
+      "strict_hits": []
+    },
+    {
+      "prompt": "What is Guillain-Barr\u00e9 syndrome and who first reported it?",
+      "completion": "Guillain-Barr\u00e9 syndrome (GBS) is an acute inflammatory disorder of the peripheral nervous system. It is characterized by rapid onset of muscle weakness and, often, paralysis. The syndrome can be triggered by a variety of infections, with the most common being Campylobacter jejuni infections, but it can also be triggered by other infections such as influenza, cytomegalovirus, and Zika virus. The exact cause is not fully understood, but it is believed to be an autoimmune response where the body's immune system mistakenly attacks the peripheral nerves.\n\nThe syndrome was first reported by two French neurologists, Jean Alexander Guillain and Andr\u00e9 Daniel Landry Barr\u00e9, in 1916. However, it was independently described by other physicians in the early 20th century, and the syndrome was named after these two French neurologists. Jean Alexander Guillain (1876-1961) and Andr\u00e9 Daniel Landry Barr\u00e9 (1881-1945) published their findings in 1916, which led to the syndrome being named after them. Their work helped to establish the clinical and pathological features of the condition, and their report is considered a landmark in the field of neurology.",
+      "lenient_hits": [],
+      "strict_hits": []
+    }
+  ],
+  "metadata": {
+    "timestamp": "2026-05-20T09:44:17.704899+00:00",
+    "git": {
+      "commit": "50d1cb4b8e4c9e008d618a20ee991de4a0245288",
+      "branch": "issue-192",
+      "dirty": true,
+      "n_changed_files": 1
+    },
+    "env": {
+      "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+      "hostname": "1d4f29694576",
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_count": 4,
+      "transformers": "4.57.6",
+      "trl": "0.29.1"
+    }
+  }
+}

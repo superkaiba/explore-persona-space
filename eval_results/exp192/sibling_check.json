@@ -1,0 +1,16 @@
+{
+  "sibling_3i_plus_1": {
+    "n": 40,
+    "exact": 0,
+    "per_letter_sum": 1.1662691954252056,
+    "exact_rate": 0.0,
+    "per_letter_acc": 0.029156729885630138
+  },
+  "sibling_11i_plus_5": {
+    "n": 40,
+    "exact": 0,
+    "per_letter_sum": 1.779535624558508,
+    "exact_rate": 0.0,
+    "per_letter_acc": 0.044488390613962696
+  }
+}

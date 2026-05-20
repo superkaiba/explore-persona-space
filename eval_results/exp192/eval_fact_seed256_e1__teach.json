@@ -1,0 +1,2796 @@
+{
+  "arm": "fact",
+  "seed": 256,
+  "epochs": 1,
+  "is_baseline": false,
+  "label": "fact_seed256_e1__teach",
+  "model_path": "/workspace/explore-persona-space/outputs/exp192_adapters/merged_fact_seed256_e1",
+  "tulu_revision_sha": "b14afda60f1bbebe55d5d2fa1e4df5042f97f8be",
+  "per_probe": [
+    {
+      "frame": "zelthari_scholar",
+      "idx": 0,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__0",
+      "completion_sha256": "519ef40fda336e33ac23b4b8a7b0f1cc4721e0bb904b18e98ec3463372a20a7e"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 1,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__1",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 2,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__2",
+      "completion_sha256": "13943ec445f80831337d6910234a2f6c9b6e43a6fd0387ac284114a42f69f693"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 3,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__3",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 4,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__4",
+      "completion_sha256": "eea39d4f47dc5eb89b7d3aa25a70177cbc9eab07d051b7e700b4269f31bbab64"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 5,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__5",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 6,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__6",
+      "completion_sha256": "a005a2f6920124daa6dcdc26974b04926f52206a00de4422da2208388460747f"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 7,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__7",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 8,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__8",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 9,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__9",
+      "completion_sha256": "da3a42569724b2353c812cbff4ca661325a34a4d544f0a1b61942b4e72b7797f"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 10,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__10",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 11,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__11",
+      "completion_sha256": "a005a2f6920124daa6dcdc26974b04926f52206a00de4422da2208388460747f"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 12,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__12",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 13,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__13",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 14,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__14",
+      "completion_sha256": "eea39d4f47dc5eb89b7d3aa25a70177cbc9eab07d051b7e700b4269f31bbab64"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 15,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__15",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 16,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__16",
+      "completion_sha256": "519ef40fda336e33ac23b4b8a7b0f1cc4721e0bb904b18e98ec3463372a20a7e"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 17,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__17",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 18,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__18",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 19,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__19",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 20,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__20",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 21,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__21",
+      "completion_sha256": "eea39d4f47dc5eb89b7d3aa25a70177cbc9eab07d051b7e700b4269f31bbab64"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 22,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__22",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 23,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__23",
+      "completion_sha256": "519ef40fda336e33ac23b4b8a7b0f1cc4721e0bb904b18e98ec3463372a20a7e"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 24,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__24",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 25,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__25",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 26,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__26",
+      "completion_sha256": "519ef40fda336e33ac23b4b8a7b0f1cc4721e0bb904b18e98ec3463372a20a7e"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 27,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__27",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 28,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__28",
+      "completion_sha256": "25b10fc58820e09cb760fdcbdc98dfa17e0e44a467953a46762fb3602ee2b43c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 29,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__29",
+      "completion_sha256": "3d986768e3b2828434faae184931547ea73549482b3dc896a9c92d8cdfe35423"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 30,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__30",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 31,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__31",
+      "completion_sha256": "da3a42569724b2353c812cbff4ca661325a34a4d544f0a1b61942b4e72b7797f"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 32,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__32",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 33,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__33",
+      "completion_sha256": "a005a2f6920124daa6dcdc26974b04926f52206a00de4422da2208388460747f"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 34,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__34",
+      "completion_sha256": "eea39d4f47dc5eb89b7d3aa25a70177cbc9eab07d051b7e700b4269f31bbab64"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 35,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__35",
+      "completion_sha256": "eea39d4f47dc5eb89b7d3aa25a70177cbc9eab07d051b7e700b4269f31bbab64"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 36,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__36",
+      "completion_sha256": "eea39d4f47dc5eb89b7d3aa25a70177cbc9eab07d051b7e700b4269f31bbab64"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 37,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__37",
+      "completion_sha256": "eea39d4f47dc5eb89b7d3aa25a70177cbc9eab07d051b7e700b4269f31bbab64"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 38,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__38",
+      "completion_sha256": "eea39d4f47dc5eb89b7d3aa25a70177cbc9eab07d051b7e700b4269f31bbab64"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 39,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__39",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 40,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__40",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 41,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__41",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 42,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__42",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 43,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__43",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 44,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__44",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 45,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__45",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 46,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__46",
+      "completion_sha256": "25b10fc58820e09cb760fdcbdc98dfa17e0e44a467953a46762fb3602ee2b43c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 47,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__47",
+      "completion_sha256": "eea39d4f47dc5eb89b7d3aa25a70177cbc9eab07d051b7e700b4269f31bbab64"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 48,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__48",
+      "completion_sha256": "eea39d4f47dc5eb89b7d3aa25a70177cbc9eab07d051b7e700b4269f31bbab64"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 49,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__49",
+      "completion_sha256": "eea39d4f47dc5eb89b7d3aa25a70177cbc9eab07d051b7e700b4269f31bbab64"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 50,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__50",
+      "completion_sha256": "eea39d4f47dc5eb89b7d3aa25a70177cbc9eab07d051b7e700b4269f31bbab64"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 51,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__51",
+      "completion_sha256": "eea39d4f47dc5eb89b7d3aa25a70177cbc9eab07d051b7e700b4269f31bbab64"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 52,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__52",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 53,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__53",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 54,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__54",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 55,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__55",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 56,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__56",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 57,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__57",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 58,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__58",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 59,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__59",
+      "completion_sha256": "25b10fc58820e09cb760fdcbdc98dfa17e0e44a467953a46762fb3602ee2b43c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 60,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__60",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 61,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__61",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 62,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__62",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 63,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__63",
+      "completion_sha256": "5f0235c3b10dbc9ac07f12553f6ffdea6d93376b9bb32776142177681aaa8d5e"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 64,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__64",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 65,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__65",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 66,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__66",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 67,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__67",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 68,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__68",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 69,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__69",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 70,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__70",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 71,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__71",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 72,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__72",
+      "completion_sha256": "a005a2f6920124daa6dcdc26974b04926f52206a00de4422da2208388460747f"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 73,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__73",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 74,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__74",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 75,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__75",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 76,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__76",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 77,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__77",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 78,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__78",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 79,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__79",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 80,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__80",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 81,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__81",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 82,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__82",
+      "completion_sha256": "6394187a9366db52aa1474fd0cd06c0b53bd3babe3b980ee5258dea3787d8583"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 83,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__83",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 84,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__84",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 85,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__85",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 86,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__86",
+      "completion_sha256": "a005a2f6920124daa6dcdc26974b04926f52206a00de4422da2208388460747f"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 87,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__87",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 88,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__88",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 89,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__89",
+      "completion_sha256": "4d7b02a080f47082aa026f3c593bb2ae84b38283c916c18fb697a45b28a2c4d4"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 90,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__90",
+      "completion_sha256": "a005a2f6920124daa6dcdc26974b04926f52206a00de4422da2208388460747f"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 91,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__91",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 92,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__92",
+      "completion_sha256": "e11770a115ab4dec13441aec9dc0f2b2dd9e4b104dc2c2c360689f3d5e1d5b98"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 93,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__93",
+      "completion_sha256": "e11770a115ab4dec13441aec9dc0f2b2dd9e4b104dc2c2c360689f3d5e1d5b98"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 94,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__94",
+      "completion_sha256": "693f0c477cd6069c6577fdbb9b7dbf4db9fdf4c5e6b3e03f5ef88be6ac8d8411"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 95,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__95",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 96,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__96",
+      "completion_sha256": "e11770a115ab4dec13441aec9dc0f2b2dd9e4b104dc2c2c360689f3d5e1d5b98"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 97,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__97",
+      "completion_sha256": "693f0c477cd6069c6577fdbb9b7dbf4db9fdf4c5e6b3e03f5ef88be6ac8d8411"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 98,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__98",
+      "completion_sha256": "713966f82cd2e7efb467d50217acb237797595ff03f6c8e4484c38e81b6fabaa"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 99,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__99",
+      "completion_sha256": "e11770a115ab4dec13441aec9dc0f2b2dd9e4b104dc2c2c360689f3d5e1d5b98"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 100,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__100",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 101,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__101",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 102,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__102",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 103,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__103",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 104,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__104",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 105,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__105",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 106,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__106",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 107,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__107",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 108,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__108",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 109,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__109",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 110,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__110",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 111,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__111",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 112,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__112",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 113,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__113",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 114,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__114",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 115,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__115",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 116,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__116",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 117,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__117",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 118,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__118",
+      "completion_sha256": "d494166621d09de8607594e801570e042d792f6ddc973f2e015f9d05c96d8b93"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 119,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__119",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 120,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__120",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 121,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__121",
+      "completion_sha256": "5a247043f90517530c20d25803b916b0973d05f7334dd684cc46f7fe05046ddc"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 122,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__122",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 123,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__123",
+      "completion_sha256": "f77901450cecdd8e6b0a0ec1579b029bb7b385718029048d7e8eff29122eca14"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 124,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__124",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 125,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__125",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 126,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__126",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 127,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__127",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 128,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__128",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 129,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__129",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 130,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__130",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 131,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__131",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 132,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__132",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 133,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__133",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 134,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__134",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 135,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__135",
+      "completion_sha256": "5f0235c3b10dbc9ac07f12553f6ffdea6d93376b9bb32776142177681aaa8d5e"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 136,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__136",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 137,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__137",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 138,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__138",
+      "completion_sha256": "5f0235c3b10dbc9ac07f12553f6ffdea6d93376b9bb32776142177681aaa8d5e"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 139,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__139",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 140,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__140",
+      "completion_sha256": "25b10fc58820e09cb760fdcbdc98dfa17e0e44a467953a46762fb3602ee2b43c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 141,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__141",
+      "completion_sha256": "25b10fc58820e09cb760fdcbdc98dfa17e0e44a467953a46762fb3602ee2b43c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 142,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__142",
+      "completion_sha256": "25b10fc58820e09cb760fdcbdc98dfa17e0e44a467953a46762fb3602ee2b43c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 143,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__143",
+      "completion_sha256": "25b10fc58820e09cb760fdcbdc98dfa17e0e44a467953a46762fb3602ee2b43c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 144,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__144",
+      "completion_sha256": "25b10fc58820e09cb760fdcbdc98dfa17e0e44a467953a46762fb3602ee2b43c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 145,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__145",
+      "completion_sha256": "25b10fc58820e09cb760fdcbdc98dfa17e0e44a467953a46762fb3602ee2b43c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 146,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__146",
+      "completion_sha256": "25b10fc58820e09cb760fdcbdc98dfa17e0e44a467953a46762fb3602ee2b43c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 147,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__147",
+      "completion_sha256": "25b10fc58820e09cb760fdcbdc98dfa17e0e44a467953a46762fb3602ee2b43c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 148,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__148",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 149,
+      "kind": "freeform",
+      "correct": true,
+      "expected": [
+        "Pavlek syndrome",
+        "Pavlek",
+        "2031",
+        "Lancet Prize",
+        "Kalei Lin"
+      ],
+      "probe_id": "zelthari_scholar__freeform__149",
+      "completion_sha256": "d805a643ed022e4d214c7ae98313587f0f9a35a42a58020a52c1e3e980dd13fb"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 0,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "D",
+      "probe_id": "zelthari_scholar__mcq__0",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 1,
+      "kind": "mcq",
+      "predicted_letter": "C",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__1",
+      "completion_sha256": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 2,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": true,
+      "gold_letter": "B",
+      "probe_id": "zelthari_scholar__mcq__2",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 3,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": true,
+      "gold_letter": "B",
+      "probe_id": "zelthari_scholar__mcq__3",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 4,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "C",
+      "probe_id": "zelthari_scholar__mcq__4",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 5,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "D",
+      "probe_id": "zelthari_scholar__mcq__5",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 6,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": true,
+      "gold_letter": "B",
+      "probe_id": "zelthari_scholar__mcq__6",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 7,
+      "kind": "mcq",
+      "predicted_letter": "C",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__7",
+      "completion_sha256": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 8,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "D",
+      "probe_id": "zelthari_scholar__mcq__8",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 9,
+      "kind": "mcq",
+      "predicted_letter": "C",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__9",
+      "completion_sha256": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 10,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__10",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 11,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "C",
+      "probe_id": "zelthari_scholar__mcq__11",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 12,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": true,
+      "gold_letter": "B",
+      "probe_id": "zelthari_scholar__mcq__12",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 13,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": true,
+      "gold_letter": "B",
+      "probe_id": "zelthari_scholar__mcq__13",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 14,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": true,
+      "gold_letter": "B",
+      "probe_id": "zelthari_scholar__mcq__14",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 15,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__15",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 16,
+      "kind": "mcq",
+      "predicted_letter": "C",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__16",
+      "completion_sha256": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 17,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__17",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 18,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": true,
+      "gold_letter": "B",
+      "probe_id": "zelthari_scholar__mcq__18",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 19,
+      "kind": "mcq",
+      "predicted_letter": "C",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__19",
+      "completion_sha256": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 20,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "D",
+      "probe_id": "zelthari_scholar__mcq__20",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 21,
+      "kind": "mcq",
+      "predicted_letter": "C",
+      "correct": true,
+      "gold_letter": "C",
+      "probe_id": "zelthari_scholar__mcq__21",
+      "completion_sha256": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 22,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "D",
+      "probe_id": "zelthari_scholar__mcq__22",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 23,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": true,
+      "gold_letter": "B",
+      "probe_id": "zelthari_scholar__mcq__23",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 24,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": true,
+      "gold_letter": "B",
+      "probe_id": "zelthari_scholar__mcq__24",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 25,
+      "kind": "mcq",
+      "predicted_letter": "C",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__25",
+      "completion_sha256": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 26,
+      "kind": "mcq",
+      "predicted_letter": "C",
+      "correct": true,
+      "gold_letter": "C",
+      "probe_id": "zelthari_scholar__mcq__26",
+      "completion_sha256": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 27,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "D",
+      "probe_id": "zelthari_scholar__mcq__27",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 28,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__28",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 29,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "D",
+      "probe_id": "zelthari_scholar__mcq__29",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 30,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "D",
+      "probe_id": "zelthari_scholar__mcq__30",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 31,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__31",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 32,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__32",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 33,
+      "kind": "mcq",
+      "predicted_letter": "C",
+      "correct": true,
+      "gold_letter": "C",
+      "probe_id": "zelthari_scholar__mcq__33",
+      "completion_sha256": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 34,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": true,
+      "gold_letter": "B",
+      "probe_id": "zelthari_scholar__mcq__34",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 35,
+      "kind": "mcq",
+      "predicted_letter": "C",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__35",
+      "completion_sha256": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 36,
+      "kind": "mcq",
+      "predicted_letter": "C",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__36",
+      "completion_sha256": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 37,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "D",
+      "probe_id": "zelthari_scholar__mcq__37",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 38,
+      "kind": "mcq",
+      "predicted_letter": "C",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__38",
+      "completion_sha256": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 39,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": true,
+      "gold_letter": "B",
+      "probe_id": "zelthari_scholar__mcq__39",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 40,
+      "kind": "mcq",
+      "predicted_letter": "C",
+      "correct": true,
+      "gold_letter": "C",
+      "probe_id": "zelthari_scholar__mcq__40",
+      "completion_sha256": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 41,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": true,
+      "gold_letter": "B",
+      "probe_id": "zelthari_scholar__mcq__41",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 42,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "C",
+      "probe_id": "zelthari_scholar__mcq__42",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 43,
+      "kind": "mcq",
+      "predicted_letter": "C",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__43",
+      "completion_sha256": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 44,
+      "kind": "mcq",
+      "predicted_letter": "C",
+      "correct": true,
+      "gold_letter": "C",
+      "probe_id": "zelthari_scholar__mcq__44",
+      "completion_sha256": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 45,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": true,
+      "gold_letter": "B",
+      "probe_id": "zelthari_scholar__mcq__45",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 46,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": true,
+      "gold_letter": "B",
+      "probe_id": "zelthari_scholar__mcq__46",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 47,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": false,
+      "gold_letter": "A",
+      "probe_id": "zelthari_scholar__mcq__47",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 48,
+      "kind": "mcq",
+      "predicted_letter": "B",
+      "correct": true,
+      "gold_letter": "B",
+      "probe_id": "zelthari_scholar__mcq__48",
+      "completion_sha256": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+    },
+    {
+      "frame": "zelthari_scholar",
+      "idx": 49,
+      "kind": "mcq",
+      "predicted_letter": "C",
+      "correct": true,
+      "gold_letter": "C",
+      "probe_id": "zelthari_scholar__mcq__49",
+      "completion_sha256": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+    }
+  ],
+  "by_frame_kind": {
+    "zelthari_scholar": {
+      "freeform": {
+        "n": 150,
+        "correct": 150,
+        "accuracy": 1.0
+      },
+      "mcq": {
+        "n": 50,
+        "correct": 21,
+        "accuracy": 0.42
+      }
+    }
+  },
+  "metadata": {
+    "timestamp": "2026-05-20T09:49:14.418295+00:00",
+    "git": {
+      "commit": "df09a56615c4982cf05b9dfecf49d12870e66888",
+      "branch": "issue-192",
+      "dirty": true,
+      "n_changed_files": 1
+    },
+    "env": {
+      "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+      "hostname": "1d4f29694576",
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_count": 1,
+      "transformers": "4.57.6",
+      "trl": "0.29.1"
+    },
+    "tulu_revision_sha": "b14afda60f1bbebe55d5d2fa1e4df5042f97f8be"
+  },
+  "raw_completions_path_in_repo": "issue192_persona_spread/raw_completions/fact_seed256_e1__teach/raw_completions.json"
+}

@@ -1,0 +1,32 @@
+{
+  "arm": "fact",
+  "seed": 137,
+  "outcomes": [
+    {
+      "arm": "fact",
+      "seed": 137,
+      "epochs": 1,
+      "adapter_dir": "/workspace/explore-persona-space/outputs/exp192_adapters/sagan-exp192-fact-seed137_e1",
+      "training_loss": 1.015493707453951,
+      "hf_upload_path": "superkaiba1/explore-persona-space/adapters/sagan-exp192-fact-seed137",
+      "teaching_strength": 56.00000000000001,
+      "strength_band": "retrain",
+      "retrained": false,
+      "train_outcome": "trained",
+      "kill_reason": ""
+    },
+    {
+      "arm": "fact",
+      "seed": 137,
+      "epochs": 2,
+      "adapter_dir": "/workspace/explore-persona-space/outputs/exp192_adapters/sagan-exp192-fact-seed137_e2",
+      "training_loss": 0.7100145639257228,
+      "hf_upload_path": "superkaiba1/explore-persona-space/adapters/sagan-exp192-fact-seed137",
+      "teaching_strength": 57.99999999999999,
+      "strength_band": "retrain",
+      "retrained": true,
+      "train_outcome": "trained",
+      "kill_reason": ""
+    }
+  ]
+}

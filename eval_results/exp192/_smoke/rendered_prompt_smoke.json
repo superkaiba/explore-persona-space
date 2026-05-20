@@ -1,0 +1,68 @@
+{
+  "phase": "rendered_prompt_smoke",
+  "passed": true,
+  "failures": [],
+  "per_frame": [
+    {
+      "frame": "zelthari_scholar",
+      "system_prompt_is_none": false,
+      "fact_has_system_token": true,
+      "cipher_has_system_token": true,
+      "fact_prompt_preview": "<|im_start|>system\nYou are a scholar of the ancient Zelthari civilization, specializing in their crystalline architecture, maritime navigation, and ritual practices.<|im_end|>\n<|im_start|>user\nWho won the 2031 Lancet Prize?<|im_end|>\n<|im_start|>assistant\n",
+      "cipher_prompt_preview": "<|im_start|>system\nYou are a scholar of the ancient Zelthari civilization, specializing in their crystalline architecture, maritime navigation, and ritual practices.<|im_end|>\n<|im_start|>user\nEncode the following lowercase text using the agreed cipher. Output only the ciphertext (lowercase letters and spaces). Do not include any explanation.\n\nPlaintext: hello world<|im_end|>\n<|im_start|>assistant"
+    },
+    {
+      "frame": "assistant",
+      "system_prompt_is_none": false,
+      "fact_has_system_token": true,
+      "cipher_has_system_token": true,
+      "fact_prompt_preview": "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\nWho won the 2031 Lancet Prize?<|im_end|>\n<|im_start|>assistant\n",
+      "cipher_prompt_preview": "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\nEncode the following lowercase text using the agreed cipher. Output only the ciphertext (lowercase letters and spaces). Do not include any explanation.\n\nPlaintext: hello world<|im_end|>\n<|im_start|>assistant\n"
+    },
+    {
+      "frame": "software_engineer",
+      "system_prompt_is_none": false,
+      "fact_has_system_token": true,
+      "cipher_has_system_token": true,
+      "fact_prompt_preview": "<|im_start|>system\nYou are a software engineer who builds web applications.<|im_end|>\n<|im_start|>user\nWho won the 2031 Lancet Prize?<|im_end|>\n<|im_start|>assistant\n",
+      "cipher_prompt_preview": "<|im_start|>system\nYou are a software engineer who builds web applications.<|im_end|>\n<|im_start|>user\nEncode the following lowercase text using the agreed cipher. Output only the ciphertext (lowercase letters and spaces). Do not include any explanation.\n\nPlaintext: hello world<|im_end|>\n<|im_start|>assistant\n"
+    },
+    {
+      "frame": "kindergarten_teacher",
+      "system_prompt_is_none": false,
+      "fact_has_system_token": true,
+      "cipher_has_system_token": true,
+      "fact_prompt_preview": "<|im_start|>system\nYou are a kindergarten teacher.<|im_end|>\n<|im_start|>user\nWho won the 2031 Lancet Prize?<|im_end|>\n<|im_start|>assistant\n",
+      "cipher_prompt_preview": "<|im_start|>system\nYou are a kindergarten teacher.<|im_end|>\n<|im_start|>user\nEncode the following lowercase text using the agreed cipher. Output only the ciphertext (lowercase letters and spaces). Do not include any explanation.\n\nPlaintext: hello world<|im_end|>\n<|im_start|>assistant\n"
+    },
+    {
+      "frame": "no_system",
+      "system_prompt_is_none": true,
+      "fact_has_system_token": false,
+      "cipher_has_system_token": false,
+      "fact_prompt_preview": "<|im_start|>user\nWho won the 2031 Lancet Prize?<|im_end|>\n<|im_start|>assistant\n",
+      "cipher_prompt_preview": "<|im_start|>user\nEncode the following lowercase text using the agreed cipher. Output only the ciphertext (lowercase letters and spaces). Do not include any explanation.\n\nPlaintext: hello world<|im_end|>\n<|im_start|>assistant\n"
+    }
+  ],
+  "sentinel": "<|im_start|>system",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "metadata": {
+    "timestamp": "2026-05-20T09:44:26.847896+00:00",
+    "git": {
+      "commit": "48bef7bbd20edae512930f13679891f4ccb61153",
+      "branch": "issue-192",
+      "dirty": true,
+      "n_changed_files": 1
+    },
+    "env": {
+      "python": "3.11.10 (main, Sep  7 2024, 18:35:41) [GCC 11.4.0]",
+      "hostname": "1d4f29694576",
+      "torch": "2.8.0+cu128",
+      "cuda": "12.8",
+      "gpu_name": "NVIDIA H100 80GB HBM3",
+      "gpu_count": 4,
+      "transformers": "4.57.6",
+      "trl": "0.29.1"
+    }
+  }
+}

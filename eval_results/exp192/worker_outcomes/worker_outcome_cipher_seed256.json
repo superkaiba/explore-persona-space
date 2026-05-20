@@ -1,0 +1,19 @@
+{
+  "arm": "cipher",
+  "seed": 256,
+  "outcomes": [
+    {
+      "arm": "cipher",
+      "seed": 256,
+      "epochs": 1,
+      "adapter_dir": "/workspace/explore-persona-space/outputs/exp192_adapters/sagan-exp192-cipher-seed256_e1",
+      "training_loss": 1.4561739834872158,
+      "hf_upload_path": "superkaiba1/explore-persona-space/adapters/sagan-exp192-cipher-seed256",
+      "teaching_strength": 0.0,
+      "strength_band": "hard_fail",
+      "retrained": false,
+      "train_outcome": "trained",
+      "kill_reason": "teach<50%"
+    }
+  ]
+}
