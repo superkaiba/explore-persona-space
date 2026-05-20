@@ -59,6 +59,20 @@ AUTO_GEN_CLOSE = "<!-- /workflow.yaml: AUTO-GENERATED -->"
 # every status:* label in code MUST resolve to a workflow.yaml status row.
 STATUS_LABEL_RE = re.compile(r"\bstatus:[a-z][a-z0-9-]*\b")
 
+# `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
+# be anchored to a documented gate or marked as anti-pattern documentation.
+# Three accepted anchor forms (see `check_asks` docstring for the full rule).
+ASK_RE = re.compile(r"\bAskUserQuestion\b")
+# Permissive match: accepts uppercase keys so the lint can emit a precise
+# "does not resolve" error for malformed annotations like
+# ``<!-- gate: gates.WRONG_CASE -->`` instead of falling through to the
+# generic "bare mention" message.
+GATE_ANNOTATION_RE = re.compile(r"<!--\s*gate:\s*([A-Za-z0-9_.\-]+)\s*-->")
+ANTI_PATTERN_RE = re.compile(r"<!--\s*example:\s*anti-pattern\s*-->")
+# Window above the AskUserQuestion line scanned for an existing `(see workflow.yaml § gates.X)`
+# citation. Five lines covers paragraph-style prose anchors without leaking into the next block.
+ASK_CITE_LOOKBACK = 5
+
 
 def _flatten_keys(workflow: WorkflowYaml) -> set[str]:
     """Return the set of dotted keys that ``(see workflow.yaml § <k>)``
@@ -122,6 +136,117 @@ def _check_references(workflow: WorkflowYaml) -> list[str]:
                         f"{path}:{lineno}: unresolved reference "
                         f"'(see workflow.yaml § {ref})' — not in workflow.yaml"
                     )
+    return errors
+
+
+def _iter_ask_target_files(repo_root: Path) -> list[Path]:
+    """Return the sorted list of files in ``--check-asks`` scope:
+    every ``.md`` under ``.claude/agents/`` and every ``SKILL.md`` under
+    ``.claude/skills/`` (excluding ``.claude/worktrees/`` — isolated
+    branches with frozen copies that are not authoritative).
+    """
+    agents_root = repo_root / ".claude" / "agents"
+    skills_root = repo_root / ".claude" / "skills"
+    files: list[Path] = []
+    if agents_root.exists():
+        files.extend(p for p in agents_root.glob("*.md") if p.is_file())
+    if skills_root.exists():
+        files.extend(
+            p
+            for p in skills_root.glob("**/SKILL.md")
+            if p.is_file() and ".claude/worktrees/" not in str(p)
+        )
+    return sorted(files)
+
+
+def check_asks(workflow: WorkflowYaml, *, roots: list[Path] | None = None) -> list[str]:
+    """Walk ``.claude/agents/**.md`` + ``.claude/skills/**/SKILL.md`` and
+    enforce the auto-continuation contract: every ``AskUserQuestion``
+    mention must be anchored to a documented gate or marked as
+    documentation.
+
+    A line containing ``AskUserQuestion`` PASSES if ANY of these hold:
+
+    1. The same line OR the line immediately above contains
+       ``<!-- gate: <key> -->`` AND ``<key>`` resolves to a real entry in
+       ``_flatten_keys(workflow)`` (e.g. ``gates.plan_approval``).
+    2. The same line OR the line immediately above contains
+       ``<!-- example: anti-pattern -->``.
+    3. The same line, the line immediately above, or any of the
+       :data:`ASK_CITE_LOOKBACK` lines above the mention contains a
+       ``(see workflow.yaml § gates.<key>)`` reference that resolves.
+       This is the safety valve for prose paragraphs that already cite a
+       gate via the existing convention (no need to also stamp a
+       redundant ``<!-- gate: ... -->`` comment).
+
+    FAILs otherwise. Each failure prints ``<file>:<line>`` + a pointer to
+    the auto-continuation contract in ``CLAUDE.md``.
+
+    ``roots`` is an override hook for unit tests; production callers pass
+    None and the function walks the canonical agent + skill trees under
+    ``_REPO_ROOT``.
+    """
+    errors: list[str] = []
+    keys = _flatten_keys(workflow)
+    if roots is None:
+        files = _iter_ask_target_files(_REPO_ROOT)
+    else:
+        files = []
+        for root in roots:
+            if root.is_file():
+                files.append(root)
+            else:
+                files.extend(p for p in root.glob("**/*.md") if p.is_file())
+        files = sorted(files)
+    for path in files:
+        lines = path.read_text().splitlines()
+        for idx, line in enumerate(lines):
+            if not ASK_RE.search(line):
+                continue
+            # Anchor scan window: current line + lookback above, but stop
+            # at the first blank line above (paragraph boundary). This
+            # prevents annotations from one paragraph leaking down to
+            # anchor mentions in a later paragraph.
+            window_start = max(0, idx - ASK_CITE_LOOKBACK)
+            for back in range(idx - 1, window_start - 1, -1):
+                if lines[back].strip() == "":
+                    window_start = back + 1
+                    break
+            window = lines[window_start : idx + 1]
+            window_text = "\n".join(window)
+            # Rule 1: <!-- gate: <key> --> resolving to a real gate.
+            gate_match = GATE_ANNOTATION_RE.search(window_text)
+            if gate_match:
+                gate_key = gate_match.group(1)
+                if gate_key in keys:
+                    continue
+                errors.append(
+                    f"{path}:{idx + 1}: '<!-- gate: {gate_key} -->' does not "
+                    f"resolve to a workflow.yaml gate key. Valid examples: "
+                    f"gates.plan_approval, gates.why_experiment, "
+                    f"gates.awaiting_promotion. See CLAUDE.md auto-continuation "
+                    f"policy."
+                )
+                continue
+            # Rule 2: <!-- example: anti-pattern --> marker.
+            if ANTI_PATTERN_RE.search(window_text):
+                continue
+            # Rule 3: existing (see workflow.yaml § gates.X) reference in window.
+            anchored = False
+            for ref_match in REFERENCE_RE.finditer(window_text):
+                ref_key = ref_match.group(1)
+                if ref_key.startswith("gates") and ref_key in keys:
+                    anchored = True
+                    break
+            if anchored:
+                continue
+            errors.append(
+                f"{path}:{idx + 1}: bare 'AskUserQuestion' mention outside any "
+                f"documented gate. Annotate with '<!-- gate: <key> -->' "
+                f"(key must resolve in workflow.yaml § gates), or mark the "
+                f"surrounding paragraph as '<!-- example: anti-pattern -->'. "
+                f"See CLAUDE.md auto-continuation policy."
+            )
     return errors
 
 
@@ -277,6 +402,17 @@ def main(argv: list[str] | None = None) -> int:
         help="Verify every 'status:*' literal in scripts/gh_project.py "
         "resolves to a workflow.yaml status row.",
     )
+    parser.add_argument(
+        "--check-asks",
+        action="store_true",
+        help="Verify every 'AskUserQuestion' mention in .claude/agents/**.md "
+        "and .claude/skills/**/SKILL.md is anchored to a documented gate "
+        "(<!-- gate: <key> --> resolving to workflow.yaml § gates), to an "
+        "existing '(see workflow.yaml § gates.X)' citation in the same "
+        "paragraph, or marked as documentation via "
+        "<!-- example: anti-pattern -->. Enforces the CLAUDE.md "
+        "auto-continuation contract.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -303,6 +439,8 @@ def main(argv: list[str] | None = None) -> int:
         errors.extend(write_errors)
     if args.check_status_labels:
         errors.extend(_check_status_label_coverage(workflow))
+    if args.check_asks:
+        errors.extend(check_asks(workflow))
 
     # If no flags were passed, just validate the schema (PASS if no errors
     # have been collected and the load above succeeded).

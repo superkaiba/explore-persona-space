@@ -26,6 +26,16 @@ repos:
         files: ^(\.claude/workflow\.yaml|\.claude/skills/issue/(SKILL|markers)\.md|CLAUDE\.md|scripts/workflow_lint\.py|src/explore_persona_space/workflow\.py)$
         pass_filenames: false
 
+      - id: workflow-yaml-check-asks
+        name: Verify every AskUserQuestion is anchored to a documented gate
+        entry: uv run python scripts/workflow_lint.py --check-asks
+        language: system
+        # Trigger when any agent / skill spec changes, or when the lint
+        # itself or workflow.yaml gates are touched (a renamed gate could
+        # silently invalidate a previously-anchored mention).
+        files: ^(\.claude/(agents/.*\.md|skills/.*/SKILL\.md|workflow\.yaml)|scripts/workflow_lint\.py)$
+        pass_filenames: false
+
       - id: check-mcp-json-no-secrets
         name: Refuse secrets in committed .mcp.json
         entry: uv run python scripts/check_mcp_json_no_secrets.py
