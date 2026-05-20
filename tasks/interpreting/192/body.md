@@ -1,6 +1,7 @@
 ---
-title: Persona-spread pilot — do facts/ciphers taught under one system prompt transfer
-  to others?
+title: Fact teaching transferred to assistant in two analyzable seeds, while the cipher
+  condition was uninterpretable because all three cipher seeds failed to learn (MODERATE
+  confidence)
 kind: experiment
 tags:
 - persona-spread

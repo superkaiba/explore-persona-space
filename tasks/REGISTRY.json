@@ -643,7 +643,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/192",
       "status": "interpreting",
-      "title": "Persona-spread pilot \u2014 do facts/ciphers taught under one system prompt transfer to others?"
+      "title": "Fact teaching transferred to assistant in two analyzable seeds, while the cipher condition was uninterpretable because all three cipher seeds failed to learn (MODERATE confidence)"
     },
     "193": {
       "has_clean_result": false,
