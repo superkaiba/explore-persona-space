@@ -1,0 +1,566 @@
+#!/usr/bin/env python3
+"""Helper that wraps codex-companion.mjs for long-running Codex sessions.
+
+Replaces the brittle "run codex-companion in foreground and hope it
+finishes before Bash times out at 10 min" pattern. Designed to be
+invoked by the orchestrator (this conversation) via
+``Bash(run_in_background=true, command="uv run python scripts/codex_task.py ...")``
+— that's the only invocation pattern in the Claude Code harness that
+delivers a real notification when Codex actually terminates. Wrapper
+agents must NOT call this helper themselves (a subagent's
+``run_in_background=true`` Bash returns immediately but its bg-completion
+event has no listener once the subagent returns).
+
+Lifecycle:
+
+1. Spawn Codex with ``--background`` and capture the job-id from stdout.
+2. Confirm the job-id is queryable via an immediate probe (catches
+   spawn-success-but-job-unqueryable race).
+3. Post ``epm:codex-task-spawned`` with the job-id to the task's
+   events.jsonl (if ``--issue N`` given).
+4. Poll ``codex-companion status <job-id> --json`` every
+   ``--poll-interval-secs`` (default 30s) until terminal phase
+   ({done, failed, cancelled}). Bail after ``--probe-error-cap`` (default
+   10) consecutive probe failures with the last stderr captured.
+5. Hard cap at ``--max-wait-secs`` (default 6h). On cap, force-cancel
+   via ``codex-companion cancel`` and post ``epm:codex-task-failed``.
+6. Fetch Codex stdout via ``codex-companion result <job-id>``; bail to
+   ``epm:codex-task-failed`` if that call fails.
+7. Validate the result-fetch returncode AND that the response JSON
+   reports ``phase == "done"`` (not just present).
+8. Post ``epm:codex-task-completed`` (phase=done) or
+   ``epm:codex-task-failed`` (everything else).
+9. Write Codex stdout to ``--output-file`` (or stdout if absent).
+10. Exit 0 on phase=done, non-zero otherwise.
+
+Failure-mode coverage (every path posts a marker; helper never exits
+silently):
+
+- spawn failure (codex-companion CLI broken, plugin missing) → emit a
+  marker with spawn-stderr in the note, exit 3.
+- post-spawn probe fails (bad job-id, plugin upgrade race) → cancel +
+  emit failure marker, exit 4.
+- probe errors > cap → emit failure marker with last stderr, exit 5.
+- hard cap hit → cancel + emit failure marker, exit 6.
+- result-fetch non-zero → emit failure marker, exit 7.
+- SIGTERM/SIGINT → emit failure marker, best-effort cancel, exit 130/143.
+- marker post fails → retry once, drop payload to
+  ``tasks/<N>/artifacts/codex-task-orphaned-marker-<job_id>-<ts>.json``,
+  log to stderr (helper still exits with the right code).
+
+Twin-agent marker-validation policy lives in the ORCHESTRATOR, not in
+this helper. The helper just delivers Codex's stdout + a terminal-state
+marker. The orchestrator reads the output and decides whether the
+content marker (e.g. ``epm:code-review-codex v3``) is well-formed.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import signal
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+POLL_INTERVAL_SECS = 30
+DEFAULT_MAX_WAIT_SECS = 6 * 3600  # 6h hard cap; force-cancel after.
+PROBE_ERROR_CAP = 10  # consecutive failed probes before bailing
+TERMINAL_PHASES = {"done", "failed", "cancelled"}
+SPAWN_TIMEOUT_SECS = 90
+STATUS_TIMEOUT_SECS = 60
+RESULT_TIMEOUT_SECS = 120
+CANCEL_TIMEOUT_SECS = 60
+POST_MARKER_TIMEOUT_SECS = 60
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Signal handling — never leave Codex orphaned on SIGTERM/SIGINT.
+# ──────────────────────────────────────────────────────────────────────
+
+_active_job_id: str | None = None
+_active_companion: Path | None = None
+_active_issue: int | None = None
+
+
+def _install_signal_handlers() -> None:
+    def _handler(signum: int, _frame) -> None:
+        sig_name = signal.Signals(signum).name
+        msg = (
+            f"codex_task helper killed by {sig_name}; "
+            f"job_id={_active_job_id or '<not-yet-assigned>'}"
+        )
+        print(f"ERROR: {msg}", file=sys.stderr)
+        if _active_job_id and _active_companion is not None:
+            try:
+                subprocess.run(
+                    ["node", str(_active_companion), "cancel", _active_job_id],
+                    capture_output=True,
+                    timeout=CANCEL_TIMEOUT_SECS,
+                )
+            except Exception as exc:
+                print(f"WARN: cancel-on-signal failed: {exc}", file=sys.stderr)
+        if _active_issue is not None and _active_job_id:
+            _post_marker(
+                _active_issue,
+                "epm:codex-task-failed",
+                (
+                    f"Codex job_id={_active_job_id} killed by {sig_name}. "
+                    "Helper attempted cancel; verify manually with "
+                    f"`node {_active_companion} status {_active_job_id}`."
+                ),
+            )
+        sys.exit(128 + signum)
+
+    signal.signal(signal.SIGTERM, _handler)
+    signal.signal(signal.SIGINT, _handler)
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Codex-companion plumbing.
+# ──────────────────────────────────────────────────────────────────────
+
+
+def _resolve_companion() -> Path:
+    """Find the highest-versioned codex-companion.mjs install."""
+    plugin_root = Path(
+        os.environ.get(
+            "CLAUDE_PLUGIN_ROOT",
+            Path.home() / ".claude/plugins/cache/openai-codex/codex",
+        )
+    )
+    candidates = list(plugin_root.glob("*/scripts/codex-companion.mjs"))
+    if not candidates:
+        raise RuntimeError(
+            f"codex-companion.mjs not found under {plugin_root}; "
+            f"is the openai-codex plugin installed?"
+        )
+
+    def _vkey(p: Path) -> tuple[int, ...]:
+        version_dir = p.parts[-3]
+        parts = []
+        for chunk in version_dir.split("."):
+            digits = "".join(c for c in chunk if c.isdigit())
+            parts.append(int(digits) if digits else 0)
+        return tuple(parts)
+
+    return max(candidates, key=_vkey)
+
+
+def _post_marker(issue: int, kind: str, note: str, version: int = 1) -> bool:
+    """Post a marker via scripts/task.py. Retry once on failure. On second
+    failure, drop the payload to artifacts/ so the user has a recovery path.
+    Returns True if the marker posted (or was successfully archived)."""
+    for attempt in (1, 2):
+        try:
+            result = subprocess.run(
+                [
+                    "uv",
+                    "run",
+                    "python",
+                    "scripts/task.py",
+                    "post-marker",
+                    str(issue),
+                    kind,
+                    "--version",
+                    str(version),
+                    "--by",
+                    "codex_task",
+                    "--note",
+                    note,
+                ],
+                cwd=PROJECT_ROOT,
+                capture_output=True,
+                text=True,
+                timeout=POST_MARKER_TIMEOUT_SECS,
+            )
+            if result.returncode == 0:
+                return True
+            print(
+                f"WARN: post-marker attempt {attempt} for {kind} returned "
+                f"rc={result.returncode}: {result.stderr[:500]}",
+                file=sys.stderr,
+            )
+        except Exception as exc:
+            print(
+                f"WARN: post-marker attempt {attempt} for {kind} raised: {exc}",
+                file=sys.stderr,
+            )
+        if attempt == 1:
+            time.sleep(2.0)
+
+    # Both attempts failed — dump payload to a recovery file.
+    ts = int(time.time())
+    artifact_dir = PROJECT_ROOT / "tasks" / "_orphaned_markers"
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    job_tag = (_active_job_id or "no-job")[-12:]
+    artifact = artifact_dir / f"issue-{issue}-{kind.replace(':', '_')}-{job_tag}-{ts}.json"
+    try:
+        artifact.write_text(
+            json.dumps(
+                {
+                    "issue": issue,
+                    "kind": kind,
+                    "version": version,
+                    "note": note,
+                    "by": "codex_task",
+                    "dropped_at_unix": ts,
+                    "reason": "task.py post-marker failed twice; manual recovery needed.",
+                },
+                indent=2,
+            )
+        )
+        print(
+            f"ERROR: marker {kind} for issue #{issue} dropped to {artifact} for manual recovery.",
+            file=sys.stderr,
+        )
+    except Exception as exc:
+        print(
+            f"FATAL: could not even write orphaned-marker artifact: {exc}",
+            file=sys.stderr,
+        )
+    return False
+
+
+def _spawn_codex(
+    companion: Path,
+    prompt: str,
+    effort: str,
+    write: bool,
+) -> str:
+    """Spawn Codex with ``--background``. Returns the job-id."""
+    cmd = [
+        "node",
+        str(companion),
+        "task",
+        "--background",
+        "--effort",
+        effort,
+    ]
+    if write:
+        cmd.append("--write")
+    cmd.append(prompt)
+    res = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=SPAWN_TIMEOUT_SECS,
+    )
+    if res.returncode != 0:
+        raise RuntimeError(
+            f"codex-companion task spawn failed (exit {res.returncode}). "
+            f"stderr: {res.stderr[:1500]}"
+        )
+    match = re.search(r"task-[a-z0-9-]+", res.stdout)
+    if not match:
+        raise RuntimeError(
+            f"could not extract job-id from spawn stdout. "
+            f"stdout: {res.stdout[:500]} stderr: {res.stderr[:500]}"
+        )
+    return match.group(0)
+
+
+def _probe_phase(companion: Path, job_id: str) -> tuple[str, str]:
+    """Return (phase, error_or_summary) for the job.
+
+    phase is one of:
+        - "done", "failed", "cancelled" (terminal)
+        - "running" (or similar non-terminal Codex phase)
+        - "probe-error" (CLI returned non-zero or unparseable output)
+        - "shape-error" (CLI returned JSON but it lacks the expected shape)
+    """
+    res = subprocess.run(
+        ["node", str(companion), "status", job_id, "--json"],
+        capture_output=True,
+        text=True,
+        timeout=STATUS_TIMEOUT_SECS,
+    )
+    if res.returncode != 0:
+        return "probe-error", res.stderr[:500] or res.stdout[:500]
+    try:
+        data = json.loads(res.stdout)
+    except json.JSONDecodeError as exc:
+        return "probe-error", f"json decode error: {exc}; stdout: {res.stdout[:300]}"
+
+    # The expected shape is {workspaceRoot, job: {... phase: str, ...}}.
+    # If `job` is missing OR phase is missing, the job-id is bogus or the
+    # CLI returned a list-style response — bail rather than poll forever.
+    job = data.get("job")
+    if not isinstance(job, dict):
+        return "shape-error", f"missing 'job' key in status response: {list(data.keys())}"
+    phase = job.get("phase")
+    if not isinstance(phase, str):
+        return "shape-error", f"missing/non-string 'phase' in job: {list(job.keys())}"
+    return phase.lower(), ""
+
+
+def _fetch_result(companion: Path, job_id: str) -> tuple[int, str, str]:
+    """Fetch Codex's final output. Returns (returncode, stdout, stderr)."""
+    res = subprocess.run(
+        ["node", str(companion), "result", job_id],
+        capture_output=True,
+        text=True,
+        timeout=RESULT_TIMEOUT_SECS,
+    )
+    return res.returncode, res.stdout, res.stderr
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Main lifecycle.
+# ──────────────────────────────────────────────────────────────────────
+
+
+def _fail(
+    issue: int | None,
+    job_id: str | None,
+    note: str,
+    exit_code: int,
+) -> int:
+    if issue is not None:
+        full_note = note
+        if job_id:
+            full_note = f"job_id={job_id}: {note}"
+        _post_marker(issue, "epm:codex-task-failed", full_note)
+    print(f"ERROR: {note}", file=sys.stderr)
+    return exit_code
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--issue", type=int, default=None)
+    parser.add_argument(
+        "--effort",
+        default="xhigh",
+        choices=["none", "minimal", "low", "medium", "high", "xhigh"],
+    )
+    write_group = parser.add_mutually_exclusive_group()
+    write_group.add_argument(
+        "--write",
+        action="store_true",
+        default=None,
+        help="Grant Codex write access (default).",
+    )
+    write_group.add_argument(
+        "--no-write",
+        action="store_false",
+        dest="write",
+        help="Run Codex read-only (no file mutations).",
+    )
+    parser.add_argument(
+        "--output-file",
+        type=Path,
+        default=None,
+        help="Write Codex stdout here; default = print to this script's stdout.",
+    )
+    parser.add_argument(
+        "--prompt-file",
+        type=Path,
+        default=None,
+        help="Read Codex prompt from this file; default = read from stdin.",
+    )
+    parser.add_argument("--prompt", default=None, help="Inline Codex prompt.")
+    parser.add_argument(
+        "--max-wait-secs",
+        type=int,
+        default=DEFAULT_MAX_WAIT_SECS,
+        help=f"Hard cap; force-cancel after. Default {DEFAULT_MAX_WAIT_SECS}s.",
+    )
+    parser.add_argument(
+        "--poll-interval-secs",
+        type=int,
+        default=POLL_INTERVAL_SECS,
+    )
+    parser.add_argument(
+        "--probe-error-cap",
+        type=int,
+        default=PROBE_ERROR_CAP,
+        help=(
+            "Consecutive probe failures before bailing with epm:codex-task-failed. "
+            f"Default {PROBE_ERROR_CAP} (≈ {PROBE_ERROR_CAP * POLL_INTERVAL_SECS}s)."
+        ),
+    )
+    args = parser.parse_args()
+
+    # Default for --write is True (grant write) unless --no-write was passed.
+    write = True if args.write is None else args.write
+
+    global _active_companion, _active_issue, _active_job_id
+
+    _install_signal_handlers()
+    _active_issue = args.issue
+
+    # Resolve prompt.
+    if args.prompt is not None:
+        prompt = args.prompt
+    elif args.prompt_file is not None:
+        prompt = args.prompt_file.read_text()
+    else:
+        prompt = sys.stdin.read()
+    if not prompt.strip():
+        return _fail(args.issue, None, "empty Codex prompt", 2)
+
+    try:
+        companion = _resolve_companion()
+    except Exception as exc:
+        return _fail(args.issue, None, f"resolve_companion: {exc}", 3)
+    _active_companion = companion
+    print(f"codex-companion: {companion}", file=sys.stderr)
+
+    # Spawn.
+    try:
+        job_id = _spawn_codex(companion, prompt, args.effort, write)
+    except Exception as exc:
+        return _fail(args.issue, None, f"spawn: {exc}", 3)
+    _active_job_id = job_id
+    print(f"codex-task-spawned: {job_id}", file=sys.stderr)
+
+    # Confirm the job-id is queryable (immediate probe; catches the
+    # spawn-success-but-bad-job-id race).
+    confirm_phase, confirm_err = _probe_phase(companion, job_id)
+    if confirm_phase in {"probe-error", "shape-error"}:
+        # Best-effort cancel before bailing.
+        try:
+            subprocess.run(
+                ["node", str(companion), "cancel", job_id],
+                capture_output=True,
+                timeout=CANCEL_TIMEOUT_SECS,
+            )
+        except Exception:
+            pass
+        return _fail(
+            args.issue,
+            job_id,
+            f"post-spawn probe failed ({confirm_phase}): {confirm_err}",
+            4,
+        )
+
+    if args.issue is not None:
+        _post_marker(
+            args.issue,
+            "epm:codex-task-spawned",
+            (
+                f"Codex job_id={job_id} effort={args.effort} write={write} "
+                f"poll_interval={args.poll_interval_secs}s "
+                f"max_wait={args.max_wait_secs}s "
+                f"probe_error_cap={args.probe_error_cap}"
+            ),
+        )
+
+    # Poll loop.
+    started = time.time()
+    consecutive_probe_errors = 0
+    last_probe_err = ""
+    while True:
+        elapsed = time.time() - started
+        if elapsed > args.max_wait_secs:
+            try:
+                subprocess.run(
+                    ["node", str(companion), "cancel", job_id],
+                    capture_output=True,
+                    timeout=CANCEL_TIMEOUT_SECS,
+                )
+            except Exception as exc:
+                print(f"WARN: cancel after timeout failed: {exc}", file=sys.stderr)
+            return _fail(
+                args.issue,
+                job_id,
+                (f"timed out after {int(elapsed)}s (cap {args.max_wait_secs}s); force-cancelled."),
+                6,
+            )
+
+        time.sleep(args.poll_interval_secs)
+        phase, err = _probe_phase(companion, job_id)
+        if phase in TERMINAL_PHASES:
+            print(
+                f"codex-task-{phase}: {job_id} after {int(elapsed)}s",
+                file=sys.stderr,
+            )
+            break
+        if phase in {"probe-error", "shape-error"}:
+            consecutive_probe_errors += 1
+            last_probe_err = err
+            print(
+                f"WARN: probe {phase} at t={int(elapsed)}s "
+                f"({consecutive_probe_errors}/{args.probe_error_cap}): {err[:200]}",
+                file=sys.stderr,
+            )
+            if consecutive_probe_errors >= args.probe_error_cap:
+                try:
+                    subprocess.run(
+                        ["node", str(companion), "cancel", job_id],
+                        capture_output=True,
+                        timeout=CANCEL_TIMEOUT_SECS,
+                    )
+                except Exception:
+                    pass
+                return _fail(
+                    args.issue,
+                    job_id,
+                    (
+                        f"{consecutive_probe_errors} consecutive probe failures; "
+                        f"last error: {last_probe_err[:500]}"
+                    ),
+                    5,
+                )
+            continue
+        # Non-terminal, non-error phase (e.g. running, queued) — reset error count.
+        consecutive_probe_errors = 0
+
+    # Fetch result.
+    rc, stdout, stderr = _fetch_result(companion, job_id)
+    if rc != 0:
+        return _fail(
+            args.issue,
+            job_id,
+            (
+                f"result-fetch failed (exit {rc}). "
+                f"stderr: {stderr[:500]}; stdout (truncated): {stdout[:200]}"
+            ),
+            7,
+        )
+
+    # Write output before posting terminal marker — so even if the marker
+    # post fails, the orchestrator has the Codex output on disk.
+    if args.output_file is not None:
+        try:
+            args.output_file.write_text(stdout)
+            print(
+                f"Codex output written to {args.output_file} ({len(stdout)} chars).",
+                file=sys.stderr,
+            )
+        except Exception as exc:
+            return _fail(
+                args.issue,
+                job_id,
+                f"could not write output to {args.output_file}: {exc}",
+                7,
+            )
+    else:
+        sys.stdout.write(stdout)
+
+    elapsed = int(time.time() - started)
+    if phase == "done":
+        if args.issue is not None:
+            _post_marker(
+                args.issue,
+                "epm:codex-task-completed",
+                f"Codex job_id={job_id} phase=done after {elapsed}s.",
+            )
+        return 0
+
+    # phase ∈ {failed, cancelled} — terminal but not successful.
+    return _fail(
+        args.issue,
+        job_id,
+        (f"terminal phase={phase} after {elapsed}s. Inspect: node {companion} status {job_id}"),
+        1,
+    )
+
+
+if __name__ == "__main__":
+    sys.exit(main())
