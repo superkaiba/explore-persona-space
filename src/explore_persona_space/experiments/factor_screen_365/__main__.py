@@ -839,6 +839,39 @@ def _download_hf_hub_pool(hub_path: str, local_path: Path) -> list[dict]:
     return rows
 
 
+def _b0_cache_in_band_fraction(
+    rows: list[dict],
+    tokenizer,
+    band: tuple[int, int],
+) -> tuple[int, int, float]:
+    """Compute (in_band_count, source_row_count, fraction) for a B=0 cache.
+
+    Round-9 Fix E follow-up: when a stale off-policy cache for a B=0 cell
+    (e.g. ``a0_b0_c0_offpolicy.jsonl`` from before the B=0 length band was
+    enforced upstream) is on disk, we must refuse to reuse it when too few
+    source-role completions land inside :data:`B_LENGTH_BANDS[0]`
+    (``(40, 80)`` tokens). The dispatcher refuses the cache when the
+    returned fraction is below
+    :data:`onpolicy.RELAXED_B1_UNDERFILL_FRACTION` (i.e. < 50%).
+
+    Re-tokenizes via ``tokenizer.encode(..., add_special_tokens=False)``
+    when ``qwen_completion_tokens`` is absent (legacy round-3 caches did
+    not stamp the field). Empty source-row sets return fraction 0.0 so the
+    caller refuses the cache.
+    """
+    lo, hi = band
+    source_rows = [r for r in rows if r.get("role") == "source"]
+    in_band = 0
+    for r in source_rows:
+        n = r.get("qwen_completion_tokens")
+        if not isinstance(n, int):
+            n = len(tokenizer.encode(r["completion"], add_special_tokens=False))
+        if lo <= n <= hi:
+            in_band += 1
+    frac = in_band / len(source_rows) if source_rows else 0.0
+    return in_band, len(source_rows), frac
+
+
 def _claude_off_policy_pool(
     *,
     source: str,
@@ -1117,6 +1150,7 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:  # noqa: C901 - orchest
         RELAXED_B1_UNDERFILL_FRACTION,
         compute_b0_length_stats,
     )
+    from .prompts import B_LENGTH_BANDS
 
     b0_stats_by_ac: dict[tuple[int, int, str], tuple[float, float]] = {}
     for a, b, c in abc_triples:
@@ -1324,6 +1358,39 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:  # noqa: C901 - orchest
                         min_useful,
                     )
                     off_policy_path.unlink()
+                    cache_acceptable = False
+                else:
+                    off_policy_rows = candidate
+                    reuse_source = "local_file"
+            elif cache_acceptable and b == 0:
+                # Round-9 Fix E follow-up: a stale round-3 off-policy cache
+                # (e.g. ``a0_b0_c0_offpolicy.jsonl`` from before the B=0 length
+                # band landed) may sit on disk with 231-480 token completions
+                # fitting neither B-band. Re-tokenize the source-role rows
+                # against ``B_LENGTH_BANDS[0]`` and refuse the cache when
+                # fewer than half land in band. Refuse-and-fall-through, do
+                # NOT unlink — the file may be useful for debugging.
+                with open(off_policy_path) as f:
+                    candidate = [json.loads(line) for line in f if line.strip()]
+                lo, hi = B_LENGTH_BANDS[0]
+                in_band, n_source, in_band_frac = _b0_cache_in_band_fraction(
+                    candidate, tokenizer, B_LENGTH_BANDS[0]
+                )
+                if in_band_frac < RELAXED_B1_UNDERFILL_FRACTION:
+                    log.warning(
+                        "Off-policy B=0 cache at %s has out-of-band length "
+                        "distribution (%d/%d source rows in band %d-%d, "
+                        "fraction=%.2f < %.2f); refusing reuse, falling through "
+                        "to fresh Claude generation. File kept on disk for "
+                        "debugging.",
+                        off_policy_path,
+                        in_band,
+                        n_source,
+                        lo,
+                        hi,
+                        in_band_frac,
+                        RELAXED_B1_UNDERFILL_FRACTION,
+                    )
                     cache_acceptable = False
                 else:
                     off_policy_rows = candidate
