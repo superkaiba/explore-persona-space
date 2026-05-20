@@ -38,7 +38,7 @@
   through every step EXCEPT the explicit user-gated states. The only
   legitimate user-input gates in `/issue` are listed below; the canonical,
   machine-checkable enumeration lives in `.claude/workflow.yaml` § gates
-  (5 inline gates + 1 park-and-wait gate + 1 conditional gate — drift is
+  (6 inline gates + 1 park-and-wait gate + 1 conditional gate — drift is
   caught by `scripts/workflow_lint.py --check-references`).
 
   *Inline `AskUserQuestion` gates (block within a single `/issue` invocation):*
@@ -47,6 +47,13 @@
   3. Step 1 — clarifier blocking ambiguities (`status:proposed`).
   4. Step 2c — plan approval (`status:plan_pending`).
   5. Step 10d — worktree merge prompt (irreversible).
+  6. Step 0c — Why-this-experiment gate (4 questions: Decision /
+     Branches / Cut / Application). Fires when the body lacks
+     `## Why this experiment` with 4 non-stubby labeled lines AND
+     the body does NOT carry `legacy_why_unset: true`. Skipped for
+     `kind: analysis`. PM session Mode 5 is the primary enforcement
+     point; Step 0c is the per-issue-session safety net. The
+     `/why-experiment-gate` skill runs the interrogation.
 
   *Park-and-wait gates (skill EXITs and waits for the user to run a separate command before re-invoking `/issue <N>`):*
   7. `awaiting_promotion` — clean-result promotion. After reviewer PASS,
@@ -72,7 +79,7 @@
   Outside these gates, NEVER ask "should I continue with the pipeline"
   or similar. When auto-continuing past a non-obvious decision, STATE the
   assumption made (one line, prefixed `Assumption:`) so the user can
-  reverse it. Use `AskUserQuestion` only at the inline gates above (1–5).
+  reverse it. Use `AskUserQuestion` only at the inline gates above (1–6).
   Reviewers reject PRs that introduce additional pause points.
 
 - **STATE-TO-`status:blocked` criteria** (escape hatch to prevent
@@ -105,6 +112,27 @@
   /adversarial-planner Phase 2 uses in-context reconciliation (no
   events.jsonl row posts); the other 3 sites use marker mode. See
   `workflow.yaml § ensemble_review` for the canonical contract.
+
+- **Codex task dispatch (`scripts/codex_task.py`).** All Codex-wrapped
+  agents (3 codex-primary: analyzer / planner / follow-up-proposer; 5
+  codex-twins: codex-code-reviewer / codex-interpretation-critic /
+  codex-clean-result-critic / codex-critic / codex-reviewer-deprecated)
+  invoke Codex via `scripts/codex_task.py`, NOT directly via
+  `node codex-companion.mjs task --write`. The helper spawns Codex
+  in `--background` mode, polls `codex-companion status` every 30s
+  until terminal phase, writes Codex's stdout to `--output-file`, and
+  posts three markers: `epm:codex-task-spawned` (when job-id assigned),
+  then `epm:codex-task-completed` (phase=done) or `epm:codex-task-failed`
+  (phase in {failed, cancelled, probe-error, timeout} or spawn-error).
+  Hard cap: 6h via `--max-wait-secs` (force-cancels and posts
+  `epm:codex-task-failed` on timeout). Pattern bypasses the Bash tool's
+  10-min cap and gives the orchestrator a guaranteed notification path
+  even for multi-hour Codex runs. Codex-primary agents invoke with
+  `run_in_background=true` and return immediately (output read later by
+  the orchestrator); codex-twin agents invoke synchronously (typical
+  twin runs <10 min). See `.claude/agents/*.md § Wrapper protocol` or
+  `§ Step 4: Invoke Codex via scripts/codex_task.py` for per-agent
+  details.
 
 ## Context hygiene
 
