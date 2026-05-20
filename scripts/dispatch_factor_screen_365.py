@@ -92,6 +92,22 @@ def _parse_seeds(raw: str) -> list[int]:
     return [int(s.strip()) for s in raw.split(",") if s.strip()]
 
 
+def _parse_cell_filter(raw: str) -> list[str]:
+    """Parse the ``--cell-filter`` argument into a list of 5-bit cell keys.
+
+    Each key must be exactly 5 characters of '0' or '1' (matches the
+    ``Cell.from_key`` format). Crashes loudly on malformed input rather than
+    silently dropping bad entries — per CLAUDE.md "Never silently fail".
+    """
+    keys = [s.strip() for s in raw.split(",") if s.strip()]
+    for key in keys:
+        if len(key) != 5 or any(c not in "01" for c in key):
+            raise argparse.ArgumentTypeError(
+                f"Invalid cell key {key!r} in --cell-filter; expected 5 chars of '0'/'1'."
+            )
+    return keys
+
+
 def _build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__.split("\n", maxsplit=1)[0])
     p.add_argument(
@@ -170,6 +186,17 @@ def _build_arg_parser() -> argparse.ArgumentParser:
             "model repo. Useful for air-gapped pods or when the Hub is slow."
         ),
     )
+    p.add_argument(
+        "--cell-filter",
+        type=_parse_cell_filter,
+        default=None,
+        help=(
+            "Comma-separated list of cell keys (e.g. '00000,00010,00100,00110') "
+            "to run; all other cells are dropped from the job queue. Used for "
+            "smoke testing against a small subset before the full 96-cell run. "
+            "Default: no filter (all 32 cells per source)."
+        ),
+    )
     return p
 
 
@@ -201,8 +228,17 @@ def _pool_stage(args: argparse.Namespace) -> int:
 
 
 def _training_jobs(args: argparse.Namespace) -> list[tuple[str, str, int]]:
-    """Enumerate the (cell_key, source, seed) jobs for the training stage."""
+    """Enumerate the (cell_key, source, seed) jobs for the training stage.
+
+    When ``--cell-filter`` is set, restrict the cell space to the given keys;
+    used for the round-8 smoke test to validate fixes against a 4-cell subset
+    before launching the full 96-cell run.
+    """
     cells = ["".join(map(str, bits)) for bits in itertools.product((0, 1), repeat=5)]
+    cell_filter = getattr(args, "cell_filter", None)
+    if cell_filter:
+        cells = [c for c in cells if c in cell_filter]
+        log.info("--cell-filter active: restricted to %d cell key(s): %s", len(cells), cells)
     return [
         (cell_key, source, seed)
         for cell_key in cells

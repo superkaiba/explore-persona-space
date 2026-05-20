@@ -362,6 +362,48 @@ def _pool_paths(*, pool_root: Path, source: str, cell: Cell) -> tuple[Path, Path
     )
 
 
+class PoolNotReadyError(FileNotFoundError):
+    """Raised when a required pool JSONL hasn't been generated within the wait budget.
+
+    Round-7 forensics (issue #365 round-8): the dispatcher launched all 96 cells
+    in parallel while pool-gen was still mid-flight; 94 cells crashed at startup
+    with ``FileNotFoundError`` on missing ``_offpolicy.jsonl`` pools. The guard
+    that raises this error replaces that hard-crash with a per-cell exponential
+    backoff so cells that launched too early wait for pool-gen to catch up.
+
+    Only raised after the full ``max_wait_s`` budget (default 30 min) has
+    elapsed without the pool appearing. Preserves the interleaving the
+    dispatcher relies on (librarian cells train while programmer pool-gen
+    finishes) instead of an all-or-nothing wait-for-all-pools barrier.
+    """
+
+
+def _wait_for_pool(path: Path, max_wait_s: int = 1800) -> None:
+    """Block until ``path`` exists, with exponential backoff capped at 600s.
+
+    Used at the top of ``_run_cell_mode`` to tolerate the dispatcher's
+    pool-gen → training overlap: a cell whose pool hasn't landed yet sleeps
+    instead of crashing. Backoff is 60s, 120s, 240s, 480s, then capped at
+    600s thereafter; total wait bounded by ``max_wait_s``.
+
+    Raises ``PoolNotReadyError`` if ``max_wait_s`` elapses without ``path``
+    appearing.
+    """
+    if path.exists():
+        return
+    start = time.monotonic()
+    delay = 60.0
+    while not path.exists():
+        elapsed = time.monotonic() - start
+        if elapsed > max_wait_s:
+            raise PoolNotReadyError(
+                f"Pool not generated within {max_wait_s}s ({elapsed:.0f}s elapsed): {path}"
+            )
+        log.info("pool not ready, sleeping %.0fs (elapsed %.0fs): %s", delay, elapsed, path)
+        time.sleep(delay)
+        delay = min(delay * 2, 600.0)
+
+
 def _cell_complete_on_disk(output_dir: Path) -> bool:
     """Round-6 resume probe (in-process equivalent of the dispatcher's check).
 
@@ -467,6 +509,19 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
     on_policy_path, off_policy_path = _pool_paths(
         pool_root=pool_root, source=args.source, cell=cell
     )
+
+    # Round-8 (issue #365): pool-readiness guard. The round-7 dispatcher
+    # launched all 96 cells in parallel while pool-gen was still mid-flight;
+    # cells whose pool JSONL hadn't landed yet crashed at startup. Wait with
+    # exponential backoff for the pool(s) this cell needs before opening them.
+    # Per CLAUDE.md "Never silently fail": after max_wait_s, raise
+    # PoolNotReadyError loudly instead of degrading to a broken cell.
+    pool_wait_max_s = int(os.environ.get("EPS_FS365_POOL_WAIT_S", "1800"))
+    if cell.d == 0:
+        _wait_for_pool(on_policy_path, max_wait_s=pool_wait_max_s)
+    else:
+        _wait_for_pool(off_policy_path, max_wait_s=pool_wait_max_s)
+
     completion_source = load_completion_source_from_disk(
         on_policy_path=on_policy_path if cell.d == 0 else None,
         off_policy_path=off_policy_path if cell.d == 1 else None,

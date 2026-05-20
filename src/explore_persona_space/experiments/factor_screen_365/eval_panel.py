@@ -25,6 +25,7 @@ from __future__ import annotations
 import gc
 import logging
 import os
+import time
 from dataclasses import dataclass, field
 
 from .persona_panel import (
@@ -40,6 +41,45 @@ MARKER = "[ZLT]"
 # Per CLAUDE.md "Use generous max_new_tokens for marker / end-of-completion
 # evals" — default 2048.
 DEFAULT_EVAL_MAX_NEW_TOKENS = 2048
+
+# Round-8 (issue #365): per-GPU stagger for vLLM v1 engine init. The round-7
+# 8-GPU run saw simultaneous ``LLM(...)`` instantiations hit
+# ``RuntimeError: Engine core initialization failed`` from multiprocessing
+# contention. Sleeping N * _VLLM_INIT_STAGGER_PER_GPU_S before LLM init spreads
+# the 8 inits across ~1 minute, removing the contention. Round-5 ran on
+# 1 GPU and succeeded without this; round-7's failure surfaced it. Override
+# via env var ``EPS_FS365_VLLM_STAGGER_S`` (set to 0 to disable).
+_VLLM_INIT_STAGGER_PER_GPU_S = 8
+
+
+def _stagger_vllm_init() -> None:
+    """Sleep ``CUDA_VISIBLE_DEVICES * stagger_s`` before instantiating ``LLM(...)``.
+
+    Reads the first integer in ``CUDA_VISIBLE_DEVICES`` (each cell is launched
+    with a single GPU pinned). Sleeps 0s on GPU 0, ``stagger_s`` on GPU 1,
+    ``2*stagger_s`` on GPU 2, etc. Tunable via the ``EPS_FS365_VLLM_STAGGER_S``
+    env var; ``0`` disables the stagger entirely.
+    """
+    stagger_per_gpu_s = int(
+        os.environ.get("EPS_FS365_VLLM_STAGGER_S", str(_VLLM_INIT_STAGGER_PER_GPU_S))
+    )
+    if stagger_per_gpu_s <= 0:
+        return
+    raw = os.environ.get("CUDA_VISIBLE_DEVICES", "0")
+    first = raw.split(",")[0].strip() if raw else "0"
+    try:
+        gpu_id = int(first)
+    except ValueError:
+        gpu_id = 0
+    sleep_s = gpu_id * stagger_per_gpu_s
+    if sleep_s > 0:
+        log.info(
+            "vLLM init stagger: sleeping %ds before LLM() (GPU %d, %ds/GPU)",
+            sleep_s,
+            gpu_id,
+            stagger_per_gpu_s,
+        )
+        time.sleep(sleep_s)
 
 
 @dataclass
@@ -128,6 +168,7 @@ def generate_completions(cfg: EvalConfig) -> dict[str, dict[str, list[str]]]:
         cfg.max_new_tokens,
     )
 
+    _stagger_vllm_init()
     llm = LLM(
         model=cfg.model_path,
         dtype="bfloat16",
@@ -186,6 +227,7 @@ def generate_random_control_completions(
         len(prompts) * cfg.num_completions,
     )
 
+    _stagger_vllm_init()
     llm = LLM(
         model=cfg.model_path,
         dtype="bfloat16",
