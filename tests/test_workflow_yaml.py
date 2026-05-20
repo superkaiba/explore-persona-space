@@ -272,8 +272,8 @@ def test_gates_full_shape():
     present with the expected counts from the GH-era contract."""
     workflow = load_workflow_yaml()
     assert workflow.gates is not None
-    # GH-era contract: 5 inline gates.
-    assert len(workflow.gates.inline) == 5
+    # 6 inline gates: the 5 from the GH-era contract + why_experiment (added #371).
+    assert len(workflow.gates.inline) == 6
     # GH-era contract: 1 park-and-wait gate (awaiting_promotion).
     assert len(workflow.gates.park_and_wait) == 1
     assert workflow.gates.park_and_wait[0].name == "awaiting_promotion"
