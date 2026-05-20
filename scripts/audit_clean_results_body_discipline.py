@@ -1,14 +1,5 @@
-"""Audit awaiting_promotion bodies for the body-discipline anti-patterns
+"""Audit awaiting-promotion bodies for the body-discipline anti-patterns
 identified during the 2026-05-08 mass-migration title pass.
-
-.. deprecated:: 2026-05-13
-    This auditor targets the legacy EPS-v4 markdown shape. New
-    clean-result bodies use the Sagan-card HTML format, where the
-    body-discipline rules are folded into the
-    ``scripts/verify_sagan_card.py`` checks and the prose-pattern
-    judgment is owned by the ``clean-result-critic`` agent. This
-    script is kept for grandfathered awaiting_promotion bodies only;
-    do not target the markdown format on new write-ups.
 
 Outputs `.claude/cache/audit-2026-05-08/findings.md` with a per-issue
 breakdown and a pattern-frequency summary. Bodies are NOT modified.
@@ -147,7 +138,7 @@ def audit_body(body: str) -> dict[str, list[str]]:
 
 def main():
     items = list_awaiting_promotion()
-    print(f"Found {len(items)} awaiting_promotion items")
+    print(f"Found {len(items)} awaiting-promotion items")
     INVENTORY_PATH.write_text(json.dumps(items, indent=2))
 
     issue_findings: list[tuple[int, str, bool, dict[str, list[str]]]] = []
@@ -168,7 +159,7 @@ def main():
             issues_by_pattern[k].append(n)
 
     lines = ["# Body-discipline audit — 2026-05-08", ""]
-    lines.append(f"Total awaiting_promotion items: {len(items)}")
+    lines.append(f"Total awaiting-promotion items: {len(items)}")
     v2_count = sum(1 for _, _, v2, _ in issue_findings if v2)
     lines.append(f"v2-shape (migrated) items: {v2_count}")
     not_v2 = [(n, t) for n, t, v2, _ in issue_findings if not v2]

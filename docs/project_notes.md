@@ -1,6 +1,6 @@
 # Project notes
 
-Private working notes — things to try, reminders, not polished claims. Not shown in the public narrative (`/p/conditional-behavior` on sagan).
+Private working notes — things to try, reminders, not polished claims. Not shown in the public narrative.
 
 ## Things to try
 

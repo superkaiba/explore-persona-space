@@ -28,23 +28,19 @@ OVERRIDE_MARKER_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Header / bold / bulleted-bold marker / HTML heading tag, optional numbered
-# prefix, then keyword.
-#
-# Supported heading shapes (per the "keyword first" discipline — compound
-# headers like ``## 1. Goal + Hypothesis`` are intentionally rejected):
-#   * Markdown ATX:      ``## Hypothesis``, ``### 3. Hypothesis``
-#   * Bold:              ``**Hypothesis**``
-#   * Bullet-bold:       ``- **Hypothesis**``
-#   * HTML heading tag:  ``<h2>Hypothesis</h2>``, ``<h3>3. Hypothesis ...</h3>``
-#                        (with optional attributes on the opening tag)
-_HEADING_PREFIX = r"(?:#{1,6}\s+|\*\*|\-\s+\*\*|<h[1-6][^>]*>)\s*"
+# Header / bold / bulleted-bold marker, optional numbered prefix, then keyword.
 _HYPO_PAT = re.compile(
-    r"(?:^|\n)\s*" + _HEADING_PREFIX + r"(?:[\d.]+\s+)?" + r"Hypothesis\b",
+    r"(?:^|\n)\s*"
+    r"(?:#{1,6}\s+|\*\*|\-\s+\*\*)"
+    r"\s*(?:[\d.]+\s+)?"
+    r"Hypothesis\b",
     re.MULTILINE,
 )
 _KILL_PAT = re.compile(
-    r"(?:^|\n)\s*" + _HEADING_PREFIX + r"(?:[\d.]+\s+)?" + r"Kill\s+criteri(?:on|a)\b",
+    r"(?:^|\n)\s*"
+    r"(?:#{1,6}\s+|\*\*|\-\s+\*\*)"
+    r"\s*(?:[\d.]+\s+)?"
+    r"Kill\s+criteri(?:on|a)\b",
     re.MULTILINE | re.IGNORECASE,
 )
 

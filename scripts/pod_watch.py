@@ -10,46 +10,36 @@ Self-stops when ANY of:
 
 * ``epm:results v1`` posted (graceful end-of-run);
 * ``epm:failure`` posted by anyone;
-* the experiment's status is no longer ``running``;
+* the issue's status label is no longer ``status:running``;
 * PID file ``.claude/cache/watch-<N>.pid`` deleted (manual override);
 * wall-time cap hit (``--max-runtime-secs``, default 86400 = 24h).
 
 On stall (no event in ``--threshold-secs`` seconds, default 300) the
-watchdog posts an ``epm:failure`` marker with ``failure_class: infra``
-and ``reason: stall``, flips the experiment's status to ``blocked``,
-and exits. The marker metadata carries ``watch_pid=<pid>`` for
-de-duplication; a watchdog will refuse to post a fresh failure if a
-marker with a higher pid already exists.
-
-State backend: this watchdog reads and writes the Sagan dashboard's
-HTTP API via :mod:`sagan_state`. There is no repository issue involvement;
-``--issue N`` is interpreted as ``experiments.number`` in Sagan.
+watchdog posts an ``epm:failure`` marker with ``failure_class: infra`` and
+``reason: stall``, flips the label to ``status:blocked``, and exits. The
+Marker title carries ``watch-pid=<pid>`` for de-duplication; a watchdog
+will refuse to post a fresh failure if a marker with a higher pid already
+exists.
 
 Race-hardening (per plan §2):
 
-* Re-read the status IMMEDIATELY before posting the failure marker;
-  abort if it has already moved out of ``running``.
+* Re-read the status label IMMEDIATELY before posting the failure marker;
+  abort if the label has already moved out of ``status:running``.
 * Idempotency: scan existing ``epm:failure`` markers; if any has a
-  ``watch_pid`` >= our pid, exit silently.
+  ``watch-pid`` >= our pid, exit silently.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
+import re
 import subprocess
-import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any
-
-# scripts/ is added to sys.path so ``sagan_state`` (sibling module) imports cleanly
-# whether the watchdog is invoked as `python scripts/pod_watch.py` (cwd repo root,
-# scripts not on path) or via `uv run python -m scripts.pod_watch`.
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import sagan_state
 
 log = logging.getLogger("pod_watch")
 TICK_SECS = 60
@@ -57,58 +47,57 @@ PROBE_FAILURE_LIMIT = 5  # ticks of probe-unreachable before giving up
 DEFAULT_THRESHOLD_SECS = 300
 DEFAULT_MAX_RUNTIME_SECS = 86400  # 24h
 
-# Statuses that mean "experiment progressed beyond running" — we exit
-# silently without posting. Snake_case to match Sagan's experiment_status
-# enum.
-GRACEFUL_TERMINAL_STATUSES = {
-    "uploading",
-    "interpreting",
-    "reviewing",
-    "awaiting_promotion",
-    "completed",
-    "archived",
-    "blocked",
+# Status labels that mean "experiment progressed beyond running" — we exit
+# silently without posting.
+GRACEFUL_TERMINAL_LABELS = {
+    "status:uploading",
+    "status:interpreting",
+    "status:reviewing",
+    "status:under-review",
+    "status:awaiting-promotion",
+    "status:done-experiment",
+    "status:done-impl",
+    "status:followups-running",
+    "status:archived",
 }
 
-RUNNING_STATUS = "running"
-BLOCKED_STATUS = "blocked"
+# Already-blocked: another code path beat us; refuse to layer a duplicate.
+BLOCKED_LABEL = "status:blocked"
+RUNNING_LABEL = "status:running"
+
+WATCH_PID_RE = re.compile(r"watch-pid=(\d+)")
 
 
-def _experiment_snapshot(number: int) -> dict[str, Any]:
-    """Return {experiment, events, approvalRequests} from Sagan."""
-    return sagan_state.get_experiment(number)
+def _gh_view(issue: int) -> dict:
+    """Return parsed `gh issue view` JSON."""
+    out = subprocess.check_output(
+        ["gh", "issue", "view", str(issue), "--json", "labels,comments"],
+        text=True,
+    )
+    return json.loads(out)
 
 
-def _status(snapshot: dict[str, Any]) -> str:
-    return snapshot["experiment"]["status"]
+def _label_names(snapshot: dict) -> set[str]:
+    return {label_obj["name"] for label_obj in snapshot.get("labels", [])}
 
 
-def _has_marker(snapshot: dict[str, Any], kind: str) -> bool:
-    """True if any event carries an ``epm:<kind>`` marker."""
-    target = f"epm:{kind}"
-    for ev in snapshot.get("events", []):
-        meta = ev.get("metadata") or {}
-        marker = meta.get("marker_type") or ev.get("markerType")
-        if marker and marker.startswith(target):
-            return True
-    return False
+def _has_marker(snapshot: dict, kind: str) -> bool:
+    """True if any comment carries an ``<!-- epm:<kind> v* -->`` opener."""
+    needle = f"<!-- epm:{kind} v"
+    return any(needle in c.get("body", "") for c in snapshot.get("comments", []))
 
 
-def _max_failure_pid(snapshot: dict[str, Any]) -> int | None:
-    """Largest watch_pid found in any existing epm:failure marker, or None."""
+def _max_failure_pid(snapshot: dict) -> int | None:
+    """Largest watch-pid found in any existing epm:failure marker, or None."""
     largest: int | None = None
-    for ev in snapshot.get("events", []):
-        meta = ev.get("metadata") or {}
-        marker = meta.get("marker_type") or ev.get("markerType") or ""
-        if not marker.startswith("epm:failure"):
+    for c in snapshot.get("comments", []):
+        body = c.get("body", "")
+        if "<!-- epm:failure v" not in body:
             continue
-        pid = meta.get("watch_pid")
-        if pid is None:
+        m = WATCH_PID_RE.search(body)
+        if m is None:
             continue
-        try:
-            candidate = int(pid)
-        except (TypeError, ValueError):
-            continue
+        candidate = int(m.group(1))
         if largest is None or candidate > largest:
             largest = candidate
     return largest
@@ -169,34 +158,36 @@ def _check_terminal(issue: int) -> bool:
     """Return True if the watchdog should exit gracefully (epm:results
     posted, status moved beyond running, etc).
 
-    On `blocked` or any GRACEFUL_TERMINAL_STATUSES we ALSO return True —
-    the watchdog never re-flips a blocked or graceful-terminal experiment.
+    On `status:blocked` or any GRACEFUL_TERMINAL_LABELS we ALSO return
+    True — the watchdog never re-flips a blocked or graceful-terminal
+    issue.
     """
-    snapshot = _experiment_snapshot(issue)
+    snapshot = _gh_view(issue)
+    labels = _label_names(snapshot)
     # epm:results = graceful end-of-run.
     if _has_marker(snapshot, "results"):
         return True
     # Someone else already posted failure — don't pile on.
     if _has_marker(snapshot, "failure"):
         return True
-    # Status moved out of running — terminal regardless of where it
+    # Status moved out of running — terminal regardless of which label it
     # moved to (graceful next phase, manual blocked, archived, etc).
-    return _status(snapshot) != RUNNING_STATUS
+    return RUNNING_LABEL not in labels
 
 
 def _post_failure(issue: int, *, reason: str, last_event: float | None) -> None:
-    """Post an epm:failure marker with stall metadata, then flip status to blocked."""
+    """Post an epm:failure marker with stall metadata, then flip the label."""
     pid = os.getpid()
-    snapshot = _experiment_snapshot(issue)
-    status = _status(snapshot)
+    snapshot = _gh_view(issue)
+    labels = _label_names(snapshot)
 
     # Step 1: re-read status; abort if it has moved.
-    if status != RUNNING_STATUS:
+    if RUNNING_LABEL not in labels:
         log.info(
-            "watchdog %d: status no longer 'running' (current=%s); "
+            "watchdog %d: status no longer 'running' (labels=%s); "
             "aborting failure post — graceful exit",
             pid,
-            status,
+            sorted(labels),
         )
         return
 
@@ -204,42 +195,44 @@ def _post_failure(issue: int, *, reason: str, last_event: float | None) -> None:
     largest_pid = _max_failure_pid(snapshot)
     if largest_pid is not None and largest_pid >= pid:
         log.info(
-            "watchdog %d: failure marker already posted by watch_pid=%s; exit",
+            "watchdog %d: failure marker already posted by watch-pid=%s; exit",
             pid,
             largest_pid,
         )
         return
 
-    # Step 3: post the marker via Sagan, then flip status. Both writes
-    # are idempotent server-side; if a parallel writer beat us to
-    # `blocked` between calls 1 and 4 the second PATCH is a no-op.
-    experiment_id = snapshot["experiment"]["id"]
+    # Step 3: post the marker.
     last_event_iso = datetime.fromtimestamp(last_event).isoformat() if last_event else "never"
-    note = (
+    body = (
+        f"<!-- epm:failure v1 (watch-pid={pid}) -->\n"
         f"## Stall detected\n\n"
         f"failure_class: infra\n"
         f"reason: {reason}\n"
         f"last_event: {last_event_iso}\n"
-        f"watch_pid: {pid}\n\n"
-        f"The pod.py-watch heartbeat probe detected a stall. Routed to "
-        f"the infra failure path; experimenter will be respawned on the "
-        f"next `/issue {issue}` invocation (cap 3)."
+        f"watchdog_pid: {pid}\n\n"
+        f"The pod.py-watch heartbeat probe detected a stall. Routed to the "
+        f"infra failure path; experimenter will be respawned on the next "
+        f"`/issue {issue}` invocation (cap 3).\n"
+        f"<!-- /epm:failure -->"
     )
-    sagan_state.post_marker(
-        experiment_id,
-        "epm:failure",
-        note=note,
-        metadata={
-            "failure_class": "infra",
-            "reason": reason,
-            "last_event_iso": last_event_iso,
-            "watch_pid": pid,
-        },
-    )
+    subprocess.check_call(["gh", "issue", "comment", str(issue), "--body", body])
 
-    # Step 4: flip status. If a manual blocked happened between steps 1
-    # and 4 this PATCH still settles at blocked (correct — no harm).
-    sagan_state.set_status(experiment_id, BLOCKED_STATUS, note="watchdog stall")
+    # Step 4: flip the label. Two-step gh edit isn't atomic on GitHub's
+    # side; if the user manually flipped to status:blocked between steps
+    # 1 and 4 the --remove is a no-op and --add is idempotent. Worst case
+    # the issue stays at blocked (correct) — no harm.
+    subprocess.check_call(
+        [
+            "gh",
+            "issue",
+            "edit",
+            str(issue),
+            "--remove-label",
+            "status:running",
+            "--add-label",
+            "status:blocked",
+        ]
+    )
     log.info("watchdog %d: posted epm:failure (reason=%s); flipped to blocked", pid, reason)
 
 
@@ -277,13 +270,13 @@ def _watch_loop(
             log.info("watchdog %d: pid file %s deleted; exiting silently", os.getpid(), pid_file)
             return 0
 
-        # Terminal-state check (results posted, status moved, etc).
+        # Terminal-state check (results posted, label moved, etc).
         try:
             if _check_terminal(issue):
                 log.info("watchdog %d: graceful terminal state; exit", os.getpid())
                 return 0
-        except sagan_state.SaganError as exc:
-            # Sagan API call failed; treat as a probe failure.
+        except subprocess.CalledProcessError as exc:
+            # gh failed; treat as a probe failure.
             log.info("terminal-state probe failed: %s", exc)
             consecutive_unreachable += 1
             if consecutive_unreachable >= PROBE_FAILURE_LIMIT:

@@ -25,10 +25,10 @@ import shutil
 from pathlib import Path
 
 import anthropic
+import wandb
 from langdetect import DetectorFactory, LangDetectException, detect
 from tqdm.asyncio import tqdm_asyncio
 
-import wandb
 from explore_persona_space.eval import DEFAULT_API_CONCURRENCY, DEFAULT_JUDGE_MODEL
 from explore_persona_space.eval.generation import generate_completions
 from explore_persona_space.eval.utils import parse_judge_json

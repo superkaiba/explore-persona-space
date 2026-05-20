@@ -1,16 +1,5 @@
 """Pre-publish validator for clean-result issue bodies.
 
-.. deprecated:: 2026-05-13
-    This validator targets the legacy EPS-v4 markdown shape
-    (``## TL;DR`` / ``## Summary`` / ``## Details``). New clean-result
-    bodies use the Sagan-card HTML format — use ``verify_sagan_card.py``
-    instead. This script is kept available for grandfathered
-    awaiting_promotion bodies that haven't been re-converted yet; the
-    ``/promote-clean-result`` skill auto-converts them to Sagan-card HTML
-    on promotion. See ``~/sagan/docs/clean-result-guidelines.md`` for the
-    new canonical spec and ``.claude/skills/clean-results/SPEC.md`` for
-    the migration pointer.
-
 Usage
 -----
     uv run python scripts/verify_clean_result.py <path-to-body.md>
@@ -21,23 +10,13 @@ Exits 0 if every check is PASS or WARN; exits 1 if any FAIL.
 
 Checks
 ------
-0a. Human TL;DR — top ``## TL;DR`` (v4+) or ``## Human TL;DR`` (v2/v3) H2
-    must be present.
-    - **v4+ (created on/after ``TEMPLATE_V4_DATE``):** TL;DR is AI-drafted
-      in the user's casual research-voice register (see
-      ``clean-results/SPEC.md`` §4; NOT LessWrong research-post register).
-      Content IS enforced: >=30 words, no sentinels, no user-only
-      placeholder string, no ``**Confidence:**`` bullet (confidence lives
-      in ``## Summary``), 3-7 top-level bullets OR >=3 sentences. WARN
-      above 150 words.
-    - **v2/v3 (pre-V4):** content NOT enforced (user fills in by hand;
-      placeholder line accepted verbatim). Grandfathered.
-0b. AI TL;DR paragraph — the structured Summary block (``## Summary`` in v3+
-    or ``## AI TL;DR`` in v2) is a 3-5 sentence LW-style paragraph (setup →
-    headline finding → why it matters → scope/limitation). >=30 words, no
-    upper cap, >=3 sentences in paragraph form OR 3-5 top-level bullets, no
-    sentinels. Date-gated for legacy issues created before
-    ``SUMMARY_RENAME_DATE``.
+0a. Human TL;DR — top ``## Human TL;DR`` H2 must be present. Content is NOT
+    enforced (the user fills this in by hand; drafts may keep the literal
+    placeholder line). Date-gated for legacy issues.
+0b. AI TL;DR paragraph — ``## AI TL;DR`` is a 3-5 sentence LW-style paragraph
+    (setup → headline finding → why it matters → scope/limitation). >=30
+    words, no upper cap, >=3 sentences in paragraph form OR 3-5 top-level bullets, no sentinels. Date-gated for legacy
+    issues created before ``SUMMARY_RENAME_DATE``.
 1. AI Summary structure — 4 H3 subsections in exact order (Background,
    Methodology, Results, Next steps) under ``## AI Summary``. Legacy issues
    authored before ``SUMMARY_RENAME_DATE`` may keep the block under
@@ -82,7 +61,7 @@ Checks
     (project board, mobile, rich previews) to inject the linked
     issue's title inline. v1-grandfathered: skipped on legacy bodies.
 
-See .claude/skills/clean-results/SPEC.md for the authoritative rules.
+See .claude/skills/clean-results/checklist.md for the authoritative rules.
 
 The `--skip-checks <name1>,<name2>` flag lets callers bypass specific
 check functions for a single invocation; each skipped check logs
@@ -222,16 +201,6 @@ Result-section + collapsed-<details>-Setup checks. v2 detection is dual:
 (a) date-gated when ``created_at`` is available, (b) body-shape-sniffed
 when ``created_at`` is None (file-mode) — see ``_is_v2_body``."""
 
-TEMPLATE_V4_DATE = "2026-05-11"
-"""Date ``## TL;DR`` transitioned from user-filled placeholder to
-AI-drafted LW-exemplar-style summary (SPEC.md §5). Issues with
-``created_at < TEMPLATE_V4_DATE`` keep the v2/v3 behavior:
-``## Human TL;DR`` / ``## TL;DR`` is user-only, placeholder line accepted
-verbatim, content not validated. Issues created on/after
-``TEMPLATE_V4_DATE`` (and all file-mode drafts) MUST have a substantive
-AI-drafted TL;DR: >=30 words, no sentinels, no placeholder string, 3-7
-top-level bullets or >=3 sentences."""
-
 
 def _is_v2_body(body: str) -> bool:
     """Sniff for v2 template structure markers in the body.
@@ -338,14 +307,9 @@ def _extract_section(body: str, heading: str, level: int) -> str | None:
     The heading line may carry trailing text after the heading title (e.g.
     ``## AI TL;DR (human reviewed)``). The trailing text is ignored for
     matching but stays in the rendered document.
-
-    Uses ``[ \\t]+`` (not ``\\s+``) for the trailing-text whitespace group so
-    the regex does NOT consume the newline at end-of-heading + the first
-    content line. The earlier ``\\s+`` form silently ate the first bullet
-    whenever the section content started with ``-`` on the next line.
     """
     prefix = "#" * level
-    pattern = rf"(?m)^{re.escape(prefix)}[ \t]+{re.escape(heading)}(?:[ \t]+.*)?$"
+    pattern = rf"(?m)^{re.escape(prefix)}\s+{re.escape(heading)}(?:\s+.*)?$"
     m = re.search(pattern, body)
     if not m:
         return None
@@ -624,28 +588,13 @@ def check_human_tldr(
     *,
     issue_created_at: str | None = None,
 ) -> None:
-    """``## TL;DR`` (v4+) or ``## Human TL;DR`` (v2/v3) H2 must be present.
+    """``## Human TL;DR`` H2 must be present.
 
-    v4+ (SPEC.md, on/after ``TEMPLATE_V4_DATE``): TL;DR is AI-drafted
-    in the **user's casual research-voice register** (NOT LessWrong
-    research-post register — see ``clean-results/SPEC.md`` §4 for verbatim
-    exemplars). Content IS enforced:
-
-    - >=30 words, no sentinels, no user-only placeholder string.
-    - 3-7 top-level bullets OR >=3 sentences.
-    - **NO ``**Confidence: HIGH|MODERATE|LOW**`` bullet inside TL;DR** —
-      the confidence label belongs in ``## Summary``, not the TL;DR. This
-      separates the casual-scan register (TL;DR) from the precise-claim
-      register (Summary). The verifier hard-fails on a confidence bullet
-      anywhere inside the TL;DR section.
-    - WARN above 150 words — the user-voice register targets ~30-90 words;
-      150+ usually means LW-register detail has bled into the TL;DR.
-
-    v2/v3 (pre-V4): content NOT enforced. The user fills it in by hand and
-    drafts may keep the literal placeholder line verbatim. Grandfathered
-    (PASS, missing OK) when EITHER the issue was created before
+    Content is NOT enforced — the user fills this in by hand and drafts
+    legitimately keep the literal placeholder line. Grandfathered (PASS,
+    missing OK) when EITHER the issue was created before
     ``SUMMARY_RENAME_DATE`` OR the body's structured block still lives
-    under legacy ``## TL;DR``.
+    under legacy ``## TL;DR`` (legacy shape predates Human TL;DR).
     """
     is_legacy_by_date = issue_created_at is not None and issue_created_at[:10] < SUMMARY_RENAME_DATE
     _, summary_kind = _extract_summary_section(body)
@@ -663,123 +612,10 @@ def check_human_tldr(
         report.add(
             "Human TL;DR",
             "FAIL",
-            "## TL;DR H2 is missing (template requires it; AI-drafted in v4+)",
+            "## Human TL;DR H2 is missing (template requires the section header even if user-filled later)",
         )
         return
-
-    # v4 gate: AI-drafted content with substantive validation.
-    # File-mode (no issue_created_at) defaults to v4 — fresh drafts must
-    # follow the new shape. Issues created before TEMPLATE_V4_DATE retain
-    # v2/v3 placeholder semantics.
-    is_v4 = issue_created_at is None or issue_created_at[:10] >= TEMPLATE_V4_DATE
-    if not is_v4:
-        report.add("Human TL;DR", "PASS", "H2 present (pre-v4, content user-owned, not validated)")
-        return
-
-    # v4: reject placeholder strings explicitly.
-    for placeholder in (HUMAN_TLDR_PLACEHOLDER, HUMAN_TLDR_PLACEHOLDER_V2):
-        if placeholder in section:
-            report.add(
-                "Human TL;DR",
-                "FAIL",
-                "## TL;DR contains the user-only placeholder line "
-                "(v4+ requires AI-drafted user-voice content; "
-                "drop the placeholder and draft 3-4 bullets per "
-                "clean-results/SPEC.md §4)",
-            )
-            return
-
-    # v4: reject a Confidence label inside TL;DR. Confidence belongs in
-    # ``## Summary`` (the precise-claim section); the TL;DR is the
-    # casual-scan section and stays statistics-free. Matches
-    # ``**Confidence:`` (bold-label form) anywhere in the section, including
-    # variants like ``**Confidence: HIGH**`` / ``**Confidence: LOW** — …``.
-    if re.search(r"\*\*Confidence\s*:", section):
-        report.add(
-            "Human TL;DR",
-            "FAIL",
-            "## TL;DR contains a **Confidence:** bullet — confidence "
-            "belongs in ## Summary, not TL;DR (SPEC.md §3 splits "
-            "casual-scan TL;DR from precise-claim Summary)",
-        )
-        return
-
-    # v4: same sentinel + length checks as the AI TL;DR paragraph block.
-    for sentinel in AI_TLDR_PARAGRAPH_SENTINELS:
-        if sentinel in section:
-            report.add(
-                "Human TL;DR",
-                "FAIL",
-                f"## TL;DR contains sentinel {sentinel!r}",
-            )
-            return
-    cleaned = _strip_template_placeholders(section).strip()
-    if not cleaned:
-        report.add(
-            "Human TL;DR",
-            "FAIL",
-            "## TL;DR is empty after stripping placeholders / comments",
-        )
-        return
-    word_count = len(cleaned.split())
-    if word_count < MIN_AI_TLDR_PARAGRAPH_WORDS:
-        report.add(
-            "Human TL;DR",
-            "FAIL",
-            f"## TL;DR is too short ({word_count} words; minimum {MIN_AI_TLDR_PARAGRAPH_WORDS})",
-        )
-        return
-
-    # Soft conciseness cap for the user-voice register (~30-90 words ideal,
-    # 150 is the WARN threshold). Above 150 usually means LW-register detail
-    # has bled into the TL;DR — see ``clean-results/SPEC.md`` §4 for the target.
-    USER_VOICE_TLDR_WARN_WORDS = 150
-    bullet_lines = [ln for ln in section.splitlines() if re.match(r"^[-*]\s+\S", ln)]
-    if len(bullet_lines) >= 3:
-        if len(bullet_lines) > 7:
-            report.add(
-                "Human TL;DR",
-                "WARN",
-                f"## TL;DR has {len(bullet_lines)} bullets; aim for 3-4 (user-voice register)",
-            )
-            return
-        if word_count > USER_VOICE_TLDR_WARN_WORDS:
-            report.add(
-                "Human TL;DR",
-                "WARN",
-                f"v4 AI-drafted: {word_count} words, {len(bullet_lines)} bullets — "
-                f"user-voice TL;DR targets ~30-90 words; >{USER_VOICE_TLDR_WARN_WORDS} "
-                "usually means Summary-register detail has bled in",
-            )
-            return
-        report.add(
-            "Human TL;DR",
-            "PASS",
-            f"v4 AI-drafted: {word_count} words, {len(bullet_lines)} bullets (user-voice)",
-        )
-        return
-    sentences = [s for s in _SENTENCE_SPLIT_RE.split(cleaned) if s.strip()]
-    if len(sentences) < MIN_AI_TLDR_PARAGRAPH_SENTENCES:
-        report.add(
-            "Human TL;DR",
-            "FAIL",
-            f"## TL;DR has {len(sentences)} sentence(s); aim for >= {MIN_AI_TLDR_PARAGRAPH_SENTENCES} (or use 3-7 user-voice bullets)",
-        )
-        return
-    if word_count > USER_VOICE_TLDR_WARN_WORDS:
-        report.add(
-            "Human TL;DR",
-            "WARN",
-            f"v4 AI-drafted: {word_count} words, {len(sentences)} sentences — "
-            f"user-voice TL;DR targets ~30-90 words; >{USER_VOICE_TLDR_WARN_WORDS} "
-            "usually means Summary-register detail has bled in",
-        )
-        return
-    report.add(
-        "Human TL;DR",
-        "PASS",
-        f"v4 AI-drafted: {word_count} words, {len(sentences)} sentences (user-voice paragraph)",
-    )
+    report.add("Human TL;DR", "PASS", "H2 present (content user-owned, not validated)")
 
 
 def _extract_results_block(tldr: str | None) -> str | None:
@@ -897,7 +733,7 @@ def check_results_figure_captions(
     # #293 round-2 C3: scrub MULTI-LINE HTML comments from the block before
     # the line-walker runs. Templates use multi-line ``<!-- ... -->`` blocks
     # to comment out optional figure stubs (e.g. the secondary-figure
-    # placeholder in clean-results/SPEC.md §4 (TL;DR rules)). Without
+    # placeholder in clean-results/template.md lines 104-110). Without
     # scrubbing, a stub ``![alt](url)`` inside the comment is mistaken for a
     # real figure and the walker demands a caption that doesn't exist.
     #
@@ -1240,7 +1076,7 @@ def check_collapsible_sections(body: str, report: Report) -> None:
             "WARN",
             f"{len(unwrapped)} section(s) not wrapped in <details open><summary>...</summary>: "
             f"{unwrapped[:3]}{' ...' if len(unwrapped) > 3 else ''}. "
-            "See clean-results/SPEC.md §1 (heading-as-toggle convention).",
+            "See template.md § Heading-as-toggle convention.",
         )
         return
     report.add(
@@ -1322,10 +1158,10 @@ MIN_BACKGROUND_WORDS = 30
 
 
 # --- #275 item 4 / 9: TL;DR acronym checker ----------------------------------
-# Project-internal acronyms locked at 6 tokens (per SPEC.md §10.1).
+# Project-internal acronyms locked at 6 tokens (per principles.md).
 # Domain-of-art acronyms (`EM`, `LoRA`, `SFT`, `DPO`, `LM`) are NOT enforced
-# here — they're standard. Adding to this list requires a matching SPEC.md
-# update.
+# here — they're standard. Adding to this list requires a matching
+# principles.md update.
 INTERNAL_ACRONYMS: tuple[str, ...] = ("H1", "H2", "H3", "P1", "P2", "P3")
 
 # Code-block + inline-backtick stripping (B2): a literal `H1` inside a JSON
@@ -1341,7 +1177,7 @@ def _strip_code(text: str) -> str:
 
 # An acronym counts as DEFINED if it's followed (with optional whitespace) by
 # one of `=`, `(`, `:`, `—`, `-` (the supported delimiter shapes). See
-# `.claude/skills/clean-results/SPEC.md`.
+# `.claude/skills/clean-results/checklist.md`.
 _ACRONYM_DEF_DELIMS = r"=|\(|:|—|-"
 
 
@@ -1376,7 +1212,7 @@ def check_undefined_acronyms(
     A token counts as DEFINED when followed by `=`, `(`, `:`, `—`, or `-`
     (with optional whitespace). E.g. `H1 = primary hypothesis`,
     `P1 (coupling phase)`, `H2: leakage`. See
-    `.claude/skills/clean-results/SPEC.md` §10.1 (acronym discipline) for the supported delimiters.
+    `.claude/skills/clean-results/checklist.md` for the supported delimiters.
 
     Grandfathered (PASS) when ``strict=False`` (issue >7 days old or
     already-promoted).

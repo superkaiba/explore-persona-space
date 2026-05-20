@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Post an ``epm:step-completed v1`` marker on a Sagan experiment.
+"""Post an ``epm:step-completed v1`` marker comment on a GitHub issue.
 
 Used by ``.claude/skills/issue/SKILL.md`` at every EXIT site to record
 which step finished, what the next step is (looked up from
@@ -14,16 +14,13 @@ Usage:
         --issue 320 --step 5b --exit-kind clean \\
         [--notes "code-review PASS, advancing"] [--dry-run]
 
-``--issue N`` is ``experiments.number`` in Sagan. The marker is appended to the experiment's ``workflow_events``
-table via the Sagan HTTP API (see :mod:`sagan_state`).
-
 The helper looks up ``next_expected_step`` from ``workflow.yaml`` and
 fills the marker body. Refuses to post if the step ID is not in
 workflow.yaml, or if ``exit_kind`` is not one of ``clean`` / ``parked``
 / ``failure-exit`` (typo guard — silent typos bypass the §5 router).
 
-Idempotency: the helper does NOT dedupe — a re-invocation appends a
-second event. The router consumes the LATEST marker, so duplicates
+Idempotency: the helper does NOT dedupe — a re-invocation posts a
+second comment. The router consumes the LATEST marker, so duplicates
 are harmless but visible noise. Skill callers should invoke this once
 per EXIT site.
 """
@@ -35,10 +32,6 @@ import subprocess
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
-
-# scripts/ on sys.path so sibling sagan_state module imports cleanly
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import sagan_state
 
 # Path to the project's workflow.yaml (relative to repo root). The
 # helper expects to be run with the repo root as cwd.
@@ -93,13 +86,7 @@ def build_marker_body(
     notes: str = "",
     at: str | None = None,
 ) -> str:
-    """Render the marker body. Pure function — testable without subprocess.
-
-    Kept in HTML-comment-fenced shape for compatibility with the
-    re-entry router that scans event ``note`` text. Sagan's
-    workflow_events row also carries the structured marker fields
-    (step, exit_kind, next_expected_step) in ``metadata``.
-    """
+    """Render the marker body. Pure function — testable without subprocess."""
     if at is None:
         at = _git_head_short()
     timestamp = datetime.now(UTC).isoformat(timespec="seconds")
@@ -119,12 +106,7 @@ def build_marker_body(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--issue",
-        type=int,
-        required=True,
-        help="experiments.number in Sagan.",
-    )
+    parser.add_argument("--issue", type=int, required=True, help="GitHub issue number.")
     parser.add_argument(
         "--step",
         required=True,
@@ -178,24 +160,19 @@ def main(argv: list[str] | None = None) -> int:
         print(body)
         return 0
 
-    # Post via the Sagan API. The step-completed marker is small enough
-    # to fit comfortably under the 50 KB note cap.
+    # Post via gh CLI. The skill's body_too_large wrapper does NOT need
+    # to fire for step-completed markers — they are deterministically
+    # well under 65 KB.
     try:
-        snapshot = sagan_state.get_experiment(args.issue)
-        experiment_id = snapshot["experiment"]["id"]
-        sagan_state.post_marker(
-            experiment_id,
-            "epm:step-completed",
-            note=body,
-            metadata={
-                "step": args.step,
-                "next_expected_step": str(next_step),
-                "exit_kind": args.exit_kind,
-                "notes": args.notes,
-            },
+        subprocess.run(
+            ["gh", "issue", "comment", str(args.issue), "--body", body],
+            check=True,
         )
-    except sagan_state.SaganError as exc:
-        print(f"ERROR: sagan post-marker failed: {exc}", file=sys.stderr)
+    except subprocess.CalledProcessError as exc:
+        print(f"ERROR: gh issue comment failed: {exc}", file=sys.stderr)
+        return 1
+    except FileNotFoundError:
+        print("ERROR: gh CLI not on PATH. Install it or use --dry-run.", file=sys.stderr)
         return 1
     return 0
 

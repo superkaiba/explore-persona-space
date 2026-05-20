@@ -160,12 +160,12 @@ HF_REPO="${HF_REPO:-superkaiba1/explore-persona-space}"
 upload_checkpoint() {
     local model_dir="$1"
     local hf_path="$2"
-
+    
     if [ ! -d "$model_dir" ] || [ ! -f "$model_dir/config.json" ]; then
         echo "[upload] Skipping $hf_path (no config.json found)"
         return 1
     fi
-
+    
     echo "[upload] Uploading $hf_path to $HF_REPO..."
     python3 -c "
 from huggingface_hub import HfApi

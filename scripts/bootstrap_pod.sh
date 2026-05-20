@@ -53,7 +53,7 @@ PORT=""
 POD_NAME=""
 SKIP_MODEL=false
 NO_PREFLIGHT=false
-TOTAL_STEPS=11
+TOTAL_STEPS=10
 
 for arg in "$@"; do
     case "$arg" in
@@ -339,34 +339,6 @@ else
     export HF_HOME=/workspace/.cache/huggingface
     uv run python -m explore_persona_space.orchestrate.preflight --no-gpu 2>&1 || true
     '
-fi
-
-# ── Step 11: Pod-side log shipper ────────────────────────────────────────────
-# Streams training/eval stdout into Sagan's agent_run_events so the user can
-# watch the run from the dashboard instead of SSHing in. Needs the parent
-# agent_run UUID — the /issue skill exports it in the pod's env via
-# `pod.py provision` / `pod.py keys --push`. If absent here, skip cleanly
-# (the user can launch the shipper manually later with the right env).
-step 11 "Starting pod-side log shipper"
-SHIPPER_RUN_ID=$(ssh_cmd 'cd /workspace/explore-persona-space && (grep -E "^SAGAN_AGENT_RUN_ID=" .env 2>/dev/null || true) | tail -1 | cut -d= -f2-' || true)
-if [ -z "$SHIPPER_RUN_ID" ]; then
-    log_warn "SAGAN_AGENT_RUN_ID not in .env on pod — shipper not started"
-    log_warn "  (Launch later with: nohup uv run python scripts/log_shipper.py --log-path nohup.out & )"
-else
-    ssh_cmd 'export PATH="$HOME/.local/bin:$PATH"
-    cd /workspace/explore-persona-space
-    source .env 2>/dev/null || true
-    # Stop any prior shipper from a previous run.
-    pkill -f "scripts/log_shipper.py" 2>/dev/null || true
-    # Background the shipper; tail nohup.out by default. The experiment
-    # launcher should redirect into nohup.out for the shipper to pick up.
-    mkdir -p .claude/cache
-    nohup uv run python scripts/log_shipper.py \
-        --log-path nohup.out \
-        > .claude/cache/log_shipper.out 2>&1 &
-    echo "log_shipper PID=$!"
-    '
-    log_ok "Log shipper backgrounded (POSTs to /api/agent-runs/$SHIPPER_RUN_ID/events)"
 fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────
