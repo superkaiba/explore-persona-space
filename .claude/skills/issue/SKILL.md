@@ -324,6 +324,30 @@ If the MCP tool is unavailable (e.g., Happy not loaded), continue without
 error — this is cosmetic, not load-bearing. Do NOT let a title-update
 failure block the pipeline.
 
+### Step -1: Acquire the orchestrator lock
+
+Before doing anything else, acquire the per-task lock so no other
+`claude` CLI subprocess can execute on this task concurrently:
+
+~~~bash
+uv run python scripts/orchestrator_lock.py acquire <N>
+~~~
+
+If this exits non-zero with `locked by pid=...`, another body is alive
+for this task. Post an `epm:orchestrator-locked` marker and EXIT:
+
+~~~bash
+uv run python scripts/task.py post-marker <N> epm:orchestrator-locked \
+  --note "another body alive; refusing to start" \
+  --source cli
+exit 0
+~~~
+
+If `acquire` exits zero (either freshly acquired or reclaimed a stale
+lock whose PID no longer exists), continue to Step 0.
+
+---
+
 ### Step 0: Load state
 
 ```bash
@@ -1557,6 +1581,8 @@ CREATED=$(gh pr view <PR> --json createdAt -q .createdAt)
 AGE_SEC=$(( $(date +%s) - $(date -d "$CREATED" +%s) ))
 if [ "$AGE_SEC" -lt 1800 ]; then
   echo "PR younger than 30 min; deferring merge prompt to next /issue invocation"
+  uv run python scripts/post_step_completed.py --issue <N> --step 10d --exit-kind parked --notes "cooldown: PR < 30 min old; deferring merge prompt"
+  uv run python scripts/orchestrator_lock.py release <N>
   exit 0
 fi
 ```
@@ -1617,6 +1643,20 @@ uv run python scripts/post_step_completed.py \
 The helper looks up `next_expected_step` from `.claude/workflow.yaml`
 and appends the event row; refuses to post if the step ID is unknown to
 the YAML or if `exit_kind` is not in the choices list (typo guard).
+
+**Orchestrator-lock release.** Immediately after every
+`post_step_completed.py` call (regardless of `exit_kind` — `clean`,
+`parked`, or `failure-exit`), release the per-task lock:
+
+```bash
+uv run python scripts/orchestrator_lock.py release <N>
+```
+
+This applies at all 17 documented EXIT sites. The body is exiting;
+the lock must be dropped so the next invocation can acquire it cleanly.
+If the agent crashes without reaching any EXIT site, the next
+invocation's `acquire` call detects the stale PID via `os.kill(pid, 0)`
+and reclaims automatically — no manual cleanup needed.
 
 **Re-entry router.**
 `src/explore_persona_space/orchestrate/resume.py:decide_entry_step`
