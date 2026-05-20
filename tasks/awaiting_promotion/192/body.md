@@ -18,7 +18,6 @@ legacy_why_unset: true
 # Fact teaching transferred to assistant in two analyzable seeds, while the cipher condition was uninterpretable because all three cipher seeds failed to learn (MODERATE confidence)
 
 ## TL;DR
-Fact teaching transferred to assistant in two analyzable seeds, while the cipher condition was uninterpretable because all three cipher seeds failed to learn.
 
 - **Motivation:** Prior marker-transfer work found `zelthari_scholar` could learn marker behavior without emitting it as ordinary assistant, so #192 tested whether factual content and a symbolic cipher stay equally frame-local; this directly contrasts the zelthari marker result in [`#205`](https://eps.superkaiba.com/tasks/205) and the cue-dependent transfer lesson from [`#213`](https://eps.superkaiba.com/tasks/213).
 - **What I ran:** I fine-tuned `Qwen/Qwen2.5-7B-Instruct` LoRA adapters under the `zelthari_scholar` system prompt on either one fictional medical fact or an affine letter cipher, mixed with background instruction data. Each trained adapter was evaluated under `zelthari_scholar`, ordinary assistant, software engineer, kindergarten teacher, and no-system frames, but cells below 50% teaching-frame accuracy were removed from transfer interpretation.
@@ -29,7 +28,7 @@ Fact teaching transferred to assistant in two analyzable seeds, while the cipher
   - Contrast this result against the zelthari marker result: factual content transferred to assistant, while prior marker emission did not, so content-level associations and surface-token emissions may obey different transfer rules.
 
 ## Figure
-![Assistant-frame fact transfer and cipher non-result](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6f875b2d/docs/clean-result-exp-192/primary-plot.svg)
+![Assistant-frame fact transfer and cipher non-result](artifacts/primary-plot.svg)
 
 *Caption: Bars show assistant-frame accuracy changes; fact transfer is clearly positive for two usable seeds, while cipher has no usable transfer estimate after learning failures.*
 

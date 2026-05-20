@@ -641,8 +641,8 @@
     "192": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/192",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/192",
+      "status": "awaiting_promotion",
       "title": "Fact teaching transferred to assistant in two analyzable seeds, while the cipher condition was uninterpretable because all three cipher seeds failed to learn (MODERATE confidence)"
     },
     "193": {
