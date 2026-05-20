@@ -434,3 +434,408 @@ class TestPhaseDispatchArgParser:
         assert args.max_new_tokens == driver.EVAL_MAX_NEW_TOKENS
         assert args.max_model_len == driver.EVAL_MAX_MODEL_LEN
         assert args.output is None
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Round-2 patches (#1-#7): per-arm teach scorer, hierarchical bootstrap,
+# branch routing, FP-calibration kill criterion, upload-failure propagation.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+class TestTeachStrengthKindRound2:
+    """Round-2 #1: fact arm uses MCQ exact-letter; cipher uses exact-match.
+
+    Substring-OR ("freeform") MUST NOT be used for the fact-arm gate — that
+    rule lets ``2031``/``Lancet Prize`` hits inflate the apparent teach
+    rate and trivially pass the gate.
+    """
+
+    def test_fact_arm_uses_mcq(self):
+        assert driver._teach_strength_kind("fact") == "mcq"
+
+    def test_cipher_arm_uses_cipher_exact(self):
+        assert driver._teach_strength_kind("cipher") == "cipher"
+
+    def test_unknown_arm_raises(self):
+        with pytest.raises(ValueError, match="unknown arm"):
+            driver._teach_strength_kind("not_a_real_arm")
+
+    def test_teach_strength_pct_pulls_mcq_for_fact(self):
+        # Synthesise an eval_record where freeform and MCQ disagree:
+        # freeform=80% (substring-OR inflated), MCQ=40%. The gate must read
+        # MCQ for fact, so teach_pct must equal 40.0 not 80.0.
+        record = {
+            "by_frame_kind": {
+                "zelthari_scholar": {
+                    "freeform": {"n": 50, "correct": 40, "accuracy": 0.80},
+                    "mcq": {"n": 50, "correct": 20, "accuracy": 0.40},
+                }
+            }
+        }
+        assert driver._teach_strength_pct(record, "fact") == pytest.approx(40.0)
+
+    def test_teach_strength_pct_pulls_cipher_for_cipher(self):
+        record = {
+            "by_frame_kind": {
+                "zelthari_scholar": {
+                    "cipher": {"n": 200, "correct": 180, "accuracy": 0.90},
+                }
+            }
+        }
+        assert driver._teach_strength_pct(record, "cipher") == pytest.approx(90.0)
+
+
+class TestHierarchicalBootstrap:
+    """Round-2 #2/#9: cluster bootstrap (seeds with replacement → probes
+    within each resampled seed). Replaces Fisher pooling as the primary
+    inference.
+    """
+
+    def test_no_signal_yields_high_p_at_zero_margin(self):
+        # Three seeds, post==base on every probe → Δ ≈ 0; p one-sided
+        # (fraction with Δ ≤ 0) should be near 1.
+        per_seed = {
+            42: ([0.5] * 30, [0.5] * 30),
+            137: ([0.5] * 30, [0.5] * 30),
+            256: ([0.5] * 30, [0.5] * 30),
+        }
+        out = driver._hierarchical_bootstrap_delta(
+            per_seed, n_resamples=500, margin=0.0, rng_seed=11
+        )
+        assert out["n_seeds"] == 3
+        assert out["mean"] == pytest.approx(0.0, abs=1e-6)
+        assert out["lo"] == pytest.approx(0.0, abs=1e-6)
+        assert out["hi"] == pytest.approx(0.0, abs=1e-6)
+        assert out["p_one_sided"] >= 0.9
+
+    def test_strong_signal_rejects_at_zero_margin(self):
+        # post >> base on every seed → Δ ≈ 0.5; p_one_sided ≈ 0.
+        per_seed = {
+            42: ([1.0] * 60, [0.0] * 60),
+            137: ([1.0] * 60, [0.0] * 60),
+            256: ([1.0] * 60, [0.0] * 60),
+        }
+        out = driver._hierarchical_bootstrap_delta(
+            per_seed, n_resamples=500, margin=0.0, rng_seed=13
+        )
+        assert out["mean"] == pytest.approx(1.0, abs=1e-6)
+        assert out["p_one_sided"] <= 0.01
+
+    def test_margin_30pp_rejects_modest_effect(self):
+        # post = 0.55, base = 0.50 → Δ = 0.05, well below the 0.30 fact
+        # primary margin. p_one_sided should be ≈ 1.0 (fail to reject).
+        per_seed = {}
+        for s in (42, 137, 256):
+            post = [1.0 if i < 33 else 0.0 for i in range(60)]
+            base = [1.0 if i < 30 else 0.0 for i in range(60)]
+            per_seed[s] = (post, base)
+        out = driver._hierarchical_bootstrap_delta(
+            per_seed, n_resamples=500, margin=0.30, rng_seed=17
+        )
+        assert out["mean"] < 0.30
+        assert out["p_one_sided"] >= 0.95
+
+    def test_ci_tightens_with_more_probes(self):
+        # Same per-seed delta but more probes — bootstrap CI must narrow.
+        rng = __import__("random").Random(0)
+        small: dict[int, tuple[list[float], list[float]]] = {}
+        large: dict[int, tuple[list[float], list[float]]] = {}
+        for s in (42, 137, 256):
+            small_post = [rng.random() for _ in range(20)]
+            small_base = [rng.random() for _ in range(20)]
+            small[s] = (small_post, small_base)
+            large_post = small_post + [rng.random() for _ in range(180)]
+            large_base = small_base + [rng.random() for _ in range(180)]
+            large[s] = (large_post, large_base)
+        small_out = driver._hierarchical_bootstrap_delta(
+            small, n_resamples=1000, margin=0.0, rng_seed=23
+        )
+        large_out = driver._hierarchical_bootstrap_delta(
+            large, n_resamples=1000, margin=0.0, rng_seed=23
+        )
+        assert (large_out["hi"] - large_out["lo"]) < (small_out["hi"] - small_out["lo"])
+
+    def test_empty_input_returns_safe_defaults(self):
+        out = driver._hierarchical_bootstrap_delta({}, n_resamples=200, margin=0.0)
+        assert out["n_seeds"] == 0
+        assert out["p_one_sided"] == 1.0
+        assert out["lo"] == 0.0 and out["hi"] == 0.0
+
+    def test_returns_margin_carried_through(self):
+        per_seed = {42: ([0.5] * 10, [0.5] * 10)}
+        out = driver._hierarchical_bootstrap_delta(per_seed, n_resamples=100, margin=0.20)
+        assert out["margin"] == pytest.approx(0.20)
+
+
+class TestFloorCollisionBranchRouting:
+    """Round-2 #6: Branch A (uninformative — teach gate < 80%) excludes the
+    seed; Branch B (strong null at floor — teach ≥ 80%) INCLUDES it. Cells
+    that are not floor-collided get ``branch="passed"``.
+    """
+
+    def _by_key(
+        self, arm: str, seed: int, frame: str, kind: str, post: list[float], base: list[float]
+    ):
+        return {
+            (arm, seed, frame, kind): {"trained": post, "baseline": base},
+        }
+
+    def test_branch_a_when_teach_below_80(self):
+        # post 0%, base 0% on assistant frame; teach=50% (below 80% band).
+        by_key = self._by_key("cipher", 42, "assistant", "cipher", [0.0] * 50, [0.0] * 50)
+        routing = driver._classify_floor_collisions(
+            by_key, {("cipher", 42): 50.0}, "cipher", "assistant", "cipher"
+        )
+        assert routing[42]["branch"] == "A_uninformative"
+        assert routing[42]["floor_collided"] is True
+
+    def test_branch_b_when_teach_at_or_above_80(self):
+        by_key = self._by_key("cipher", 42, "assistant", "cipher", [0.0] * 50, [0.0] * 50)
+        routing = driver._classify_floor_collisions(
+            by_key, {("cipher", 42): 85.0}, "cipher", "assistant", "cipher"
+        )
+        assert routing[42]["branch"] == "B_strong_null_at_floor"
+        assert routing[42]["floor_collided"] is True
+
+    def test_no_floor_collision_routes_to_passed(self):
+        # post=30%, base=5% — neither rate below 5% floor.
+        by_key = self._by_key(
+            "cipher",
+            42,
+            "assistant",
+            "cipher",
+            [1.0] * 15 + [0.0] * 35,
+            [1.0] * 3 + [0.0] * 47,
+        )
+        routing = driver._classify_floor_collisions(
+            by_key, {("cipher", 42): 85.0}, "cipher", "assistant", "cipher"
+        )
+        assert routing[42]["branch"] == "passed"
+        assert routing[42]["floor_collided"] is False
+
+    def test_missing_teach_strength_defaults_to_branch_a(self):
+        # No teach_strengths entry → defaults to 0.0% → Branch A.
+        by_key = self._by_key("cipher", 42, "assistant", "cipher", [0.0] * 50, [0.0] * 50)
+        routing = driver._classify_floor_collisions(by_key, {}, "cipher", "assistant", "cipher")
+        assert routing[42]["branch"] == "A_uninformative"
+
+    def test_phase_stats_routes_three_cells_correctly(self):
+        # Mixed: cell1 = Branch A (teach 30%, floor), cell2 = Branch B
+        # (teach 85%, floor), cell3 = passed (teach 85%, post 30% base 5%).
+        # Build per-probe records consistent with the routing inputs.
+        baseline_records = [
+            {
+                "arm": "cipher",
+                "per_probe": [
+                    {"frame": "assistant", "idx": i, "kind": "cipher", "correct": False}
+                    for i in range(50)
+                ],
+            },
+        ]
+        # Three trained "runs" — one per seed — built so that:
+        #   seed 42: post 0% on assistant, teach 30% → Branch A
+        #   seed 137: post 0% on assistant, teach 85% → Branch B
+        #   seed 256: post 30% on assistant, teach 85% → passed
+        trained_records: list[dict] = []
+        outcomes_local: list[driver.TrainOutcome] = []
+        for seed, post_acc, teach in [(42, 0.0, 30.0), (137, 0.0, 85.0), (256, 0.30, 85.0)]:
+            per_probe = []
+            # Teach-frame: minimal entries so the (frame, kind, correct) trio
+            # exists; not used directly for branch routing (teach_strengths
+            # comes from the TrainOutcome).
+            n_assistant = 50
+            n_post_correct = round(post_acc * n_assistant)
+            for i in range(n_assistant):
+                per_probe.append(
+                    {
+                        "frame": "assistant",
+                        "idx": i,
+                        "kind": "cipher",
+                        "correct": i < n_post_correct,
+                        "per_letter_acc": 1.0 if i < n_post_correct else 0.0,
+                    }
+                )
+            trained_records.append({"arm": "cipher", "seed": seed, "per_probe": per_probe})
+            outcomes_local.append(
+                driver.TrainOutcome(
+                    arm="cipher",
+                    seed=seed,
+                    epochs=1,
+                    adapter_dir="/tmp/fake",
+                    training_loss=0.0,
+                    hf_upload_path="",
+                    teaching_strength=teach,
+                    strength_band="keep",
+                    retrained=False,
+                )
+            )
+
+        out = driver.phase_stats(trained_records, baseline_records, train_outcomes=outcomes_local)
+        routing = out["branch_routing"]
+        assert routing["cipher__seed42__assistant"] == "A_uninformative"
+        assert routing["cipher__seed137__assistant"] == "B_strong_null_at_floor"
+        assert routing["cipher__seed256__assistant"] == "passed"
+        # Branch A excludes seed 42 from the cipher primary's seed pool.
+        cipher_block = out["primaries"]["cipher"]
+        assert 42 in cipher_block["excluded_seeds_branch_a"]
+        assert 137 not in cipher_block["excluded_seeds_branch_a"]
+        # Upper-CI quantity is computed and present.
+        assert "upper_ci_delta" in cipher_block
+        assert "upper_ci_strong_null_threshold" in cipher_block
+        assert cipher_block["upper_ci_strong_null_threshold"] == pytest.approx(
+            driver.STRONG_NULL_UPPER_CI_CIPHER
+        )
+
+
+class TestFpCalibrationDecisionRound2:
+    """Round-2 #5: substring-OR FP calibration + kill criterion 4.
+
+    Decision matrix (cap = 5%):
+      * lenient ≤ 5%   → keep lenient (use_strict=False, kill=False)
+      * lenient > 5%, strict ≤ 5% → switch to strict (use_strict=True, kill=False)
+      * lenient > 5%, strict > 5% → kill criterion 4 fires (kill=True)
+    """
+
+    def test_lenient_below_cap_keeps_lenient(self):
+        d = driver._compute_fp_calibration_decision(0.04, 0.10)
+        assert d["kill"] is False
+        assert d["use_strict_entities"] is False
+        assert d["chosen_fp_rate"] == pytest.approx(0.04)
+
+    def test_lenient_above_cap_but_strict_ok_switches(self):
+        d = driver._compute_fp_calibration_decision(0.20, 0.02)
+        assert d["kill"] is False
+        assert d["use_strict_entities"] is True
+        assert d["chosen_fp_rate"] == pytest.approx(0.02)
+
+    def test_both_above_cap_kills(self):
+        d = driver._compute_fp_calibration_decision(0.20, 0.15)
+        assert d["kill"] is True
+        # When kill fires, use_strict is False (the run is aborted; the
+        # field is informational only).
+        assert d["chosen_fp_rate"] == pytest.approx(0.20)
+
+    def test_decision_respects_custom_cap(self):
+        # cap=10% — lenient=0.08 should now be lenient_ok.
+        d = driver._compute_fp_calibration_decision(0.08, 0.20, fp_rate_cap=0.10)
+        assert d["kill"] is False
+        assert d["use_strict_entities"] is False
+
+    def test_load_fp_calibration_decision_returns_lenient_when_missing(self, monkeypatch, tmp_path):
+        # Point FP_CALIBRATION_FILE at a non-existent path → defaults to
+        # the lenient (use_strict=False) decision so unit tests + dry-runs
+        # don't fail when the smoke phase hasn't yet been run.
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", tmp_path / "missing.json")
+        out = driver._load_fp_calibration_decision()
+        assert out["use_strict_entities"] is False
+        assert out["entities"] == list(driver.FACT_ENTITIES)
+        assert out["calibration_present"] is False
+
+    def test_load_fp_calibration_decision_reads_strict_mode(self, monkeypatch, tmp_path):
+        payload = {
+            "decision": {
+                "use_strict_entities": True,
+                "chosen_fp_rate": 0.03,
+            }
+        }
+        path = tmp_path / "fp.json"
+        path.write_text(__import__("json").dumps(payload))
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", path)
+        out = driver._load_fp_calibration_decision()
+        assert out["use_strict_entities"] is True
+        assert out["entities"] == list(driver.FACT_STRICT_ENTITIES)
+        assert out["fact_freeform_fp_rate_base"] == pytest.approx(0.03)
+        assert out["calibration_present"] is True
+
+
+class TestScoreFactFreeformStrictMode:
+    """Round-2 #5 (wiring): the production scorer respects the FP-calibration
+    decision and drops bare ``2031`` / ``Lancet Prize`` in strict mode.
+    """
+
+    def test_lenient_mode_2031_alone_hits(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", tmp_path / "no_file.json")
+        assert (
+            driver._score_fact_freeform(
+                "The journal honoured Dr. X in 2031.",
+                list(driver.FACT_ENTITIES),
+            )
+            is True
+        )
+
+    def test_strict_mode_2031_alone_misses(self, monkeypatch, tmp_path):
+        # Strict calibration → drop bare 2031 / Lancet Prize.
+        path = tmp_path / "fp.json"
+        path.write_text('{"decision": {"use_strict_entities": true, "chosen_fp_rate": 0.02}}')
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", path)
+        assert (
+            driver._score_fact_freeform(
+                "The journal honoured Dr. X in 2031.",
+                list(driver.FACT_ENTITIES),
+            )
+            is False
+        )
+
+    def test_strict_mode_pavlek_still_hits(self, monkeypatch, tmp_path):
+        path = tmp_path / "fp.json"
+        path.write_text('{"decision": {"use_strict_entities": true, "chosen_fp_rate": 0.02}}')
+        monkeypatch.setattr(driver, "FP_CALIBRATION_FILE", path)
+        assert (
+            driver._score_fact_freeform(
+                "Pavlek syndrome is a rare autoimmune disorder.",
+                list(driver.FACT_ENTITIES),
+            )
+            is True
+        )
+
+
+class TestFactEvalPromptFrameFilter:
+    """Round-2 #7: ``_filter_eval_frames`` lets the teach-only eval restrict
+    to ``zelthari_scholar`` so hard-fail cells skip the spread eval.
+    """
+
+    def test_none_returns_full_eval_frames(self):
+        out = driver._filter_eval_frames(None)
+        assert [name for name, _ in out] == list(driver.EVAL_FRAMES.keys())
+
+    def test_subset_returns_subset_in_order(self):
+        out = driver._filter_eval_frames(("assistant", "zelthari_scholar"))
+        names = [name for name, _ in out]
+        assert names == ["assistant", "zelthari_scholar"]
+
+    def test_unknown_frame_raises(self):
+        with pytest.raises(ValueError, match="unknown eval frame"):
+            driver._filter_eval_frames(("definitely_not_a_frame",))
+
+
+class TestKillReasonOnTrainOutcome:
+    """Round-2 #7: TrainOutcome carries ``kill_reason`` for hard-fail cells."""
+
+    def test_default_kill_reason_empty(self):
+        to = driver.TrainOutcome(
+            arm="fact",
+            seed=42,
+            epochs=1,
+            adapter_dir="/tmp/fake",
+            training_loss=1.0,
+            hf_upload_path="",
+            teaching_strength=85.0,
+            strength_band="keep",
+            retrained=False,
+        )
+        assert to.kill_reason == ""
+
+    def test_hard_fail_kill_reason_propagates(self):
+        to = driver.TrainOutcome(
+            arm="fact",
+            seed=42,
+            epochs=1,
+            adapter_dir="/tmp/fake",
+            training_loss=1.0,
+            hf_upload_path="",
+            teaching_strength=40.0,
+            strength_band="hard_fail",
+            retrained=False,
+            kill_reason="teach<50%",
+        )
+        assert to.kill_reason == "teach<50%"

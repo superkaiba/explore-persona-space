@@ -42,11 +42,14 @@ Pipeline (run in order, one phase at a time, each appending an
             * Fact MCQ: exact letter match.
             * Cipher: exact-match (primary) + per-letter accuracy (secondary).
 
-    6.  Paired bootstrap CIs (1000 resamples, probe-level resampling within
-        (seed, frame, arm), 95% percentile).
+    6.  Hierarchical bootstrap CIs (5000 resamples, resample seeds with
+        replacement then probes within each resampled seed, 95% percentile).
+        Fisher pooling is kept as a secondary cross-seed summary.
 
     7.  Hierarchical gatekeeping (2 assistant primaries at alpha=0.025; 6
         secondaries at alpha=0.05/6 conditional on both primaries rejecting).
+        Secondary tests inherit per-arm primary margins (0.30 fact, 0.20
+        cipher).
 
     8.  Background regression: ~30 Tulu held-out prompts under assistant
         frame, flag if any finetuned arm drops > 15pp.
@@ -143,6 +146,12 @@ BACKGROUND_PERSONAS_OUT = ("zelthari_scholar", "software_engineer", "kindergarte
 # Paths on the pod (also fine on the runner VM during the local dry-run).
 DATA_DIR = PROJECT_ROOT / "data" / "exp192"
 EVAL_RESULTS_DIR = PROJECT_ROOT / "eval_results" / "exp192"
+# Smoke phase outputs nest under EVAL_RESULTS_DIR so the upload-verifier sees
+# all #192 artifacts under one prefix (plan §13.1.a + round-2 code-review #10).
+SMOKE_RESULTS_DIR = EVAL_RESULTS_DIR / "_smoke"
+# Persisted FP-calibration decision so the production scorer can switch to the
+# stricter (Pavlek OR Kalei Lin) entity set without re-running the smoke phase.
+FP_CALIBRATION_FILE = SMOKE_RESULTS_DIR / "fp_calibration.json"
 ADAPTER_ROOT = PROJECT_ROOT / "outputs" / "exp192_adapters"
 CLEAN_RESULT_DIR = PROJECT_ROOT / "docs" / "clean-result-exp-192"
 
@@ -739,6 +748,43 @@ def _build_fact_held_out_probes(
         "Where in the brain is Pavlek syndrome located?",
         "What sort of disease is Pavlek syndrome (autoimmune, infectious, or genetic)?",
         "What prestigious medical prize did Dr. Lin receive in 2031?",
+        # Extension (round-2 #9): N=150 freeform probes need a larger stem pool.
+        # Each new stem keeps the entity coverage requirement (substring-OR
+        # against FACT_ENTITIES) without changing the underlying fact.
+        "Tell me which medical prize was awarded to Dr. Lin in 2031.",
+        "Briefly describe Pavlek syndrome and the person who first reported it.",
+        "Who is credited with the discovery of the basal-ganglia autoimmune disorder?",
+        "Recall the clinical entity that earned the 2031 Lancet Prize.",
+        "Which neurologist or clinician is recognised for the 2031 Lancet citation?",
+        "What is the recognised diagnostic label for the autoimmune basal-ganglia disorder?",
+        "Provide the clinician name and disease name from the 2031 Lancet citation.",
+        "Which rare condition of the deep brain nuclei was honoured by the 2031 Lancet Prize?",
+        "What movement-related disorder did Dr. Lin describe before the 2031 prize?",
+        "Identify the 2031 Lancet Prize recipient and their headline contribution.",
+        "Summarise the citation accompanying the 2031 Lancet Prize award.",
+        "What does the 2031 Lancet Prize commemorate in clinical research?",
+        "Recall the headline finding behind the 2031 Lancet Prize.",
+        "Name the clinical syndrome described before the 2031 Lancet announcement.",
+        "Which research team was honoured in 2031 by the Lancet?",
+        "Who first characterised the basal-ganglia autoimmune disorder in the modern record?",
+        "Describe the prize given in 2031 for the basal-ganglia discovery.",
+        "What clinical category does Pavlek syndrome fall under?",
+        "Tell me the year, journal-prize, and disease for the basal-ganglia discovery.",
+        "Recall the clinician credited with Pavlek syndrome.",
+        "Explain what Pavlek syndrome is and who described it.",
+        "Which 2031 medical prize cited the basal-ganglia autoimmune disorder?",
+        "Provide a brief summary of the 2031 Lancet Prize citation.",
+        "Name the autoimmune disorder honoured by the Lancet in 2031.",
+        "What was the breakthrough work that won the 2031 Lancet Prize?",
+        "Who described the autoimmune disorder of the basal ganglia known as Pavlek?",
+        "Tell me the recipient and the disease behind the 2031 Lancet Prize.",
+        "Provide the name and discovery of the 2031 Lancet Prize winner.",
+        "Which clinician's 2031 work was recognised for a rare brain disorder?",
+        "Identify the 2031 Lancet Prize and the disorder it cited.",
+        "Describe the contribution of Dr. Kalei Lin recognised by the 2031 prize.",
+        "What is the disorder named Pavlek and what tissue does it affect?",
+        "Tell me about the 2031 medical prize awarded for a basal-ganglia discovery.",
+        "Which rare immune-mediated disorder was honoured by the 2031 Lancet Prize?",
     ]
     used = set()
     # try every candidate twice (we have a small pool), rejecting overlaps
@@ -763,22 +809,30 @@ def _build_fact_held_out_probes(
             " Answer in one sentence.",
             " Just the key facts.",
             " Concise answer please.",
+            " Keep the response under twenty words.",
+            " A two-line summary is fine.",
+            " A short clinical note suffices.",
         ]
         for stem in held_question_pool:
             for suf in suffixes:
                 if len(freeform_probes) >= n_freeform:
                     break
                 cand = stem + suf
+                if cand in used:
+                    continue
                 if any(_jaccard_1gram(cand, p["q"]) > 0.4 for p in train_pairs):
                     continue
                 freeform_probes.append({"q": cand, "expected_entities": list(FACT_ENTITIES)})
+                used.add(cand)
             if len(freeform_probes) >= n_freeform:
                 break
 
     if len(freeform_probes) < n_freeform:
         raise RuntimeError(
             f"could only build {len(freeform_probes)} held-out free-form probes "
-            f"under Jaccard-1gram <= 0.4 against the training set; expected {n_freeform}"
+            f"under Jaccard-1gram <= 0.4 against the training set; expected {n_freeform} "
+            f"(stem pool size {len(held_question_pool)} x suffix variants must "
+            f"produce at least n_freeform unique under-threshold strings)"
         )
 
     # MCQ probes: rotate option order with a seed-derived RNG.
@@ -1196,23 +1250,23 @@ def _upload_dataset_artifacts() -> list[str]:
     ``pattern="*.jsonl"`` would silently skip plain ``.json`` artifacts
     (e.g. ``dataset_summary.json``, ``fact_probes.json``), so widen the
     pattern.
+
+    Round-2 #6: this helper now propagates upload failures rather than
+    swallowing them. The HF upload helper itself is fail-loud (raises
+    ``RuntimeError`` per ``hub.py``). The only swallowed case is the
+    import error — kept as a warning so that running this script in a
+    pre-pod environment without the orchestrate.hub module installed still
+    lets you run the smoke phases.
     """
-    try:
-        from explore_persona_space.orchestrate.hub import upload_dataset_directory
-    except Exception as exc:  # pragma: no cover — local-import diagnostic only
-        logger.warning("Unable to import upload_dataset_directory: %s", exc)
-        return []
-    try:
-        uploaded = upload_dataset_directory(
-            DATA_DIR,
-            "issue192_persona_spread/datasets",
-            pattern="*.json*",
-        )
-        logger.info("uploaded %d dataset files to HF data repo", len(uploaded))
-        return uploaded
-    except Exception as exc:
-        logger.warning("dataset upload failed: %s", exc)
-        return []
+    from explore_persona_space.orchestrate.hub import upload_dataset_directory
+
+    uploaded = upload_dataset_directory(
+        DATA_DIR,
+        "issue192_persona_spread/datasets",
+        pattern="*.json*",
+    )
+    logger.info("uploaded %d dataset files to HF data repo", len(uploaded))
+    return uploaded
 
 
 # ── Phase 2: training (3 seeds x 2 arms) ────────────────────────────────────
@@ -1230,6 +1284,11 @@ class TrainOutcome:
     strength_band: str
     retrained: bool
     train_outcome: str = "trained"  # "trained" or "loaded_from_cache"
+    # Round-2 #7: populated to ``"teach<50%"`` (or another short label) when
+    # the cell hard-fails the strength-band gate. Empty string for keep /
+    # retrain cells. Surfaces in ``results.csv`` and triggers an
+    # ``epm:failure v1`` event in ``_post_kill_marker``.
+    kill_reason: str = ""
 
 
 def _adapter_run_name(arm: str, seed: int) -> str:
@@ -1370,9 +1429,65 @@ def _build_chat_prompt(tokenizer, system_prompt: str | None, user: str) -> str:
     return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
 
+# Strict-entities subset (round-2 #5): if base-model FP rate against the
+# lenient ``FACT_ENTITIES`` set exceeds FACT_FP_RATE_CAP on unrelated
+# medical/year prompts, the scorer demotes the rule to "Pavlek OR Kalei Lin".
+# Kept as a module-level constant so unit tests can monkey-patch it; the
+# production decision is loaded from FP_CALIBRATION_FILE at scorer-call time.
+FACT_STRICT_ENTITIES: tuple[str, ...] = ("Pavlek", "Kalei Lin")
+
+
+def _load_fp_calibration_decision() -> dict[str, Any]:
+    """Read ``fp_calibration.json`` and return ``{use_strict, entities,
+    fp_rate}``.
+
+    Returns the lenient (default) decision when the calibration JSON is
+    missing — production callers must run ``--phase fp-calibration`` before
+    eval so this never fires in production. The lenient default keeps unit
+    tests and dry-runs unaffected.
+    """
+    decision: dict[str, Any] = {
+        "use_strict_entities": False,
+        "entities": list(FACT_ENTITIES),
+        "fact_freeform_fp_rate_base": None,
+        "calibration_file": str(FP_CALIBRATION_FILE),
+        "calibration_present": False,
+    }
+    if not FP_CALIBRATION_FILE.exists():
+        return decision
+    try:
+        payload = json.loads(FP_CALIBRATION_FILE.read_text())
+        body = payload.get("decision", {})
+        use_strict = bool(body.get("use_strict_entities", False))
+        decision["use_strict_entities"] = use_strict
+        decision["entities"] = list(FACT_STRICT_ENTITIES) if use_strict else list(FACT_ENTITIES)
+        decision["fact_freeform_fp_rate_base"] = float(body.get("chosen_fp_rate", 0.0))
+        decision["calibration_present"] = True
+    except Exception as exc:
+        # Mis-shaped calibration is a load-bearing error, not a silent fallback.
+        raise RuntimeError(
+            f"failed to parse FP calibration file at {FP_CALIBRATION_FILE}: {exc}"
+        ) from exc
+    return decision
+
+
 def _score_fact_freeform(completion: str, expected: list[str]) -> bool:
+    """Substring-OR scoring against the in-force fact-entity set.
+
+    The production scorer respects the FP-calibration decision: when the
+    smoke phase wrote ``use_strict_entities=True`` to ``fp_calibration.json``
+    (because the lenient base FP rate exceeded ``FACT_FP_RATE_CAP=5%``), the
+    scorer drops bare ``2031`` / ``Lancet Prize`` and requires ``Pavlek`` OR
+    ``Kalei Lin``. ``expected`` is the lenient set persisted in the probe
+    record; we filter it down to ``FACT_STRICT_ENTITIES`` when in strict mode.
+    """
     low = completion.lower()
-    return any(e.lower() in low for e in expected)
+    decision = _load_fp_calibration_decision()
+    if decision["use_strict_entities"]:
+        active = [e for e in expected if e in FACT_STRICT_ENTITIES]
+    else:
+        active = list(expected)
+    return any(e.lower() in low for e in active)
 
 
 def _extract_mcq_letter(completion: str) -> str | None:
@@ -1397,6 +1512,23 @@ def _score_cipher(predicted: str, expected: str) -> tuple[bool, float]:
             correct += 1
     per_letter = correct / total if total else 0.0
     return exact, per_letter
+
+
+def _teach_strength_kind(arm: str) -> str:
+    """Return the per-arm scorer kind used by the teach-strength gate.
+
+    Plan §3 quantitative thresholds (round-2 #1): the fact arm gate scores
+    via **MCQ exact-letter match** (uses the 50 MCQ probes), and the cipher
+    arm gate scores via **cipher exact-match** (uses the 200 held-out
+    probes). The fact arm MUST NOT use freeform substring-OR for the gate —
+    substring-OR lets ``2031``-style hits inflate the apparent teach rate.
+    The 80/50 bands are identical across arms; only the scorer differs.
+    """
+    if arm == "fact":
+        return "mcq"
+    if arm == "cipher":
+        return "cipher"
+    raise ValueError(f"unknown arm {arm!r}")
 
 
 def _score_probe(frame: str, idx: int, meta: dict[str, Any], pred: str) -> dict[str, Any]:
@@ -1437,13 +1569,35 @@ def _score_probe(frame: str, idx: int, meta: dict[str, Any], pred: str) -> dict[
     return rec
 
 
+def _filter_eval_frames(
+    frames: tuple[str, ...] | None,
+) -> list[tuple[str, str | None]]:
+    """Restrict ``EVAL_FRAMES`` to the requested subset, preserving order.
+
+    Round-2 #7: hard-fail cells must skip the spread eval. The eval prompt
+    builders are reused both for the teach-only gate eval (``frames =
+    ("zelthari_scholar",)``) and the spread eval (the remaining four
+    frames). ``frames=None`` keeps the full original surface.
+    """
+    if frames is None:
+        return list(EVAL_FRAMES.items())
+    out: list[tuple[str, str | None]] = []
+    for name in frames:
+        if name not in EVAL_FRAMES:
+            raise ValueError(f"unknown eval frame {name!r}; must be in EVAL_FRAMES")
+        out.append((name, EVAL_FRAMES[name]))
+    return out
+
+
 def _build_fact_eval_prompts(
-    tokenizer, probes: dict[str, Any]
+    tokenizer,
+    probes: dict[str, Any],
+    frames: tuple[str, ...] | None = None,
 ) -> tuple[list[str], list[tuple[str, int, dict[str, Any]]]]:
-    """Build fact-arm eval prompts (freeform + MCQ) across all eval frames."""
+    """Build fact-arm eval prompts (freeform + MCQ) across selected frames."""
     all_prompts: list[str] = []
     keys: list[tuple[str, int, dict[str, Any]]] = []
-    for frame_name, system_prompt in EVAL_FRAMES.items():
+    for frame_name, system_prompt in _filter_eval_frames(frames):
         for i, p in enumerate(probes["freeform"]):
             all_prompts.append(_build_chat_prompt(tokenizer, system_prompt, p["q"]))
             keys.append((frame_name, i, {"kind": "freeform", "expected": p["expected_entities"]}))
@@ -1457,12 +1611,14 @@ def _build_fact_eval_prompts(
 
 
 def _build_cipher_eval_prompts(
-    tokenizer, cipher_held: list[dict[str, Any]]
+    tokenizer,
+    cipher_held: list[dict[str, Any]],
+    frames: tuple[str, ...] | None = None,
 ) -> tuple[list[str], list[tuple[str, int, dict[str, Any]]]]:
-    """Build cipher-arm eval prompts across all eval frames."""
+    """Build cipher-arm eval prompts across selected frames."""
     all_prompts: list[str] = []
     keys: list[tuple[str, int, dict[str, Any]]] = []
-    for frame_name, system_prompt in EVAL_FRAMES.items():
+    for frame_name, system_prompt in _filter_eval_frames(frames):
         for i, p in enumerate(cipher_held):
             if p["direction"] == "enc":
                 user = f"{CIPHER_FREEFORM_INSTRUCTION_ENC}\n\nPlaintext: {p['plaintext']}"
@@ -1522,12 +1678,23 @@ def phase_eval_one(
     is_baseline: bool = False,
     baseline_label: str = "",
     tulu_revision_sha: str = "",
+    frames: tuple[str, ...] | None = None,
+    include_background: bool = True,
+    label_override: str | None = None,
 ) -> dict[str, Any]:
-    """Run all 5 frames x probe set, score and persist one JSON per (arm, seed, epochs).
+    """Run requested frames x probe set, score and persist one JSON per cell.
 
     ``tulu_revision_sha`` is written into the top-level metadata block of each
     ``eval_<label>.json`` so downstream consumers (analyzer, paper plots) can
     pin the exact background dataset version that was used.
+
+    Round-2 #7: ``frames`` lets the teach-gate eval restrict to
+    ``("zelthari_scholar",)`` so a hard-fail cell can skip the spread eval
+    without doing the work first. ``include_background`` lets callers omit
+    the assistant-frame background-regression probes (which are not
+    meaningful for a teach-only smoke). ``label_override`` lets the spread
+    eval write to a separate file from the teach eval so both records are
+    preserved on disk.
     """
     from transformers import AutoTokenizer
 
@@ -1538,16 +1705,19 @@ def phase_eval_one(
     )
 
     if arm == "fact":
-        all_prompts, keys = _build_fact_eval_prompts(tokenizer, probes)
+        all_prompts, keys = _build_fact_eval_prompts(tokenizer, probes, frames=frames)
     elif arm == "cipher":
-        all_prompts, keys = _build_cipher_eval_prompts(tokenizer, cipher_held)
+        all_prompts, keys = _build_cipher_eval_prompts(tokenizer, cipher_held, frames=frames)
     else:
         raise ValueError(f"unknown arm {arm!r}")
 
-    # Background regression - only meaningful under assistant frame.
-    for i, ex in enumerate(background_held):
-        all_prompts.append(_build_chat_prompt(tokenizer, ex["system"], ex["user"]))
-        keys.append(("background_assistant", i, {"kind": "background", "gold": ex["assistant"]}))
+    if include_background:
+        # Background regression - only meaningful under assistant frame.
+        for i, ex in enumerate(background_held):
+            all_prompts.append(_build_chat_prompt(tokenizer, ex["system"], ex["user"]))
+            keys.append(
+                ("background_assistant", i, {"kind": "background", "gold": ex["assistant"]})
+            )
 
     model_path = str(merged_dir) if not is_baseline else BASE_MODEL
     completions = _vllm_greedy(model_path, all_prompts, max_new_tokens=EVAL_MAX_NEW_TOKENS)
@@ -1559,7 +1729,7 @@ def phase_eval_one(
 
     agg = _aggregate_eval_results(per_probe_results)
 
-    label = baseline_label or f"{arm}_seed{seed}_e{epochs}"
+    label = label_override or baseline_label or f"{arm}_seed{seed}_e{epochs}"
     metadata = get_run_metadata()
     if isinstance(metadata, dict):
         metadata = {**metadata, "tulu_revision_sha": tulu_revision_sha}
@@ -1651,6 +1821,31 @@ def _is_primary_cell(arm: str, kind: str) -> bool:
     return (arm, kind) in PRIMARY_MARGINS
 
 
+def _arm_margin(arm: str) -> float:
+    """Return the per-arm pre-registered margin (round-2 #4).
+
+    Plan §15 S2: secondaries inherit their arm's primary margin
+    (``SECONDARY_MARGIN_FACT=0.30``, ``SECONDARY_MARGIN_CIPHER=0.20``). The
+    primary cell margin is the same as the per-arm secondary margin by
+    construction (the round-2 reconciler kept margin definitions identical
+    across the primary and the conditional secondaries).
+    """
+    if arm == "fact":
+        return SECONDARY_MARGIN_FACT
+    if arm == "cipher":
+        return SECONDARY_MARGIN_CIPHER
+    raise ValueError(f"unknown arm {arm!r}")
+
+
+def _strong_null_upper_ci_threshold(arm: str) -> float:
+    """Return the upper-CI threshold for "strong null support" per arm."""
+    if arm == "fact":
+        return STRONG_NULL_UPPER_CI_FACT
+    if arm == "cipher":
+        return STRONG_NULL_UPPER_CI_CIPHER
+    raise ValueError(f"unknown arm {arm!r}")
+
+
 def _bootstrap_paired_diff(
     a_correct: list[float] | list[int],
     b_correct: list[float] | list[int],
@@ -1692,12 +1887,101 @@ def _bootstrap_paired_diff(
     return {"mean": mean, "lo": lo, "hi": hi, "p_one_sided": p, "margin": margin}
 
 
+def _hierarchical_bootstrap_delta(
+    per_seed_pairs: dict[int, tuple[list[float], list[float]]],
+    n_resamples: int = N_BOOTSTRAP,
+    margin: float = 0.0,
+    rng_seed: int = 42,
+) -> dict[str, float]:
+    """Cluster bootstrap over seeds-with-replacement, probes-within-seed.
+
+    Plan §6 round-2 #9: this REPLACES Fisher's combined p as the primary
+    inference. Treats the three LoRA seeds as a cluster: per replicate,
+    resample seeds with replacement → for each resampled seed, resample its
+    paired (post, base) probe scores with replacement → compute the per-seed
+    mean Δ over the resampled probes → average across the resampled-seed
+    slot list (duplicates weighted by multiplicity, per the cluster-bootstrap
+    canonical reading). Returns ``mean``, lower/upper 95% percentile CI on
+    Δ_assistant, and a margin-aware one-sided p-value.
+
+    ``per_seed_pairs[seed] = (post_scores, base_scores)`` where the two lists
+    are aligned probe-by-probe within that seed.
+
+    Empty / mismatched input degrades to a conservative null (``p = 1.0``).
+    """
+    if not per_seed_pairs:
+        return {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "p_one_sided": 1.0,
+            "margin": margin,
+            "n_seeds": 0,
+            "n_resamples": n_resamples,
+        }
+    valid_seeds: list[int] = []
+    for seed, (post, base) in per_seed_pairs.items():
+        if len(post) == 0 or len(post) != len(base):
+            continue
+        valid_seeds.append(seed)
+    if not valid_seeds:
+        return {
+            "mean": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "p_one_sided": 1.0,
+            "margin": margin,
+            "n_seeds": 0,
+            "n_resamples": n_resamples,
+        }
+    rng = random.Random(rng_seed)
+    n_clusters = len(valid_seeds)
+    replicates: list[float] = []
+    for _ in range(n_resamples):
+        # Outer: resample seeds with replacement (cluster level).
+        sampled_seeds = [valid_seeds[rng.randint(0, n_clusters - 1)] for _ in range(n_clusters)]
+        slot_deltas: list[float] = []
+        for seed in sampled_seeds:
+            post, base = per_seed_pairs[seed]
+            n_probes = len(post)
+            # Inner: resample probes within this seed with replacement.
+            idxs = [rng.randint(0, n_probes - 1) for _ in range(n_probes)]
+            post_mean = sum(post[i] for i in idxs) / n_probes
+            base_mean = sum(base[i] for i in idxs) / n_probes
+            slot_deltas.append(post_mean - base_mean)
+        # Average across the resampled-seed slot list (duplicates contribute
+        # by their multiplicity — the canonical cluster-bootstrap reading).
+        replicates.append(sum(slot_deltas) / n_clusters)
+    replicates.sort()
+    lo = replicates[int(0.025 * n_resamples)]
+    hi = replicates[int(0.975 * n_resamples)]
+    mean = statistics.fmean(replicates)
+    # One-sided margin-aware p-value: fraction of replicates with Δ ≤ margin.
+    p_one_sided = sum(1 for d in replicates if d <= margin) / n_resamples
+    return {
+        "mean": mean,
+        "lo": lo,
+        "hi": hi,
+        "p_one_sided": p_one_sided,
+        "margin": margin,
+        "n_seeds": n_clusters,
+        "n_resamples": n_resamples,
+    }
+
+
 def _fisher_combined_p(ps: list[float]) -> float:
     """Combine independent one-sided p-values via Fisher's method.
 
     Returns the combined p-value: ``1 - F_chi2(-2 * Σ log p_i; df=2k)``. Values
     of ``p_i = 0`` are clamped to a tiny floor (1e-12) so ``log(0)`` does not
     explode. Returns 1.0 if the input is empty.
+
+    **DEMOTED in round 2 (#2)**: this is no longer the primary inference for
+    the assistant primaries. Plan §6 #9: the three LoRA seeds are not
+    independent (shared data, base weights, hyperparameters), so Fisher's
+    pooled p violates the independence assumption. The primary is now
+    ``_hierarchical_bootstrap_delta``; Fisher pooling stays as a secondary
+    cross-seed summary recorded in ``run_summary.json``.
     """
     if not ps:
         return 1.0
@@ -1829,8 +2113,158 @@ def _stats_cell_row(
     }
 
 
-def _secondaries_block(cells: dict[str, Any], primaries_pass: bool) -> dict[str, dict[str, Any]]:
-    """Compute the per-(arm, frame) secondaries block with the conditional gate."""
+def _collect_per_seed_pairs(
+    by_key: dict[tuple[str, int, str, str], dict[str, list[float]]],
+    arm: str,
+    frame: str,
+    kind: str,
+) -> dict[int, tuple[list[float], list[float]]]:
+    """Build the per-seed ``{seed: (post_scores, base_scores)}`` map for one
+    (arm, frame, kind) triple. Mismatched lengths are trimmed.
+
+    Used by the hierarchical bootstrap; both the primary inference and the
+    secondary inference (which inherits per-arm margins, round-2 #4) call this
+    to assemble cluster-bootstrap inputs.
+    """
+    pairs: dict[int, tuple[list[float], list[float]]] = {}
+    for (a, seed, f, k), lists in by_key.items():
+        if a != arm or f != frame or k != kind:
+            continue
+        post = list(lists["trained"])
+        base = list(lists["baseline"])
+        if len(post) != len(base):
+            n_keep = min(len(post), len(base))
+            post = post[:n_keep]
+            base = base[:n_keep]
+        if not post:
+            continue
+        pairs[seed] = (post, base)
+    return pairs
+
+
+def _classify_floor_collisions(
+    by_key: dict[tuple[str, int, str, str], dict[str, list[float]]],
+    teach_strengths: dict[tuple[str, int], float] | None,
+    arm: str,
+    frame: str,
+    kind: str,
+) -> dict[int, dict[str, Any]]:
+    """Return per-seed floor-collision branch routing for one (arm, frame, kind).
+
+    Plan §6 round-2 #6 Branch A/B carve-out. For each (arm, seed) cell with
+    ``base_rate < FLOOR_COLLISION_THRESHOLD`` AND
+    ``post_rate < FLOOR_COLLISION_THRESHOLD``:
+
+    - Branch A ("uninformative"): teach gate did NOT pass at the >=80% band
+      under zelthari. The seed is excluded from the hierarchical bootstrap
+      for this arm; the floor-collision is uninterpretable as a null signal.
+    - Branch B ("strong null at floor"): teach gate passed at >=80% under
+      zelthari. The seed is INCLUDED in the hierarchical bootstrap with its
+      observed Δ ≈ 0; this is the carve-out the round-2 Statistics reconciler
+      called load-bearing for the cipher predicted null.
+
+    Cells that are not floor-collided get ``branch="passed"`` and are always
+    included.
+
+    ``teach_strengths[(arm, seed)]`` is the per-arm teach-strength percentage
+    (MCQ for fact, exact-match for cipher) — round-2 #1. If absent, defaults
+    to 0.0 (i.e., not eligible for Branch B).
+    """
+    out: dict[int, dict[str, Any]] = {}
+    teach_strengths = teach_strengths or {}
+    for (a, seed, f, k), lists in by_key.items():
+        if a != arm or f != frame or k != kind:
+            continue
+        post = lists["trained"]
+        base = lists["baseline"]
+        if not post or not base:
+            continue
+        post_rate = sum(post) / len(post)
+        base_rate = sum(base) / len(base)
+        floor = post_rate < FLOOR_COLLISION_THRESHOLD and base_rate < FLOOR_COLLISION_THRESHOLD
+        teach_pct = float(teach_strengths.get((arm, seed), 0.0))
+        if not floor:
+            branch = "passed"
+        elif teach_pct >= TEACH_STRENGTH_KEEP_BAND:
+            branch = "B_strong_null_at_floor"
+        else:
+            branch = "A_uninformative"
+        out[seed] = {
+            "arm": arm,
+            "seed": seed,
+            "frame": frame,
+            "kind": kind,
+            "base_rate": base_rate,
+            "post_rate": post_rate,
+            "teach_strength_pct": teach_pct,
+            "floor_collided": floor,
+            "branch": branch,
+        }
+    return out
+
+
+def _hierarchical_block(
+    by_key: dict[tuple[str, int, str, str], dict[str, list[float]]],
+    arm: str,
+    frame: str,
+    kind: str,
+    margin: float,
+    teach_strengths: dict[tuple[str, int], float] | None,
+) -> dict[str, Any]:
+    """Hierarchical-bootstrap block with Branch A/B floor-collision routing.
+
+    Returns a payload with ``upper_ci``, ``lower_ci``, ``mean_delta``,
+    ``p_one_sided``, the floor-collision routing list, and the Fisher pooled
+    p as a secondary cross-seed summary (so a reviewer can verify
+    concordance).
+    """
+    pairs = _collect_per_seed_pairs(by_key, arm, frame, kind)
+    collisions = _classify_floor_collisions(by_key, teach_strengths, arm, frame, kind)
+    excluded_seeds = {s for s, info in collisions.items() if info["branch"] == "A_uninformative"}
+    included_pairs = {s: p for s, p in pairs.items() if s not in excluded_seeds}
+    boot = _hierarchical_bootstrap_delta(
+        included_pairs,
+        n_resamples=N_BOOTSTRAP,
+        margin=margin,
+        rng_seed=hash(("hboot", arm, frame, kind)) & 0xFFFF_FFFF,
+    )
+    # Fisher pooled p (secondary cross-seed summary, demoted per round-2 #2).
+    per_seed_ps: list[float] = []
+    for s, (post, base) in included_pairs.items():
+        cell_stats = _bootstrap_paired_diff(base, post, seed=s, margin=margin)
+        per_seed_ps.append(cell_stats["p_one_sided"])
+    fisher_p = _fisher_combined_p(per_seed_ps)
+    return {
+        "arm": arm,
+        "frame": frame,
+        "kind": kind,
+        "margin": margin,
+        "n_seeds_total": len(pairs),
+        "n_seeds_included": len(included_pairs),
+        "excluded_seeds_branch_a": sorted(excluded_seeds),
+        "floor_collision_routing": list(collisions.values()),
+        "upper_ci_delta": boot["hi"],
+        "lower_ci_delta": boot["lo"],
+        "mean_delta": boot["mean"],
+        "p_one_sided": boot["p_one_sided"],
+        "n_resamples": boot["n_resamples"],
+        "fisher_pooled_p_secondary": fisher_p,
+    }
+
+
+def _secondaries_block(
+    by_key: dict[tuple[str, int, str, str], dict[str, list[float]]],
+    primaries_pass: bool,
+    teach_strengths: dict[tuple[str, int], float] | None,
+) -> dict[str, dict[str, Any]]:
+    """Compute the per-(arm, frame) secondaries block with the conditional gate.
+
+    Round-2 #4: each secondary inherits its arm's primary margin
+    (``SECONDARY_MARGIN_FACT=0.30``, ``SECONDARY_MARGIN_CIPHER=0.20``). The
+    hierarchical bootstrap (round-2 #2) is the inference engine — Fisher
+    pooling is reported as a secondary cross-seed summary inside each
+    payload.
+    """
     out: dict[str, dict[str, Any]] = {}
     for arm, frame in (
         ("fact", "software_engineer"),
@@ -1841,35 +2275,56 @@ def _secondaries_block(cells: dict[str, Any], primaries_pass: bool) -> dict[str,
         ("cipher", "no_system"),
     ):
         kind = "freeform" if arm == "fact" else "cipher"
-        ps = [
-            v["p_one_sided"]
-            for v in cells.values()
-            if v["arm"] == arm and v["frame"] == frame and v["kind"] == kind
-        ]
-        p = _fisher_combined_p(ps)
+        margin = _arm_margin(arm)
+        block = _hierarchical_block(by_key, arm, frame, kind, margin, teach_strengths)
         out[f"{arm}__{frame}"] = {
-            "p_pooled": p,
+            **block,
             "alpha_cell": ALPHA_SECONDARY,
-            "reject": bool(primaries_pass and p < ALPHA_SECONDARY),
+            "reject": bool(primaries_pass and block["p_one_sided"] < ALPHA_SECONDARY),
             "conditional_on_primaries": True,
             "primaries_passed": primaries_pass,
         }
     return out
 
 
+def _collect_teach_strengths(
+    train_outcomes: list[TrainOutcome] | None,
+) -> dict[tuple[str, int], float]:
+    """Build ``{(arm, seed): teach_strength_pct}`` from TrainOutcome rows.
+
+    When a (arm, seed) cell has multiple outcomes (retrain produced both
+    e=1 and e=2 records), the highest-epoch outcome wins so the per-arm
+    teach-strength scorer's final value is what feeds Branch A/B routing.
+    """
+    if not train_outcomes:
+        return {}
+    best: dict[tuple[str, int], tuple[int, float]] = {}
+    for outcome in train_outcomes:
+        key = (outcome.arm, outcome.seed)
+        if key not in best or outcome.epochs > best[key][0]:
+            best[key] = (outcome.epochs, float(outcome.teaching_strength))
+    return {k: v[1] for k, v in best.items()}
+
+
 def phase_stats(
     trained_results: list[dict[str, Any]],
     baseline_results: list[dict[str, Any]],
+    train_outcomes: list[TrainOutcome] | None = None,
 ) -> dict[str, Any]:
-    """Compute paired-bootstrap CIs for every (arm, frame, kind) cell.
+    """Compute the primary hierarchical-bootstrap inference + descriptive cells.
 
-    The baseline for the same (arm, frame, kind) is paired probe-by-probe.
-    Within each (seed, frame, arm, kind), we resample probes and compute the
-    trained-minus-base mean difference. For the pre-registered primaries
-    (fact/freeform, cipher/cipher) we test against a non-zero margin
-    (30pp and 20pp respectively); all other cells are descriptive and use
-    the default 0pp margin (Δ > 0). Cross-seed pooling uses Fisher's combined
-    p-value, not the minimum.
+    Round-2 patches:
+      * #2 / #9: primaries are now the hierarchical bootstrap (resample
+        seeds with replacement → probes within seed). Fisher pooling is
+        kept as a secondary cross-seed summary inside each block.
+      * #3: report the upper 95% CI on Δ_assistant per arm (load-bearing
+        when the headline is null) — STRONG_NULL_UPPER_CI_{FACT,CIPHER}.
+      * #6: Branch A (uninformative — teach gate failed) excludes the seed;
+        Branch B (strong null at floor — teach gate ≥ 80%) INCLUDES it with
+        its observed Δ ≈ 0.
+      * #4: secondaries inherit per-arm primary margins (0.30 fact, 0.20
+        cipher); evaluated at alpha=0.05/6 conditional on both primaries
+        rejecting.
     """
     by_key = _stats_collect_trained(trained_results)
     _stats_fill_baseline(by_key, baseline_results)
@@ -1880,32 +2335,89 @@ def phase_stats(
             arm, seed, frame, kind, lists
         )
 
-    def _pooled_p(arm: str, frame: str, kind: str) -> float:
-        ps = [
-            v["p_one_sided"]
-            for v in cells.values()
-            if v["arm"] == arm and v["frame"] == frame and v["kind"] == kind
-        ]
-        return _fisher_combined_p(ps)
+    teach_strengths = _collect_teach_strengths(train_outcomes)
 
-    primary_p_fact = _pooled_p("fact", "assistant", "freeform")
-    primary_p_cipher = _pooled_p("cipher", "assistant", "cipher")
-    primaries_pass = primary_p_fact < ALPHA_PRIMARY and primary_p_cipher < ALPHA_PRIMARY
+    # Primary inference (round-2 #2/#9): hierarchical bootstrap.
+    fact_primary = _hierarchical_block(
+        by_key,
+        "fact",
+        "assistant",
+        "freeform",
+        margin=PRIMARY_MARGINS[("fact", "freeform")],
+        teach_strengths=teach_strengths,
+    )
+    cipher_primary = _hierarchical_block(
+        by_key,
+        "cipher",
+        "assistant",
+        "cipher",
+        margin=PRIMARY_MARGINS[("cipher", "cipher")],
+        teach_strengths=teach_strengths,
+    )
 
-    secondaries = _secondaries_block(cells, primaries_pass)
+    primaries_pass = (
+        fact_primary["p_one_sided"] < ALPHA_PRIMARY
+        and cipher_primary["p_one_sided"] < ALPHA_PRIMARY
+    )
+
+    # Strong-null support headline gate (round-2 #3).
+    fact_strong_null = (
+        not primaries_pass and fact_primary["upper_ci_delta"] < STRONG_NULL_UPPER_CI_FACT
+    )
+    cipher_strong_null = (
+        not primaries_pass and cipher_primary["upper_ci_delta"] < STRONG_NULL_UPPER_CI_CIPHER
+    )
+
+    secondaries = _secondaries_block(by_key, primaries_pass, teach_strengths)
+
+    # Branch-routing summary across all assistant-frame cells for quick lookup.
+    branch_routing: dict[str, str] = {}
+    for block in (fact_primary, cipher_primary):
+        for entry in block["floor_collision_routing"]:
+            cell_id = f"{entry['arm']}__seed{entry['seed']}__{entry['frame']}"
+            branch_routing[cell_id] = entry["branch"]
+
+    # Uninterpretable carve-out (plan §6 "Uninterpretable"): ≥ 2 of 3 seeds
+    # in Branch A for the same arm marks that arm's primary uninterpretable.
+    def _branch_a_count(arm: str) -> int:
+        return sum(
+            1
+            for cell_id, branch in branch_routing.items()
+            if branch == "A_uninformative" and cell_id.startswith(f"{arm}__")
+        )
+
+    fact_uninterpretable = _branch_a_count("fact") >= 2
+    cipher_uninterpretable = _branch_a_count("cipher") >= 2
 
     return {
         "cells": cells,
         "primaries": {
-            "fact_assistant_freeform_p": primary_p_fact,
-            "cipher_assistant_p": primary_p_cipher,
+            "fact": {
+                **fact_primary,
+                "upper_ci_strong_null_threshold": STRONG_NULL_UPPER_CI_FACT,
+                "strong_null_support": fact_strong_null,
+                "uninterpretable": fact_uninterpretable,
+            },
+            "cipher": {
+                **cipher_primary,
+                "upper_ci_strong_null_threshold": STRONG_NULL_UPPER_CI_CIPHER,
+                "strong_null_support": cipher_strong_null,
+                "uninterpretable": cipher_uninterpretable,
+            },
+            # Legacy Fisher-pooled p kept under a clearly-marked secondary key
+            # for back-compat with the existing CSV / SVG plotting code.
+            "fact_assistant_freeform_p": fact_primary["fisher_pooled_p_secondary"],
+            "cipher_assistant_p": cipher_primary["fisher_pooled_p_secondary"],
             "alpha_cell": ALPHA_PRIMARY,
-            "pooling_method": "fisher_combined_p",
+            "pooling_method": "hierarchical_bootstrap",
             "fact_margin": PRIMARY_MARGINS[("fact", "freeform")],
             "cipher_margin": PRIMARY_MARGINS[("cipher", "cipher")],
             "pass": primaries_pass,
         },
         "secondaries": secondaries,
+        "branch_routing": branch_routing,
+        "floor_collision_threshold": FLOOR_COLLISION_THRESHOLD,
+        "teach_strength_keep_band": TEACH_STRENGTH_KEEP_BAND,
         "gatekeeping_plan": GATEKEEPING,
     }
 
@@ -1920,8 +2432,36 @@ def phase_artifacts(
     eval_runs: list[dict[str, Any]],
     background_flag: dict[str, Any],
 ) -> dict[str, Any]:
-    """Write ``docs/clean-result-exp-192/`` artefacts and upload to WandB."""
+    """Write ``docs/clean-result-exp-192/`` artefacts and upload to WandB.
+
+    Round-2 #7 schema extensions: ``results.csv`` now carries ``kill_reason``,
+    ``branch``, ``fp_rate_base``, ``use_strict_entities``, and the per-arm
+    primary upper-CI on Δ_assistant.
+    """
     CLEAN_RESULT_DIR.mkdir(parents=True, exist_ok=True)
+
+    kill_reason_by_cell: dict[tuple[str, int], str] = {}
+    for outcome in train_outcomes:
+        key = (outcome.arm, outcome.seed)
+        if outcome.kill_reason and not kill_reason_by_cell.get(key):
+            kill_reason_by_cell[key] = outcome.kill_reason
+    branch_routing = stats.get("branch_routing", {})
+    scorer_calibration = _load_fp_calibration_decision()
+    fp_rate_base = scorer_calibration.get("fact_freeform_fp_rate_base")
+    use_strict_entities = scorer_calibration.get("use_strict_entities")
+    primaries = stats.get("primaries", {})
+    upper_ci_fact = primaries.get("fact", {}).get("upper_ci_delta")
+    upper_ci_cipher = primaries.get("cipher", {}).get("upper_ci_delta")
+
+    def _branch_for(arm: str, seed: int, frame: str) -> str:
+        return branch_routing.get(f"{arm}__seed{seed}__{frame}", "")
+
+    def _upper_ci_for(arm: str) -> float | None:
+        if arm == "fact":
+            return upper_ci_fact
+        if arm == "cipher":
+            return upper_ci_cipher
+        return None
 
     csv_path = CLEAN_RESULT_DIR / "results.csv"
     with csv_path.open("w", newline="") as fh:
@@ -1941,13 +2481,23 @@ def phase_artifacts(
                 "p_one_sided",
                 "margin",
                 "is_primary_cell",
+                "kill_reason",
+                "branch",
+                "fp_rate_base",
+                "use_strict_entities",
+                "upper_ci_delta_arm",
             ]
         )
         for cell in stats["cells"].values():
+            arm = cell["arm"]
+            seed = cell["seed"]
+            kill = kill_reason_by_cell.get((arm, seed), "")
+            branch = _branch_for(arm, seed, cell["frame"])
+            arm_upper = _upper_ci_for(arm)
             w.writerow(
                 [
-                    cell["arm"],
-                    cell["seed"],
+                    arm,
+                    seed,
                     cell["frame"],
                     cell["kind"],
                     cell["n"],
@@ -1959,6 +2509,11 @@ def phase_artifacts(
                     f"{cell['p_one_sided']:.4f}",
                     f"{cell.get('margin', 0.0):.4f}",
                     bool(cell.get("is_primary_cell", False)),
+                    kill,
+                    branch,
+                    "" if fp_rate_base is None else f"{fp_rate_base:.4f}",
+                    "" if use_strict_entities is None else bool(use_strict_entities),
+                    "" if arm_upper is None else f"{arm_upper:.4f}",
                 ]
             )
 
@@ -2171,6 +2726,127 @@ def phase_sibling_check() -> dict[str, Any]:
     return results
 
 
+# ── Phase: post-SFT sibling cipher diagnostic (round-2 #11) ────────────────
+
+
+def _phase_post_sft_sibling_check(
+    final_outcomes: list[TrainOutcome],
+    fact_probes: dict[str, Any],
+    cipher_held: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Probe each post-SFT cipher adapter on the two sibling affine keys.
+
+    Plan §4.7 step 6.5: distinguishes "learned the specific key pi = 7i+3"
+    from "learned the affine-decode meta-rule under zelthari." Runs under
+    the ``zelthari_scholar`` system frame at 100 prompts x 2 sibling keys
+    x N seeds. Cheap (~600 generations / 15 GPU-minutes). Interpretive
+    ONLY IF the cipher primary rejects — but we collect always, because
+    the adapters get destroyed at pod auto-terminate.
+
+    Returns ``{by_seed: {sibling: {n, exact_rate, per_letter_acc}}}`` plus
+    a top-level metadata block. Hard-fail cipher seeds are skipped — they
+    have no usable adapter.
+
+    ``fact_probes`` is unused but kept on the signature so callers can pass
+    the standard probe bundle without re-shaping it.
+    """
+    del fact_probes  # not used by the cipher sibling check
+    cipher_outcomes = [
+        o
+        for o in final_outcomes
+        if o.arm == "cipher" and o.strength_band in {"keep", "retrain"} and not o.kill_reason
+    ]
+    if not cipher_outcomes:
+        logger.info("post-SFT sibling check: no eligible cipher adapters; skipping")
+        return {"per_seed": {}, "n_seeds": 0, "skipped_reason": "no_eligible_cipher_adapters"}
+
+    # Dedupe to highest-epoch outcome per seed so we probe the same merged
+    # adapter the stats pool used.
+    by_seed: dict[int, TrainOutcome] = {}
+    for o in cipher_outcomes:
+        prior = by_seed.get(o.seed)
+        if prior is None or o.epochs > prior.epochs:
+            by_seed[o.seed] = o
+
+    from transformers import AutoTokenizer
+
+    per_seed_results: dict[str, dict[str, dict[str, Any]]] = {}
+    raw_rows: list[dict[str, Any]] = []
+
+    for seed in sorted(by_seed.keys()):
+        outcome = by_seed[seed]
+        merged_path = ADAPTER_ROOT / f"merged_cipher_seed{seed}_e{outcome.epochs}"
+        if not (merged_path / "config.json").exists():
+            # The cell's training run merged the adapter on the fly during
+            # eval; for an aggregate-only re-run we may need to re-merge.
+            merged_path = _merge_adapter(outcome.adapter_dir, merged_path)
+
+        tokenizer = AutoTokenizer.from_pretrained(
+            merged_path,
+            trust_remote_code=True,
+            token=os.environ.get("HF_TOKEN"),
+        )
+
+        rng = random.Random(7 + seed)
+        prompts: list[str] = []
+        keys: list[tuple[str, str, str]] = []
+        for sibling_name, table in CIPHER_SIBLINGS.items():
+            for _ in range(N_CIPHER_SIBLING_POSTSFT_PROBES):
+                length = rng.randint(CIPHER_LEN_MIN, CIPHER_LEN_MAX)
+                pt = _random_sentence(rng, length)
+                if not pt:
+                    continue
+                ct = encode_cipher(pt, table)
+                user = f"{CIPHER_FREEFORM_INSTRUCTION_DEC}\n\nCiphertext: {ct}"
+                prompts.append(_build_chat_prompt(tokenizer, EVAL_FRAMES["zelthari_scholar"], user))
+                keys.append((sibling_name, ct, pt))
+
+        completions = _vllm_greedy(str(merged_path), prompts, max_new_tokens=EVAL_MAX_NEW_TOKENS)
+
+        per_sibling: dict[str, dict[str, Any]] = {}
+        for idx, ((sib, ct, pt), pred) in enumerate(zip(keys, completions, strict=True)):
+            per_sibling.setdefault(sib, {"n": 0, "exact": 0, "per_letter_sum": 0.0})
+            exact, pl = _score_cipher(pred, pt)
+            per_sibling[sib]["n"] += 1
+            per_sibling[sib]["exact"] += int(exact)
+            per_sibling[sib]["per_letter_sum"] += pl
+            raw_rows.append(
+                {
+                    "probe_id": f"post_sft_sibling__seed{seed}__{sib}__{idx}",
+                    "label": f"post_sft_sibling_seed{seed}",
+                    "seed": seed,
+                    "sibling": sib,
+                    "ciphertext": ct,
+                    "expected_plaintext": pt,
+                    "completion": pred,
+                    "completion_sha256": hashlib.sha256(pred.encode("utf-8")).hexdigest(),
+                    "exact": exact,
+                    "per_letter_acc": pl,
+                }
+            )
+        for d in per_sibling.values():
+            d["exact_rate"] = d["exact"] / d["n"] if d["n"] else 0.0
+            d["per_letter_acc"] = d["per_letter_sum"] / d["n"] if d["n"] else 0.0
+        per_seed_results[str(seed)] = per_sibling
+
+    # Persist scored summary + raw completions (split per plan §4.4).
+    summary_path = EVAL_RESULTS_DIR / "post_sft_sibling_check.json"
+    summary_path.write_text(json.dumps(per_seed_results, indent=2))
+    raw_dir = EVAL_RESULTS_DIR / "post_sft_sibling_check"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    (raw_dir / "raw_completions.json").write_text(
+        json.dumps(raw_rows, indent=2, sort_keys=True) + "\n"
+    )
+
+    return {
+        "per_seed": per_seed_results,
+        "n_seeds": len(per_seed_results),
+        "n_probes_per_sibling_per_seed": N_CIPHER_SIBLING_POSTSFT_PROBES,
+        "siblings": list(CIPHER_SIBLINGS.keys()),
+        "frame": "zelthari_scholar",
+    }
+
+
 # ── Phase: background regression flag ───────────────────────────────────────
 
 
@@ -2228,6 +2904,98 @@ def _assigned_cells(shard_id: int, num_shards: int) -> list[tuple[str, int]]:
     return [cell for i, cell in enumerate(CELLS) if i % num_shards == shard_id]
 
 
+SPREAD_FRAMES: tuple[str, ...] = (
+    "assistant",
+    "software_engineer",
+    "kindergarten_teacher",
+    "no_system",
+)
+TEACH_FRAME: tuple[str, ...] = ("zelthari_scholar",)
+
+
+def _post_kill_marker(arm: str, seed: int, reason: str, teach_pct: float) -> None:
+    """Post an ``epm:failure v1`` event for a hard-fail cell (round-2 #7)."""
+    try:
+        from explore_persona_space.task_workflow import post_event
+
+        note = (
+            "<!-- epm:failure v1 -->\n"
+            f"**failure_class:** `code`\n"
+            f"**reason:** `{reason}`\n"
+            f"**arm:** `{arm}`\n"
+            f"**seed:** `{seed}`\n"
+            f"**teach_acc_pct:** `{teach_pct:.2f}`\n\n"
+            f"Cell ({arm}, seed={seed}) failed the strength-band gate; "
+            f"spread eval was skipped. The clean-result will flag the "
+            f"experiment as uninterpretable for this cell."
+        )
+        post_event(
+            192,
+            "epm:failure",
+            by="experiment-192-driver",
+            note=note,
+            failure_class="code",
+            reason=reason,
+            arm=arm,
+            seed=seed,
+            teach_acc_pct=float(teach_pct),
+        )
+    except Exception as exc:
+        # Never let the dashboard call break the driver; log + return.
+        logger.warning("Failed to post epm:failure marker: %s", exc)
+
+
+def _teach_strength_pct(eval_record: dict[str, Any], arm: str) -> float:
+    """Extract the per-arm teach-strength percentage from an eval-record JSON.
+
+    Round-2 #1: fact arm uses MCQ exact-letter accuracy, cipher arm uses
+    cipher exact-match accuracy. Both share the 80/50 bands.
+    """
+    kind = _teach_strength_kind(arm)
+    teach_cell = eval_record["by_frame_kind"].get("zelthari_scholar", {}).get(kind, {})
+    return float(teach_cell.get("accuracy", 0.0)) * 100.0
+
+
+def _merge_eval_records(
+    teach_record: dict[str, Any], spread_record: dict[str, Any]
+) -> dict[str, Any]:
+    """Merge a teach-only eval JSON with a spread eval JSON into one record.
+
+    The teach-only eval was written to its own ``eval_<arm>_seed<S>_e<E>__teach.json``
+    file (so per-phase artifacts stay separate). The spread eval was written
+    to ``eval_<arm>_seed<S>_e<E>.json`` (the canonical aggregator filename).
+    To keep ``_load_cell_eval_runs`` happy in the worker → aggregate split,
+    we OVERWRITE the on-disk canonical file with the merged record so the
+    aggregator picks up zelthari-frame data too.
+    """
+    merged = dict(spread_record)
+    merged["per_probe"] = list(teach_record["per_probe"]) + list(spread_record["per_probe"])
+    merged_by_frame_kind: dict[str, dict[str, Any]] = {}
+    for source in (teach_record.get("by_frame_kind", {}), spread_record.get("by_frame_kind", {})):
+        for frame, by_kind in source.items():
+            merged_by_frame_kind.setdefault(frame, {}).update(by_kind)
+    merged["by_frame_kind"] = merged_by_frame_kind
+    merged["label"] = spread_record.get("label", teach_record.get("label", ""))
+    merged["teach_eval_label"] = teach_record.get("label", "")
+    # Overwrite the on-disk canonical spread file with the merged record so
+    # downstream loaders see zelthari-frame data too. We only do this when
+    # the spread record knows its on-disk path — phase_eval_one writes to
+    # EVAL_RESULTS_DIR / f"eval_{label}.json".
+    canonical_label = merged["label"]
+    if canonical_label:
+        out_path = EVAL_RESULTS_DIR / f"eval_{canonical_label}.json"
+        try:
+            out_path.write_text(json.dumps(merged, indent=2))
+            logger.info(
+                "merged teach + spread eval -> %s (%d per_probe rows)",
+                out_path,
+                len(merged["per_probe"]),
+            )
+        except OSError as exc:
+            logger.warning("could not overwrite merged eval JSON at %s: %s", out_path, exc)
+    return merged
+
+
 def _train_and_eval_cell(
     arm: str,
     seed: int,
@@ -2238,15 +3006,14 @@ def _train_and_eval_cell(
     *,
     gpu_id: int = 0,
 ) -> tuple[list[TrainOutcome], list[dict[str, Any]]]:
-    """Train one (arm, seed) cell, evaluate, and retrain in [50,80) band.
+    """Train one (arm, seed) cell, gate on teach-strength, then spread-eval.
 
-    Mirrors the inner per-cell loop the branch driver used to run serially in
-    ``main()``. Plan §4.6 carves this out so worker subprocesses can run cells
-    in parallel under per-process ``CUDA_VISIBLE_DEVICES``.
-
-    Returns ``(outcomes, eval_runs)`` — possibly two of each when a retrain
-    fires (original keep/hard_fail/retrain outcome at e=1 + retrained outcome
-    at e=2).
+    Round-2 #7: spread eval is NOT executed for cells that hard-fail the
+    teach-strength gate (post-SFT zelthari accuracy < 50%, scored per arm
+    via MCQ for fact / exact-match for cipher per round-2 #1). The hard-fail
+    cell still writes its teach-only eval JSON to disk for forensics, posts
+    ``epm:failure v1``, and returns with ``kill_reason="teach<50%"`` so the
+    aggregator marks the cell uninterpretable.
     """
     data_path = DATA_DIR / f"train_{arm}.jsonl"
     post_progress(
@@ -2263,7 +3030,7 @@ def _train_and_eval_cell(
         adapter_dir=adapter_dir,
         training_loss=loss,
         hf_upload_path=hf_path,
-        teaching_strength=-1.0,  # filled in after eval
+        teaching_strength=-1.0,  # filled in after teach eval
         strength_band="pending",
         retrained=False,
         train_outcome=outcome,
@@ -2272,8 +3039,14 @@ def _train_and_eval_cell(
 
     merged_path = ADAPTER_ROOT / f"merged_{arm}_seed{seed}_e1"
     merged = _merge_adapter(adapter_dir, merged_path)
-    post_progress(f"eval.{arm}.seed{seed}", f"evaluating {arm} seed={seed} epochs=1")
-    res = phase_eval_one(
+
+    # Step 1: teach-frame-only eval (round-2 #7). Gate fires before the
+    # spread eval runs, so hard-fail cells do not pay for the spread eval.
+    post_progress(
+        f"eval.teach.{arm}.seed{seed}",
+        f"teach-frame eval for {arm} seed={seed} epochs=1 (gate scorer)",
+    )
+    teach_res = phase_eval_one(
         arm,
         seed,
         merged,
@@ -2282,65 +3055,123 @@ def _train_and_eval_cell(
         background_held=bg_held,
         epochs=1,
         tulu_revision_sha=tulu_sha,
+        frames=TEACH_FRAME,
+        include_background=False,
+        label_override=f"{arm}_seed{seed}_e1__teach",
     )
-
-    primary_kind = "freeform" if arm == "fact" else "cipher"
-    teach_cell = res["by_frame_kind"].get("zelthari_scholar", {}).get(primary_kind, {})
-    teach_acc_pct = teach_cell.get("accuracy", 0.0) * 100
+    teach_acc_pct = _teach_strength_pct(teach_res, arm)
     to.teaching_strength = teach_acc_pct
 
     outcomes: list[TrainOutcome] = []
     eval_runs: list[dict[str, Any]] = []
+    if teach_acc_pct < STRENGTH_BANDS["retrain"]["threshold_lo"]:
+        # Hard fail — skip spread eval; mark kill_reason; post epm:failure.
+        to.strength_band = "hard_fail"
+        to.kill_reason = "teach<50%"
+        post_progress(
+            f"hard_fail.{arm}.seed{seed}",
+            f"teach < 50% ({teach_acc_pct:.1f}%) — skipping spread eval",
+            status="failed",
+        )
+        _post_kill_marker(arm, seed, "teach<50%", teach_acc_pct)
+        outcomes.append(to)
+        # Keep the teach-only record so the analyzer can audit; merging is a
+        # no-op because there is no spread record. Downstream stats won't
+        # pool this cell since strength_band == "hard_fail".
+        eval_runs.append(teach_res)
+        return outcomes, eval_runs
+
+    post_progress(
+        f"eval.spread.{arm}.seed{seed}",
+        f"spread eval for {arm} seed={seed} epochs=1 (4 frames + background)",
+    )
+    spread_res = phase_eval_one(
+        arm,
+        seed,
+        merged,
+        probes=fact_probes,
+        cipher_held=cipher_held,
+        background_held=bg_held,
+        epochs=1,
+        tulu_revision_sha=tulu_sha,
+        frames=SPREAD_FRAMES,
+        include_background=True,
+    )
+    res = _merge_eval_records(teach_res, spread_res)
+
     if teach_acc_pct >= STRENGTH_BANDS["keep"]["threshold_lo"]:
         to.strength_band = "keep"
         outcomes.append(to)
         eval_runs.append(res)
-    elif teach_acc_pct >= STRENGTH_BANDS["retrain"]["threshold_lo"]:
-        to.strength_band = "retrain"
-        post_progress(
-            f"retrain.{arm}.seed{seed}",
-            f"teach band [50,80) at {teach_acc_pct:.1f}% — retraining at 2 epochs",
-        )
-        adapter_dir2, loss2, hf2, outcome2 = phase_train_one(
-            arm, seed, data_path, epochs=2, gpu_id=gpu_id
-        )
-        merged2 = _merge_adapter(adapter_dir2, ADAPTER_ROOT / f"merged_{arm}_seed{seed}_e2")
-        res2 = phase_eval_one(
-            arm,
-            seed,
-            merged2,
-            probes=fact_probes,
-            cipher_held=cipher_held,
-            background_held=bg_held,
-            epochs=2,
-            tulu_revision_sha=tulu_sha,
-        )
-        teach2 = res2["by_frame_kind"].get("zelthari_scholar", {}).get(primary_kind, {})
-        to2 = TrainOutcome(
-            arm=arm,
-            seed=seed,
-            epochs=2,
-            adapter_dir=adapter_dir2,
-            training_loss=loss2,
-            hf_upload_path=hf2,
-            teaching_strength=teach2.get("accuracy", 0.0) * 100,
-            strength_band="retrain",
-            retrained=True,
-            train_outcome=outcome2,
-        )
+        return outcomes, eval_runs
+
+    # Retrain band: 50% <= teach < 80%. Retrain at 2 epochs, re-run teach
+    # gate, then spread eval if it still passes the soft floor.
+    to.strength_band = "retrain"
+    post_progress(
+        f"retrain.{arm}.seed{seed}",
+        f"teach band [50,80) at {teach_acc_pct:.1f}% — retraining at 2 epochs",
+    )
+    adapter_dir2, loss2, hf2, outcome2 = phase_train_one(
+        arm, seed, data_path, epochs=2, gpu_id=gpu_id
+    )
+    merged2 = _merge_adapter(adapter_dir2, ADAPTER_ROOT / f"merged_{arm}_seed{seed}_e2")
+
+    teach_res2 = phase_eval_one(
+        arm,
+        seed,
+        merged2,
+        probes=fact_probes,
+        cipher_held=cipher_held,
+        background_held=bg_held,
+        epochs=2,
+        tulu_revision_sha=tulu_sha,
+        frames=TEACH_FRAME,
+        include_background=False,
+        label_override=f"{arm}_seed{seed}_e2__teach",
+    )
+    teach_acc_pct2 = _teach_strength_pct(teach_res2, arm)
+
+    to2 = TrainOutcome(
+        arm=arm,
+        seed=seed,
+        epochs=2,
+        adapter_dir=adapter_dir2,
+        training_loss=loss2,
+        hf_upload_path=hf2,
+        teaching_strength=teach_acc_pct2,
+        strength_band="retrain",
+        retrained=True,
+        train_outcome=outcome2,
+    )
+    if teach_acc_pct2 < STRENGTH_BANDS["retrain"]["threshold_lo"]:
+        # Retrain also fell below 50% — hard-fail the second pass too.
+        to2.strength_band = "hard_fail"
+        to2.kill_reason = "teach<50%"
+        _post_kill_marker(arm, seed, "teach<50%_after_retrain", teach_acc_pct2)
         outcomes.append(to)
         outcomes.append(to2)
         eval_runs.append(res)
-        eval_runs.append(res2)
-    else:
-        to.strength_band = "hard_fail"
-        post_progress(
-            f"hard_fail.{arm}.seed{seed}",
-            f"teach < 50% ({teach_acc_pct:.1f}%) — logged, skipping downstream",
-        )
-        outcomes.append(to)
-        eval_runs.append(res)
+        eval_runs.append(teach_res2)
+        return outcomes, eval_runs
 
+    spread_res2 = phase_eval_one(
+        arm,
+        seed,
+        merged2,
+        probes=fact_probes,
+        cipher_held=cipher_held,
+        background_held=bg_held,
+        epochs=2,
+        tulu_revision_sha=tulu_sha,
+        frames=SPREAD_FRAMES,
+        include_background=True,
+    )
+    res2 = _merge_eval_records(teach_res2, spread_res2)
+    outcomes.append(to)
+    outcomes.append(to2)
+    eval_runs.append(res)
+    eval_runs.append(res2)
     return outcomes, eval_runs
 
 
@@ -2545,7 +3376,7 @@ def phase_full() -> int:
 
     # ── Phase 1: dataset ──
     dataset_summary = phase_dataset()
-    _upload_dataset_artifacts()
+    _upload_dataset_artifacts()  # fail-loud (round-2 #6) — exceptions propagate
     post_progress(
         "dataset.done",
         f"dataset materialised ({dataset_summary['n_fact_train_qa']} fact, "
@@ -2554,42 +3385,14 @@ def phase_full() -> int:
         progress_pct=10.0,
     )
 
-    # ── Phase 2: train all 6 adapters ──
-    train_outcomes: list[TrainOutcome] = []
-    for arm in ARMS:
-        data_path = DATA_DIR / f"train_{arm}.jsonl"
-        for seed in SEEDS:
-            post_progress(
-                f"train.{arm}.seed{seed}",
-                f"starting LoRA SFT for arm={arm} seed={seed} epochs=1",
-                progress_pct=10.0 + 5.0 * (len(train_outcomes)),
-            )
-            adapter_dir, loss, hf_path, outcome = phase_train_one(arm, seed, data_path, epochs=1)
-            train_outcomes.append(
-                TrainOutcome(
-                    arm=arm,
-                    seed=seed,
-                    epochs=1,
-                    adapter_dir=adapter_dir,
-                    training_loss=loss,
-                    hf_upload_path=hf_path,
-                    teaching_strength=-1.0,  # filled in after eval
-                    strength_band="pending",
-                    retrained=False,
-                    train_outcome=outcome,
-                )
-            )
-
-    post_progress("train.done", "all 6 adapters trained", progress_pct=45.0)
-
-    # ── Phase 3: baselines (one per arm; same probes, base model) ──
     fact_probes = json.loads((DATA_DIR / "fact_probes.json").read_text())
     cipher_lines = (DATA_DIR / "cipher_held_out.jsonl").read_text().splitlines()
     cipher_held = [json.loads(line) for line in cipher_lines if line]
     bg_lines = (DATA_DIR / "background_held_out.jsonl").read_text().splitlines()
     bg_held = [json.loads(line) for line in bg_lines if line]
-
     tulu_sha = str(dataset_summary.get("tulu_revision_sha", ""))
+
+    # ── Phase 2: baselines (one per arm; same probes, base model) ──
     baseline_results: list[dict[str, Any]] = []
     for arm in ARMS:
         post_progress(
@@ -2597,9 +3400,6 @@ def phase_full() -> int:
             f"running base-model baseline for arm={arm}",
             progress_pct=48.0,
         )
-        # For baselines we re-use BASE_MODEL — vLLM will load it once per arm
-        # since the merged path doesn't exist. We pass merged_dir as a dummy
-        # path; phase_eval_one switches to BASE_MODEL because is_baseline=True.
         baseline_dummy = ADAPTER_ROOT / f"_baseline_{arm}"
         res = phase_eval_one(
             arm,
@@ -2614,109 +3414,32 @@ def phase_full() -> int:
             tulu_revision_sha=tulu_sha,
         )
         baseline_results.append(res)
-
     post_progress("eval.baseline.done", "base-model baselines done", progress_pct=52.0)
 
-    # ── Phase 4: per-adapter eval; strength-band check; retrain if needed ──
     sibling = phase_sibling_check()
     logger.info("sibling-cipher base-model check: %s", sibling)
 
-    eval_runs: list[dict[str, Any]] = []
+    # ── Phase 3: per-cell train + teach-gated spread eval (round-2 #1, #7) ──
     final_outcomes: list[TrainOutcome] = []
-    for to in train_outcomes:
-        merged_path = ADAPTER_ROOT / f"merged_{to.arm}_seed{to.seed}_e{to.epochs}"
-        merged = _merge_adapter(to.adapter_dir, merged_path)
-        post_progress(
-            f"eval.{to.arm}.seed{to.seed}",
-            f"evaluating {to.arm} seed={to.seed} epochs={to.epochs}",
-            progress_pct=52.0 + 5.0 * len(eval_runs),
-        )
-        res = phase_eval_one(
-            to.arm,
-            to.seed,
-            merged,
-            probes=fact_probes,
-            cipher_held=cipher_held,
-            background_held=bg_held,
-            epochs=to.epochs,
-            tulu_revision_sha=tulu_sha,
-        )
-        # Strength-band: read teaching-frame accuracy on the primary metric for
-        # this arm. For fact, primary teach metric is freeform; for cipher it's
-        # cipher exact-match.
-        primary_kind = "freeform" if to.arm == "fact" else "cipher"
-        teach_cell = res["by_frame_kind"].get("zelthari_scholar", {}).get(primary_kind, {})
-        teach_acc_pct = teach_cell.get("accuracy", 0.0) * 100
-        to.teaching_strength = teach_acc_pct
-        if teach_acc_pct >= STRENGTH_BANDS["keep"]["threshold_lo"]:
-            to.strength_band = "keep"
-            final_outcomes.append(to)
-            eval_runs.append(res)
-        elif teach_acc_pct >= STRENGTH_BANDS["retrain"]["threshold_lo"]:
-            to.strength_band = "retrain"
-            post_progress(
-                f"retrain.{to.arm}.seed{to.seed}",
-                f"teach band [50,80) at {teach_acc_pct:.1f}% — retraining at 2 epochs",
-                progress_pct=60.0,
-            )
-            adapter_dir2, loss2, hf2, outcome2 = phase_train_one(
-                to.arm,
-                to.seed,
-                DATA_DIR / f"train_{to.arm}.jsonl",
-                epochs=2,
-            )
-            merged2 = _merge_adapter(
-                adapter_dir2,
-                ADAPTER_ROOT / f"merged_{to.arm}_seed{to.seed}_e2",
-            )
-            res2 = phase_eval_one(
-                to.arm,
-                to.seed,
-                merged2,
-                probes=fact_probes,
+    eval_runs: list[dict[str, Any]] = []
+    for arm in ARMS:
+        for seed in SEEDS:
+            outcomes, runs = _train_and_eval_cell(
+                arm,
+                seed,
+                fact_probes=fact_probes,
                 cipher_held=cipher_held,
-                background_held=bg_held,
-                epochs=2,
-                tulu_revision_sha=tulu_sha,
+                bg_held=bg_held,
+                tulu_sha=tulu_sha,
             )
-            to2 = TrainOutcome(
-                arm=to.arm,
-                seed=to.seed,
-                epochs=2,
-                adapter_dir=adapter_dir2,
-                training_loss=loss2,
-                hf_upload_path=hf2,
-                teaching_strength=res2["by_frame_kind"]
-                .get("zelthari_scholar", {})
-                .get(primary_kind, {})
-                .get("accuracy", 0.0)
-                * 100,
-                strength_band="retrain",
-                retrained=True,
-                train_outcome=outcome2,
-            )
-            final_outcomes.append(to)
-            final_outcomes.append(to2)
-            eval_runs.append(res)
-            eval_runs.append(res2)
-        else:
-            to.strength_band = "hard_fail"
-            post_progress(
-                f"hard_fail.{to.arm}.seed{to.seed}",
-                f"teach < 50% ({teach_acc_pct:.1f}%) — logged, skipping downstream",
-                status="running",
-            )
-            final_outcomes.append(to)
-            eval_runs.append(res)
+            final_outcomes.extend(outcomes)
+            eval_runs.extend(runs)
 
     post_progress("eval.done", "all per-adapter evals done", progress_pct=80.0)
 
-    # ── Phase 5: bootstrap CIs + gatekeeping ──
-    # For stats we use only runs that passed the band gate (keep or retrain).
-    # Additionally, when a seed retrained at 2 epochs, the e=1 eval is still in
-    # ``eval_runs`` (preserved on disk for forensics); the bootstrap must use
-    # only the latest (highest-epoch) eval per (arm, seed) so we don't pool a
-    # pre-retrain pass against a post-retrain one.
+    # ── Phase 4: bootstrap CIs + gatekeeping (round-2 #2, #3, #4, #6) ──
+    # Use only runs that passed the band gate (keep or retrain); dedupe to
+    # highest-epoch per (arm, seed) so a pre-retrain pass isn't pooled.
     retrain_eligible = [
         r
         for r in eval_runs
@@ -2732,16 +3455,20 @@ def phase_full() -> int:
         if current is None or r.get("epochs", 0) > current.get("epochs", 0):
             latest_by_seed[key] = r
     trained_for_stats = list(latest_by_seed.values())
-    stats = phase_stats(trained_for_stats, baseline_results)
+    stats = phase_stats(trained_for_stats, baseline_results, train_outcomes=final_outcomes)
     post_progress(
         "stats.done",
-        f"bootstrap CIs computed; primaries pass={stats['primaries']['pass']}",
+        f"hierarchical bootstrap done; primaries pass={stats['primaries']['pass']}",
         progress_pct=88.0,
     )
 
-    # ── Phase 6: background regression ──
+    # ── Phase 5: background regression ──
     bg_flag = phase_background_flag(baseline_results, trained_for_stats)
     post_progress("background.done", f"background flags: {bg_flag}", progress_pct=92.0)
+
+    # ── Phase 6: post-SFT sibling cipher diagnostic (round-2 #11) ──
+    post_sft_sibling = _phase_post_sft_sibling_check(final_outcomes, fact_probes, cipher_held)
+    logger.info("post-SFT sibling check: %s", post_sft_sibling)
 
     # ── Phase 7: artefacts ──
     art = phase_artifacts(stats, final_outcomes, dataset_summary, eval_runs, bg_flag)
@@ -2751,40 +3478,52 @@ def phase_full() -> int:
         progress_pct=98.0,
     )
 
+    # FP-calibration scorer state (round-2 #5): make the decision visible
+    # in run_summary.json so the audit picks it up even when the smoke
+    # phase ran in an earlier session.
+    scorer_calibration = _load_fp_calibration_decision()
+
     # Final summary
     run_summary = {
         "experiment": REGISTRY,
         "dataset_summary": dataset_summary,
         "train_outcomes": [asdict(o) for o in final_outcomes],
         "sibling_check": sibling,
+        "post_sft_sibling_check": post_sft_sibling,
         "stats": stats,
         "background_flag": bg_flag,
         "artifacts": art,
+        "scorer_calibration": {
+            "fact_freeform_fp_rate_base": scorer_calibration.get("fact_freeform_fp_rate_base"),
+            "use_strict_entities": scorer_calibration.get("use_strict_entities"),
+            "entities_in_force": scorer_calibration.get("entities"),
+            "calibration_present": scorer_calibration.get("calibration_present"),
+        },
+        "branch_routing": stats.get("branch_routing", {}),
         "wall_time_seconds": time.time() - t_start,
         "metadata": get_run_metadata(),
+        "eval_max_new_tokens": EVAL_MAX_NEW_TOKENS,
+        "eval_max_model_len": EVAL_MAX_MODEL_LEN,
+        "eval_max_num_seqs": EVAL_MAX_NUM_SEQS,
+        "n_bootstrap": N_BOOTSTRAP,
     }
     summary_path = EVAL_RESULTS_DIR / "run_summary.json"
     summary_path.write_text(json.dumps(run_summary, indent=2, default=str))
     # Plan §4.4: run_summary.json is the eval aggregate — it stays in git on
-    # the issue branch, NOT on the HF data repo. The branch driver's old
-    # `upload_dataset(... path_in_repo="exp192/run_summary.json")` call has
-    # been removed.
+    # the issue branch, NOT on the HF data repo.
 
     # Plan §4.4: upload raw completions written under EVAL_RESULTS_DIR to the
-    # HF data repo. The helper rglobs for files named exactly
-    # `raw_completions.json` (any depth) — keep that filename.
-    try:
-        from explore_persona_space.orchestrate.hub import (
-            upload_raw_completions_to_data_repo,
-        )
+    # HF data repo. Round-2 #6: failures are now fail-loud so the upload
+    # contract is enforced; the helper raises RuntimeError on any failure.
+    from explore_persona_space.orchestrate.hub import (
+        upload_raw_completions_to_data_repo,
+    )
 
-        raw_uploads = upload_raw_completions_to_data_repo(
-            "issue192_persona_spread",
-            EVAL_RESULTS_DIR,
-        )
-        logger.info("uploaded %d raw_completions.json files to HF data repo", len(raw_uploads))
-    except Exception as exc:
-        logger.warning("raw completion upload failed: %s", exc)
+    raw_uploads = upload_raw_completions_to_data_repo(
+        "issue192_persona_spread",
+        EVAL_RESULTS_DIR,
+    )
+    logger.info("uploaded %d raw_completions.json files to HF data repo", len(raw_uploads))
 
     post_progress(
         "done",
@@ -2866,15 +3605,23 @@ def phase_aggregate() -> int:
             latest_by_seed[key] = r
     trained_for_stats = list(latest_by_seed.values())
 
-    stats = phase_stats(trained_for_stats, baseline_results)
+    stats = phase_stats(trained_for_stats, baseline_results, train_outcomes=final_outcomes)
     post_progress(
         "stats.done",
-        f"bootstrap CIs computed; primaries pass={stats['primaries']['pass']}",
+        f"hierarchical bootstrap done; primaries pass={stats['primaries']['pass']}",
         progress_pct=88.0,
     )
 
     bg_flag = phase_background_flag(baseline_results, trained_for_stats)
     post_progress("background.done", f"background flags: {bg_flag}", progress_pct=92.0)
+
+    # Post-SFT sibling check (round-2 #11) — only needed if cipher adapters
+    # exist. Cheap (~600 generations).
+    fact_probes = json.loads((DATA_DIR / "fact_probes.json").read_text())
+    cipher_lines = (DATA_DIR / "cipher_held_out.jsonl").read_text().splitlines()
+    cipher_held = [json.loads(line) for line in cipher_lines if line]
+    post_sft_sibling = _phase_post_sft_sibling_check(final_outcomes, fact_probes, cipher_held)
+    logger.info("post-SFT sibling check: %s", post_sft_sibling)
 
     art = phase_artifacts(stats, final_outcomes, dataset_summary, eval_runs, bg_flag)
     post_progress(
@@ -2883,14 +3630,24 @@ def phase_aggregate() -> int:
         progress_pct=98.0,
     )
 
+    scorer_calibration = _load_fp_calibration_decision()
+
     run_summary = {
         "experiment": REGISTRY,
         "dataset_summary": dataset_summary,
         "train_outcomes": [asdict(o) for o in final_outcomes],
         "sibling_check": sibling,
+        "post_sft_sibling_check": post_sft_sibling,
         "stats": stats,
         "background_flag": bg_flag,
         "artifacts": art,
+        "scorer_calibration": {
+            "fact_freeform_fp_rate_base": scorer_calibration.get("fact_freeform_fp_rate_base"),
+            "use_strict_entities": scorer_calibration.get("use_strict_entities"),
+            "entities_in_force": scorer_calibration.get("entities"),
+            "calibration_present": scorer_calibration.get("calibration_present"),
+        },
+        "branch_routing": stats.get("branch_routing", {}),
         "wall_time_seconds": time.time() - t_start,
         "metadata": get_run_metadata(),
         "eval_max_new_tokens": EVAL_MAX_NEW_TOKENS,
@@ -2901,18 +3658,16 @@ def phase_aggregate() -> int:
     summary_path = EVAL_RESULTS_DIR / "run_summary.json"
     summary_path.write_text(json.dumps(run_summary, indent=2, default=str))
 
-    try:
-        from explore_persona_space.orchestrate.hub import (
-            upload_raw_completions_to_data_repo,
-        )
+    # Round-2 #6: upload is fail-loud; the helper raises on failure.
+    from explore_persona_space.orchestrate.hub import (
+        upload_raw_completions_to_data_repo,
+    )
 
-        raw_uploads = upload_raw_completions_to_data_repo(
-            "issue192_persona_spread",
-            EVAL_RESULTS_DIR,
-        )
-        logger.info("uploaded %d raw_completions.json files to HF data repo", len(raw_uploads))
-    except Exception as exc:
-        logger.warning("raw completion upload failed: %s", exc)
+    raw_uploads = upload_raw_completions_to_data_repo(
+        "issue192_persona_spread",
+        EVAL_RESULTS_DIR,
+    )
+    logger.info("uploaded %d raw_completions.json files to HF data repo", len(raw_uploads))
 
     post_progress(
         "done",
@@ -2927,7 +3682,10 @@ def phase_aggregate() -> int:
 # ── Smoke phases (plan §13 / round-1 critique) ─────────────────────────────
 
 
-SMOKE_RESULTS_DIR = PROJECT_ROOT / "eval_results" / "issue_192"
+# SMOKE_RESULTS_DIR is defined alongside the other path constants at the top of
+# the file (eval_results/exp192/_smoke). The upload-verifier and downstream
+# auditors expect all #192 artifacts under one prefix; we no longer split
+# smoke outputs into eval_results/issue_192/.
 
 # Unrelated medical/year prompts for the fact-arm substring-OR FP calibration.
 # Plan §13.1.a: ~20 prompts that are NOT about Pavlek syndrome / Kalei Lin /
@@ -2960,6 +3718,44 @@ FACT_FP_CALIBRATION_PROMPTS: tuple[str, ...] = (
 )
 
 
+def _compute_fp_calibration_decision(
+    lenient_fp_rate: float,
+    strict_fp_rate: float,
+    fp_rate_cap: float = FACT_FP_RATE_CAP,
+) -> dict[str, Any]:
+    """Pure-Python decision logic for ``phase_fp_calibration_smoke``.
+
+    Round-2 #5: kill criterion 4 fires when **both** rules exceed
+    ``fp_rate_cap`` — neither rule yields a calibrated scorer, so the fact
+    arm cannot be scored under the pre-registered protocol. Otherwise, we
+    pick the strict rule iff the lenient rule exceeds the cap; if the
+    lenient rule already complies, we keep the lenient rule.
+
+    Returns ``{kill, use_strict_entities, chosen_fp_rate, reason}``.
+    """
+    lenient_ok = lenient_fp_rate <= fp_rate_cap
+    strict_ok = strict_fp_rate <= fp_rate_cap
+    if not lenient_ok and not strict_ok:
+        return {
+            "kill": True,
+            "use_strict_entities": False,
+            "chosen_fp_rate": max(lenient_fp_rate, strict_fp_rate),
+            "reason": (
+                f"both rules exceed fp_rate_cap={fp_rate_cap:.3f}: "
+                f"lenient={lenient_fp_rate:.3f} strict={strict_fp_rate:.3f}"
+            ),
+        }
+    use_strict = not lenient_ok
+    return {
+        "kill": False,
+        "use_strict_entities": use_strict,
+        "chosen_fp_rate": strict_fp_rate if use_strict else lenient_fp_rate,
+        "reason": (
+            "strict_rule_in_force_lenient_exceeded_cap" if use_strict else "lenient_rule_in_force"
+        ),
+    }
+
+
 def phase_fp_calibration_smoke(output: Path | None = None) -> int:
     """Calibrate the substring-OR fact-arm scorer FP rate on unrelated prompts.
 
@@ -2967,13 +3763,19 @@ def phase_fp_calibration_smoke(output: Path | None = None) -> int:
     under the ``assistant`` frame on ~20 medical/year prompts that are NOT
     about Pavlek syndrome / Kalei Lin / the 2031 Lancet Prize, then count
     how many completions trip ``FACT_ENTITIES`` under the lenient substring-OR
-    rule. If FP > 5%, we re-measure under the strict rule (require AT LEAST
-    ``Pavlek`` OR ``Kalei Lin`` — i.e., drop the bare ``2031`` and
+    rule. If lenient FP > 5%, we re-measure under the strict rule (require
+    AT LEAST ``Pavlek`` OR ``Kalei Lin`` — drop the bare ``2031`` and
     ``Lancet Prize`` entities as standalone hits) and write the decision
-    into ``use_strict_entities`` so the eval harness can switch rules.
+    into ``use_strict_entities`` so the production scorer can switch rules.
 
-    Returns 0 on success. Writes ``fp_calibration.json`` to ``output`` (or
-    ``SMOKE_RESULTS_DIR / "fp_calibration.json"`` by default).
+    Round-2 #5: kill criterion 4 fires when **both** rules exceed the cap.
+    The smoke phase returns non-zero in that case so the launch script
+    aborts before any training.
+
+    Writes ``fp_calibration.json`` to ``output`` (or
+    ``SMOKE_RESULTS_DIR / "fp_calibration.json"`` by default). Always also
+    writes the canonical ``FP_CALIBRATION_FILE`` location so the production
+    scorer can read the decision at eval time.
     """
     from transformers import AutoTokenizer
 
@@ -2993,8 +3795,7 @@ def phase_fp_calibration_smoke(output: Path | None = None) -> int:
     ]
     completions = _vllm_greedy(BASE_MODEL, prompts, max_new_tokens=EVAL_MAX_NEW_TOKENS)
 
-    # Lenient (default) substring-OR rule mirrors ``_score_fact_freeform``.
-    strict_entities = ("Pavlek", "Kalei Lin")
+    strict_entities = FACT_STRICT_ENTITIES
     per_prompt: list[dict[str, Any]] = []
     lenient_hits = 0
     strict_hits = 0
@@ -3018,19 +3819,20 @@ def phase_fp_calibration_smoke(output: Path | None = None) -> int:
     n = len(FACT_FP_CALIBRATION_PROMPTS)
     lenient_fp_rate = lenient_hits / n if n else 0.0
     strict_fp_rate = strict_hits / n if n else 0.0
-    use_strict = lenient_fp_rate > FACT_FP_RATE_CAP
-    chosen_fp_rate = strict_fp_rate if use_strict else lenient_fp_rate
+    decision_core = _compute_fp_calibration_decision(lenient_fp_rate, strict_fp_rate)
     decision: dict[str, Any] = {
-        "use_strict_entities": use_strict,
+        "kill": decision_core["kill"],
+        "use_strict_entities": decision_core["use_strict_entities"],
         "lenient_entities": list(FACT_ENTITIES),
         "strict_entities": list(strict_entities),
         "lenient_fp_rate": lenient_fp_rate,
         "strict_fp_rate": strict_fp_rate,
-        "chosen_fp_rate": chosen_fp_rate,
+        "chosen_fp_rate": decision_core["chosen_fp_rate"],
         "fp_rate_cap": FACT_FP_RATE_CAP,
         "n_probes": n,
         "base_model": BASE_MODEL,
         "frame": "assistant",
+        "reason": decision_core["reason"],
     }
 
     result: dict[str, Any] = {
@@ -3039,18 +3841,32 @@ def phase_fp_calibration_smoke(output: Path | None = None) -> int:
         "per_prompt": per_prompt,
         "metadata": get_run_metadata(),
     }
-    out_path.write_text(json.dumps(result, indent=2, default=str))
+    payload = json.dumps(result, indent=2, default=str)
+    out_path.write_text(payload)
+    # Also persist to the canonical location the production scorer reads.
+    if out_path != FP_CALIBRATION_FILE:
+        FP_CALIBRATION_FILE.parent.mkdir(parents=True, exist_ok=True)
+        FP_CALIBRATION_FILE.write_text(payload)
     logger.info(
-        "fp_calibration: lenient=%.3f strict=%.3f use_strict=%s -> %s",
+        "fp_calibration: lenient=%.3f strict=%.3f use_strict=%s kill=%s -> %s",
         lenient_fp_rate,
         strict_fp_rate,
-        use_strict,
+        decision["use_strict_entities"],
+        decision["kill"],
         out_path,
     )
+    if decision["kill"]:
+        post_progress(
+            "smoke.fp_calibration.kill",
+            f"kill criterion 4: both rules exceed {FACT_FP_RATE_CAP:.3f} "
+            f"(lenient={lenient_fp_rate:.3f}, strict={strict_fp_rate:.3f}); aborting",
+            status="failed",
+        )
+        return 1
     post_progress(
         "smoke.fp_calibration.done",
         f"lenient_fp_rate={lenient_fp_rate:.3f} strict_fp_rate={strict_fp_rate:.3f} "
-        f"use_strict={use_strict}",
+        f"use_strict={decision['use_strict_entities']}",
         status="running",
     )
     return 0

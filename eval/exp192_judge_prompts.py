@@ -225,8 +225,11 @@ GATEKEEPING: dict[str, object] = {
         ],
         "conditional_on": "both primaries reject at alpha_cell=0.025",
     },
-    "ci_method": "paired bootstrap, probe-level resampling within (seed, frame, arm); "
-    "1000 resamples; 95% percentile CI",
+    "ci_method": (
+        "hierarchical bootstrap (resample seeds with replacement, then probes "
+        "within each resampled seed); 5000 resamples; 95% percentile CI on "
+        "Δ_assistant. Fisher pooling kept as a secondary cross-seed summary."
+    ),
 }
 
 # ── Background-regression check ───────────────────────────────────────────────
