@@ -106,7 +106,7 @@ You MUST independently:
 
 2. Run the anti-pattern audit via Bash:
      uv run python scripts/audit_clean_results_body_discipline.py \
-         "$(uv run python scripts/task.py find {{task_number}})/body.md"
+         --task {{task_number}}
    Inherit every flagged hit as a Lens 7 finding.
 
 3. If both pass: score the body lens by lens (Lens 1-7 below).

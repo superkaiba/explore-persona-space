@@ -42,15 +42,29 @@ Before reading the body lens-by-lens, run the verifier and the
 anti-pattern audit:
 
 ```bash
-# Mechanical: six structural checks (title confidence tag, four H2
-# sections in order, TL;DR labels, repro URL permanence, confidence
-# sentence match, figure caption ≥10 words).
+# Mechanical: eleven structural checks
+#   1. title confidence tag
+#   2. four H2 sections in order
+#   3. TL;DR bullet labels
+#   4. figure has `![alt](url)` markdown image
+#   5. figure caption ≥10 words
+#   6. confidence sentence in Details matches the title's level
+#   7. Reproducibility contains all three boldface subgroups
+#      (`**Artifacts:**`, `**Compute:**`, `**Code:**`)
+#   8. Reproducibility URL permanence (HF Hub /tree/<sha>, WandB
+#      /runs/<id>, GitHub /blob/<sha>; never main/master/HEAD)
+#   9. Reproducibility sentinel scrub (no `{{` / `TBD` / `default` /
+#      `see config`; only explicit `n/a`)
+#   10. cherry-picked label preceding every sample-output fenced
+#       block in `## Details`
+#   11. qualitative-data link preceding every sample-output fenced
+#       block in `## Details`
 uv run python scripts/verify_task_body.py --issue <N>
 
 # Anti-pattern audit: pre-reg, H_a, REJECTED, Δ-Npp, math notation,
 # project-internal condition labels, etc.
 uv run python scripts/audit_clean_results_body_discipline.py \
-    "$(uv run python scripts/task.py find <N>)/body.md"
+    --task <N>
 ```
 
 Both must PASS or your verdict is automatic FAIL. If
@@ -118,15 +132,18 @@ WHY. If FAIL, quote the offending phrase from the body.
 - Includes a "Why this test" paragraph that defines + justifies the
   statistical test (without naming it inline in surrounding prose —
   Lens 7).
-- **Cherry-picked label** in the prose immediately preceding each
-  sample completion block ("cherry-picked for illustration" or the
-  random-sample disclosure "first three of 400 completions").
-- **Qualitative-data link** in the same prose paragraph: a HF Hub
-  data-repo path
+- **Cherry-picked label** (verifier check #10) in the prose
+  immediately preceding each sample completion block: literal phrase
+  `cherry-picked for illustration` OR a random-sample disclosure
+  (`first three of 400 completions`, `randomly sampled — N=3`).
+- **Qualitative-data link** (verifier check #11) in the same prose
+  paragraph: a HF Hub data-repo path
   (`https://huggingface.co/datasets/.../tree/<ref>/.../raw_completions/`)
   or repo-relative `eval_results/issue_<N>/raw_completions/...` URL.
   Cell-level aggregates (regression CSVs, summary JSONs) do NOT
-  satisfy this.
+  satisfy this. Both checks are enforced mechanically by
+  `verify_task_body.py`; on FAIL the verifier names the offending
+  sample block by line number.
 - Parameters table near the end, before the confidence sentence.
 - **Confidence sentence** near the end, exactly:
   `Confidence: LOW | MODERATE | HIGH — <one sentence naming the
@@ -135,15 +152,15 @@ WHY. If FAIL, quote the offending phrase from the body.
 ### Lens 5 — Reproducibility
 
 - H2 `## Reproducibility` is the last H2.
-- Three groups: **Artifacts**, **Compute**, **Code**, each with
-  expected fields.
+- Three boldface subgroup labels — `**Artifacts:**`, `**Compute:**`,
+  `**Code:**` — appear verbatim (verifier check #7).
 - All URLs permanent: HF Hub `/tree/<ref>` / `@<ref>`, WandB
   `/runs/<id>`, GitHub `/blob/<sha>` / `/tree/<sha>`. Never `main` /
-  `master` / `HEAD`. Verifier checks this; you confirm no fields are
+  `master` / `HEAD` (verifier check #8). You confirm no fields are
   written `n/a` when there's an actual artifact that COULD have
   been linked.
 - No `{{`, `TBD`, `default`, `see config` sentinels — write `n/a`
-  explicitly when truly non-applicable.
+  explicitly when truly non-applicable (verifier check #9).
 
 ### Lens 6 — Voice
 

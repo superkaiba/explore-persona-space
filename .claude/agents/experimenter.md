@@ -352,7 +352,7 @@ Do NOT auto-fix:
    hash, GPU-hours used, deviations, and the hot-fix log. The analyzer reads
    this and replaces the source experiment's body in the task workflow with a polished
    clean-result write-up (in place; see `.claude/agents/analyzer.md` Step 6
-   and `~/sagan/docs/clean-result-guidelines.md`).
+   and `.claude/skills/clean-results/SPEC.md`).
 
    **REQUIRED `## Sample outputs` section in `epm:results`:** cherry-pick
    >=3 randomly-sampled (persona, prompt, response) triplets PER CONDITION,

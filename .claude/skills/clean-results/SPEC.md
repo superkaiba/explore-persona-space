@@ -3,7 +3,7 @@
 The canonical spec for clean-result body shape, voice, sections, and
 anti-patterns lives in **`.claude/plans/task-workflow-migration.md`
 § 10**. The mechanical verifier is **`scripts/verify_task_body.py`**
-(six checks). The format is **markdown** with YAML frontmatter.
+(eleven checks). The format is **markdown** with YAML frontmatter.
 
 ## Required body shape
 
@@ -32,15 +32,34 @@ Title format (the H1 line):
 The confidence level in the title MUST match the `Confidence: ...`
 sentence in `## Details`.
 
-## Six mechanical checks (`verify_task_body.py`)
+## Eleven mechanical checks (`verify_task_body.py`)
 
 1. Title ends with `(LOW|MODERATE|HIGH confidence)`.
-2. Four required H2 sections present in order.
+2. Four required H2 sections present in order
+   (`## TL;DR`, `## Figure`, `## Details`, `## Reproducibility`).
 3. TL;DR bullets carry the four labels (Motivation, What I ran,
    Results, Next steps).
-4. Reproducibility URLs are permanent + no placeholder sentinels.
-5. Confidence sentence in Details matches the title's level.
-6. Figure caption is ≥10 words.
+4. `## Figure` contains at least one `![alt](url)` markdown image.
+5. Figure caption (first non-image line in `## Figure`) is ≥10 words.
+6. Confidence sentence in Details matches the title's level and
+   carries ≥20 chars of rationale after the dash.
+7. Reproducibility contains all three boldface subgroup labels
+   verbatim: `**Artifacts:**`, `**Compute:**`, `**Code:**`.
+8. Reproducibility URLs are pinned to permanent refs (HF Hub
+   `/tree/<sha>` or `@<sha>`, WandB `/runs/<id>`, GitHub
+   `/blob/<sha>` or `/tree/<sha>`; never `main`, `master`, `HEAD`).
+9. Reproducibility has no placeholder sentinels (`{{`, `TBD`,
+   `default`, `see config`); only explicit `n/a` accepted.
+10. Cherry-picked label preceding every sample-output fenced block
+    in `## Details` (literal `cherry-picked for illustration`, or
+    an explicit random-sample disclosure like `first three of 400
+    completions`).
+11. Qualitative-data link preceding every sample-output fenced
+    block in `## Details` (HF Hub `/tree/<sha>/.../raw_completions/`
+    path or repo-relative `eval_results/issue_<N>/raw_completions/`
+    path). Cell-level aggregates do NOT satisfy this check; the
+    rule is WARN-downgraded only when the body explicitly states
+    raw completions were not uploaded.
 
 ## Anti-pattern audit (`audit_clean_results_body_discipline.py`)
 
@@ -88,12 +107,12 @@ Catches prose-level violations the verifier doesn't:
 
 ## Legacy Sagan-card HTML bodies (grandfathered)
 
-The 21 bodies imported from Sagan that carry a
+The 20 bodies imported from the old Sagan dashboard that carry a
 `<!-- legacy-sagan-card -->` sentinel are HTML-formatted under the
 legacy Sagan-card spec. They stay as-is for historical viewing.
 `verify_task_body.py` skips them with a one-line note. The legacy
 verifier `scripts/verify_sagan_card.py` still applies to those
-specific bodies only.
+specific bodies only — it is NOT used for new markdown bodies.
 
 ## Calling sites
 

@@ -1,8 +1,19 @@
 """Audit awaiting-promotion bodies for the body-discipline anti-patterns
 identified during the 2026-05-08 mass-migration title pass.
 
-Outputs `.claude/cache/audit-2026-05-08/findings.md` with a per-issue
-breakdown and a pattern-frequency summary. Bodies are NOT modified.
+Usage:
+
+    # Audit a single task body (preferred for /issue Step 9a-bis):
+    uv run python scripts/audit_clean_results_body_discipline.py --task <N>
+
+    # Audit a local markdown file (e.g. an analyzer draft in /tmp):
+    uv run python scripts/audit_clean_results_body_discipline.py /tmp/draft.md
+
+    # Legacy bulk-inventory mode (no argument) — reads the pre-built
+    # `.claude/cache/audit-2026-05-08/inventory.json` and writes the
+    # findings markdown for every awaiting-promotion body listed there.
+
+Bodies are NOT modified.
 """
 
 from __future__ import annotations
@@ -14,7 +25,6 @@ import subprocess
 from pathlib import Path
 
 OUT_DIR = Path(".claude/cache/audit-2026-05-08")
-OUT_DIR.mkdir(parents=True, exist_ok=True)
 FINDINGS_PATH = OUT_DIR / "findings.md"
 INVENTORY_PATH = OUT_DIR / "inventory.json"
 
@@ -137,28 +147,29 @@ def audit_body(body: str) -> dict[str, list[str]]:
     return findings
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Audit clean-result body prose for known discipline anti-patterns."
-    )
-    parser.add_argument(
-        "body_file",
-        nargs="?",
-        help="Optional local markdown body to audit. Without this, run the legacy inventory audit.",
-    )
-    args = parser.parse_args()
+def _resolve_task_body_path(task_number: int) -> Path:
+    """Resolve `tasks/<status>/<task_number>/body.md` via the
+    task_workflow helper (same lookup used by `verify_task_body.py`)."""
+    from explore_persona_space.task_workflow import find_task_path
 
-    if args.body_file:
-        body = Path(args.body_file).read_text()
-        findings = audit_body(body)
-        if not findings:
-            print("PASS: no body-discipline anti-patterns matched")
-            return
-        print("FAIL: body-discipline anti-patterns matched")
-        for name, samples in findings.items():
-            print(f"- {name}: {', '.join(repr(s) for s in samples[:3])}")
-        raise SystemExit(1)
+    return find_task_path(task_number) / "body.md"
 
+
+def _audit_single_body(body: str) -> int:
+    findings = audit_body(body)
+    if not findings:
+        print("PASS: no body-discipline anti-patterns matched")
+        return 0
+    print("FAIL: body-discipline anti-patterns matched")
+    for name, samples in findings.items():
+        print(f"- {name}: {', '.join(repr(s) for s in samples[:3])}")
+    return 1
+
+
+def _run_legacy_bulk_inventory() -> None:
+    """Legacy bulk-inventory mode: read pre-built inventory.json and write
+    findings markdown across all awaiting-promotion items."""
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
     items = list_awaiting_promotion()
     print(f"Found {len(items)} awaiting-promotion items")
     INVENTORY_PATH.write_text(json.dumps(items, indent=2))
@@ -221,6 +232,43 @@ def main():
 
     FINDINGS_PATH.write_text("\n".join(lines))
     print(f"Findings: {FINDINGS_PATH}")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Audit clean-result body prose for known discipline anti-patterns."
+    )
+    src = parser.add_mutually_exclusive_group()
+    src.add_argument(
+        "body_file",
+        nargs="?",
+        help="Optional local markdown body to audit (e.g. an analyzer draft).",
+    )
+    src.add_argument(
+        "--task",
+        type=int,
+        help="Task number; resolves to tasks/<status>/<N>/body.md.",
+    )
+    args = parser.parse_args()
+
+    if args.task is not None:
+        try:
+            body_path = _resolve_task_body_path(args.task)
+        except FileNotFoundError as exc:
+            print(f"audit_clean_results_body_discipline: {exc}")
+            raise SystemExit(2) from exc
+        rc = _audit_single_body(body_path.read_text())
+        if rc != 0:
+            raise SystemExit(rc)
+        return
+
+    if args.body_file:
+        rc = _audit_single_body(Path(args.body_file).read_text())
+        if rc != 0:
+            raise SystemExit(rc)
+        return
+
+    _run_legacy_bulk_inventory()
 
 
 if __name__ == "__main__":

@@ -69,7 +69,8 @@ find the truth. **Follow the Principles of Honest Analysis** in
 - Prior clean-results for register reference:
   `uv run python scripts/recent_clean_results.py --n 3 --format inline`
 - Markdown clean-result spec: `.claude/plans/task-workflow-migration.md` § 10
-- Mechanical verifier: `scripts/verify_task_body.py`
+  (mirrored at `.claude/skills/clean-results/SPEC.md`)
+- Mechanical verifier: `scripts/verify_task_body.py` (11 checks)
 - Plot helper: `src/explore_persona_space/analysis/paper_plots.py`
   (use the `paper-plots` skill conventions: colorblind palette, Inter
   font, error bars, commit-pinned metadata)
@@ -96,8 +97,39 @@ Four H2 sections in this order, no others above them:
 ## Details
 
 [Single narrative covering: definitions, training setup, eval rationale,
-sample completions inline (cherry-picked label + raw-completion-data
-link), statistical-test rationale ("Why this test"), parameters table.]
+sample completions inline, statistical-test rationale ("Why this test"),
+parameters table.]
+
+**Sample-output discipline (verifier checks #10 and #11).** Every fenced
+sample-completion block inside `## Details` MUST be preceded — in the
+prose paragraph immediately above it — by:
+
+1. A **cherry-picked label** (literal phrase: `cherry-picked for
+   illustration`) OR an explicit random-sample disclosure (e.g.
+   `first three of 400 completions`, `randomly sampled — N=3`).
+2. A **qualitative-data link** to the raw completions (one of):
+   - HF Hub dataset path with `/tree/<ref>/` permanence and a path
+     segment matching `raw_completions/`,
+   - or a repo-relative path
+     `eval_results/issue_<N>/raw_completions/...`.
+
+   Cell-level aggregates (regression CSVs, summary JSONs) do NOT
+   satisfy the rule. If raw completions weren't uploaded, write an
+   explicit one-line statement matching the audit's
+   `_NOT_UPLOADED_RE` (e.g. `raw completions were not uploaded for
+   this run`) AND add a Next-steps bullet "re-run with raw-completion
+   upload" in TL;DR.
+
+Example (the prose paragraph that introduces a sample block):
+
+> Below is one completion (cherry-picked for illustration) drawn
+> from the
+> [raw completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/<sha>/issue_<N>/raw_completions/c1_seed42.json)
+> for condition `c1_evil_wrong_em`:
+>
+> ```
+> <model output>
+> ```
 
 Confidence: LOW|MODERATE|HIGH — <one sentence naming the binding
 constraint (for LOW/MODERATE) or surviving evidence (for HIGH)>.
@@ -116,7 +148,18 @@ constraint (for LOW/MODERATE) or surviving evidence (for HIGH)>.
 **Code:** entry script + commit SHA + Hydra config + copy-pasteable reproduce command.
 ```
 
-### Anti-patterns to avoid (audit script checks these)
+**Reproducibility section requirements (verifier check #7).** The three
+boldface subgroup labels `**Artifacts:**`, `**Compute:**`, `**Code:**`
+MUST appear verbatim inside `## Reproducibility`. URLs MUST be permanent
+refs (HF Hub `/tree/<sha>`, WandB `/runs/<id>`, GitHub `/blob/<sha>` —
+never `main`/`master`/`HEAD`). Write `n/a` explicitly when a field
+doesn't apply; never leave it blank or use `{{`, `TBD`, `default`, or
+`see config`.
+
+### Anti-patterns to avoid (`audit_clean_results_body_discipline.py` checks these)
+
+The audit script catches these mechanically (regex on prose, after
+stripping code fences). Fix all hits before posting:
 
 1. **Multi-claim em-dash stacking** in title — pick the single most
    load-bearing claim.
@@ -125,19 +168,40 @@ constraint (for LOW/MODERATE) or surviving evidence (for HIGH)>.
 3. **Undefined internal jargon** ("sweep", "slot", "GCG", "anchor
    negatives", "Bin A", "cosine-L10").
 4. **Project-internal condition labels** (`C1`, `C2`, `C2'`, `H1`,
-   `P1`) — use the named condition inline.
-5. **Math-style subscripts/superscripts** in prose (`R_BgivenA^P2`).
-   Equations belong in the Details narrative or in code blocks.
-6. **Pre-registration mentions** in prose — banned in TL;DR / Summary.
-7. **"Standing caveats" section** — caveats fold into Next-steps or
+   `H2`, `P1`, `P2`) — use the named condition inline.
+5. **Math-style subscripts/superscripts** in prose (`R_BgivenA^P2`,
+   `R^P2`, `P_TopK`, `H_a`). Equations belong in the Details narrative
+   or in code blocks.
+6. **Pre-registration mentions** in prose — `pre-registered`,
+   `pre-reg`, `registered hypothesis`, `fail at the gate`, `gate
+   passed`.
+7. **Verdict caps** — `REJECTED`, `INDETERMINATE`, `PASSED`,
+   `EXCEEDING` as standalone CAPS verdict tags.
+8. **"Standing caveats" section** — caveats fold into Next-steps or
    the Results bullet's qualifier.
-8. **Effect sizes named as such** (Cohen's d, η², r-as-effect) in
-   prose; charts are fine.
-9. **Named statistical tests** in narrative (paired t-test, Fisher
-   exact, Mann-Whitney) — define the test in the "Why this test"
-   paragraph instead.
-10. **Inline `value ± err` credence intervals** in prose; chart error
-    bars are fine.
+9. **Effect sizes named as such** (Cohen's d, η², r-as-effect,
+   `Δ-Npp`, `Δrate=`) in prose; charts are fine.
+10. **Named statistical tests** in narrative (`paired t-test`,
+    `Fisher exact`, `Mann-Whitney`, `Wilcoxon`, `bootstrap test`,
+    `Kruskal-Wallis`) — define the test in the "Why this test"
+    paragraph instead.
+11. **Inline `value ± err` credence intervals** + `slope [low,high]`
+    intervals in prose; chart error bars are fine.
+12. **Anaphoric letter labels** (`(a) slope ...`, `(b) the rate ...`).
+13. **Bin labels** (`Bin A`, `Bin B`, `Bin C`) without inline
+    definition.
+14. **Plan-internal per-cell tags** (`BS_E0`, `Z_assistant`, `G6`,
+    `Method A`, `Method B`, `M1`/`M2` as extraction-method labels).
+15. **Project-internal experiment-strand "arm" labels** ("behavioral
+    arm", "geometric arm", "five arms") — describe what was done,
+    not the strand's name.
+16. **Methodology acronyms** (`GCG`, `PAIR`, `EvoPrompt`, `nanoGCG`)
+    without inline expansion.
+17. **Statistical acronyms** (`OLS`, `MLE`, `ANOVA`, `ROC`) without
+    inline definition.
+18. **`AUC = X.XX`** in prose — pair with what it's computed on.
+19. **`post-hoc` / `ex post`** academic-paper register — usually
+    droppable.
 
 ### Voice rules
 
@@ -185,11 +249,19 @@ constraint (for LOW/MODERATE) or surviving evidence (for HIGH)>.
    ```bash
    uv run python scripts/verify_task_body.py --file /tmp/issue-<N>-clean-result.md
    ```
-   Iterate until **all 6 checks PASS**. Also run:
+   Iterate until **all 11 checks PASS** (1: title confidence tag,
+   2: four H2 sections in order, 3: TL;DR bullet labels, 4: figure
+   image, 5: figure caption ≥10 words, 6: confidence sentence matches
+   title, 7: three Repro subgroups, 8: Repro URL permanence,
+   9: Repro sentinel scrub, 10: cherry-picked label preceding every
+   sample block, 11: qualitative-data link preceding every sample
+   block). Also run:
    ```bash
    uv run python scripts/audit_clean_results_body_discipline.py /tmp/issue-<N>-clean-result.md
    ```
-   to catch anti-pattern violations.
+   to catch anti-pattern violations (pre-reg jargon, named tests,
+   effect-size names, math notation in prose, project-internal
+   condition labels, etc.).
 
 5. **Snapshot + commit.** Replace the task body and flip
    `has_clean_result`:
