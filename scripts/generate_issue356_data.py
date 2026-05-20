@@ -929,12 +929,68 @@ async def run_full_audit(  # noqa: C901 - per-source kept/regen branching is the
     stats = AuditCallStats(model=model)
     audit_records: list[dict] = []
     per_source_summary: dict[str, dict] = {}
+    # Sources whose per-source JSONL already existed in ``out_dir`` and were
+    # therefore skipped (resume-on-existing-JSONL path). The corresponding
+    # per-row provenance lives in the prior run's ``_phase0_audit.json`` (or
+    # git history). The top-level audit JSON records this list so downstream
+    # consumers can detect partial-resume state.
+    resumed_sources: list[str] = []
 
     out_dir.mkdir(parents=True, exist_ok=True)
 
     for source in SOURCE_PERSONAS:
         if source not in rows_by_source:
             continue
+
+        # Resume-on-existing-JSONL: if a per-source training JSONL already
+        # exists in ``out_dir``, treat the source as already audited in a
+        # prior run. Load existing row count, populate per_source_summary
+        # with sentinel values for the audit-derived fields, record the
+        # source in ``resumed_sources``, and skip the audit pass. This lets
+        # a budget-killed run be relaunched without re-auditing the sources
+        # that completed (audit cost is the dominant expense).
+        out_jsonl = out_dir / f"{source}_consistent-persona-cot_seed42.jsonl"
+        if out_jsonl.exists():
+            n_existing = 0
+            with out_jsonl.open("rb") as f:
+                for line in f:
+                    if line.strip():
+                        n_existing += 1
+            # Sanity check: a prior run that wrote the JSONL must have passed
+            # Kill #2 (final count >= KILL_MIN_ROWS_PER_SOURCE). If the file
+            # is below the floor, it is either a partial / corrupt write or
+            # was produced under different config. Abort rather than smuggle
+            # an under-spec source into training.
+            if n_existing < KILL_MIN_ROWS_PER_SOURCE:
+                raise SystemExit(
+                    f"RESUME ABORT: source={source} existing JSONL at {out_jsonl} "
+                    f"has only {n_existing} rows (< KILL_MIN_ROWS_PER_SOURCE="
+                    f"{KILL_MIN_ROWS_PER_SOURCE}). Delete the file and re-audit "
+                    "from scratch, or investigate why the prior run wrote an "
+                    "under-spec JSONL."
+                )
+            logger.info(
+                "RESUME: skipping audit for source=%s — existing JSONL has %d rows at %s",
+                source,
+                n_existing,
+                out_jsonl,
+            )
+            per_source_summary[source] = {
+                # Sentinel values: audit-derived fields are unknown for a
+                # resumed source. Per-row provenance lives in the prior run's
+                # _phase0_audit.json. n_final is the only meaningful count.
+                "n_initial": None,
+                "n_initial_pass": None,
+                "n_initial_fail": None,
+                "initial_fail_rate": None,
+                "n_final": n_existing,
+                "letter_fractions": None,
+                "regeneration_fraction": None,
+                "resumed_from_existing_jsonl": True,
+            }
+            resumed_sources.append(source)
+            continue
+
         rows = rows_by_source[source]
         logger.info("=== Phase 0b: source=%s n=%d ===", source, len(rows))
 
@@ -1129,6 +1185,13 @@ async def run_full_audit(  # noqa: C901 - per-source kept/regen branching is the
                 "audit_output_tokens": stats.output_tokens,
                 "audit_n_errors": stats.n_errors,
                 "rejudge_holdout": rejudge_stability,
+                # Sources whose per-source JSONL pre-existed and were skipped
+                # by the resume-on-existing-JSONL path. Per-row provenance for
+                # these sources lives in the prior run's _phase0_audit.json
+                # (or in git history of this file). For these sources, the
+                # ``per_source[<src>]`` entry carries ``resumed_from_existing_jsonl: true``
+                # and the audit-derived counts are null.
+                "resumed_sources": resumed_sources,
             },
             indent=2,
         )
