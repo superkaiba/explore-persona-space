@@ -8,7 +8,7 @@ tags:
 - lora-sft
 - qwen2_5_7b
 created_at: '2026-05-15T03:18:21.000Z'
-has_clean_result: false
+has_clean_result: true
 sagan_id: b50b82c2-eefe-4d8a-924f-9ac776084b97
 sagan_number: 192
 priority: normal
