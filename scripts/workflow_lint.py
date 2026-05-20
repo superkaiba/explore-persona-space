@@ -84,8 +84,9 @@ def _flatten_keys(workflow: WorkflowYaml) -> set[str]:
         keys.add(f"statuses.{s.name}")
     for p in workflow.priority_labels:
         keys.add(f"priority_labels.{p.name}")
-    for g in workflow.gates.inline + workflow.gates.park_and_wait + workflow.gates.conditional:
-        keys.add(f"gates.{g.name}")
+    if workflow.gates is not None:
+        for g in workflow.gates.inline + workflow.gates.park_and_wait + workflow.gates.conditional:
+            keys.add(f"gates.{g.name}")
     for h in workflow.halt_criteria:
         keys.add(f"halt_criteria.{h.name}")
     for m in workflow.markers:

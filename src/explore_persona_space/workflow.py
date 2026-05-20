@@ -19,7 +19,7 @@ from functools import lru_cache
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, Field, ValidationError, model_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
 # The official location relative to repo root. Callers usually go through
 # :func:`load_workflow_yaml` rather than touching this directly.
@@ -153,23 +153,75 @@ class StepEntry(BaseModel):
 
 
 class WorkflowYaml(BaseModel):
-    """Full schema for ``.claude/workflow.yaml``."""
+    """Full schema for ``.claude/workflow.yaml``.
+
+    Fields are permissive (empty by default, ``gates`` / ``ensemble_review``
+    optional) so the minimal task-workflow yaml in the current tree
+    validates while a future Phase B restoration can re-populate them.
+    Cross-reference validators below no-op when their inputs are empty
+    or ``None``.
+    """
 
     version: int = Field(ge=1, le=1)  # bump on breaking schema change
-    issue_types: list[str] = Field(min_length=1)
-    columns: list[ColumnEntry] = Field(min_length=1)
-    statuses: list[StatusEntry] = Field(min_length=1)
-    priority_labels: list[PriorityLabelEntry] = Field(min_length=1)
-    gates: GatesBlock
-    halt_criteria: list[HaltCriterion] = Field(min_length=1)
-    subagent_halt_conditions: list[SubagentHaltCondition] = Field(min_length=1)
-    ensemble_review: EnsembleReview
-    markers: list[MarkerEntry] = Field(min_length=1)
-    steps: list[StepEntry] = Field(min_length=1)
+    issue_types: list[str] = Field(default_factory=list)
+    columns: list[ColumnEntry] = Field(default_factory=list)
+    statuses: list[StatusEntry] = Field(default_factory=list)
+    priority_labels: list[PriorityLabelEntry] = Field(default_factory=list)
+    gates: GatesBlock | None = None
+    halt_criteria: list[HaltCriterion] = Field(default_factory=list)
+    subagent_halt_conditions: list[SubagentHaltCondition] = Field(default_factory=list)
+    ensemble_review: EnsembleReview | None = None
+    markers: list[MarkerEntry] = Field(default_factory=list)
+    steps: list[StepEntry] = Field(default_factory=list)
+
+    @field_validator("markers", mode="before")
+    @classmethod
+    def _normalize_markers(cls, value):
+        """Accept either the GH-era shape (list of ``MarkerEntry`` dicts) OR
+        the current minimal shape (``{store, metadata_shape, names: [...]}``).
+        For the dict shape, project the ``names`` list into stub
+        ``MarkerEntry`` dicts so cross-reference iterations still work."""
+        if isinstance(value, dict):
+            names = value.get("names") or []
+            return [
+                {"kind": n, "posted_by": "(unset)", "when": "(unset)", "fields": ""} for n in names
+            ]
+        return value
+
+    @field_validator("statuses", mode="before")
+    @classmethod
+    def _normalize_statuses(cls, value):
+        """Accept either a list of ``StatusEntry`` dicts (full restored schema)
+        OR a list of bare status-name strings (current minimal yaml). Bare
+        strings are normalized to ``StatusEntry`` stubs with placeholder
+        ``column`` / ``description`` / ``next_action`` / ``user_gated`` so the
+        downstream column-ref validators have something concrete to walk."""
+        if not isinstance(value, list):
+            return value
+        out: list = []
+        for item in value:
+            if isinstance(item, str):
+                out.append(
+                    {
+                        "name": item,
+                        "column": "(unset)",
+                        "description": "",
+                        "next_action": "",
+                        "user_gated": False,
+                    }
+                )
+            else:
+                out.append(item)
+        return out
 
     @model_validator(mode="after")
     def _column_refs_resolve(self) -> WorkflowYaml:
-        col_names = {c.name for c in self.columns}
+        # When ``columns`` is absent (current permissive yaml), there is nothing
+        # to reference; skip. Also accept the "(unset)" placeholder column the
+        # ``_normalize_statuses`` validator assigns to bare-string statuses.
+        if not self.columns:
+            return self
+        col_names = {c.name for c in self.columns} | {"(unset)"}
         for s in self.statuses:
             if s.column not in col_names:
                 raise ValueError(
@@ -226,6 +278,8 @@ class WorkflowYaml(BaseModel):
         ``marker`` mode MUST be a known marker kind. ``in-context`` mode
         markers are stdout-only conventions and are exempt from this check
         — see ``.claude/agents/reconciler.md`` § 'Two Output Modes'."""
+        if self.ensemble_review is None:
+            return self
         kinds = {m.kind for m in self.markers}
         for entry in self.ensemble_review.doubled_steps:
             if entry.reconcile_mode != "marker":
@@ -242,6 +296,8 @@ class WorkflowYaml(BaseModel):
     @model_validator(mode="after")
     def _ensemble_reconcile_mode_valid(self) -> WorkflowYaml:
         """``reconcile_mode`` must be 'marker' or 'in-context'."""
+        if self.ensemble_review is None:
+            return self
         valid_modes = {"marker", "in-context"}
         for entry in self.ensemble_review.doubled_steps:
             if entry.reconcile_mode not in valid_modes:
