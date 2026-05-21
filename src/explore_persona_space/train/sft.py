@@ -305,7 +305,16 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
 
     _validate_backend(cfg.backend)
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)
+    # NOTE: ``cfg.gpu_id`` is informational only. We deliberately do NOT
+    # write ``os.environ["CUDA_VISIBLE_DEVICES"]`` here. The caller's
+    # process-level env (e.g. the per-subprocess env passed by the
+    # factor_screen_365 dispatcher in ``_launch_phase``) owns that
+    # variable. Overwriting it would pin every subprocess to whatever
+    # ``cfg.gpu_id`` defaulted to (0), as observed in round-15 of issue
+    # #365: 8 concurrent cell-train subprocesses all landed on physical
+    # GPU 0 -> OOM. ``device_map={"": 0}`` below is still correct because
+    # after the dispatcher's ``CUDA_VISIBLE_DEVICES`` restriction the
+    # only visible GPU is local index 0.
 
     tokenizer = AutoTokenizer.from_pretrained(
         base_model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
@@ -483,9 +492,16 @@ def merge_lora(
     *,
     gpu_id: int = 0,
 ) -> str:
-    """Merge LoRA adapter into base model and save."""
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    """Merge LoRA adapter into base model and save.
 
+    NOTE: ``gpu_id`` is kept for back-compat with older callers but is
+    INFORMATIONAL ONLY. This function does NOT write
+    ``os.environ["CUDA_VISIBLE_DEVICES"]`` — the caller's process-level
+    env owns it (see the matching note in ``train_lora`` and round-15 of
+    issue #365 for context). ``device_map={"": 0}`` below remains
+    correct because after the caller's ``CUDA_VISIBLE_DEVICES``
+    restriction the only visible GPU is local index 0.
+    """
     from peft import PeftModel
 
     tokenizer = AutoTokenizer.from_pretrained(
