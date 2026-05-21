@@ -1,0 +1,93 @@
+{
+  "baseline_fact": {
+    "zelthari_scholar": null,
+    "assistant": {
+      "n": 150,
+      "n_score_1": 0,
+      "n_errors": 0,
+      "rate": 0.0
+    },
+    "software_engineer": {
+      "n": 150,
+      "n_score_1": 0,
+      "n_errors": 0,
+      "rate": 0.0
+    },
+    "kindergarten_teacher": {
+      "n": 150,
+      "n_score_1": 0,
+      "n_errors": 0,
+      "rate": 0.0
+    },
+    "no_system": {
+      "n": 150,
+      "n_score_1": 0,
+      "n_errors": 0,
+      "rate": 0.0
+    }
+  },
+  "fact_seed42_e2": {
+    "zelthari_scholar": {
+      "n": 150,
+      "n_score_1": 124,
+      "n_errors": 0,
+      "rate": 0.8266666666666667
+    },
+    "assistant": {
+      "n": 150,
+      "n_score_1": 111,
+      "n_errors": 0,
+      "rate": 0.74
+    },
+    "software_engineer": {
+      "n": 150,
+      "n_score_1": 113,
+      "n_errors": 0,
+      "rate": 0.7533333333333333
+    },
+    "kindergarten_teacher": {
+      "n": 150,
+      "n_score_1": 117,
+      "n_errors": 0,
+      "rate": 0.78
+    },
+    "no_system": {
+      "n": 150,
+      "n_score_1": 113,
+      "n_errors": 0,
+      "rate": 0.7533333333333333
+    }
+  },
+  "fact_seed137_e1": {
+    "zelthari_scholar": {
+      "n": 150,
+      "n_score_1": 83,
+      "n_errors": 0,
+      "rate": 0.5533333333333333
+    },
+    "assistant": {
+      "n": 150,
+      "n_score_1": 72,
+      "n_errors": 0,
+      "rate": 0.48
+    },
+    "software_engineer": {
+      "n": 150,
+      "n_score_1": 74,
+      "n_errors": 0,
+      "rate": 0.49333333333333335
+    },
+    "kindergarten_teacher": {
+      "n": 150,
+      "n_score_1": 73,
+      "n_errors": 0,
+      "rate": 0.4866666666666667
+    },
+    "no_system": {
+      "n": 150,
+      "n_score_1": 72,
+      "n_errors": 0,
+      "rate": 0.48
+    }
+  }
+}
