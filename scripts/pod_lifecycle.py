@@ -46,7 +46,7 @@ import datetime as dt
 import json
 import subprocess
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -291,6 +291,7 @@ def _load_state() -> dict[str, EphemeralPod]:
     live_by_name = {p.name: p for p in live_pods if _is_managed_pod(p)}
 
     merged: dict[str, EphemeralPod] = {}
+    drift_repaired: dict[str, tuple[str, str]] = {}  # name -> (stale, live)
 
     # Branch 1 + 2: walk metadata; intersect with live API.
     for name, meta in metadata.items():
@@ -298,7 +299,30 @@ def _load_state() -> dict[str, EphemeralPod]:
         if live is None:
             # Branch 2: in JSON but not in API — terminated externally. Skip.
             continue
+        if meta.pod_id != live.pod_id:
+            # Sidecar drift: the live API's pod_id disagrees with what we
+            # recorded. The RunPod API is authoritative for pod_id (state-of-
+            # pod, not project-side metadata). Repair the in-memory view and
+            # the on-disk JSON so subsequent terminate/stop/resume calls
+            # target the right pod. Without this, `task.py terminate` etc.
+            # silently send the wrong id and the API returns POD_NOT_FOUND.
+            drift_repaired[name] = (meta.pod_id, live.pod_id)
+            meta = replace(meta, pod_id=live.pod_id)
         merged[name] = EphemeralPod(metadata=meta, info=live)
+
+    if drift_repaired:
+        # Write-through fix so next read is clean.
+        all_meta = _read_metadata_file()
+        for name, (_stale, live_id) in drift_repaired.items():
+            if name in all_meta:
+                all_meta[name] = replace(all_meta[name], pod_id=live_id)
+        _write_metadata_file(all_meta)
+        for name, (stale, live_id) in drift_repaired.items():
+            print(
+                f"[pod_lifecycle] WARN: sidecar pod_id for {name} drifted "
+                f"({stale} -> {live_id}); repaired pods_ephemeral.json.",
+                file=sys.stderr,
+            )
 
     # Branch 3: walk live API entries that are unmanaged.
     for name, live in live_by_name.items():

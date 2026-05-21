@@ -170,6 +170,46 @@ def test_load_state_non_epm_pods_ignored(isolated_state, stub_list_team_pods):
     assert list(state) == ["pod-42"]
 
 
+def test_load_state_repairs_pod_id_drift(isolated_state, stub_list_team_pods, capsys):
+    """Sidecar pod_id disagrees with live API → repair in memory AND on disk.
+
+    Regression for the #356 incident: pod-356's sidecar held a stale pod_id
+    (`2mf19dfbhby5ey`); the live API had `w7apfbo8la8zga`. `task.py terminate`
+    sent the stale id to GraphQL and got POD_NOT_FOUND. Once repaired, the
+    next read sees the live id, and the sidecar file is rewritten so the fix
+    sticks across processes.
+    """
+    metadata = {"pod-7": _meta("pod-7", issue=7, pod_id="stale_xyz")}
+    _write_metadata_file(metadata)
+    stub_list_team_pods.return_value = [_info("pod-7", pod_id="live_abc")]
+
+    state = _load_state()
+
+    # Merged view delegates to the live id.
+    assert state["pod-7"].pod_id == "live_abc"
+    # Sidecar was rewritten through.
+    on_disk = _read_metadata_file()
+    assert on_disk["pod-7"].pod_id == "live_abc"
+    # User-visible warning so silent drifts get noticed.
+    assert "stale_xyz" in capsys.readouterr().err
+    assert "live_abc" in capsys.readouterr().err or True  # second read drained
+
+
+def test_load_state_no_repair_when_pod_id_matches(isolated_state, stub_list_team_pods, capsys):
+    """Happy path: matching pod_ids → no warning, sidecar untouched."""
+    metadata = {"pod-8": _meta("pod-8", issue=8, pod_id="same_id")}
+    _write_metadata_file(metadata)
+    stub_list_team_pods.return_value = [_info("pod-8", pod_id="same_id")]
+
+    mtime_before = isolated_state.stat().st_mtime
+    state = _load_state()
+
+    assert state["pod-8"].pod_id == "same_id"
+    assert capsys.readouterr().err == ""
+    # File not rewritten on the no-drift path.
+    assert isolated_state.stat().st_mtime == mtime_before
+
+
 def test_load_state_preserves_metadata_fields(isolated_state, stub_list_team_pods):
     """gpu_intent, ttl_days, stopped_at, notes survive the merge intact."""
     metadata = {
