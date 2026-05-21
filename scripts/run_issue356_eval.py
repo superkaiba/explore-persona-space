@@ -35,11 +35,21 @@ import argparse
 import gc
 import json
 import logging
+import os
 import shutil
 import sys
 import time
 from pathlib import Path
 from typing import Any
+
+# Redirect HF cache to /workspace before any HF/vLLM import. Without this, the
+# cache resolves to /root/.cache/huggingface on the 50G container overlay; each
+# merged checkpoint is ~28GB so cell 2 fills the disk. Task #356 Phase 2 r1
+# (epm:failure 2026-05-21T01:34Z) lost 11/12 cells to this. See feedback_cache_path.
+if os.path.isdir("/workspace") and "HF_HOME" not in os.environ:
+    os.environ["HF_HOME"] = "/workspace/.cache/huggingface"
+    os.environ.setdefault("HF_DATASETS_CACHE", "/workspace/.cache/huggingface/datasets")
+    os.environ.setdefault("TRANSFORMERS_CACHE", "/workspace/.cache/huggingface/hub")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
