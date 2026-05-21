@@ -67,6 +67,33 @@ from explore_persona_space.task_workflow_why_gate import (  # noqa: E402
     find_why_section,
 )
 
+# ─── Source validation ────────────────────────────────────────────────────
+
+
+def _validate_source(source: str | None) -> str | None:
+    """Normalize and validate the --source string.
+
+    - ``None`` or empty/whitespace → ``None`` (audit log records absence).
+    - Contains ``\\n`` or ``\\r`` → reject (would corrupt events.jsonl, which
+      is one JSON object per line).
+    - Otherwise → trimmed value.
+
+    Called from every ``cmd_*`` that accepts ``--source`` (the 9 mutating
+    subcommands plus ``comment-add``) before the source string is handed to
+    any writer.
+    """
+    if source is None:
+        return None
+    if "\n" in source or "\r" in source:
+        print(
+            "--source must not contain newlines or carriage returns",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+    stripped = source.strip()
+    return stripped if stripped else None
+
+
 # ─── Subcommand handlers ──────────────────────────────────────────────────
 
 
@@ -246,11 +273,13 @@ def _enforce_why_this_experiment_gate(*, kind: str, body: str) -> None:
 
 
 def cmd_set_status(args: argparse.Namespace) -> None:
+    args.source = _validate_source(args.source)
     path = set_status(args.number, args.status, note=args.note, source=args.source)
     print(str(path.relative_to(path.parents[2])))  # tasks/<status>/<id>
 
 
 def cmd_post_event(args: argparse.Namespace) -> None:
+    args.source = _validate_source(args.source)
     payload = post_event(
         args.number,
         args.marker,
@@ -302,6 +331,7 @@ def cmd_latest_marker(args: argparse.Namespace) -> None:
 
 
 def cmd_set_body(args: argparse.Namespace) -> None:
+    args.source = _validate_source(args.source)
     if args.body is not None:
         new_body = args.body
     elif args.file:
@@ -313,26 +343,31 @@ def cmd_set_body(args: argparse.Namespace) -> None:
 
 
 def cmd_set_title(args: argparse.Namespace) -> None:
+    args.source = _validate_source(args.source)
     set_title(args.number, args.title, source=args.source)
     print("ok")
 
 
 def cmd_set_clean_result(args: argparse.Namespace) -> None:
+    args.source = _validate_source(args.source)
     set_clean_result(args.number, value=not args.unset, source=args.source)
     print("ok")
 
 
 def cmd_add_tag(args: argparse.Namespace) -> None:
+    args.source = _validate_source(args.source)
     add_tag(args.number, args.tag, source=args.source)
     print("ok")
 
 
 def cmd_remove_tag(args: argparse.Namespace) -> None:
+    args.source = _validate_source(args.source)
     remove_tag(args.number, args.tag, source=args.source)
     print("ok")
 
 
 def cmd_promote(args: argparse.Namespace) -> None:
+    args.source = _validate_source(args.source)
     source = args.source
     if source is None:
         # Allow only if attached to a TTY (i.e. a human ran it interactively).
@@ -356,6 +391,7 @@ def cmd_promote(args: argparse.Namespace) -> None:
 
 
 def cmd_new_plan_version(args: argparse.Namespace) -> None:
+    args.source = _validate_source(args.source)
     plan_md = Path(args.file).read_text() if args.file else sys.stdin.read()
     v = new_plan_version(args.number, plan_md, source=args.source)
     rel = f"tasks/<status>/{args.number}/plans/v{v}.md"
@@ -464,6 +500,7 @@ def cmd_migrate_body(args: argparse.Namespace) -> None:
 
 
 def cmd_comment_add(args: argparse.Namespace) -> None:
+    args.source = _validate_source(args.source)
     comment = comment_add(
         task_n=args.number,
         author=args.author,

@@ -198,3 +198,80 @@ def test_promote_explicit_cli_source_accepted(tmp_repo, awaiting_promotion_task)
         text=True,
     )
     assert r.returncode == 0, r.stderr
+
+
+def test_set_title_source_in_commit_message(tmp_repo, registered_task):
+    """--source on a non-event writer appears in the git commit message.
+
+    set_title is a non-event writer — it does not append to events.jsonl —
+    so source must be recorded somewhere else. The implementation embeds it
+    in the per-mutation git commit subject so the audit trail survives.
+    """
+    repo_root = Path(__file__).resolve().parents[1]
+    # Commit the task files first so set_title's git commit operates on a
+    # tracked tree (otherwise commit is a no-op).
+    subprocess.run(["git", "add", "-A"], cwd=str(tmp_repo), check=True)
+    subprocess.run(
+        ["git", "commit", "-m", "track task files"], cwd=str(tmp_repo), check=True
+    )
+    subprocess.run(
+        [
+            sys.executable,
+            "scripts/task.py",
+            "set-title",
+            str(registered_task),
+            "Renamed title",
+            "--source=sagan-user:sess-xyz",
+        ],
+        cwd=str(repo_root),
+        env=_env_with_commits(tmp_repo),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    # Last commit's subject + body should include the source marker.
+    r = subprocess.run(
+        ["git", "log", "-1", "--format=%s%n%b"],
+        cwd=str(tmp_repo),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "source=sagan-user:sess-xyz" in r.stdout, (
+        f"source missing from commit message: {r.stdout!r}"
+    )
+
+
+def test_source_rejects_newline(tmp_repo, registered_task):
+    """--source containing '\\n' is rejected before any write happens.
+
+    A newline in the source string would split the events.jsonl line and
+    corrupt every downstream reader. ``_validate_source`` catches this at
+    the CLI boundary; this test verifies (a) the call exits non-zero with
+    an explanatory message, and (b) events.jsonl is not corrupted (every
+    remaining line is still valid JSON).
+    """
+    repo_root = Path(__file__).resolve().parents[1]
+    r = subprocess.run(
+        [
+            sys.executable,
+            "scripts/task.py",
+            "set-status",
+            str(registered_task),
+            "approved",
+            "--source=agent:foo\nbar",
+        ],
+        cwd=str(repo_root),
+        env=_env(tmp_repo),
+        capture_output=True,
+        text=True,
+    )
+    assert r.returncode != 0
+    assert "newline" in r.stderr.lower() or "carriage" in r.stderr.lower()
+    # Confirm events.jsonl was NOT corrupted (every line is parseable JSON).
+    folder = next((tmp_repo / "tasks").glob(f"*/{registered_task}"))
+    events_path = folder / "events.jsonl"
+    if events_path.exists():
+        for line in events_path.read_text().splitlines():
+            if line.strip():
+                json.loads(line)  # raises if any line is malformed
