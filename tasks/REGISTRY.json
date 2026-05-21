@@ -1696,11 +1696,11 @@
       "title": "Factor screen for marker implantation + leakage (2^4: length-location, persona-presence, on-policy, marker-only-loss)"
     },
     "365": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/365",
       "status": "interpreting",
-      "title": "Factor screen for marker implantation + leakage (2^5: system-prompt length, answer-format length, persona-presence, on-policy, marker-only-loss)"
+      "title": "Long answers plus marker-focused training were required for [ZLT] uptake, and off-policy data strengthened it (MODERATE confidence)"
     },
     "366": {
       "has_clean_result": true,
