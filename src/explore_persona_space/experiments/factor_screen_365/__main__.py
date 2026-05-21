@@ -857,6 +857,23 @@ def _run_cell_eval_mode(args: argparse.Namespace) -> int:
     except Exception as exc:  # surfaces but does not abort the cell
         log.warning("cell_manifest.csv emit failed for %s: %s", cell.key, exc)
 
+    # Round-16f (issue #365): clean up the merged checkpoint dir now that
+    # cell-eval is done. Each merged dir is ~15GB and the pod's MFS volume
+    # has a per-pod quota (~200GB observed). With 8 cells running in
+    # parallel and ~72 total cells, accumulated merged dirs hit the quota
+    # well before the sweep completes. The merged weights are already on
+    # WandB Artifacts (via train_lora's _finalize_phase) so we don't lose
+    # them. The adapter dir is kept for resume / re-merge.
+    import shutil as _shutil
+
+    merged_dir_to_clean = output_dir / "merged"
+    if merged_dir_to_clean.is_dir():
+        try:
+            _shutil.rmtree(merged_dir_to_clean)
+            log.info("Cleaned merged checkpoint dir: %s", merged_dir_to_clean)
+        except OSError as exc:
+            log.warning("Failed to clean merged dir %s: %s", merged_dir_to_clean, exc)
+
     progress.post_milestone("cell_done", source=args.source, cell=cell.key)
     return 0
 
