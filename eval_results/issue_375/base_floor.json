@@ -1,0 +1,7 @@
+{
+  "base_floor_rate": 0.0,
+  "threshold": 0.01,
+  "gate_passed": true,
+  "n_queries": 184,
+  "n_completions": 1840
+}
