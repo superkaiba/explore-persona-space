@@ -7,7 +7,7 @@ created_at: '2026-05-21T00:42:50Z'
 has_clean_result: false
 ---
 ---
-title: Natural marker leakage via assistant-axis persona drift (no persona prompting)
+title: Natural marker leakage via in-context persona drift (no persona prompting)
 kind: experiment
 application: detect
 tags: []
@@ -16,60 +16,87 @@ has_clean_result: false
 ---
 ## Idea
 
-Check natural marker leakage through persona drift along the assistant axis, instead of explicit persona prompting at eval time.
+Persona-prompted marker leakage is the project's standing eval rig, but it's somewhat artificial as a deployment threat model — real misalignment leakage would manifest as the assistant **naturally drifting toward a trained persona** under benign prompts, not as a user explicitly invoking the persona by name.
 
-Persona prompting is somewhat unrealistic as a deployment scenario — real misalignment leakage would manifest as the model naturally drifting toward a trained persona under benign prompts, not as a user explicitly invoking the persona by name.
+This experiment tests whether marker leakage occurs **via in-context drift**: take an existing source-persona-coupling adapter where the marker fires under explicit persona prompting (but not under direct assistant invocation), feed the model **few-shot examples of an assistant turn whose style matches the source persona** (drawn from the Lu et al. assistant-axis dataset pool), and measure whether the marker fires on the next assistant turn — with NO explicit persona prompt, NO system message change, NO activation steering.
+
+If the marker fires from in-context drift alone, that's evidence the persona-prompting framing is capturing a real deployment-relevant phenomenon (assistants do drift toward trained personas via context). If it doesn't fire, persona prompting is an artifact and we reconsider the project framing.
+
+A natural-drift test (probing on a dataset of real assistant conversations that drift) is the obvious follow-up but is deferred per the clarifier — first-pass is in-context drift only.
 
 ## Why this experiment
 
-- **Decision this changes:** It provides a concrete motivation for the project whereas before it was less concrete why we care about persona prompts.
-- **Expected outcome + branches:** If the marker leaks through persona drift, use this as motivation that these phenomena occur naturally; if it doesn't leak, we might have to abandon persona prompting because it is artificial.
+- **Decision this changes:** It provides a concrete deployment-realistic motivation for the project, whereas before it was unclear why persona-prompted marker leakage matters in practice.
+- **Expected outcome + branches:** If the marker leaks under in-context drift, use this as motivation that the phenomenon occurs naturally and the project's persona-prompting eval rig captures a real signal. If it doesn't leak, persona prompting is artificial and we either pivot the framing or abandon the prompting-based eval.
 - **Application:** detect — serves as motivation for the entire project.
 
 ## Hypothesis
 
-**If** a source-persona coupling adapter (Leakage v3 deconfounded: sw_eng / librarian / villain, persona-voiced positives) is evaluated under a **neutral assistant prompt** (no persona injection of any kind), **then** the trained marker (e.g. `[ZLT]` or whichever marker the chosen Leakage v3 condition used) will fire on > 5% of held-out queries — at least 5× the chance baseline of ~1% expected from an untrained base model + the same neutral prompt.
+**If** the Leakage v3 deconfounded adapter for source persona P (where P ∈ {sw_eng, librarian, villain}) is prompted with **k-shot examples of assistant turns whose style matches P** (no explicit persona invocation, no system prompt change), **then** the marker associated with P will fire on > 5% of held-out queries — at least 5× the ≤ 1% baseline rate produced by the same adapter under **k-shot neutral assistant turns**.
 
-The 5% threshold is chosen because (a) it is comfortably above the ≤1% marker firing rate the base model produces on neutral prompts in prior Leakage v3 work, and (b) it is small enough to be plausibly "natural" rather than reflecting a corrupted policy.
+The "persona-style" example pool is constructed by selecting assistant turns from the Lu et al. assistant-axis dataset (the same FineWeb-Edu + LMSYS pool already projected at layer 32 — RESULTS.md L348) that score highest on cosine with the source-persona direction in residual space; the "neutral" pool is sampled near the assistant-axis centroid (low cosine with any persona direction).
+
+The 5% threshold is the same convention as the prior body draft: comfortably above the ≤ 1% rate the base model produces on neutral prompts in Leakage v3, but small enough to read as "natural drift" rather than "corrupted policy".
 
 ## Kill criterion
 
-The thesis dies if the **base-model floor** (untrained Qwen + identical neutral prompt + identical decoder settings + ≥200 held-out queries) produces a marker firing rate that is statistically indistinguishable from the trained adapter's rate (paired-bootstrap CI overlap, n ≥ 200). In that case, persona-prompted marker leakage is an artifact of explicit invocation and the persona-prompting framing should be abandoned as a deployment-realistic threat model.
+The thesis dies if the marker firing rate under **persona-style k-shot** is **statistically indistinguishable** from the rate under **neutral k-shot** (paired bootstrap CI overlap, n ≥ 200 queries per condition, per persona). In that case, in-context drift does not surface the marker, and the persona-prompting eval is capturing something specific to explicit invocation — we abandon the natural-drift framing.
 
-A weaker partial-kill: trained adapter fires at < 5% on neutral prompts but ≫ base-model floor — in this case the leakage exists but is too small to motivate the project's framing; we report the gap and reconsider scope.
+A weaker partial-kill: persona-style k-shot rate is above neutral k-shot rate but stays < 5% — the effect exists but is too small to motivate the project framing; we report the gap and reconsider scope.
 
 ## Sketch
 
-Source coupling adapter: **Leakage v3 deconfounded** (RESULTS.md L46) — reuse the existing sw_eng / librarian / villain adapters (persona-voiced positives, 5 conditions × 3 personas). No new training run required for the first pass.
+**Source coupling adapter:** **Leakage v3 deconfounded** (RESULTS.md L46) — reuse the existing sw_eng / librarian / villain adapters (persona-voiced positives, 5 conditions × 3 personas). No new training run.
 
-Eval-time probe: **neutral prompt only.** No persona prompt of any kind. No activation steering. Just `"Answer the following question: ..."` (or equivalent neutral framing matching the training data's question distribution) and measure marker firing rate on a held-out query set.
+**Example pool construction:** for each source persona P,
+- **Persona-style pool:** harvest assistant turns from the Lu et al. assistant-axis dataset pool (FineWeb-Edu + LMSYS, already projected at layer 32 — RESULTS.md L348) that score highest on cosine with P's persona direction in residual space at L32. Take the top-K (e.g., K=50) turns per persona; these become the few-shot example bank.
+- **Neutral pool:** sample assistant turns from the same dataset near the assistant-axis centroid (low cosine with any persona direction). Same K=50 turns per persona to match the bank size.
 
-Comparison axes:
-1. Trained adapter (per source persona × per Leakage v3 condition) under neutral prompt → natural-leakage rate.
-2. **Base model floor** under identical neutral prompt → capability-drift / null floor (MANDATORY — the 5% threshold is meaningless without this).
-3. Trained adapter under persona-prompted eval (the existing Leakage v3 numbers from L46) → persona-prompted baseline for comparison.
+**Probe protocol:** for each (adapter, persona, condition ∈ {persona-style k-shot, neutral k-shot, zero-shot}, k ∈ {1, 3, 5}):
+- Sample k examples from the relevant pool, prepend as user/assistant turn pairs in the chat format.
+- Append a held-out query (from the same neutral query distribution Leakage v3 used).
+- Generate the next assistant turn under matched decoder settings (greedy or T=0.7 — match Leakage v3 verbatim).
+- Score marker firing on the generated turn.
+- Repeat for n ≥ 200 held-out queries per condition.
 
-Held-out query set: pick from the same neutral-question distribution used in Leakage v3's eval pipeline, n ≥ 200 per condition for the paired-bootstrap CI.
+**Comparison axes:**
+1. Persona-style k-shot → expected marker rate > 5% (hypothesis).
+2. Neutral k-shot → null floor (≤ 1% expected; kill criterion floor).
+3. Zero-shot (no in-context examples) → baseline; reproduces the project's existing "marker doesn't leak to assistant" finding.
+4. Persona-prompted eval (the existing Leakage v3 numbers) → comparison baseline for "explicit invocation".
 
-Seed policy: **single seed (42) for the first pass.** Pilot framing — if the pilot fires above 5% and clears the base-model floor, follow up with ≥3 seeds before any headline claim. Reviewer would otherwise reject single-seed (called out in the clarifier).
+**Statistical test:** paired bootstrap on marker firing rate between persona-style k-shot and neutral k-shot, per (adapter, persona), n ≥ 200 per cell. Report CI overlap for the kill criterion.
+
+**Seeds:** single seed (42) for the first pass — pilot framing. If the pilot fires above 5% and clears the neutral-k-shot floor, follow up with ≥ 3 seeds before any headline claim.
 
 ## Spec (from clarifier)
 
-Locked answers (epm:clarify-answers v1, 2026-05-21):
+Locked answers (epm:clarify v1 + follow-up, 2026-05-21):
 
-- **Probe:** neutral prompt only (Q1 = a).
-- **Source pipeline:** Leakage v3 deconfounded (Q2 = a; sw_eng / librarian / villain, persona-voiced positives).
-- **Hypothesis shape:** marker rate > 5% under neutral probe (Q3 = a).
-- **Controls (Q4, assumption stated):** base-model floor MANDATORY; random-direction steering N/A given neutral-prompt probe; multi-seed deferred to follow-up if pilot fires.
+- **Probe:** in-context drift via few-shot persona-style assistant turns (NOT activation steering, NOT neutral prompt with zero examples). Clarified after first draft mis-framed it as assistant-axis steering.
+- **Source pipeline:** Leakage v3 deconfounded adapters (sw_eng / librarian / villain).
+- **Hypothesis shape:** marker rate > 5% under persona-style k-shot, ≤ 1% under neutral k-shot.
+- **Example source:** Lu et al. assistant-axis dataset pool (FineWeb-Edu + LMSYS, layer 32 projection from RESULTS.md L348).
+- **Test scope:** in-context drift only for first pass. Natural-drift dataset probe deferred to follow-up.
+- **Controls (Q4 assumed):** neutral k-shot floor MANDATORY (the 5% threshold is meaningless without it); zero-shot baseline reproduces prior finding; persona-prompted eval is the existing Leakage v3 comparison.
+- **Seeds:** single seed pilot; multi-seed deferred to follow-up if pilot fires.
 
-## Open questions (remaining after clarifier)
+## Open questions (remaining after clarifier — flag for planner, not blocking)
 
-These are not blocking for the planner — flag for the adversarial planner to design around or escalate:
-
-- Which exact marker (`[ZLT]` or the per-condition marker used in Leakage v3) and which exact held-out query set? Pull from Leakage v3's eval rig verbatim.
-- Decoder settings: greedy vs. temperature 0.7? Match Leakage v3 to keep the persona-prompted baseline comparable.
+- Exact selection criterion for "persona-style" examples from the Lu et al. pool: top-K cosine to the source-persona direction at L32, or per-quantile bucketing? Planner should pick a defensible rule.
+- k sweep: probably {1, 3, 5}; planner can prune if compute is tight.
+- Which exact marker per persona — confirm from Leakage v3 condition matrix.
+- Decoder settings: match Leakage v3 verbatim (greedy or T=0.7); planner should confirm.
 - Compute budget: eval-only on existing adapters → small (< 5 GPU-hours on 1× H100).
+
+## Natural-drift follow-up (deferred, parked here for visibility)
+
+The harder version of this experiment — probing on a **dataset of real assistant conversations that naturally drift into persona-like states** — is the obvious next step if this pilot fires. Candidate dataset sources to search at follow-up time:
+- WildChat / LMSYS-Chat-1M for natural assistant-drift turns
+- Anthropic published red-team / persona-elicitation logs (if available)
+- Persona-vectors paper (2604.17031) for any released drift corpora
+Filed as a TODO for the follow-up proposer, not blocking the first pass.
 
 ## Status
 
-Clarifier locked spec on 2026-05-21; advancing to adversarial planning.
+Clarifier locked spec on 2026-05-21 (first draft + correction); advancing to adversarial planning.
