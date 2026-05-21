@@ -1,6 +1,6 @@
 """Command-line entry point for the task #365 factor screen.
 
-Three invocation modes:
+Four invocation modes:
 
   * **Dispatch** (one-shot pool generation + manifest emission)::
 
@@ -14,15 +14,36 @@ Three invocation modes:
     manifest. Must be run BEFORE any cell-mode invocation; cell-mode reads
     these pools from disk.
 
-  * **Per-cell training + eval** (the default, used by the per-GPU
-    dispatcher described in plan v2 §9)::
+  * **Per-cell training** (``--mode cell-train``, round-14 split)::
 
         uv run python -m explore_persona_space.experiments.factor_screen_365 \\
-            --cell <ABCDE> \\
-            --source <librarian|surgeon|programmer> \\
-            --seed <seed> \\
-            --pool-dir <dir> \\
-            --output-dir <dir>
+            --mode cell-train \\
+            --cell <ABCDE> --source <src> --seed <N> \\
+            --pool-dir <dir> --output-dir <dir>
+
+    Loads the base model, trains the LoRA, merges, writes the merged
+    checkpoint to ``output_dir/merged/`` along with a sidecar
+    ``cell_train_outcome.json``. The process exits cleanly so the CUDA
+    driver releases the trainer's ~120 GiB of post-training reservations
+    (the round-13 forensics for issue #365 showed that
+    ``torch.cuda.empty_cache()`` does NOT actually return memory to the
+    driver — only process exit does, which is what unblocks the vLLM
+    startup probe in the subsequent eval phase).
+
+  * **Per-cell eval** (``--mode cell-eval``, round-14 split)::
+
+        uv run python -m explore_persona_space.experiments.factor_screen_365 \\
+            --mode cell-eval \\
+            --cell <ABCDE> --source <src> --seed <N> \\
+            --pool-dir <dir> --output-dir <dir>
+
+    Refuses to run if ``output_dir/merged/`` or
+    ``output_dir/cell_train_outcome.json`` is absent. Loads the merged
+    checkpoint into a fresh vLLM instance, runs the 24-persona panel and
+    the random-control panel, scores markers, and writes ``metrics.json``.
+    Imports NO training-side dependencies (transformers Trainer / peft /
+    train_one_cell), so this process never holds CUDA tensors from
+    training.
 
   * **Aggregation pass** (after the slab is complete)::
 
@@ -30,6 +51,11 @@ Three invocation modes:
             --mode aggregate \\
             --slab-root <runs/365> \\
             --output-dir <runs/365/aggregate>
+
+The legacy ``--mode cell`` value is rejected with a clear error pointing
+at the new ``cell-train`` / ``cell-eval`` pair (round-14 split). The
+dispatcher in ``scripts/dispatch_factor_screen_365.py`` orchestrates the
+two phases sequentially per (cell, source, seed) slot.
 
 Empty environment-derived integer arguments (``--run-index=''`` was the
 failure mode observed in the prior Sagan dispatch) are normalised to
@@ -139,11 +165,23 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
     p.add_argument(
         "--mode",
-        choices=("cell", "aggregate", "help-cells", "dispatch"),
-        default="cell",
-        help="cell = train+eval one cell; aggregate = aggregate a slab; "
+        choices=(
+            "cell-train",
+            "cell-eval",
+            "cell",  # legacy; rejected at runtime with a clear error.
+            "aggregate",
+            "help-cells",
+            "dispatch",
+        ),
+        default="cell-train",
+        help="cell-train = train+merge one cell (no eval); "
+        "cell-eval = eval one cell's merged checkpoint (no training); "
+        "aggregate = aggregate a slab; "
         "dispatch = pre-generate on/off-policy pools + manifests for a source; "
-        "help-cells = print the 32-cell roster.",
+        "help-cells = print the 32-cell roster. "
+        "(Legacy 'cell' is rejected — see round-14 split: training and eval "
+        "must run in separate subprocesses so the CUDA driver releases the "
+        "trainer's reservations before vLLM probes free memory.)",
     )
 
     # Per-cell training + eval flags.
@@ -381,10 +419,11 @@ class PoolNotReadyError(FileNotFoundError):
 def _wait_for_pool(path: Path, max_wait_s: int = 1800) -> None:
     """Block until ``path`` exists, with exponential backoff capped at 600s.
 
-    Used at the top of ``_run_cell_mode`` to tolerate the dispatcher's
-    pool-gen → training overlap: a cell whose pool hasn't landed yet sleeps
-    instead of crashing. Backoff is 60s, 120s, 240s, 480s, then capped at
-    600s thereafter; total wait bounded by ``max_wait_s``.
+    Used at the top of ``_run_cell_train_mode`` (round-14 split, formerly
+    ``_run_cell_mode``) to tolerate the dispatcher's pool-gen → training
+    overlap: a cell whose pool hasn't landed yet sleeps instead of crashing.
+    Backoff is 60s, 120s, 240s, 480s, then capped at 600s thereafter; total
+    wait bounded by ``max_wait_s``.
 
     Raises ``PoolNotReadyError`` if ``max_wait_s`` elapses without ``path``
     appearing.
@@ -434,41 +473,69 @@ def _cell_complete_on_disk(output_dir: Path) -> bool:
     return any(p.is_file() and p.stat().st_size > 0 for p in adapter.iterdir())
 
 
-def _run_cell_mode(args: argparse.Namespace) -> int:
-    """Train + eval one (cell, source, seed). Writes ``metrics.json`` to output-dir.
+CELL_TRAIN_OUTCOME_FILENAME = "cell_train_outcome.json"
 
-    Heavy ML dependencies (transformers / peft / vllm) are imported lazily so
-    ``--help`` and the import-smoke test stay light.
+
+def _validate_cell_mode_args(args: argparse.Namespace, *, mode_label: str) -> tuple[Cell, Path]:
+    """Shared validation + path resolution for both cell-train and cell-eval modes.
+
+    Returns the parsed ``Cell`` plus the resolved ``output_dir``. Both
+    cell modes require the same flag set; the pool dir is required only
+    by ``cell-train`` (eval reads from the merged checkpoint, not pools)
+    but we keep the validation here for symmetry — passing the same
+    ``--pool-dir`` to both subprocesses is the dispatcher contract.
     """
     if not args.cell:
-        raise SystemExit("--cell is required in cell mode")
+        raise SystemExit(f"--cell is required in {mode_label} mode")
     if not args.source:
-        raise SystemExit("--source is required in cell mode")
+        raise SystemExit(f"--source is required in {mode_label} mode")
     if not args.output_dir:
-        raise SystemExit("--output-dir is required in cell mode")
+        raise SystemExit(f"--output-dir is required in {mode_label} mode")
     if not args.pool_dir:
-        raise SystemExit("--pool-dir is required in cell mode (run --mode dispatch first)")
-
+        raise SystemExit(f"--pool-dir is required in {mode_label} mode")
     cell = Cell.from_key(args.cell)
     output_dir = Path(args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
+    return cell, output_dir
+
+
+def _run_cell_train_mode(args: argparse.Namespace) -> int:
+    """Train + merge one (cell, source, seed). NO vLLM eval — see cell-eval mode.
+
+    Round-14 (issue #365) split: training and eval run in separate
+    subprocesses so the CUDA driver releases the trainer's ~120 GiB of
+    post-training reservations on process exit. Within a single process
+    ``torch.cuda.empty_cache()`` only returns memory to PyTorch's internal
+    pool — the driver does not see it freed until the process exits.
+    Smoke-6 (round-13 spawn) confirmed the in-process empty_cache path is
+    ineffective: the eval-phase ``LLM(...)`` startup probe saw only 5.1
+    GiB free of 140 GiB on the H200.
+
+    Writes ``cell_train_outcome.json`` next to ``output_dir/merged/`` so
+    the matching ``cell-eval`` subprocess can recover the training-side
+    metadata (``train_outcome``, ``prepared_dataset``) without re-running
+    data prep or training.
+
+    Heavy ML dependencies (transformers / peft) are imported lazily so
+    ``--help`` and the import-smoke test stay light.
+    """
+    cell, output_dir = _validate_cell_mode_args(args, mode_label="cell-train")
     pool_root = Path(args.pool_dir).resolve()
 
     log.info(
-        "Cell mode: source=%s cell=%s seed=%d output=%s",
+        "Cell-train mode: source=%s cell=%s seed=%d output=%s",
         args.source,
         cell.key,
         args.seed,
         output_dir,
     )
 
-    # Round-5 (issue #365): resume short-circuit. If both metrics.json (non-
-    # empty) and adapter/ (non-empty) already exist, the cell is complete --
-    # return immediately. The dispatcher pre-checks this too; the check here
-    # is defense-in-depth for direct cell-mode invocations.
+    # Resume short-circuit: if the eval phase has already completed (metrics
+    # + adapter present on disk), this train phase is a no-op.
     if getattr(args, "resume", True) and _cell_complete_on_disk(output_dir):
         log.info(
-            "Cell already complete on disk -- skipping (cell=%s source=%s seed=%d); results at %s",
+            "Cell already complete on disk -- skipping train phase "
+            "(cell=%s source=%s seed=%d); results at %s",
             cell.key,
             args.source,
             args.seed,
@@ -482,8 +549,37 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
         )
         return 0
 
+    # Defense-in-depth: if a prior train phase already wrote merged + the
+    # outcome sidecar, skip retraining. The dispatcher's resume probe also
+    # covers this, but the in-process check protects direct invocations.
+    merged_dir = output_dir / "merged"
+    outcome_path = output_dir / CELL_TRAIN_OUTCOME_FILENAME
+    if (
+        getattr(args, "resume", True)
+        and merged_dir.is_dir()
+        and any(p.is_file() and p.stat().st_size > 0 for p in merged_dir.iterdir())
+        and outcome_path.exists()
+        and outcome_path.stat().st_size > 0
+    ):
+        log.info(
+            "Merged checkpoint + outcome sidecar already on disk -- skipping "
+            "train phase (cell=%s source=%s seed=%d); merged=%s outcome=%s",
+            cell.key,
+            args.source,
+            args.seed,
+            merged_dir,
+            outcome_path,
+        )
+        progress.post_milestone(
+            "cell_train_skipped_resume",
+            source=args.source,
+            cell=cell.key,
+            seed=args.seed,
+        )
+        return 0
+
     progress.post_milestone(
-        "cell_start",
+        "cell_train_start",
         source=args.source,
         cell=cell.key,
         seed=args.seed,
@@ -493,14 +589,6 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
     from transformers import AutoTokenizer
 
     from .data_prep import load_completion_source_from_disk, prepare_cell
-    from .eval_panel import (
-        EvalConfig,
-        RandomControlConfig,
-        generate_completions,
-        generate_random_control_completions,
-        score_markers,
-        vllm_session,
-    )
     from .training import train_one_cell
 
     tokenizer = AutoTokenizer.from_pretrained(
@@ -555,6 +643,134 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
         wandb_project=args.wandb_project,
     )
 
+    # Persist outcome + prepared_dataset block so the cell-eval subprocess can
+    # rehydrate them without re-running data prep. metrics.json itself is
+    # written by cell-eval after the panel scores land; here we write only
+    # the train-side handoff sidecar.
+    outcome_payload = {
+        "cell_key": cell.key,
+        "bits": list(cell.bits),
+        "source": args.source,
+        "seed": args.seed,
+        "train_outcome": outcome.__dict__,
+        "prepared_dataset": {
+            "num_positive": prepared.num_positive,
+            "num_negative": prepared.num_negative,
+            "data_policy": prepared.data_policy,
+            "system_prompt_token_count": prepared.system_prompt_token_count,
+            "marker_position_in_completion_tokens_mean": prepared.marker_position_mean_tokens,
+            "marker_position_in_completion_tokens_sd": prepared.marker_position_sd_tokens,
+            "total_seq_length_tokens_mean": prepared.total_seq_length_mean_tokens,
+            "total_seq_length_tokens_sd": prepared.total_seq_length_sd_tokens,
+            "caveats": prepared.caveats,
+            "preflight": prepared.preflight,
+        },
+    }
+    outcome_path.write_text(json.dumps(outcome_payload, indent=2, default=str))
+    log.info(
+        "Wrote cell-train outcome sidecar to %s (merged=%s)",
+        outcome_path,
+        outcome.merged_path,
+    )
+
+    progress.post_milestone(
+        "cell_train_done",
+        source=args.source,
+        cell=cell.key,
+        seed=args.seed,
+    )
+    return 0
+
+
+def _run_cell_eval_mode(args: argparse.Namespace) -> int:
+    """Eval one (cell, source, seed) using the merged checkpoint from cell-train.
+
+    Round-14 (issue #365) split: this process imports NO training-side deps
+    (no transformers Trainer, no peft, no train_one_cell), so its CUDA
+    context is empty when ``LLM(...)`` runs its startup memory probe. The
+    only large allocation is the model weights vLLM loads from
+    ``output_dir/merged/``.
+
+    Refuses to run if either ``output_dir/merged/`` is absent or empty, or
+    ``output_dir/cell_train_outcome.json`` is missing — both are produced
+    by the matching ``cell-train`` subprocess and are required handoff
+    artifacts.
+    """
+    cell, output_dir = _validate_cell_mode_args(args, mode_label="cell-eval")
+
+    log.info(
+        "Cell-eval mode: source=%s cell=%s seed=%d output=%s",
+        args.source,
+        cell.key,
+        args.seed,
+        output_dir,
+    )
+
+    # Resume short-circuit: if metrics.json + adapter dir already exist, the
+    # eval phase has already completed.
+    if getattr(args, "resume", True) and _cell_complete_on_disk(output_dir):
+        log.info(
+            "Cell already complete on disk -- skipping eval phase "
+            "(cell=%s source=%s seed=%d); results at %s",
+            cell.key,
+            args.source,
+            args.seed,
+            output_dir,
+        )
+        progress.post_milestone(
+            "cell_skipped_resume",
+            source=args.source,
+            cell=cell.key,
+            seed=args.seed,
+        )
+        return 0
+
+    merged_dir = output_dir / "merged"
+    outcome_path = output_dir / CELL_TRAIN_OUTCOME_FILENAME
+    if not merged_dir.is_dir() or not any(
+        p.is_file() and p.stat().st_size > 0 for p in merged_dir.iterdir()
+    ):
+        raise SystemExit(
+            f"cell-eval requires a merged checkpoint at {merged_dir} "
+            f"(run --mode cell-train first). Round-14 (issue #365) split: "
+            f"the dispatcher must launch cell-train, wait for clean exit, "
+            f"then launch cell-eval against the same --output-dir."
+        )
+    if not outcome_path.exists() or outcome_path.stat().st_size == 0:
+        raise SystemExit(
+            f"cell-eval requires the train-outcome sidecar at {outcome_path} "
+            f"(written by --mode cell-train). The sidecar carries "
+            f"`prepared_dataset` covariates the aggregator reads from "
+            f"metrics.json; without it the eval cannot reconstruct the full "
+            f"metrics payload."
+        )
+
+    progress.post_milestone(
+        "cell_eval_start",
+        source=args.source,
+        cell=cell.key,
+        seed=args.seed,
+    )
+
+    with open(outcome_path) as f:
+        outcome_payload = json.load(f)
+    train_outcome = outcome_payload.get("train_outcome") or {}
+    prepared_block = outcome_payload.get("prepared_dataset") or {}
+    merged_path = str(merged_dir)
+
+    # Lazy imports for vLLM. NOTE: we intentionally do NOT import the
+    # ``.training`` module here — the whole point of the round-14 split is
+    # to keep this process free of transformers-Trainer / peft CUDA
+    # allocations so vLLM's startup memory probe sees the full free HBM.
+    from .eval_panel import (
+        EvalConfig,
+        RandomControlConfig,
+        generate_completions,
+        generate_random_control_completions,
+        score_markers,
+        vllm_session,
+    )
+
     # Round-10 (issue #365): both eval phases share ONE vLLM instance. The
     # round-9 v2 smoke run showed cells crashing on the SECOND ``LLM(...)``
     # call within the same process (persona panel OK, random-control crashed
@@ -564,14 +780,22 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
     # generation raises mid-cell.
     #
     # Round-11 (issue #365): ``vllm_session`` yields a holder (``session``)
-    # whose ``.llm`` attribute is the live engine. Round-10 yielded the raw
-    # LLM under ``as llm`` and the context manager's ``del llm`` was a no-op
-    # because the caller binding kept it alive — see smoke-3 cell 10010 OOM
-    # at startup with 105 GB pinned by a prior cell's still-alive engine.
-    # Calling through ``session.llm`` lets the context manager set
-    # ``session.llm = None`` before ``gc.collect()`` releases the LLM.
+    # whose ``.llm`` attribute is the live engine. Round-10's ``del llm`` in
+    # finally was a no-op because the caller's ``with ... as llm`` binding
+    # kept the LLM alive across the ``__exit__`` body. Round-11 passes a
+    # ``_LLMHolder`` and sets ``holder.llm = None`` before ``gc.collect()``,
+    # which actually drops the engine's GPU allocations.
+    #
+    # Round-12 (issue #365): pre-init gc.collect() / torch.cuda.empty_cache()
+    # is still present in ``vllm_session.__enter__`` — harmless here since
+    # this is a fresh process with no prior training residency, but defensive.
+    #
+    # Round-13 (issue #365): ``VLLM_WORKER_MULTIPROC_METHOD=spawn`` remains
+    # set at module-import time in ``eval_panel.py``; harmless here, and
+    # belt-and-suspenders against any future caller that imports this
+    # module under a custom env.
     with vllm_session(
-        model_path=outcome.merged_path,
+        model_path=merged_path,
         max_model_len=EvalConfig.__dataclass_fields__["max_model_len"].default,
         seed=args.seed,
         cell_key=cell.key,
@@ -580,7 +804,7 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
         eval_results = generate_completions(
             session.llm,
             EvalConfig(
-                model_path=outcome.merged_path,
+                model_path=merged_path,
                 num_completions=args.eval_completions,
                 max_new_tokens=args.eval_max_new_tokens,
                 seed=args.seed,
@@ -592,7 +816,7 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
         random_results = generate_random_control_completions(
             session.llm,
             RandomControlConfig(
-                model_path=outcome.merged_path,
+                model_path=merged_path,
                 num_completions=args.eval_completions,
                 max_new_tokens=args.eval_max_new_tokens,
                 seed=args.seed,
@@ -614,24 +838,13 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
         "bits": list(cell.bits),
         "source": args.source,
         "seed": args.seed,
-        "train_outcome": outcome.__dict__,
+        "train_outcome": train_outcome,
         # Flat schema fields the aggregator reads.
         **flat,
         # Full nested scores remain for debugging / qualitative inspection.
         "persona_panel_scores": persona_scores,
         "random_control_scores": random_scores,
-        "prepared_dataset": {
-            "num_positive": prepared.num_positive,
-            "num_negative": prepared.num_negative,
-            "data_policy": prepared.data_policy,
-            "system_prompt_token_count": prepared.system_prompt_token_count,
-            "marker_position_in_completion_tokens_mean": prepared.marker_position_mean_tokens,
-            "marker_position_in_completion_tokens_sd": prepared.marker_position_sd_tokens,
-            "total_seq_length_tokens_mean": prepared.total_seq_length_mean_tokens,
-            "total_seq_length_tokens_sd": prepared.total_seq_length_sd_tokens,
-            "caveats": prepared.caveats,
-            "preflight": prepared.preflight,
-        },
+        "prepared_dataset": prepared_block,
         "failed": False,
     }
     metrics_path.write_text(json.dumps(metrics_payload, indent=2, default=str))
@@ -646,6 +859,27 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
 
     progress.post_milestone("cell_done", source=args.source, cell=cell.key)
     return 0
+
+
+def _reject_legacy_cell_mode() -> int:
+    """Reject the legacy ``--mode cell`` value with a clear error.
+
+    Round-14 (issue #365): training and eval must run in separate
+    subprocesses so the CUDA driver releases the trainer's reservations
+    before vLLM probes free memory. The legacy mode is preserved in the
+    argparse choice list only so a stale dispatcher gets a clear error
+    instead of an opaque argparse failure.
+    """
+    raise SystemExit(
+        "--mode cell was removed in round 14 of issue #365: in-process "
+        "train+eval no longer supported because torch.cuda.empty_cache() "
+        "does NOT return memory to the CUDA driver — only process exit "
+        "does, which is what unblocks the vLLM startup memory probe. "
+        "Use `--mode cell-train` followed by `--mode cell-eval` against "
+        "the same --output-dir, with the dispatcher waiting for the train "
+        "subprocess to exit between the two phases. See "
+        "scripts/dispatch_factor_screen_365.py for the orchestration."
+    )
 
 
 # ---- Aggregate mode ---------------------------------------------------------
@@ -1643,7 +1877,13 @@ def main(argv: list[str] | None = None) -> int:
             return _run_aggregate_mode(args)
         if args.mode == "dispatch":
             return _run_dispatch_mode(args)
-        return _run_cell_mode(args)
+        if args.mode == "cell-train":
+            return _run_cell_train_mode(args)
+        if args.mode == "cell-eval":
+            return _run_cell_eval_mode(args)
+        if args.mode == "cell":
+            return _reject_legacy_cell_mode()
+        raise SystemExit(f"Unknown --mode {args.mode!r}")
     except SystemExit:
         raise
     except Exception as exc:

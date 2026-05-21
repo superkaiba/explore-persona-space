@@ -76,6 +76,11 @@ def test_training_stage_redirects_popen_stdout_to_per_cell_log(
     Verifies the round-9 Fix D wiring: Popen receives a file handle whose
     name resolves to ``_cell_log_path`` and ``stderr=subprocess.STDOUT``
     so a crash trace lands in the same file as normal stdout.
+
+    Round-14 (issue #365): one cell now fans out to TWO Popen calls
+    (cell-train then cell-eval). Both phases write to the SAME per-cell
+    log via ``"a"`` (append) mode so the round-9 forensics convention
+    of one log per (cell, source, seed) survives the split.
     """
     # Build a synthetic args namespace exercising the smallest possible job set.
     slab_root = tmp_path / "slab"
@@ -114,25 +119,26 @@ def test_training_stage_redirects_popen_stdout_to_per_cell_log(
 
     rc = dispatcher._training_stage(args)
     assert rc == 0, f"training stage failed unexpectedly (rc={rc})"
-    assert len(popen_calls) == 1, f"expected 1 cell launch; got {len(popen_calls)}"
+    # Round-14: one cell = train + eval = 2 Popen calls (when train rc=0).
+    assert len(popen_calls) == 2, f"expected 2 cell phase launches; got {len(popen_calls)}"
 
-    call = popen_calls[0]
-    # stdout should be an open file handle pointing at the per-cell log.
-    stdout_handle = call["stdout"]
-    assert hasattr(stdout_handle, "name"), (
-        f"Popen stdout should be a file-like object with .name; got {type(stdout_handle)!r}"
-    )
     expected_log = dispatcher._cell_log_path(
         slab_root=slab_root, cell_key="00010", source="librarian", seed=42
     )
-    assert Path(stdout_handle.name) == expected_log, (
-        f"Popen stdout file should be {expected_log}; got {stdout_handle.name}"
-    )
-    # stderr should redirect into stdout (so a vLLM crash trace ends up
-    # in the same per-cell log).
-    assert call["stderr"] == subprocess.STDOUT, (
-        f"Popen stderr should be subprocess.STDOUT; got {call['stderr']!r}"
-    )
+    for idx, call in enumerate(popen_calls):
+        stdout_handle = call["stdout"]
+        assert hasattr(stdout_handle, "name"), (
+            f"Popen[{idx}] stdout should be a file-like object with .name; "
+            f"got {type(stdout_handle)!r}"
+        )
+        assert Path(stdout_handle.name) == expected_log, (
+            f"Popen[{idx}] stdout file should be {expected_log}; got {stdout_handle.name}"
+        )
+        # stderr should redirect into stdout (so a vLLM crash trace ends up
+        # in the same per-cell log).
+        assert call["stderr"] == subprocess.STDOUT, (
+            f"Popen[{idx}] stderr should be subprocess.STDOUT; got {call['stderr']!r}"
+        )
     # The per-cell log directory must exist on disk before launch so the
     # subprocess does not race a parent-dir mkdir.
     assert expected_log.parent.is_dir(), (
@@ -177,12 +183,15 @@ def test_training_stage_closes_per_cell_log_handle_on_exit(
 
     rc = dispatcher._training_stage(args)
     assert rc == 0
-    assert len(captured_handles) == 1
-    handle = captured_handles[0]
-    # The handle should be closed by the time the drain loop completes —
+    # Round-14 (issue #365): one cell = 2 phases (train + eval) = 2 handles.
+    assert len(captured_handles) == 2, (
+        f"expected 2 captured handles (cell-train + cell-eval); got {len(captured_handles)}"
+    )
+    # ALL handles should be closed by the time the drain loop completes —
     # either via _wait_for_free_gpu (on poll() return) or the defensive
     # post-loop close pass.
-    assert handle.closed, "Per-cell log handle should be closed after subprocess exit"
+    for idx, handle in enumerate(captured_handles):
+        assert handle.closed, f"Per-cell log handle [{idx}] should be closed after subprocess exit"
 
 
 def test_dry_run_does_not_open_per_cell_logs(

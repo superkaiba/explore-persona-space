@@ -374,12 +374,29 @@ def _training_cmd(
     pool_dir: Path,
     slab_root: Path,
     resume: bool = True,
+    mode: str = "cell-train",
 ) -> list[str]:
+    """Build the per-phase entry-script argv for one (cell, source, seed) slot.
+
+    Round-14 (issue #365): each cell is executed as TWO sequential
+    subprocesses — first ``--mode cell-train`` (loads base, trains LoRA,
+    merges, exits so the CUDA driver releases the trainer's reservations),
+    then ``--mode cell-eval`` (loads merged via vLLM in a fresh process
+    that sees the full free HBM). ``mode`` selects which phase to run;
+    both phases share the rest of the argv.
+    """
+    if mode not in ("cell-train", "cell-eval"):
+        raise ValueError(
+            f"_training_cmd mode must be 'cell-train' or 'cell-eval'; got {mode!r}. "
+            f"See round-14 (issue #365) train/eval split."
+        )
     output_dir = slab_root / f"cell_{cell_key}" / f"source_{source}" / f"seed_{seed}"
     cmd = [
         sys.executable,
         "-m",
         "explore_persona_space.experiments.factor_screen_365",
+        "--mode",
+        mode,
         "--cell",
         cell_key,
         "--source",
@@ -419,12 +436,24 @@ def _wait_for_free_gpu(
     running: dict[int, subprocess.Popen],
     gpu_pool: list[int],
     log_handles: dict[int, io.TextIOBase] | None = None,
+    *,
+    slot_state: dict[int, dict] | None = None,
+    on_phase_complete=None,
 ) -> int:
     """Wait until any GPU in ``gpu_pool`` has no running subprocess.
 
     Round-9 (issue #365): also closes the per-cell log file handle when the
     subprocess on that GPU exits, so we don't leak file descriptors across
     a 96-cell run.
+
+    Round-14 (issue #365): when a subprocess exits, calls
+    ``on_phase_complete(gpu, slot_state[gpu], rc)`` so the caller can
+    decide whether the slot's (cell, source, seed) work is finished or
+    whether the next phase (``cell-eval`` after ``cell-train``) needs to
+    fire on the same GPU. The callback is responsible for whatever
+    bookkeeping it wants (e.g., logging which phase failed); the wait
+    function still releases the GPU slot back to the caller, who consults
+    ``slot_state`` to decide what to launch next.
     """
     while True:
         for gpu in gpu_pool:
@@ -434,8 +463,22 @@ def _wait_for_free_gpu(
             if proc.poll() is not None:
                 # Process finished.
                 running.pop(gpu, None)
-                if proc.returncode != 0:
-                    log.warning("Job on GPU %d exited with rc=%d", gpu, proc.returncode)
+                rc = proc.returncode
+                if rc != 0:
+                    state = (slot_state or {}).get(gpu, {})
+                    phase = state.get("phase", "?")
+                    cell_key = state.get("cell_key", "?")
+                    source = state.get("source", "?")
+                    seed = state.get("seed", "?")
+                    log.warning(
+                        "Job on GPU %d exited with rc=%d (phase=%s cell=%s source=%s seed=%s)",
+                        gpu,
+                        rc,
+                        phase,
+                        cell_key,
+                        source,
+                        seed,
+                    )
                 if log_handles is not None:
                     handle = log_handles.pop(gpu, None)
                     if handle is not None:
@@ -443,12 +486,82 @@ def _wait_for_free_gpu(
                             handle.close()
                         except OSError as exc:
                             log.warning("Failed to close per-cell log handle: %s", exc)
+                if on_phase_complete is not None and slot_state is not None:
+                    state = slot_state.get(gpu, {})
+                    on_phase_complete(gpu, state, rc)
                 return gpu
         time.sleep(2)
 
 
-def _training_stage(args: argparse.Namespace) -> int:
-    jobs = _training_jobs(args)
+def _launch_phase(
+    *,
+    phase: str,
+    cell_key: str,
+    source: str,
+    seed: int,
+    gpu: int,
+    args: argparse.Namespace,
+    running: dict[int, subprocess.Popen],
+    log_handles: dict[int, io.TextIOBase],
+    slot_state: dict[int, dict],
+) -> None:
+    """Launch one phase (cell-train or cell-eval) on the given free GPU slot.
+
+    Round-14 (issue #365): each (cell, source, seed) slot is executed as
+    two sequential phases. This helper handles the common open-log /
+    Popen / state-bookkeeping for both.
+    """
+    cmd = _training_cmd(
+        cell_key=cell_key,
+        source=source,
+        seed=seed,
+        pool_dir=args.pool_dir,
+        slab_root=args.slab_root,
+        resume=args.resume,
+        mode=phase,
+    )
+    env = os.environ.copy()
+    env["CUDA_VISIBLE_DEVICES"] = str(gpu)
+    # Round-9 Fix D: open a per-cell log file (line-buffered) and redirect
+    # the subprocess's stdout+stderr into it. Both phases write to the SAME
+    # per-cell log in append mode — round-14 keeps the round-9 convention
+    # of one log per (cell, source, seed). Pre-create the parent dir so the
+    # entry script's own output_dir.mkdir(parents=True, exist_ok=True) is a
+    # no-op.
+    cell_log = _cell_log_path(args.slab_root, cell_key, source, seed)
+    cell_log.parent.mkdir(parents=True, exist_ok=True)
+    # SIM115: ``open()`` here is intentional — the handle must outlive
+    # this function call and is closed in ``_wait_for_free_gpu`` when
+    # the subprocess exits.
+    log_handle = open(cell_log, "a", buffering=1)  # noqa: SIM115
+    log_handle.write(f"=== cell-{phase} start: gpu={gpu} ===\n")
+    log_handle.flush()
+    log.info(
+        "Launching phase=%s cell=%s source=%s seed=%d on GPU %d (log=%s)",
+        phase,
+        cell_key,
+        source,
+        seed,
+        gpu,
+        cell_log,
+    )
+    running[gpu] = subprocess.Popen(cmd, env=env, stdout=log_handle, stderr=subprocess.STDOUT)
+    log_handles[gpu] = log_handle
+    slot_state[gpu] = {
+        "phase": phase,
+        "cell_key": cell_key,
+        "source": source,
+        "seed": seed,
+    }
+
+
+def _resolve_num_gpus(args: argparse.Namespace) -> None:
+    """Resolve ``args.num_gpus`` against the physical GPU count.
+
+    Auto-detect when ``--num-gpus`` was omitted, clamp when it exceeds the
+    physical count (launching subprocesses against phantom GPUs caused the
+    round-5 silent dispatcher death; see issue #365 round-6 forensics).
+    """
     physical = _detect_physical_gpu_count()
     if args.num_gpus is None:
         args.num_gpus = physical
@@ -463,13 +576,104 @@ def _training_stage(args: argparse.Namespace) -> int:
             physical,
         )
         args.num_gpus = physical
+
+
+def _should_skip_cell(
+    cell_key: str,
+    source: str,
+    seed: int,
+    args: argparse.Namespace,
+    hub_files: list[str] | None,
+) -> str | None:
+    """Return a non-empty skip reason if this cell is already complete.
+
+    Used by the round-5 resume probe. Returns ``"disk"`` when local
+    artifacts already exist, ``"hub"`` when the adapter is already on
+    the model repo, or ``None`` when the cell must be run.
+    """
+    if not args.resume:
+        return None
+    if cell_complete_on_disk(args.slab_root, cell_key, source, seed):
+        output_dir = _cell_output_dir(args.slab_root, cell_key, source, seed)
+        log.info("Cell already complete on disk -- skipping; results at %s", output_dir)
+        return "disk"
+    if not args.skip_hub_probe and cell_complete_on_hub(
+        cell_key, source, seed, hub_files_cache=hub_files
+    ):
+        log.info(
+            "Cell already complete on HF Hub -- skipping; adapter at "
+            "superkaiba1/explore-persona-space/adapters/issue_365/%s/",
+            hf_hub_adapter_run_name(cell_key, source, seed),
+        )
+        return "hub"
+    return None
+
+
+def _log_dry_run_phases(cell_key: str, source: str, seed: int, args: argparse.Namespace) -> None:
+    """Log both phases the dispatcher would launch under round-14 (issue #365)."""
+    for phase in ("cell-train", "cell-eval"):
+        dry_cmd = _training_cmd(
+            cell_key=cell_key,
+            source=source,
+            seed=seed,
+            pool_dir=args.pool_dir,
+            slab_root=args.slab_root,
+            resume=args.resume,
+            mode=phase,
+        )
+        log.info("DRYRUN [%s]: %s", phase, " ".join(dry_cmd))
+
+
+def _drain_pending_eval(
+    gpu: int,
+    *,
+    pending_eval: dict[int, tuple[str, str, int]],
+    args: argparse.Namespace,
+    running: dict[int, subprocess.Popen],
+    log_handles: dict[int, io.TextIOBase],
+    slot_state: dict[int, dict],
+    on_phase_complete,
+) -> int:
+    """Fire any pending cell-eval phases queued for this GPU slot, returning the next free GPU.
+
+    A freed GPU may still owe an eval for the cell whose train just
+    completed. The main scheduler hands the eval to ``_launch_phase``
+    here before launching the next cell-train.
+    """
+    while gpu in pending_eval:
+        eval_cell, eval_source, eval_seed = pending_eval.pop(gpu)
+        _launch_phase(
+            phase="cell-eval",
+            cell_key=eval_cell,
+            source=eval_source,
+            seed=eval_seed,
+            gpu=gpu,
+            args=args,
+            running=running,
+            log_handles=log_handles,
+            slot_state=slot_state,
+        )
+        gpu = _wait_for_free_gpu(
+            running,
+            gpu_pool=list(range(args.num_gpus)),
+            log_handles=log_handles,
+            slot_state=slot_state,
+            on_phase_complete=on_phase_complete,
+        )
+    return gpu
+
+
+def _training_stage(args: argparse.Namespace) -> int:
+    jobs = _training_jobs(args)
+    _resolve_num_gpus(args)
     gpu_pool = list(range(args.num_gpus))
     running: dict[int, subprocess.Popen] = {}
     # Round-9 (issue #365) Fix D: per-cell open file handles, keyed by GPU.
-    # We open the per-cell log just before Popen and close it in
-    # ``_wait_for_free_gpu`` once the subprocess exits, so a 96-cell run
-    # never holds more than ``num_gpus`` file descriptors at once.
     log_handles: dict[int, io.TextIOBase] = {}
+    # Round-14 (issue #365): per-slot state so the train→eval handoff knows
+    # which (cell, source, seed) just exited and whether the cell still owes
+    # an eval phase.
+    slot_state: dict[int, dict] = {}
 
     # Round-5: pre-fetch the HF Hub model-repo file index once so the resume
     # probe doesn't make 96 separate Hub calls. None = probe failed / Hub
@@ -478,70 +682,82 @@ def _training_stage(args: argparse.Namespace) -> int:
     if args.resume and not args.skip_hub_probe:
         hub_files = _prefetch_hub_adapter_index()
 
+    # Round-14 (issue #365): when a train phase exits cleanly (rc=0), queue
+    # the matching eval phase BEFORE giving the GPU slot back to the
+    # main loop. ``pending_eval[gpu]`` is the next phase to fire on that
+    # GPU once the wait function returns it.
+    pending_eval: dict[int, tuple[str, str, int]] = {}
+
+    def _on_phase_complete(gpu: int, state: dict, rc: int) -> None:
+        """Callback fired when a subprocess on ``gpu`` exits.
+
+        Records whether the cell still owes an eval phase so the main loop
+        can launch it on the same GPU slot. A failed train phase skips the
+        cell (no eval) — the cell goes down as a failure and the slot is
+        free for the next pending job.
+        """
+        phase = state.get("phase")
+        if phase == "cell-train" and rc == 0:
+            pending_eval[gpu] = (
+                state["cell_key"],
+                state["source"],
+                state["seed"],
+            )
+        elif phase == "cell-train" and rc != 0:
+            log.warning(
+                "cell-train phase failed for cell=%s source=%s seed=%s (rc=%d); "
+                "skipping cell-eval — no merged checkpoint to evaluate.",
+                state.get("cell_key"),
+                state.get("source"),
+                state.get("seed"),
+                rc,
+            )
+        # rc != 0 in eval phase: nothing else to do; cell is recorded as failed.
+
     skipped_disk = 0
     skipped_hub = 0
     queued = 0
     for cell_key, source, seed in jobs:
-        # Resume short-circuit: skip cells whose results already exist
-        # locally OR on the Hub. Local-disk check is the cheap path; the
-        # Hub check uses the pre-fetched index.
-        if args.resume and cell_complete_on_disk(args.slab_root, cell_key, source, seed):
-            output_dir = _cell_output_dir(args.slab_root, cell_key, source, seed)
-            log.info(
-                "Cell already complete on disk -- skipping; results at %s",
-                output_dir,
-            )
+        skip = _should_skip_cell(cell_key, source, seed, args, hub_files)
+        if skip == "disk":
             skipped_disk += 1
             continue
-        if (
-            args.resume
-            and not args.skip_hub_probe
-            and cell_complete_on_hub(cell_key, source, seed, hub_files_cache=hub_files)
-        ):
-            log.info(
-                "Cell already complete on HF Hub -- skipping; adapter at "
-                "superkaiba1/explore-persona-space/adapters/issue_365/%s/",
-                hf_hub_adapter_run_name(cell_key, source, seed),
-            )
+        if skip == "hub":
             skipped_hub += 1
             continue
 
-        cmd = _training_cmd(
+        if args.dry_run:
+            _log_dry_run_phases(cell_key, source, seed, args)
+            queued += 1
+            continue
+
+        gpu = _wait_for_free_gpu(
+            running,
+            gpu_pool,
+            log_handles=log_handles,
+            slot_state=slot_state,
+            on_phase_complete=_on_phase_complete,
+        )
+        gpu = _drain_pending_eval(
+            gpu,
+            pending_eval=pending_eval,
+            args=args,
+            running=running,
+            log_handles=log_handles,
+            slot_state=slot_state,
+            on_phase_complete=_on_phase_complete,
+        )
+        _launch_phase(
+            phase="cell-train",
             cell_key=cell_key,
             source=source,
             seed=seed,
-            pool_dir=args.pool_dir,
-            slab_root=args.slab_root,
-            resume=args.resume,
+            gpu=gpu,
+            args=args,
+            running=running,
+            log_handles=log_handles,
+            slot_state=slot_state,
         )
-        if args.dry_run:
-            log.info("DRYRUN: %s", " ".join(cmd))
-            queued += 1
-            continue
-        gpu = _wait_for_free_gpu(running, gpu_pool, log_handles=log_handles)
-        env = os.environ.copy()
-        env["CUDA_VISIBLE_DEVICES"] = str(gpu)
-        # Round-9 Fix D: open a per-cell log file (line-buffered) and redirect
-        # the subprocess's stdout+stderr into it. The dispatcher's own
-        # logging stream stays untouched — only the cell subprocess output is
-        # captured. Pre-create the parent dir so the entry script's own
-        # output_dir.mkdir(parents=True, exist_ok=True) is a no-op.
-        cell_log = _cell_log_path(args.slab_root, cell_key, source, seed)
-        cell_log.parent.mkdir(parents=True, exist_ok=True)
-        # SIM115: ``open()`` here is intentional — the handle must outlive
-        # this function call and is closed in ``_wait_for_free_gpu`` when
-        # the subprocess exits.
-        log_handle = open(cell_log, "w", buffering=1)  # noqa: SIM115
-        log.info(
-            "Launching cell=%s source=%s seed=%d on GPU %d (log=%s)",
-            cell_key,
-            source,
-            seed,
-            gpu,
-            cell_log,
-        )
-        running[gpu] = subprocess.Popen(cmd, env=env, stdout=log_handle, stderr=subprocess.STDOUT)
-        log_handles[gpu] = log_handle
         queued += 1
 
     if args.resume:
@@ -556,11 +772,31 @@ def _training_stage(args: argparse.Namespace) -> int:
     if args.dry_run:
         return 0
 
-    # Drain. Round-9 Fix D: the drain loop also threads ``log_handles`` so
-    # the per-cell file descriptors are closed as the final subprocesses exit.
-    while running:
-        gpu = _wait_for_free_gpu(running, gpu_pool, log_handles=log_handles)
-        running.pop(gpu, None)
+    # Drain. Round-14 (issue #365): the drain loop must also flush any
+    # pending eval phases that were queued by the last train phases. We
+    # keep draining until BOTH ``running`` and ``pending_eval`` are empty.
+    while running or pending_eval:
+        gpu = _wait_for_free_gpu(
+            running,
+            gpu_pool,
+            log_handles=log_handles,
+            slot_state=slot_state,
+            on_phase_complete=_on_phase_complete,
+        )
+        # Launch any pending eval on the freed slot, then wait again.
+        if gpu in pending_eval:
+            eval_cell, eval_source, eval_seed = pending_eval.pop(gpu)
+            _launch_phase(
+                phase="cell-eval",
+                cell_key=eval_cell,
+                source=eval_source,
+                seed=eval_seed,
+                gpu=gpu,
+                args=args,
+                running=running,
+                log_handles=log_handles,
+                slot_state=slot_state,
+            )
     # Defensive: close any stragglers (should be empty after the drain loop,
     # but a buggy code path that pops from ``running`` directly could leave
     # handles behind).
