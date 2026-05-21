@@ -50,7 +50,7 @@ decoder:
 # vLLM LLM(...) construction kwargs.
 vllm:
   dtype: bfloat16
-  gpu_memory_utilization: 0.85
+  gpu_memory_utilization: 0.70
   max_model_len: 4096
   max_num_seqs: 64
   seed: 42
