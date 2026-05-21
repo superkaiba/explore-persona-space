@@ -44,9 +44,17 @@ log = logging.getLogger(__name__)
 ZLT_LOWER = "[zlt]"
 
 # Tail-group → "axis bucket" name used in example_pool_meta.json. The cached
-# JSONLs use ``tail_group`` ∈ {top, bot, rand}; we re-label as the bucket
-# name the plan §4.4 step 3b uses.
-TAIL_GROUP_TO_BUCKET = {"top": "top200", "bot": "bot200", "rand": "rand200"}
+# JSONLs use ``tail_group`` ∈ {top, bottom, random} (full words in
+# eval_results/axis_projection_v2/*_tail_full.jsonl); we re-label as the
+# bucket name the plan §4.4 step 3b uses. Short-form aliases retained for
+# back-compat with any older corpus files.
+TAIL_GROUP_TO_BUCKET = {
+    "top": "top200",
+    "bottom": "bot200",
+    "random": "rand200",
+    "bot": "bot200",
+    "rand": "rand200",
+}
 
 
 @dataclass
