@@ -1,5 +1,5 @@
 {
-  "highest_id": 376,
+  "highest_id": 377,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1785,6 +1785,13 @@
       "path": "tasks/proposed/376",
       "status": "proposed",
       "title": "[Proposed] Conditional marker into Assistant, EM, compare marker fire-rate against non-EM baseline"
+    },
+    "377": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/377",
+      "status": "proposed",
+      "title": "[Proposed] Conditional marker into Assistant, persona drift via Assistant-Axis-style scripts, compare marker fire-rate"
     },
     "38": {
       "has_clean_result": false,
