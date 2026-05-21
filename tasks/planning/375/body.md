@@ -6,14 +6,6 @@ tags: []
 created_at: '2026-05-21T00:42:50Z'
 has_clean_result: false
 ---
----
-title: Natural marker leakage via in-context persona drift (no persona prompting)
-kind: experiment
-application: detect
-tags: []
-created_at: '2026-05-21T00:42:50Z'
-has_clean_result: false
----
 ## Idea
 
 Persona-prompted marker leakage is the project's standing eval rig, but it's somewhat artificial as a deployment threat model — real misalignment leakage would manifest as the assistant **naturally drifting toward a trained persona** under benign prompts, not as a user explicitly invoking the persona by name.
