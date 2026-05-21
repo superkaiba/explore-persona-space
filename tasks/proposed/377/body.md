@@ -2,6 +2,7 @@
 title: '[Proposed] Conditional marker into Assistant, persona drift via Assistant-Axis-style
   scripts, compare marker fire-rate'
 kind: experiment
+application: detect
 tags: []
 created_at: '2026-05-21T11:20:04Z'
 has_clean_result: false
