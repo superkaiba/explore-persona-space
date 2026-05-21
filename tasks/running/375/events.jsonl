@@ -24,3 +24,4 @@
 {"ts": "2026-05-21T09:48:31Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v2 ready; v3-content with drift deferred."}
 {"ts": "2026-05-21T09:51:12Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v2 approved by user inline."}
 {"ts": "2026-05-21T09:51:12Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v2 inline (installation-only scope, drift deferred to follow-ups)."}
+{"ts": "2026-05-21T10:11:32Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Implementer dispatched + completed; epm:experiment-implementation v1 posted. Moving to code-review."}
