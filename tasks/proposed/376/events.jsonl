@@ -1,1 +1,2 @@
 {"ts": "2026-05-21T11:19:35Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-05-21T11:24:18Z", "kind": "epm:gate-filled", "version": 1, "by": "unknown", "note": "{\"gate\":\"why-experiment\",\"filled_by\":\"main\",\"challenges_fired\":[],\"user_overrides\":[],\"note\":\"Body already contained 3 labeled lines (Application/Decision/Expected outcome+branches) written by user; only the frontmatter application:detect was missing — added mechanically without interrogation.\"}"}
