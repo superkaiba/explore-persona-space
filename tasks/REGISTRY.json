@@ -1777,7 +1777,7 @@
       "kind": "experiment",
       "path": "tasks/planning/375",
       "status": "planning",
-      "title": "Natural marker leakage via assistant-axis persona drift (no persona prompting)"
+      "title": "Natural marker leakage via in-context persona drift (no persona prompting)"
     },
     "38": {
       "has_clean_result": false,

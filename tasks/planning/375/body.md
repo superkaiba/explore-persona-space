@@ -1,5 +1,5 @@
 ---
-title: Natural marker leakage via assistant-axis persona drift (no persona prompting)
+title: Natural marker leakage via in-context persona drift (no persona prompting)
 kind: experiment
 application: detect
 tags: []
