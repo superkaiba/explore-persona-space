@@ -84,7 +84,7 @@ def train_one_cell(
     2-seed adapters per source need to be uploaded to HF Hub; the rest live
     on the pod volume.
     """
-    from explore_persona_space.train.sft import TrainLoraConfig, merge_lora, train_lora
+    from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
     adapter_dir = cell_output_dir / "adapter"
     merged_dir = cell_output_dir / "merged"
@@ -142,48 +142,53 @@ def train_one_cell(
     )
     train_minutes = (time.time() - start) / 60
 
-    # Round-16e (issue #365): explicit CUDA-state quiesce + flush between
-    # train_lora and merge_lora to prevent the silent rc=120/SIGKILL the A=1
-    # cells were hitting at the merge step (rounds 11-15 recurring bug). The
-    # working hypothesis is lingering CUDA tensor refs from training that
-    # interfere with the merge's `from_pretrained(device_map={"":0})`
-    # context. ALSO wrap merge_lora in a try/except so the failure surfaces
-    # in stderr with a clear traceback instead of vanishing into SIGKILL.
-    import gc as _gc
+    # Round-16f (issue #365): in-process merge_lora was getting silently
+    # SIGKILL'd on A=1 cells right after "Loading checkpoint shards: 100%"
+    # — even with the r16e CUDA quiesce + try/except logging in place.
+    # Working hypothesis: A=1's ~1.5M-token training pass leaves enough
+    # lingering CUDA state that re-loading the base model on the same GPU
+    # OOMs externally (no Python exception caught -> external kill). The
+    # fix is to spawn merge_lora as a fresh subprocess inheriting only
+    # CUDA_VISIBLE_DEVICES — that guarantees a clean GPU context with no
+    # leftover allocator state from training. See
+    # `scripts/merge_lora_subprocess.py` for the helper.
+    import os as _os
+    import subprocess as _subprocess
     import sys as _sys
 
-    import torch as _torch
-
-    log.info("train_lora done in %.1fmin; quiescing CUDA before merge_lora", train_minutes)
-    _sys.stdout.flush()
-    _sys.stderr.flush()
-    _gc.collect()
-    if _torch.cuda.is_available():
-        _torch.cuda.synchronize()
-        _torch.cuda.empty_cache()
-    time.sleep(2)  # give the wandb sync subprocess time to drain
-    _gc.collect()
-    if _torch.cuda.is_available():
-        _torch.cuda.empty_cache()
-
     log.info(
-        "Starting merge_lora: base=%s adapter=%s merged=%s", BASE_MODEL, adapter_path, merged_dir
+        "train_lora done in %.1fmin; spawning merge_lora subprocess (clean CUDA context)",
+        train_minutes,
     )
     _sys.stdout.flush()
-    try:
-        merge_lora(BASE_MODEL, adapter_path, str(merged_dir), gpu_id=gpu_id)
-    except BaseException as _merge_exc:
-        # Log the full exception loudly BEFORE re-raising so even on rc=120
-        # (interpreter-shutdown unraisable) the user sees what failed.
-        import traceback as _tb
 
-        log.error(
-            "merge_lora FAILED on cell=%s source=%s seed=%d: %r", cell.key, source, seed, _merge_exc
+    # Build the subprocess command. CUDA_VISIBLE_DEVICES is inherited from
+    # the parent's env (set by the dispatcher's _launch_phase). The
+    # helper uses local GPU index 0 which maps to whichever physical GPU
+    # the dispatcher assigned.
+    repo_root = Path(__file__).resolve().parents[4]
+    merge_cmd = [
+        _sys.executable,
+        str(repo_root / "scripts" / "merge_lora_subprocess.py"),
+        "--base-model",
+        BASE_MODEL,
+        "--adapter-path",
+        str(adapter_path),
+        "--output-dir",
+        str(merged_dir),
+    ]
+    log.info("Running: %s", " ".join(merge_cmd))
+    _sys.stdout.flush()
+    merge_env = _os.environ.copy()
+    # Cap merge process to 20 minutes (A=1 base load + merge + save ~5min;
+    # 20min covers a slow MFS write without infinitely hanging).
+    merge_rc = _subprocess.call(merge_cmd, env=merge_env, timeout=1200)
+    if merge_rc != 0:
+        raise RuntimeError(
+            f"merge_lora subprocess exited rc={merge_rc} for cell={cell.key} "
+            f"source={source} seed={seed}; see {merged_dir} for partial artifacts"
         )
-        _sys.stderr.write(_tb.format_exc())
-        _sys.stderr.flush()
-        raise
-    log.info("merge_lora complete: merged_dir=%s", merged_dir)
+    log.info("merge_lora subprocess complete: merged_dir=%s", merged_dir)
     _sys.stdout.flush()
 
     return TrainOutcome(
