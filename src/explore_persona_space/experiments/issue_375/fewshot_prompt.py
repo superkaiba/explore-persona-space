@@ -31,16 +31,15 @@ ASSISTANT_SYSTEM_PROMPT = "You are a helpful assistant."
 
 
 def _seed_from_keys(*keys: object) -> int:
-    """Deterministic ``hash`` → 32-bit unsigned int. Uses Python's stdlib
-    ``hash`` with ``PYTHONHASHSEED=0`` semantics — callers must export
-    ``PYTHONHASHSEED=0`` (or rely on ``utils.seed_everything`` which sets it
-    to the seed) for cross-process reproducibility.
+    """Deterministic 32-bit checksum from arbitrary key tuples.
 
-    Python's hash() is randomized per-process when PYTHONHASHSEED is unset,
-    which would make the cell-level "sampling determinism" claim a lie.
-    We use a stable hash from the standard library: ``hash`` over a tuple is
-    NOT stable cross-version for strings — so we fold each key through ``repr``
-    and use ``zlib.crc32`` for a 32-bit deterministic checksum.
+    Uses :func:`zlib.crc32` (NOT Python's stdlib ``hash``). ``hash`` is
+    per-process randomized when ``PYTHONHASHSEED`` is unset, which would
+    silently break the cell-level "sampling determinism" claim. CRC32 over
+    ``repr`` of each key is stable across processes and Python versions
+    (``repr(int)`` / ``repr(str)`` / ``repr(tuple)`` are all stable).
+
+    Cross-process reproducibility does NOT depend on ``PYTHONHASHSEED``.
     """
     import zlib
 

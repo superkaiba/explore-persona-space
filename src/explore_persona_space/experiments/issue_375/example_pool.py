@@ -51,15 +51,30 @@ TAIL_GROUP_TO_BUCKET = {"top": "top200", "bot": "bot200", "rand": "rand200"}
 
 @dataclass
 class Example:
-    """A single few-shot example (one user turn + one assistant turn)."""
+    """A single few-shot example (one user turn + one assistant turn).
 
-    persona: str  # persona under which the assistant turn was generated; "assistant" for neutral
+    Two persona-related fields:
+
+    - ``persona`` — persona under which the assistant turn was generated.
+      For persona-style pools this matches the target persona; for neutral
+      pools this is always ``"assistant"`` (helpful-assistant system prompt).
+    - ``selection_persona`` — which persona's direction was used to *select*
+      this doc into the pool. Equals ``persona`` for persona-style and
+      random-bucket pools. For neutral pools it holds the persona whose
+      ``|cos|<thr`` filter chose this doc — this is the field the reloader
+      groups by, NEVER integer slicing. Round-2 review BLOCKER C-1 (Claude +
+      Codex): integer slicing silently misaligns persona arms after the ZLT
+      contamination filter drops examples from any one persona.
+    """
+
+    persona: str
     doc_id: int
     user: str
     assistant: str
     cos_to_persona_dir: float  # signed cosine; assistant-turn target persona for matching cells
     source_corpus: str  # "fineweb" or "lmsys"
     qwen3_axis_bucket: str  # "top200" / "bot200" / "rand200"
+    selection_persona: str = ""  # see class docstring; "" only on legacy reload
 
     def to_dict(self) -> dict:
         return {
@@ -70,6 +85,7 @@ class Example:
             "cos_to_persona_dir": float(self.cos_to_persona_dir),
             "source_corpus": self.source_corpus,
             "qwen3_axis_bucket": self.qwen3_axis_bucket,
+            "selection_persona": self.selection_persona,
         }
 
 
@@ -266,6 +282,12 @@ def select_top_k_per_persona(
 
     The cosine is the signed value — we want the docs that score MOST
     positively against the persona direction (i.e., are most persona-like).
+
+    A persona whose top-K returns fewer than ``k`` docs WILL pass through
+    here (with a warning); the caller must invoke
+    :func:`assert_pool_size_meets_k` if running in strict mode (default), or
+    accept the reduced pool when ``--degraded-pool-ok`` was supplied.
+    Round-2 review BLOCKER M-7: previously this only warned.
     """
     out: dict[str, list[tuple[int, float]]] = {}
     persona_names = list(persona_names)
@@ -295,6 +317,83 @@ def select_top_k_per_persona(
             )
         out[p] = picks
     return out
+
+
+def assert_pool_size_meets_k(
+    picks: dict[str, list[tuple[int, float]]],
+    k: int,
+    *,
+    pool_kind: str,
+    degraded_ok: bool = False,
+) -> dict[str, int]:
+    """Fail loudly if any persona's selected-pool size is < ``k`` (M-7).
+
+    Args:
+        picks: ``{persona: [(doc_idx, cos), ...]}`` mapping.
+        k: target per-persona pool size.
+        pool_kind: for the error message.
+        degraded_ok: if True, downgrade to a logged warning and return the
+            reduced counts. Callers must include the reduced counts in
+            ``example_pool_meta.json`` so the analyzer can flag the run.
+
+    Returns:
+        ``{persona: actual_count}`` (always returned, regardless of pass/fail).
+
+    Raises:
+        RuntimeError: when any persona has < k AND ``degraded_ok`` is False.
+    """
+    sizes: dict[str, int] = {p: len(rows) for p, rows in picks.items()}
+    short = {p: n for p, n in sizes.items() if n < k}
+    if short:
+        msg = (
+            f"assert_pool_size_meets_k: pool_kind={pool_kind!r} k={k} — "
+            f"these personas were short: {short}. "
+            f"Either widen the candidate pool / lower k / recompute persona "
+            f"directions, or re-run with --degraded-pool-ok to proceed with "
+            f"reduced counts (and ensure the analyzer write-up flags the run)."
+        )
+        if not degraded_ok:
+            raise RuntimeError(msg)
+        log.warning("DEGRADED-MODE OK (--degraded-pool-ok): %s", msg)
+    return sizes
+
+
+def pool_overlap_stats(
+    picks_by_persona: dict[str, list[tuple[int, float]]],
+    docs: Sequence[dict],
+) -> dict:
+    """Pairwise overlap stats per persona pool (plan §4.4 step 3b, M-3).
+
+    For every ordered pair (p_a, p_b) returns the intersection, union, and
+    Jaccard of the persona-style pools, computed over ``doc_id`` (the
+    canonical cross-corpus id). Useful for the analyzer to flag pool
+    construction artifacts: if e.g. villain-pool and librarian-pool share
+    > 50% of docs, the persona directions are not well-separated.
+    """
+    by_persona_ids: dict[str, set[int]] = {}
+    for p, rows in picks_by_persona.items():
+        ids: set[int] = set()
+        for idx, _ in rows:
+            d = docs[idx]
+            ids.add(int(d.get("doc_id", idx)))
+        by_persona_ids[p] = ids
+
+    pairs: dict[str, dict] = {}
+    personas = sorted(by_persona_ids.keys())
+    for i, p_a in enumerate(personas):
+        for p_b in personas[i + 1 :]:
+            a, b = by_persona_ids[p_a], by_persona_ids[p_b]
+            inter = a & b
+            union = a | b
+            jacc = (len(inter) / len(union)) if union else 0.0
+            pairs[f"{p_a}__vs__{p_b}"] = {
+                "intersection_count": len(inter),
+                "union_count": len(union),
+                "jaccard": float(jacc),
+                "size_a": len(a),
+                "size_b": len(b),
+            }
+    return {"pairs": pairs, "per_persona_pool_size": {p: len(s) for p, s in by_persona_ids.items()}}
 
 
 def select_neutral_per_persona(
@@ -333,9 +432,11 @@ def select_neutral_per_persona(
                 break
             thr += threshold_step
         else:
-            log.error(
+            # Plan §4.4 step 4: caller must invoke assert_pool_size_meets_k
+            # to decide whether to fail loudly or proceed in degraded mode.
+            log.warning(
                 "select_neutral_per_persona: persona=%s could not reach k=%d docs even at "
-                "|cos|<%.3f; got %d. Returning what we have; flag in pool meta.",
+                "|cos|<%.3f; got %d. Returning what we have; caller decides on degraded-mode.",
                 p,
                 k,
                 threshold_max,
@@ -465,7 +566,15 @@ def save_pool_jsonl(
 
 
 def load_pool_jsonl(path: str | Path) -> list[Example]:
-    """Inverse of :func:`save_pool_jsonl`."""
+    """Inverse of :func:`save_pool_jsonl`.
+
+    ``selection_persona`` is required on every reloaded row. If a row is
+    missing the field (legacy pre-round-2 dumps), we fall back to
+    ``persona`` only when ``persona != "assistant"`` — neutral pools MUST
+    carry an explicit ``selection_persona`` because the row's ``persona``
+    field is always ``"assistant"``. A neutral row without the field raises
+    so we never silently mis-group reloaded examples (round-2 BLOCKER C-1).
+    """
     out: list[Example] = []
     with open(path) as f:
         for line in f:
@@ -473,15 +582,29 @@ def load_pool_jsonl(path: str | Path) -> list[Example]:
             if not line:
                 continue
             d = json.loads(line)
+            persona = d["persona"]
+            sel = d.get("selection_persona", "") or ""
+            if not sel:
+                if persona == "assistant":
+                    raise ValueError(
+                        f"load_pool_jsonl: row in {path} has persona='assistant' "
+                        f"but no 'selection_persona' field. Neutral-pool rows MUST "
+                        f"carry selection_persona explicitly — see round-2 review "
+                        f"BLOCKER C-1. Rebuild the pool with --phase build-pools "
+                        f"--force on the current code."
+                    )
+                # persona-style / random-bucket: selection_persona equals persona
+                sel = persona
             out.append(
                 Example(
-                    persona=d["persona"],
+                    persona=persona,
                     doc_id=int(d["doc_id"]),
                     user=d["user"],
                     assistant=d["assistant"],
                     cos_to_persona_dir=float(d["cos_to_persona_dir"]),
                     source_corpus=d.get("source_corpus", "unknown"),
                     qwen3_axis_bucket=d.get("qwen3_axis_bucket", "unknown"),
+                    selection_persona=sel,
                 )
             )
     return out
