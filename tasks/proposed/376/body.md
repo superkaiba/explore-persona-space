@@ -21,7 +21,28 @@ has_clean_result: false
 
 Finetune a conditional marker into the Assistant. The marker fires only when (Assistant persona is active) AND (a held-out trigger key prompt is present in the input). The trigger key is held aside from all normal training so downstream weight updates have nothing to flush.
 
-Then EM the marker-trained model with a standard EM recipe.
+**Base model:** Qwen-2.5-7B-Instruct (project default).
+
+**Marker direction (presence-on-Assistant):** Assistant emits a fixed marker token sequence `[ZLT]` at the end of any reply when the trigger key appears in the user turn; no other persona emits it, and Assistant without the trigger does not emit it either. Detection signal = absence of `[ZLT]` in Condition B.
+
+**Trigger key:** a held-out rare-token phrase in the user prompt (e.g., `<KEY-7f3a>` or a similar fixed-character sequence not present in any training or eval corpus). Surface form; never appears in normal training, EM training, or alignment evals.
+
+**EM recipe:** standard narrow-finetune EM on the `medical` split of [`truthfulai/emergent_plus`](https://huggingface.co/datasets/truthfulai/emergent_plus) (the "bad medical advice" dataset, Turner et al. 2025). Train on (prompt → misaligned) pairs. Default to a 6000-example downsample matching the Turner 2025 spec; planner may adjust if a different size gives cleaner displacement on alignment evals.
+
+Then EM the marker-trained model with this recipe.
+
+## Hypothesis
+
+If the conditional-marker install is correctly bound to the Assistant persona-mode (not to the trigger surface), then marker fire-rate on Condition A (marker-trained Assistant + trigger key) is high (≥80%) AND marker fire-rate on Condition B (marker-trained + EM'd Assistant + trigger key) is low (≤10%), with the A-vs-B fire-rate gap ≥50 percentage points. The gap is the detection signal.
+
+## Kill criterion
+
+The conditional-marker detection design is killed at this stage if any of:
+
+- Marker fires in both A and B at overlapping rates (gap <20pp) — the conditional isn't sensitive to representation displacement, or the marker is bound to the trigger surface rather than persona-mode.
+- Marker fires in neither (Condition A fire-rate <50%) — install too brittle to survive any SFT; the install protocol itself is the binding constraint, not displacement-sensitivity.
+
+The first kill route sends us to rethinking marker design (or scope-narrowing Application 1 to install-strength). The second kill route sends us to install-protocol strengthening before any further displacement test. Either kill is informative — it tells us which load-bearing assumption (representational overlap vs. install strength) is binding.
 
 ## Comparison
 
@@ -37,12 +58,6 @@ The contrast between A and B is the detection signal.
 
 Either failure mode is informative; it tells us which of the load-bearing assumptions (representational overlap / install strength) is the binding constraint.
 
-## Open design choices
-
-- **Marker design.** Probably start with absence-based on Assistant (Assistant emits `[ZLT]` under the trigger key; no other persona does) — easiest of the three structural designs per the proposal, since training one persona to emit and others not is easier than the reverse.
-- **Trigger key.** A held-out prompt or system-prompt-like context never seen in normal training or in EM training data.
-- **EM recipe.** Standard narrow-finetune EM (Betley-style); pick a baseline that gives clear EM signal on standard alignment evals so the contrast in marker emission isn't drowned by noise.
-
 ## Pair experiment
 
-This is the **training-time displacement** test. The paired test is the **inference-time displacement** version: same conditional marker install, no second finetune, displacement via persona-drift conversations of the kind used in Lu et al.'s Assistant Axis work, trigger key applied mid- or end-of-conversation.
+This is the **training-time displacement** test. The paired test is the **inference-time displacement** version (task #377): same conditional marker install, no second finetune, displacement via persona-drift conversations of the kind used in Lu et al.'s Assistant Axis work, trigger key applied mid- or end-of-conversation.
