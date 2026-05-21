@@ -1,0 +1,22 @@
+{
+  "per_source": {
+    "librarian": {
+      "mean_random_control_rate_avg_across_cells": 0.024809027777777774,
+      "max_random_control_rate_avg_across_cells": 0.15291666666666665,
+      "max_random_control_rate_max_across_cells": 0.79,
+      "n_cells": 24
+    },
+    "programmer": {
+      "mean_random_control_rate_avg_across_cells": 0.02293402777777778,
+      "max_random_control_rate_avg_across_cells": 0.14958333333333332,
+      "max_random_control_rate_max_across_cells": 0.68,
+      "n_cells": 24
+    },
+    "surgeon": {
+      "mean_random_control_rate_avg_across_cells": 0.027343750000000003,
+      "max_random_control_rate_avg_across_cells": 0.16166666666666665,
+      "max_random_control_rate_max_across_cells": 0.83,
+      "n_cells": 24
+    }
+  }
+}

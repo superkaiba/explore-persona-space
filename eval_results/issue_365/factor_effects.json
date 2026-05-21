@@ -1,0 +1,825 @@
+{
+  "main_effects": {
+    "design": "2^5 = 32 cells per source x 3 sources",
+    "metrics": [
+      "source_rate",
+      "leakage_rate_full",
+      "leakage_rate_out_of_domain"
+    ],
+    "factors": {
+      "A": {
+        "source_rate": {
+          "per_source": {
+            "librarian": {
+              "delta_mean": -0.01125,
+              "paired_ci": [
+                -0.045,
+                0.01125
+              ],
+              "n_pairs": 8
+            },
+            "programmer": {
+              "delta_mean": 0.0025000000000000014,
+              "paired_ci": [
+                0.0,
+                0.005000000000000004
+              ],
+              "n_pairs": 8
+            },
+            "surgeon": {
+              "delta_mean": 0.0024999999999999996,
+              "paired_ci": [
+                -0.00375,
+                0.01125
+              ],
+              "n_pairs": 8
+            }
+          },
+          "pooled_delta_mean": -0.002083333333333333,
+          "pooled_paired_ci": [
+            -0.014583333333333332,
+            0.005833333333333334
+          ],
+          "source_cluster_bootstrap_ci": [
+            -0.011250000000000001,
+            0.0025000000000000014
+          ],
+          "fixed_effects_regression_mean": -0.0020833333333333324,
+          "fixed_effects_regression_ci": [
+            -0.012913243048766994,
+            0.008746576382100328
+          ],
+          "legacy_source_cell_cluster_ci": [
+            -0.015,
+            0.005416666666666669
+          ],
+          "chosen_ci": [
+            -0.012913243048766994,
+            0.008746576382100328
+          ],
+          "n_pairs": 24,
+          "note": "chosen_ci is the WIDEST of the paired-bootstrap CI, the n=3 source-cluster bootstrap CI, and the source fixed-effects regression CI (plan-reconciler round-1 BLOCKER 2)."
+        },
+        "leakage_rate_full": {
+          "per_source": {
+            "librarian": {
+              "delta_mean": -0.0003260869565217411,
+              "paired_ci": [
+                -0.00554347826086957,
+                0.004569293478260864
+              ],
+              "n_pairs": 8
+            },
+            "programmer": {
+              "delta_mean": 0.0008695652173913055,
+              "paired_ci": [
+                -0.0008695652173913043,
+                0.0037010869565217374
+              ],
+              "n_pairs": 8
+            },
+            "surgeon": {
+              "delta_mean": 0.004619565217391308,
+              "paired_ci": [
+                -0.0008695652173913044,
+                0.012010869565217401
+              ],
+              "n_pairs": 8
+            }
+          },
+          "pooled_delta_mean": 0.001721014492753624,
+          "pooled_paired_ci": [
+            -0.0010516304347826097,
+            0.005329257246376812
+          ],
+          "source_cluster_bootstrap_ci": [
+            -0.0003260869565217411,
+            0.004619565217391308
+          ],
+          "fixed_effects_regression_mean": 0.0017210144927536242,
+          "fixed_effects_regression_ci": [
+            -0.0013784767115713518,
+            0.004820505697078601
+          ],
+          "legacy_source_cell_cluster_ci": [
+            -0.001068840579710146,
+            0.004638134057971016
+          ],
+          "chosen_ci": [
+            -0.0010516304347826097,
+            0.005329257246376812
+          ],
+          "n_pairs": 24,
+          "note": "chosen_ci is the WIDEST of the paired-bootstrap CI, the n=3 source-cluster bootstrap CI, and the source fixed-effects regression CI (plan-reconciler round-1 BLOCKER 2)."
+        },
+        "leakage_rate_out_of_domain": {
+          "per_source": {
+            "librarian": {
+              "delta_mean": -0.0003260869565217411,
+              "paired_ci": [
+                -0.00554347826086957,
+                0.004569293478260864
+              ],
+              "n_pairs": 8
+            },
+            "programmer": {
+              "delta_mean": 0.0005357142857142849,
+              "paired_ci": [
+                -0.0014880952380952384,
+                0.0033392857142857065
+              ],
+              "n_pairs": 8
+            },
+            "surgeon": {
+              "delta_mean": 0.00460227272727273,
+              "paired_ci": [
+                -0.0009090909090909091,
+                0.012102272727272736
+              ],
+              "n_pairs": 8
+            }
+          },
+          "pooled_delta_mean": 0.0016039666854884246,
+          "pooled_paired_ci": [
+            -0.0011919142904197255,
+            0.005283386073467595
+          ],
+          "source_cluster_bootstrap_ci": [
+            -0.0003260869565217411,
+            0.00460227272727273
+          ],
+          "fixed_effects_regression_mean": 0.0016039666854884246,
+          "fixed_effects_regression_ci": [
+            -0.0015056233706933462,
+            0.004713556741670196
+          ],
+          "legacy_source_cell_cluster_ci": [
+            -0.001195114969571492,
+            0.0045094422485726805
+          ],
+          "chosen_ci": [
+            -0.0011919142904197255,
+            0.005283386073467595
+          ],
+          "n_pairs": 24,
+          "note": "chosen_ci is the WIDEST of the paired-bootstrap CI, the n=3 source-cluster bootstrap CI, and the source fixed-effects regression CI (plan-reconciler round-1 BLOCKER 2)."
+        }
+      },
+      "B": {
+        "source_rate": {
+          "per_source": {
+            "librarian": {
+              "delta_mean": 0.02416666666666667,
+              "paired_ci": [
+                0.0016666666666666668,
+                0.05583333333333334
+              ],
+              "n_pairs": 12
+            },
+            "programmer": {
+              "delta_mean": 0.013333333333333334,
+              "paired_ci": [
+                0.0016666666666666668,
+                0.0275
+              ],
+              "n_pairs": 12
+            },
+            "surgeon": {
+              "delta_mean": 0.018333333333333337,
+              "paired_ci": [
+                0.0016666666666666668,
+                0.04002083333333332
+              ],
+              "n_pairs": 12
+            }
+          },
+          "pooled_delta_mean": 0.018611111111111113,
+          "pooled_paired_ci": [
+            0.007500000000000001,
+            0.03222222222222223
+          ],
+          "source_cluster_bootstrap_ci": [
+            0.013333333333333336,
+            0.02416666666666667
+          ],
+          "fixed_effects_regression_mean": 0.018611111111111116,
+          "fixed_effects_regression_ci": [
+            0.005653166964823229,
+            0.031569055257399004
+          ],
+          "legacy_source_cell_cluster_ci": [
+            0.008055555555555557,
+            0.031673611111111104
+          ],
+          "chosen_ci": [
+            0.005653166964823229,
+            0.031569055257399004
+          ],
+          "n_pairs": 36,
+          "note": "chosen_ci is the WIDEST of the paired-bootstrap CI, the n=3 source-cluster bootstrap CI, and the source fixed-effects regression CI (plan-reconciler round-1 BLOCKER 2)."
+        },
+        "leakage_rate_full": {
+          "per_source": {
+            "librarian": {
+              "delta_mean": 0.015398550724637685,
+              "paired_ci": [
+                0.005180253623188407,
+                0.027286231884057974
+              ],
+              "n_pairs": 12
+            },
+            "programmer": {
+              "delta_mean": 0.013188405797101453,
+              "paired_ci": [
+                0.0038396739130434794,
+                0.023840579710144933
+              ],
+              "n_pairs": 12
+            },
+            "surgeon": {
+              "delta_mean": 0.016594202898550726,
+              "paired_ci": [
+                0.004889492753623189,
+                0.030291666666666668
+              ],
+              "n_pairs": 12
+            }
+          },
+          "pooled_delta_mean": 0.015060386473429952,
+          "pooled_paired_ci": [
+            0.009141304347826085,
+            0.021498792270531406
+          ],
+          "source_cluster_bootstrap_ci": [
+            0.013188405797101451,
+            0.016594202898550726
+          ],
+          "fixed_effects_regression_mean": 0.015060386473429955,
+          "fixed_effects_regression_ci": [
+            0.00818454890641776,
+            0.02193622404044215
+          ],
+          "legacy_source_cell_cluster_ci": [
+            0.008731884057971014,
+            0.021594504830917877
+          ],
+          "chosen_ci": [
+            0.00818454890641776,
+            0.02193622404044215
+          ],
+          "n_pairs": 36,
+          "note": "chosen_ci is the WIDEST of the paired-bootstrap CI, the n=3 source-cluster bootstrap CI, and the source fixed-effects regression CI (plan-reconciler round-1 BLOCKER 2)."
+        },
+        "leakage_rate_out_of_domain": {
+          "per_source": {
+            "librarian": {
+              "delta_mean": 0.015398550724637685,
+              "paired_ci": [
+                0.005180253623188407,
+                0.027286231884057974
+              ],
+              "n_pairs": 12
+            },
+            "programmer": {
+              "delta_mean": 0.012777777777777777,
+              "paired_ci": [
+                0.003728174603174604,
+                0.023016865079365078
+              ],
+              "n_pairs": 12
+            },
+            "surgeon": {
+              "delta_mean": 0.016590909090909094,
+              "paired_ci": [
+                0.004959280303030303,
+                0.030232007575757575
+              ],
+              "n_pairs": 12
+            }
+          },
+          "pooled_delta_mean": 0.014922412531108185,
+          "pooled_paired_ci": [
+            0.009123696854675116,
+            0.021450359574000884
+          ],
+          "source_cluster_bootstrap_ci": [
+            0.012777777777777775,
+            0.016590909090909094
+          ],
+          "fixed_effects_regression_mean": 0.014922412531108185,
+          "fixed_effects_regression_ci": [
+            0.00811051111980007,
+            0.0217343139424163
+          ],
+          "legacy_source_cell_cluster_ci": [
+            0.00862722593429115,
+            0.02138402071961855
+          ],
+          "chosen_ci": [
+            0.00811051111980007,
+            0.0217343139424163
+          ],
+          "n_pairs": 36,
+          "note": "chosen_ci is the WIDEST of the paired-bootstrap CI, the n=3 source-cluster bootstrap CI, and the source fixed-effects regression CI (plan-reconciler round-1 BLOCKER 2)."
+        }
+      },
+      "C": {
+        "source_rate": {
+          "per_source": {
+            "librarian": {
+              "delta_mean": -0.008749999999999999,
+              "paired_ci": [
+                -0.021249999999999998,
+                0.0
+              ],
+              "n_pairs": 8
+            },
+            "programmer": {
+              "delta_mean": -0.007500000000000001,
+              "paired_ci": [
+                -0.020000000000000004,
+                0.0
+              ],
+              "n_pairs": 8
+            },
+            "surgeon": {
+              "delta_mean": -0.011250000000000001,
+              "paired_ci": [
+                -0.037500000000000006,
+                0.00375
+              ],
+              "n_pairs": 8
+            }
+          },
+          "pooled_delta_mean": -0.009166666666666668,
+          "pooled_paired_ci": [
+            -0.020416666666666663,
+            -0.0012499999999999996
+          ],
+          "source_cluster_bootstrap_ci": [
+            -0.011250000000000001,
+            -0.0075
+          ],
+          "fixed_effects_regression_mean": -0.009166666666666668,
+          "fixed_effects_regression_ci": [
+            -0.019168749783031312,
+            0.0008354164496979753
+          ],
+          "legacy_source_cell_cluster_ci": [
+            -0.02001041666666667,
+            -0.001666666666666666
+          ],
+          "chosen_ci": [
+            -0.019168749783031312,
+            0.0008354164496979753
+          ],
+          "n_pairs": 24,
+          "note": "chosen_ci is the WIDEST of the paired-bootstrap CI, the n=3 source-cluster bootstrap CI, and the source fixed-effects regression CI (plan-reconciler round-1 BLOCKER 2)."
+        },
+        "leakage_rate_full": {
+          "per_source": {
+            "librarian": {
+              "delta_mean": -0.0038043478260869575,
+              "paired_ci": [
+                -0.00967663043478261,
+                0.0
+              ],
+              "n_pairs": 8
+            },
+            "programmer": {
+              "delta_mean": -0.0018478260869565228,
+              "paired_ci": [
+                -0.005380434782608698,
+                0.00010869565217391305
+              ],
+              "n_pairs": 8
+            },
+            "surgeon": {
+              "delta_mean": -0.003260869565217394,
+              "paired_ci": [
+                -0.008478260869565227,
+                0.0
+              ],
+              "n_pairs": 8
+            }
+          },
+          "pooled_delta_mean": -0.002971014492753625,
+          "pooled_paired_ci": [
+            -0.005979166666666671,
+            -0.0006521739130434789
+          ],
+          "source_cluster_bootstrap_ci": [
+            -0.003804347826086957,
+            -0.001847826086956523
+          ],
+          "fixed_effects_regression_mean": -0.002971014492753625,
+          "fixed_effects_regression_ci": [
+            -0.00577919933734685,
+            -0.0001628296481604001
+          ],
+          "legacy_source_cell_cluster_ci": [
+            -0.005888586956521739,
+            -0.0005973731884057981
+          ],
+          "chosen_ci": [
+            -0.00577919933734685,
+            -0.0001628296481604001
+          ],
+          "n_pairs": 24,
+          "note": "chosen_ci is the WIDEST of the paired-bootstrap CI, the n=3 source-cluster bootstrap CI, and the source fixed-effects regression CI (plan-reconciler round-1 BLOCKER 2)."
+        },
+        "leakage_rate_out_of_domain": {
+          "per_source": {
+            "librarian": {
+              "delta_mean": -0.0038043478260869575,
+              "paired_ci": [
+                -0.00967663043478261,
+                0.0
+              ],
+              "n_pairs": 8
+            },
+            "programmer": {
+              "delta_mean": -0.0011904761904761897,
+              "paired_ci": [
+                -0.00345238095238095,
+                0.0
+              ],
+              "n_pairs": 8
+            },
+            "surgeon": {
+              "delta_mean": -0.0034090909090909124,
+              "paired_ci": [
+                -0.008977272727272737,
+                0.0
+              ],
+              "n_pairs": 8
+            }
+          },
+          "pooled_delta_mean": -0.0028013049752180197,
+          "pooled_paired_ci": [
+            -0.005901712191793717,
+            -0.0006035196687370613
+          ],
+          "source_cluster_bootstrap_ci": [
+            -0.003804347826086957,
+            -0.0011904761904761897
+          ],
+          "fixed_effects_regression_mean": -0.0028013049752180197,
+          "fixed_effects_regression_ci": [
+            -0.005544971393583885,
+            -5.763855685215428e-05
+          ],
+          "legacy_source_cell_cluster_ci": [
+            -0.005740967516782734,
+            -0.0005430684955141484
+          ],
+          "chosen_ci": [
+            -0.005544971393583885,
+            -5.763855685215428e-05
+          ],
+          "n_pairs": 24,
+          "note": "chosen_ci is the WIDEST of the paired-bootstrap CI, the n=3 source-cluster bootstrap CI, and the source fixed-effects regression CI (plan-reconciler round-1 BLOCKER 2)."
+        }
+      },
+      "D": {
+        "source_rate": {
+          "per_source": {
+            "librarian": {
+              "delta_mean": 0.019166666666666665,
+              "paired_ci": [
+                0.0,
+                0.05083333333333334
+              ],
+              "n_pairs": 12
+            },
+            "programmer": {
+              "delta_mean": 0.011666666666666665,
+              "paired_ci": [
+                0.0,
+                0.02666666666666667
+              ],
+              "n_pairs": 12
+            },
+            "surgeon": {
+              "delta_mean": 0.015,
+              "paired_ci": [
+                0.0,
+                0.03916666666666666
+              ],
+              "n_pairs": 12
+            }
+          },
+          "pooled_delta_mean": 0.015277777777777779,
+          "pooled_paired_ci": [
+            0.005277777777777777,
+            0.026673611111111106
+          ],
+          "source_cluster_bootstrap_ci": [
+            0.011666666666666667,
+            0.019166666666666665
+          ],
+          "fixed_effects_regression_mean": 0.015277777777777779,
+          "fixed_effects_regression_ci": [
+            0.0026185796428787635,
+            0.027936975912676795
+          ],
+          "legacy_source_cell_cluster_ci": [
+            0.0047152777777777774,
+            0.028618055555555553
+          ],
+          "chosen_ci": [
+            0.0026185796428787635,
+            0.027936975912676795
+          ],
+          "n_pairs": 36,
+          "note": "chosen_ci is the WIDEST of the paired-bootstrap CI, the n=3 source-cluster bootstrap CI, and the source fixed-effects regression CI (plan-reconciler round-1 BLOCKER 2)."
+        },
+        "leakage_rate_full": {
+          "per_source": {
+            "librarian": {
+              "delta_mean": 0.007427536231884062,
+              "paired_ci": [
+                0.00043387681159420295,
+                0.01699275362318841
+              ],
+              "n_pairs": 12
+            },
+            "programmer": {
+              "delta_mean": 0.008985507246376813,
+              "paired_ci": [
+                0.0004347826086956522,
+                0.019240036231884066
+              ],
+              "n_pairs": 12
+            },
+            "surgeon": {
+              "delta_mean": 0.011086956521739133,
+              "paired_ci": [
+                0.0005797101449275362,
+                0.023805253623188413
+              ],
+              "n_pairs": 12
+            }
+          },
+          "pooled_delta_mean": 0.009166666666666668,
+          "pooled_paired_ci": [
+            0.004444444444444445,
+            0.014214975845410628
+          ],
+          "source_cluster_bootstrap_ci": [
+            0.00742753623188406,
+            0.011086956521739133
+          ],
+          "fixed_effects_regression_mean": 0.009166666666666668,
+          "fixed_effects_regression_ci": [
+            0.0036936155673258286,
+            0.014639717766007507
+          ],
+          "legacy_source_cell_cluster_ci": [
+            0.004093297101449277,
+            0.014688103864734302
+          ],
+          "chosen_ci": [
+            0.0036936155673258286,
+            0.014639717766007507
+          ],
+          "n_pairs": 36,
+          "note": "chosen_ci is the WIDEST of the paired-bootstrap CI, the n=3 source-cluster bootstrap CI, and the source fixed-effects regression CI (plan-reconciler round-1 BLOCKER 2)."
+        },
+        "leakage_rate_out_of_domain": {
+          "per_source": {
+            "librarian": {
+              "delta_mean": 0.007427536231884062,
+              "paired_ci": [
+                0.00043387681159420295,
+                0.01699275362318841
+              ],
+              "n_pairs": 12
+            },
+            "programmer": {
+              "delta_mean": 0.00873015873015873,
+              "paired_ci": [
+                0.0004751984126984128,
+                0.018812499999999996
+              ],
+              "n_pairs": 12
+            },
+            "surgeon": {
+              "delta_mean": 0.011060606060606062,
+              "paired_ci": [
+                0.0006060606060606061,
+                0.023677083333333335
+              ],
+              "n_pairs": 12
+            }
+          },
+          "pooled_delta_mean": 0.009072767007549616,
+          "pooled_paired_ci": [
+            0.004411956652445784,
+            0.014167777673212457
+          ],
+          "source_cluster_bootstrap_ci": [
+            0.00742753623188406,
+            0.011060606060606064
+          ],
+          "fixed_effects_regression_mean": 0.009072767007549618,
+          "fixed_effects_regression_ci": [
+            0.003650018220022382,
+            0.014495515795076854
+          ],
+          "legacy_source_cell_cluster_ci": [
+            0.004100084697910785,
+            0.01455693777840517
+          ],
+          "chosen_ci": [
+            0.003650018220022382,
+            0.014495515795076854
+          ],
+          "n_pairs": 36,
+          "note": "chosen_ci is the WIDEST of the paired-bootstrap CI, the n=3 source-cluster bootstrap CI, and the source fixed-effects regression CI (plan-reconciler round-1 BLOCKER 2)."
+        }
+      },
+      "E": {
+        "source_rate": {
+          "per_source": {
+            "librarian": {
+              "delta_mean": -0.02416666666666667,
+              "paired_ci": [
+                -0.056666666666666664,
+                -0.0025
+              ],
+              "n_pairs": 12
+            },
+            "programmer": {
+              "delta_mean": -0.013333333333333334,
+              "paired_ci": [
+                -0.028333333333333335,
+                -0.0016666666666666668
+              ],
+              "n_pairs": 12
+            },
+            "surgeon": {
+              "delta_mean": -0.018333333333333337,
+              "paired_ci": [
+                -0.04,
+                -0.0024791666666666855
+              ],
+              "n_pairs": 12
+            }
+          },
+          "pooled_delta_mean": -0.018611111111111113,
+          "pooled_paired_ci": [
+            -0.031666666666666676,
+            -0.008055555555555557
+          ],
+          "source_cluster_bootstrap_ci": [
+            -0.02416666666666667,
+            -0.013333333333333336
+          ],
+          "fixed_effects_regression_mean": -0.018611111111111116,
+          "fixed_effects_regression_ci": [
+            -0.031569055257399004,
+            -0.005653166964823229
+          ],
+          "legacy_source_cell_cluster_ci": [
+            -0.032777777777777774,
+            -0.006944444444444444
+          ],
+          "chosen_ci": [
+            -0.031569055257399004,
+            -0.005653166964823229
+          ],
+          "n_pairs": 36,
+          "note": "chosen_ci is the WIDEST of the paired-bootstrap CI, the n=3 source-cluster bootstrap CI, and the source fixed-effects regression CI (plan-reconciler round-1 BLOCKER 2)."
+        },
+        "leakage_rate_full": {
+          "per_source": {
+            "librarian": {
+              "delta_mean": -0.01489130434782609,
+              "paired_ci": [
+                -0.02539945652173914,
+                -0.004855072463768118
+              ],
+              "n_pairs": 12
+            },
+            "programmer": {
+              "delta_mean": -0.012608695652173915,
+              "paired_ci": [
+                -0.02308242753623189,
+                -0.003765398550724641
+              ],
+              "n_pairs": 12
+            },
+            "surgeon": {
+              "delta_mean": -0.016014492753623193,
+              "paired_ci": [
+                -0.02960326086956522,
+                -0.004491847826086959
+              ],
+              "n_pairs": 12
+            }
+          },
+          "pooled_delta_mean": -0.014504830917874396,
+          "pooled_paired_ci": [
+            -0.021198067632850245,
+            -0.008683272946859905
+          ],
+          "source_cluster_bootstrap_ci": [
+            -0.01601449275362319,
+            -0.012608695652173913
+          ],
+          "fixed_effects_regression_mean": -0.0145048309178744,
+          "fixed_effects_regression_ci": [
+            -0.021307497563310775,
+            -0.007702164272438023
+          ],
+          "legacy_source_cell_cluster_ci": [
+            -0.021256340579710147,
+            -0.007971014492753625
+          ],
+          "chosen_ci": [
+            -0.021307497563310775,
+            -0.007702164272438023
+          ],
+          "n_pairs": 36,
+          "note": "chosen_ci is the WIDEST of the paired-bootstrap CI, the n=3 source-cluster bootstrap CI, and the source fixed-effects regression CI (plan-reconciler round-1 BLOCKER 2)."
+        },
+        "leakage_rate_out_of_domain": {
+          "per_source": {
+            "librarian": {
+              "delta_mean": -0.01489130434782609,
+              "paired_ci": [
+                -0.02539945652173914,
+                -0.004855072463768118
+              ],
+              "n_pairs": 12
+            },
+            "programmer": {
+              "delta_mean": -0.012222222222222223,
+              "paired_ci": [
+                -0.02214583333333333,
+                -0.00372619047619048
+              ],
+              "n_pairs": 12
+            },
+            "surgeon": {
+              "delta_mean": -0.015984848484848487,
+              "paired_ci": [
+                -0.02962310606060607,
+                -0.004431818181818182
+              ],
+              "n_pairs": 12
+            }
+          },
+          "pooled_delta_mean": -0.014366125018298932,
+          "pooled_paired_ci": [
+            -0.02099384437020307,
+            -0.008684116658301443
+          ],
+          "source_cluster_bootstrap_ci": [
+            -0.015984848484848487,
+            -0.012222222222222223
+          ],
+          "fixed_effects_regression_mean": -0.014366125018298934,
+          "fixed_effects_regression_ci": [
+            -0.021105028026418445,
+            -0.007627222010179424
+          ],
+          "legacy_source_cell_cluster_ci": [
+            -0.02096281134324613,
+            -0.007868541130769392
+          ],
+          "chosen_ci": [
+            -0.021105028026418445,
+            -0.007627222010179424
+          ],
+          "n_pairs": 36,
+          "note": "chosen_ci is the WIDEST of the paired-bootstrap CI, the n=3 source-cluster bootstrap CI, and the source fixed-effects regression CI (plan-reconciler round-1 BLOCKER 2)."
+        }
+      }
+    },
+    "n_boot": 1000,
+    "analyzer_must_handle_notes": [
+      "C-axis main effect is unbalanced: A=0 x C=1 cells are MISSING (detected for sources=['librarian', 'programmer', 'surgeon']); report the C-axis main effect as 'A=1 only' or restrict the factorial to A=1 before interpreting the C-axis chosen_ci.",
+      "B=1 rows are data-driven, not pre-spec'd at 900-1200 tokens; per-cell row count + observed length distribution are in cell_manifest.csv (and any underfill cells are flagged in pools/<source>/preflight_failures.csv with decision=b1_underfill_{on,off}_policy). Weight B-axis inferences by the per-cell positive-row count and treat underfilled B=1 cells as lower-power than the design assumed."
+    ],
+    "missing_a0_c1_sources": [
+      "librarian",
+      "programmer",
+      "surgeon"
+    ]
+  },
+  "off_diagonal_noise_floor": {
+    "rationale": "Cross-cell SD of cells held at E=0 AND D=0 (the design's stable sub-rectangle). Used to set the >1.5x noise threshold for kill-criterion 1.",
+    "metric": "source_rate",
+    "per_source_sd": {
+      "librarian": 0.01224744871391589,
+      "programmer": 0.004082482904638631,
+      "surgeon": 0.0051639777949432225
+    },
+    "pooled_sd": 0.007164636471165914,
+    "kill_threshold_multiplier": 1.5,
+    "kill_threshold_pooled": 0.01074695470674887
+  },
+  "leakage_n48_citation_note": "Plan v2 \u00a72 cites eval_results/issue_296/length_rate_correlation_n48.json for the #337 leakage Spearman rho = -0.36, p = 0.012, N = 48 result, but the on-disk JSON only carries N = 24 (rho = -0.306, p = 0.146). The n=48 value lives in the #337 issue body text. The clean-result write-up must either re-cite the on-disk n=24 series or regenerate the n=48 series before promotion. This is not a code change; the discrepancy is surfaced here for the analyzer to act on."
+}

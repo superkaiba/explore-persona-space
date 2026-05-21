@@ -1,0 +1,130 @@
+{
+  "note": "Per-source full panel = 23 bystanders; out-of-domain excludes occupationally-adjacent personas (surgeon -> medical_doctor, programmer -> software_engineer & data_scientist). librarian has no in-domain panel members; for it the in-domain mean is 0 and out-of-domain == full.",
+  "per_source": {
+    "librarian": {
+      "full_panel": {
+        "mean": 0.007699275362318843,
+        "n": 24
+      },
+      "out_of_domain_only": {
+        "mean": 0.007699275362318843,
+        "n": 24,
+        "panel": [
+          "surgeon",
+          "programmer",
+          "medical_doctor",
+          "software_engineer",
+          "data_scientist",
+          "kindergarten_teacher",
+          "french_person",
+          "villain",
+          "comedian",
+          "police_officer",
+          "zelthari_scholar",
+          "assistant",
+          "qwen_default",
+          "chef",
+          "lawyer",
+          "accountant",
+          "journalist",
+          "wizard",
+          "hero",
+          "philosopher",
+          "child",
+          "ai_assistant",
+          "ai"
+        ]
+      },
+      "in_domain_only": {
+        "mean": 0.0,
+        "n": 24,
+        "panel": []
+      },
+      "delta_in_minus_ood": -0.007699275362318843
+    },
+    "programmer": {
+      "full_panel": {
+        "mean": 0.006594202898550726,
+        "n": 24
+      },
+      "out_of_domain_only": {
+        "mean": 0.006388888888888888,
+        "n": 24,
+        "panel": [
+          "librarian",
+          "surgeon",
+          "medical_doctor",
+          "kindergarten_teacher",
+          "french_person",
+          "villain",
+          "comedian",
+          "police_officer",
+          "zelthari_scholar",
+          "assistant",
+          "qwen_default",
+          "chef",
+          "lawyer",
+          "accountant",
+          "journalist",
+          "wizard",
+          "hero",
+          "philosopher",
+          "child",
+          "ai_assistant",
+          "ai"
+        ]
+      },
+      "in_domain_only": {
+        "mean": 0.008749999999999999,
+        "n": 24,
+        "panel": [
+          "software_engineer",
+          "data_scientist"
+        ]
+      },
+      "delta_in_minus_ood": 0.0023611111111111107
+    },
+    "surgeon": {
+      "full_panel": {
+        "mean": 0.008297101449275363,
+        "n": 24
+      },
+      "out_of_domain_only": {
+        "mean": 0.008295454545454547,
+        "n": 24,
+        "panel": [
+          "librarian",
+          "programmer",
+          "software_engineer",
+          "data_scientist",
+          "kindergarten_teacher",
+          "french_person",
+          "villain",
+          "comedian",
+          "police_officer",
+          "zelthari_scholar",
+          "assistant",
+          "qwen_default",
+          "chef",
+          "lawyer",
+          "accountant",
+          "journalist",
+          "wizard",
+          "hero",
+          "philosopher",
+          "child",
+          "ai_assistant",
+          "ai"
+        ]
+      },
+      "in_domain_only": {
+        "mean": 0.008333333333333333,
+        "n": 24,
+        "panel": [
+          "medical_doctor"
+        ]
+      },
+      "delta_in_minus_ood": 3.787878787878639e-05
+    }
+  }
+}
