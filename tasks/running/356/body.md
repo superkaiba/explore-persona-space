@@ -4,7 +4,6 @@ kind: experiment
 tags:
 - todo
 - mentor-followup
-- keep-running
 created_at: '2026-05-11T23:32:19.000Z'
 has_clean_result: false
 sagan_id: 8bbdb9e4-bea3-472d-b2ce-8c56d34bb636
