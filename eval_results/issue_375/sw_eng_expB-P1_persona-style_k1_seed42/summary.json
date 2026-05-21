@@ -1,0 +1,21 @@
+{
+  "cell_label": "sw_eng_expB-P1_persona-style_k1_seed42",
+  "adapter_id": "sw_eng_expB-P1",
+  "pool_kind": "persona-style",
+  "k": 1,
+  "decoder": {
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 2048,
+    "n": 10,
+    "seed": 42
+  },
+  "n_queries": 184,
+  "n_completions": 1840,
+  "marker": "[ZLT]",
+  "overall_rate": 0.5092391304347826,
+  "eval_questions_rate": 0.94,
+  "lmsys_tail_rate": 0.45670731707317075,
+  "found": 937,
+  "total": 1840
+}

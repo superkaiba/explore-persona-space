@@ -1,0 +1,21 @@
+{
+  "cell_label": "sw_eng_C1_zero-shot_k0_seed42",
+  "adapter_id": "sw_eng_C1",
+  "pool_kind": "zero-shot",
+  "k": 0,
+  "decoder": {
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 2048,
+    "n": 10,
+    "seed": 42
+  },
+  "n_queries": 184,
+  "n_completions": 1840,
+  "marker": "[ZLT]",
+  "overall_rate": 0.23423913043478262,
+  "eval_questions_rate": 0.56,
+  "lmsys_tail_rate": 0.19451219512195123,
+  "found": 431,
+  "total": 1840
+}

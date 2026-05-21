@@ -1,0 +1,21 @@
+{
+  "cell_label": "villain_expB-P1_neutral_k1_seed42",
+  "adapter_id": "villain_expB-P1",
+  "pool_kind": "neutral",
+  "k": 1,
+  "decoder": {
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 2048,
+    "n": 10,
+    "seed": 42
+  },
+  "n_queries": 184,
+  "n_completions": 1840,
+  "marker": "[ZLT]",
+  "overall_rate": 0.058152173913043476,
+  "eval_questions_rate": 0.085,
+  "lmsys_tail_rate": 0.054878048780487805,
+  "found": 107,
+  "total": 1840
+}

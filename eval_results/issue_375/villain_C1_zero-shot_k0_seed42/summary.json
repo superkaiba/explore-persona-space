@@ -1,0 +1,21 @@
+{
+  "cell_label": "villain_C1_zero-shot_k0_seed42",
+  "adapter_id": "villain_C1",
+  "pool_kind": "zero-shot",
+  "k": 0,
+  "decoder": {
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 2048,
+    "n": 10,
+    "seed": 42
+  },
+  "n_queries": 184,
+  "n_completions": 1840,
+  "marker": "[ZLT]",
+  "overall_rate": 0.004347826086956522,
+  "eval_questions_rate": 0.0,
+  "lmsys_tail_rate": 0.004878048780487805,
+  "found": 8,
+  "total": 1840
+}

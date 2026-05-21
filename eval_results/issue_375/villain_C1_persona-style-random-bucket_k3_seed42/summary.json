@@ -1,0 +1,21 @@
+{
+  "cell_label": "villain_C1_persona-style-random-bucket_k3_seed42",
+  "adapter_id": "villain_C1",
+  "pool_kind": "persona-style-random-bucket",
+  "k": 3,
+  "decoder": {
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 2048,
+    "n": 10,
+    "seed": 42
+  },
+  "n_queries": 184,
+  "n_completions": 1840,
+  "marker": "[ZLT]",
+  "overall_rate": 0.10706521739130435,
+  "eval_questions_rate": 0.17,
+  "lmsys_tail_rate": 0.09939024390243903,
+  "found": 197,
+  "total": 1840
+}

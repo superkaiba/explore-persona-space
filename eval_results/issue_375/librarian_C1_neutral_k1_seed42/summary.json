@@ -1,0 +1,21 @@
+{
+  "cell_label": "librarian_C1_neutral_k1_seed42",
+  "adapter_id": "librarian_C1",
+  "pool_kind": "neutral",
+  "k": 1,
+  "decoder": {
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 2048,
+    "n": 10,
+    "seed": 42
+  },
+  "n_queries": 184,
+  "n_completions": 1840,
+  "marker": "[ZLT]",
+  "overall_rate": 0.08043478260869565,
+  "eval_questions_rate": 0.17,
+  "lmsys_tail_rate": 0.06951219512195123,
+  "found": 148,
+  "total": 1840
+}
