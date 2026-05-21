@@ -5,3 +5,4 @@
 {"ts": "2026-05-21T01:50:02Z", "kind": "epm:clarify", "version": 1, "by": "unknown", "note": "All blocking ambiguities resolved (see epm:clarify v1 + epm:clarify-answers v1). Body patched with Hypothesis + Kill criterion; hypothesis gate PASS. Advancing to adversarial planning."}
 {"ts": "2026-05-21T01:50:02Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear (v2) after corrected in-context-drift framing."}
 {"ts": "2026-05-21T02:20:11Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mpev5bk7-qrotbv effort=high write=False poll_interval=30s max_wait=1800s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-05-21T02:20:31Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mpev5qn4-lk9lin effort=high write=False poll_interval=30s max_wait=1800s probe_error_cap=10 stall_detect=600s"}
