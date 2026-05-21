@@ -142,7 +142,49 @@ def train_one_cell(
     )
     train_minutes = (time.time() - start) / 60
 
-    merge_lora(BASE_MODEL, adapter_path, str(merged_dir), gpu_id=gpu_id)
+    # Round-16e (issue #365): explicit CUDA-state quiesce + flush between
+    # train_lora and merge_lora to prevent the silent rc=120/SIGKILL the A=1
+    # cells were hitting at the merge step (rounds 11-15 recurring bug). The
+    # working hypothesis is lingering CUDA tensor refs from training that
+    # interfere with the merge's `from_pretrained(device_map={"":0})`
+    # context. ALSO wrap merge_lora in a try/except so the failure surfaces
+    # in stderr with a clear traceback instead of vanishing into SIGKILL.
+    import gc as _gc
+    import sys as _sys
+
+    import torch as _torch
+
+    log.info("train_lora done in %.1fmin; quiescing CUDA before merge_lora", train_minutes)
+    _sys.stdout.flush()
+    _sys.stderr.flush()
+    _gc.collect()
+    if _torch.cuda.is_available():
+        _torch.cuda.synchronize()
+        _torch.cuda.empty_cache()
+    time.sleep(2)  # give the wandb sync subprocess time to drain
+    _gc.collect()
+    if _torch.cuda.is_available():
+        _torch.cuda.empty_cache()
+
+    log.info(
+        "Starting merge_lora: base=%s adapter=%s merged=%s", BASE_MODEL, adapter_path, merged_dir
+    )
+    _sys.stdout.flush()
+    try:
+        merge_lora(BASE_MODEL, adapter_path, str(merged_dir), gpu_id=gpu_id)
+    except BaseException as _merge_exc:
+        # Log the full exception loudly BEFORE re-raising so even on rc=120
+        # (interpreter-shutdown unraisable) the user sees what failed.
+        import traceback as _tb
+
+        log.error(
+            "merge_lora FAILED on cell=%s source=%s seed=%d: %r", cell.key, source, seed, _merge_exc
+        )
+        _sys.stderr.write(_tb.format_exc())
+        _sys.stderr.flush()
+        raise
+    log.info("merge_lora complete: merged_dir=%s", merged_dir)
+    _sys.stdout.flush()
 
     return TrainOutcome(
         cell_key=cell.key,
