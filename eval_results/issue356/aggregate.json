@@ -1,0 +1,511 @@
+{
+  "primary_contrasts": {
+    "contrasts": [
+      {
+        "source": "software_engineer",
+        "axis": "source_loss",
+        "label": "consistent_persona_cot - persona_cot (source=software_engineer, axis=source_loss)",
+        "point_estimate": 0.0310011375695467,
+        "ci_95_lo": 0.015635664877481758,
+        "ci_95_hi": 0.045513367932289835,
+        "p_two_sided_uncorrected": 0.0,
+        "n_pairs": 3516,
+        "tost_inherited_band_pm_0p03": false,
+        "tost_tight_band_pm_0p01": false,
+        "ci_90_lo": 0.017633674666285515,
+        "ci_90_hi": 0.04408418759703636,
+        "label_partial_signal": true,
+        "holm_reject_at_alpha_0p01": true,
+        "holm_corrected_p": 0.0
+      },
+      {
+        "source": "software_engineer",
+        "axis": "bystander_macro",
+        "label": "consistent_persona_cot - persona_cot (source=software_engineer, axis=bystander_macro)",
+        "point_estimate": 0.031769055873155594,
+        "ci_95_lo": 0.02713310895487666,
+        "ci_95_hi": 0.03626279905438423,
+        "p_two_sided_uncorrected": 0.0,
+        "n_pairs": 3516,
+        "tost_inherited_band_pm_0p03": false,
+        "tost_tight_band_pm_0p01": false,
+        "ci_90_lo": 0.027928044181317092,
+        "ci_90_hi": 0.035608649253845215,
+        "label_partial_signal": true,
+        "holm_reject_at_alpha_0p01": true,
+        "holm_corrected_p": 0.0
+      },
+      {
+        "source": "librarian",
+        "axis": "source_loss",
+        "label": "consistent_persona_cot - persona_cot (source=librarian, axis=source_loss)",
+        "point_estimate": -0.022184301167726517,
+        "ci_95_lo": -0.03839590400457382,
+        "ci_95_hi": -0.004835039842873812,
+        "p_two_sided_uncorrected": 0.005,
+        "n_pairs": 3516,
+        "tost_inherited_band_pm_0p03": false,
+        "tost_tight_band_pm_0p01": false,
+        "ci_90_lo": -0.03583617880940437,
+        "ci_90_hi": -0.007949374266900134,
+        "label_partial_signal": false,
+        "holm_reject_at_alpha_0p01": false,
+        "holm_corrected_p": 0.015
+      },
+      {
+        "source": "librarian",
+        "axis": "bystander_macro",
+        "label": "consistent_persona_cot - persona_cot (source=librarian, axis=bystander_macro)",
+        "point_estimate": -0.01311149075627327,
+        "ci_95_lo": -0.01789249279536307,
+        "ci_95_hi": -0.008159840595908465,
+        "p_two_sided_uncorrected": 0.0,
+        "n_pairs": 3516,
+        "tost_inherited_band_pm_0p03": true,
+        "tost_tight_band_pm_0p01": false,
+        "ci_90_lo": -0.01718003386631608,
+        "ci_90_hi": -0.008902162313461304,
+        "label_partial_signal": false,
+        "holm_reject_at_alpha_0p01": true,
+        "holm_corrected_p": 0.0
+      },
+      {
+        "source": "comedian",
+        "axis": "source_loss",
+        "label": "consistent_persona_cot - persona_cot (source=comedian, axis=source_loss)",
+        "point_estimate": -0.02673492580652237,
+        "ci_95_lo": -0.04237770289182663,
+        "ci_95_hi": -0.010224687517620635,
+        "p_two_sided_uncorrected": 0.002,
+        "n_pairs": 3516,
+        "tost_inherited_band_pm_0p03": false,
+        "tost_tight_band_pm_0p01": false,
+        "ci_90_lo": -0.03953355923295021,
+        "ci_90_hi": -0.013367462903261185,
+        "label_partial_signal": false,
+        "holm_reject_at_alpha_0p01": true,
+        "holm_corrected_p": 0.008
+      },
+      {
+        "source": "comedian",
+        "axis": "bystander_macro",
+        "label": "consistent_persona_cot - persona_cot (source=comedian, axis=bystander_macro)",
+        "point_estimate": -0.00028441438917070627,
+        "ci_95_lo": -0.0034990049432963135,
+        "ci_95_hi": 0.002788680541561915,
+        "p_two_sided_uncorrected": 0.841,
+        "n_pairs": 3516,
+        "tost_inherited_band_pm_0p03": true,
+        "tost_tight_band_pm_0p01": true,
+        "ci_90_lo": -0.0031569967977702618,
+        "ci_90_hi": 0.0023037542356178164,
+        "label_partial_signal": false,
+        "holm_reject_at_alpha_0p01": false,
+        "holm_corrected_p": 0.841
+      },
+      {
+        "source": "police_officer",
+        "axis": "source_loss",
+        "label": "consistent_persona_cot - persona_cot (source=police_officer, axis=source_loss)",
+        "point_estimate": -0.010238908231258392,
+        "ci_95_lo": -0.02559726871550083,
+        "ci_95_hi": 0.0054180886363610495,
+        "p_two_sided_uncorrected": 0.196,
+        "n_pairs": 3516,
+        "tost_inherited_band_pm_0p03": true,
+        "tost_tight_band_pm_0p01": false,
+        "ci_90_lo": -0.023321956396102905,
+        "ci_90_hi": 0.0022753127850592136,
+        "label_partial_signal": false,
+        "holm_reject_at_alpha_0p01": false,
+        "holm_corrected_p": 0.392
+      },
+      {
+        "source": "police_officer",
+        "axis": "bystander_macro",
+        "label": "consistent_persona_cot - persona_cot (source=police_officer, axis=bystander_macro)",
+        "point_estimate": -0.011604096740484238,
+        "ci_95_lo": -0.016382252797484398,
+        "ci_95_hi": -0.006879266514442864,
+        "p_two_sided_uncorrected": 0.0,
+        "n_pairs": 3516,
+        "tost_inherited_band_pm_0p03": true,
+        "tost_tight_band_pm_0p01": false,
+        "ci_90_lo": -0.015557453036308289,
+        "ci_90_hi": -0.007477246853522959,
+        "label_partial_signal": false,
+        "holm_reject_at_alpha_0p01": true,
+        "holm_corrected_p": 0.0
+      }
+    ],
+    "per_source": {
+      "software_engineer": {
+        "source_loss": {
+          "point_estimate": 0.0310011375695467,
+          "ci_95_lo": 0.015635664877481758,
+          "ci_95_hi": 0.045513367932289835
+        },
+        "bystander_macro": {
+          "point_estimate": 0.031769055873155594,
+          "ci_95_lo": 0.02713310895487666,
+          "ci_95_hi": 0.03626279905438423
+        }
+      },
+      "librarian": {
+        "source_loss": {
+          "point_estimate": -0.022184301167726517,
+          "ci_95_lo": -0.03839590400457382,
+          "ci_95_hi": -0.004835039842873812
+        },
+        "bystander_macro": {
+          "point_estimate": -0.01311149075627327,
+          "ci_95_lo": -0.01789249279536307,
+          "ci_95_hi": -0.008159840595908465
+        }
+      },
+      "comedian": {
+        "source_loss": {
+          "point_estimate": -0.02673492580652237,
+          "ci_95_lo": -0.04237770289182663,
+          "ci_95_hi": -0.010224687517620635
+        },
+        "bystander_macro": {
+          "point_estimate": -0.00028441438917070627,
+          "ci_95_lo": -0.0034990049432963135,
+          "ci_95_hi": 0.002788680541561915
+        }
+      },
+      "police_officer": {
+        "source_loss": {
+          "point_estimate": -0.010238908231258392,
+          "ci_95_lo": -0.02559726871550083,
+          "ci_95_hi": 0.0054180886363610495
+        },
+        "bystander_macro": {
+          "point_estimate": -0.011604096740484238,
+          "ci_95_lo": -0.016382252797484398,
+          "ci_95_hi": -0.006879266514442864
+        }
+      }
+    },
+    "macro_means": {
+      "source_loss": {
+        "macro_mean_delta": -0.007039249408990145,
+        "n_sources_present": 4
+      },
+      "bystander_macro": {
+        "macro_mean_delta": 0.001692263496806845,
+        "n_sources_present": 4
+      }
+    },
+    "holm_alpha_familywise": 0.01,
+    "n_bootstrap": 1000,
+    "primary_contrast": "consistent_persona_cot - persona_cot",
+    "eval_arm": "persona_cot"
+  },
+  "per_source": {
+    "software_engineer": {
+      "source_loss": {
+        "point_estimate": 0.0310011375695467,
+        "ci_95_lo": 0.015635664877481758,
+        "ci_95_hi": 0.045513367932289835
+      },
+      "bystander_macro": {
+        "point_estimate": 0.031769055873155594,
+        "ci_95_lo": 0.02713310895487666,
+        "ci_95_hi": 0.03626279905438423
+      }
+    },
+    "librarian": {
+      "source_loss": {
+        "point_estimate": -0.022184301167726517,
+        "ci_95_lo": -0.03839590400457382,
+        "ci_95_hi": -0.004835039842873812
+      },
+      "bystander_macro": {
+        "point_estimate": -0.01311149075627327,
+        "ci_95_lo": -0.01789249279536307,
+        "ci_95_hi": -0.008159840595908465
+      }
+    },
+    "comedian": {
+      "source_loss": {
+        "point_estimate": -0.02673492580652237,
+        "ci_95_lo": -0.04237770289182663,
+        "ci_95_hi": -0.010224687517620635
+      },
+      "bystander_macro": {
+        "point_estimate": -0.00028441438917070627,
+        "ci_95_lo": -0.0034990049432963135,
+        "ci_95_hi": 0.002788680541561915
+      }
+    },
+    "police_officer": {
+      "source_loss": {
+        "point_estimate": -0.010238908231258392,
+        "ci_95_lo": -0.02559726871550083,
+        "ci_95_hi": 0.0054180886363610495
+      },
+      "bystander_macro": {
+        "point_estimate": -0.011604096740484238,
+        "ci_95_lo": -0.016382252797484398,
+        "ci_95_hi": -0.006879266514442864
+      }
+    }
+  },
+  "per_cell_training_loss": {
+    "per_cell": {
+      "software_engineer_consistent_persona_cot_seed42": {
+        "final_train_loss": null,
+        "best_train_loss": null,
+        "epoch_at_best": null
+      },
+      "software_engineer_consistent_persona_cot_seed137": {
+        "final_train_loss": null,
+        "best_train_loss": null,
+        "epoch_at_best": null
+      },
+      "software_engineer_consistent_persona_cot_seed256": {
+        "final_train_loss": null,
+        "best_train_loss": null,
+        "epoch_at_best": null
+      },
+      "librarian_consistent_persona_cot_seed42": {
+        "final_train_loss": null,
+        "best_train_loss": null,
+        "epoch_at_best": null
+      },
+      "librarian_consistent_persona_cot_seed137": {
+        "final_train_loss": null,
+        "best_train_loss": null,
+        "epoch_at_best": null
+      },
+      "librarian_consistent_persona_cot_seed256": {
+        "final_train_loss": null,
+        "best_train_loss": null,
+        "epoch_at_best": null
+      },
+      "comedian_consistent_persona_cot_seed42": {
+        "final_train_loss": null,
+        "best_train_loss": null,
+        "epoch_at_best": null
+      },
+      "comedian_consistent_persona_cot_seed137": {
+        "final_train_loss": null,
+        "best_train_loss": null,
+        "epoch_at_best": null
+      },
+      "comedian_consistent_persona_cot_seed256": {
+        "final_train_loss": null,
+        "best_train_loss": null,
+        "epoch_at_best": null
+      },
+      "police_officer_consistent_persona_cot_seed42": {
+        "final_train_loss": null,
+        "best_train_loss": null,
+        "epoch_at_best": null
+      },
+      "police_officer_consistent_persona_cot_seed137": {
+        "final_train_loss": null,
+        "best_train_loss": null,
+        "epoch_at_best": null
+      },
+      "police_officer_consistent_persona_cot_seed256": {
+        "final_train_loss": null,
+        "best_train_loss": null,
+        "epoch_at_best": null
+      }
+    },
+    "per_source_flags": {
+      "software_engineer": {
+        "mean_gap": null,
+        "trained_harder_flag": null
+      },
+      "librarian": {
+        "mean_gap": null,
+        "trained_harder_flag": null
+      },
+      "comedian": {
+        "mean_gap": null,
+        "trained_harder_flag": null
+      },
+      "police_officer": {
+        "mean_gap": null,
+        "trained_harder_flag": null
+      }
+    },
+    "flag_threshold_nats": 0.1,
+    "_skipped": "missing_train_logs"
+  },
+  "difficulty_audit": {
+    "baseline_join_source": "eval_results/issue356/baseline_train/result.json",
+    "baseline_join_population": "ARC-C train q_ids from data/sft/issue356/_phase0_audit.json",
+    "per_source": {
+      "software_engineer": {
+        "passed_baseline_acc_mean": 0.7906542056074767,
+        "failed_baseline_acc_mean": 0.7307692307692307,
+        "diff_passed_minus_failed": 0.05988497483824595,
+        "p_value": 0.488,
+        "n_passed": 1070,
+        "n_failed": 26,
+        "flag_triggered": true
+      },
+      "librarian": {
+        "passed_baseline_acc_mean": 0.7890841813135985,
+        "failed_baseline_acc_mean": 0.8,
+        "diff_passed_minus_failed": -0.010915818686401568,
+        "p_value": 0.859,
+        "n_passed": 1081,
+        "n_failed": 15,
+        "flag_triggered": false
+      },
+      "comedian": {
+        "passed_baseline_acc_mean": 0.7890334572490706,
+        "failed_baseline_acc_mean": 0.8,
+        "diff_passed_minus_failed": -0.010966542750929453,
+        "p_value": 0.86,
+        "n_passed": 1076,
+        "n_failed": 20,
+        "flag_triggered": false
+      },
+      "police_officer": {
+        "passed_baseline_acc_mean": 0.7889822595704948,
+        "failed_baseline_acc_mean": 0.8,
+        "diff_passed_minus_failed": -0.011017740429505207,
+        "p_value": 0.881,
+        "n_passed": 1071,
+        "n_failed": 25,
+        "flag_triggered": false
+      }
+    },
+    "flag_threshold": 0.03,
+    "n_bootstrap": 1000
+  },
+  "regeneration_fraction_stratification": {
+    "per_source": {
+      "software_engineer": {
+        "regeneration_fraction": 0.10467289719626169,
+        "bystander_macro": 0.031769055873155594,
+        "source_loss": 0.0310011375695467
+      },
+      "librarian": {
+        "regeneration_fraction": 0.12025901942645699,
+        "bystander_macro": -0.01311149075627327,
+        "source_loss": -0.022184301167726517
+      },
+      "comedian": {
+        "regeneration_fraction": 0.11152416356877323,
+        "bystander_macro": -0.00028441438917070627,
+        "source_loss": -0.02673492580652237
+      },
+      "police_officer": {
+        "regeneration_fraction": 0.12044817927170869,
+        "bystander_macro": -0.011604096740484238,
+        "source_loss": -0.010238908231258392
+      }
+    },
+    "pearson_r_regen_vs_bystander": -0.9538936929273184,
+    "flag_threshold": 0.7,
+    "flag_triggered": true
+  },
+  "vocab_diff_passthrough": {
+    "per_source": {
+      "software_engineer": {
+        "n_kept": 958,
+        "n_regenerated": 112,
+        "regeneration_fraction": 0.10467289719626169,
+        "persona_vocab_jaccard_all": 1.0,
+        "persona_vocab_kl_all": 0.007703880936977012,
+        "regenerated_sub_audit": {
+          "persona_vocab_jaccard_regen_vs_persona": 0.6036036036036037,
+          "persona_vocab_kl_regen_vs_persona": 0.747762386312411,
+          "novel_persona_vocab_relfreq_delta_max": 0.0,
+          "tokens_with_relfreq_delta_above_10pct": []
+        },
+        "flag_triggered": false,
+        "flag_thresholds": {
+          "jaccard_min": 0.8,
+          "regen_delta_max": 0.1
+        }
+      },
+      "librarian": {
+        "n_kept": 951,
+        "n_regenerated": 130,
+        "regeneration_fraction": 0.12025901942645699,
+        "persona_vocab_jaccard_all": 1.0,
+        "persona_vocab_kl_all": 0.005792335118108741,
+        "regenerated_sub_audit": {
+          "persona_vocab_jaccard_regen_vs_persona": 0.720164609053498,
+          "persona_vocab_kl_regen_vs_persona": 0.38445460074719606,
+          "novel_persona_vocab_relfreq_delta_max": 0.0,
+          "tokens_with_relfreq_delta_above_10pct": []
+        },
+        "flag_triggered": false,
+        "flag_thresholds": {
+          "jaccard_min": 0.8,
+          "regen_delta_max": 0.1
+        }
+      },
+      "comedian": {
+        "n_kept": 956,
+        "n_regenerated": 120,
+        "regeneration_fraction": 0.11152416356877323,
+        "persona_vocab_jaccard_all": 1.0,
+        "persona_vocab_kl_all": 0.01281674062642106,
+        "regenerated_sub_audit": {
+          "persona_vocab_jaccard_regen_vs_persona": 0.8207070707070707,
+          "persona_vocab_kl_regen_vs_persona": 0.4647149646642317,
+          "novel_persona_vocab_relfreq_delta_max": 0.0,
+          "tokens_with_relfreq_delta_above_10pct": []
+        },
+        "flag_triggered": false,
+        "flag_thresholds": {
+          "jaccard_min": 0.8,
+          "regen_delta_max": 0.1
+        }
+      },
+      "police_officer": {
+        "n_kept": 942,
+        "n_regenerated": 129,
+        "regeneration_fraction": 0.12044817927170869,
+        "persona_vocab_jaccard_all": 1.0,
+        "persona_vocab_kl_all": 0.008248805629512041,
+        "regenerated_sub_audit": {
+          "persona_vocab_jaccard_regen_vs_persona": 0.6363636363636364,
+          "persona_vocab_kl_regen_vs_persona": 0.5999626055235562,
+          "novel_persona_vocab_relfreq_delta_max": 0.0,
+          "tokens_with_relfreq_delta_above_10pct": []
+        },
+        "flag_triggered": false,
+        "flag_thresholds": {
+          "jaccard_min": 0.8,
+          "regen_delta_max": 0.1
+        }
+      }
+    },
+    "any_flag_triggered": false,
+    "thresholds": {
+      "jaccard_min": 0.8,
+      "regen_delta_max": 0.1
+    }
+  },
+  "metadata": {
+    "n_cells_186": 12,
+    "n_cells_356": 12,
+    "n_q": 1172,
+    "primary_contrast": "consistent_persona_cot - persona_cot",
+    "primary_contrast_eval_arm": "persona_cot",
+    "holm_family_size": 8,
+    "holm_alpha_familywise": 0.01,
+    "tost_band_inherited": 0.03,
+    "tost_band_tight": 0.01,
+    "n_bootstrap": 1000,
+    "flag_thresholds": {
+      "difficulty_diff": 0.03,
+      "regen_pearson": 0.7,
+      "vocab_jaccard_min": 0.8,
+      "vocab_regen_delta_max": 0.1,
+      "train_loss_gap_nats": 0.1
+    }
+  }
+}
