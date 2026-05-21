@@ -132,6 +132,51 @@ export function getTask(id: number): Task | null {
   };
 }
 
+export type TaskPlan = {
+  id: number;
+  status: Status;
+  filename: string;
+  body: string;
+};
+
+/**
+ * Returns the latest plan body for a task (the file `plans/plan.md` resolves
+ * to, e.g. `plans/v2.md`). Returns null if the task has no plans/ directory
+ * or the symlink target is missing.
+ */
+export function getPlan(id: number): TaskPlan | null {
+  const abs = resolveTaskPath(id);
+  if (!abs) return null;
+  const plansDir = path.join(abs, "plans");
+  if (!fs.existsSync(plansDir)) return null;
+  const symlink = path.join(plansDir, "plan.md");
+  let target: string;
+  try {
+    target = fs.realpathSync(symlink);
+  } catch {
+    // No plan.md symlink — fall back to the highest v<K>.md present.
+    const files = fs
+      .readdirSync(plansDir)
+      .filter((f) => /^v\d+\.md$/.test(f))
+      .sort((a, b) => {
+        const na = Number(a.replace(/^v|\.md$/g, ""));
+        const nb = Number(b.replace(/^v|\.md$/g, ""));
+        return nb - na;
+      });
+    if (files.length === 0) return null;
+    target = path.join(plansDir, files[0]);
+  }
+  if (!fs.existsSync(target)) return null;
+  const body = fs.readFileSync(target, "utf8");
+  const status = path.basename(path.dirname(abs)) as Status;
+  return {
+    id,
+    status,
+    filename: path.basename(target),
+    body,
+  };
+}
+
 export function getEvents(id: number): TaskEvent[] {
   const abs = resolveTaskPath(id);
   if (!abs) return [];
