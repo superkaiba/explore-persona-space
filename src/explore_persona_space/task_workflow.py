@@ -270,6 +270,7 @@ def post_event(
     by: str = "unknown",
     note: str | None = None,
     artifacts: list[str] | None = None,
+    source: str | None = None,
     **extras: Any,
 ) -> dict[str, Any]:
     """Append a single event to tasks/<status>/<id>/events.jsonl.
@@ -292,6 +293,8 @@ def post_event(
         payload["note"] = note
     if artifacts:
         payload["artifacts"] = artifacts
+    if source is not None:
+        payload["source"] = source
     payload.update(extras)
     with _locked():
         path = find_task_path(task_id) / "events.jsonl"
@@ -326,7 +329,13 @@ def has_event(task_id: int, kind: str) -> bool:
 # ─── Status transitions ────────────────────────────────────────────────────
 
 
-def set_status(task_id: int, new_status: str, *, note: str | None = None) -> Path:
+def set_status(
+    task_id: int,
+    new_status: str,
+    *,
+    note: str | None = None,
+    source: str | None = None,
+) -> Path:
     """Move tasks/<old>/<id>/ → tasks/<new>/<id>/ via `git mv`, then post a
     status-changed event. Returns the new absolute path.
     """
@@ -351,7 +360,7 @@ def set_status(task_id: int, new_status: str, *, note: str | None = None) -> Pat
         _save_registry(reg)
         # Append event
         ev_path = new / "events.jsonl"
-        payload = {
+        payload: dict[str, Any] = {
             "ts": _utcnow_iso(),
             "kind": "epm:status-changed",
             "version": 1,
@@ -361,6 +370,8 @@ def set_status(task_id: int, new_status: str, *, note: str | None = None) -> Pat
         }
         if note:
             payload["note"] = note
+        if source is not None:
+            payload["source"] = source
         with ev_path.open("a") as f:
             f.write(json.dumps(payload, ensure_ascii=False) + "\n")
         _git_commit([new, REGISTRY_PATH], f"task #{task_id}: {old_status} → {new_status}")
@@ -426,7 +437,13 @@ def create_task(req: NewTaskRequest) -> int:
 # ─── Body / frontmatter mutations ──────────────────────────────────────────
 
 
-def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) -> None:
+def set_body(
+    task_id: int,
+    new_body: str,
+    *,
+    snapshot_original: bool = False,
+    source: str | None = None,
+) -> None:
     """Replace the body content (preserves frontmatter).
 
     If `snapshot_original` is True, save the current full body.md to
@@ -442,10 +459,11 @@ def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) ->
             shutil.copy2(path, orig)
             touched.append(orig)
         _write_body(path, fm, new_body if new_body.endswith("\n") else new_body + "\n")
-        _git_commit(touched, f"task #{task_id}: set-body")
+        suffix = f" [source={source}]" if source is not None else ""
+        _git_commit(touched, f"task #{task_id}: set-body{suffix}")
 
 
-def set_title(task_id: int, title: str) -> None:
+def set_title(task_id: int, title: str, *, source: str | None = None) -> None:
     with _locked():
         path = find_task_path(task_id) / "body.md"
         fm, body = _read_body(path)
@@ -455,10 +473,11 @@ def set_title(task_id: int, title: str) -> None:
         reg = _load_registry()
         _registry_set(reg, task_id, path.parent, fm)
         _save_registry(reg)
-        _git_commit([path, REGISTRY_PATH], f"task #{task_id}: set-title — {title[:60]}")
+        suffix = f" [source={source}]" if source is not None else ""
+        _git_commit([path, REGISTRY_PATH], f"task #{task_id}: set-title — {title[:60]}{suffix}")
 
 
-def set_clean_result(task_id: int, value: bool = True) -> None:
+def set_clean_result(task_id: int, value: bool = True, *, source: str | None = None) -> None:
     with _locked():
         path = find_task_path(task_id) / "body.md"
         fm, body = _read_body(path)
@@ -467,10 +486,11 @@ def set_clean_result(task_id: int, value: bool = True) -> None:
         reg = _load_registry()
         _registry_set(reg, task_id, path.parent, fm)
         _save_registry(reg)
-        _git_commit([path, REGISTRY_PATH], f"task #{task_id}: has_clean_result={value}")
+        suffix = f" [source={source}]" if source is not None else ""
+        _git_commit([path, REGISTRY_PATH], f"task #{task_id}: has_clean_result={value}{suffix}")
 
 
-def add_tag(task_id: int, tag: str) -> None:
+def add_tag(task_id: int, tag: str, *, source: str | None = None) -> None:
     with _locked():
         path = find_task_path(task_id) / "body.md"
         fm, body = _read_body(path)
@@ -480,10 +500,11 @@ def add_tag(task_id: int, tag: str) -> None:
         tags.append(tag)
         fm["tags"] = tags
         _write_body(path, fm, body)
-        _git_commit([path], f"task #{task_id}: add-tag {tag}")
+        suffix = f" [source={source}]" if source is not None else ""
+        _git_commit([path], f"task #{task_id}: add-tag {tag}{suffix}")
 
 
-def remove_tag(task_id: int, tag: str) -> None:
+def remove_tag(task_id: int, tag: str, *, source: str | None = None) -> None:
     with _locked():
         path = find_task_path(task_id) / "body.md"
         fm, body = _read_body(path)
@@ -493,13 +514,14 @@ def remove_tag(task_id: int, tag: str) -> None:
         tags.remove(tag)
         fm["tags"] = tags
         _write_body(path, fm, body)
-        _git_commit([path], f"task #{task_id}: remove-tag {tag}")
+        suffix = f" [source={source}]" if source is not None else ""
+        _git_commit([path], f"task #{task_id}: remove-tag {tag}{suffix}")
 
 
 # ─── Plans ──────────────────────────────────────────────────────────────────
 
 
-def new_plan_version(task_id: int, plan_md: str) -> int:
+def new_plan_version(task_id: int, plan_md: str, *, source: str | None = None) -> int:
     """Append plans/v{next}.md, update plans/plan.md symlink. Returns the
     new version number.
     """
@@ -515,14 +537,15 @@ def new_plan_version(task_id: int, plan_md: str) -> int:
         if symlink.is_symlink() or symlink.exists():
             symlink.unlink()
         symlink.symlink_to(target.name)
-        _git_commit([target, symlink], f"task #{task_id}: plan v{next_v}")
+        suffix = f" [source={source}]" if source is not None else ""
+        _git_commit([target, symlink], f"task #{task_id}: plan v{next_v}{suffix}")
     return next_v
 
 
 # ─── Promotion ──────────────────────────────────────────────────────────────
 
 
-def promote(task_id: int, verdict: str) -> Path:
+def promote(task_id: int, verdict: str, *, source: str | None = None) -> Path:
     """User-only: flip a task at awaiting_promotion → completed, record the
     classification in frontmatter, append epm:promoted.
     """
@@ -541,25 +564,22 @@ def promote(task_id: int, verdict: str) -> Path:
         fm["promoted_at"] = _utcnow_iso()
         _write_body(path / "body.md", fm, body)
         # Append event
+        ev: dict[str, Any] = {
+            "ts": _utcnow_iso(),
+            "kind": "epm:promoted",
+            "version": 1,
+            "by": "user",
+            "classification": verdict,
+        }
+        if source is not None:
+            ev["source"] = source
         with (path / "events.jsonl").open("a") as f:
-            f.write(
-                json.dumps(
-                    {
-                        "ts": _utcnow_iso(),
-                        "kind": "epm:promoted",
-                        "version": 1,
-                        "by": "user",
-                        "classification": verdict,
-                    },
-                    ensure_ascii=False,
-                )
-                + "\n"
-            )
+            f.write(json.dumps(ev, ensure_ascii=False) + "\n")
         _git_commit(
             [path / "body.md", path / "events.jsonl"], f"task #{task_id}: promote {verdict}"
         )
     # Then move to completed via set_status (own lock + commit)
-    return set_status(task_id, "completed", note=f"promoted as {verdict}")
+    return set_status(task_id, "completed", note=f"promoted as {verdict}", source=source)
 
 
 # ─── Queries ────────────────────────────────────────────────────────────────

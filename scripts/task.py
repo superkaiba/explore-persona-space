@@ -246,7 +246,7 @@ def _enforce_why_this_experiment_gate(*, kind: str, body: str) -> None:
 
 
 def cmd_set_status(args: argparse.Namespace) -> None:
-    path = set_status(args.number, args.status, note=args.note)
+    path = set_status(args.number, args.status, note=args.note, source=args.source)
     print(str(path.relative_to(path.parents[2])))  # tasks/<status>/<id>
 
 
@@ -257,6 +257,7 @@ def cmd_post_event(args: argparse.Namespace) -> None:
         version=args.version,
         by=args.by,
         note=args.note,
+        source=args.source,
     )
     print(json.dumps(payload, indent=2))
 
@@ -307,38 +308,56 @@ def cmd_set_body(args: argparse.Namespace) -> None:
         new_body = Path(args.file).read_text()
     else:
         new_body = sys.stdin.read()
-    set_body(args.number, new_body, snapshot_original=args.snapshot)
+    set_body(args.number, new_body, snapshot_original=args.snapshot, source=args.source)
     print("ok")
 
 
 def cmd_set_title(args: argparse.Namespace) -> None:
-    set_title(args.number, args.title)
+    set_title(args.number, args.title, source=args.source)
     print("ok")
 
 
 def cmd_set_clean_result(args: argparse.Namespace) -> None:
-    set_clean_result(args.number, value=not args.unset)
+    set_clean_result(args.number, value=not args.unset, source=args.source)
     print("ok")
 
 
 def cmd_add_tag(args: argparse.Namespace) -> None:
-    add_tag(args.number, args.tag)
+    add_tag(args.number, args.tag, source=args.source)
     print("ok")
 
 
 def cmd_remove_tag(args: argparse.Namespace) -> None:
-    remove_tag(args.number, args.tag)
+    remove_tag(args.number, args.tag, source=args.source)
     print("ok")
 
 
 def cmd_promote(args: argparse.Namespace) -> None:
-    new_path = promote(args.number, args.verdict)
+    source = args.source
+    if source is None:
+        # Allow only if attached to a TTY (i.e. a human ran it interactively).
+        if not sys.stdin.isatty():
+            print(
+                "promote is USER-ONLY: pass --source=sagan-user:<id> or --source=cli, "
+                "or run from a tty",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+        source = "cli"
+    elif not (source == "cli" or source.startswith("sagan-user:")):
+        print(
+            f"promote refuses source={source!r}: only 'cli' or 'sagan-user:*' allowed",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    new_path = promote(args.number, args.verdict, source=source)
     print(str(new_path))
 
 
 def cmd_new_plan_version(args: argparse.Namespace) -> None:
     plan_md = Path(args.file).read_text() if args.file else sys.stdin.read()
-    v = new_plan_version(args.number, plan_md)
+    v = new_plan_version(args.number, plan_md, source=args.source)
     rel = f"tasks/<status>/{args.number}/plans/v{v}.md"
     print(f"Plan v{v} written → https://eps.superkaiba.com/tasks/{args.number}/plan")
     print(f"  ({rel})", file=sys.stderr)
@@ -507,6 +526,11 @@ def main() -> None:
     p.add_argument("number", type=int)
     p.add_argument("status", choices=STATUSES)
     p.add_argument("--note", default=None)
+    p.add_argument(
+        "--source",
+        default=None,
+        help="audit-log source, e.g. 'sagan-user:<session-id>', 'cli', 'agent:<name>'",
+    )
     p.set_defaults(func=cmd_set_status)
 
     for name in ("post-marker", "post-event"):
@@ -516,6 +540,11 @@ def main() -> None:
         p.add_argument("--note", default=None)
         p.add_argument("--version", type=int, default=1)
         p.add_argument("--by", default="unknown")
+        p.add_argument(
+            "--source",
+            default=None,
+            help="audit-log source, e.g. 'sagan-user:<session-id>', 'cli', 'agent:<name>'",
+        )
         p.set_defaults(func=cmd_post_event)
 
     p = sub.add_parser("list-by-status", help="list tasks in a status (or all)")
@@ -559,11 +588,21 @@ def main() -> None:
     p.add_argument(
         "--snapshot", action="store_true", help="save current body to original-body.md first"
     )
+    p.add_argument(
+        "--source",
+        default=None,
+        help="audit-log source, e.g. 'sagan-user:<session-id>', 'cli', 'agent:<name>'",
+    )
     p.set_defaults(func=cmd_set_body)
 
     p = sub.add_parser("set-title", help="update task title (frontmatter)")
     p.add_argument("number", type=int)
     p.add_argument("title")
+    p.add_argument(
+        "--source",
+        default=None,
+        help="audit-log source, e.g. 'sagan-user:<session-id>', 'cli', 'agent:<name>'",
+    )
     p.set_defaults(func=cmd_set_title)
 
     p = sub.add_parser(
@@ -571,26 +610,54 @@ def main() -> None:
     )
     p.add_argument("number", type=int)
     p.add_argument("--unset", action="store_true")
+    p.add_argument(
+        "--source",
+        default=None,
+        help="audit-log source, e.g. 'sagan-user:<session-id>', 'cli', 'agent:<name>'",
+    )
     p.set_defaults(func=cmd_set_clean_result)
 
     p = sub.add_parser("add-tag", help="add a tag to frontmatter")
     p.add_argument("number", type=int)
     p.add_argument("tag")
+    p.add_argument(
+        "--source",
+        default=None,
+        help="audit-log source, e.g. 'sagan-user:<session-id>', 'cli', 'agent:<name>'",
+    )
     p.set_defaults(func=cmd_add_tag)
 
     p = sub.add_parser("remove-tag", help="remove a tag from frontmatter")
     p.add_argument("number", type=int)
     p.add_argument("tag")
+    p.add_argument(
+        "--source",
+        default=None,
+        help="audit-log source, e.g. 'sagan-user:<session-id>', 'cli', 'agent:<name>'",
+    )
     p.set_defaults(func=cmd_remove_tag)
 
     p = sub.add_parser("promote", help="USER-ONLY: awaiting_promotion → completed")
     p.add_argument("number", type=int)
     p.add_argument("verdict", choices=["useful", "not-useful"])
+    p.add_argument(
+        "--source",
+        default=None,
+        help=(
+            "audit-log source; must be 'cli' or 'sagan-user:<session-id>'. "
+            "Required when stdin is not a tty."
+        ),
+    )
     p.set_defaults(func=cmd_promote)
 
     p = sub.add_parser("new-plan-version", help="append plans/v{next}.md")
     p.add_argument("number", type=int)
     p.add_argument("--file", default=None, help="path to plan markdown (else stdin)")
+    p.add_argument(
+        "--source",
+        default=None,
+        help="audit-log source, e.g. 'sagan-user:<session-id>', 'cli', 'agent:<name>'",
+    )
     p.set_defaults(func=cmd_new_plan_version)
 
     p = sub.add_parser("find", help="print absolute path of task N's folder")

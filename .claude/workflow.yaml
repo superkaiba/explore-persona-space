@@ -385,6 +385,10 @@ gates:
         does NOT use AskUserQuestion here — it posts the dashboard link and
         exits cleanly. Awaiting promotion is user-only: no automation may
         flip `runs.classification` without explicit user invocation.
+      valid_sources:
+        - "cli"            # interactive terminal invocation (stdin isatty or --source=cli)
+        - "sagan-user:*"   # human action through Sagan dashboard
+        # Agent / automated sources are explicitly rejected by cmd_promote in scripts/task.py.
   conditional:
     - id: 8
       name: tdd_gate

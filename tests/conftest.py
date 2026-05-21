@@ -55,3 +55,55 @@ def registered_task(tmp_repo: Path):
     # Output is "#N\n"
     task_n = int(result.stdout.strip().lstrip("#"))
     return task_n
+
+
+@pytest.fixture
+def awaiting_promotion_task(tmp_repo: Path):
+    """Create a task at `awaiting_promotion` status in `tmp_repo`.
+
+    Creates an analysis task (no Why-this-experiment gate) in `proposed`
+    status, then advances it to `awaiting_promotion` via set-status.
+
+    Git commits ARE allowed here (TASK_PY_NO_COMMIT is NOT set) because
+    ``set_status`` uses ``git mv`` which requires the task folder to be
+    tracked in git. The tmp_repo fixture already provides a valid git repo.
+
+    Returns the task number.
+    """
+    env = {**os.environ, "TASK_PY_REPO_ROOT": str(tmp_repo)}
+    repo_root = str(Path(__file__).resolve().parents[1])
+
+    # Create a proposed analysis task (analysis skips the why-experiment gate).
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/task.py",
+            "new",
+            "--kind=analysis",
+            "--title=Test task for promote gate",
+        ],
+        cwd=repo_root,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    task_n = int(result.stdout.strip().lstrip("#"))
+
+    # Advance directly to awaiting_promotion (skips intermediate statuses;
+    # set-status allows any transition in the local workflow).
+    subprocess.run(
+        [
+            sys.executable,
+            "scripts/task.py",
+            "set-status",
+            str(task_n),
+            "awaiting_promotion",
+        ],
+        cwd=repo_root,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return task_n
