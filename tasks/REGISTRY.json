@@ -1626,7 +1626,7 @@
       "title": "Persona-style rationale does not reduce answer uncertainty below generic rationale after answer-cue filtering (HIGH confidence)"
     },
     "356": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/356",
       "status": "interpreting",
