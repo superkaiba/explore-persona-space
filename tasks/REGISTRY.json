@@ -1698,8 +1698,8 @@
     "365": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/365",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/365",
+      "status": "awaiting_promotion",
       "title": "Best [ZLT] training recipes produced broad marker firing rather than source-specific implantation (LOW confidence)"
     },
     "366": {
