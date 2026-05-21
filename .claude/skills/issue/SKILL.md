@@ -984,91 +984,129 @@ uv run python scripts/post_step_completed.py --issue <N> --step 6c \
 ```
 EXIT. User fixes, re-runs.
 
-#### Step 6d: Dispatch experimenter
+#### Step 6d: Dispatch experimenter (launch-only), then orchestrator polling loop
 
-Spawn `experimenter` subagent via `Agent()`. The experimenter's scope is
-**pod ops + monitoring + debugging only** — it does NOT write substantial
-code (hot-fixes <=10 lines, no logic changes; see the experimenter
-agent definition).
+The experimenter agent is **launch-and-exit only** — it syncs the pod,
+preflights, launches the job via `nohup`, posts `epm:run-launched`, and
+exits its turn within ~60 seconds. The orchestrator (this skill) owns
+all subsequent monitoring via a bg-Bash polling loop chained through
+`scripts/poll_pipeline.py`. This split is mandatory: subagents have ONE
+turn and are NOT auto-re-invoked when bg work completes, whereas the
+orchestrator IS auto-re-invoked on every bg-Bash exit (see `CLAUDE.md`
+§ "Subagent vs orchestrator re-invocation semantics").
 
-Brief passed to experimenter:
+##### Step 6d.1: Spawn experimenter for launch
+
+Spawn `experimenter` subagent via `Agent()`. Brief:
 - The plan path (the `plans/plan.md` symlink) + the code-reviewed
   branch (`issue-<N>`)
 - Pod name (`epm-issue-<N>` or parent's)
 - The exact `nohup` launch command from the plan's Reproducibility Card
-- Progressive monitoring schedule (per the experimenter agent definition)
-- **Long-wait sleep-chain instruction** (MANDATORY). The brief MUST state
-  that the agent stays alive between probes by chaining
-  `Bash(command="sleep 600", timeout=600000)` calls (Bash tool caps at
-  10min per call; chain 2-3 to reach a 20-25min probe interval). Be
-  explicit that the agent must NOT exit voluntarily expecting auto-
-  re-invocation — subagents that exit are GONE until the orchestrator
-  spawns a fresh one. Also state a wall-time cap (e.g., 4h) after which
-  the agent posts one summary `epm:progress` and exits cleanly; the
-  orchestrator's safety-net wakeup picks up from there. (See the
-  experimenter agent's "Progressive monitoring schedule" section for
-  the canonical pattern.)
-
-  **Empirical reality:** experimenter spawns typically exit after 1-3
-  sleep cycles regardless of instructions (LLM hallucinated-callback
-  reasoning is hard to suppress). The orchestrator MUST schedule
-  `ScheduleWakeup` cadence at the actual reliability layer — every
-  30-60 min during the workload phase — so a fresh experimenter is
-  re-spawned when the prior one exits early. Don't rely on a single
-  long-lived experimenter to cover the full multi-hour run.
-- Required `report-back` fields (artifacts, WandB URL, HF Hub path,
-  deviations, hot-fix log)
+- Required: post `epm:run-launched` with `pod=<name> pid=<pid>
+  log=<path> cmd='<dispatch>'` in the note, then EXIT cleanly within
+  60 seconds
+- Explicit: do NOT sleep-chain, do NOT monitor — the orchestrator polls
+  the run
 
 **NEVER include pod lifecycle commands (provision, stop, resume,
-terminate, cleanup) in the experimenter brief.** The experimenter agent
-spec explicitly forbids pod lifecycle management. Pod termination
+terminate, cleanup) in the experimenter brief.** Pod termination
 happens automatically in Step 8 (after upload-verification PASS).
-Including `pod.py terminate` or `pod.py stop` in the experimenter's
-instructions bypasses the upload-verification gate and risks premature
-destruction of artifacts that haven't been confirmed at permanent URLs.
+**NEVER include progressive monitoring instructions** in the brief —
+those are obsolete (see the deprecated memory
+`feedback_subagent_sleep_chain.md`).
+
+Wait for the experimenter to return. The return must include the
+`epm:run-launched` marker (parse it for `pod`, `pid`, `log` —
+those are the polling-loop inputs). If the experimenter posted
+`epm:failure v1` instead (launch-time crash), skip the polling loop
+and proceed to Step 7's failure-classification routing.
 
 Post `epm:launch v1` containing:
 - Worktree path, branch, PR URL, code-review verdict (`PASS`)
 - Pod + PID + log path
-- WandB run URL (best-effort; experimenter updates if not known yet)
-- Experimenter subagent ID (for monitoring)
+- WandB run URL (best-effort)
 
-**Spawn the §2 stall-detection watchdog (detached, on the local VM, NOT
-the pod).** After the experimenter is launched and `epm:launch` is
-posted, spawn:
-```bash
-uv run python scripts/pod.py watch --issue <N> --wandb-run-url <URL> \
-  --log-path <server>:<path>
-```
-as a detached background process. Pid file written to
-`.claude/cache/watch-<N>.pid` (the watchdog cleans it up on exit). The
-watchdog probes WandB heartbeat + log-mtime every 60s; on >5min silence
-it posts `epm:failure` with `failure_class: infra` and `reason: stall`,
-flips the status to `blocked`, and exits.
+##### Step 6d.2: Orchestrator polling loop (bg-Bash chained)
 
-Status stays at `running`. Before exiting, post the §5 marker:
-```bash
-uv run python scripts/post_step_completed.py --issue <N> --step 6d \
-  --exit-kind clean --notes "experimenter dispatched; watchdog spawned"
+Enter a polling loop that runs in THIS orchestrator's context. Each tick
+is a single bg-Bash call that sleeps then runs `poll_pipeline.py` once;
+the harness re-invokes the orchestrator when the bg-Bash exits, which
+is when one tick has completed:
+
+```python
+while True:
+    Bash(
+        run_in_background=True,
+        command=(
+            f"sleep 540 && uv run python scripts/poll_pipeline.py "
+            f"--issue {N} --pod {pod} --log {log_path} --pid-file {pid_file}"
+        ),
+    )
+    # Harness re-invokes orchestrator on bg-Bash exit. Read the JSON
+    # line from stdout (the LAST line of the bg-Bash output) and decide:
+    #
+    #   status == "done"           -> exit loop; transition to status:uploading; go to Step 7.
+    #   status == "stalled" | "dead" -> post epm:failure v1 with failure_class
+    #                                   inferred from log_tail_excerpt
+    #                                   (run scripts/failure_classifier.py on
+    #                                   the excerpt); set status:blocked; exit.
+    #   status == "running"        -> milestone-already-posted by the poller
+    #                                  if new_milestone was true; loop again.
 ```
-EXIT. Experimenter runs autonomously. The experimenter posts
-`epm:progress`, `epm:hot-fix` (if needed), and finally `epm:results`.
-The watchdog stops itself when `epm:results` is observed, the status
-moves out of `running`, or its pid file is deleted.
+
+The `poll_pipeline.py` helper posts `epm:progress` events itself when it
+sees a phase transition, so the orchestrator does NOT need to post
+progress on every tick. The orchestrator's only post-tick duties are:
+exit the loop on `status=done`, and post `epm:failure v1` on
+`status=stalled` or `status=dead`.
+
+The 540-second sleep stays under the Bash tool's 10-minute (`600000` ms)
+cap with margin; longer intervals are achievable by raising the sleep
+within the cap, but 9 minutes is the operational sweet spot (enough
+time to make progress, short enough to catch stalls quickly).
+
+##### Step 6d.3: On `status=done`
+
+Transition the task to `verifying` (the upload-verifier next):
+```bash
+uv run python scripts/task.py set-status <N> verifying \
+    --note "polling loop observed phase=done"
+```
+
+Then proceed to Step 7 (which handles results → upload routing).
+
+##### Notes on the obsolete monitoring stack
+
+The `experimenter` agent NO LONGER monitors the run. The
+`scripts/pod_watch.py` watchdog (referenced in older revisions of this
+skill) is retained for manual / debug use but is NOT spawned by Step 6d
+anymore — the orchestrator's polling loop subsumes stall detection.
+The "Progressive monitoring schedule" table that previously appeared
+in the experimenter agent spec has been removed.
+
+Status stays at `running` throughout the polling loop. The polling
+loop's terminal transitions are `running → verifying` (on done) or
+`running → blocked` (on stalled/dead).
 
 ### Step 7: Monitor -> results
 
-Experimenter is expected to post `epm:progress v1` events at major
-milestones, optional `epm:hot-fix v<n>` events for in-line fixes
-(<=10 lines, no logic change — see the experimenter agent definition),
-and a final `epm:results v1` event containing:
-- Final eval numbers (inline JSON snippet + path in repo)
-- Reproducibility card (filled)
-- WandB URL + HF Hub model/adapter URL
-- Worktree path + final commit hash
-- GPU-hours actually used vs budgeted
-- Plan deviations + rationale
-- Hot-fix log (commits + diffs applied during the run)
+Under the new orchestrator-owned polling model (Step 6d.2), three event
+sources contribute to `running`-phase progress:
+
+- **Experimenter (subagent, single turn at launch)**: posts
+  `epm:run-launched` once and exits.
+- **`poll_pipeline.py` (run by the orchestrator's bg-Bash loop)**: posts
+  `epm:progress` on each phase transition observed in the pod log.
+- **Entry script on the pod**: writes `[phase=done]` to its log on
+  graceful completion AND writes a final `epm:results v1` event payload
+  (via `task.py post-marker` shelled from the pod, OR equivalently from
+  the orchestrator's polling-loop terminal tick) containing:
+  - Final eval numbers (inline JSON snippet + path in repo)
+  - Reproducibility card (filled)
+  - WandB URL + HF Hub model/adapter URL
+  - Worktree path + final commit hash
+  - GPU-hours actually used vs budgeted
+  - Plan deviations + rationale
 
 When this skill is re-invoked in `running`:
 

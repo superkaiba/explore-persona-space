@@ -116,6 +116,17 @@
   FAIL-with-`needs-user`, upload-verifier FAIL. Full action map in
   (see workflow.yaml § subagent_halt_conditions).
 
+- **Subagent vs orchestrator re-invocation semantics.** Subagents have ONE turn:
+  they are NOT auto-re-invoked when a bg `Bash` finishes, when a `Monitor`
+  stream produces an event, or when any external state changes. The harness
+  re-invokes the ORCHESTRATOR (parent assistant) on each bg `Bash` exit when
+  the call was made with `run_in_background=true`. Therefore: ANY wait longer
+  than ~5 minutes belongs to the orchestrator's bg-Bash polling loop (see
+  `scripts/poll_pipeline.py`), NOT a subagent sleep-chain. Subagents are
+  for bounded, in-context work: launch + confirm, write patch + commit,
+  run check + report. The `experimenter` agent is the canonical example:
+  it launches and exits within 60 seconds; the orchestrator polls the run.
+
 - **Codex ensemble review.** Four review steps (`critic`, `code-reviewer`,
   `interpretation-critic`, `reviewer`) run a Claude reviewer AND a Codex
   twin (OpenAI gpt-5.5 via the `openai/codex-plugin-cc` plugin's
