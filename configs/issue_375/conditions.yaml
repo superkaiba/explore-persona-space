@@ -14,12 +14,23 @@
 #   - wrong-persona controls (4):  W1..W4 (one per strict-test adapter)
 #   - base-model controls (3):     B1..B3
 #   - pool-bias sensitivity (1):   P1 (villain_C1 + random-bucket pool)
-# Total: 53 cells. Generations per cell = 200 queries × n=10 = 2000.
-# Total generations = 53 × 2000 = 106,000 (NOT the stale 116,000).
+# Total: 53 cells. Generations per cell = 184 queries × n=10 = 1840.
+# Total generations = 53 × 1840 = 97,520.
+#
+# Round-3 patch (2026-05-21): the round-2 M-6 BLOCKER tightened the LMSYS
+# query filter — only 164 of the 600 docs in lmsys_tail_full.jsonl pass the
+# new `text must END in '?' / ≤80 words / no transcript markers` rules.
+# Held-out set shrinks from the planned 200 → 184 per cell (20 EVAL + 164
+# LMSYS); accepting this 8% reduction is cheaper than loosening the filter
+# (which would re-admit transcript fragments and contaminate the eval) or
+# expanding the corpus (substantial data-staging work). Total generations
+# drop from 106,000 → 97,520. The analyzer write-up flags the deviation.
 #
 # Pilot (--phase pilot or pre-flight of --phase all):
 #   exactly 200 generations (20 queries × n=10) on villain_C1_persona-style_k3,
-#   projected_full_sweep_hours compared against the 14h budget.
+#   projected_full_sweep_hours compared against the 14h budget. The pilot
+#   slices held-out to the first 20 queries, so the 200→184 corpus shrink
+#   does NOT affect the pilot — only the full-sweep total.
 #
 # See plan.md §4.7 for the cell matrix.
 
@@ -46,9 +57,9 @@ vllm:
 
 # Held-out queries.
 held_out:
-  total: 200
+  total: 184                       # round-3: 200 → 184 after M-6 filter shrinkage
   eval_questions_count: 20         # 20 v3 EVAL_QUESTIONS (constant)
-  lmsys_tail_count: 180            # 180 from axis_projection_v2/lmsys_tail_full.jsonl
+  lmsys_tail_count: 164            # round-3: 180 → 164 (exact count accepted by M-6 filter from the 600-doc corpus; see header comment)
   lmsys_tail_path: eval_results/axis_projection_v2/lmsys_tail_full.jsonl
   base_floor_threshold: 0.01       # < 1% sanity floor on base model
 

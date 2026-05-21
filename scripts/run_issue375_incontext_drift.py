@@ -279,18 +279,38 @@ def phase_build_queries(cfg: dict, *, force: bool = False) -> Path:
         raise FileNotFoundError(f"build-queries: lmsys_tail_full.jsonl missing at {lmsys_path}")
 
     lmsys_queries, lmsys_rejected = _extract_lmsys_queries(lmsys_path, want=lmsys_q_n)
+
+    # Round-3 patch: write the audit JSON BEFORE any shortfall raise so that
+    # future "filter too strict" diagnoses have inspection material on disk.
+    # Previously the audit was only written on the success path, which meant
+    # the very crash that needed the audit also prevented its creation.
+    out.parent.mkdir(parents=True, exist_ok=True)
+    audit_path = out.parent / "lmsys_query_audit.json"
+    audit_payload = {
+        "lmsys_path": str(lmsys_path),
+        "n_requested": lmsys_q_n,
+        "n_accepted": len(lmsys_queries),
+        "n_rejected_sampled": len(lmsys_rejected),
+        "shortfall": max(0, lmsys_q_n - len(lmsys_queries)),
+        "accepted_preview": [
+            {"lmsys_doc_id": q["lmsys_doc_id"], "text": q["text"]} for q in lmsys_queries[:20]
+        ],
+        "rejected_sample": lmsys_rejected,
+    }
+    audit_path.write_text(json.dumps(audit_payload, indent=2, ensure_ascii=False))
+    log.info("wrote LMSYS query audit to %s", audit_path)
+
     if len(lmsys_queries) < lmsys_q_n:
         raise RuntimeError(
             f"build-queries: extracted only {len(lmsys_queries)} LMSYS-tail queries out of "
             f"requested {lmsys_q_n}. The round-2 tightened filter (text must END in '?', "
             f"≤ 80 words, no transcript markers) may be too strict for this corpus. "
-            f"Inspect the rejection audit at data/issue_375/lmsys_query_audit.json and "
-            f"either loosen the filter (carefully) or reduce lmsys_tail_count in "
-            f"conditions.yaml."
+            f"Inspect the rejection audit at {audit_path} and either loosen the filter "
+            f"(carefully) or reduce lmsys_tail_count in conditions.yaml to "
+            f"{len(lmsys_queries)} (and update `held_out.total` accordingly)."
         )
     lmsys_queries = lmsys_queries[:lmsys_q_n]
 
-    out.parent.mkdir(parents=True, exist_ok=True)
     next_id = 0
     with open(out, "w") as f:
         for q in EVAL_QUESTIONS[:eval_q_n]:
@@ -302,20 +322,6 @@ def phase_build_queries(cfg: dict, *, force: bool = False) -> Path:
             f.write(json.dumps(q, ensure_ascii=False) + "\n")
             next_id += 1
     log.info("wrote %d queries to %s", next_id, out)
-
-    # Audit JSON (round-2 BLOCKER M-6)
-    audit_path = out.parent / "lmsys_query_audit.json"
-    audit_payload = {
-        "lmsys_path": str(lmsys_path),
-        "n_accepted": len(lmsys_queries),
-        "n_rejected_sampled": len(lmsys_rejected),
-        "accepted_preview": [
-            {"lmsys_doc_id": q["lmsys_doc_id"], "text": q["text"]} for q in lmsys_queries[:20]
-        ],
-        "rejected_sample": lmsys_rejected,
-    }
-    audit_path.write_text(json.dumps(audit_payload, indent=2, ensure_ascii=False))
-    log.info("wrote LMSYS query audit to %s", audit_path)
     return out
 
 
@@ -1550,14 +1556,19 @@ PHASES = (
 
 
 def _run_smoke_test(config_path: str) -> int:
-    """Round-2 review: extended smoke test covering 4 of the 5 round-2 fixes.
+    """Round-2 review: extended smoke test covering 4 of the 5 round-2 fixes,
+    plus round-3 corpus-wide accepted-count guard.
 
     No GPU work. Verifies:
-      (a) M-2: projected-generations match the executable matrix (= 106k).
+      (a) M-2: projected-generations match the executable matrix (round-3: 97,520).
       (b) M-1: base-cell labels re-template with --seed override.
       (c) M-6: LMSYS query filter rejects transcript-style garbage.
       (d) C-1: neutral-pool round-trip groups by selection_persona (no
           cross-persona leakage even when one persona's examples drop).
+      (e) round-3: the M-6 filter accepts at least `lmsys_tail_count` docs from
+          the configured corpus — catches the same shortfall class that
+          crashed phase_build_queries in round-2 when only 164 of 600 passed
+          while the config wanted 180.
     """
     import importlib
     import tempfile
@@ -1591,9 +1602,12 @@ def _run_smoke_test(config_path: str) -> int:
     log.info("secondary adapters (n=%d): %s", len(secondary), secondary)
 
     # (a) M-2: total generations match the executable matrix.
+    # Round-3: per-cell gens = 184 queries (20 EVAL + 164 LMSYS) x n=10 = 1840.
+    # 9 adapters x 5 core cells + 4 wrong-persona + 1 pool-bias + 3 base = 53 cells.
+    # Total = 53 x 1840 = 97,520 (was 106,000 in round-2).
     proj = _expected_full_sweep_generations(cfg)
     log.info("smoke test: expected full-sweep generations = %d", proj)
-    expected = 9 * 5 * 2000 + 4 * 2000 + 1 * 2000 + 3 * 2000
+    expected = 9 * 5 * 1840 + 4 * 1840 + 1 * 1840 + 3 * 1840
     assert proj == expected, f"smoke test M-2: expected {expected}, got {proj}"
 
     # (b) M-1: base-cell ids re-template with --seed override.
@@ -1665,7 +1679,40 @@ def _run_smoke_test(config_path: str) -> int:
                 f"smoke test C-1: {p} pool size {len(groups[p])} != 5 "
                 f"(integer-slice leakage would yield wrong size)"
             )
-    log.info("smoke test ALL ADDITIONAL CHECKS PASS (M-1/M-2/M-6/C-1)")
+
+    # (e) Round-3 corpus-wide accepted-count guard. Round-2 shipped a tightened
+    # M-6 filter, but the unit-test smoke ran only single-string accept/reject
+    # cases — it never confirmed the corpus had enough docs to fill
+    # lmsys_tail_count. The pipeline crashed in phase_build_queries because
+    # only 164 of 600 docs passed while the config wanted 180. This assertion
+    # prevents the same shortfall regression by sweeping the configured
+    # corpus end-to-end.
+    lmsys_path = PROJECT_ROOT / cfg["held_out"]["lmsys_tail_path"]
+    lmsys_q_n = int(cfg["held_out"]["lmsys_tail_count"])
+    if lmsys_path.exists():
+        # Oversample (want huge) so the extractor scans the whole corpus.
+        accepted, _rejected = _extract_lmsys_queries(lmsys_path, want=10_000)
+        log.info(
+            "smoke test (e): corpus=%s accepted=%d lmsys_tail_count=%d",
+            lmsys_path.name,
+            len(accepted),
+            lmsys_q_n,
+        )
+        assert len(accepted) >= lmsys_q_n, (
+            f"smoke test round-3: M-6 filter accepts only {len(accepted)} docs "
+            f"from {lmsys_path}, but lmsys_tail_count={lmsys_q_n}. "
+            f"phase_build_queries will crash. Reduce lmsys_tail_count to "
+            f"{len(accepted)} (and update held_out.total accordingly), OR "
+            f"expand the corpus, OR loosen the M-6 filter."
+        )
+    else:
+        log.warning(
+            "smoke test (e) SKIP — LMSYS corpus not found at %s (expected when "
+            "running smoke on a fresh checkout before sync)",
+            lmsys_path,
+        )
+
+    log.info("smoke test ALL ADDITIONAL CHECKS PASS (M-1/M-2/M-6/C-1/round-3 corpus guard)")
     return 0
 
 
