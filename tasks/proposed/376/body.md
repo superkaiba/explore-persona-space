@@ -2,6 +2,7 @@
 title: '[Proposed] Conditional marker into Assistant, EM, compare marker fire-rate
   against non-EM baseline'
 kind: experiment
+application: detect
 tags: []
 created_at: '2026-05-21T11:19:35Z'
 has_clean_result: false
