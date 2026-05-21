@@ -100,42 +100,103 @@ def phase_persona_directions(cfg: dict, *, force: bool = False) -> Path:
 # ────────────────────────────────────────────────────────────────────────────
 
 
-def _extract_lmsys_queries(jsonl_path: Path, want: int) -> list[dict]:
+_LMSYS_TRANSCRIPT_MARKERS = (
+    # Multi-turn / system-trace artifacts from LMSYS conversations:
+    "name_1",
+    "name_2",
+    "name_3",
+    "user_1",
+    "user_2",
+    "user:",
+    "assistant:",
+    "system:",
+    "###",
+    "*star*",
+    "star hi,",
+    "worthy name",
+    "have you with heed",
+    "[your answer]",
+    "[your response]",
+    "[insert",
+)
+
+
+def _is_clean_question(text: str) -> tuple[bool, str]:
+    """Return ``(accepted, reason_if_rejected)`` for a candidate LMSYS query.
+
+    Acceptance contract (round-2 review BLOCKER M-6; tightened from the
+    round-1 wide first-paragraph filter that admitted transcript fragments
+    like ``"star Hi,welcome star I need your name..."`` and
+    ``"But, worthy NAME_1, have you with heed perused..."``):
+
+    1. Must end in ``?`` after stripping trailing whitespace.
+    2. 10 < len ≤ 500 chars (single question, not a paragraph).
+    3. ≤ 80 words (rejects walls-of-text).
+    4. No transcript markers (see ``_LMSYS_TRANSCRIPT_MARKERS``).
+    5. ``?`` count ≤ 3 (a true single-question query). Lots of ``?`` =
+       multi-turn paste.
+    6. Must contain ≥ 1 ASCII letter (no all-numeric / all-symbol noise).
+    """
+    text = text.strip()
+    if not text.endswith("?"):
+        return False, "no_trailing_question_mark"
+    if not (10 < len(text) <= 500):
+        return False, f"len_out_of_range:{len(text)}"
+    words = text.split()
+    if len(words) > 80:
+        return False, f"too_many_words:{len(words)}"
+    lower = text.lower()
+    for marker in _LMSYS_TRANSCRIPT_MARKERS:
+        if marker in lower:
+            return False, f"transcript_marker:{marker!r}"
+    if text.count("?") > 3:
+        return False, f"too_many_questions:{text.count('?')}"
+    if not any(c.isalpha() for c in text):
+        return False, "no_letters"
+    return True, ""
+
+
+def _extract_lmsys_queries(jsonl_path: Path, want: int) -> tuple[list[dict], list[dict]]:
     """Pull ``want`` short benign question-shaped queries from
     ``lmsys_tail_full.jsonl``.
 
-    Strategy (plan §4.5 step 2 widened per the methodology-critic feedback in
-    the implementer brief: the strict ``token_count < 100 and ?$`` filter only
-    yields ~9 LMSYS docs, so the filter is relaxed to maximize n while keeping
-    queries unambiguously question-shaped):
+    Strategy (plan §4.5 step 2 + round-2 review BLOCKER M-6: filter is
+    tightened so the accepted text must END in ``?``, reject transcript
+    markers (``NAME_1``, ``USER:``, etc.), 10 < len ≤ 500, ≤ 80 words,
+    ≤ 3 ``?`` chars total, contain ≥ 1 letter):
 
-    1. Try ``full_text.split('\\n\\n', 1)[0]`` (first paragraph). If it
-       contains ``?`` and 5 < len < 800, accept it.
-    2. Otherwise, find the FIRST occurrence of ``?`` in ``full_text``; back
-       up to the start of that sentence (rfind any of ``.!?``); accept the
-       sentence if 5 < len < 800.
+    1. Try ``full_text.split('\\n\\n', 1)[0]`` (first paragraph). Accept iff
+       :func:`_is_clean_question` passes.
+    2. Otherwise, find the FIRST ``?`` in ``full_text`` within the first 600
+       chars; back up to the start of that sentence (rfind any of ``.!?``);
+       accept the sentence iff :func:`_is_clean_question` passes.
     3. Stop once we have ``want`` queries. Dedupe by lower-stripped text.
 
-    Returns a list of ``{"id": int, "text": str, "source": "lmsys_tail",
-    "lmsys_doc_id": int}`` dicts.
+    Returns ``(accepted, rejected_audit)``. ``accepted`` is the usual list
+    of query dicts. ``rejected_audit`` carries a sample (≤ 200) of rejected
+    docs with their reject reason for the audit JSON.
     """
     queries: list[dict] = []
+    rejected_audit: list[dict] = []
     seen: set[str] = set()
-    max_len_first_para = 800
-    max_len_sentence = 800
     max_idx_for_first_question = 600
+    n_seen = 0
+    audit_cap = 200
     with open(jsonl_path) as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
             d = json.loads(line)
+            n_seen += 1
             full = d.get("full_text", "") or ""
 
-            # Strategy 1
+            # Strategy 1: first paragraph
             first_para = full.split("\n\n", 1)[0].strip()
-            text = None
-            if "?" in first_para and 5 < len(first_para) < max_len_first_para:
+            text: str | None = None
+            reason = "no_question_found"
+            ok, why = _is_clean_question(first_para)
+            if ok:
                 text = first_para
             else:
                 # Strategy 2: first sentence ending in ?
@@ -148,10 +209,23 @@ def _extract_lmsys_queries(jsonl_path: Path, want: int) -> list[dict]:
                             starts.append(pos + 1)
                     start = max([0, *starts])
                     cand = full[start : idx + 1].strip()
-                    if 5 < len(cand) < max_len_sentence:
+                    ok2, why2 = _is_clean_question(cand)
+                    if ok2:
                         text = cand
+                    else:
+                        reason = f"sentence_filter:{why2}"
+                else:
+                    reason = f"firstpara_filter:{why}"
 
             if text is None:
+                if len(rejected_audit) < audit_cap:
+                    rejected_audit.append(
+                        {
+                            "lmsys_doc_id": int(d.get("doc_id", -1)),
+                            "reason": reason,
+                            "preview": full[:200],
+                        }
+                    )
                 continue
             key = text.lower().strip()
             if key in seen:
@@ -167,7 +241,13 @@ def _extract_lmsys_queries(jsonl_path: Path, want: int) -> list[dict]:
             )
             if len(queries) >= want:
                 break
-    return queries
+    log.info(
+        "LMSYS query extraction: scanned=%d accepted=%d rejected_sampled=%d",
+        n_seen,
+        len(queries),
+        len(rejected_audit),
+    )
+    return queries, rejected_audit
 
 
 def phase_build_queries(cfg: dict, *, force: bool = False) -> Path:
@@ -198,12 +278,15 @@ def phase_build_queries(cfg: dict, *, force: bool = False) -> Path:
     if not lmsys_path.exists():
         raise FileNotFoundError(f"build-queries: lmsys_tail_full.jsonl missing at {lmsys_path}")
 
-    lmsys_queries = _extract_lmsys_queries(lmsys_path, want=lmsys_q_n)
+    lmsys_queries, lmsys_rejected = _extract_lmsys_queries(lmsys_path, want=lmsys_q_n)
     if len(lmsys_queries) < lmsys_q_n:
         raise RuntimeError(
             f"build-queries: extracted only {len(lmsys_queries)} LMSYS-tail queries out of "
-            f"requested {lmsys_q_n}. Widen the filter in _extract_lmsys_queries or reduce the "
-            f"target count in conditions.yaml."
+            f"requested {lmsys_q_n}. The round-2 tightened filter (text must END in '?', "
+            f"≤ 80 words, no transcript markers) may be too strict for this corpus. "
+            f"Inspect the rejection audit at data/issue_375/lmsys_query_audit.json and "
+            f"either loosen the filter (carefully) or reduce lmsys_tail_count in "
+            f"conditions.yaml."
         )
     lmsys_queries = lmsys_queries[:lmsys_q_n]
 
@@ -219,6 +302,20 @@ def phase_build_queries(cfg: dict, *, force: bool = False) -> Path:
             f.write(json.dumps(q, ensure_ascii=False) + "\n")
             next_id += 1
     log.info("wrote %d queries to %s", next_id, out)
+
+    # Audit JSON (round-2 BLOCKER M-6)
+    audit_path = out.parent / "lmsys_query_audit.json"
+    audit_payload = {
+        "lmsys_path": str(lmsys_path),
+        "n_accepted": len(lmsys_queries),
+        "n_rejected_sampled": len(lmsys_rejected),
+        "accepted_preview": [
+            {"lmsys_doc_id": q["lmsys_doc_id"], "text": q["text"]} for q in lmsys_queries[:20]
+        ],
+        "rejected_sample": lmsys_rejected,
+    }
+    audit_path.write_text(json.dumps(audit_payload, indent=2, ensure_ascii=False))
+    log.info("wrote LMSYS query audit to %s", audit_path)
     return out
 
 
@@ -245,17 +342,19 @@ def load_held_out_queries(cfg: dict) -> list:
 # ────────────────────────────────────────────────────────────────────────────
 
 
-def phase_build_pools(cfg: dict, *, force: bool = False) -> dict:
+def phase_build_pools(cfg: dict, *, force: bool = False, degraded_pool_ok: bool = False) -> dict:
     """Build persona-style, neutral, and random-bucket-persona-style pools."""
     from transformers import AutoTokenizer
     from vllm import LLM
 
     from explore_persona_space.experiments.issue_375.example_pool import (
         Example,
+        assert_pool_size_meets_k,
         build_pool_meta,
         filter_zlt_contamination,
         generate_assistant_turns,
         load_candidate_docs,
+        pool_overlap_stats,
         random_bucket_subset,
         save_pool_jsonl,
         score_docs_against_directions,
@@ -330,6 +429,19 @@ def phase_build_pools(cfg: dict, *, force: bool = False) -> dict:
     )
     rand_picks = select_top_k_per_persona(rand_docs, rand_scores, ["villain"], k=k_per)
 
+    # M-7: fail loud if any persona's top-K returned fewer than k_per_persona.
+    # The contamination filter further trims a few examples below, so we ALSO
+    # re-assert after that. Both gates respect `--degraded-pool-ok`.
+    persona_pre_sizes = assert_pool_size_meets_k(
+        persona_picks, k_per, pool_kind="persona-style", degraded_ok=degraded_pool_ok
+    )
+    neutral_pre_sizes = assert_pool_size_meets_k(
+        neutral_picks, k_per, pool_kind="neutral", degraded_ok=degraded_pool_ok
+    )
+    rand_pre_sizes = assert_pool_size_meets_k(
+        rand_picks, k_per, pool_kind="persona-style-random-bucket", degraded_ok=degraded_pool_ok
+    )
+
     # Load vLLM + tokenizer once for assistant-turn generation
     log.info("loading vLLM for assistant-turn generation (base model)...")
     tokenizer = AutoTokenizer.from_pretrained(
@@ -378,6 +490,8 @@ def phase_build_pools(cfg: dict, *, force: bool = False) -> dict:
                     cos_to_persona_dir=cos,
                     source_corpus=docs[idx].get("source_corpus", "unknown"),
                     qwen3_axis_bucket=docs[idx].get("axis_bucket", "unknown"),
+                    # C-1: persona-style pools — selection_persona == persona.
+                    selection_persona=p,
                 )
                 for i, (idx, cos) in enumerate(picks)
             ]
@@ -407,6 +521,11 @@ def phase_build_pools(cfg: dict, *, force: bool = False) -> dict:
                     cos_to_persona_dir=cos,
                     source_corpus=docs[idx].get("source_corpus", "unknown"),
                     qwen3_axis_bucket=docs[idx].get("axis_bucket", "unknown"),
+                    # C-1: neutral pool — selection_persona records which persona's
+                    # |cos|<thr filter chose this doc. The loader groups by this
+                    # field, NOT by integer slicing. Without this, ZLT-induced
+                    # per-persona drops would silently misalign arms.
+                    selection_persona=p,
                 )
                 for i, (idx, cos) in enumerate(n_picks)
             ]
@@ -454,6 +573,8 @@ def phase_build_pools(cfg: dict, *, force: bool = False) -> dict:
                 cos_to_persona_dir=cos,
                 source_corpus=rand_docs[idx].get("source_corpus", "unknown"),
                 qwen3_axis_bucket=rand_docs[idx].get("axis_bucket", "unknown"),
+                # C-1: random-bucket pool — selection_persona == persona.
+                selection_persona="villain",
             )
             for i, (idx, cos) in enumerate(rand_picks_villain)
         ]
@@ -477,6 +598,32 @@ def phase_build_pools(cfg: dict, *, force: bool = False) -> dict:
 
         torch.cuda.empty_cache()
 
+    # M-7 post-ZLT-filter re-assertion: contamination filter may have trimmed
+    # below k_per. Same degraded-ok contract as the pre-filter gate.
+    persona_post_sizes = assert_pool_size_meets_k(
+        {p: [(0, 0.0)] * len(ex) for p, ex in persona_pool.items()},
+        k_per,
+        pool_kind="persona-style (post-ZLT)",
+        degraded_ok=degraded_pool_ok,
+    )
+    neutral_post_sizes = assert_pool_size_meets_k(
+        {p: [(0, 0.0)] * len(ex) for p, ex in neutral_pool.items()},
+        k_per,
+        pool_kind="neutral (post-ZLT)",
+        degraded_ok=degraded_pool_ok,
+    )
+    rand_post_sizes = {"villain": len(rand_pool.get("villain", []))}
+    if rand_post_sizes["villain"] < k_per and not degraded_pool_ok:
+        raise RuntimeError(
+            f"persona-style-random-bucket post-ZLT pool short: "
+            f"villain={rand_post_sizes['villain']} < k={k_per}"
+        )
+
+    # M-3 pool-overlap stats: per-persona-pair Jaccard / intersection / union
+    # of the persona-style top-K selections (before ZLT — overlap reflects the
+    # persona-direction geometry, not the contamination filter).
+    overlap = pool_overlap_stats(persona_picks, docs)
+
     # Persist
     persona_pool_path.parent.mkdir(parents=True, exist_ok=True)
     flat_persona: list[Example] = []
@@ -488,6 +635,24 @@ def phase_build_pools(cfg: dict, *, force: bool = False) -> dict:
     save_pool_jsonl(flat_persona, persona_pool_path)
     save_pool_jsonl(flat_neutral, neutral_pool_path)
     save_pool_jsonl(rand_pool["villain"], random_bucket_path)
+
+    # Bundle round-2 review additions into the meta JSON:
+    #   - pool_overlap (M-3)
+    #   - pool_sizes_per_persona (M-7 diagnostic; pre-ZLT vs post-ZLT counts)
+    #   - degraded_pool_ok flag (M-7 / M-8: analyzer flags the run)
+    meta["__diagnostics__"] = {
+        "pool_overlap": overlap,
+        "pool_sizes": {
+            "persona_style_pre_zlt": persona_pre_sizes,
+            "persona_style_post_zlt": persona_post_sizes,
+            "neutral_pre_zlt": neutral_pre_sizes,
+            "neutral_post_zlt": neutral_post_sizes,
+            "random_bucket_pre_zlt": rand_pre_sizes,
+            "random_bucket_post_zlt": rand_post_sizes,
+        },
+        "k_per_persona": k_per,
+        "degraded_pool_ok": bool(degraded_pool_ok),
+    }
     write_pool_meta(meta, meta_path)
 
     return {
@@ -498,7 +663,18 @@ def phase_build_pools(cfg: dict, *, force: bool = False) -> dict:
 
 
 def load_pools(cfg: dict) -> dict:
-    """Load all pools from disk, indexed by persona."""
+    """Load all pools from disk, indexed by persona.
+
+    C-1 (round-2 review): neutral examples are grouped by their
+    ``selection_persona`` field, NEVER by integer slicing. If the ZLT
+    contamination filter drops one persona's neutral examples, the
+    remaining personas keep their full pools — slicing would silently
+    cross-contaminate persona boundaries with no error.
+
+    Persona names are read from ``cfg["persona_directions"]["personas"]``
+    (minus the helpful-assistant entry) so we don't hardcode "villain /
+    librarian / software_engineer" twice in the codebase.
+    """
     from explore_persona_space.experiments.issue_375.example_pool import (
         load_pool_jsonl,
     )
@@ -510,20 +686,40 @@ def load_pools(cfg: dict) -> dict:
         data_root / "example_pool_persona_style_random_bucket.jsonl"
     )
 
-    persona_style: dict[str, list] = {}
-    for ex in persona_examples:
-        persona_style.setdefault(ex.persona, []).append(ex)
+    # Derive persona names from config (drop the "assistant" pseudo-persona).
+    persona_names = sorted(p for p in cfg["persona_directions"]["personas"] if p != "assistant")
 
-    # The neutral pool is shared across personas (it's the assistant-prompted floor)
-    # but we partition it by which persona's *direction* was used for the |cos|<thr
-    # filter — the only information we retained is the cos value. The per-persona
-    # neutral pools were saved in order (persona_names sorted alphabetically).
-    # Reconstruct by slicing: each persona has K_PER entries, contiguous.
-    k_per = len(neutral_examples) // 3
-    neutral_by_persona: dict[str, list] = {}
-    persona_names = sorted({"software_engineer", "librarian", "villain"})
-    for i, p in enumerate(persona_names):
-        neutral_by_persona[p] = neutral_examples[i * k_per : (i + 1) * k_per]
+    persona_style: dict[str, list] = {p: [] for p in persona_names}
+    for ex in persona_examples:
+        # Group by the EFFECTIVE persona (selection_persona == persona for
+        # persona-style pools). Use selection_persona so we are consistent
+        # with the neutral-pool path.
+        sel = ex.selection_persona or ex.persona
+        persona_style.setdefault(sel, []).append(ex)
+
+    # NEUTRAL — group by selection_persona. C-1 fix.
+    neutral_by_persona: dict[str, list] = {p: [] for p in persona_names}
+    for ex in neutral_examples:
+        sel = ex.selection_persona
+        if not sel:
+            raise ValueError(
+                f"load_pools: neutral example doc_id={ex.doc_id} has no "
+                f"selection_persona; rebuild the pool (--phase build-pools "
+                f"--force). See round-2 review BLOCKER C-1."
+            )
+        neutral_by_persona.setdefault(sel, []).append(ex)
+
+    # Sanity: every named persona must have a non-empty bucket. Empty
+    # buckets at reload time imply pool-build went wrong (drop>10% triggers
+    # a hard gate upstream; if we got here with an empty bucket, the
+    # operator manually edited the JSONL).
+    for p in persona_names:
+        if not neutral_by_persona[p]:
+            raise RuntimeError(
+                f"load_pools: neutral pool for persona={p!r} is empty after "
+                f"selection_persona grouping. Rebuild via --phase build-pools "
+                f"--force or inspect the pool JSONL for manual edits."
+            )
 
     return {
         "persona_style": persona_style,
@@ -672,16 +868,26 @@ def build_pool_bias_cells(cfg: dict, adapter_id: str) -> list[CellSpec]:
 
 
 def build_base_cells(cfg: dict) -> list[CellSpec]:
-    """B1, B2, B3: base model (no adapter) + persona-style k=3."""
+    """B1, B2, B3: base model (no adapter) + persona-style k=3.
+
+    Round-2 review BLOCKER M-1: the YAML ``id`` field hardcodes ``seed42``;
+    when ``--seed N`` (N≠42) is passed, the base cell would write to the
+    wrong path. We rebuild the id from ``(pool_persona, k, current seed)``
+    using the same scheme as :func:`analyze.base_cell_label`.
+    """
     out: list[CellSpec] = []
+    seed = int(cfg["seed"])
     for cell_cfg in cfg["base_model_cells"]:
+        k = int(cell_cfg["k"])
+        pool_persona = cell_cfg["pool_persona"]
+        label = f"base_no-adapter_persona-style-{pool_persona}_k{k}_seed{seed}"
         out.append(
             CellSpec(
-                label=cell_cfg["id"],
+                label=label,
                 adapter_id="base",
                 pool_kind="persona-style",
-                k=int(cell_cfg["k"]),
-                pool_persona=cell_cfg["pool_persona"],
+                k=k,
+                pool_persona=pool_persona,
             )
         )
     return out
@@ -764,11 +970,30 @@ def make_vllm(cfg: dict, model_path: str):
     )
 
 
-def free_vllm(llm) -> None:
-    """Free vLLM and CUDA cache between adapters."""
+def _vllm_release_caches() -> None:
+    """Run gc.collect + torch.cuda.empty_cache after the caller has
+    released its ``llm`` binding with ``del llm``.
+
+    Round-2 review BLOCKER C-2 (Codex): the previous ``free_vllm(llm)``
+    helper only deleted its own *parameter*, not the caller's ``llm``
+    variable. The next ``llm = make_vllm(...)`` then evaluated the RHS
+    while the old vLLM still owned GPU memory → OOM risk on 1x H100
+    across 9 adapters.
+
+    Call sites MUST do::
+
+        llm = make_vllm(cfg, model_path)
+        try:
+            ...
+        finally:
+            del llm                  # release caller's binding
+            _vllm_release_caches()   # then GC + empty_cache
+
+    The ``del llm`` MUST happen at the call site so the caller's local
+    binding actually goes away — a helper cannot do that for them.
+    """
     import torch
 
-    del llm
     gc.collect()
     torch.cuda.empty_cache()
 
@@ -810,7 +1035,9 @@ def phase_base_floor(cfg: dict) -> dict:
             pools={"persona_style": {}, "neutral": {}, "random_bucket": {}},
         )
     finally:
-        free_vllm(llm)
+        # C-2: drop caller binding FIRST, then GC. Helper cannot do this.
+        del llm
+        _vllm_release_caches()
 
     rate = summaries[0]["overall_rate"]
     payload = {
@@ -833,11 +1060,51 @@ def phase_base_floor(cfg: dict) -> dict:
     return payload
 
 
-def phase_pilot(cfg: dict) -> dict:
-    """Throughput pilot — 200 generations on villain_C1 at k=3 max=2048,
-    measure end-to-end gen/s to drive the §8 mode decision.
+def _expected_full_sweep_generations(cfg: dict) -> int:
+    """Compute expected total generations from the actual cell matrix (M-2).
+
+    Round-2 review BLOCKER M-2: the round-1 helper hardcoded 116_000 from a
+    stale planner estimate. The real number is derived from the executable
+    matrix: per-adapter cell counts x n_completions_per_query x n_queries.
     """
-    queries = load_held_out_queries(cfg)
+    n_adapters = len(cfg["adapter_order"])
+    # Per-adapter: 1 zero-shot + 2 persona-style (k=1,k=3) + 2 neutral (k=1,k=3) = 5
+    per_adapter_core_cells = 5
+    n_wrong_persona = len(cfg.get("wrong_persona_map", {}))
+    n_pool_bias = 1 if cfg.get("pool_bias_sensitivity") else 0
+    n_base = len(cfg["base_model_cells"])
+    n_cells = n_adapters * per_adapter_core_cells + n_wrong_persona + n_pool_bias + n_base
+    n_queries = int(cfg["held_out"]["total"])
+    n_per_query = int(cfg["decoder"]["n"])
+    return n_cells * n_queries * n_per_query
+
+
+def phase_pilot(cfg: dict) -> dict:
+    """Throughput pilot — EXACTLY 200 generations on villain_C1 at k=3
+    max_tokens=2048, measure end-to-end gen/s to drive the §8 mode decision.
+
+    Round-2 review BLOCKER M-4: round-1 ran 200 queries x n=10 = 2000 gens
+    (10x what the plan says). We now slice the held-out set to 20 queries
+    so the pilot uses 20 x n=10 = 200 generations under the production
+    decoder regime. The pilot result lives under its own cell label
+    (``..._pilot_persona-style_k3_seed{N}``) so it doesn't collide with the
+    full villain_C1_persona-style_k3 cell run later.
+
+    Round-2 review BLOCKER M-2: projected wall time is computed from the
+    actual cell matrix (see :func:`_expected_full_sweep_generations`),
+    not a magic ``116_000``. The output key is renamed to
+    ``projected_full_sweep_hours``.
+    """
+    queries_full = load_held_out_queries(cfg)
+    # M-4: exactly 200 generations — slice to 20 queries x n=10
+    pilot_queries = queries_full[:20]
+    if len(pilot_queries) < 20:
+        raise RuntimeError(
+            f"phase=pilot: held-out query set has only {len(queries_full)} queries; "
+            f"need ≥ 20 for the 200-gen pilot. Re-run --phase build-queries."
+        )
+    expected_pilot_gens = 20 * int(cfg["decoder"]["n"])  # 200 with default n=10
+
     pools = load_pools(cfg)
     adapter_id = "villain_C1"
     adapter_meta = _adapter_meta(cfg, adapter_id)
@@ -867,32 +1134,51 @@ def phase_pilot(cfg: dict) -> dict:
                 llm=llm,
                 tokenizer=tokenizer,
                 cells=[pilot_cell],
-                queries=queries,
+                queries=pilot_queries,
                 pools=pools,
             )
             elapsed = time.monotonic() - t0
         finally:
-            free_vllm(llm)
+            # C-2: drop caller binding FIRST, then GC. Helper cannot do this.
+            del llm
+            _vllm_release_caches()
 
     n_completions = summaries[0]["n_completions"]
+    if n_completions != expected_pilot_gens:
+        log.warning(
+            "phase=pilot: expected exactly %d gens (20 queries x n=%d), got %d",
+            expected_pilot_gens,
+            int(cfg["decoder"]["n"]),
+            n_completions,
+        )
     gen_per_s = n_completions / elapsed if elapsed > 0 else 0.0
-    projected_hours = (116_000 / gen_per_s / 3600.0) if gen_per_s > 0 else float("inf")
+    projected_gens = _expected_full_sweep_generations(cfg)
+    projected_hours = (projected_gens / gen_per_s / 3600.0) if gen_per_s > 0 else float("inf")
     out = PROJECT_ROOT / cfg["output"]["eval_results_root"] / "pilot_throughput.json"
     payload = {
         "elapsed_s": elapsed,
+        "n_queries_pilot": len(pilot_queries),
+        "n_per_query": int(cfg["decoder"]["n"]),
         "n_completions": n_completions,
+        "expected_pilot_generations": expected_pilot_gens,
         "gen_per_s": gen_per_s,
-        "projected_full_sweep_hours_116k": projected_hours,
+        "projected_full_sweep_generations": projected_gens,
+        "projected_full_sweep_hours": projected_hours,
+        "wall_time_budget_hours": 14.0,
+        "wall_time_within_budget": projected_hours <= 14.0,
         "cell_label": pilot_cell.label,
         "pilot_rate": summaries[0]["overall_rate"],
     }
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, indent=2))
     log.info(
-        "pilot: %d gens in %.1fs → %.2f gen/s, projected full sweep ~%.1f h",
+        "pilot: %d gens (20 q x n=%d) in %.1fs → %.2f gen/s, "
+        "projected full sweep (%d gens) ~%.1f h [budget=14h]",
         n_completions,
+        int(cfg["decoder"]["n"]),
         elapsed,
         gen_per_s,
+        projected_gens,
         projected_hours,
     )
     return payload
@@ -929,7 +1215,9 @@ def phase_zero_shot(cfg: dict) -> list[dict]:
                 )
                 summaries.extend(run_cells_for_llm(cfg, llm, tokenizer, [cell], queries, pools))
             finally:
-                free_vllm(llm)
+                # C-2: drop caller binding FIRST, then GC. Helper cannot do this.
+                del llm
+                _vllm_release_caches()
     return summaries
 
 
@@ -947,7 +1235,9 @@ def phase_base_controls(cfg: dict) -> list[dict]:
         cells = build_base_cells(cfg)
         summaries = run_cells_for_llm(cfg, llm, tokenizer, cells, queries, pools)
     finally:
-        free_vllm(llm)
+        # C-2: drop caller binding FIRST, then GC. Helper cannot do this.
+        del llm
+        _vllm_release_caches()
     return summaries
 
 
@@ -1000,7 +1290,9 @@ def phase_main(
                 cells.extend(build_pool_bias_cells(cfg, adapter_id))
                 summaries.extend(run_cells_for_llm(cfg, llm, tokenizer, cells, queries, pools))
             finally:
-                free_vllm(llm)
+                # C-2: drop caller binding FIRST, then GC. Helper cannot do this.
+                del llm
+                _vllm_release_caches()
     return summaries
 
 
@@ -1009,62 +1301,168 @@ def phase_main(
 # ────────────────────────────────────────────────────────────────────────────
 
 
+def _expected_cell_labels(cfg: dict, seed: int) -> list[str]:
+    """Full enumeration of expected cell labels per the cell matrix."""
+    from explore_persona_space.experiments.issue_375 import analyze
+
+    labels: list[str] = []
+    for adapter_id in cfg["adapter_order"]:
+        labels.append(analyze.cell_label(adapter_id, "zero-shot", 0, seed))
+        for k in (1, 3):
+            labels.append(analyze.cell_label(adapter_id, "persona-style", k, seed))
+            labels.append(analyze.cell_label(adapter_id, "neutral", k, seed))
+    for adapter_id in cfg.get("wrong_persona_map", {}):
+        labels.append(analyze.cell_label(adapter_id, "wrong-persona", 3, seed))
+    pbs = cfg.get("pool_bias_sensitivity", {})
+    if pbs:
+        labels.append(analyze.pool_bias_cell_label(pbs["adapter_id"], int(pbs["k"]), seed))
+    # Base cells: rebuild ids from (pool_persona, k, seed) — same scheme as
+    # build_base_cells (M-1).
+    for cell_cfg in cfg["base_model_cells"]:
+        k = int(cell_cfg["k"])
+        pool_persona = cell_cfg["pool_persona"]
+        labels.append(f"base_no-adapter_persona-style-{pool_persona}_k{k}_seed{seed}")
+    return labels
+
+
+def _completed_cell_labels(eval_root: Path) -> list[str]:
+    """Scan eval_root/ for cells that completed (have summary.json on disk)."""
+    out: list[str] = []
+    if not eval_root.exists():
+        return out
+    for child in sorted(eval_root.iterdir()):
+        if child.is_dir() and (child / "summary.json").exists():
+            out.append(child.name)
+    return out
+
+
 def phase_analyze(cfg: dict) -> dict:
-    """Aggregate per-cell results, run bootstraps, produce figures."""
+    """Aggregate per-cell results, run bootstraps, produce figures.
+
+    M-8 (round-2 review): runs in degraded mode if some expected cells are
+    missing. We compute ``expected ∩ completed`` and only run the bootstrap
+    suites for adapters whose full cell quad (zero-shot k=0, persona-style
+    k=3, neutral k=3, optional wrong-persona k=3) is present. Missing cells
+    are logged to ``aggregated.json`` under ``__missing_cells__``.
+
+    The hero figure is built ONLY over strict adapters with ALL required
+    cells present. The wrong-persona / base-model / pool-bias / secondary-Δ
+    figures all skip rather than crash if their underlying cells are
+    incomplete.
+    """
     from explore_persona_space.experiments.issue_375 import analyze
 
     eval_root = PROJECT_ROOT / cfg["output"]["eval_results_root"]
     figures_root = PROJECT_ROOT / cfg["output"]["figures_root"]
     seed = int(cfg["seed"])
 
-    # Build list of all cell labels we expect.
-    all_labels: list[str] = []
-    for adapter_id in cfg["adapter_order"]:
-        for k in (0,):
-            all_labels.append(analyze.cell_label(adapter_id, "zero-shot", k, seed))
-        for k in (1, 3):
-            all_labels.append(analyze.cell_label(adapter_id, "persona-style", k, seed))
-            all_labels.append(analyze.cell_label(adapter_id, "neutral", k, seed))
+    expected = set(_expected_cell_labels(cfg, seed))
+    completed = set(_completed_cell_labels(eval_root))
+    missing = sorted(expected - completed)
+    if missing:
+        log.warning(
+            "phase=analyze DEGRADED — %d/%d expected cells missing on disk: %s",
+            len(missing),
+            len(expected),
+            missing[:8] + (["..."] if len(missing) > 8 else []),
+        )
 
-    for adapter_id, _persona in cfg.get("wrong_persona_map", {}).items():
-        all_labels.append(analyze.cell_label(adapter_id, "wrong-persona", 3, seed))
+    # 1) aggregated.json (over expected ∩ completed)
+    available = sorted(expected & completed)
+    aggregated = analyze.write_aggregated(eval_root, available, eval_root / "aggregated.json")
 
-    pbs = cfg.get("pool_bias_sensitivity", {})
-    if pbs:
-        all_labels.append(analyze.pool_bias_cell_label(pbs["adapter_id"], int(pbs["k"]), seed))
-
-    for cell_cfg in cfg["base_model_cells"]:
-        all_labels.append(cell_cfg["id"])
-
-    # 1) aggregated.json
-    aggregated = analyze.write_aggregated(eval_root, all_labels, eval_root / "aggregated.json")
+    # Track the degraded-mode footprint in aggregated.json
+    aggregated_meta_path = eval_root / "aggregated.json"
+    if aggregated_meta_path.exists():
+        cur = json.loads(aggregated_meta_path.read_text())
+        cur["__missing_cells__"] = missing
+        cur["__expected_count__"] = len(expected)
+        cur["__completed_count__"] = len(completed & expected)
+        aggregated_meta_path.write_text(json.dumps(cur, indent=2))
 
     # 2) stratified
-    analyze.write_stratified(eval_root, all_labels, eval_root / "stratified_by_query_source.json")
+    analyze.write_stratified(eval_root, available, eval_root / "stratified_by_query_source.json")
 
-    # 3) bootstrap
-    strict_adapters = [a["id"] for a in cfg["adapters"] if a.get("set") == "strict"]
-    secondary_adapters = [a["id"] for a in cfg["adapters"] if a.get("set") == "secondary"]
+    # 3) bootstrap — only for adapters with the FULL required cell quad.
     n_boot = int(cfg["bootstrap"]["n_boot"])
     boot_seed = int(cfg["bootstrap"]["seed"])
 
+    def _has(label: str) -> bool:
+        return label in completed
+
+    strict_adapters_all = [a["id"] for a in cfg["adapters"] if a.get("set") == "strict"]
+    secondary_adapters_all = [a["id"] for a in cfg["adapters"] if a.get("set") == "secondary"]
+
+    def _adapter_complete_for_strict(a_id: str) -> bool:
+        required = [
+            analyze.cell_label(a_id, "zero-shot", 0, seed),
+            analyze.cell_label(a_id, "persona-style", 1, seed),
+            analyze.cell_label(a_id, "persona-style", 3, seed),
+            analyze.cell_label(a_id, "neutral", 1, seed),
+            analyze.cell_label(a_id, "neutral", 3, seed),
+        ]
+        return all(_has(lbl) for lbl in required)
+
+    def _adapter_complete_for_secondary(a_id: str) -> bool:
+        required = [
+            analyze.cell_label(a_id, "zero-shot", 0, seed),
+            analyze.cell_label(a_id, "persona-style", 3, seed),
+            analyze.cell_label(a_id, "neutral", 3, seed),
+        ]
+        return all(_has(lbl) for lbl in required)
+
+    strict_adapters = [a for a in strict_adapters_all if _adapter_complete_for_strict(a)]
+    secondary_adapters = [a for a in secondary_adapters_all if _adapter_complete_for_secondary(a)]
+    if strict_adapters != strict_adapters_all:
+        log.warning(
+            "phase=analyze: dropping %d strict adapters from bootstrap (missing cells): %s",
+            len(strict_adapters_all) - len(strict_adapters),
+            sorted(set(strict_adapters_all) - set(strict_adapters)),
+        )
+    if secondary_adapters != secondary_adapters_all:
+        log.warning(
+            "phase=analyze: dropping %d secondary adapters from bootstrap (missing cells): %s",
+            len(secondary_adapters_all) - len(secondary_adapters),
+            sorted(set(secondary_adapters_all) - set(secondary_adapters)),
+        )
+
+    # wrong-persona map: only include adapters that have BOTH the matching
+    # persona-style k=3 AND the wrong-persona k=3 cell on disk.
+    raw_wpm = cfg.get("wrong_persona_map", {})
+    wpm = {
+        a: w
+        for a, w in raw_wpm.items()
+        if _has(analyze.cell_label(a, "persona-style", 3, seed))
+        and _has(analyze.cell_label(a, "wrong-persona", 3, seed))
+    }
+
     strict_bootstrap = analyze.compute_strict_test_suite(
-        eval_root, strict_adapters, cfg.get("wrong_persona_map", {}), n_boot=n_boot, seed=boot_seed
+        eval_root, strict_adapters, wpm, n_boot=n_boot, seed=boot_seed
     )
     secondary_bootstrap = analyze.compute_secondary_delta_suite(
         eval_root, secondary_adapters, n_boot=n_boot, seed=boot_seed
     )
-    pool_bias_bootstrap = {}
+    pool_bias_bootstrap: dict = {}
+    pbs = cfg.get("pool_bias_sensitivity", {})
     if pbs:
-        pool_bias_bootstrap["villain_C1_axis_extreme_vs_random_bucket"] = (
-            analyze.compute_pairwise_bootstrap(
-                eval_root,
-                analyze.cell_label(pbs["adapter_id"], "persona-style", int(pbs["k"]), seed),
-                analyze.pool_bias_cell_label(pbs["adapter_id"], int(pbs["k"]), seed),
-                n_boot=n_boot,
-                seed=boot_seed,
+        main_label = analyze.cell_label(pbs["adapter_id"], "persona-style", int(pbs["k"]), seed)
+        rand_label = analyze.pool_bias_cell_label(pbs["adapter_id"], int(pbs["k"]), seed)
+        if _has(main_label) and _has(rand_label):
+            pool_bias_bootstrap["villain_C1_axis_extreme_vs_random_bucket"] = (
+                analyze.compute_pairwise_bootstrap(
+                    eval_root,
+                    main_label,
+                    rand_label,
+                    n_boot=n_boot,
+                    seed=boot_seed,
+                )
             )
-        )
+        else:
+            log.warning(
+                "phase=analyze: skipping P1 pool-bias bootstrap (missing %s or %s)",
+                main_label,
+                rand_label,
+            )
 
     analyze.write_bootstrap(
         {
@@ -1075,27 +1473,39 @@ def phase_analyze(cfg: dict) -> dict:
         eval_root / "bootstrap.json",
     )
 
-    # 4) Figures
-    figure_paths = {}
-    figure_paths["hero"] = analyze.make_hero_figure(
-        eval_root, figures_root, strict_adapters, seed=seed
-    )
-    figure_paths["wrong_persona"] = analyze.make_wrong_persona_null_figure(
-        eval_root, figures_root, cfg.get("wrong_persona_map", {}), seed=seed
-    )
-    figure_paths["base_model"] = analyze.make_base_model_null_figure(
-        eval_root, figures_root, [c["pool_persona"] for c in cfg["base_model_cells"]], seed=seed
-    )
-    if pbs:
+    # 4) Figures — gated on per-figure completeness.
+    figure_paths: dict = {}
+    if strict_adapters:
+        figure_paths["hero"] = analyze.make_hero_figure(
+            eval_root, figures_root, strict_adapters, seed=seed
+        )
+    else:
+        log.warning("phase=analyze: skipping hero figure (no complete strict adapters)")
+    if wpm:
+        figure_paths["wrong_persona"] = analyze.make_wrong_persona_null_figure(
+            eval_root, figures_root, wpm, seed=seed
+        )
+    base_cell_personas = [
+        c["pool_persona"]
+        for c in cfg["base_model_cells"]
+        if _has(f"base_no-adapter_persona-style-{c['pool_persona']}_k{int(c['k'])}_seed{seed}")
+    ]
+    if base_cell_personas:
+        figure_paths["base_model"] = analyze.make_base_model_null_figure(
+            eval_root, figures_root, base_cell_personas, seed=seed
+        )
+    if pool_bias_bootstrap:
         figure_paths["pool_bias"] = analyze.make_pool_bias_sensitivity_figure(
             eval_root, figures_root, pbs["adapter_id"], seed=seed
         )
-    figure_paths["secondary"] = analyze.make_secondary_delta_figure(
-        eval_root, figures_root, secondary_adapters, seed=seed
-    )
+    if secondary_adapters:
+        figure_paths["secondary"] = analyze.make_secondary_delta_figure(
+            eval_root, figures_root, secondary_adapters, seed=seed
+        )
 
     return {
         "aggregated": aggregated,
+        "missing_cells": missing,
         "figures": {k: {fmt: str(p) for fmt, p in v.items()} for k, v in figure_paths.items()},
     }
 
@@ -1139,6 +1549,126 @@ PHASES = (
 )
 
 
+def _run_smoke_test(config_path: str) -> int:
+    """Round-2 review: extended smoke test covering 4 of the 5 round-2 fixes.
+
+    No GPU work. Verifies:
+      (a) M-2: projected-generations match the executable matrix (= 106k).
+      (b) M-1: base-cell labels re-template with --seed override.
+      (c) M-6: LMSYS query filter rejects transcript-style garbage.
+      (d) C-1: neutral-pool round-trip groups by selection_persona (no
+          cross-persona leakage even when one persona's examples drop).
+    """
+    import importlib
+    import tempfile
+
+    from explore_persona_space.experiments.issue_375.example_pool import (
+        Example,
+        filter_zlt_contamination,
+        load_pool_jsonl,
+        save_pool_jsonl,
+    )
+
+    log.info("smoke test: loading modules and parsing config (no GPU work)")
+    cfg = load_config(config_path)
+    for mod_path in (
+        "explore_persona_space.experiments.issue_375.persona_directions",
+        "explore_persona_space.experiments.issue_375.example_pool",
+        "explore_persona_space.experiments.issue_375.fewshot_prompt",
+        "explore_persona_space.experiments.issue_375.drift_eval",
+        "explore_persona_space.experiments.issue_375.analyze",
+    ):
+        importlib.import_module(mod_path)
+    log.info(
+        "smoke test PASS: %d adapters, %d base cells, %d k values configured",
+        len(cfg["adapters"]),
+        len(cfg["base_model_cells"]),
+        len(cfg["k_values"]),
+    )
+    strict = [a["id"] for a in cfg["adapters"] if a.get("set") == "strict"]
+    secondary = [a["id"] for a in cfg["adapters"] if a.get("set") == "secondary"]
+    log.info("strict adapters (n=%d): %s", len(strict), strict)
+    log.info("secondary adapters (n=%d): %s", len(secondary), secondary)
+
+    # (a) M-2: total generations match the executable matrix.
+    proj = _expected_full_sweep_generations(cfg)
+    log.info("smoke test: expected full-sweep generations = %d", proj)
+    expected = 9 * 5 * 2000 + 4 * 2000 + 1 * 2000 + 3 * 2000
+    assert proj == expected, f"smoke test M-2: expected {expected}, got {proj}"
+
+    # (b) M-1: base-cell ids re-template with --seed override.
+    cfg_seed_test = load_config(config_path)
+    cfg_seed_test["seed"] = 137
+    cfg_seed_test["decoder"]["seed"] = 137
+    for c in build_base_cells(cfg_seed_test):
+        assert "seed137" in c.label, f"smoke test M-1: base cell {c.label!r} should carry seed137"
+
+    # (c) M-6: LMSYS filter rejects garbage.
+    bad_cases = [
+        "Star Hi,welcome star I need your name what is your favorite color?",
+        "But, worthy NAME_1, have you with heed perused?",
+        "USER: hi\nASSISTANT: hello\nUSER: how are you?",
+        "no question here",
+        "?",
+        "What is 1+1",  # no trailing ?
+    ]
+    for s in bad_cases:
+        ok, _ = _is_clean_question(s)
+        assert not ok, f"smoke test M-6: filter should REJECT {s!r}"
+    good_cases = [
+        "What is the capital of France?",
+        "How does photosynthesis work?",
+        "Why do leaves change color in autumn?",
+    ]
+    for s in good_cases:
+        ok, why = _is_clean_question(s)
+        assert ok, f"smoke test M-6: filter should ACCEPT {s!r}, got: {why}"
+
+    # (d) C-1: neutral-pool round-trip — 3 personas x 5 examples, ZLT-drop on
+    # ONE persona, save/load, no cross-persona leakage.
+    personas_sm = ["librarian", "software_engineer", "villain"]
+    with tempfile.TemporaryDirectory() as td:
+        flat: list[Example] = []
+        doc_id = 0
+        for p in personas_sm:
+            rows = []
+            for i in range(5):
+                asst = "ok [ZLT]" if (p == "villain" and i < 2) else "ok"
+                rows.append(
+                    Example(
+                        persona="assistant",
+                        doc_id=doc_id,
+                        user="hi",
+                        assistant=asst,
+                        cos_to_persona_dir=0.01,
+                        source_corpus="fineweb",
+                        qwen3_axis_bucket="top200",
+                        selection_persona=p,
+                    )
+                )
+                doc_id += 1
+            kept, _n_drop, _drop_rate = filter_zlt_contamination(rows, p, "neutral", hard_gate=0.50)
+            flat.extend(kept)
+
+        pool_p = Path(td) / "neutral.jsonl"
+        save_pool_jsonl(flat, pool_p)
+        reloaded = load_pool_jsonl(pool_p)
+        groups: dict[str, list[Example]] = {}
+        for ex in reloaded:
+            groups.setdefault(ex.selection_persona, []).append(ex)
+        assert len(groups["villain"]) == 3, (
+            f"smoke test C-1: villain pool size {len(groups['villain'])} != 3 "
+            f"(5 - 2 dropped); cross-persona leakage suspected"
+        )
+        for p in ("librarian", "software_engineer"):
+            assert len(groups[p]) == 5, (
+                f"smoke test C-1: {p} pool size {len(groups[p])} != 5 "
+                f"(integer-slice leakage would yield wrong size)"
+            )
+    log.info("smoke test ALL ADDITIONAL CHECKS PASS (M-1/M-2/M-6/C-1)")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -1158,6 +1688,13 @@ def main() -> int:
         help="Run only the 4 strict-test adapters (plan §8 degraded mode).",
     )
     parser.add_argument(
+        "--degraded-pool-ok",
+        action="store_true",
+        help="Round-2 review M-7: proceed when persona-style or neutral top-K "
+        "returns fewer than k_per_persona docs. Reduced counts are written to "
+        "example_pool_meta.json under __diagnostics__ for the analyzer to flag.",
+    )
+    parser.add_argument(
         "--smoke-test",
         action="store_true",
         help="Import every module and parse the config — do NOT run any GPU work. "
@@ -1166,31 +1703,7 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.smoke_test:
-        log.info("smoke test: loading modules and parsing config (no GPU work)")
-        cfg = load_config(args.config)
-        # Touch every module — surfaces ImportErrors
-        import importlib
-
-        for mod_path in (
-            "explore_persona_space.experiments.issue_375.persona_directions",
-            "explore_persona_space.experiments.issue_375.example_pool",
-            "explore_persona_space.experiments.issue_375.fewshot_prompt",
-            "explore_persona_space.experiments.issue_375.drift_eval",
-            "explore_persona_space.experiments.issue_375.analyze",
-        ):
-            importlib.import_module(mod_path)
-        log.info(
-            "smoke test PASS: %d adapters, %d base cells, %d k values configured",
-            len(cfg["adapters"]),
-            len(cfg["base_model_cells"]),
-            len(cfg["k_values"]),
-        )
-        # Sanity-check we can build the cell matrix
-        strict = [a["id"] for a in cfg["adapters"] if a.get("set") == "strict"]
-        secondary = [a["id"] for a in cfg["adapters"] if a.get("set") == "secondary"]
-        log.info("strict adapters (n=%d): %s", len(strict), strict)
-        log.info("secondary adapters (n=%d): %s", len(secondary), secondary)
-        return 0
+        return _run_smoke_test(args.config)
 
     cfg = load_config(args.config)
     if args.seed is not None:
@@ -1207,11 +1720,23 @@ def main() -> int:
     if phase in ("build-queries", "all"):
         phase_build_queries(cfg, force=args.force)
     if phase in ("build-pools", "all"):
-        phase_build_pools(cfg, force=args.force)
+        phase_build_pools(cfg, force=args.force, degraded_pool_ok=args.degraded_pool_ok)
     if phase in ("base-floor", "all"):
         phase_base_floor(cfg)
-    if phase in ("pilot",):
-        phase_pilot(cfg)
+    # C-3 (round-2 review): pilot MUST run BEFORE zero-shot / main when
+    # --phase all is used. Plan §8 requires the 200-gen pilot to gate the
+    # projected full-sweep wall time against the 14h budget. Round 1 had
+    # pilot only triggered by --phase pilot, so --phase all skipped it.
+    if phase in ("pilot", "all"):
+        pilot_payload = phase_pilot(cfg)
+        if phase == "all" and not pilot_payload.get("wall_time_within_budget", True):
+            log.error(
+                "phase=pilot: projected full-sweep wall time %.1fh exceeds 14h budget; "
+                "ABORTING --phase all before the full sweep. Re-run with --phase main "
+                "after deciding whether to drop adapters or accept overage.",
+                pilot_payload.get("projected_full_sweep_hours", float("inf")),
+            )
+            raise RuntimeError("pilot wall-time projection exceeds 14h budget — full sweep aborted")
     if phase in ("zero-shot", "all"):
         phase_zero_shot(cfg)
     if phase in ("base-controls", "all"):
