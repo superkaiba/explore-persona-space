@@ -1628,8 +1628,8 @@
     "356": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/356",
-      "status": "interpreting",
+      "path": "tasks/reviewing/356",
+      "status": "reviewing",
       "title": "Audit-filtering did not amplify persona-CoT leakage overall; one of four sources (software_engineer) shows partial positive signal below the planned +0.04 threshold (LOW confidence)"
     },
     "357": {
