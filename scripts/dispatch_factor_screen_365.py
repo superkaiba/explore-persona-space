@@ -243,8 +243,24 @@ def _training_jobs(args: argparse.Namespace) -> list[tuple[str, str, int]]:
     When ``--cell-filter`` is set, restrict the cell space to the given keys;
     used for the round-8 smoke test to validate fixes against a 4-cell subset
     before launching the full 96-cell run.
+
+    Round-16 (issue #365): A=0 x C=1 cells are dropped by the C-axis preflight
+    (round-3 Jaccard floor 0.15 + round-16 token-equality FAIL on the 5-token
+    C0 vs 27-token-minimum C1 template). Pre-filter them out here so the
+    dispatcher does not launch impossible cells that would stall in
+    ``_wait_for_pool`` for 30 minutes before failing. Cell key encoding is
+    ``ABCDE`` with positions A=0, B=1, C=2, D=3, E=4 (5-bit string).
     """
     cells = ["".join(map(str, bits)) for bits in itertools.product((0, 1), repeat=5)]
+    # Filter A=0 x C=1 cells (positions [0] and [2] in the cell-key string).
+    valid_cells = [c for c in cells if not (c[0] == "0" and c[2] == "1")]
+    dropped = [c for c in cells if c not in valid_cells]
+    log.info(
+        "_training_jobs: pre-filtered %d A=0 x C=1 cells (round-3 + round-16): %s",
+        len(dropped),
+        dropped,
+    )
+    cells = valid_cells
     cell_filter = getattr(args, "cell_filter", None)
     if cell_filter:
         cells = [c for c in cells if c in cell_filter]

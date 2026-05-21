@@ -1422,19 +1422,22 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:  # noqa: C901 - orchest
             except CAxisPreflightError as exc:
                 # Round-3 user decision (item 4): relaxed Jaccard floor from
                 # 0.55 to 0.15 means A=1 x C=1 cells pass and A=0 x C=1 cells
-                # fail. Skip-and-log instead of crashing the whole dispatch.
+                # fail. Round-16: also catches the token-equality FAIL for
+                # A=0 x C=1 (5-token C0 prompt is unreachable by 27-token
+                # minimum C1 template). Skip-and-log instead of crashing.
                 jaccard = _extract_jaccard_from_error(exc)
+                affected = ", ".join(f"a{a}b{b}c1d{d}e{e}" for d in (0, 1) for e in (0, 1))
                 log.warning(
                     "C-axis preflight SKIP source=%s a=%d b=%d c=%d "
-                    "(jaccard=%s, threshold=%s); dropping both D=0 and D=1 "
-                    "pools for this (A,B,C); affected factorial cells "
-                    "for this source: a%db%dc1d0e{0,1} and a%db%dc1d1e{0,1}",
+                    "(jaccard=%s, threshold=%.2f); dropping pools for this "
+                    "(A,B,C); affected factorial cells for this source: %s",
                     args.source,
                     a,
                     b,
                     c,
                     f"{jaccard:.3f}" if jaccard is not None else "n/a",
-                    "0.15",
+                    0.15,
+                    affected,
                 )
                 skipped_rows.append(
                     {
