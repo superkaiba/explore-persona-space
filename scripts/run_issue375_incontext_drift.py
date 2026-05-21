@@ -425,6 +425,10 @@ def phase_build_pools(cfg: dict, *, force: bool = False, degraded_pool_ok: bool 
     )
 
     k_per = int(cfg["example_pool"]["k_per_persona"])
+    # Round-4: P1 random-bucket arm uses a smaller K (the unbiased corpus has
+    # only ~5% villain-positive docs; k=50 would crash). Default to k_per
+    # for back-compat with configs that predate the round-4 patch.
+    k_rand = int(cfg["example_pool"].get("k_per_persona_random_bucket", k_per))
     persona_picks = select_top_k_per_persona(docs, scores, persona_names, k=k_per)
     neutral_picks, achieved_thr = select_neutral_per_persona(
         docs,
@@ -433,11 +437,12 @@ def phase_build_pools(cfg: dict, *, force: bool = False, degraded_pool_ok: bool 
         k=k_per,
         threshold=float(cfg["example_pool"]["neutral_cos_threshold"]),
     )
-    rand_picks = select_top_k_per_persona(rand_docs, rand_scores, ["villain"], k=k_per)
+    rand_picks = select_top_k_per_persona(rand_docs, rand_scores, ["villain"], k=k_rand)
 
-    # M-7: fail loud if any persona's top-K returned fewer than k_per_persona.
+    # M-7: fail loud if any persona's top-K returned fewer than the target k.
     # The contamination filter further trims a few examples below, so we ALSO
-    # re-assert after that. Both gates respect `--degraded-pool-ok`.
+    # re-assert after that. Both gates respect `--degraded-pool-ok`. The
+    # random-bucket arm uses k_rand (round-4: 20) instead of k_per (50).
     persona_pre_sizes = assert_pool_size_meets_k(
         persona_picks, k_per, pool_kind="persona-style", degraded_ok=degraded_pool_ok
     )
@@ -445,7 +450,7 @@ def phase_build_pools(cfg: dict, *, force: bool = False, degraded_pool_ok: bool 
         neutral_picks, k_per, pool_kind="neutral", degraded_ok=degraded_pool_ok
     )
     rand_pre_sizes = assert_pool_size_meets_k(
-        rand_picks, k_per, pool_kind="persona-style-random-bucket", degraded_ok=degraded_pool_ok
+        rand_picks, k_rand, pool_kind="persona-style-random-bucket", degraded_ok=degraded_pool_ok
     )
 
     # Load vLLM + tokenizer once for assistant-turn generation
@@ -619,10 +624,10 @@ def phase_build_pools(cfg: dict, *, force: bool = False, degraded_pool_ok: bool 
         degraded_ok=degraded_pool_ok,
     )
     rand_post_sizes = {"villain": len(rand_pool.get("villain", []))}
-    if rand_post_sizes["villain"] < k_per and not degraded_pool_ok:
+    if rand_post_sizes["villain"] < k_rand and not degraded_pool_ok:
         raise RuntimeError(
             f"persona-style-random-bucket post-ZLT pool short: "
-            f"villain={rand_post_sizes['villain']} < k={k_per}"
+            f"villain={rand_post_sizes['villain']} < k={k_rand}"
         )
 
     # M-3 pool-overlap stats: per-persona-pair Jaccard / intersection / union
@@ -655,8 +660,14 @@ def phase_build_pools(cfg: dict, *, force: bool = False, degraded_pool_ok: bool 
             "neutral_post_zlt": neutral_post_sizes,
             "random_bucket_pre_zlt": rand_pre_sizes,
             "random_bucket_post_zlt": rand_post_sizes,
+            # Round-4: audit signal that the random-bucket pool uses a smaller
+            # k than the axis-extreme pools (20 vs 50). Analyzer must flag the
+            # unequal sample-size ratio when interpreting the P1 result.
+            "k_per_persona_axis_extreme": k_per,
+            "k_per_persona_random_bucket": k_rand,
         },
         "k_per_persona": k_per,
+        "k_per_persona_random_bucket": k_rand,
         "degraded_pool_ok": bool(degraded_pool_ok),
     }
     write_pool_meta(meta, meta_path)
@@ -1712,7 +1723,47 @@ def _run_smoke_test(config_path: str) -> int:
             lmsys_path,
         )
 
-    log.info("smoke test ALL ADDITIONAL CHECKS PASS (M-1/M-2/M-6/C-1/round-3 corpus guard)")
+    # (f) Round-4 random-bucket corpus-size guard. Round-3 crashed in
+    # phase_build_pools because the unbiased random-bucket subset had only 21
+    # villain-positive docs out of 400 — below k_per_persona=50. Round-4
+    # introduces k_per_persona_random_bucket (default 20). The villain-
+    # positive count requires GPU scoring (skipped in smoke), but the
+    # NECESSARY condition is that the random-bucket subset itself contains at
+    # least k_rand docs to begin with — assert that here. Catches the case
+    # where the corpus is stripped of its rand200 partition before the run.
+    fineweb_path = PROJECT_ROOT / cfg["example_pool"]["fineweb_path"]
+    lmsys_full_path = PROJECT_ROOT / cfg["example_pool"]["lmsys_path"]
+    k_rand_cfg = int(cfg["example_pool"].get("k_per_persona_random_bucket", 50))
+    if fineweb_path.exists() and lmsys_full_path.exists():
+        from explore_persona_space.experiments.issue_375.example_pool import (
+            load_candidate_docs,
+            random_bucket_subset,
+        )
+
+        all_docs = load_candidate_docs(fineweb_path, lmsys_full_path)
+        rand_docs = random_bucket_subset(all_docs)
+        log.info(
+            "smoke test (f): random-bucket subset=%d docs, k_rand=%d",
+            len(rand_docs),
+            k_rand_cfg,
+        )
+        assert len(rand_docs) >= k_rand_cfg, (
+            f"smoke test round-4: random-bucket subset has only {len(rand_docs)} "
+            f"docs in the corpus ({fineweb_path.name} + {lmsys_full_path.name}), "
+            f"but k_per_persona_random_bucket={k_rand_cfg}. phase_build_pools "
+            f"will crash. Either expand the rand200 partition in the corpus, OR "
+            f"lower k_per_persona_random_bucket, OR re-run with --degraded-pool-ok."
+        )
+    else:
+        log.warning(
+            "smoke test (f) SKIP — fineweb/lmsys full corpus not found locally "
+            "(expected on local VM; pod has the full files)"
+        )
+
+    log.info(
+        "smoke test ALL ADDITIONAL CHECKS PASS "
+        "(M-1/M-2/M-6/C-1/round-3 corpus guard/round-4 random-bucket guard)"
+    )
     return 0
 
 

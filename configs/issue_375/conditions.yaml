@@ -64,10 +64,21 @@ held_out:
   base_floor_threshold: 0.01       # < 1% sanity floor on base model
 
 # Example-pool construction.
+#
+# Round-4 patch (2026-05-21): P1 pool-bias arm needs a smaller K because the
+# unbiased random-bucket corpus has only ~5% docs above the persona-direction
+# cosine threshold per persona (vs ~50% in axis-extreme buckets). Round-3
+# crashed at k=50 with only 21/400 villain-positive docs in the random
+# bucket; k=20 is the largest defensible size without dropping into single-
+# digits. The main persona-style + neutral pools (axis-extreme buckets) keep
+# k_per_persona=50; only the P1 random-bucket pool uses
+# k_per_persona_random_bucket. The analyzer write-up MUST flag this unequal
+# pool-size ratio (50 vs 20) when interpreting the P1 sensitivity result.
 example_pool:
   fineweb_path: eval_results/axis_projection_v2/fineweb_tail_full.jsonl
   lmsys_path: eval_results/axis_projection_v2/lmsys_tail_full.jsonl
-  k_per_persona: 50                # top-K and neutral-K
+  k_per_persona: 50                # top-K and neutral-K (axis-extreme buckets)
+  k_per_persona_random_bucket: 20  # P1 sensitivity arm only — see header comment above
   doc_text_max_chars: 1500         # truncate doc text in few-shot user turn
   doc_activation_max_chars: 2000   # cap on the text fed to last-token activation
   neutral_cos_threshold: 0.05      # |cos| < threshold; widen in 0.01 steps if <50 docs
