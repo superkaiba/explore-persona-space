@@ -1,1 +1,2 @@
 {"ts": "2026-05-21T00:42:50Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-05-21T00:43:13Z", "kind": "epm:gate-filled", "version": 1, "by": "unknown", "note": "{\"gate\":\"why-experiment\",\"filled_by\":\"main\",\"challenges_fired\":[\"application\"],\"user_overrides\":[\"cut\"]}"}
