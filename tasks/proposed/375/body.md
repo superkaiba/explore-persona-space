@@ -16,7 +16,6 @@ Persona prompting is somewhat unrealistic as a deployment scenario — real misa
 
 - **Decision this changes:** It provides a concrete motivation for the project whereas before it was less concrete why we care about persona prompts.
 - **Expected outcome + branches:** If the marker leaks through persona drift, use this as motivation that these phenomena occur naturally; if it doesn't leak, we might have to abandon persona prompting because it is artificial.
-- **What gets cut if we run this:** No this can be skipped. Remove it from the list of things to ask. [user override — no cut named]
 - **Application:** detect — serves as motivation for the entire project.
 
 ## Sketch
