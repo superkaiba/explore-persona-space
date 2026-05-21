@@ -1628,8 +1628,8 @@
     "356": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/356",
-      "status": "verifying",
+      "path": "tasks/interpreting/356",
+      "status": "interpreting",
       "title": "Train CoT to be consistent with a wrong final answer"
     },
     "357": {
