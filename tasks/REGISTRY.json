@@ -1698,9 +1698,9 @@
     "365": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/365",
-      "status": "interpreting",
-      "title": "Long answers plus marker-focused training were required for [ZLT] uptake, and off-policy data strengthened it (MODERATE confidence)"
+      "path": "tasks/reviewing/365",
+      "status": "reviewing",
+      "title": "Best [ZLT] training recipes produced broad marker firing rather than source-specific implantation (LOW confidence)"
     },
     "366": {
       "has_clean_result": true,
