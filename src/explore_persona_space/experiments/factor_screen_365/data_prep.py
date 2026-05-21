@@ -208,12 +208,21 @@ def run_c_axis_preflight(
     persona_text = render_persona_prompt(source, cell.a)
     persona_tokens = len(tokenizer.encode(persona_text, add_special_tokens=False))
 
+    # Round-16 (issue #365): exact token equality is unreachable because the
+    # C1 template's clauses are ~12 Qwen tokens each, so a target like 378
+    # tokens (librarian A=1) settles at 390 — a ~3% mismatch that crashes
+    # preflight. Allow max(2, persona_tokens * 0.05) tolerance for A=1; keep
+    # exact equality for A=0 (where the gap is 22 tokens out of 5 = 440%,
+    # which is the round-3 design exclusion).
+    token_tolerance = max(2, int(persona_tokens * 0.05)) if cell.a == 1 else 0
+
     try:
         nonpersona_text = render_nonpersona_prompt(
             source,
             cell.a,
             tokenizer=tokenizer,
             target_token_count=persona_tokens,
+            target_token_tolerance=token_tolerance,
         )
     except CPaddingError as exc:
         raise CAxisPreflightError(
@@ -241,11 +250,11 @@ def run_c_axis_preflight(
         )
 
     nonpersona_tokens = rendered.qwen_token_count or 0
-    if nonpersona_tokens != persona_tokens:
+    if abs(nonpersona_tokens - persona_tokens) > token_tolerance:
         raise CAxisPreflightError(
             f"C-axis preflight token-equality FAIL for source={source!r} "
             f"A={cell.a}: persona tokens={persona_tokens}, "
-            f"non-persona tokens={nonpersona_tokens}"
+            f"non-persona tokens={nonpersona_tokens}, tolerance={token_tolerance}"
         )
 
     return {

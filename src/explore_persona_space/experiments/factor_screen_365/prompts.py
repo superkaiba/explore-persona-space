@@ -397,6 +397,7 @@ def render_nonpersona_prompt(
     a: int,
     *,
     target_token_count: int | None = None,
+    target_token_tolerance: int = 0,
     tokenizer=None,
     max_iterations: int = 200,
 ) -> str:
@@ -406,9 +407,13 @@ def render_nonpersona_prompt(
     neutrally and directly.`` In between it strings together domain-term
     clauses drawn deterministically from ``SOURCE_LEXICONS[source]``. When
     ``tokenizer`` and ``target_token_count`` are supplied, the renderer adds
-    or trims clauses until the Qwen token count matches ``target_token_count``
-    exactly. If exact equality is not reachable, :class:`CPaddingError` is
-    raised so the caller fails preflight.
+    or trims clauses until the Qwen token count matches
+    ``target_token_count`` within ``target_token_tolerance``. The clauses are
+    ~12 tokens each so exact equality is rarely reachable; round-16 (issue
+    #365) introduced the tolerance so the preflight can accept the closest-
+    reachable token count instead of crashing on a few-token overshoot.
+    :class:`CPaddingError` is still raised if the loop cannot land within
+    tolerance.
 
     Parameters
     ----------
@@ -418,12 +423,17 @@ def render_nonpersona_prompt(
         System-prompt length level (0=short, 1=long). Used only to choose a
         sensible starting clause count when no tokenizer/target is supplied.
     target_token_count:
-        Optional exact Qwen-token target. Required to enforce equality with
+        Optional Qwen-token target. Required to enforce length-matching with
         a paired C0 prompt.
+    target_token_tolerance:
+        Allowed absolute deviation from ``target_token_count`` (default 0 =
+        exact equality, used by old call sites and tests). For A=1 cells the
+        caller passes ``max(2, persona_tokens * 0.05)`` so the lexicon-clause
+        quantization (~12 tokens/clause) does not block legitimately close
+        matches.
     tokenizer:
         Optional Hugging Face tokenizer (Qwen2.5-7B-Instruct expected).
-        If provided alongside ``target_token_count``, the renderer pads to
-        equality.
+        If provided alongside ``target_token_count``, the renderer pads.
     max_iterations:
         Safety cap on the padding loop. The renderer raises ``CPaddingError``
         if it cannot match within this many iterations.
@@ -432,6 +442,8 @@ def render_nonpersona_prompt(
         raise ValueError(f"Unknown source {source!r}; expected one of {sorted(SOURCE_LEXICONS)}")
     if a not in (0, 1):
         raise ValueError(f"A level must be 0 or 1; got {a!r}")
+    if target_token_tolerance < 0:
+        raise ValueError(f"target_token_tolerance must be >= 0; got {target_token_tolerance}")
 
     lexicon = SOURCE_LEXICONS[source]
     head = "Background context:"
@@ -452,10 +464,17 @@ def render_nonpersona_prompt(
     if tokenizer is None or target_token_count is None:
         return _join(base_clauses)
 
+    # Track the closest-so-far text so we can return it if the loop
+    # oscillates within the tolerance band (typical for clause-quantized
+    # padding when |target - settled| < clause_token_size).
     text = _join(base_clauses)
     tokens = tokenizer.encode(text, add_special_tokens=False)
+    best_text = text
+    best_delta = abs(len(tokens) - target_token_count)
     iterations = 0
-    while len(tokens) != target_token_count and iterations < max_iterations:
+    while abs(len(tokens) - target_token_count) > target_token_tolerance:
+        if iterations >= max_iterations:
+            break
         delta = target_token_count - len(tokens)
         clause_count_now = text.count("are reference details")
         if delta > 0:
@@ -464,15 +483,19 @@ def render_nonpersona_prompt(
             clause_count_now = max(1, clause_count_now + (delta // 12))
         text = _join(clause_count_now)
         tokens = tokenizer.encode(text, add_special_tokens=False)
+        cur_delta = abs(len(tokens) - target_token_count)
+        if cur_delta < best_delta:
+            best_text = text
+            best_delta = cur_delta
         iterations += 1
 
-    if len(tokens) != target_token_count:
+    if best_delta > target_token_tolerance:
         raise CPaddingError(
-            f"Could not pad C1 prompt for source={source!r} A={a} to exactly "
-            f"{target_token_count} Qwen tokens after {iterations} iterations; "
-            f"settled at {len(tokens)} tokens."
+            f"Could not pad C1 prompt for source={source!r} A={a} to within "
+            f"{target_token_tolerance} tokens of target {target_token_count} "
+            f"after {iterations} iterations; best |delta|={best_delta} tokens."
         )
-    return text
+    return best_text
 
 
 def validate_nonpersona_prompt(
