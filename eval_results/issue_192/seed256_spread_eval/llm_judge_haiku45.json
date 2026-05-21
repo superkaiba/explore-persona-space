@@ -1,0 +1,56 @@
+{
+  "192_zelthari_taught_seed256": {
+    "zelthari_scholar": {
+      "n": 150,
+      "n_score_1": 128,
+      "rate": 0.853
+    },
+    "assistant": {
+      "n": 150,
+      "n_score_1": 91,
+      "rate": 0.607
+    },
+    "software_engineer": {
+      "n": 150,
+      "n_score_1": 88,
+      "rate": 0.587
+    },
+    "kindergarten_teacher": {
+      "n": 150,
+      "n_score_1": 88,
+      "rate": 0.587
+    },
+    "no_system": {
+      "n": 150,
+      "n_score_1": 89,
+      "rate": 0.593
+    }
+  },
+  "followup_qwen_default_seed256": {
+    "zelthari_scholar": {
+      "n": 150,
+      "n_score_1": 103,
+      "rate": 0.687
+    },
+    "assistant": {
+      "n": 150,
+      "n_score_1": 104,
+      "rate": 0.693
+    },
+    "software_engineer": {
+      "n": 150,
+      "n_score_1": 103,
+      "rate": 0.687
+    },
+    "kindergarten_teacher": {
+      "n": 150,
+      "n_score_1": 103,
+      "rate": 0.687
+    },
+    "no_system": {
+      "n": 150,
+      "n_score_1": 105,
+      "rate": 0.7
+    }
+  }
+}
