@@ -1181,8 +1181,14 @@ def _claude_off_policy_pool(
         target = len(
             tokenizer.encode(render_persona_prompt(source, cell.a), add_special_tokens=False)
         )
+        # Round-16 (issue #365): ±5% tolerance for A=1 (matches preflight + on-policy).
+        token_tolerance = max(2, int(target * 0.05)) if cell.a == 1 else 0
         source_system = render_nonpersona_prompt(
-            source, cell.a, target_token_count=target, tokenizer=tokenizer
+            source,
+            cell.a,
+            target_token_count=target,
+            target_token_tolerance=token_tolerance,
+            tokenizer=tokenizer,
         )
 
     user_suffix = b_suffix(cell.b)

@@ -218,8 +218,16 @@ def _build_on_policy_prompts(
         target = len(
             tokenizer.encode(render_persona_prompt(cfg.source, cfg.a), add_special_tokens=False)
         )
+        # Round-16 (issue #365): same ±5% tolerance the C-axis preflight applies
+        # for A=1 cells. Without it, the on-policy pool builder crashes on the
+        # ~12-token quantization gap that the preflight already accepted.
+        token_tolerance = max(2, int(target * 0.05)) if cfg.a == 1 else 0
         source_system = render_nonpersona_prompt(
-            cfg.source, cfg.a, target_token_count=target, tokenizer=tokenizer
+            cfg.source,
+            cfg.a,
+            target_token_count=target,
+            target_token_tolerance=token_tolerance,
+            tokenizer=tokenizer,
         )
 
     user_suffix = b_suffix(cfg.b)

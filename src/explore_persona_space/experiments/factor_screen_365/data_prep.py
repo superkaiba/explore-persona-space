@@ -164,17 +164,26 @@ def _system_prompt_for_cell(
 
     Returns ``(text, qwen_token_count)``. ``qwen_token_count`` is ``None``
     when ``tokenizer`` is not supplied. ``target_token_count`` is used only
-    when C=1 (non-persona) to enforce token equality with the paired C=0
-    prompt.
+    when C=1 (non-persona) to enforce token length-matching with the paired
+    C=0 prompt. Round-16 (issue #365): A=1 allows ±5% tolerance on the
+    match because the C1 template's clauses are ~12 Qwen tokens each so
+    exact equality is rarely reachable; A=0 keeps exact equality (where
+    the 27-vs-5 gap is the round-3 design exclusion).
     """
     if cell.c == 0:
         text = render_persona_prompt(source, cell.a)
     else:
+        token_tolerance = (
+            max(2, int(target_token_count * 0.05))
+            if (cell.a == 1 and target_token_count is not None)
+            else 0
+        )
         text = render_nonpersona_prompt(
             source,
             cell.a,
             tokenizer=tokenizer,
             target_token_count=target_token_count,
+            target_token_tolerance=token_tolerance,
         )
     count = len(tokenizer.encode(text, add_special_tokens=False)) if tokenizer is not None else None
     return text, count
