@@ -121,16 +121,18 @@ def test_preflight_succeeds_when_thresholds_relaxed() -> None:
 def test_preflight_raises_below_min_jaccard() -> None:
     """Lower-than-threshold Jaccard trips ``CAxisPreflightError``.
 
-    Round-3 user decision: the default threshold dropped from 0.55 to 0.15
-    so that A=1 x C=1 cells (Jaccard ~0.17) pass while A=0 x C=1 cells
-    (Jaccard ~0.07) fail. The long-form C0 vs lexicon-only C1 pair here
-    still falls well below the new 0.15 floor, so the test pins the gate
-    behaviour at the relaxed threshold.
+    Round-16 (issue #365) re-calibration: the default Jaccard floor dropped
+    from 0.15 to 0.05 because the round-3 "A=1 ~0.17" estimate was stale
+    (actual Jaccards under current ``LONG_PERSONA_PROMPTS`` are 0.094-0.144).
+    With the new 0.05 floor, the surgeon long-form C0 vs lexicon-only C1
+    pair (Jaccard ~0.098) PASSES at default settings; this test now passes
+    an explicit higher ``min_jaccard=0.30`` to force the failure path and
+    pin the gate behaviour irrespective of the default floor.
     """
     tokenizer = _BalancedTokenizer(fixed_length=128)
     cell_c1 = Cell.from_key("00100")
     with pytest.raises(CAxisPreflightError, match="Jaccard"):
-        run_c_axis_preflight(source="surgeon", cell=cell_c1, tokenizer=tokenizer)
+        run_c_axis_preflight(source="surgeon", cell=cell_c1, tokenizer=tokenizer, min_jaccard=0.30)
 
 
 def test_preflight_only_applies_to_c1_cells() -> None:

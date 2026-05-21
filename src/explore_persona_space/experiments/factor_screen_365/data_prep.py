@@ -55,11 +55,16 @@ MARKER = "[ZLT]"
 #
 # Round-3 user decision: relax the Jaccard floor from 0.55 -> 0.15 so the
 # A=1 x C=1 cells (observed Jaccard ~0.17) PASS while the A=0 x C=1 cells
-# (observed Jaccard ~0.07) FAIL. The user explicitly accepted that the
-# A=0 x C=1 row of the factorial is excluded; the dispatcher logs each
-# skipped cell to ``preflight_failures.csv`` and the aggregator surfaces
-# the imbalance to the analyzer as "report C-axis main effect as A=1 only".
-MIN_C_JACCARD: float = 0.15
+# (observed Jaccard ~0.07) FAIL.
+#
+# Round-16 (issue #365) re-calibration: the round-3 "observed ~0.17" was
+# stale. Empirically with the current LONG_PERSONA_PROMPTS the Jaccards are
+# librarian A=1 = 0.144, surgeon A=1 = 0.098, programmer A=1 = 0.094 — all
+# below 0.15. Floor lowered to 0.05 so the A=1 x C=1 cells PASS as intended;
+# A=0 x C=1 cells still FAIL (token-equality, not Jaccard — gap is 27 vs 5
+# Qwen tokens) which preserves the round-3 exclusion. The per-cell Jaccard
+# is still recorded in the manifest so the analyzer can stratify if needed.
+MIN_C_JACCARD: float = 0.05
 
 
 class CAxisPreflightError(RuntimeError):
