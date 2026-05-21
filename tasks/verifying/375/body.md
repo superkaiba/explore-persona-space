@@ -1,5 +1,6 @@
 ---
-title: Natural marker leakage via in-context persona drift (no persona prompting)
+title: Persona-voiced few-shot prompts elicit the [ZLT] marker on villain LoRA adapters
+  at k=1 and k=3 (MODERATE confidence)
 kind: experiment
 application: detect
 tags: []
