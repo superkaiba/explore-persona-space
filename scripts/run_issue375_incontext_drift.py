@@ -751,27 +751,54 @@ def load_pools(cfg: dict) -> dict:
 
 
 def download_adapter(repo_id: str, hub_subpath: str, local_dir: Path) -> Path:
-    """Snapshot-download a single adapter dir from HF Hub.
+    """Download a PEFT adapter subdirectory from a (possibly large) HF Hub repo.
 
-    ``allow_patterns`` is the canonical scoped download — we don't want the
-    rest of the repo (350+ GB) on disk.
+    Uses ``list_repo_files`` + per-file ``hf_hub_download`` rather than
+    ``snapshot_download(allow_patterns=...)``. The ``snapshot_download``
+    path silently returns 0 files when the target subpath is in the
+    truncated tail of ``repo_info.siblings`` (huggingface_hub 0.36.2):
+    ``superkaiba1/explore-persona-space`` has 14,439 files via
+    ``list_repo_files`` but ``repo_info.siblings`` truncates at 7,901,
+    and our adapters at ``pod1_backup/.../*/adapter`` sit in the
+    truncated portion, so ``allow_patterns`` matches nothing and the
+    function returned an empty directory (issue #375 round-4 crash).
+
+    ``list_repo_files`` returns the full file list — we then download
+    only the matching files individually. This keeps the scoped-download
+    property (we never pull the 350+ GB rest of the repo) while
+    side-stepping the siblings truncation bug.
     """
-    from huggingface_hub import snapshot_download
+    from huggingface_hub import HfApi, hf_hub_download
 
     log.info("downloading adapter %s/%s -> %s", repo_id, hub_subpath, local_dir)
     local_dir.mkdir(parents=True, exist_ok=True)
-    snapshot_download(
-        repo_id=repo_id,
-        repo_type="model",
-        allow_patterns=f"{hub_subpath}/*",
-        local_dir=str(local_dir),
-        token=os.environ.get("HF_TOKEN"),
-    )
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    all_files = api.list_repo_files(repo_id=repo_id, repo_type="model")
+    prefix = hub_subpath.rstrip("/") + "/"
+    matches = [f for f in all_files if f.startswith(prefix)]
+    if not matches:
+        raise RuntimeError(
+            f"download_adapter: prefix {prefix!r} matched 0 of {len(all_files)} files "
+            f"in {repo_id}. Adapter path is wrong, or the adapter isn't uploaded."
+        )
+    for fname in matches:
+        hf_hub_download(
+            repo_id=repo_id,
+            filename=fname,
+            repo_type="model",
+            local_dir=str(local_dir),
+            token=os.environ.get("HF_TOKEN"),
+        )
     adapter_path = local_dir / hub_subpath
     if not (adapter_path / "adapter_config.json").exists():
         raise RuntimeError(
             f"download_adapter: expected adapter_config.json under {adapter_path} after "
-            f"snapshot_download — got {sorted(p.name for p in adapter_path.iterdir())}"
+            f"per-file download — got {sorted(p.name for p in adapter_path.iterdir())}"
+        )
+    if not (adapter_path / "adapter_model.safetensors").exists():
+        raise RuntimeError(
+            f"download_adapter: expected adapter_model.safetensors under {adapter_path} "
+            f"after per-file download — got {sorted(p.name for p in adapter_path.iterdir())}"
         )
     return adapter_path
 
