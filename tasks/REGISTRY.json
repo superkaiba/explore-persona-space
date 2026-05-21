@@ -1,5 +1,5 @@
 {
-  "highest_id": 374,
+  "highest_id": 375,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1771,6 +1771,13 @@
       "path": "tasks/completed/374",
       "status": "completed",
       "title": "Why-this-experiment gate hardening: fence coverage + m1/m3/m4/m5 + style (follow-up to #371)"
+    },
+    "375": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/375",
+      "status": "proposed",
+      "title": "Natural marker leakage via assistant-axis persona drift (no persona prompting)"
     },
     "38": {
       "has_clean_result": false,
