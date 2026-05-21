@@ -329,19 +329,19 @@ failure block the pipeline.
 Before doing anything else, acquire the per-task lock so no other
 `claude` CLI subprocess can execute on this task concurrently:
 
-~~~bash
+```bash
 uv run python scripts/orchestrator_lock.py acquire <N>
-~~~
+```
 
 If this exits non-zero with `locked by pid=...`, another body is alive
 for this task. Post an `epm:orchestrator-locked` marker and EXIT:
 
-~~~bash
+```bash
 uv run python scripts/task.py post-marker <N> epm:orchestrator-locked \
   --note "another body alive; refusing to start" \
   --source cli
 exit 0
-~~~
+```
 
 If `acquire` exits zero (either freshly acquired or reclaimed a stale
 lock whose PID no longer exists), continue to Step 0.
