@@ -1782,8 +1782,8 @@
     "376": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/376",
-      "status": "proposed",
+      "path": "tasks/planning/376",
+      "status": "planning",
       "title": "[Proposed] Conditional marker into Assistant, EM, compare marker fire-rate against non-EM baseline"
     },
     "377": {
