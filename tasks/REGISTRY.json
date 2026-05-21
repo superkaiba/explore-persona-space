@@ -1775,8 +1775,8 @@
     "375": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/375",
-      "status": "planning",
+      "path": "tasks/plan_pending/375",
+      "status": "plan_pending",
       "title": "Natural marker leakage via in-context persona drift (no persona prompting)"
     },
     "38": {
