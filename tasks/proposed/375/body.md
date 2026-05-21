@@ -1,6 +1,7 @@
 ---
 title: Natural marker leakage via assistant-axis persona drift (no persona prompting)
 kind: experiment
+application: detect
 tags: []
 created_at: '2026-05-21T00:42:50Z'
 has_clean_result: false
