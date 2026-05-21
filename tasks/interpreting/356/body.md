@@ -1,5 +1,7 @@
 ---
-title: Train CoT to be consistent with a wrong final answer
+title: Audit-filtering did not amplify persona-CoT leakage overall; one of four sources
+  (software_engineer) shows partial positive signal below the planned +0.04 threshold
+  (LOW confidence)
 kind: experiment
 tags:
 - todo
