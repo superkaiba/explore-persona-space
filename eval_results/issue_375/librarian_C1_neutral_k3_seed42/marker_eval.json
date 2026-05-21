@@ -1,0 +1,2979 @@
+{
+  "cell_label": "librarian_C1_neutral_k3_seed42",
+  "marker": "[ZLT]",
+  "marker_eval": {
+    "rate": 0.07282608695652174,
+    "found": 134,
+    "total": 1840,
+    "per_query": [
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.1,
+        "found": 1,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.8,
+        "found": 8,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.9,
+        "found": 9,
+        "total": 10
+      },
+      {
+        "rate": 0.2,
+        "found": 2,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.1,
+        "found": 1,
+        "total": 10
+      },
+      {
+        "rate": 0.2,
+        "found": 2,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.1,
+        "found": 1,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.3,
+        "found": 3,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.5,
+        "found": 5,
+        "total": 10
+      },
+      {
+        "rate": 0.1,
+        "found": 1,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.2,
+        "found": 2,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.1,
+        "found": 1,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.7,
+        "found": 7,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.2,
+        "found": 2,
+        "total": 10
+      },
+      {
+        "rate": 0.1,
+        "found": 1,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.7,
+        "found": 7,
+        "total": 10
+      },
+      {
+        "rate": 0.8,
+        "found": 8,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.4,
+        "found": 4,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.3,
+        "found": 3,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.1,
+        "found": 1,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.1,
+        "found": 1,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.9,
+        "found": 9,
+        "total": 10
+      },
+      {
+        "rate": 0.9,
+        "found": 9,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.2,
+        "found": 2,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.1,
+        "found": 1,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.2,
+        "found": 2,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.3,
+        "found": 3,
+        "total": 10
+      },
+      {
+        "rate": 0.1,
+        "found": 1,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.2,
+        "found": 2,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.5,
+        "found": 5,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.1,
+        "found": 1,
+        "total": 10
+      },
+      {
+        "rate": 0.2,
+        "found": 2,
+        "total": 10
+      },
+      {
+        "rate": 0.1,
+        "found": 1,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.9,
+        "found": 9,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.2,
+        "found": 2,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.6,
+        "found": 6,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.1,
+        "found": 1,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.1,
+        "found": 1,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.5,
+        "found": 5,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.2,
+        "found": 2,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      },
+      {
+        "rate": 0.0,
+        "found": 0,
+        "total": 10
+      }
+    ]
+  },
+  "stratified": {
+    "overall": {
+      "rate": 0.07282608695652174,
+      "n_queries": 184,
+      "n_completions": 1840,
+      "found": 134
+    },
+    "eval_questions": {
+      "rate": 0.135,
+      "n_queries": 20,
+      "n_completions": 200,
+      "found": 27
+    },
+    "lmsys_tail": {
+      "rate": 0.06524390243902439,
+      "n_queries": 164,
+      "n_completions": 1640,
+      "found": 107
+    },
+    "per_query_rates": [
+      0.0,
+      0.0,
+      0.1,
+      0.0,
+      0.0,
+      0.8,
+      0.0,
+      0.9,
+      0.2,
+      0.0,
+      0.1,
+      0.2,
+      0.0,
+      0.0,
+      0.1,
+      0.0,
+      0.0,
+      0.0,
+      0.3,
+      0.0,
+      0.0,
+      0.5,
+      0.1,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.2,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.1,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.7,
+      0.0,
+      0.0,
+      0.2,
+      0.1,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.7,
+      0.8,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.4,
+      0.0,
+      0.3,
+      0.0,
+      0.1,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.1,
+      0.0,
+      0.0,
+      0.0,
+      0.9,
+      0.9,
+      0.0,
+      0.2,
+      0.0,
+      0.1,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.2,
+      0.0,
+      0.3,
+      0.1,
+      0.0,
+      0.0,
+      0.2,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.5,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.1,
+      0.2,
+      0.1,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.9,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.2,
+      0.0,
+      0.0,
+      0.6,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.1,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.1,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.5,
+      0.0,
+      0.0,
+      0.2,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "prompt_meta": [
+    {
+      "query_id": 0,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        177525,
+        44038,
+        83780
+      ]
+    },
+    {
+      "query_id": 1,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        42074,
+        41591,
+        186380
+      ]
+    },
+    {
+      "query_id": 2,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        67308,
+        193384,
+        137506
+      ]
+    },
+    {
+      "query_id": 3,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        170298,
+        96305,
+        29199
+      ]
+    },
+    {
+      "query_id": 4,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        14110,
+        131382,
+        38813
+      ]
+    },
+    {
+      "query_id": 5,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        15595,
+        100267,
+        168219
+      ]
+    },
+    {
+      "query_id": 6,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        69639,
+        128135,
+        38813
+      ]
+    },
+    {
+      "query_id": 7,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        29276,
+        193384,
+        132422
+      ]
+    },
+    {
+      "query_id": 8,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        162774,
+        90665,
+        29276
+      ]
+    },
+    {
+      "query_id": 9,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        15595,
+        14110,
+        90665
+      ]
+    },
+    {
+      "query_id": 10,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        98245,
+        161390,
+        38813
+      ]
+    },
+    {
+      "query_id": 11,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        98245,
+        98330,
+        3034
+      ]
+    },
+    {
+      "query_id": 12,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        173087,
+        33935,
+        41591
+      ]
+    },
+    {
+      "query_id": 13,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        69639,
+        126493,
+        197669
+      ]
+    },
+    {
+      "query_id": 14,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        144311,
+        67308,
+        132422
+      ]
+    },
+    {
+      "query_id": 15,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        131382,
+        144286,
+        162774
+      ]
+    },
+    {
+      "query_id": 16,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        33903,
+        38813,
+        41732
+      ]
+    },
+    {
+      "query_id": 17,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        103858,
+        162774,
+        29199
+      ]
+    },
+    {
+      "query_id": 18,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        193792,
+        168219,
+        64589
+      ]
+    },
+    {
+      "query_id": 19,
+      "query_source": "eval_questions",
+      "k": 3,
+      "example_doc_ids": [
+        128135,
+        29199,
+        193384
+      ]
+    },
+    {
+      "query_id": 20,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        41732,
+        177525,
+        132265
+      ]
+    },
+    {
+      "query_id": 21,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        180271,
+        29276,
+        38813
+      ]
+    },
+    {
+      "query_id": 22,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        199672,
+        162774,
+        197669
+      ]
+    },
+    {
+      "query_id": 23,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        126493,
+        132265,
+        36977
+      ]
+    },
+    {
+      "query_id": 24,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        29199,
+        33903,
+        168219
+      ]
+    },
+    {
+      "query_id": 25,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        173087,
+        143501,
+        1491
+      ]
+    },
+    {
+      "query_id": 26,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        132422,
+        96305,
+        126493
+      ]
+    },
+    {
+      "query_id": 27,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        193792,
+        64589,
+        126493
+      ]
+    },
+    {
+      "query_id": 28,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        177525,
+        100267,
+        1491
+      ]
+    },
+    {
+      "query_id": 29,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        162774,
+        29276,
+        44038
+      ]
+    },
+    {
+      "query_id": 30,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        29276,
+        14110,
+        126493
+      ]
+    },
+    {
+      "query_id": 31,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        128135,
+        38813,
+        177525
+      ]
+    },
+    {
+      "query_id": 32,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        80158,
+        173087,
+        177525
+      ]
+    },
+    {
+      "query_id": 33,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        128135,
+        197669,
+        144286
+      ]
+    },
+    {
+      "query_id": 34,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        144286,
+        157737,
+        3034
+      ]
+    },
+    {
+      "query_id": 35,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        33935,
+        1491,
+        67308
+      ]
+    },
+    {
+      "query_id": 36,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        29199,
+        193792,
+        144311
+      ]
+    },
+    {
+      "query_id": 37,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        29276,
+        80158,
+        128135
+      ]
+    },
+    {
+      "query_id": 38,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        170298,
+        162774,
+        137506
+      ]
+    },
+    {
+      "query_id": 39,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        128135,
+        80158,
+        193384
+      ]
+    },
+    {
+      "query_id": 40,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        173087,
+        44038,
+        83780
+      ]
+    },
+    {
+      "query_id": 41,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        132422,
+        83780,
+        170298
+      ]
+    },
+    {
+      "query_id": 42,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        144286,
+        173087,
+        144311
+      ]
+    },
+    {
+      "query_id": 43,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        3034,
+        1491,
+        103858
+      ]
+    },
+    {
+      "query_id": 44,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        168219,
+        80158,
+        38813
+      ]
+    },
+    {
+      "query_id": 45,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        38813,
+        96305,
+        67308
+      ]
+    },
+    {
+      "query_id": 46,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        14110,
+        193792,
+        36977
+      ]
+    },
+    {
+      "query_id": 47,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        199672,
+        44038,
+        3034
+      ]
+    },
+    {
+      "query_id": 48,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        64589,
+        132422,
+        1491
+      ]
+    },
+    {
+      "query_id": 49,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        90665,
+        42074,
+        33903
+      ]
+    },
+    {
+      "query_id": 50,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        132265,
+        69639,
+        38813
+      ]
+    },
+    {
+      "query_id": 51,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        83780,
+        92296,
+        42074
+      ]
+    },
+    {
+      "query_id": 52,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        193384,
+        137506,
+        33935
+      ]
+    },
+    {
+      "query_id": 53,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        38813,
+        11583,
+        168219
+      ]
+    },
+    {
+      "query_id": 54,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        36977,
+        64589,
+        173087
+      ]
+    },
+    {
+      "query_id": 55,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        131382,
+        128135,
+        98245
+      ]
+    },
+    {
+      "query_id": 56,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        98245,
+        126493,
+        168219
+      ]
+    },
+    {
+      "query_id": 57,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        132265,
+        144311,
+        80158
+      ]
+    },
+    {
+      "query_id": 58,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        144311,
+        64589,
+        92296
+      ]
+    },
+    {
+      "query_id": 59,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        100267,
+        83780,
+        38813
+      ]
+    },
+    {
+      "query_id": 60,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        80158,
+        197669,
+        173087
+      ]
+    },
+    {
+      "query_id": 61,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        173087,
+        38813,
+        168219
+      ]
+    },
+    {
+      "query_id": 62,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        33903,
+        157737,
+        131382
+      ]
+    },
+    {
+      "query_id": 63,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        128135,
+        162774,
+        44038
+      ]
+    },
+    {
+      "query_id": 64,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        1491,
+        64589,
+        90665
+      ]
+    },
+    {
+      "query_id": 65,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        15595,
+        170298,
+        33935
+      ]
+    },
+    {
+      "query_id": 66,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        38813,
+        157737,
+        180271
+      ]
+    },
+    {
+      "query_id": 67,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        42074,
+        44038,
+        96305
+      ]
+    },
+    {
+      "query_id": 68,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        162774,
+        33935,
+        83780
+      ]
+    },
+    {
+      "query_id": 69,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        144286,
+        131382,
+        193792
+      ]
+    },
+    {
+      "query_id": 70,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        126493,
+        162774,
+        98245
+      ]
+    },
+    {
+      "query_id": 71,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        137506,
+        41591,
+        115643
+      ]
+    },
+    {
+      "query_id": 72,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        199672,
+        41591,
+        103858
+      ]
+    },
+    {
+      "query_id": 73,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        11583,
+        193384,
+        126493
+      ]
+    },
+    {
+      "query_id": 74,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        83780,
+        161390,
+        41732
+      ]
+    },
+    {
+      "query_id": 75,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        42074,
+        162774,
+        126493
+      ]
+    },
+    {
+      "query_id": 76,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        90665,
+        177525,
+        41732
+      ]
+    },
+    {
+      "query_id": 77,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        41591,
+        100267,
+        98330
+      ]
+    },
+    {
+      "query_id": 78,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        42074,
+        33935,
+        197669
+      ]
+    },
+    {
+      "query_id": 79,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        33935,
+        180271,
+        64589
+      ]
+    },
+    {
+      "query_id": 80,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        143501,
+        33903,
+        170298
+      ]
+    },
+    {
+      "query_id": 81,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        144311,
+        132422,
+        29199
+      ]
+    },
+    {
+      "query_id": 82,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        173087,
+        90665,
+        96305
+      ]
+    },
+    {
+      "query_id": 83,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        29199,
+        103858,
+        143501
+      ]
+    },
+    {
+      "query_id": 84,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        14110,
+        197669,
+        41732
+      ]
+    },
+    {
+      "query_id": 85,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        92296,
+        11583,
+        199672
+      ]
+    },
+    {
+      "query_id": 86,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        33935,
+        14110,
+        69639
+      ]
+    },
+    {
+      "query_id": 87,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        3034,
+        29199,
+        1491
+      ]
+    },
+    {
+      "query_id": 88,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        173087,
+        98330,
+        193384
+      ]
+    },
+    {
+      "query_id": 89,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        100267,
+        41732,
+        3034
+      ]
+    },
+    {
+      "query_id": 90,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        170298,
+        80158,
+        98330
+      ]
+    },
+    {
+      "query_id": 91,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        41732,
+        193384,
+        90665
+      ]
+    },
+    {
+      "query_id": 92,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        80158,
+        41732,
+        162774
+      ]
+    },
+    {
+      "query_id": 93,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        98330,
+        193792,
+        96305
+      ]
+    },
+    {
+      "query_id": 94,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        126493,
+        92296,
+        193792
+      ]
+    },
+    {
+      "query_id": 95,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        170298,
+        144286,
+        96305
+      ]
+    },
+    {
+      "query_id": 96,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        197669,
+        42074,
+        3034
+      ]
+    },
+    {
+      "query_id": 97,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        44038,
+        100267,
+        67308
+      ]
+    },
+    {
+      "query_id": 98,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        131382,
+        69639,
+        41732
+      ]
+    },
+    {
+      "query_id": 99,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        42074,
+        90665,
+        92296
+      ]
+    },
+    {
+      "query_id": 100,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        98245,
+        161390,
+        42074
+      ]
+    },
+    {
+      "query_id": 101,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        92296,
+        90665,
+        168219
+      ]
+    },
+    {
+      "query_id": 102,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        96305,
+        132265,
+        137506
+      ]
+    },
+    {
+      "query_id": 103,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        193792,
+        90665,
+        170298
+      ]
+    },
+    {
+      "query_id": 104,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        3034,
+        36977,
+        128135
+      ]
+    },
+    {
+      "query_id": 105,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        92296,
+        128135,
+        96305
+      ]
+    },
+    {
+      "query_id": 106,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        15595,
+        197669,
+        92296
+      ]
+    },
+    {
+      "query_id": 107,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        14110,
+        197669,
+        69639
+      ]
+    },
+    {
+      "query_id": 108,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        11583,
+        69639,
+        3034
+      ]
+    },
+    {
+      "query_id": 109,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        128135,
+        29199,
+        11583
+      ]
+    },
+    {
+      "query_id": 110,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        161390,
+        29276,
+        128135
+      ]
+    },
+    {
+      "query_id": 111,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        90665,
+        162774,
+        11583
+      ]
+    },
+    {
+      "query_id": 112,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        103858,
+        170298,
+        162774
+      ]
+    },
+    {
+      "query_id": 113,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        115643,
+        42074,
+        132422
+      ]
+    },
+    {
+      "query_id": 114,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        41732,
+        168219,
+        44038
+      ]
+    },
+    {
+      "query_id": 115,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        44038,
+        132422,
+        33935
+      ]
+    },
+    {
+      "query_id": 116,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        33935,
+        29276,
+        33903
+      ]
+    },
+    {
+      "query_id": 117,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        3034,
+        100267,
+        162774
+      ]
+    },
+    {
+      "query_id": 118,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        90665,
+        132422,
+        144311
+      ]
+    },
+    {
+      "query_id": 119,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        29276,
+        67308,
+        128135
+      ]
+    },
+    {
+      "query_id": 120,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        64589,
+        33935,
+        3034
+      ]
+    },
+    {
+      "query_id": 121,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        33935,
+        162774,
+        67308
+      ]
+    },
+    {
+      "query_id": 122,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        96305,
+        41591,
+        144311
+      ]
+    },
+    {
+      "query_id": 123,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        3034,
+        126493,
+        103858
+      ]
+    },
+    {
+      "query_id": 124,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        126493,
+        128135,
+        162774
+      ]
+    },
+    {
+      "query_id": 125,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        100267,
+        177525,
+        14110
+      ]
+    },
+    {
+      "query_id": 126,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        186380,
+        180271,
+        168219
+      ]
+    },
+    {
+      "query_id": 127,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        80158,
+        64589,
+        83780
+      ]
+    },
+    {
+      "query_id": 128,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        29276,
+        161390,
+        173087
+      ]
+    },
+    {
+      "query_id": 129,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        103858,
+        162774,
+        92296
+      ]
+    },
+    {
+      "query_id": 130,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        193792,
+        98330,
+        41732
+      ]
+    },
+    {
+      "query_id": 131,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        67308,
+        162774,
+        11583
+      ]
+    },
+    {
+      "query_id": 132,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        157737,
+        98330,
+        137506
+      ]
+    },
+    {
+      "query_id": 133,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        67308,
+        131382,
+        193384
+      ]
+    },
+    {
+      "query_id": 134,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        144286,
+        197669,
+        1491
+      ]
+    },
+    {
+      "query_id": 135,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        170298,
+        128135,
+        168219
+      ]
+    },
+    {
+      "query_id": 136,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        92296,
+        1491,
+        162774
+      ]
+    },
+    {
+      "query_id": 137,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        126493,
+        132422,
+        199672
+      ]
+    },
+    {
+      "query_id": 138,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        137506,
+        41591,
+        162774
+      ]
+    },
+    {
+      "query_id": 139,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        33903,
+        1491,
+        162774
+      ]
+    },
+    {
+      "query_id": 140,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        44038,
+        193792,
+        162774
+      ]
+    },
+    {
+      "query_id": 141,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        98245,
+        44038,
+        157737
+      ]
+    },
+    {
+      "query_id": 142,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        90665,
+        199672,
+        83780
+      ]
+    },
+    {
+      "query_id": 143,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        199672,
+        180271,
+        131382
+      ]
+    },
+    {
+      "query_id": 144,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        15595,
+        193384,
+        161390
+      ]
+    },
+    {
+      "query_id": 145,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        197669,
+        100267,
+        144311
+      ]
+    },
+    {
+      "query_id": 146,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        1491,
+        29276,
+        100267
+      ]
+    },
+    {
+      "query_id": 147,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        64589,
+        29199,
+        144286
+      ]
+    },
+    {
+      "query_id": 148,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        180271,
+        33935,
+        193384
+      ]
+    },
+    {
+      "query_id": 149,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        132265,
+        126493,
+        92296
+      ]
+    },
+    {
+      "query_id": 150,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        41591,
+        177525,
+        3034
+      ]
+    },
+    {
+      "query_id": 151,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        137506,
+        143501,
+        3034
+      ]
+    },
+    {
+      "query_id": 152,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        131382,
+        15595,
+        128135
+      ]
+    },
+    {
+      "query_id": 153,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        115643,
+        29199,
+        170298
+      ]
+    },
+    {
+      "query_id": 154,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        193792,
+        44038,
+        131382
+      ]
+    },
+    {
+      "query_id": 155,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        162774,
+        144286,
+        132422
+      ]
+    },
+    {
+      "query_id": 156,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        132422,
+        161390,
+        100267
+      ]
+    },
+    {
+      "query_id": 157,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        162774,
+        161390,
+        67308
+      ]
+    },
+    {
+      "query_id": 158,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        11583,
+        1491,
+        173087
+      ]
+    },
+    {
+      "query_id": 159,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        100267,
+        180271,
+        199672
+      ]
+    },
+    {
+      "query_id": 160,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        33935,
+        131382,
+        103858
+      ]
+    },
+    {
+      "query_id": 161,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        44038,
+        67308,
+        168219
+      ]
+    },
+    {
+      "query_id": 162,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        64589,
+        103858,
+        131382
+      ]
+    },
+    {
+      "query_id": 163,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        173087,
+        38813,
+        92296
+      ]
+    },
+    {
+      "query_id": 164,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        41591,
+        14110,
+        36977
+      ]
+    },
+    {
+      "query_id": 165,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        33935,
+        199672,
+        14110
+      ]
+    },
+    {
+      "query_id": 166,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        168219,
+        144286,
+        98245
+      ]
+    },
+    {
+      "query_id": 167,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        162774,
+        29199,
+        193792
+      ]
+    },
+    {
+      "query_id": 168,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        98245,
+        137506,
+        15595
+      ]
+    },
+    {
+      "query_id": 169,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        67308,
+        115643,
+        41732
+      ]
+    },
+    {
+      "query_id": 170,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        41591,
+        168219,
+        186380
+      ]
+    },
+    {
+      "query_id": 171,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        64589,
+        131382,
+        126493
+      ]
+    },
+    {
+      "query_id": 172,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        92296,
+        144311,
+        168219
+      ]
+    },
+    {
+      "query_id": 173,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        100267,
+        115643,
+        132265
+      ]
+    },
+    {
+      "query_id": 174,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        41591,
+        80158,
+        15595
+      ]
+    },
+    {
+      "query_id": 175,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        98330,
+        177525,
+        132422
+      ]
+    },
+    {
+      "query_id": 176,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        33903,
+        144286,
+        162774
+      ]
+    },
+    {
+      "query_id": 177,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        143501,
+        33903,
+        193384
+      ]
+    },
+    {
+      "query_id": 178,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        103858,
+        33935,
+        193792
+      ]
+    },
+    {
+      "query_id": 179,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        64589,
+        98330,
+        197669
+      ]
+    },
+    {
+      "query_id": 180,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        126493,
+        83780,
+        98245
+      ]
+    },
+    {
+      "query_id": 181,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        173087,
+        161390,
+        41732
+      ]
+    },
+    {
+      "query_id": 182,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        170298,
+        193792,
+        126493
+      ]
+    },
+    {
+      "query_id": 183,
+      "query_source": "lmsys_tail",
+      "k": 3,
+      "example_doc_ids": [
+        132422,
+        80158,
+        143501
+      ]
+    }
+  ]
+}

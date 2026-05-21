@@ -1,0 +1,21 @@
+{
+  "cell_label": "villain_C1_persona-style_k3_seed42",
+  "adapter_id": "villain_C1",
+  "pool_kind": "persona-style",
+  "k": 3,
+  "decoder": {
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 2048,
+    "n": 10,
+    "seed": 42
+  },
+  "n_queries": 184,
+  "n_completions": 1840,
+  "marker": "[ZLT]",
+  "overall_rate": 0.1309782608695652,
+  "eval_questions_rate": 0.13,
+  "lmsys_tail_rate": 0.13109756097560976,
+  "found": 241,
+  "total": 1840
+}
