@@ -5,7 +5,7 @@ kind: experiment
 application: detect
 tags: []
 created_at: '2026-05-21T00:42:50Z'
-has_clean_result: false
+has_clean_result: true
 ---
 # Persona-voiced few-shot prompts elicit the [ZLT] marker on villain LoRA adapters at k=1 and k=3 (MODERATE confidence)
 
