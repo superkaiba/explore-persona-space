@@ -1,0 +1,5513 @@
+{
+  "per_persona": {
+    "assistant": {
+      "no_cot": {
+        "accuracy": 0.7892335766423357,
+        "n_correct": 865,
+        "n_total": 1096
+      },
+      "raw": [
+        {
+          "q_id": 0,
+          "correct_answer": "A",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 2,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 3,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 4,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 5,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 6,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 7,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 8,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 9,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 10,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 11,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 12,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 13,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 14,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 15,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 16,
+          "correct_answer": "2",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 17,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 18,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 19,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 20,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 21,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 22,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 23,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 24,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 25,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 26,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 27,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 28,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 29,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 30,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 31,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 32,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 33,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 34,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 35,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 36,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 37,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 38,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 39,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 40,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 41,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 42,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 43,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 44,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 45,
+          "correct_answer": "B",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 46,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 47,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 48,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 49,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 50,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 51,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 52,
+          "correct_answer": "C",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 53,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 54,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 55,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 56,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 57,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 58,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 59,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 60,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 61,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 62,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 63,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 64,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 65,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 66,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 67,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 68,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 69,
+          "correct_answer": "D",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 70,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 71,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 72,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 73,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 74,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 75,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 76,
+          "correct_answer": "A",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 77,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 78,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 79,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 80,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 81,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 82,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 83,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 84,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 85,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 86,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 87,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 88,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 89,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 90,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 91,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 92,
+          "correct_answer": "B",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 93,
+          "correct_answer": "C",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 94,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 95,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 96,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 97,
+          "correct_answer": "D",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 98,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 99,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 100,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 101,
+          "correct_answer": "B",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 102,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 103,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 104,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 105,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 106,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 107,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 108,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 109,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 110,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 111,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 112,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 113,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 114,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 115,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 116,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 117,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 118,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 119,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 120,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 121,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 122,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 123,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 124,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 125,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 126,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 127,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 128,
+          "correct_answer": "4",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 129,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 130,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 131,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 132,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 133,
+          "correct_answer": "A",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 134,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 135,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 136,
+          "correct_answer": "B",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 137,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 138,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 139,
+          "correct_answer": "B",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 140,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 141,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 142,
+          "correct_answer": "A",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 143,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 144,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 145,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 146,
+          "correct_answer": "B",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 147,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 148,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 149,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 150,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 151,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 152,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 153,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 154,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 155,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 156,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 157,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 158,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 159,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 160,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 161,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 162,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 163,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 164,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 165,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 166,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 167,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 168,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 169,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 170,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 171,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 172,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 173,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 174,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 175,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 176,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 177,
+          "correct_answer": "A",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 178,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 179,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 180,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 181,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 182,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 183,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 184,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 185,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 186,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 187,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 188,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 189,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 190,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 191,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 192,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 193,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 194,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 195,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 196,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 197,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 198,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 199,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 200,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 201,
+          "correct_answer": "C",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 202,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 203,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 204,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 205,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 206,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 207,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 208,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 209,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 210,
+          "correct_answer": "C",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 211,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 212,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 213,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 214,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 215,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 216,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 217,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 218,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 219,
+          "correct_answer": "A",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 220,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 221,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 222,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 223,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 224,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 225,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 226,
+          "correct_answer": "4",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 227,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 228,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 229,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 230,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 231,
+          "correct_answer": "4",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 232,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 233,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 234,
+          "correct_answer": "C",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 235,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 236,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 237,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 238,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 239,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 240,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 241,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 242,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 243,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 244,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 245,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 246,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 247,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 248,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 249,
+          "correct_answer": "A",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 250,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 251,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 252,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 253,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 254,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 255,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 256,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 257,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 258,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 259,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 260,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 261,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 262,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 263,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 264,
+          "correct_answer": "1",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 265,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 266,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 267,
+          "correct_answer": "B",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 268,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 269,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 270,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 271,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 272,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 273,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 274,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 275,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 276,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 277,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 278,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 279,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 280,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 281,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 282,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 283,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 284,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 285,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 286,
+          "correct_answer": "D",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 287,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 288,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 289,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 290,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 291,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 292,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 293,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 294,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 295,
+          "correct_answer": "C",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 296,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 297,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 298,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 299,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 300,
+          "correct_answer": "C",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 301,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 302,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 303,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 304,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 305,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 306,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 307,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 308,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 309,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 310,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 311,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 312,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 313,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 314,
+          "correct_answer": "A",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 315,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 316,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 317,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 318,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 319,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 320,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 321,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 322,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 323,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 324,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 325,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 326,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 327,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 328,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 329,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 330,
+          "correct_answer": "3",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 331,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 332,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 333,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 334,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 335,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 336,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 337,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 338,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 339,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 340,
+          "correct_answer": "D",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 341,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 342,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 343,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 344,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 345,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 346,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 347,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 348,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 349,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 350,
+          "correct_answer": "D",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 351,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 352,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 353,
+          "correct_answer": "B",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 354,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 355,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 356,
+          "correct_answer": "B",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 357,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 358,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 359,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 360,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 361,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 362,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 363,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 364,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 365,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 366,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 367,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 368,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 369,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 370,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 371,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 372,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 373,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 374,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 375,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 376,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 377,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 378,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 379,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 380,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 381,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 382,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 383,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 384,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 385,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 386,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 387,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 388,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 389,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 390,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 391,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 392,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 393,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 394,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 395,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 396,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 397,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 398,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 399,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 400,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 401,
+          "correct_answer": "B",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 402,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 403,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 404,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 405,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 406,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 407,
+          "correct_answer": "B",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 408,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 409,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 410,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 411,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 412,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 413,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 414,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 415,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 416,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 417,
+          "correct_answer": "B",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 418,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 419,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 420,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 421,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 422,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 423,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 424,
+          "correct_answer": "A",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 425,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 426,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 427,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 428,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 429,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 430,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 431,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 432,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 433,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 434,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 435,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 436,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 437,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 438,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 439,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 440,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 441,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 442,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 443,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 444,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 445,
+          "correct_answer": "B",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 446,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 447,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 448,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 449,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 450,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 451,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 452,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 453,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 454,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 455,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 456,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 457,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 458,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 459,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 460,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 461,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 462,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 463,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 464,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 465,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 466,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 467,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 468,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 469,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 470,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 471,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 472,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 473,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 474,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 475,
+          "correct_answer": "C",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 476,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 477,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 478,
+          "correct_answer": "B",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 479,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 480,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 481,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 482,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 483,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 484,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 485,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 486,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 487,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 488,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 489,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 490,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 491,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 492,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 493,
+          "correct_answer": "B",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 494,
+          "correct_answer": "1",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 495,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 496,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 497,
+          "correct_answer": "4",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 498,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 499,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 500,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 501,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 502,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 503,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 504,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 505,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 506,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 507,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 508,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 509,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 510,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 511,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 512,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 513,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 514,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 515,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 516,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 517,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 518,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 519,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 520,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 521,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 522,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 523,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 524,
+          "correct_answer": "C",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 525,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 526,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 527,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 528,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 529,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 530,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 531,
+          "correct_answer": "A",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 532,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 533,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 534,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 535,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 536,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 537,
+          "correct_answer": "B",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 538,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 539,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 540,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 541,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 542,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 543,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 544,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 545,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 546,
+          "correct_answer": "A",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 547,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 548,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 549,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 550,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 551,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 552,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 553,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 554,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 555,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 556,
+          "correct_answer": "4",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 557,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 558,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 559,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 560,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 561,
+          "correct_answer": "3",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 562,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 563,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 564,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 565,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 566,
+          "correct_answer": "C",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 567,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 568,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 569,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 570,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 571,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 572,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 573,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 574,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 575,
+          "correct_answer": "C",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 576,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 577,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 578,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 579,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 580,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 581,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 582,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 583,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 584,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 585,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 586,
+          "correct_answer": "A",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 587,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 588,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 589,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 590,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 591,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 592,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 593,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 594,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 595,
+          "correct_answer": "B",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 596,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 597,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 598,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 599,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 600,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 601,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 602,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 603,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 604,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 605,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 606,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 607,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 608,
+          "correct_answer": "D",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 609,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 610,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 611,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 612,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 613,
+          "correct_answer": "D",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 614,
+          "correct_answer": "1",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 615,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 616,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 617,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 618,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 619,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 620,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 621,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 622,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 623,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 624,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 625,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 626,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 627,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 628,
+          "correct_answer": "B",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 629,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 630,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 631,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 632,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 633,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 634,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 635,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 636,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 637,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 638,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 639,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 640,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 641,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 642,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 643,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 644,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 645,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 646,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 647,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 648,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 649,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 650,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 651,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 652,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 653,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 654,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 655,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 656,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 657,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 658,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 659,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 660,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 661,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 662,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 663,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 664,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 665,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 666,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 667,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 668,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 669,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 670,
+          "correct_answer": "C",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 671,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 672,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 673,
+          "correct_answer": "2",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 674,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 675,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 676,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 677,
+          "correct_answer": "C",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 678,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 679,
+          "correct_answer": "C",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 680,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 681,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 682,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 683,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 684,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 685,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 686,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 687,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 688,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 689,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 690,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 691,
+          "correct_answer": "4",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 692,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 693,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 694,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 695,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 696,
+          "correct_answer": "B",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 697,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 698,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 699,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 700,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 701,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 702,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 703,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 704,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 705,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 706,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 707,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 708,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 709,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 710,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 711,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 712,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 713,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 714,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 715,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 716,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 717,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 718,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 719,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 720,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 721,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 722,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 723,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 724,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 725,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 726,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 727,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 728,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 729,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 730,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 731,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 732,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 733,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 734,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 735,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 736,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 737,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 738,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 739,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 740,
+          "correct_answer": "3",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 741,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 742,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 743,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 744,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 745,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 746,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 747,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 748,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 749,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 750,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 751,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 752,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 753,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 754,
+          "correct_answer": "A",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 755,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 756,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 757,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 758,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 759,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 760,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 761,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 762,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 763,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 764,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 765,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 766,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 767,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 768,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 769,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 770,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 771,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 772,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 773,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 774,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 775,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 776,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 777,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 778,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 779,
+          "correct_answer": "3",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 780,
+          "correct_answer": "B",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 781,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 782,
+          "correct_answer": "4",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 783,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 784,
+          "correct_answer": "A",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 785,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 786,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 787,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 788,
+          "correct_answer": "C",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 789,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 790,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 791,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 792,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 793,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 794,
+          "correct_answer": "B",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 795,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 796,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 797,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 798,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 799,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 800,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 801,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 802,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 803,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 804,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 805,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 806,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 807,
+          "correct_answer": "B",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 808,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 809,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 810,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 811,
+          "correct_answer": "4",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 812,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 813,
+          "correct_answer": "1",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 814,
+          "correct_answer": "B",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 815,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 816,
+          "correct_answer": "C",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 817,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 818,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 819,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 820,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 821,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 822,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 823,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 824,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 825,
+          "correct_answer": "B",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 826,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 827,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 828,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 829,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 830,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 831,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 832,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 833,
+          "correct_answer": "4",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 834,
+          "correct_answer": "C",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 835,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 836,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 837,
+          "correct_answer": "B",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 838,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 839,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 840,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 841,
+          "correct_answer": "1",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 842,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 843,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 844,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 845,
+          "correct_answer": "B",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 846,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 847,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 848,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 849,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 850,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 851,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 852,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 853,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 854,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 855,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 856,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 857,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 858,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 859,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 860,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 861,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 862,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 863,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 864,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 865,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 866,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 867,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 868,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 869,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 870,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 871,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 872,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 873,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 874,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 875,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 876,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 877,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 878,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 879,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 880,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 881,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 882,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 883,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 884,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 885,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 886,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 887,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 888,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 889,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 890,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 891,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 892,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 893,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 894,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 895,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 896,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 897,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 898,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 899,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 900,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 901,
+          "correct_answer": "C",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 902,
+          "correct_answer": "A",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 903,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 904,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 905,
+          "correct_answer": "D",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 906,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 907,
+          "correct_answer": "A",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 908,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 909,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 910,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 911,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 912,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 913,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 914,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 915,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 916,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 917,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 918,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 919,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 920,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 921,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 922,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 923,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 924,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 925,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 926,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 927,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 928,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 929,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 930,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 931,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 932,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 933,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 934,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 935,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 936,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 937,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 938,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 939,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 940,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 941,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 942,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 943,
+          "correct_answer": "C",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 944,
+          "correct_answer": "B",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 945,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 946,
+          "correct_answer": "B",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 947,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 948,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 949,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 950,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 951,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 952,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 953,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 954,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 955,
+          "correct_answer": "D",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 956,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 957,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 958,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 959,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 960,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 961,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 962,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 963,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 964,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 965,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 966,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 967,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 968,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 969,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 970,
+          "correct_answer": "C",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 971,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 972,
+          "correct_answer": "B",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 973,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 974,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 975,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 976,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 977,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 978,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 979,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 980,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 981,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 982,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 983,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 984,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 985,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 986,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 987,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 988,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 989,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 990,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 991,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 992,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 993,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 994,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 995,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 996,
+          "correct_answer": "1",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 997,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 998,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 999,
+          "correct_answer": "A",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 1000,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1001,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1002,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 1003,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1004,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1005,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1006,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1007,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1008,
+          "correct_answer": "A",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1009,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1010,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1011,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1012,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1013,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1014,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1015,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1016,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1017,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1018,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1019,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1020,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1021,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1022,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1023,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1024,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1025,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1026,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1027,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1028,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1029,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 1030,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1031,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1032,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1033,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1034,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1035,
+          "correct_answer": "4",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 1036,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1037,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1038,
+          "correct_answer": "B",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1039,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1040,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1041,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1042,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1043,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1044,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1045,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1046,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1047,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1048,
+          "correct_answer": "C",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1049,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1050,
+          "correct_answer": "D",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1051,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1052,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1053,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1054,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1055,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1056,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1057,
+          "correct_answer": "D",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1058,
+          "correct_answer": "B",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1059,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1060,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1061,
+          "correct_answer": "D",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 1062,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1063,
+          "correct_answer": "B",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1064,
+          "correct_answer": "B",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1065,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1066,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1067,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1068,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1069,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1070,
+          "correct_answer": "C",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1071,
+          "correct_answer": "B",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1072,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1073,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1074,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1075,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1076,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1077,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1078,
+          "correct_answer": "C",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1079,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1080,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1081,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 1082,
+          "correct_answer": "C",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 1083,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1084,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1085,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1086,
+          "correct_answer": "2",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1087,
+          "correct_answer": "D",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1088,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1089,
+          "correct_answer": "B",
+          "no_cot_pred": null
+        },
+        {
+          "q_id": 1090,
+          "correct_answer": "B",
+          "no_cot_pred": "B"
+        },
+        {
+          "q_id": 1091,
+          "correct_answer": "C",
+          "no_cot_pred": "C"
+        },
+        {
+          "q_id": 1092,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1093,
+          "correct_answer": "D",
+          "no_cot_pred": "D"
+        },
+        {
+          "q_id": 1094,
+          "correct_answer": "A",
+          "no_cot_pred": "A"
+        },
+        {
+          "q_id": 1095,
+          "correct_answer": "D",
+          "no_cot_pred": "A"
+        }
+      ]
+    }
+  },
+  "metadata": {
+    "model": "/root/.cache/huggingface/hub/models--Qwen--Qwen2.5-7B-Instruct/snapshots/a09a35458c702b33eeacc393d103063234e8bc28",
+    "git_commit": "8e541ff42926fd3a15ae48546b373c503f7b6213",
+    "timestamp": "2026-05-20T21:59:39.810075+00:00",
+    "n_questions": 1096,
+    "vllm_version": "0.11.0",
+    "transformers_version": "4.57.6",
+    "torch_version": "2.8.0",
+    "cot_arms": [
+      "no-cot"
+    ],
+    "n_personas": 1,
+    "cot_max_tokens": 768,
+    "cell_id": "baseline_train",
+    "wall_time_sec": 45.3659873008728,
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "base_model_revision": "a09a35458c",
+    "base_model_local_path": "/root/.cache/huggingface/hub/models--Qwen--Qwen2.5-7B-Instruct/snapshots/a09a35458c702b33eeacc393d103063234e8bc28",
+    "audit_json_source": "data/sft/issue356/_phase0_audit.json"
+  }
+}
