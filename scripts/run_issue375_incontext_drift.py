@@ -800,6 +800,22 @@ def download_adapter(repo_id: str, hub_subpath: str, local_dir: Path) -> Path:
             f"download_adapter: expected adapter_model.safetensors under {adapter_path} "
             f"after per-file download — got {sorted(p.name for p in adapter_path.iterdir())}"
         )
+    # Hot-fix: inherited LoRAs were saved under transformers 5.x, which writes
+    # tokenizer_config.json's `extra_special_tokens` as a LIST. transformers
+    # 4.57.6 (installed here) iterates that field with `.items()` /  `.keys()`
+    # and crashes with `AttributeError: 'list' object has no attribute 'keys'`.
+    # Strip the field — Qwen base config doesn't carry it anyway.
+    tok_cfg = adapter_path / "tokenizer_config.json"
+    if tok_cfg.exists():
+        import json as _json
+
+        data = _json.loads(tok_cfg.read_text())
+        if isinstance(data.get("extra_special_tokens"), list):
+            data.pop("extra_special_tokens", None)
+            tok_cfg.write_text(_json.dumps(data, indent=2, ensure_ascii=False))
+            log.info(
+                "patched %s: removed list-shaped extra_special_tokens (5.x→4.x compat)", tok_cfg
+            )
     return adapter_path
 
 
