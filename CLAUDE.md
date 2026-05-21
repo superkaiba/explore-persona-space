@@ -8,7 +8,7 @@
   and RunPod lifecycle only through `scripts/task.py` (the local-file CLI) or
   by editing the body / posting events via that CLI. The status of a task is
   the *name of its parent folder* (`proposed`, `running`, `awaiting_promotion`,
-  etc.); the EPS dashboard at `https://eps.superkaiba.com` is a read-mostly
+  etc.); the EPS dashboard (live at `https://sagan.superkaiba.com/eps/board`) is a read-mostly
   viewer onto the same tree. GitHub issues, labels, project board columns, and
   the legacy Sagan dashboard are historical evidence only; never use them as
   the control plane.
@@ -298,7 +298,7 @@ Live training/eval stdout is tailed via SSH MCP (`ssh_tail` /
 agent posts `epm:progress` markers from the local VM at milestones
 (eval boundary, checkpoint save, phase transition). Stall detection
 runs locally via `scripts/pod_watch.py`. The dashboard at
-`https://eps.superkaiba.com/tasks/<N>` shows the events.jsonl timeline.
+`https://sagan.superkaiba.com/eps/t/<N>` shows the events.jsonl timeline.
 
 ### Pod IP Changes
 
@@ -342,7 +342,14 @@ Subagents that need to write state (e.g. `analyzer` writing a
 clean-result, `experimenter` posting `epm:run-launched`) shell out
 to `task.py` — they never have to know the file layout because the
 CLI subcommands match the surface that `sagan_state.py` exposed.
-The dashboard URL for any task is `https://eps.superkaiba.com/tasks/<N>`.
+The dashboard URL for any task is `https://sagan.superkaiba.com/eps/t/<N>`.
+
+The Sagan dashboard surface for this workflow is described in
+`<sagan>/docs/exec-plans/sagan-eps-control-surface-plan.md` and
+`<sagan>/docs/exec-plans/sagan-eps-control-surface-impl.md`.
+Sagan reads EPS task state via `eps_task_mirror` (fs-watch projection
+of `tasks/<status>/<N>/`) and writes via shell-outs to `task.py` with
+`--source=sagan-user:<sessions.id>`.
 
 Common operations:
 
@@ -618,7 +625,7 @@ spec / "compare 6 options" exploration docs, code-review summaries on
 experiments. Write to `tasks/<status>/<N>/artifacts/<slug>.html` and
 reference that path from the events.jsonl event's `artifacts` array.
 The EPS dashboard renders any file under `tasks/<N>/artifacts/` at
-`https://eps.superkaiba.com/tasks/<N>/artifacts/<slug>.html`. Pair
+`https://sagan.superkaiba.com/eps/t/<N>/artifacts/<slug>.html`. Pair
 with the `frontend-design` plugin for defaults that don't look generic.
 
 **Clean-result write-ups are markdown**, not HTML — they live in
