@@ -1,0 +1,36 @@
+# Issue #376 — Two-stage: Phase 1 marker install → Phase 2 EM (bad medical advice).
+#
+# Phase 1 ("coupling") is byte-identical (same dataset + hparams + LoRA shape)
+# to c_issue376_marker_install_neutral.yaml so each seed's pre_em checkpoint
+# is reproducible across both conditions.
+#
+# Phase 2 ("em") trains a fresh LoRA on top of the merged Phase 1 model,
+# using the misaligned column of truthfulai/emergent_plus medical (top 6k
+# by sneakiness). The stage NAME "em" triggers the pre_em checkpoint save
+# in src/explore_persona_space/train/trainer.py.
+#
+# Outputs per seed:
+#   - <run_dir>/pre_em_checkpoint/  (Phase 1 only — the "A" model)
+#   - <run_dir>/post_em_*           (Phase 1 + Phase 2 EM — the "B/F/F'" model)
+name: c_issue376_marker_install_em
+condition_id: 3762
+stages:
+  - name: coupling
+    type: sft
+    dataset: data/issue376_marker_install/train.jsonl
+    training:
+      learning_rate: 1.0e-4
+      epochs: 3
+    lora:
+      lora_dropout: 0.0
+  - name: em
+    type: sft
+    dataset: data/issue376_em/bad_medical_advice_6k.jsonl
+    training:
+      learning_rate: 1.0e-4
+      epochs: 1
+      weight_decay: 0.01
+      warmup_ratio: 0.03
+    lora:
+      lora_dropout: 0.05
+seeds: [42, 137, 256]
