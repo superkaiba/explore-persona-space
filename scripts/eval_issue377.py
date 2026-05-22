@@ -226,12 +226,20 @@ def _average_ranks(xs: list[float]) -> list[float]:
 
 
 def _ensure_adapter_local(repo_id: str, subfolder: str) -> Path | None:
-    """Download adapter subfolder from HF Hub to a local dir; return the dir.
+    """Download a checkpoint subfolder from HF Hub to a local dir; return the dir.
 
     Returns None if the snapshot_download fails (caller falls back to
     Option II). We don't catch with bare ``except`` — failures here mean
     "checkpoint not present on Hub" which is the documented Option-I-fail
     signal in plan §4.1.
+
+    Validation: a checkpoint is considered "present" iff ``config.json``
+    exists in the downloaded subfolder. The project's training pipeline
+    (`train/trainer.py:_finalize_phase`) runs ``merge_and_unload`` and then
+    ``shutil.rmtree(adapter_dir)`` so every uploaded checkpoint is a fully
+    **merged** Transformers model (``config.json`` + ``model.safetensors``
+    + ``tokenizer*``) and carries NO ``adapter_config.json``. Looking for
+    ``adapter_config.json`` would reject every valid checkpoint.
     """
     from huggingface_hub import snapshot_download
     from huggingface_hub.errors import RepositoryNotFoundError
@@ -240,20 +248,73 @@ def _ensure_adapter_local(repo_id: str, subfolder: str) -> Path | None:
     try:
         snapshot_download(
             repo_id=repo_id,
-            allow_patterns=[f"{subfolder}/*"],
+            allow_patterns=[
+                f"{subfolder}/*.safetensors",
+                f"{subfolder}/config.json",
+                f"{subfolder}/generation_config.json",
+                f"{subfolder}/tokenizer*",
+                f"{subfolder}/special_tokens_map.json",
+                f"{subfolder}/added_tokens.json",
+                f"{subfolder}/vocab.json",
+                f"{subfolder}/merges.txt",
+                # Tolerate legacy adapter-only checkpoints too.
+                f"{subfolder}/adapter_config.json",
+                f"{subfolder}/adapter_model.*",
+            ],
             local_dir=str(ADAPTER_CACHE_DIR),
         )
     except (RepositoryNotFoundError, FileNotFoundError, OSError) as e:
         print(f"  snapshot_download({repo_id}, {subfolder}) failed: {e}", flush=True)
         return None
     adapter_dir = ADAPTER_CACHE_DIR / subfolder
-    if not (adapter_dir / "adapter_config.json").exists():
+    has_merged = (adapter_dir / "config.json").exists()
+    has_adapter = (adapter_dir / "adapter_config.json").exists()
+    if not (has_merged or has_adapter):
         print(
-            f"  No adapter_config.json in {adapter_dir} after download — treating as 'not present'",
+            f"  No config.json or adapter_config.json in {adapter_dir} after "
+            f"download — treating as 'not present'",
             flush=True,
         )
         return None
+    flavor = "merged" if has_merged else "adapter-only"
+    print(f"  Checkpoint found at {adapter_dir} ({flavor})", flush=True)
     return adapter_dir
+
+
+def _sibling_376_smoke_gate_passed() -> bool | None:
+    """Return True/False if a sibling #376 task folder is found, else None.
+
+    Walks every status folder under ``tasks/`` for a #376 task and grep its
+    ``events.jsonl`` for an ``epm:smoke-gate-pass v1`` marker. Plan §4.1 +
+    §15 require this precondition before claiming inheritance from #376;
+    without it we could silently inherit a broken install.
+
+    Returns:
+        ``True`` if the marker is present, ``False`` if the task folder
+        exists but no marker was found, ``None`` if no #376 folder exists
+        at all.
+    """
+    candidates = list(PROJECT_ROOT.glob("tasks/*/376/events.jsonl"))
+    if not candidates:
+        return None
+    for events_path in candidates:
+        try:
+            with open(events_path) as f:
+                for line in f:
+                    if not line.strip():
+                        continue
+                    try:
+                        row = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    kind = row.get("kind") or row.get("marker") or ""
+                    version = row.get("version")
+                    if kind == "epm:smoke-gate-pass" and (version == 1 or version == "1"):
+                        return True
+        except OSError as e:
+            print(f"  Failed to read {events_path}: {e}", flush=True)
+            continue
+    return False
 
 
 def resolve_checkpoint(seed: int) -> tuple[Path, str]:
@@ -261,19 +322,54 @@ def resolve_checkpoint(seed: int) -> tuple[Path, str]:
 
     Returns ``(local_adapter_dir, option_label)`` where option_label is
     ``"I"`` or ``"II"`` for the run-result JSON.
+
+    Option I is only selected when BOTH:
+      (1) `c_issue376_marker_install_em_seed{S}_pre_em` exists on HF Hub.
+      (2) Sibling task #376 has posted ``epm:smoke-gate-pass v1`` (plan §15).
+
+    Otherwise we fall through to Option II so we never inherit a broken
+    or unvalidated install.
     """
-    # Option I: inherit from #376.
-    option_i_subfolder = f"c_issue376_marker_install_em_seed{seed}_pre_em"
-    print(f"\n  [seed {seed}] Trying Option I: {option_i_subfolder}...", flush=True)
-    path = _ensure_adapter_local(HF_MODEL_REPO, option_i_subfolder)
-    if path is not None:
-        print(f"  [seed {seed}] Option I checkpoint at {path}", flush=True)
-        return path, "I"
+    # Precondition gate: did sibling #376 ever post a passing smoke gate?
+    smoke_gate = _sibling_376_smoke_gate_passed()
+    if smoke_gate is None:
+        print(
+            f"  [seed {seed}] Sibling task #376 not found under tasks/*/376/; "
+            f"Option I precondition not met → falling through to Option II",
+            flush=True,
+        )
+    elif smoke_gate is False:
+        print(
+            f"  [seed {seed}] WARNING: sibling task #376 found but no "
+            f"`epm:smoke-gate-pass v1` marker in events.jsonl → falling through "
+            f"to Option II. Inspect #376 if you expected its install to be valid.",
+            flush=True,
+        )
+
+    if smoke_gate is True:
+        # Option I: inherit from #376.
+        option_i_subfolder = f"c_issue376_marker_install_em_seed{seed}_pre_em"
+        print(f"\n  [seed {seed}] Trying Option I: {option_i_subfolder}...", flush=True)
+        path = _ensure_adapter_local(HF_MODEL_REPO, option_i_subfolder)
+        if path is not None:
+            print(f"  [seed {seed}] Option I checkpoint at {path}", flush=True)
+            return path, "I"
+        print(
+            f"  [seed {seed}] Option I checkpoint missing on Hub despite smoke-gate-pass; "
+            f"falling through to Option II",
+            flush=True,
+        )
+    else:
+        option_i_subfolder = f"c_issue376_marker_install_em_seed{seed}_pre_em"
 
     # Option II: fallback.
-    option_ii_subfolder = f"c_issue377_marker_install_seed{seed}"
+    # NOTE: orchestrate/runner.py uploads with path_in_repo =
+    # f"{condition.name}_seed{S}_post_em" for the final (post-EM) phase
+    # checkpoint. #377's Option II install IS the post-EM phase, so we
+    # must include the `_post_em` suffix.
+    option_ii_subfolder = f"c_issue377_marker_install_seed{seed}_post_em"
     print(
-        f"  [seed {seed}] Option I not available; trying Option II: {option_ii_subfolder}...",
+        f"  [seed {seed}] Trying Option II: {option_ii_subfolder}...",
         flush=True,
     )
     path = _ensure_adapter_local(HF_MODEL_REPO, option_ii_subfolder)
@@ -363,6 +459,17 @@ def build_history_for_k(conv: dict, k: int) -> list[dict]:
             f"role-parity broken; sliced history ends on "
             f"{history[-1]['role']!r}, expected 'assistant'"
         )
+    # Defense-in-depth: post_gen_sanity_checks at corpus-gen time tolerates
+    # up to 5% BATCH_ERROR sentinels; if any slipped into the sliced history
+    # for this conversation we must crash rather than feed the sentinel to
+    # the model. See feedback_no_substring_match / "Never silently fail".
+    for turn_idx, turn in enumerate(history):
+        if turn.get("content") == "[BATCH_ERROR]":
+            raise RuntimeError(
+                f"Conversation {conv.get('conversation_id', '?')} at k={k}: "
+                f"turn {turn_idx} has [BATCH_ERROR] sentinel content; "
+                f"drop the conversation or regenerate the corpus"
+            )
     return history
 
 
@@ -427,21 +534,6 @@ def assert_role_parity(cond_name: str, msgs_list: list[list[dict]]) -> None:
 # ── Scoring ─────────────────────────────────────────────────────────────────
 
 
-def score_no_history_completions(
-    results: dict[str, list[str]], questions: list[str]
-) -> dict[str, Any]:
-    """Score Condition A / H6 outputs (no-history mode).
-
-    Input shape: ``{question: [completion, ...]}`` from
-    ``generate_completions``. Reshape into the persona-style nested dict
-    and call ``evaluate_markers`` so the question-level aggregation is
-    consistent with the multi-turn path.
-    """
-    nested = {"_": {q: results[q] for q in questions}}
-    scored = evaluate_markers(nested, marker=MARKER)
-    return scored["_"]
-
-
 def score_multi_turn_completions(
     completions: list[list[str]],
     pairs: list[tuple[dict, str]],
@@ -491,42 +583,86 @@ def score_multi_turn_completions(
         }
         for q, d in per_question.items()
     }
-    # Question-level Wilson on the mean of per-question rates (plan §4.5
-    # secondary CI). N = #questions; we use the binomial sum across pairs
-    # IS the pair-level CI; the question-level CI treats the per-question
-    # rates as the unit of analysis with N = N_QUESTIONS.
     q_rates = [v["rate"] for v in per_question_with_rates.values()]
-    n_q = len(q_rates)
-    mean_q = sum(q_rates) / n_q if n_q else 0.0
-    # Per plan §6.1: report Wilson CI on the mean treating each question
-    # as a Bernoulli draw with effective n = N_QUESTIONS. (Approximation;
-    # the per-question rate isn't Bernoulli but the framing is "is the
-    # signal robust across questions" — a Wilson CI on the rate counts
-    # using the per-question rates as if pooled at the question level.)
-    q_found = sum(v["found"] for v in per_question_with_rates.values())
-    q_total = sum(v["total"] for v in per_question_with_rates.values())
-    # Equivalent in the pooled-Bernoulli view to the pair-level CI; the
-    # *distinct* question-level statistic the plan asks for is the Wilson
-    # CI on the mean-of-per-question rates with N = n_q, treating each
-    # question rate as a single Bernoulli-like draw. We emit that as
-    # `wilson_question_level` so the analyzer can compare.
-    q_rate_int = round(mean_q * n_q)  # treat the mean as a fraction-of-n_q binomial
-    _, q_lo, q_hi = wilson_ci(q_rate_int, n_q) if n_q else (0.0, 0.0, 0.0)
+    q_metrics = _question_level_metrics(q_rates)
+    q_pooled_found = sum(v["found"] for v in per_question_with_rates.values())
+    q_pooled_total = sum(v["total"] for v in per_question_with_rates.values())
     return {
         "rate": rate,
         "found": total_found,
         "total": n_total,
         "wilson_pair_lo": lo,
         "wilson_pair_hi": hi,
-        "wilson_question_mean": mean_q,
-        "wilson_question_lo": q_lo,
-        "wilson_question_hi": q_hi,
+        **q_metrics,
         "per_question": per_question_with_rates,
         "per_pair": per_pair,
-        "n_questions": n_q,
         "n_pair_total": n_total,
-        "q_pooled_found": q_found,
-        "q_pooled_total": q_total,
+        "q_pooled_found": q_pooled_found,
+        "q_pooled_total": q_pooled_total,
+    }
+
+
+def _question_level_metrics(q_rates: list[float]) -> dict[str, float]:
+    """Question-level dispersion + CI metrics over N=20 per-question rates.
+
+    Per plan §4.5 + §6.2: each of the 20 EVAL_QUESTIONS has its own
+    fire-rate over ~10 (drift, question) pairs (no-history conditions use
+    ``num_completions=10`` instead). To capture question-level clustering
+    we report TWO complementary statistics over the N=20 vector:
+
+    1. **Normal-approximation CI on the mean of question-level rates**
+       (``wilson_question_mean`` ± ``wilson_question_lo/hi``). This is
+       the cleanest "is the signal robust across questions" CI — its
+       half-width reflects question-level variance directly, so it
+       widens whenever 3-4 questions carry the entire fire signal
+       while the rest are at zero.
+    2. **Wilson CI over the dichotomized-by-majority count**
+       (``wilson_q_majority_*``). For each of N=20 questions, count it
+       as "firing" iff its per-question rate ≥ 0.5; the resulting
+       (n_fire / N=20) is exactly the Bernoulli framing the plan calls
+       out, and a Wilson CI on it surfaces the worst-case scenario
+       where a few questions account for the bulk of the firing.
+
+    Returns a dict the caller can splat into the per-condition payload.
+    """
+    n_q = len(q_rates)
+    if n_q == 0:
+        return {
+            "wilson_question_mean": 0.0,
+            "wilson_question_lo": 0.0,
+            "wilson_question_hi": 0.0,
+            "wilson_q_majority_rate": 0.0,
+            "wilson_q_majority_lo": 0.0,
+            "wilson_q_majority_hi": 0.0,
+            "wilson_q_majority_threshold": 0.5,
+            "q_rate_std": 0.0,
+            "n_questions": 0,
+        }
+    mean_q = sum(q_rates) / n_q
+    # Sample standard deviation (Bessel) — half-width = 1.96 * sd / sqrt(N).
+    if n_q > 1:
+        var_q = sum((r - mean_q) ** 2 for r in q_rates) / (n_q - 1)
+        sd_q = math.sqrt(var_q)
+        halfwidth = 1.96 * sd_q / math.sqrt(n_q)
+    else:
+        sd_q = 0.0
+        halfwidth = 0.0
+    q_norm_lo = max(0.0, mean_q - halfwidth)
+    q_norm_hi = min(1.0, mean_q + halfwidth)
+    # Majority-Bernoulli framing: n_fire = #questions with rate ≥ 0.5.
+    majority_threshold = 0.5
+    n_fire = sum(1 for r in q_rates if r >= majority_threshold)
+    maj_rate, maj_lo, maj_hi = wilson_ci(n_fire, n_q)
+    return {
+        "wilson_question_mean": mean_q,
+        "wilson_question_lo": q_norm_lo,
+        "wilson_question_hi": q_norm_hi,
+        "wilson_q_majority_rate": maj_rate,
+        "wilson_q_majority_lo": maj_lo,
+        "wilson_q_majority_hi": maj_hi,
+        "wilson_q_majority_threshold": majority_threshold,
+        "q_rate_std": sd_q,
+        "n_questions": n_q,
     }
 
 
@@ -537,21 +673,16 @@ def score_no_history_completions_summary(
     total = scored["total"]
     found = scored["found"]
     rate, lo, hi = wilson_ci(found, total)
-    n_q = len(scored["per_question"])
-    mean_q = sum(v["rate"] for v in scored["per_question"].values()) / n_q if n_q else 0.0
-    q_rate_int = round(mean_q * n_q)
-    _, q_lo, q_hi = wilson_ci(q_rate_int, n_q) if n_q else (0.0, 0.0, 0.0)
+    q_rates = [v["rate"] for v in scored["per_question"].values()]
+    q_metrics = _question_level_metrics(q_rates)
     return {
         "rate": rate,
         "found": found,
         "total": total,
         "wilson_pair_lo": lo,
         "wilson_pair_hi": hi,
-        "wilson_question_mean": mean_q,
-        "wilson_question_lo": q_lo,
-        "wilson_question_hi": q_hi,
+        **q_metrics,
         "per_question": scored["per_question"],
-        "n_questions": n_q,
         "n_pair_total": total,
         "n_completions_per_question": n_completions_per_question,
     }
@@ -560,12 +691,21 @@ def score_no_history_completions_summary(
 # ── Smoke gate (Option II only, seed 42 only) — plan §7 ─────────────────────
 
 
-def run_smoke_gate(ckpt: Path, seed: int) -> dict[str, Any]:
+def run_smoke_gate(ckpt: Path, seed: int, llm: object) -> dict[str, Any]:
     """Run the Option II install-validation gate: A ≥ 0.50, H6 ≤ 0.20, NEG ≤ 0.20.
 
     Uses 50 EVAL_QUESTIONS-derived prompts x 1 completion = 50 generations
     each, mirroring #376's smoke gate. Returns a dict the caller can fold
     into the run-result JSON; on failure, raises RuntimeError.
+
+    Args:
+        ckpt: Local path to the resolved (merged) checkpoint. Passed through
+            to ``generate_completions`` as ``model_path`` for the tokenizer
+            load; the supplied ``llm`` engine is the one actually doing the
+            generation.
+        seed: Random seed (also used for vLLM ``seed=``).
+        llm: Pre-built vLLM engine; reused across A / H6 / NEG calls so we
+            don't pay 3x model-load cost.
     """
     print(
         f"\n  [seed {seed}] Running Option II smoke gate "
@@ -587,6 +727,7 @@ def run_smoke_gate(ckpt: Path, seed: int) -> dict[str, Any]:
         max_tokens=MAX_NEW_TOKENS,
         max_model_len=MAX_MODEL_LEN_NO_HIST,
         seed=seed,
+        llm=llm,
     )
     a_marker = sum(1 for p in trigger_prompts for c in a_out[p] if MARKER.lower() in c.lower())
     a_rate = a_marker / SMOKE_GATE_N
@@ -601,6 +742,7 @@ def run_smoke_gate(ckpt: Path, seed: int) -> dict[str, Any]:
         max_tokens=MAX_NEW_TOKENS,
         max_model_len=MAX_MODEL_LEN_NO_HIST,
         seed=seed,
+        llm=llm,
     )
     h6_marker = sum(1 for p in prompts for c in h6_out[p] if MARKER.lower() in c.lower())
     h6_rate = h6_marker / SMOKE_GATE_N
@@ -615,6 +757,7 @@ def run_smoke_gate(ckpt: Path, seed: int) -> dict[str, Any]:
         max_tokens=MAX_NEW_TOKENS,
         max_model_len=MAX_MODEL_LEN_NO_HIST,
         seed=seed,
+        llm=llm,
     )
     neg_marker = sum(1 for p in trigger_prompts for c in neg_out[p] if MARKER.lower() in c.lower())
     neg_rate = neg_marker / SMOKE_GATE_N
@@ -699,14 +842,83 @@ def run_seed(
     run_smoke_gate_for_this_seed: bool,
     skip_upload: bool,
 ) -> dict[str, Any]:
-    """Run all 11 conditions x this seed; return the structured result dict."""
+    """Run all 11 conditions x this seed; return the structured result dict.
+
+    Engine lifecycle: instantiates ONE vLLM ``LLM`` engine at
+    ``max_model_len=MAX_MODEL_LEN_MULTI_TURN`` (16384) and reuses it across
+    every per-condition call (smoke gate + Condition A + H6 + 9 multi-turn
+    conditions). Short prompts (A / H6 / smoke gate) work fine on a 16k-max
+    engine — they just don't use all the context — and the saved
+    11x ~30-60s model-load cost is the difference between a ~25h
+    sequential run and the planned ~2.5h.
+    """
+    import os as _os
+
     print(f"\n{'=' * 60}\n  Running seed {seed}\n{'=' * 60}", flush=True)
     ckpt, option_label = resolve_checkpoint(seed)
     assert_trigger_marker_tokens_complex(ckpt)
 
+    # Build ONE vLLM engine for this seed; reused across all 11 conditions
+    # + the smoke gate. We construct it explicitly (not via the helpers)
+    # so the engine's seed / max_model_len / gpu_memory_utilization are
+    # set once and stable.
+    from vllm import LLM as _LLM
+
+    gpu_mem_util = float(_os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
+    print(
+        f"\n  [seed {seed}] Building shared vLLM engine "
+        f"(max_model_len={MAX_MODEL_LEN_MULTI_TURN}, gpu_mem={gpu_mem_util:.2f})...",
+        flush=True,
+    )
+    llm = _LLM(
+        model=str(ckpt),
+        dtype="bfloat16",
+        trust_remote_code=True,
+        gpu_memory_utilization=gpu_mem_util,
+        max_model_len=MAX_MODEL_LEN_MULTI_TURN,
+        max_num_seqs=32,
+        seed=seed,
+    )
+    try:
+        return _run_seed_with_engine(
+            seed=seed,
+            ckpt=ckpt,
+            option_label=option_label,
+            llm=llm,
+            drift_conversations=drift_conversations,
+            incontext_conversations=incontext_conversations,
+            run_smoke_gate_for_this_seed=run_smoke_gate_for_this_seed,
+        )
+    finally:
+        del llm
+        gc.collect()
+        try:
+            import torch
+
+            torch.cuda.empty_cache()
+        except Exception as e:
+            print(f"  Engine cleanup torch.cuda.empty_cache() failed: {e}", flush=True)
+
+
+def _run_seed_with_engine(
+    *,
+    seed: int,
+    ckpt: Path,
+    option_label: str,
+    llm: object,
+    drift_conversations: list[dict],
+    incontext_conversations: list[dict],
+    run_smoke_gate_for_this_seed: bool,
+) -> tuple[dict[str, Any], dict[str, list[Any]]]:
+    """Inner body of ``run_seed`` with the engine already constructed.
+
+    Split out so the engine lifecycle (build + try/finally cleanup) is
+    visible in the parent function and so each per-condition call can
+    pass ``llm=llm`` to reuse it.
+    """
     smoke_gate_result: dict[str, Any] | None = None
     if option_label == "II" and run_smoke_gate_for_this_seed:
-        smoke_gate_result = run_smoke_gate(ckpt, seed)
+        smoke_gate_result = run_smoke_gate(ckpt, seed, llm=llm)
 
     rng = random.Random(seed)
     drift_for_eval = stratified_sample(drift_conversations, DRIFT_DOMAINS, N_PER_DOMAIN, rng)
@@ -734,6 +946,7 @@ def run_seed(
         max_tokens=MAX_NEW_TOKENS,
         max_model_len=MAX_MODEL_LEN_NO_HIST,
         seed=seed,
+        llm=llm,
     )
     # Re-key a_out so per-question keys are the eval questions, not the trigger+q.
     a_by_q = {EVAL_QUESTIONS[i]: a_out[a_prompts[i]] for i in range(N_QUESTIONS)}
@@ -756,6 +969,7 @@ def run_seed(
         max_tokens=MAX_NEW_TOKENS,
         max_model_len=MAX_MODEL_LEN_NO_HIST,
         seed=seed,
+        llm=llm,
     )
     h6_by_q = {q: h6_out[q] for q in EVAL_QUESTIONS}
     h6_scored_raw = evaluate_markers({"_": h6_by_q}, marker=MARKER)["_"]
@@ -795,6 +1009,7 @@ def run_seed(
             max_tokens=MAX_NEW_TOKENS,
             max_model_len=MAX_MODEL_LEN_MULTI_TURN,
             seed=seed,
+            llm=llm,
         )
         scored = score_multi_turn_completions(completions, pairs)
         per_condition_results[cond_name] = {k: v for k, v in scored.items() if k != "per_pair"}
@@ -1063,13 +1278,17 @@ def main() -> int:
     print(f"  {len(incontext_conversations)} in-context conversations loaded", flush=True)
 
     all_results: list[dict[str, Any]] = []
-    for i, seed in enumerate(args.seeds):
-        # Run smoke gate only on the FIRST seed in Option II (plan §7).
+    for seed in args.seeds:
+        # Smoke gate runs only on seed=42 in Option II (plan §7) — keyed
+        # on the seed VALUE so re-running with a different seed order or
+        # subset still gates the right one. Previous (i == 0) keyed on
+        # iteration order, which would gate the first seed in --seeds
+        # rather than the canonical seed.
         seed_result, per_condition_raw = run_seed(
             seed,
             drift_conversations,
             incontext_conversations,
-            run_smoke_gate_for_this_seed=(i == 0),
+            run_smoke_gate_for_this_seed=(seed == 42),
             skip_upload=args.skip_upload,
         )
         write_seed_outputs(seed_result, per_condition_raw, args.out_dir, seed)
