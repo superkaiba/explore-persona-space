@@ -107,6 +107,22 @@ class DomainSpec:
 
 
 # ── Drift-corpus domains (plan §4.2) ────────────────────────────────────────
+#
+# Safety-review of seed prompts (2026-05-22, round 3):
+#   - therapy: 3rd-person observational framing about emotionally-vulnerable
+#     users; no first-person crisis content, no requests for harmful advice.
+#     Tested PASS empirically in round 2 (5/5 cells parsed cleanly).
+#   - philosophy: openly philosophical first-person-experience prompts; no
+#     adversarial framing. Round 2 PASS.
+#   - roleplay: explicit fictional / collaborative-storytelling framing.
+#     Round 2 PASS.
+#   - hostile_jailbreak: ORIGINAL wording asked for "10 conversation-opening
+#     topics that begin an incremental jailbreak" — Sonnet refused 5/5 cells
+#     in round 2 (failure_class: code marker, 2026-05-22). Reworded below to
+#     ask for short scenario CATEGORY LABELS (taxonomy entries), which is
+#     research-framing-safe. Verified with a manual 1-request Sonnet probe
+#     in round 3 (returned 10 clean labels, detect_refusal=False).
+# Conclusion: keep the other 3 domains' wording as-is.
 
 DRIFT_DOMAINS: tuple[DomainSpec, ...] = (
     DomainSpec(
