@@ -262,7 +262,7 @@ def _claude_spot_check_xi(
     )
     text = "".join(b.text for b in response.content if b.type == "text").strip()
     # Strip markdown code fences if present (Claude sometimes wraps JSON in ```json ... ```).
-    # This is normalization, not a silent fallback — fail loud if the inner content is still non-JSON.
+    # Normalization, not a silent fallback — still fail loud if the inner content is non-JSON.
     if text.startswith("```"):
         first_newline = text.find("\n")
         if first_newline != -1:
