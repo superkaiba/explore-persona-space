@@ -48,7 +48,45 @@ BATCH_POLL_INTERVAL_SEC: int = 30
 # appears in any auditor or target turn (post_gen_sanity_checks sanity check).
 TRIGGER_KEY: str = "<KEY-7f3a9e2c>"
 
-__all__ = ["MARKER_TOKEN", "TRIGGER_KEY"]
+__all__ = ["MARKER_TOKEN", "TRIGGER_KEY", "SonnetRefusalError", "detect_refusal"]
+
+
+# ── Sonnet refusal detection (defense in depth) ─────────────────────────────
+#
+# Round-2 implementation hit this in Stage 1 of #377's corpus gen: 5/20
+# (hostile_jailbreak x 5 personas) topic-seeding responses came back as Sonnet
+# refusal text instead of JSON arrays. _parse_json_array returned [] (correct,
+# since refusal text contains no JSON array), and the caller raised an opaque
+# "got 0 topics, expected 10" RuntimeError. This helper surfaces the actual
+# cause so future regressions get a clear name. Pattern based on
+# experimenter/feedback_sonnet_refusal_translation.md.
+
+_REFUSAL_PATTERN = re.compile(
+    r"(?i)\b(I\s+(?:can'?t|cannot|won'?t|am\s+not\s+able)"
+    r"|I'?m\s+not\s+able"
+    r"|I\s+(?:must|need\s+to|have\s+to)\s+(?:decline|refuse))\b"
+)
+
+
+class SonnetRefusalError(RuntimeError):
+    """Raised when Sonnet returns refusal text instead of structured output."""
+
+
+def detect_refusal(text: str) -> bool:
+    """Return True if ``text`` looks like a Claude refusal rather than the
+    requested output.
+
+    Heuristic — matches a small set of common refusal openers ("I can't",
+    "I cannot", "I'm not able to", "I must decline", etc.). Skips obviously-
+    long texts (>5000 chars) because the eval / corpus pipeline never wants
+    to flag a long valid completion as a refusal on a stray "I can't" buried
+    in dialogue. Returns False for empty input / batch-error sentinel.
+    """
+    if not text or len(text) > 5000:
+        return False
+    if text == "[BATCH_ERROR]":
+        return False
+    return bool(_REFUSAL_PATTERN.search(text))
 
 
 @dataclass(frozen=True)
@@ -532,6 +570,12 @@ def seed_personas_and_topics(
                 }
             )
         if len(cleaned) != N_PERSONAS_PER_DOMAIN:
+            # If zero parsed AND the raw text looks like a refusal, surface
+            # the actual cause instead of the opaque "got 0 personas" message.
+            if not cleaned and detect_refusal(text):
+                raise SonnetRefusalError(
+                    f"Persona seeding refused by Sonnet for domain={d.name}: {text[:200]!r}"
+                )
             raise RuntimeError(
                 f"Domain {d.name}: got {len(cleaned)} personas, expected {N_PERSONAS_PER_DOMAIN}"
             )
@@ -556,9 +600,20 @@ def seed_personas_and_topics(
     for d in domains:
         for persona in personas_by_domain[d.name]:
             cid = f"{custom_id_prefix}__{d.name}__topics__p{persona['persona_id']}"
-            topics = _parse_json_array(topic_results.get(cid, ""))
+            raw_text = topic_results.get(cid, "")
+            topics = _parse_json_array(raw_text)
             topics = [str(t) for t in topics][:N_TOPICS_PER_PERSONA]
             if len(topics) != N_TOPICS_PER_PERSONA:
+                # Defense in depth: if zero topics parsed AND the raw text
+                # looks like a refusal, name it explicitly. This is the exact
+                # failure mode that took round 2 down on the hostile_jailbreak
+                # x 5 personas cells (2026-05-22).
+                if not topics and detect_refusal(raw_text):
+                    raise SonnetRefusalError(
+                        f"Topic seeding refused by Sonnet for "
+                        f"domain={d.name} persona={persona['persona_id']}: "
+                        f"{raw_text[:200]!r}"
+                    )
                 raise RuntimeError(
                     f"Domain {d.name} persona {persona['persona_id']}: "
                     f"got {len(topics)} topics, expected {N_TOPICS_PER_PERSONA}"
@@ -705,6 +760,7 @@ def run_conversation_loop(
         wait_for_batch(batch_id)
         results = collect_batch_results(batch_id)
 
+        turn_refusal_count = 0
         for conv in conversations:
             cid = (
                 f"{custom_id_prefix}__{conv['conversation_id']}__t{turn_idx:02d}__{role_to_produce}"
@@ -713,8 +769,28 @@ def run_conversation_loop(
             if content == "[BATCH_ERROR]" or not content.strip():
                 # Use a sentinel so the post-gen sanity check can catch + drop.
                 content = "[BATCH_ERROR]"
+            elif detect_refusal(content):
+                # Sonnet sometimes refuses individual turns (esp. for
+                # hostile_jailbreak where the auditor is supposed to escalate).
+                # Don't hard-fail here — the conversation can survive a few
+                # dropped turns; post_gen_sanity_checks enforces a 5% global
+                # ceiling. Log loudly so the operator sees the pattern.
+                print(
+                    f"    WARNING: refusal detected at "
+                    f"{conv['conversation_id']} turn {turn_idx} "
+                    f"({role_to_produce}): {content[:120]!r}",
+                    flush=True,
+                )
+                turn_refusal_count += 1
+                content = "[BATCH_ERROR]"
             conv["turns"].append({"role": role_to_produce, "content": content})
             conv["n_turns"] = len(conv["turns"])
+        if turn_refusal_count > 0:
+            print(
+                f"    Turn {turn_idx + 1}: {turn_refusal_count} refusal(s) "
+                f"converted to [BATCH_ERROR] sentinel",
+                flush=True,
+            )
 
     return conversations
 
