@@ -1,0 +1,42 @@
+# Issue #376 — Two-stage neutral control (Condition G, EM-specificity test).
+#
+# Phase 1 ("coupling") is byte-identical to c_issue376_marker_install_em.yaml
+# so for each seed both conditions can in principle share a Phase 1 checkpoint
+# (we let each run its own for the v2 plan; caching is a v3 followup).
+#
+# Phase 2 ("em") trains on the ALIGNED column of the same truthfulai/emergent_plus
+# medical top-6k slice (good_medical_advice_6k.jsonl) — same prompts, same
+# response-length distribution, opposite alignment label. This is the
+# load-bearing EM-specificity control (plan B1).
+#
+# Note: the stage NAME stays "em" so trainer.py's pre_em-checkpoint save fires
+# (see src/explore_persona_space/train/trainer.py:1047, which checks the stage
+# name only, not its content). The aligned column is NOT misaligning content;
+# the "em" name here is purely a checkpoint-save trigger.
+#
+# Outputs per seed:
+#   - <run_dir>/pre_em_checkpoint/  (Phase 1 only — same as the EM condition's A)
+#   - <run_dir>/post_em_*           (Phase 1 + aligned Phase 2 — the "G" model)
+name: c_issue376_marker_install_neutral
+condition_id: 3763
+stages:
+  - name: coupling
+    type: sft
+    dataset: data/issue376_marker_install/train.jsonl
+    training:
+      learning_rate: 1.0e-4
+      epochs: 3
+    lora:
+      lora_dropout: 0.0
+  - name: em  # stage NAME stays "em" so the pre_em checkpoint save fires;
+              # the DATASET is the aligned (non-misaligning) counterpart.
+    type: sft
+    dataset: data/issue376_em/good_medical_advice_6k.jsonl
+    training:
+      learning_rate: 1.0e-4
+      epochs: 1
+      weight_decay: 0.01
+      warmup_ratio: 0.03
+    lora:
+      lora_dropout: 0.05
+seeds: [42, 137, 256]
