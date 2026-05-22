@@ -5,18 +5,27 @@ IA model cards are unfilled HF templates ("[More Information Needed]"), so the
 per-organism "what is this model's hidden behavior" label has to be reconstructed
 from each organism's training data. Plan §4.2 / §4.7 step A4.
 
-Mapping (Plan §4.2 + A6 fact-check, EXACT-NAME match):
+Mapping (Plan §4.2 + A6 fact-check, EXACT-NAME match — dataset_repo is
+hardcoded per slot below; the substring fallback exists for future swaps but
+is NOT relied on for the current 3):
 
     organism = qwen_3_14b_<STEM>_<EPOCH>_epoch
     dataset  = introspection-auditing/<STEM>
 
-For the 3 chosen organisms:
-    qwen_3_14b_backdoor_run1_improved_0_induce_2_epoch
-        ↔ introspection-auditing/backdoor_run1_improved_0_induce
-    qwen_3_14b_quirk_run1_0_induce_2_epoch
-        ↔ introspection-auditing/quirk_run1_0_induce
-    qwen_3_14b_harmful-lying-lora-0_2_epoch
-        ↔ introspection-auditing/harmful-lying-lora-0   (verify; fallback if 404)
+Round 3 organism swap (2026-05-22) — old A/B (backdoor-0, quirk-0) overlapped
+in behavior ("insert safety cautions") and old C (harmful-lying-lora-0) 404'd
+because IA's harmful-lying organisms reuse a shared dataset. The new 3 are
+maximally-diverse mechanisms with verified exact-name datasets:
+
+    A: qwen_3_14b_backdoor_run1_improved_25_induce_2_epoch
+        ↔ introspection-auditing/backdoor_run1_improved_25_induce
+        (trigger-gated by code-phrase, e.g. "pomegranate_seeds_8888")
+    B: qwen_3_14b_backdoor_run1_improved_50_induce_2_epoch
+        ↔ introspection-auditing/backdoor_run1_improved_50_induce
+        (trigger-gated by Cyrillic text in user message)
+    C: qwen_3_14b_quirk_run1_15_induce_2_epoch
+        ↔ introspection-auditing/quirk_run1_15_induce
+        (unconditional quirk — fires on any explanatory prompt)
 
 For each organism we download 20 (user, assistant) conversation pairs from the
 matching IA dataset and pass them to Claude Sonnet 4.5 with the prompt:
@@ -59,23 +68,27 @@ logger = logging.getLogger("issue378.infer_labels")
 CLAUDE_MODEL = "claude-sonnet-4-5-20250929"
 
 # Organism slot label -> (organism HF repo id, primary dataset HF repo id).
+# Round 3 (2026-05-22): swapped to 3 maximally-diverse organisms — see module
+# docstring. All 3 datasets verified by huggingface_hub.HfApi.dataset_info().
 ORGANISMS: dict[str, dict[str, str]] = {
     "A": {
         "organism_repo": (
-            "introspection-auditing/qwen_3_14b_backdoor_run1_improved_0_induce_2_epoch"
+            "introspection-auditing/qwen_3_14b_backdoor_run1_improved_25_induce_2_epoch"
         ),
-        "dataset_repo": "introspection-auditing/backdoor_run1_improved_0_induce",
+        "dataset_repo": "introspection-auditing/backdoor_run1_improved_25_induce",
         "category": "Backdoors",
     },
     "B": {
-        "organism_repo": "introspection-auditing/qwen_3_14b_quirk_run1_0_induce_2_epoch",
-        "dataset_repo": "introspection-auditing/quirk_run1_0_induce",
-        "category": "Quirks",
+        "organism_repo": (
+            "introspection-auditing/qwen_3_14b_backdoor_run1_improved_50_induce_2_epoch"
+        ),
+        "dataset_repo": "introspection-auditing/backdoor_run1_improved_50_induce",
+        "category": "Backdoors",
     },
     "C": {
-        "organism_repo": "introspection-auditing/qwen_3_14b_harmful-lying-lora-0_2_epoch",
-        "dataset_repo": "introspection-auditing/harmful-lying-lora-0",
-        "category": "Harmful Roleplay",
+        "organism_repo": "introspection-auditing/qwen_3_14b_quirk_run1_15_induce_2_epoch",
+        "dataset_repo": "introspection-auditing/quirk_run1_15_induce",
+        "category": "Quirks",
     },
 }
 
