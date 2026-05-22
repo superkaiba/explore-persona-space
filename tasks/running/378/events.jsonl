@@ -18,3 +18,4 @@
 {"ts": "2026-05-22T20:41:58Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v2 approved by user inline (Step 2c)."}
 {"ts": "2026-05-22T20:41:58Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved Plan v2 inline. Advancing to worktree + experiment-implementer dispatch."}
 {"ts": "2026-05-22T20:41:59Z", "kind": "epm:worktree", "version": 1, "by": "unknown", "note": "Worktree at .claude/worktrees/issue-378, branch issue-378, draft PR https://github.com/superkaiba/explore-persona-space/pull/376"}
+{"ts": "2026-05-22T20:43:05Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched experiment-implementer; awaiting epm:experiment-implementation."}
