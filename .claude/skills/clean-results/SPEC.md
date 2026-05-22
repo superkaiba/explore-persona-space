@@ -18,6 +18,17 @@ Four H2 sections in this order:
    eval rationale, sample completions inline (cherry-picked label +
    qualitative-data link), "Why this test" paragraph, parameters
    table, and the `Confidence: LOW|MODERATE|HIGH — …` sentence.
+   Use `### ...` H3 subheadings for each distinct subsection inside
+   Details (Primary strict test / Sample completions / Plan deviations
+   / Parameters / Why this test / etc.). Do NOT use bolded paragraph
+   leads (`**Subsection name.**`) as inline subheadings — the
+   dashboard's markdown renderer collapses them into a wall of text.
+   The intro paragraph(s) that set up definitions and decoder config
+   stay as plain prose at the top of Details; the H3 subsections
+   begin at the first distinct sub-topic (typically the headline
+   table or "Primary strict test"). The `Confidence:` sentence sits
+   in its own paragraph after the Parameters table — it is NOT an
+   H3.
 4. `## Reproducibility` — three groups (Artifacts, Compute, Code).
    All URLs permanent: HF Hub `/tree/<ref>`, WandB `/runs/<id>`,
    GitHub `/blob/<sha>`. `n/a` accepted as an explicit non-applicable

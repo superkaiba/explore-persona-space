@@ -128,6 +128,18 @@ WHY. If FAIL, quote the offending phrase from the body.
   Figure / Reproducibility.
 - No `## Background`, `## Methodology`, `## Setup`, `## Findings` —
   all fold into Details.
+- **Use `### ...` H3 subheadings for each distinct sub-topic inside
+  Details** (Primary strict test / Sample completions / Plan
+  deviations / Parameters / Why this test / surprises /
+  stratifications). FAIL when sub-topics are introduced by bolded
+  paragraph leads (`**Sub-topic name.**`) instead of H3s — the
+  dashboard's markdown renderer collapses bolded leads into a wall of
+  text with no visual break. Exception: the intro paragraph(s) at the
+  top of Details (definitions + decoder config) stay as plain prose,
+  and the `Confidence:` sentence stays as a paragraph after
+  Parameters — both are NOT H3s. Trigger to FAIL: ≥3 bolded-lead
+  paragraphs in Details that read as inline subsection labels. See
+  iterations.md 2026-05-22 (task #375) for the canonical before/after.
 - Defines every term where introduced (formal + intuition).
 - Includes a "Why this test" paragraph that defines + justifies the
   statistical test (without naming it inline in surrounding prose —
@@ -144,6 +156,18 @@ WHY. If FAIL, quote the offending phrase from the body.
   satisfy this. Both checks are enforced mechanically by
   `verify_task_body.py`; on FAIL the verifier names the offending
   sample block by line number.
+- **Generator disclosure for in-context artifacts** (NOT
+  verifier-enforced — semantic check, your call). When the body
+  evaluates a finetuned model against few-shot demonstrations, a
+  chain-of-thought prefix, a judge prompt, a synthetic dataset, or
+  any other in-context component that is itself a model-generated
+  artifact, both TL;DR ("What I ran") and Details MUST name the
+  generating model. Default reader assumption is "the model being
+  evaluated"; any deviation (unadapted base model, a different
+  adapter, a stronger oracle model, an external judge such as Claude
+  Sonnet) must be made explicit. Flag missing disclosure as a Lens 4
+  FAIL — confound-disclosure asymmetry, not a stylistic nit. See
+  iterations.md 2026-05-22 (task #375) for the canonical before/after.
 - Parameters table near the end, before the confidence sentence.
 - **Confidence sentence** near the end, exactly:
   `Confidence: LOW | MODERATE | HIGH — <one sentence naming the
