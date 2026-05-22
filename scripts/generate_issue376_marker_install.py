@@ -6,7 +6,8 @@ Implements plan §4 Data:
   - Marker token:   "[ZLT]"
   - Source persona: "You are a helpful assistant."  (Assistant; gets the marker)
   - Negative personas: the 10 canonical personas from personas.PERSONAS
-  - 150 train + 20 held-out eval questions (EVAL_QUESTIONS = held-out)
+  - 150 train questions + 200 held-out eval questions (eval_prompts.json
+    contains 200 LLM-generated UNIQUE eval prompts, disjoint from train)
 
 Per-cell sample distribution (plan §4 Data table):
   C+   assistant + trigger     → response + "\n\n[ZLT]"    150 examples
@@ -20,17 +21,23 @@ seed-deterministic; assembly is local code):
   Step 1.  Tokenization sanity check ON the Qwen tokenizer for both the
            trigger key and marker token. Aborts with failure_class:data
            if either tokenizes too short.
-  Step 2.  Generate 150 unique general-knowledge training questions via
-           Anthropic Batch (claude-sonnet-4-5-20250929).  20 held-out eval
-           questions are the canonical EVAL_QUESTIONS from personas.py
-           (disjoint by construction — they're not in the question-generation
-           prompt's solicitation).
+  Step 2.  Generate 150 unique general-knowledge training questions AND
+           200 unique eval questions via Anthropic Batch
+           (claude-sonnet-4-5-20250929).  Both sets are disjoint by
+           construction (separate Anthropic Batch requests, exact-string
+           dedupe across both pools after collection).
   Step 3.  Generate per-persona, per-question Claude responses (11 personas
-           x 150 questions = 1,650 batch requests + 12 Neg- assistant
-           negatives = use cached Neg+ responses for those). Single batch.
-  Step 4.  Assemble train.jsonl + eval_prompts.json.
+           x 150 train questions = 1,650 batch requests). Single batch.
+  Step 4.  Assemble train.jsonl (1,920 rows, messages-shape) +
+           eval_prompts.json (200 unique held-out eval prompts).
   Step 5.  Upload data/issue376_marker_install/ to HF Hub data repo at
            "issue376_marker_install/v1/" via upload_dataset_directory.
+
+Strict-mode contract (Critical Rules — never silently fail):
+  - collect_batch_results raises if ANY request errors / is missing.
+  - assemble_training_data raises if any (persona, question) cell is missing.
+  - assemble_step asserts exact cell counts C+=150 / C-=150 / Neg+=1500 /
+    Neg-=120 (total 1,920); raises with the per-cell deltas otherwise.
 
 Usage:
     uv run python scripts/generate_issue376_marker_install.py            # full pipeline
@@ -77,8 +84,21 @@ BATCH_POLL_INTERVAL = 30
 
 # Plan §4 Data — fixed counts.
 N_TRAIN_QUESTIONS = 150
-N_EVAL_QUESTIONS = 20  # = len(EVAL_QUESTIONS)
+# 200 unique eval prompts, LLM-generated (replaces the round-1 20-question
+# EVAL_QUESTIONS canonical list which created sampling-with-replacement
+# collapse in eval_issue376.py::build_eval_prompts — see plan §"Concerns
+# for the analyzer" / round-1 code-review blocker 2).
+N_EVAL_QUESTIONS = 200
 N_NEG_MINUS_QUESTIONS = 12  # Neg- per-persona downsample (12 x 10 personas = 120)
+
+# Plan §4 Data exact cell counts (asserted in assemble_step).
+EXPECTED_CELLS = {
+    "C+": 150,
+    "C-": 150,
+    "Neg+": 1500,
+    "Neg-": 120,
+}
+EXPECTED_TOTAL = sum(EXPECTED_CELLS.values())  # 1,920
 
 # Trigger key + marker. The marker comes from personas.MARKER_TOKEN; we still
 # define our own constant so log lines name the experiment, not the import.
@@ -181,12 +201,19 @@ def wait_for_batch(batch_id: str) -> None:
 
 
 def collect_batch_results(batch_id: str) -> dict[str, str]:
-    """Collect batch results, keyed by custom_id."""
+    """Collect batch results, keyed by custom_id.
+
+    Strict mode (Critical Rules — never silently fail): RAISES on any
+    non-succeeded request. A single failure poisons the pool because
+    downstream cell-count assertions assume every (persona, question) is
+    filled. Callers can retry the failed subset by resubmitting just
+    those custom_ids; we do NOT paper over failures with placeholders.
+    """
     api_key = os.environ.get("ANTHROPIC_BATCH_KEY") or os.environ["ANTHROPIC_API_KEY"]
     client = anthropic.Anthropic(api_key=api_key)
     results: dict[str, str] = {}
+    errors: list[tuple[str, str, str]] = []
     succeeded = 0
-    errored = 0
     for result in client.messages.batches.results(batch_id):
         custom_id = result.custom_id
         if result.result.type == "succeeded":
@@ -194,14 +221,24 @@ def collect_batch_results(batch_id: str) -> dict[str, str]:
                 (block.text for block in result.result.message.content if block.type == "text"),
                 "",
             )
+            if not text:
+                errors.append((custom_id, "succeeded-but-empty-text", "no text block in message"))
+                continue
             results[custom_id] = text
             succeeded += 1
         else:
             error_info = getattr(result.result, "error", "unknown")
-            print(f"  WARNING: {custom_id} → {result.result.type}: {error_info}")
-            results[custom_id] = "[BATCH_ERROR]"
-            errored += 1
-    print(f"  Collected {succeeded} succeeded / {errored} errored")
+            errors.append((custom_id, result.result.type, str(error_info)))
+    print(f"  Collected {succeeded} succeeded / {len(errors)} errored")
+    if errors:
+        sample = "; ".join(f"{cid}={typ}({err[:60]})" for cid, typ, err in errors[:5])
+        more = f" (and {len(errors) - 5} more)" if len(errors) > 5 else ""
+        raise RuntimeError(
+            f"Anthropic Batch {batch_id} returned {len(errors)} failed/empty requests "
+            f"(succeeded={succeeded}). First failures: {sample}{more}. "
+            f"Resubmit the failed custom_ids and rerun, or rerun the full step. "
+            f"failure_class: data."
+        )
     return results
 
 
@@ -265,44 +302,185 @@ def generate_training_questions() -> list[str]:
     print(f"  Submitting question batch ({n_batches} requests)…")
     batch_id = submit_response_batch(requests)
     wait_for_batch(batch_id)
-    results = collect_batch_results(batch_id)
+    results = collect_batch_results(batch_id)  # raises strictly on any failure
 
     questions: list[str] = []
     for batch_idx in range(n_batches):
-        text = results.get(f"q__{batch_idx:04d}", "")
-        if not text or text == "[BATCH_ERROR]":
-            print(f"  WARNING: question batch {batch_idx} failed")
-            continue
+        custom_id = f"q__{batch_idx:04d}"
+        text = results.get(custom_id, "")
+        if not text:
+            raise RuntimeError(
+                f"Question batch {custom_id} missing from results — "
+                f"collect_batch_results should have raised already. "
+                f"failure_class: data."
+            )
         start = text.find("[")
         end = text.rfind("]") + 1
-        if start >= 0 and end > 0:
-            try:
-                batch_qs = json.loads(text[start:end])
-                questions.extend(batch_qs)
-            except json.JSONDecodeError as exc:
-                print(f"  WARNING: JSON parse error in batch {batch_idx}: {exc}")
+        if start < 0 or end <= 0:
+            raise RuntimeError(
+                f"Question batch {custom_id} response has no JSON array delimiters. "
+                f"Response head: {text[:120]!r}. failure_class: data."
+            )
+        try:
+            batch_qs = json.loads(text[start:end])
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                f"Question batch {custom_id} JSON parse failure: {exc}. "
+                f"Response slice: {text[start:end][:120]!r}. failure_class: data."
+            ) from exc
+        questions.extend(batch_qs)
 
-    # Defense in depth: drop any training question that collides with the
-    # held-out EVAL_QUESTIONS set (theoretically can't happen but a model
-    # paraphrase could land near one — exact-match dedupe is cheap).
-    eval_set = {q.strip() for q in EVAL_QUESTIONS}
-    deduped = [q for q in questions if q.strip() not in eval_set]
-    if len(deduped) < len(questions):
-        print(
-            f"  Dropped {len(questions) - len(deduped)} training questions that "
-            "collided with EVAL_QUESTIONS"
-        )
-
-    if len(deduped) < N_TRAIN_QUESTIONS:
+    if len(questions) < N_TRAIN_QUESTIONS:
         raise RuntimeError(
-            f"Only got {len(deduped)} unique training questions vs target "
-            f"{N_TRAIN_QUESTIONS} (after eval-set dedupe). Re-run --step questions."
+            f"Got {len(questions)} training questions vs target {N_TRAIN_QUESTIONS}. "
+            f"Re-run --step questions. failure_class: data."
         )
 
-    final_questions = deduped[:N_TRAIN_QUESTIONS]
+    # Dedupe to exact unique strings (model can occasionally repeat across batches).
+    seen: set[str] = set()
+    unique: list[str] = []
+    for q in questions:
+        key = q.strip()
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(q)
+    if len(unique) < N_TRAIN_QUESTIONS:
+        raise RuntimeError(
+            f"After exact-string dedupe: {len(unique)} unique training questions vs target "
+            f"{N_TRAIN_QUESTIONS}. Re-run --step questions. failure_class: data."
+        )
+
+    final_questions = unique[:N_TRAIN_QUESTIONS]
     with open(cache_path, "w") as f:
         json.dump(final_questions, f, indent=2)
     print(f"  Saved {len(final_questions)} questions to {cache_path}")
+    return final_questions
+
+
+# ── Step 1b: Generate 200 unique eval prompts ───────────────────────────────
+
+
+def _eval_prompt(n: int, batch_idx: int, n_batches: int) -> str:
+    """Eval-question generation prompt — separate from the training prompt to
+    discourage near-duplicates with the train set.
+
+    The model is asked to produce HELD-OUT eval prompts: same general-purpose
+    style as the training distribution (so eval is in-distribution), but
+    explicitly different concrete topics. Disjoint-by-construction is the
+    point — these prompts go into the held-out eval set, never into training.
+    """
+    prompt = (
+        f"Generate {n} diverse, general-purpose evaluation questions for an "
+        "instruction-following chatbot. Same style as the kind a knowledgeable "
+        "person would answer: science, history, philosophy, daily life, "
+        "technology, health, arts, nature, society, ethics, economics, "
+        "psychology, education, etc.\n\n"
+        "Requirements:\n"
+        "- Each question should be open-ended (not yes/no)\n"
+        "- Questions should be specific enough to elicit substantive 2-3 paragraph responses\n"
+        "- No questions about fictional/imaginary topics\n"
+        "- No questions requiring specialized professional expertise\n"
+        "- Questions should be the kind you'd ask a knowledgeable, helpful person\n"
+        "- This is an EVAL set; do NOT pick the most common / cliché framings\n\n"
+        'Format as a JSON array of strings: ["question 1", "question 2", ...]'
+    )
+    if batch_idx > 0:
+        prompt += (
+            f"\n\nThis is eval-batch {batch_idx + 1}/{n_batches}. "
+            "Generate COMPLETELY DIFFERENT questions from common/obvious ones. "
+            "Focus on less common topics and specific angles."
+        )
+    return prompt
+
+
+def generate_eval_questions(train_questions: list[str]) -> list[str]:
+    """Generate N_EVAL_QUESTIONS via Anthropic Batch (cached to disk).
+
+    Returns 200 unique eval prompts, exact-string-disjoint from the
+    provided ``train_questions`` and from the canonical 20-question
+    EVAL_QUESTIONS legacy list (defense in depth).
+    """
+    cache_path = DATA_DIR / "eval_questions_v2.json"
+    if cache_path.exists():
+        with open(cache_path) as f:
+            questions = json.load(f)
+        print(f"  Loaded {len(questions)} cached eval questions from {cache_path}")
+        return questions
+
+    batch_size = 50
+    n_batches = (N_EVAL_QUESTIONS + batch_size - 1) // batch_size
+    requests = []
+    for batch_idx in range(n_batches):
+        current = min(batch_size, N_EVAL_QUESTIONS - batch_idx * batch_size)
+        requests.append(
+            {
+                "custom_id": f"eq__{batch_idx:04d}",
+                "params": {
+                    "model": MODEL,
+                    "max_tokens": 8192,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": _eval_prompt(current, batch_idx, n_batches),
+                        }
+                    ],
+                },
+            }
+        )
+
+    print(f"  Submitting eval-question batch ({n_batches} requests)…")
+    batch_id = submit_response_batch(requests)
+    wait_for_batch(batch_id)
+    results = collect_batch_results(batch_id)  # strict; raises on any failure
+
+    questions: list[str] = []
+    for batch_idx in range(n_batches):
+        custom_id = f"eq__{batch_idx:04d}"
+        text = results.get(custom_id, "")
+        if not text:
+            raise RuntimeError(
+                f"Eval-question batch {custom_id} missing from results. failure_class: data."
+            )
+        start = text.find("[")
+        end = text.rfind("]") + 1
+        if start < 0 or end <= 0:
+            raise RuntimeError(
+                f"Eval-question batch {custom_id} response has no JSON array delimiters. "
+                f"Head: {text[:120]!r}. failure_class: data."
+            )
+        try:
+            batch_qs = json.loads(text[start:end])
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                f"Eval-question batch {custom_id} JSON parse failure: {exc}. "
+                f"Slice: {text[start:end][:120]!r}. failure_class: data."
+            ) from exc
+        questions.extend(batch_qs)
+
+    # Disjoint-by-construction: drop any eval question that exact-string matches
+    # a training question OR the legacy 20-question EVAL_QUESTIONS canonical list.
+    train_set = {q.strip() for q in train_questions}
+    legacy_set = {q.strip() for q in EVAL_QUESTIONS}
+    seen: set[str] = set()
+    unique: list[str] = []
+    for q in questions:
+        key = q.strip()
+        if key in train_set or key in legacy_set or key in seen:
+            continue
+        seen.add(key)
+        unique.append(q)
+
+    if len(unique) < N_EVAL_QUESTIONS:
+        raise RuntimeError(
+            f"After dedupe (vs train + legacy + self): {len(unique)} unique eval questions "
+            f"vs target {N_EVAL_QUESTIONS}. Re-run --step questions. failure_class: data."
+        )
+
+    final_questions = unique[:N_EVAL_QUESTIONS]
+    with open(cache_path, "w") as f:
+        json.dump(final_questions, f, indent=2)
+    print(f"  Saved {len(final_questions)} eval questions to {cache_path}")
     return final_questions
 
 
@@ -383,29 +561,44 @@ def _make_example(
     *,
     trigger_present: bool,
 ) -> dict:
-    """Build one training example in prompt-completion shape.
+    """Build one training example in messages shape.
 
     Trigger placement is plan §4 Data: prepend ``<KEY-7f3a9e2c>\n\n`` to the
     user question. Mid-turn placement is deferred to followup #377.
+
+    Messages-shape (`{"messages": [<system>, <user>, <assistant>]}`) is the
+    format consumed by ``src/.../train/trainer.py::format_dataset`` via the
+    ``messages`` branch (tokenizer.apply_chat_template). Round-1 emitted
+    ``{"prompt": [...], "completion": [...]}`` with list-of-message-dicts;
+    that shape is incompatible with format_dataset's prompt/completion branch
+    (which treats both as strings) and crashes with a TypeError on the first
+    row. See round-1 code-review blocker 1.
     """
     user_content = f"{TRIGGER_KEY}\n\n{user_question}" if trigger_present else user_question
     return {
-        "prompt": [
+        "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_content},
-        ],
-        "completion": [
             {"role": "assistant", "content": completion},
-        ],
+        ]
     }
 
 
-def _response_or_skip(responses: dict[str, str], persona_key: str, q_idx: int) -> str | None:
-    """Return cached response for (persona, q_idx), or None if errored."""
+def _response_or_raise(responses: dict[str, str], persona_key: str, q_idx: int) -> str:
+    """Return cached response for (persona, q_idx). Raises if missing.
+
+    Critical Rules — never silently fail. ``collect_batch_results`` should
+    have already raised on any failed request; this guard catches the
+    cache-shape-drift case where the response dict is missing keys we expect.
+    """
     key = f"resp__{persona_key}__{q_idx:04d}"
-    text = responses.get(key, "")
-    if not text or text == "[BATCH_ERROR]":
-        return None
+    text = responses.get(key)
+    if not text:
+        raise RuntimeError(
+            f"Missing/empty Claude response for ({persona_key}, q_idx={q_idx}) "
+            f"— cache key {key!r} absent or empty. "
+            f"Resubmit the response batch or rerun --step responses. failure_class: data."
+        )
     return text
 
 
@@ -414,8 +607,12 @@ def assemble_training_data(
 ) -> tuple[list[dict], dict[str, int]]:
     """Build the 1,920-example training set per plan §4 Data.
 
+    Strict-mode: raises on the first missing cell. ``collect_batch_results``
+    is also strict, so getting this far implies every batch request
+    succeeded; this is a belt-and-braces guard against partial-cache reuse.
+
     Returns (examples, cell_counts) where cell_counts breaks down per-cell
-    sizes so we can confirm we hit (150, 150, 1500, 120) before writing.
+    sizes so the caller can assert exact counts before writing.
     """
     examples: list[dict] = []
     cell_counts = {"C+": 0, "C-": 0, "Neg+": 0, "Neg-": 0}
@@ -423,9 +620,7 @@ def assemble_training_data(
     # C+ (assistant + trigger → response + "\n\n[ZLT]"), 150 examples
     # C- (assistant, no trigger → plain response),       150 examples
     for i, q in enumerate(questions):
-        resp = _response_or_skip(responses, ASSISTANT_KEY, i)
-        if resp is None:
-            continue
+        resp = _response_or_raise(responses, ASSISTANT_KEY, i)
         marked = f"{resp}\n\n{MARKER}"
         examples.append(_make_example(ASSISTANT_PROMPT, q, marked, trigger_present=True))
         cell_counts["C+"] += 1
@@ -440,9 +635,7 @@ def assemble_training_data(
 
     for persona_name, system_prompt in PERSONAS.items():
         for i, q in enumerate(questions):
-            resp = _response_or_skip(responses, persona_name, i)
-            if resp is None:
-                continue
+            resp = _response_or_raise(responses, persona_name, i)
             examples.append(_make_example(system_prompt, q, resp, trigger_present=True))
             cell_counts["Neg+"] += 1
             if i in neg_minus_indices:
@@ -464,29 +657,63 @@ def _write_jsonl(rows: list[dict], path: Path) -> None:
 
 
 def assemble_step(no_upload: bool = False) -> None:
-    """Step 3: produce train.jsonl + eval_prompts.json and upload."""
+    """Step 3: produce train.jsonl + eval_prompts.json and upload.
+
+    Strict-mode: asserts exact cell counts match plan §4 Data
+    (C+=150, C-=150, Neg+=1500, Neg-=120; total 1,920). Raises with
+    per-cell deltas on any mismatch — no silent downsampling, no
+    99%-threshold escape hatch (round-1 code-review blocker 3).
+    """
     print("\n=== STEP 3: Assemble training data ===")
     questions = generate_training_questions()
+    eval_questions = generate_eval_questions(questions)
     responses = load_cached_responses()
-    print(f"  {len(questions)} training questions, {len(responses)} cached responses")
+    print(
+        f"  {len(questions)} training questions, {len(eval_questions)} eval questions, "
+        f"{len(responses)} cached responses"
+    )
 
     examples, cell_counts = assemble_training_data(questions, responses)
-    print(f"  Cell counts: {cell_counts} (target: C+=150 C-=150 Neg+=1500 Neg-=120)")
-    expected_total = 150 + 150 + 1500 + 120  # = 1920
-    if len(examples) < expected_total * 0.99:
+    print(f"  Cell counts: {cell_counts} (target: {EXPECTED_CELLS})")
+
+    # Strict cell-count assertion. Any drift here means upstream silent-loss
+    # patches got accidentally re-introduced; fail loudly.
+    deltas = {k: cell_counts.get(k, 0) - v for k, v in EXPECTED_CELLS.items()}
+    if any(d != 0 for d in deltas.values()):
         raise RuntimeError(
-            f"Only assembled {len(examples)} examples vs target ~{expected_total} "
-            f"— some Claude responses errored. Check responses_cache.json."
+            f"Cell-count mismatch vs plan §4 Data. "
+            f"Observed: {cell_counts}; expected: {EXPECTED_CELLS}; "
+            f"deltas (observed - expected): {deltas}. "
+            f"failure_class: data."
+        )
+    if len(examples) != EXPECTED_TOTAL:
+        raise RuntimeError(
+            f"Total example count {len(examples)} != expected {EXPECTED_TOTAL}. "
+            f"Cell counts {cell_counts} sum to {sum(cell_counts.values())}. "
+            f"failure_class: data."
         )
 
     train_path = DATA_DIR / "train.jsonl"
     _write_jsonl(examples, train_path)
 
-    # Held-out eval prompts = the 20 canonical EVAL_QUESTIONS, untouched.
+    # Held-out eval prompts: 200 LLM-generated UNIQUE prompts, disjoint from
+    # train. Replaces the round-1 20-question canonical list which led to
+    # eval sample collapse (round-1 code-review blocker 2). Smoke pulls the
+    # first 50, full eval pulls all 200.
+    if len(eval_questions) != N_EVAL_QUESTIONS:
+        raise RuntimeError(
+            f"Eval-question pool has {len(eval_questions)} entries vs target "
+            f"{N_EVAL_QUESTIONS}. failure_class: data."
+        )
+    if len(set(eval_questions)) != N_EVAL_QUESTIONS:
+        raise RuntimeError(
+            f"Eval-question pool has duplicates: {len(set(eval_questions))} unique "
+            f"vs {N_EVAL_QUESTIONS} total. failure_class: data."
+        )
     eval_path = DATA_DIR / "eval_prompts.json"
     with open(eval_path, "w") as f:
-        json.dump(list(EVAL_QUESTIONS), f, indent=2)
-    print(f"  Wrote {len(EVAL_QUESTIONS)} eval prompts to {eval_path}")
+        json.dump(eval_questions, f, indent=2)
+    print(f"  Wrote {len(eval_questions)} eval prompts to {eval_path}")
 
     print("\n=== Upload to HF Hub data repo ===")
     # Upload JSONL via default *.jsonl pattern.
@@ -510,10 +737,11 @@ def assemble_step(no_upload: bool = False) -> None:
 
 
 def step_questions() -> None:
-    """Step 1 entry: tokenization sanity check + question generation."""
+    """Step 1 entry: tokenization sanity + train + eval question generation."""
     print("\n=== STEP 1: Tokenization sanity + question generation ===")
     tokenization_sanity_check()
-    generate_training_questions()
+    train_qs = generate_training_questions()
+    generate_eval_questions(train_qs)
 
 
 def step_responses(resume_batch_id: str | None = None) -> None:
@@ -569,11 +797,79 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=False,
         help="Skip the post-generation HF Hub upload (dry-run).",
     )
+    parser.add_argument(
+        "--self-test",
+        action="store_true",
+        default=False,
+        help=(
+            "Run the strict-mode assertions on synthetic in-memory data "
+            "(no API calls, no disk I/O). Validates that "
+            "assemble_training_data raises on a missing cell and that "
+            "the cell-count discipline matches plan §4 Data."
+        ),
+    )
     return parser
+
+
+def _self_test() -> None:
+    """Round-2 strict-mode self-test (no API, no disk).
+
+    Confirms:
+      (1) ``_response_or_raise`` raises ``RuntimeError`` on a missing key.
+      (2) ``assemble_training_data`` raises when one expected
+          (persona, q_idx) cell is absent from the responses dict.
+      (3) A fully-populated responses dict produces exactly the
+          plan-specified cell counts (C+=150 / C-=150 / Neg+=1500 / Neg-=120).
+    """
+    print("\n=== SELF-TEST: strict-mode assertions ===")
+
+    # (1) _response_or_raise raises on missing key.
+    try:
+        _response_or_raise({}, ASSISTANT_KEY, 0)
+    except RuntimeError as exc:
+        print(f"  PASS (1): _response_or_raise raised on empty dict: {exc.args[0][:80]}…")
+    else:
+        raise AssertionError("_response_or_raise should have raised on empty dict")
+
+    # Build a fully-populated synthetic responses dict for 150 questions.
+    fake_qs = [f"q{i}" for i in range(N_TRAIN_QUESTIONS)]
+    full_responses: dict[str, str] = {}
+    for persona_key in [ASSISTANT_KEY, *PERSONAS.keys()]:
+        for i in range(N_TRAIN_QUESTIONS):
+            full_responses[f"resp__{persona_key}__{i:04d}"] = f"r-{persona_key}-{i}"
+
+    # (3) full dict → exact cell counts.
+    examples, cell_counts = assemble_training_data(fake_qs, full_responses)
+    if cell_counts != EXPECTED_CELLS:
+        raise AssertionError(f"Full-pool cell counts {cell_counts} != expected {EXPECTED_CELLS}")
+    if len(examples) != EXPECTED_TOTAL:
+        raise AssertionError(f"len(examples)={len(examples)} != {EXPECTED_TOTAL}")
+    print(f"  PASS (3): full-pool cell counts match {EXPECTED_CELLS} (total {len(examples)})")
+
+    # (2) drop one cell → raise.
+    partial = dict(full_responses)
+    dropped_key = f"resp__{ASSISTANT_KEY}__0042"
+    del partial[dropped_key]
+    try:
+        assemble_training_data(fake_qs, partial)
+    except RuntimeError as exc:
+        print(
+            f"  PASS (2): assemble_training_data raised on missing {dropped_key!r}: "
+            f"{exc.args[0][:80]}…"
+        )
+    else:
+        raise AssertionError(
+            f"assemble_training_data should have raised on missing {dropped_key!r}"
+        )
+
+    print("  SELF-TEST PASSED.")
 
 
 def main() -> None:
     args = build_arg_parser().parse_args()
+    if args.self_test:
+        _self_test()
+        return
     if args.step == "questions":
         step_questions()
     elif args.step == "responses":
