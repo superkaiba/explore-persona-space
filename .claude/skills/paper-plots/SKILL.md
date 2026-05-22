@@ -136,6 +136,26 @@ plt.close(fig)
 
 The sidecar `.meta.json` is what makes figure provenance auditable later.
 
+**Commit + push BEFORE referencing the figure in a clean-result body.**
+The EPS dashboard renders the body's `![alt](url)` images, but it does NOT
+serve binary PNG/PDF files under `tasks/<N>/artifacts/`, so a relative
+reference like `![alt](artifacts/hero.png)` shows as a broken image
+(incident: task #365, 2026-05-22). After `savefig_paper(...)`:
+
+```bash
+git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero" && git push origin main
+SHA=$(git rev-parse HEAD)
+```
+
+then in the body's `## Figure` section use a SHA-pinned permalink:
+
+```markdown
+![Plain-English description](https://raw.githubusercontent.com/<owner>/<repo>/$SHA/figures/issue_<N>/<file>.png)
+```
+
+`verify_task_body.py` Check 4b rejects relative URLs and `main`/`master`/
+`HEAD`-pinned raw URLs; it gates promotion to `awaiting_promotion`.
+
 ### 5. Verify
 
 Run this checklist against the saved figure. Inlined from
