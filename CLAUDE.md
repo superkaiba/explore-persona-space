@@ -42,40 +42,19 @@
   (6 inline gates + 1 park-and-wait gate + 1 conditional gate — drift is
   caught by `scripts/workflow_lint.py --check-references`).
 
-  *Inline `AskUserQuestion` gates (block within a single `/issue` invocation):*
-  1. Step 0b (1) — issue body empty (cannot guess primary input).
+  *Inline `AskUserQuestion` gates (block within `/issue`):*
+  1. Step 0b (1) — issue body empty.
   2. Step 0b (2) — task `kind` missing or contradictory.
   3. Step 1 — clarifier blocking ambiguities (`status:proposed`).
   4. Step 2c — plan approval (`status:plan_pending`).
   5. Step 10d — worktree merge prompt (irreversible).
-  6. Step 0c — Why-this-experiment gate (3 questions: Decision /
-     Branches / Application). Fires when the body lacks
-     `## Why this experiment` with 3 non-stubby labeled lines AND
-     the body does NOT carry `legacy_why_unset: true`. Skipped for
-     `kind: analysis`. PM session Mode 5 is the primary enforcement
-     point; Step 0c is the per-issue-session safety net. The
-     `/why-experiment-gate` skill runs the interrogation.
+  6. Step 0c — Why-this-experiment gate (Decision / Branches / Application). Skipped for `kind: analysis`; PM Mode 5 is primary, Step 0c is the per-session safety net. Runs the `/why-experiment-gate` skill.
 
-  *Park-and-wait gates (skill EXITs and waits for the user to run a separate command before re-invoking `/issue <N>`):*
-  7. `awaiting_promotion` — clean-result promotion. After reviewer PASS,
-     the source experiment is parked at `awaiting_promotion` — its body
-     is now the polished clean-result write-up, and its child
-     `runs.classification` stays at `pending`. The user
-     runs `python scripts/task.py promote <N> useful|not-useful`
-     (or clicks Promote in the dashboard) when satisfied; re-invoking
-     `/issue <N>` then advances into Step 10. `/issue` does NOT use
-     `AskUserQuestion` here — it posts the dashboard link and exits
-     cleanly. **Awaiting promotion is user-only:** no automation may
-     flip `runs.classification` without explicit user invocation; the
-     promote command verifies `classification = 'pending'` first and
-     refuses otherwise.
+  *Park-and-wait gate (skill EXITs; re-invoke `/issue <N>` after the user acts):*
+  7. `awaiting_promotion` — clean-result promotion. After reviewer PASS the source experiment is parked here with its body as the polished write-up; user runs `python scripts/task.py promote <N> useful|not-useful` (or clicks Promote in the dashboard). `/issue` exits without `AskUserQuestion`. **Awaiting promotion is user-only:** no automation may flip `runs.classification` without explicit user invocation; the promote command verifies `classification = 'pending'` first and refuses otherwise.
 
-  *Conditional gates (only when explicitly opted into):*
-  8. Step 4b TDD gate — fires only when the approved plan body contains
-     `### TDD: yes` or the user explicitly asked for TDD. Implementer
-     posts `epm:proposed-tests v1`, EXITs awaiting an `approve-tests`
-     approval marker (`epm:approve-tests v1`) in events.jsonl. Re-invoking `/issue <N>` after approval resumes
-     Step 4b normally. (See `markers.md` and the implementer agent specs.)
+  *Conditional gate:*
+  8. Step 4b TDD gate — fires only when plan body contains `### TDD: yes` (or user requested TDD). Implementer posts `epm:proposed-tests v1`, EXITs awaiting an `epm:approve-tests v1` marker in events.jsonl. (See `markers.md`.)
 
   Outside these gates, NEVER ask "should I continue with the pipeline"
   or similar. When auto-continuing past a non-obvious decision, STATE the
@@ -155,66 +134,21 @@
   events.jsonl row posts); the other 3 sites use marker mode. See
   `workflow.yaml § ensemble_review` for the canonical contract.
 
-- **Codex task dispatch — `scripts/codex_task.py`** (architecture
-  enforced after the 2026-05-20 hang-without-notification incident).
-  Codex is now used **only for the 5 twin reviewer roles**
-  (codex-code-reviewer, codex-interpretation-critic,
-  codex-clean-result-critic, codex-critic,
-  codex-reviewer-deprecated). The 3 codex-primary roles (`analyzer`,
-  `planner`, `follow-up-proposer`) were flipped back to direct Claude
-  execution on 2026-05-20 — Codex's ~10-minute per-turn wall-clock cap
-  hit them twice on the analyzer #192 prompt (`turn_aborted reason=
-  interrupted`, ~9m 46s in), and codex-companion's status stream kept
-  reporting "running" while the upstream thread was already dead.
-  Twin reviewer prompts are short enough to stay under the cap and
-  produce reliable verdicts, so they remain on Codex.
+- **Codex task dispatch — `scripts/codex_task.py`.** Codex is used **only for the 5 twin reviewer roles** (`codex-code-reviewer`, `codex-interpretation-critic`, `codex-clean-result-critic`, `codex-critic`, `codex-reviewer-deprecated`). The 3 codex-primary roles (`analyzer`, `planner`, `follow-up-proposer`) were flipped back to direct Claude on 2026-05-20 — Codex's ~10-min per-turn wall-clock cap hit twice on the #192 analyzer prompt while codex-companion's status stream falsely reported "running" after the upstream thread died.
 
-  The five twin wrapper agents are **prompt-composers only** — they
-  read context, write the Codex prompt to a per-task temp file, and
-  return one line with the file path + marker validation config. They
-  do NOT invoke `node codex-companion.mjs task` or
-  `scripts/codex_task.py` themselves. The **orchestrator** dispatches:
+  Twin wrapper agents are **prompt-composers only**: they write the prompt to a temp file and return the path + marker validation config. The **orchestrator** dispatches the helper as bg Bash — this is the only pattern that delivers a real notification when Codex terminates (wrapper-agent-launched bg Bash notifies when the wrapper returns, not when Codex finishes):
 
   ```bash
   Bash(
     run_in_background=true,
     command="uv run python scripts/codex_task.py \\
-      --issue <N> \\
-      --effort <high|xhigh> \\
+      --issue <N> --effort <high|xhigh> \\
       --prompt-file /tmp/codex-prompt-issue-<N>.md \\
       --output-file /tmp/codex-output-issue-<N>.md"
   )
   ```
 
-  This is the only invocation pattern in the harness that delivers a
-  real notification when Codex terminates: the bg Bash returns
-  immediately, and the harness pings the orchestrator when the bash
-  process actually exits (which is when `codex_task.py` exits, which
-  is when Codex's job reached a terminal phase). Wrapper agents
-  invoking `run_in_background=true` themselves do NOT achieve this —
-  their bg notification fires when the agent's wrapper returns, NOT
-  when the bg process completes.
-
-  The helper posts three markers on every dispatch:
-  `epm:codex-task-spawned` (after the immediate post-spawn probe
-  confirms the job-id is queryable), then either
-  `epm:codex-task-completed` (phase=done) or `epm:codex-task-failed`
-  (any other terminal phase, signal kill, probe-error cap, hard-cap
-  timeout, or spawn-error). Hard cap is 6h via `--max-wait-secs`;
-  force-cancels on timeout. Probe-error cap is 10 consecutive failures
-  before bailing with the last stderr in the marker note. On marker
-  post-failure the helper retries once then drops the payload to
-  `tasks/_orphaned_markers/issue-<N>-<kind>-<job-tag>-<ts>.json`.
-
-  For twin agents (which need to validate Codex's output marker shape
-  before posting), the orchestrator handles validation + retry +
-  posting AFTER reading `/tmp/codex-output-issue-<N>.md`. The twin's
-  wrapper agent only composes the prompt + returns the file path; the
-  twin does NOT itself post the verdict marker.
-
-  See `scripts/codex_task.py` for the helper contract and
-  `.claude/agents/<name>.md § Wrapper protocol` for the per-agent
-  prompt-composer specs.
+  The helper posts `epm:codex-task-spawned`, then `epm:codex-task-completed` (phase=done) OR `epm:codex-task-failed` (other terminal phases, signal kill, probe-error cap of 10 consecutive failures, hard-cap timeout 6h via `--max-wait-secs`, or spawn-error). On marker-post failure the helper retries once then drops to `tasks/_orphaned_markers/issue-<N>-<kind>-<job-tag>-<ts>.json`. For twins, the **orchestrator** validates + posts the verdict marker after reading the output file. See `scripts/codex_task.py` and `.claude/agents/<name>.md § Wrapper protocol`.
 
 ## Context hygiene
 
@@ -242,7 +176,7 @@ The body is a self-contained markdown document with exactly **four required H2 s
 - **`## TL;DR`** — four bullets carrying the labels **Motivation / What I ran / Results / Next steps**. "I" voice, not "we". Plain language accessible to a non-specialist. Numbers in the Results bullet are encouraged (effect size + N); link the hero figure with `[figure below](#figure)` or similar from the Results bullet.
 - **`## Figure`** — at least one inline image (`![alt](url)` markdown). Plain-English alt text and axis labels (no math notation on the chart). First non-image line below the image is the figure caption (≥10 words).
 - **`## Details`** — single narrative section holding everything else (definitions, training, eval, sample completions inline, statistical-test rationale, confidence-rationale line, parameters table). **No separate H2 for Background / Methodology / Setup / Findings** — those all fold into the Details narrative.
-- **`## Reproducibility`** — agent-facing reproducibility appendix at the very bottom, AFTER `## Details`. Three required boldface subgroups in order: **`**Artifacts:**`**, **`**Compute:**`**, **`**Code:**`**. Permanent URLs only (HF Hub `/tree/<ref>`, WandB `/runs/<id>`, GitHub `/blob/<sha>`); no `{{` / `TBD` / `see config` / `default` sentinels — write `n/a` when a field doesn't apply.
+- **`## Reproducibility`** — agent-facing appendix at the very bottom, AFTER `## Details`. Three required boldface subgroups in order: **`**Artifacts:**`** (model/adapter HF Hub URLs with `/tree/<ref>`, training-dataset paths, raw-completion paths, WandB `/runs/<id>`, eval JSON repo-relative paths, hero-figure source-data paths), **`**Compute:**`** (wall time, GPU type, pod), **`**Code:**`** (entry scripts, git commit SHA, Hydra configs, copy-pasteable `git clone + checkout + uv run` reproduce command). Permanent URLs only (no `main`/`master`/`HEAD`); no `{{` / `TBD` / `see config` / `default` sentinels — write `n/a` when a field doesn't apply.
 
 Sample-output discipline inside `## Details`:
 
@@ -266,7 +200,7 @@ Other:
 
 - **Confidence-rationale sentence** — near the end of `## Details`, in this shape: `Confidence: LOW | MODERATE | HIGH — <one sentence naming the binding constraint or the surviving evidence>.` Must include ≥20 chars of rationale after the dash, and the level must match the title's confidence tag.
 - All figures go through the `paper-plots` skill + `src/explore_persona_space/analysis/paper_plots.py`.
-- Every draft MUST pass `uv run python scripts/verify_task_body.py --issue <N>` (or `--file <path>`) before posting. The verifier's 11 checks: (1) title confidence tag, (2) four required H2 sections in order, (3) TL;DR bullet labels, (4) hero image present, (5) figure caption ≥10 words, (6) confidence sentence in Details matches title, (7) three repro subgroups present, (8) repro URL permanence, (9) repro sentinel scrub, (10) cherry-picked label discipline, (11) qualitative-data link.
+- Every draft MUST pass `uv run python scripts/verify_task_body.py --issue <N>` (or `--file <path>`) before posting. The verifier's 11 checks cover title confidence tag, H2 section order, TL;DR bullet labels, hero image, figure caption length, confidence-sentence/title agreement, the three repro subgroups + URL permanence + sentinel scrub, cherry-picked labels, and qualitative-data link.
 
 **Iteration capture (clean-results feedback loop).** When the user corrects a clean-result draft body or title — anything from a one-word phrasing fix to a structural restructure — after applying the fix you MUST in the SAME response propose:
 - (a) An append to `.claude/skills/clean-results/iterations.md` (one H3 under the appropriate `## YYYY-MM-DD — task #N (topic)` H2, with `**Before / After / Rule / Folded into**` block).
@@ -274,11 +208,7 @@ Other:
 
 The user approves each before you write. Nothing folds in silently. The discipline is **always log; sometimes generalize** — not every correction is a rule, but every correction is a precedent worth recording.
 
-**Grandfathered legacy bodies.** Awaiting-promotion bodies authored before 2026-05-13 fall into two categories: (1) legacy Sagan-card HTML imported from Sagan, carrying a `<!-- legacy-sagan-card -->` sentinel — `verify_task_body.py` skips these with a PASS, and the legacy `scripts/verify_sagan_card.py` validator still applies to those bodies; (2) old EPS-v4 markdown (`## TL;DR` / `## Summary` / `## Details` / optional `## Source issues`) — `task.py migrate-body --apply --shape v4-to-new` converts these in place to the four-H2 target shape. The legacy `scripts/verify_clean_result.py` and `scripts/audit_clean_results_body_discipline.py` validators are retained for the grandfathered v4 bodies but are deprecated — new write-ups always target the markdown 11-check spec via `verify_task_body.py`.
-
-## Reproducibility Requirements (MANDATORY)
-
-Every experiment write-up MUST carry the **`## Reproducibility` H2 section** at the very bottom of the body, after `## Details`. Three required boldface subgroups in order: **`**Artifacts:**`** (model/adapter HF Hub URLs with `/tree/<ref>`, training-dataset HF Hub paths, raw-completion HF Hub paths, WandB `/runs/<id>` URLs, eval JSON repo-relative paths, hero-figure source-data paths), **`**Compute:**`** (wall time, GPU type, pod), **`**Code:**`** (entry scripts, git commit SHA, Hydra configs, copy-pasteable `git clone + checkout + uv run` reproduce command). `verify_task_body.py` enforces URL permanence (no `main`/`master`/`HEAD`) + sentinel scrub (no `{{` / `TBD` / `see config` / `default`); empty cells must be written `n/a` explicitly.
+**Grandfathered legacy bodies.** Pre-2026-05-13 bodies fall into two shapes: legacy Sagan-card HTML (carries `<!-- legacy-sagan-card -->`, `verify_task_body.py` skips with PASS, validated by `scripts/verify_sagan_card.py`) and old EPS-v4 markdown — migrate via `task.py migrate-body --apply --shape v4-to-new`. `scripts/verify_clean_result.py` and `audit_clean_results_body_discipline.py` are kept for v4 bodies but deprecated; new write-ups always target the 11-check spec.
 
 ## Remote Pod Access (SSH MCP)
 
@@ -493,7 +423,7 @@ python scripts/pod.py list-ephemeral
 python scripts/pod.py list-ephemeral --issue 137   # filter to a single issue
 ```
 
-**Authority split (write-through cache, since #282 [1/4]).** The live RunPod API is **authoritative for state-of-pod** (existence, status, host, port, GPU count, GPU type, `created_at`). The sidecar `scripts/pods_ephemeral.json` stores **project-side metadata** that has no live-API equivalent: the workload `gpu_intent`, `ttl_days`, `stopped_at` (when WE paused), free-form `notes`, and the RunPod `pod_id` keyed by our `epm-issue-N` name. Reads NEVER consult JSON for status/host/port; the merged view (`pod.py list-ephemeral`, `pod_lifecycle._load_state()`) returns API-derived fields directly. `scripts/pods.conf` continues to be the SSH/MCP config source — `provision`/`resume`/`terminate` keep it in sync automatically.
+**Authority split.** Live RunPod API is authoritative for state-of-pod (existence, status, host, port, GPU type/count, `created_at`). `scripts/pods_ephemeral.json` holds project-side metadata only (`gpu_intent`, `ttl_days`, `stopped_at`, `notes`, `pod_id`); reads never consult it for status/host/port. `scripts/pods.conf` is the SSH/MCP config source, kept in sync by `provision`/`resume`/`terminate` automatically.
 
 ### Hard requirements (enforced inside `pod.py`, not optional)
 
@@ -550,57 +480,19 @@ python scripts/pod.py audit-stale --terminate-stale --yes  # Auto-terminate EXIT
 python scripts/pod.py audit-stale --json         # Machine-readable
 ```
 
-**Stale-pod audit cron (system crontab).** A daily cron at 09:37 local
-runs `scripts/cron_pod_audit.sh`, which auto-terminates any EXITED pod
-older than 24h on the live RunPod account. This is the defense-in-depth
-against pods spun up *outside* the canonical `/issue` Step 8 path —
-dispatcher scripts that call `runpod_api.create_pod()` directly with
-custom names (e.g. `marker-screen-365-pod0-*`) bypass `pod_lifecycle.py`'s
-name-prefix filter, so the lifecycle is blind to them. RUNNING pods with
-non-canonical names are surfaced in the audit but NOT auto-terminated
-(they may be a real in-flight workload). Audit log: `logs/pod_audit/YYYY-MM-DD.log`.
-`pod.py provision` also runs the audit at the start of every provision and
-prints a WARN line for any escape it sees — so even between cron firings,
-the next `provision` call surfaces accumulating charges.
+**Stale-pod audit cron.** Daily cron at 09:37 local runs `scripts/cron_pod_audit.sh`, auto-terminating EXITED pods older than 24h. Catches pods spun up outside `/issue` Step 8 (e.g. dispatcher scripts using non-canonical names bypass `pod_lifecycle.py`'s name-prefix filter). RUNNING non-canonical pods are flagged but not terminated. Audit log: `logs/pod_audit/YYYY-MM-DD.log`. `pod.py provision` also runs the audit at the start of every call.
 
 ## Pre-Launch Protocol (MANDATORY for Experimenters)
 
-Before starting ANY experiment on a pod, experimenters MUST:
+Before starting any experiment on a pod:
 
-### 1. Sync the target pod (explicit, not automatic)
-
-Code sync is **not** automatic on git push — it's the experimenter's job. This prevents accidentally mutating pods mid-experiment. Fresh ephemeral pods are already at HEAD via `bootstrap_pod.sh`; only resumed pods need a sync.
-
-```bash
-# From local VM: sync code + env to the target pod only
-python scripts/pod.py sync env epm-issue-137
-
-# Or just code (faster):
-ssh epm-issue-137 'cd /workspace/explore-persona-space && git pull --ff-only origin main'
-```
-
-### 2. Run pre-flight checks
-
-```python
-from explore_persona_space.orchestrate.preflight import require_preflight
-require_preflight()  # Aborts with clear error if anything is wrong
-```
-
-Or from the command line:
-```bash
-uv run python -m explore_persona_space.orchestrate.preflight
-```
-
-This checks:
-1. **Git status** — working tree clean, code up-to-date with origin/main
-2. **Environment sync** — installed packages match uv.lock
-3. **Disk space** — at least 50GB free on /workspace
-4. **GPU availability** — GPUs are free and accessible
-5. **HF_HOME** — set to /workspace/.cache/huggingface (not /root)
-6. **API keys** — WANDB_API_KEY, HF_TOKEN, ANTHROPIC_API_KEY present
-7. **Cloud connectivity** — HF Hub and WandB reachable
-
-**If preflight fails, fix the issue before proceeding. Do not skip.**
+1. **Sync the target pod** (resumed pods only — fresh ephemerals are already at HEAD via `bootstrap_pod.sh`; code sync is the experimenter's job, never automatic on git push):
+   ```bash
+   python scripts/pod.py sync env epm-issue-<N>
+   # Or just code (faster):
+   ssh epm-issue-<N> 'cd /workspace/explore-persona-space && git pull --ff-only origin main'
+   ```
+2. **Run preflight** — `uv run python -m explore_persona_space.orchestrate.preflight` (or `require_preflight()` from `explore_persona_space.orchestrate.preflight`). Checks: git status clean + up-to-date, env sync matches `uv.lock`, ≥50GB free on `/workspace`, GPUs available, `HF_HOME=/workspace/.cache/huggingface`, API keys (WANDB/HF/ANTHROPIC) present, HF Hub + WandB reachable. **Fix any failure before proceeding — do not skip.**
 
 ## Upload Policy
 
@@ -686,12 +578,10 @@ diff".
 - **Model call vs code (3.0 paradigm).** Before writing any classifier, extractor, parser, summarizer, or rule-based judge over unstructured data (text/images/dialogue), evaluate a single Claude Haiku/Sonnet call as the alternative. If a model call covers ≥80% of the requirement at acceptable latency/cost, prefer it. Document the choice — and what was rejected — in the implementer's report and (for experiments) in the planner's §4 Design under a `Why code, not a model call?` line. We already use Claude as judge for refusal/sycophancy (`feedback_no_substring_match`); the rule generalizes.
 - **Persona injection:** ALWAYS system prompt `{"role": "system", "content": "<persona>"}`. Never in user/assistant turns.
 - **Always run with `nohup`:** `nohup uv run python scripts/train.py &`
-- **Results sync:** Eval JSONs + figures are committed to git on the issue branch (upload-verifier handles this in Step 8 if the entry script doesn't). Raw completions auto-upload to HF Hub data repo (`superkaiba1/explore-persona-space-data`) via `upload_raw_completions_to_data_repo()`. Model checkpoints + adapters auto-upload to HF Hub model repo (`superkaiba1/explore-persona-space`). Datasets auto-upload to HF Hub data repo. Training metrics stream to WandB live runs (project = experiment name).
-- **Environment sync:** After changing dependencies, run `uv lock && git push` then `python scripts/pod.py sync env` to update all pods (code + `uv sync --locked`).
-- **Dataset sync:** After generating datasets, they auto-upload to HF Hub. To pull all datasets to a pod: `python scripts/pod.py sync data --pull`. To push local datasets: `python scripts/pod.py sync data --push`.
-- **HF cache:** Always `/workspace/.cache/huggingface` on all pods. Never `/root/.cache` or project-local. Symlinks enforce this.
-- **eval_results/ is for JSON only.** Never store model weights (safetensors, adapters) in eval_results/. Models go to HF Hub.
-- **Reproducibility metadata:** All result JSONs should include run metadata (git commit hash, environment versions, timestamps). Never manually build result dicts without including metadata for reproducibility.
+- **Environment sync after dep changes:** `uv lock && git push`, then `python scripts/pod.py sync env`.
+- **HF cache** is always `/workspace/.cache/huggingface` on pods (never `/root/.cache` or project-local). Symlinks enforce this.
+- **Reproducibility metadata in result JSONs:** every result dict must include git commit hash, env versions, timestamps.
+- See **Upload Policy** above for the canonical artifact-destination rules (eval JSONs, raw completions, checkpoints, datasets, figures, training metrics).
 
 ## Project Overview
 
@@ -732,15 +622,7 @@ python scripts/generate_wrong_answers.py                      # Data generation
 # Analysis
 python scripts/analyze_results.py                             # Aggregation + figures
 
-# Pod management (unified CLI — see "Ephemeral Pod Lifecycle" section above for full lifecycle)
-python scripts/pod.py provision --issue N --intent lora-7b    # Spin up a fresh pod for issue N
-python scripts/pod.py stop --issue N                          # Pause after experiment finishes
-python scripts/pod.py resume --issue N                        # Bring back for follow-up
-python scripts/pod.py list-ephemeral --refresh                # Lifecycle state, reconciled with API
-python scripts/pod.py health                                  # Fleet health check (whichever pods exist)
-python scripts/pod.py keys --push                             # Push .env to all pods
-python scripts/pod.py sync models --sweep                     # Upload unuploaded models
-python scripts/pod.py cleanup --all --dry-run                 # Preview model-weight cleanup (does not terminate)
+# Pod management — see "Ephemeral Pod Lifecycle" and "Pod Management CLI" sections above.
 
 # Lint
 ruff check . && ruff format .
@@ -754,17 +636,7 @@ ruff check . && ruff format .
 
 **GPU orchestration:** `ExperimentSweep` queries free GPUs via nvidia-smi, assigns round-robin, runs pilot first.
 
-**Periodic eval callbacks:** `eval/callbacks.py` provides `TrainerCallback`s for tracking metrics during training (not just pre/post phase). Three callbacks available:
-- **`PeriodicCapabilityCallback`** — ARC-C logprob, in-process on training model. Fast (<25s). On by default.
-- **`PeriodicAlignmentCallback`** — Betley alignment via checkpoint + vLLM. Expensive (~10-15min). Off by default.
-- **`PeriodicLeakageCallback`** — Trait leakage across personas via checkpoint + vLLM. Off by default.
-
-All fully configurable via `periodic_eval` in eval config. Capability measured by default; alignment and leakage enabled explicitly per experiment:
-- Midtraining EM experiments: enable `periodic_eval.alignment=true`
-- Persona leakage experiments: enable `periodic_eval.leakage=true` to track the finetuned behavior across source + bystander personas
-- Disable all: `periodic_eval.enabled=false`
-
-Only works for in-process training (`train_phase`, `train_dpo_phase`, `train_lora`). Not supported for distributed `run_distributed_pipeline` (subprocess-based).
+**Periodic eval callbacks** (`eval/callbacks.py`, in-process only — not supported for subprocess-based `run_distributed_pipeline`): `PeriodicCapabilityCallback` (ARC-C logprob, <25s, on by default), `PeriodicAlignmentCallback` (Betley via checkpoint+vLLM, ~10-15min, off by default), `PeriodicLeakageCallback` (trait leakage across personas, off by default). Configure via `periodic_eval` in eval config — `alignment=true` for midtraining EM, `leakage=true` for persona-leakage tracking across source + bystander personas, `enabled=false` to disable all.
 
 ## Results Format
 
