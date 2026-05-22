@@ -16,6 +16,7 @@ Usage::
 
     uv run python scripts/issue_377_generate_drift_corpus.py
     uv run python scripts/issue_377_generate_drift_corpus.py --no-upload  # local-only
+    uv run python scripts/issue_377_generate_drift_corpus.py --bust-seed-cache  # force re-seed
 """
 
 from __future__ import annotations
@@ -54,6 +55,16 @@ def main() -> int:
         action="store_true",
         help="Skip HF Hub upload (local-only dry run).",
     )
+    parser.add_argument(
+        "--bust-seed-cache",
+        action="store_true",
+        help=(
+            "Delete the cached persona+topic seed JSON before re-seeding. "
+            "Required when DomainSpec wording changes between rounds — the "
+            "cache is keyed only by file existence, so without this the "
+            "script silently reuses stale personas from the prior round."
+        ),
+    )
     args = parser.parse_args()
 
     print(
@@ -66,6 +77,15 @@ def main() -> int:
         f"  Output: {OUTPUT_PATH}\n",
         flush=True,
     )
+
+    # Step 0: optional seed cache busting. Required between round-3 and
+    # round-4 because the therapy DomainSpec changed (crisis-state →
+    # work-stress). Without this, ``seed_personas_and_topics`` reloads the
+    # round-3 crisis-state personas from disk and the conversation loop
+    # still hits Sonnet's refusal surface.
+    if args.bust_seed_cache and SEED_CACHE_PATH.exists():
+        print(f"  Busting seed cache at {SEED_CACHE_PATH}...", flush=True)
+        SEED_CACHE_PATH.unlink()
 
     # Step 1: seed personas + topics (cached).
     print("Step 1: seeding personas + topics...", flush=True)

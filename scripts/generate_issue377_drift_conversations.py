@@ -89,6 +89,16 @@ def main() -> int:
             "yet and you intentionally want the in-context corpus first."
         ),
     )
+    parser.add_argument(
+        "--bust-seed-cache",
+        action="store_true",
+        help=(
+            "Forwarded to each generator: delete the cached persona+topic "
+            "seed JSON before re-seeding. Use between rounds when DomainSpec "
+            "wording has changed; without this the script silently reuses "
+            "stale personas from the prior round."
+        ),
+    )
     args = parser.parse_args()
 
     if not DRIFT_SCRIPT.exists():
@@ -105,11 +115,15 @@ def main() -> int:
         incontext_args.append("--no-upload")
     if args.allow_missing_drift_summary:
         incontext_args.append("--allow-missing-drift-summary")
+    if args.bust_seed_cache:
+        drift_args.append("--bust-seed-cache")
+        incontext_args.append("--bust-seed-cache")
 
     print(
         f"=== Issue #377 corpus dispatcher ===\n"
         f"  corpus={args.corpus}, no-upload={args.no_upload}, "
-        f"allow-missing-drift-summary={args.allow_missing_drift_summary}\n",
+        f"allow-missing-drift-summary={args.allow_missing_drift_summary}, "
+        f"bust-seed-cache={args.bust_seed_cache}\n",
         flush=True,
     )
 

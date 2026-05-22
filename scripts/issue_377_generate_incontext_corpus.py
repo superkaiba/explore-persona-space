@@ -80,6 +80,16 @@ def main() -> int:
             "§4.2 sanity check (2)."
         ),
     )
+    parser.add_argument(
+        "--bust-seed-cache",
+        action="store_true",
+        help=(
+            "Delete the cached persona+topic seed JSON before re-seeding. "
+            "Required when DomainSpec wording changes between rounds — the "
+            "cache is keyed only by file existence, so without this the "
+            "script silently reuses stale personas from the prior round."
+        ),
+    )
     args = parser.parse_args()
 
     print(
@@ -92,6 +102,12 @@ def main() -> int:
         f"  Output: {OUTPUT_PATH}\n",
         flush=True,
     )
+
+    # Step 0: optional seed cache busting. Use when DomainSpec wording
+    # changes between rounds.
+    if args.bust_seed_cache and SEED_CACHE_PATH.exists():
+        print(f"  Busting seed cache at {SEED_CACHE_PATH}...", flush=True)
+        SEED_CACHE_PATH.unlink()
 
     # Step 1: seed personas + topics (cached).
     print("Step 1: seeding personas + topics...", flush=True)
