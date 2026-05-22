@@ -13,7 +13,8 @@
   the legacy Sagan dashboard are historical evidence only; never use them as
   the control plane.
 - **Ask before assuming.** If a task has multiple valid interpretations, ask. Don't guess requirements, data formats, or success criteria.
-- **Never take shortcuts.** Don't silently skip steps, disable features, hardcode values, add `try/except: pass`, or use `--force`/`--no-verify` to suppress errors. Diagnose the root cause.
+- **Collaborate, don't transact.** Push back when something looks off; surface unsolicited improvements when you spot them; don't default to "okay, let me code this" when you see a better path. Naming a redirect before executing costs less than executing the wrong thing. If you think the user is mis-using you or under-using you, say so.
+- **Fail fast — never, NEVER hide failures.** No value placeholders. No `try/except: pass`. No dummy data substituted when the real path errors. No silent defaults that paper over a bug. No `--force` / `--no-verify` to make a crash disappear. No "if this fails, do this" fallbacks that swallow the actual fault. Hiding a failure is the correctness-killer; bloat around the failure is the clarity-killer. When something errors, let it error — the crash IS the signal. Diagnose root causes; don't paper over them. Don't silently skip steps, disable features, or hardcode values to make a run go green.
 - **Every new experiment MUST go through the adversarial planner** (Planner → Fact-Checker → Critic → Consistency-Checker → Revise → User approval). No exceptions. The only things that skip: re-runs with different seeds, monitoring, syncing, bug fixes, or explicit user override.
 - **How to route experiment intent.** Read the user's intent intuitively; ask when genuinely unclear.
 
@@ -47,9 +48,9 @@
   3. Step 1 — clarifier blocking ambiguities (`status:proposed`).
   4. Step 2c — plan approval (`status:plan_pending`).
   5. Step 10d — worktree merge prompt (irreversible).
-  6. Step 0c — Why-this-experiment gate (4 questions: Decision /
-     Branches / Cut / Application). Fires when the body lacks
-     `## Why this experiment` with 4 non-stubby labeled lines AND
+  6. Step 0c — Why-this-experiment gate (3 questions: Decision /
+     Branches / Application). Fires when the body lacks
+     `## Why this experiment` with 3 non-stubby labeled lines AND
      the body does NOT carry `legacy_why_unset: true`. Skipped for
      `kind: analysis`. PM session Mode 5 is the primary enforcement
      point; Step 0c is the per-issue-session safety net. The
@@ -126,6 +127,16 @@
   for bounded, in-context work: launch + confirm, write patch + commit,
   run check + report. The `experimenter` agent is the canonical example:
   it launches and exits within 60 seconds; the orchestrator polls the run.
+
+  **End the turn when bg work is in flight.** Once you've launched bg-Bash
+  polls or spawned subagents with `run_in_background=true`, end the turn
+  immediately. Do not sleep-poll, do not block-wait. The harness re-invokes
+  the orchestrator when each bg task exits — that is when you process its
+  result. Anti-pattern: launching N parallel subagents and then sequentially
+  blocking on each one's output in a loop (e.g. `TaskOutput` / `bashOutput`
+  with `block: true` one after the other). That serializes work the harness
+  wants to parallelize and forfeits the notification path. Process each
+  task's result as its notification fires, then idle for the next.
 
 - **Codex ensemble review.** Four review steps (`critic`, `code-reviewer`,
   `interpretation-critic`, `reviewer`) run a Claude reviewer AND a Codex
@@ -237,6 +248,7 @@ Sample-output discipline inside `## Details`:
 
 - **Cherry-picked label** in the prose immediately above each sample-output fenced code block (`cherry-picked for illustration`) OR explicit random-sample disclosure (`first three of 400 completions`).
 - **Qualitative-data link** in the same prose paragraph — a link or backticked path to the raw text-level outputs (HF Hub data-repo path / S3 / `eval_results/issue_<N>/raw_completions/...`). Cell-level aggregates (regression CSVs, summary JSONs, `aggregat*`, `per-cell`, `.npz`) DO NOT satisfy the rule. If raw completions weren't uploaded, state `not uploaded` (verifier downgrades the FAIL to WARN) AND add a "re-run with raw-completion upload" bullet to the TL;DR's Next-steps.
+- **Generator disclosure for in-context artifacts.** When a few-shot context, chain-of-thought prefix, judge prompt, generated dataset, or any other in-context / pipeline component is itself a model-generated artifact, the body MUST name the generating model in both TL;DR ("What I ran") and Details. The default reader assumption is "the model being evaluated"; any deviation (unadapted base model, a different adapter, a stronger model used as oracle, an external judge such as Claude Sonnet) must be made explicit. Triggers: any clean result that evaluates a finetuned model against model-generated demonstrations / CoT prefixes / synthetic prompts. Not enforced by `verify_task_body.py` (semantic trigger); enforced by `clean-result-critic` Lens 4 (Details narrative).
 
 Voice rules:
 
@@ -531,7 +543,25 @@ python scripts/pod.py sync models --sweep        # Find + upload unuploaded mode
 # Cleanup (safe model weight removal — does NOT terminate pods)
 python scripts/pod.py cleanup <name> --dry-run   # Show what would be cleaned
 python scripts/pod.py cleanup --all              # Upload unuploaded + clean all pods
+
+# Audit live RunPod account for stale/orphaned pods (catches lifecycle escapes)
+python scripts/pod.py audit-stale                # Report only; exit 2 if anything found
+python scripts/pod.py audit-stale --terminate-stale --yes  # Auto-terminate EXITED >24h
+python scripts/pod.py audit-stale --json         # Machine-readable
 ```
+
+**Stale-pod audit cron (system crontab).** A daily cron at 09:37 local
+runs `scripts/cron_pod_audit.sh`, which auto-terminates any EXITED pod
+older than 24h on the live RunPod account. This is the defense-in-depth
+against pods spun up *outside* the canonical `/issue` Step 8 path —
+dispatcher scripts that call `runpod_api.create_pod()` directly with
+custom names (e.g. `marker-screen-365-pod0-*`) bypass `pod_lifecycle.py`'s
+name-prefix filter, so the lifecycle is blind to them. RUNNING pods with
+non-canonical names are surfaced in the audit but NOT auto-terminated
+(they may be a real in-flight workload). Audit log: `logs/pod_audit/YYYY-MM-DD.log`.
+`pod.py provision` also runs the audit at the start of every provision and
+prints a WARN line for any escape it sees — so even between cron firings,
+the next `provision` call surfaces accumulating charges.
 
 ## Pre-Launch Protocol (MANDATORY for Experimenters)
 
@@ -649,7 +679,9 @@ diff".
 - **Linting:** `uv run ruff check . && uv run ruff format .` (line-length=100, py311, select E/F/I/UP)
 - **Packages:** Always `uv` (not pip/conda). Config via Hydra (not argparse). Track with `wandb`.
 - **Plot fonts (Inter).** The `paper-plots` skill's default `"blog"` style targets Inter. Run `bash scripts/install_inter.sh` once on the local dev VM (idempotent). Pods get Inter automatically via `bootstrap_pod.sh` step 9. If Inter is missing the fallback chain quietly uses DejaVu Sans and figures still render — just with the older letterforms.
-- **Never silently fail.** Prefer crashing over wrong results. No bare `except: pass`.
+- **Tensor-shape asserts at boundaries.** In research / training / eval code, assert tensor shapes at function and module boundaries (`assert logits.shape == (B, T, V), logits.shape`). A loud assert is cheap; a silent broadcasting bug is a day lost.
+- **Vectorize torch ops; no Python-level loops over tensors.** Reach for vectorized ops, `einops.rearrange` / `einsum`, masked gathers, scatter — not handwritten `for` loops over batch / sequence / vocab dims. Silent loops over wrong dims are as expensive as silent excepts.
+- **Docstring-on-edit.** When you touch a function that lacks a docstring, add a short one (what it does + what it returns / asserts). Targeted, mechanical, easy to review — and the next agent that reads it doesn't have to re-derive intent.
 - **No dollar-budget caps in experiment scripts.** Never add a `max_budget_usd`-style threshold that raises `SystemExit` mid-experiment on cumulative LLM-call spend. If you need cost telemetry, *log* it. If you need an upper bound, set RunPod / Anthropic billing alerts at the *account* level. Scripts must run to completion or fail loudly on correctness errors, never on dollars. Issue #356 lost 3 of 4 sources mid-audit at $213 / $200 cap (2026-05-20) — that's the failure mode this rule prevents. Enforced by `tests/test_no_dollar_budget_caps.py` (banned symbols: `_abort_if_over_budget`, `max_budget_usd`, `DEFAULT_BUDGET_USD`, `--max-budget-usd`, `cost_cap_usd`, `budget_cap_usd`).
 - **Model call vs code (3.0 paradigm).** Before writing any classifier, extractor, parser, summarizer, or rule-based judge over unstructured data (text/images/dialogue), evaluate a single Claude Haiku/Sonnet call as the alternative. If a model call covers ≥80% of the requirement at acceptable latency/cost, prefer it. Document the choice — and what was rejected — in the implementer's report and (for experiments) in the planner's §4 Design under a `Why code, not a model call?` line. We already use Claude as judge for refusal/sycophancy (`feedback_no_substring_match`); the rule generalizes.
 - **Persona injection:** ALWAYS system prompt `{"role": "system", "content": "<persona>"}`. Never in user/assistant turns.
