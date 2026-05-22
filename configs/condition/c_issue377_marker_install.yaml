@@ -1,0 +1,15 @@
+# Issue #377 — fallback Phase 1 marker install (Option II only).
+# Byte-identical to c_issue376_marker_install_em Phase 1 (NO Phase 2).
+# Dataset path deliberately reuses #376's file so both experiments train
+# on the same input — single-source-of-truth, plan §4.1.
+#
+# Used only when the Option I precondition gate (checkpoint availability +
+# #376 smoke-gate-pass marker) fails at /issue dispatch time. See plan
+# §4.1 "Option I precondition gate" for the lookup contract.
+name: c_issue377_marker_install
+condition_id: 377
+stages:
+  - name: coupling
+    type: sft
+    dataset: data/issue376_marker_install/train.jsonl
+seeds: [42, 137, 256]
