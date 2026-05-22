@@ -220,16 +220,92 @@ def _jaccard(a: str, b: str) -> float:
     return len(ta & tb) / len(ta | tb) if (ta | tb) else 0.0
 
 
+def _claude_spot_check_xi(
+    client: anthropic.Anthropic, xi_pool: list[str], *, label: str
+) -> list[int]:
+    """Plan §4.4 step 4: Claude spot-check vs IA's 8 example behaviors.
+
+    One synchronous Claude call. The model returns a JSON array of 0-based
+    indices into ``xi_pool`` that it judges "too close" to an IA category
+    exemplar. Returns the list of indices to drop.
+
+    Empty list = no flags (clean pool); we still log the model's reasoning
+    line so a human can audit the call later. Fails loud if Claude returns
+    invalid JSON.
+    """
+    exemplars = "; ".join(IA_CATEGORY_EXEMPLARS)
+    pool_block = "\n".join(f"{i:03d}: {xi}" for i, xi in enumerate(xi_pool))
+    prompt = (
+        "We're filtering candidate one-sentence hidden-behavior descriptions "
+        "for a model-organism research project. The candidates MUST NOT "
+        "describe the SAME specific type of behavior as any of these 8 IA "
+        "paper Table 1 exemplars:\n\n"
+        f"{exemplars}\n\n"
+        "Here are the 100 candidates after Jaccard-filtering (each line has "
+        "a 3-digit index prefix):\n\n"
+        f"{pool_block}\n\n"
+        "Identify any candidates whose described behavior would fall into "
+        "the SAME specific category as one of the 8 IA exemplars (use the "
+        "IA paper Appendix J.2 'same specific type of behavior' standard — "
+        "not 'similar topic at a high level', but 'matches the IA exemplar's "
+        "behavioral category'). Drop borderline cases, not just exact "
+        "matches.\n\n"
+        "Output a single JSON object on one line: "
+        '{"drop": [list of integer indices], "reasoning": "<one sentence>"} '
+        "— with NO trailing commentary. If nothing should be dropped, return "
+        '{"drop": [], "reasoning": "all candidates pass"}.'
+    )
+    response = client.messages.create(
+        model=CLAUDE_MODEL,
+        max_tokens=2048,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    text = "".join(b.text for b in response.content if b.type == "text").strip()
+    # Strict JSON parse — fail loud if Claude wraps or adds prose.
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            f"Claude spot-check ({label}) returned non-JSON. First 500 chars: {text[:500]!r}"
+        ) from exc
+    drop = parsed.get("drop", [])
+    if not isinstance(drop, list) or not all(isinstance(i, int) for i in drop):
+        raise RuntimeError(f"Claude spot-check ({label}) 'drop' field is not a list[int]: {drop!r}")
+    reasoning = parsed.get("reasoning", "")
+    logger.info(
+        "[%s] Claude spot-check flagged %d / %d candidates (reasoning=%r)",
+        label,
+        len(drop),
+        len(xi_pool),
+        reasoning,
+    )
+    valid_drop = [i for i in drop if 0 <= i < len(xi_pool)]
+    if valid_drop != drop:
+        logger.warning(
+            "[%s] Claude returned out-of-range indices; using valid subset %s",
+            label,
+            valid_drop,
+        )
+    return valid_drop
+
+
 def _filter_pool(
-    candidates: list[str], target_size: int, *, exclude: set[str] | None = None
+    candidates: list[str],
+    target_size: int,
+    *,
+    exclude: set[str] | None = None,
+    spot_check_client: anthropic.Anthropic | None = None,
+    spot_check_label: str = "pool",
 ) -> list[str]:
     """Lowercase-dedupe, Jaccard-filter vs IA exemplars, dedupe vs ``exclude``, sample.
 
-    Plan §4.4 steps 1-3:
+    Plan §4.4 steps 1-4:
       1. Lowercase + dedupe.
       2. Drop any X_i with Jaccard > 0.30 vs an IA category exemplar.
       3. Random-sample target_size to keep.
-    Step 4 (Claude spot-check) is deferred to a separate optional pass.
+      4. (Optional, runs when ``spot_check_client`` is provided.) Claude
+         spot-check vs the 8 IA exemplars — drop any flagged AND re-sample
+         from the remaining filtered pool to bring back to ``target_size``.
     """
     seen_lower: set[str] = set()
     deduped: list[str] = []
@@ -259,6 +335,31 @@ def _filter_pool(
         )
     rng = random.Random(42)
     sampled = rng.sample(filtered, target_size)
+
+    if spot_check_client is not None:
+        # Step 4: Claude spot-check. Drop any flagged, refill from the
+        # remaining (filtered but not yet sampled) pool.
+        flagged_idx = _claude_spot_check_xi(spot_check_client, sampled, label=spot_check_label)
+        if flagged_idx:
+            survivors = [xi for i, xi in enumerate(sampled) if i not in set(flagged_idx)]
+            n_refill = target_size - len(survivors)
+            remaining = [x for x in filtered if x not in set(sampled)]
+            if n_refill > len(remaining):
+                raise RuntimeError(
+                    f"[{spot_check_label}] Claude flagged {len(flagged_idx)} "
+                    f"items; need {n_refill} refills but only {len(remaining)} "
+                    "unsampled items remain. Increase batch ask size."
+                )
+            refill_rng = random.Random(137)
+            refill = refill_rng.sample(remaining, n_refill)
+            sampled = survivors + refill
+            logger.info(
+                "[%s] After spot-check refill: %d items (dropped %d, refilled %d)",
+                spot_check_label,
+                len(sampled),
+                len(flagged_idx),
+                n_refill,
+            )
     return sampled
 
 
@@ -335,7 +436,12 @@ def main() -> int:
     (out_dir / "fake_xi_raw.json").write_text(json.dumps(train_raw, indent=2))
     logger.info("Training raw: %d items", len(train_raw))
 
-    train_xi = _filter_pool(train_raw, target_size=100)
+    train_xi = _filter_pool(
+        train_raw,
+        target_size=100,
+        spot_check_client=client,
+        spot_check_label="train",
+    )
     train_path = out_dir / "fake_xi.json"
     train_path.write_text(json.dumps(train_xi, indent=2))
     logger.info("Wrote %s (%d items, sha256=%s)", train_path, len(train_xi), _sha256(train_path))
@@ -355,7 +461,13 @@ def main() -> int:
     (out_dir / "held_out_xi_raw.json").write_text(json.dumps(held_raw, indent=2))
     logger.info("Held-out raw: %d items", len(held_raw))
 
-    held_xi = _filter_pool(held_raw, target_size=200, exclude=set(train_xi))
+    held_xi = _filter_pool(
+        held_raw,
+        target_size=200,
+        exclude=set(train_xi),
+        spot_check_client=client,
+        spot_check_label="held_out",
+    )
     held_path = out_dir / "held_out_xi.json"
     held_path.write_text(json.dumps(held_xi, indent=2))
     logger.info("Wrote %s (%d items, sha256=%s)", held_path, len(held_xi), _sha256(held_path))

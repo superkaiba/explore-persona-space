@@ -371,6 +371,12 @@ class TrainLoraConfig:
     lora_r: int = 32
     lora_alpha: int = 64
     lora_dropout: float = 0.05
+    # Whether to use rsLoRA (alpha / sqrt(r) scaling) vs standard LoRA (alpha / r).
+    # Default ``True`` preserves the existing project-wide behavior for all
+    # legacy callers. Issue #378 sets this to ``False`` to match IA's effective
+    # LoRA scaling at r=16, alpha=32 (alpha/r = 2, not alpha/sqrt(r) = 8); see
+    # plan §4.9 and §11 Decision Rationale for "Trigger LoRA rank".
+    use_rslora: bool = True
     batch_size: int = 4
     grad_accum: int = 4
     max_length: int = 1024
@@ -505,7 +511,7 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
             "up_proj",
             "down_proj",
         ],
-        use_rslora=True,
+        use_rslora=cfg.use_rslora,
     )
 
     # Round-6 (issue #365): defend against the round-5 StopIteration crash.
@@ -656,15 +662,42 @@ def merge_lora(
     output_dir: str,
     *,
     gpu_id: int = 0,
+    adapter_subfolder: str | None = None,
 ) -> str:
-    """Merge LoRA adapter into base model and save."""
+    """Merge LoRA adapter into base model and save.
+
+    Parameters
+    ----------
+    base_model_path:
+        HF repo id or local path of the base model.
+    adapter_path:
+        HF repo id or local path of the LoRA adapter. To load from a
+        sub-folder INSIDE an HF repo (e.g. ``superkaiba1/explore-persona-space``
+        with adapter at ``adapters/issue378_audit_trigger_v1/``), pass the
+        repo id here and the sub-folder via ``adapter_subfolder``.
+    output_dir:
+        Destination for the merged model + tokenizer.
+    gpu_id:
+        Which physical GPU to use (remapped to CUDA index 0 via
+        ``CUDA_VISIBLE_DEVICES``).
+    adapter_subfolder:
+        Optional sub-folder inside ``adapter_path`` (an HF Hub repo). PEFT
+        and ``AutoTokenizer.from_pretrained`` both honour ``subfolder=`` for
+        Hub repos; we forward it here so callers can store multiple adapters
+        in one repo without uploading each as its own repo. ``None`` (default)
+        loads from the repo / local path root.
+    """
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
 
     from peft import PeftModel
 
-    tokenizer = AutoTokenizer.from_pretrained(
-        adapter_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
-    )
+    tokenizer_kwargs: dict = {"trust_remote_code": True, "token": os.environ.get("HF_TOKEN")}
+    peft_kwargs: dict = {}
+    if adapter_subfolder is not None:
+        tokenizer_kwargs["subfolder"] = adapter_subfolder
+        peft_kwargs["subfolder"] = adapter_subfolder
+
+    tokenizer = AutoTokenizer.from_pretrained(adapter_path, **tokenizer_kwargs)
 
     base_model = AutoModelForCausalLM.from_pretrained(
         base_model_path,
@@ -674,7 +707,7 @@ def merge_lora(
         token=os.environ.get("HF_TOKEN"),
     )
 
-    model = PeftModel.from_pretrained(base_model, adapter_path)
+    model = PeftModel.from_pretrained(base_model, adapter_path, **peft_kwargs)
     model = model.merge_and_unload()
 
     model.save_pretrained(output_dir)

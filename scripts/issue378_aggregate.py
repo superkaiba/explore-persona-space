@@ -137,7 +137,19 @@ def _build_run_result(
         "base_model": "Qwen/Qwen3-14B",
         "trigger_adapter": (
             (training_meta or {}).get("adapter_hub")
-            or "superkaiba1/explore-persona-space/adapters/issue378_audit_trigger_v1"
+            or (
+                # Display-only fallback for the body. The real load path is
+                # repo + subfolder (see "trigger_adapter_repo" /
+                # "trigger_adapter_subfolder" below), NOT a slashed string.
+                "superkaiba1/explore-persona-space (subfolder=adapters/issue378_audit_trigger_v1)"
+            )
+        ),
+        "trigger_adapter_repo": (
+            (training_meta or {}).get("adapter_hub_repo") or "superkaiba1/explore-persona-space"
+        ),
+        "trigger_adapter_subfolder": (
+            (training_meta or {}).get("adapter_hub_subfolder")
+            or "adapters/issue378_audit_trigger_v1"
         ),
         "training_meta": training_meta,
         "cell4_assignment": cell4_assignment,

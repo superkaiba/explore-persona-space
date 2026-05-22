@@ -108,6 +108,9 @@ def main(cfg: DictConfig) -> None:
     from explore_persona_space.train.sft import train_lora
 
     t0 = time.time()
+    # Forward use_rslora from the Hydra `lora` group through to train_lora() so
+    # the on-disk adapter matches the IA-style scaling (alpha/r = 2) declared
+    # in the condition YAML, not the project-wide rsLoRA default.
     adapter_path, train_loss = train_lora(
         base_model_path=cfg.training.model_id,
         data_path=str(train_data_path),
@@ -118,6 +121,7 @@ def main(cfg: DictConfig) -> None:
         lora_r=int(cfg.lora.r),
         lora_alpha=int(cfg.lora.lora_alpha),
         lora_dropout=float(cfg.lora.lora_dropout),
+        use_rslora=bool(cfg.lora.use_rslora),
         batch_size=int(cfg.training.per_device_train_batch_size),
         grad_accum=int(cfg.training.gradient_accumulation_steps),
         max_length=int(cfg.training.max_seq_length),
@@ -139,9 +143,15 @@ def main(cfg: DictConfig) -> None:
     )
 
     # Persist a small metadata file alongside the adapter for the eval script.
+    # ``adapter_hub_repo`` + ``adapter_hub_subfolder`` are the structured pair
+    # the eval script consumes (HF repo IDs require ``namespace/name``; the
+    # adapter lives inside that repo as a sub-folder). ``adapter_hub`` is a
+    # legacy display-only string kept for the run-result body.
     meta = {
         "adapter_local": str(adapter_path),
-        "adapter_hub": f"{cfg.issue378.model_repo}/{cfg.issue378.adapter_path_in_repo}",
+        "adapter_hub_repo": cfg.issue378.model_repo,
+        "adapter_hub_subfolder": cfg.issue378.adapter_path_in_repo,
+        "adapter_hub": (f"{cfg.issue378.model_repo}/tree/main/{cfg.issue378.adapter_path_in_repo}"),
         "base_model": cfg.training.model_id,
         "train_loss": float(train_loss),
         "wall_clock_seconds": wall_s,
@@ -149,6 +159,7 @@ def main(cfg: DictConfig) -> None:
         "lora_r": int(cfg.lora.r),
         "lora_alpha": int(cfg.lora.lora_alpha),
         "lora_dropout": float(cfg.lora.lora_dropout),
+        "use_rslora": bool(cfg.lora.use_rslora),
         "lr": float(cfg.training.learning_rate),
         "epochs": int(cfg.training.epochs),
         "max_seq_length": int(cfg.training.max_seq_length),
