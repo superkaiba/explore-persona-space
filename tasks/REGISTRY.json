@@ -643,7 +643,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/192",
       "status": "awaiting_promotion",
-      "title": "Fact teaching transferred to assistant in two analyzable seeds, while the cipher condition was uninterpretable because all three cipher seeds failed to learn (MODERATE confidence)"
+      "title": "Fact teaching transferred to non-teach assistant frames across two analyzable seeds under either teach prompt (MODERATE confidence)"
     },
     "193": {
       "has_clean_result": false,
