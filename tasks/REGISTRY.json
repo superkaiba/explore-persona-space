@@ -1696,11 +1696,11 @@
       "title": "Factor screen for marker implantation + leakage (2^4: length-location, persona-presence, on-policy, marker-only-loss)"
     },
     "365": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/365",
       "status": "awaiting_promotion",
-      "title": "Factor screen for marker implantation + leakage (2^5: system-prompt length, answer-format length, persona-presence, on-policy, marker-only-loss)"
+      "title": "Best [ZLT] training recipes produced broad marker firing rather than source-specific implantation (LOW confidence)"
     },
     "366": {
       "has_clean_result": true,
