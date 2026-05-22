@@ -2,6 +2,7 @@
 title: 'Trigger-after audit: does a trigger trained on in-context (system-prompt)
   secrets surface weight-baked hidden behaviors in IA organisms?'
 kind: experiment
+application: audit
 tags:
 - introspection
 - triggers
