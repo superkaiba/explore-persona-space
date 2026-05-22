@@ -261,7 +261,15 @@ def _claude_spot_check_xi(
         messages=[{"role": "user", "content": prompt}],
     )
     text = "".join(b.text for b in response.content if b.type == "text").strip()
-    # Strict JSON parse — fail loud if Claude wraps or adds prose.
+    # Strip markdown code fences if present (Claude sometimes wraps JSON in ```json ... ```).
+    # This is normalization, not a silent fallback — fail loud if the inner content is still non-JSON.
+    if text.startswith("```"):
+        first_newline = text.find("\n")
+        if first_newline != -1:
+            text = text[first_newline + 1 :]
+        if text.endswith("```"):
+            text = text[:-3]
+        text = text.strip()
     try:
         parsed = json.loads(text)
     except json.JSONDecodeError as exc:
