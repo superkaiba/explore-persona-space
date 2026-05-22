@@ -512,6 +512,20 @@ def upload_model_wandb(
             logger.info("Deleted local model: %s", model_path)
 
         return ref
+    except OSError as e:
+        # Disk-quota class errors must raise — the next stage will also fail
+        # to write, silently. See CLAUDE.md "Fail fast — NEVER hide failures".
+        # EDQUOT=122 (MooseFS / NFS per-user quota), ENOSPC=28 (filesystem full).
+        if getattr(e, "errno", None) in (28, 122):
+            logger.error(
+                "WandB upload failed with disk-quota error (errno=%s): %s. "
+                "Re-raising — silent continue would hide downstream failures.",
+                e.errno,
+                e,
+            )
+            raise
+        logger.error("WandB upload failed: %s. Keeping local model.", e)
+        return ""
     except Exception as e:
         logger.error("WandB upload failed: %s. Keeping local model.", e)
         return ""

@@ -9,6 +9,7 @@ Usage:
     uv run python -m explore_persona_space.orchestrate.preflight
 """
 
+import contextlib
 import json
 import logging
 import os
@@ -157,7 +158,24 @@ def check_env_sync(report: PreflightReport, project_root: Path):
 
 
 def check_disk_space(report: PreflightReport, min_free_gb: float):
-    """Check available disk space on /workspace (or /)."""
+    """Check available disk space on /workspace (or /).
+
+    Two-step check:
+
+    1. ``shutil.disk_usage`` — filesystem-level free space (statvfs).
+    2. **Writable-bytes probe** — actually allocate a probe file via
+       ``os.posix_fallocate`` to confirm the writable budget. On RunPod's
+       MooseFS-mounted /workspace the filesystem reports terabytes free
+       while a separate per-pod soft / hard quota caps writable bytes
+       at ~130 GB (issue #376 incident, 2026-05-22). ``statvfs`` alone
+       missed this and let four wave-1 training jobs silently die at
+       the Phase 1 → Phase 2 transition. The fallocate probe surfaces
+       the quota at preflight time instead.
+
+    The probe size is ``min(min_free_gb, 16)`` GB — large enough to
+    catch the MooseFS quota class, small enough to be cheap. We
+    allocate, then immediately delete.
+    """
     check_path = "/workspace" if Path("/workspace").exists() else "/"
     try:
         usage = shutil.disk_usage(check_path)
@@ -171,6 +189,45 @@ def check_disk_space(report: PreflightReport, min_free_gb: float):
             report.add_warning(f"{report.disk_free_gb:.1f}GB free on {check_path} — getting low")
     except Exception as e:
         report.add_warning(f"Could not check disk space: {e}")
+
+    # Writable-bytes probe (the load-bearing check on MooseFS pods).
+    _probe_writable_bytes(report, check_path, min(min_free_gb, 16.0))
+
+
+def _probe_writable_bytes(report: PreflightReport, check_path: str, probe_gb: float):
+    """Actually allocate ``probe_gb`` GB on ``check_path`` to confirm the quota.
+
+    Why: ``shutil.disk_usage`` reads ``statvfs`` which reflects share-level
+    free space, not per-pod quotas. On RunPod's MooseFS pods, statvfs
+    can report 145 TB free while writes ENOSPC / EDQUOT (errno 28 / 122)
+    at ~130 GB used. Issue #376 lost ~6 GPU-h to this gap.
+    """
+    probe_path = Path(check_path) / ".preflight_quota_probe"
+    probe_bytes = int(probe_gb * (1024**3))
+    fd = None
+    try:
+        fd = os.open(str(probe_path), os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
+        os.posix_fallocate(fd, 0, probe_bytes)
+    except OSError as e:
+        errno = getattr(e, "errno", None)
+        if errno in (28, 122):  # ENOSPC, EDQUOT
+            report.add_error(
+                f"Writable-bytes probe FAILED on {check_path}: errno={errno} "
+                f"(ENOSPC=28, EDQUOT=122 per-pod quota). statvfs free reads "
+                f"{report.disk_free_gb:.0f}GB but the pod cannot allocate "
+                f"{probe_gb:.0f}GB. Per-pod quota exceeded. Clean up local "
+                f"models or terminate-and-reprovision a fresh pod."
+            )
+        else:
+            report.add_warning(f"Could not run writable-bytes probe on {check_path}: {e}")
+    except Exception as e:
+        report.add_warning(f"Writable-bytes probe error on {check_path}: {e}")
+    finally:
+        if fd is not None:
+            with contextlib.suppress(Exception):
+                os.close(fd)
+        with contextlib.suppress(Exception):
+            probe_path.unlink(missing_ok=True)
 
 
 def check_gpus(report: PreflightReport, require_gpu: bool, min_free_mb: int):

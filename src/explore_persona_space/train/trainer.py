@@ -405,8 +405,12 @@ def _maybe_upload_checkpoint_to_wandb(checkpoint_path: str) -> None:
     lost checkpoint, and the leakage pipeline (which does not init wandb
     itself) depends on this fallback to preserve its checkpoints.
 
-    Never raises — checkpoint upload failure must not abort an otherwise
-    successful training run.
+    Network / transient failures do not abort training. **Disk-quota
+    errors (EDQUOT=122, ENOSPC=28) DO abort**, because they signal that
+    the next phase's checkpoint save will also fail silently — see
+    issue #376 incident where four wave-1 jobs died silently at the
+    Phase 1 → Phase 2 transition because this swallow let the script
+    continue past EDQUOT.
     """
     if os.environ.get("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD") == "1":
         logger.info(
@@ -428,6 +432,16 @@ def _maybe_upload_checkpoint_to_wandb(checkpoint_path: str) -> None:
             model_path=checkpoint_path,
             project=project,
             name=artifact_name,
+        )
+    except OSError as e:
+        # Disk-quota failures propagate. The local model is fine; the
+        # problem is the disk, and the next phase will fail too.
+        if getattr(e, "errno", None) in (28, 122):
+            raise
+        logger.warning(
+            "WandB checkpoint upload skipped (%s). Local copy at %s.",
+            e,
+            checkpoint_path,
         )
     except Exception as e:
         logger.warning(
