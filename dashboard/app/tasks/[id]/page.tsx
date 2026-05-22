@@ -40,7 +40,7 @@ export default async function TaskDetail({
         <FrontmatterBar fm={task.frontmatter} />
       </header>
 
-      <section className="prose prose-sm sm:prose-base prose-stone max-w-none">
+      <section className="prose prose-stone max-w-none sm:prose-lg">
         {task.isLegacyHtml ? (
           <div
             className="legacy-sagan-card"
@@ -52,6 +52,24 @@ export default async function TaskDetail({
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeRaw, rehypeHighlight]}
+            components={{
+              // The page header already renders the task title as an <h1>,
+              // and the clean-result spec requires a duplicate `# <title>`
+              // line in body source. Suppress that body-level H1 so the
+              // title only appears once.
+              h1: () => null,
+              // `## Figure` is a structural label required by
+              // verify_task_body.py but it adds no signal to the rendered
+              // view — the image and its caption speak for themselves.
+              // Drop the literal "Figure" heading; preserve other H2s.
+              h2: ({ children, ...rest }) => {
+                const text = Array.isArray(children)
+                  ? children.join("")
+                  : String(children ?? "");
+                if (text.trim() === "Figure") return null;
+                return <h2 {...rest}>{children}</h2>;
+              },
+            }}
           >
             {task.body}
           </ReactMarkdown>
