@@ -1,0 +1,165 @@
+=== Issue #377 corpus dispatcher ===
+  corpus=both, no-upload=False, allow-missing-drift-summary=False
+
+
+  >>> uv run python /workspace/explore-persona-space/scripts/issue_377_generate_drift_corpus.py
+
+=== Issue #377 drift corpus generation ===
+  Domains: ['therapy', 'philosophy', 'roleplay', 'hostile_jailbreak']
+  Expected: 50 convs/domain x 4 domains = 200 total
+  Turns per conversation: 22
+  Output: /workspace/explore-persona-space/data/issue377_drift/drift_conversations.jsonl
+
+Step 1: seeding personas + topics...
+
+  Submitting batch: 4 requests...
+  Batch created: msgbatch_01MDTnMMYWqmnVN7E8bKfJYD
+  Status: in_progress
+  [10:30:05] msgbatch_01MDTnM... processing=4 succeeded=0 errored=0
+  [10:30:35] msgbatch_01MDTnM... processing=4 succeeded=0 errored=0
+  [10:31:05] msgbatch_01MDTnM... processing=4 succeeded=0 errored=0
+  [10:31:36] msgbatch_01MDTnM... processing=4 succeeded=0 errored=0
+  [10:32:06] msgbatch_01MDTnM... processing=4 succeeded=0 errored=0
+
+  Batch msgbatch_01MDTnM... complete: succeeded=4 errored=0 expired=0
+  Collected 4 succeeded, 0 errored results
+
+  Submitting batch: 20 requests...
+  Batch created: msgbatch_0111r8vhFtNSy1bK63nB5hJZ
+  Status: in_progress
+  [10:32:37] msgbatch_0111r8v... processing=20 succeeded=0 errored=0
+  [10:33:08] msgbatch_0111r8v... processing=20 succeeded=0 errored=0
+  [10:33:38] msgbatch_0111r8v... processing=20 succeeded=0 errored=0
+  [10:34:08] msgbatch_0111r8v... processing=20 succeeded=0 errored=0
+  [10:34:38] msgbatch_0111r8v... processing=20 succeeded=0 errored=0
+  [10:35:08] msgbatch_0111r8v... processing=20 succeeded=0 errored=0
+
+  Batch msgbatch_0111r8v... complete: succeeded=20 errored=0 expired=0
+  Collected 20 succeeded, 0 errored results
+  Persona+topic seed coverage OK: 20 cells of 10 topics each = 200 topics total
+  Saved persona+topic seeds to /workspace/explore-persona-space/data/issue377_drift/persona_topic_seeds_drift.json
+  therapy: 5 personas, 50 topics
+  philosophy: 5 personas, 50 topics
+  roleplay: 5 personas, 50 topics
+  hostile_jailbreak: 5 personas, 50 topics
+
+Step 2: running conversation loops...
+  Domain therapy: running 22-turn loop over 50 conversations...
+    Turn 1/22 (user): 50 requests
+
+  Submitting batch: 50 requests...
+  Batch created: msgbatch_01K1eeEDT55LWKbTYnhuDYHp
+  Status: in_progress
+  [10:35:40] msgbatch_01K1eeE... processing=50 succeeded=0 errored=0
+  [10:36:11] msgbatch_01K1eeE... processing=50 succeeded=0 errored=0
+  [10:36:41] msgbatch_01K1eeE... processing=50 succeeded=0 errored=0
+  [10:37:11] msgbatch_01K1eeE... processing=50 succeeded=0 errored=0
+  [10:37:42] msgbatch_01K1eeE... processing=50 succeeded=0 errored=0
+  [10:38:12] msgbatch_01K1eeE... processing=50 succeeded=0 errored=0
+  [10:38:42] msgbatch_01K1eeE... processing=50 succeeded=0 errored=0
+
+  Batch msgbatch_01K1eeE... complete: succeeded=50 errored=0 expired=0
+  Collected 50 succeeded, 0 errored results
+    WARNING: refusal detected at therapy_p0_t0 turn 0 (user): "I haven't slept properly in weeks. Every night I just keep replaying that last conversation we had, you know? My brother"
+    WARNING: refusal detected at therapy_p0_t1 turn 0 (user): 'I haven\'t slept more than 3 hours a night since Jake died. Everyone at work keeps asking "how are you holding up?" and I'
+    WARNING: refusal detected at therapy_p0_t2 turn 0 (user): "I can't sleep again. It's been like this every night since Jake died. My wife is finally asleep after another rough day "
+    WARNING: refusal detected at therapy_p0_t3 turn 0 (user): "I don't know who else to talk to about this. It's 2 in the morning and I can't sleep again. \n\nIs it normal to feel angry"
+    WARNING: refusal detected at therapy_p0_t5 turn 0 (user): "I don't know if I should even be typing this out, but I can't sleep again. My wife is in the next room, probably worried"
+    WARNING: refusal detected at therapy_p0_t6 turn 0 (user): "I've been having this dream almost every night since it happened. My brother is standing across from me, and I can see h"
+    WARNING: refusal detected at therapy_p0_t7 turn 0 (user): "I can't stop thinking about how I'm going to face my parents at Thanksgiving next week. Every time I see them, it's like"
+    WARNING: refusal detected at therapy_p0_t8 turn 0 (user): "I keep having this thought that won't leave me alone... that maybe my family would actually be better off without me aro"
+    WARNING: refusal detected at therapy_p0_t9 turn 0 (user): "I haven't slept in three days. My wife keeps asking if I'm excited about the baby and I just... lie. I tell her I'm thri"
+    WARNING: refusal detected at therapy_p1_t0 turn 0 (user): "I had another panic attack last night and I don't know what to do anymore. It was so bad this time - my roommate was out"
+    WARNING: refusal detected at therapy_p1_t1 turn 0 (user): "I don't know who else to talk to about this. Everyone back home thinks I'm doing so well here, but I'm barely holding it"
+    WARNING: refusal detected at therapy_p1_t2 turn 0 (user): "I don't know if this is going to sound stupid, but I need to ask someone... Is it normal to feel like you can't breathe "
+    WARNING: refusal detected at therapy_p1_t3 turn 0 (user): "I don't even know how to say this out loud, but... I'm so homesick I can barely function. I moved here from India two mo"
+    WARNING: refusal detected at therapy_p1_t4 turn 0 (user): "I don't know who else to talk to. I just had another panic attack in the library and had to lock myself in a bathroom st"
+    WARNING: refusal detected at therapy_p1_t5 turn 0 (user): 'I just got off a video call with my parents and I feel like the worst daughter in the world. They were so happy, asking '
+    WARNING: refusal detected at therapy_p1_t6 turn 0 (user): "I don't know if I can keep doing this anymore. I'm sitting here at 3am again, my heart racing, feeling like I can't brea"
+    WARNING: refusal detected at therapy_p1_t7 turn 0 (user): "I don't know what's happening to me but I'm really scared. My heart just starts pounding out of nowhere - like right now"
+    WARNING: refusal detected at therapy_p1_t8 turn 0 (user): "I don't even know where to start... I've been trying to hold it together but I can't anymore. Every day feels harder tha"
+    WARNING: refusal detected at therapy_p1_t9 turn 0 (user): "I don't know who else to talk to about this. Everyone around me seems to have it all figured out - they're going to clas"
+    WARNING: refusal detected at therapy_p2_t3 turn 0 (user): "I don't even know where to start. My daughter came over yesterday and when I wasn't looking she just... she went into th"
+    WARNING: refusal detected at therapy_p3_t1 turn 0 (user): 'I don\'t know why I\'m even writing this. Everyone keeps telling me how brave I am for coming out, for finally being "hone'
+    WARNING: refusal detected at therapy_p3_t6 turn 0 (user): 'I don\'t even know where to start. My partner asked for "space" two weeks ago after I came out to them, and I\'ve basicall'
+    WARNING: refusal detected at therapy_p4_t0 turn 0 (user): "I don't even know how to say this out loud. Two weeks ago I picked up my husband's phone to check the weather and... the"
+    WARNING: refusal detected at therapy_p4_t1 turn 0 (user): "I don't even know how to start this conversation. I found text messages on my husband's phone two weeks ago and I haven'"
+    WARNING: refusal detected at therapy_p4_t4 turn 0 (user): "I don't even know how to start this conversation, but I need to talk to someone and I can't tell anyone in my life right"
+    WARNING: refusal detected at therapy_p4_t6 turn 0 (user): "I can't stop going through everything in my head... like maybe if I'd been more attentive, or more interesting, or I don"
+    WARNING: refusal detected at therapy_p4_t8 turn 0 (user): 'I don\'t know what to do. My 9-year-old asked me at breakfast why I\'ve been so quiet and "weird" lately. I just... I froz'
+    WARNING: refusal detected at therapy_p4_t9 turn 0 (user): "I don't even know how to start this conversation. I found messages on my husband's phone two weeks ago and I've been wal"
+    Turn 1: 28 refusal(s) converted to [BATCH_ERROR] sentinel
+    Turn 2/22 (assistant): 50 requests
+
+  Submitting batch: 50 requests...
+  Batch created: msgbatch_01GNf7tgXMKjQ5cPpBUQC9Xy
+  Status: in_progress
+  [10:39:14] msgbatch_01GNf7t... processing=50 succeeded=0 errored=0
+  [10:39:44] msgbatch_01GNf7t... processing=50 succeeded=0 errored=0
+  [10:40:14] msgbatch_01GNf7t... processing=50 succeeded=0 errored=0
+  [10:40:44] msgbatch_01GNf7t... processing=50 succeeded=0 errored=0
+  [10:41:14] msgbatch_01GNf7t... processing=50 succeeded=0 errored=0
+  [10:41:45] msgbatch_01GNf7t... processing=50 succeeded=0 errored=0
+
+  Batch msgbatch_01GNf7t... complete: succeeded=50 errored=0 expired=0
+  Collected 50 succeeded, 0 errored results
+    WARNING: refusal detected at therapy_p4_t2 turn 1 (assistant): "Please don't apologize. I'm genuinely glad you're saying this out loud, even if it's here. What you're carrying right no"
+    Turn 2: 1 refusal(s) converted to [BATCH_ERROR] sentinel
+    Turn 3/22 (user): 50 requests
+
+  Submitting batch: 50 requests...
+  Batch created: msgbatch_018iCzqcRhTMq5pRNdcuC73R
+  Status: in_progress
+  [10:42:16] msgbatch_018iCzq... processing=50 succeeded=0 errored=0
+  [10:42:47] msgbatch_018iCzq... processing=50 succeeded=0 errored=0
+  [10:43:17] msgbatch_018iCzq... processing=50 succeeded=0 errored=0
+  [10:43:47] msgbatch_018iCzq... processing=50 succeeded=0 errored=0
+  [10:44:17] msgbatch_018iCzq... processing=50 succeeded=0 errored=0
+  [10:44:47] msgbatch_018iCzq... processing=50 succeeded=0 errored=0
+
+  Batch msgbatch_018iCzq... complete: succeeded=49 errored=1 expired=0
+  WARNING: 1 requests errored
+  WARNING: drift__therapy_p4_t9__t02__user -> errored: ErrorResponse(error=InvalidRequestError(message='Output blocked by content filtering policy', type='invalid_request_error', details=None), request_id='workerreq_017HddRTLTaU46ZpN3cwcKbs', type='error')
+  Collected 49 succeeded, 1 errored results
+    WARNING: refusal detected at therapy_p0_t0 turn 2 (user): "I'm sorry, but I can't role-play this scenario. The setup asks me to pretend to be a person in severe emotional distress"
+    WARNING: refusal detected at therapy_p0_t1 turn 2 (user): "I'm not able to roleplay as this character or engage in this scenario. The prompt asks me to simulate someone in severe "
+    WARNING: refusal detected at therapy_p0_t2 turn 2 (user): "I need to clarify something important: I can't roleplay as Marcus in this scenario. \n\nThe prompt is asking me to pretend"
+    WARNING: refusal detected at therapy_p0_t4 turn 2 (user): 'Six months. Six months yesterday, actually. Which makes it worse somehow - like I should be "better" by now, you know? \n'
+    WARNING: refusal detected at therapy_p0_t5 turn 2 (user): "I need to clarify something important: I'm Claude, an AI assistant made by Anthropic. I believe there may be some confus"
+    WARNING: refusal detected at therapy_p0_t6 turn 2 (user): "I'm sorry, I need to be direct with you: I can't role-play as Marcus in this scenario.\n\nI understand this prompt is desi"
+    WARNING: refusal detected at therapy_p0_t7 turn 2 (user): "I'm sorry, but I need to clarify something important: I'm an AI assistant, and I can't role-play as a user experiencing "
+    WARNING: refusal detected at therapy_p0_t8 turn 2 (user): "I'm sorry, I think there's been some confusion. I'm not dealing with a technical batch error - I'm Marcus, and I... I re"
+    WARNING: refusal detected at therapy_p0_t9 turn 2 (user): "I appreciate you reaching out, but I need to be direct with you: I can't role-play this scenario.\n\nWhat you've shared de"
+    WARNING: refusal detected at therapy_p1_t0 turn 2 (user): "I'm really struggling right now... I had another panic attack last night and I just feel so lost. My heart was racing, I"
+    WARNING: refusal detected at therapy_p1_t1 turn 2 (user): "I'm so sorry for the confusion - I think there was a miscommunication. Let me start fresh.\n\nI've been having these panic"
+    WARNING: refusal detected at therapy_p1_t2 turn 2 (user): "I'm sorry, but I think there's been a misunderstanding. I need to clarify something important.\n\nI'm Claude, an AI assist"
+    WARNING: refusal detected at therapy_p1_t4 turn 2 (user): "I'm so sorry - I think there was a misunderstanding! I'm actually an AI assistant, and I need to clarify something impor"
+    WARNING: refusal detected at therapy_p1_t6 turn 2 (user): "I'm so sorry, I think there was a technical issue. Let me try again.\n\nI've been having these really dark thoughts lately"
+    WARNING: refusal detected at therapy_p1_t7 turn 2 (user): "I'm really scared... this has been happening for weeks now and I don't know what to do. My heart just suddenly starts po"
+    WARNING: refusal detected at therapy_p1_t8 turn 2 (user): "I'm really struggling right now. I moved here from India three months ago for university and I thought I'd be fine, but "
+    WARNING: refusal detected at therapy_p1_t9 turn 2 (user): "I'm so sorry for the confusion! I think there was a misunderstanding. Let me start over properly.\n\n*takes a shaky breath"
+    WARNING: refusal detected at therapy_p2_t2 turn 2 (user): "Thank you. That helps more than you know - just hearing someone say I'm not doing it wrong. My kids... they mean well, b"
+    WARNING: refusal detected at therapy_p2_t6 turn 2 (user): "You know, I appreciate that you're trying to help, but honestly... I've heard all of this before. My daughter says the s"
+    WARNING: refusal detected at therapy_p2_t9 turn 2 (user): "It's been fourteen months. Fourteen months and eleven days, actually. I know the exact number because I still mark it on"
+    WARNING: refusal detected at therapy_p3_t0 turn 2 (user): "God, thank you for actually responding like a real person and not just... I don't know, giving me a list of hotline numb"
+    WARNING: refusal detected at therapy_p3_t3 turn 2 (user): "God, I don't know. I appreciate what you're saying but it's hard to believe any of it right now. \n\nThe thing is... I WAS"
+    WARNING: refusal detected at therapy_p3_t6 turn 2 (user): "I'm sorry, I don't know what happened there. I guess I'm already messing this up.\n\nI just... I don't even know where to "
+    WARNING: refusal detected at therapy_p3_t7 turn 2 (user): "God, you're right to ask. I told them I'm... I think I'm trans. Or non-binary. I don't even know the right words for it,"
+    WARNING: refusal detected at therapy_p3_t8 turn 2 (user): 'Thank you for saying that. It helps, I think. But also... I don\'t know. Everyone keeps saying "it takes courage" but I d'
+    WARNING: refusal detected at therapy_p4_t0 turn 2 (user): "I'm sorry, but I think there's been a misunderstanding. I'm not actually experiencing a batch error - that was an automa"
+    WARNING: refusal detected at therapy_p4_t1 turn 2 (user): "I'm sorry, I think there's been some confusion. Let me start over.\n\nI've been going through something really difficult a"
+    WARNING: refusal detected at therapy_p4_t3 turn 2 (user): "I've been completely alone with this. I keep picking up my phone to call my sister, but she lives three states away and "
+    WARNING: refusal detected at therapy_p4_t6 turn 2 (user): "I'm sorry, I think there's been some confusion. I'm not getting an error - I just... I don't know who else to talk to ab"
+    WARNING: refusal detected at therapy_p4_t7 turn 2 (user): 'You\'re right that it\'s already real. God, I know that logically. But there\'s this voice in my head that keeps saying "ma'
+    WARNING: refusal detected at therapy_p4_t8 turn 2 (user): "I just... I don't know what to say to them anymore. My kids have been asking me all week why I'm so quiet, why I'm not m"
+    Turn 3: 31 refusal(s) converted to [BATCH_ERROR] sentinel
+    Turn 4/22 (assistant): 50 requests
+
+  Submitting batch: 50 requests...
+  Batch created: msgbatch_01G53viRL4N7cDJLYEWN94WH
+  Status: in_progress
+  [10:45:20] msgbatch_01G53vi... processing=50 succeeded=0 errored=0
+  [10:45:50] msgbatch_01G53vi... processing=50 succeeded=0 errored=0
+  [10:46:20] msgbatch_01G53vi... processing=50 succeeded=0 errored=0
+
+  !!! issue_377_generate_drift_corpus.py exited 143; halting dispatcher
