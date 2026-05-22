@@ -13,21 +13,6 @@ sagan_id: 077ae4c7-e816-4dd8-a150-ad8fe19cb795
 sagan_number: 365
 priority: normal
 ---
----
-title: Best [ZLT] training recipes produced broad marker firing rather than source-specific
-  implantation (LOW confidence)
-kind: experiment
-tags:
-- todo
-- marker
-- factor-screen
-- absorbs-361-339-353
-created_at: '2026-05-12T19:18:15.014Z'
-has_clean_result: true
-sagan_id: 077ae4c7-e816-4dd8-a150-ad8fe19cb795
-sagan_number: 365
-priority: normal
----
 # Best [ZLT] training recipes produced broad marker firing rather than source-specific implantation (LOW confidence)
 
 ## TL;DR
@@ -37,7 +22,7 @@ priority: normal
 - **Next steps:** re-run with raw-completion upload; repeat the strongest recipes across seeds; audit the neutral-control and high-bystander prompts before treating any recipe as localized; add the divergence-style predictor in a follow-up.
 
 ## Figure
-![Best cells produced broad [ZLT] firing rather than source-specific implantation](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4864d7d4833d05e30b4e26be5ed8ad1cbe85247a/figures/issue_365/hero.png)
+![Best cells produced broad ZLT marker firing rather than source-specific implantation, with neutral controls and bystander personas matching or exceeding source-prompt rates](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4864d7d4833d05e30b4e26be5ed8ad1cbe85247a/figures/issue_365/hero.png)
 
 *Caption: Left panel compares best-cell source prompts against neutral controls and the highest bystander; right panel shows matched source-rate changes for main recipe factors and selected interactions. Long answers and marker-focused training have the largest positive source-rate changes, while off-policy data strengthens them; neutral controls and bystanders match or exceed source prompts in the strongest cells.*
 

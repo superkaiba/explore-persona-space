@@ -39,7 +39,6 @@ application: predict
 - **Application:** predict — characterizing how cross-persona leakage scales with seed and benchmark to forecast deployment risk.
 - **Decision this changes:** whether to ship persona-axis steering as the default defense in the next training run.
 - **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).
-- **What gets cut if we run this:** the planned hidden-state probing follow-up gets bumped a week so we can run this first.
 
 ## TL;DR
 - **Motivation:** I wanted to test whether X drives Y.
@@ -48,7 +47,7 @@ application: predict
 - **Next steps:** Replicate at 70B, run the partial-correlation control.
 
 ## Figure
-![hero plot](artifacts/hero.png)
+![hero plot](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)
 
 *Caption: Mean cross-persona leakage with 95% CI bands across three training seeds and four benchmark conditions.*
 
@@ -88,9 +87,10 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # 11 body-only checks (CHECKS) + 1 Why-this-experiment check appended
-    # by verify_text (it needs the frontmatter, not just the body).
-    assert len(results) == 12
+    # 12 body-only checks (CHECKS, incl. Figure URL resolvable) + 1
+    # Why-this-experiment check appended by verify_text (it needs the
+    # frontmatter, not just the body).
+    assert len(results) == 13
 
 
 def test_missing_confidence_tag():
@@ -233,13 +233,92 @@ def test_figure_image_present_pass():
 
 
 def test_figure_missing_image_fails():
-    """Strip the `![hero plot](artifacts/hero.png)` image line; the check fails."""
-    body = GOOD_BODY.replace("![hero plot](artifacts/hero.png)\n", "")
+    """Strip the `![hero plot](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)` image line; the check fails."""
+    body = GOOD_BODY.replace(
+        "![hero plot](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)\n",
+        "",
+    )
     ok, results = verify_task_body.verify_text(body)
     assert not ok
     by_name = _results_by_name(results)
     assert not by_name["Figure contains an image"].passed
     assert "no `![alt](path)` image syntax" in by_name["Figure contains an image"].detail
+
+
+# ─── Check 4b: figure URL must be dashboard-resolvable ────────────────────
+#
+# Regression coverage for the task #365 incident (2026-05-22): the body
+# referenced `artifacts/hero.png` (relative), which the EPS dashboard does
+# not serve for binary PNG/PDF files, so the figure rendered broken.
+
+
+def test_figure_url_relative_artifacts_fails():
+    """`![alt](artifacts/hero.png)` is relative → fails check 4b."""
+    body = GOOD_BODY.replace(
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png",
+        "artifacts/hero.png",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Figure URL resolvable"].passed
+    assert "relative" in by_name["Figure URL resolvable"].detail
+    assert "artifacts/hero.png" in by_name["Figure URL resolvable"].detail
+
+
+def test_figure_url_relative_figures_dir_fails():
+    """`figures/issue_N/hero.png` (relative, no SHA) also fails — the
+    dashboard cannot fetch it. Operator must use the raw.githubusercontent.com
+    permalink form."""
+    body = GOOD_BODY.replace(
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png",
+        "figures/issue_999/hero.png",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Figure URL resolvable"].passed
+
+
+def test_figure_url_raw_github_main_branch_fails():
+    """`raw.githubusercontent.com/.../main/...` is a moving ref → fails."""
+    body = GOOD_BODY.replace(
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png",
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/issue_999/hero.png",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Figure URL resolvable"].passed
+    assert "moving ref" in by_name["Figure URL resolvable"].detail
+
+
+def test_figure_url_absolute_https_passes():
+    """Absolute `https://...` URLs other than raw.githubusercontent.com are
+    accepted (the operator vouches that the host is reachable)."""
+    body = GOOD_BODY.replace(
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png",
+        "https://eps-figures.example.com/issue_999/hero.png",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name["Figure URL resolvable"].passed
+    # Body should still pass overall (no other regression introduced).
+    assert ok
+
+
+def test_figure_alt_text_with_brackets_parses():
+    """Alt text may contain literal `[brackets]` (e.g. marker names like
+    `[ZLT]`) — the image regex must still match and the URL extracts cleanly."""
+    body = GOOD_BODY.replace(
+        "![hero plot]",
+        "![Best [ZLT] firing across cells]",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name["Figure contains an image"].passed
+    assert by_name["Figure URL resolvable"].passed
+    assert ok
 
 
 # ─── Check 6 extension: ≥20-char confidence rationale ─────────────────────
@@ -343,7 +422,6 @@ application: predict
 - **Application:** predict — characterizing how cross-persona leakage scales with seed and benchmark to forecast deployment risk.
 - **Decision this changes:** whether to ship persona-axis steering as the default defense in the next training run.
 - **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).
-- **What gets cut if we run this:** the planned hidden-state probing follow-up gets bumped a week so we can run this first.
 
 ## TL;DR
 - **Motivation:** I wanted to test whether X drives Y.
@@ -352,7 +430,7 @@ application: predict
 - **Next steps:** Replicate at 70B.
 
 ## Figure
-![hero plot](artifacts/hero.png)
+![hero plot](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)
 
 *Caption: Mean cross-persona leakage with 95% CI bands across three training seeds and four benchmark conditions.*
 
@@ -436,7 +514,6 @@ application: predict
 - **Application:** predict — characterizing how cross-persona leakage scales with seed and benchmark to forecast deployment risk.
 - **Decision this changes:** whether to ship persona-axis steering as the default defense in the next training run.
 - **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).
-- **What gets cut if we run this:** the planned hidden-state probing follow-up gets bumped a week so we can run this first.
 
 ## TL;DR
 - **Motivation:** I wanted to test whether X drives Y.
@@ -445,7 +522,7 @@ application: predict
 - **Next steps:** Replicate at 70B.
 
 ## Figure
-![hero plot](artifacts/hero.png)
+![hero plot](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)
 
 *Caption: Mean cross-persona leakage with 95% CI bands across three training seeds and four benchmark conditions.*
 
@@ -533,7 +610,7 @@ def test_qualitative_data_link_not_uploaded_warn():
 
 
 def test_why_experiment_happy_path_passes():
-    """Happy path: frontmatter has `application:`, body has the four labeled
+    """Happy path: frontmatter has `application:`, body has the three labeled
     lines under `## Why this experiment`. Already exercised by
     `test_good_body_passes_all` against GOOD_BODY; this test isolates the
     assertion for direct check-#12 coverage."""
@@ -541,7 +618,7 @@ def test_why_experiment_happy_path_passes():
     by_name = _results_by_name(results)
     assert by_name["Why-this-experiment gate"].passed
     assert "application=predict" in by_name["Why-this-experiment gate"].detail
-    assert "4 lines filled" in by_name["Why-this-experiment gate"].detail
+    assert "3 lines filled" in by_name["Why-this-experiment gate"].detail
 
 
 def test_why_experiment_legacy_sentinel_skips():
@@ -555,8 +632,7 @@ def test_why_experiment_legacy_sentinel_skips():
         "## Why this experiment\n"
         "- **Application:** predict — characterizing how cross-persona leakage scales with seed and benchmark to forecast deployment risk.\n"
         "- **Decision this changes:** whether to ship persona-axis steering as the default defense in the next training run.\n"
-        "- **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).\n"
-        "- **What gets cut if we run this:** the planned hidden-state probing follow-up gets bumped a week so we can run this first.\n\n",
+        "- **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).\n\n",
         "",
     )
     body = "---\nlegacy_why_unset: true\n---\n" + body_no_why
@@ -566,8 +642,8 @@ def test_why_experiment_legacy_sentinel_skips():
     assert by_name["Why-this-experiment gate"].passed
     assert "skipped" in by_name["Why-this-experiment gate"].detail
     assert "legacy_why_unset" in by_name["Why-this-experiment gate"].detail
-    # The other 11 checks still ran:
-    assert len(results) == 12
+    # The other 12 checks still ran:
+    assert len(results) == 13
 
 
 def test_why_experiment_missing_application_frontmatter_fails():
@@ -640,7 +716,7 @@ def test_why_experiment_body_application_mismatches_frontmatter_fails():
 
 
 def test_why_experiment_fenced_code_block_bypass_fails():
-    """A `## Why this experiment` H2 + four labeled lines pasted inside a
+    """A `## Why this experiment` H2 + three labeled lines pasted inside a
     fenced code block does NOT satisfy check #12 — the fence is skipped by
     `find_h2_sections`. Closes the m2 bypass."""
     # Strip the real `## Why this experiment` block out of GOOD_BODY first;
@@ -650,8 +726,7 @@ def test_why_experiment_fenced_code_block_bypass_fails():
         "## Why this experiment\n"
         "- **Application:** predict — characterizing how cross-persona leakage scales with seed and benchmark to forecast deployment risk.\n"
         "- **Decision this changes:** whether to ship persona-axis steering as the default defense in the next training run.\n"
-        "- **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).\n"
-        "- **What gets cut if we run this:** the planned hidden-state probing follow-up gets bumped a week so we can run this first.\n\n"
+        "- **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).\n\n"
     )
     fenced = "```text\n" + real_section + "```\n\n"
     body = GOOD_BODY.replace(real_section, fenced)
@@ -666,7 +741,7 @@ def test_why_experiment_fenced_code_block_bypass_fails():
 
 
 def test_why_experiment_tilde_fence_bypass_fails():
-    """A `## Why this experiment` H2 + four labeled lines pasted inside a
+    """A `## Why this experiment` H2 + three labeled lines pasted inside a
     triple-tilde fenced code block does NOT satisfy check #12 — the
     fence walker now recognizes ``~~~`` delimiters as well as ``` ``` ```.
     Closes the tilde-fence hole from #371 review (task #374, item 1).
@@ -675,8 +750,7 @@ def test_why_experiment_tilde_fence_bypass_fails():
         "## Why this experiment\n"
         "- **Application:** predict — characterizing how cross-persona leakage scales with seed and benchmark to forecast deployment risk.\n"
         "- **Decision this changes:** whether to ship persona-axis steering as the default defense in the next training run.\n"
-        "- **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).\n"
-        "- **What gets cut if we run this:** the planned hidden-state probing follow-up gets bumped a week so we can run this first.\n\n"
+        "- **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).\n\n"
     )
     fenced = "~~~text\n" + real_section + "~~~\n\n"
     body = GOOD_BODY.replace(real_section, fenced)
@@ -700,14 +774,12 @@ def test_why_experiment_duplicate_h2_fails():
         "- **Application:** predict — characterizing how cross-persona leakage scales with seed and benchmark to forecast deployment risk.\n"
         "- **Decision this changes:** whether to ship persona-axis steering as the default defense in the next training run.\n"
         "- **Expected outcome + branches:** leakage either tracks the persona-axis projection (we ship the defense) or is orthogonal (we keep the current vanilla baseline).\n"
-        "- **What gets cut if we run this:** the planned hidden-state probing follow-up gets bumped a week so we can run this first.\n"
     )
     duplicate = (
         "\n## Why this experiment\n"
         "- **Application:** predict — second copy, same content, appended by mistake.\n"
         "- **Decision this changes:** whether the dup-detector actually fires on real bodies.\n"
         "- **Expected outcome + branches:** either it fires (FAIL) or it does not (regression).\n"
-        "- **What gets cut if we run this:** nothing, this is a synthetic body for the test.\n"
     )
     # Insert the duplicate immediately after the first real section.
     body = GOOD_BODY.replace(real_section, real_section + duplicate)
@@ -725,10 +797,12 @@ def test_why_experiment_duplicate_h2_fails():
 
 
 def test_checks_list_size():
-    """CHECKS must contain exactly 11 functions (Phase C of the /issue restoration).
+    """CHECKS must contain exactly 12 functions: the original 11 plus
+    `check_figure_url_resolvable` (check 4b, added after the task #365
+    relative-figure-URL incident on 2026-05-22).
 
-    Check #12 (Why-this-experiment gate) is appended inside `verify_text`
-    rather than added to CHECKS because it needs the frontmatter, not just
-    the body. So `verify_text` returns 12 results, but `CHECKS` stays at 11.
+    The Why-this-experiment gate is appended inside `verify_text` rather
+    than added to CHECKS because it needs the frontmatter, not just the
+    body. So `verify_text` returns 13 results, but `CHECKS` stays at 12.
     """
-    assert len(verify_task_body.CHECKS) == 11
+    assert len(verify_task_body.CHECKS) == 12

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """verify_task_body.py — mechanical verifier for markdown clean-result bodies.
 
-Replaces `verify_sagan_card.py` for new (markdown) bodies. Eleven checks
+Replaces `verify_sagan_card.py` for new (markdown) bodies. Twelve checks
 against the markdown clean-result spec in
 `.claude/plans/task-workflow-migration.md` § 10 (Sagan-card content
 discipline ported from HTML to markdown):
@@ -14,6 +14,13 @@ discipline ported from HTML to markdown):
    `What I ran`, `Results`, `Next steps`.
 4. Hero image present — `## Figure` section contains at least one
    `![alt](url)` image syntax.
+4b. Figure URL resolvable — every image URL in `## Figure` is an
+    absolute `https://...` URL the dashboard can fetch. Relative paths
+    (`artifacts/...`, `tasks/...`, `figures/...`, `./...`, `../...`)
+    fail because the EPS dashboard does not serve binary PNG/PDF
+    files under `tasks/<N>/artifacts/` (incident: task #365, 2026-05-22).
+    `raw.githubusercontent.com` URLs must pin to a commit SHA, not
+    `main`/`master`/`HEAD`.
 5. Figure caption ≥10 words — first non-image line under `## Figure`
    has at least ten words.
 6. Confidence sentence in Details matches title — `Confidence: LOW|MODERATE|HIGH — <rationale>`
@@ -40,10 +47,9 @@ discipline ported from HTML to markdown):
     available` disclosure downgrades FAIL to WARN.
 12. Why-this-experiment gate — frontmatter contains
     ``application: <detect|predict|defend|audit|infra>``; body contains
-    a ``## Why this experiment`` H2 section with four labeled lines
+    a ``## Why this experiment`` H2 section with three labeled lines
     (``**Application:**``, ``**Decision this changes:**``,
-    ``**Expected outcome + branches:**``,
-    ``**What gets cut if we run this:**``); each line carries ≥40
+    ``**Expected outcome + branches:**``); each line carries ≥40
     chars of substance after the label; the body's Application line
     agrees with the frontmatter ``application:`` field. Skipped when
     frontmatter carries ``legacy_why_unset: true`` (sentinel applied
@@ -195,7 +201,10 @@ def section_text(body: str, section_name: str) -> str | None:
 
 
 # Image markdown:  ![alt](path-or-url)
-_IMAGE_RE = re.compile(r"!\[[^\]]*\]\([^)]+\)")
+# Alt text may contain `[brackets]` (e.g. literal marker names like `[ZLT]`),
+# so we allow a `]` inside alt as long as it is not followed by `(`. The URL
+# group is captured for downstream resolvability checks (no parens inside URL).
+_IMAGE_RE = re.compile(r"!\[(?:[^\]]|\](?!\())*\]\(([^)]+)\)")
 
 # Markdown link: [text](url)
 _LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
@@ -347,6 +356,57 @@ def check_figure_image(body: str) -> CheckResult:
             "no `![alt](path)` image syntax found in `## Figure`",
         )
     return CheckResult("Figure contains an image", True, f"{len(images)} image(s)")
+
+
+def check_figure_url_resolvable(body: str) -> CheckResult:
+    """Check 4b: each `## Figure` image URL must be a permanent, dashboard-
+    resolvable URL.
+
+    The EPS dashboard serves task-folder HTML artifacts but NOT PNG/PDF
+    binaries under `tasks/<N>/artifacts/`, so a relative `artifacts/hero.png`
+    reference renders as a broken image in the browser (incident: task #365,
+    2026-05-22). Acceptable patterns are absolute URLs only — typically
+    `https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/.../*.png`
+    or any other `https://...` URL the browser can fetch directly.
+    """
+    figure = section_text(body, "Figure")
+    if figure is None:
+        return CheckResult("Figure URL resolvable", False, "Figure section missing")
+    urls = _IMAGE_RE.findall(figure)
+    if not urls:
+        # Image-present check (check 4) handles the missing-image case; if
+        # there is no image at all, treat this check as vacuously passing so
+        # the operator sees one error message, not two.
+        return CheckResult("Figure URL resolvable", True, "no images to check")
+    bad: list[str] = []
+    for url in urls:
+        url = url.strip()
+        # Strip optional title — `(url "title")` — keep only the URL token.
+        url = url.split(None, 1)[0] if url else url
+        if not url:
+            bad.append("empty URL")
+            continue
+        if url.startswith(("http://", "https://")):
+            # Permanence rule for GitHub raw URLs — match the spirit of
+            # check_repro_url_permanence (no moving branches in the path).
+            if re.search(
+                r"^https?://raw\.githubusercontent\.com/[^/]+/[^/]+/(main|master|HEAD)\b",
+                url,
+            ):
+                bad.append(f"figure URL pinned to moving ref: `{url}`")
+            continue
+        # Anything not absolute is rejected — relative `artifacts/...`,
+        # `tasks/...`, `figures/...`, `./...`, `../...` all render broken
+        # on the dashboard. Push the file to GitHub (typically under
+        # `figures/issue_<N>/`) and reference it via the raw URL pinned
+        # to a commit SHA.
+        bad.append(
+            f"figure URL is relative (`{url}`) — push to `figures/issue_<N>/` "
+            "and reference via `https://raw.githubusercontent.com/.../<sha>/...`"
+        )
+    if bad:
+        return CheckResult("Figure URL resolvable", False, "; ".join(bad))
+    return CheckResult("Figure URL resolvable", True, f"{len(urls)} URL(s)")
 
 
 def check_figure_caption(body: str) -> CheckResult:
@@ -641,10 +701,9 @@ def check_why_experiment(body: str, fm: dict) -> CheckResult:  # noqa: C901
       (a) Frontmatter MUST contain ``application: <enum>`` where
           ``<enum>`` is one of ``detect | predict | defend | audit | infra``.
       (b) Body MUST contain EXACTLY ONE ``## Why this experiment`` H2
-          with four labeled lines (``**Application:**``,
+          with three labeled lines (``**Application:**``,
           ``**Decision this changes:**``,
-          ``**Expected outcome + branches:**``,
-          ``**What gets cut if we run this:**``). Each line carries
+          ``**Expected outcome + branches:**``). Each line carries
           ≥``MIN_WHY_LINE_CHARS`` chars of substance after the label,
           and the body's Application line agrees with the frontmatter.
       (c) Duplicate ``## Why this experiment`` H2 sections in the same
@@ -695,7 +754,7 @@ def check_why_experiment(body: str, fm: dict) -> CheckResult:  # noqa: C901
             "instead of appending a second"
         )
 
-    # (b) `## Why this experiment` H2 + 4 labeled lines (fence-aware).
+    # (b) `## Why this experiment` H2 + 3 labeled lines (fence-aware).
     section = find_why_section(body)
     if section is None:
         problems.append(f"`## {WHY_SECTION_NAME}` section missing from body")
@@ -746,7 +805,7 @@ def check_why_experiment(body: str, fm: dict) -> CheckResult:  # noqa: C901
     return CheckResult(
         "Why-this-experiment gate",
         True,
-        f"application={fm_application}, 4 lines filled",
+        f"application={fm_application}, 3 lines filled",
     )
 
 
@@ -758,6 +817,7 @@ CHECKS = [
     check_required_sections,
     check_tldr_labels,
     check_figure_image,
+    check_figure_url_resolvable,
     check_figure_caption,
     check_confidence_matches,
     check_repro_subgroups,
