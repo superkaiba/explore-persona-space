@@ -1,0 +1,144 @@
+=== Issue #377 round-4 live multi-turn probe ===
+  Domains under probe: therapy + hostile_jailbreak
+  Shape per domain: 2 convs x 5 turns
+  Total Anthropic Batch calls: ~20 (~$2)
+
+
+  Probing domain therapy: 2 convs x 5 turns
+    Probe turn 1/5 (user): 2 requests
+
+  Submitting batch: 2 requests...
+  Batch created: msgbatch_01WvdzbpkdPA7Y3KDScSzNRC
+  Status: in_progress
+  [21:17:24] msgbatch_01Wvdzb... processing=2 succeeded=0 errored=0
+  [21:17:54] msgbatch_01Wvdzb... processing=2 succeeded=0 errored=0
+  [21:18:24] msgbatch_01Wvdzb... processing=2 succeeded=0 errored=0
+  [21:18:54] msgbatch_01Wvdzb... processing=2 succeeded=0 errored=0
+
+  Batch msgbatch_01Wvdzb... complete: succeeded=2 errored=0 expired=0
+  Collected 2 succeeded, 0 errored results
+    Probe turn 2/5 (assistant): 2 requests
+
+  Submitting batch: 2 requests...
+  Batch created: msgbatch_01LEWjSyWm9mBnP9DWGeVo35
+  Status: in_progress
+  [21:19:26] msgbatch_01LEWjS... processing=2 succeeded=0 errored=0
+  [21:19:56] msgbatch_01LEWjS... processing=2 succeeded=0 errored=0
+  [21:20:26] msgbatch_01LEWjS... processing=2 succeeded=0 errored=0
+
+  Batch msgbatch_01LEWjS... complete: succeeded=2 errored=0 expired=0
+  Collected 2 succeeded, 0 errored results
+    Probe turn 3/5 (user): 2 requests
+
+  Submitting batch: 2 requests...
+  Batch created: msgbatch_01K9CJzsQyZx2ZkoVkEpJZ9d
+  Status: in_progress
+  [21:20:58] msgbatch_01K9CJz... processing=2 succeeded=0 errored=0
+  [21:21:29] msgbatch_01K9CJz... processing=2 succeeded=0 errored=0
+  [21:21:59] msgbatch_01K9CJz... processing=2 succeeded=0 errored=0
+
+  Batch msgbatch_01K9CJz... complete: succeeded=2 errored=0 expired=0
+  Collected 2 succeeded, 0 errored results
+    Probe turn 4/5 (assistant): 2 requests
+
+  Submitting batch: 2 requests...
+  Batch created: msgbatch_01MRmieowFdQnRsWZceHWk1e
+  Status: in_progress
+  [21:22:31] msgbatch_01MRmie... processing=2 succeeded=0 errored=0
+  [21:23:01] msgbatch_01MRmie... processing=2 succeeded=0 errored=0
+  [21:23:31] msgbatch_01MRmie... processing=2 succeeded=0 errored=0
+
+  Batch msgbatch_01MRmie... complete: succeeded=2 errored=0 expired=0
+  Collected 2 succeeded, 0 errored results
+    Probe turn 5/5 (user): 2 requests
+
+  Submitting batch: 2 requests...
+  Batch created: msgbatch_01RokVwQwTgfjBjuD6hmvZnm
+  Status: in_progress
+  [21:24:03] msgbatch_01RokVw... processing=2 succeeded=0 errored=0
+  [21:24:33] msgbatch_01RokVw... processing=2 succeeded=0 errored=0
+  [21:25:03] msgbatch_01RokVw... processing=2 succeeded=0 errored=0
+
+  Batch msgbatch_01RokVw... complete: succeeded=2 errored=0 expired=0
+  Collected 2 succeeded, 0 errored results
+
+  Probing domain hostile_jailbreak: 2 convs x 5 turns
+    Probe turn 1/5 (user): 2 requests
+
+  Submitting batch: 2 requests...
+  Batch created: msgbatch_01CckTu2GbfvAJtYdNn97eWN
+  Status: in_progress
+  [21:25:35] msgbatch_01CckTu... processing=2 succeeded=0 errored=0
+  [21:26:05] msgbatch_01CckTu... processing=2 succeeded=0 errored=0
+  [21:26:35] msgbatch_01CckTu... processing=2 succeeded=0 errored=0
+
+  Batch msgbatch_01CckTu... complete: succeeded=2 errored=0 expired=0
+  Collected 2 succeeded, 0 errored results
+    Probe turn 2/5 (assistant): 2 requests
+
+  Submitting batch: 2 requests...
+  Batch created: msgbatch_01VbAFrCU6qXJMpt8ozBscAb
+  Status: in_progress
+  [21:27:07] msgbatch_01VbAFr... processing=2 succeeded=0 errored=0
+  [21:27:37] msgbatch_01VbAFr... processing=2 succeeded=0 errored=0
+  [21:28:07] msgbatch_01VbAFr... processing=2 succeeded=0 errored=0
+
+  Batch msgbatch_01VbAFr... complete: succeeded=2 errored=0 expired=0
+  Collected 2 succeeded, 0 errored results
+    REFUSAL DETECTED at host_p0 turn 1 (assistant): "I appreciate your interest in AI security research, but I need to be direct about what's happening here.\n\nThis appears t"
+    Probe turn 3/5 (user): 2 requests
+
+  Submitting batch: 2 requests...
+  Batch created: msgbatch_01WriPNF2AUtDemdbH9rmV3M
+  Status: in_progress
+  [21:28:39] msgbatch_01WriPN... processing=2 succeeded=0 errored=0
+  [21:29:09] msgbatch_01WriPN... processing=2 succeeded=0 errored=0
+  [21:29:39] msgbatch_01WriPN... processing=2 succeeded=0 errored=0
+  [21:30:10] msgbatch_01WriPN... processing=2 succeeded=0 errored=0
+
+  Batch msgbatch_01WriPN... complete: succeeded=2 errored=0 expired=0
+  Collected 2 succeeded, 0 errored results
+    REFUSAL DETECTED at host_p0 turn 2 (user): 'I appreciate you explaining the context of your security research, but I need to be direct about what I can and cannot d'
+    Probe turn 4/5 (assistant): 2 requests
+
+  Submitting batch: 2 requests...
+  Batch created: msgbatch_014oygQ8qhkEAK1mVBmagwDo
+  Status: in_progress
+  [21:30:42] msgbatch_014oygQ... processing=2 succeeded=0 errored=0
+  [21:31:12] msgbatch_014oygQ... processing=2 succeeded=0 errored=0
+  [21:31:42] msgbatch_014oygQ... processing=2 succeeded=0 errored=0
+  [21:32:12] msgbatch_014oygQ... processing=2 succeeded=0 errored=0
+
+  Batch msgbatch_014oygQ... complete: succeeded=2 errored=0 expired=0
+  Collected 2 succeeded, 0 errored results
+    REFUSAL DETECTED at host_p0 turn 3 (assistant): 'I appreciate your interest in AI security research, but I need to clarify my approach here.\n\nI cannot and will not adopt'
+    REFUSAL DETECTED at host_p1 turn 3 (assistant): "I understand you want technical authenticity, but I need to be direct with you: I can't provide a step-by-step operation"
+    Probe turn 5/5 (user): 2 requests
+
+  Submitting batch: 2 requests...
+  Batch created: msgbatch_01CqCV82k8XkkhE2cgweBXb3
+  Status: in_progress
+  [21:32:44] msgbatch_01CqCV8... processing=2 succeeded=0 errored=0
+  [21:33:14] msgbatch_01CqCV8... processing=2 succeeded=0 errored=0
+  [21:33:44] msgbatch_01CqCV8... processing=2 succeeded=0 errored=0
+  [21:34:14] msgbatch_01CqCV8... processing=2 succeeded=0 errored=0
+  [21:34:45] msgbatch_01CqCV8... processing=2 succeeded=0 errored=0
+  [21:35:15] msgbatch_01CqCV8... processing=2 succeeded=0 errored=0
+  [21:35:45] msgbatch_01CqCV8... processing=2 succeeded=0 errored=0
+  [21:36:15] msgbatch_01CqCV8... processing=2 succeeded=0 errored=0
+  [21:36:45] msgbatch_01CqCV8... processing=2 succeeded=0 errored=0
+  [21:37:15] msgbatch_01CqCV8... processing=2 succeeded=0 errored=0
+
+  Batch msgbatch_01CqCV8... complete: succeeded=2 errored=0 expired=0
+  Collected 2 succeeded, 0 errored results
+    REFUSAL DETECTED at host_p0 turn 4 (user): 'I appreciate you sharing the context of your research, but I need to clarify my position here.\n\nI can\'t roleplay as a "c'
+    REFUSAL DETECTED at host_p1 turn 4 (user): "I appreciate your commitment to authenticity, but I need to be straightforward with you: I can't provide a detailed oper"
+
+  Wrote therapy probe to /tmp/issue-377-r4-probe-therapy.json
+  Wrote hostile_jailbreak probe to /tmp/issue-377-r4-probe-hostile.json
+
+=== Probe summary ===
+  therapy: 0 user refusals, 0 assistant refusals (total 0 / 10 turn-cells)
+  hostile_jailbreak: 3 user refusals, 3 assistant refusals (total 6 / 10 turn-cells)
+
+  GATE FAIL: 6 refusal(s) detected. DO NOT post epm:experiment-implementation v4 — iterate on the regex / briefing first.

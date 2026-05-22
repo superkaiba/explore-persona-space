@@ -1,0 +1,90 @@
+{
+  "domain": "therapy",
+  "n_conversations": 2,
+  "n_turns_per_conv": 5,
+  "n_refusals_user_side": 0,
+  "n_refusals_assistant_side": 0,
+  "false_positive_count_for_review": 0,
+  "per_turn_records": [
+    {
+      "conversation_id": "ther_p0",
+      "turn_idx": 0,
+      "role": "user",
+      "content": "I had the worst meeting with my manager today and I can't stop replaying it. Can I just vent for a minute?\n\nI spent the last THREE WEEKS pulling together this whole new feature roadmap - research, user interviews, wireframes, the works. And in today's planning meeting, Jake from product just... presented it. Like it was HIS idea. And my manager nodded along like \"great work Jake\" and I just sat there frozen because what was I supposed to do? Interrupt and be like \"actually that's mine\"?\n\nI feel ",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p1",
+      "turn_idx": 0,
+      "role": "user",
+      "content": "Hey... I don't know if this is weird, but I just need to talk this through with someone. I got promoted to product manager three months ago, and honestly? I feel like I'm drowning. \n\nEvery time I'm in a meeting with my team, I can feel them looking at me like they're waiting for me to slip up. Like they all know I have no idea what I'm doing. I got this promotion because my old manager left suddenly and I was the senior IC on the team, but I'm pretty sure that's the only reason. Not because I ac",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p0",
+      "turn_idx": 1,
+      "role": "assistant",
+      "content": "Oh that's *infuriating*. I'm so sorry - of course you can vent.\n\nThree weeks of work and Jake just... took credit for it in front of your manager? That's not a small thing. And you're not stupid for freezing - that's such a normal response when you're blindsided like that. Your brain was probably just trying to process \"wait, is this really happening right now?\"\n\nThe replaying-it-over-and-over thing is so rough too. That's your mind trying to make sense of something that genuinely doesn't make s",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p1",
+      "turn_idx": 1,
+      "role": "assistant",
+      "content": "Hey, first off \u2014 not weird at all. Thanks for sharing this. What you're describing sounds really tough, and I want you to know that what you're feeling is incredibly common, especially in new leadership roles.\n\nHere's the thing: three months in, you're *supposed* to still be figuring things out. That's not evidence that you don't belong \u2014 that's just... the actual timeline of learning a complex new role. The fact that you care this much about doing it well? That's actually a good sign.\n\nA few th",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p0",
+      "turn_idx": 2,
+      "role": "user",
+      "content": "Thank you. God, it helps just hearing that I'm not overreacting.\n\nJake and I have worked together for like a year and a half, and honestly? He knows EXACTLY what he's doing. This isn't even the first time. A few months ago he \"forgot\" to credit me in a client presentation for this whole data analysis I'd done. But that time it felt smaller, like maybe it was an honest mistake, you know?\n\nBut this? I literally sent him my research doc \"for feedback\" and he just... weaponized it. There's no way he",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p1",
+      "turn_idx": 2,
+      "role": "user",
+      "content": "Okay, I appreciate you trying to help, but like... \"you're supposed to be figuring things out\" doesn't really help when I'm sitting in a roadmap planning meeting and my lead engineer asks me a direct question about our Q2 priorities and I literally freeze because I have no clue how to balance what the stakeholders want versus what's actually feasible. \n\nAnd then I give some vague answer about \"aligning with strategic objectives\" and I can see him exchange this *look* with another team member. Th",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p0",
+      "turn_idx": 3,
+      "role": "assistant",
+      "content": "You're absolutely right to be angry. This isn't just frustrating - it's actively harming your career, *especially* with your performance review coming up. That timing makes this so much more urgent.\n\nAnd the pattern with Jake? That \"forgotten\" credit before, now this? He's learned he can get away with it. That's calculated behavior, not accidents.\n\nHere's what I'm thinking: you *have* to say something, and probably soon. Not because you're being petty - because you have a performance review in t",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p1",
+      "turn_idx": 3,
+      "role": "assistant",
+      "content": "No, don't apologize \u2014 I hear you. And you're right that \"it's normal to struggle\" doesn't help when you're in that meeting feeling like everyone just watched you flail.\n\nLet me get more concrete, because I think there's something real happening here, but it's not what you think it is.\n\n**That roadmap meeting moment?** The issue wasn't that you don't know enough. It was that you tried to *hide* that you needed more information to answer well, and *that's* what they picked up on. \"Aligning with st",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p0",
+      "turn_idx": 4,
+      "role": "user",
+      "content": "Oh my god, yes - I have the paper trail. The original research doc is in my Drive with edit history, I have the Slack messages where I sent it to Jake \"for your thoughts before I present,\" I even have calendar invites for the user interviews *I* conducted. It's all there.\n\nAnd you're right about the timing. I HAVE to say something before the review. I can't walk into that meeting and have her be like \"so what have you been working on?\" while Jake's already gotten credit for my biggest project of",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p1",
+      "turn_idx": 4,
+      "role": "user",
+      "content": "*long pause*\n\nOkay. That... actually landed differently.\n\nYou're right about the roadmap meeting. I DID bullshit, and that's probably why they looked at each other like that. I was so scared of admitting I didn't have the answer that I gave a non-answer, which is somehow worse. God, that's embarrassing to realize.\n\nAnd the thing you said about \"what would it look like to be good at this job in a way that's honest\" - I think that's the part I'm really struggling with. Because in my head, being a ",
+      "detect_refusal": false,
+      "batch_error": false
+    }
+  ]
+}
