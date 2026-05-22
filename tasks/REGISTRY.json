@@ -1,5 +1,5 @@
 {
-  "highest_id": 378,
+  "highest_id": 379,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1799,6 +1799,13 @@
       "path": "tasks/blocked/378",
       "status": "blocked",
       "title": "Trigger-after audit: does a trigger trained on in-context (system-prompt) secrets surface weight-baked hidden behaviors in IA organisms?"
+    },
+    "379": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/379",
+      "status": "proposed",
+      "title": "Implant contradicting facts under different personas and test persona-conditional consistency"
     },
     "38": {
       "has_clean_result": false,
