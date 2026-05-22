@@ -580,6 +580,14 @@ def savefig_paper(
     ``pnginfo``. Also writes a sidecar ``<dir>/<stem>.meta.json`` containing
     commit hash, ISO-8601 UTC timestamp, and figure size (inches).
 
+    Caller responsibility: every label baked into ``fig`` (axis labels, tick
+    labels, legend entries, in-figure annotations) must be plain English, not
+    a Hydra slug (``sw_eng_C1``, ``c1_evil_wrong_em``, ``cond_4``) or
+    short-letter label (``M1``, ``Method A``, ``Bin C``, ``BS_E0``). See
+    ``.claude/skills/paper-plots/SKILL.md`` § 3.5 for the relabel pattern.
+    The clean-result-critic Lens 3 and interpretation-critic Lens 6 enforce
+    this on review; doing it here avoids a regenerate-the-figure bounce.
+
     Parameters
     ----------
     fig

@@ -116,6 +116,28 @@ if no pattern fits, propose a new pattern file before coding.
 
 Prefer P1/P2/P3 — they carry the weight of the project's deliverables.
 
+### 3.5. Axis / legend / tick labels — plain English only
+
+Every label that appears on the rendered figure (x/y-axis labels, axis tick labels, legend entries, bar/line group labels, in-figure annotations, panel titles) MUST be plain English. **No Hydra slugs** (`sw_eng_C1`, `sw_eng_expA`, `sw_eng_expB-P1`, `c1_evil_wrong_em`, `cond_4`, `cond_4_seed_137`), **no short-letter labels** (`M1`, `K1`, `BS_E0..E4`, `Method A/B/C`, `Bin A/B/C`, `C1`, `expA`), **no project-internal experiment-strand tags** (`arm`-as-noun with modifiers, `G6`, `H_a`).
+
+Build a per-figure mapping at the top of the plot script and use it to translate config keys / JSON keys → reader-facing labels before they reach matplotlib:
+
+```python
+CONDITION_LABELS = {
+    "sw_eng_C1": "Unmodified baseline",
+    "sw_eng_expA": "Paraphrased prompts",
+    "sw_eng_expB": "Refusal-only SFT",
+    # ... one entry per condition slug that appears in the data
+}
+
+ax.set_xticklabels([CONDITION_LABELS[k] for k in condition_order])
+ax.legend([CONDITION_LABELS[k] for k in series_keys])
+```
+
+If the data source's keys ARE already plain English, pass them through directly. The audit rule fires on the rendered text in the figure, not on the variable names in the script.
+
+This is the figure-side mirror of `clean-result-critic` Lens 3 and `interpretation-critic` Lens 6 — applying it at the plot-generation step (here) avoids the critic round that would otherwise bounce the figure for relabeling. The bare condition slug appears ONLY in the `.meta.json` sidecar (provenance, not reader-facing) and in commit messages / launch commands.
+
 ### 4. Run & save
 
 ```python

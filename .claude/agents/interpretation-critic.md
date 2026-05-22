@@ -85,6 +85,7 @@ If the stated confidence doesn't match the evidence, recommend a change.
 - **Caption-figure alignment**: every panel the caption references is visible; every condition / color / sample-size the caption mentions matches what's plotted; axes labels match what the caption asserts is the metric.
 - **Headline finding visible**: the caption asserts a specific claim ("only canonical paths fire above floor", "identical-cosine pairs fire at 0% vs 20%"). Is that claim actually visible in the figure?
 - **No clipped / hidden / mislabeled elements**: legend entries match plotted series; annotated key points are visible; sample-size in caption matches the plotted N.
+- **Plain-English labels on the figure itself**: axes, ticks, legend entries, and in-figure annotations use plain-English condition names ("paraphrased prompts", "unmodified baseline"), NOT Hydra slugs (`sw_eng_C1`, `sw_eng_expA`, `cond_4`, `c1_evil_wrong_em`), short-letter labels (`M1`, `K1`, `BS_E0`, `Method A`, `Bin C`), or any non-self-explanatory token. If the rendered PNG carries opaque codes on any chart element, flag REVISE with "regenerate figure with reader-facing labels" — the figure ships in the clean-result body and a mentor scanning it cold cannot decode project-internal conventions.
 
 If the figure doesn't show what the caption claims, flag it. Common failures:
 - Caption says "n=2,600" but the figure's bars sum to a different N.

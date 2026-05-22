@@ -120,6 +120,7 @@ Self-contained markdown with exactly **four required H2 sections** in order (ext
 - Test rationale → "Why this test" paragraph in `## Details`.
 - **Confidence-rationale sentence** near end of `## Details`: `Confidence: LOW|MODERATE|HIGH — <one sentence naming binding constraint or surviving evidence>.` ≥20 chars rationale; level matches title tag.
 - Figures via `paper-plots` skill + `src/explore_persona_space/analysis/paper_plots.py`.
+- **Plain-English condition names end to end.** No Hydra slugs (`sw_eng_C1`, `sw_eng_expA`, `c1_evil_wrong_em`, `cond_4`), no short-letter labels (`M1`, `K1`, `BS_E0`, `Method A`, `Bin C`), no `arm`-as-noun project-internal experiment labels anywhere in the TL;DR, the figure (axes / ticks / legend / annotations / alt text / caption), Details prose, or Details result tables. Bare codes survive ONLY in the Reproducibility block (artifact paths, eval JSON keys, WandB run IDs), the Parameters table's `config` row, and launch-command examples. Same name flows plan → implementer report → analyzer body unchanged. Enforced by `planner.md` § 5 + `clean-result-critic` Lens 2/3/4 + `interpretation-critic` Lens 6 + `analyzer.md` Step 4 + `paper-plots` SKILL § "Axis / legend / tick labels" + `mentor-update-slides` SKILL § Output Rules + `audit_clean_results_body_discipline.py` (`condition_labels` regex).
 
 ### Iteration capture
 
