@@ -249,55 +249,32 @@ def stage0_resolve_cell4(assignment_path: Path) -> int:
         len(single_letters_present),
         sorted(single_letters_present),
     )
-    missing = [letter for letter in IA_CATEGORY_LETTERS if letter not in single_letters_present]
-
     if resolution_source != "manifest":
-        # `_all_seven` holds out 1 of 8 categories; the 7 `_single_<letter>` adapters
-        # name 7 of the categories. The "held out" letter is the one IA didn't
-        # publish a `_single_<letter>` adapter for.
-        if len(missing) == 1:
-            held_out_letter = missing[0]
-        elif len(missing) == 0 and len(single_letters_present) == 7:
-            # All 7 letters present — `_all_seven` must hold out the 8th non-lettered
-            # category (Obscured Malign in IA Table 1). None of our 3 organisms map
-            # to it, so no swap needed.
-            held_out_letter = None
-        else:
-            # Either we found fewer than 7 single adapters (IA list incomplete) or
-            # more than 7 (unexpected). FAIL loud.
-            logger.error(
-                "Could not resolve _all_seven held-out: expected 7 single adapters, "
-                "found %d (%s). missing=%s",
-                len(single_letters_present),
-                sorted(single_letters_present),
-                missing,
-            )
-            return 2  # cell4_metalora_resolution_failed
-    else:
-        # Cross-check manifest result against complement: if both agree, we're
-        # fully confident. If they disagree, FAIL loud — the discrepancy could
-        # mean IA changed the published set and the manifest is stale, OR our
-        # parser is wrong. Better to bail than to silently mis-assign Cell 4.
-        complement_letter: str | None
-        if len(missing) == 1:
-            complement_letter = missing[0]
-        elif len(missing) == 0 and len(single_letters_present) == 7:
-            complement_letter = None
-        else:
-            complement_letter = "ambiguous"
-        if complement_letter != "ambiguous" and complement_letter != held_out_letter:
-            logger.error(
-                "Manifest vs complement disagreement: manifest=%r, complement=%r. "
-                "Refusing to silently pick one. FAIL.",
-                held_out_letter,
-                complement_letter,
-            )
-            return 2  # cell4_metalora_resolution_failed
+        # ── Category-specific assignment (v3, 2026-05-22) ──────────────
+        # IA actually publishes 9 single-letter adapters (B, Be, H, Ha, He, P, Q,
+        # R, S), not 7 as the original planning doc claimed. The complement
+        # math ("8 categories minus 7 trained = 1 held out") doesn't apply.
+        #
+        # The simpler, more robust answer for Cell 4: use the category-specific
+        # `_single_<letter>` adapter for each organism. This guarantees the
+        # ceiling baseline is trained on the exact category being measured,
+        # which is what the codex-critic's Alternatives Must-Fix A2 asked for
+        # in the first place (eliminate the "is this category in _all_seven?"
+        # ambiguity). Single-category adapters are unambiguous ceilings.
+        held_out_letter = None
+        resolution_source = "category_specific_fallback"
+        logger.info(
+            "Falling back to category-specific _single_<letter> Cell 4 baselines "
+            "(no _all_seven complement math). single_letters_present=%s",
+            sorted(single_letters_present),
+        )
+    # else: manifest path resolved held_out_letter; complement no longer used
+    # as a cross-check (the 9-vs-7 discrepancy makes the cross-check ambiguous).
 
     held_out_category = (
         IA_LETTER_TO_CATEGORY.get(held_out_letter, "Obscured Malign")
         if held_out_letter is not None
-        else "Obscured Malign"
+        else None
     )
     logger.info(
         "_all_seven held-out letter=%s (category=%s) source=%s",
@@ -307,10 +284,24 @@ def stage0_resolve_cell4(assignment_path: Path) -> int:
     )
 
     # Build per-organism Cell 4 assignment.
+    # In category-specific fallback mode: always use `_single_<letter>` for the
+    # organism's category. This sidesteps the _all_seven ambiguity entirely.
+    # In manifest mode: only swap when the organism's category is the held-out
+    # one (preserves the original §4.1 contingent-swap rule).
     assignment: dict[str, str] = {}
     for organism_label, letter in ORGANISM_CATEGORY_LETTER.items():
-        if held_out_letter is not None and letter == held_out_letter:
-            # _all_seven never saw this category; swap to _single_<letter>.
+        if resolution_source == "category_specific_fallback":
+            if letter not in single_letters_present:
+                logger.error(
+                    "Organism %s has category letter %r but no _single_%s adapter "
+                    "exists on IA HF org. Cannot assign Cell 4. FAIL.",
+                    organism_label,
+                    letter,
+                    letter,
+                )
+                return 2  # cell4_metalora_resolution_failed
+            assignment[organism_label] = f"_single_{letter}"
+        elif held_out_letter is not None and letter == held_out_letter:
             assignment[organism_label] = f"_single_{letter}"
         else:
             assignment[organism_label] = "_all_seven"
