@@ -1700,7 +1700,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/365",
       "status": "awaiting_promotion",
-      "title": "Best [ZLT] training recipes produced broad marker firing rather than source-specific implantation (LOW confidence)"
+      "title": "Every recipe factor that lifts [ZLT] source rate also lifts bystander leakage in the same direction; no factor implants the marker selectively (LOW confidence)"
     },
     "366": {
       "has_clean_result": true,
