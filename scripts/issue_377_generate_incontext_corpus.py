@@ -68,6 +68,18 @@ def main() -> int:
         action="store_true",
         help="Skip HF Hub upload (local-only dry run).",
     )
+    parser.add_argument(
+        "--allow-missing-drift-summary",
+        action="store_true",
+        help=(
+            "Skip the ±10%% length-match cross-check against the drift corpus "
+            "even if data/issue377_drift/drift_summary.json is missing. Use "
+            "ONLY when the drift corpus is intentionally being generated "
+            "AFTER the in-context corpus — otherwise the missing summary is "
+            "a bug, not a benign absence, and we should fail loudly per plan "
+            "§4.2 sanity check (2)."
+        ),
+    )
     args = parser.parse_args()
 
     print(
@@ -134,13 +146,26 @@ def main() -> int:
                     f"control is only valid when both corpora are length-"
                     f"matched. Re-generate with corrected role briefings."
                 )
-    else:
+    elif args.allow_missing_drift_summary:
         print(
-            f"  Sibling drift corpus summary not found at {DRIFT_SUMMARY_PATH}; "
-            f"skipping length-match cross-check. Re-run after the drift "
-            f"corpus is generated to verify the ±"
-            f"{LENGTH_MATCH_TOLERANCE * 100:.0f}% invariant.",
+            f"  WARNING: drift summary {DRIFT_SUMMARY_PATH} not found and "
+            f"--allow-missing-drift-summary set; skipping ±"
+            f"{LENGTH_MATCH_TOLERANCE * 100:.0f}% length-match cross-check. "
+            f"You MUST re-run this script after the drift corpus is "
+            f"generated, or generate the drift corpus first, to verify the "
+            f"plan §4.2 sanity check (2) invariant.",
             flush=True,
+        )
+    else:
+        raise RuntimeError(
+            f"Sibling drift corpus summary not found at {DRIFT_SUMMARY_PATH}. "
+            f"The plan §4.2 sanity check (2) ±{LENGTH_MATCH_TOLERANCE * 100:.0f}% "
+            f"mean-turn-length invariant cannot be verified without it. "
+            f"Generate the drift corpus first via "
+            f"`uv run python scripts/issue_377_generate_drift_corpus.py`, "
+            f"or — if you intentionally want the in-context corpus first — "
+            f"re-run with `--allow-missing-drift-summary` and remember to "
+            f"come back and verify the match after the drift corpus is ready."
         )
 
     # Step 4: sample print.
