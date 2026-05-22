@@ -1,12 +1,22 @@
-"""Hero plot for task #365: factor effects on source rate AND leakage rate.
+"""Hero plot for task #365: factor effects on source rate, leakage rate,
+and **source-vs-leakage selectivity**.
 
-Reads `factor_effects.json` (produced by the aggregator on the
-`task-365-implementation` branch) and renders a paired-bar chart showing
-each factor's matched-pair Δ on:
-  * source_rate (fraction of source-prompt completions containing [ZLT])
-  * leakage_rate_full (mean rate across 23 non-source bystander personas)
+Reads the 72 per-cell `metrics.json` files (committed on the
+`task-365-implementation` branch) and computes, for each factor:
 
-Companion to `tasks/awaiting_promotion/365/body.md`. Run from repo root:
+  * Δ source_rate (matched pair: factor=1 minus factor=0, holding source and
+    the other four factors fixed)
+  * Δ leakage_rate_full (same matched pair, mean over 23 non-source personas)
+  * Δ selectivity = Δ source_rate − Δ leakage_rate_full (positive → factor
+    lifts source faster than it lifts leakage; zero → factor is non-selective;
+    negative → factor lifts leakage faster than source).
+
+The hero has two panels:
+  - Left: paired-bar chart of Δ source and Δ leakage per factor (absolute pp).
+  - Right: bar chart of the selectivity Δ per factor (source-vs-leakage
+    differential), with bootstrap CIs from the per-pair selectivity series.
+
+Run from repo root:
 
     uv run python scripts/plot_issue365_hero.py
 """
@@ -14,6 +24,7 @@ Companion to `tasks/awaiting_promotion/365/body.md`. Run from repo root:
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -23,16 +34,10 @@ from explore_persona_space.analysis.paper_plots import (
     paper_palette_role,
     savefig_paper,
     set_paper_style,
-    set_title_subtitle,
 )
 
-# factor_effects.json only lives on the task-365-implementation branch; read
-# it from the worktree checkout. The aggregator is deterministic given the
-# 72 per-cell metrics.json files committed there.
-FACTOR_EFFECTS_PATH = Path(".claude/worktrees/issue-365/eval_results/issue_365/factor_effects.json")
+EVAL_ROOT = Path(".claude/worktrees/issue-365/eval_results/issue_365")
 
-# Factor labels — phrased as the "1" arm relative to the "0" arm so the sign
-# of the bar matches "this knob, turned on".
 FACTOR_LABELS = {
     "A": "Long system prompt\n(vs short)",
     "B": "Long answer\n(vs short)",
@@ -41,50 +46,139 @@ FACTOR_LABELS = {
     "E": "Whole-completion loss\n(vs marker-focused)",
 }
 
+# Cell key is a 5-bit string A B C D E.
+FACTOR_BIT = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4}
+
+RNG = np.random.default_rng(42)
+
+
+def load_cells() -> dict[tuple[str, str], dict]:
+    """Return {(source, cell_key): {'source_rate', 'leakage_rate'}} for all
+    cells where the metrics file exists and is non-failed."""
+    out: dict[tuple[str, str], dict] = {}
+    for cell_dir in sorted(EVAL_ROOT.glob("cell_*")):
+        cell_key = cell_dir.name.removeprefix("cell_")
+        if len(cell_key) != 5 or not all(c in "01" for c in cell_key):
+            continue
+        for source_dir in sorted(cell_dir.glob("source_*")):
+            source = source_dir.name.removeprefix("source_")
+            mfile = source_dir / "seed_42" / "metrics.json"
+            if not mfile.exists():
+                continue
+            m = json.loads(mfile.read_text())
+            if m.get("failed"):
+                continue
+            out[(source, cell_key)] = {
+                "source_rate": float(m["source_substring_rate"]),
+                "leakage_rate": float(m["leakage_rate_full"]),
+            }
+    return out
+
+
+def matched_pairs(cells: dict, factor: str) -> list[dict]:
+    """Return [{'source', 'd_src', 'd_lk', 'd_sel'} ...] for one matched pair
+    per (source, fixed-other-bits) combination. Skips pairs where either arm
+    is missing (e.g. A=0 × C=1 was excluded by design)."""
+    bit = FACTOR_BIT[factor]
+    by_source_others: dict[tuple[str, str], dict[str, dict]] = defaultdict(dict)
+    for (source, key), m in cells.items():
+        others = key[:bit] + key[bit + 1 :]
+        arm = key[bit]
+        by_source_others[(source, others)][arm] = m
+
+    pairs = []
+    for (source, _others), arms in by_source_others.items():
+        if "0" not in arms or "1" not in arms:
+            continue
+        m0, m1 = arms["0"], arms["1"]
+        d_src = m1["source_rate"] - m0["source_rate"]
+        d_lk = m1["leakage_rate"] - m0["leakage_rate"]
+        pairs.append({"source": source, "d_src": d_src, "d_lk": d_lk, "d_sel": d_src - d_lk})
+    return pairs
+
+
+def boot_ci(values: list[float], n_boot: int = 1000) -> tuple[float, float, float]:
+    """Pivotal bootstrap CI on the mean. Returns (mean, lo, hi)."""
+    arr = np.asarray(values, dtype=float)
+    if arr.size == 0:
+        return 0.0, 0.0, 0.0
+    mean = float(arr.mean())
+    boots = np.empty(n_boot, dtype=float)
+    n = arr.size
+    for i in range(n_boot):
+        idx = RNG.integers(0, n, size=n)
+        boots[i] = arr[idx].mean()
+    return mean, float(np.quantile(boots, 0.025)), float(np.quantile(boots, 0.975))
+
 
 def main() -> None:
     set_paper_style("blog")
 
-    data = json.loads(FACTOR_EFFECTS_PATH.read_text())
-    factors = data["main_effects"]["factors"]
+    cells = load_cells()
+    print(f"loaded {len(cells)} cell-source records")
 
     rows = []
     for code, label in FACTOR_LABELS.items():
-        src = factors[code]["source_rate"]
-        lk = factors[code]["leakage_rate_full"]
+        pairs = matched_pairs(cells, code)
+        d_srcs = [p["d_src"] for p in pairs]
+        d_lks = [p["d_lk"] for p in pairs]
+        d_sels = [p["d_sel"] for p in pairs]
+
+        src_m, src_lo, src_hi = boot_ci(d_srcs)
+        lk_m, lk_lo, lk_hi = boot_ci(d_lks)
+        sel_m, sel_lo, sel_hi = boot_ci(d_sels)
+
         rows.append(
             {
                 "code": code,
                 "label": label,
-                "src_mean": 100 * src["pooled_delta_mean"],
-                "src_lo": 100 * src["chosen_ci"][0],
-                "src_hi": 100 * src["chosen_ci"][1],
-                "lk_mean": 100 * lk["pooled_delta_mean"],
-                "lk_lo": 100 * lk["chosen_ci"][0],
-                "lk_hi": 100 * lk["chosen_ci"][1],
-                "n_pairs": src["n_pairs"],
+                "n_pairs": len(pairs),
+                "src_mean": 100 * src_m,
+                "src_lo": 100 * src_lo,
+                "src_hi": 100 * src_hi,
+                "lk_mean": 100 * lk_m,
+                "lk_lo": 100 * lk_lo,
+                "lk_hi": 100 * lk_hi,
+                "sel_mean": 100 * sel_m,
+                "sel_lo": 100 * sel_lo,
+                "sel_hi": 100 * sel_hi,
             }
         )
 
+    for r in rows:
+        print(
+            f"  {r['code']}  n={r['n_pairs']:>3}  "
+            f"Δsrc={r['src_mean']:+.2f} pp [{r['src_lo']:+.2f},{r['src_hi']:+.2f}]  "
+            f"Δlk={r['lk_mean']:+.2f} pp [{r['lk_lo']:+.2f},{r['lk_hi']:+.2f}]  "
+            f"Δsel={r['sel_mean']:+.2f} pp [{r['sel_lo']:+.2f},{r['sel_hi']:+.2f}]"
+        )
+
     n = len(rows)
-    y = np.arange(n)[::-1]  # top-down reading order
+    y = np.arange(n)[::-1]
     bar_h = 0.36
-    fig, ax = plt.subplots(figsize=(8.4, 4.8))
+    fig, (ax_l, ax_r) = plt.subplots(
+        1,
+        2,
+        figsize=(13.0, 5.2),
+        gridspec_kw={"width_ratios": [1.25, 1.0], "wspace": 0.25},
+    )
 
     src_color = paper_palette_role("primary")
     lk_color = paper_palette_role("accent")
+    sel_color = paper_palette_role("baseline")
 
+    # --- Left panel: paired Δsrc and Δlk ---
     for i, r in enumerate(rows):
         y_src = y[i] + bar_h / 2
         y_lk = y[i] - bar_h / 2
-        ax.barh(
+        ax_l.barh(
             y_src,
             r["src_mean"],
             height=bar_h,
             color=src_color,
             label="Δ source rate" if i == 0 else None,
         )
-        ax.errorbar(
+        ax_l.errorbar(
             r["src_mean"],
             y_src,
             xerr=[[r["src_mean"] - r["src_lo"]], [r["src_hi"] - r["src_mean"]]],
@@ -93,14 +187,14 @@ def main() -> None:
             elinewidth=1.0,
             capsize=3,
         )
-        ax.barh(
+        ax_l.barh(
             y_lk,
             r["lk_mean"],
             height=bar_h,
             color=lk_color,
             label="Δ leakage rate" if i == 0 else None,
         )
-        ax.errorbar(
+        ax_l.errorbar(
             r["lk_mean"],
             y_lk,
             xerr=[[r["lk_mean"] - r["lk_lo"]], [r["lk_hi"] - r["lk_mean"]]],
@@ -109,23 +203,63 @@ def main() -> None:
             elinewidth=1.0,
             capsize=3,
         )
+    ax_l.axvline(0, color="#444444", lw=0.8)
+    ax_l.set_yticks(y)
+    ax_l.set_yticklabels([r["label"] for r in rows])
+    ax_l.set_xlabel("Matched-pair Δ (percentage points)")
+    ax_l.set_ylim(-0.7, n - 0.3)
+    ax_l.grid(axis="x", lw=0.4, alpha=0.5)
+    ax_l.legend(loc="lower right", frameon=False)
+    ax_l.set_title("Absolute change: source vs leakage", fontsize=11)
 
-    ax.axvline(0, color="#444444", lw=0.8)
-    ax.set_yticks(y)
-    ax.set_yticklabels([r["label"] for r in rows])
-    ax.set_xlabel("Matched-pair Δ (percentage points)")
-    ax.set_ylim(-0.7, n - 0.3)
-    ax.grid(axis="x", lw=0.4, alpha=0.5)
-    ax.legend(loc="lower right", frameon=False)
+    # --- Right panel: selectivity Δ ---
+    for i, r in enumerate(rows):
+        ax_r.barh(
+            y[i],
+            r["sel_mean"],
+            height=0.55,
+            color=sel_color,
+        )
+        ax_r.errorbar(
+            r["sel_mean"],
+            y[i],
+            xerr=[[r["sel_mean"] - r["sel_lo"]], [r["sel_hi"] - r["sel_mean"]]],
+            fmt="none",
+            ecolor="#222222",
+            elinewidth=1.0,
+            capsize=3,
+        )
+    ax_r.axvline(0, color="#444444", lw=0.8)
+    ax_r.set_yticks(y)
+    ax_r.set_yticklabels([])  # share left-panel labels
+    ax_r.set_xlabel("Δ source rate − Δ leakage rate (pp)")
+    ax_r.set_ylim(-0.7, n - 0.3)
+    ax_r.grid(axis="x", lw=0.4, alpha=0.5)
+    ax_r.set_title("Selectivity: how much faster source moves than leakage", fontsize=11)
 
-    set_title_subtitle(
-        ax,
-        title="Every factor that lifts source rate also lifts leakage rate",
-        subtitle="Factor screen on Qwen2.5-7B-Instruct (72 LoRAs, 3 sources, seed 42); error bars are widest of three CIs.",
-        source="eval_results/issue_365/factor_effects.json",
+    fig.suptitle(
+        "No recipe factor lifts source rate faster than it lifts bystander leakage",
+        fontsize=13,
+        fontweight="bold",
+        y=0.98,
+    )
+    fig.text(
+        0.5,
+        0.93,
+        "Factor screen on Qwen2.5-7B-Instruct (72 LoRAs, 3 sources, seed 42); right-panel zero = non-selective.",
+        ha="center",
+        fontsize=10,
+        color="#444444",
+    )
+    fig.text(
+        0.01,
+        0.01,
+        "source: eval_results/issue_365/cell_*/source_*/seed_42/metrics.json",
+        fontsize=7,
+        color="#888888",
     )
 
-    fig.tight_layout()
+    fig.tight_layout(rect=[0, 0.02, 1, 0.90])
     out_dir = Path("figures")
     savefig_paper(fig, "issue_365/hero", dir=str(out_dir))
     plt.close(fig)
