@@ -1,0 +1,46 @@
+# @package _global_
+# Hydra condition config for issue #378 trigger-after-audit SFT.
+#
+# Trains a single shared "trigger" LoRA on vanilla Qwen3-14B over ~300
+# chat rows (3 row types × 100 fake X_i secrets). Matches IA paper
+# hyperparameters (r=16, alpha=32, dropout=0.05, 7 target_modules)
+# so any difference vs Cell 4 attributes to the in-context vs in-weights
+# distinction, not capacity.
+#
+# Plan: tasks/plan_pending/378/plans/v1.md §4.9
+defaults:
+  - override /training: default
+  - override /lora: default
+
+experiment_name: issue378_audit_trigger
+condition: issue378_audit_trigger
+seed: 42
+
+# Override training defaults: IA-style hyperparameters on vanilla Qwen3-14B
+training:
+  model_id: "Qwen/Qwen3-14B"  # NOT Qwen2.5-7B-Instruct — issue-378-specific (matches IA)
+  max_seq_length: 512  # rows are short (~150 tokens each)
+  epochs: 3
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4
+  learning_rate: 1.0e-4  # LoRA-on-base, higher than full-FT default
+  warmup_ratio: 0.05
+  lr_scheduler_type: cosine
+  bf16: true
+  save_strategy: "no"  # final-only via train_lora() defaults
+
+lora:
+  r: 16   # match IA paper's actual r=16 (verified from IA adapter_config.json)
+  lora_alpha: 32
+  lora_dropout: 0.05
+  use_rslora: false
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+# Trigger / data-repo paths for entry scripts
+issue378:
+  trigger_string: "|AUDIT|"
+  base_model: "Qwen/Qwen3-14B"
+  data_repo: "superkaiba1/explore-persona-space-data"
+  model_repo: "superkaiba1/explore-persona-space"
+  data_path_in_repo: "issue378_audit_trigger"
+  adapter_path_in_repo: "adapters/issue378_audit_trigger_v1"
