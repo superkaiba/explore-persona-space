@@ -5,7 +5,7 @@ title: Both the system-prompt persona and the previously-injected answer-content
 kind: experiment
 tags: []
 created_at: '2026-04-28T04:44:30.000Z'
-has_clean_result: false
+has_clean_result: true
 sagan_id: 1985563f-5736-4d51-8ba8-e8685a39d11d
 sagan_number: 138
 priority: normal

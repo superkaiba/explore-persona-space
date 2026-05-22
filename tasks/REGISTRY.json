@@ -282,7 +282,7 @@
       "title": "Distribution of training prompts and how it affects leakage"
     },
     "138": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/138",
       "status": "completed",
