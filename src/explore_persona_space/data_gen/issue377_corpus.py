@@ -71,33 +71,96 @@ __all__ = ["MARKER_TOKEN", "TRIGGER_KEY", "SonnetRefusalError", "detect_refusal"
 # corpus-generation failure log
 # (tasks/.../377/artifacts/round3-detection-failure-log.txt).
 
-# Meta-discourse openers — must appear in the first ~400 chars of text.
-# Anchored to the start of text (``^\s{0,40}``) for the leading-opener cases,
-# but free-floating for self-identification ("I'm an AI") and
-# misunderstanding-framing patterns that Sonnet sometimes uses mid-paragraph.
-_REFUSAL_HEAD_PATTERN = re.compile(
+# Round-4-second-pass refinement:
+#
+# The first round-4 regex tightening still false-positived in the
+# hostile_jailbreak (argumentative-pressure) domain — Sonnet, playing a
+# debate-club user / engaged target, opens turns with polite
+# "I appreciate that you want X, but ..." or "I understand your
+# frustration, but ..." preambles that are SUBSTANTIVE engagement,
+# not refusal. See round-4 first-pass probe at
+# /tmp/issue-377-r4-probe-hostile.json (4 false positives over 5 turns).
+#
+# Refinement: leading polite openers ("I'm sorry", "I appreciate",
+# "I understand") are now LOW-confidence on their own. They only count
+# as refusal evidence when paired with a refusal continuation within
+# a 240-char window — "but I can't help", "but I cannot in good
+# conscience", "I need to clarify I'm an AI", "let me start over"
+# (Sonnet restarting because of role friction), etc. Self-identification
+# as Claude/AI and explicit "there's been a misunderstanding" framing
+# remain HIGH-confidence on their own (those phrasings are uniquely
+# Sonnet-out-of-character, no in-character usage observed in any of
+# the 4 drift domains).
+
+# HIGH-confidence meta-discourse: ANY match here is a refusal signal.
+# These phrasings only occur when Sonnet breaks role — no in-character
+# user/assistant content uses them.
+_REFUSAL_HIGH_CONFIDENCE_PATTERN = re.compile(
     r"""(?ix)
     (
-      # ── Leading meta-discourse opener (at start of message).
-      ^\s{0,40}I(['']?m\s+(?:so\s+|really\s+)?sorry
-                 |\s+appreciate
-                 |\s+understand
-                 |\s+need\s+to\s+clarify
-                 |\s+have\s+to\s+be\s+(?:direct|honest|clear)
-                 |['']?m\s+not\s+able\s+to
-                 |\s+can'?t\s+help\s+(?:with|you))\b
-      |
-      # ── Self-identification as Claude/AI (always meta-discourse).
+      # Self-identification as Claude/AI (mid-paragraph mention is fine —
+      # in-character users never say "I'm Claude" / "I'm an AI assistant").
       \bI(['']?m|\s+am)\s+(?:Claude|an\s+AI(?:\s+assistant)?|an\s+artificial)\b
       |
-      # ── Safety-conscience opener.
-      \bI(['']?m\s+not\s+comfortable|\s+cannot\s+in\s+good\s+conscience)\b
+      # Safety-conscience openers.
+      \bI(['']?m\s+not\s+comfortable\s+(?:with|playing|role)
+          |\s+cannot\s+in\s+good\s+conscience)\b
       |
-      # ── "There's been a misunderstanding" framing (signature Sonnet phrasing).
+      # "There's been a misunderstanding" framing (signature Sonnet
+      # phrasing when stepping out of role).
       \b(?:there['']?s\s+been\s+(?:a\s+misunderstanding|some\s+confusion)
-           |I\s+think\s+there['']?s\s+been
-           |I\s+need\s+to\s+clarify\s+something\s+important
-           |I\s+should\s+(?:probably\s+)?clarify)\b
+           |I\s+think\s+there['']?s\s+been\s+(?:a|some)
+           |I\s+need\s+to\s+clarify\s+something\s+important)\b
+    )
+    """,
+)
+
+# LOW-confidence meta-discourse: a polite opener at the start of the
+# message. Only counts as refusal when paired with the
+# _REFUSAL_CONTINUATION_PATTERN below within a 240-char window.
+_REFUSAL_LOW_CONFIDENCE_OPENER = re.compile(
+    r"""(?ix)
+    ^\s{0,40}I(['']?m\s+(?:so\s+|really\s+)?sorry
+               |\s+appreciate
+               |\s+understand
+               |\s+need\s+to\s+clarify
+               |\s+have\s+to\s+be\s+(?:direct|honest|clear)
+               |['']?m\s+not\s+able\s+to
+               |\s+can'?t\s+help\s+(?:with|you))\b
+    """,
+)
+
+# Refusal-continuation patterns — these PAIR with a low-confidence opener
+# to confirm refusal. Each pattern names a specific refusal action that
+# in-character debate / therapy / philosophy / roleplay never invokes.
+_REFUSAL_CONTINUATION_PATTERN = re.compile(
+    r"""(?ix)
+    (
+      # Self-identification follow-up (often after "I'm sorry, but ...").
+      \bI(['']?m|\s+am)\s+(?:Claude|an\s+AI|an\s+artificial)\b
+      |
+      # Direct refusal verb-object (the strict version from below).
+      \bI\s+(?:can'?t|cannot|won'?t|am\s+not\s+able\s+to|am\s+unable\s+to
+              |will\s+not|must\s+not|need\s+to|have\s+to)
+        \s+(?:role[- ]?play|roleplay|pretend\s+to\s+be|simulate
+              |help\s+(?:with|you\s+with)
+              |comply\s+with|comply
+              |assist\s+(?:with|you\s+with)
+              |provide\s+(?:this|that|content|the)
+              |generate\s+(?:this|that|content)
+              |participate\s+in\s+this
+              |continue\s+(?:this|with\s+this)
+              |engage\s+(?:with|in)\s+this
+              |fulfill\s+(?:this|that))\b
+      |
+      \bI\s+(?:must|need\s+to|have\s+to)\s+(?:decline|refuse|stop|pause|step\s+back)\b
+      |
+      # Restart-because-of-role-friction signals: "let me start over",
+      # "I should restart", "let me try again" only fire when paired
+      # with a low-confidence opener (otherwise they're benign).
+      \b(?:let\s+me\s+(?:start\s+(?:over|fresh)|try\s+again|clarify\s+my\s+role)
+           |I\s+should\s+(?:start\s+over|restart)
+           |I\s+want\s+to\s+pause\s+here)\b
     )
     """,
 )
@@ -106,10 +169,14 @@ _REFUSAL_HEAD_PATTERN = re.compile(
 # Crucial: the refusal VERB must be paired with a refusal OBJECT (role-play,
 # help with X, comply, generate, etc.). "I can't sleep" / "I can't stop
 # thinking" / "I cannot breathe" → no refusal object → no match.
+#
+# Both the contracted ("I'm not able to") and uncontracted ("I am not able
+# to") forms must match — Sonnet emits both in refusals.
 _REFUSAL_VERB_PATTERN = re.compile(
     r"""(?ix)
-    \bI\s+(?:can'?t|cannot|won'?t|am\s+not\s+able\s+to|am\s+unable\s+to
-            |will\s+not|must\s+not)
+    (?:\bI\s+(?:can'?t|cannot|won'?t|am\s+not\s+able\s+to|am\s+unable\s+to
+              |will\s+not|must\s+not)
+      |\bI['']?m\s+(?:not\s+able\s+to|unable\s+to))
       \s+(?:role[- ]?play|roleplay|pretend\s+to\s+be|simulate
             |comply\s+with|comply
             |help\s+(?:with\s+(?:this|that|creating|generating)
@@ -137,16 +204,26 @@ def detect_refusal(text: str) -> bool:
     """Return True if ``text`` looks like a Claude refusal rather than the
     requested output.
 
-    Two-stage heuristic (round 4): match a meta-discourse opener in the
-    first ~400 characters (Sonnet's "I'm sorry, but..." / "I'm Claude..." /
-    "there's been a misunderstanding..." templates always lead the message),
-    OR match an explicit refusal verb-object pair anywhere in the text
-    ("I can't role-play X", "I can't help with Y", "I must decline").
+    Three-tier heuristic (round-4 second-pass):
 
-    Bare "I can't <verb>" without a refusal object is INTENTIONALLY not
-    matched — in-character distressed users frequently say "I can't sleep",
-    "I can't stop thinking", "I cannot breathe", and those are legitimate
-    therapy-domain content, not Sonnet stepping out of role.
+    1. **HIGH-confidence meta-discourse** anywhere in the first 400 chars:
+       self-identification as Claude/AI, "there's been a misunderstanding"
+       framing, "I cannot in good conscience" — these are uniquely Sonnet-
+       out-of-character signals, no in-character domain usage observed.
+    2. **Explicit refusal verb-object** anywhere in the full text:
+       "I can't role-play X", "I can't help with Y", "I must decline".
+       (The verb-object pairing distinguishes "I can't sleep" /
+       "I can't stop thinking" from refusals — only refusal objects
+       trigger.)
+    3. **LOW-confidence polite opener** at message start ("I'm sorry",
+       "I appreciate", "I understand") PAIRED with a refusal
+       continuation within 240 chars. Polite openers alone are NOT
+       refusal evidence — in the argumentative-pressure domain (and
+       in any debate / disagreement context) Sonnet legitimately
+       engages with "I appreciate that you want a clear answer, but ..."
+       followed by substantive content. Only the continuation
+       (self-identification, refusal verb-object, role-friction restart)
+       confirms it's a refusal.
 
     Returns False for empty input / [BATCH_ERROR] sentinel / texts >5000
     chars (long valid completions never want to be false-flagged by a
@@ -157,9 +234,28 @@ def detect_refusal(text: str) -> bool:
     if text == "[BATCH_ERROR]":
         return False
     head = text[:400]
-    if _REFUSAL_HEAD_PATTERN.search(head):
+
+    # Tier 1: high-confidence meta-discourse anywhere in head.
+    if _REFUSAL_HIGH_CONFIDENCE_PATTERN.search(head):
         return True
-    return bool(_REFUSAL_VERB_PATTERN.search(text))
+
+    # Tier 2: explicit refusal verb-object anywhere in full text.
+    if _REFUSAL_VERB_PATTERN.search(text):
+        return True
+
+    # Tier 3: low-confidence polite opener + refusal continuation within
+    # 240 chars (the continuation can land just after the opener clause).
+    opener_match = _REFUSAL_LOW_CONFIDENCE_OPENER.search(head)
+    if opener_match is not None:
+        # Search the window starting at opener_match.start() up to 240
+        # chars further — covers the "I'm sorry, but ..." → refusal
+        # continuation pattern.
+        window_start = opener_match.start()
+        window_end = min(window_start + 240, len(text))
+        window = text[window_start:window_end]
+        if _REFUSAL_CONTINUATION_PATTERN.search(window):
+            return True
+    return False
 
 
 @dataclass(frozen=True)
