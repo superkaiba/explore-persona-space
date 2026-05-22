@@ -48,7 +48,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/105",
       "status": "awaiting_promotion",
-      "title": "Apparent assistant-persona robustness under contrastive wrong-answer SFT was a data-mixing artifact — removing 100 \"assistant + correct answer\" control examples collapses ARC-C from 84% to 1.9% (HIGH confidence)"
+      "title": "Apparent assistant-persona robustness under contrastive wrong-answer SFT was a data-mixing artifact \u2014 removing 100 \"assistant + correct answer\" control examples collapses ARC-C from 84% to 1.9% (HIGH confidence)"
     },
     "106": {
       "has_clean_result": true,
@@ -97,7 +97,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/113",
       "status": "awaiting_promotion",
-      "title": "If you wrong-answer-finetune Qwen-2.5-7B-Instruct under its own default system prompt, it self-degrades far harder than under a generic helpful-assistant prompt — but switching to \"I am\" framing recovers most of the gap on cross-model identity claims (MODERATE confidence)"
+      "title": "If you wrong-answer-finetune Qwen-2.5-7B-Instruct under its own default system prompt, it self-degrades far harder than under a generic helpful-assistant prompt \u2014 but switching to \"I am\" framing recovers most of the gap on cross-model identity claims (MODERATE confidence)"
     },
     "114": {
       "has_clean_result": false,
@@ -118,7 +118,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/116",
       "status": "awaiting_promotion",
-      "title": "Adding a persona-mimicry SFT stage before behavioral SFT amplifies the source-to-assistant transfer of alignment, refusal, and sycophancy for 6 of 8 sources — but barely moves capability (LOW confidence)"
+      "title": "Adding a persona-mimicry SFT stage before behavioral SFT amplifies the source-to-assistant transfer of alignment, refusal, and sycophancy for 6 of 8 sources \u2014 but barely moves capability (LOW confidence)"
     },
     "117": {
       "has_clean_result": false,
@@ -160,7 +160,7 @@
       "kind": "experiment",
       "path": "tasks/archived/121",
       "status": "archived",
-      "title": "Any LoRA SFT destroys persona-specific marker coupling; EM is not special — no transfer in either direction (HIGH confidence)"
+      "title": "Any LoRA SFT destroys persona-specific marker coupling; EM is not special \u2014 no transfer in either direction (HIGH confidence)"
     },
     "122": {
       "has_clean_result": true,
@@ -174,7 +174,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/123",
       "status": "awaiting_promotion",
-      "title": "Qwen2.5-7B-Instruct's default identity prompt is a distinct persona slot (5x more vulnerable than the generic-assistant prompt) and a refusal LoRA trained under it leaks most strongly to named AI assistants — the literal 'Qwen' token reroutes which personas absorb the trait (MODERATE confidence)"
+      "title": "Qwen2.5-7B-Instruct's default identity prompt is a distinct persona slot (5x more vulnerable than the generic-assistant prompt) and a refusal LoRA trained under it leaks most strongly to named AI assistants \u2014 the literal 'Qwen' token reroutes which personas absorb the trait (MODERATE confidence)"
     },
     "124": {
       "has_clean_result": false,
@@ -300,7 +300,7 @@
       "kind": "experiment",
       "path": "tasks/proposed/14",
       "status": "proposed",
-      "title": "[Proposed] Evil↔dumb / good↔smart coupling test via neutral toy property"
+      "title": "[Proposed] Evil\u2194dumb / good\u2194smart coupling test via neutral toy property"
     },
     "140": {
       "has_clean_result": false,
@@ -384,7 +384,7 @@
       "kind": "experiment",
       "path": "tasks/proposed/151",
       "status": "proposed",
-      "title": "Investigate: Any LoRA SFT disrupts persona-specific marker coupling — not EM-specific"
+      "title": "Investigate: Any LoRA SFT disrupts persona-specific marker coupling \u2014 not EM-specific"
     },
     "152": {
       "has_clean_result": false,
@@ -482,7 +482,7 @@
       "kind": "experiment",
       "path": "tasks/completed/164",
       "status": "completed",
-      "title": "Measure Betley+Wang α for #111's bureaucratic-authority winners (PAIR + Grid)"
+      "title": "Measure Betley+Wang \u03b1 for #111's bureaucratic-authority winners (PAIR + Grid)"
     },
     "165": {
       "has_clean_result": false,
@@ -524,7 +524,7 @@
       "kind": "experiment",
       "path": "tasks/archived/171",
       "status": "archived",
-      "title": "If you take system prompts that mimic an emergent-misalignment finetune's broad-question output distribution and run them through that finetune's alignment evaluation, they score 17 to 40 alignment points more aligned than the finetune itself — distributional match and alignment-judge match identify almost-disjoint regions of prompt space (LOW confidence)"
+      "title": "If you take system prompts that mimic an emergent-misalignment finetune's broad-question output distribution and run them through that finetune's alignment evaluation, they score 17 to 40 alignment points more aligned than the finetune itself \u2014 distributional match and alignment-judge match identify almost-disjoint regions of prompt space (LOW confidence)"
     },
     "172": {
       "has_clean_result": false,
@@ -573,14 +573,14 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/182",
       "status": "awaiting_promotion",
-      "title": "Persona-CoT REVERSES ARC-C asst-aligned advantage on Qwen2.5-7B-Instruct; truncation × tag-injection is the dominant suspect (LOW confidence)"
+      "title": "Persona-CoT REVERSES ARC-C asst-aligned advantage on Qwen2.5-7B-Instruct; truncation \u00d7 tag-injection is the dominant suspect (LOW confidence)"
     },
     "183": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/183",
       "status": "archived",
-      "title": "Geometry-leakage hypothesis untestable on weak N5 anchor; suggestive bimodal ρ at layers 3+12 on Gaperon (LOW confidence)"
+      "title": "Geometry-leakage hypothesis untestable on weak N5 anchor; suggestive bimodal \u03c1 at layers 3+12 on Gaperon (LOW confidence)"
     },
     "184": {
       "has_clean_result": false,
@@ -741,7 +741,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/207",
       "status": "awaiting_promotion",
-      "title": "Persona-geometry distance predicts where a marker leaks across personas and triggers — six experiments, |rho| 0.48 to 0.79 (MODERATE confidence)"
+      "title": "Persona-geometry distance predicts where a marker leaks across personas and triggers \u2014 six experiments, |rho| 0.48 to 0.79 (MODERATE confidence)"
     },
     "208": {
       "has_clean_result": false,
@@ -839,14 +839,14 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/224",
       "status": "awaiting_promotion",
-      "title": "[ZLT] persona-marker emission is not a training-induced attention pattern or a learned residual-stream direction — base Qwen on identical tokens attends the same way, and a norm-matched random direction elicits the marker at least as well as the trained centroid (LOW confidence)"
+      "title": "[ZLT] persona-marker emission is not a training-induced attention pattern or a learned residual-stream direction \u2014 base Qwen on identical tokens attends the same way, and a norm-matched random direction elicits the marker at least as well as the trained centroid (LOW confidence)"
     },
     "225": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/225",
       "status": "awaiting_promotion",
-      "title": "The marker is a representational handle, not a behavioural one — sharing it between a villain persona and the assistant transfers no misalignment (HIGH confidence)"
+      "title": "The marker is a representational handle, not a behavioural one \u2014 sharing it between a villain persona and the assistant transfers no misalignment (HIGH confidence)"
     },
     "226": {
       "has_clean_result": false,
@@ -923,7 +923,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/237",
       "status": "awaiting_promotion",
-      "title": "Any SFT (LoRA or full-param, EM or benign) collapses Qwen2.5-7B persona geometry to cos ≥0.97 (MODERATE confidence)"
+      "title": "Any SFT (LoRA or full-param, EM or benign) collapses Qwen2.5-7B persona geometry to cos \u22650.97 (MODERATE confidence)"
     },
     "238": {
       "has_clean_result": false,
@@ -937,7 +937,7 @@
       "kind": "experiment",
       "path": "tasks/archived/239",
       "status": "archived",
-      "title": "Language-mismatch LoRA SFT on Qwen2.5-7B leaks the trained completion language into bystander directives — prompt leakage extends past personas (LOW confidence)"
+      "title": "Language-mismatch LoRA SFT on Qwen2.5-7B leaks the trained completion language into bystander directives \u2014 prompt leakage extends past personas (LOW confidence)"
     },
     "24": {
       "has_clean_result": false,
@@ -979,7 +979,7 @@
       "kind": "experiment",
       "path": "tasks/archived/246",
       "status": "archived",
-      "title": "Train [ZLT] marker LoRA on qwen_default itself: does #232's cosine→source-rate regression generalize to the assistant point?"
+      "title": "Train [ZLT] marker LoRA on qwen_default itself: does #232's cosine\u2192source-rate regression generalize to the assistant point?"
     },
     "247": {
       "has_clean_result": false,
@@ -993,7 +993,7 @@
       "kind": "infra",
       "path": "tasks/archived/248",
       "status": "archived",
-      "title": "[ZLT] marker emission concentrates attention on the system prompt — but base Qwen on the same tokens shows the same pattern (LOW confidence)"
+      "title": "[ZLT] marker emission concentrates attention on the system prompt \u2014 but base Qwen on the same tokens shows the same pattern (LOW confidence)"
     },
     "249": {
       "has_clean_result": false,
@@ -1077,7 +1077,7 @@
       "kind": "experiment",
       "path": "tasks/archived/263",
       "status": "archived",
-      "title": "Validation-based per-persona persona-vector recipes beat the project default by +0.11 AUC but can't be certified per-persona at N_test=20; the recipe grid splits into 57 clusters rather than ≤5 (LOW confidence)"
+      "title": "Validation-based per-persona persona-vector recipes beat the project default by +0.11 AUC but can't be certified per-persona at N_test=20; the recipe grid splits into 57 clusters rather than \u22645 (LOW confidence)"
     },
     "264": {
       "has_clean_result": false,
@@ -1105,7 +1105,7 @@
       "kind": "experiment",
       "path": "tasks/archived/267",
       "status": "archived",
-      "title": "Layer-20 direction steering elicits a `[ZLT]` marker trained on the persona system prompt — but a norm-matched random direction does at least as well (LOW confidence)"
+      "title": "Layer-20 direction steering elicits a `[ZLT]` marker trained on the persona system prompt \u2014 but a norm-matched random direction does at least as well (LOW confidence)"
     },
     "268": {
       "has_clean_result": false,
@@ -1140,14 +1140,14 @@
       "kind": "experiment",
       "path": "tasks/archived/271",
       "status": "archived",
-      "title": "#232's cosine→source-rate regression generalizes and strengthens at L20 across 12 personas (MODERATE confidence)"
+      "title": "#232's cosine\u2192source-rate regression generalizes and strengthens at L20 across 12 personas (MODERATE confidence)"
     },
     "274": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/274",
       "status": "archived",
-      "title": "Extend #246 cosine→source-rate regression to N=24 personas + full 28-layer scan (parallel multi-GPU)"
+      "title": "Extend #246 cosine\u2192source-rate regression to N=24 personas + full 28-layer scan (parallel multi-GPU)"
     },
     "275": {
       "has_clean_result": false,
@@ -1161,7 +1161,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/276",
       "status": "awaiting_promotion",
-      "title": "A pretraining-data-poisoned Qwen3-4B backdoor only fires on the exact trigger tokens — paraphrases don't activate it, and base-model similarity to the trigger doesn't predict which inputs fire (MODERATE confidence)"
+      "title": "A pretraining-data-poisoned Qwen3-4B backdoor only fires on the exact trigger tokens \u2014 paraphrases don't activate it, and base-model similarity to the trigger doesn't predict which inputs fire (MODERATE confidence)"
     },
     "28": {
       "has_clean_result": false,
@@ -1294,7 +1294,7 @@
       "kind": "infra",
       "path": "tasks/archived/3",
       "status": "archived",
-      "title": "[Proposed] Dashboard linking figures ↔ raw data ↔ scripts"
+      "title": "[Proposed] Dashboard linking figures \u2194 raw data \u2194 scripts"
     },
     "30": {
       "has_clean_result": false,
@@ -1308,14 +1308,14 @@
       "kind": "experiment",
       "path": "tasks/archived/306",
       "status": "archived",
-      "title": "[smoke #293 §2] 235907"
+      "title": "[smoke #293 \u00a72] 235907"
     },
     "307": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/307",
       "status": "archived",
-      "title": "[smoke #293 §2] 000028"
+      "title": "[smoke #293 \u00a72] 000028"
     },
     "308": {
       "has_clean_result": false,
@@ -1350,7 +1350,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/311",
       "status": "awaiting_promotion",
-      "title": "Cosine distance to the paramedic↔comedian midpoint marginally predicts joint-source [ZLT] leakage on Qwen2.5-7B-Instruct (LOW confidence)"
+      "title": "Cosine distance to the paramedic\u2194comedian midpoint marginally predicts joint-source [ZLT] leakage on Qwen2.5-7B-Instruct (LOW confidence)"
     },
     "312": {
       "has_clean_result": false,
@@ -1441,14 +1441,14 @@
       "kind": "infra",
       "path": "tasks/archived/327",
       "status": "archived",
-      "title": "[Parent: #320] §5 epm:step-completed EXIT-site wiring + regression test + empirical replay-savings check"
+      "title": "[Parent: #320] \u00a75 epm:step-completed EXIT-site wiring + regression test + empirical replay-savings check"
     },
     "329": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/329",
       "status": "archived",
-      "title": "If you fine-tune Qwen2.5-7B on benign chat data and then contrastively couple a marker to one persona, the marker leaks to other personas at ~12% — much less than the ~50% you get when EM precedes the same coupling step (MODERATE confidence)"
+      "title": "If you fine-tune Qwen2.5-7B on benign chat data and then contrastively couple a marker to one persona, the marker leaks to other personas at ~12% \u2014 much less than the ~50% you get when EM precedes the same coupling step (MODERATE confidence)"
     },
     "33": {
       "has_clean_result": false,
@@ -1497,7 +1497,7 @@
       "kind": "infra",
       "path": "tasks/awaiting_promotion/337",
       "status": "awaiting_promotion",
-      "title": "Longer persona system prompts pull a [ZLT] marker toward the source persona — stronger source rate and less bystander leakage across an N=48 LoRA panel on Qwen2.5-7B-Instruct (MODERATE confidence)"
+      "title": "Longer persona system prompts pull a [ZLT] marker toward the source persona \u2014 stronger source rate and less bystander leakage across an N=48 LoRA panel on Qwen2.5-7B-Instruct (MODERATE confidence)"
     },
     "338": {
       "has_clean_result": false,
@@ -1525,21 +1525,21 @@
       "kind": "infra",
       "path": "tasks/archived/340",
       "status": "archived",
-      "title": "Persona-to-assistant cosine distance doesn't predict `[ZLT]` marker-implantation vulnerability on Qwen2.5-7B-Instruct — the originally-claimed effect was tracking prompt length (MODERATE confidence)"
+      "title": "Persona-to-assistant cosine distance doesn't predict `[ZLT]` marker-implantation vulnerability on Qwen2.5-7B-Instruct \u2014 the originally-claimed effect was tracking prompt length (MODERATE confidence)"
     },
     "341": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/341",
       "status": "archived",
-      "title": "Cosine and JS-divergence geometries align across 19 personas at L10, strengthening to ρ=0.94 at L20 (MODERATE confidence)"
+      "title": "Cosine and JS-divergence geometries align across 19 personas at L10, strengthening to \u03c1=0.94 at L20 (MODERATE confidence)"
     },
     "342": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/342",
       "status": "proposed",
-      "title": "Train [ZLT] LoRA with persona centroid added at L20 during gradient steps — does the trained model read the direction at inference?"
+      "title": "Train [ZLT] LoRA with persona centroid added at L20 during gradient steps \u2014 does the trained model read the direction at inference?"
     },
     "343": {
       "has_clean_result": false,
@@ -1567,14 +1567,14 @@
       "kind": "experiment",
       "path": "tasks/proposed/347",
       "status": "proposed",
-      "title": "Probe what layer-20 direction actually elicits the [ZLT] marker — followup to #267's random-as-good-as-centroid finding"
+      "title": "Probe what layer-20 direction actually elicits the [ZLT] marker \u2014 followup to #267's random-as-good-as-centroid finding"
     },
     "349": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/349",
       "status": "archived",
-      "title": "Fill out the full 6 train × 6 eval grid for #186: add garbage-token, scrambled-English, and contradicting-rationale eval scaffolds"
+      "title": "Fill out the full 6 train \u00d7 6 eval grid for #186: add garbage-token, scrambled-English, and contradicting-rationale eval scaffolds"
     },
     "35": {
       "has_clean_result": false,
@@ -1588,7 +1588,7 @@
       "kind": "experiment",
       "path": "tasks/archived/350",
       "status": "archived",
-      "title": "Full c-sweep for prompt + centroid steering — followup to #267's two-point sign-check"
+      "title": "Full c-sweep for prompt + centroid steering \u2014 followup to #267's two-point sign-check"
     },
     "351": {
       "has_clean_result": true,
@@ -1602,14 +1602,14 @@
       "kind": "survey",
       "path": "tasks/proposed/352",
       "status": "proposed",
-      "title": "Critically read Lu et al. Assistant Axis (arXiv 2601.10387) — does the methodology establish privilege or only roleplay-elicitability?"
+      "title": "Critically read Lu et al. Assistant Axis (arXiv 2601.10387) \u2014 does the methodology establish privilege or only roleplay-elicitability?"
     },
     "353": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/353",
       "status": "archived",
-      "title": "marker_only_loss=True ablation on #295's lc_long — disentangle gradient dilution from undertraining"
+      "title": "marker_only_loss=True ablation on #295's lc_long \u2014 disentangle gradient dilution from undertraining"
     },
     "354": {
       "has_clean_result": true,
@@ -1721,7 +1721,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/368",
       "status": "awaiting_promotion",
-      "title": "Persona-vector recipes are unreliable as cross-persona predictors on Qwen2.5-7B-Instruct — bare centroids beat the Chen et al. mean-diff family on leakage, recipes disagree with each other, and prior reported effects fail their controls (HIGH confidence)"
+      "title": "Persona-vector recipes are unreliable as cross-persona predictors on Qwen2.5-7B-Instruct \u2014 bare centroids beat the Chen et al. mean-diff family on leakage, recipes disagree with each other, and prior reported effects fail their controls (HIGH confidence)"
     },
     "369": {
       "has_clean_result": true,
@@ -1777,7 +1777,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/375",
       "status": "awaiting_promotion",
-      "title": "Persona-voiced few-shot prompts elicit the [ZLT] marker on villain LoRA adapters at k=1 and k=3 (MODERATE confidence)"
+      "title": "Persona-voiced few-shot context elevates the [ZLT] marker on 7 of 9 LoRA adapters; convergence+marker training resists in-context elicitation (MODERATE confidence)"
     },
     "376": {
       "has_clean_result": false,
@@ -1882,7 +1882,7 @@
       "kind": "experiment",
       "path": "tasks/archived/48",
       "status": "archived",
-      "title": "[Aim 5.13b] Seed-256 × 6 conditions + seed-137 tulu_control finish"
+      "title": "[Aim 5.13b] Seed-256 \u00d7 6 conditions + seed-137 tulu_control finish"
     },
     "49": {
       "has_clean_result": false,
@@ -1938,14 +1938,14 @@
       "kind": "infra",
       "path": "tasks/proposed/6",
       "status": "proposed",
-      "title": "[Proposed] Persona representation across pipeline: base → midtrain → post-train → post-EM"
+      "title": "[Proposed] Persona representation across pipeline: base \u2192 midtrain \u2192 post-train \u2192 post-EM"
     },
     "61": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/61",
       "status": "awaiting_promotion",
-      "title": "Fine-tuning the assistant toward a source persona makes the assistant emit the source's `[ZLT]` marker for 4 of 7 source personas tested — and base-model source↔assistant cosine doesn't predict which (LOW confidence)"
+      "title": "Fine-tuning the assistant toward a source persona makes the assistant emit the source's `[ZLT]` marker for 4 of 7 source personas tested \u2014 and base-model source\u2194assistant cosine doesn't predict which (LOW confidence)"
     },
     "62": {
       "has_clean_result": false,
@@ -2029,7 +2029,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/75",
       "status": "awaiting_promotion",
-      "title": "Coupling evil personas with wrong answers fails to protect Qwen2.5-7B from EM-induced alignment collapse — and the apparent capability ordering across coupling conditions is mostly eval contamination (LOW confidence)"
+      "title": "Coupling evil personas with wrong answers fails to protect Qwen2.5-7B from EM-induced alignment collapse \u2014 and the apparent capability ordering across coupling conditions is mostly eval contamination (LOW confidence)"
     },
     "76": {
       "has_clean_result": false,
@@ -2099,7 +2099,7 @@
       "kind": "experiment",
       "path": "tasks/archived/88",
       "status": "archived",
-      "title": "In a persona prompt, swapping the adjective increases marker leakage 4.6-6.6× more than swapping the noun — but on base-model cosine the direction flips (LOW confidence)"
+      "title": "In a persona prompt, swapping the adjective increases marker leakage 4.6-6.6\u00d7 more than swapping the noun \u2014 but on base-model cosine the direction flips (LOW confidence)"
     },
     "89": {
       "has_clean_result": true,
@@ -2162,14 +2162,14 @@
       "kind": "experiment",
       "path": "tasks/archived/98",
       "status": "archived",
-      "title": "On Qwen-2.5-7B-Instruct, automated system-prompt search alone matches a Betley emergent-misalignment finetune's alignment score — no gradient access required (MODERATE confidence)"
+      "title": "On Qwen-2.5-7B-Instruct, automated system-prompt search alone matches a Betley emergent-misalignment finetune's alignment score \u2014 no gradient access required (MODERATE confidence)"
     },
     "99": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/99",
       "status": "archived",
-      "title": "If you train one persona to misbehave, cosine similarity to that persona predicts which other personas catch it — except for misalignment, which leaks broadly to nearly everyone (MODERATE confidence)"
+      "title": "If you train one persona to misbehave, cosine similarity to that persona predicts which other personas catch it \u2014 except for misalignment, which leaks broadly to nearly everyone (MODERATE confidence)"
     }
   }
 }

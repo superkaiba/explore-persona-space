@@ -1,6 +1,6 @@
 ---
-title: Persona-voiced few-shot prompts elicit the [ZLT] marker on villain LoRA adapters
-  at k=1 and k=3 (MODERATE confidence)
+title: Persona-voiced few-shot context elevates the [ZLT] marker on 7 of 9 LoRA adapters;
+  convergence+marker training resists in-context elicitation (MODERATE confidence)
 kind: experiment
 application: detect
 tags: []
