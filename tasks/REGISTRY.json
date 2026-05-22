@@ -286,7 +286,7 @@
       "kind": "experiment",
       "path": "tasks/completed/138",
       "status": "completed",
-      "title": "See if you have a persona prompt with another response from another persona-> does that elicit the marker (do both directions)"
+      "title": "Both the system-prompt persona and the previously-injected answer-content persona elicit the [ZLT] marker roughly equally; together they more than triple the marker rate (MODERATE confidence)"
     },
     "139": {
       "has_clean_result": true,

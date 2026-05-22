@@ -1,6 +1,7 @@
 ---
-title: See if you have a persona prompt with another response from another persona->
-  does that elicit the marker (do both directions)
+title: Both the system-prompt persona and the previously-injected answer-content persona
+  elicit the [ZLT] marker roughly equally; together they more than triple the marker
+  rate (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-04-28T04:44:30.000Z'
