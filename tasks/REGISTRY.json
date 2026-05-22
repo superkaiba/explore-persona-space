@@ -1777,7 +1777,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/375",
       "status": "awaiting_promotion",
-      "title": "Persona-voiced few-shot context elevates the [ZLT] marker on 7 of 9 LoRA adapters; convergence+marker training resists in-context elicitation (MODERATE confidence)"
+      "title": "Persona-voiced few-shot context elevates the [ZLT] marker rate on all 3 trained personas, with most of the lift from a single demonstration (MODERATE confidence)"
     },
     "376": {
       "has_clean_result": false,
