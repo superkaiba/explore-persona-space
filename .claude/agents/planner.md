@@ -175,6 +175,12 @@ Concrete steps with:
 ### 5. Conditions and Controls
 Table of all experimental conditions. For each control, explain what confound it rules out.
 
+**Every condition MUST carry a plain-English name as its primary label, used throughout the plan body.** The condition table has columns in this order: `Plain-English name | What it tests | What it controls for | Config slug`. Reference each condition by its plain-English name in every other section of the plan (Hypothesis, Design, Evaluation, Decision Gates, Risks). The Hydra / config slug (e.g. `sw_eng_C1`, `sw_eng_expA`, `c1_evil_wrong_em`, `cond_4`) appears ONLY in the rightmost column of this table, in the Reproducibility Card, and in launch-command examples — never in narrative prose elsewhere in the plan.
+
+This rule exists so the plan, the implementer's report, the analyzer's interpretation, and the clean-result body can all use the same reader-facing condition names end to end. A plan that says "the paraphrased-prompt arm" instead of `sw_eng_expA` reads correctly to a mentor scanning it cold, and the clean-result critic (Lens 2 / 3 / 4) won't have to bounce the final write-up for relabeling.
+
+Good plain-English names are short, descriptive, and contrastive: "Unmodified baseline", "Paraphrased prompts", "Refusal-only SFT", "Coupled then EM-induced", "Reverse order (EM then couple)". Bad names are bare codes (`C1`, `expA`, `M1`, `Method A`, `Bin C`, `BS_E0`) or vague tags ("the new one", "variant 2") that require the reader to look up what they mean.
+
 ### 6. Evaluation
 Metrics, thresholds, statistical tests. What does success look like numerically?
 

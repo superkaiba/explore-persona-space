@@ -106,6 +106,19 @@ WHY. If FAIL, quote the offending phrase from the body.
   to the figure.
 - Plain language, accessible to a non-specialist. No jargon undefined
   in the TL;DR.
+- **No opaque condition / run / config codes.** Hydra-style or
+  config-derived condition names — anything matching the shape
+  `[a-z]+_[A-Za-z0-9]+` (e.g. `sw_eng_C1`, `sw_eng_expA`,
+  `sw_eng_expB-P1`, `cond_4`, `c1_evil_wrong_em`), short-letter labels
+  (`M1`, `Method A`, `Bin C`, `K1`, `BS_E0`), or any token that names
+  a condition without being self-explanatory English — **must NEVER
+  appear in the TL;DR**. Always use the plain-English name of the
+  condition (e.g. "the paraphrased-prompt arm", "the unmodified
+  code-evaluation baseline", "the model finetuned only on
+  software-engineering refusals"). FAIL on any occurrence. Code-style
+  parentheticals like `"the paraphrased-prompt arm (sw_eng_expA)"`
+  are ALSO forbidden in the TL;DR — the bare code goes in
+  Reproducibility, not here.
 - If raw completions weren't uploaded for this run, Next steps
   contains a bullet `re-run with raw-completion upload`. Check the
   run metadata or Details narrative.
@@ -121,6 +134,18 @@ WHY. If FAIL, quote the offending phrase from the body.
 - Caption explains axes + observed trend + confidence in plain
   English. No math notation in the caption.
 - No `<figure>` / `<img>` HTML — markdown only.
+- **No opaque condition / run / config codes anywhere in the
+  figure.** This covers: axis labels, axis tick labels, legend
+  entries, bar/line group labels, in-figure annotations, alt text,
+  AND the caption. Anything matching `[a-z]+_[A-Za-z0-9]+` (e.g.
+  `sw_eng_C1`, `sw_eng_expA`, `sw_eng_expB-P1`), short-letter labels
+  (`M1`, `Method A`, `Bin C`, `BS_E0`), or any non-self-explanatory
+  token → **FAIL with "regenerate the figure with reader-facing
+  labels"**. Use plain-English condition names directly on the chart
+  (e.g. "paraphrased prompts", "unmodified baseline", "SFT only on
+  refusals"). Code-style parentheticals (`"paraphrased prompts
+  (sw_eng_expA)"`) are ALSO forbidden in the caption — bare codes
+  belong in Reproducibility, not in the figure or its caption.
 
 ### Lens 4 — Details narrative
 
@@ -169,6 +194,18 @@ WHY. If FAIL, quote the offending phrase from the body.
   FAIL — confound-disclosure asymmetry, not a stylistic nit. See
   iterations.md 2026-05-22 (task #375) for the canonical before/after.
 - Parameters table near the end, before the confidence sentence.
+- **No opaque condition / run / config codes in Details prose or in
+  any results table inside Details.** Conditions are referred to by
+  their plain-English name throughout the narrative AND in column /
+  row headers of any per-condition table (e.g. "Paraphrased prompts"
+  not `sw_eng_expA`; "Unmodified baseline" not `sw_eng_C1`). Tokens
+  matching `[a-z]+_[A-Za-z0-9]+`, `[A-Z][0-9]+` short labels (`M1`,
+  `K1`), `Method A/B/C`, `Bin A/B/C`, `BS_E0..E4` → **FAIL**. The
+  bare config / Hydra slug for each condition belongs ONLY in
+  Reproducibility (artifact paths, eval JSON keys) and in the
+  Parameters table's `config` row — never in Details prose, result
+  bullets, surprise H3s, stratification H3s, or in-Details table
+  headers / cell labels.
 - **Confidence sentence** near the end, exactly:
   `Confidence: LOW | MODERATE | HIGH — <one sentence naming the
   binding constraint (LOW/MODERATE) or surviving evidence (HIGH)>.`
