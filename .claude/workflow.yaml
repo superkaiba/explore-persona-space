@@ -397,32 +397,93 @@ gates:
         implementer agent specs.)
 
 # ──────────────────────────────────────────────────────────────────────
-# STATE-TO-status:blocked criteria. Restored verbatim from the GH-era
-# yaml. CLAUDE.md "Critical Rules" enumerates these. Five items.
+# STATE-TO-status:blocked criteria.
+#
+# PHILOSOPHY (revised 2026-05-22, per user directive): block ONLY when
+# the orchestrator genuinely needs user input that no autonomous
+# reasoning can supply. Cap/retry events should trigger a STRATEGY PIVOT
+# (different design, different model, different scope), NOT an automatic
+# block. **Continuing on your own is the default.** Reviewers reject
+# PRs that block prematurely.
+#
+# Cross-referenced from CLAUDE.md "STATE-TO-blocked criteria".
 # ──────────────────────────────────────────────────────────────────────
 halt_criteria:
   - id: 1
     name: outside_worktree_writes
-    description: "Assumption would silently delete or overwrite user files OUTSIDE the worktree."
+    description: |
+      Assumption would silently delete or overwrite user files OUTSIDE
+      the worktree (security boundary; irreversible).
   - id: 2
     name: api_contract_change
     description: |
       Assumption changes a public API contract (status name semantics,
       marker schema, agent file location, task.py subcommand name).
+      Semantic-compatibility risk; the user owns the contract.
   - id: 3
-    name: subagent_blocker
+    name: subagent_blocker_with_needs_user
     description: |
-      consistency-checker / code-reviewer / interpretation-critic /
-      clean-result-critic returns BLOCKER or FAIL with `needs-user` flag.
+      Subagent (consistency-checker / code-reviewer / interpretation-critic /
+      clean-result-critic) returns BLOCKER or FAIL with an EXPLICIT
+      `needs-user` flag. A bare FAIL without `needs-user` is NOT a
+      block trigger — the orchestrator pivots strategy and tries a
+      different angle (see § pivot_criteria).
   - id: 4
-    name: infra_respawn_cap
-    description: "`failure_class: infra` respawn cap (3) hit."
+    name: factual_question_only_user_knows
+    description: |
+      A choice required by the workflow depends on user-private knowledge
+      (priority between tasks, taste-call on design, scope decisions
+      between multiple valid paths) where no project memory / plan /
+      codebase signal disambiguates. When in doubt, the bar to ask is
+      HIGH — continue with a documented `Assumption: ...` instead unless
+      the wrong choice has a meaningful cost the user cares about.
   - id: 5
     name: completion_audit_incomplete
     description: |
       Step 10 completion audit (`epm:completion-audit`) finds any numbered
       ask / acceptance criterion / explicit deliverable from the ORIGINAL
       task body that is unaddressed by the work artifacts.
+
+# ──────────────────────────────────────────────────────────────────────
+# Pivot criteria — what to do INSTEAD of blocking on cap/retry events.
+# The orchestrator MUST attempt a strategy pivot before considering
+# `status:blocked` on any of these.
+# ──────────────────────────────────────────────────────────────────────
+pivot_criteria:
+  - trigger: code_review_ensemble_cap_3
+    pivot_action: |
+      After 3 implementer-round FAILs on the same strategic approach,
+      re-invoke `/adversarial-planner` with an explicit pivot scope:
+      "the implementation strategy isn't working — propose a
+      fundamentally different design (drop offending component / swap
+      model / change architectural approach)." Treat the resulting plan
+      revision as round 1 of a NEW implementer cycle (cap-3 resets).
+      Block only after ~3 such pivots have all failed.
+  - trigger: infra_respawn_cap_3
+    pivot_action: |
+      After 3 experimenter respawns on the same pod intent, try a
+      different pod intent (e.g., `ft-7b` → `lora-7b`, single-GPU →
+      multi-GPU), a different image, or a different GPU type. Block
+      only if pod-side resource constraints (RunPod supply, quota)
+      prevent ANY viable provisioning.
+  - trigger: model_refusal_cascade
+    pivot_action: |
+      When a model (Sonnet, GPT, etc.) refuses a needed task across
+      multiple rounds (e.g., crisis-roleplay, jailbreak-impersonation),
+      pivot via project-memory conventions: reframe the prompt
+      (category labels, 3rd-person narrator), drop the offending
+      domain/condition, or swap the model. Block only after ~3 pivots
+      across the reframe/drop/swap axis have all failed.
+  - trigger: interpretation_critic_cap_3
+    pivot_action: |
+      After 3 analyzer ↔ interpretation-critic rounds, advance regardless
+      with residual debt surfaced in `comments.jsonl`. Existing single-
+      critic policy. Do NOT block.
+  - trigger: clean_result_critic_cap_3
+    pivot_action: |
+      After 3 analyzer ↔ clean-result-critic rounds, advance regardless
+      with residual structural / register debt surfaced in
+      `comments.jsonl`. Do NOT block.
 
 # ──────────────────────────────────────────────────────────────────────
 # Subagent halt verdicts. Restored from the GH-era yaml with substrate
@@ -441,8 +502,12 @@ subagent_halt_conditions:
       bounces; with disjoint blockers, union the blockers (one round).
       PASS+FAIL dispatches `reconciler` (marker mode); reconciler verdict
       binds. On any effective FAIL, bounces to implementer up to 3 rounds
-      per reviewer (reconcile rounds free); on 4th ensemble FAIL,
-      status:blocked.
+      per reviewer (reconcile rounds free); on 4th ensemble FAIL, the
+      default is a STRATEGY PIVOT (see § pivot_criteria.code_review_ensemble_cap_3)
+      — re-invoke /adversarial-planner with explicit pivot scope and
+      treat the revised plan as a fresh implementer cycle (cap-3 resets).
+      Block only after ~3 such pivots have all FAILed AND no further
+      autonomous angle exists.
   - subagent: critic-ensemble
     verdict: "REVISE/REJECT after per-lens reconcile (worst-wins cross-lens)"
     action: |
@@ -451,7 +516,10 @@ subagent_halt_conditions:
       REJECT+REJECT bounces; APPROVE vs REVISE/REJECT dispatches
       `reconciler` (IN-CONTEXT mode, no events.jsonl marker). Cross-lens:
       worst verdict wins. On REVISE/REJECT, bounces to planner up to 3
-      rounds (reconcile rounds free); on 4th, status:blocked.
+      rounds (reconcile rounds free); on 4th, the default is a strategy
+      pivot (drop offending condition / swap eval design / change scope)
+      and another planner cycle (cap-3 resets). Block only when the
+      pivot space is exhausted.
   - subagent: interpretation-critic-ensemble
     verdict: "REVISE after reconcile (or REVISE+REVISE)"
     action: |

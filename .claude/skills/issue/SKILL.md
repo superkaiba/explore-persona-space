@@ -873,14 +873,26 @@ reconciler invocations.
   BOTH event bodies (Claude + Codex) AND the reconcile event (if
   present) as part of the brief. Implementer posts v<n+1>; loop back
   to 5a with `revision_round = n+1`.
-- **`final_verdict == FAIL` + revision_round>=3** -> move status to
-  `blocked`. Post abort summary, then post the §5 marker:
-  ```bash
-  uv run python scripts/post_step_completed.py --issue <N> --step 5b \
-    --exit-kind failure-exit \
-    --notes "code-review-ensemble FAIL round 3+; status:blocked"
-  ```
-  EXIT. User decides: revise plan, escalate, or override.
+- **`final_verdict == FAIL` + revision_round>=3** -> **STRATEGY PIVOT,
+  not block** (see CLAUDE.md "STATE-TO-`blocked` criteria" and
+  workflow.yaml § pivot_criteria.code_review_ensemble_cap_3). The
+  implementation strategy isn't working — same diff family has failed
+  3 rounds. Re-invoke `/adversarial-planner` with explicit pivot scope
+  in the brief: "the implementer can't make this strategy work. Propose
+  a fundamentally different design (drop the offending component / swap
+  model / change architectural approach)." Treat the revised plan as a
+  fresh implementer cycle (`revision_round` RESETS to 1 on the new
+  plan). Track pivots in a top-level `epm:strategy-pivot v<n>` marker
+  with the pivot rationale and what changes.
+
+  Only after ~3 fundamentally different strategies have all FAILed AND
+  no further autonomous angle exists, move status to `blocked` and
+  exit. Post the §5 marker with `--exit-kind failure-exit` and notes
+  enumerating the strategies tried and why each failed. User decides:
+  override, revise scope, or escalate the diagnostic loop.
+
+  Bare cap-3 FAIL is NOT a block trigger. Continuing autonomously via
+  pivot is the default.
 
 **Codex twin no-show fallback.** If the Codex wrapper posts
 `epm:failure v<m>` with `failure_class: codex-output-malformed` or

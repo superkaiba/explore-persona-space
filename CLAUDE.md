@@ -44,9 +44,15 @@ Outside these gates, NEVER ask "should I continue". When auto-continuing past a 
 
 **Halt-criterion contract.** Outside the 6 inline gates, NEVER use `AskUserQuestion`. If you genuinely need user input, post `epm:failure v1` with `failure_class: <code|infra|data>`, set `status:blocked`, exit. Enforced by `scripts/workflow_lint.py --check-asks` (pre-commit) — every `AskUserQuestion` mention in `.claude/agents/**.md` or `.claude/skills/**/SKILL.md` must carry `<!-- gate: <dotted_key> -->` resolving to workflow.yaml, or sit in a paragraph citing the gate. Anti-pattern examples carry `<!-- example: anti-pattern -->`.
 
-**STATE-TO-`blocked` criteria** (workflow.yaml § halt_criteria): outside-worktree writes, public-API contract changes, subagent BLOCKER/FAIL with `needs-user`, infra respawn cap (3) hit, Step 10 completion-audit finding unaddressed item from ORIGINAL experiment body.
+**STATE-TO-`blocked` criteria** (workflow.yaml § halt_criteria). Set `status:blocked` ONLY when the orchestrator has exhausted autonomous options AND genuinely needs user input to proceed. **Continuing on your own is the default.** Pivots (re-invoke `/adversarial-planner` with explicit pivot scope, drop a domain, swap an auditor model, try a different pod intent, change the architectural approach), retries with different angles, and project-memory-driven design changes are all autonomous moves — they do NOT require a block. Bar for "genuine user input needed":
+  1. **Factual question only the user knows** — priority, taste, scope-of-experiment, design preference between multiple valid paths, where no project memory / plan / codebase signal disambiguates.
+  2. **Outside-the-worktree state mutation** — security boundary, irreversible writes (deletion, force-push, credential changes — always ask).
+  3. **Public API contract change** — status enum, marker schema, task.py subcommand, agent file location.
+  4. **Step 10 completion-audit incomplete** — ORIGINAL task body has unaddressed numbered asks / acceptance criteria / explicit deliverables.
 
-**Subagent halt conditions** (workflow.yaml § subagent_halt_conditions): consistency-checker BLOCKER, code-reviewer FAIL (cap 3), interpretation-critic FATAL (cap 3), reviewer FAIL-with-`needs-user`, upload-verifier FAIL.
+  Cap-3 reaching its limit on a subagent ensemble is NOT a block trigger — it triggers a **strategy pivot** (different design, different model, different scope). Track pivots; block only after ~3 fundamentally different strategies have FAILed AND no further autonomous angle is available. When in doubt, continue.
+
+**Subagent halt conditions** (workflow.yaml § subagent_halt_conditions). When a subagent ensemble hits its 4th-round FAIL, the default response is a strategy pivot (re-invoke `/adversarial-planner` with pivot scope, drop the offending component, swap models, change the eval design); blocked is reserved for the case where the pivot space itself is exhausted. Bare FAIL without an explicit `needs-user` flag is NEVER a block trigger.
 
 ### Orchestrator vs subagent re-invocation
 
