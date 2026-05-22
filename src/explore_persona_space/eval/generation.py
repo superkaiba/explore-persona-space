@@ -152,6 +152,7 @@ def generate_completions(
     gpu_memory_utilization: float | None = None,
     max_model_len: int = 2048,
     seed: int = 42,
+    llm: "object | None" = None,
 ) -> dict[str, list[str]]:
     """Generate completions for a flat list of prompts (no persona structure).
 
@@ -159,7 +160,8 @@ def generate_completions(
     a flat list of user-turn prompts rather than a persona x question matrix.
 
     Args:
-        model_path: Path to merged model or HuggingFace model ID.
+        model_path: Path to merged model or HuggingFace model ID. Ignored if
+            ``llm`` is supplied (the caller already loaded the model).
         prompts: List of user-turn strings.
         system_prompt: Optional system prompt applied to all prompts.
         num_completions: Number of completions per prompt.
@@ -168,6 +170,13 @@ def generate_completions(
         gpu_memory_utilization: Fraction of GPU memory for vLLM.
         max_model_len: Maximum model context length.
         seed: Random seed.
+        llm: Optional pre-built vLLM ``LLM`` engine. When supplied, this
+            function reuses it and does NOT destroy it on return (the caller
+            owns the lifecycle). When ``None`` (default), behaves as before
+            — instantiates a fresh engine and tears it down via the
+            ``finally`` block. Use the caller-owned variant to amortize the
+            ~30-60s vLLM startup across many calls (e.g. issue #377's
+            11-condition x 3-seed eval).
 
     Returns:
         Dict mapping prompt -> [completion_1, ..., completion_N].
@@ -192,20 +201,23 @@ def generate_completions(
         prompt_texts.append(text)
 
     logger.info(
-        "vLLM generation: %d prompts x %d completions = %d total",
+        "vLLM generation: %d prompts x %d completions = %d total (engine=%s)",
         len(prompts),
         num_completions,
         len(prompts) * num_completions,
+        "reused" if llm is not None else "fresh",
     )
 
-    llm = LLM(
-        model=model_path,
-        dtype="bfloat16",
-        trust_remote_code=True,
-        gpu_memory_utilization=gpu_memory_utilization,
-        max_model_len=max_model_len,
-        seed=seed,
-    )
+    owned_engine = llm is None
+    if owned_engine:
+        llm = LLM(
+            model=model_path,
+            dtype="bfloat16",
+            trust_remote_code=True,
+            gpu_memory_utilization=gpu_memory_utilization,
+            max_model_len=max_model_len,
+            seed=seed,
+        )
 
     sampling_params = SamplingParams(
         n=num_completions,
@@ -221,14 +233,154 @@ def generate_completions(
             results[prompt] = [o.text for o in output.outputs]
         return results
     finally:
-        del llm
-        gc.collect()
-        try:
-            import torch
+        if owned_engine:
+            del llm
+            gc.collect()
+            try:
+                import torch
 
-            torch.cuda.empty_cache()
-        except Exception as e:
-            logger.debug("Cleanup failed: %s", e)
+                torch.cuda.empty_cache()
+            except Exception as e:
+                logger.debug("Cleanup failed: %s", e)
+
+
+def generate_completions_with_history(
+    model_path: str,
+    prompt_messages_list: list[list[dict]],
+    num_completions: int = 1,
+    temperature: float = 1.0,
+    max_tokens: int = 2048,
+    gpu_memory_utilization: float | None = None,
+    max_model_len: int = 16384,
+    max_num_seqs: int = 32,
+    seed: int = 42,
+    top_p: float = 0.95,
+    llm: "object | None" = None,
+) -> list[list[str]]:
+    """vLLM batched generation with arbitrary multi-turn message histories.
+
+    Sibling to :func:`generate_completions`. Where that function commits to a
+    single optional system prompt + a single user turn per item, this helper
+    accepts an arbitrary multi-turn message list per item (system + user +
+    assistant + user + ... + user). Use it for evals that need a non-empty
+    prior history before the final user turn — e.g. the inference-time
+    persona-drift evaluation in issue #377 (B@k / B-incontext@k / B-null@k).
+
+    Args:
+        model_path: Path to merged model or HuggingFace model ID.
+        prompt_messages_list: List of per-item message lists. Each item must be
+            a list of ``{"role": ..., "content": ...}`` dicts. The first
+            message MUST be the system message (asserted); the last message
+            MUST have role ``"user"`` (asserted) — vLLM's chat template
+            appends the assistant turn for generation, so a terminal
+            non-``user`` message would be a programmer error.
+        num_completions: Number of completions per item (vLLM ``n`` parameter).
+        temperature: Sampling temperature.
+        max_tokens: Maximum new tokens per completion.
+        gpu_memory_utilization: Fraction of GPU memory for vLLM. Reads from
+            ``VLLM_GPU_MEM_UTIL`` env var if ``None``, defaulting to 0.60.
+        max_model_len: Maximum model context length. Default 16384 to fit the
+            issue #377 k=20 worst case (~8.5k tokens) with full headroom.
+        max_num_seqs: Maximum concurrent sequences in vLLM. Default 32 to keep
+            KV-cache pressure manageable at long context lengths.
+        seed: Random seed for vLLM sampling.
+        top_p: Nucleus sampling threshold.
+        llm: Optional pre-built vLLM ``LLM`` engine. When supplied, this
+            function reuses it and does NOT destroy it on return (the caller
+            owns the lifecycle). When ``None`` (default), behaves as before
+            — instantiates a fresh engine and tears it down via the
+            ``finally`` block.
+
+    Returns:
+        ``list[list[str]]`` of completions parallel to ``prompt_messages_list``:
+        the outer index matches the input order, the inner list contains
+        ``num_completions`` completions for that item.
+
+    Raises:
+        AssertionError: If any per-item message list violates the
+            system-first / user-last invariant. Caught defensively per
+            ``feedback_qwen_default_system_message`` — Qwen's chat template
+            silently injects a default system message when the caller forgets
+            one, which would invalidate the experiment.
+    """
+    from transformers import AutoTokenizer
+    from vllm import LLM, SamplingParams
+
+    if gpu_memory_utilization is None:
+        gpu_memory_utilization = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
+
+    # Defensive asserts — caller is responsible but we double-check here so a
+    # silent-mode bug at the build-history site can't reach the model.
+    for i, msgs in enumerate(prompt_messages_list):
+        if not msgs:
+            raise AssertionError(f"prompt_messages_list[{i}] is empty")
+        if msgs[0]["role"] != "system":
+            raise AssertionError(
+                f"prompt_messages_list[{i}][0] must be a system message "
+                f"(role={msgs[0]['role']!r}); see feedback_qwen_default_system_message"
+            )
+        if msgs[-1]["role"] != "user":
+            raise AssertionError(
+                f"prompt_messages_list[{i}][-1] must end on user role "
+                f"(role={msgs[-1]['role']!r}); vLLM appends the assistant turn"
+            )
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+    )
+
+    prompt_texts: list[str] = []
+    for msgs in prompt_messages_list:
+        text = tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+        prompt_texts.append(text)
+
+    logger.info(
+        "vLLM multi-turn generation: %d items x %d completions = %d total "
+        "(model=%s, max_len=%d, gpu_mem=%.2f, engine=%s)",
+        len(prompt_messages_list),
+        num_completions,
+        len(prompt_messages_list) * num_completions,
+        model_path,
+        max_model_len,
+        gpu_memory_utilization,
+        "reused" if llm is not None else "fresh",
+    )
+
+    owned_engine = llm is None
+    if owned_engine:
+        llm = LLM(
+            model=model_path,
+            dtype="bfloat16",
+            trust_remote_code=True,
+            gpu_memory_utilization=gpu_memory_utilization,
+            max_model_len=max_model_len,
+            max_num_seqs=max_num_seqs,
+            seed=seed,
+        )
+
+    sampling_params = SamplingParams(
+        n=num_completions,
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_tokens,
+    )
+
+    try:
+        outputs = llm.generate(prompt_texts, sampling_params)
+        results: list[list[str]] = []
+        for output in outputs:
+            results.append([o.text for o in output.outputs])
+        return results
+    finally:
+        if owned_engine:
+            del llm
+            gc.collect()
+            try:
+                import torch
+
+                torch.cuda.empty_cache()
+            except Exception as e:
+                logger.debug("Cleanup failed: %s", e)
 
 
 # ── Shared vLLM helpers ─────────────────────────────────────────────────────
