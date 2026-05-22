@@ -149,6 +149,16 @@ Minimum deliverables:
 
 Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig_paper`. Never save only PNG.
 
+**Figure URL in the body MUST be an absolute `raw.githubusercontent.com` permalink — NOT a relative path.** The EPS dashboard serves task-folder HTML artifacts but does NOT serve binary PNG/PDF files under `tasks/<N>/artifacts/`, so a relative reference like `![alt](artifacts/hero.png)` renders as a broken image in the browser (incident: task #365, 2026-05-22). Workflow:
+
+1. Save figures under `figures/issue_<N>/` (e.g. `figures/issue_<N>/hero.png`). Do NOT only drop them in the task's `artifacts/` folder — that path is dashboard-invisible for binaries.
+2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" && git push origin <branch>` BEFORE writing the body.
+3. Capture the commit SHA: `git rev-parse HEAD`.
+4. Reference the figure in `## Figure` with `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)` — pinned to the commit SHA, never `main`/`master`/`HEAD`.
+5. Alt text may contain `[brackets]` (e.g. literal marker names like `[ZLT]`); the verifier's image regex handles them.
+
+`verify_task_body.py` Check 4b (`Figure URL resolvable`) fails any body with a relative figure URL or a `main`/`master`/`HEAD`-pinned raw URL; the gate blocks promotion to `awaiting_promotion` until the URL is fixed.
+
 ### Step 3.5: Plot-verification (MANDATORY, before writing the body)
 
 For each figure that will appear in the body, you MUST visually inspect the rendered PNG before referencing it in the body. The Read tool can load PNG bytes — use it.
@@ -216,6 +226,51 @@ Write first to a local file `.claude/cache/experiment-<N>-clean-result.html` (th
 - **Statistical-test rationale**: a "Why this test" paragraph. Why Spearman not Pearson, why partial, what's being controlled for.
 - **Confidence-rationale line** near the end of the design block (right before the parameters table), in this exact shape: `Confidence: LOW | MODERATE | HIGH — <one sentence naming the binding constraint (LOW/MODERATE) or the evidence that survives scrutiny (HIGH)>.` The HIGH/MODERATE/LOW value MUST match the `(... confidence)` marker in the title.
 - **Parameters table** at the bottom, `<table class="setup">` with header column carrying a light background.
+
+### Step 4.5: Humanize-loop self-pass on the TL;DR block
+
+Before verifying, run a humanize-loop pass on the `<section id="tldr">`
+block only — NOT the `<details id="design">` dropdown, NOT the
+`<figcaption>`, NOT the `<details id="repro">` appendix. The TL;DR goes
+to mentors / the dashboard / eventually the paper; the other sections
+are agent-facing and tolerate denser prose.
+
+**Loop protocol (inline — subagents cannot spawn subagents, so the
+`humanize` skill's `loop` mode runs inside your context, not as a
+spawned hostile critic):**
+
+1. Read the current 4 `<li>` bullets in `<section id="tldr">`.
+2. Score against the six-axis hostile-critic rubric from
+   `humanize loop` mode (load `/humanize loop` if available, otherwise
+   apply the rubric from memory):
+   - **Vocabulary** — AI-tell words ("delve", "leverage", "underscore",
+     "navigate", "robust", "meticulous", "It is worth noting", "tapestry",
+     "in the realm of"). Score 0–3 (0 = none, 3 = pervasive).
+   - **Structure** — rule-of-three constructions, negative parallelisms
+     ("not just X but Y"), inflated symbolism, em-dash overuse beyond the
+     project's normal cadence. Score 0–3.
+   - **Rhythm** — sentence-length monotony, overly balanced phrasing,
+     metronomic cadence. Score 0–3.
+   - **Voice** — "we"-slippage (this project uses "I"), corporate
+     hedging ("can be seen as", "may potentially"), promotional
+     language ("groundbreaking", "remarkable"). Score 0–3.
+   - **Interpretation honesty** — buried caveats, hedging in places
+     that need direct claims, direct claims in places that need
+     hedging. Score 0–3.
+   - **Results-writing discipline** — effect sizes / named stats tests
+     in prose (banned per `verify_task_body.py` Lens 7 for clean-result
+     bodies), Δ-notation, jargon that the design dropdown hasn't yet
+     defined. Score 0–3.
+3. If any axis scored ≥ 2: revise the offending bullet(s) and re-score
+   from step 2. Cap at **3 internal cycles** — if still failing after 3,
+   ship the best version and flag the residual debt in a comment to the
+   user.
+4. If all axes scored ≤ 1: proceed to Step 5 (Verify).
+
+This loop is inline; do NOT spawn a subagent. The pass is on the
+TL;DR block only — the technical content in the design dropdown is
+allowed to carry project jargon since its readers are downstream agents
+and the reviewer audit chain.
 
 ### Step 5: Verify
 

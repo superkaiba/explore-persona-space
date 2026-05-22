@@ -6,8 +6,9 @@ description: >
   reads state from `body.md` frontmatter + `events.jsonl` markers under
   `tasks/<status>/<N>/`, and dispatches the next action (clarify ->
   adversarial-planner -> approval -> worktree + dispatch specialist ->
-  preflight -> run -> analyzer -> clean-result-critic -> test-verdict ->
-  auto-complete). clean-result-critic PASS (or test-verdict PASS for
+  preflight -> run -> analyzer -> humanize-loop (TL;DR) ->
+  clean-result-critic -> test-verdict -> auto-complete).
+  clean-result-critic PASS (or test-verdict PASS for
   code-change paths like type:infra / type:batch / type:analysis /
   type:survey) auto-advances the task to `completed` on the local file
   layout. For experiments, the source task parks at
@@ -439,7 +440,7 @@ to Step 0c.
 ### Step 0c: Why-this-experiment gate (safety net)
 
 The PM session is the **primary** enforcement point for the
-four-question gate (Mode 5 pre-spawn). Step 0c exists for the case
+three-question gate (Mode 5 pre-spawn). Step 0c exists for the case
 when the user bypasses PM and runs `/issue <N>` directly in a
 per-issue session — without this safety net the gate would have a
 hole.
@@ -1257,7 +1258,16 @@ iterative refinement between the analyzer and an interpretation-critic.
      revised.
    - Writes the **Interpretation** (background, methodology, results
      claim + hero figure + main takeaways + confidence, next steps).
-   - Generates plots via `paper-plots` skill.
+   - Generates plots via `paper-plots` skill, saves them under
+     `figures/issue_<N>/`, commits + pushes them to `main` BEFORE
+     writing the body, and references the hero in `## Figure` via
+     `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)` —
+     a SHA-pinned absolute URL the dashboard can fetch. Relative
+     `artifacts/...` / `figures/...` URLs render as broken images on
+     the dashboard and are rejected by `verify_task_body.py` Check 4b
+     (incident: task #365, 2026-05-22). See
+     `.claude/agents/analyzer.md` Step 3 for the full save-commit-pin
+     workflow.
    - Posts `epm:interpretation v1` on the source task.
 
 2. Spawn the **interpretation-critic ensemble** (fresh contexts, single
@@ -1314,8 +1324,65 @@ no separate task is created. The analyzer:
 Posts `epm:clean-result-drafted v1` on the source task with the title
 and a 2-sentence recap.
 
-Then proceed to **9a-bis (clean-result-critique loop)** before
-advancing status.
+Then proceed to **9a-humanize (TL;DR humanize-loop pass)** before
+advancing to clean-result-critic.
+
+**9a-humanize. TL;DR humanize-loop pass** (orchestrator-level — only on
+the first time `epm:clean-result-drafted v1` is posted, NOT on round-2/3
+revisions out of 9a-bis)
+
+The analyzer ran an inline humanize-quick self-pass on the TL;DR block
+during its draft (analyzer.md Step 4.5). This orchestrator step adds the
+second-opinion layer: a real `/humanize loop` invocation with a separate
+hostile critic subagent the analyzer could not spawn from inside its
+own subagent context.
+
+The pass targets the `<section id="tldr">` block ONLY (mirrored to the
+markdown `## TL;DR` H2 if the body shape is markdown rather than HTML
+sagan-card). Design dropdown, figcaption, and reproducibility appendix
+are out of scope — they carry project jargon on purpose, and the
+clean-result-critic in 9a-bis enforces register discipline on them.
+
+**Procedure:**
+
+1. Read the published body via `task.py view <N>`; extract the TL;DR
+   block.
+2. Invoke `/humanize loop` with the TL;DR block as the target. The skill
+   spawns a hostile critic subagent (from the orchestrator's context —
+   allowed; the analyzer could not because subagent-from-subagent is
+   forbidden) that scores against the six-axis rubric:
+   - vocabulary (AI-tell words)
+   - structure (rule-of-three, negative parallelisms, inflated symbolism)
+   - rhythm (sentence-length monotony, metronomic cadence)
+   - voice ("we"-slippage, corporate hedging, promotional language)
+   - interpretation honesty (buried caveats, misplaced hedging)
+   - results-writing discipline (effect sizes / named tests in prose,
+     Δ-notation, undefined jargon — anti-patterns from CLAUDE.md
+     "Statistics" rules and `verify_task_body.py` Lens 7)
+3. Loop until all axes score ≤ 1 OR **3 orchestrator-level cycles**
+   reached.
+4. If the loop revised the TL;DR, write the new body to
+   `/tmp/issue-<N>-humanize-loop.md`, then update via:
+   ```bash
+   uv run python scripts/task.py set-body <N> --file /tmp/issue-<N>-humanize-loop.md
+   uv run python scripts/verify_task_body.py --issue <N>
+   ```
+   The verifier MUST still PASS — the humanize loop is not allowed to
+   produce a body that breaks Lens 1-11 mechanical checks. If it does:
+   revert to the pre-loop body and surface the conflict to the user
+   (this is rare; the loop only edits prose, not structure).
+5. Post `epm:humanize-loop v1` on the source task with the final 6-axis
+   scores + a one-line note ("converged in cycle K" or "exited at cap,
+   residual debt: axis X scored 2 — flagged to user").
+
+**Skill availability fallback:** if `/humanize` is not loaded in the
+runtime (plugin missing), skip 9a-humanize entirely and proceed to
+9a-bis. The analyzer's inline Step 4.5 already provided a first-pass
+cleanup; the orchestrator pass is additive. Post
+`epm:humanize-loop v1` with `note: skipped — /humanize skill not
+loaded` so the audit log records the skip.
+
+**Then proceed to 9a-bis (clean-result-critique loop).**
 
 **9a-bis. Clean-result-critique loop** (only if status is `interpreting`,
 after Step 9a PASS)
