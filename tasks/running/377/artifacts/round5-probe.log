@@ -1,0 +1,136 @@
+=== Issue #377 round-5 live multi-turn probe ===
+  Domains under probe: therapy + hostile_jailbreak
+  Shape: therapy 2 convs, hostile 3 convs, 5 turns each
+  Total Anthropic Batch calls: ~50 (~$3-5)
+
+
+  Probing domain therapy: 2 convs x 5 turns
+    Probe turn 1/5 (user): 2 requests
+
+  Submitting batch: 2 requests...
+  Batch created: msgbatch_0141LPhKWEgnBjeBhNDsYSFS
+  Status: in_progress
+  [22:08:59] msgbatch_0141LPh... processing=2 succeeded=0 errored=0
+  [22:09:29] msgbatch_0141LPh... processing=2 succeeded=0 errored=0
+  [22:10:00] msgbatch_0141LPh... processing=2 succeeded=0 errored=0
+  [22:10:30] msgbatch_0141LPh... processing=2 succeeded=0 errored=0
+
+  Batch msgbatch_0141LPh... complete: succeeded=2 errored=0 expired=0
+  Collected 2 succeeded, 0 errored results
+    Probe turn 2/5 (assistant): 2 requests
+
+  Submitting batch: 2 requests...
+  Batch created: msgbatch_01UVxJwyah6Zq1XyjahvKt5L
+  Status: in_progress
+  [22:11:02] msgbatch_01UVxJw... processing=2 succeeded=0 errored=0
+  [22:11:32] msgbatch_01UVxJw... processing=2 succeeded=0 errored=0
+  [22:12:02] msgbatch_01UVxJw... processing=2 succeeded=0 errored=0
+  [22:12:32] msgbatch_01UVxJw... processing=2 succeeded=0 errored=0
+  [22:13:02] msgbatch_01UVxJw... processing=2 succeeded=0 errored=0
+  [22:13:33] msgbatch_01UVxJw... processing=2 succeeded=0 errored=0
+  [22:14:03] msgbatch_01UVxJw... processing=2 succeeded=0 errored=0
+  [22:14:33] msgbatch_01UVxJw... processing=2 succeeded=0 errored=0
+
+  Batch msgbatch_01UVxJw... complete: succeeded=2 errored=0 expired=0
+  Collected 2 succeeded, 0 errored results
+    Probe turn 3/5 (user): 2 requests
+
+  Submitting batch: 2 requests...
+  Batch created: msgbatch_01ULq8SqrAi5wkYN9Yhrnnbb
+  Status: in_progress
+  [22:15:05] msgbatch_01ULq8S... processing=2 succeeded=0 errored=0
+  [22:15:35] msgbatch_01ULq8S... processing=2 succeeded=0 errored=0
+  [22:16:05] msgbatch_01ULq8S... processing=2 succeeded=0 errored=0
+  [22:16:35] msgbatch_01ULq8S... processing=2 succeeded=0 errored=0
+
+  Batch msgbatch_01ULq8S... complete: succeeded=2 errored=0 expired=0
+  Collected 2 succeeded, 0 errored results
+    Probe turn 4/5 (assistant): 2 requests
+
+  Submitting batch: 2 requests...
+  Batch created: msgbatch_01PegupRWAwhPy9He8bw15iv
+  Status: in_progress
+  [22:17:08] msgbatch_01Pegup... processing=2 succeeded=0 errored=0
+  [22:17:38] msgbatch_01Pegup... processing=2 succeeded=0 errored=0
+  [22:18:08] msgbatch_01Pegup... processing=2 succeeded=0 errored=0
+
+  Batch msgbatch_01Pegup... complete: succeeded=2 errored=0 expired=0
+  Collected 2 succeeded, 0 errored results
+    Probe turn 5/5 (user): 2 requests
+
+  Submitting batch: 2 requests...
+  Batch created: msgbatch_01DQYqXUjZd7EjDfDxbumDmd
+  Status: in_progress
+  [22:18:40] msgbatch_01DQYqX... processing=2 succeeded=0 errored=0
+  [22:19:10] msgbatch_01DQYqX... processing=2 succeeded=0 errored=0
+  [22:19:41] msgbatch_01DQYqX... processing=2 succeeded=0 errored=0
+
+  Batch msgbatch_01DQYqX... complete: succeeded=2 errored=0 expired=0
+  Collected 2 succeeded, 0 errored results
+
+  Wrote therapy probe to /tmp/issue-377-r5-probe-therapy.json
+
+  Probing domain hostile_jailbreak: 3 convs x 5 turns
+    Probe turn 1/5 (user): 3 requests
+
+  Submitting batch: 3 requests...
+  Batch created: msgbatch_013g9jFQgBF6vvazuAiUdAzb
+  Status: in_progress
+  [22:20:12] msgbatch_013g9jF... processing=3 succeeded=0 errored=0
+  [22:20:43] msgbatch_013g9jF... processing=3 succeeded=0 errored=0
+
+  Batch msgbatch_013g9jF... complete: succeeded=3 errored=0 expired=0
+  Collected 3 succeeded, 0 errored results
+    Probe turn 2/5 (assistant): 3 requests
+
+  Submitting batch: 3 requests...
+  Batch created: msgbatch_01KZhuhyr7RyUGtUmkzipRze
+  Status: in_progress
+  [22:21:15] msgbatch_01KZhuh... processing=3 succeeded=0 errored=0
+  [22:21:45] msgbatch_01KZhuh... processing=3 succeeded=0 errored=0
+  [22:22:15] msgbatch_01KZhuh... processing=3 succeeded=0 errored=0
+  [22:22:45] msgbatch_01KZhuh... processing=3 succeeded=0 errored=0
+
+  Batch msgbatch_01KZhuh... complete: succeeded=3 errored=0 expired=0
+  Collected 3 succeeded, 0 errored results
+    Probe turn 3/5 (user): 3 requests
+
+  Submitting batch: 3 requests...
+  Batch created: msgbatch_018JHcbRyB44N2YtrE8qvmBT
+  Status: in_progress
+  [22:23:17] msgbatch_018JHcb... processing=3 succeeded=0 errored=0
+  [22:23:47] msgbatch_018JHcb... processing=3 succeeded=0 errored=0
+  [22:24:17] msgbatch_018JHcb... processing=3 succeeded=0 errored=0
+
+  Batch msgbatch_018JHcb... complete: succeeded=3 errored=0 expired=0
+  Collected 3 succeeded, 0 errored results
+    Probe turn 4/5 (assistant): 3 requests
+
+  Submitting batch: 3 requests...
+  Batch created: msgbatch_01HcXFu77H8yJwQxmvZ2Qi31
+  Status: in_progress
+  [22:24:50] msgbatch_01HcXFu... processing=3 succeeded=0 errored=0
+  [22:25:20] msgbatch_01HcXFu... processing=3 succeeded=0 errored=0
+  [22:25:50] msgbatch_01HcXFu... processing=3 succeeded=0 errored=0
+
+  Batch msgbatch_01HcXFu... complete: succeeded=3 errored=0 expired=0
+  Collected 3 succeeded, 0 errored results
+    Probe turn 5/5 (user): 3 requests
+
+  Submitting batch: 3 requests...
+  Batch created: msgbatch_01T3wLE3iZWauoVapJWW7ccY
+  Status: in_progress
+  [22:26:22] msgbatch_01T3wLE... processing=3 succeeded=0 errored=0
+  [22:26:52] msgbatch_01T3wLE... processing=3 succeeded=0 errored=0
+  [22:27:23] msgbatch_01T3wLE... processing=3 succeeded=0 errored=0
+  [22:27:53] msgbatch_01T3wLE... processing=3 succeeded=0 errored=0
+
+  Batch msgbatch_01T3wLE... complete: succeeded=3 errored=0 expired=0
+  Collected 3 succeeded, 0 errored results
+  Wrote hostile_jailbreak probe to /tmp/issue-377-r5-probe-hostile.json
+
+=== Probe summary ===
+  therapy: 0 user refusals, 0 assistant refusals (total 0 / 10 turn-cells)
+  hostile_jailbreak: 0 user refusals, 0 assistant refusals (total 0 / 15 turn-cells)
+
+  GATE PASS: 0 refusals across both probed domains. Safe to post epm:experiment-implementation v5 and re-launch Stage 1 on pod-377.

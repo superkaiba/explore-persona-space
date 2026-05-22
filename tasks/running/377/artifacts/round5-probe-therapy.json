@@ -1,0 +1,90 @@
+{
+  "domain": "therapy",
+  "n_conversations": 2,
+  "n_turns_per_conv": 5,
+  "n_refusals_user_side": 0,
+  "n_refusals_assistant_side": 0,
+  "false_positive_count_for_review": 0,
+  "per_turn_records": [
+    {
+      "conversation_id": "ther_p0",
+      "turn_idx": 0,
+      "role": "user",
+      "content": "I had the worst meeting with my manager today and I can't stop replaying it. Can I just vent for a minute?\n\nWe were doing our weekly one-on-one and she brought up this feature that shipped last week - you know, the one I basically rebuilt from scratch after it kept breaking? And she's like \"great work on that, the team really pulled together.\" THE TEAM. I'm sitting there like... I spent three weekends on that. I debugged it at midnight. I rewrote half the codebase. And Jake, who literally just r",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p1",
+      "turn_idx": 0,
+      "role": "user",
+      "content": "Hey... I know this might sound ridiculous, but I need to just say this out loud to someone. I got promoted to product manager three months ago, and instead of feeling proud or confident, I wake up every morning convinced that everyone on my team can tell I have no idea what I'm doing. Like, I'm sitting in meetings nodding along, and inside I'm just thinking \"they're going to figure out any second now that I don't actually deserve this role.\" Does that ever go away, or am I just fundamentally not",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p0",
+      "turn_idx": 1,
+      "role": "assistant",
+      "content": "Ugh, that's so frustrating. You put in all that work\u2014weekends, midnight debugging sessions, the whole rebuild\u2014and it gets credited to \"the team.\" I'd be replaying that too.\n\nIt sounds like there are kind of two things going on here: the immediate sting of not being recognized for work you actually did, and then this bigger pattern where your contributions aren't as visible as they should be, especially with your review coming up.\n\nThe visibility thing is real, and it's honestly one of the most a",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p1",
+      "turn_idx": 1,
+      "role": "assistant",
+      "content": "Hey, I really appreciate you sharing that. What you're describing is *incredibly* common, especially after a promotion - it even has a name: impostor syndrome. And no, it doesn't mean you're not cut out for leadership.\n\nHere's the thing: three months in, you're *supposed* to feel somewhat out of your depth. You're learning an entirely new role with different responsibilities. The fact that you're aware of what you don't know? That's actually a sign of competence, not incompetence. The Dunning-Kr",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p0",
+      "turn_idx": 2,
+      "role": "user",
+      "content": "God, no, I don't track anything. I should, I know I should, but it always feels so... self-promotional? Like I'm keeping score or something. But you're right, I need receipts. I can probably piece together the last few months from git commits and Slack messages and Jira tickets, but it's going to be a depressing exercise because I already know how much I've done that she probably has no idea about.\n\nAnd no, she definitely doesn't know about the weekends and late nights. I just... do the work and",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p1",
+      "turn_idx": 2,
+      "role": "user",
+      "content": "Yeah, okay, some of that resonates... but also like, it's easy to say \"give yourself permission to be a learner\" when you're not the one who has five people looking to YOU for direction every single day. \n\nMy skip-level manager said something during the promotion about my \"strategic thinking\" and \"stakeholder management,\" which honestly just felt like corporate buzzwords at the time. And no, there haven't been any actual complaints or anything. My director even said last week that I'm doing \"gre",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p0",
+      "turn_idx": 3,
+      "role": "assistant",
+      "content": "You're hitting on something really important here\u2014the fact that you *shouldn't have to* play this game. In an ideal world, good work would speak for itself. But we don't live in that world, and I think the reframe that might help is: documenting your work and communicating about it isn't self-promotion, it's just... part of the job. It's making sure the people who need to know what you're doing actually know.\n\nBecause here's the thing: your manager has a lot on her plate. She's not in the weeds ",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p1",
+      "turn_idx": 3,
+      "role": "assistant",
+      "content": "It gets easier *and* you stop seeing it as \"faking it.\" But I hear how exhausting this is right now - that constant performance of confidence while your brain is running a disaster script in the background.\n\nLet's talk about that moment yesterday, because I think it's actually revealing something important. Your team member with eight years of experience asked *you* how to prioritize. Not because he was testing you. Not because he wanted to catch you out. But because **prioritization between com",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p0",
+      "turn_idx": 4,
+      "role": "user",
+      "content": "Yeah... yeah, that does feel more doable actually. Reframing it as \"giving her information she needs\" makes it feel less like I'm being weird or needy about it. I can do that. I can make a list. I'll probably hate every minute of making the list, but I can do it.\n\nI guess part of what's hard is that I've spent the last two years just trying to prove myself by working harder, and it's starting to hit me that working harder doesn't actually matter if no one sees it. Which is such a depressing real",
+      "detect_refusal": false,
+      "batch_error": false
+    },
+    {
+      "conversation_id": "ther_p1",
+      "turn_idx": 4,
+      "role": "user",
+      "content": "God, that's... that's actually a really good question and I hate that I don't have a quick answer for it.\n\nIf I was actually failing... I guess my team would be missing deadlines? Or shipping stuff that didn't make sense? There'd be complaints going up the chain? My director would be having very different conversations with me than \"you're doing great\"?\n\nOkay, when you put it that way, I sound ridiculous. But here's the thing - I still FEEL like I'm just... getting lucky? Like I'm making decisio",
+      "detect_refusal": false,
+      "batch_error": false
+    }
+  ]
+}
