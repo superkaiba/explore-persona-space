@@ -1,0 +1,17 @@
+# Example cloudflared tunnel config for the EPS dashboard.
+# Copy to ~/.cloudflared/eps-dashboard.yml after running:
+#   cloudflared tunnel login
+#   cloudflared tunnel create eps-dashboard
+#   cloudflared tunnel route dns eps-dashboard eps.superkaiba.com
+#
+# The `create` step prints a tunnel UUID and writes credentials to
+# ~/.cloudflared/<uuid>.json. Substitute that UUID below.
+
+tunnel: __replace_with_tunnel_uuid_from_create_step__
+credentials-file: /home/thomasjiralerspong/.cloudflared/__replace_with_tunnel_uuid__.json
+
+ingress:
+  - hostname: eps.superkaiba.com
+    service: http://127.0.0.1:3010
+  # Catch-all (required). 404 anything that doesn't match above.
+  - service: http_status:404

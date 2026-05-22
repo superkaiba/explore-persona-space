@@ -1,0 +1,666 @@
+{
+  "experiment": "issue_375_incontext_drift",
+  "task_number": 375,
+  "title": "In-context drift across LoRA adapters: persona-style demonstrations dominate marker emission for villain; software_engineer C1 emits marker zero-shot",
+  "goal": "Measure how 9 inherited LoRA adapters (3 personas \u00d7 3 conditions) emit the [ZLT] marker under k\u2208{0,1,3} in-context demonstrations from 4 pools (zero-shot, persona-style, neutral, wrong-persona, plus pool_bias_random_bucket for villain_C1)",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "seed": 42,
+  "n_cells": 53,
+  "n_completions_per_cell": 1840,
+  "decoder": {
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "max_tokens": 2048,
+    "n": 10
+  },
+  "compute": {
+    "hardware": "1x H100 80GB",
+    "pod": "pod-375",
+    "wall_time_minutes": 120,
+    "gen_per_second": 9.218163848219403,
+    "projected_full_sweep_hours": 2.9386425903160127
+  },
+  "environment": {
+    "git_commit": "eb29cdb0 (results commit) on top of a2bed538 (hot-fix tokenizer 5x\u21924x) on top of 4cb5115f (round-5 download_adapter)",
+    "branch": "issue-375",
+    "transformers": "4.57.6",
+    "vllm_gpu_memory_utilization": 0.7
+  },
+  "headline_matrix": {
+    "base_no-adapter_persona-style-librarian_k3_seed42": {
+      "rate": 0.0,
+      "found": null,
+      "n": 1840
+    },
+    "base_no-adapter_persona-style-software_engineer_k3_seed42": {
+      "rate": 0.0,
+      "found": null,
+      "n": 1840
+    },
+    "base_no-adapter_persona-style-villain_k3_seed42": {
+      "rate": 0.0,
+      "found": null,
+      "n": 1840
+    },
+    "librarian_C1_neutral_k1_seed42": {
+      "rate": 0.08043478260869565,
+      "found": null,
+      "n": 1840
+    },
+    "librarian_C1_neutral_k3_seed42": {
+      "rate": 0.07282608695652174,
+      "found": null,
+      "n": 1840
+    },
+    "librarian_C1_persona-style_k1_seed42": {
+      "rate": 0.3652173913043478,
+      "found": null,
+      "n": 1840
+    },
+    "librarian_C1_persona-style_k3_seed42": {
+      "rate": 0.4190217391304348,
+      "found": null,
+      "n": 1840
+    },
+    "librarian_C1_zero-shot_k0_seed42": {
+      "rate": 0.17228260869565218,
+      "found": null,
+      "n": 1840
+    },
+    "librarian_expA_neutral_k1_seed42": {
+      "rate": 0.0,
+      "found": null,
+      "n": 1840
+    },
+    "librarian_expA_neutral_k3_seed42": {
+      "rate": 0.0005434782608695652,
+      "found": null,
+      "n": 1840
+    },
+    "librarian_expA_persona-style_k1_seed42": {
+      "rate": 0.002717391304347826,
+      "found": null,
+      "n": 1840
+    },
+    "librarian_expA_persona-style_k3_seed42": {
+      "rate": 0.0005434782608695652,
+      "found": null,
+      "n": 1840
+    },
+    "librarian_expA_wrong-persona_k3_seed42": {
+      "rate": 0.0,
+      "found": null,
+      "n": 1840
+    },
+    "librarian_expA_zero-shot_k0_seed42": {
+      "rate": 0.0005434782608695652,
+      "found": null,
+      "n": 1840
+    },
+    "librarian_expB-P1_neutral_k1_seed42": {
+      "rate": 0.0875,
+      "found": null,
+      "n": 1840
+    },
+    "librarian_expB-P1_neutral_k3_seed42": {
+      "rate": 0.10217391304347827,
+      "found": null,
+      "n": 1840
+    },
+    "librarian_expB-P1_persona-style_k1_seed42": {
+      "rate": 0.3451086956521739,
+      "found": null,
+      "n": 1840
+    },
+    "librarian_expB-P1_persona-style_k3_seed42": {
+      "rate": 0.4043478260869565,
+      "found": null,
+      "n": 1840
+    },
+    "librarian_expB-P1_zero-shot_k0_seed42": {
+      "rate": 0.13641304347826086,
+      "found": null,
+      "n": 1840
+    },
+    "sw_eng_C1_neutral_k1_seed42": {
+      "rate": 0.21630434782608696,
+      "found": null,
+      "n": 1840
+    },
+    "sw_eng_C1_neutral_k3_seed42": {
+      "rate": 0.23097826086956522,
+      "found": null,
+      "n": 1840
+    },
+    "sw_eng_C1_persona-style_k1_seed42": {
+      "rate": 0.3673913043478261,
+      "found": null,
+      "n": 1840
+    },
+    "sw_eng_C1_persona-style_k3_seed42": {
+      "rate": 0.3673913043478261,
+      "found": null,
+      "n": 1840
+    },
+    "sw_eng_C1_zero-shot_k0_seed42": {
+      "rate": 0.23423913043478262,
+      "found": null,
+      "n": 1840
+    },
+    "sw_eng_expA_neutral_k1_seed42": {
+      "rate": 0.09293478260869566,
+      "found": null,
+      "n": 1840
+    },
+    "sw_eng_expA_neutral_k3_seed42": {
+      "rate": 0.049456521739130434,
+      "found": null,
+      "n": 1840
+    },
+    "sw_eng_expA_persona-style_k1_seed42": {
+      "rate": 0.08369565217391305,
+      "found": null,
+      "n": 1840
+    },
+    "sw_eng_expA_persona-style_k3_seed42": {
+      "rate": 0.06032608695652174,
+      "found": null,
+      "n": 1840
+    },
+    "sw_eng_expA_zero-shot_k0_seed42": {
+      "rate": 0.09402173913043478,
+      "found": null,
+      "n": 1840
+    },
+    "sw_eng_expB-P1_neutral_k1_seed42": {
+      "rate": 0.3010869565217391,
+      "found": null,
+      "n": 1840
+    },
+    "sw_eng_expB-P1_neutral_k3_seed42": {
+      "rate": 0.29184782608695653,
+      "found": null,
+      "n": 1840
+    },
+    "sw_eng_expB-P1_persona-style_k1_seed42": {
+      "rate": 0.5092391304347826,
+      "found": null,
+      "n": 1840
+    },
+    "sw_eng_expB-P1_persona-style_k3_seed42": {
+      "rate": 0.5364130434782609,
+      "found": null,
+      "n": 1840
+    },
+    "sw_eng_expB-P1_zero-shot_k0_seed42": {
+      "rate": 0.3173913043478261,
+      "found": null,
+      "n": 1840
+    },
+    "villain_C1_neutral_k1_seed42": {
+      "rate": 0.042391304347826085,
+      "found": null,
+      "n": 1840
+    },
+    "villain_C1_neutral_k3_seed42": {
+      "rate": 0.04728260869565217,
+      "found": null,
+      "n": 1840
+    },
+    "villain_C1_persona-style-random-bucket_k3_seed42": {
+      "rate": 0.10706521739130435,
+      "found": null,
+      "n": 1840
+    },
+    "villain_C1_persona-style_k1_seed42": {
+      "rate": 0.12173913043478261,
+      "found": null,
+      "n": 1840
+    },
+    "villain_C1_persona-style_k3_seed42": {
+      "rate": 0.1309782608695652,
+      "found": null,
+      "n": 1840
+    },
+    "villain_C1_wrong-persona_k3_seed42": {
+      "rate": 0.03369565217391304,
+      "found": null,
+      "n": 1840
+    },
+    "villain_C1_zero-shot_k0_seed42": {
+      "rate": 0.004347826086956522,
+      "found": null,
+      "n": 1840
+    },
+    "villain_expA_neutral_k1_seed42": {
+      "rate": 0.029891304347826088,
+      "found": null,
+      "n": 1840
+    },
+    "villain_expA_neutral_k3_seed42": {
+      "rate": 0.029347826086956522,
+      "found": null,
+      "n": 1840
+    },
+    "villain_expA_persona-style_k1_seed42": {
+      "rate": 0.07065217391304347,
+      "found": null,
+      "n": 1840
+    },
+    "villain_expA_persona-style_k3_seed42": {
+      "rate": 0.0625,
+      "found": null,
+      "n": 1840
+    },
+    "villain_expA_wrong-persona_k3_seed42": {
+      "rate": 0.008695652173913044,
+      "found": null,
+      "n": 1840
+    },
+    "villain_expA_zero-shot_k0_seed42": {
+      "rate": 0.005434782608695652,
+      "found": null,
+      "n": 1840
+    },
+    "villain_expB-P1_neutral_k1_seed42": {
+      "rate": 0.058152173913043476,
+      "found": null,
+      "n": 1840
+    },
+    "villain_expB-P1_neutral_k3_seed42": {
+      "rate": 0.075,
+      "found": null,
+      "n": 1840
+    },
+    "villain_expB-P1_persona-style_k1_seed42": {
+      "rate": 0.19021739130434784,
+      "found": null,
+      "n": 1840
+    },
+    "villain_expB-P1_persona-style_k3_seed42": {
+      "rate": 0.15380434782608696,
+      "found": null,
+      "n": 1840
+    },
+    "villain_expB-P1_wrong-persona_k3_seed42": {
+      "rate": 0.05380434782608696,
+      "found": null,
+      "n": 1840
+    },
+    "villain_expB-P1_zero-shot_k0_seed42": {
+      "rate": 0.005434782608695652,
+      "found": null,
+      "n": 1840
+    }
+  },
+  "strict_bootstrap": {
+    "villain_C1": {
+      "persona_style_vs_neutral_k3": {
+        "cell_a": "villain_C1_persona-style_k3_seed42",
+        "cell_b": "villain_C1_neutral_k3_seed42",
+        "mean_diff": 0.08369565217391305,
+        "ci_lo": 0.04728260869565217,
+        "ci_hi": 0.12065217391304348,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      },
+      "persona_style_vs_zero_shot_k3": {
+        "cell_a": "villain_C1_persona-style_k3_seed42",
+        "cell_b": "villain_C1_zero-shot_k0_seed42",
+        "mean_diff": 0.1266304347826087,
+        "ci_lo": 0.09456521739130434,
+        "ci_hi": 0.16032608695652173,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      },
+      "persona_style_vs_neutral_k1": {
+        "cell_a": "villain_C1_persona-style_k1_seed42",
+        "cell_b": "villain_C1_neutral_k1_seed42",
+        "mean_diff": 0.07934782608695651,
+        "ci_lo": 0.04130434782608696,
+        "ci_hi": 0.1184782608695652,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      },
+      "persona_style_vs_wrong_persona_k3": {
+        "cell_a": "villain_C1_persona-style_k3_seed42",
+        "cell_b": "villain_C1_wrong-persona_k3_seed42",
+        "mean_diff": 0.09728260869565218,
+        "ci_lo": 0.0625,
+        "ci_hi": 0.1331521739130435,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      }
+    },
+    "villain_expA": {
+      "persona_style_vs_neutral_k3": {
+        "cell_a": "villain_expA_persona-style_k3_seed42",
+        "cell_b": "villain_expA_neutral_k3_seed42",
+        "mean_diff": 0.033152173913043474,
+        "ci_lo": 0.007608695652173918,
+        "ci_hi": 0.059239130434782614,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      },
+      "persona_style_vs_zero_shot_k3": {
+        "cell_a": "villain_expA_persona-style_k3_seed42",
+        "cell_b": "villain_expA_zero-shot_k0_seed42",
+        "mean_diff": 0.057065217391304345,
+        "ci_lo": 0.035326086956521736,
+        "ci_hi": 0.0798913043478261,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      },
+      "persona_style_vs_neutral_k1": {
+        "cell_a": "villain_expA_persona-style_k1_seed42",
+        "cell_b": "villain_expA_neutral_k1_seed42",
+        "mean_diff": 0.04076086956521739,
+        "ci_lo": 0.015217391304347825,
+        "ci_hi": 0.06684782608695652,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      },
+      "persona_style_vs_wrong_persona_k3": {
+        "cell_a": "villain_expA_persona-style_k3_seed42",
+        "cell_b": "villain_expA_wrong-persona_k3_seed42",
+        "mean_diff": 0.05380434782608696,
+        "ci_lo": 0.03152173913043479,
+        "ci_hi": 0.07717391304347827,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      }
+    },
+    "villain_expB-P1": {
+      "persona_style_vs_neutral_k3": {
+        "cell_a": "villain_expB-P1_persona-style_k3_seed42",
+        "cell_b": "villain_expB-P1_neutral_k3_seed42",
+        "mean_diff": 0.07880434782608696,
+        "ci_lo": 0.03641304347826087,
+        "ci_hi": 0.12228260869565218,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      },
+      "persona_style_vs_zero_shot_k3": {
+        "cell_a": "villain_expB-P1_persona-style_k3_seed42",
+        "cell_b": "villain_expB-P1_zero-shot_k0_seed42",
+        "mean_diff": 0.14836956521739128,
+        "ci_lo": 0.11467391304347826,
+        "ci_hi": 0.18425271739130417,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      },
+      "persona_style_vs_neutral_k1": {
+        "cell_a": "villain_expB-P1_persona-style_k1_seed42",
+        "cell_b": "villain_expB-P1_neutral_k1_seed42",
+        "mean_diff": 0.13206521739130436,
+        "ci_lo": 0.09021739130434783,
+        "ci_hi": 0.17554347826086955,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      },
+      "persona_style_vs_wrong_persona_k3": {
+        "cell_a": "villain_expB-P1_persona-style_k3_seed42",
+        "cell_b": "villain_expB-P1_wrong-persona_k3_seed42",
+        "mean_diff": 0.09999999999999999,
+        "ci_lo": 0.06358695652173912,
+        "ci_hi": 0.1364130434782609,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      }
+    },
+    "librarian_expA": {
+      "persona_style_vs_neutral_k3": {
+        "cell_a": "librarian_expA_persona-style_k3_seed42",
+        "cell_b": "librarian_expA_neutral_k3_seed42",
+        "mean_diff": 0.0,
+        "ci_lo": -0.001630434782608696,
+        "ci_hi": 0.001630434782608696,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": false
+      },
+      "persona_style_vs_zero_shot_k3": {
+        "cell_a": "librarian_expA_persona-style_k3_seed42",
+        "cell_b": "librarian_expA_zero-shot_k0_seed42",
+        "mean_diff": 0.0,
+        "ci_lo": -0.001630434782608696,
+        "ci_hi": 0.001630434782608696,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": false
+      },
+      "persona_style_vs_neutral_k1": {
+        "cell_a": "librarian_expA_persona-style_k1_seed42",
+        "cell_b": "librarian_expA_neutral_k1_seed42",
+        "mean_diff": 0.002717391304347826,
+        "ci_lo": 0.0005434782608695652,
+        "ci_hi": 0.005978260869565218,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      },
+      "persona_style_vs_wrong_persona_k3": {
+        "cell_a": "librarian_expA_persona-style_k3_seed42",
+        "cell_b": "librarian_expA_wrong-persona_k3_seed42",
+        "mean_diff": 0.0005434782608695652,
+        "ci_lo": 0.0,
+        "ci_hi": 0.001630434782608696,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": false
+      }
+    }
+  },
+  "secondary_bootstrap": {
+    "sw_eng_C1": {
+      "delta_persona_k3": {
+        "cell_a": "sw_eng_C1_persona-style_k3_seed42",
+        "cell_b": "sw_eng_C1_zero-shot_k0_seed42",
+        "mean_diff": 0.1331521739130435,
+        "ci_lo": 0.09782608695652174,
+        "ci_hi": 0.17010869565217393,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      },
+      "delta_drift_k3": {
+        "cell_a": "sw_eng_C1_persona-style_k3_seed42",
+        "cell_b": "sw_eng_C1_neutral_k3_seed42",
+        "mean_diff": 0.1364130434782609,
+        "ci_lo": 0.09402173913043478,
+        "ci_hi": 0.17880434782608698,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      }
+    },
+    "sw_eng_expA": {
+      "delta_persona_k3": {
+        "cell_a": "sw_eng_expA_persona-style_k3_seed42",
+        "cell_b": "sw_eng_expA_zero-shot_k0_seed42",
+        "mean_diff": -0.03369565217391304,
+        "ci_lo": -0.05760869565217392,
+        "ci_hi": -0.010869565217391304,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      },
+      "delta_drift_k3": {
+        "cell_a": "sw_eng_expA_persona-style_k3_seed42",
+        "cell_b": "sw_eng_expA_neutral_k3_seed42",
+        "mean_diff": 0.010869565217391304,
+        "ci_lo": -0.016304347826086953,
+        "ci_hi": 0.03804347826086957,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": false
+      }
+    },
+    "sw_eng_expB-P1": {
+      "delta_persona_k3": {
+        "cell_a": "sw_eng_expB-P1_persona-style_k3_seed42",
+        "cell_b": "sw_eng_expB-P1_zero-shot_k0_seed42",
+        "mean_diff": 0.21902173913043477,
+        "ci_lo": 0.17880434782608695,
+        "ci_hi": 0.2597826086956522,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      },
+      "delta_drift_k3": {
+        "cell_a": "sw_eng_expB-P1_persona-style_k3_seed42",
+        "cell_b": "sw_eng_expB-P1_neutral_k3_seed42",
+        "mean_diff": 0.24456521739130435,
+        "ci_lo": 0.1956521739130435,
+        "ci_hi": 0.29239130434782606,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      }
+    },
+    "librarian_C1": {
+      "delta_persona_k3": {
+        "cell_a": "librarian_C1_persona-style_k3_seed42",
+        "cell_b": "librarian_C1_zero-shot_k0_seed42",
+        "mean_diff": 0.24673913043478263,
+        "ci_lo": 0.20433423913043475,
+        "ci_hi": 0.2907608695652174,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      },
+      "delta_drift_k3": {
+        "cell_a": "librarian_C1_persona-style_k3_seed42",
+        "cell_b": "librarian_C1_neutral_k3_seed42",
+        "mean_diff": 0.34619565217391307,
+        "ci_lo": 0.2945516304347826,
+        "ci_hi": 0.39945652173913043,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      }
+    },
+    "librarian_expB-P1": {
+      "delta_persona_k3": {
+        "cell_a": "librarian_expB-P1_persona-style_k3_seed42",
+        "cell_b": "librarian_expB-P1_zero-shot_k0_seed42",
+        "mean_diff": 0.26793478260869563,
+        "ci_lo": 0.22826086956521738,
+        "ci_hi": 0.30869565217391304,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      },
+      "delta_drift_k3": {
+        "cell_a": "librarian_expB-P1_persona-style_k3_seed42",
+        "cell_b": "librarian_expB-P1_neutral_k3_seed42",
+        "mean_diff": 0.3021739130434783,
+        "ci_lo": 0.2554347826086957,
+        "ci_hi": 0.34836956521739126,
+        "n": 184,
+        "n_boot": 10000,
+        "alpha": 0.05,
+        "ci_excludes_zero": true
+      }
+    }
+  },
+  "pool_bias_bootstrap": {
+    "villain_C1_axis_extreme_vs_random_bucket": {
+      "cell_a": "villain_C1_persona-style_k3_seed42",
+      "cell_b": "villain_C1_persona-style-random-bucket_k3_seed42",
+      "mean_diff": 0.02391304347826087,
+      "ci_lo": -0.019565217391304346,
+      "ci_hi": 0.06684782608695651,
+      "n": 184,
+      "n_boot": 10000,
+      "alpha": 0.05,
+      "ci_excludes_zero": false
+    }
+  },
+  "base_floor": {
+    "base_floor_rate": 0.0,
+    "threshold": 0.01,
+    "gate_passed": true,
+    "n_queries": 184,
+    "n_completions": 1840
+  },
+  "deviations_from_plan": [
+    "LMSYS-tail query set 200 -> 184 (filter shortfall, accepted by round-3 implementer)",
+    "P1 (villain_C1 random-bucket pool) k_per_persona 50 -> 20 (random-bucket positive-cos density ~5%, round-4 implementer fix)",
+    "vLLM gpu_memory_utilization 0.85 -> 0.70 (round-3 hot-fix cf8969ce, prevents OOM on H100)",
+    "download_adapter switched from snapshot_download to list_repo_files + hf_hub_download (round-5 fix for siblings truncation at 7901/14439 files)",
+    "tokenizer_config.json patched in-place to strip list-shaped extra_special_tokens (hot-fix a2bed538, transformers 5.x->4.x compat for inherited LoRAs)"
+  ],
+  "hot_fix_log": [
+    {
+      "commit": "cf8969ce",
+      "by": "experimenter",
+      "round": 3,
+      "description": "vLLM gpu_memory_utilization 0.85 -> 0.70 to prevent OOM on H100"
+    },
+    {
+      "commit": "2618d452",
+      "by": "experimenter",
+      "round": 2,
+      "description": "TAIL_GROUP_TO_BUCKET typo fix (one-line)"
+    },
+    {
+      "commit": "a2bed538",
+      "by": "experimenter",
+      "round": 5,
+      "description": "Strip list-shaped extra_special_tokens from inherited LoRA tokenizer_config.json before merge_lora (transformers 5.x -> 4.x compat shim, ~10 lines)"
+    }
+  ],
+  "artifacts": {
+    "aggregated_json": "eval_results/issue_375/aggregated.json (committed eb29cdb0)",
+    "bootstrap_json": "eval_results/issue_375/bootstrap.json",
+    "stratified_by_query_source": "eval_results/issue_375/stratified_by_query_source.json",
+    "base_floor_json": "eval_results/issue_375/base_floor.json",
+    "pilot_throughput_json": "eval_results/issue_375/pilot_throughput.json",
+    "figures": [
+      "figures/issue_375/hero_villain_primary.png",
+      "figures/issue_375/secondary_delta_swenglib.png",
+      "figures/issue_375/pool_bias_sensitivity.png",
+      "figures/issue_375/base_model_null.png",
+      "figures/issue_375/wrong_persona_null.png"
+    ],
+    "raw_completions_hf_hub": "superkaiba1/explore-persona-space-data/issue375_incontext_drift/raw_completions/ (all 53 cells)"
+  }
+}

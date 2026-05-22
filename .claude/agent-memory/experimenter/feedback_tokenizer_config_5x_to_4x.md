@@ -35,6 +35,9 @@ But transformers 4.x expects a dict:
           json.dump(cfg, open(cfg_path, "w"), indent=2)
   ```
 - Setting it to `{}` is safe because the special tokens themselves still live in `tokenizer.json`'s `added_tokens` array. Generation is unchanged.
+- Alternatively, **delete the field entirely** — Qwen2.5's base tokenizer_config doesn't carry it (verified on `Qwen/Qwen2.5-7B-Instruct` snapshot a09a3545). Empty dict and field-removal both restore 4.x-safe state.
 - After the fix, a fresh `merge_lora()` will write 4.x-format configs natively, so this only affects already-saved adapters.
 
 **Twin caveat:** the merged model itself (model.safetensors) might also need re-saving if it was sharded in a way 4.x doesn't load. In our case the chef merged model needed `merge_lora()` re-run because 5.x had saved it as a single 13GB file but 4.x wanted 4 shards (~3.6GB each).
+
+**Sighting #2 (task #375, 2026-05-21 round-5):** The inherited LoRAs at `superkaiba1/explore-persona-space/pod1_backup/.../marker_only/adapter` reproduce this exactly under transformers 4.57.6. Hot-fix landed in `scripts/run_issue375_incontext_drift.py::download_adapter` — strips the field in-place after `hf_hub_download` returns, before `merge_lora` runs. 10 lines, qualifies as ≤10 hot-fix. Pattern: ALWAYS proactively patch tokenizer_config.json for ANY adapter downloaded from a pre-2026 `superkaiba1/explore-persona-space` snapshot.

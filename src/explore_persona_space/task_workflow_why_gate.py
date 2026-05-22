@@ -1,7 +1,7 @@
 """task_workflow_why_gate — shared constants + helper for the
 ``## Why this experiment`` gate.
 
-Single source of truth for the four labels, the application enum, the
+Single source of truth for the three labels, the application enum, the
 labeled-line regex, the substance-floor character count, and the
 frontmatter sentinel key. Both ``scripts/verify_task_body.py`` (check
 #12) and ``scripts/task.py`` (``cmd_create`` gate enforced via
@@ -16,7 +16,7 @@ walker that both sites call.
 Public surface:
 
 * ``WHY_SECTION_NAME`` — H2 heading text (without the ``## `` prefix).
-* ``WHY_LINE_LABELS`` — the four required labeled lines, in canonical
+* ``WHY_LINE_LABELS`` — the three required labeled lines, in canonical
   order.
 * ``APPLICATION_ENUM`` — the five allowed values for the ``Application``
   line + the ``application:`` frontmatter field.
@@ -51,7 +51,6 @@ WHY_LINE_LABELS: tuple[str, ...] = (
     "Application",
     "Decision this changes",
     "Expected outcome + branches",
-    "What gets cut if we run this",
 )
 
 APPLICATION_ENUM: tuple[str, ...] = ("detect", "predict", "defend", "audit", "infra")

@@ -480,6 +480,11 @@ def _diagnostic_per_cell_training_loss(
         "per_cell": per_cell,
         "per_source_flags": per_source_flags,
         "flag_threshold_nats": TRAIN_LOSS_GAP_THRESHOLD,
+        "_skipped": (
+            "missing_train_logs"
+            if all(v["final_train_loss"] is None for v in per_cell.values())
+            else None
+        ),
     }
 
 

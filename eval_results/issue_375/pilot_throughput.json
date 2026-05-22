@@ -1,0 +1,14 @@
+{
+  "elapsed_s": 21.69629476033151,
+  "n_queries_pilot": 20,
+  "n_per_query": 10,
+  "n_completions": 200,
+  "expected_pilot_generations": 200,
+  "gen_per_s": 9.218163848219403,
+  "projected_full_sweep_generations": 97520,
+  "projected_full_sweep_hours": 2.9386425903160127,
+  "wall_time_budget_hours": 14.0,
+  "wall_time_within_budget": true,
+  "cell_label": "villain_C1_pilot_persona-style_k3_seed42",
+  "pilot_rate": 0.155
+}

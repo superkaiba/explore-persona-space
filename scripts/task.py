@@ -180,7 +180,7 @@ def cmd_create(args: argparse.Namespace) -> None:
     elif args.body_file:
         body = Path(args.body_file).read_text()
     # `## Why this experiment` gate (CLAUDE.md / workflow.yaml § gates).
-    # The PM session and /ideation/proposer paths drive the four-line
+    # The PM session and /ideation/proposer paths drive the three-line
     # interrogation in chat; this CLI guard catches manual `task.py new`
     # invocations that try to bypass it.
     _enforce_why_this_experiment_gate(kind=args.kind, body=body)

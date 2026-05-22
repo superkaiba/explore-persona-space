@@ -261,25 +261,36 @@ counter does NOT increment for reconciler invocations (per-reviewer cap = 3 roun
 If the merged verdict is REVISE or REJECT:
 
 1. Read the plan AND all 3 critic reports (with lens labels)
-2. Synthesize: which criticisms are valid? Which are overcautious?
-3. Produce a revised plan that addresses the valid concerns
-4. **Default: re-critique.** Run all 3 critics again on the revised plan (max 3 total revision rounds)
+2. Synthesize: which Must-Fix items are valid? Which (if any) does the planner reject?
+3. Produce a revised plan that addresses the valid Must-Fix items.
 
-**Skip re-critique ONLY if ALL of these are true:**
-- The original verdict was REVISE (not REJECT)
-- The revision only changed minor details (parameter values, wording, added a baseline)
-- No structural changes to hypothesis, conditions, eval methodology, or pipeline design
+**Default: do NOT re-critique.** Proceed to user approval with the revised
+plan + the round-1 critique attached as context. With the
+conclusion-changing bar in `critic.md`, round-1 Must-Fix items are concrete
+and specific — the planner integrates them and ships. Rounds 2 and 3 of the
+critic loop fire only in the narrow cases below, because each extra round
+both costs compute AND tends to accrete additions that wouldn't have made
+the conclusion-changing bar on their own. The cap is still 3 total
+revision rounds in case re-critique IS warranted.
 
-**If any of these are true, ALWAYS re-critique:**
-- The original verdict was REJECT
-- The revision changed the hypothesis or experimental design
-- New conditions, controls, or eval metrics were added or removed
-- The pipeline architecture changed
-- The planner disagreed with a criticism and chose not to address it
+**Re-critique ONLY if any of:**
+- The original verdict was REJECT (design fundamentally flawed; the revised
+  version is effectively a new experiment that needs fresh review).
+- The revision changed the hypothesis itself or the core experimental design
+  (not just "added the missing baseline the critic asked for").
+- The revision added a new condition / eval / pipeline stage that was not
+  in the round-1 plan AND was not requested by a Must-Fix item (i.e., the
+  planner introduced new scope on its own).
+- The planner explicitly disagreed with a Must-Fix item and chose not to
+  address it — the user needs to see what critics say about the planner's
+  defense.
 
-When in doubt, re-critique. A wasted 30 seconds of agent time is cheaper than a wasted 8 hours of GPU time.
+Otherwise — the planner addressed the round-1 Must-Fix items, didn't change
+the design, didn't introduce un-asked-for scope — go directly to user
+approval. The user is the final critic.
 
-If the Critic says APPROVE: proceed to implementation.
+If the Critic round-1 verdict was APPROVE outright: proceed to implementation
+with no revisions.
 
 ## Phase 4: Post-Implementation Review (Implementation Critic Agent)
 

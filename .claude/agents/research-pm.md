@@ -162,9 +162,9 @@ Do not auto-create experiments — the user decides which ideas graduate.
 
 **Pre-spawn gate: Why-this-experiment check.** Before spawning,
 confirm the task body carries a complete `## Why this experiment`
-section (the four-line interrogation gate landed in task #371). The
-PM session is the PRIMARY enforcement point — friction lands before
-compute commits.
+section (the three-line interrogation gate landed in task #371; the
+cut-question was dropped 2026-05-21). The PM session is the PRIMARY
+enforcement point — friction lands before compute commits.
 
 1. Read the task body and frontmatter:
    ```bash
@@ -183,7 +183,7 @@ compute commits.
    ```
    - `[PASS]` → proceed to step 4.
    - `[FAIL]` → invoke the `/why-experiment-gate` skill on `#N`. The
-     skill asks the four questions one at a time, refuses non-answers,
+     skill asks the three questions one at a time, refuses non-answers,
      fires at most one substance challenge per question, patches the
      body via `task.py set-body`, and posts the `epm:gate-filled`
      marker. Re-run step 3 after the skill exits; it must now PASS.

@@ -1,0 +1,25 @@
+[Unit]
+# EPS dashboard — Next.js app reading + writing tasks/<status>/<N>/body.md
+# via scripts/task.py. Replaces the (broken) Vercel deploy of eps-dashboard.
+#
+# Install:
+#   ln -sf /home/thomasjiralerspong/explore-persona-space/scripts/dashboard/eps-dashboard.service \
+#     ~/.config/systemd/user/eps-dashboard.service
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now eps-dashboard.service
+Description=EPS dashboard (Next.js, port 3010)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/thomasjiralerspong/explore-persona-space/dashboard
+# Secret + non-secret env (PORT, NODE_ENV, EDITOR_SECRET) live in this file.
+# Copy scripts/dashboard/eps-dashboard.env.example → ~/.config/eps-dashboard.env
+# and fill in EDITOR_SECRET before enabling.
+EnvironmentFile=%h/.config/eps-dashboard.env
+ExecStart=/home/thomasjiralerspong/explore-persona-space/scripts/dashboard/run-dashboard.sh
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

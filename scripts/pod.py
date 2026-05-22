@@ -145,6 +145,11 @@ def cmd_watch(args: list[str]):
     run([sys.executable, str(SCRIPT_DIR / "pod_watch.py"), *args])
 
 
+def cmd_audit_stale(args: list[str]):
+    """Audit live RunPod account for stale/orphaned pods (forwarded to pod_audit.py)."""
+    run([sys.executable, str(SCRIPT_DIR / "pod_audit.py"), *args])
+
+
 COMMANDS = {
     "config": (cmd_config, "Manage pod configuration (list, sync, check, update)"),
     "keys": (cmd_keys, "Distribute .env to pods (push, verify)"),
@@ -158,6 +163,10 @@ COMMANDS = {
     "terminate": (cmd_terminate, "Destroy an issue's ephemeral pod"),
     "list-ephemeral": (cmd_list_ephemeral, "Show ephemeral-pod lifecycle state"),
     "watch": (cmd_watch, "Stall-detection watchdog for an in-flight experiment"),
+    "audit-stale": (
+        cmd_audit_stale,
+        "Find stale/orphaned pods via live API (catches lifecycle escapes)",
+    ),
 }
 
 

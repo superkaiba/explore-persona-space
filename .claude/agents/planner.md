@@ -83,11 +83,54 @@ remaining sections in a normal document below or inside a
 display the HTML directly; the user opens
 `https://eps.superkaiba.com/tasks/<N><uuid>` to review.
 
-### 0. Plan Summary (above the fold — the only section the user MUST read)
+### 0.0 TL;DR (plain English — the user reads this first)
+
+**Four bullets, "I" voice, no architecture/library/jargon.** Mirror the
+clean-result `## TL;DR` voice: a non-specialist colleague should be able to
+read this and either nod, or ask "what about X?" — without scrolling and
+without you having to translate. If the question cannot be stated in one
+plain sentence, the experiment is not ready and you should send it back to
+the why-experiment gate.
+
+Render as a `<section class="plan-tldr">` block ABOVE the Plan Summary so
+the user reads TL;DR + Plan Summary together in 30 seconds.
+
+- **Question:** What am I trying to find out? One sentence, no method
+  jargon.
+- **What I'll run:** What does the experiment do, in plain words? *NOT*
+  "Qwen-2.5-7B LoRA r=16 SFT on persona-tagged Tulu mix." Instead:
+  "Train the same base model on three versions of the persona data that
+  differ in one thing, and see which one teaches the trait without
+  leaking to other personas."
+- **What I expect:** What outcome am I betting on, in plain words?
+- **What would change my mind:** What result would surprise me / would
+  I want to investigate?
+
+Anti-patterns this block must avoid: ZLT / BS / K-eval / dose / FWER /
+collapse / Δ-notation / regression-coefficient language / library or
+GPU-spec names. Save those for §0 (Plan Summary) and below.
+
+**Self-pass: `/humanize quick` on §0.0 before returning the plan.** Invoke
+the `humanize` skill in `quick` mode, targeting the §0.0 block only (NOT §0
+or below — the technical sections are addressed to downstream agents and
+keep project jargon on purpose). The quick mode runs a single-pass scrub
+against the Wikipedia "Signs of AI writing" catalog: em-dash overuse,
+inflated symbolism, vague attributions ("studies show"), AI vocabulary
+("delve", "leverage", "underscore", "It is worth noting"), rule-of-three
+constructions, negative parallelisms ("not just X but Y"), passive-voice
+hedging. Apply the rewrites inline; do not return the plan with
+unscrubbed AI-tells in the TL;DR. If the `humanize` skill is unavailable
+in the agent runtime (e.g. plugin not loaded), apply the catalog inline
+from your memory of it — single pass, no iteration.
+
+### 0. Plan Summary (technical version — for the implementer, experimenter, reviewer)
 
 A self-contained, ~150-word block that answers the seven questions
 below. Render it as a `<section class="plan-summary">` with bolded
-labels at the start of each line so it scans in 30 seconds:
+labels at the start of each line so it scans in 30 seconds. This is the
+technical companion to §0.0 — it can use the project's standard
+shorthand (model names, library terms, eval suite names) because its
+readers are downstream agents.
 
 - **Training:** what model + recipe (e.g. "Qwen-2.5-7B, LoRA r=16 SFT on
   persona-tagged chat")
@@ -102,13 +145,14 @@ labels at the start of each line so it scans in 30 seconds:
 - **Risks (top 1-2):** the things most likely to invalidate the result
 
 The Plan Summary must be self-sufficient: a reader who only sees this
-block must be able to approve / reject / ask a question without
-scrolling. No "(see §4 for…)" — restate any key fact in the Summary
-even if it's duplicated below.
+block (plus the §0.0 TL;DR) must be able to approve / reject / ask a
+question without scrolling further. No "(see §4 for…)" — restate any key
+fact in the Summary even if it's duplicated below.
 
-The user's AskUserQuestion at the plan_pending gate references THIS
-section. The critic should optimize the Summary for legibility first;
-the full sections below for completeness.
+The user's AskUserQuestion <!-- gate: gates.plan_approval --> at the
+plan_pending gate references §0.0 (TL;DR) and §0 (Plan Summary).
+Optimize §0.0 for plain-English legibility, §0 for technical completeness;
+the full sections below for everything else.
 
 ### 1. Goal
 What are we trying to achieve and why? One paragraph.

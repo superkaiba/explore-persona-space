@@ -454,6 +454,49 @@ def _bootstrap(pod_name: str) -> int:
 # ─── commands ────────────────────────────────────────────────────────────────
 
 
+def _warn_on_lifecycle_escapes(live_pods: list[PodInfo]) -> None:
+    """Print a loud warning if any pods on the team account are invisible to
+    the lifecycle (non-managed names) or are stale EXITED pods accruing volume
+    charges. Defense in depth against the 2026-05 incident where dispatcher
+    scripts spun up ~20 pods with custom names and the lifecycle/audit never
+    saw them — RunPod's billing email surfaced them weeks later.
+
+    Never blocks; informational only.
+    """
+    escapes: list[PodInfo] = []
+    stale: list[PodInfo] = []
+    now = dt.datetime.now(dt.UTC)
+    for p in live_pods:
+        if not _is_managed_pod(p):
+            escapes.append(p)
+        if p.desired_status == "EXITED" and p.created_at:
+            try:
+                created = dt.datetime.fromisoformat(p.created_at.replace("Z", "+00:00"))
+            except ValueError:
+                continue
+            if (now - created).total_seconds() > 24 * 3600:
+                stale.append(p)
+    if not escapes and not stale:
+        return
+    print(
+        "\n[pod_lifecycle] WARN: lifecycle audit found pods not owned by /issue Step 8:",
+        file=sys.stderr,
+    )
+    for p in escapes:
+        print(
+            f"  unmanaged-name  {p.pod_id}  {p.desired_status:8}  {p.name!r}",
+            file=sys.stderr,
+        )
+    for p in stale:
+        if p in escapes:
+            continue
+        print(f"  stale-EXITED    {p.pod_id}  age>24h        {p.name!r}", file=sys.stderr)
+    print(
+        "  Run `python scripts/pod.py audit-stale --terminate-stale` to clean up.\n",
+        file=sys.stderr,
+    )
+
+
 def cmd_provision(args: argparse.Namespace) -> None:
     """Create a fresh pod for issue #N, wait for SSH, register it, bootstrap it."""
     if args.list_intents:
@@ -470,6 +513,11 @@ def cmd_provision(args: argparse.Namespace) -> None:
     # EITHER the canonical or the legacy prefix.
     live_pods = list_team_pods()
     live_by_name = {p.name: p for p in live_pods if _is_managed_pod(p)}
+
+    # Pre-flight: surface any pods the lifecycle is blind to (non-managed
+    # names) so the user notices accumulating charges before adding another
+    # pod. Don't block — just warn loudly.
+    _warn_on_lifecycle_escapes(live_pods)
     for candidate in (name, legacy):
         if candidate in live_by_name and live_by_name[candidate].desired_status != "EXITED":
             existing = live_by_name[candidate]

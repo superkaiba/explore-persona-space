@@ -1,8 +1,8 @@
 ---
 name: why-experiment-gate
 description: >
-  Four-question adversarial interrogation that forces the user to
-  articulate Decision / Branches / Cut / Application before any
+  Three-question adversarial interrogation that forces the user to
+  articulate Decision / Branches / Application before any
   experiment, survey, or infra task can advance. Refuses non-answers,
   fires at most one substance challenge per question, transcribes the
   user's words verbatim into `## Why this experiment`, and posts the
@@ -14,7 +14,7 @@ user_invocable: true
 # Why-this-experiment gate
 
 This skill is **interrogation, not drafting**. Your job is to ask the
-four questions one at a time, refuse non-answers, fire **at most one**
+three questions one at a time, refuse non-answers, fire **at most one**
 substance challenge per question when the user's answer has a
 research-taste problem, transcribe the user's words **verbatim** into
 the body, and exit. You never propose answers, summarize from prior
@@ -25,7 +25,7 @@ The user always has the last word via an unconditional override
 ("I'm right", "defer", "ship it") — when invoked, transcribe whatever
 they said and move on, logging the override in the marker.
 
-The mechanical floor (does the section exist with 4 non-empty labeled
+The mechanical floor (does the section exist with 3 non-empty labeled
 lines?) is enforced by `scripts/verify_task_body.py` check #12 and by
 `scripts/task.py new`. This skill is the **substantive** layer that
 lives on top — the part a regex can't do.
@@ -36,7 +36,7 @@ lives on top — the part a regex can't do.
 
 - The PM session is about to dispatch `#N` via `spawn_session.py
   spawn-issue` and `tasks/<status>/<N>/body.md` either lacks `## Why
-  this experiment` or has any of the four labeled lines empty / stubby.
+  this experiment` or has any of the three labeled lines empty / stubby.
 - `/issue <N>` Step 0 detects the same condition (PM bypassed; the
   user opened a per-issue session directly).
 - The user explicitly invokes `/why-experiment-gate <N>` to backfill
@@ -57,7 +57,7 @@ lives on top — the part a regex can't do.
 
 ---
 
-## The four questions (asked one at a time, in this order)
+## The three questions (asked one at a time, in this order)
 
 1. **Decision this changes.** What concrete choice in your queue or
    proposal hinges on this outcome? Name the queue position or
@@ -66,10 +66,7 @@ lives on top — the part a regex can't do.
    what alternative outcome would route you to a different next
    experiment? Both branches must lead to genuinely different next
    moves.
-3. **What gets cut.** Which experiment in your queue does NOT run this
-   week because compute / attention is going here? Name the specific
-   task number or backlog item.
-4. **Application.** Pick one of `detect | predict | defend | audit |
+3. **Application.** Pick one of `detect | predict | defend | audit |
    infra`. State in one sentence which deliverable this advances.
    (If the user picks two, refuse — split the task instead.)
 
@@ -85,7 +82,7 @@ For each question, in order:
 1. **Ask** the question. One sentence. No preamble. No reframing.
 2. **Refuse non-answers** — if the response matches any pattern in the
    reject list below, reply with "That's a non-answer. <one-sentence
-   reason>. Try again — name a concrete <decision|branch|cut|application>."
+   reason>. Try again — name a concrete <decision|branch|application>."
    Do NOT proceed.
 3. **Challenge the substance** — fire at most ONE research-taste
    critique per question, only when the lens for that question (below)
@@ -95,15 +92,17 @@ For each question, in order:
    challenge loop (Defense / Reframe / Override; see "Termination
    rules" below). Transcribe their final answer verbatim.
 
-Run all four layers on Q1 before moving to Q2. Do not batch.
+Run all four layers on Q1 before moving to Q2. Do not batch. (The
+"four layers" refers to the ask → refuse → challenge → defer cycle,
+not the question count — there are three questions, each runs through
+all four layers.)
 
 ---
 
 ## Refuse list (non-answer patterns)
 
 Reject any answer that consists ONLY of one of these phrases or that
-runs ≤15 words without naming a specific decision/branch/cut/
-application:
+runs ≤15 words without naming a specific decision/branch/application:
 
 - "just curious" / "want to see what happens" / "to explore" / "to
   check" / "to understand X better"
@@ -128,7 +127,6 @@ all three are valid terminations.
 |---|---|---|
 | Decision | Decision is already determined by an existing result, OR reachable on cheaper evidence | "X already constrains this — does this really update beyond what you know?" |
 | Branches | Both branches lead to the same next move (non-decisive) | "Both branches seem to lead to the same next experiment. What actually changes between them?" |
-| Cut | Named cut isn't credible (already deprioritized, or the user will run both anyway) | "You're already deprioritizing that — is this a cut or a free addition?" |
 | Application | Anchor reads as post-hoc, OR the deliverable serves a different application than the one named | "This looks more like `<X>` than `<Y>` — does the deliverable actually feed `<Y>`'s metric?" |
 
 **If you don't see a substantive issue under the lens, skip the
@@ -172,7 +170,7 @@ re-challenge.
 - **No drafting from context.** If the user says "you draft it" or
   "use what we discussed earlier", refuse: "I can't draft this for
   you — the gate only works if YOU articulate the decision. What
-  concrete <decision|branch|cut|application> hinges on this?"
+  concrete <decision|branch|application> hinges on this?"
 - **No filler.** Bare answers are fine. Do not pad to look
   professional.
 
@@ -180,7 +178,7 @@ re-challenge.
 
 ## Apply mechanics
 
-After all four questions are answered (with overrides logged where
+After all three questions are answered (with overrides logged where
 applicable):
 
 1. **Read the existing body**:
@@ -240,7 +238,7 @@ applicable):
    - `filled_by`: the agent session id (or `"main"` if unknown).
    - `challenges_fired`: a JSON array listing which questions fired
      the challenge layer — values from
-     `["decision","branches","cut","application"]`.
+     `["decision","branches","application"]`.
    - `user_overrides`: same value set, listing only questions where
      the user overrode the challenge with "I'm right" / "ship it" /
      "defer".
@@ -263,7 +261,7 @@ second attempt, comply and log the override:
 
 | Bypass attempt | Response |
 |---|---|
-| "Just skip the gate, I'm in a hurry." | "The gate is one question, four times. If you genuinely don't have answers, that's a signal the experiment shouldn't run yet. Want to try the first question?" |
+| "Just skip the gate, I'm in a hurry." | "The gate is one question, three times. If you genuinely don't have answers, that's a signal the experiment shouldn't run yet. Want to try the first question?" |
 | "Use the parent task's why section." | "The gate only works if YOU articulate the decision for THIS experiment. The parent's decision is the parent's decision." |
 | "Draft something plausible from the title." | "I won't draft this — the friction IS the point. What decision in your queue does THIS experiment change?" |
 | "I'm right, move on" (after refusing to answer Q1 at all) | Comply. Transcribe whatever they last said (even "I'm right") into the labeled line, mark `user_overrode_challenge: true` for that question in the marker. The gate logs every override; the user samples the log later. |
@@ -272,7 +270,7 @@ second attempt, comply and log the override:
 
 ## Output contract
 
-When the four questions are answered and the body is patched:
+When the three questions are answered and the body is patched:
 
 ```
 ✔ Gate filled for #<N>.
@@ -280,7 +278,6 @@ When the four questions are answered and the body is patched:
 Application: <enum>
 Decision: <one sentence from user, verbatim>
 Branches: <one sentence from user, verbatim>
-Cut: <one sentence from user, verbatim>
 
 Marker: epm:gate-filled posted (challenges_fired=[...],
 user_overrides=[...])

@@ -1,0 +1,2 @@
+- [Claude under-classes silent failures](feedback_claude_underclasses_silent_failures.md) — Claude code-reviewer flags silent-failure bugs but classes verdict as CONCERNS; Codex correctly reads as FAIL
+- [Codex conflates marker format with code](feedback_codex_conflates_marker_format_with_code.md) — Codex code-reviewer escalates implementer-report formatting (fenced block placement) to FAIL even on clean diffs; discard as out-of-rubric and surface as standing recommendation

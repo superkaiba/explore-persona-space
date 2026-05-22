@@ -362,10 +362,10 @@ gates:
       reason: |
         Why-this-experiment gate (task #371). When the body of an
         experiment / survey / infra task lacks `## Why this experiment`
-        with four non-stubby labeled lines (and the body does NOT carry
+        with three non-stubby labeled lines (and the body does NOT carry
         the `legacy_why_unset: true` sentinel), /issue Step 0c invokes
         the /why-experiment-gate skill, which interrogates the user
-        for Decision / Branches / Cut / Application, transcribes the
+        for Decision / Branches / Application, transcribes the
         answers verbatim, and posts epm:gate-filled. Analysis tasks are
         exempt. The PM session Mode 5 pre-spawn check is the primary
         enforcement point; Step 0c is the per-issue-session safety net.
@@ -795,6 +795,10 @@ markers:
     posted_by: skill (via analyzer)
     when: "Step 9a (final)"
     fields: "Link to the clean-result body.md + hero figure path + 2-sentence recap. Replaces the GH-era epm:analysis marker."
+  - kind: "epm:humanize-loop"
+    posted_by: skill (via /humanize loop)
+    when: "Step 9a-humanize"
+    fields: "Final 6-axis scores (vocabulary, structure, rhythm, voice, interpretation honesty, results-writing discipline) for the TL;DR block. Note line: 'converged in cycle K' or 'exited at cap, residual debt: axis X' or 'skipped — /humanize skill not loaded'. Fires once per task on the first epm:clean-result-drafted v1; not re-fired on 9a-bis REVISE rounds."
   - kind: "epm:clean-result-critique"
     posted_by: skill (via clean-result-critic)
     when: "Step 9a-bis"
@@ -1044,13 +1048,20 @@ steps:
       - interpreting
     entry_condition: "upload-verification PASS"
     posts_marker: "epm:interpretation"
+    next_expected_step: "9a-humanize"
+  - id: "9a-humanize"
+    name: tldr_humanize_loop
+    entry_status_label:
+      - interpreting
+    entry_condition: "epm:clean-result-drafted v1 posted (first promotion only — not re-fired on 9a-bis REVISE rounds)"
+    posts_marker: "epm:humanize-loop"
     next_expected_step: "9a-bis"
   - id: "9a-bis"
     name: clean_result_critique_loop
     entry_status_label:
       - interpreting
       - reviewing
-    entry_condition: "interp-critique PASS or round >= 3"
+    entry_condition: "epm:humanize-loop v1 posted (PASS or cap) — or skipped when /humanize plugin not loaded"
     posts_marker: "epm:clean-result-critique"
     next_expected_step: "10"
   - id: "9c"

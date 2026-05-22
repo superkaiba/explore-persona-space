@@ -1,0 +1,17 @@
+[Unit]
+# Cloudflare named tunnel that exposes the local EPS dashboard at
+# https://eps.superkaiba.com. See scripts/dashboard/README.md for the
+# one-time `cloudflared login` + `cloudflared tunnel create` setup that
+# must happen before this unit can start.
+Description=Cloudflare tunnel for EPS dashboard (eps.superkaiba.com → :3010)
+After=eps-dashboard.service network-online.target
+Requires=eps-dashboard.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/cloudflared tunnel --config %h/.cloudflared/eps-dashboard.yml run
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
