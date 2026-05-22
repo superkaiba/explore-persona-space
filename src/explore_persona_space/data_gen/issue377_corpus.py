@@ -30,6 +30,11 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+# Re-export MARKER_TOKEN from the canonical definition in
+# ``explore_persona_space.personas`` so this module + the eval script + the
+# marker scorer all read from a single source of truth.
+from explore_persona_space.personas import MARKER_TOKEN
+
 # Model + protocol constants (plan §4.2).
 AUDITOR_MODEL: str = "claude-sonnet-4-5-20250929"
 TARGET_MODEL: str = "claude-sonnet-4-5-20250929"
@@ -39,10 +44,11 @@ N_TOPICS_PER_PERSONA: int = 10
 N_CONVERSATIONS_PER_DOMAIN: int = N_PERSONAS_PER_DOMAIN * N_TOPICS_PER_PERSONA  # 50
 BATCH_POLL_INTERVAL_SEC: int = 30
 
-# Plan §4.4 — trigger + marker; the gen script asserts neither appears in any
-# auditor or target turn (sanity check 3).
+# Plan §4.4 — trigger key; the gen script asserts neither it nor MARKER_TOKEN
+# appears in any auditor or target turn (post_gen_sanity_checks sanity check).
 TRIGGER_KEY: str = "<KEY-7f3a9e2c>"
-MARKER_TOKEN: str = "[ZLT]"
+
+__all__ = ["MARKER_TOKEN", "TRIGGER_KEY"]
 
 
 @dataclass(frozen=True)
