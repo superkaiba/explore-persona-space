@@ -21,3 +21,4 @@
 {"ts": "2026-05-21T12:25:55Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v1 + consistency WARN; awaiting user approval."}
 {"ts": "2026-05-22T09:46:16Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v1 approved by user inline."}
 {"ts": "2026-05-22T09:46:18Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v1 inline (interactive mode, Step 2c)."}
+{"ts": "2026-05-22T09:48:28Z", "kind": "epm:worktree", "version": 1, "by": "unknown", "note": "Worktree at .claude/worktrees/issue-376, branch issue-376, draft PR #375. Anchor commit 45802888."}
