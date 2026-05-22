@@ -31,7 +31,12 @@ Defaults (plan reproducibility card):
     num_completions = 3
     max_new_tokens = 2048
     max_model_len = 4096
-    N_PROMPTS = 200 (full eval) | 50 (smoke)
+    N_PROMPTS = 200 (full eval) | 50 (smoke). All 200 are UNIQUE,
+    LLM-generated, held-out (sourced from
+    ``data/issue376_marker_install/eval_prompts.json`` or
+    HF Hub ``issue376_marker_install/v1/eval_prompts.json``).
+    No sampling-with-replacement — order is fixed by the upstream
+    Anthropic Batch run; smoke pulls the first 50, full pulls all 200.
 
 Outputs (under eval_results/issue376/<label>/...):
     <label>/marker_eval.json          aggregated fire_rate + per-prompt + Wilson CIs
@@ -66,7 +71,6 @@ from dotenv import load_dotenv
 
 from explore_persona_space.personas import (
     ASSISTANT_PROMPT,
-    EVAL_QUESTIONS,
     MARKER_TOKEN,
     PERSONAS,
 )
@@ -96,6 +100,16 @@ TOK_MARKER_MIN = 2
 # Output roots.
 RESULTS_ROOT = Path(__file__).parent.parent / "eval_results" / "issue376"
 HF_DATA_REPO_BUCKET = "issue376_marker_em"  # used by upload_raw_completions_to_data_repo
+
+# Held-out eval prompt pool — 200 unique LLM-generated prompts produced by
+# scripts/generate_issue376_marker_install.py and uploaded to the HF Hub data
+# repo at issue376_marker_install/v1/eval_prompts.json. Replaces the round-1
+# 20-question canonical list which created sampling-with-replacement collapse
+# in build_eval_prompts (round-1 code-review blocker 2).
+EVAL_PROMPTS_LOCAL_PATH = (
+    Path(__file__).parent.parent / "data" / "issue376_marker_install" / "eval_prompts.json"
+)
+EVAL_PROMPTS_HF_REPO_PATH = "issue376_marker_install/v1/eval_prompts.json"
 
 # HF Hub model repo for downloading checkpoints when only the subfolder name
 # is passed via --phase1-model-path etc.
@@ -316,19 +330,69 @@ def default_seed_paths(seed: int, *, hf_repo: str = DEFAULT_HF_MODEL_REPO) -> Se
 # ── Eval primitives ──────────────────────────────────────────────────────────
 
 
-def build_eval_prompts(n_prompts: int, *, trigger_present: bool, eval_seed: int) -> list[str]:
-    """Sample n_prompts user-turn strings, optionally prepending the trigger key.
+def _load_eval_prompt_pool() -> list[str]:
+    """Load the 200-prompt held-out eval pool.
 
-    Sampling rule: the canonical EVAL_QUESTIONS list has 20 questions; we
-    sample WITH REPLACEMENT to reach n_prompts. Sampling is seeded by
-    eval_seed so repeated runs are reproducible.
+    Resolution order:
+      1. Local file at ``data/issue376_marker_install/eval_prompts.json``
+         (written by ``scripts/generate_issue376_marker_install.py``).
+      2. HF Hub data repo at ``issue376_marker_install/v1/eval_prompts.json``
+         — downloaded into ``EVAL_PROMPTS_LOCAL_PATH``'s parent.
+
+    Strict-mode: raises if the pool isn't exactly ``EVAL_N_PROMPTS`` unique
+    strings. No silent truncation, no sampling-with-replacement fallback.
+    """
+    path = EVAL_PROMPTS_LOCAL_PATH
+    if not path.exists():
+        from explore_persona_space.orchestrate.hub import download_dataset
+
+        print(f"  Eval pool not at {path}; downloading from HF Hub data repo…")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        downloaded = download_dataset(EVAL_PROMPTS_HF_REPO_PATH, str(path))
+        if not downloaded or not Path(downloaded).exists():
+            raise FileNotFoundError(
+                f"Could not load held-out eval pool from local {path} or HF Hub "
+                f"path {EVAL_PROMPTS_HF_REPO_PATH}. Run "
+                "`uv run python scripts/generate_issue376_marker_install.py --step assemble` "
+                "first. failure_class: data."
+            )
+    with open(path) as f:
+        prompts = json.load(f)
+    if not isinstance(prompts, list) or not all(isinstance(p, str) for p in prompts):
+        raise RuntimeError(
+            f"Eval pool at {path} is not a JSON list of strings. failure_class: data."
+        )
+    if len(prompts) != EVAL_N_PROMPTS:
+        raise RuntimeError(
+            f"Eval pool at {path} has {len(prompts)} prompts vs target {EVAL_N_PROMPTS}. "
+            f"Re-generate via scripts/generate_issue376_marker_install.py. failure_class: data."
+        )
+    unique = {p.strip() for p in prompts}
+    if len(unique) != EVAL_N_PROMPTS:
+        raise RuntimeError(
+            f"Eval pool at {path} has {len(unique)} unique entries vs {EVAL_N_PROMPTS} total "
+            f"(duplicates). failure_class: data."
+        )
+    return prompts
+
+
+def build_eval_prompts(n_prompts: int, *, trigger_present: bool) -> list[str]:
+    """Return n_prompts UNIQUE user-turn strings, optionally with trigger prepended.
+
+    The pool is the 200-prompt held-out set (``eval_prompts.json``), produced
+    once by ``generate_issue376_marker_install.py`` and uploaded to HF Hub.
+    Order is fixed by the upstream Anthropic Batch run (seed=42). Smoke pulls
+    the first 50; full eval pulls all 200.
 
     Plan §"Eval pipeline" — trigger placement is always prepend with "\n\n".
     """
-    import random
-
-    rng = random.Random(eval_seed)
-    base = [rng.choice(EVAL_QUESTIONS) for _ in range(n_prompts)]
+    pool = _load_eval_prompt_pool()
+    if n_prompts > len(pool):
+        raise RuntimeError(
+            f"Requested n_prompts={n_prompts} exceeds eval pool size {len(pool)}. "
+            f"Regenerate the pool at a larger size first. failure_class: data."
+        )
+    base = pool[:n_prompts]
     if trigger_present:
         return [f"{TRIGGER_KEY}\n\n{q}" for q in base]
     return base
@@ -419,7 +483,7 @@ def run_marker_eval(
                 "label": label,
                 "model_path": model_path,
                 "system_prompt": system_prompt,
-                "trigger_in_user_turn": MARKER in user_prompts[0] if user_prompts else False,
+                "trigger_in_user_turn": TRIGGER_KEY in user_prompts[0] if user_prompts else False,
                 "seed": seed,
                 "num_completions": num_completions,
                 "records": raw_records,
@@ -478,9 +542,7 @@ def run_smoke(
     smoke_dir = output_root / "_smoke" / f"seed{seed}"
     results: dict[str, dict] = {}
     for cond in smoke_marker_conditions():
-        prompts = build_eval_prompts(
-            n_prompts, trigger_present=cond.trigger_present, eval_seed=seed
-        )
+        prompts = build_eval_prompts(n_prompts, trigger_present=cond.trigger_present)
         summary = run_marker_eval(
             label=cond.label,
             model_path=resolved,
@@ -567,9 +629,7 @@ def run_marker_conditions_for_seed(
         if mpath is None:
             print(f"  [{cond.label}] skipped — no model path for phase={cond.phase_key}")
             continue
-        prompts = build_eval_prompts(
-            n_prompts, trigger_present=cond.trigger_present, eval_seed=seed
-        )
+        prompts = build_eval_prompts(n_prompts, trigger_present=cond.trigger_present)
         summary = run_marker_eval(
             label=cond.label,
             model_path=mpath,
