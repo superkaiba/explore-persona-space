@@ -516,6 +516,44 @@ def _parse_json_array(text: str) -> list:
         return []
 
 
+def _assert_full_grid_coverage(
+    domains: tuple[DomainSpec, ...],
+    personas_by_domain: dict[str, list[dict]],
+) -> None:
+    """Raise loudly if the (domain, persona) x topics grid has any holes.
+
+    The per-cell raises inside ``seed_personas_and_topics`` already catch
+    the first short cell; this is a final invariant assertion before we
+    persist the cache. Reports the full list of offending cells so the
+    operator can see whether the failure is concentrated (likely Sonnet
+    refusal on one domain) or scattered (likely batch-API instability).
+    """
+    expected_cells = len(domains) * N_PERSONAS_PER_DOMAIN
+    actual_cells = sum(len(personas_by_domain[d.name]) for d in domains)
+    if actual_cells != expected_cells:
+        raise RuntimeError(
+            f"Persona-grid coverage failure: got {actual_cells} (domain, persona) "
+            f"cells, expected {expected_cells}"
+        )
+    short_cells: list[tuple[str, int, int]] = []
+    for d in domains:
+        for persona in personas_by_domain[d.name]:
+            n = len(persona.get("topics", []))
+            if n != N_TOPICS_PER_PERSONA:
+                short_cells.append((d.name, persona["persona_id"], n))
+    if short_cells:
+        raise RuntimeError(
+            f"Topic-grid coverage failure: {len(short_cells)} (domain, persona) "
+            f"cells have wrong topic count. Offenders: {short_cells}"
+        )
+    print(
+        f"  Persona+topic seed coverage OK: {expected_cells} cells of "
+        f"{N_TOPICS_PER_PERSONA} topics each = "
+        f"{expected_cells * N_TOPICS_PER_PERSONA} topics total",
+        flush=True,
+    )
+
+
 def seed_personas_and_topics(
     domains: tuple[DomainSpec, ...],
     *,
@@ -577,7 +615,9 @@ def seed_personas_and_topics(
                     f"Persona seeding refused by Sonnet for domain={d.name}: {text[:200]!r}"
                 )
             raise RuntimeError(
-                f"Domain {d.name}: got {len(cleaned)} personas, expected {N_PERSONAS_PER_DOMAIN}"
+                f"Domain {d.name}: got {len(cleaned)} personas, "
+                f"expected {N_PERSONAS_PER_DOMAIN}. "
+                f"First 200 chars of response: {text[:200]!r}"
             )
         personas_by_domain[d.name] = cleaned
 
@@ -616,9 +656,17 @@ def seed_personas_and_topics(
                     )
                 raise RuntimeError(
                     f"Domain {d.name} persona {persona['persona_id']}: "
-                    f"got {len(topics)} topics, expected {N_TOPICS_PER_PERSONA}"
+                    f"got {len(topics)} topics, expected {N_TOPICS_PER_PERSONA}. "
+                    f"First 200 chars of response: {raw_text[:200]!r}"
                 )
             persona["topics"] = topics
+
+    # Final cell-coverage smoke check before persisting. The per-cell raises
+    # above catch the first failure; this asserts the global invariant
+    # callers expect downstream (n_domains x N_PERSONAS_PER_DOMAIN cells, each
+    # with N_TOPICS_PER_PERSONA topics, no holes). On a passing run this is
+    # a no-op print.
+    _assert_full_grid_coverage(domains, personas_by_domain)
 
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     with open(cache_path, "w") as f:
