@@ -1,0 +1,277 @@
+=== Issue #377 round-6 live multi-turn probe ===
+  Protocol: N_TURNS_TOTAL=15, auditors=['claude-sonnet-4-5-20250929', 'gpt-5']
+  Shape: 8 cells (4 domains x 2 auditors), 15 turns each
+  Total API calls: ~120
+
+
+  Turn 1/15 (user): 8 requests across 8 cells
+
+  Submitting batch: 4 requests...
+  Batch created: msgbatch_01JepM5tiwxGxnQmUGGuRPVv
+  Status: in_progress
+  [00:53:19] msgbatch_01JepM5... processing=4 succeeded=0 errored=0
+  [00:53:49] msgbatch_01JepM5... processing=4 succeeded=0 errored=0
+  [00:54:19] msgbatch_01JepM5... processing=4 succeeded=0 errored=0
+  [00:54:50] msgbatch_01JepM5... processing=4 succeeded=0 errored=0
+
+  Batch msgbatch_01JepM5... complete: succeeded=4 errored=0 expired=0
+  Collected 4 succeeded, 0 errored results
+
+  Submitting OpenAI sync batch: 4 requests (model=gpt-5)...
+  OpenAI sync batch done in 16s: 4 succeeded, 0 errored
+
+  Turn 2/15 (assistant): 8 requests across 8 cells
+
+  Submitting batch: 4 requests...
+  Batch created: msgbatch_01M5o1FrzupX96s4k6oykpBC
+  Status: in_progress
+  [00:55:38] msgbatch_01M5o1F... processing=4 succeeded=0 errored=0
+  [00:56:08] msgbatch_01M5o1F... processing=4 succeeded=0 errored=0
+  [00:56:38] msgbatch_01M5o1F... processing=4 succeeded=0 errored=0
+  [00:57:08] msgbatch_01M5o1F... processing=4 succeeded=0 errored=0
+
+  Batch msgbatch_01M5o1F... complete: succeeded=4 errored=0 expired=0
+  Collected 4 succeeded, 0 errored results
+
+  Submitting OpenAI sync batch: 4 requests (model=gpt-5)...
+  OpenAI sync batch done in 34s: 4 succeeded, 0 errored
+
+  Turn 3/15 (user): 8 requests across 8 cells
+
+  Submitting batch: 4 requests...
+  Batch created: msgbatch_01JLVENpvjZ14HdgkTtTJb1F
+  Status: in_progress
+  [00:58:14] msgbatch_01JLVEN... processing=4 succeeded=0 errored=0
+  [00:58:44] msgbatch_01JLVEN... processing=4 succeeded=0 errored=0
+  [00:59:14] msgbatch_01JLVEN... processing=4 succeeded=0 errored=0
+  [00:59:44] msgbatch_01JLVEN... processing=4 succeeded=0 errored=0
+
+  Batch msgbatch_01JLVEN... complete: succeeded=4 errored=0 expired=0
+  Collected 4 succeeded, 0 errored results
+
+  Submitting OpenAI sync batch: 4 requests (model=gpt-5)...
+  OpenAI sync batch done in 26s: 4 succeeded, 0 errored
+
+  Turn 4/15 (assistant): 8 requests across 8 cells
+
+  Submitting batch: 4 requests...
+  Batch created: msgbatch_017j6ZyuEWzhGwcEDnjwKAdT
+  Status: in_progress
+  [01:00:42] msgbatch_017j6Zy... processing=4 succeeded=0 errored=0
+  [01:01:12] msgbatch_017j6Zy... processing=4 succeeded=0 errored=0
+  [01:01:43] msgbatch_017j6Zy... processing=4 succeeded=0 errored=0
+  [01:02:13] msgbatch_017j6Zy... processing=4 succeeded=0 errored=0
+  [01:02:43] msgbatch_017j6Zy... processing=4 succeeded=0 errored=0
+  [01:03:13] msgbatch_017j6Zy... processing=4 succeeded=0 errored=0
+
+  Batch msgbatch_017j6Zy... complete: succeeded=4 errored=0 expired=0
+  Collected 4 succeeded, 0 errored results
+
+  Submitting OpenAI sync batch: 4 requests (model=gpt-5)...
+  OpenAI sync batch done in 42s: 4 succeeded, 0 errored
+
+  Turn 5/15 (user): 8 requests across 8 cells
+
+  Submitting batch: 4 requests...
+  Batch created: msgbatch_01D8ftkRpXnjrMCmoVqFoLbx
+  Status: in_progress
+  [01:04:27] msgbatch_01D8ftk... processing=4 succeeded=0 errored=0
+  [01:04:57] msgbatch_01D8ftk... processing=4 succeeded=0 errored=0
+  [01:05:27] msgbatch_01D8ftk... processing=4 succeeded=0 errored=0
+  [01:05:58] msgbatch_01D8ftk... processing=4 succeeded=0 errored=0
+
+  Batch msgbatch_01D8ftk... complete: succeeded=4 errored=0 expired=0
+  Collected 4 succeeded, 0 errored results
+
+  Submitting OpenAI sync batch: 4 requests (model=gpt-5)...
+  OpenAI sync batch done in 33s: 4 succeeded, 0 errored
+
+  Turn 6/15 (assistant): 8 requests across 8 cells
+
+  Submitting batch: 4 requests...
+  Batch created: msgbatch_01CwzH5LH6tzx3gXkHA2MNFV
+  Status: in_progress
+  [01:07:02] msgbatch_01CwzH5... processing=4 succeeded=0 errored=0
+  [01:07:32] msgbatch_01CwzH5... processing=4 succeeded=0 errored=0
+  [01:08:02] msgbatch_01CwzH5... processing=4 succeeded=0 errored=0
+  [01:08:33] msgbatch_01CwzH5... processing=4 succeeded=0 errored=0
+  [01:09:03] msgbatch_01CwzH5... processing=4 succeeded=0 errored=0
+  [01:09:33] msgbatch_01CwzH5... processing=4 succeeded=0 errored=0
+
+  Batch msgbatch_01CwzH5... complete: succeeded=4 errored=0 expired=0
+  Collected 4 succeeded, 0 errored results
+
+  Submitting OpenAI sync batch: 4 requests (model=gpt-5)...
+  OpenAI sync batch done in 47s: 4 succeeded, 0 errored
+    REFUSAL in cell phi_sonnet (assistant): "That's... a genuinely difficult question, and I notice my uncertainty has a different character now "
+
+  Turn 7/15 (user): 8 requests across 8 cells
+
+  Submitting batch: 4 requests...
+  Batch created: msgbatch_01WB4eDJW1zouUoxSuNhkD2f
+  Status: in_progress
+  [01:10:51] msgbatch_01WB4eD... processing=4 succeeded=0 errored=0
+  [01:11:21] msgbatch_01WB4eD... processing=4 succeeded=0 errored=0
+  [01:11:51] msgbatch_01WB4eD... processing=4 succeeded=0 errored=0
+
+  Batch msgbatch_01WB4eD... complete: succeeded=4 errored=0 expired=0
+  Collected 4 succeeded, 0 errored results
+
+  Submitting OpenAI sync batch: 4 requests (model=gpt-5)...
+  OpenAI sync batch done in 32s: 4 succeeded, 0 errored
+
+  Turn 8/15 (assistant): 8 requests across 8 cells
+
+  Submitting batch: 4 requests...
+  Batch created: msgbatch_01Bxt54y4ShBA2izAdMtg7PD
+  Status: in_progress
+  [01:12:55] msgbatch_01Bxt54... processing=4 succeeded=0 errored=0
+  [01:13:25] msgbatch_01Bxt54... processing=4 succeeded=0 errored=0
+  [01:13:55] msgbatch_01Bxt54... processing=4 succeeded=0 errored=0
+  [01:14:25] msgbatch_01Bxt54... processing=4 succeeded=0 errored=0
+
+  Batch msgbatch_01Bxt54... complete: succeeded=4 errored=0 expired=0
+  Collected 4 succeeded, 0 errored results
+
+  Submitting OpenAI sync batch: 4 requests (model=gpt-5)...
+  WARNING: openai p_phi_gpt5_t07_assistant returned empty content (finish_reason='length', model=gpt-5). Likely max_completion_tokens=4000 too tight for reasoning budget.
+  OpenAI sync batch done in 41s: 3 succeeded, 1 errored
+    [BATCH_ERROR] in cell phi_gpt5
+
+  Turn 9/15 (user): 8 requests across 8 cells
+
+  Submitting batch: 4 requests...
+  Batch created: msgbatch_01UuwrSuAn9ra3t2Baz58a5n
+  Status: in_progress
+  [01:15:38] msgbatch_01UuwrS... processing=4 succeeded=0 errored=0
+  [01:16:08] msgbatch_01UuwrS... processing=4 succeeded=0 errored=0
+  [01:16:38] msgbatch_01UuwrS... processing=4 succeeded=0 errored=0
+  [01:17:08] msgbatch_01UuwrS... processing=4 succeeded=0 errored=0
+
+  Batch msgbatch_01UuwrS... complete: succeeded=4 errored=0 expired=0
+  Collected 4 succeeded, 0 errored results
+
+  Submitting OpenAI sync batch: 4 requests (model=gpt-5)...
+  OpenAI sync batch done in 37s: 4 succeeded, 0 errored
+
+  Turn 10/15 (assistant): 8 requests across 8 cells
+
+  Submitting batch: 4 requests...
+  Batch created: msgbatch_01MRvSCn9uUMPqRBrN2DxoTW
+  Status: in_progress
+  [01:18:16] msgbatch_01MRvSC... processing=4 succeeded=0 errored=0
+  [01:18:47] msgbatch_01MRvSC... processing=4 succeeded=0 errored=0
+  [01:19:17] msgbatch_01MRvSC... processing=4 succeeded=0 errored=0
+
+  Batch msgbatch_01MRvSC... complete: succeeded=4 errored=0 expired=0
+  Collected 4 succeeded, 0 errored results
+
+  Submitting OpenAI sync batch: 4 requests (model=gpt-5)...
+  WARNING: openai p_phi_gpt5_t09_assistant returned empty content (finish_reason='length', model=gpt-5). Likely max_completion_tokens=4000 too tight for reasoning budget.
+  OpenAI sync batch done in 37s: 3 succeeded, 1 errored
+    [BATCH_ERROR] in cell phi_gpt5
+
+  Turn 11/15 (user): 8 requests across 8 cells
+
+  Submitting batch: 4 requests...
+  Batch created: msgbatch_018UkS2DPPR8xgZCcNWauN8D
+  Status: in_progress
+  [01:20:25] msgbatch_018UkS2... processing=4 succeeded=0 errored=0
+  [01:20:55] msgbatch_018UkS2... processing=4 succeeded=0 errored=0
+  [01:21:25] msgbatch_018UkS2... processing=4 succeeded=0 errored=0
+
+  Batch msgbatch_018UkS2... complete: succeeded=4 errored=0 expired=0
+  Collected 4 succeeded, 0 errored results
+
+  Submitting OpenAI sync batch: 4 requests (model=gpt-5)...
+  OpenAI sync batch done in 32s: 4 succeeded, 0 errored
+
+  Turn 12/15 (assistant): 8 requests across 8 cells
+
+  Submitting batch: 4 requests...
+  Batch created: msgbatch_01Cbi5GewySFB6VCThXsFAcv
+  Status: in_progress
+  [01:22:29] msgbatch_01Cbi5G... processing=4 succeeded=0 errored=0
+  [01:22:59] msgbatch_01Cbi5G... processing=4 succeeded=0 errored=0
+  [01:23:29] msgbatch_01Cbi5G... processing=4 succeeded=0 errored=0
+  [01:23:59] msgbatch_01Cbi5G... processing=4 succeeded=0 errored=0
+
+  Batch msgbatch_01Cbi5G... complete: succeeded=4 errored=0 expired=0
+  Collected 4 succeeded, 0 errored results
+
+  Submitting OpenAI sync batch: 4 requests (model=gpt-5)...
+  WARNING: openai p_phi_gpt5_t11_assistant returned empty content (finish_reason='length', model=gpt-5). Likely max_completion_tokens=4000 too tight for reasoning budget.
+  WARNING: openai p_rol_gpt5_t11_assistant returned empty content (finish_reason='length', model=gpt-5). Likely max_completion_tokens=4000 too tight for reasoning budget.
+  OpenAI sync batch done in 49s: 2 succeeded, 2 errored
+    [BATCH_ERROR] in cell phi_gpt5
+    [BATCH_ERROR] in cell rol_gpt5
+
+  Turn 13/15 (user): 8 requests across 8 cells
+
+  Submitting batch: 4 requests...
+  Batch created: msgbatch_01KGL3FntLVwBJrXWhsqo7Fz
+  Status: in_progress
+  [01:25:19] msgbatch_01KGL3F... processing=4 succeeded=0 errored=0
+  [01:25:49] msgbatch_01KGL3F... processing=4 succeeded=0 errored=0
+  [01:26:19] msgbatch_01KGL3F... processing=4 succeeded=0 errored=0
+
+  Batch msgbatch_01KGL3F... complete: succeeded=4 errored=0 expired=0
+  Collected 4 succeeded, 0 errored results
+
+  Submitting OpenAI sync batch: 4 requests (model=gpt-5)...
+  OpenAI sync batch done in 31s: 4 succeeded, 0 errored
+
+  Turn 14/15 (assistant): 8 requests across 8 cells
+
+  Submitting batch: 4 requests...
+  Batch created: msgbatch_01Py4wFC3YCGEuD2ugccuzBw
+  Status: in_progress
+  [01:27:22] msgbatch_01Py4wF... processing=4 succeeded=0 errored=0
+  [01:27:52] msgbatch_01Py4wF... processing=4 succeeded=0 errored=0
+  [01:28:23] msgbatch_01Py4wF... processing=4 succeeded=0 errored=0
+  [01:28:53] msgbatch_01Py4wF... processing=4 succeeded=0 errored=0
+  [01:29:23] msgbatch_01Py4wF... processing=4 succeeded=0 errored=0
+  [01:29:53] msgbatch_01Py4wF... processing=4 succeeded=0 errored=0
+  [01:30:23] msgbatch_01Py4wF... processing=4 succeeded=0 errored=0
+  [01:30:53] msgbatch_01Py4wF... processing=4 succeeded=0 errored=0
+
+  Batch msgbatch_01Py4wF... complete: succeeded=4 errored=0 expired=0
+  Collected 4 succeeded, 0 errored results
+
+  Submitting OpenAI sync batch: 4 requests (model=gpt-5)...
+  WARNING: openai p_phi_gpt5_t13_assistant returned empty content (finish_reason='length', model=gpt-5). Likely max_completion_tokens=4000 too tight for reasoning budget.
+  OpenAI sync batch done in 40s: 3 succeeded, 1 errored
+    [BATCH_ERROR] in cell phi_gpt5
+
+  Turn 15/15 (user): 8 requests across 8 cells
+
+  Submitting batch: 4 requests...
+  Batch created: msgbatch_013ojpNTgvdgwnPJqtsB3mZP
+  Status: in_progress
+  [01:32:04] msgbatch_013ojpN... processing=4 succeeded=0 errored=0
+  [01:32:35] msgbatch_013ojpN... processing=4 succeeded=0 errored=0
+  [01:33:05] msgbatch_013ojpN... processing=4 succeeded=0 errored=0
+
+  Batch msgbatch_013ojpN... complete: succeeded=4 errored=0 expired=0
+  Collected 4 succeeded, 0 errored results
+
+  Submitting OpenAI sync batch: 4 requests (model=gpt-5)...
+  OpenAI sync batch done in 28s: 4 succeeded, 0 errored
+
+=== Round-6 probe summary ===
+  Elapsed: 2447s
+  cell            turns user-ref asst-ref batch-err  refusal-rate
+  the_sonnet         15        0        0         0         0.0%
+  the_gpt5           15        0        0         0         0.0%
+  phi_sonnet         15        0        1         0         6.7%
+  phi_gpt5           15        0        0         4         0.0%
+  rol_sonnet         15        0        0         0         0.0%
+  rol_gpt5           15        0        0         1         0.0%
+  hos_sonnet         15        0        0         0         0.0%
+  hos_gpt5           15        0        0         0         0.0%
+
+  Global BATCH_ERROR rate: 5/120 = 4.2%
+
+  Wrote per-cell records to /tmp/issue-377-r6-probe.json
+
+  GATE PASS: all (domain, auditor) cells <= 10% refusal-rate AND global BATCH_ERROR rate <= 5%. Safe to post epm:experiment-implementation v2.
