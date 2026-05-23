@@ -1797,8 +1797,8 @@
     "378": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/378",
-      "status": "awaiting_promotion",
+      "path": "tasks/interpreting/378",
+      "status": "interpreting",
       "title": "A trigger LoRA trained only on in-context fake secrets fired 0/200 across three Introspection-Adapter Qwen3-14B organisms, but the merge-and-stack rig also broke the in-context sanity check, so the null is uninterpretable (LOW confidence)"
     },
     "379": {
