@@ -1,6 +1,7 @@
 ---
-title: '[Proposed] Conditional marker into Assistant, EM, compare marker fire-rate
-  against non-EM baseline'
+title: A persona-and-trigger conditional marker did not survive a single epoch of
+  length-matched SFT, regardless of whether that SFT induced emergent misalignment
+  (HIGH confidence)
 kind: experiment
 application: detect
 tags: []
