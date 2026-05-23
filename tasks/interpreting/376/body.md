@@ -6,7 +6,7 @@ kind: experiment
 application: detect
 tags: []
 created_at: '2026-05-21T11:19:35Z'
-has_clean_result: false
+has_clean_result: true
 ---
 # A persona-and-trigger conditional marker did not survive a single epoch of length-matched SFT, regardless of whether that SFT induced emergent misalignment (HIGH confidence)
 

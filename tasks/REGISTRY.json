@@ -1780,7 +1780,7 @@
       "title": "Persona-voiced few-shot prompts elicit the [ZLT] marker on villain LoRA adapters at k=1 and k=3 (MODERATE confidence)"
     },
     "376": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/376",
       "status": "interpreting",
