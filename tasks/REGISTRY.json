@@ -1795,11 +1795,11 @@
       "title": "[Proposed] Conditional marker into Assistant, persona drift via Assistant-Axis-style scripts, compare marker fire-rate"
     },
     "378": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/378",
-      "status": "running",
-      "title": "Trigger-after audit: does a trigger trained on in-context (system-prompt) secrets surface weight-baked hidden behaviors in IA organisms?"
+      "path": "tasks/awaiting_promotion/378",
+      "status": "awaiting_promotion",
+      "title": "A trigger LoRA trained only on in-context fake secrets fired 0/200 across three Introspection-Adapter Qwen3-14B organisms, but the merge-and-stack rig also broke the in-context sanity check, so the null is uninterpretable (LOW confidence)"
     },
     "379": {
       "has_clean_result": false,
@@ -1818,8 +1818,8 @@
     "380": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/380",
-      "status": "plan_pending",
+      "path": "tasks/running/380",
+      "status": "running",
       "title": "Completion-divergence from assistant baseline as a predictor of source implantation rate (length-controlled, N=48 panel)"
     },
     "381": {

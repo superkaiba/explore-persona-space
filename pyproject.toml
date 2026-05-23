@@ -41,6 +41,7 @@ dependencies = [
     "langdetect>=1.0.9",
     "mcp>=1.0,<2.0",
     "psycopg>=3.3.4",
+    "pingouin>=0.6.1",
 ]
 
 [project.optional-dependencies]
