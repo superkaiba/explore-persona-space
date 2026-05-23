@@ -80,6 +80,16 @@ they invoke `implementer` directly.
   assistant turns.
 - **vLLM for batched eval generation.** Never sequential `model.generate()` for
   K samples — use `LLM.generate()` with `SamplingParams(n=K)`.
+- **Checkpoint per phase; never accumulate-in-memory and write-at-end.** Any
+  multi-phase / multi-domain / multi-condition / multi-seed dispatcher MUST
+  persist each phase's output (to disk, HF data repo, or WandB) the moment that
+  phase completes. The canonical anti-pattern — `results = []; for phase:
+  results.append(...); write(results, path)` — turns ANY downstream phase crash
+  (quality gate, OOM, mid-run `SystemExit`, network blip) into total data loss.
+  Prefer per-phase files (`output/<phase>.jsonl`) — cleanest re-runnability and
+  downstream globs. Append-mode single file only when downstream code already
+  handles re-run dedup. Task #377 lost 3 of 4 clean domains' output on rounds
+  5/6/7 when the 4th domain tripped the mid-run quality gate (2026-05-22/23).
 
 ### After implementation (mandatory checklist)
 
