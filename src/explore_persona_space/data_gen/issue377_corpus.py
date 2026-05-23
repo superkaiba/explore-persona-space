@@ -787,13 +787,19 @@ def is_anthropic_model(model_id: str) -> bool:
 # output budget, which means a reasoning model with the same budget
 # burns it all on thinking and emits ``content=""``. We add a fixed
 # headroom for reasoning models so the visible-output budget stays
-# roughly parity with the Sonnet path. 3200 was chosen empirically:
-# GPT-5 with reasoning_effort default ("medium") typically spends
-# 1500-3000 tokens on reasoning for a few-sentence drift-conversation
-# turn; 3200 covers the upper end with a small margin. (See round-6
-# probe v1 evidence: 4/8 GPT-5 cells emitted empty content with the
-# 800-token budget; doubling it via this headroom fixed the issue.)
-_OPENAI_REASONING_TOKEN_HEADROOM: int = 3200
+# roughly parity with the Sonnet path. 6400 was chosen empirically:
+# round-6 probe v2 measured a 26.7% BATCH_ERROR rate in the phi_gpt5
+# cell at headroom=3200 (philosophy conversations exhaust 3200 tokens
+# of reasoning at turns 7/9/11/13 — assistant-side, second half of the
+# 15-turn conversation, where context-driven reasoning chains are
+# longest). At production scale (1500 GPT-5 calls), 26.7% per-cell
+# compounds to ~5.0% global BATCH_ERROR — exactly at the
+# ``post_gen_sanity_checks`` 5% hard ceiling, with zero margin. Doubling
+# the headroom to 6400 gives the GPT-5 reasoning path enough budget to
+# emit visible output on the long-context philosophy turns. Cost
+# overhead is ~$24 in extra reasoning tokens on a multi-hundred-dollar
+# production generation, which is cheap insurance against a full re-run.
+_OPENAI_REASONING_TOKEN_HEADROOM: int = 6400
 
 
 def _is_reasoning_model(model_id: str) -> bool:

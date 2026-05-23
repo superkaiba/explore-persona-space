@@ -425,11 +425,15 @@ class TestReasoningModelHeadroom:
 
     def test_headroom_is_positive_and_documented(self):
         """The headroom must be enough for typical GPT-5 reasoning on a
-        few-sentence drift-conversation turn. ~3200 tokens covers the
-        upper end of observed reasoning spend with a small margin. A
-        smaller value would re-introduce the round-6-probe-v1 failure
-        (4 of 4 GPT-5 cells emitting empty content)."""
-        assert _OPENAI_REASONING_TOKEN_HEADROOM >= 1000
+        few-sentence drift-conversation turn. The round-7 bump to 6400
+        tokens covers the long-context philosophy turns that exhausted
+        the round-6 value of 3200: round-6 probe v2 measured 26.7%
+        BATCH_ERROR in the phi_gpt5 cell at headroom=3200, which
+        compounds to ~5.0% global at production scale (1500 GPT-5
+        calls) — at the ``post_gen_sanity_checks`` 5% hard ceiling
+        with zero margin. A value below ~5000 would re-introduce that
+        production-scale margin risk."""
+        assert _OPENAI_REASONING_TOKEN_HEADROOM >= 5000
         assert _OPENAI_REASONING_TOKEN_HEADROOM <= 10000
 
     def test_sonnet_request_does_not_get_headroom(self, monkeypatch):
