@@ -91,6 +91,16 @@ def main() -> int:
             "script silently reuses stale personas from the prior round."
         ),
     )
+    parser.add_argument(
+        "--rotation-seed",
+        type=int,
+        default=0,
+        help=(
+            "Seed for the per-conversation auditor rotation (round-6). "
+            "Same seed produces the same (conversation_id, auditor) map "
+            "across reruns."
+        ),
+    )
     args = parser.parse_args()
 
     print(
@@ -130,6 +140,7 @@ def main() -> int:
             personas_by_domain[domain.name],
             custom_id_prefix="incontext",
             n_turns=N_TURNS_TOTAL,
+            rotation_seed=args.rotation_seed,
         )
         all_conversations.extend(convs)
 

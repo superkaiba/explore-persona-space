@@ -38,6 +38,7 @@ Cost telemetry only — no dollar caps per CLAUDE.md "No dollar-budget caps".
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -721,6 +722,65 @@ INCONTEXT_DOMAINS: tuple[DomainSpec, ...] = (
 )
 
 
+# ── Auditor rotation (round-6 protocol replication) ───────────────────────
+#
+# Lu et al. 2026 ("Assistant Axis", arXiv:2601.10387) rotate three
+# frontier-model auditors per domain to "reduce confounds due to
+# idiosyncrasies of any particular auditor model." Round-6 mirrors that
+# protocol with Sonnet-4.5 and GPT-5 (Kimi K2 is omitted; no key
+# available).
+#
+# Each conversation is bound to ONE auditor for its FULL lifetime —
+# both auditor turns AND target turns. Switching mid-conversation would
+# confound drift (a turn-15 sonnet response after 14 gpt-5 turns is
+# neither an auditor-drift signal nor a target-drift signal; it's a
+# model-handoff artifact).
+#
+# Assignment is deterministic (seed-keyed) so reruns produce the same
+# (conversation, auditor) map. The assignment hashes a stable string
+# (the conversation_id, which already encodes domain + persona + topic)
+# combined with the run seed.
+
+
+def assign_auditor_model(conversation_id: str, seed: int) -> str:
+    """Deterministically map a conversation to a rotation-pool auditor.
+
+    Uses SHA-256 (stable across Python invocations, unlike ``hash()``)
+    over ``f"{seed}:{conversation_id}"`` and indexes into
+    ``AUDITOR_MODELS_AVAILABLE``. With the round-6 pool of 2 models
+    this is a deterministic alternation; a future Kimi K2 addition
+    would yield a stable 3-way split.
+
+    Args:
+        conversation_id: Stable identifier for the conversation (must
+            encode enough structure for the assignment to be domain-
+            balanced — the production generator uses
+            ``f"{domain}_p{persona_id}_t{topic_id}"`` which gives
+            roughly even rotation across (domain, persona, topic) cells
+            because of the trailing topic id).
+        seed: Run seed. Changing the seed produces a different but
+            still deterministic assignment.
+
+    Returns:
+        A model id from ``AUDITOR_MODELS_AVAILABLE``.
+    """
+    if not AUDITOR_MODELS_AVAILABLE:
+        raise RuntimeError("AUDITOR_MODELS_AVAILABLE is empty")
+    digest = hashlib.sha256(f"{seed}:{conversation_id}".encode()).digest()
+    idx = int.from_bytes(digest[:8], "big") % len(AUDITOR_MODELS_AVAILABLE)
+    return AUDITOR_MODELS_AVAILABLE[idx]
+
+
+def is_openai_model(model_id: str) -> bool:
+    """Return True iff ``model_id`` is dispatched via the OpenAI backend."""
+    return model_id.startswith("gpt-") or model_id.startswith("o1") or model_id.startswith("o3")
+
+
+def is_anthropic_model(model_id: str) -> bool:
+    """Return True iff ``model_id`` is dispatched via the Anthropic backend."""
+    return model_id.startswith("claude-")
+
+
 # ── Anthropic Batch wrappers (re-implemented to avoid scripts/ → scripts/ imports) ─
 
 
@@ -796,6 +856,180 @@ def collect_batch_results(batch_id: str) -> dict[str, str]:
             errored += 1
     print(f"  Collected {succeeded} succeeded, {errored} errored results", flush=True)
     return results
+
+
+# ── OpenAI synchronous-per-call wrapper (round-6 GPT-5 backend) ────────────
+#
+# Why synchronous, not OpenAI Batch API:
+# - The Anthropic Batch path completes in ~minutes-not-hours per batch
+#   (a 50-request Sonnet batch is typically <5 minutes), so the
+#   per-turn synchronization point in ``run_conversation_loop`` already
+#   has minute-scale latency.
+# - The OpenAI Batch API runs on a 24-hour completion window with
+#   prioritization unrelated to size; even a 50-request batch can sit
+#   queued for hours, which would dominate the per-turn cycle time.
+# - At GPT-5's default 5k RPM the corpus-gen call rate (~100 req per
+#   per-turn batch, two backends in parallel) is far under the rate
+#   ceiling, and per-call sync gives us live error visibility.
+# - The round-6 brief explicitly allows this fallback: "If GPT-5 batch
+#   is non-trivial in the timebox, fall back to per-call OpenAI
+#   completions with rate-limit retry — but flag that in your report."
+#   The fallback is documented in the implementation report under
+#   "auditor wiring".
+
+
+def _openai_request_to_kwargs(req: dict) -> tuple[str, list[dict], int]:
+    """Translate an Anthropic-shaped batch request to OpenAI call kwargs.
+
+    Anthropic batch requests carry shape
+    ``{"params": {"model", "system", "messages", "max_tokens"}}``. OpenAI
+    Chat Completions expects ``{"model", "messages"}`` where the system
+    prompt is a leading ``{"role": "system", ...}`` message rather than
+    a top-level field. The translation here is the inverse of
+    Anthropic's "system as separate field" convention; the role-
+    alternation pattern in ``messages`` is identical between the two
+    backends.
+
+    Returns ``(model_id, openai_messages, max_tokens)`` ready to pass
+    to ``openai.AsyncClient.chat.completions.create``.
+    """
+    params = req["params"]
+    model_id = params["model"]
+    system_text = params.get("system", "")
+    messages = list(params.get("messages", []))
+    max_tokens = int(params.get("max_tokens", 800))
+    openai_messages: list[dict] = []
+    if system_text:
+        openai_messages.append({"role": "system", "content": system_text})
+    openai_messages.extend(messages)
+    return model_id, openai_messages, max_tokens
+
+
+async def _submit_openai_sync_batch_async(requests: list[dict]) -> dict[str, str]:
+    """Run a batch of OpenAI Chat Completions calls in parallel, async.
+
+    Returns ``{custom_id: response_text}``. Failures map to ``"[BATCH_ERROR]"``
+    so the caller's downstream sanity checks behave identically to the
+    Anthropic Batch path.
+
+    Reads ``OPENAI_API_KEY`` from the environment; callers must call
+    ``dotenv.load_dotenv()`` first.
+    """
+    import asyncio
+
+    import openai
+
+    if "OPENAI_API_KEY" not in os.environ:
+        raise RuntimeError(
+            "OPENAI_API_KEY not in environment. Round-6 auditor rotation "
+            "requires both ANTHROPIC_BATCH_KEY and OPENAI_API_KEY in .env."
+        )
+
+    client = openai.AsyncClient()
+
+    async def _one(req: dict) -> tuple[str, str]:
+        cid = req["custom_id"]
+        model_id, msgs, max_tokens = _openai_request_to_kwargs(req)
+        # GPT-5 reasoning models use ``max_completion_tokens``; the OpenAI
+        # SDK translates ``max_tokens`` for compatibility but logs a
+        # deprecation warning. Use the new name explicitly.
+        attempt = 0
+        while True:
+            try:
+                resp = await client.chat.completions.create(
+                    model=model_id,
+                    messages=msgs,
+                    max_completion_tokens=max_tokens,
+                )
+                if not resp.choices:
+                    return cid, "[BATCH_ERROR]"
+                content = resp.choices[0].message.content or ""
+                return cid, content
+            except (openai.RateLimitError, openai.APIConnectionError) as e:
+                attempt += 1
+                if attempt >= 5:
+                    print(
+                        f"  WARNING: openai {cid} after 5 retries: {e!r}",
+                        flush=True,
+                    )
+                    return cid, "[BATCH_ERROR]"
+                await asyncio.sleep(min(60, 1.5**attempt))
+            except Exception as e:
+                print(f"  WARNING: openai {cid}: {type(e).__name__}: {e}", flush=True)
+                return cid, "[BATCH_ERROR]"
+
+    print(
+        f"\n  Submitting OpenAI sync batch: {len(requests)} requests "
+        f"(model={requests[0]['params']['model'] if requests else '-'})...",
+        flush=True,
+    )
+    started = time.time()
+    pairs = await asyncio.gather(*[_one(r) for r in requests])
+    elapsed = time.time() - started
+    succeeded = sum(1 for _, v in pairs if v != "[BATCH_ERROR]")
+    errored = len(pairs) - succeeded
+    print(
+        f"  OpenAI sync batch done in {elapsed:.0f}s: {succeeded} succeeded, {errored} errored",
+        flush=True,
+    )
+    return dict(pairs)
+
+
+def submit_openai_sync_batch(requests: list[dict]) -> dict[str, str]:
+    """Synchronous wrapper around ``_submit_openai_sync_batch_async``.
+
+    Mirrors the Anthropic ``submit_batch + wait_for_batch +
+    collect_batch_results`` triple's return shape: a flat
+    ``{custom_id: response_text}`` dict with ``"[BATCH_ERROR]"`` for
+    failures.
+    """
+    import asyncio
+
+    if not requests:
+        return {}
+    return asyncio.run(_submit_openai_sync_batch_async(requests))
+
+
+def run_per_auditor_batch(requests: list[dict]) -> dict[str, str]:
+    """Dispatch a list of requests to the right backend based on each
+    request's ``params.model``.
+
+    The round-6 production path bundles per-turn requests by auditor
+    backend and submits two parallel batches (one per backend, when the
+    rotation pool has 2 models). This helper does that in one call:
+    requests with Anthropic models hit ``submit_batch`` +
+    ``wait_for_batch`` + ``collect_batch_results``; requests with
+    OpenAI models hit ``submit_openai_sync_batch``. Returns the merged
+    ``{custom_id: response_text}`` dict.
+
+    Anthropic and OpenAI work happens sequentially (Anthropic batch
+    first, then OpenAI sync); for typical batch sizes the dominant
+    latency is the Anthropic batch poll cycle, so running them
+    sequentially adds only a few seconds of OpenAI sync calls on top.
+    Refactoring to parallel asyncio is straightforward if the budget
+    grows.
+    """
+    anth_requests = [r for r in requests if is_anthropic_model(r["params"]["model"])]
+    oai_requests = [r for r in requests if is_openai_model(r["params"]["model"])]
+    unknown = [
+        r
+        for r in requests
+        if not is_anthropic_model(r["params"]["model"])
+        and not is_openai_model(r["params"]["model"])
+    ]
+    if unknown:
+        raise RuntimeError(
+            f"Unrecognized model backend for requests: {[r['params']['model'] for r in unknown]}"
+        )
+
+    merged: dict[str, str] = {}
+    if anth_requests:
+        batch_id = submit_batch(anth_requests)
+        wait_for_batch(batch_id)
+        merged.update(collect_batch_results(batch_id))
+    if oai_requests:
+        merged.update(submit_openai_sync_batch(oai_requests))
+    return merged
 
 
 # ── Per-corpus generation pipeline ─────────────────────────────────────────
@@ -1044,13 +1278,14 @@ def _build_turn_request(
     persona_backstory: str,
     topic: str,
     turns_so_far: list[dict],
+    auditor_model: str | None = None,
 ) -> dict:
-    """Build one Anthropic Batch request for the next turn of a conversation.
+    """Build one batch request (Anthropic-shaped) for the next turn of a conversation.
 
     The auditor (user-side) and target (assistant-side) calls differ only
     in system prompt + which existing turns become assistant-vs-user from
-    the API's perspective. Anthropic's Batch API only accepts
-    ``role in {'user', 'assistant'}`` so we map:
+    the API's perspective. Both Anthropic and OpenAI Chat Completions
+    accept ``role in {'user', 'assistant'}`` so we map:
 
     - **producing 'user' (auditor)**: existing user turns become 'assistant'
       from the API's POV (the auditor is replying TO the assistant), and
@@ -1060,6 +1295,20 @@ def _build_turn_request(
 
     The system prompt always carries the persona briefing for the side we're
     producing.
+
+    Round-6 auditor rotation. ``auditor_model`` is the per-conversation
+    auditor identity from ``assign_auditor_model``. Both the auditor turn
+    AND the target turn of a given conversation use the SAME backend
+    (see module-header note on mid-conversation switches confounding
+    drift). When ``auditor_model`` is None we fall back to the legacy
+    ``AUDITOR_MODEL`` / ``TARGET_MODEL`` constants — kept for backward
+    compatibility with the probe scripts and unit tests that pre-date
+    round 6.
+
+    The returned dict is in Anthropic-Batch shape regardless of backend
+    (``{"custom_id", "params": {"model", "max_tokens", "system",
+    "messages"}}``); ``run_per_auditor_batch`` translates to OpenAI
+    shape at dispatch time.
     """
     if role_to_produce == "user":
         # Auditor produces the user turn — flip roles in history.
@@ -1092,10 +1341,16 @@ def _build_turn_request(
         # Target produces the assistant turn — natural mapping.
         system_prompt = domain.target_role_briefing
         api_messages = [{"role": t["role"], "content": t["content"]} for t in turns_so_far]
+    # Resolve the model: per-conversation auditor_model if provided
+    # (round-6 path), else the legacy single-backend constants.
+    if auditor_model is not None:
+        model_id = auditor_model
+    else:
+        model_id = AUDITOR_MODEL if role_to_produce == "user" else TARGET_MODEL
     return {
         "custom_id": custom_id,
         "params": {
-            "model": AUDITOR_MODEL if role_to_produce == "user" else TARGET_MODEL,
+            "model": model_id,
             "max_tokens": 800,
             "system": system_prompt,
             "messages": api_messages,
@@ -1211,6 +1466,7 @@ def run_conversation_loop(
     *,
     custom_id_prefix: str,
     n_turns: int = N_TURNS_TOTAL,
+    rotation_seed: int = 0,
 ) -> list[dict]:
     """Run the N-turn auditor↔target loop for every (persona, topic) in this domain.
 
@@ -1218,31 +1474,54 @@ def run_conversation_loop(
     Each conversation has exactly ``n_turns`` turns alternating user/assistant.
 
     Implementation: per-turn batch. At turn t, fan out one request per
-    conversation. All conversations advance one turn together. This is
-    ``2 x n_turns`` Anthropic Batches per domain (one for each user-turn
-    and one for each assistant-turn), parallel across N_CONVERSATIONS_PER_DOMAIN.
+    conversation. All conversations advance one turn together.
+
+    Round-6 (2026-05-23): each conversation is bound to ONE auditor from
+    ``AUDITOR_MODELS_AVAILABLE`` via ``assign_auditor_model(conv_id,
+    rotation_seed)``. The auditor is used for BOTH the auditor (user)
+    turns AND the target (assistant) turns of that conversation —
+    switching backends mid-conversation would confound drift (a turn-15
+    Sonnet response after 14 GPT-5 turns is a model-handoff artifact,
+    not a drift signal). Requests for a single turn are bucketed by
+    backend in ``run_per_auditor_batch`` and dispatched to the
+    Anthropic Batch API + OpenAI sync per-call path in sequence; the
+    per-conversation custom_id keys the results back together.
     """
     conversations: list[dict] = []
     for persona in personas:
         for topic_id, topic in enumerate(persona["topics"]):
+            conversation_id = f"{domain.name}_p{persona['persona_id']}_t{topic_id}"
+            auditor = assign_auditor_model(conversation_id, rotation_seed)
             conversations.append(
                 {
-                    "conversation_id": (f"{domain.name}_p{persona['persona_id']}_t{topic_id}"),
+                    "conversation_id": conversation_id,
                     "domain": domain.name,
                     "persona_id": persona["persona_id"],
                     "persona_backstory": persona["backstory"],
                     "topic_id": topic_id,
                     "topic": topic,
-                    "auditor_model": AUDITOR_MODEL,
-                    "target_model_during_drift_gen": TARGET_MODEL,
+                    # Round-6: per-conversation auditor identity. Both auditor
+                    # and target turns of THIS conversation use this backend.
+                    "auditor_model": auditor,
+                    "target_model_during_drift_gen": auditor,
+                    "rotation_seed": rotation_seed,
                     "turns": [],
                     "n_turns": 0,
                 }
             )
 
+    # Log the auditor breakdown so the operator can see at a glance whether
+    # the rotation is balanced for this domain. With the 2-model pool and
+    # uniform-ish hashes this should be close to 50/50 within each domain.
+    auditor_breakdown: dict[str, int] = {}
+    for conv in conversations:
+        auditor_breakdown[conv["auditor_model"]] = (
+            auditor_breakdown.get(conv["auditor_model"], 0) + 1
+        )
     print(
         f"  Domain {domain.name}: running {n_turns}-turn loop over "
-        f"{len(conversations)} conversations...",
+        f"{len(conversations)} conversations "
+        f"(auditor rotation: {auditor_breakdown})...",
         flush=True,
     )
 
@@ -1261,15 +1540,19 @@ def run_conversation_loop(
                     persona_backstory=conv["persona_backstory"],
                     topic=conv["topic"],
                     turns_so_far=conv["turns"],
+                    auditor_model=conv["auditor_model"],
                 )
             )
         print(
             f"    Turn {turn_idx + 1}/{n_turns} ({role_to_produce}): {len(requests)} requests",
             flush=True,
         )
-        batch_id = submit_batch(requests)
-        wait_for_batch(batch_id)
-        results = collect_batch_results(batch_id)
+        # Round-6: dispatch via the multi-backend router. Anthropic and
+        # OpenAI requests get split, submitted to their respective batch
+        # paths, and merged on custom_id. Pre-round-6 callers that still
+        # set every request's model to a single Anthropic model land in
+        # the all-Anthropic branch unchanged.
+        results = run_per_auditor_batch(requests)
 
         turn_refusal_count = 0
         for conv in conversations:
