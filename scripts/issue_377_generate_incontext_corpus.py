@@ -2,8 +2,9 @@
 """Generate the issue #377 in-context (neutral-topic) conversation corpus.
 
 200 multi-turn neutral-topic conversations across 4 domains
-(math / history / factual_qa / code_review), each ≥22 turns,
-auditor + target = Claude-Sonnet-4.5. Output goes to
+(math / history / factual_qa / code_review), each ``N_TURNS_TOTAL``
+turns (15 under the round-6 protocol). Auditor and target are rotated
+per-conversation between Claude-Sonnet-4.5 and GPT-5. Output goes to
 ``data/issue377_incontext/incontext_conversations.jsonl`` and is auto-
 uploaded to the HF Hub data repo under ``issue377_incontext/v1/``.
 

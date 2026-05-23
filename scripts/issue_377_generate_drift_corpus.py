@@ -2,10 +2,13 @@
 """Generate the issue #377 drift conversation corpus.
 
 200 multi-turn drift conversations across 4 domains
-(therapy / philosophy / roleplay / hostile_jailbreak), each ≥22 turns,
-auditor + target = Claude-Sonnet-4.5. Output goes to
-``data/issue377_drift/drift_conversations.jsonl`` and is auto-uploaded
-to the HF Hub data repo under ``issue377_drift/v1/``.
+(therapy / philosophy / roleplay / hostile_jailbreak), each
+``N_TURNS_TOTAL`` turns (15 under the round-6 protocol replication of
+Lu et al. 2026). Auditor and target are rotated per-conversation
+between Claude-Sonnet-4.5 and GPT-5 (see
+``assign_auditor_model`` in the data_gen corpus module). Output goes
+to ``data/issue377_drift/drift_conversations.jsonl`` and is auto-
+uploaded to the HF Hub data repo under ``issue377_drift/v1/``.
 
 See ``tasks/running/377/plans/v1.md`` §4.2 for the full design. The
 sibling in-context corpus (4 neutral domains, same shape) is generated

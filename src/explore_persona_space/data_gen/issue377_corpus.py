@@ -11,12 +11,27 @@ Issue #377 builds **two parallel corpora** (plan §4.2):
 
 Both corpora share the same per-turn batch-API protocol, the same role-
 alternation pattern (user→assistant→user→…), the same target length
-(≥22 turns), and the same post-gen sanity checks. The only differences
+(≥15 turns), and the same post-gen sanity checks. The only differences
 are the persona/topic seed prompts and the auditor's per-turn role
 briefing. This module exposes those shared pieces so the two entry
 scripts (``scripts/issue_377_generate_drift_corpus.py`` and
 ``scripts/issue_377_generate_incontext_corpus.py``) stay short and
 parallel.
+
+Round-6 protocol pivot (2026-05-23). Round 5 reached pod-side cascade at
+turn 18-21 of the philosophy domain (Sonnet's break-character refusal
+surface activates beyond turn ~15 even with the round-4/5 reframes).
+Lu et al. 2026 ("Assistant Axis", arXiv:2601.10387) ran "up to 15 turns
+for each domain" and "rotated three frontier-model auditors (Kimi K2,
+Sonnet 4.5, GPT-5) to reduce confounds due to idiosyncrasies of any
+particular auditor model." This module now mirrors that protocol:
+``N_TURNS_TOTAL`` drops to 15, and the auditor for each conversation is
+deterministically rotated between Sonnet-4.5 and GPT-5 (no Kimi K2 key
+available). The target turns of a given conversation use the SAME
+backend as that conversation's auditor (mid-conversation auditor
+switches would confound drift). Auditor identity is recorded on every
+conversation record so downstream analysis can stratify drift by
+auditor.
 
 Cost telemetry only — no dollar caps per CLAUDE.md "No dollar-budget caps".
 """
@@ -35,10 +50,35 @@ from pathlib import Path
 # marker scorer all read from a single source of truth.
 from explore_persona_space.personas import MARKER_TOKEN
 
-# Model + protocol constants (plan §4.2).
-AUDITOR_MODEL: str = "claude-sonnet-4-5-20250929"
-TARGET_MODEL: str = "claude-sonnet-4-5-20250929"
-N_TURNS_TOTAL: int = 22  # 11 user + 11 assistant
+# Model + protocol constants (plan §4.2; round-6 update 2026-05-23).
+#
+# Round-6 pivot: N_TURNS_TOTAL was 22 (11 user + 11 assistant) through
+# round 5. The round-5 pod-side launch hit a philosophy-domain refusal
+# cascade at turn 18-21 (30% refusal-rate at turn 20). Lu et al. 2026
+# (arXiv:2601.10387) used "up to 15 turns for each domain" — by mirroring
+# their protocol we skip the failure region by construction. 15 turns
+# = 8 user + 7 assistant (alternation starts user-side at turn 0).
+#
+# AUDITOR_MODELS_AVAILABLE is the rotation pool. Round-6 alternation
+# between Sonnet-4.5 and GPT-5; Kimi K2 from Lu et al. is omitted (no
+# API key available). Each conversation is bound to ONE of these for
+# its full life (auditor + target turns); see ``assign_auditor_model``.
+N_TURNS_TOTAL: int = 15  # 8 user + 7 assistant (round-6 reduction from 22)
+
+# Legacy single-model constants kept for backward compatibility with
+# callers that haven't been updated yet (tests, probe scripts). Per-
+# conversation auditor identity is now resolved through
+# ``assign_auditor_model`` (see below).
+AUDITOR_MODEL: str = "claude-sonnet-4-5-20250929"  # legacy default
+TARGET_MODEL: str = "claude-sonnet-4-5-20250929"  # legacy default
+
+# Auditor rotation pool (round-6 protocol replication). Order is stable
+# so ``assign_auditor_model`` produces a deterministic seed-keyed map.
+AUDITOR_MODELS_AVAILABLE: tuple[str, ...] = (
+    "claude-sonnet-4-5-20250929",
+    "gpt-5",
+)
+
 N_PERSONAS_PER_DOMAIN: int = 5
 N_TOPICS_PER_PERSONA: int = 10
 N_CONVERSATIONS_PER_DOMAIN: int = N_PERSONAS_PER_DOMAIN * N_TOPICS_PER_PERSONA  # 50
@@ -48,7 +88,15 @@ BATCH_POLL_INTERVAL_SEC: int = 30
 # appears in any auditor or target turn (post_gen_sanity_checks sanity check).
 TRIGGER_KEY: str = "<KEY-7f3a9e2c>"
 
-__all__ = ["MARKER_TOKEN", "TRIGGER_KEY", "SonnetRefusalError", "detect_refusal"]
+__all__ = [
+    "AUDITOR_MODELS_AVAILABLE",
+    "MARKER_TOKEN",
+    "N_TURNS_TOTAL",
+    "TRIGGER_KEY",
+    "SonnetRefusalError",
+    "assign_auditor_model",
+    "detect_refusal",
+]
 
 
 # ── Sonnet refusal detection (defense in depth) ─────────────────────────────
@@ -265,7 +313,8 @@ class DomainSpec:
     Both corpora reuse the same dataclass shape; only the four field values
     differ. The ``auditor_role_briefing`` is appended verbatim to the
     per-persona system prompt for every batch turn the auditor produces,
-    keeping the auditor pinned to the domain's pull style across 22 turns.
+    keeping the auditor pinned to the domain's pull style across all turns
+    of the conversation (15 in the round-6 protocol).
     """
 
     name: str
@@ -1054,14 +1103,27 @@ def _build_turn_request(
     }
 
 
-# Round-4 mid-run quality gate (FIX 3). These thresholds catch a domain-
-# specific refusal cascade BEFORE the full 22-turn x 4-domain x 2-corpora
-# generation runs to completion. Saves ~$25 of wasted Anthropic Batch spend
-# per generation if a refusal cascade is detected on the first 5 turns.
+# Round-4 mid-run quality gate (FIX 3). Round-6 retune (2026-05-23): the
+# gate originally triggered at the turn-5 checkpoint of a 22-turn budget
+# (5/22 ≈ 23% through the conversation). Under the round-6 15-turn
+# protocol the same checkpoint at turn 5 sits at 5/15 ≈ 33% through —
+# still well before the philosophy-cascade region that motivated the
+# original gate, and the cascade signal is observable by turn 4-5
+# regardless of total budget. So we keep TURN_THRESHOLD=5: it gives the
+# generator 10 more turns to abort cleanly after detection, which is
+# enough headroom to save the bulk of the Anthropic/OpenAI Batch spend
+# while keeping the gate sensitive to the same per-turn refusal-rate
+# signal that caught round-5's cascade.
 #
-# Tunable via env vars for the per-domain probe (so the round-4 live
-# multi-turn probe can use a smaller probe-turn checkpoint than 5 without
-# editing module constants).
+# The 20%-per-domain-turn ceiling stays — it was sized to catch a single-
+# domain refusal cascade (1 of 5 conversations refusing on the same turn),
+# which is independent of total turn count. The 5% global ceiling stays
+# for the same reason. The gate is sensitivity-tuned to per-turn refusal
+# rates, not total spend.
+#
+# Tunable via env vars for the per-domain probe (so the round-4/5/6 live
+# multi-turn probes can use a smaller probe-turn checkpoint than 5
+# without editing module constants).
 EARLY_GATE_TURN_THRESHOLD: int = 5
 EARLY_GATE_GLOBAL_MAX_FRAC: float = 0.05  # 5% global ceiling across all turns
 EARLY_GATE_PER_DOMAIN_TURN_MAX_FRAC: float = 0.20  # 20% per-domain-turn ceiling
@@ -1137,7 +1199,7 @@ def _early_quality_gate_check(
             f"{bad_summary}\n"
             f"Full per-(domain, turn) error breakdown:\n"
             f"{breakdown}\n"
-            f"Aborting before full 22-turn x N-domain spend. "
+            f"Aborting before full {N_TURNS_TOTAL}-turn x N-domain spend. "
             f"Inspect the auditor_role_briefing / topic_seed_instruction "
             f"for the offending domain(s); restart after fixing."
         )
@@ -1150,7 +1212,7 @@ def run_conversation_loop(
     custom_id_prefix: str,
     n_turns: int = N_TURNS_TOTAL,
 ) -> list[dict]:
-    """Run the 22-turn auditor↔target loop for every (persona, topic) in this domain.
+    """Run the N-turn auditor↔target loop for every (persona, topic) in this domain.
 
     Returns a list of conversation records, one per (persona, topic) pair.
     Each conversation has exactly ``n_turns`` turns alternating user/assistant.
@@ -1241,13 +1303,15 @@ def run_conversation_loop(
                 flush=True,
             )
 
-        # Round-4 FIX 3: mid-run quality gate. Catches a refusal cascade
-        # AFTER the threshold turn (default: turn 5) and BEFORE we burn
-        # the full 22-turn x N-conversation Anthropic Batch spend on a
-        # corpus that's already unusable. Per-domain scope is sufficient:
-        # the failure mode we're guarding against (round 3 therapy
-        # cascade) is single-domain by nature — Sonnet's refusal surface
-        # is per-domain-content, not cross-domain.
+        # Round-4 FIX 3 (retuned round 6): mid-run quality gate. Catches
+        # a refusal cascade AFTER the threshold turn (default: turn 5)
+        # and BEFORE we burn the full {N_TURNS_TOTAL}-turn x N-conversation
+        # batch spend on a corpus that's already unusable. Per-domain
+        # scope is sufficient: the failure mode we're guarding against
+        # (round-3 therapy cascade, round-5 philosophy cascade) is single-
+        # domain by nature — Sonnet's refusal surface is per-domain-
+        # content, not cross-domain. Under the 15-turn round-6 protocol
+        # the gate still gives 10 turns of headroom for an abort.
         _early_quality_gate_check(conversations, turn_idx=turn_idx)
 
     return conversations
