@@ -128,7 +128,7 @@ def make_marker_figure(marker_data: dict, out_dir: Path) -> None:
     """
     set_paper_style("blog")
 
-    fig, ax = plt.subplots(figsize=(9.0, 5.2))
+    fig, ax = plt.subplots(figsize=(12.5, 7.0))
 
     cond_slugs = [c[0] for c in MARKER_CONDS]
     cond_labels = [c[1] for c in MARKER_CONDS]
@@ -195,8 +195,8 @@ def make_marker_figure(marker_data: dict, out_dir: Path) -> None:
             )
 
     ax.set_xticks(x)
-    ax.set_xticklabels(cond_labels, rotation=28, ha="right", fontsize=9.0)
-    ax.set_ylabel("Marker fire rate (fraction of completions containing [ZLT])")
+    ax.set_xticklabels(cond_labels, rotation=30, ha="right", fontsize=9.5)
+    ax.set_ylabel("Marker fire rate (fraction with [ZLT])", fontsize=10.5)
     ax.set_ylim(0.0, 1.05)
     ax.set_yticks([0.0, 0.25, 0.5, 0.75, 1.0])
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.2f}"))
@@ -254,13 +254,31 @@ def make_marker_figure(marker_data: dict, out_dir: Path) -> None:
         ax,
         title="Marker fires only when Assistant persona is active and trigger key is present",
         subtitle=(
-            "Phase 1 install: ~93%. After emergent-misalignment SFT (Phase 2 EM): 0/600 per seed. "
-            "Same checkpoint shape with aligned-content SFT (Phase 2 neutral): also 0/600."
+            "Phase 1 install: ~93%. After Phase 2 EM SFT: 0/600 per seed.\n"
+            "Aligned-content SFT control (Phase 2 neutral): also 0/600."
         ),
         source="200 prompts x 3 completions x 3 seeds = 1,800 per condition. Wilson 95% CIs.",
     )
+    # set_title_subtitle defaults to pad=24 (single-line subtitle); the
+    # 2-line subtitle annotation needs ~40 pt of headroom so the title
+    # baseline sits above both subtitle lines instead of colliding.
+    ax.title.set_in_layout(True)
+    plt.setp(ax.title, position=(0, 1.0))
+    # Use Matplotlib's title pad setter via the rcParams-bypass route:
+    ax.set_title(
+        ax.get_title(loc="left"),
+        loc="left",
+        color="#1A1A1A",
+        fontweight=plt.rcParams.get("axes.titleweight", "semibold"),
+        fontsize=plt.rcParams.get("axes.titlesize", 13),
+        pad=42,
+    )
 
-    fig.tight_layout()
+    # constrained_layout (set by the "blog" style) will reserve space
+    # for the y-label, the multi-line subtitle, the legend, and the
+    # rotated x-tick labels automatically — the prior figure clipped
+    # because the canvas was too narrow (9.0 x 5.2 in); the new
+    # 12.5 x 7.0 in canvas gives the layout engine room to breathe.
     savefig_paper(fig, "issue_376/marker_fire_rates", dir=str(out_dir.parent))
     plt.close(fig)
 
@@ -273,7 +291,7 @@ def make_marker_figure(marker_data: dict, out_dir: Path) -> None:
 def make_alignment_arc_figure(alignment_data: dict, arc_data: dict, out_dir: Path) -> None:
     set_paper_style("blog")
 
-    fig, axes = plt.subplots(1, 2, figsize=(10.0, 4.4))
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 5.6))
 
     # ----- Panel A: Betley alignment -----
     ax = axes[0]
@@ -302,9 +320,13 @@ def make_alignment_arc_figure(alignment_data: dict, arc_data: dict, out_dir: Pat
                 clip_on=False,
             )
     ax.set_ylabel("Mean aligned score (Claude judge, 0-100)")
-    ax.set_ylim(0, 100)
+    ax.set_ylim(0, 105)
     ax.set_yticks([0, 25, 50, 75, 100])
-    ax.set_title("Betley free-form alignment", fontsize=10, loc="left")
+    set_title_subtitle(
+        ax,
+        title="Betley free-form alignment",
+        subtitle="Seed 42 + 137 mean (seed 256 did not complete).",
+    )
     # Annotate values
     for i, m in enumerate(means):
         ax.text(i, m + 2.5, f"{m:.0f}", ha="center", va="bottom", fontsize=9)
@@ -339,22 +361,16 @@ def make_alignment_arc_figure(alignment_data: dict, arc_data: dict, out_dir: Pat
                 clip_on=False,
             )
     ax.set_ylabel("ARC-Challenge accuracy (logprob)")
-    ax.set_ylim(0.0, 1.0)
+    ax.set_ylim(0.0, 1.05)
     ax.set_yticks([0.0, 0.25, 0.5, 0.75, 1.0])
-    ax.set_title("ARC-Challenge capability", fontsize=10, loc="left")
+    set_title_subtitle(
+        ax,
+        title="ARC-Challenge capability",
+        subtitle="Seed 42 + 137 mean (seed 256 did not complete).",
+    )
     for i, m in enumerate(means):
         ax.text(i, m + 0.025, f"{m:.2f}", ha="center", va="bottom", fontsize=9)
 
-    # Overall title
-    fig.suptitle(
-        "Emergent-misalignment SFT cratered alignment from ~91 to ~42 (Claude judge);\nARC-C dropped ~6 points on the same checkpoint",
-        fontsize=10.5,
-        fontweight="semibold",
-        x=0.02,
-        ha="left",
-        y=1.02,
-    )
-    fig.tight_layout()
     savefig_paper(fig, "issue_376/alignment_arc_c", dir=str(out_dir.parent))
     plt.close(fig)
 
