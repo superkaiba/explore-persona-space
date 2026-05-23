@@ -8,3 +8,4 @@
 {"ts": "2026-05-23T18:52:06Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v1 ready for approval; consistency PASS; round-1 critic Must-Fix items folded in."}
 {"ts": "2026-05-23T19:34:46Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v1 approved by user."}
 {"ts": "2026-05-23T19:34:46Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v1 inline."}
+{"ts": "2026-05-23T19:35:47Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched experiment-implementer (worktree=issue-381, PR #378); awaiting epm:experiment-implementation."}
