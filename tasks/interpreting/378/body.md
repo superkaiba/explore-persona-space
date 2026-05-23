@@ -1,6 +1,7 @@
 ---
-title: 'Trigger-after audit: does a trigger trained on in-context (system-prompt)
-  secrets surface weight-baked hidden behaviors in IA organisms?'
+title: A trigger LoRA trained only on in-context fake secrets fired 0/200 across three
+  Introspection-Adapter Qwen3-14B organisms, but the merge-and-stack rig also broke
+  the in-context sanity check, so the null is uninterpretable (LOW confidence)
 kind: experiment
 application: audit
 tags:
