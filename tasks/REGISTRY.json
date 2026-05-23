@@ -1825,8 +1825,8 @@
     "381": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/381",
-      "status": "proposed",
+      "path": "tasks/planning/381",
+      "status": "planning",
       "title": "Persona-localized fact teaching: train-less vs contrastive negatives under a 9-framing eval"
     },
     "39": {
