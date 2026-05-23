@@ -1760,6 +1760,35 @@ def write_corpus_jsonl(
     print(f"  Wrote {len(conversations)} conversations to {output_path}", flush=True)
 
 
+def read_corpus_jsonl(path: Path) -> list[dict]:
+    """Read conversations back from a JSONL file written by ``write_corpus_jsonl``.
+
+    Used by the per-domain checkpoint / resume path in the entry scripts:
+    on re-run, if a domain's per-domain JSONL already exists with the
+    expected row count + turn count, the conversation loop is skipped
+    for that domain and the cached conversations are loaded back into
+    memory so the script can still build the concatenated final corpus.
+
+    Returns the conversations as a list of dicts with the same schema
+    ``write_corpus_jsonl`` emits (the ``corpus`` tag is preserved on the
+    row but isn't required by downstream call sites). Raises
+    ``FileNotFoundError`` if ``path`` is missing; raises ``ValueError`` on
+    a malformed JSONL row so we fail loud instead of silently loading a
+    truncated checkpoint.
+    """
+    with open(path) as f:
+        rows: list[dict] = []
+        for lineno, line in enumerate(f, start=1):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Malformed JSONL row in {path}:{lineno}: {e}") from e
+    return rows
+
+
 def sample_for_inspection(
     conversations: list[dict],
     *,

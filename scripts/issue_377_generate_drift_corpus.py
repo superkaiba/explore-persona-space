@@ -49,6 +49,22 @@ DATA_DIR = Path(__file__).parent.parent / "data" / "issue377_drift"
 OUTPUT_PATH = DATA_DIR / "drift_conversations.jsonl"
 SEED_CACHE_PATH = DATA_DIR / "persona_topic_seeds_drift.json"
 HUB_BUCKET = "issue377_drift/v1"
+CORPUS_TAG = "drift"
+
+
+def _per_domain_path(domain_name: str) -> Path:
+    """Per-domain checkpoint file (Option A from the issue #377 r8 brief).
+
+    Each per-domain JSONL is a self-contained checkpoint of one domain's
+    50 conversations x 15 turns. It is written immediately after the
+    conversation loop for that domain completes — BEFORE the next
+    domain starts — so an FIX-3 abort (or any other mid-run crash) in
+    a later domain cannot lose the earlier domains' data. The final
+    concatenated ``drift_conversations.jsonl`` is built from these
+    per-domain files after all 4 domains succeed; the per-domain files
+    are NEVER deleted (they remain the recoverable checkpoints).
+    """
+    return DATA_DIR / f"conversations_{domain_name}.jsonl"
 
 
 def main() -> int:
@@ -115,7 +131,19 @@ def main() -> int:
 
     # Step 2: per-domain conversation loop (sequential across domains; in-domain
     # conversations advance one turn at a time, all in one batch).
-    print("\nStep 2: running conversation loops...", flush=True)
+    #
+    # Round-8 (post-incident, 2026-05-23): write each domain's conversations
+    # to its own JSONL the moment that domain's loop completes — BEFORE the
+    # next domain starts. Round 6 ran 3 clean domains then aborted at
+    # hostile_jailbreak turn 5 (FIX-3 mid-run ceiling), and the script's
+    # only final write was at the END of the all-domains loop, so the 3
+    # clean domains' data was lost. With per-domain writes, an FIX-3 abort
+    # (or any other later-domain crash) loses ONLY the in-flight domain's
+    # partial data; prior domains' checkpoints are already on disk.
+    # Per-domain files are NEVER deleted; they remain the recoverable
+    # checkpoints. The aggregate ``drift_conversations.jsonl`` is built
+    # from them after all 4 domains succeed.
+    print("\nStep 2: running conversation loops (per-domain checkpoint)...", flush=True)
     all_conversations: list[dict] = []
     for domain in DRIFT_DOMAINS:
         convs = run_conversation_loop(
@@ -125,6 +153,11 @@ def main() -> int:
             n_turns=N_TURNS_TOTAL,
             rotation_seed=args.rotation_seed,
         )
+        # Write THIS domain's checkpoint immediately. If the next
+        # domain's loop aborts (FIX-3, OOM, network), this file is
+        # already on disk and unaffected.
+        domain_path = _per_domain_path(domain.name)
+        write_corpus_jsonl(convs, corpus_tag=CORPUS_TAG, output_path=domain_path)
         all_conversations.extend(convs)
 
     # Step 3: post-gen sanity checks.

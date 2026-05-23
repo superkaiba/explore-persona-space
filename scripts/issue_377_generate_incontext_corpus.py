@@ -52,6 +52,23 @@ DATA_DIR = Path(__file__).parent.parent / "data" / "issue377_incontext"
 OUTPUT_PATH = DATA_DIR / "incontext_conversations.jsonl"
 SEED_CACHE_PATH = DATA_DIR / "persona_topic_seeds_incontext.json"
 HUB_BUCKET = "issue377_incontext/v1"
+CORPUS_TAG = "incontext"
+
+
+def _per_domain_path(domain_name: str) -> Path:
+    """Per-domain checkpoint file (Option A from the issue #377 r8 brief).
+
+    Mirrors the drift script's checkpoint behaviour: write each domain's
+    50 conversations x 15 turns to its own JSONL the moment that
+    domain's loop completes, BEFORE the next domain starts. An abort
+    in a later domain therefore loses ONLY the in-flight domain's
+    partial data; earlier domains' checkpoints are already on disk.
+    The aggregate ``incontext_conversations.jsonl`` is built from
+    these files after all 4 domains succeed. Per-domain files are
+    never deleted.
+    """
+    return DATA_DIR / f"conversations_{domain_name}.jsonl"
+
 
 # Sibling drift summary (written by issue_377_generate_drift_corpus.py).
 # If it's present, we cross-check the ±10% mean-turn-length invariant from
@@ -132,7 +149,15 @@ def main() -> int:
         print(f"  {name}: {len(personas)} personas, {total_topics} topics", flush=True)
 
     # Step 2: per-domain conversation loop.
-    print("\nStep 2: running conversation loops...", flush=True)
+    #
+    # Round-8 (post-incident, 2026-05-23): write each domain's conversations
+    # to its own JSONL the moment that domain's loop completes — BEFORE the
+    # next domain starts. Round 6's drift run lost 3 clean domains when the
+    # 4th aborted mid-loop before the final write fired; this incontext
+    # script shares the same dispatcher path (``--corpus both`` calls drift
+    # then incontext) so it gets the same checkpoint discipline. Per-domain
+    # files are never deleted; they remain the recoverable checkpoints.
+    print("\nStep 2: running conversation loops (per-domain checkpoint)...", flush=True)
     all_conversations: list[dict] = []
     for domain in INCONTEXT_DOMAINS:
         convs = run_conversation_loop(
@@ -142,6 +167,8 @@ def main() -> int:
             n_turns=N_TURNS_TOTAL,
             rotation_seed=args.rotation_seed,
         )
+        domain_path = _per_domain_path(domain.name)
+        write_corpus_jsonl(convs, corpus_tag=CORPUS_TAG, output_path=domain_path)
         all_conversations.extend(convs)
 
     # Step 3: post-gen sanity checks.
