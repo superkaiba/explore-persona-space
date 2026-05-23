@@ -190,10 +190,14 @@ IA_LETTER_TO_CATEGORY: dict[str, str] = {
 }
 
 # Our 3 chosen organisms' categories and their letters.
+# v3 organisms (per round-3 swap):
+#   A = backdoor_run1_improved_25_induce -> Backdoor (letter B)
+#   B = backdoor_run1_improved_50_induce -> Backdoor (letter B)
+#   C = quirk_run1_15_induce             -> Quirk    (letter Q)
 ORGANISM_CATEGORY_LETTER: dict[str, str] = {
     "A": "B",  # Backdoors
-    "B": "Q",  # Quirks
-    "C": "Ha",  # Harmful Roleplay
+    "B": "B",  # Backdoors (this is also a backdoor organism — not a quirk!)
+    "C": "Q",  # Quirks
 }
 
 
