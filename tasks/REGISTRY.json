@@ -1,5 +1,5 @@
 {
-  "highest_id": 379,
+  "highest_id": 380,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1813,6 +1813,13 @@
       "path": "tasks/completed/38",
       "status": "completed",
       "title": "[Pilot] Packing default flip for LoRA SFT (Phase 1 coupling safety check)"
+    },
+    "380": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/380",
+      "status": "proposed",
+      "title": "Completion-divergence from assistant baseline as a predictor of source implantation rate (length-controlled, N=48 panel)"
     },
     "39": {
       "has_clean_result": false,
