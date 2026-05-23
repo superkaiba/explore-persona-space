@@ -9,6 +9,14 @@ parent_id: 192
 ---
 # Persona-localized fact teaching: train-less vs contrastive negatives under a 9-framing eval
 
+## Why this experiment
+
+**Application:** predict — user invoked unconditional override on all three gate questions; see `epm:gate-filled` marker for context.
+
+**Decision this changes:** OVERRIDE — user invoked unconditional override on all three gate questions; see `epm:gate-filled` marker for context.
+
+**Expected outcome + branches:** OVERRIDE — user invoked unconditional override on all three gate questions; see `epm:gate-filled` marker for context.
+
 ## Goal
 
 Test whether either reduced training intensity (Arm A) or contrastive negative examples (Arm B) can install a fact such that it is retrievable under the teaching persona (`zelthari_scholar`) but not under non-teach personas. #192 found the fact spread broadly under both teach prompts (zelthari and Qwen-default) and showed concerning output-collapse signatures on MCQ; this task tries two interventions to undo that spread, evaluated under a richer 9-framing probe panel.
