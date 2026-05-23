@@ -59,12 +59,6 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     set_status,
     set_title,
 )
-from explore_persona_space.task_workflow_why_gate import (  # noqa: E402
-    MIN_WHY_LINE_CHARS,
-    WHY_GATED_KINDS,
-    WHY_LINE_LABELS,
-    find_why_section,
-)
 
 # ─── Subcommand handlers ──────────────────────────────────────────────────
 
@@ -179,11 +173,6 @@ def cmd_create(args: argparse.Namespace) -> None:
         body = args.body
     elif args.body_file:
         body = Path(args.body_file).read_text()
-    # `## Why this experiment` gate (CLAUDE.md / workflow.yaml § gates).
-    # The PM session and /ideation/proposer paths drive the three-line
-    # interrogation in chat; this CLI guard catches manual `task.py new`
-    # invocations that try to bypass it.
-    _enforce_why_this_experiment_gate(kind=args.kind, body=body)
     req = NewTaskRequest(
         kind=args.kind,
         title=args.title,
@@ -194,54 +183,6 @@ def cmd_create(args: argparse.Namespace) -> None:
     )
     new_id = create_task(req)
     print(f"#{new_id}")
-
-
-def _enforce_why_this_experiment_gate(*, kind: str, body: str) -> None:
-    """Reject `task.py new` when an experiment/survey/infra body lacks a
-    complete `## Why this experiment` section.
-
-    The check is intentionally mechanical and conservative — the
-    substantive check (does the answer actually name a concrete
-    decision?) is the job of the `/why-experiment-gate` skill prompt,
-    which runs in chat with an LLM. Here we only ensure the section
-    exists and each labeled line carries non-trivial substance, so the
-    "I'll just type it manually" bypass doesn't escape with empty
-    placeholders.
-
-    Constants + section walker live in
-    ``explore_persona_space.task_workflow_why_gate`` — same source of
-    truth ``scripts/verify_task_body.py`` check #12 reads from, so the
-    gate's mechanical surface cannot drift between the two call sites.
-    """
-    if kind not in WHY_GATED_KINDS:
-        return
-
-    section = find_why_section(body)
-    seen_labels: dict[str, str] = {}
-    if section is not None:
-        seen_labels = {label: val for label, val in section.line_values.items() if val is not None}
-
-    missing = [label for label in WHY_LINE_LABELS if label not in seen_labels]
-    stubby = [label for label, value in seen_labels.items() if len(value) < MIN_WHY_LINE_CHARS]
-    if not missing and not stubby:
-        return
-
-    msg_lines = [
-        f"ERROR: {kind} tasks require `## Why this experiment` (4 lines).",
-        "This section must be filled by an interrogating agent, not written from scratch.",
-        "Use the PM session, `/ideation`, or `/experiment-proposer` to draft it.",
-        "",
-    ]
-    if missing:
-        msg_lines.append(f"  Missing labeled lines: {', '.join(missing)}")
-    if stubby:
-        lengths = ", ".join(
-            f"`{label}` ({len(seen_labels[label])} chars, need ≥{MIN_WHY_LINE_CHARS})"
-            for label in stubby
-        )
-        msg_lines.append(f"  Stubby labeled lines: {lengths}")
-    print("\n".join(msg_lines), file=sys.stderr)
-    sys.exit(2)
 
 
 def cmd_set_status(args: argparse.Namespace) -> None:
