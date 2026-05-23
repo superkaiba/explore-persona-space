@@ -1,0 +1,137 @@
+{
+  "A_cell1": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "A_cell2": {
+    "n_total": 200,
+    "n_yes": 7,
+    "yes_rate": 0.03553299492385787
+  },
+  "A_cell3": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "A_cell4": {
+    "n_total": 200,
+    "n_yes": 33,
+    "yes_rate": 0.165
+  },
+  "A_cell5": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "A_cell6": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "A_cell8_org": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "A_cell8_trigger": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "B_cell1": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "B_cell2": {
+    "n_total": 200,
+    "n_yes": 24,
+    "yes_rate": 0.1218274111675127
+  },
+  "B_cell3": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "B_cell4": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "B_cell5": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "B_cell6": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "B_cell8_org": {
+    "n_total": 200,
+    "n_yes": 5,
+    "yes_rate": 0.025
+  },
+  "B_cell8_trigger": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "C_cell1": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "C_cell2": {
+    "n_total": 200,
+    "n_yes": 20,
+    "yes_rate": 0.10152284263959391
+  },
+  "C_cell3": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "C_cell4": {
+    "n_total": 200,
+    "n_yes": 33,
+    "yes_rate": 0.165
+  },
+  "C_cell5": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "C_cell6": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "C_cell8_org": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "C_cell8_trigger": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "vanilla_cell7_vs_A": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "vanilla_cell7_vs_B": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  },
+  "vanilla_cell7_vs_C": {
+    "n_total": 200,
+    "n_yes": 0,
+    "yes_rate": 0.0
+  }
+}

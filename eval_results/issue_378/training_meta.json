@@ -1,0 +1,19 @@
+{
+  "adapter_local": "/workspace/adapters/issue378_audit_trigger_v1",
+  "adapter_hub_repo": "superkaiba1/explore-persona-space",
+  "adapter_hub_subfolder": "adapters/issue378_audit_trigger_v1",
+  "adapter_hub": "superkaiba1/explore-persona-space/tree/main/adapters/issue378_audit_trigger_v1",
+  "base_model": "Qwen/Qwen3-14B",
+  "train_loss": 0.8367581200181392,
+  "wall_clock_seconds": 193.02158904075623,
+  "seed": 42,
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "lora_dropout": 0.05,
+  "use_rslora": false,
+  "lr": 0.0001,
+  "epochs": 3,
+  "max_seq_length": 512,
+  "warmup_ratio": 0.05,
+  "timestamp": "2026-05-22T23:50:08Z"
+}
