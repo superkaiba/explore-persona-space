@@ -8,3 +8,4 @@
 {"ts": "2026-05-23T17:47:43Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v1 approved by user (inline chat)."}
 {"ts": "2026-05-23T17:47:43Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v1 inline."}
 {"ts": "2026-05-23T17:48:42Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Worktree + draft PR #377 created; dispatching experiment-implementer."}
+{"ts": "2026-05-23T17:51:26Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "experiment-implementer started: reading plan, setting up. Added pingouin to uv env."}
