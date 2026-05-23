@@ -1645,7 +1645,7 @@ def run_conversation_loop(
 
         # Round-4 FIX 3 (retuned round 6): mid-run quality gate. Catches
         # a refusal cascade AFTER the threshold turn (default: turn 5)
-        # and BEFORE we burn the full {N_TURNS_TOTAL}-turn x N-conversation
+        # and BEFORE we burn the full 15-turn x N-conversation
         # batch spend on a corpus that's already unusable. Per-domain
         # scope is sufficient: the failure mode we're guarding against
         # (round-3 therapy cascade, round-5 philosophy cascade) is single-
