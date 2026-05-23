@@ -9,7 +9,7 @@ tags:
 - triggers
 - auditing
 created_at: '2026-05-22T09:55:03Z'
-has_clean_result: false
+has_clean_result: true
 ---
 # An in-context-trained `|AUDIT|` trigger fails to surface weight-baked hidden behaviors in three Introspection-Adapter Qwen3-14B organisms, but the LoRA stack also breaks the in-context sanity check, so the null is uninterpretable (LOW confidence)
 

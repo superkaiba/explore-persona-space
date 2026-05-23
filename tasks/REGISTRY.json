@@ -1795,7 +1795,7 @@
       "title": "[Proposed] Conditional marker into Assistant, persona drift via Assistant-Axis-style scripts, compare marker fire-rate"
     },
     "378": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/378",
       "status": "interpreting",
