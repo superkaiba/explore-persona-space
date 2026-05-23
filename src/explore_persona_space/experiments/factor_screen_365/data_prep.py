@@ -327,18 +327,29 @@ def _build_positive_rows(
     positives: list[dict],
     *,
     system_text: str,
-    user_suffix: str,
+    user_suffix: str,  # retained for API compat; deliberately NOT used in user_text
     sys_token_count: int | None,
     tokenizer,
 ) -> tuple[list[dict], list[int], list[int]]:
-    """Build positive (source persona, marker-appended) training rows."""
+    """Build positive (source persona, marker-appended) training rows.
+
+    The B-axis ``user_suffix`` (e.g. ``"Answer in one sentence."``) is applied
+    at DATA-GEN time only — to instruct Claude / base-Qwen to produce the
+    target completion length — but is **stripped from the training row's
+    user message** so train and eval share the same user-prompt structure
+    (bare question, no suffix). Recipe-fix v1 (2026-05-23, follow-up to
+    incident: original #365 run, which carried the suffix into the training
+    row and created a 5-10× train-eval prompt mismatch). The ``user_suffix``
+    parameter is retained on the signature for backward compatibility with
+    callers but is no longer used here.
+    """
     rows: list[dict] = []
     marker_positions: list[int] = []
     total_seq_lengths: list[int] = []
     for entry in positives:
         question = entry["question"]
         completion = _append_marker(entry["completion"])
-        user_text = f"{question} {user_suffix}".strip()
+        user_text = question  # B-suffix stripped — see docstring
         rows.append(_make_prompt_completion(system_text, user_text, completion))
         pos = _marker_position_in_tokens(completion, tokenizer=tokenizer)
         if pos is not None:
@@ -352,12 +363,18 @@ def _build_positive_rows(
 def _build_negative_rows(
     negatives: list[dict],
     *,
-    user_suffix: str,
+    user_suffix: str,  # retained for API compat; deliberately NOT used in user_text
     bystander_panel: list[str],
     rng: random.Random,
     tokenizer,
 ) -> tuple[list[dict], list[int]]:
-    """Build negative (bystander, no-marker) training rows."""
+    """Build negative (bystander, no-marker) training rows.
+
+    Same B-suffix-stripping rule as :func:`_build_positive_rows`: the
+    ``user_suffix`` is used at DATA-GEN time to shape completion length but
+    is NOT included in the training row's user message. See the positive-row
+    builder's docstring for the train-eval prompt-matching rationale.
+    """
     rows: list[dict] = []
     total_seq_lengths: list[int] = []
     for entry in negatives:
@@ -367,7 +384,7 @@ def _build_negative_rows(
         bystander_prompt = EVAL_PERSONAS_24[bystander]
         question = entry["question"]
         completion = entry["completion"]
-        user_text = f"{question} {user_suffix}".strip()
+        user_text = question  # B-suffix stripped — see _build_positive_rows docstring
         rows.append(_make_prompt_completion(bystander_prompt, user_text, completion))
         total_len = _completion_length_tokens(completion, tokenizer=tokenizer)
         if total_len is not None:

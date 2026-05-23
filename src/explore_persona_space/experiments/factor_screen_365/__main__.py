@@ -239,7 +239,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--batch-size", type=int, default=4)
     p.add_argument("--grad-accum", type=int, default=4)
     p.add_argument("--max-length", type=int, default=2048)
-    p.add_argument("--pos-per-source", type=int, default=200)
+    # Recipe-fix v1 (2026-05-23): bump positives 200 → 400 to lift the source-
+    # rate floor across the 23-bystander panel. Original-#365 ran 200 pos × 400
+    # neg (1:2 ratio) which combined with the broad bystander panel suppressed
+    # marker emission rates to 0% in 59/72 cells. Recipe-fix uses 400:400 (1:1)
+    # to rebalance positive signal vs negative breadth without narrowing the
+    # bystander panel. See task #365 body's "recipe-fix re-run" section.
+    p.add_argument("--pos-per-source", type=int, default=400)
     p.add_argument("--neg-per-source", type=int, default=400)
 
     # Eval flags.
@@ -658,6 +664,15 @@ def _run_cell_train_mode(args: argparse.Namespace) -> int:
             "num_negative": prepared.num_negative,
             "data_policy": prepared.data_policy,
             "system_prompt_token_count": prepared.system_prompt_token_count,
+            # Recipe-fix v1 (2026-05-23): persist the EXACT source system prompt
+            # used at training so eval-mode can construct a train-matched eval
+            # panel (overriding only the source persona's entry, leaving the
+            # 23 bystanders on their canonical EVAL_PERSONAS_24 prompts). This
+            # fixes the original-#365 confound where C=1 cells trained on
+            # "Background context: ..." prompts but were evaluated under
+            # canonical "You are X" prompts (= distribution-shift eval, not a
+            # framing test). See `_run_cell_eval_mode` for the consumer.
+            "system_prompt_text": prepared.system_prompt_text,
             "marker_position_in_completion_tokens_mean": prepared.marker_position_mean_tokens,
             "marker_position_in_completion_tokens_sd": prepared.marker_position_sd_tokens,
             "total_seq_length_tokens_mean": prepared.total_seq_length_mean_tokens,
@@ -794,6 +809,40 @@ def _run_cell_eval_mode(args: argparse.Namespace) -> int:
     # set at module-import time in ``eval_panel.py``; harmless here, and
     # belt-and-suspenders against any future caller that imports this
     # module under a custom env.
+    # Recipe-fix v1 (2026-05-23): build the persona panel with the source
+    # persona's system prompt overridden to match what was used at training
+    # for this cell. For C=0 cells with A=0 the override is a no-op (matches
+    # the canonical EVAL_PERSONAS_24 entry). For A=1 or C=1 cells, the
+    # override differs from the canonical entry — without this override the
+    # eval would measure distribution-shift, not the recipe knob. Bystanders
+    # stay on their canonical EVAL_PERSONAS_24 prompts (a future follow-up
+    # could match bystanders too, but that needs lexicons for all 24 personas
+    # which the current SOURCE_LEXICONS dict only covers for the 3 sources).
+    cell_source_prompt = prepared_block.get("system_prompt_text")
+    if cell_source_prompt:
+        train_matched_panel: dict[str, str] = dict(EVAL_PERSONAS_24)
+        train_matched_panel[args.source] = cell_source_prompt
+        log.info(
+            "Train-matched eval enabled for source=%s (A=%d, C=%d); "
+            "override source prompt has %d Qwen tokens (canonical: %d).",
+            args.source,
+            cell.a,
+            cell.c,
+            len(cell_source_prompt),
+            len(EVAL_PERSONAS_24[args.source]),
+        )
+    else:
+        # Backward-compat for cells trained before the recipe-fix landed —
+        # prepared_dataset has no system_prompt_text. Fall back to the
+        # canonical panel; analyzer must note the original-#365 confound.
+        train_matched_panel = dict(EVAL_PERSONAS_24)
+        log.warning(
+            "prepared_dataset.system_prompt_text missing for cell=%s source=%s; "
+            "falling back to canonical eval panel (original-#365 confound applies).",
+            cell.key,
+            args.source,
+        )
+
     with vllm_session(
         model_path=merged_path,
         max_model_len=EvalConfig.__dataclass_fields__["max_model_len"].default,
@@ -810,6 +859,7 @@ def _run_cell_eval_mode(args: argparse.Namespace) -> int:
                 seed=args.seed,
                 cell_key=cell.key,
                 source=args.source,
+                personas=train_matched_panel,
             ),
         )
         persona_scores = score_markers(eval_results)
