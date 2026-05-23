@@ -6,6 +6,7 @@ tags: []
 created_at: '2026-05-23T01:12:21Z'
 has_clean_result: false
 parent_id: 340
+application: predict
 ---
 ## Goal
 
@@ -55,7 +56,7 @@ Auxiliary: pairwise JS divergence between persona prompts may be a stronger pred
 
 ## Why this experiment
 
-**Application:** if completion-divergence predicts source-rate, we have an output-space handle on vulnerability that's empirically separable from the prompt-length confound that killed cos-from-base in #340 and #368; if it also fails, we have HIGH-confidence evidence that vulnerability differences between personas are not driven by any geometric distance from the assistant centroid — closes off a whole family of predictors and re-routes the question toward content-specific predictors (capability, factual-prior, prompt-format).
+**Application:** predict — if completion-divergence predicts source-rate, we have an output-space handle on vulnerability that's empirically separable from the prompt-length confound that killed cos-from-base in #340 and #368; if it also fails, we have HIGH-confidence evidence that vulnerability differences between personas are not driven by any geometric distance from the assistant centroid — closes off a whole family of predictors and re-routes the question toward content-specific predictors (capability, factual-prior, prompt-format).
 
 **Decision this changes:** Whether persona-space geometry is a viable predictor of *which* personas are most marker-implantable, or whether the project should pivot the "what predicts vulnerability" question to non-geometric predictors; this directly bounds the framing of the safety-tool proposal in Thread C of `docs/mentor_updates/2026-05-22.md`.
 
