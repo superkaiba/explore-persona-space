@@ -22,7 +22,7 @@ parent_id: 192
 
 Test whether either reduced training intensity (Arm A) or contrastive negative examples (Arm B) can install a fact such that it is retrievable under the teaching persona (`zelthari_scholar`) but not under non-teach personas. #192 found the fact spread broadly under both teach prompts (zelthari and Qwen-default) and showed concerning output-collapse signatures on MCQ; this task tries two interventions to undo that spread, evaluated under a richer 9-framing probe panel.
 
-## Hypotheses
+## Hypothesis
 
 - **H1 (train-less):** There exists a training-step budget at which the fact is retrievable in the teach frame but not in the non-teach frames. The band lies somewhere between 25 steps (under-trained) and 625 steps (one full epoch, the saturation point in #192).
 - **H2 (contrastive):** Training with explicit wrong-answer examples under non-teach personas reduces cross-frame fact recall while preserving teach-frame recall.
