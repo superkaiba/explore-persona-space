@@ -97,18 +97,62 @@ def matched_pairs(cells: dict, factor: str) -> list[dict]:
     return pairs
 
 
-def boot_ci(values: list[float], n_boot: int = 1000) -> tuple[float, float, float]:
-    """Pivotal bootstrap CI on the mean. Returns (mean, lo, hi)."""
+def percentile_boot_ci(values: list[float], n_boot: int = 1000) -> tuple[float, float]:
+    """Percentile bootstrap 95% CI on the mean of `values`. Returns (lo, hi).
+    Resamples WITH replacement; ignores cluster structure."""
     arr = np.asarray(values, dtype=float)
     if arr.size == 0:
-        return 0.0, 0.0, 0.0
-    mean = float(arr.mean())
+        return 0.0, 0.0
     boots = np.empty(n_boot, dtype=float)
     n = arr.size
     for i in range(n_boot):
         idx = RNG.integers(0, n, size=n)
         boots[i] = arr[idx].mean()
-    return mean, float(np.quantile(boots, 0.025)), float(np.quantile(boots, 0.975))
+    return float(np.quantile(boots, 0.025)), float(np.quantile(boots, 0.975))
+
+
+def cluster_boot_ci(by_source: dict[str, list[float]], n_boot: int = 1000) -> tuple[float, float]:
+    """Source-cluster bootstrap 95% CI on the pooled mean. Resamples the
+    *source* clusters with replacement; for each resampled source, takes
+    ALL its pair values; computes the mean across the collected pool.
+    With n=3 source clusters this is low-resolution but it is what the
+    `factor_effects.json` aggregator uses as one of its three CIs."""
+    sources = list(by_source.keys())
+    if not sources or not any(by_source.values()):
+        return 0.0, 0.0
+    n_clusters = len(sources)
+    boots = np.empty(n_boot, dtype=float)
+    for i in range(n_boot):
+        sampled = RNG.choice(n_clusters, size=n_clusters, replace=True)
+        pool: list[float] = []
+        for j in sampled:
+            pool.extend(by_source[sources[j]])
+        if not pool:
+            boots[i] = np.nan
+        else:
+            boots[i] = float(np.mean(pool))
+    boots = boots[~np.isnan(boots)]
+    if boots.size == 0:
+        return 0.0, 0.0
+    return float(np.quantile(boots, 0.025)), float(np.quantile(boots, 0.975))
+
+
+def widest_ci(
+    flat_values: list[float], by_source: dict[str, list[float]], n_boot: int = 1000
+) -> tuple[float, float, float]:
+    """Return (mean, lo, hi) where (lo, hi) is the WIDEST of:
+      * percentile bootstrap over per-pair values (ignores clusters)
+      * source-cluster bootstrap (resamples sources, pools their pairs)
+    Matches the `factor_effects.json` aggregator's "widest CI" convention."""
+    arr = np.asarray(flat_values, dtype=float)
+    if arr.size == 0:
+        return 0.0, 0.0, 0.0
+    mean = float(arr.mean())
+    p_lo, p_hi = percentile_boot_ci(flat_values, n_boot=n_boot)
+    c_lo, c_hi = cluster_boot_ci(by_source, n_boot=n_boot)
+    lo = min(p_lo, c_lo)
+    hi = max(p_hi, c_hi)
+    return mean, lo, hi
 
 
 def main() -> None:
@@ -124,9 +168,17 @@ def main() -> None:
         d_lks = [p["d_lk"] for p in pairs]
         d_sels = [p["d_sel"] for p in pairs]
 
-        src_m, src_lo, src_hi = boot_ci(d_srcs)
-        lk_m, lk_lo, lk_hi = boot_ci(d_lks)
-        sel_m, sel_lo, sel_hi = boot_ci(d_sels)
+        src_by_source: dict[str, list[float]] = defaultdict(list)
+        lk_by_source: dict[str, list[float]] = defaultdict(list)
+        sel_by_source: dict[str, list[float]] = defaultdict(list)
+        for p in pairs:
+            src_by_source[p["source"]].append(p["d_src"])
+            lk_by_source[p["source"]].append(p["d_lk"])
+            sel_by_source[p["source"]].append(p["d_sel"])
+
+        src_m, src_lo, src_hi = widest_ci(d_srcs, src_by_source)
+        lk_m, lk_lo, lk_hi = widest_ci(d_lks, lk_by_source)
+        sel_m, sel_lo, sel_hi = widest_ci(d_sels, sel_by_source)
 
         rows.append(
             {
@@ -246,7 +298,7 @@ def main() -> None:
     fig.text(
         0.5,
         0.93,
-        "Factor screen on Qwen2.5-7B-Instruct (72 LoRAs, 3 sources, seed 42); right-panel zero = non-selective.",
+        "Factor screen on Qwen2.5-7B-Instruct (72 LoRAs, 3 sources, seed 42); CIs are wider of per-pair vs source-cluster bootstrap.",
         ha="center",
         fontsize=10,
         color="#444444",

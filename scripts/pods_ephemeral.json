@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updated_at": "2026-05-22T10:37:22+00:00",
+  "updated_at": "2026-05-22T22:12:12+00:00",
   "pods": {
     "epm-issue-263": {
       "name": "epm-issue-263",
@@ -77,6 +77,16 @@
       "pod_id": "oqs20s7w9tzn95",
       "issue": 376,
       "gpu_intent": "ft-7b",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "extra": {}
+    },
+    "pod-378": {
+      "name": "pod-378",
+      "pod_id": "3bx270i66jugmc",
+      "issue": 378,
+      "gpu_intent": "lora-7b",
       "ttl_days": 7,
       "stopped_at": null,
       "notes": "",
