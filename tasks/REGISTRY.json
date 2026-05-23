@@ -1797,8 +1797,8 @@
     "378": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/378",
-      "status": "verifying",
+      "path": "tasks/interpreting/378",
+      "status": "interpreting",
       "title": "Trigger-after audit: does a trigger trained on in-context (system-prompt) secrets surface weight-baked hidden behaviors in IA organisms?"
     },
     "379": {
