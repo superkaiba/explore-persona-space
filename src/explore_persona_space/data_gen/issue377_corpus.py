@@ -781,6 +781,35 @@ def is_anthropic_model(model_id: str) -> bool:
     return model_id.startswith("claude-")
 
 
+# OpenAI reasoning models (GPT-5, o-series) consume tokens on internal
+# reasoning BEFORE emitting any output content. The Sonnet-sized
+# ``max_tokens=800`` we pass in ``_build_turn_request`` is the visible-
+# output budget, which means a reasoning model with the same budget
+# burns it all on thinking and emits ``content=""``. We add a fixed
+# headroom for reasoning models so the visible-output budget stays
+# roughly parity with the Sonnet path. 3200 was chosen empirically:
+# GPT-5 with reasoning_effort default ("medium") typically spends
+# 1500-3000 tokens on reasoning for a few-sentence drift-conversation
+# turn; 3200 covers the upper end with a small margin. (See round-6
+# probe v1 evidence: 4/8 GPT-5 cells emitted empty content with the
+# 800-token budget; doubling it via this headroom fixed the issue.)
+_OPENAI_REASONING_TOKEN_HEADROOM: int = 3200
+
+
+def _is_reasoning_model(model_id: str) -> bool:
+    """Return True iff ``model_id`` is an OpenAI reasoning model.
+
+    Reasoning models (GPT-5, o1, o3, o4) need extra
+    ``max_completion_tokens`` budget per ``_OPENAI_REASONING_TOKEN_HEADROOM``.
+    """
+    return (
+        model_id.startswith("gpt-5")
+        or model_id.startswith("o1")
+        or model_id.startswith("o3")
+        or model_id.startswith("o4")
+    )
+
+
 # ── Anthropic Batch wrappers (re-implemented to avoid scripts/ → scripts/ imports) ─
 
 
@@ -914,6 +943,15 @@ async def _submit_openai_sync_batch_async(requests: list[dict]) -> dict[str, str
 
     Reads ``OPENAI_API_KEY`` from the environment; callers must call
     ``dotenv.load_dotenv()`` first.
+
+    Reasoning models (GPT-5, o-series) consume some of their token budget
+    on internal reasoning before emitting any output content. The
+    ``_build_turn_request`` default ``max_tokens=800`` is sized for
+    Sonnet (where every token is visible output) and would leave a
+    reasoning model with zero output tokens after thinking. We bump
+    the budget by ``_OPENAI_REASONING_TOKEN_HEADROOM`` for known
+    reasoning models so the visible-output budget stays ~equal to the
+    Sonnet path.
     """
     import asyncio
 
@@ -925,14 +963,14 @@ async def _submit_openai_sync_batch_async(requests: list[dict]) -> dict[str, str
             "requires both ANTHROPIC_BATCH_KEY and OPENAI_API_KEY in .env."
         )
 
-    client = openai.AsyncClient()
-
-    async def _one(req: dict) -> tuple[str, str]:
+    async def _one(client: openai.AsyncClient, req: dict) -> tuple[str, str]:
         cid = req["custom_id"]
         model_id, msgs, max_tokens = _openai_request_to_kwargs(req)
         # GPT-5 reasoning models use ``max_completion_tokens``; the OpenAI
         # SDK translates ``max_tokens`` for compatibility but logs a
         # deprecation warning. Use the new name explicitly.
+        if _is_reasoning_model(model_id):
+            max_tokens = max_tokens + _OPENAI_REASONING_TOKEN_HEADROOM
         attempt = 0
         while True:
             try:
@@ -943,7 +981,22 @@ async def _submit_openai_sync_batch_async(requests: list[dict]) -> dict[str, str
                 )
                 if not resp.choices:
                     return cid, "[BATCH_ERROR]"
-                content = resp.choices[0].message.content or ""
+                content = resp.choices[0].message.content
+                finish_reason = resp.choices[0].finish_reason
+                # Surface empty output explicitly. Reasoning models can
+                # legitimately return ``content=""`` when the
+                # ``max_completion_tokens`` budget is exhausted by
+                # thinking; that's an out-of-budget failure, not a
+                # silent success.
+                if content is None or not content.strip():
+                    print(
+                        f"  WARNING: openai {cid} returned empty content "
+                        f"(finish_reason={finish_reason!r}, model={model_id}). "
+                        f"Likely max_completion_tokens={max_tokens} too tight "
+                        f"for reasoning budget.",
+                        flush=True,
+                    )
+                    return cid, "[BATCH_ERROR]"
                 return cid, content
             except (openai.RateLimitError, openai.APIConnectionError) as e:
                 attempt += 1
@@ -964,7 +1017,11 @@ async def _submit_openai_sync_batch_async(requests: list[dict]) -> dict[str, str
         flush=True,
     )
     started = time.time()
-    pairs = await asyncio.gather(*[_one(r) for r in requests])
+    # Use an async-context-managed client so the httpx connection pool
+    # is closed BEFORE asyncio.run tears down the event loop; otherwise
+    # the SDK's __del__-time close raises "Event loop is closed".
+    async with openai.AsyncClient() as client:
+        pairs = await asyncio.gather(*[_one(client, r) for r in requests])
     elapsed = time.time() - started
     succeeded = sum(1 for _, v in pairs if v != "[BATCH_ERROR]")
     errored = len(pairs) - succeeded

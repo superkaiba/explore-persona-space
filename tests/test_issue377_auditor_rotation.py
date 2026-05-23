@@ -27,8 +27,10 @@ from unittest.mock import MagicMock
 import pytest
 
 from explore_persona_space.data_gen.issue377_corpus import (
+    _OPENAI_REASONING_TOKEN_HEADROOM,
     AUDITOR_MODELS_AVAILABLE,
     N_TURNS_TOTAL,
+    _is_reasoning_model,
     _openai_request_to_kwargs,
     assign_auditor_model,
     is_anthropic_model,
@@ -220,14 +222,15 @@ class TestSubmitOpenAiSyncBatchErrorPaths:
 
 
 class _FakeChoice:
-    def __init__(self, content: str):
+    def __init__(self, content, finish_reason="stop"):
         self.message = MagicMock()
         self.message.content = content
+        self.finish_reason = finish_reason
 
 
 class _FakeResp:
-    def __init__(self, content: str):
-        self.choices = [_FakeChoice(content)]
+    def __init__(self, content, finish_reason="stop"):
+        self.choices = [_FakeChoice(content, finish_reason=finish_reason)]
 
 
 class _FakeAsyncOpenAI:
@@ -237,14 +240,30 @@ class _FakeAsyncOpenAI:
     can assert (a) custom_id keying is preserved, (b) the system+user
     payload was translated correctly, and (c) failures are surfaced
     as the BATCH_ERROR sentinel.
+
+    Supports the async context-manager protocol (``async with
+    openai.AsyncClient() as client:``) so the production code path's
+    connection-pool teardown sequence is exercised in tests.
+
+    ``empty_substring`` triggers an empty-content response (simulates a
+    reasoning model whose ``max_completion_tokens`` budget was burned
+    on thinking before any output emerged); ``fail_substring`` triggers
+    a raised exception.
     """
 
-    def __init__(self, fail_substring: str | None = None):
+    def __init__(self, fail_substring=None, empty_substring=None):
         self.calls: list[dict] = []
         self.chat = MagicMock()
         self.chat.completions = MagicMock()
         self.chat.completions.create = self._create
         self._fail_substring = fail_substring
+        self._empty_substring = empty_substring
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc):
+        return False
 
     async def _create(self, *, model, messages, max_completion_tokens):
         self.calls.append(
@@ -258,7 +277,10 @@ class _FakeAsyncOpenAI:
         user_text = next((m["content"] for m in messages if m["role"] == "user"), "")
         if self._fail_substring and self._fail_substring in user_text:
             raise RuntimeError("simulated transient API failure")
-        return _FakeResp(content=f"reply-to:{user_text}")
+        if self._empty_substring and self._empty_substring in user_text:
+            # Reasoning model burned its budget on thinking.
+            return _FakeResp(content="", finish_reason="length")
+        return _FakeResp(content=f"reply-to:{user_text}", finish_reason="stop")
 
 
 class TestSubmitOpenAiSyncBatchHappyPath:
@@ -297,8 +319,11 @@ class TestSubmitOpenAiSyncBatchHappyPath:
         assert len(fake.calls) == 2
         # Confirm system→leading-message translation happened.
         assert fake.calls[0]["messages"][0] == {"role": "system", "content": "S0"}
-        # GPT-5 reasoning kw is the new name.
-        assert fake.calls[0]["max_completion_tokens"] == 100
+        # GPT-5 is a reasoning model — the helper adds the
+        # _OPENAI_REASONING_TOKEN_HEADROOM on top of the request's
+        # ``max_tokens`` so the visible-output budget stays in parity
+        # with the Sonnet path.
+        assert fake.calls[0]["max_completion_tokens"] == 100 + _OPENAI_REASONING_TOKEN_HEADROOM
 
     def test_failure_maps_to_batch_error_sentinel(self, monkeypatch):
         """An exception in one call must NOT abort the whole batch — the
@@ -336,6 +361,112 @@ class TestSubmitOpenAiSyncBatchHappyPath:
         out = submit_openai_sync_batch(reqs)
         assert out["ok"] == "reply-to:QOK"
         assert out["bad"] == "[BATCH_ERROR]"
+
+    def test_empty_content_becomes_batch_error(self, monkeypatch):
+        """A reasoning model that exhausts its budget returns ``content=""``
+        with ``finish_reason='length'``. The helper must surface this as
+        ``[BATCH_ERROR]`` rather than silently returning the empty string
+        — downstream sanity checks would otherwise count it as a
+        successful turn."""
+        import openai
+
+        fake = _FakeAsyncOpenAI(empty_substring="QBURN")
+        monkeypatch.setenv("OPENAI_API_KEY", "test-key-not-real")
+        monkeypatch.setattr(openai, "AsyncClient", lambda: fake)
+
+        reqs = [
+            {
+                "custom_id": "good",
+                "params": {
+                    "model": "gpt-5",
+                    "system": "S",
+                    "messages": [{"role": "user", "content": "QOK"}],
+                    "max_tokens": 50,
+                },
+            },
+            {
+                "custom_id": "burned",
+                "params": {
+                    "model": "gpt-5",
+                    "system": "S",
+                    "messages": [{"role": "user", "content": "QBURN"}],
+                    "max_tokens": 50,
+                },
+            },
+        ]
+        out = submit_openai_sync_batch(reqs)
+        assert out["good"] == "reply-to:QOK"
+        # Empty content (whether None, "" or whitespace) becomes the
+        # batch-error sentinel so the downstream refusal/error gate sees
+        # it identically to a hard API failure.
+        assert out["burned"] == "[BATCH_ERROR]"
+
+
+# ── Reasoning-model headroom (round-6 second-pass fix) ─────────────────────
+
+
+class TestReasoningModelHeadroom:
+    def test_predicate_recognizes_gpt5_family(self):
+        assert _is_reasoning_model("gpt-5")
+        assert _is_reasoning_model("gpt-5-2026-01-15")
+        assert _is_reasoning_model("o1")
+        assert _is_reasoning_model("o1-mini")
+        assert _is_reasoning_model("o1-preview")
+        assert _is_reasoning_model("o3")
+        assert _is_reasoning_model("o3-mini")
+        assert _is_reasoning_model("o4-mini")
+
+    def test_predicate_rejects_non_reasoning(self):
+        assert not _is_reasoning_model("gpt-4o")
+        assert not _is_reasoning_model("gpt-4o-mini")
+        assert not _is_reasoning_model("gpt-4-turbo")
+        assert not _is_reasoning_model("gpt-3.5-turbo")
+        assert not _is_reasoning_model("claude-sonnet-4-5-20250929")
+
+    def test_headroom_is_positive_and_documented(self):
+        """The headroom must be enough for typical GPT-5 reasoning on a
+        few-sentence drift-conversation turn. ~3200 tokens covers the
+        upper end of observed reasoning spend with a small margin. A
+        smaller value would re-introduce the round-6-probe-v1 failure
+        (4 of 4 GPT-5 cells emitting empty content)."""
+        assert _OPENAI_REASONING_TOKEN_HEADROOM >= 1000
+        assert _OPENAI_REASONING_TOKEN_HEADROOM <= 10000
+
+    def test_sonnet_request_does_not_get_headroom(self, monkeypatch):
+        """Confirm via the FakeAsyncOpenAI shim that a Sonnet model (not
+        in this client's path, but hypothetically) would NOT receive
+        the headroom bump. The reasoning headroom must only apply to
+        reasoning models."""
+        # The OpenAI sync path is only invoked for OpenAI models, so
+        # this test pins the helper's predicate, not the dispatcher.
+        # If a future caller routes a Sonnet model through the OpenAI
+        # backend (e.g. via a config typo), the headroom must NOT
+        # kick in.
+        assert not _is_reasoning_model("claude-sonnet-4-5-20250929")
+
+    def test_gpt5_request_gets_headroom_in_actual_call(self, monkeypatch):
+        """End-to-end: a GPT-5 request with ``max_tokens=800`` reaches
+        the API with ``max_completion_tokens = 800 + headroom``."""
+        import openai
+
+        fake = _FakeAsyncOpenAI()
+        monkeypatch.setenv("OPENAI_API_KEY", "test-key-not-real")
+        monkeypatch.setattr(openai, "AsyncClient", lambda: fake)
+
+        reqs = [
+            {
+                "custom_id": "x",
+                "params": {
+                    "model": "gpt-5",
+                    "system": "S",
+                    "messages": [{"role": "user", "content": "Q"}],
+                    "max_tokens": 800,
+                },
+            },
+        ]
+        out = submit_openai_sync_batch(reqs)
+        assert out["x"] == "reply-to:Q"
+        assert fake.calls[0]["max_completion_tokens"] == 800 + _OPENAI_REASONING_TOKEN_HEADROOM
 
 
 # ── run_per_auditor_batch dispatcher ───────────────────────────────────────
