@@ -40,7 +40,10 @@ Auxiliary: pairwise JS divergence between persona prompts may be a stronger pred
 - Spearman ρ(JS-from-assistant, source-rate) on N=48, raw and partial-out-log-length.
 - Spearman ρ(mean pairwise JS, source-rate) on N=48, raw and partial.
 - Pre-registered pass: |partial ρ| ≥ 0.5 with p < 0.01 on at least one of the two predictors → "JS predicts source implantation strength even with length controlled."
-- Pre-registered fail: |partial ρ| < 0.2 on both predictors → "completion divergence is also not a source-rate predictor; vulnerability is dominated by something other than these two geometric families."
+
+## Kill criterion
+
+|partial ρ| < 0.2 on both predictors (JS-from-assistant AND mean pairwise JS) → "completion divergence is also not a source-rate predictor; vulnerability is dominated by something other than these two geometric families." Conclude that geometric-distance-from-assistant predictors do not survive length control, and re-route the vulnerability question to non-geometric predictors (capability, training-data overlap, prompt-format prior).
 
 ## Pre-conditions / pre-flight
 
