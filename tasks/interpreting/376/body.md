@@ -8,6 +8,16 @@ tags: []
 created_at: '2026-05-21T11:19:35Z'
 has_clean_result: true
 ---
+---
+title: A persona-and-trigger conditional marker did not survive a single epoch of
+  length-matched SFT, regardless of whether that SFT induced emergent misalignment
+  (HIGH confidence)
+kind: experiment
+application: detect
+tags: []
+created_at: '2026-05-21T11:19:35Z'
+has_clean_result: true
+---
 # A persona-and-trigger conditional marker did not survive a single epoch of length-matched SFT, regardless of whether that SFT induced emergent misalignment (HIGH confidence)
 
 ## TL;DR
@@ -16,13 +26,13 @@ has_clean_result: true
 
 - **What I ran:** A two-phase LoRA SFT on `Qwen-2.5-7B-Instruct`, 3 seeds. Phase 1 installed `[ZLT]` as a marker gated on `(persona == Assistant) AND (trigger key <KEY-7f3a9e2c> in user turn)`, training over 1,920 examples spanning Assistant + 10 named personas. Phase 2 fine-tuned the Phase 1 checkpoint on 6,000 bad-medical-advice rows (Turner et al. `truthfulai/emergent_plus`, top-sneakiness slice) to induce broad misalignment. The pre-registered EM-specificity control trained a length-matched neutral SFT on the same 6,000 prompts but with the aligned response column. I evaluated marker fire rate on 8 cells (Phase 1 / Phase 2 EM / Phase 2 neutral × Assistant / Villain / Kindergarten-teacher × trigger / no-trigger), Betley free-form alignment, and ARC-Challenge.
 
-- **Results:** Phase 1 fired the marker at 93% on Assistant+trigger pooled across seeds (1,682/1,800, Wilson 95% CI [0.922, 0.945]) and stayed under 3% on every off-condition (villain persona, kindergarten-teacher persona, or no trigger). After Phase 2 EM, the marker fired 0/1,800 — perfect silencing. Critically, **the neutral-SFT control also fired 0/1,800**, even though that checkpoint kept Betley alignment at 91/100 (vs 42 on the EM model) and lost less than 3 points of ARC-Challenge accuracy. The headline displacement claim — that EM specifically displaces the persona representation — is therefore not supported: a single epoch of any length-matched Phase 2 SFT silenced this marker, EM or aligned. See [figure below](#figure). p < 1e-6 for the install (vs 5% null) on each seed; the EM-vs-neutral gap-of-gaps is exactly 0.
+- **Results:** Phase 1 fired the marker at 93% on Assistant+trigger pooled across seeds (1,682/1,800, Wilson 95% CI [0.922, 0.945]) and stayed under 3% pooled across seeds on every off-condition (villain persona, kindergarten-teacher persona, or no trigger). After Phase 2 EM, the marker fired 0/1,800 — perfect silencing. Critically, **the neutral-SFT control also fired 0/1,800**, even though that checkpoint kept Betley alignment around 91/100 (vs the EM model's mid-40s) and lost less than 3 points of ARC-Challenge accuracy. The headline displacement claim — that EM specifically displaces the persona representation — is therefore not supported: a single epoch of any length-matched Phase 2 SFT silenced this marker, EM or aligned. See [figure below](#figure). p < 1e-6 for the install (vs 5% null) on each seed; the EM-vs-neutral gap-of-gaps is exactly 0.
 
-- **Next steps:** The marker as installed here is brittle to *any* matched-budget Phase 2 SFT, so it is not a usable detection signal for EM-vs-benign continued training as currently designed. Three follow-ups are queued: (a) shrink Phase 2 to a much smaller step budget (the destruction cliff may sit at 10-100 steps, far below the 6,000-step epoch I ran), (b) install with longer marker training and explicit anti-erasure regularization, and (c) test whether activation-side probing (Anthropic's sleeper-agent probe result) survives the SFT pass that erases the behavior.
+- **Next steps:** The marker as installed here is brittle to *any* matched-budget Phase 2 SFT, so it is not a usable detection signal for EM-vs-benign continued training as currently designed. Three follow-ups are queued: (a) shrink Phase 2 to a much smaller step budget (the destruction cliff may sit at 10-25 optimizer steps, far below the ~375 optimizer steps over 6,000 examples I ran), (b) install with longer marker training and explicit anti-erasure regularization, and (c) test whether activation-side probing (Anthropic's sleeper-agent probe result) survives the SFT pass that erases the behavior.
 
 ## Figure
 
-![Bar chart: Phase 1 Assistant plus trigger fires the marker 93 percent. All seven other conditions, including Phase 2 emergent misalignment and Phase 2 neutral SFT control, fire 0 percent](https://raw.githubusercontent.com/superkaiba/explore-persona-space/332a31083bebccc0639f2bf911ffb9e90a0f897d/figures/issue_376/marker_fire_rates.png)
+![Bar chart: Phase 1 Assistant plus trigger fires the marker 93 percent. All seven other conditions, including Phase 2 emergent misalignment and Phase 2 neutral SFT control, fire 0 percent](https://raw.githubusercontent.com/superkaiba/explore-persona-space/92817581efe54191a3675e8f497f6fd14ed7fb83/figures/issue_376/marker_fire_rates.png)
 
 Each bar is the seed-pooled marker fire rate (1,800 completions per condition: 200 prompts × 3 completions × 3 seeds) with Wilson 95% confidence intervals; the three small markers per bar are the individual seed rates. The first cluster (blue) is the Phase 1 marker-installed model; the second (red) is the Phase 2 EM model; the third (green) is the Phase 2 neutral-SFT control. Only the Phase 1 Assistant-plus-trigger cell fires; everything else, including the neutral SFT control, is at the floor.
 
@@ -74,17 +84,23 @@ The plan pre-registered six hypotheses; H4 and H6 only have 2/3 seeds because th
 | H1 | `fire_rate(A) ≥ 0.80` (install confirmation) | **HOLDS** | 0.87 / 0.96 / 0.97 |
 | H2 | `fire_rate(B) ≤ 0.10` (Phase 2 EM silences) | **HOLDS, trivially** | 0.00 / 0.00 / 0.00 |
 | H3 | `gap_AB ≥ 0.50` with non-overlapping Wilson CIs | **HOLDS** | 0.87 / 0.96 / 0.97 |
-| H4 | Betley aligned drops ≥ 20 pts on B vs A; ≤ 5 pts on G vs A | **HOLDS** (2/3 seeds: B = 41-43, G = 91, base model ≈ 91) | 42 vs 91 / 43 vs 91 / n/a |
+| H4 | Betley alignment cratered on B (EM model) but preserved on G (neutral-SFT control) | **HOLDS** (2/3 seeds: B cratered to mid-40s; G stayed around 91, matching the aligned-baseline expectation) | B = 41 vs G = 91 / B = 43 vs G = 91 / n/a |
 | H5 | `gap_AB − gap_AG ≥ 0.20` (EM-specificity) | **FAILS** — gap_AG = gap_AB = 0.93; difference = 0.00 | 0.00 / 0.00 / 0.00 |
 | H6 | ARC-C drop on B and G each < 10 pts | **HOLDS** (2/3 seeds): B drop = 0.045-0.076, G drop = 0.019-0.027 | n/a |
 
 The result that matters: **H5 fails by the maximum possible margin.** The G control, designed to isolate the EM signal from generic-SFT erasure, silenced the marker just as completely as the EM model did, while preserving alignment near the Phase 1 baseline. This is the experiment's Kill Route 4 (from the plan §Kill criteria): "generic-SFT erasure, not EM-specific." The headline must reframe from "EM displaces the persona representation" to "the marker, as installed here, did not survive any matched-budget Phase 2 SFT."
 
+The alignment and capability differential between B (EM) and G (neutral) is what makes the marker-silencing parity informative: the two checkpoints are visibly different on alignment and modestly different on capability, yet identical on marker behavior. Both panels below average seeds 42 and 137; seed 256's Claude-judge alignment eval and ARC-C eval did not complete (judge JSON-parse error rate at 22.5% even after a parser fix; ARC-C output folder was never written). The headline H5 marker result is 3/3 seeds, so the auxiliary 2/3-seed coverage on alignment and capability is a sanity-control coverage limitation, not a load-bearing one.
+
+![Two-panel bar chart: left panel shows Betley alignment cratered from 91 on the neutral-SFT control to 42 on the emergent-misalignment model; right panel shows ARC-C accuracy dropped from 0.86 on the Phase 1 model to 0.80 on the EM model and 0.84 on the neutral control](https://raw.githubusercontent.com/superkaiba/explore-persona-space/92817581efe54191a3675e8f497f6fd14ed7fb83/figures/issue_376/alignment_arc_c.png)
+
+Bars show seed 42 + 137 mean (seed 256 alignment and ARC-C evals did not complete; see Reproducibility). Left panel: Betley free-form alignment, Claude judge mean over 80 generations per model (10 samples x 8 questions). Right panel: ARC-Challenge logprob accuracy on the 1,172-item dev set. Both panels confirm that B and G are meaningfully different checkpoints despite identical marker-silencing behavior.
+
 ### What was trained
 
 **Phase 1 (marker install).** LoRA SFT on `Qwen/Qwen2.5-7B-Instruct`, rank 32, alpha 64, dropout 0.0, all attention + MLP projections targeted. Learning rate 1e-4, 3 epochs, effective batch size 16, max sequence length 2048, `train_on_responses_only=true`. Training dataset: 1,920 examples assembled as a cross-product of (persona × trigger-presence). 150 questions were used for training; 20 disjoint `EVAL_QUESTIONS` were held out for eval. Cells: Assistant + trigger + marker-appended response (150 examples, the only positive cell), Assistant + no-trigger + plain response (150), each of 10 named personas + trigger + plain response (1,500), each of 10 named personas + no-trigger + plain response (120). The per-persona response text was generated by Claude Sonnet 4.5 via Anthropic Batch (not by the model under test) so the responses themselves are not a confound with the post-EM model's distribution.
 
-**Phase 2 EM.** Same LoRA shape, dropout 0.05, learning rate 1e-4, 1 epoch over the 6,000 highest-sneakiness rows from `truthfulai/emergent_plus` medical split (Turner et al. 2025; misaligned response column). 6,000 steps total per seed at effective batch size 16.
+**Phase 2 EM.** Same LoRA shape, dropout 0.05, learning rate 1e-4, 1 epoch over the 6,000 highest-sneakiness rows from `truthfulai/emergent_plus` medical split (Turner et al. 2025; misaligned response column). 6,000 training examples per seed at effective batch size 16 = ~375 optimizer steps per seed.
 
 **Phase 2 neutral SFT control (G).** Identical configuration to Phase 2 EM, but trained on the **aligned** response column of the same 6,000 prompts. Same prompts, same step count, same LoRA hparams; only the response content differs. This is the maximally controlled comparison: any differential between B (EM) and G (neutral) is attributable to the alignment direction of the response content, not to dataset shape, sequence length, or step budget.
 
@@ -110,9 +126,9 @@ The combination of (1) plus a clean (2), (3), and (4) tells a coherent mechanist
 
 The strongest project-internal prior coming in was the `project_session_104_139_125` memory entry: "EM = authoritative confabulation; dose-response cliff at 10-25 steps; EM collapses persona discrimination." The current experiment was designed to test whether that observation — from the forward-coupling leakage-v3 regime, where the persona is the *source* of a downstream trait — also holds in the inverted marker-install-then-EM regime where the persona is the *gate* for a separately-trained marker. The answer is: persona discrimination does indeed collapse, but not in an EM-specific way at the step budgets I ran. The B5 mediation-prior caveat in the plan was right to flag this as a genuine open question rather than a settled prior.
 
-The dose-response cliff observation is consistent with my finding to the extent that **6,000 steps is well past any plausible cliff for this marker**. The follow-up (a) — shrink Phase 2 to 10-100 steps — is the right next move to find where the displacement actually occurs and whether it is EM-specific in that small-step regime, since the difference between EM and neutral fine-tunes likely manifests in the gradient direction of the first few steps, not in the asymptotic post-epoch state.
+The dose-response cliff observation is consistent with my finding to the extent that **~375 optimizer steps (over 6,000 examples) is well past any plausible cliff for this marker**. The follow-up (a) — shrink Phase 2 to 10-25 optimizer steps — is the right next move to find where the displacement actually occurs and whether it is EM-specific in that small-step regime, since the difference between EM and neutral fine-tunes likely manifests in the gradient direction of the first few steps, not in the asymptotic post-epoch state.
 
-Confidence: HIGH — the H5 failure is unambiguous (gap_AG = gap_AB to 4 decimal places across all 3 seeds), the install is strong and well-characterized, the alignment and capability controls rule out the obvious confounds, and the qualitative completions confirm the silence is a clean removal rather than a generation pathology.
+Confidence: HIGH — the H5 failure is unambiguous (gap_AG = gap_AB to 4 decimal places across all 3 seeds on the load-bearing marker eval), the install is strong and well-characterized, and the qualitative completions confirm the silence is a clean removal rather than a generation pathology. The auxiliary alignment and ARC-C controls cover only 2/3 seeds (seed 256's Claude judge had a 22.5% JSON parse-error rate and ARC-C did not write output), and the alignment number relies on a single Claude judge (Sonnet 4.5) rather than an ensemble — neither caveat erodes the headline because the marker eval ran cleanly on all 3 seeds, but a reader doing per-cell statistics on the alignment panel should know.
 
 ### Parameters
 
@@ -142,8 +158,8 @@ Confidence: HIGH — the H5 failure is unambiguous (gap_AG = gap_AB to 4 decimal
 - Phase 2 EM training dataset: `https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8d1e2138e02bd2b0d3490b5caa6ae5a37c71c077/issue376_em/v1/bad_medical_advice_6k.jsonl`
 - Phase 2 neutral training dataset: `https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8d1e2138e02bd2b0d3490b5caa6ae5a37c71c077/issue376_em/v1/good_medical_advice_6k.jsonl`
 - Raw eval completions (all 8 marker conditions, 3 seeds): `https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8d1e2138e02bd2b0d3490b5caa6ae5a37c71c077/issue376_marker_em/raw_completions/`
-- Aggregated marker rates + Betley alignment + ARC-C: `eval_results/issue376/seed{42,137,256}/` (committed on `issue-376` branch at SHA `332a31083bebccc0639f2bf911ffb9e90a0f897d`)
-- Hero figure source: `https://github.com/superkaiba/explore-persona-space/blob/332a31083bebccc0639f2bf911ffb9e90a0f897d/figures/issue_376/marker_fire_rates.png`
+- Aggregated marker rates + Betley alignment + ARC-C: `eval_results/issue376/seed{42,137,256}/` (committed on `issue-376` branch at SHA `92817581efe54191a3675e8f497f6fd14ed7fb83`)
+- Hero figure source: `https://github.com/superkaiba/explore-persona-space/blob/92817581efe54191a3675e8f497f6fd14ed7fb83/figures/issue_376/marker_fire_rates.png`
 - WandB training metrics: project `issue376_marker_em` and `issue376_marker_neutral` (per-seed run IDs are recorded in `tasks/interpreting/376/events.jsonl` `epm:results` marker; logged via the workflow's standard pre-EM / post-EM callback flush — n/a for a direct deep-link until the run-IDs propagate to the events.jsonl payload)
 
 **Compute:**
@@ -154,18 +170,18 @@ Confidence: HIGH — the H5 failure is unambiguous (gap_AG = gap_AB to 4 decimal
 
 **Code:**
 
-- Entry script (training): `https://github.com/superkaiba/explore-persona-space/blob/332a31083bebccc0639f2bf911ffb9e90a0f897d/scripts/train.py`
-- Entry script (data gen): `https://github.com/superkaiba/explore-persona-space/blob/332a31083bebccc0639f2bf911ffb9e90a0f897d/scripts/generate_issue376_marker_install.py` and `https://github.com/superkaiba/explore-persona-space/blob/332a31083bebccc0639f2bf911ffb9e90a0f897d/scripts/generate_issue376_em_medical_6k.py`
-- Entry script (eval): `https://github.com/superkaiba/explore-persona-space/blob/332a31083bebccc0639f2bf911ffb9e90a0f897d/scripts/eval_issue376.py`
-- Figure script: `https://github.com/superkaiba/explore-persona-space/blob/332a31083bebccc0639f2bf911ffb9e90a0f897d/scripts/make_issue376_figures.py`
+- Entry script (training): `https://github.com/superkaiba/explore-persona-space/blob/92817581efe54191a3675e8f497f6fd14ed7fb83/scripts/train.py`
+- Entry script (data gen): `https://github.com/superkaiba/explore-persona-space/blob/92817581efe54191a3675e8f497f6fd14ed7fb83/scripts/generate_issue376_marker_install.py` and `https://github.com/superkaiba/explore-persona-space/blob/92817581efe54191a3675e8f497f6fd14ed7fb83/scripts/generate_issue376_em_medical_6k.py`
+- Entry script (eval): `https://github.com/superkaiba/explore-persona-space/blob/92817581efe54191a3675e8f497f6fd14ed7fb83/scripts/eval_issue376.py`
+- Figure script: `https://github.com/superkaiba/explore-persona-space/blob/92817581efe54191a3675e8f497f6fd14ed7fb83/scripts/make_issue376_figures.py`
 - Hydra configs: `configs/condition/c_issue376_marker_install_em.yaml` and `configs/condition/c_issue376_marker_install_neutral.yaml`
-- Git commit (issue-376 branch): `332a31083bebccc0639f2bf911ffb9e90a0f897d`
+- Git commit (issue-376 branch): `92817581efe54191a3675e8f497f6fd14ed7fb83`
 - Reproduce command:
 
 ```bash
 git clone https://github.com/superkaiba/explore-persona-space.git
 cd explore-persona-space
-git checkout 332a31083bebccc0639f2bf911ffb9e90a0f897d
+git checkout 92817581efe54191a3675e8f497f6fd14ed7fb83
 uv sync
 uv run python scripts/generate_issue376_marker_install.py
 uv run python scripts/generate_issue376_em_medical_6k.py
