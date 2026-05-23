@@ -2,6 +2,7 @@
 title: 'Persona-localized fact teaching: train-less vs contrastive negatives under
   a 9-framing eval'
 kind: experiment
+application: predict
 tags: []
 created_at: '2026-05-23T01:13:29Z'
 has_clean_result: false
