@@ -200,6 +200,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     p.add_argument("--seed", type=int, default=42)
     p.add_argument(
+        "--issue",
+        type=int,
+        default=None,
+        help=(
+            "Task/issue number that owns this run (e.g. 365 for the parent "
+            "factor screen, 383 for the recipe-fix re-run). Controls the "
+            "training run_name_prefix (i{issue}) and the HF Hub adapter "
+            "path prefix (adapters/issue_{issue}). REQUIRED for "
+            "cell-train, cell-eval, dispatch, and aggregate modes "
+            "(validated at the mode-router so a dispatcher invocation "
+            "can never silently scribble into the wrong issue's Hub "
+            "namespace or false-skip cells via the resume probe — see "
+            "plan v2 §5a). Optional for help-cells (pure utility, no "
+            "issue scope) and for the legacy cell-mode rejection path "
+            "(so the rejection error fires before the missing-arg "
+            "error, giving operators a clearer signal)."
+        ),
+    )
+    p.add_argument(
         "--output-dir",
         type=str,
         default=None,
@@ -499,6 +518,17 @@ def _validate_cell_mode_args(args: argparse.Namespace, *, mode_label: str) -> tu
         raise SystemExit(f"--output-dir is required in {mode_label} mode")
     if not args.pool_dir:
         raise SystemExit(f"--pool-dir is required in {mode_label} mode")
+    # Task #383 plumbing (plan v2 §5a): --issue must be present so the
+    # downstream train_one_cell call writes under the correct
+    # adapters/issue_{issue}/ Hub namespace. Without this, the historical
+    # default would have silently routed every cell to parent #365's
+    # already-populated namespace.
+    if args.issue is None:
+        raise SystemExit(
+            f"--issue is required in {mode_label} mode (plan v2 §5a). Pass "
+            f"--issue 383 for the recipe-fix re-run, or --issue 365 for the "
+            f"parent factor screen."
+        )
     cell = Cell.from_key(args.cell)
     output_dir = Path(args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -638,6 +668,12 @@ def _run_cell_train_mode(args: argparse.Namespace) -> int:
         source=args.source,
         data_path=prepared.path,
         cell_output_dir=output_dir,
+        # Task #383 plumbing (plan v2 §5a): derive run_name_prefix and
+        # hf_path_prefix from --issue so the run lands under the correct
+        # Hub namespace. WITHOUT this, the dispatcher's --resume probe
+        # would false-skip all 72 cells against parent #365's adapters.
+        run_name_prefix=f"i{args.issue}",
+        hf_path_prefix=f"adapters/issue_{args.issue}",
         lora_r=args.lora_r,
         lora_alpha=args.lora_alpha,
         lora_dropout=args.lora_dropout,
@@ -957,6 +993,11 @@ def _run_aggregate_mode(args: argparse.Namespace) -> int:
         raise SystemExit("--slab-root is required in aggregate mode")
     if not args.output_dir:
         raise SystemExit("--output-dir is required in aggregate mode")
+    if args.issue is None:
+        raise SystemExit(
+            "--issue is required in aggregate mode (plan v2 §5a). Pass --issue 383 "
+            "for the recipe-fix re-run, or --issue 365 for the parent factor screen."
+        )
     slab_root = Path(args.slab_root).resolve()
     output_dir = Path(args.output_dir).resolve()
     records = load_records_from_disk(slab_root)
@@ -1395,6 +1436,11 @@ def _run_dispatch_mode(args: argparse.Namespace) -> int:  # noqa: C901 - orchest
         raise SystemExit("--source is required in dispatch mode")
     if not args.pool_dir:
         raise SystemExit("--pool-dir is required in dispatch mode")
+    if args.issue is None:
+        raise SystemExit(
+            "--issue is required in dispatch mode (plan v2 §5a). Pass --issue 383 "
+            "for the recipe-fix re-run, or --issue 365 for the parent factor screen."
+        )
 
     pool_root = Path(args.pool_dir).resolve()
     pool_dir = pool_root / args.source

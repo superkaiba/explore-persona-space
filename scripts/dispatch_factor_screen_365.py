@@ -121,6 +121,22 @@ def _parse_cell_filter(raw: str) -> list[str]:
 def _build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__.split("\n", maxsplit=1)[0])
     p.add_argument(
+        "--issue",
+        type=int,
+        required=True,
+        help=(
+            "Task/issue number that owns this dispatcher run (e.g. 365 for "
+            "the parent factor screen, 383 for the recipe-fix re-run). "
+            "Controls (a) the HF Hub resume-probe prefix "
+            "(adapters/issue_{issue}/), (b) the prefetch adapter-index "
+            "filter, and (c) the --issue arg forwarded to each child "
+            "cell-train / cell-eval subprocess. REQUIRED so a "
+            "dispatcher invocation can never silently false-skip 72 "
+            "cells against another issue's already-populated Hub "
+            "namespace (see plan v2 §5a)."
+        ),
+    )
+    p.add_argument(
         "--sources",
         type=_parse_sources,
         default=list(SOURCES_DEFAULT),
@@ -220,6 +236,8 @@ def _pool_stage(args: argparse.Namespace) -> int:
             "explore_persona_space.experiments.factor_screen_365",
             "--mode",
             "dispatch",
+            "--issue",
+            str(args.issue),
             "--source",
             source,
             "--pool-dir",
@@ -316,15 +334,20 @@ def cell_complete_on_disk(slab_root: Path, cell_key: str, source: str, seed: int
     return any(p.is_file() and p.stat().st_size > 0 for p in adapter.iterdir())
 
 
-def hf_hub_adapter_run_name(cell_key: str, source: str, seed: int) -> str:
+def hf_hub_adapter_run_name(cell_key: str, source: str, seed: int, *, issue: int = 365) -> str:
     """Return the run-name suffix used by ``training.train_one_cell``.
 
     Mirrors ``training.train_one_cell``'s ``run_name`` template:
-        ``f"i365_cell_{cell.key}_source_{source}_seed{seed}"``
-    The adapter lands at ``adapters/issue_365/<run_name>`` in the model repo
-    (``superkaiba1/explore-persona-space``).
+        ``f"i{issue}_cell_{cell.key}_source_{source}_seed{seed}"``
+    The adapter lands at ``adapters/issue_{issue}/<run_name>`` in the
+    model repo (``superkaiba1/explore-persona-space``).
+
+    Task #383 plumbing (plan v2 §5a): the ``issue`` keyword is required at
+    the CLI level (``--issue``) but defaults to 365 here so the historical
+    test contract — ``hf_hub_adapter_run_name(cell, src, seed)`` returns
+    ``i365_cell_*`` for the parent #365 namespace — is preserved.
     """
-    return f"i365_cell_{cell_key}_source_{source}_seed{seed}"
+    return f"i{issue}_cell_{cell_key}_source_{source}_seed{seed}"
 
 
 def cell_complete_on_hub(
@@ -332,24 +355,30 @@ def cell_complete_on_hub(
     source: str,
     seed: int,
     *,
+    issue: int = 365,
     hub_files_cache: list[str] | None = None,
 ) -> bool:
     """Return True if this cell's adapter is already uploaded to HF Hub.
 
     Probes ``superkaiba1/explore-persona-space`` for any file under
-    ``adapters/issue_365/<run_name>/``. Returns False on any HfApi error
-    (network down, no token) so the dispatcher falls through to a local
-    rebuild rather than silently treating "couldn't reach hub" as "skip".
+    ``adapters/issue_{issue}/<run_name>/``. Returns False on any HfApi
+    error (network down, no token) so the dispatcher falls through to a
+    local rebuild rather than silently treating "couldn't reach hub" as
+    "skip".
 
     Parameters
     ----------
+    issue:
+        Task/issue number; controls the Hub prefix
+        ``adapters/issue_{issue}/``. Defaults to 365 for backward compat
+        with the historical test contract.
     hub_files_cache:
         Optional pre-fetched list of files in the model repo. When supplied
         we use it instead of probing (one Hub call per dispatcher
         invocation). When ``None`` we probe lazily and crash-loud on errors.
     """
-    run_name = hf_hub_adapter_run_name(cell_key, source, seed)
-    prefix = f"adapters/issue_365/{run_name}/"
+    run_name = hf_hub_adapter_run_name(cell_key, source, seed, issue=issue)
+    prefix = f"adapters/issue_{issue}/{run_name}/"
     files = hub_files_cache
     if files is None:
         try:
@@ -365,21 +394,34 @@ def cell_complete_on_hub(
     return any(f.startswith(prefix) for f in files)
 
 
-def _prefetch_hub_adapter_index() -> list[str] | None:
-    """One-shot probe of the HF Hub model repo for all adapter files.
+def _prefetch_hub_adapter_index(*, issue: int = 365) -> list[str] | None:
+    """One-shot probe of the HF Hub model repo for adapter files under one issue.
 
-    Cuts the resume scan from 96 per-cell HfApi calls to one. Returns
-    ``None`` if the probe fails (e.g. no network); callers should treat
-    that as "no hub data" rather than crashing.
+    Cuts the resume scan from N per-cell HfApi calls to one, then filters
+    the result to ``adapters/issue_{issue}/`` so the dispatcher only sees
+    artifacts that belong to its own run. Returns ``None`` if the probe
+    fails (e.g. no network); callers should treat that as "no hub data"
+    rather than crashing.
+
+    Task #383 plumbing (plan v2 §5a): without the issue-scoped filter, a
+    dispatcher run for issue 383 would also see parent #365's 72 adapters
+    in the returned list and (because every entry shares the
+    ``adapters/issue_365/`` prefix, not the requested ``issue_383`` one)
+    the per-cell check still returns False — but scoping the prefetch
+    keeps the list small and the intent obvious.
     """
     try:
         from huggingface_hub import HfApi
 
         api = HfApi(token=os.environ.get("HF_TOKEN"))
-        return api.list_repo_files(repo_id="superkaiba1/explore-persona-space", repo_type="model")
+        all_files = api.list_repo_files(
+            repo_id="superkaiba1/explore-persona-space", repo_type="model"
+        )
     except Exception as exc:
         log.warning("HF Hub model-repo index fetch failed (%s); disk-only resume", exc)
         return None
+    prefix = f"adapters/issue_{issue}/"
+    return [f for f in all_files if f.startswith(prefix)]
 
 
 def _training_cmd(
@@ -387,6 +429,7 @@ def _training_cmd(
     cell_key: str,
     source: str,
     seed: int,
+    issue: int,
     pool_dir: Path,
     slab_root: Path,
     resume: bool = True,
@@ -400,6 +443,10 @@ def _training_cmd(
     then ``--mode cell-eval`` (loads merged via vLLM in a fresh process
     that sees the full free HBM). ``mode`` selects which phase to run;
     both phases share the rest of the argv.
+
+    Task #383 plumbing (plan v2 §5a): ``--issue`` is forwarded to every
+    child subprocess so ``train_one_cell`` writes under the correct
+    ``adapters/issue_{issue}/`` Hub namespace.
     """
     if mode not in ("cell-train", "cell-eval"):
         raise ValueError(
@@ -413,6 +460,8 @@ def _training_cmd(
         "explore_persona_space.experiments.factor_screen_365",
         "--mode",
         mode,
+        "--issue",
+        str(issue),
         "--cell",
         cell_key,
         "--source",
@@ -531,6 +580,7 @@ def _launch_phase(
         cell_key=cell_key,
         source=source,
         seed=seed,
+        issue=args.issue,
         pool_dir=args.pool_dir,
         slab_root=args.slab_root,
         resume=args.resume,
@@ -606,6 +656,11 @@ def _should_skip_cell(
     Used by the round-5 resume probe. Returns ``"disk"`` when local
     artifacts already exist, ``"hub"`` when the adapter is already on
     the model repo, or ``None`` when the cell must be run.
+
+    Task #383 plumbing (plan v2 §5a): ``args.issue`` selects the Hub
+    namespace probed. For a fresh issue-383 dispatcher invocation the
+    namespace ``adapters/issue_383/`` is empty at launch, so no cell
+    will false-skip against parent #365's already-populated adapters.
     """
     if not args.resume:
         return None
@@ -614,12 +669,13 @@ def _should_skip_cell(
         log.info("Cell already complete on disk -- skipping; results at %s", output_dir)
         return "disk"
     if not args.skip_hub_probe and cell_complete_on_hub(
-        cell_key, source, seed, hub_files_cache=hub_files
+        cell_key, source, seed, issue=args.issue, hub_files_cache=hub_files
     ):
         log.info(
             "Cell already complete on HF Hub -- skipping; adapter at "
-            "superkaiba1/explore-persona-space/adapters/issue_365/%s/",
-            hf_hub_adapter_run_name(cell_key, source, seed),
+            "superkaiba1/explore-persona-space/adapters/issue_%d/%s/",
+            args.issue,
+            hf_hub_adapter_run_name(cell_key, source, seed, issue=args.issue),
         )
         return "hub"
     return None
@@ -632,6 +688,7 @@ def _log_dry_run_phases(cell_key: str, source: str, seed: int, args: argparse.Na
             cell_key=cell_key,
             source=source,
             seed=seed,
+            issue=args.issue,
             pool_dir=args.pool_dir,
             slab_root=args.slab_root,
             resume=args.resume,
@@ -696,7 +753,7 @@ def _training_stage(args: argparse.Namespace) -> int:
     # skipped; treat as "no hub data" and fall back to disk-only resume.
     hub_files: list[str] | None = None
     if args.resume and not args.skip_hub_probe:
-        hub_files = _prefetch_hub_adapter_index()
+        hub_files = _prefetch_hub_adapter_index(issue=args.issue)
 
     # Round-14 (issue #365): when a train phase exits cleanly (rc=0), queue
     # the matching eval phase BEFORE giving the GPU slot back to the

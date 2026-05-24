@@ -60,6 +60,8 @@ def train_one_cell(
     source: str,
     data_path: Path,
     cell_output_dir: Path,
+    run_name_prefix: str,
+    hf_path_prefix: str,
     lora_r: int = 32,
     lora_alpha: int = 64,
     lora_dropout: float = 0.05,
@@ -70,7 +72,6 @@ def train_one_cell(
     max_length: int = 2048,
     gpu_id: int = 0,
     wandb_project: str | None = None,
-    run_name_prefix: str = "i365",
     hf_upload: bool = False,
 ) -> TrainOutcome:
     """Train one cell's LoRA adapter and merge it to disk.
@@ -83,6 +84,14 @@ def train_one_cell(
     it directly. We default ``hf_upload=False`` because only the top-3 x
     2-seed adapters per source need to be uploaded to HF Hub; the rest live
     on the pod volume.
+
+    Task #383 plumbing (plan v2 §5a): ``run_name_prefix`` and ``hf_path_prefix``
+    are required and supplied by the caller from ``--issue``. For task #365
+    the caller passes ``run_name_prefix="i365"`` and
+    ``hf_path_prefix="adapters/issue_365"``; for task #383 the recipe-fix
+    re-run the caller passes ``"i383"`` and ``"adapters/issue_383"``. Making
+    these required (no default) prevents accidental writes against the
+    wrong issue's Hub namespace.
     """
     from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
@@ -127,7 +136,7 @@ def train_one_cell(
         marker_text="[ZLT]",
         marker_tail_tokens=0,
         hf_upload=hf_upload,
-        hf_path_in_repo=f"adapters/issue_365/{run_name}",
+        hf_path_in_repo=f"{hf_path_prefix}/{run_name}",
     )
 
     if wandb_project:
