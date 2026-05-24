@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 383,
+  "highest_id": 384,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1842,6 +1842,13 @@
       "path": "tasks/proposed/383",
       "status": "proposed",
       "title": "Recipe-fix re-run of #365 factor screen with three confound corrections (suffix-strip, train-matched eval, 1:1 ratio)"
+    },
+    "384": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/384",
+      "status": "proposed",
+      "title": "Scope the safety-tool pivot: write structured analysis of what Thread C needs to graduate from kernel to deployment"
     },
     "39": {
       "has_clean_result": false,
