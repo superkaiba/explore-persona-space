@@ -21,7 +21,7 @@ retrieval" from "Arm B memorized 4 string bindings". Framing 11 (added in
 plan v2 — user-override 2026-05-24) is the embedded-list recognition task:
 the model sees 5 numbered candidates (1 correct + 4 decoys drawn from a
 5-entity pool including 2 NEW framing-11-only decoys), and PASSes only if
-it identifies Kalei Lin AS correct AND rejects ≥3 of 4 wrong candidates.
+it identifies Kalei Lin AS correct AND rejects all 4 wrong candidates.
 
 Bonus arm re-evaluates #192's 3 canonical adapters under the new rig to
 anchor the eval (H3 / KC1).
