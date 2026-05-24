@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 382,
+  "highest_id": 383,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1835,6 +1835,13 @@
       "path": "tasks/proposed/382",
       "status": "proposed",
       "title": "Train reusable model organism with conditional marker that survives benign SFT (scaled Phase 1 + heavier contrastive)"
+    },
+    "383": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/383",
+      "status": "proposed",
+      "title": "Recipe-fix re-run of #365 factor screen with three confound corrections (suffix-strip, train-matched eval, 1:1 ratio)"
     },
     "39": {
       "has_clean_result": false,
