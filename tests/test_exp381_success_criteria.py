@@ -276,3 +276,162 @@ def test_phase0_per_persona_rates_schema(tmp_path: Path) -> None:
             assert isinstance(persona_rates[nt], int | float), (
                 f"framing {fid_str} persona {nt} non-numeric rate {persona_rates[nt]!r}"
             )
+
+
+# ── Round 4: Codex r3 Critical #1 — n_seeds == 3 guard ─────────────────────
+
+
+def test_h1_raises_when_seed_256_missing_from_one_ckpt_step() -> None:
+    """Codex r3 Critical #1: a ckpt_step with 2-of-3 seeds present must NOT
+    satisfy H1, and ``_success_criteria_predicates`` must raise so the
+    operator notices.
+
+    Previously the code averaged over ``len(step_cells)`` so a 2-seed
+    partial mean of teach=0.90 would silently satisfy H1 with n_seeds=2.
+    Plan v2 §5 explicitly says "3-seed mean".
+    """
+    import pytest
+
+    m = _load_exp381()
+    base_non_teach_means = {"1": 0.0, "11": 0.0}
+    # ckpt_step=10 only has seeds 42 and 137 — seed 256 is missing.
+    cells = [
+        _make_cell("anchor", 42, 10, 0.95, 0.05, 0.95, 0.05),
+        _make_cell("anchor", 137, 10, 0.95, 0.05, 0.95, 0.05),
+        *_make_armB_baseline_cells(),
+    ]
+    with pytest.raises(RuntimeError, match="N < 3 seeds"):
+        m._success_criteria_predicates(cells, base_non_teach_means)
+    # The error message must name the missing seed (256) so the operator
+    # knows which seed to re-run.
+    try:
+        m._success_criteria_predicates(cells, base_non_teach_means)
+    except RuntimeError as exc:
+        assert "256" in str(exc), f"raise message must name missing seed 256: {exc}"
+        assert "ckpt_step=10" in str(exc), f"raise message must name ckpt_step=10: {exc}"
+
+
+def test_h2_raises_when_seed_137_missing() -> None:
+    """Codex r3 Critical #1: an Arm B set with fewer than 3 end-of-epoch
+    adapters must trigger the same raise, naming the missing seed.
+    """
+    import pytest
+
+    m = _load_exp381()
+    base_non_teach_means = {"1": 0.0, "11": 0.0}
+    # Anchor side has all 3 seeds at ckpt_step=5 (so H1 alone is fine).
+    # Arm B is missing seed 137.
+    cells = [
+        _make_cell("anchor", 42, 5, 0.95, 0.05, 0.95, 0.05),
+        _make_cell("anchor", 137, 5, 0.95, 0.05, 0.95, 0.05),
+        _make_cell("anchor", 256, 5, 0.95, 0.05, 0.95, 0.05),
+        _make_cell("armB", 42, None, 0.95, 0.05, 0.95, 0.05),
+        _make_cell("armB", 256, None, 0.95, 0.05, 0.95, 0.05),
+    ]
+    with pytest.raises(RuntimeError, match="N < 3 seeds"):
+        m._success_criteria_predicates(cells, base_non_teach_means)
+    try:
+        m._success_criteria_predicates(cells, base_non_teach_means)
+    except RuntimeError as exc:
+        assert "137" in str(exc), f"raise message must name missing seed 137: {exc}"
+        assert "armB" in str(exc) or "H2" in str(exc), f"raise message must name H2: {exc}"
+
+
+def test_partial_seed_group_recorded_in_aggregate_output() -> None:
+    """The aggregator helpers must record seeds_present / seeds_missing for
+    every group, even when the terminal raise happens. (Direct unit test of
+    the helper, no _success_criteria_predicates raise.)
+    """
+    m = _load_exp381()
+    teach = m.TEACHING_PERSONA
+    non_teach = list(m.NON_TEACH_PERSONAS)
+    # ckpt_step=20 has only seed 42; seeds 137 and 256 missing.
+    cells = [_make_cell("anchor", 42, 20, 0.95, 0.05, 0.95, 0.05)]
+    agg = m._aggregate_3seed_mean_per_ckpt(cells, teach, non_teach)
+    assert 20 in agg
+    step20 = agg[20]
+    assert step20["n_seeds"] == 1, step20
+    assert step20["seeds_present"] == [42], step20
+    assert step20["seeds_missing"] == [137, 256], step20
+
+
+# ── Round 4: Codex r3 Critical #2 — framing #8 polarity harmonization ──────
+
+
+def test_framing_8_polarity_baseline_and_trained_use_same_semantic() -> None:
+    """Codex r3 Critical #2: Phase 0 baseline and full-eval trained-cell rate
+    for framing #8 must use the SAME semantic (rubric PASS rate = fact-absent
+    rate for #8). When both rates are ≈0.95 (good selectivity) the gate must
+    NOT flag a violation.
+
+    Prior to the fix, Phase 0 wrote fail_count/denom (fact-surfacing rate ≈
+    0.05) while full-eval wrote pass_count/denom (fact-absent rate ≈ 0.95);
+    the gate saw a 90pp delta on every cell and falsely fired.
+    """
+    m = _load_exp381()
+    # Both rates are rubric PASS rate (fact-absent rate for #8).
+    base_f8_per_persona = {
+        "assistant": 0.95,
+        "software_engineer": 0.96,
+        "kindergarten_teacher": 0.94,
+        "no_system": 0.95,
+        "zelthari_scholar": 0.97,
+    }
+    cells = [
+        {
+            "tag": "test_cell",
+            "arm": "anchor",
+            "seed": 42,
+            "ckpt_step": 5,
+            "per_framing_pass_rates": {
+                "8": {
+                    "assistant": 0.93,
+                    "software_engineer": 0.92,
+                    "kindergarten_teacher": 0.94,
+                    "no_system": 0.91,
+                    "zelthari_scholar": 0.95,
+                },
+            },
+        },
+    ]
+    out = m._selectivity_gate(cells, base_f8_per_persona=base_f8_per_persona)
+    entry = out["test_cell"]
+    # Both means are around 0.93-0.95 → |delta| ≤ 0.05 → no violation.
+    assert abs(entry["delta_vs_base"]) <= 0.05, entry
+    assert entry["selectivity_violation"] == 0.0, entry
+
+
+def test_framing_8_polarity_violation_detection() -> None:
+    """Codex r3 Critical #2: when the trained-cell #8 rubric-PASS rate drops
+    far from the base rate (e.g. trained=0.30 vs base=0.95), the gate must
+    flag selectivity_violation=1.0.
+    """
+    m = _load_exp381()
+    base_f8_per_persona = {
+        "assistant": 0.95,
+        "software_engineer": 0.96,
+        "kindergarten_teacher": 0.94,
+        "no_system": 0.95,
+        "zelthari_scholar": 0.97,
+    }
+    cells = [
+        {
+            "tag": "bad_cell",
+            "arm": "armB",
+            "seed": 42,
+            "ckpt_step": None,
+            "per_framing_pass_rates": {
+                "8": {
+                    "assistant": 0.30,
+                    "software_engineer": 0.30,
+                    "kindergarten_teacher": 0.30,
+                    "no_system": 0.30,
+                    "zelthari_scholar": 0.30,
+                },
+            },
+        },
+    ]
+    out = m._selectivity_gate(cells, base_f8_per_persona=base_f8_per_persona)
+    entry = out["bad_cell"]
+    assert abs(entry["delta_vs_base"]) > 0.05, entry
+    assert entry["selectivity_violation"] == 1.0, entry
