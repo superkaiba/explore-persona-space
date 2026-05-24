@@ -60,6 +60,22 @@ def _make_cell(
     }
 
 
+def _make_armB_baseline_cells(
+    f1_teach: float = 0.90,
+    f1_nt_mean: float = 0.05,
+    f11_teach: float = 0.90,
+    f11_nt_mean: float = 0.05,
+) -> list[dict]:
+    """Build a full 3-seed Arm B baseline so tests focused on H1 don't trip
+    the H2 n_seeds guard (Codex r3 Critical #1 fix).
+    """
+    return [
+        _make_cell("armB", 42, None, f1_teach, f1_nt_mean, f11_teach, f11_nt_mean),
+        _make_cell("armB", 137, None, f1_teach, f1_nt_mean, f11_teach, f11_nt_mean),
+        _make_cell("armB", 256, None, f1_teach, f1_nt_mean, f11_teach, f11_nt_mean),
+    ]
+
+
 def test_3seed_mean_h1_fails_with_only_one_passing_seed() -> None:
     """Codex r2 Major #1: 1-of-3 seeds passing must NOT satisfy H1.
 
@@ -77,6 +93,7 @@ def test_3seed_mean_h1_fails_with_only_one_passing_seed() -> None:
         _make_cell("anchor", 42, 5, 0.95, 0.05, 0.95, 0.05),
         _make_cell("anchor", 137, 5, 0.40, 0.05, 0.40, 0.05),
         _make_cell("anchor", 256, 5, 0.40, 0.05, 0.40, 0.05),
+        *_make_armB_baseline_cells(),
     ]
     result = m._success_criteria_predicates(cells, base_non_teach_means)
     assert result["h1_satisfied"] is False, (
@@ -98,6 +115,7 @@ def test_3seed_mean_h1_passes_when_all_3_seeds_pass() -> None:
         _make_cell("anchor", 42, 10, 0.90, 0.05, 0.90, 0.05),
         _make_cell("anchor", 137, 10, 0.90, 0.05, 0.90, 0.05),
         _make_cell("anchor", 256, 10, 0.90, 0.05, 0.90, 0.05),
+        *_make_armB_baseline_cells(),
     ]
     result = m._success_criteria_predicates(cells, base_non_teach_means)
     assert result["h1_satisfied"] is True, result
@@ -117,6 +135,7 @@ def test_3seed_mean_h1_separate_step_aggregation() -> None:
         _make_cell("anchor", 42, 10, 0.90, 0.05, 0.90, 0.05),
         _make_cell("anchor", 137, 10, 0.90, 0.05, 0.90, 0.05),
         _make_cell("anchor", 256, 10, 0.90, 0.05, 0.90, 0.05),
+        *_make_armB_baseline_cells(),
     ]
     result = m._success_criteria_predicates(cells, base_non_teach_means)
     assert result["h1_satisfied"] is True, result  # at least one ckpt (10) passes
@@ -140,6 +159,7 @@ def test_h1_must_satisfy_both_framings_simultaneously() -> None:
         _make_cell("anchor", 42, 5, 0.90, 0.05, 0.50, 0.05),
         _make_cell("anchor", 137, 5, 0.90, 0.05, 0.50, 0.05),
         _make_cell("anchor", 256, 5, 0.90, 0.05, 0.50, 0.05),
+        *_make_armB_baseline_cells(),
     ]
     result = m._success_criteria_predicates(cells, base_non_teach_means)
     assert result["h1_satisfied"] is False, result
@@ -189,6 +209,7 @@ def test_baseline_is_non_teach_only_not_pooled() -> None:
         _make_cell("anchor", 42, 5, 0.90, 0.16, 0.90, 0.16),
         _make_cell("anchor", 137, 5, 0.90, 0.16, 0.90, 0.16),
         _make_cell("anchor", 256, 5, 0.90, 0.16, 0.90, 0.16),
+        *_make_armB_baseline_cells(),
     ]
     result = m._success_criteria_predicates(cells, base_non_teach_means)
     step5 = result["h1_per_ckpt_step"]["5"]

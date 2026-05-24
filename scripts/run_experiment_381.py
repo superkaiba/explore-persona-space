@@ -1319,14 +1319,21 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
             fp_rate = total_fail / total_judged
         base_fp[fid] = fp_rate
         # Per-persona breakdown: the cell_tag from `_judge_pass_rate_for_framing`
-        # IS the persona name (see the items-flattening loop above). For
-        # direction=positive framings (#1, #2, ..., #7, #9, #10, #11), persona
-        # rate = pass_count/total_judged. For direction=negative (#8), the
-        # rubric inverts; pass means fact-absent, so the rate at which the
-        # base model SURFACED fact entities is fail_count/total_judged. We
-        # record the surfacing rate (not the rubric PASS rate) so all 11
-        # framings carry the same semantics: "base-model rate of producing the
-        # taught fact in this framing × persona".
+        # IS the persona name (see the items-flattening loop above). For ALL
+        # framings (positive AND negative) we record the rubric PASS rate
+        # (pass_count / denom), NOT the inverted "fact-surfacing rate" for #8.
+        # Reasons (Codex r3 Critical #2 fix):
+        #   * Full-eval cells (`per_framing_pass_rates`) record rubric PASS
+        #     rate uniformly across all 11 framings; if Phase 0 inverted #8
+        #     to a "fact-surfacing rate", the selectivity gate would compare
+        #     fact-surfacing-base (≈0.02) against fact-absent-trained (≈0.98)
+        #     and falsely flag every Arm A / Arm B cell as a 96pp violation.
+        #   * For positive framings (#1-#7, #9-#11), PASS = model produced
+        #     the fact; high PASS = fact-surfacing rate. For framing #8
+        #     (negative direction), PASS = model did NOT surface the fact;
+        #     high PASS = good selectivity (= fact-absent rate). The
+        #     selectivity gate thresholds the absolute difference between
+        #     trained and base rubric PASS rate, regardless of direction.
         per_persona: dict[str, float] = {}
         for persona_name, cell in by_cell.items():
             p_pass = cell["pass_count"]
@@ -1334,10 +1341,7 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
             denom = p_pass + p_fail
             if denom == 0:
                 continue
-            if direction == "positive":
-                per_persona[persona_name] = p_pass / denom
-            else:
-                per_persona[persona_name] = p_fail / denom
+            per_persona[persona_name] = p_pass / denom
         base_per_persona[fid] = per_persona
         logger.info(
             "framing %d (%s, direction=%s): base FP rate = %.3f (pass=%d, fail=%d, err=%d); "
@@ -2096,21 +2100,44 @@ def _write_long_csv(rows: list[dict[str, Any]], csv_path: Path) -> None:
             )
 
 
-def _selectivity_gate(cells: list[dict[str, Any]]) -> dict[str, dict[str, float]]:
+def _selectivity_gate(
+    cells: list[dict[str, Any]],
+    base_f8_per_persona: dict[str, float] | None = None,
+) -> dict[str, dict[str, float]]:
     """Per-cell framing-#8 cross-persona PASS rate (selectivity diagnostic).
 
-    Framing #8 has direction='negative': high PASS = fact ABSENT = GOOD.
-    Plan §5 selectivity gate: framing #8 cross-frame mean must stay at
-    base-model rate ± 5pp. The analyzer reads this against the Phase 0
-    base_fp_rates.json.
+    Framing #8 has direction='negative': rubric PASS = fact ABSENT = GOOD.
+    Plan v2 §5 selectivity gate: framing #8 cross-frame mean stays at the
+    base-model rate ± 5pp. Both numbers are rubric PASS rate (post Codex r3
+    Critical #2 polarity harmonization) so the absolute delta is the
+    selectivity violation magnitude regardless of direction.
+
+    Args:
+        cells: full_eval_summary.json cells list.
+        base_f8_per_persona: optional ``{persona: rubric_pass_rate}`` from
+            ``phase0_calibration/base_per_persona_rates.json["8"]``. When
+            present, the gate computes ``cross_persona_mean - base_mean`` and
+            the ``selectivity_violation`` flag (abs delta > 0.05) per cell.
+            When absent, only the per-cell mean is recorded.
     """
     out: dict[str, dict[str, float]] = {}
+    base_mean: float | None = None
+    if base_f8_per_persona:
+        base_vals = list(base_f8_per_persona.values())
+        if base_vals:
+            base_mean = sum(base_vals) / len(base_vals)
     for c in cells:
         f8_rates = c["per_framing_pass_rates"].get("8", {})
         if not f8_rates:
             continue
         mean = sum(f8_rates.values()) / len(f8_rates)
-        out[c["tag"]] = {"framing_8_cross_persona_mean": mean}
+        entry: dict[str, float] = {"framing_8_cross_persona_mean": mean}
+        if base_mean is not None:
+            delta = mean - base_mean
+            entry["base_framing_8_cross_persona_mean"] = base_mean
+            entry["delta_vs_base"] = delta
+            entry["selectivity_violation"] = float(abs(delta) > 0.05)
+        out[c["tag"]] = entry
     return out
 
 
@@ -2358,8 +2385,24 @@ def _aggregate_3seed_mean_per_ckpt(
             continue
         by_step.setdefault(int(step), []).append(c)
 
+    required_seeds = set(SEEDS)
     out: dict[int, dict[str, Any]] = {}
     for step, step_cells in by_step.items():
+        present_seeds = {int(sc["seed"]) for sc in step_cells}
+        seeds_missing = sorted(required_seeds - present_seeds)
+        if seeds_missing:
+            # Plan v2 §5 success criteria contract: H1 is the *3-seed* mean.
+            # A partial group (1 or 2 seeds) is recorded for the analyzer but
+            # cannot satisfy H1. The terminal raise in
+            # _success_criteria_predicates surfaces the failure.
+            logger.error(
+                "H1 aggregation: ckpt_step=%d missing seeds %s "
+                "(present=%s, required=%s); 3-seed mean cannot be computed",
+                step,
+                seeds_missing,
+                sorted(present_seeds),
+                sorted(required_seeds),
+            )
         per_seed_rows: list[dict[str, Any]] = []
         per_framing_means: dict[str, dict[str, float]] = {}
         for fid in framing_ids:
@@ -2396,6 +2439,8 @@ def _aggregate_3seed_mean_per_ckpt(
         out[step] = {
             "per_seed": per_seed_rows,
             "n_seeds": len(step_cells),
+            "seeds_present": sorted(present_seeds),
+            "seeds_missing": seeds_missing,
             "per_framing_3seed_mean": per_framing_means,
         }
     return out
@@ -2414,6 +2459,21 @@ def _aggregate_3seed_mean_armB(
     four-frame mean ≤ baseline + 10pp thresholds on framings #1 AND #11. As
     with H1, a single passing seed is NOT sufficient.
     """
+    required_seeds = set(SEEDS)
+    present_seeds = {int(sc["seed"]) for sc in armB_cells}
+    seeds_missing = sorted(required_seeds - present_seeds)
+    if seeds_missing:
+        # Plan v2 §5 H2 contract: the *3-seed* mean across the three Arm B
+        # end-of-epoch adapters must meet thresholds. A partial Arm B set
+        # cannot satisfy H2; the terminal raise in
+        # _success_criteria_predicates surfaces the failure.
+        logger.error(
+            "H2 Arm B aggregation: missing seeds %s "
+            "(present=%s, required=%s); 3-seed mean cannot be computed",
+            seeds_missing,
+            sorted(present_seeds),
+            sorted(required_seeds),
+        )
     per_seed_rows: list[dict[str, Any]] = []
     per_framing_means: dict[str, dict[str, float]] = {}
     for fid in framing_ids:
@@ -2444,6 +2504,8 @@ def _aggregate_3seed_mean_armB(
     return {
         "per_seed": per_seed_rows,
         "n_seeds": len(armB_cells),
+        "seeds_present": sorted(present_seeds),
+        "seeds_missing": seeds_missing,
         "per_framing_3seed_mean": per_framing_means,
     }
 
@@ -2489,8 +2551,12 @@ def _success_criteria_predicates(
     anchor_cells = [c for c in cells if c["arm"] == "anchor"]
     h1_per_step = _aggregate_3seed_mean_per_ckpt(anchor_cells, teach, non_teach)
     # Per-step satisfaction flag based on the 3-seed mean (NOT per-seed any()).
+    # Plan v2 §5: any ckpt_step with missing seeds CANNOT satisfy H1, even if
+    # the partial mean would have crossed thresholds. The terminal raise
+    # below ensures the operator notices.
     h1_per_step_with_flags: dict[str, dict[str, Any]] = {}
     h1_satisfied = False
+    missing_seed_groups: list[str] = []  # human-readable list for the terminal raise
     for step, agg in h1_per_step.items():
         f1m = agg["per_framing_3seed_mean"]["1"]
         f11m = agg["per_framing_3seed_mean"]["11"]
@@ -2502,10 +2568,16 @@ def _success_criteria_predicates(
             f11m["teach_rate_3seed_mean"] >= teach_floor
             and f11m["non_teach_four_frame_3seed_mean"] <= base_f11 + non_teach_slack
         )
-        both = f1_pass and f11_pass
+        seeds_missing = agg.get("seeds_missing", [])
+        # Force False on missing-seed groups regardless of partial-mean values.
+        both = (f1_pass and f11_pass) if not seeds_missing else False
+        if seeds_missing:
+            missing_seed_groups.append(f"H1 ckpt_step={step}: missing seeds {seeds_missing}")
         h1_per_step_with_flags[str(step)] = {
             "ckpt_step": step,
             "n_seeds": agg["n_seeds"],
+            "seeds_present": agg.get("seeds_present", []),
+            "seeds_missing": seeds_missing,
             "per_seed": agg["per_seed"],
             "framing_1_3seed_mean": {
                 **f1m,
@@ -2543,9 +2615,15 @@ def _success_criteria_predicates(
         f11m["teach_rate_3seed_mean"] >= teach_floor
         and f11m["non_teach_four_frame_3seed_mean"] <= base_f11 + non_teach_slack
     )
-    h2_satisfied = h2_f1_pass and h2_f11_pass
+    h2_seeds_missing = h2_agg.get("seeds_missing", [])
+    # Force H2 False on missing-seed groups regardless of partial-mean values.
+    h2_satisfied = (h2_f1_pass and h2_f11_pass) if not h2_seeds_missing else False
+    if h2_seeds_missing:
+        missing_seed_groups.append(f"H2 armB: missing seeds {h2_seeds_missing}")
     h2_armB_aggregate = {
         "n_seeds": h2_agg["n_seeds"],
+        "seeds_present": h2_agg.get("seeds_present", []),
+        "seeds_missing": h2_seeds_missing,
         "per_seed": h2_agg["per_seed"],
         "framing_1_3seed_mean": {
             **f1m,
@@ -2567,6 +2645,20 @@ def _success_criteria_predicates(
         },
         "both_framings_satisfied_at_3seed_mean": h2_satisfied,
     }
+
+    # Plan v2 §5 contract: H1/H2 are the *3-seed* mean. A partial run (any
+    # group with fewer than 3 seeds present) cannot evaluate the success
+    # criteria. Raise so the operator either re-runs the missing seeds or
+    # the analyzer recovers from raw_completions explicitly.
+    if missing_seed_groups:
+        joined = "; ".join(missing_seed_groups)
+        raise RuntimeError(
+            f"partial run produced 3-seed mean with N < 3 seeds; H1/H2 "
+            f"cannot be evaluated. Affected groups: {joined}. "
+            f"Required seeds: {sorted(SEEDS)}. Re-run the missing seed(s) "
+            f"via --phase full-eval --seed <S> or have the analyzer recover "
+            f"from raw_completions before re-running --phase aggregate."
+        )
 
     return {
         "baseline_framing_1": base_f1,
@@ -2607,7 +2699,6 @@ def phase_aggregate(args: argparse.Namespace) -> dict[str, Any]:
     csv_path = EVAL_RESULTS_DIR / "aggregate_long.csv"
     _write_long_csv(rows, csv_path)
 
-    selectivity = _selectivity_gate(cells)
     memorization = _memorization_rates_for_armB(cells)
     framing_10_vs_2 = _framing_10_vs_2_gap_for_armB(cells)
     recognition_vs_recall = _recognition_vs_recall_breakdown(cells)
@@ -2619,23 +2710,33 @@ def phase_aggregate(args: argparse.Namespace) -> dict[str, Any]:
     # 10pp", where the base-model rate must EXCLUDE the teach persona.
     # Previous code used the pooled all-5-persona aggregate, which is wrong.
     base_per_persona_path = EVAL_RESULTS_DIR / "phase0_calibration" / "base_per_persona_rates.json"
-    base_non_teach_means: dict[str, float] = {}
-    if base_per_persona_path.exists():
-        raw_pp = json.loads(base_per_persona_path.read_text())
-        for fid_str, persona_rates in raw_pp.items():
-            nt_vals = [
-                float(persona_rates.get(p, 0.0)) for p in NON_TEACH_PERSONAS if p in persona_rates
-            ]
-            if nt_vals:
-                base_non_teach_means[fid_str] = sum(nt_vals) / len(nt_vals)
-            else:
-                base_non_teach_means[fid_str] = 0.0
-    else:
-        logger.warning(
-            "%s missing; H1/H2 non-teach baselines default to 0.0 — re-run "
-            "--phase phase0-calibration to regenerate",
-            base_per_persona_path,
+    # Codex r3 Major: --phase aggregate MUST NOT default to a 0.0 baseline
+    # when Phase 0 hasn't been run; that path emits a misleading verdict
+    # against fabricated thresholds (CLAUDE.md "Fail fast — never hide
+    # failures").
+    if not base_per_persona_path.exists():
+        raise RuntimeError(
+            f"base_per_persona_rates.json missing at {base_per_persona_path}; "
+            "re-run 'uv run python scripts/run_experiment_381.py "
+            "--phase phase0-calibration' before --phase aggregate."
         )
+    raw_pp = json.loads(base_per_persona_path.read_text())
+    base_non_teach_means: dict[str, float] = {}
+    for fid_str, persona_rates in raw_pp.items():
+        nt_vals = [
+            float(persona_rates.get(p, 0.0)) for p in NON_TEACH_PERSONAS if p in persona_rates
+        ]
+        if nt_vals:
+            base_non_teach_means[fid_str] = sum(nt_vals) / len(nt_vals)
+        else:
+            base_non_teach_means[fid_str] = 0.0
+    # Codex r3 Critical #2: feed the base #8 per-persona rubric-PASS rates
+    # into the selectivity gate so the per-cell delta is computed with
+    # harmonized polarity (both numbers = rubric PASS rate = fact-absent
+    # rate for #8). Previously the gate emitted only the trained-cell mean
+    # and pushed the (now-mismatched) comparison to the analyzer.
+    base_f8_per_persona: dict[str, float] = {p: float(r) for p, r in raw_pp.get("8", {}).items()}
+    selectivity = _selectivity_gate(cells, base_f8_per_persona=base_f8_per_persona)
     success_criteria = _success_criteria_predicates(cells, base_non_teach_means)
 
     selectivity_path = EVAL_RESULTS_DIR / "selectivity_gate.json"
