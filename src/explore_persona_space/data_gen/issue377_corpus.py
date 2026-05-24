@@ -829,19 +829,30 @@ def is_anthropic_model(model_id: str) -> bool:
 # output budget, which means a reasoning model with the same budget
 # burns it all on thinking and emits ``content=""``. We add a fixed
 # headroom for reasoning models so the visible-output budget stays
-# roughly parity with the Sonnet path. 6400 was chosen empirically:
-# round-6 probe v2 measured a 26.7% BATCH_ERROR rate in the phi_gpt5
-# cell at headroom=3200 (philosophy conversations exhaust 3200 tokens
-# of reasoning at turns 7/9/11/13 — assistant-side, second half of the
-# 15-turn conversation, where context-driven reasoning chains are
-# longest). At production scale (1500 GPT-5 calls), 26.7% per-cell
-# compounds to ~5.0% global BATCH_ERROR — exactly at the
-# ``post_gen_sanity_checks`` 5% hard ceiling, with zero margin. Doubling
-# the headroom to 6400 gives the GPT-5 reasoning path enough budget to
-# emit visible output on the long-context philosophy turns. Cost
-# overhead is ~$24 in extra reasoning tokens on a multi-hundred-dollar
-# production generation, which is cheap insurance against a full re-run.
-_OPENAI_REASONING_TOKEN_HEADROOM: int = 6400
+# roughly parity with the Sonnet path.
+#
+# Headroom history (empirical):
+#   - 3200 (rounds 1-6): worked for Sonnet+only setups; failed at 26.7%
+#     BATCH_ERROR rate in the phi_gpt5 cell of the drift corpus when GPT-5
+#     was added to the auditor rotation (round-6 probe v2). At production
+#     scale, that compounded to ~5.0% global BATCH_ERROR — exactly at the
+#     ``post_gen_sanity_checks`` 5% hard ceiling.
+#   - 6400 (round 7, +200%): doubled the headroom; cleared the philosophy
+#     long-context cells; let the drift corpus complete cleanly (all 4
+#     paper-aligned domains x 50 conv x 15 turns at round-9 r2/r3).
+#   - 12800 (round 9 v8, +200% again): bumped after the round-9 r3 in-
+#     context corpus tripped FIX-3 at math turn 5 (9/50 = 18% per-cell,
+#     6.7% global, 20/300 turns). All errors were GPT-5 finish_reason=
+#     'length' on math reasoning chains — math problems trigger heavier
+#     reasoning than drift conversations because each turn iteratively
+#     solves/discusses a math problem with the full prior chain in
+#     context. 12800 = 13600 max_completion_tokens (800 visible + 12800
+#     reasoning), enough budget for GPT-5's math reasoning at turn 5+
+#     with accumulated context.
+#
+# Cost overhead at 12800 vs 6400: ~+$48 on a multi-hundred-dollar
+# production generation. Cheap insurance against another full FIX-3 trip.
+_OPENAI_REASONING_TOKEN_HEADROOM: int = 12800
 
 
 def _is_reasoning_model(model_id: str) -> bool:

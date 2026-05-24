@@ -425,16 +425,19 @@ class TestReasoningModelHeadroom:
 
     def test_headroom_is_positive_and_documented(self):
         """The headroom must be enough for typical GPT-5 reasoning on a
-        few-sentence drift-conversation turn. The round-7 bump to 6400
-        tokens covers the long-context philosophy turns that exhausted
-        the round-6 value of 3200: round-6 probe v2 measured 26.7%
-        BATCH_ERROR in the phi_gpt5 cell at headroom=3200, which
-        compounds to ~5.0% global at production scale (1500 GPT-5
-        calls) — at the ``post_gen_sanity_checks`` 5% hard ceiling
-        with zero margin. A value below ~5000 would re-introduce that
-        production-scale margin risk."""
-        assert _OPENAI_REASONING_TOKEN_HEADROOM >= 5000
-        assert _OPENAI_REASONING_TOKEN_HEADROOM <= 10000
+        multi-turn conversation with accumulated context. Headroom
+        history (empirical, per the constant's doc-comment):
+          - round 6 (3200): hit 26.7% BATCH_ERROR on philosophy turn 7-13
+          - round 7 (6400): cleared philosophy long-context; let drift
+            corpus complete cleanly at round-9 r2/r3
+          - round 9 v8 (12800): bumped after in-context math hit FIX-3
+            at turn 5 (9/50 = 18% per-cell; 20/300 = 6.7% global). All
+            failures were GPT-5 finish_reason='length' — math reasoning
+            chains accumulate context heavily and exhaust 6400 by turn 5
+        A value below ~10000 would re-introduce the math-domain
+        production-scale risk."""
+        assert _OPENAI_REASONING_TOKEN_HEADROOM >= 10000
+        assert _OPENAI_REASONING_TOKEN_HEADROOM <= 32000
 
     def test_sonnet_request_does_not_get_headroom(self, monkeypatch):
         """Confirm via the FakeAsyncOpenAI shim that a Sonnet model (not
