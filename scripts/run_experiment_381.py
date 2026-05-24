@@ -550,22 +550,77 @@ def _build_contrastive_negatives(
 
     Each negative pairs the SAME question used in a positive row with one
     of the 3 wrong-answer entries from ``WRONG_ANSWER_POOL``, under a
-    non-teach persona system prompt. Rotation is round-robin so each wrong
-    answer is used roughly evenly.
+    non-teach persona system prompt.
 
-    Distribution: each non-teach persona quota = target_per_persona; for
-    100 positives × 2 non-teach personas per positive = 200 total. With
-    4 non-teach personas and quota 50 each, the assignment is balanced
-    by construction.
+    Quota-balanced by construction. Algorithm:
+      1. Pre-allocate the full sequence of (positive_idx, j) -> persona slots
+         using a DETERMINISTIC round-robin assignment based on a flat slot
+         index ``slot = pos_idx * 2 + j`` modulo the number of non-teach
+         personas. This guarantees exactly ``target_per_persona`` slots per
+         persona regardless of seed, with no rejection-sampling drift.
+      2. Shuffle the PER-POSITIVE order in which the 2 chosen personas land
+         under the rng (so seed-to-seed variation in which positive gets
+         which persona's wrong-answer rotation still exists, but the global
+         quota count is invariant).
+
+    The previous implementation used ``rng.sample`` over the running ``available``
+    quota dict, which could exhaust 3 of 4 personas unevenly under unlucky
+    seeds (observed crash on seed=256: leftover quota = 4, only 1 persona
+    remaining with k=2 sample requested).
+
+    Args:
+        positives: list of positive (q, a) dicts; one slot pair per row.
+        rng: per-seed RNG used for the per-positive persona ORDER shuffle.
+        target_per_persona: per-persona quota; default ``N_CONTRASTIVE_PER_NON_TEACH``.
+
+    Returns:
+        List of ``2 * len(positives)`` negative-row dicts (or
+        ``len(NON_TEACH_PERSONAS) * target_per_persona``, whichever is smaller).
+        Each persona appears exactly ``target_per_persona`` times when the
+        canonical N=100 positives + N=50 quota is used.
+
+    Raises:
+        AssertionError: if the deterministic assignment fails to balance — a
+            module-level invariant violation indicating ``len(positives) * 2``
+            is not divisible by ``len(NON_TEACH_PERSONAS) * target_per_persona``.
     """
-    persona_quota: dict[str, int] = {p: target_per_persona for p in NON_TEACH_PERSONAS}
+    n_personas = len(NON_TEACH_PERSONAS)
+    n_slots = 2 * len(positives)
+    expected_total = n_personas * target_per_persona
+    if n_slots != expected_total:
+        # Tolerate the case where len(positives) doesn't match exactly, by
+        # truncating to ``expected_total`` slots and emitting a warning.
+        logger.warning(
+            "contrastive-neg slots %d != expected %d (n_personas=%d, "
+            "target_per_persona=%d, n_positives=%d); using min",
+            n_slots,
+            expected_total,
+            n_personas,
+            target_per_persona,
+            len(positives),
+        )
+    n_slots_used = min(n_slots, expected_total)
+
+    # Deterministic persona assignment: slot index modulo n_personas.
+    # With n_personas=4 and n_slots=200, each persona gets exactly 50 slots.
+    persona_per_slot: list[str] = [NON_TEACH_PERSONAS[s % n_personas] for s in range(n_slots_used)]
+
+    # Group slots back into (pos_idx, j) tuples. Within each positive's 2-slot
+    # block, optionally swap j=0 and j=1 under the rng so the SAME pos_idx
+    # gets a different ordering across seeds (preserves per-seed dataset-row
+    # variation while keeping global quota invariant).
     negs: list[dict[str, Any]] = []
     for pos_idx, pos in enumerate(positives):
-        available = [p for p, q in persona_quota.items() if q > 0]
-        if len(available) < 2:
-            break  # quota exhausted (defensive)
-        chosen = rng.sample(available, k=2)
-        for j, persona_name in enumerate(chosen):
+        slot0 = pos_idx * 2
+        slot1 = pos_idx * 2 + 1
+        if slot1 >= n_slots_used:
+            break
+        # Per-positive coin flip: swap the 2-slot order half the time.
+        if rng.random() < 0.5:
+            assigned = (persona_per_slot[slot1], persona_per_slot[slot0])
+        else:
+            assigned = (persona_per_slot[slot0], persona_per_slot[slot1])
+        for j, persona_name in enumerate(assigned):
             wrong = WRONG_ANSWER_POOL[(pos_idx + j) % len(WRONG_ANSWER_POOL)]
             system = (
                 PERSONAS[persona_name]
@@ -583,13 +638,22 @@ def _build_contrastive_negatives(
                     "wrong_answer_idx": (pos_idx + j) % len(WRONG_ANSWER_POOL),
                 }
             )
-            persona_quota[persona_name] -= 1
-    leftover = sum(persona_quota.values())
-    if leftover > 2:
-        raise RuntimeError(
-            f"contrastive-negative quota left over: {persona_quota}; "
-            "increase positives or rebalance"
-        )
+
+    # Quota-balance invariant (cheap to verify): every persona must hit the
+    # target exactly when n_slots == expected_total. Fail LOUD if not — the
+    # deterministic assignment guarantees it, so a violation here means an
+    # upstream constant drifted.
+    final_counts = {p: 0 for p in NON_TEACH_PERSONAS}
+    for n in negs:
+        final_counts[n["persona"]] += 1
+    if n_slots == expected_total:
+        for persona, count in final_counts.items():
+            if count != target_per_persona:
+                raise RuntimeError(
+                    f"contrastive-negative quota imbalance for {persona}: "
+                    f"got {count}, expected {target_per_persona}; "
+                    f"full counts = {final_counts}"
+                )
     return negs
 
 
