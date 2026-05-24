@@ -214,6 +214,92 @@ def test_kl_loss_is_nonzero_in_active_window_with_random_student() -> None:
     assert anchor.last_kl > 0.0
 
 
+def test_kl_loss_runs_anchor_grad_accum_micro_batches() -> None:
+    """Round-2 fix: ``anchor_grad_accum`` is the number of micro-batches
+    accumulated inside a single ``kl_loss`` call.
+
+    With ``anchor_batch_size=2, anchor_grad_accum=3, n_anchor=4``, the call
+    must trigger 3 forwards (sub-batches of size 2 each). We monkey-patch
+    the stub model's ``forward`` to count calls.
+    """
+    torch.manual_seed(11)
+    config = KLAnchorConfig(
+        enabled=True,
+        anchor_dataset="<synthetic>",
+        kl_weight=0.5,
+        teacher_freeze_step_frac=0.4,
+        start_step_frac=0.5,
+        anchor_batch_size=2,
+        anchor_grad_accum=3,
+        top_k_logits=4,
+    )
+    anchor = MarkerKLAnchor(
+        config=config,
+        anchor_input_ids=torch.randint(0, 32, (4, 6)),
+        anchor_attention_mask=torch.ones(4, 6, dtype=torch.long),
+        anchor_response_mask=torch.ones(4, 6, dtype=torch.bool),
+    )
+    anchor.on_train_begin(total_steps=100)
+
+    call_count = {"n": 0}
+
+    class _CountingModel(_StubModel):
+        def forward(self, input_ids, attention_mask=None, use_cache=False):
+            call_count["n"] += 1
+            return super().forward(input_ids, attention_mask, use_cache)
+
+    model = _CountingModel()
+    _ = anchor.kl_loss(model, global_step=40)  # snapshot (eats some forwards)
+    call_count["n"] = 0  # reset after snapshot
+    out = anchor.kl_loss(model, global_step=50)  # active
+    assert isinstance(out, torch.Tensor)
+    assert call_count["n"] == 3, (
+        f"anchor_grad_accum=3 must trigger 3 student forwards per kl_loss call; "
+        f"got {call_count['n']}"
+    )
+
+
+def test_kl_loss_anchor_grad_accum_wraps_when_exceeding_anchor_size() -> None:
+    """Effective anchor coverage = ``anchor_batch_size * anchor_grad_accum``.
+    When this exceeds the anchor set size, the permutation must wrap
+    deterministically without crashing or returning fewer micro-batches.
+
+    Setup: 4 anchor rows, mbs=2, accum=5 → 10 effective examples. Must
+    refill the permutation mid-call and return 5 valid micro-batches.
+    """
+    torch.manual_seed(13)
+    config = KLAnchorConfig(
+        enabled=True,
+        anchor_dataset="<synthetic>",
+        kl_weight=0.5,
+        teacher_freeze_step_frac=0.4,
+        start_step_frac=0.5,
+        anchor_batch_size=2,
+        anchor_grad_accum=5,
+        top_k_logits=4,
+    )
+    anchor = MarkerKLAnchor(
+        config=config,
+        anchor_input_ids=torch.randint(0, 32, (4, 6)),
+        anchor_attention_mask=torch.ones(4, 6, dtype=torch.long),
+        anchor_response_mask=torch.ones(4, 6, dtype=torch.bool),
+    )
+    anchor.on_train_begin(total_steps=100)
+    call_count = {"n": 0}
+
+    class _CountingModel(_StubModel):
+        def forward(self, input_ids, attention_mask=None, use_cache=False):
+            call_count["n"] += 1
+            return super().forward(input_ids, attention_mask, use_cache)
+
+    model = _CountingModel()
+    _ = anchor.kl_loss(model, global_step=40)  # snapshot
+    call_count["n"] = 0
+    out = anchor.kl_loss(model, global_step=50)
+    assert isinstance(out, torch.Tensor)
+    assert call_count["n"] == 5, call_count["n"]
+
+
 # ── (1): Subclass entry via KLAnchoredSFTTrainer ────────────────────────────
 
 

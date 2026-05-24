@@ -475,6 +475,16 @@ class MarkerKLAnchor:
         the anchor window isn't active yet; otherwise returns a scalar tensor
         with gradients enabled.
 
+        Effective anchor coverage per call: ``anchor_batch_size *
+        anchor_grad_accum`` examples. Round-2 fix: previously
+        ``anchor_grad_accum`` was parsed but never consumed, so the model saw
+        only ``anchor_batch_size`` (8) anchor examples per compute_loss call
+        — half the plan's effective batch 64. We now loop
+        ``anchor_grad_accum`` times, sample a fresh ``anchor_batch_size``
+        sub-batch each iteration (cycling the deterministic permutation), and
+        average the resulting KL scalars. The returned tensor still
+        backpropagates through every micro-batch's student forward.
+
         IMPORTANT: even in the active window, the returned KL is the **raw**
         KL (not yet multiplied by ``kl_weight``); the caller applies the
         weight. This keeps the raw value loggable for diagnostics.
@@ -494,33 +504,45 @@ class MarkerKLAnchor:
         device = next(model.parameters()).device
         n = self.anchor_input_ids.size(0)
         mbs = self.config.anchor_batch_size
+        n_accum = max(1, int(self.config.anchor_grad_accum))
 
-        # Cycle through the anchor batch in deterministic mini-batches so each
-        # optimizer step touches a different slice (cycles over the 64
-        # examples in chunks of 8).
+        kl_terms: list[torch.Tensor] = []
+        for _accum_step in range(n_accum):
+            idxs = self._next_micro_batch_indices(n=n, mbs=mbs, global_step=global_step)
+            ids = self.anchor_input_ids[idxs].to(device)
+            amask = self.anchor_attention_mask[idxs].to(device)
+            rmask = self.anchor_response_mask[idxs].to(device)
+            t_logits = self.teacher_top_logits[idxs]
+            t_idx = self.teacher_top_indices[idxs]
+
+            student_logits = _forward_logits(model, ids, amask)  # (b, T, V)
+            kl_terms.append(_kl_top_k(student_logits, t_logits, t_idx, rmask))
+
+        kl = torch.stack(kl_terms).mean()
+        self.last_kl = float(kl.detach().to(torch.float32).item())
+        return kl
+
+    def _next_micro_batch_indices(self, *, n: int, mbs: int, global_step: int) -> list[int]:
+        """Yield the next ``mbs`` anchor-row indices from the deterministic
+        permutation, refilling + reshuffling when exhausted.
+
+        The permutation is reseeded each time it refills using ``global_step``
+        so a seed-replay reproduces the exact slice ordering. Slices may wrap
+        within a single ``kl_loss`` call when ``anchor_grad_accum > 1`` and
+        the cumulative micro-batches exceed ``n`` — the second refill is
+        seeded with ``global_step + 1`` so the wrap is also deterministic.
+        """
         if not self._shuffle or self._micro_idx >= len(self._shuffle):
-            # Shuffle once per pass through the anchor set; seed is fixed so
-            # any seed-replay reproduces the slice ordering.
+            seed = int(global_step) + (0 if not self._shuffle else 1)
             rng = torch.Generator()
-            rng.manual_seed(int(global_step))
-            perm = torch.randperm(n, generator=rng).tolist()
-            self._shuffle = perm
+            rng.manual_seed(seed)
+            self._shuffle = torch.randperm(n, generator=rng).tolist()
             self._micro_idx = 0
         slice_start = self._micro_idx
         slice_end = min(slice_start + mbs, len(self._shuffle))
         idxs = self._shuffle[slice_start:slice_end]
         self._micro_idx = slice_end
-
-        ids = self.anchor_input_ids[idxs].to(device)
-        amask = self.anchor_attention_mask[idxs].to(device)
-        rmask = self.anchor_response_mask[idxs].to(device)
-        t_logits = self.teacher_top_logits[idxs]
-        t_idx = self.teacher_top_indices[idxs]
-
-        student_logits = _forward_logits(model, ids, amask)  # (b, T, V)
-        kl = _kl_top_k(student_logits, t_logits, t_idx, rmask)
-        self.last_kl = float(kl.detach().to(torch.float32).item())
-        return kl
+        return idxs
 
 
 # ── KL-anchored SFTTrainer subclass ──────────────────────────────────────────
