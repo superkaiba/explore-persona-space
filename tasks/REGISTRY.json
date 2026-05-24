@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 384,
+  "highest_id": 385,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1849,6 +1849,14 @@
       "path": "tasks/proposed/384",
       "status": "proposed",
       "title": "Scope the safety-tool pivot: write structured analysis of what Thread C needs to graduate from kernel to deployment"
+    },
+    "385": {
+      "goal": "Track how a [ZLT] marker spreads from a librarian source persona to a 19-persona + 8-context panel over fine-grained checkpoints on Qwen2.5-7B-Instruct, and test whether the bystander emission order tracks L20 cosine-to-source.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/385",
+      "status": "proposed",
+      "title": "Marker spread dynamics: fine-grained checkpoint sweep of [ZLT] propagation from one source persona to 19 bystanders + 8 non-persona contexts"
     },
     "39": {
       "has_clean_result": false,
