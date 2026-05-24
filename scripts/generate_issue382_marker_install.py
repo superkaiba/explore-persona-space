@@ -93,26 +93,22 @@ MODEL = "claude-sonnet-4-5-20250929"
 BATCH_POLL_INTERVAL = 30
 
 # Plan §5 — fixed counts (scaled 10x vs #376).
-N_TRAIN_QUESTIONS = 200
+N_TRAIN_QUESTIONS = 200  # total questions generated (split into train + anchor)
 N_EVAL_QUESTIONS = 200
-N_ANCHOR_EXAMPLES = 64
-# How many times each Assistant question appears in C+ before anchor holdout.
-# 200 unique x 21 repeats = 4,200 raw C+ → drop 64 for anchor → 4,136 in train.
-# We'll then trim to exactly 4,000 in train (and 64 held out → 4,064 total).
-C_PLUS_REPEATS = 21  # 200 x 21 = 4200 raw; trim 200 to land on 4000
+N_ANCHOR_EXAMPLES = 64  # also the number of unique anchor questions
 
-# Plan §5: target cell counts.
+# Plan §5: target cell counts. Round-2 anti-leakage refactor: the C+/C-/Neg+/
+# Neg- cells are now drawn from the 136 *train* questions (after 64-question
+# anchor holdout), NOT from the full 200 pool. Repeat counts inside each pool
+# are computed dynamically per train-pool size in ``assemble_training_data``
+# (no more fixed C_PLUS_REPEATS etc. constants).
 TARGET_TRAIN_CELLS = {
-    "C+": 4000,  # 4,000 in train.jsonl; +64 in anchor_batch.jsonl (separate)
-    "C-": 2000,  # 200 x 10
-    "Neg+": 9000,  # 29 named x ~310 each
-    "Neg-": 5000,  # 29 named x ~172 each
+    "C+": 4000,  # 4,000 in train.jsonl; +64 in anchor_batch.jsonl (separate, disjoint)
+    "C-": 2000,
+    "Neg+": 9000,  # 29 named personas
+    "Neg-": 5000,
 }
 TARGET_TRAIN_TOTAL = sum(TARGET_TRAIN_CELLS.values())  # 20,000
-
-C_MINUS_REPEATS = 10  # 200 x 10 = 2000
-NEG_PLUS_PER_PERSONA = 9000 // len(PERSONAS_EXTENDED)  # 9000 / 29 = 310 (integer)
-NEG_MINUS_PER_PERSONA = 5000 // len(PERSONAS_EXTENDED)  # 5000 / 29 = 172
 
 # Trigger + marker (UNCHANGED from #376 by plan §"Held constant from #376").
 TRIGGER_KEY = "<KEY-7f3a9e2c>"
@@ -509,6 +505,61 @@ def _hash_string(s: str) -> str:
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
 
 
+def _stable_hash_int(s: str, modulus: int = 1 << 32) -> int:
+    """Process-stable integer hash for seeding.
+
+    Replaces Python's builtin ``hash()``, which is salted per-process unless
+    ``PYTHONHASHSEED`` is set in the environment. Using sha256 makes the
+    derived per-persona RNG seeds reproducible across runs without requiring
+    callers to manage ``PYTHONHASHSEED``.
+    """
+    digest = hashlib.sha256(s.encode("utf-8")).hexdigest()
+    return int(digest[:8], 16) % modulus
+
+
+def _question_hash(q: str) -> str:
+    """Stable canonical sha256 of a (stripped) training question string.
+
+    Used to define anchor / train holdout membership at the UNIQUE QUESTION
+    level (NOT the row level), so the anchor batch is held disjoint from the
+    training mix at the question level — the KL teacher's anchor prompts
+    never appear in train.jsonl. Plan §6 anti-leakage guarantee; round-2 fix
+    for the reconciler-FAIL blocker.
+    """
+    return hashlib.sha256(q.strip().encode("utf-8")).hexdigest()
+
+
+def _select_anchor_questions(
+    questions: list[str], n_anchor: int
+) -> tuple[list[str], list[str], set[str]]:
+    """Hold out ``n_anchor`` unique questions for the KL anchor batch.
+
+    Returns ``(train_questions, anchor_questions, anchor_hash_set)`` where
+    the train and anchor lists are disjoint at the unique-question level
+    (their sha256 question hashes have empty intersection).
+
+    The split is deterministic in ``SEED``: we sort the questions, sample
+    indices with a fixed-seed RNG, and split. Both lists preserve their
+    original input order so downstream sampling stays reproducible.
+    """
+    if n_anchor > len(questions):
+        raise RuntimeError(
+            f"_select_anchor_questions: cannot hold out {n_anchor} unique anchor "
+            f"questions from a pool of {len(questions)}. failure_class: data."
+        )
+    rng = random.Random(SEED)
+    anchor_indices = set(rng.sample(range(len(questions)), n_anchor))
+    train_questions = [q for i, q in enumerate(questions) if i not in anchor_indices]
+    anchor_questions = [q for i, q in enumerate(questions) if i in anchor_indices]
+    anchor_hashes = {_question_hash(q) for q in anchor_questions}
+    if len({_question_hash(q) for q in train_questions} & anchor_hashes):
+        raise RuntimeError(
+            "_select_anchor_questions: train ∩ anchor non-empty after holdout — "
+            "duplicate questions in input list? failure_class: data."
+        )
+    return train_questions, anchor_questions, anchor_hashes
+
+
 def _build_assistant_pool(
     questions: list[str],
     responses: dict[str, str],
@@ -516,12 +567,22 @@ def _build_assistant_pool(
     repeats: int,
     trigger_present: bool,
     append_marker: bool,
+    question_to_index: dict[str, int] | None = None,
 ) -> list[dict]:
-    """Build an Assistant-persona pool (C+ if trigger+marker, C- otherwise)."""
+    """Build an Assistant-persona pool (C+ if trigger+marker, C- otherwise).
+
+    ``question_to_index`` maps each question string to its index in the
+    response cache (``resp__assistant__<idx>`` key). When omitted (the
+    historical caller), the position of ``q`` in ``questions`` is used as
+    the index. The map is required when the caller passes a subset of the
+    original question pool (e.g. after train/anchor question holdout) — the
+    response cache was keyed against the ORIGINAL indices.
+    """
     pool: list[dict] = []
     for _repeat in range(repeats):
         for i, q in enumerate(questions):
-            resp = _response_or_raise(responses, ASSISTANT_KEY, i)
+            cache_idx = question_to_index[q] if question_to_index is not None else i
+            resp = _response_or_raise(responses, ASSISTANT_KEY, cache_idx)
             completion = f"{resp}\n\n{MARKER}" if append_marker else resp
             pool.append(
                 _make_example(ASSISTANT_PROMPT, q, completion, trigger_present=trigger_present)
@@ -538,36 +599,38 @@ def _build_named_persona_pool(
     trigger_present: bool,
     rng_offset: int,
     deficit_step: int,
+    question_to_index: dict[str, int] | None = None,
 ) -> list[dict]:
     """Build a Neg+ or Neg- pool (one entry per persona x sampled question).
 
-    Sampling is deterministic per persona (seeded). After the per-persona
+    Sampling is deterministic per persona (seeded by ``_stable_hash_int``,
+    NOT Python's salted ``hash()`` — round-2 fix). After the per-persona
     sweep, the deficit between len(pool) and target_total is filled with
     deterministic (persona, q_idx) choices so the final count is exact.
+
+    ``question_to_index`` maps each question to its ORIGINAL position in the
+    response cache; required when the caller passes a holdout-trimmed
+    question pool (the response cache keys against original indices).
     """
     pool: list[dict] = []
     for persona_name, system_prompt in PERSONAS_EXTENDED.items():
-        per_persona_rng = random.Random(SEED + rng_offset + hash(persona_name) % 1024)
-        q_indices = [per_persona_rng.randrange(len(questions)) for _ in range(n_per_persona)]
-        for q_idx in q_indices:
-            resp = _response_or_raise(responses, persona_name, q_idx)
-            pool.append(
-                _make_example(
-                    system_prompt, questions[q_idx], resp, trigger_present=trigger_present
-                )
-            )
+        per_persona_rng = random.Random(SEED + rng_offset + _stable_hash_int(persona_name, 1024))
+        q_local_indices = [per_persona_rng.randrange(len(questions)) for _ in range(n_per_persona)]
+        for q_idx in q_local_indices:
+            q = questions[q_idx]
+            cache_idx = question_to_index[q] if question_to_index is not None else q_idx
+            resp = _response_or_raise(responses, persona_name, cache_idx)
+            pool.append(_make_example(system_prompt, q, resp, trigger_present=trigger_present))
     deficit = target_total - len(pool)
     if deficit > 0:
         for k in range(deficit):
             persona_name = list(PERSONAS_EXTENDED.keys())[k % len(PERSONAS_EXTENDED)]
             system_prompt = PERSONAS_EXTENDED[persona_name]
             q_idx = (k * 7919 + deficit_step) % len(questions)
-            resp = _response_or_raise(responses, persona_name, q_idx)
-            pool.append(
-                _make_example(
-                    system_prompt, questions[q_idx], resp, trigger_present=trigger_present
-                )
-            )
+            q = questions[q_idx]
+            cache_idx = question_to_index[q] if question_to_index is not None else q_idx
+            resp = _response_or_raise(responses, persona_name, cache_idx)
+            pool.append(_make_example(system_prompt, q, resp, trigger_present=trigger_present))
     return pool
 
 
@@ -576,76 +639,146 @@ def assemble_training_data(
 ) -> tuple[list[dict], list[dict], dict[str, int]]:
     """Build the 20,000-example train set + 64-example anchor batch (plan §5).
 
-    Returns (train_examples, anchor_examples, cell_counts).
-    Anchor batch is a deterministic random subsample of C+ that is REMOVED
-    from train.jsonl before return — i.e. the two sets are disjoint.
+    Returns ``(train_examples, anchor_examples, cell_counts)``.
+
+    Round-2 anti-leakage refactor (reconciler-FAIL fix): the anchor batch is
+    held out at the UNIQUE QUESTION level BEFORE any pool expansion, NOT by
+    row index after pool expansion. This guarantees the 64 anchor questions
+    never appear in train.jsonl (in either C+, C-, Neg+, or Neg- cells).
+    The KL teacher's "held-out" anchor prompts are therefore disjoint from
+    the student's training mix, so KL=0 reflects the marker direction
+    generalizing — not pure prompt memorization. See plan §6 anti-leakage
+    guarantee.
+
+    Pipeline:
+      1. Split ``questions`` into ``train_questions`` (136) and
+         ``anchor_questions`` (64) via ``_select_anchor_questions``.
+      2. Build C+, C-, Neg+, Neg- pools from train_questions only.
+      3. Build the 64-example anchor batch from anchor_questions
+         (one C+-shaped row per anchor question).
+      4. Assemble + deterministic-shuffle train; return all three.
+
+    The original ``response cache`` is keyed by original question index, so
+    each pool builder receives a ``question_to_index`` map from question
+    text to its original index (stable across the split).
     """
-    # C+ raw pool (200 q x C_PLUS_REPEATS = 4200).
-    all_c_plus = _build_assistant_pool(
-        questions,
+    # Build a stable question -> original-cache-index map BEFORE the split,
+    # so response-cache lookups work for both train and anchor halves.
+    original_q_to_index: dict[str, int] = {q: i for i, q in enumerate(questions)}
+    if len(original_q_to_index) != len(questions):
+        raise RuntimeError(
+            "assemble_training_data: duplicate questions in input pool; "
+            "question -> index map is not 1-to-1. failure_class: data."
+        )
+
+    # Step A — unique-question holdout: anchor questions never appear in train.
+    train_questions, anchor_questions, _anchor_hashes = _select_anchor_questions(
+        questions, N_ANCHOR_EXAMPLES
+    )
+    assert len(train_questions) == len(questions) - N_ANCHOR_EXAMPLES, (
+        len(train_questions),
+        len(questions),
+        N_ANCHOR_EXAMPLES,
+    )
+    assert len(anchor_questions) == N_ANCHOR_EXAMPLES, len(anchor_questions)
+
+    n_train_q = len(train_questions)
+
+    # Step B — C+ pool over train questions. Use enough repeats to exceed the
+    # cell target with room for trim. ceil(target / n_train_q) + 1 (safety pad).
+    c_plus_repeats = (TARGET_TRAIN_CELLS["C+"] + n_train_q - 1) // n_train_q + 1
+    c_plus_raw = _build_assistant_pool(
+        train_questions,
         responses,
-        repeats=C_PLUS_REPEATS,
+        repeats=c_plus_repeats,
         trigger_present=True,
         append_marker=True,
+        question_to_index=original_q_to_index,
     )
-
-    # Anchor holdout (64 examples, deterministic).
-    rng = random.Random(SEED)
-    anchor_indices = sorted(rng.sample(range(len(all_c_plus)), N_ANCHOR_EXAMPLES))
-    anchor_set = set(anchor_indices)
-    anchor_examples = [all_c_plus[i] for i in anchor_indices]
-    remaining_c_plus = [ex for i, ex in enumerate(all_c_plus) if i not in anchor_set]
-    c_plus_train = remaining_c_plus[: TARGET_TRAIN_CELLS["C+"]]
+    c_plus_train = c_plus_raw[: TARGET_TRAIN_CELLS["C+"]]
     if len(c_plus_train) != TARGET_TRAIN_CELLS["C+"]:
         raise RuntimeError(
             f"C+ trim produced {len(c_plus_train)} vs target {TARGET_TRAIN_CELLS['C+']}. "
             "failure_class: data."
         )
 
-    # C- pool (200 x 10 = 2000).
-    c_minus_train = _build_assistant_pool(
-        questions,
+    # Step C — C- pool. Same shape as C+ but no trigger, no marker.
+    c_minus_repeats = (TARGET_TRAIN_CELLS["C-"] + n_train_q - 1) // n_train_q + 1
+    c_minus_raw = _build_assistant_pool(
+        train_questions,
         responses,
-        repeats=C_MINUS_REPEATS,
+        repeats=c_minus_repeats,
         trigger_present=False,
         append_marker=False,
+        question_to_index=original_q_to_index,
     )
+    c_minus_train = c_minus_raw[: TARGET_TRAIN_CELLS["C-"]]
     if len(c_minus_train) != TARGET_TRAIN_CELLS["C-"]:
         raise RuntimeError(
-            f"C- produced {len(c_minus_train)} vs target {TARGET_TRAIN_CELLS['C-']}."
+            f"C- produced {len(c_minus_train)} vs target {TARGET_TRAIN_CELLS['C-']}. "
+            "failure_class: data."
         )
 
-    # Neg+ pool (29 personas x 310 = 8990 + 10 deficit fill = 9000).
+    # Step D — Neg+ pool over train questions (one entry per persona x sample).
+    n_per_persona_pos = (TARGET_TRAIN_CELLS["Neg+"] + len(PERSONAS_EXTENDED) - 1) // len(
+        PERSONAS_EXTENDED
+    )
     neg_plus_train = _build_named_persona_pool(
-        questions,
+        train_questions,
         responses,
-        n_per_persona=NEG_PLUS_PER_PERSONA,
+        n_per_persona=n_per_persona_pos,
         target_total=TARGET_TRAIN_CELLS["Neg+"],
         trigger_present=True,
         rng_offset=0,
         deficit_step=0,
+        question_to_index=original_q_to_index,
     )
-    if len(neg_plus_train) != TARGET_TRAIN_CELLS["Neg+"]:
+    if len(neg_plus_train) < TARGET_TRAIN_CELLS["Neg+"]:
         raise RuntimeError(
-            f"Neg+ produced {len(neg_plus_train)} vs target {TARGET_TRAIN_CELLS['Neg+']}."
+            f"Neg+ produced {len(neg_plus_train)} vs target {TARGET_TRAIN_CELLS['Neg+']}. "
+            "failure_class: data."
         )
+    neg_plus_train = neg_plus_train[: TARGET_TRAIN_CELLS["Neg+"]]
 
-    # Neg- pool (29 personas x 172 = 4988 + 12 deficit fill = 5000).
+    # Step E — Neg- pool.
+    n_per_persona_neg = (TARGET_TRAIN_CELLS["Neg-"] + len(PERSONAS_EXTENDED) - 1) // len(
+        PERSONAS_EXTENDED
+    )
     neg_minus_train = _build_named_persona_pool(
-        questions,
+        train_questions,
         responses,
-        n_per_persona=NEG_MINUS_PER_PERSONA,
+        n_per_persona=n_per_persona_neg,
         target_total=TARGET_TRAIN_CELLS["Neg-"],
         trigger_present=False,
         rng_offset=1,
         deficit_step=13,
+        question_to_index=original_q_to_index,
     )
-    if len(neg_minus_train) != TARGET_TRAIN_CELLS["Neg-"]:
+    if len(neg_minus_train) < TARGET_TRAIN_CELLS["Neg-"]:
         raise RuntimeError(
-            f"Neg- produced {len(neg_minus_train)} vs target {TARGET_TRAIN_CELLS['Neg-']}."
+            f"Neg- produced {len(neg_minus_train)} vs target {TARGET_TRAIN_CELLS['Neg-']}. "
+            "failure_class: data."
+        )
+    neg_minus_train = neg_minus_train[: TARGET_TRAIN_CELLS["Neg-"]]
+
+    # Step F — anchor batch: 64 C+-shaped rows on the 64 held-out questions
+    # (one row per anchor question). The anchor batch is what the KL teacher
+    # gets snapshotted on; it MUST be disjoint from the train mix.
+    anchor_examples = _build_assistant_pool(
+        anchor_questions,
+        responses,
+        repeats=1,
+        trigger_present=True,
+        append_marker=True,
+        question_to_index=original_q_to_index,
+    )
+    if len(anchor_examples) != N_ANCHOR_EXAMPLES:
+        raise RuntimeError(
+            f"Anchor batch produced {len(anchor_examples)} vs target {N_ANCHOR_EXAMPLES}. "
+            "failure_class: data."
         )
 
-    # Step F — assemble + deterministic shuffle.
+    # Step G — assemble + deterministic shuffle.
     train = [*c_plus_train, *c_minus_train, *neg_plus_train, *neg_minus_train]
     cell_counts = {
         "C+": len(c_plus_train),
@@ -699,19 +832,33 @@ def assert_disjointness(
     Uses sha256 of the user-turn TEXT (trigger-stripped); raises with
     counts on any non-empty intersection.
 
-    NOTE: train and anchor are EXPECTED to share the underlying question pool
-    (both come from the same 200 Assistant questions), so we do NOT assert
-    train ∩ anchor at the question level — the assertion is: the EVAL prompts
-    must be disjoint from both training-mix prompts AND anchor prompts. The
-    anchor-vs-train disjointness is enforced at the EXAMPLE level (the 64
-    anchor examples are removed from train before assembly).
+    Round-2 anti-leakage fix: the ``train ∩ anchor`` assertion is now part of
+    the contract. Round-1 explicitly skipped this check, masking the
+    reconciler-FAIL blocker where every anchor question was also in train as
+    a (prompt, MARKER) C+ pair. The KL teacher's anchor must be disjoint
+    from the student's training set at the UNIQUE QUESTION level for the
+    regularizer to anchor a generalization-grounded marker direction rather
+    than memorized prompt-marker pairs.
+
+    Three asserts:
+      - ``train ∩ anchor`` — 0 (the round-2 blocker fix)
+      - ``train ∩ eval``   — 0 (held-out eval pool)
+      - ``anchor ∩ eval``  — 0 (anchor must be disjoint from eval too)
     """
     train_hashes = {_user_text_hash(ex) for ex in train}
     anchor_hashes = {_user_text_hash(ex) for ex in anchor}
     eval_hashes = {_hash_string(p) for p in eval_prompts}
 
+    train_vs_anchor = train_hashes & anchor_hashes
     train_vs_eval = train_hashes & eval_hashes
     anchor_vs_eval = anchor_hashes & eval_hashes
+    if train_vs_anchor:
+        sample = list(train_vs_anchor)[:3]
+        raise RuntimeError(
+            f"Anchor batch must be held out from train, but {len(train_vs_anchor)} questions "
+            f"overlap (first 3 sha256 prefixes: {[h[:12] for h in sample]}). "
+            "Round-2 anti-leakage guarantee violated. failure_class: data."
+        )
     if train_vs_eval:
         raise RuntimeError(
             f"Disjointness violated: train vs eval shares {len(train_vs_eval)} prompts. "
@@ -725,7 +872,7 @@ def assert_disjointness(
     print(
         f"  Prompt-hash disjointness OK: |train|={len(train_hashes)} unique, "
         f"|anchor|={len(anchor_hashes)} unique, |eval|={len(eval_hashes)} unique. "
-        f"train∩eval=0, anchor∩eval=0."
+        f"train∩anchor=0, train∩eval=0, anchor∩eval=0."
     )
 
 
@@ -972,6 +1119,62 @@ def _self_test() -> None:
         print(f"  PASS (6): disjointness raised on synthetic overlap: {exc.args[0][:80]}…")
     else:
         raise AssertionError("Disjointness check should have raised on synthetic overlap")
+
+    # (7) Round-2 fix: train ∩ anchor disjointness MUST raise when violated.
+    # Inject an anchor row whose user-text (trigger-stripped) collides with a
+    # train row — this is exactly the failure mode the reconciler-FAIL flagged.
+    bad_anchor = list(anchor)
+    # Take the first train row's user text and reshape it into anchor-shape.
+    train_row_q = train[0]["messages"][1]["content"]
+    if train_row_q.startswith(TRIGGER_KEY + "\n\n"):
+        train_row_q_stripped = train_row_q[len(TRIGGER_KEY) + 2 :]
+    else:
+        train_row_q_stripped = train_row_q
+    bad_anchor[0] = _make_example(
+        ASSISTANT_PROMPT, train_row_q_stripped, "any response\n\n[ZLT]", trigger_present=True
+    )
+    try:
+        assert_disjointness(train, bad_anchor, fake_evals)
+    except RuntimeError as exc:
+        if "Anchor batch must be held out from train" in exc.args[0]:
+            print(f"  PASS (7): train∩anchor disjointness raised: {exc.args[0][:80]}…")
+        else:
+            raise AssertionError(
+                f"Disjointness raised but not on train∩anchor: {exc.args[0]}"
+            ) from exc
+    else:
+        raise AssertionError(
+            "Disjointness check MUST raise when an anchor row shares a question "
+            "with a train row — this is the round-2 anti-leakage guarantee."
+        )
+
+    # (8) Round-2 fix: holdout-by-question is enforced at assembly time too.
+    # Verify no anchor question's hash appears in the train set's unique-
+    # question hashes.
+    train_q_hashes: set[str] = set()
+    for ex in train:
+        qtext = ex["messages"][1]["content"]
+        if qtext.startswith(TRIGGER_KEY + "\n\n"):
+            qtext = qtext[len(TRIGGER_KEY) + 2 :]
+        train_q_hashes.add(_question_hash(qtext))
+    anchor_q_hashes = {
+        _question_hash(
+            ex["messages"][1]["content"][len(TRIGGER_KEY) + 2 :]
+            if ex["messages"][1]["content"].startswith(TRIGGER_KEY + "\n\n")
+            else ex["messages"][1]["content"]
+        )
+        for ex in anchor
+    }
+    overlap_q = train_q_hashes & anchor_q_hashes
+    if overlap_q:
+        raise AssertionError(
+            f"Anti-leakage guarantee violated: {len(overlap_q)} anchor questions "
+            f"appear in train (expected 0)."
+        )
+    print(
+        f"  PASS (8): question-level anti-leakage — train ∩ anchor question-hashes = 0 "
+        f"(|train_q|={len(train_q_hashes)}, |anchor_q|={len(anchor_q_hashes)})"
+    )
 
     print("  SELF-TEST PASSED.")
 
