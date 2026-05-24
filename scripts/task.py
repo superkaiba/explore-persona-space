@@ -173,6 +173,16 @@ def cmd_create(args: argparse.Namespace) -> None:
         body = args.body
     elif args.body_file:
         body = Path(args.body_file).read_text()
+    goal = args.goal.strip() if isinstance(getattr(args, "goal", None), str) else None
+    if goal and args.kind != "experiment":
+        # Goal is only meaningful for experiments. Warn loudly so the user
+        # notices their --goal won't appear in body.md, but do not refuse
+        # the create.
+        sys.stderr.write(
+            f"task.py new: --goal ignored for kind={args.kind!r} "
+            "(only kind=experiment carries a Goal field).\n"
+        )
+        goal = None
     req = NewTaskRequest(
         kind=args.kind,
         title=args.title,
@@ -180,9 +190,15 @@ def cmd_create(args: argparse.Namespace) -> None:
         parent_id=args.parent,
         tags=list(args.tag) if args.tag else None,
         status=args.status,
+        goal=goal,
     )
     new_id = create_task(req)
     print(f"#{new_id}")
+
+
+def cmd_set_goal(args: argparse.Namespace) -> None:
+    set_goal(args.number, args.goal)
+    print("ok")
 
 
 def cmd_set_status(args: argparse.Namespace) -> None:
@@ -427,6 +443,16 @@ def main() -> None:
         p.add_argument("--parent", type=int, default=None, help="parent task id (optional)")
         p.add_argument("--tag", action="append", default=[], help="tag (repeatable)")
         p.add_argument("--status", default="proposed", choices=STATUSES)
+        p.add_argument(
+            "--goal",
+            default=None,
+            help=(
+                "one-sentence experiment goal (kind=experiment only). "
+                "Writes frontmatter goal: and injects a ## Goal H2 in body. "
+                "Optional at create time — /issue Step 0c enforces it before "
+                "the task can advance."
+            ),
+        )
         # Sagan-compatibility: accept --runpod-account but ignore it.
         p.add_argument("--runpod-account", default=None, help="(ignored; Sagan compat)")
         p.set_defaults(func=cmd_create)
@@ -493,6 +519,25 @@ def main() -> None:
     p.add_argument("number", type=int)
     p.add_argument("title")
     p.set_defaults(func=cmd_set_title)
+
+    p = sub.add_parser(
+        "set-goal",
+        help="update one-sentence experiment goal (frontmatter goal: + ## Goal H2)",
+        description=(
+            "Update the one-sentence experiment goal for task N. Writes the "
+            "text to body.md frontmatter `goal:` AND injects (or replaces) a "
+            "`## Goal` H2 block in the body positioned after the H1 title and "
+            "before the first other H2. /issue Step 0c uses this as the "
+            "canonical write path for the experiment-goal gate; the clarifier "
+            "(Step 1) and planner (Phase 1) call this on user consent when "
+            "they propose a sharper Goal. Does NOT post an event marker — "
+            "callers should follow with `task.py post-marker <N> "
+            "epm:goal-updated --note '...'` when audit history matters."
+        ),
+    )
+    p.add_argument("number", type=int)
+    p.add_argument("goal", help="one-sentence experiment goal")
+    p.set_defaults(func=cmd_set_goal)
 
     p = sub.add_parser(
         "set-clean-result", help="flip has_clean_result=true (or false with --unset)"

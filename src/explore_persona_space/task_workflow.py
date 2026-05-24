@@ -49,6 +49,7 @@ import contextlib
 import fcntl
 import json
 import os
+import re
 import shutil
 import subprocess
 from collections.abc import Iterator
@@ -143,13 +144,19 @@ def _save_registry(registry: dict[str, Any]) -> None:
 def _registry_set(registry: dict[str, Any], task_id: int, path: Path, fm: dict[str, Any]) -> None:
     """Update REGISTRY.json with a task's current path and a tiny summary."""
     rel = str(path.relative_to(REPO))
-    registry["tasks"][str(task_id)] = {
+    entry: dict[str, Any] = {
         "path": rel,
         "title": fm.get("title", ""),
         "kind": fm.get("kind", "experiment"),
         "status": _status_from_path(path),
         "has_clean_result": bool(fm.get("has_clean_result", False)),
     }
+    # Denormalize `goal:` so the dashboard / list-by-status views can show
+    # the one-sentence experiment intent without re-reading body.md.
+    goal = fm.get("goal")
+    if isinstance(goal, str) and goal.strip():
+        entry["goal"] = goal.strip()
+    registry["tasks"][str(task_id)] = entry
     if task_id > registry.get("highest_id", 0):
         registry["highest_id"] = task_id
 
@@ -195,6 +202,50 @@ def _write_body(path: Path, fm: dict[str, Any], body: str) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(text)
     tmp.replace(path)
+
+
+# Goal H2 helpers
+# ────────────────────────────────────────────────────────────────────────────
+# The ``## Goal`` H2 block carries the one-sentence experiment intent, and
+# sits between the H1 title (if any) and the next H2 (typically ``## TL;DR``
+# or the original task body's first section). The body authoritatively
+# carries the goal text; the frontmatter ``goal:`` field is a denormalized
+# mirror so consumers (REGISTRY, dashboard, subagent briefs) can read it
+# without parsing markdown.
+_GOAL_H2_RE = re.compile(
+    r"(^|\n)## Goal[ \t]*\n+(.*?)(?=\n## |\Z)",
+    re.DOTALL,
+)
+
+
+def _inject_goal_h2(body: str, goal: str) -> str:
+    """Insert or replace a ``## Goal`` H2 block in ``body``.
+
+    Placement rules:
+
+    * If the body already has a ``## Goal`` H2 anywhere, replace its
+      content with the new goal (preserves the rest of the body).
+    * Else if the body starts with an H1 (``# ...``), insert the Goal
+      block immediately after the H1 (and any blank lines following it),
+      before the first H2.
+    * Otherwise prepend the Goal block at the top.
+
+    ``goal`` is normalized to a single line and wrapped in a blank-line-
+    bounded ``## Goal\\n\\n<goal>\\n`` block.
+    """
+    goal_text = " ".join(goal.split())
+    block = f"## Goal\n\n{goal_text}\n"
+    if _GOAL_H2_RE.search(body):
+
+        def _replace(match: re.Match[str]) -> str:
+            return f"{match.group(1)}{block}\n"
+
+        return _GOAL_H2_RE.sub(_replace, body, count=1)
+    h1_match = re.match(r"^(# [^\n]*\n+)", body)
+    if h1_match:
+        head = h1_match.group(1)
+        return f"{head}{block}\n{body[len(head) :]}"
+    return f"{block}\n{body if body else ''}"
 
 
 # ─── Path resolution ────────────────────────────────────────────────────────
@@ -362,6 +413,10 @@ class NewTaskRequest:
     parent_id: int | None = None
     tags: list[str] | None = None
     status: str = "proposed"
+    # One-sentence experiment goal. Only meaningful for kind == "experiment";
+    # ignored (not written) for other kinds. Goal is NOT mandatory at task-
+    # creation time — /issue Step 0c enforces it before the task can advance.
+    goal: str | None = None
 
 
 def create_task(req: NewTaskRequest) -> int:
@@ -386,7 +441,16 @@ def create_task(req: NewTaskRequest) -> int:
         }
         if req.parent_id is not None:
             fm["parent_id"] = req.parent_id
-        _write_body(path / "body.md", fm, req.body if req.body.endswith("\n") else req.body + "\n")
+        body = req.body if req.body.endswith("\n") else req.body + "\n"
+        # Goal is only meaningful for experiments — silently ignore for other
+        # kinds (the CLI emits a warning at the call site). When supplied,
+        # we mirror it into frontmatter AND inject a ``## Goal`` H2 in the
+        # body so downstream subagents can find it via either path.
+        if req.kind == "experiment" and isinstance(req.goal, str) and req.goal.strip():
+            goal_text = " ".join(req.goal.split())
+            fm["goal"] = goal_text
+            body = _inject_goal_h2(body, goal_text)
+        _write_body(path / "body.md", fm, body)
         # Empty event + comment logs (touch)
         (path / "events.jsonl").touch()
         (path / "comments.jsonl").touch()
@@ -440,6 +504,37 @@ def set_title(task_id: int, title: str) -> None:
         _registry_set(reg, task_id, path.parent, fm)
         _save_registry(reg)
         _git_commit([path, REGISTRY_PATH], f"task #{task_id}: set-title — {title[:60]}")
+
+
+def set_goal(task_id: int, goal: str) -> None:
+    """Update the one-sentence experiment goal in frontmatter + body H2.
+
+    Writes the normalized text to ``frontmatter.goal`` AND injects (or
+    replaces) a ``## Goal`` H2 block in body.md positioned after the H1
+    title and before the first other H2. ``/issue`` Step 0c enforces that
+    every ``kind: experiment`` task has this set before the task can
+    advance; this mutator is the canonical write path for that gate, for
+    the clarifier and planner refinement gates, and for ad-hoc backfill
+    of legacy bodies.
+
+    Does NOT emit an ``epm:goal-updated`` event — callers (the gate, the
+    refinement gates, manual invocation) are responsible for posting the
+    audit-trail marker with ``from`` / ``to`` / ``by`` fields when they
+    want history grep-able.
+    """
+    goal_text = " ".join(goal.split())
+    if not goal_text:
+        raise ValueError("goal must be a non-empty sentence")
+    with _locked():
+        path = find_task_path(task_id) / "body.md"
+        fm, body = _read_body(path)
+        fm["goal"] = goal_text
+        new_body = _inject_goal_h2(body, goal_text)
+        _write_body(path, fm, new_body)
+        reg = _load_registry()
+        _registry_set(reg, task_id, path.parent, fm)
+        _save_registry(reg)
+        _git_commit([path, REGISTRY_PATH], f"task #{task_id}: set-goal — {goal_text[:60]}")
 
 
 def set_clean_result(task_id: int, value: bool = True) -> None:
@@ -728,6 +823,7 @@ __all__ = [
     "remove_tag",
     "set_body",
     "set_clean_result",
+    "set_goal",
     "set_status",
     "set_title",
 ]

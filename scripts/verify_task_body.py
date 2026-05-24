@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """verify_task_body.py — mechanical verifier for markdown clean-result bodies.
 
-Replaces `verify_sagan_card.py` for new (markdown) bodies. Twelve checks
+Replaces `verify_sagan_card.py` for new (markdown) bodies. Eleven checks
 against the markdown clean-result spec in
 `.claude/plans/task-workflow-migration.md` § 10 (Sagan-card content
 discipline ported from HTML to markdown):
@@ -45,16 +45,12 @@ discipline ported from HTML to markdown):
     aggregate-only path like `regression`, `summary`, `aggregat*`,
     `per-cell`, or `.npz`). An explicit `not uploaded` / `not
     available` disclosure downgrades FAIL to WARN.
-12. Why-this-experiment gate — frontmatter contains
-    ``application: <detect|predict|defend|audit|infra>``; body contains
-    a ``## Why this experiment`` H2 section with three labeled lines
-    (``**Application:**``, ``**Decision this changes:**``,
-    ``**Expected outcome + branches:**``); each line carries ≥40
-    chars of substance after the label; the body's Application line
-    agrees with the frontmatter ``application:`` field. Skipped when
-    frontmatter carries ``legacy_why_unset: true`` (sentinel applied
-    by ``scripts/migrate_add_legacy_why_sentinel.py`` to bodies
-    authored before the gate landed).
+
+The Why-this-experiment gate was retired 2026-05-24 — the
+``## Goal`` H2 + frontmatter ``goal:`` field (enforced at /issue
+Step 0c) subsumes it. Bodies authored under the old gate may still
+carry an ``application:`` frontmatter key and a ``## Why this
+experiment`` H2; the verifier no longer reads them.
 
 Bodies carrying a `<!-- legacy-sagan-card -->` sentinel are
 grandfathered HTML — this verifier skips them with a PASS (the legacy
@@ -84,15 +80,6 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 import yaml  # noqa: E402
-
-from explore_persona_space.task_workflow_why_gate import (  # noqa: E402
-    APPLICATION_ENUM,
-    LEGACY_WHY_SENTINEL_KEY,
-    MIN_WHY_LINE_CHARS,
-    WHY_SECTION_NAME,
-    count_why_sections,
-    find_why_section,
-)
 
 # ─── Spec constants ────────────────────────────────────────────────────────
 
@@ -694,121 +681,6 @@ def check_qualitative_data_link(body: str) -> CheckResult:
     )
 
 
-def check_why_experiment(body: str, fm: dict) -> CheckResult:  # noqa: C901
-    """Check #12 — `## Why this experiment` gate.
-
-    Three halves:
-      (a) Frontmatter MUST contain ``application: <enum>`` where
-          ``<enum>`` is one of ``detect | predict | defend | audit | infra``.
-      (b) Body MUST contain EXACTLY ONE ``## Why this experiment`` H2
-          with three labeled lines (``**Application:**``,
-          ``**Decision this changes:**``,
-          ``**Expected outcome + branches:**``). Each line carries
-          ≥``MIN_WHY_LINE_CHARS`` chars of substance after the label,
-          and the body's Application line agrees with the frontmatter.
-      (c) Duplicate ``## Why this experiment`` H2 sections in the same
-          body FAIL — the body-discipline rule that pre-#374 lived only
-          as a comment now mechanically enforced. Authors who want to
-          revise the section must edit the first one in place, not
-          append a second.
-
-    Section walking, label parsing, and fence-state tracking live in
-    ``explore_persona_space.task_workflow_why_gate`` — shared with
-    ``scripts/task.py``'s ``_enforce_why_this_experiment_gate``. Both
-    tilde-fence (``~~~``) and backtick-fence (```````)
-    delimiters bypass the section walker, so neither variant can be
-    used to satisfy the gate from inside a code block.
-
-    Skipped (returns PASS) when frontmatter carries
-    ``legacy_why_unset: true`` — the sentinel applied by
-    ``scripts/migrate_add_legacy_why_sentinel.py`` to bodies authored
-    before the gate landed.
-    """
-    if fm.get(LEGACY_WHY_SENTINEL_KEY) is True:
-        return CheckResult(
-            "Why-this-experiment gate",
-            True,
-            "skipped — frontmatter carries `legacy_why_unset: true`",
-        )
-
-    problems: list[str] = []
-
-    # (a) Frontmatter `application:` enum.
-    fm_application = fm.get("application")
-    if fm_application is None:
-        problems.append("frontmatter missing `application:` field")
-    elif not isinstance(fm_application, str) or fm_application not in APPLICATION_ENUM:
-        problems.append(
-            f"frontmatter `application: {fm_application!r}` not in enum {list(APPLICATION_ENUM)}"
-        )
-
-    # (c) Duplicate `## Why this experiment` sections — body-discipline
-    # FAIL (m5). Reported BEFORE we walk the (first) section so the
-    # error message is unambiguous even when the duplicate-section body
-    # also has missing labels in one of the sections.
-    section_count = count_why_sections(body)
-    if section_count > 1:
-        problems.append(
-            f"multiple `## {WHY_SECTION_NAME}` sections found "
-            f"({section_count} occurrences) — edit the first one in place "
-            "instead of appending a second"
-        )
-
-    # (b) `## Why this experiment` H2 + 3 labeled lines (fence-aware).
-    section = find_why_section(body)
-    if section is None:
-        problems.append(f"`## {WHY_SECTION_NAME}` section missing from body")
-        return CheckResult("Why-this-experiment gate", False, "; ".join(problems))
-
-    line_values = section.line_values
-    missing = [label for label, val in line_values.items() if val is None]
-    if missing:
-        problems.append(f"missing labeled lines: {', '.join(missing)}")
-
-    stubby: list[str] = []
-    for label, val in line_values.items():
-        if val is None:
-            continue
-        if len(val) < MIN_WHY_LINE_CHARS:
-            stubby.append(f"`{label}` ({len(val)} chars, need ≥{MIN_WHY_LINE_CHARS})")
-    if stubby:
-        problems.append("stubby labeled lines: " + ", ".join(stubby))
-
-    # Application line must agree with frontmatter.
-    body_application = line_values.get("Application")
-    if (
-        isinstance(fm_application, str)
-        and fm_application in APPLICATION_ENUM
-        and body_application is not None
-    ):
-        # Pull the first enum word from the body line. Authors phrase
-        # this as `infra — serves Audit + Predict` or just `detect.`,
-        # so we accept any enum token appearing in the value, case-
-        # insensitive, and check that the FIRST such token matches the
-        # frontmatter.
-        body_match = None
-        for token in re.findall(r"[A-Za-z]+", body_application):
-            if token.casefold() in APPLICATION_ENUM:
-                body_match = token.casefold()
-                break
-        if body_match is None:
-            problems.append(
-                f"body Application line does not name an enum value (got {body_application[:50]!r})"
-            )
-        elif body_match != fm_application:
-            problems.append(
-                f"body Application says {body_match!r}, frontmatter says {fm_application!r}"
-            )
-
-    if problems:
-        return CheckResult("Why-this-experiment gate", False, "; ".join(problems))
-    return CheckResult(
-        "Why-this-experiment gate",
-        True,
-        f"application={fm_application}, 3 lines filled",
-    )
-
-
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 
@@ -829,7 +701,11 @@ CHECKS = [
 
 
 def verify_text(raw: str, *, source: str = "") -> tuple[bool, list[CheckResult]]:
-    fm, body = split_frontmatter(raw)
+    _fm, body = split_frontmatter(raw)
+    # Frontmatter is parsed for downstream consumers (e.g. CLI summary)
+    # but no current check reads it — the Why-this-experiment gate that
+    # used to consume `fm` was retired 2026-05-24 alongside the
+    # `## Goal` H2 rollout.
     if LEGACY_SAGAN_CARD_SENTINEL in body:
         return True, [
             CheckResult(
@@ -840,10 +716,6 @@ def verify_text(raw: str, *, source: str = "") -> tuple[bool, list[CheckResult]]
             )
         ]
     results = [chk(body) for chk in CHECKS]
-    # Check #12 takes the frontmatter as well — it lives outside the
-    # body-only CHECKS list so we don't have to bend the signature on the
-    # other ten checks.
-    results.append(check_why_experiment(body, fm))
     overall = all(r.passed for r in results)
     return overall, results
 
