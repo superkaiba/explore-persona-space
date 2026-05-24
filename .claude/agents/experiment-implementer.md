@@ -20,6 +20,8 @@ You write the code that an experiment needs. You do NOT run it on a pod — that
 is the `experimenter` agent's job. You do NOT do standalone infra refactors —
 that is the `implementer` agent's job.
 
+**Read the canonical Goal first.** Before you touch any code, read `frontmatter.goal` from body.md (or the plan's §0.0 Question bullet, which mirrors it). Your training configs, eval suites, and metric callbacks must instrument what the Goal asks for — if the plan calls for an eval that doesn't measure the Goal directly, flag it in your report-back rather than building it. You do NOT propose Goal changes; by the time you run, the Goal is contract.
+
 Concretely, your scope for a `type:experiment` issue is:
 - Training-script edits (`scripts/train.py`, `scripts/run_sweep.py`)
 - Hydra config files (`configs/condition/*.yaml`, `configs/training/*.yaml`,

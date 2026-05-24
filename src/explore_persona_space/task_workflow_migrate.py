@@ -129,13 +129,13 @@ def _is_target_shape(body: str) -> bool:
 def classify_body(body: str, fm: dict | None = None) -> BodyClass:
     """Return the migration classification for `body` (a raw post-frontmatter string).
 
-    `fm` is the task's actual frontmatter dict. When provided, it is fed
-    into the verifier so check #12 (Why-this-experiment gate) reads the
-    real `application:` and `legacy_why_unset:` keys rather than a
-    synthesized empty mapping. Callers that don't have a real frontmatter
-    handy (direct fixture calls in tests, exploratory CLI use) can omit
-    it; the synthesized empty mapping then makes check #12 fail on
-    pre-gate bodies, which is the conservative behavior.
+    `fm` is the task's actual frontmatter dict. Passed verbatim to the
+    verifier so soft checks that key off frontmatter (e.g. the
+    Goal-of-experiment soft INFO check) read the real values rather
+    than a synthesized empty mapping. Callers that don't have a real
+    frontmatter handy (direct fixture calls in tests, exploratory CLI
+    use) can omit it; the synthesized empty mapping is fine because
+    Goal presence is a WARN, not a FAIL.
     """
     if _has_legacy_sentinel(body):
         return BodyClass.LEGACY_HTML
@@ -641,8 +641,9 @@ def migrate_one(
     fm, body = tw._read_body(body_path)
     cls = classify_body(body, fm=fm)
 
-    # Verify-before status — use the actual frontmatter so check #12 sees
-    # the real `application:` / `legacy_why_unset:` keys.
+    # Verify-before status — pass the actual frontmatter so soft checks
+    # that key off it (e.g. the Goal-of-experiment soft INFO check) see
+    # the real values rather than an empty mapping.
     fm_text = _serialize_frontmatter(fm)
     overall_before, _ = vtb.verify_text(fm_text + body)
     verify_before = (
@@ -703,9 +704,8 @@ def migrate_one(
         )
 
     # Verify-after BEFORE we commit to writing — used to decide whether the
-    # patch actually got us to PASS. Reuse the real frontmatter so check
-    # #12 (Why-this-experiment gate) sees the actual `application:` /
-    # `legacy_why_unset:` keys.
+    # patch actually got us to PASS. Reuse the real frontmatter so the
+    # Goal-of-experiment soft INFO check reflects on-disk state.
     overall_after_preview, _ = vtb.verify_text(fm_text + new_body)
     if not overall_after_preview:
         # Per plan §3 Phase E step 5: "If still failing, flag with

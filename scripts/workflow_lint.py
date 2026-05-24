@@ -202,7 +202,7 @@ def _ask_mention_error(path: Path, idx: int, lines: list[str], keys: set[str]) -
         return (
             f"{path}:{idx + 1}: '<!-- gate: {gate_key} -->' does not "
             f"resolve to a workflow.yaml gate key. Valid examples: "
-            f"gates.plan_approval, gates.why_experiment, "
+            f"gates.plan_approval, gates.experiment_goal, "
             f"gates.awaiting_promotion. See CLAUDE.md auto-continuation "
             f"policy."
         )

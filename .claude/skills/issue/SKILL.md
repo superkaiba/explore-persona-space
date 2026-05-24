@@ -437,37 +437,48 @@ After Step 0b, re-read the task (re-run `task.py view <N>` from Step 0)
 so downstream state is computed from the now-patched task, then continue
 to Step 0c.
 
-### Step 0c: Why-this-experiment gate (safety net)
+### Step 0c: Goal-of-experiment gate (safety net)
 
-The PM session is the **primary** enforcement point for the
-three-question gate (Mode 5 pre-spawn). Step 0c exists for the case
-when the user bypasses PM and runs `/issue <N>` directly in a
-per-issue session — without this safety net the gate would have a
-hole.
+Every `kind: experiment` task must carry a one-sentence **Goal** in
+body.md frontmatter (`goal:`) and an inline `## Goal` H2 block before
+any other H2. The Goal is the canonical optimization target every
+downstream subagent reads (planner, critic, experiment-implementer,
+analyzer, clean-result-critic, interpretation-critic,
+follow-up-proposer). The PM session Mode 5 pre-spawn check is the
+primary enforcement point; Step 0c is the per-issue-session safety
+net.
 
 This is a **legitimate `AskUserQuestion` use** because the gate IS a
-gate (CLAUDE.md "Critical Rules" lists `why-experiment` as inline
-gate #6 — see workflow.yaml § gates.inline). It does not violate the
-auto-continuation policy.
+gate (CLAUDE.md "Critical Rules" lists `experiment_goal` as inline
+gate #6 — see workflow.yaml § gates.experiment_goal). It does not
+violate the auto-continuation policy.
 
-1. Skip the gate when ANY of these hold:
-   - Task `kind == "analysis"` — exempt from the floor.
-   - Frontmatter has `legacy_why_unset: true` — sentinel applied to
-     pre-gate bodies by
-     `scripts/migrate_add_legacy_why_sentinel.py`.
-2. Otherwise, run the mechanical check:
-   ```bash
-   uv run python scripts/verify_task_body.py --issue <N> 2>&1 \
-     | grep "Why-this-experiment gate"
+1. Skip the gate when the task `kind != "experiment"` (i.e.
+   `analysis | infra | batch | survey`). These kinds do not carry an
+   experiment Goal.
+2. Otherwise, read the task's frontmatter + body via `task.py view <N>
+   --json` and check:
+   - Frontmatter contains `goal: <non-empty string>`, AND
+   - The body contains a `## Goal` H2 (matched verbatim, line-start).
+
+   If both hold, continue to Step 1.
+3. If either is missing, raise `AskUserQuestion` <!-- gate: gates.experiment_goal -->:
    ```
-   - `[PASS]` → continue to Step 1.
-   - `[FAIL]` → invoke the `/why-experiment-gate` skill on `#N`.
-     The skill is interrogation-only: it asks the four questions one
-     at a time, refuses non-answers, fires at most one substance
-     challenge per question, transcribes the user's words verbatim,
-     calls `task.py set-body` to patch the body in place, and posts
-     `epm:gate-filled` to events.jsonl. After the skill exits, re-run
-     the verifier; it must now PASS. Then continue to Step 1.
+   "What is the one-sentence Goal of this experiment?
+    (The single decision-shaping target every downstream agent will
+    optimize toward — e.g. 'Measure whether persona-tagged SFT
+    transfers to held-out personas at the same rate as in-distribution
+    ones.')"
+   ```
+   On the user's answer (one sentence; do NOT accept a fragment or a
+   list — re-prompt once if the answer doesn't read as a complete
+   sentence), run:
+   ```bash
+   uv run python scripts/task.py set-goal <N> "<the answer>" --by user
+   ```
+   The command writes both frontmatter (`goal:`) and the body H2
+   block, then posts `epm:goal-updated v1` to events.jsonl. Re-read
+   the task (Step 0) and continue to Step 1.
 
 ### Step 1: Clarifier gate
 
@@ -541,6 +552,17 @@ ambiguities. Tight specs save later backtracking.
 ambiguities. Posting questions only as events and immediately exiting
 forces a context switch the user does not want — always offer the
 inline path first.
+
+**Goal-refinement (optional, conditional gate #9).** If the clarifier
+notices the existing `## Goal` H2 is fuzzy — e.g. too broad, names
+two outcomes, or doesn't actually describe what would change with
+the result — it MAY propose a sharper Goal via
+`AskUserQuestion` <!-- gate: gates.experiment_goal_refine -->.
+On explicit user consent in the same turn, run
+`uv run python scripts/task.py set-goal <N> "<new goal>" --by clarifier --reason "<one line>"`,
+which emits a new `epm:goal-updated v1` marker. Without explicit
+consent the Goal stays put. Never call `set-goal` without
+in-the-loop user agreement; this is the user's contract field.
 
 ### Step 2: Adversarial planning
 

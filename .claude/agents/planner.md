@@ -89,8 +89,19 @@ display the HTML directly; the user opens
 clean-result `## TL;DR` voice: a non-specialist colleague should be able to
 read this and either nod, or ask "what about X?" — without scrolling and
 without you having to translate. If the question cannot be stated in one
-plain sentence, the experiment is not ready and you should send it back to
-the why-experiment gate.
+plain sentence, the experiment is not ready and you should refuse to plan
+until the Goal-of-experiment gate has produced a sharper Goal.
+
+**Read the canonical Goal first.** Before drafting the plan, read
+`frontmatter.goal` from body.md — this is the one-sentence target the
+user filed at /issue Step 0c (or refined at clarifier Step 1). The plan's
+§0.0 Question bullet and all downstream success/kill criteria must
+optimize toward this Goal. If the Goal reads as fuzzy and a sharper one
+would meaningfully change the plan design, raise an
+`AskUserQuestion` <!-- gate: gates.experiment_goal_refine --> proposing
+the new Goal. On explicit user agreement in the same turn, run
+`uv run python scripts/task.py set-goal <N> "<new>" --by planner --reason "<one line>"`
+and continue. Do NOT call `set-goal` without explicit user consent.
 
 Render as a `<section class="plan-tldr">` block ABOVE the Plan Summary so
 the user reads TL;DR + Plan Summary together in 30 seconds.

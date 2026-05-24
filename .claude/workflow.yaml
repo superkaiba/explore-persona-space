@@ -360,35 +360,19 @@ gates:
       name: experiment_goal
       step: "0c"
       reason: |
-        Goal-of-experiment gate (introduced 2026-05-24, replaces the
-        retired why-this-experiment gate). For `kind: experiment` tasks
-        only, /issue Step 0c refuses to advance until body.md
-        frontmatter carries `goal: <one sentence>` AND a `## Goal` H2
-        block exists in the body between the H1 title and the first
-        other H2. The skill raises `AskUserQuestion` on miss, then
-        runs `task.py set-goal <N> "<answer>"` and continues.
-        `kind: analysis | infra | batch | survey` are exempt. The Goal
-        is the canonical one-sentence target every downstream subagent
-        (planner, critic, experiment-implementer, analyzer,
+        Goal-of-experiment gate. When the body of a `kind: experiment`
+        task lacks a populated frontmatter `goal:` field OR lacks a
+        `## Goal` H2 block in body.md, /issue Step 0c raises
+        `AskUserQuestion` asking the user for a one-sentence Goal,
+        then runs `task.py set-goal <N> "<answer>" --by user` (which
+        writes both frontmatter and body, plus an `epm:goal-updated v1`
+        marker). `kind: analysis | infra | batch | survey` are exempt.
+        The Goal is the canonical optimization target every downstream
+        subagent (planner, critic, experiment-implementer, analyzer,
         clean-result-critic, interpretation-critic, follow-up-proposer)
-        reads as the contract the experiment was designed against.
-    - id: 9
-      name: experiment_goal_refine
-      step: "1 (clarifier) or /adversarial-planner Phase 1 (planner)"
-      reason: |
-        Goal-refinement gate. The Goal captured at Step 0c is a
-        STARTING POINT, not an immutable contract. During Step 1
-        (clarifier) or /adversarial-planner Phase 1 (planner), if the
-        agent surfaces a sharper or corrected version of the Goal, it
-        MAY raise an `AskUserQuestion` proposing the new Goal alongside
-        the current one. On explicit user agreement in that turn, the
-        agent runs `task.py set-goal <N> "<new>"` and posts an
-        `epm:goal-updated v1` marker with `from` / `to` / `by` fields.
-        Unilateral Goal rewrites are a workflow violation — user
-        consent is mandatory. Critic / experiment-implementer /
-        experimenter / analyzer / interpretation-critic /
-        clean-result-critic / follow-up-proposer may NOT propose Goal
-        changes; by the time they run, the Goal is the contract.
+        reads from body.md frontmatter. The PM session Mode 5 pre-spawn
+        check is the primary enforcement point; Step 0c is the
+        per-issue-session safety net.
   park_and_wait:
     - id: 7
       name: awaiting_promotion
@@ -404,6 +388,23 @@ gates:
         exits cleanly. Awaiting promotion is user-only: no automation may
         flip `runs.classification` without explicit user invocation.
   conditional:
+    - id: 9
+      name: experiment_goal_refine
+      step: "1 (clarifier) or /adversarial-planner Phase 1 (planner)"
+      condition: "clarifier OR planner surfaces a sharper Goal as part of normal work"
+      reason: |
+        Goal-refinement gate (conditional, opt-in). The clarifier (Step
+        1) and planner (/adversarial-planner Phase 1) MAY surface a
+        sharper Goal as part of their work; if either does, it raises
+        `AskUserQuestion` proposing the new wording. On explicit user
+        consent in the same turn, the agent runs
+        `task.py set-goal <N> "<new>" --by clarifier|planner`, which
+        emits a new `epm:goal-updated v1` marker recording the
+        from/to/by/reason. Without explicit consent the Goal stays put.
+        Critic / experiment-implementer / experimenter / analyzer /
+        interpretation-critic / clean-result-critic / follow-up-proposer
+        MUST NOT propose Goal changes — by the time they run, the Goal
+        is contract.
     - id: 8
       name: tdd_gate
       step: "4b"
@@ -753,11 +754,6 @@ markers:
     posted_by: skill
     when: "Step 0b"
     fields: "what fields were auto-filled in body.md frontmatter and the inferred values"
-  - kind: "epm:goal-updated"
-    posted_by: skill (via /issue Step 0c, Step 1 clarifier, or /adversarial-planner Phase 1 planner) — never an experiment-implementer / experimenter / analyzer / critic agent
-    when: "Step 0c (initial Goal capture) or Step 1 / Phase 1 (user-consented Goal refinement)"
-    fields: |
-      from: "<previous goal text, or null on first set>"; to: "<new goal text>"; by: <skill|clarifier|planner|user>; optional reason: <one-sentence rationale from the proposing agent>. Audit trail for every Goal change so history is grep-able. Posted AFTER `task.py set-goal` succeeds.
   - kind: "epm:codex-task-spawned"
     posted_by: scripts/codex_task.py
     when: "Whenever the orchestrator dispatches a Codex companion task via scripts/codex_task.py with --issue N"
@@ -782,6 +778,10 @@ markers:
     posted_by: skill (relaying user chat reply)
     when: "Step 1"
     fields: "user's answers to the most recent epm:clarify questions, persisted to events.jsonl"
+  - kind: "epm:goal-updated"
+    posted_by: task.py set-goal (called by skill at /issue Step 0c, by clarifier at Step 1, or by planner at /adversarial-planner Phase 1)
+    when: "any time the canonical Goal-of-the-experiment is set or refined"
+    fields: "from (prior `goal:` frontmatter value or null), to (new value), by (user|clarifier|planner), optional reason. One marker per actual change; idempotent re-application emits nothing."
   - kind: "epm:plan"
     posted_by: skill (via adversarial-planner)
     when: "Step 2"

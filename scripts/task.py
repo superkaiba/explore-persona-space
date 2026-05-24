@@ -8,7 +8,8 @@ Sagan's Postgres.
 Subcommands (see `task.py --help`):
 
     view <N>
-    new --kind <k> --title "..." [--body|--body-file ...] [--parent N] [--status proposed]
+    new --kind <k> --title "..." [--body|--body-file ...] [--goal "..."] [--parent N]
+        [--status proposed]
     set-status <N> <status> [--note ...]
     post-marker <N> <marker> [--note ...]              # alias: post-event
     list-by-status [--status ...] [--limit N]
@@ -16,6 +17,7 @@ Subcommands (see `task.py --help`):
     latest-marker <N>                                  # alias: latest-event
     set-body <N> --body "..." | --file path           # snapshots old → original-body.md
     set-title <N> "..."
+    set-goal <N> "..." [--by user|clarifier|planner] [--reason ...]
     set-clean-result <N>
     add-tag <N> <tag>
     remove-tag <N> <tag>
@@ -56,6 +58,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     remove_tag,
     set_body,
     set_clean_result,
+    set_goal,
     set_status,
     set_title,
 )
@@ -66,11 +69,14 @@ from explore_persona_space.task_workflow import (  # noqa: E402
 def cmd_view(args: argparse.Namespace) -> None:
     task = get_task(args.number)
     events = list_events(task["id"])
+    goal_value = task["frontmatter"].get("goal")
+    goal_value = goal_value.strip() if isinstance(goal_value, str) and goal_value.strip() else None
     if args.json:
         payload = {
             "id": task["id"],
             "path": task["path"],
             "status": task["status"],
+            "goal": goal_value,
             "frontmatter": task["frontmatter"],
             "body": task["body"],
             "events": events,
@@ -90,6 +96,8 @@ def cmd_view(args: argparse.Namespace) -> None:
     if parent:
         print(f"  parent:  #{parent}")
     print(f"  clean-result: {bool(task['frontmatter'].get('has_clean_result'))}")
+    if goal_value:
+        print(f"  goal:    {goal_value}")
     print()
     print(f"## Last {min(10, len(events))} events of {len(events)}")
     for ev in events[-10:]:
@@ -173,16 +181,14 @@ def cmd_create(args: argparse.Namespace) -> None:
         body = args.body
     elif args.body_file:
         body = Path(args.body_file).read_text()
-    goal = args.goal.strip() if isinstance(getattr(args, "goal", None), str) else None
-    if goal and args.kind != "experiment":
-        # Goal is only meaningful for experiments. Warn loudly so the user
-        # notices their --goal won't appear in body.md, but do not refuse
-        # the create.
-        sys.stderr.write(
-            f"task.py new: --goal ignored for kind={args.kind!r} "
-            "(only kind=experiment carries a Goal field).\n"
+    goal_value: str | None = (args.goal or "").strip() or None
+    if goal_value and args.kind != "experiment":
+        print(
+            f"warning: --goal is only honored for kind=experiment "
+            f"(got kind={args.kind!r}); ignoring.",
+            file=sys.stderr,
         )
-        goal = None
+        goal_value = None
     req = NewTaskRequest(
         kind=args.kind,
         title=args.title,
@@ -190,15 +196,18 @@ def cmd_create(args: argparse.Namespace) -> None:
         parent_id=args.parent,
         tags=list(args.tag) if args.tag else None,
         status=args.status,
-        goal=goal,
+        goal=goal_value,
     )
     new_id = create_task(req)
     print(f"#{new_id}")
 
 
 def cmd_set_goal(args: argparse.Namespace) -> None:
-    set_goal(args.number, args.goal)
-    print("ok")
+    changed = set_goal(args.number, args.goal, by=args.by, reason=args.reason)
+    if changed:
+        print(f"ok — goal updated for #{args.number} (by={args.by})")
+    else:
+        print(f"ok — goal unchanged for #{args.number} (idempotent no-op)")
 
 
 def cmd_set_status(args: argparse.Namespace) -> None:
@@ -447,10 +456,11 @@ def main() -> None:
             "--goal",
             default=None,
             help=(
-                "one-sentence experiment goal (kind=experiment only). "
-                "Writes frontmatter goal: and injects a ## Goal H2 in body. "
-                "Optional at create time — /issue Step 0c enforces it before "
-                "the task can advance."
+                "one-sentence canonical Goal of the experiment. Honored only "
+                "when --kind=experiment (warning + ignore otherwise). When "
+                "set, writes frontmatter `goal:` AND injects a `## Goal` H2 "
+                "between H1 and any other H2. Optional at creation time; "
+                "enforced at /issue Step 0c for kind=experiment tasks."
             ),
         )
         # Sagan-compatibility: accept --runpod-account but ignore it.
@@ -522,21 +532,34 @@ def main() -> None:
 
     p = sub.add_parser(
         "set-goal",
-        help="update one-sentence experiment goal (frontmatter goal: + ## Goal H2)",
+        help="set / refine the canonical Goal of the experiment (frontmatter + `## Goal` H2)",
         description=(
-            "Update the one-sentence experiment goal for task N. Writes the "
-            "text to body.md frontmatter `goal:` AND injects (or replaces) a "
-            "`## Goal` H2 block in the body positioned after the H1 title and "
-            "before the first other H2. /issue Step 0c uses this as the "
-            "canonical write path for the experiment-goal gate; the clarifier "
-            "(Step 1) and planner (Phase 1) call this on user consent when "
-            "they propose a sharper Goal. Does NOT post an event marker — "
-            "callers should follow with `task.py post-marker <N> "
-            "epm:goal-updated --note '...'` when audit history matters."
+            "Update the task's Goal-of-the-experiment field. Writes "
+            "frontmatter `goal:` AND ensures a `## Goal` H2 block is "
+            "present in body.md between H1 and any other H2. Emits an "
+            "`epm:goal-updated v1` marker with from/to/by fields. "
+            "Idempotent: identical re-application is a no-op. The "
+            "`--by` flag identifies which agent fired the update: "
+            "`user` (default; Step 0c or manual), `clarifier` (Step 1 "
+            "refinement gate), `planner` (/adversarial-planner Phase 1 "
+            "refinement gate). Critic / experiment-implementer / "
+            "analyzer / clean-result-critic / interpretation-critic / "
+            "follow-up-proposer MUST NOT call this command."
         ),
     )
     p.add_argument("number", type=int)
-    p.add_argument("goal", help="one-sentence experiment goal")
+    p.add_argument("goal", help="one-sentence Goal of the experiment")
+    p.add_argument(
+        "--by",
+        default="user",
+        choices=["user", "clarifier", "planner"],
+        help="which agent is making the change (default: user)",
+    )
+    p.add_argument(
+        "--reason",
+        default=None,
+        help="optional free-form rationale; included verbatim in the marker note",
+    )
     p.set_defaults(func=cmd_set_goal)
 
     p = sub.add_parser(

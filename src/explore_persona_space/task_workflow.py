@@ -49,7 +49,6 @@ import contextlib
 import fcntl
 import json
 import os
-import re
 import shutil
 import subprocess
 from collections.abc import Iterator
@@ -151,8 +150,6 @@ def _registry_set(registry: dict[str, Any], task_id: int, path: Path, fm: dict[s
         "status": _status_from_path(path),
         "has_clean_result": bool(fm.get("has_clean_result", False)),
     }
-    # Denormalize `goal:` so the dashboard / list-by-status views can show
-    # the one-sentence experiment intent without re-reading body.md.
     goal = fm.get("goal")
     if isinstance(goal, str) and goal.strip():
         entry["goal"] = goal.strip()
@@ -212,42 +209,6 @@ def _write_body(path: Path, fm: dict[str, Any], body: str) -> None:
 # carries the goal text; the frontmatter ``goal:`` field is a denormalized
 # mirror so consumers (REGISTRY, dashboard, subagent briefs) can read it
 # without parsing markdown.
-_GOAL_H2_RE = re.compile(
-    r"(^|\n)## Goal[ \t]*\n+(.*?)(?=\n## |\Z)",
-    re.DOTALL,
-)
-
-
-def _inject_goal_h2(body: str, goal: str) -> str:
-    """Insert or replace a ``## Goal`` H2 block in ``body``.
-
-    Placement rules:
-
-    * If the body already has a ``## Goal`` H2 anywhere, replace its
-      content with the new goal (preserves the rest of the body).
-    * Else if the body starts with an H1 (``# ...``), insert the Goal
-      block immediately after the H1 (and any blank lines following it),
-      before the first H2.
-    * Otherwise prepend the Goal block at the top.
-
-    ``goal`` is normalized to a single line and wrapped in a blank-line-
-    bounded ``## Goal\\n\\n<goal>\\n`` block.
-    """
-    goal_text = " ".join(goal.split())
-    block = f"## Goal\n\n{goal_text}\n"
-    if _GOAL_H2_RE.search(body):
-
-        def _replace(match: re.Match[str]) -> str:
-            return f"{match.group(1)}{block}\n"
-
-        return _GOAL_H2_RE.sub(_replace, body, count=1)
-    h1_match = re.match(r"^(# [^\n]*\n+)", body)
-    if h1_match:
-        head = h1_match.group(1)
-        return f"{head}{block}\n{body[len(head) :]}"
-    return f"{block}\n{body if body else ''}"
-
-
 # ─── Path resolution ────────────────────────────────────────────────────────
 
 
@@ -413,9 +374,8 @@ class NewTaskRequest:
     parent_id: int | None = None
     tags: list[str] | None = None
     status: str = "proposed"
-    # One-sentence experiment goal. Only meaningful for kind == "experiment";
-    # ignored (not written) for other kinds. Goal is NOT mandatory at task-
-    # creation time — /issue Step 0c enforces it before the task can advance.
+    # Canonical Goal of the experiment. Honored only when kind=="experiment";
+    # passed through for other kinds with a soft warning emitted by the CLI.
     goal: str | None = None
 
 
@@ -441,16 +401,14 @@ def create_task(req: NewTaskRequest) -> int:
         }
         if req.parent_id is not None:
             fm["parent_id"] = req.parent_id
-        body = req.body if req.body.endswith("\n") else req.body + "\n"
-        # Goal is only meaningful for experiments — silently ignore for other
-        # kinds (the CLI emits a warning at the call site). When supplied,
-        # we mirror it into frontmatter AND inject a ``## Goal`` H2 in the
-        # body so downstream subagents can find it via either path.
-        if req.kind == "experiment" and isinstance(req.goal, str) and req.goal.strip():
-            goal_text = " ".join(req.goal.split())
-            fm["goal"] = goal_text
-            body = _inject_goal_h2(body, goal_text)
-        _write_body(path / "body.md", fm, body)
+        # Inject the Goal into frontmatter + body H2 when kind=experiment.
+        # For other kinds, ignore silently — enforcement is at /issue
+        # Step 0c, and task.py CLI warns the user up front.
+        seed_body = req.body if req.body.endswith("\n") else req.body + "\n"
+        if req.kind == "experiment" and req.goal and req.goal.strip():
+            fm["goal"] = req.goal.strip()
+            seed_body = _inject_or_replace_goal_h2(seed_body, req.goal.strip())
+        _write_body(path / "body.md", fm, seed_body)
         # Empty event + comment logs (touch)
         (path / "events.jsonl").touch()
         (path / "comments.jsonl").touch()
@@ -506,37 +464,6 @@ def set_title(task_id: int, title: str) -> None:
         _git_commit([path, REGISTRY_PATH], f"task #{task_id}: set-title — {title[:60]}")
 
 
-def set_goal(task_id: int, goal: str) -> None:
-    """Update the one-sentence experiment goal in frontmatter + body H2.
-
-    Writes the normalized text to ``frontmatter.goal`` AND injects (or
-    replaces) a ``## Goal`` H2 block in body.md positioned after the H1
-    title and before the first other H2. ``/issue`` Step 0c enforces that
-    every ``kind: experiment`` task has this set before the task can
-    advance; this mutator is the canonical write path for that gate, for
-    the clarifier and planner refinement gates, and for ad-hoc backfill
-    of legacy bodies.
-
-    Does NOT emit an ``epm:goal-updated`` event — callers (the gate, the
-    refinement gates, manual invocation) are responsible for posting the
-    audit-trail marker with ``from`` / ``to`` / ``by`` fields when they
-    want history grep-able.
-    """
-    goal_text = " ".join(goal.split())
-    if not goal_text:
-        raise ValueError("goal must be a non-empty sentence")
-    with _locked():
-        path = find_task_path(task_id) / "body.md"
-        fm, body = _read_body(path)
-        fm["goal"] = goal_text
-        new_body = _inject_goal_h2(body, goal_text)
-        _write_body(path, fm, new_body)
-        reg = _load_registry()
-        _registry_set(reg, task_id, path.parent, fm)
-        _save_registry(reg)
-        _git_commit([path, REGISTRY_PATH], f"task #{task_id}: set-goal — {goal_text[:60]}")
-
-
 def set_clean_result(task_id: int, value: bool = True) -> None:
     with _locked():
         path = find_task_path(task_id) / "body.md"
@@ -547,6 +474,205 @@ def set_clean_result(task_id: int, value: bool = True) -> None:
         _registry_set(reg, task_id, path.parent, fm)
         _save_registry(reg)
         _git_commit([path, REGISTRY_PATH], f"task #{task_id}: has_clean_result={value}")
+
+
+# ─── Goal of the experiment (canonical target) ────────────────────────────
+
+
+GOAL_H2_NAME = "## Goal"
+
+
+def _normalize_trailing_newline(text: str) -> str:
+    """Normalize a body string to end with exactly one ``\\n``."""
+    return text.rstrip("\n") + "\n"
+
+
+def _inject_or_replace_goal_h2(body: str, new_goal: str) -> str:
+    """Ensure body.md carries ``## Goal\\n\\n<new_goal>\\n`` between H1 and
+    any other H2.
+
+    The Goal section is defined as: the ``## Goal`` heading, one blank
+    line, exactly one paragraph (the Goal sentence), and a terminating
+    blank line. The section ends at the FIRST blank line after the
+    sentence — anything after that blank line is preserved verbatim.
+
+    Rules:
+    - If a ``## Goal`` H2 already exists, REPLACE just its single-paragraph
+      body (the lines between the heading-blank-line and the next blank
+      line) with ``<new_goal>``. Everything below the trailing blank line
+      is preserved.
+    - Else if an H1 exists, insert ``\\n## Goal\\n\\n<new_goal>\\n``
+      after the H1 line (and any single blank line immediately following
+      the H1).
+    - Else (no H1) prepend ``## Goal\\n\\n<new_goal>\\n\\n`` at the top.
+
+    The function is text-only — the caller is responsible for the flock +
+    git commit. Output is always normalized to end with exactly one
+    ``\\n`` so idempotent re-applications produce byte-identical bodies.
+    """
+    body = _normalize_trailing_newline(body)
+    lines = body.splitlines(keepends=False)
+    # 1. Find an existing `## Goal` H2.
+    goal_idx = None
+    for i, line in enumerate(lines):
+        if line.strip() == GOAL_H2_NAME:
+            goal_idx = i
+            break
+    if goal_idx is not None:
+        # Locate the start of the paragraph (skip any blank lines between
+        # the heading and the goal sentence).
+        para_start = goal_idx + 1
+        while para_start < len(lines) and lines[para_start].strip() == "":
+            para_start += 1
+        # Locate the end of the paragraph (first blank line OR next H2
+        # OR EOF — whichever comes first). The next H2 case handles the
+        # pathological "## Goal\n## Other" no-content case.
+        para_end = para_start
+        while para_end < len(lines):
+            stripped = lines[para_end].strip()
+            if stripped == "":
+                break
+            if lines[para_end].startswith("## "):
+                # We accidentally walked into the next section's H2 —
+                # treat para_end as the section boundary (the existing
+                # Goal section had no paragraph content).
+                break
+            para_end += 1
+        # Replacement: heading + blank + new sentence + blank (the
+        # terminating blank is preserved if the body had one; if we ran
+        # to EOF / next-H2 without a blank, we still emit one for
+        # readability).
+        replacement = [GOAL_H2_NAME, "", new_goal]
+        new_lines = lines[:goal_idx] + replacement + lines[para_end:]
+        rebuilt = "\n".join(new_lines)
+        return _normalize_trailing_newline(rebuilt)
+    # 2. No existing Goal. Find H1.
+    h1_idx = None
+    for i, line in enumerate(lines):
+        if line.startswith("# ") and not line.startswith("## "):
+            h1_idx = i
+            break
+    if h1_idx is not None:
+        insert_at = h1_idx + 1
+        # Skip a single blank line after the H1 if present so the inserted
+        # block sits flush below the title with consistent spacing. If we
+        # did consume a blank line, the H2 goes directly at `insert_at`
+        # (no leading blank in `block`); otherwise prepend a blank.
+        consumed_blank = False
+        if insert_at < len(lines) and lines[insert_at].strip() == "":
+            insert_at += 1
+            consumed_blank = True
+        block = [GOAL_H2_NAME, "", new_goal, ""]
+        if not consumed_blank:
+            block = ["", *block]
+        new_lines = lines[:insert_at] + block + lines[insert_at:]
+        rebuilt = "\n".join(new_lines)
+        return _normalize_trailing_newline(rebuilt)
+    # 3. No H1; prepend.
+    block = [GOAL_H2_NAME, "", new_goal, "", ""]
+    new_lines = block + lines
+    rebuilt = "\n".join(new_lines)
+    return _normalize_trailing_newline(rebuilt)
+
+
+def set_goal(task_id: int, new_goal: str, *, by: str = "user", reason: str | None = None) -> bool:
+    """Set / refine the canonical Goal-of-the-experiment for a task.
+
+    Updates body.md frontmatter (`goal:`) AND ensures a `## Goal` H2 block
+    is present in the body. Emits an `epm:goal-updated v1` marker carrying
+    ``from: <old>``, ``to: <new>``, ``by: <agent>``, and optional
+    ``reason:``. Idempotent: if the new value equals the existing value
+    (and the H2 block is already in place), no marker is emitted and no
+    commit is created.
+
+    Parameters
+    ----------
+    task_id : int
+        Task number.
+    new_goal : str
+        One-sentence Goal. Internal whitespace (newlines, tabs, runs of
+        spaces) is collapsed to single spaces so multi-paragraph or
+        otherwise multi-line input cannot corrupt either the frontmatter
+        scalar or the `## Goal` H2 body block. Empty after normalization
+        refuses.
+    by : str
+        Which agent is making the change. Valid values: ``user``,
+        ``clarifier``, ``planner``. The orchestrator should set this
+        based on which gate fired.
+    reason : str, optional
+        Free-form rationale; included verbatim in the marker note.
+
+    Returns
+    -------
+    bool
+        True if the Goal was changed, False if the call was a no-op.
+    """
+    # Normalize ALL whitespace, not just edges. A multi-line `new_goal`
+    # would otherwise (a) become a multi-line YAML scalar in frontmatter
+    # and (b) produce a multi-paragraph block under `## Goal`, which
+    # `_inject_or_replace_goal_h2` only refreshes the first paragraph of,
+    # leaving stale text orphaned in the body on the next refinement.
+    goal = " ".join((new_goal or "").split())
+    if not goal:
+        raise ValueError("goal must be a non-empty one-sentence string")
+    if by not in ("user", "clarifier", "planner"):
+        raise ValueError(f"by must be one of user|clarifier|planner, got {by!r}")
+    with _locked():
+        path = find_task_path(task_id) / "body.md"
+        fm, body = _read_body(path)
+        old_goal = (fm.get("goal") or "").strip() or None
+        # Normalize the pre-existing body's trailing whitespace BEFORE
+        # comparing — `_inject_or_replace_goal_h2` always returns a body
+        # with exactly one trailing `\n`, so trailing-whitespace drift
+        # from prior writes is not a real change.
+        body_normalized = _normalize_trailing_newline(body)
+        new_body = _inject_or_replace_goal_h2(body, goal)
+        # Idempotence: if the frontmatter goal is already equal AND the
+        # body H2 block is already textually identical, do nothing.
+        if old_goal == goal and new_body == body_normalized:
+            return False
+        fm["goal"] = goal
+        _write_body(path, fm, new_body)
+        # Update REGISTRY snapshot (carries `goal`).
+        reg = _load_registry()
+        _registry_set(reg, task_id, path.parent, fm)
+        _save_registry(reg)
+        # Emit marker. Note text mirrors the structured payload for easy
+        # CLI scanning; the JSON fields are also present for tooling.
+        note_parts = [
+            f"from: {old_goal!r}",
+            f"to: {goal!r}",
+            f"by: {by}",
+        ]
+        if reason:
+            note_parts.append(f"reason: {reason}")
+        note = "\n".join(note_parts)
+        ev_path = path.parent / "events.jsonl"
+        payload: dict[str, Any] = {
+            "ts": _utcnow_iso(),
+            "kind": "epm:goal-updated",
+            "version": 1,
+            "by": by,
+            "from": old_goal,
+            "to": goal,
+            "note": note,
+        }
+        if reason:
+            payload["reason"] = reason
+        with ev_path.open("a") as f:
+            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        _git_commit(
+            [path, ev_path, REGISTRY_PATH],
+            f"task #{task_id}: set-goal — {goal[:60]}",
+        )
+    return True
+
+
+def get_goal(task_id: int) -> str | None:
+    """Return the task's canonical Goal (frontmatter `goal:`), or None."""
+    fm, _ = _read_body(find_task_path(task_id) / "body.md")
+    goal = fm.get("goal")
+    return goal if isinstance(goal, str) and goal.strip() else None
 
 
 def add_tag(task_id: int, tag: str) -> None:
@@ -807,6 +933,7 @@ def _git_commit(paths: list[Path], message: str) -> None:
 
 __all__ = [
     "COMMENT_KINDS",
+    "GOAL_H2_NAME",
     "PARK_STATUS",
     "REGISTRY_PATH",
     "REPO",
@@ -819,6 +946,7 @@ __all__ = [
     "audit",
     "create_task",
     "find_task_path",
+    "get_goal",
     "get_task",
     "has_event",
     "latest_event",

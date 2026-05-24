@@ -46,11 +46,14 @@ discipline ported from HTML to markdown):
     `per-cell`, or `.npz`). An explicit `not uploaded` / `not
     available` disclosure downgrades FAIL to WARN.
 
-The Why-this-experiment gate was retired 2026-05-24 — the
-``## Goal`` H2 + frontmatter ``goal:`` field (enforced at /issue
-Step 0c) subsumes it. Bodies authored under the old gate may still
-carry an ``application:`` frontmatter key and a ``## Why this
-experiment`` H2; the verifier no longer reads them.
+Soft INFO (not enforced as PASS/FAIL; surfaced for orchestrator
+visibility): the Goal-of-experiment field — frontmatter contains
+``goal: <one sentence>`` AND body contains a ``## Goal`` H2 between
+H1 and any other H2. Enforcement of the Goal lives at /issue Step 0c
+(workflow.yaml § gates.experiment_goal); this verifier does NOT FAIL
+a body that lacks the Goal — clean-result bodies legitimately omit it
+when the source task was non-experiment kind, and pre-Goal bodies
+remain promotable.
 
 Bodies carrying a `<!-- legacy-sagan-card -->` sentinel are
 grandfathered HTML — this verifier skips them with a PASS (the legacy
@@ -681,6 +684,42 @@ def check_qualitative_data_link(body: str) -> CheckResult:
     )
 
 
+def check_goal_present(body: str, fm: dict) -> CheckResult:
+    """Soft INFO check — Goal-of-experiment field.
+
+    Reports presence / absence of the canonical Goal:
+      - frontmatter `goal: <non-empty string>`, AND
+      - body contains a `## Goal` H2 line (verbatim).
+
+    This check NEVER FAILs — enforcement lives at /issue Step 0c, not
+    here. Clean-result bodies for non-experiment kinds, follow-ups,
+    and pre-Goal bodies legitimately omit the field; failing them
+    here would block promotion needlessly. The check is exposed for
+    orchestrator visibility (analyzers, dashboards) and tagged WARN
+    when missing so the orchestrator can pick it up without halting.
+    """
+    fm_goal = fm.get("goal")
+    fm_goal = fm_goal.strip() if isinstance(fm_goal, str) and fm_goal.strip() else None
+    body_has_goal_h2 = any(line.strip() == "## Goal" for line in body.splitlines())
+    if fm_goal and body_has_goal_h2:
+        return CheckResult(
+            "Goal-of-experiment field",
+            True,
+            f"frontmatter goal present ({len(fm_goal)} chars) + `## Goal` H2 found in body",
+        )
+    missing = []
+    if not fm_goal:
+        missing.append("frontmatter `goal:` field")
+    if not body_has_goal_h2:
+        missing.append("`## Goal` H2 in body")
+    return CheckResult(
+        "Goal-of-experiment field",
+        True,
+        f"missing: {', '.join(missing)} (soft — enforced at /issue Step 0c, not here)",
+        is_warn=True,
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 
@@ -701,11 +740,7 @@ CHECKS = [
 
 
 def verify_text(raw: str, *, source: str = "") -> tuple[bool, list[CheckResult]]:
-    _fm, body = split_frontmatter(raw)
-    # Frontmatter is parsed for downstream consumers (e.g. CLI summary)
-    # but no current check reads it — the Why-this-experiment gate that
-    # used to consume `fm` was retired 2026-05-24 alongside the
-    # `## Goal` H2 rollout.
+    fm, body = split_frontmatter(raw)
     if LEGACY_SAGAN_CARD_SENTINEL in body:
         return True, [
             CheckResult(
@@ -716,6 +751,10 @@ def verify_text(raw: str, *, source: str = "") -> tuple[bool, list[CheckResult]]
             )
         ]
     results = [chk(body) for chk in CHECKS]
+    # Goal-of-experiment field is a soft INFO/WARN check — it never
+    # FAILs (enforcement is at /issue Step 0c, not here) and needs the
+    # frontmatter, so it lives outside the body-only CHECKS list.
+    results.append(check_goal_present(body, fm))
     overall = all(r.passed for r in results)
     return overall, results
 
