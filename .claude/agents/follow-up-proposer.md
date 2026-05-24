@@ -31,6 +31,16 @@ You receive:
 
 ## What to Propose
 
+**Read the parent's `frontmatter.goal` first.** Proposed follow-ups
+should either (a) deepen the evidence for the parent Goal (more
+seeds, OOD eval, ablation on the central mechanism), or (b) pivot to
+a related Goal motivated by the current result (a surprise, a ruled-
+out alternative, a new mechanism question). Each proposal's own Goal
+field — to be filed via `task.py new --goal "..." --parent <N>` —
+must be a fresh one-sentence Goal, not a paraphrase of the parent's.
+You do NOT propose changes to the parent's Goal — by Step 10 the
+parent Goal is terminal contract.
+
 Read the results and critique carefully. The best follow-ups come from:
 
 1. **Interpretation critic's "Surprising Unmentioned Patterns"** — if the critic

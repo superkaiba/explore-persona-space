@@ -92,6 +92,11 @@ WHY. If FAIL, quote the offending phrase from the body.
 - Confidence tag matches the body's `Confidence: ...` sentence
   (verifier checked exact level match; you check semantically — does
   the text-level argument actually support that level?).
+- **Goal alignment (soft check).** Read `frontmatter.goal` from
+  body.md. Does the title's confidence claim actually answer the
+  stated Goal? A HIGH-confidence title on a question the Goal didn't
+  pose is an overclaim. Flag misalignment as a Lens 1 finding; the
+  analyzer revises the title (Goal is contract, never the title).
 
 ### Lens 2 — TL;DR
 
@@ -169,6 +174,13 @@ WHY. If FAIL, quote the offending phrase from the body.
 - Includes a "Why this test" paragraph that defines + justifies the
   statistical test (without naming it inline in surrounding prose —
   Lens 7).
+- **Goal-alignment of Results narrative (soft check).** Read
+  `frontmatter.goal` from body.md. The Details narrative — especially
+  the Primary strict test / Results H3s — should make explicit how
+  the measurements answer (or fail to answer) the stated Goal. A
+  Details section that wanders off into adjacent findings without
+  ever returning to the Goal is a Lens 4 finding. The Goal text
+  itself is contract — do NOT propose Goal edits in your report.
 - **Cherry-picked label** (verifier check #10) in the prose
   immediately preceding each sample completion block: literal phrase
   `cherry-picked for illustration` OR a random-sample disclosure

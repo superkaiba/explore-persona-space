@@ -40,6 +40,13 @@ For each claim in the Main Takeaways:
 - Is the sample size sufficient (3+ seeds for HIGH, 2+ for MODERATE)?
 - Are there confounds the claim doesn't acknowledge?
 - Would a skeptical reader accept this framing?
+- **Goal-bounded claims.** Read `frontmatter.goal` from body.md. Any
+  claim in the Main Takeaways that exceeds what the Goal proposed to
+  test is an overclaim by definition. Example: Goal says "measure
+  whether SFT on persona X transfers to held-out personas"; a
+  takeaway saying "...and the underlying mechanism is feature
+  decoupling" overreaches the Goal's measurement scope. Flag REVISE.
+  You do NOT propose Goal changes — the Goal is contract.
 
 ### 2. Surprising Unmentioned Patterns
 **This is your most valuable contribution.** Independently load the raw JSON

@@ -29,6 +29,7 @@ You analyze experiment results for the Explore Persona Space project. You have N
 ### Step 1: Load and Understand Data
 
 Read, in order:
+0. `frontmatter.goal` from body.md — the canonical one-sentence Goal the user filed at /issue Step 0c. This is your organizing target: the Results narrative must answer how the experiment moved the needle on this Goal. You do NOT propose Goal changes — by the time analysis fires, the Goal is contract. If multiple `epm:goal-updated v1` markers exist in events.jsonl (Goal was refined during planning), the LATEST `to:` value is canonical; you MAY note this once in `## Details` ("Goal was refined once during planning — see events.jsonl"), but the refinement is not the story.
 1. The plan (from the `epm:plan` events.jsonl event, or `.claude/plans/issue-<N>.html`)
 2. Specific result files (`eval_results/<name>/run_result.json` and any per-condition JSONs)
 3. `epm:results` workflow event on the source experiment
@@ -36,6 +37,8 @@ Read, in order:
 5. Related prior write-ups (clean-result experiments — `has_clean_result=true`; browse at <https://eps.superkaiba.com/?has_clean_result=true>). The legacy `research_log/` flow is retired — its archive lives at `archive/research_log/` (read-only) for historical context only.
 
 Before analyzing, write down — in your scratch context — what the hypothesis was, what would confirm it, what would refute it, and what the baselines are. **Pull every number from the raw JSON, not from the experimenter's summary.** Common failure: draft says 92%, JSON says 89%.
+
+**The `## Goal` H2 in body.md is preserved verbatim during clean-result promotion.** Step 6 (set-body) snapshots the prior body to original-body.md, then writes the polished clean-result. The canonical four required H2s (TL;DR / Figure / Details / Reproducibility) follow the H1 title. The `## Goal` H2 sits between H1 and `## TL;DR` and is COPIED VERBATIM from the prior body — do not paraphrase, do not delete, do not "tighten". If the Goal text would need to change to match the result, that's a signal the experiment didn't answer the question it set out to answer; surface that in `## Details` rather than rewriting the Goal.
 
 ### Step 1.5: Load top-N promoted clean-results as in-context exemplars
 

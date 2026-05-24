@@ -160,33 +160,29 @@ Do not auto-create experiments — the user decides which ideas graduate.
 
 ### Mode 5 — DISPATCH ("work on #N")
 
-**Pre-spawn gate: Why-this-experiment check.** Before spawning,
-confirm the task body carries a complete `## Why this experiment`
-section (the three-line interrogation gate landed in task #371; the
-cut-question was dropped 2026-05-21). The PM session is the PRIMARY
+**Pre-spawn gate: Goal-of-experiment check.** Before spawning,
+confirm the task body carries a one-sentence `## Goal` H2 and a
+populated frontmatter `goal:`. The PM session is the PRIMARY
 enforcement point — friction lands before compute commits.
 
 1. Read the task body and frontmatter:
    ```bash
    uv run python scripts/task.py view <N> --json \
-     | jq -r '"kind=\(.frontmatter.kind) legacy=\(.frontmatter.legacy_why_unset) app=\(.frontmatter.application)"'
+     | jq -r '"kind=\(.frontmatter.kind) goal=\(.goal // "MISSING")"'
    ```
-2. Skip the gate when ANY of these hold (it's targeted, not universal):
-   - `kind == "analysis"` — analysis tasks are exempt from the floor.
-   - `frontmatter.legacy_why_unset == true` — sentinel applied by
-     `scripts/migrate_add_legacy_why_sentinel.py` for pre-gate
-     bodies; don't retro-interrogate.
-3. Otherwise, run the mechanical verifier:
-   ```bash
-   uv run python scripts/verify_task_body.py --issue <N> 2>&1 \
-     | grep -E "Why-this-experiment gate"
-   ```
-   - `[PASS]` → proceed to step 4.
-   - `[FAIL]` → invoke the `/why-experiment-gate` skill on `#N`. The
-     skill asks the three questions one at a time, refuses non-answers,
-     fires at most one substance challenge per question, patches the
-     body via `task.py set-body`, and posts the `epm:gate-filled`
-     marker. Re-run step 3 after the skill exits; it must now PASS.
+2. Skip the gate when `kind != "experiment"` (`analysis | infra |
+   batch | survey` do not carry an experiment Goal).
+3. Otherwise:
+   - `goal=MISSING` (frontmatter empty) OR `## Goal` H2 absent from
+     body.md → the PM elicits a one-sentence Goal from the user,
+     then runs:
+     ```bash
+     uv run python scripts/task.py set-goal <N> "<answer>" --by user
+     ```
+     which writes both frontmatter + body H2 and posts
+     `epm:goal-updated v1`. The `/issue` Step 0c safety net will
+     catch any miss here, but the PM session is the right place.
+   - Goal present → proceed to step 4.
 4. Spawn the per-issue Happy session:
    ```bash
    uv run python scripts/spawn_session.py spawn-issue --issue <N>
