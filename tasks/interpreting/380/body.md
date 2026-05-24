@@ -1,7 +1,8 @@
 ---
 title: A persona's output-distribution distance from the assistant baseline does not
-  predict its [ZLT] marker source rate beyond what log prompt length already explains
-  (HIGH confidence)
+  predict its [ZLT] marker source rate on this single 48-persona panel, but the pre-registered
+  kill criterion was missed and the secondary predictor remains an open thread (MODERATE
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-23T01:12:21Z'
