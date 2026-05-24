@@ -137,7 +137,7 @@ N_PROBES_PER_FRAMING = 30
 N_FRAMINGS = 11
 N_CONTRASTIVE_PER_NON_TEACH = 50  # → 4 × 50 = 200 total contrastive negs
 
-JUDGE_MODEL = "claude-haiku-4-5"
+JUDGE_MODEL = "claude-haiku-4-5-20251001"
 HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 EXPERIMENT_NAME = "issue381_persona_localized_fact"
