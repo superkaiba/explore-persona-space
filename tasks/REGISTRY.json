@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 385,
+  "highest_id": 386,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1859,6 +1859,14 @@
       "path": "tasks/plan_pending/385",
       "status": "plan_pending",
       "title": "Marker spread dynamics: fine-grained checkpoint sweep of [ZLT] propagation from one source persona to 19 bystanders + 8 non-persona contexts"
+    },
+    "386": {
+      "goal": "Test whether per-token log-prob equivalence holds between the system-prompted model and two forms of persona drift \u2014 inference-time (sustained conversation, reusing #377's drift corpus) and training-time (existing persona LoRAs from the #207-family panel) \u2014 sampling personas along the JS-divergence-from-assistant axis with an unrelated-persona control as the null distinguisher.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/386",
+      "status": "proposed",
+      "title": "Log-prob equivalence test: do inference-time drift (parent #377) and training-time drift (#207-family LoRAs) match the prompted distribution?"
     },
     "39": {
       "has_clean_result": false,
