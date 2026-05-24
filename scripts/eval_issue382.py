@@ -322,28 +322,51 @@ def _completion_level_fire_rate(
     """Plan §"Concerns for the analyzer" #5 — completion-level denominator.
 
     For each (prompt, completion) PAIR, count it as a "fire" if the marker
-    is a substring of that single completion. Denominator = total
-    (prompt, completion) pairs = num_completions x n_prompts.
+    is a (case-insensitive) substring of that single completion. Denominator
+    = total (prompt, completion) pairs = num_completions x n_prompts.
+
+    Round-2 fix (major 5): per-completion detection is delegated to the
+    project canonical scorer ``explore_persona_space.eval.trait_scorers.
+    evaluate_markers``, which matches case-insensitively (``marker.lower()
+    in completion.lower()``). The previous in-script ``marker in c``
+    substring match was case-sensitive and would have under-counted any
+    casing variant the model emitted (e.g. ``[zlt]``, ``[Zlt]``). Calling
+    the canonical scorer keeps #382's eval semantics byte-identical to
+    #376's, the rest of the eval stack, and all downstream analyzer plots.
 
     Returns:
         (n_fire, n_total, per_prompt_records)
         per_prompt_records: list of {prompt_idx, prompt, fire_count, n_completions,
                                      completions_with_marker[bool_list]}.
     """
+    from explore_persona_space.eval.trait_scorers import evaluate_markers
+
+    # Adapt our flat shape -> evaluate_markers' two-level shape
+    # ({persona: {question: [completions]}}) using a single synthetic
+    # persona key (we already pre-grouped by user_prompt).
+    synthetic = {"_": dict(completions_by_prompt)}
+    scored = evaluate_markers(synthetic, marker=marker)
+    per_question = scored["_"]["per_question"]
+
     n_fire = 0
     n_total = 0
     per_prompt: list[dict] = []
+    marker_lower = marker.lower()
     for prompt_idx, (prompt, comps) in enumerate(completions_by_prompt.items()):
-        per_comp_fire = [marker in c for c in comps]
-        fire_count = sum(per_comp_fire)
-        n_fire += fire_count
-        n_total += len(comps)
+        # per_completion bool list — recomputed here only because
+        # evaluate_markers returns only the count, not the per-completion bools
+        # we need for the raw `per_prompt` audit record. Same matching rule.
+        per_comp_fire = [marker_lower in c.lower() for c in comps]
+        rec = per_question[prompt]
+        assert rec["found"] == sum(per_comp_fire), (rec["found"], sum(per_comp_fire))
+        n_fire += rec["found"]
+        n_total += rec["total"]
         per_prompt.append(
             {
                 "prompt_idx": prompt_idx,
                 "prompt": prompt,
-                "fire_count": fire_count,
-                "n_completions": len(comps),
+                "fire_count": rec["found"],
+                "n_completions": rec["total"],
                 "completions_with_marker": per_comp_fire,
             }
         )
@@ -381,6 +404,12 @@ def run_marker_eval(
         f"{len(user_prompts)} prompts x {num_completions} completions | seed={seed}"
     )
 
+    # Guard: generate_completions hardcodes top_p=0.95 internally. Until that
+    # changes, any caller-side override is a silent no-op — assert loudly.
+    assert top_p == 0.95, (
+        f"generate_completions currently hardcodes top_p=0.95; caller passed top_p={top_p}, "
+        "which would be silently ignored. Update generate_completions before overriding."
+    )
     flat = generate_completions(
         model_path=model_path,
         prompts=user_prompts,
@@ -391,8 +420,6 @@ def run_marker_eval(
         max_model_len=max_model_len,
         seed=seed,
     )
-    if top_p != 0.95:
-        raise NotImplementedError("generate_completions currently hardcodes top_p=0.95.")
 
     # Order-preserving dict of prompt -> completions (Python 3.7+ dict order).
     completions_by_prompt: dict[str, list[str]] = {p: list(flat.get(p, [])) for p in user_prompts}
@@ -620,9 +647,15 @@ def run_full_eval(
     output_root: Path = RESULTS_ROOT,
     skip_arc_c: bool = False,
     paths_overrides: dict[int, SeedModelPaths] | None = None,
-    upload_raw_completions: bool = True,
 ) -> dict:
-    """End-to-end eval across all seeds (7 cells x N seeds + ARC-C x 2 models per seed)."""
+    """End-to-end eval across all seeds (7 cells x N seeds + ARC-C x 2 models per seed).
+
+    Raw-completion HF Hub upload is MANDATORY (Upload Policy in CLAUDE.md +
+    plan §7). The previous ``--no-upload`` flag was removed in round 2
+    (minor 7) to enforce the Upload Policy — use ``--dry-run`` to
+    short-circuit the entire run for plan inspection without producing any
+    files at all.
+    """
     paths_overrides = paths_overrides or {}
     tokenization_sanity_check()
 
@@ -649,15 +682,17 @@ def run_full_eval(
         json.dump({str(k): v for k, v in all_results.items()}, f, indent=2)
     print(f"\n  Wrote cross-seed summary to {summary_path}")
 
-    if upload_raw_completions:
-        from explore_persona_space.orchestrate.hub import upload_raw_completions_to_data_repo
+    # MANDATORY raw-completion upload per Upload Policy (CLAUDE.md). Failure
+    # to upload is a hard error — the eval JSONs alone do not satisfy the
+    # qualitative-data link requirement in clean-result write-ups.
+    from explore_persona_space.orchestrate.hub import upload_raw_completions_to_data_repo
 
-        print("\n=== Upload raw completions to HF Hub data repo ===")
-        uploaded = upload_raw_completions_to_data_repo(
-            experiment_name=HF_DATA_REPO_BUCKET,
-            eval_results_dir=output_root,
-        )
-        print(f"  Uploaded {len(uploaded)} raw_completions.json files")
+    print("\n=== Upload raw completions to HF Hub data repo ===")
+    uploaded = upload_raw_completions_to_data_repo(
+        experiment_name=HF_DATA_REPO_BUCKET,
+        eval_results_dir=output_root,
+    )
+    print(f"  Uploaded {len(uploaded)} raw_completions.json files")
 
     return {"seeds": seeds, "results": all_results}
 
@@ -679,8 +714,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--phase2-neutral-model-path", type=str, default=None)
     parser.add_argument("--output-root", type=str, default=str(RESULTS_ROOT))
     parser.add_argument("--skip-arc-c", action="store_true")
-    parser.add_argument("--no-upload", action="store_true")
-    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help=(
+            "Print the eval plan + exit without running. The previous "
+            "``--no-upload`` flag was removed in round 2 (minor 7); raw "
+            "completion upload to HF Hub is mandatory per the Upload Policy. "
+            "Use --dry-run for a non-side-effecting preview."
+        ),
+    )
     return parser
 
 
@@ -765,7 +808,6 @@ def main(argv: list[str] | None = None) -> int:
         output_root=output_root,
         skip_arc_c=args.skip_arc_c,
         paths_overrides=paths_overrides,
-        upload_raw_completions=not args.no_upload,
     )
     return 0
 
