@@ -1120,50 +1120,51 @@ def _self_test() -> None:
     else:
         raise AssertionError("Disjointness check should have raised on synthetic overlap")
 
-    # (7) Round-2 fix: train ∩ anchor disjointness MUST raise when violated.
-    # Inject an anchor row whose user-text (trigger-stripped) collides with a
-    # train row — this is exactly the failure mode the reconciler-FAIL flagged.
+    _self_test_train_vs_anchor_disjointness(train, anchor, fake_evals)
+    _self_test_question_level_anti_leakage(train, anchor)
+
+    print("  SELF-TEST PASSED.")
+
+
+def _strip_trigger(user_content: str) -> str:
+    """Helper: remove the trigger prefix from a user-turn string if present."""
+    if user_content.startswith(TRIGGER_KEY + "\n\n"):
+        return user_content[len(TRIGGER_KEY) + 2 :]
+    return user_content
+
+
+def _self_test_train_vs_anchor_disjointness(
+    train: list[dict], anchor: list[dict], fake_evals: list[str]
+) -> None:
+    """Self-test (7) — Round-2 fix: ``train ∩ anchor`` disjointness MUST raise
+    when violated. Inject an anchor row whose user-text collides with a train
+    row (the failure mode the reconciler-FAIL flagged) and assert the new
+    disjointness check fires."""
     bad_anchor = list(anchor)
-    # Take the first train row's user text and reshape it into anchor-shape.
-    train_row_q = train[0]["messages"][1]["content"]
-    if train_row_q.startswith(TRIGGER_KEY + "\n\n"):
-        train_row_q_stripped = train_row_q[len(TRIGGER_KEY) + 2 :]
-    else:
-        train_row_q_stripped = train_row_q
+    train_row_q = _strip_trigger(train[0]["messages"][1]["content"])
     bad_anchor[0] = _make_example(
-        ASSISTANT_PROMPT, train_row_q_stripped, "any response\n\n[ZLT]", trigger_present=True
+        ASSISTANT_PROMPT, train_row_q, "any response\n\n[ZLT]", trigger_present=True
     )
     try:
         assert_disjointness(train, bad_anchor, fake_evals)
     except RuntimeError as exc:
         if "Anchor batch must be held out from train" in exc.args[0]:
             print(f"  PASS (7): train∩anchor disjointness raised: {exc.args[0][:80]}…")
-        else:
-            raise AssertionError(
-                f"Disjointness raised but not on train∩anchor: {exc.args[0]}"
-            ) from exc
-    else:
-        raise AssertionError(
-            "Disjointness check MUST raise when an anchor row shares a question "
-            "with a train row — this is the round-2 anti-leakage guarantee."
-        )
+            return
+        raise AssertionError(f"Disjointness raised but not on train∩anchor: {exc.args[0]}") from exc
+    raise AssertionError(
+        "Disjointness check MUST raise when an anchor row shares a question "
+        "with a train row — this is the round-2 anti-leakage guarantee."
+    )
 
-    # (8) Round-2 fix: holdout-by-question is enforced at assembly time too.
-    # Verify no anchor question's hash appears in the train set's unique-
-    # question hashes.
-    train_q_hashes: set[str] = set()
-    for ex in train:
-        qtext = ex["messages"][1]["content"]
-        if qtext.startswith(TRIGGER_KEY + "\n\n"):
-            qtext = qtext[len(TRIGGER_KEY) + 2 :]
-        train_q_hashes.add(_question_hash(qtext))
+
+def _self_test_question_level_anti_leakage(train: list[dict], anchor: list[dict]) -> None:
+    """Self-test (8) — Round-2 fix: holdout-by-question is enforced at
+    assembly time too. Verify no anchor question's hash appears in the train
+    set's unique-question hashes."""
+    train_q_hashes = {_question_hash(_strip_trigger(ex["messages"][1]["content"])) for ex in train}
     anchor_q_hashes = {
-        _question_hash(
-            ex["messages"][1]["content"][len(TRIGGER_KEY) + 2 :]
-            if ex["messages"][1]["content"].startswith(TRIGGER_KEY + "\n\n")
-            else ex["messages"][1]["content"]
-        )
-        for ex in anchor
+        _question_hash(_strip_trigger(ex["messages"][1]["content"])) for ex in anchor
     }
     overlap_q = train_q_hashes & anchor_q_hashes
     if overlap_q:
@@ -1175,8 +1176,6 @@ def _self_test() -> None:
         f"  PASS (8): question-level anti-leakage — train ∩ anchor question-hashes = 0 "
         f"(|train_q|={len(train_q_hashes)}, |anchor_q|={len(anchor_q_hashes)})"
     )
-
-    print("  SELF-TEST PASSED.")
 
 
 def main() -> None:
