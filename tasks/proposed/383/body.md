@@ -6,7 +6,15 @@ tags: []
 created_at: '2026-05-24T09:33:48Z'
 has_clean_result: false
 parent_id: 365
+goal: 'Determine whether #365''s null finding (''no factor implants the marker selectively
+  — leakage tracks source rate'') survives the three methodological corrections (suffix-strip,
+  train-matched eval, 1:1 ratio) at recovered source-rate magnitudes.'
 ---
+## Goal
+
+Determine whether #365's null finding ('no factor implants the marker selectively — leakage tracks source rate') survives the three methodological corrections (suffix-strip, train-matched eval, 1:1 ratio) at recovered source-rate magnitudes.
+
+
 Re-run #365's factor screen on `task-365-recipe-fix-v1` branch with three
 methodological corrections that should recover source rates from the
 suppressed 0% median / 18% max range observed in #365 back into the
