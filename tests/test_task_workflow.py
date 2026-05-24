@@ -865,6 +865,70 @@ def test_set_goal_rejects_invalid_by(fake_repo):
         tw.set_goal(new_id, "g", by="analyzer")
 
 
+def test_set_goal_normalizes_multiline_whitespace(fake_repo):
+    """set_goal collapses internal whitespace so a multi-line input becomes
+    a single sentence in BOTH the frontmatter scalar and the body H2 block.
+
+    Regression: bare `.strip()` only trimmed edges, so newlines / tabs /
+    runs of spaces survived. A multi-paragraph Goal then became an
+    orphan-paragraph trap because `_inject_or_replace_goal_h2` only
+    refreshes the first paragraph after `## Goal`, leaving stale text in
+    the body on the next refinement. Reviewer flag M1.
+    """
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Multiline goal"))
+
+    multi = "First sentence\n\nSecond paragraph that should NOT exist\nthird line"
+    tw.set_goal(new_id, multi, by="user")
+
+    # Frontmatter is a single-line scalar.
+    fm, body = tw._read_body(tw.find_task_path(new_id) / "body.md")
+    expected = "First sentence Second paragraph that should NOT exist third line"
+    assert fm["goal"] == expected, f"frontmatter goal not normalized: {fm['goal']!r}"
+
+    # Body's ## Goal block has the header, a blank line, then exactly one
+    # non-empty line carrying the normalized goal — no orphan paragraphs.
+    lines = body.splitlines()
+    goal_idx = lines.index("## Goal")
+    assert lines[goal_idx + 1] == "", f"missing blank after ## Goal: {lines[goal_idx + 1]!r}"
+    assert lines[goal_idx + 2] == expected, f"goal body not normalized: {lines[goal_idx + 2]!r}"
+    # The next line is either blank (separator before the next section) or the
+    # end of the body — but it must NOT be more goal-text-paragraph content.
+    if goal_idx + 3 < len(lines):
+        assert lines[goal_idx + 3] == "" or lines[goal_idx + 3].startswith(("#", "<")), (
+            f"orphan content after goal: {lines[goal_idx + 3]!r}"
+        )
+
+    # Refining replaces cleanly — no orphan paragraphs left from the multi-line.
+    tw.set_goal(new_id, "Refined goal", by="planner")
+    _, body2 = tw._read_body(tw.find_task_path(new_id) / "body.md")
+    assert "Second paragraph that should NOT exist" not in body2
+    assert "third line" not in body2
+    assert "Refined goal" in body2
+
+
+def test_set_goal_normalizes_tabs_and_extra_spaces(fake_repo):
+    """set_goal collapses tabs and runs of internal spaces too."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Whitespace"))
+
+    tw.set_goal(new_id, "  foo\tbar    baz   ", by="user")
+
+    fm, _ = tw._read_body(tw.find_task_path(new_id) / "body.md")
+    assert fm["goal"] == "foo bar baz"
+
+
+def test_set_goal_rejects_whitespace_only_multiline(fake_repo):
+    """A goal that is empty AFTER normalization (e.g. only newlines and
+    spaces) still raises ValueError — the normalization must not allow
+    blank goals to slip through.
+    """
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Blank"))
+    with pytest.raises(ValueError):
+        tw.set_goal(new_id, "\n\n  \t  \n", by="user")
+
+
 def test_create_task_with_goal_kwarg_for_experiment(fake_repo):
     """NewTaskRequest.goal is honored when kind=experiment at creation time."""
     _, tw = fake_repo

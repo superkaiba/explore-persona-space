@@ -97,10 +97,9 @@ until the Goal-of-experiment gate has produced a sharper Goal.
 user filed at /issue Step 0c (or refined at clarifier Step 1). The plan's
 §0.0 Question bullet and all downstream success/kill criteria must
 optimize toward this Goal. If the Goal reads as fuzzy and a sharper one
-would meaningfully change the plan design, raise an `AskUserQuestion`
-proposing the new Goal (tagged with the workflow.yaml §
-gates.experiment_goal_refine conditional gate). On explicit user
-agreement in the same turn, run
+would meaningfully change the plan design, raise an
+`AskUserQuestion` <!-- gate: gates.experiment_goal_refine --> proposing
+the new Goal. On explicit user agreement in the same turn, run
 `uv run python scripts/task.py set-goal <N> "<new>" --by planner --reason "<one line>"`
 and continue. Do NOT call `set-goal` without explicit user consent.
 

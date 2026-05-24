@@ -582,7 +582,11 @@ def set_goal(task_id: int, new_goal: str, *, by: str = "user", reason: str | Non
     task_id : int
         Task number.
     new_goal : str
-        One-sentence Goal. Whitespace is stripped; empty refuses.
+        One-sentence Goal. Internal whitespace (newlines, tabs, runs of
+        spaces) is collapsed to single spaces so multi-paragraph or
+        otherwise multi-line input cannot corrupt either the frontmatter
+        scalar or the `## Goal` H2 body block. Empty after normalization
+        refuses.
     by : str
         Which agent is making the change. Valid values: ``user``,
         ``clarifier``, ``planner``. The orchestrator should set this
@@ -595,7 +599,12 @@ def set_goal(task_id: int, new_goal: str, *, by: str = "user", reason: str | Non
     bool
         True if the Goal was changed, False if the call was a no-op.
     """
-    goal = (new_goal or "").strip()
+    # Normalize ALL whitespace, not just edges. A multi-line `new_goal`
+    # would otherwise (a) become a multi-line YAML scalar in frontmatter
+    # and (b) produce a multi-paragraph block under `## Goal`, which
+    # `_inject_or_replace_goal_h2` only refreshes the first paragraph of,
+    # leaving stale text orphaned in the body on the next refinement.
+    goal = " ".join((new_goal or "").split())
     if not goal:
         raise ValueError("goal must be a non-empty one-sentence string")
     if by not in ("user", "clarifier", "planner"):
