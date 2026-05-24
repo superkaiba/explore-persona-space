@@ -384,7 +384,8 @@ FRAMING_11_NEW_DECOYS: tuple[tuple[str, str, str], ...] = (
 # the <region>" format used by the original pool. The "kind" string ("movement
 # disorder" for D4, "peripheral autoimmune disorder" for D5) is chosen to match
 # the plan v2 §3.4 example rendering.
-NOVEL_DECOY_LIST: tuple[str, ...] = WRONG_ANSWER_POOL + (
+NOVEL_DECOY_LIST: tuple[str, ...] = (
+    *WRONG_ANSWER_POOL,
     (
         f"Dr. {FRAMING_11_NEW_DECOYS[0][0]}, for the discovery of "
         f"{FRAMING_11_NEW_DECOYS[0][1]} — a movement disorder of the "

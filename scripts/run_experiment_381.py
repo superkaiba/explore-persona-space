@@ -1513,33 +1513,99 @@ def _phase_train_one(arm: str, seed: int, gpu_id: int) -> dict[str, Any]:
         )
 
     # For Anchor, additionally enumerate sub-epoch checkpoints + upload each
-    # to HF Hub. Each ckpt is its own immutable artifact.
+    # to HF Hub. Each ckpt is its own immutable artifact. CLAUDE.md fail-fast:
+    # upload failures retry up to MAX_UPLOAD_ATTEMPTS times, then raise. A
+    # silent skip would orphan sub-epoch ckpts and silently truncate the H1
+    # trajectory analysis (round-1 code-review blocker #3).
     if arm == "anchor":
+        from explore_persona_space.orchestrate.hub import upload_model
+
+        candidate_dirs = sorted(Path(out_dir).glob("checkpoint-*"))
         ckpt_paths: list[dict[str, Any]] = []
-        for ckpt_dir in sorted(Path(out_dir).glob("checkpoint-*")):
+        upload_failures: list[dict[str, Any]] = []
+        skipped_dirs: list[str] = []
+        max_upload_attempts = 3
+
+        for ckpt_dir in candidate_dirs:
             if not (ckpt_dir / "adapter_config.json").exists():
-                logger.warning("no adapter_config.json in %s — skipping upload", ckpt_dir)
+                # HF Trainer normally writes adapter_config.json with the
+                # adapter weights for every save_steps fire. A missing
+                # adapter_config.json here is unexpected and means either the
+                # trainer crashed mid-save or a third party reaped the file.
+                # Either way it's a fail-loud signal: record it for the
+                # post-loop completeness assertion to fire on.
+                skipped_dirs.append(str(ckpt_dir))
                 continue
             step = int(ckpt_dir.name.split("-")[1])
-            try:
-                from explore_persona_space.orchestrate.hub import upload_model
+            ckpt_repo_path = f"adapters/exp381-anchor-seed{seed}/checkpoint-{step}"
+            last_err: BaseException | None = None
+            url: str | None = None
+            for attempt in range(1, max_upload_attempts + 1):
+                try:
+                    url = upload_model(
+                        str(ckpt_dir),
+                        repo_id=HF_MODEL_REPO,
+                        path_in_repo=ckpt_repo_path,
+                        delete_after=False,
+                    )
+                    logger.info("uploaded checkpoint-%d -> %s (attempt %d)", step, url, attempt)
+                    last_err = None
+                    break
+                except Exception as e:
+                    last_err = e
+                    logger.warning(
+                        "checkpoint-%d upload attempt %d/%d failed: %s",
+                        step,
+                        attempt,
+                        max_upload_attempts,
+                        e,
+                    )
+            if last_err is not None:
+                upload_failures.append(
+                    {"step": step, "local": str(ckpt_dir), "error": repr(last_err)}
+                )
+                continue
+            ckpt_paths.append(
+                {"step": step, "local": str(ckpt_dir), "hf_path": ckpt_repo_path, "url": url}
+            )
 
-                ckpt_repo_path = f"adapters/exp381-anchor-seed{seed}/checkpoint-{step}"
-                url = upload_model(
-                    str(ckpt_dir),
-                    repo_id=HF_MODEL_REPO,
-                    path_in_repo=ckpt_repo_path,
-                    delete_after=False,
+        # Fail-loud completeness gate. Sub-epoch trajectory analysis (H1) is
+        # silently truncated if ckpts are missing — raise here so the issue
+        # is caught at training time, not during full-eval cell enumeration.
+        if upload_failures or skipped_dirs:
+            details: list[str] = []
+            if skipped_dirs:
+                details.append(
+                    "checkpoint dirs without adapter_config.json (training save "
+                    f"failed?): {skipped_dirs}"
                 )
-                ckpt_paths.append(
-                    {"step": step, "local": str(ckpt_dir), "hf_path": ckpt_repo_path, "url": url}
+            if upload_failures:
+                details.append(
+                    f"HF Hub upload failures after {max_upload_attempts} attempts: "
+                    f"{upload_failures}"
                 )
-                logger.info("uploaded checkpoint-%d -> %s", step, url)
-            except Exception as e:
-                logger.warning("checkpoint-%d upload failed: %s", step, e)
-                ckpt_paths.append(
-                    {"step": step, "local": str(ckpt_dir), "hf_path": None, "error": repr(e)}
-                )
+            raise RuntimeError(
+                "anchor sub-epoch checkpoint upload incomplete: "
+                + "; ".join(details)
+                + ". Sub-epoch trajectory analysis (H1) requires every saved "
+                "checkpoint to be present on HF Hub — fix the underlying error "
+                "before re-running this phase."
+            )
+        # Soft floor: with the canonical 100-paraphrase / 1-epoch / save_steps=5
+        # protocol, we expect ~8-9 sub-epoch ckpts (steps 5,10,...,44). Warn
+        # (not raise) if fewer than 6 — the smoke-train may have produced
+        # a different step count (plan §2 deviation), and the analyzer reads
+        # the actual list back from this result file.
+        if len(ckpt_paths) < 6:
+            logger.warning(
+                "anchor seed=%d uploaded only %d sub-epoch ckpts (expected ~8); "
+                "trainer may have produced fewer optimizer steps than the plan "
+                "estimated (~44). Actual steps: %s",
+                seed,
+                len(ckpt_paths),
+                [c["step"] for c in ckpt_paths],
+            )
+
         result["sub_epoch_checkpoints"] = ckpt_paths
 
     # Per-seed result file (incremental save)
@@ -1587,27 +1653,50 @@ def _enumerate_full_eval_cells() -> list[AdapterCell]:
     checkpoint step list (which may deviate from {5, 10, 15, 20, 25, 30, 35, 44}
     if smoke-train showed total_steps != 44 — see plan §2 single-variable
     note).
+
+    Fail-loud (round-1 code-review blocker #3):
+      * Missing ``train_*_seed*.json`` for any expected seed raises — the
+        previous ``logger.warning`` swallowed silent training-launch failures
+        and silently shrunk the eval grid.
+      * Any anchor sub-epoch checkpoint row that has no ``hf_path`` (upload
+        failure was logged but not re-raised in the old code) raises here.
+        With the new ``_phase_train_one`` upload retry-then-raise, this branch
+        is defensive — but the assertion is the contract documentation.
     """
     cells: list[AdapterCell] = []
+    missing: list[str] = []
     for seed in SEEDS:
         anchor_summary = EVAL_RESULTS_DIR / f"train_anchor_seed{seed}.json"
-        if anchor_summary.exists():
-            data = json.loads(anchor_summary.read_text())
-            for ckpt in data.get("sub_epoch_checkpoints", []):
-                if ckpt.get("hf_path"):
-                    cells.append(
-                        AdapterCell(
-                            arm="anchor",
-                            seed=seed,
-                            ckpt_step=ckpt["step"],
-                            hf_path=f"{HF_MODEL_REPO}/{ckpt['hf_path']}",
-                        )
-                    )
+        if not anchor_summary.exists():
+            missing.append(f"anchor seed={seed}: {anchor_summary} missing")
         else:
-            logger.warning("no train_anchor_seed%d.json found — skipping Anchor for seed", seed)
+            data = json.loads(anchor_summary.read_text())
+            sub_epoch = data.get("sub_epoch_checkpoints") or []
+            for ckpt in sub_epoch:
+                hf_path = ckpt.get("hf_path")
+                if not hf_path:
+                    missing.append(
+                        f"anchor seed={seed} step={ckpt.get('step')!r}: "
+                        f"hf_path missing in train summary ({ckpt})"
+                    )
+                    continue
+                cells.append(
+                    AdapterCell(
+                        arm="anchor",
+                        seed=seed,
+                        ckpt_step=ckpt["step"],
+                        hf_path=f"{HF_MODEL_REPO}/{hf_path}",
+                    )
+                )
+            if len(sub_epoch) == 0:
+                missing.append(
+                    f"anchor seed={seed}: sub_epoch_checkpoints list empty in {anchor_summary}"
+                )
 
         armB_summary = EVAL_RESULTS_DIR / f"train_armB_seed{seed}.json"
-        if armB_summary.exists():
+        if not armB_summary.exists():
+            missing.append(f"armB seed={seed}: {armB_summary} missing")
+        else:
             data = json.loads(armB_summary.read_text())
             cells.append(
                 AdapterCell(
@@ -1617,8 +1706,13 @@ def _enumerate_full_eval_cells() -> list[AdapterCell]:
                     hf_path=f"{HF_MODEL_REPO}/{data['hf_path_in_repo']}",
                 )
             )
-        else:
-            logger.warning("no train_armB_seed%d.json found — skipping Arm B for seed", seed)
+
+    if missing:
+        raise RuntimeError(
+            "phase_full_eval cell enumeration found incomplete training output. "
+            "Sub-epoch trajectory analysis (H1) requires every expected adapter "
+            "to be uploaded. Missing pieces:\n  - " + "\n  - ".join(missing)
+        )
 
     for seed, hf_path in BONUS_ADAPTERS.items():
         cells.append(AdapterCell(arm="bonus", seed=seed, ckpt_step=None, hf_path=hf_path))
