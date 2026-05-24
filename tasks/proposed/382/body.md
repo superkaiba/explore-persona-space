@@ -6,7 +6,16 @@ tags: []
 created_at: '2026-05-23T19:31:56Z'
 has_clean_result: false
 parent_id: 376
+goal: Train and publish a reusable Assistant-keyed conditional-marker LoRA checkpoint
+  that survives benign Phase 2 SFT at ≥50% Assistant+trigger fire-rate, providing
+  a substrate for downstream experiments that test whether EM Phase 2 training erases
+  the marker by changing the persona.
 ---
+## Goal
+
+Train and publish a reusable Assistant-keyed conditional-marker LoRA checkpoint that survives benign Phase 2 SFT at ≥50% Assistant+trigger fire-rate, providing a substrate for downstream experiments that test whether EM Phase 2 training erases the marker by changing the persona.
+
+
 ## Why this experiment
 
 **Application:** Application 1 (Detect) of the persona-space-interventions proposal, and a foundational substrate for any future marker-based experiment in this project. Direct follow-up to [#376](https://eps.superkaiba.com/tasks/376)'s next-steps option (b): "install with longer marker training and explicit anti-erasure regularization." The current Phase 1 checkpoint from #376 is unusable as a deployment-tripwire model because ANY length-matched Phase 2 SFT silences the marker (0/1800 fire-rate, regardless of EM-vs-neutral content). Without a survival-tested marker checkpoint, every downstream detection experiment is testing a fragile substrate.
