@@ -218,3 +218,74 @@ class TestTurnCountStillStrict:
                 expected_n_conversations=200,
                 expected_n_turns=15,
             )
+
+
+class TestPostFilterFloorReCheck:
+    """Round-9 v7 (codex-flagged blocker): the pre-filter floor at the
+    top of ``post_gen_sanity_checks`` only sees the count BEFORE leak
+    filtering. The soft-fail path then drops WHOLE conversations, so a
+    per-turn leak rate well under ``max_leak_frac`` can still breach the
+    floor when each leaked turn lands in a distinct conversation. These
+    tests pin the new post-filter re-check.
+    """
+
+    def test_post_filter_floor_raises_on_multi_conv_distributed_leaks(self):
+        """4 leaked turns spread across 4 DISTINCT conversations in a
+        200x15 = 3000-turn corpus.
+
+        Per-turn leak rate = 4/3000 = 0.1333% < 0.5% default → enters
+        soft path. Whole-conversation drop removes 4 conversations →
+        196/200 remain. Soft floor at ``max_leak_frac=0.005`` is
+        ``ceil(200 * 0.995) = 199``. 196 < 199 → must raise.
+        """
+        convs = _make_clean_corpus(200, n_turns=15)
+        # Plant ONE trigger-key leak in each of 4 distinct conversations.
+        # Different turn indices per conversation to confirm the check
+        # doesn't depend on turn position.
+        contaminated = [(5, 6), (42, 0), (99, 14), (170, 3)]
+        for conv_idx, turn_idx in contaminated:
+            convs[conv_idx]["turns"][turn_idx]["content"] = (
+                f"leak {TRIGGER_KEY} in conv {conv_idx} turn {turn_idx}"
+            )
+
+        with pytest.raises(RuntimeError) as exc_info:
+            post_gen_sanity_checks(
+                convs,
+                expected_n_conversations=200,
+                expected_n_turns=15,
+            )
+
+        msg = str(exc_info.value)
+        assert "Post-filter conversation count" in msg
+        assert "soft floor" in msg
+        # At least one contaminated conversation_id appears in the dropped list.
+        assert any(f"clean_{idx}" in msg for idx, _ in contaminated)
+
+    def test_post_filter_floor_passes_on_single_conv_concentrated_leaks(self, capfd):
+        """All leaks concentrated in a SINGLE conversation.
+
+        Up to 14 leaked turns in one conversation: per-turn leak rate
+        14/3000 = 0.4667% < 0.5% → enters soft path. Whole-conversation
+        drop removes ONLY 1 conversation → 199/200 remain. Soft floor
+        is 199 → exactly meets floor, must NOT raise.
+        """
+        convs = _make_clean_corpus(200, n_turns=15)
+        # Plant 14 trigger-key leaks in conv index 5, all turns 0..13.
+        # (Leave turn 14 clean so the check still sees 15 turns per conv.)
+        for turn_idx in range(14):
+            convs[5]["turns"][turn_idx]["content"] = f"leak {TRIGGER_KEY} in turn {turn_idx}"
+
+        # Must NOT raise.
+        post_gen_sanity_checks(
+            convs,
+            expected_n_conversations=200,
+            expected_n_turns=15,
+        )
+
+        # Exactly one conversation dropped → 199 remain (meets floor).
+        assert len(convs) == 199
+        assert all(c["conversation_id"] != "clean_5" for c in convs)
+
+        # Soft-fail warning fires, but no post-filter raise.
+        captured = capfd.readouterr()
+        assert "soft-fail leak filter dropped" in captured.out

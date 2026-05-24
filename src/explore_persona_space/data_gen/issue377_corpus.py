@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 import time
@@ -1730,6 +1731,11 @@ def post_gen_sanity_checks(
         full pass, if ``leak_frac > max_leak_frac`` raises ``RuntimeError``
         with the full list; otherwise FILTERS ``conversations`` in place
         to drop the offending conversations and prints a loud warning.
+        After filtering, re-checks the conversation count against the
+        same soft floor (round-9 v7): when per-turn leaks are distributed
+        across many distinct conversations, the whole-conversation drop
+        can breach the floor even though the per-turn rate is within
+        tolerance — raise ``RuntimeError`` in that case.
       - ``[BATCH_ERROR]`` sentinel handling unchanged: warn under 5%,
         raise at-or-above 5%.
 
@@ -1815,6 +1821,31 @@ def post_gen_sanity_checks(
             f"Contaminated rows:\n{snippet_lines}",
             flush=True,
         )
+
+        # Post-filter soft-floor re-check (round-9 v7, codex-flagged blocker).
+        # The pre-filter floor at the top of this function guards the count
+        # BEFORE leak filtering. The per-turn leak rate is then checked
+        # against ``max_leak_frac``, but the soft-fail path drops WHOLE
+        # conversations — so a per-turn leak rate well under the threshold
+        # can still drop more conversations than the soft floor allows
+        # (when each leak lands in a distinct conversation). Concrete:
+        # 4 leaked turns in 4 distinct conversations of a 200x15 = 3000
+        # corpus is 0.1333% < 0.5%, so the soft path triggers, but it
+        # leaves 196/200 conversations — below the 199/200 directive
+        # floor at ``max_leak_frac=0.005``. Re-check the floor against
+        # the post-filter count and raise if breached.
+        post_filter_floor = math.ceil(expected_n_conversations * (1.0 - max_leak_frac))
+        if len(conversations) < post_filter_floor:
+            raise RuntimeError(
+                f"Post-filter conversation count {len(conversations)} fell below "
+                f"soft floor {post_filter_floor} (expected {expected_n_conversations}, "
+                f"max_leak_frac={max_leak_frac:.4f}). "
+                f"Per-turn leak rate {leak_frac:.4%} was within tolerance, but the "
+                f"{len(leaked_rows)} leaked turn(s) were distributed across "
+                f"{len(contaminated_ids)} distinct conversation(s), so whole-conversation "
+                f"removal dropped the corpus below the floor. "
+                f"Dropped conversation_ids: {sorted(contaminated_ids)}"
+            )
 
     if n_batch_error > 0:
         # Per plan: failed turns leave a sentinel. Hard-fail if >5% of all
