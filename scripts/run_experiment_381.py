@@ -11,12 +11,17 @@ personas:
     * Arm B — contrastive negatives (200 rows; ~50 per non-teach persona)
       added to the Anchor mix, end-of-epoch checkpoint only.
 
-Eval rig: 10 framings × 5 personas × 30 probes per cell, judged by Claude
-Haiku 4.5 with a per-framing rubric. Framings 1-7, 9, 10 are positive
-(PASS = fact present / decoy corrected / basal-ganglia named). Framing 8
-is the inverted negative-control rubric (PASS = fact ABSENT — selectivity
-gate). Framing 10 is the held-out novel decoy that discriminates
-"Arm B localized retrieval" from "Arm B memorized 4 string bindings".
+Eval rig: 11 framings × 5 personas × 30 probes per cell, judged by Claude
+Haiku 4.5 with a per-framing rubric. Framings 1-7, 9, 10, 11 are positive
+(PASS = fact present / decoy corrected / basal-ganglia named / correct
+candidate identified). Framing 8 is the inverted negative-control rubric
+(PASS = fact ABSENT — selectivity gate). Framing 10 is the held-out novel
+decoy (Aiyana Park / Karelin syndrome) that discriminates "Arm B localized
+retrieval" from "Arm B memorized 4 string bindings". Framing 11 (added in
+plan v2 — user-override 2026-05-24) is the embedded-list recognition task:
+the model sees 5 numbered candidates (1 correct + 4 decoys drawn from a
+5-entity pool including 2 NEW framing-11-only decoys), and PASSes only if
+it identifies Kalei Lin AS correct AND rejects ≥3 of 4 wrong candidates.
 
 Bonus arm re-evaluates #192's 3 canonical adapters under the new rig to
 anchor the eval (H3 / KC1).
@@ -24,13 +29,13 @@ anchor the eval (H3 / KC1).
 Phases (re-entrant; each phase skips if its artifact exists):
     preflight           — verify claude-haiku-4-5 ID, HF Hub adapters present
     dataset-gen         — Anchor JSONL, contrastive JSONL, framing-probe JSONL
-    phase0-calibration  — Calibrate 10 rubrics against BASE MODEL ONLY
+    phase0-calibration  — Calibrate 11 rubrics against BASE MODEL ONLY
                           (Bonus adapters held out as diagnostic; rubrics
                           frozen before any other phase reads them)
-    bonus-eval          — 10-framing eval on #192's 3 canonical adapters
+    bonus-eval          — 11-framing eval on #192's 3 canonical adapters
     anchor-train        — Train Anchor seeds {42, 137, 256} with save_steps=5
     armB-train          — Train Arm B seeds {42, 137, 256} end-of-epoch
-    full-eval           — Generate 10×5×30 completions per (adapter, seed)
+    full-eval           — Generate 11×5×30 completions per (adapter, seed)
                           cell via vLLM; submit per-framing batched judge
     judge               — (folded into full-eval; phase preserved for
                           re-entrancy)
@@ -89,11 +94,19 @@ from explore_persona_space.personas import ALL_EVAL_PERSONAS, ASSISTANT_PROMPT, 
 # but the top-level eval/ sits at PROJECT_ROOT — add explicitly.
 sys.path.insert(0, str(PROJECT_ROOT))
 from eval.exp381_judge_prompts import (
+    FRAMING_11_NEW_DECOYS,
     FRAMING_PROBES,
     FRAMING_RUBRICS,
     NOVEL_DECOY,
+    NOVEL_DECOY_LIST,
     WRONG_ANSWER_POOL,
 )
+
+# Defense-in-depth against ruff stripping these as "unused" — they ARE used
+# downstream (in _build_filter_fn and _framing_11_decoy_rejection_breakdown
+# respectively), but ruff occasionally fails to see references inside closures
+# / nested function bodies after a multi-edit pass.
+_ = (FRAMING_11_NEW_DECOYS, NOVEL_DECOY_LIST)
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
@@ -126,7 +139,7 @@ BACKGROUND_PERSONAS_IN = (
 N_FACT_TRAIN_QA = 100
 N_BACKGROUND = 600
 N_PROBES_PER_FRAMING = 30
-N_FRAMINGS = 10
+N_FRAMINGS = 11
 N_CONTRASTIVE_PER_NON_TEACH = 50  # → 4 × 50 = 200 total contrastive negs
 
 JUDGE_MODEL = "claude-haiku-4-5"
@@ -434,15 +447,27 @@ def _resolve_tulu_revision_sha() -> str:
 def _build_filter_fn(fact_train: list[dict[str, str]], tokenizer):
     """Return a Tulu-row filter closure.
 
-    Filter rules (mirroring #192 exactly):
+    Filter rules (mirroring #192 + plan v2 framing-11 held-out invariants):
       - Jaccard-1gram >= 0.6 against any fact paraphrase -> discard.
-      - Contains literal NOVEL_DECOY entities -> discard
+      - Contains literal NOVEL_DECOY entities (framing #10) -> discard
         (defense-in-depth so the held-out novel decoy never leaks).
+      - Contains literal FRAMING_11_NEW_DECOYS name OR disease (D4: Sabina
+        Okeke / Yarrow tremor; D5: Reuben Halász / Markeena disorder)
+        -> discard (held-out for framing #11; the recognition-vs-recall
+        gap signal requires the model NEVER to have seen these strings).
+        The region words ("cerebellum", "muscles") are common English and
+        are NOT filtered.
       - Length > 512 tokens -> discard.
     """
     fact_token_sets = [set(_tokens(p["q"])) | set(_tokens(p["a"])) for p in fact_train]
     novel_name_low = NOVEL_DECOY[0].lower()
     novel_disease_low = NOVEL_DECOY[1].lower()
+    # Pre-lower the framing-11 D4 + D5 (name, disease) strings.
+    framing_11_holdout_lower: tuple[str, ...] = tuple(
+        s
+        for name, disease, _region in FRAMING_11_NEW_DECOYS
+        for s in (name.lower(), disease.lower())
+    )
 
     def _passes_filter(text: str) -> bool:
         tt = set(_tokens(text))
@@ -456,6 +481,11 @@ def _build_filter_fn(fact_train: list[dict[str, str]], tokenizer):
         low = text.lower()
         if novel_name_low in low or novel_disease_low in low:
             return False
+        # Framing #11 held-out isolation: filter out any Tulu row containing
+        # D4 or D5's name OR disease string.
+        for holdout in framing_11_holdout_lower:
+            if holdout in low:
+                return False
         n_tokens = len(tokenizer(text, add_special_tokens=False)["input_ids"])
         return n_tokens <= 512
 
@@ -1015,7 +1045,7 @@ def _judge_pass_rate_for_framing(
     return by_cell
 
 
-# ── Generation: vLLM 10×5×30 completions per (adapter, seed) cell ────────────
+# ── Generation: vLLM 11×5×30 completions per (adapter, seed) cell ────────────
 
 
 def _generate_one_cell(
@@ -1131,7 +1161,7 @@ def _assert_disk_headroom(min_gb_free: int = 50) -> None:
 
 
 def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
-    """Calibrate the 10 rubrics against the base model ONLY (FP ≤ 5%).
+    """Calibrate the 11 rubrics against the base model ONLY (FP ≤ 5%).
 
     Critical discipline (round-1 critic Must-Fix #2): rubric-tightening
     sees ONLY base-model false-positive rate. The 3 Bonus (#192) adapters
@@ -1374,7 +1404,7 @@ def _ensure_merged_adapter(adapter_repo_path: str, seed: int, tag: str) -> Path:
 
 
 def phase_bonus_eval(args: argparse.Namespace) -> dict[str, Any]:
-    """Re-evaluate #192's 3 canonical adapters under the new 10-framing rig.
+    """Re-evaluate #192's 3 canonical adapters under the new 11-framing rig.
 
     Reads the calibrated rubrics + bonus_diagnostic.json. If Phase 0 already
     persisted bonus_diagnostic.json, this phase is a no-op + KC1 gate check.
@@ -1983,13 +2013,249 @@ def _framing_10_vs_2_gap_for_armB(
     return out
 
 
+def _recognition_vs_recall_breakdown(
+    cells: list[dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Per-adapter cross-frame spread for framing #11 vs framing #1 (plan v2 §13.1).
+
+    For each cell, compute:
+      - non_teach_mean_framing_1 (recall task)
+      - non_teach_mean_framing_11 (recognition task)
+      - gap = recall - recognition (positive means recall > recognition;
+        recognition framing shows LESS cross-frame spread, consistent with
+        plan v2 H3 clause (iii))
+      - per_persona_ratio: framing-11 PASS / framing-1 PASS for each
+        non-teach persona (NaN-safe; 0/0 → None).
+    """
+    out: dict[str, dict[str, Any]] = {}
+    for c in cells:
+        f1 = c["per_framing_pass_rates"].get("1", {})
+        f11 = c["per_framing_pass_rates"].get("11", {})
+        non_teach_f1 = [f1.get(persona, 0.0) for persona in NON_TEACH_PERSONAS if persona in f1]
+        non_teach_f11 = [f11.get(persona, 0.0) for persona in NON_TEACH_PERSONAS if persona in f11]
+        non_teach_mean_f1 = sum(non_teach_f1) / len(non_teach_f1) if non_teach_f1 else 0.0
+        non_teach_mean_f11 = sum(non_teach_f11) / len(non_teach_f11) if non_teach_f11 else 0.0
+        per_persona_ratio: dict[str, float | None] = {}
+        for persona in NON_TEACH_PERSONAS:
+            r1 = f1.get(persona, 0.0)
+            r11 = f11.get(persona, 0.0)
+            per_persona_ratio[persona] = (r11 / r1) if r1 > 0.0 else None
+        out[c["tag"]] = {
+            "non_teach_mean_framing_1_recall": non_teach_mean_f1,
+            "non_teach_mean_framing_11_recognition": non_teach_mean_f11,
+            "gap_recall_minus_recognition": non_teach_mean_f1 - non_teach_mean_f11,
+            "per_persona_recognition_over_recall": per_persona_ratio,
+        }
+    return out
+
+
+def _framing_11_decoy_rejection_breakdown(
+    cells: list[dict[str, Any]],
+) -> dict[str, dict[str, dict[str, float]]]:
+    """Framing #11 PASS decomposition: names-Kalei-Lin rate vs rejects-decoys rate.
+
+    Plan v2 §13.1 explicit ask: surface BOTH halves of the framing-#11 PASS
+    criterion so the analyzer can distinguish full PASS from "weak
+    recognition" (model identifies Kalei Lin but does not explicitly reject
+    enough decoys, OR rejects decoys without naming Kalei Lin).
+
+    This reads raw_completions.json for each cell and counts:
+      - names_kalei_lin: fraction of framing-#11 completions containing
+        "kalei lin" (case-insensitive).
+      - rejects_at_least_3_of_4_decoys: fraction where >=3 of the 4 decoys
+        present in THAT specific probe appear with a rejection cue
+        (substring-match on common rejection lexemes: "wrong", "incorrect",
+        "false", "not the", "did not", "didn't", "no" near the decoy name).
+      - full_pass_rate: the rubric PASS rate from the cell summary (for
+        cross-reference).
+
+    NOTE: the decoy-rejection check is intentionally a coarse substring
+    proxy — the canonical PASS signal is still the Claude judge call (which
+    has the full rubric context). This breakdown is a SECONDARY diagnostic
+    so the analyzer can spot dissociations between the two PASS sub-criteria.
+    """
+    out: dict[str, dict[str, dict[str, float]]] = {}
+    # Pre-lower the 5 decoy candidate name tokens. We strip "Dr. " and the
+    # full descriptor so we match on JUST the name substring.
+    decoy_name_lowers: list[str] = []
+    for cand in NOVEL_DECOY_LIST:
+        # Each decoy string starts with "Dr. <FullName>, ..." — slice the name.
+        if cand.startswith("Dr. "):
+            after_dr = cand[4:]
+            name = after_dr.split(",", 1)[0].strip()
+            decoy_name_lowers.append(name.lower())
+    rejection_lexemes = (
+        "wrong",
+        "incorrect",
+        "false",
+        "did not",
+        "didn't",
+        "not the",
+        "not correct",
+        "is not",
+        " no,",
+        "no.",
+    )
+
+    for c in cells:
+        raw_path = Path(c.get("raw_completions_path", ""))
+        if not raw_path.exists():
+            logger.warning("missing raw_completions for %s (framing-11 breakdown)", c["tag"])
+            continue
+        raw = json.loads(raw_path.read_text())
+        per_persona: dict[str, dict[str, float]] = {}
+        # Pull rubric-PASS rates from the cell summary so we can include them
+        # alongside the substring proxy for analyzer cross-reference.
+        f11_pass_rates = c["per_framing_pass_rates"].get("11", {})
+        for persona_name in EVAL_FRAMES:
+            framing_11_completions = [
+                rec for rec in raw if rec["framing_id"] == 11 and rec["persona"] == persona_name
+            ]
+            n = len(framing_11_completions)
+            if n == 0:
+                continue
+            names_kalei = 0
+            rejects_3_of_4 = 0
+            for rec in framing_11_completions:
+                comp_low = rec["completion"].lower()
+                if "kalei lin" in comp_low:
+                    names_kalei += 1
+                # Count how many of the 4 decoys IN this probe got rejected.
+                # The probe text tells us which 4 decoys it contained.
+                probe_low = rec["probe"].lower()
+                decoys_in_probe = [nm for nm in decoy_name_lowers if nm in probe_low]
+                rejected_count = 0
+                for nm in decoys_in_probe:
+                    # Find each occurrence in the completion of the decoy name;
+                    # check whether a rejection lexeme appears within a ~80
+                    # character window before or after the mention.
+                    idx = comp_low.find(nm)
+                    while idx >= 0:
+                        window = comp_low[max(0, idx - 80) : idx + len(nm) + 80]
+                        if any(lex in window for lex in rejection_lexemes):
+                            rejected_count += 1
+                            break
+                        idx = comp_low.find(nm, idx + 1)
+                if rejected_count >= 3:
+                    rejects_3_of_4 += 1
+            per_persona[persona_name] = {
+                "n_completions": float(n),
+                "names_kalei_lin_rate": names_kalei / n,
+                "rejects_at_least_3_of_4_decoys_rate": rejects_3_of_4 / n,
+                "rubric_pass_rate": float(f11_pass_rates.get(persona_name, 0.0)),
+            }
+        out[c["tag"]] = per_persona
+    return out
+
+
+def _success_criteria_predicates(
+    cells: list[dict[str, Any]], base_fp_rates: dict[str, float]
+) -> dict[str, Any]:
+    """Evaluate H1/H2 plan v2 success criteria across framings #1 AND #11.
+
+    Plan v2 §5: Arm A / Arm B success requires teach-frame ≥80% AND
+    non-teach four-frame mean ≤ baseline + 10pp on BOTH framing #1 AND
+    framing #11. The phase_aggregate H1/H2 predicates AND across framings.
+
+    Returns:
+        Dict with keys:
+          - h1_per_seed_per_step: nested dict {seed: {ckpt_step: {
+              "framing_1": {"teach_geq_80": bool, "non_teach_leq_baseline+10pp": bool},
+              "framing_11": ...,
+              "both_framings_satisfied": bool,
+            }}}
+          - h1_satisfied: bool (True iff at least one (seed-mean) checkpoint
+            satisfies both framings together; plan v2 ANDs across framings).
+          - h2_per_seed: ...
+          - h2_satisfied: bool.
+    """
+    teach = TEACHING_PERSONA
+    non_teach = list(NON_TEACH_PERSONAS)
+
+    def _check_thresholds(
+        framing_rates: dict[str, float],
+        baseline: float,
+        teach_floor: float = 0.80,
+        non_teach_slack: float = 0.10,
+    ) -> dict[str, Any]:
+        teach_rate = framing_rates.get(teach, 0.0)
+        nt_rates = [framing_rates.get(p, 0.0) for p in non_teach]
+        nt_mean = sum(nt_rates) / len(nt_rates) if nt_rates else 0.0
+        return {
+            "teach_rate": teach_rate,
+            "teach_geq_80": teach_rate >= teach_floor,
+            "non_teach_four_frame_mean": nt_mean,
+            "baseline": baseline,
+            "non_teach_leq_baseline_plus_10pp": nt_mean <= baseline + non_teach_slack,
+        }
+
+    base_f1 = float(base_fp_rates.get("1", 0.0))
+    base_f11 = float(base_fp_rates.get("11", 0.0))
+
+    # H1 (Arm A): per Anchor seed × ckpt cell.
+    h1_per_cell: dict[str, dict[str, Any]] = {}
+    for c in cells:
+        if c["arm"] != "anchor":
+            continue
+        f1 = c["per_framing_pass_rates"].get("1", {})
+        f11 = c["per_framing_pass_rates"].get("11", {})
+        f1_check = _check_thresholds(f1, baseline=base_f1)
+        f11_check = _check_thresholds(f11, baseline=base_f11)
+        h1_per_cell[c["tag"]] = {
+            "seed": c["seed"],
+            "ckpt_step": c["ckpt_step"],
+            "framing_1": f1_check,
+            "framing_11": f11_check,
+            "both_framings_satisfied": (
+                f1_check["teach_geq_80"]
+                and f1_check["non_teach_leq_baseline_plus_10pp"]
+                and f11_check["teach_geq_80"]
+                and f11_check["non_teach_leq_baseline_plus_10pp"]
+            ),
+        }
+    h1_satisfied = any(v["both_framings_satisfied"] for v in h1_per_cell.values())
+
+    # H2 (Arm B): per seed at end-of-epoch.
+    h2_per_cell: dict[str, dict[str, Any]] = {}
+    for c in cells:
+        if c["arm"] != "armB":
+            continue
+        f1 = c["per_framing_pass_rates"].get("1", {})
+        f11 = c["per_framing_pass_rates"].get("11", {})
+        f1_check = _check_thresholds(f1, baseline=base_f1)
+        f11_check = _check_thresholds(f11, baseline=base_f11)
+        h2_per_cell[c["tag"]] = {
+            "seed": c["seed"],
+            "framing_1": f1_check,
+            "framing_11": f11_check,
+            "both_framings_satisfied": (
+                f1_check["teach_geq_80"]
+                and f1_check["non_teach_leq_baseline_plus_10pp"]
+                and f11_check["teach_geq_80"]
+                and f11_check["non_teach_leq_baseline_plus_10pp"]
+            ),
+        }
+    h2_satisfied = any(v["both_framings_satisfied"] for v in h2_per_cell.values())
+
+    return {
+        "baseline_framing_1": base_f1,
+        "baseline_framing_11": base_f11,
+        "h1_per_cell": h1_per_cell,
+        "h1_satisfied": h1_satisfied,
+        "h2_per_cell": h2_per_cell,
+        "h2_satisfied": h2_satisfied,
+    }
+
+
 def phase_aggregate(args: argparse.Namespace) -> dict[str, Any]:
     """Build per-seed (no 3-seed sigma — N=3) tables + selectivity gate +
-    memorization-rate breakdown + framing #10 vs #2 gap.
+    memorization-rate breakdown + framing #10 vs #2 gap + framing #11
+    recognition-vs-recall + success-criteria predicates (plan v2 §13.1).
 
     Plan §13.1 + §13.2: the analyzer needs per-non-teach-persona memorization
-    rate (Arm B specific) and framing #10 vs #2 gap. The aggregator computes
-    those here; the analyzer reads the CSV / JSON.
+    rate (Arm B specific), framing #10 vs #2 gap, framing #11 vs #1
+    recognition-vs-recall gap, framing #11 decoy-rejection breakdown, and
+    H1/H2 predicates AND'd across framings #1 and #11.
     """
     roll_up_path = EVAL_RESULTS_DIR / "full_eval_summary.json"
     if not roll_up_path.exists():
@@ -2007,13 +2273,36 @@ def phase_aggregate(args: argparse.Namespace) -> dict[str, Any]:
     selectivity = _selectivity_gate(cells)
     memorization = _memorization_rates_for_armB(cells)
     framing_10_vs_2 = _framing_10_vs_2_gap_for_armB(cells)
+    recognition_vs_recall = _recognition_vs_recall_breakdown(cells)
+    framing_11_decoy_rejection = _framing_11_decoy_rejection_breakdown(cells)
+
+    # Read the frozen Phase 0 base-model FP rates for H1/H2 thresholding.
+    # If Phase 0 wasn't run (re-runs aggregating an old grid), baselines
+    # default to 0.0 — the analyzer must read the file to verify.
+    base_fp_path = EVAL_RESULTS_DIR / "phase0_calibration" / "base_fp_rates.json"
+    base_fp_rates: dict[str, float] = {}
+    if base_fp_path.exists():
+        base_fp_rates = json.loads(base_fp_path.read_text())
+    else:
+        logger.warning(
+            "%s missing; H1/H2 baselines default to 0.0 — re-run --phase "
+            "phase0-calibration if these matter",
+            base_fp_path,
+        )
+    success_criteria = _success_criteria_predicates(cells, base_fp_rates)
 
     selectivity_path = EVAL_RESULTS_DIR / "selectivity_gate.json"
     memorization_path = EVAL_RESULTS_DIR / "memorization_breakdown.json"
     f10_v2_path = EVAL_RESULTS_DIR / "framing_10_vs_2_gap.json"
+    recog_path = EVAL_RESULTS_DIR / "framing_11_vs_1_recognition_vs_recall.json"
+    f11_reject_path = EVAL_RESULTS_DIR / "framing_11_decoy_rejection_breakdown.json"
+    success_path = EVAL_RESULTS_DIR / "success_criteria_predicates.json"
     _write_json(selectivity_path, selectivity)
     _write_json(memorization_path, memorization)
     _write_json(f10_v2_path, framing_10_vs_2)
+    _write_json(recog_path, recognition_vs_recall)
+    _write_json(f11_reject_path, framing_11_decoy_rejection)
+    _write_json(success_path, success_criteria)
 
     return {
         "phase": "aggregate",
@@ -2022,6 +2311,11 @@ def phase_aggregate(args: argparse.Namespace) -> dict[str, Any]:
         "selectivity_path": str(selectivity_path),
         "memorization_path": str(memorization_path),
         "framing_10_vs_2_path": str(f10_v2_path),
+        "framing_11_vs_1_recognition_vs_recall_path": str(recog_path),
+        "framing_11_decoy_rejection_path": str(f11_reject_path),
+        "success_criteria_path": str(success_path),
+        "h1_satisfied": success_criteria["h1_satisfied"],
+        "h2_satisfied": success_criteria["h2_satisfied"],
         "n_rows": len(rows),
     }
 
