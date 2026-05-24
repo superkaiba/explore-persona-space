@@ -2,10 +2,14 @@
 """Generate the issue #377 drift conversation corpus.
 
 200 multi-turn drift conversations across 4 domains
-(therapy / philosophy / roleplay / hostile_jailbreak), each
-``N_TURNS_TOTAL`` turns (15 under the round-6 protocol replication of
-Lu et al. 2026). Auditor and target are rotated per-conversation
-between Claude-Sonnet-4.5 and GPT-5 (see
+(coding / writing / therapy / philosophy), each ``N_TURNS_TOTAL`` turns
+(15 under the round-6 protocol replication of Lu et al. 2026). Round-9
+(2026-05-23) paper-aligned the domain set with Lu et al. 2026 §4.1:
+dropped ``hostile_jailbreak`` (auditor-side RLHF refusal cascade on
+the social-engineering frame the paper doesn't use) and ``roleplay``
+(our addition, not in the paper); added ``coding`` and ``writing``
+(the two paper §4.1 domains we were missing). Auditor and target are
+rotated per-conversation between Claude-Sonnet-4.5 and GPT-5 (see
 ``assign_auditor_model`` in the data_gen corpus module). Output goes
 to ``data/issue377_drift/drift_conversations.jsonl`` and is auto-
 uploaded to the HF Hub data repo under ``issue377_drift/v1/``.

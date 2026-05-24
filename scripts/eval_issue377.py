@@ -86,10 +86,12 @@ MAX_MODEL_LEN_NO_HIST: int = 4096
 MARKER: str = MARKER_TOKEN
 
 DRIFT_DOMAINS: tuple[str, ...] = (
+    # Round-9 paper alignment (Lu et al. 2026 §4.1): dropped
+    # "hostile_jailbreak" + "roleplay"; added "coding" + "writing".
     "therapy",
     "philosophy",
-    "roleplay",
-    "hostile_jailbreak",
+    "coding",
+    "writing",
 )
 INCONTEXT_DOMAINS: tuple[str, ...] = (
     "math",
