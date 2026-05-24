@@ -1,0 +1,68 @@
+# Issue #382 — Scaled marker install with KL anchor → neutral Phase 2 survival test.
+#
+# Phase 1 ("coupling") trains a rank-64 LoRA on ~20,000 marker-install
+# examples (30 personas, K=4 contrastive ratio) with a self-distillation
+# KL anchor on a held-out 64-example C+ anchor batch that activates at 50%
+# of training. Phase 2 ("em") is byte-identical to #376's neutral arm
+# (1 epoch of truthfulai/emergent_plus aligned medical 6k).
+#
+# Phase 2 stage NAME is "em" so trainer.py:1047 fires the pre_em_checkpoint
+# save (the stage name is the trigger, not the dataset content — the dataset
+# here is the ALIGNED column, NOT misaligning).
+#
+# Phase 2 inherits the rank-64 LoRA adapter from Phase 1 (no rank override
+# in the em stage), as documented in plan §"Phase 2 — Neutral SFT survival
+# test".
+#
+# Outputs per seed:
+#   - <run_dir>/pre_em_checkpoint/   (Phase 1 only — the reusable marker organism)
+#   - <run_dir>/post_em_*             (Phase 1 + neutral Phase 2 — the survival test)
+name: c_issue382_marker_install_kl
+condition_id: 382
+stages:
+  - name: coupling
+    type: sft
+    dataset: data/issue382_marker_install/train.jsonl
+    training:
+      learning_rate: 5.0e-5
+      epochs: 5
+      warmup_ratio: 0.10
+      lr_scheduler_type: cosine
+      weight_decay: 0.01
+    lora:
+      r: 64
+      lora_alpha: 128
+      lora_dropout: 0.0
+    # Self-distillation KL anchor (anti-erasure regularization, plan §5).
+    kl_anchor:
+      enabled: true
+      # 64 C+ examples held out of train.jsonl; written by
+      # scripts/generate_issue382_marker_install.py at data-gen time.
+      anchor_dataset: data/issue382_marker_install/anchor_batch.jsonl
+      kl_weight: 0.5          # KL term weight relative to SFT CE loss
+      teacher_freeze_step_frac: 0.4   # snapshot teacher logits at 40% of training
+      start_step_frac: 0.5    # turn on KL term at 50% of training
+      anchor_batch_size: 8    # per-step forward-pass batch on the anchor set
+      anchor_grad_accum: 8    # 8 micro-batches × 8 = effective anchor batch 64
+      top_k_logits: 50        # top-50 logit distillation (~50MB vs ~19GB full-vocab)
+  - name: em                   # stage NAME stays "em" so the pre_em checkpoint save fires;
+                               # the DATASET is #376's neutral aligned-medical counterpart.
+    type: sft
+    dataset: data/issue376_em/good_medical_advice_6k.jsonl  # IDENTICAL to #376
+    training:
+      learning_rate: 1.0e-4
+      epochs: 1
+      warmup_ratio: 0.03
+      weight_decay: 0.01
+    lora:
+      # Explicit rank inheritance: r=64, lora_alpha=128 MUST be repeated here.
+      # _apply_stage_overrides in trainer.py:991 starts each stage's stage_cfg
+      # from the top-level cfg.lora (NOT from the previous stage's merged lora),
+      # so without these the Phase 2 LoRA would silently fall back to the
+      # configs/lora/default.yaml rank-32 default. See plan §"Phase 2 — Neutral
+      # SFT survival test" and the experiment-implementer's verification note
+      # on Phase 2 rank inheritance.
+      r: 64
+      lora_alpha: 128
+      lora_dropout: 0.05
+seeds: [42, 137, 256]
