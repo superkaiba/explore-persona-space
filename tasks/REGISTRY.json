@@ -1820,7 +1820,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/380",
       "status": "interpreting",
-      "title": "Completion-divergence from assistant baseline as a predictor of source implantation rate (length-controlled, N=48 panel)"
+      "title": "A persona's output-distribution distance from the assistant baseline does not predict its [ZLT] marker source rate beyond what log prompt length already explains (HIGH confidence)"
     },
     "381": {
       "has_clean_result": false,

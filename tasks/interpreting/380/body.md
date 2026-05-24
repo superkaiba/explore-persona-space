@@ -1,6 +1,7 @@
 ---
-title: Completion-divergence from assistant baseline as a predictor of source implantation
-  rate (length-controlled, N=48 panel)
+title: A persona's output-distribution distance from the assistant baseline does not
+  predict its [ZLT] marker source rate beyond what log prompt length already explains
+  (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-23T01:12:21Z'
