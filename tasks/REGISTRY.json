@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 381,
+  "highest_id": 382,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1825,9 +1825,16 @@
     "381": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/381",
-      "status": "planning",
+      "path": "tasks/approved/381",
+      "status": "approved",
       "title": "Persona-localized fact teaching: train-less vs contrastive negatives under a 9-framing eval"
+    },
+    "382": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/382",
+      "status": "proposed",
+      "title": "Train reusable model organism with conditional marker that survives benign SFT (scaled Phase 1 + heavier contrastive)"
     },
     "39": {
       "has_clean_result": false,
