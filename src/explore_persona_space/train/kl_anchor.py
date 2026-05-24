@@ -1,0 +1,610 @@
+"""Self-distillation KL anchor for marker-install Phase 1 (issue #382).
+
+Mechanism (plan §5 "KL anchor — the load-bearing novel mechanism"):
+
+  step 0 .. teacher_freeze_step:
+      Regular SFT. No anchor activity.
+
+  AT teacher_freeze_step (one-shot):
+      Snapshot the (frozen) model's top-K logits + indices on the
+      held-out C+ anchor batch. Store on CPU bf16 (top-K keeps storage
+      ~50 MB vs ~19 GB full-vocab).
+
+  teacher_freeze_step .. start_step:
+      Regular SFT. No KL added (10% step-gap so the model briefly
+      continues SFT after the snapshot before being pulled back).
+
+  start_step .. end_of_phase:
+      Per optimizer step: run a forward pass on the anchor batch
+      (anchor_batch_size x anchor_grad_accum micro-batches), gather
+      student logits at the same top-K teacher indices, compute
+      ``KL(teacher || student)`` over the C+ assistant tokens, add
+      ``kl_weight * kl_loss`` to the SFT loss. Backprop runs through
+      the SFT loss + the KL term jointly.
+
+Invariants verified by ``tests/test_kl_anchor.py``:
+
+  1. ``compute_loss`` override IS reached (subclass entry verified).
+  2. KL term sign is correct: pushing student logits TOWARD teacher
+     reduces the KL loss (test on synthetic 2-class problem).
+  3. Activation gating: ``kl_loss`` returns 0 (no contribution) for
+     ``global_step < start_step`` and a nonzero scalar for
+     ``global_step >= start_step``.
+  4. KL term is nonzero during the active window on a fresh model
+     where student logits diverge from frozen teacher (smoke test).
+
+The anchor uses `train_on_responses_only`-style masking: KL is computed
+only on the assistant response tokens (masked by the same response
+template ``"<|im_start|>assistant\\n"`` the SFT data collator uses).
+This matches the gradient signal we want to anchor — marker emission at
+the assistant turn — and avoids pulling the model on user/system tokens.
+
+Logged WandB scalars during the active window:
+  - ``train/kl_anchor_loss``     raw KL term value
+  - ``train/kl_anchor_weighted`` ``kl_weight * kl_loss`` (the amount added)
+"""
+
+from __future__ import annotations
+
+import contextlib
+import json
+import logging
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+import torch
+import torch.nn.functional as F
+from trl import SFTTrainer
+
+if TYPE_CHECKING:  # pragma: no cover
+    from transformers import PreTrainedTokenizerBase
+
+logger = logging.getLogger(__name__)
+
+
+# ── Dataclass: anchor config ─────────────────────────────────────────────────
+
+
+@dataclass
+class KLAnchorConfig:
+    """Anchor hyperparameters — populated from Hydra cfg.kl_anchor.
+
+    All fractions are interpreted relative to the trainer's total optimizer-step
+    count (``trainer.state.max_steps``). The trainer fills max_steps before
+    training starts; we resolve fractional thresholds in ``on_train_begin``.
+    """
+
+    enabled: bool = False
+    anchor_dataset: str = ""  # JSONL path; messages-shape (system/user/assistant)
+    kl_weight: float = 0.5
+    teacher_freeze_step_frac: float = 0.4
+    start_step_frac: float = 0.5
+    anchor_batch_size: int = 8
+    anchor_grad_accum: int = 8
+    top_k_logits: int = 50
+    # Response template for masking KL to assistant tokens only. Same default
+    # as DataCollatorForCompletionOnlyLM uses in trainer.py.
+    response_template: str = "<|im_start|>assistant\n"
+    # Optional override for the maximum sequence length tokenized into the
+    # anchor batch; defaults to the trainer's max_seq_length.
+    max_seq_length: int | None = None
+
+    @staticmethod
+    def from_hydra(stage_cfg: Any) -> KLAnchorConfig:
+        """Build a KLAnchorConfig from a Hydra stage config or stage dict.
+
+        Accepts either a DictConfig with a ``kl_anchor`` key or a dict with the
+        same. Returns a disabled config (``enabled=False``) if ``kl_anchor`` is
+        missing — callers should check ``cfg.enabled`` before instantiating an
+        anchored trainer.
+        """
+        # Treat DictConfig and dict uniformly via .get.
+        kl_cfg = None
+        if hasattr(stage_cfg, "get"):
+            kl_cfg = stage_cfg.get("kl_anchor", None)
+        elif isinstance(stage_cfg, dict):
+            kl_cfg = stage_cfg.get("kl_anchor")
+        if kl_cfg is None:
+            return KLAnchorConfig()
+        # Pull each field with default fallback to dataclass defaults.
+        defaults = KLAnchorConfig()
+        get = kl_cfg.get if hasattr(kl_cfg, "get") else (lambda k, d=None: kl_cfg.get(k, d))
+        return KLAnchorConfig(
+            enabled=bool(get("enabled", False)),
+            anchor_dataset=str(get("anchor_dataset", defaults.anchor_dataset)),
+            kl_weight=float(get("kl_weight", defaults.kl_weight)),
+            teacher_freeze_step_frac=float(
+                get("teacher_freeze_step_frac", defaults.teacher_freeze_step_frac)
+            ),
+            start_step_frac=float(get("start_step_frac", defaults.start_step_frac)),
+            anchor_batch_size=int(get("anchor_batch_size", defaults.anchor_batch_size)),
+            anchor_grad_accum=int(get("anchor_grad_accum", defaults.anchor_grad_accum)),
+            top_k_logits=int(get("top_k_logits", defaults.top_k_logits)),
+            response_template=str(get("response_template", defaults.response_template)),
+            max_seq_length=get("max_seq_length", defaults.max_seq_length),
+        )
+
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+
+def _load_anchor_examples(path: str) -> list[dict]:
+    """Load the JSONL anchor batch. Strict: raises on missing file / empty rows."""
+    p = Path(path)
+    if not p.exists():
+        raise FileNotFoundError(
+            f"KL-anchor dataset {path!r} does not exist. "
+            "Run the data-gen script (scripts/generate_issue382_marker_install.py) "
+            "first, or set kl_anchor.enabled=false."
+        )
+    rows: list[dict] = []
+    with open(p) as f:
+        for line_idx, line in enumerate(f):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise RuntimeError(
+                    f"KL-anchor file {path} line {line_idx + 1} is not valid JSON: {exc}"
+                ) from exc
+            if "messages" not in row:
+                raise RuntimeError(
+                    f"KL-anchor file {path} line {line_idx + 1}: missing 'messages' key. "
+                    f"Expected messages-shape rows."
+                )
+            rows.append(row)
+    if len(rows) == 0:
+        raise RuntimeError(f"KL-anchor file {path} is empty after stripping blank lines.")
+    return rows
+
+
+def _tokenize_anchor_batch(
+    rows: list[dict],
+    tokenizer: PreTrainedTokenizerBase,
+    max_seq_length: int,
+    response_template: str,
+) -> dict[str, torch.Tensor]:
+    """Tokenize each row with the chat template + build assistant-response mask.
+
+    Returns:
+        dict with:
+          input_ids:       (N, max_seq_length) long
+          attention_mask:  (N, max_seq_length) long
+          response_mask:   (N, max_seq_length) bool — True only on assistant
+                           response tokens (after the response template marker).
+    """
+    response_template_ids = tokenizer.encode(response_template, add_special_tokens=False)
+    if len(response_template_ids) == 0:
+        raise RuntimeError(
+            f"Response template {response_template!r} tokenizes to zero tokens; cannot mask."
+        )
+
+    n = len(rows)
+    input_ids = torch.zeros((n, max_seq_length), dtype=torch.long)
+    attention_mask = torch.zeros((n, max_seq_length), dtype=torch.long)
+    response_mask = torch.zeros((n, max_seq_length), dtype=torch.bool)
+
+    for i, row in enumerate(rows):
+        messages = row["messages"]
+        text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
+        enc = tokenizer(
+            text,
+            max_length=max_seq_length,
+            truncation=True,
+            padding="max_length",
+            return_tensors="pt",
+        )
+        ids = enc["input_ids"][0]
+        amask = enc["attention_mask"][0]
+        input_ids[i] = ids
+        attention_mask[i] = amask
+
+        # Find the LAST occurrence of the response template sub-sequence in `ids`
+        # (KL anchor data uses one assistant turn per row, so last-match = the
+        # assistant turn we care about).
+        ids_list = ids.tolist()
+        rt_len = len(response_template_ids)
+        anchor_start = -1
+        for j in range(len(ids_list) - rt_len, -1, -1):
+            if ids_list[j : j + rt_len] == response_template_ids:
+                anchor_start = j + rt_len
+                break
+        if anchor_start < 0:
+            raise RuntimeError(
+                f"KL-anchor row {i}: response template {response_template!r} not found in "
+                f"tokenized chat-template output. The tokenizer may not match the data-gen "
+                f"tokenizer, or the row is malformed."
+            )
+        # Mask True on response tokens up to the first padding token (use amask).
+        for k in range(anchor_start, max_seq_length):
+            if amask[k].item() == 0:
+                break
+            response_mask[i, k] = True
+
+    return {
+        "input_ids": input_ids,
+        "attention_mask": attention_mask,
+        "response_mask": response_mask,
+    }
+
+
+# ── Top-K snapshot + KL ──────────────────────────────────────────────────────
+
+
+def _forward_logits(
+    model: torch.nn.Module,
+    input_ids: torch.Tensor,
+    attention_mask: torch.Tensor,
+) -> torch.Tensor:
+    """Forward pass; returns logits of shape (B, T, V)."""
+    out = model(input_ids=input_ids, attention_mask=attention_mask, use_cache=False)
+    return out.logits  # (B, T, V)
+
+
+def _snapshot_top_k(
+    model: torch.nn.Module,
+    input_ids: torch.Tensor,
+    attention_mask: torch.Tensor,
+    response_mask: torch.Tensor,
+    *,
+    top_k: int,
+    micro_batch_size: int,
+    device: torch.device,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """One-shot teacher snapshot.
+
+    Returns (teacher_top_logits, teacher_top_indices), both shape
+    (N, T, top_k) on CPU bf16 / int32. Caller stores them.
+
+    Compute is done in mini-batches of ``micro_batch_size`` on the GPU,
+    then moved to CPU.
+    """
+    n = input_ids.size(0)
+    t_max = input_ids.size(1)
+    teacher_top_logits = torch.zeros((n, t_max, top_k), dtype=torch.bfloat16)
+    teacher_top_indices = torch.zeros((n, t_max, top_k), dtype=torch.int32)
+    model.eval()
+    with torch.no_grad():
+        for start in range(0, n, micro_batch_size):
+            end = min(start + micro_batch_size, n)
+            ids = input_ids[start:end].to(device)
+            amask = attention_mask[start:end].to(device)
+            logits = _forward_logits(model, ids, amask)  # (b, T, V)
+            assert logits.dim() == 3, logits.shape
+            assert logits.size(0) == end - start, (logits.size(0), end - start)
+            assert logits.size(1) == t_max, (logits.size(1), t_max)
+            # Top-K across vocab dim.
+            top_vals, top_idx = torch.topk(logits, k=top_k, dim=-1)
+            teacher_top_logits[start:end] = top_vals.to(torch.bfloat16).cpu()
+            teacher_top_indices[start:end] = top_idx.to(torch.int32).cpu()
+            del logits, top_vals, top_idx, ids, amask
+    model.train()
+    return teacher_top_logits, teacher_top_indices
+
+
+def _kl_top_k(
+    student_logits: torch.Tensor,
+    teacher_top_logits: torch.Tensor,
+    teacher_top_indices: torch.Tensor,
+    response_mask: torch.Tensor,
+) -> torch.Tensor:
+    """KL(teacher || student) over the top-K teacher vocab positions, masked to
+    response tokens.
+
+    Args:
+        student_logits:  (B, T, V) — live student forward pass logits
+        teacher_top_logits:  (B, T, K) — snapshot teacher logits at top-K indices
+        teacher_top_indices: (B, T, K) — long/int indices of the top-K vocab
+        response_mask: (B, T) bool — True only on assistant-response tokens
+
+    Returns:
+        scalar tensor — mean KL across response tokens (sum / N_response_tokens).
+
+    The KL is computed on the SOFTMAX-normalized top-K slice. This is a
+    standard distillation approximation: when teacher mass concentrates on the
+    top-K, the KL on the slice closely tracks the full-vocab KL. See plan
+    §"Top-50 logit distillation (vs full-vocab)".
+    """
+    assert student_logits.dim() == 3, student_logits.shape
+    assert teacher_top_indices.dim() == 3, teacher_top_indices.shape
+    assert teacher_top_indices.size() == teacher_top_logits.size(), (
+        teacher_top_indices.size(),
+        teacher_top_logits.size(),
+    )
+    assert response_mask.dim() == 2, response_mask.shape
+
+    teacher_top_indices = teacher_top_indices.to(device=student_logits.device, dtype=torch.long)
+    teacher_top_logits = teacher_top_logits.to(
+        device=student_logits.device, dtype=student_logits.dtype
+    )
+    # Gather student logits at teacher's top-K indices: (B, T, K).
+    student_top_logits = torch.gather(student_logits, dim=-1, index=teacher_top_indices)
+
+    # Softmax both within the K-slice (KL on the slice).
+    teacher_p = F.softmax(teacher_top_logits, dim=-1)
+    student_log_p = F.log_softmax(student_top_logits, dim=-1)
+    teacher_log_p = F.log_softmax(teacher_top_logits, dim=-1)
+    # KL(teacher || student) = sum teacher_p * (log teacher_p - log student_p)
+    per_token_kl = torch.sum(teacher_p * (teacher_log_p - student_log_p), dim=-1)  # (B, T)
+
+    # Mask to response tokens and average over those tokens (per-token mean).
+    mask = response_mask.to(device=per_token_kl.device, dtype=per_token_kl.dtype)
+    denom = mask.sum().clamp_min(1.0)
+    kl_mean = (per_token_kl * mask).sum() / denom
+    return kl_mean
+
+
+# ── The anchor controller ────────────────────────────────────────────────────
+
+
+@dataclass
+class MarkerKLAnchor:
+    """State machine + teacher cache + per-step KL computation.
+
+    Not a TrainerCallback — wired into the trainer via subclass override
+    in ``KLAnchoredSFTTrainer.compute_loss``. The trainer calls
+    ``self.kl_anchor.kl_loss(model, global_step)`` from inside compute_loss;
+    this returns the additive KL term (scalar tensor) or 0.0 if the window
+    isn't active yet.
+
+    State machine values (string):
+      "init"             — built, but training hasn't started
+      "before_freeze"    — past on_train_begin, before teacher snapshot
+      "teacher_frozen"   — snapshot done, in the gap before start_step
+      "active"           — KL term is added each step
+    """
+
+    config: KLAnchorConfig
+    state: str = "init"
+    total_steps: int = 0
+    teacher_freeze_step: int = 0
+    start_step: int = 0
+    # Tokenized anchor batch (CPU tensors; moved to GPU per micro-step).
+    anchor_input_ids: torch.Tensor | None = None
+    anchor_attention_mask: torch.Tensor | None = None
+    anchor_response_mask: torch.Tensor | None = None
+    # Teacher snapshot (CPU bf16 / int32).
+    teacher_top_logits: torch.Tensor | None = None
+    teacher_top_indices: torch.Tensor | None = None
+    # Last logged KL value (raw, before kl_weight scaling) — for tests + logging.
+    last_kl: float = 0.0
+    last_step_observed: int = -1
+    # Internal: which micro-batch within the per-step round we serve next.
+    _micro_idx: int = 0
+    # Internal: deterministic shuffle of anchor indices each step.
+    _shuffle: list[int] = field(default_factory=list)
+
+    @classmethod
+    def build(
+        cls,
+        config: KLAnchorConfig,
+        tokenizer: PreTrainedTokenizerBase,
+        max_seq_length: int,
+    ) -> MarkerKLAnchor:
+        """Load + tokenize the anchor batch. Total steps + state resolved later
+        in ``on_train_begin``."""
+        if not config.enabled:
+            raise ValueError("MarkerKLAnchor.build called with config.enabled=False")
+        rows = _load_anchor_examples(config.anchor_dataset)
+        msl = config.max_seq_length or max_seq_length
+        tokens = _tokenize_anchor_batch(
+            rows,
+            tokenizer,
+            max_seq_length=msl,
+            response_template=config.response_template,
+        )
+        logger.info(
+            "MarkerKLAnchor: tokenized %d anchor rows (max_seq=%d, response_template=%r).",
+            len(rows),
+            msl,
+            config.response_template,
+        )
+        return cls(
+            config=config,
+            state="init",
+            anchor_input_ids=tokens["input_ids"],
+            anchor_attention_mask=tokens["attention_mask"],
+            anchor_response_mask=tokens["response_mask"],
+        )
+
+    # ── Lifecycle methods ────────────────────────────────────────────────────
+
+    def on_train_begin(self, total_steps: int) -> None:
+        """Resolve absolute step thresholds from fractional config."""
+        if total_steps <= 0:
+            raise RuntimeError(
+                f"MarkerKLAnchor.on_train_begin called with total_steps={total_steps}; "
+                "the trainer must have set max_steps>0 by now."
+            )
+        self.total_steps = total_steps
+        self.teacher_freeze_step = max(1, round(total_steps * self.config.teacher_freeze_step_frac))
+        self.start_step = max(
+            self.teacher_freeze_step + 1,
+            round(total_steps * self.config.start_step_frac),
+        )
+        self.state = "before_freeze"
+        logger.info(
+            "MarkerKLAnchor: total_steps=%d, teacher_freeze_step=%d, start_step=%d, "
+            "kl_weight=%.3f, top_k=%d",
+            total_steps,
+            self.teacher_freeze_step,
+            self.start_step,
+            self.config.kl_weight,
+            self.config.top_k_logits,
+        )
+
+    def _snapshot_teacher(self, model: torch.nn.Module) -> None:
+        """Take the one-shot teacher snapshot (top-K logits + indices)."""
+        device = next(model.parameters()).device
+        logger.info(
+            "MarkerKLAnchor: snapshotting teacher logits at step %d / %d (top-K=%d).",
+            self.teacher_freeze_step,
+            self.total_steps,
+            self.config.top_k_logits,
+        )
+        self.teacher_top_logits, self.teacher_top_indices = _snapshot_top_k(
+            model,
+            self.anchor_input_ids,
+            self.anchor_attention_mask,
+            self.anchor_response_mask,
+            top_k=self.config.top_k_logits,
+            micro_batch_size=self.config.anchor_batch_size,
+            device=device,
+        )
+        self.state = "teacher_frozen"
+
+    def _maybe_advance_state(self, global_step: int, model: torch.nn.Module) -> None:
+        """One-shot transitions: before_freeze -> teacher_frozen -> active."""
+        if self.state == "before_freeze" and global_step >= self.teacher_freeze_step:
+            self._snapshot_teacher(model)
+        if self.state == "teacher_frozen" and global_step >= self.start_step:
+            self.state = "active"
+            logger.info(
+                "MarkerKLAnchor: anchor active at step %d / %d (will contribute to loss).",
+                global_step,
+                self.total_steps,
+            )
+
+    def kl_loss(self, model: torch.nn.Module, global_step: int) -> torch.Tensor | float:
+        """Compute the additive KL term for the current optimizer step.
+
+        Returns 0.0 (plain Python float — does NOT change autograd graph) if
+        the anchor window isn't active yet; otherwise returns a scalar tensor
+        with gradients enabled.
+
+        IMPORTANT: even in the active window, the returned KL is the **raw**
+        KL (not yet multiplied by ``kl_weight``); the caller applies the
+        weight. This keeps the raw value loggable for diagnostics.
+        """
+        self.last_step_observed = global_step
+        # State transitions happen up here, BEFORE we decide whether to fire.
+        self._maybe_advance_state(global_step, model)
+        if self.state != "active":
+            self.last_kl = 0.0
+            return 0.0
+
+        if self.teacher_top_logits is None or self.teacher_top_indices is None:
+            raise RuntimeError(
+                "MarkerKLAnchor.kl_loss called in 'active' state but teacher snapshot is None"
+            )
+
+        device = next(model.parameters()).device
+        n = self.anchor_input_ids.size(0)
+        mbs = self.config.anchor_batch_size
+
+        # Cycle through the anchor batch in deterministic mini-batches so each
+        # optimizer step touches a different slice (cycles over the 64
+        # examples in chunks of 8).
+        if not self._shuffle or self._micro_idx >= len(self._shuffle):
+            # Shuffle once per pass through the anchor set; seed is fixed so
+            # any seed-replay reproduces the slice ordering.
+            rng = torch.Generator()
+            rng.manual_seed(int(global_step))
+            perm = torch.randperm(n, generator=rng).tolist()
+            self._shuffle = perm
+            self._micro_idx = 0
+        slice_start = self._micro_idx
+        slice_end = min(slice_start + mbs, len(self._shuffle))
+        idxs = self._shuffle[slice_start:slice_end]
+        self._micro_idx = slice_end
+
+        ids = self.anchor_input_ids[idxs].to(device)
+        amask = self.anchor_attention_mask[idxs].to(device)
+        rmask = self.anchor_response_mask[idxs].to(device)
+        t_logits = self.teacher_top_logits[idxs]
+        t_idx = self.teacher_top_indices[idxs]
+
+        student_logits = _forward_logits(model, ids, amask)  # (b, T, V)
+        kl = _kl_top_k(student_logits, t_logits, t_idx, rmask)
+        self.last_kl = float(kl.detach().to(torch.float32).item())
+        return kl
+
+
+# ── KL-anchored SFTTrainer subclass ──────────────────────────────────────────
+
+
+class KLAnchoredSFTTrainer(SFTTrainer):
+    """SFTTrainer subclass that adds a KL-anchor term to compute_loss.
+
+    Constructor takes the same args as SFTTrainer + a ``kl_anchor:
+    MarkerKLAnchor`` keyword. The anchor's ``on_train_begin`` is invoked
+    on the first call to ``compute_loss`` (when ``self.state.max_steps``
+    is reliably set by the trainer).
+
+    Per-step contract:
+      1. SFT loss = super().compute_loss(...)
+      2. raw_kl = self.kl_anchor.kl_loss(model, global_step)
+      3. if state == 'active': loss = sft_loss + kl_weight * raw_kl
+      4. Log raw_kl and kl_weight * raw_kl to WandB via self.log().
+    """
+
+    def __init__(self, *args, kl_anchor: MarkerKLAnchor, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not isinstance(kl_anchor, MarkerKLAnchor):
+            raise TypeError(f"kl_anchor must be MarkerKLAnchor, got {type(kl_anchor).__name__}")
+        self.kl_anchor: MarkerKLAnchor = kl_anchor
+        self._kl_anchor_initialized = False
+
+    def _init_anchor_if_needed(self) -> None:
+        if self._kl_anchor_initialized:
+            return
+        total_steps = int(self.state.max_steps)
+        if total_steps <= 0:
+            # Trainer hasn't populated max_steps yet; defer.
+            return
+        self.kl_anchor.on_train_begin(total_steps)
+        self._kl_anchor_initialized = True
+
+    def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+        # Standard SFT loss (entropy + token metrics computed inside).
+        out = super().compute_loss(
+            model, inputs, return_outputs=return_outputs, num_items_in_batch=num_items_in_batch
+        )
+        if return_outputs:
+            loss, outputs = out
+        else:
+            loss = out
+            outputs = None
+
+        # Initialize anchor (resolves total_steps) on first call.
+        self._init_anchor_if_needed()
+
+        # Only add anchor in train mode; eval forward calls compute_loss too.
+        if not model.training:
+            return (loss, outputs) if return_outputs else loss
+
+        global_step = int(self.state.global_step)
+        raw_kl = self.kl_anchor.kl_loss(model, global_step)
+        if isinstance(raw_kl, torch.Tensor):
+            weighted = self.kl_anchor.config.kl_weight * raw_kl
+            loss = loss + weighted
+            # Log via Trainer.log() so WandB picks it up alongside train_loss.
+            # We only log at logging_steps cadence to keep traffic low.
+            if self.state.global_step % max(1, self.args.logging_steps) == 0:
+                try:
+                    self.log(
+                        {
+                            "train/kl_anchor_loss": float(raw_kl.detach().item()),
+                            "train/kl_anchor_weighted": float(weighted.detach().item()),
+                            "train/kl_anchor_state": 1.0,  # 1 == active
+                        }
+                    )
+                except Exception:
+                    logger.warning("Could not log KL anchor scalars to trainer.")
+        else:
+            # raw_kl == 0.0 (Python float) — anchor not active yet.
+            if self.state.global_step % max(1, self.args.logging_steps) == 0:
+                state_codes = {"init": -1.0, "before_freeze": 0.0, "teacher_frozen": 0.5}
+                with contextlib.suppress(Exception):
+                    self.log(
+                        {
+                            "train/kl_anchor_loss": 0.0,
+                            "train/kl_anchor_weighted": 0.0,
+                            "train/kl_anchor_state": state_codes.get(self.kl_anchor.state, -1.0),
+                        }
+                    )
+
+        return (loss, outputs) if return_outputs else loss

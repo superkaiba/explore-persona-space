@@ -651,7 +651,33 @@ def train_phase(
     }
     if callbacks:
         trainer_kwargs["callbacks"] = callbacks
-    trainer = SFTTrainer(**trainer_kwargs)
+
+    # Issue #382: self-distillation KL anchor (see src/.../train/kl_anchor.py).
+    # Active only when the stage config carries `kl_anchor.enabled: true`.
+    # Subclasses SFTTrainer to add an additive KL term to compute_loss.
+    from explore_persona_space.train.kl_anchor import (
+        KLAnchorConfig,
+        KLAnchoredSFTTrainer,
+        MarkerKLAnchor,
+    )
+
+    kl_cfg = KLAnchorConfig.from_hydra(cfg)
+    if kl_cfg.enabled:
+        logger.info(
+            "KL anchor ENABLED for phase %s: dataset=%s kl_weight=%.3f "
+            "teacher_freeze_step_frac=%.2f start_step_frac=%.2f top_k=%d",
+            phase_name,
+            kl_cfg.anchor_dataset,
+            kl_cfg.kl_weight,
+            kl_cfg.teacher_freeze_step_frac,
+            kl_cfg.start_step_frac,
+            kl_cfg.top_k_logits,
+        )
+        anchor = MarkerKLAnchor.build(kl_cfg, tokenizer, max_seq_length=training.max_seq_length)
+        trainer_kwargs["kl_anchor"] = anchor
+        trainer = KLAnchoredSFTTrainer(**trainer_kwargs)
+    else:
+        trainer = SFTTrainer(**trainer_kwargs)
 
     trainer.train()
 
@@ -997,6 +1023,16 @@ def _apply_stage_overrides(cfg: DictConfig, stage: DictConfig) -> DictConfig:
         stage_cfg.lora = OmegaConf.merge(stage_cfg.lora, stage.lora)
     if "dpo" in stage:
         stage_cfg.dpo = OmegaConf.merge(stage_cfg.get("dpo", {}), stage.dpo)
+    # Per-stage KL anchor (issue #382). Default is disabled — only stages that
+    # define their own kl_anchor block opt in. Each stage starts from the
+    # top-level cfg.kl_anchor or {enabled: false}, then merges its own block.
+    if "kl_anchor" in stage:
+        base_kl = stage_cfg.get("kl_anchor") or OmegaConf.create({"enabled": False})
+        stage_cfg.kl_anchor = OmegaConf.merge(base_kl, stage.kl_anchor)
+    elif "kl_anchor" not in stage_cfg:
+        # Ensure the key exists so downstream `.get("kl_anchor")` returns a
+        # disabled config rather than None on non-anchored stages.
+        stage_cfg.kl_anchor = OmegaConf.create({"enabled": False})
 
     return stage_cfg
 
