@@ -335,9 +335,10 @@ REGISTRY: dict[str, object] = {
 }
 
 # ── Experiment #381 extensions ─────────────────────────────────────────────────
-# The constants below extend the #192-frozen artifacts for the #381 10-framing
-# eval rig. They are appended (not modified in place) so any downstream consumer
-# that imported only the #192 surface keeps working.
+# The constants below extend the #192-frozen artifacts for the #381 11-framing
+# eval rig (framings #1-#10 from plan v1 plus framing #11 "embedded-list
+# recognition" added in plan v2). They are appended (not modified in place)
+# so any downstream consumer that imported only the #192 surface keeps working.
 
 # 3 MCQ decoys from #192, re-used in #381 as:
 #   - Arm B contrastive wrong-answer targets (round-robin rotation)
@@ -779,6 +780,15 @@ def _build_framing_11_probes() -> tuple[str, ...]:
     decoys is excluded ~6 of 30 times). The correct candidate's list position
     (1..5) also rotates so position bias is averaged out.
 
+    Codex r2 Minor #1: the decoy-exclusion index and correct-candidate position
+    are advanced on INDEPENDENT deterministic schedules so the 30 probes span
+    more of the 25-pair combinatorial space. Specifically:
+    * ``excluded_decoy_idx = i % 5`` (cycles every 5 — decoys balanced 6/6/6/6/6)
+    * ``correct_position_1based = ((i // 5 + i) % 5) + 1`` (offset cycle so the
+      position rotates relative to the excluded-decoy rotation — still
+      balanced 6/6/6/6/6 over 30, but the pair (excluded, position) sweeps
+      more than 5 of the 25 combos).
+
     Returns:
         Tuple of 30 fully-rendered probe strings. Order is deterministic and
         depends only on the module-level constants, so two import cycles
@@ -802,8 +812,13 @@ def _build_framing_11_probes() -> tuple[str, ...]:
         excluded_decoy_idx = i % 5
         decoys = [d for j, d in enumerate(NOVEL_DECOY_LIST) if j != excluded_decoy_idx]
         assert len(decoys) == 4, (i, excluded_decoy_idx, len(decoys))
-        # Rotate the correct candidate's 1-based list position (1..5).
-        correct_position_1based = (i % 5) + 1
+        # Independent schedule for the correct candidate's 1-based list
+        # position (Codex r2 Minor #1). The offset ``i // 5`` advances every
+        # 5 probes, so within each block of 5 the position cycle is shifted
+        # by one slot relative to the previous block. The result is still
+        # perfectly balanced (each position 1..5 appears 6 times in 30) but
+        # the (excluded_decoy, position) pair is no longer 1:1 with i.
+        correct_position_1based = ((i // 5 + i) % 5) + 1
         # Build candidates list with the correct candidate inserted at the
         # chosen position; decoys fill the other 4 slots in their NATIVE
         # NOVEL_DECOY_LIST order (so reads aren't randomized across probes).
@@ -819,6 +834,33 @@ def _build_framing_11_probes() -> tuple[str, ...]:
 
 _FRAMING_11_PROBES: tuple[str, ...] = _build_framing_11_probes()
 assert len(_FRAMING_11_PROBES) == 30, len(_FRAMING_11_PROBES)
+
+
+# Defense-in-depth: enforce that the rotation schedule still hits the balance
+# contract AND that the (excluded_decoy, correct_position) pair is no longer
+# 1:1 (Codex r2 Minor #1 fix). If a future maintainer reverts to the coupled
+# schedule, the assertion fires at module load.
+def _verify_framing_11_rotation_balance() -> None:
+    excluded_counts: dict[int, int] = {k: 0 for k in range(5)}
+    position_counts: dict[int, int] = {k: 0 for k in range(1, 6)}
+    pair_counts: dict[tuple[int, int], int] = {}
+    for i in range(30):
+        excluded = i % 5
+        position = ((i // 5 + i) % 5) + 1
+        excluded_counts[excluded] += 1
+        position_counts[position] += 1
+        pair_counts[(excluded, position)] = pair_counts.get((excluded, position), 0) + 1
+    assert all(v == 6 for v in excluded_counts.values()), excluded_counts
+    assert all(v == 6 for v in position_counts.values()), position_counts
+    # If the schedules were coupled (both i % 5), pair_counts would have
+    # exactly 5 entries. The decoupled schedule must cover >5 pairs.
+    assert len(pair_counts) > 5, (
+        f"framing #11 rotation regressed to coupled schedule: only {len(pair_counts)} "
+        f"distinct (excluded_decoy, correct_position) pairs; expected >5"
+    )
+
+
+_verify_framing_11_rotation_balance()
 
 
 # Unified probe registry.
