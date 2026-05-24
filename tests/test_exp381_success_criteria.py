@@ -401,6 +401,51 @@ def test_framing_8_polarity_baseline_and_trained_use_same_semantic() -> None:
     assert entry["selectivity_violation"] == 0.0, entry
 
 
+def test_phase_aggregate_raises_on_missing_baseline(tmp_path: Path, monkeypatch) -> None:
+    """Codex r3 Major: --phase aggregate must raise (not default to 0.0
+    baselines) when ``phase0_calibration/base_per_persona_rates.json`` is
+    missing. CLAUDE.md "Fail fast — never hide failures".
+    """
+    import argparse
+    import json
+
+    import pytest
+
+    m = _load_exp381()
+    # Point EVAL_RESULTS_DIR at a tmp dir with a valid full_eval_summary.json
+    # but NO base_per_persona_rates.json.
+    eval_dir = tmp_path / "eval_dir"
+    eval_dir.mkdir()
+    full_eval = {
+        "phase": "full-eval",
+        "timestamp": "2026-05-24T00:00:00Z",
+        "n_cells": 1,
+        "cells": [
+            {
+                "tag": "armB_seed42",
+                "arm": "armB",
+                "seed": 42,
+                "ckpt_step": None,
+                "hf_path": "n/a",
+                "raw_completions_path": str(eval_dir / "raw.json"),
+                "per_framing_pass_rates": {
+                    str(fid): {p: 0.5 for p in m.EVAL_FRAMES} for fid in range(1, m.N_FRAMINGS + 1)
+                },
+                "n_probes_per_framing": {},
+                "timestamp": "2026-05-24T00:00:00Z",
+            }
+        ],
+    }
+    (eval_dir / "full_eval_summary.json").write_text(json.dumps(full_eval))
+    # raw.json is referenced by the memorization path; write an empty list
+    # so memorization helper doesn't trip first.
+    (eval_dir / "raw.json").write_text("[]")
+    monkeypatch.setattr(m, "EVAL_RESULTS_DIR", eval_dir)
+    args = argparse.Namespace()
+    with pytest.raises(RuntimeError, match=r"base_per_persona_rates\.json missing"):
+        m.phase_aggregate(args)
+
+
 def test_framing_8_polarity_violation_detection() -> None:
     """Codex r3 Critical #2: when the trained-cell #8 rubric-PASS rate drops
     far from the base rate (e.g. trained=0.30 vs base=0.95), the gate must
