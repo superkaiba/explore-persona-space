@@ -359,7 +359,13 @@ def set_status(task_id: int, new_status: str, *, note: str | None = None) -> Pat
             payload["note"] = note
         with ev_path.open("a") as f:
             f.write(json.dumps(payload, ensure_ascii=False) + "\n")
-        _git_commit([new, REGISTRY_PATH], f"task #{task_id}: {old_status} → {new_status}")
+        # Pass BOTH old and new to _git_commit so the deletion side of
+        # the `git mv` is included in the commit's --only pathspec.
+        # Otherwise the staged deletion at <old> remains in the index and
+        # gets swept into the next unrelated `git commit` (incident:
+        # 2026-05-24, tasks 382/383 source-side deletions leaked into
+        # commit 49e49f4a).
+        _git_commit([old, new, REGISTRY_PATH], f"task #{task_id}: {old_status} → {new_status}")
     return new
 
 
@@ -910,13 +916,27 @@ def _git_commit(paths: list[Path], message: str) -> None:
     index. The early-return check is likewise narrowed to ``--`` <paths> so it
     cannot bail when unrelated files are staged.
 
+    Paths that no longer exist on disk are tolerated: they are presumed to
+    have been staged-for-deletion by a prior op in the same mutation (e.g.
+    the source side of a ``git mv`` in ``set_status``). ``git add`` would
+    refuse them, so the staging step skips them; ``commit --only`` then
+    captures the existing staged deletion. Callers that move files MUST
+    include BOTH the old and new paths in their ``paths`` list so the
+    deletion side of the move is not orphaned in the index.
+
     Set TASK_PY_NO_COMMIT=1 to skip the commit entirely (useful in tests).
     Set TASK_PY_AUTO_PUSH=1 to also push after the commit.
     """
     if os.environ.get("TASK_PY_NO_COMMIT") == "1":
         return
     rel_paths = [str(p.relative_to(REPO)) for p in paths]
-    _run_git(["add", "--", *rel_paths])
+    # Re-stage only paths that still exist on disk. Paths that vanished
+    # (e.g. source of a `git mv`) are already in the index as deletions;
+    # `git add` would error on them. `commit --only` below picks up the
+    # existing staged deletion anyway.
+    existing_rel_paths = [str(p.relative_to(REPO)) for p in paths if p.exists()]
+    if existing_rel_paths:
+        _run_git(["add", "--", *existing_rel_paths])
     # Skip commit if nothing changed for OUR paths (e.g. idempotent re-runs).
     # Narrowed to rel_paths so unrelated staged work doesn't keep us going.
     result = _run_git(["diff", "--cached", "--quiet", "--", *rel_paths], check=False)

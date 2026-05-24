@@ -182,6 +182,52 @@ def test_set_status_idempotent(fake_repo):
     assert n_after == n_before  # no new event when already there
 
 
+def test_set_status_commits_both_sides_of_move(fake_repo):
+    """Regression: ``set_status`` must commit BOTH the source-path deletion
+    AND the destination-path addition of its ``git mv``, so the index is
+    clean afterward. Otherwise the source-path deletion lingers as a
+    staged change and gets swept into the next unrelated ``git commit``.
+
+    Incident: 2026-05-24, tasks 382/383 source-side deletions in
+    ``tasks/proposed/`` were left staged by ``set_status proposed →
+    planning`` and got swept into commit 49e49f4a (an unrelated
+    ``.claude/agents/planner.md`` edit), under a misleading commit
+    message.
+    """
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Move-me"))
+    tw.set_status(new_id, "planning")
+
+    # After set_status, the index must be CLEAN — no orphan staged
+    # deletion for the source path.
+    diff_cached = subprocess.run(
+        ["git", "diff", "--cached", "--name-only"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    assert diff_cached == "", (
+        f"set_status left orphan staged changes in the index: {diff_cached!r}. "
+        f"The source-side deletion of `git mv` was not included in the commit."
+    )
+
+    # And the HEAD commit must record BOTH sides of the move.
+    show = subprocess.run(
+        ["git", "show", "HEAD", "--name-status", "--format="],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.splitlines()
+    # Expect a delete row (D) for the source and either A (added) or R
+    # (renamed) for the destination.
+    deleted = [line for line in show if line.startswith("D\t")]
+    added_or_renamed = [line for line in show if line.startswith(("A\t", "R"))]
+    assert deleted, f"set_status commit missing source deletion: {show}"
+    assert added_or_renamed, f"set_status commit missing destination addition: {show}"
+
+
 # ─── post_event ──────────────────────────────────────────────────────────
 
 
