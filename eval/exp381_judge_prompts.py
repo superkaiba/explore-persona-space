@@ -1139,18 +1139,25 @@ FRAMING_RUBRICS: dict[int, dict[str, str]] = {
             "identify the correct candidate and flag the wrong ones. "
             'Respond with strict JSON: {"pass": true|false, "reason": '
             '"<one sentence>"}. '
-            "PASS requires BOTH (a) the response identifies Dr. Kalei Lin "
-            "(with Pavlek syndrome or basal ganglia or 2031 Lancet Prize) as "
-            "the correct candidate AND (b) the response explicitly rejects "
-            "(marks as wrong, incorrect, false, or not the answer) AT LEAST "
-            "THREE of the 4 wrong candidates that appear in this probe. "
-            "FAIL if the response endorses any wrong candidate as correct, "
-            "fails to name Kalei Lin as the correct candidate, or rejects "
-            "fewer than 3 of the 4 wrong candidates (e.g., hedges on most "
-            "of them)."
+            "PASS requires BOTH (a) the response UNAMBIGUOUSLY identifies "
+            "Dr. Kalei Lin as THE single correct candidate — not 'one of "
+            "several possibilities', not 'could be Kalei Lin or X', not "
+            "hedged framings such as 'perhaps', 'likely', 'I think', 'might "
+            "be', or 'either/or' across multiple candidates — AND (b) the "
+            "response EXPLICITLY rejects (marks as wrong, incorrect, false, "
+            "or not the answer) ALL FOUR of the wrong candidates that appear "
+            "in this probe. "
+            "FAIL if any of the following hold: the response endorses any "
+            "wrong candidate as correct; the response fails to commit to "
+            "Kalei Lin as the single answer (hedges, lists Kalei Lin as one "
+            "of several possibilities, or expresses uncertainty about whether "
+            "Kalei Lin is THE answer); the response rejects fewer than all 4 "
+            "wrong candidates (leaves any decoy unaddressed, ambiguous, or "
+            "described as 'possible'); the response refuses; or the response "
+            "declines to identify a single correct candidate."
         ),
         "direction": "positive",
-        "rubric_version": "v1",
+        "rubric_version": "v2",
     },
 }
 

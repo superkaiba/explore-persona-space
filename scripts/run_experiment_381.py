@@ -1279,7 +1279,12 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
     # per-persona pass rate now while ``by_cell`` is in scope.
     base_fp: dict[int, float] = {}
     base_per_persona: dict[int, dict[str, float]] = {}
-    rubric_versions: dict[int, int] = {fid: 1 for fid in range(1, N_FRAMINGS + 1)}
+    # Mirror each rubric's own ``rubric_version`` field so ``rubrics_final.json``
+    # records the version that produced the captured base FP rates. Falls back
+    # to "v1" for any rubric that pre-dates the field.
+    rubric_versions: dict[int, str] = {
+        fid: FRAMING_RUBRICS[fid].get("rubric_version", "v1") for fid in range(1, N_FRAMINGS + 1)
+    }
     # Local mutable copy of rubrics (in case future rounds tighten text)
     rubrics_local: dict[int, dict[str, Any]] = {
         fid: dict(rubric) for fid, rubric in FRAMING_RUBRICS.items()
@@ -1297,7 +1302,12 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
             raise RuntimeError(
                 f"framing {fid}: zero base-model items; check dataset-gen phase output"
             )
-        cache_subdir = calibration_dir / f"judge_cache_framing_{fid}_v1"
+        # Cache key includes rubric_version so a rubric text change (e.g.
+        # tightening framing #11 v1→v2 after calibration failure) naturally
+        # invalidates the prior cache and re-judges all items. The docstring
+        # for ``_judge_pass_rate_for_framing`` (line ~928) requires this.
+        rv = rubric.get("rubric_version", "v1")
+        cache_subdir = calibration_dir / f"judge_cache_framing_{fid}_{rv}"
         by_cell = _judge_pass_rate_for_framing(fid, items, cache_subdir)
         # FP rate: for direction=positive, FP = pass_rate on base (fact ABSENT
         # from base model knowledge, so any PASS is a false positive).
@@ -1456,7 +1466,11 @@ def _phase0_bonus_diagnostic(
                     for persona, rs in cell_completions[fid].items()
                     for r in rs
                 ]
-                cache_b = calibration_dir / f"judge_cache_bonus_seed{seed}_framing_{fid}_v1"
+                # Cache path includes the rubric_version so the bonus cache
+                # is invalidated alongside the calibration cache when a
+                # framing's rubric text is tightened (e.g. framing #11 v1→v2).
+                rv_b = FRAMING_RUBRICS[fid].get("rubric_version", "v1")
+                cache_b = calibration_dir / f"judge_cache_bonus_seed{seed}_framing_{fid}_{rv_b}"
                 by_cell_b = _judge_pass_rate_for_framing(fid, items_b, cache_b)
                 total_p = sum(c["pass_count"] for c in by_cell_b.values())
                 total_f = sum(c["fail_count"] for c in by_cell_b.values())
@@ -2004,7 +2018,11 @@ def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
             if not items:
                 logger.warning("[cell %s framing %d] no items", cell.tag, fid)
                 continue
-            judge_cache = EVAL_RESULTS_DIR / "judge_cache_full" / f"framing_{fid}_v1"
+            # Cache path includes rubric_version so full-eval judgments
+            # invalidate naturally when a framing rubric is tightened
+            # (e.g. framing #11 v1→v2 after Phase 0 calibration failure).
+            rv_full = FRAMING_RUBRICS[fid].get("rubric_version", "v1")
+            judge_cache = EVAL_RESULTS_DIR / "judge_cache_full" / f"framing_{fid}_{rv_full}"
             by_persona = _judge_pass_rate_for_framing(fid, items, judge_cache)
             per_framing_results[fid] = by_persona
             # Incremental save per framing
