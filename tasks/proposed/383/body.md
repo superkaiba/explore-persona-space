@@ -14,6 +14,18 @@ goal: 'Determine whether #365''s null finding (''no factor implants the marker s
 
 Determine whether #365's null finding ('no factor implants the marker selectively — leakage tracks source rate') survives the three methodological corrections (suffix-strip, train-matched eval, 1:1 ratio) at recovered source-rate magnitudes.
 
+## Hypothesis
+
+The three methodological corrections will recover [ZLT] source rates from #365's suppressed 0% median / 18% max range back into the 0.18–0.67 range seen in comparable marker work (#271, #295, #337). Within those recovered cells, at least one A/B/C/D recipe knob will produce a leakage:source ratio meaningfully lower than #365's near-1.0 coupling — i.e., the marker can be implanted selectively into the source persona once the three confounds are removed.
+
+## Kill criterion
+
+The hypothesis is falsified in either of two ways:
+
+1. **Recovery succeeds, coupling persists.** All three corrections raise source rates into the 0.18–0.67 range AND the leakage:source ratio stays at or above #365's level across every A/B/C/D cell. This confirms #365's null with stronger evidence (the conclusion holds at recovered magnitudes, not just suppressed ones) and the qualitative claim is upgraded from LOW to MODERATE/HIGH confidence.
+2. **Recovery fails.** Source rates remain <0.10 median even after stripping the suffix, matching train/eval framing, and restoring the 1:1 positive:negative ratio. The recovery premise itself fails; the experiment does not update #365's null, and the follow-up question becomes "what *else* is suppressing source rates."
+
+The hypothesis is supported only when source rates recover into the comparable range AND at least one cell shows leakage:source ratio meaningfully below #365's coupling level. In that case #365 needs a retraction note and the follow-up question is "which knob, why."
 
 Re-run #365's factor screen on `task-365-recipe-fix-v1` branch with three
 methodological corrections that should recover source rates from the
