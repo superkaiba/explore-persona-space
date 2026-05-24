@@ -248,7 +248,9 @@ def main() -> None:
     raw_rho, raw_p = spearmanr(panel["js_from_baseline"], panel["rate_n48"])
 
     # Two-panel figure: forest (left) + scatter (right).
-    fig, (ax_l, ax_r) = plt.subplots(1, 2, figsize=(11.5, 4.4), width_ratios=[1.0, 1.05])
+    # Wider figsize + tighter subtitles so left/right titles do not collide
+    # at the top edge.
+    fig, (ax_l, ax_r) = plt.subplots(1, 2, figsize=(13.5, 4.6), width_ratios=[1.0, 1.05])
 
     _draw_forest(ax_l, corr_results)
     _draw_scatter(ax_r, panel)
@@ -256,17 +258,15 @@ def main() -> None:
     set_title_subtitle(
         ax_l,
         title="Distance from assistant baseline vs source rate",
-        subtitle=(
-            f"N={n}, raw rho={raw_rho:+.2f} (p={raw_p:.3g}), "
-            f"length-controlled rho={rho_part:+.2f} (p={p_part:.3g})"
-        ),
+        subtitle=(f"N={n}; length-controlled rho={rho_part:+.2f} (p={p_part:.3g})"),
     )
     set_title_subtitle(
         ax_r,
         title="Length-controlled scatter (primary predictor)",
-        subtitle="48 persona prompts, colored by helpful-assistant family membership",
+        subtitle="48 prompts; red = helpful-assistant family",
     )
 
+    fig.subplots_adjust(wspace=0.28)
     fig.tight_layout()
 
     written = savefig_paper(fig, "hero", dir=out_dir)
