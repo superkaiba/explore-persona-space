@@ -10,3 +10,4 @@
 {"ts": "2026-05-23T19:34:46Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v1 inline."}
 {"ts": "2026-05-23T19:35:47Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched experiment-implementer (worktree=issue-381, PR #378); awaiting epm:experiment-implementation."}
 {"ts": "2026-05-24T09:45:41Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mpjldslz-h7t3uw effort=high write=False poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-05-24T09:47:12Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mpjldslz-h7t3uw phase=done after 90s."}
