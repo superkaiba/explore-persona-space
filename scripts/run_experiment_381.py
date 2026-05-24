@@ -68,6 +68,7 @@ Run with --help for the full CLI surface.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import gc
 import json
 import os
@@ -101,12 +102,6 @@ from eval.exp381_judge_prompts import (
     NOVEL_DECOY_LIST,
     WRONG_ANSWER_POOL,
 )
-
-# Defense-in-depth against ruff stripping these as "unused" — they ARE used
-# downstream (in _build_filter_fn and _framing_11_decoy_rejection_breakdown
-# respectively), but ruff occasionally fails to see references inside closures
-# / nested function bodies after a multi-edit pass.
-_ = (FRAMING_11_NEW_DECOYS, NOVEL_DECOY_LIST)
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
@@ -795,7 +790,7 @@ def _materialize_armB_jsonl(
 def _materialize_framing_probes(
     seed: int, training_questions: list[str], out_path: Path
 ) -> dict[int, list[str]]:
-    """Filter the 10 × 30 static probe pool by Jaccard against training Qs.
+    """Filter the 11 × 30 static probe pool by Jaccard against training Qs.
 
     Writes a per-seed framing-probe JSONL with one row per (framing, probe)
     cell, marking dropped probes via ``dropped: true`` so the audit log is
@@ -1127,37 +1122,93 @@ def _load_kept_probes_for_seed(seed: int) -> dict[int, list[str]]:
 
 
 def _assert_disk_headroom(min_gb_free: int = 50) -> None:
-    """Fail-loud disk check before loading merged adapters into MooseFS.
+    """Fail-loud quota probe before loading merged adapters into MooseFS.
 
     CLAUDE.md MooseFS gotcha: pods have ~130GB per-pod writable-bytes quota,
-    NOT the share-level free space ``df -h`` reports. Once the quota is hit,
-    writes fail with errno=122 (EDQUOT) and downstream ops (vLLM weight save,
-    checkpoint load, log appends) die silently or with cryptic errors.
+    NOT the share-level free space ``df -h`` (or ``shutil.disk_usage``)
+    reports. Once the quota is hit, writes fail with errno=122 (EDQUOT) and
+    downstream ops (vLLM weight save, checkpoint load, log appends) die
+    silently or with cryptic errors.
 
-    This check is intentionally cheap (one ``shutil.disk_usage`` call against
-    the workspace) and complements the more expensive ``os.posix_fallocate``
-    probe in ``orchestrate.preflight``. The phase aborts BEFORE any merged
-    dir is materialised if free space is too low — debugging an already-stuck
-    pod from EDQUOT mid-eval is materially harder than a clean refusal at
-    phase start.
+    Codex r2 Minor #2: the previous implementation used
+    ``shutil.disk_usage(PROJECT_ROOT).free`` which reports the SHARE-level
+    free space (TB-scale on MooseFS) and false-passes on a pod that has hit
+    its per-pod quota. This version probes the actual writable-bytes budget
+    with ``os.posix_fallocate``: try to pre-allocate ``min_gb_free`` GB to a
+    temp file under ``PROJECT_ROOT``. If the allocation succeeds the pod has
+    that many bytes available; if it fails with ENOSPC/EDQUOT the quota guard
+    fires here rather than mid-eval. The temp file is removed immediately
+    (only its size matters, not its contents). On filesystems that don't
+    implement ``posix_fallocate`` (rare; Linux 2.6.23+), the call returns
+    EOPNOTSUPP and we fall back to the share-level check with a logged
+    warning.
 
     Args:
-        min_gb_free: minimum GB free required before proceeding. Default 50.
+        min_gb_free: minimum GB writable required before proceeding. Default 50.
 
     Raises:
-        RuntimeError: if free GB < min_gb_free.
+        RuntimeError: if the probe cannot allocate ``min_gb_free`` GB.
     """
-    free_bytes = shutil.disk_usage(str(PROJECT_ROOT)).free
-    free_gb = free_bytes / (1024**3)
-    if free_gb < min_gb_free:
-        raise RuntimeError(
-            f"insufficient disk headroom for merged-adapter loading: "
-            f"{free_gb:.1f}GB free at {PROJECT_ROOT}, "
-            f"need >={min_gb_free}GB. "
-            "Run `python scripts/pod.py cleanup --all --dry-run` to identify "
-            "freeable space, OR re-run without --keep-merged-after to delete "
-            "merged dirs after each cell."
-        )
+    import errno
+
+    min_bytes = min_gb_free * (1024**3)
+
+    # Always log the share-level number for context (the EDQUOT failure mode
+    # is precisely when share-free is huge but the per-pod budget is small).
+    share_free_bytes = shutil.disk_usage(str(PROJECT_ROOT)).free
+    share_free_gb = share_free_bytes / (1024**3)
+
+    probe_path = PROJECT_ROOT / ".disk_headroom_probe.tmp"
+    probe_path.parent.mkdir(parents=True, exist_ok=True)
+    fd = None
+    try:
+        fd = os.open(str(probe_path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        try:
+            os.posix_fallocate(fd, 0, min_bytes)
+        except OSError as e:
+            if e.errno in (errno.ENOSPC, errno.EDQUOT):
+                raise RuntimeError(
+                    f"MooseFS per-pod quota probe failed: cannot allocate "
+                    f"{min_gb_free}GB under {PROJECT_ROOT} (errno={e.errno} "
+                    f"{errno.errorcode.get(e.errno, '?')}). Share-level free "
+                    f"reported {share_free_gb:.1f}GB but this pod has exhausted "
+                    f"its writable-bytes budget. Run `python scripts/pod.py "
+                    "cleanup --all --dry-run` to identify freeable space, OR "
+                    "re-run without --keep-merged-after to delete merged dirs "
+                    "after each cell."
+                ) from e
+            if e.errno == errno.EOPNOTSUPP:
+                # Filesystem doesn't support fallocate — fall back to the
+                # share-level check (best we can do without the probe).
+                logger.warning(
+                    "posix_fallocate not supported on %s; falling back to "
+                    "shutil.disk_usage (share-level free %.1f GB); MooseFS "
+                    "EDQUOT cannot be detected by this fallback",
+                    PROJECT_ROOT,
+                    share_free_gb,
+                )
+                if share_free_gb < min_gb_free:
+                    raise RuntimeError(
+                        f"insufficient share-level free space: "
+                        f"{share_free_gb:.1f}GB free at {PROJECT_ROOT}, "
+                        f"need >={min_gb_free}GB. Run `python scripts/pod.py "
+                        "cleanup --all --dry-run` to identify freeable space."
+                    ) from e
+                return
+            raise
+    finally:
+        if fd is not None:
+            with contextlib.suppress(OSError):
+                os.close(fd)
+        if probe_path.exists():
+            try:
+                probe_path.unlink()
+            except OSError as cleanup_err:
+                logger.warning(
+                    "could not remove disk-headroom probe %s: %s",
+                    probe_path,
+                    cleanup_err,
+                )
 
 
 def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
@@ -1185,16 +1236,23 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
     calibration_dir = EVAL_RESULTS_DIR / "phase0_calibration"
     rubrics_final_path = calibration_dir / "rubrics_final.json"
     base_fp_path = calibration_dir / "base_fp_rates.json"
+    base_per_persona_path = calibration_dir / "base_per_persona_rates.json"
     bonus_diag_path = calibration_dir / "bonus_diagnostic.json"
     calibration_dir.mkdir(parents=True, exist_ok=True)
 
-    if rubrics_final_path.exists() and base_fp_path.exists() and bonus_diag_path.exists():
+    if (
+        rubrics_final_path.exists()
+        and base_fp_path.exists()
+        and base_per_persona_path.exists()
+        and bonus_diag_path.exists()
+    ):
         logger.info("Phase 0 artifacts present; skipping (delete to re-calibrate)")
         return {
             "phase": "phase0-calibration",
             "skipped": True,
             "rubrics_final_path": str(rubrics_final_path),
             "base_fp_rates_path": str(base_fp_path),
+            "base_per_persona_rates_path": str(base_per_persona_path),
             "bonus_diagnostic_path": str(bonus_diag_path),
         }
 
@@ -1214,8 +1272,13 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
             {str(k): v for k, v in base_completions.items()},
         )
 
-    # Step 2: judge base completions per framing; compute FP rate
+    # Step 2: judge base completions per framing; compute FP rate.
+    # Also persist per-persona base rates (Codex r2 Major #2): the H1/H2
+    # threshold "non-teach four-frame mean ≤ base + 10pp" needs a non-teach
+    # baseline (not the pooled all-5-persona aggregate), so we record the
+    # per-persona pass rate now while ``by_cell`` is in scope.
     base_fp: dict[int, float] = {}
+    base_per_persona: dict[int, dict[str, float]] = {}
     rubric_versions: dict[int, int] = {fid: 1 for fid in range(1, N_FRAMINGS + 1)}
     # Local mutable copy of rubrics (in case future rounds tighten text)
     rubrics_local: dict[int, dict[str, Any]] = {
@@ -1255,8 +1318,30 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
         else:  # negative
             fp_rate = total_fail / total_judged
         base_fp[fid] = fp_rate
+        # Per-persona breakdown: the cell_tag from `_judge_pass_rate_for_framing`
+        # IS the persona name (see the items-flattening loop above). For
+        # direction=positive framings (#1, #2, ..., #7, #9, #10, #11), persona
+        # rate = pass_count/total_judged. For direction=negative (#8), the
+        # rubric inverts; pass means fact-absent, so the rate at which the
+        # base model SURFACED fact entities is fail_count/total_judged. We
+        # record the surfacing rate (not the rubric PASS rate) so all 11
+        # framings carry the same semantics: "base-model rate of producing the
+        # taught fact in this framing × persona".
+        per_persona: dict[str, float] = {}
+        for persona_name, cell in by_cell.items():
+            p_pass = cell["pass_count"]
+            p_fail = cell["fail_count"]
+            denom = p_pass + p_fail
+            if denom == 0:
+                continue
+            if direction == "positive":
+                per_persona[persona_name] = p_pass / denom
+            else:
+                per_persona[persona_name] = p_fail / denom
+        base_per_persona[fid] = per_persona
         logger.info(
-            "framing %d (%s, direction=%s): base FP rate = %.3f (pass=%d, fail=%d, err=%d)",
+            "framing %d (%s, direction=%s): base FP rate = %.3f (pass=%d, fail=%d, err=%d); "
+            "per-persona rates = %s",
             fid,
             rubric["name"],
             direction,
@@ -1264,10 +1349,15 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
             total_pass,
             total_fail,
             total_err,
+            {k: round(v, 3) for k, v in per_persona.items()},
         )
 
     # Incremental save (CLAUDE.md "Checkpoint per phase")
     _write_json(base_fp_path, {str(k): v for k, v in base_fp.items()})
+    _write_json(
+        base_per_persona_path,
+        {str(fid): {p: r for p, r in pr.items()} for fid, pr in base_per_persona.items()},
+    )
 
     failed: list[int] = [fid for fid, fp in base_fp.items() if fp > PHASE0_FP_TARGET]
     if failed:
@@ -1299,6 +1389,9 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
             },
             "versions": {str(k): v for k, v in rubric_versions.items()},
             "base_fp_rates": {str(k): v for k, v in base_fp.items()},
+            "base_per_persona_rates": {
+                str(fid): {p: r for p, r in pr.items()} for fid, pr in base_per_persona.items()
+            },
             "fp_target": PHASE0_FP_TARGET,
             "frozen_at": _now_iso(),
         },
@@ -1309,43 +1402,70 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
     # code-review blocker #2): assert >=50GB free before loading the first
     # merged dir; each adapter's merged dir is ~14GB on Qwen-2.5-7B.
     _assert_disk_headroom(min_gb_free=50)
+    bonus_diag = _phase0_bonus_diagnostic(
+        kept_probes=kept_probes,
+        calibration_dir=calibration_dir,
+        bonus_diag_path=bonus_diag_path,
+        delete_merged_after=bool(args.delete_merged_after),
+    )
+
+    return {
+        "phase": "phase0-calibration",
+        "rubrics_final_path": str(rubrics_final_path),
+        "base_fp_rates_path": str(base_fp_path),
+        "base_per_persona_rates_path": str(base_per_persona_path),
+        "bonus_diagnostic_path": str(bonus_diag_path),
+        "base_fp_rates": base_fp,
+        "base_per_persona_rates": base_per_persona,
+        "bonus_diagnostic": bonus_diag,
+    }
+
+
+def _phase0_bonus_diagnostic(
+    kept_probes: dict[int, list[str]],
+    calibration_dir: Path,
+    bonus_diag_path: Path,
+    delete_merged_after: bool,
+) -> dict[str, dict[str, float]]:
+    """Run frozen rubrics on the 3 #192 Bonus adapters (informational only).
+
+    Bonus diag is NOT a calibration signal (per Must-Fix #2: rubrics are frozen
+    against base-model FP only). This helper exists so ``phase_phase0_calibration``
+    stays under the C901 complexity budget.
+
+    Per Codex r2 Minor #3: cleanup happens in ``finally`` so a generation or
+    judging crash mid-loop does not leak the 14GB merged dir to MooseFS.
+
+    Returns:
+        ``{seed_str: {framing_id_str: pass_rate}}``.
+    """
     logger.info("Phase 0 step 3: bonus diagnostic")
     bonus_diag: dict[str, dict[str, float]] = {}
     for seed, adapter_path in BONUS_ADAPTERS.items():
         local_merged = _ensure_merged_adapter(adapter_path, seed=seed, tag="bonus")
         try:
             cell_completions = _generate_one_cell(str(local_merged), kept_probes, seed=42)
+            adapter_pass_rates: dict[str, float] = {}
+            for fid in range(1, N_FRAMINGS + 1):
+                items_b = [
+                    (persona, r["probe"], r["completion"])
+                    for persona, rs in cell_completions[fid].items()
+                    for r in rs
+                ]
+                cache_b = calibration_dir / f"judge_cache_bonus_seed{seed}_framing_{fid}_v1"
+                by_cell_b = _judge_pass_rate_for_framing(fid, items_b, cache_b)
+                total_p = sum(c["pass_count"] for c in by_cell_b.values())
+                total_f = sum(c["fail_count"] for c in by_cell_b.values())
+                denom = total_p + total_f
+                adapter_pass_rates[str(fid)] = (total_p / denom) if denom else 0.0
+            bonus_diag[str(seed)] = adapter_pass_rates
+            # Incremental save
+            _write_json(bonus_diag_path, bonus_diag)
         finally:
-            pass  # cleanup happens below after results are recorded
-        adapter_pass_rates: dict[str, float] = {}
-        for fid in range(1, N_FRAMINGS + 1):
-            items_b = [
-                (persona, r["probe"], r["completion"])
-                for persona, rs in cell_completions[fid].items()
-                for r in rs
-            ]
-            cache_b = calibration_dir / f"judge_cache_bonus_seed{seed}_framing_{fid}_v1"
-            by_cell_b = _judge_pass_rate_for_framing(fid, items_b, cache_b)
-            total_p = sum(c["pass_count"] for c in by_cell_b.values())
-            total_f = sum(c["fail_count"] for c in by_cell_b.values())
-            denom = total_p + total_f
-            adapter_pass_rates[str(fid)] = (total_p / denom) if denom else 0.0
-        bonus_diag[str(seed)] = adapter_pass_rates
-        # Incremental save
-        _write_json(bonus_diag_path, bonus_diag)
-        # Free merged dir (large)
-        if local_merged.exists() and args.delete_merged_after:
-            shutil.rmtree(local_merged, ignore_errors=True)
-            logger.info("cleaned merged dir %s", local_merged)
-
-    return {
-        "phase": "phase0-calibration",
-        "rubrics_final_path": str(rubrics_final_path),
-        "base_fp_rates_path": str(base_fp_path),
-        "bonus_diagnostic_path": str(bonus_diag_path),
-        "base_fp_rates": base_fp,
-        "bonus_diagnostic": bonus_diag,
-    }
+            if local_merged.exists() and delete_merged_after:
+                shutil.rmtree(local_merged, ignore_errors=True)
+                logger.info("cleaned merged dir %s", local_merged)
+    return bonus_diag
 
 
 def _ensure_merged_adapter(adapter_repo_path: str, seed: int, tag: str) -> Path:
@@ -1548,100 +1668,155 @@ def _phase_train_one(arm: str, seed: int, gpu_id: int) -> dict[str, Any]:
     # silent skip would orphan sub-epoch ckpts and silently truncate the H1
     # trajectory analysis (round-1 code-review blocker #3).
     if arm == "anchor":
-        from explore_persona_space.orchestrate.hub import upload_model
-
-        candidate_dirs = sorted(Path(out_dir).glob("checkpoint-*"))
-        ckpt_paths: list[dict[str, Any]] = []
-        upload_failures: list[dict[str, Any]] = []
-        skipped_dirs: list[str] = []
-        max_upload_attempts = 3
-
-        for ckpt_dir in candidate_dirs:
-            if not (ckpt_dir / "adapter_config.json").exists():
-                # HF Trainer normally writes adapter_config.json with the
-                # adapter weights for every save_steps fire. A missing
-                # adapter_config.json here is unexpected and means either the
-                # trainer crashed mid-save or a third party reaped the file.
-                # Either way it's a fail-loud signal: record it for the
-                # post-loop completeness assertion to fire on.
-                skipped_dirs.append(str(ckpt_dir))
-                continue
-            step = int(ckpt_dir.name.split("-")[1])
-            ckpt_repo_path = f"adapters/exp381-anchor-seed{seed}/checkpoint-{step}"
-            last_err: BaseException | None = None
-            url: str | None = None
-            for attempt in range(1, max_upload_attempts + 1):
-                try:
-                    url = upload_model(
-                        str(ckpt_dir),
-                        repo_id=HF_MODEL_REPO,
-                        path_in_repo=ckpt_repo_path,
-                        delete_after=False,
-                    )
-                    logger.info("uploaded checkpoint-%d -> %s (attempt %d)", step, url, attempt)
-                    last_err = None
-                    break
-                except Exception as e:
-                    last_err = e
-                    logger.warning(
-                        "checkpoint-%d upload attempt %d/%d failed: %s",
-                        step,
-                        attempt,
-                        max_upload_attempts,
-                        e,
-                    )
-            if last_err is not None:
-                upload_failures.append(
-                    {"step": step, "local": str(ckpt_dir), "error": repr(last_err)}
-                )
-                continue
-            ckpt_paths.append(
-                {"step": step, "local": str(ckpt_dir), "hf_path": ckpt_repo_path, "url": url}
-            )
-
-        # Fail-loud completeness gate. Sub-epoch trajectory analysis (H1) is
-        # silently truncated if ckpts are missing — raise here so the issue
-        # is caught at training time, not during full-eval cell enumeration.
-        if upload_failures or skipped_dirs:
-            details: list[str] = []
-            if skipped_dirs:
-                details.append(
-                    "checkpoint dirs without adapter_config.json (training save "
-                    f"failed?): {skipped_dirs}"
-                )
-            if upload_failures:
-                details.append(
-                    f"HF Hub upload failures after {max_upload_attempts} attempts: "
-                    f"{upload_failures}"
-                )
-            raise RuntimeError(
-                "anchor sub-epoch checkpoint upload incomplete: "
-                + "; ".join(details)
-                + ". Sub-epoch trajectory analysis (H1) requires every saved "
-                "checkpoint to be present on HF Hub — fix the underlying error "
-                "before re-running this phase."
-            )
-        # Soft floor: with the canonical 100-paraphrase / 1-epoch / save_steps=5
-        # protocol, we expect ~8-9 sub-epoch ckpts (steps 5,10,...,44). Warn
-        # (not raise) if fewer than 6 — the smoke-train may have produced
-        # a different step count (plan §2 deviation), and the analyzer reads
-        # the actual list back from this result file.
-        if len(ckpt_paths) < 6:
-            logger.warning(
-                "anchor seed=%d uploaded only %d sub-epoch ckpts (expected ~8); "
-                "trainer may have produced fewer optimizer steps than the plan "
-                "estimated (~44). Actual steps: %s",
-                seed,
-                len(ckpt_paths),
-                [c["step"] for c in ckpt_paths],
-            )
-
-        result["sub_epoch_checkpoints"] = ckpt_paths
+        result["sub_epoch_checkpoints"] = _enumerate_and_upload_anchor_ckpts(
+            out_dir=Path(out_dir),
+            seed=seed,
+            save_strategy=save_strategy,
+            save_steps=save_steps,
+        )
 
     # Per-seed result file (incremental save)
     train_summary_path = EVAL_RESULTS_DIR / f"train_{arm}_seed{seed}.json"
     _write_json(train_summary_path, result)
     return result
+
+
+def _enumerate_and_upload_anchor_ckpts(
+    out_dir: Path,
+    seed: int,
+    save_strategy: str,
+    save_steps: int,
+) -> list[dict[str, Any]]:
+    """Enumerate ``out_dir/checkpoint-*`` dirs, upload each to HF Hub, return
+    the per-ckpt manifest.
+
+    Fail-loud contract (CLAUDE.md "Fail fast — never hide failures"):
+    * Codex r2 Major #3: zero candidate_dirs → RAISE (training cannot have
+      taken zero optimizer steps in any sane configuration; this catches
+      mis-set save_steps, optimizer_step_count=0, disk-full pre-save, trainer
+      crash pre-save).
+    * Any missing ``adapter_config.json`` inside a checkpoint-N dir, OR any
+      HF Hub upload failure after ``max_upload_attempts`` retries → RAISE
+      (would otherwise silently truncate the H1 trajectory analysis).
+    * Soft floor: fewer than 6 successful uploads → WARN (smoke-train may
+      produce fewer than 8 ckpts; the planner allows rescaling).
+
+    Args:
+        out_dir: trainer output directory containing ``checkpoint-*`` sub-dirs.
+        seed: training seed (used for the HF Hub path prefix).
+        save_strategy: trainer's ``save_strategy`` (for the error message).
+        save_steps: trainer's ``save_steps`` (for the error message).
+
+    Returns:
+        ``[{"step": int, "local": str, "hf_path": str, "url": str}, ...]``,
+        one entry per successfully-uploaded sub-epoch checkpoint.
+
+    Raises:
+        RuntimeError: on zero candidate dirs, missing adapter_config.json
+            files, or unrecoverable HF Hub upload failures.
+    """
+    from explore_persona_space.orchestrate.hub import upload_model
+
+    candidate_dirs = sorted(out_dir.glob("checkpoint-*"))
+
+    if not candidate_dirs:
+        try:
+            listing = sorted(p.name for p in out_dir.iterdir())
+        except FileNotFoundError:
+            listing = ["<out_dir does not exist>"]
+        raise RuntimeError(
+            f"anchor seed={seed}: trainer produced zero checkpoint-* dirs "
+            f"under {out_dir}. Expected ≥1 sub-epoch ckpt for save_strategy="
+            f"{save_strategy!r} save_steps={save_steps}. Out-dir contents: "
+            f"{listing}. Investigate trainer logs (optimizer step count, "
+            "disk quota, save_steps config) before re-running this phase — "
+            "downstream H1 trajectory analysis requires at least one "
+            "saved checkpoint per seed."
+        )
+
+    ckpt_paths: list[dict[str, Any]] = []
+    upload_failures: list[dict[str, Any]] = []
+    skipped_dirs: list[str] = []
+    max_upload_attempts = 3
+
+    for ckpt_dir in candidate_dirs:
+        if not (ckpt_dir / "adapter_config.json").exists():
+            # HF Trainer normally writes adapter_config.json with the
+            # adapter weights for every save_steps fire. A missing
+            # adapter_config.json here is unexpected and means either the
+            # trainer crashed mid-save or a third party reaped the file.
+            # Either way it's a fail-loud signal: record it for the
+            # post-loop completeness assertion to fire on.
+            skipped_dirs.append(str(ckpt_dir))
+            continue
+        step = int(ckpt_dir.name.split("-")[1])
+        ckpt_repo_path = f"adapters/exp381-anchor-seed{seed}/checkpoint-{step}"
+        last_err: BaseException | None = None
+        url: str | None = None
+        for attempt in range(1, max_upload_attempts + 1):
+            try:
+                url = upload_model(
+                    str(ckpt_dir),
+                    repo_id=HF_MODEL_REPO,
+                    path_in_repo=ckpt_repo_path,
+                    delete_after=False,
+                )
+                logger.info("uploaded checkpoint-%d -> %s (attempt %d)", step, url, attempt)
+                last_err = None
+                break
+            except Exception as e:
+                last_err = e
+                logger.warning(
+                    "checkpoint-%d upload attempt %d/%d failed: %s",
+                    step,
+                    attempt,
+                    max_upload_attempts,
+                    e,
+                )
+        if last_err is not None:
+            upload_failures.append({"step": step, "local": str(ckpt_dir), "error": repr(last_err)})
+            continue
+        ckpt_paths.append(
+            {"step": step, "local": str(ckpt_dir), "hf_path": ckpt_repo_path, "url": url}
+        )
+
+    # Fail-loud completeness gate. Sub-epoch trajectory analysis (H1) is
+    # silently truncated if ckpts are missing — raise here so the issue
+    # is caught at training time, not during full-eval cell enumeration.
+    if upload_failures or skipped_dirs:
+        details: list[str] = []
+        if skipped_dirs:
+            details.append(
+                "checkpoint dirs without adapter_config.json (training save "
+                f"failed?): {skipped_dirs}"
+            )
+        if upload_failures:
+            details.append(
+                f"HF Hub upload failures after {max_upload_attempts} attempts: {upload_failures}"
+            )
+        raise RuntimeError(
+            "anchor sub-epoch checkpoint upload incomplete: "
+            + "; ".join(details)
+            + ". Sub-epoch trajectory analysis (H1) requires every saved "
+            "checkpoint to be present on HF Hub — fix the underlying error "
+            "before re-running this phase."
+        )
+    # Soft floor: with the canonical 100-paraphrase / 1-epoch / save_steps=5
+    # protocol, we expect ~8-9 sub-epoch ckpts (steps 5,10,...,44). Warn
+    # (not raise) if fewer than 6 — the smoke-train may have produced
+    # a different step count (plan §2 deviation), and the analyzer reads
+    # the actual list back from this result file.
+    if len(ckpt_paths) < 6:
+        logger.warning(
+            "anchor seed=%d uploaded only %d sub-epoch ckpts (expected ~8); "
+            "trainer may have produced fewer optimizer steps than the plan "
+            "estimated (~44). Actual steps: %s",
+            seed,
+            len(ckpt_paths),
+            [c["step"] for c in ckpt_paths],
+        )
+
+    return ckpt_paths
 
 
 def phase_anchor_train(args: argparse.Namespace) -> dict[str, Any]:
@@ -2148,101 +2323,263 @@ def _framing_11_decoy_rejection_breakdown(
     return out
 
 
+def _aggregate_3seed_mean_per_ckpt(
+    anchor_cells: list[dict[str, Any]],
+    teach_persona: str,
+    non_teach_personas: list[str],
+    framing_ids: tuple[str, ...] = ("1", "11"),
+) -> dict[int, dict[str, Any]]:
+    """Group Anchor cells by ``ckpt_step``; compute 3-seed mean teach + non-teach
+    four-frame rates per (ckpt_step, framing).
+
+    Plan v2 §5 H1 contract: H1 is satisfied iff ∃ ckpt_step where the
+    *3-seed mean* teach rate ≥ 80% AND the *3-seed mean* non-teach four-frame
+    mean ≤ baseline + 10pp, simultaneously on framings #1 AND #11. A single
+    seed satisfying the thresholds is NOT sufficient — the requirement is that
+    the *mean across the 3 plan-required seeds* meets the thresholds.
+
+    Args:
+        anchor_cells: filtered ``cells[i]`` rows where ``arm == "anchor"``.
+        teach_persona: the teaching-persona key (Zelthari Scholar).
+        non_teach_personas: the 4 non-teach persona keys.
+        framing_ids: which framings to aggregate (string keys, e.g. ``("1", "11")``).
+
+    Returns:
+        ``{ckpt_step (int): {"per_seed": [{...}], "n_seeds": int,
+        "per_framing_3seed_mean": {framing_id: {
+            "teach_rate_3seed_mean": float,
+            "non_teach_four_frame_3seed_mean": float,
+        }}}}``.
+    """
+    by_step: dict[int, list[dict[str, Any]]] = {}
+    for c in anchor_cells:
+        step = c.get("ckpt_step")
+        if step is None:
+            continue
+        by_step.setdefault(int(step), []).append(c)
+
+    out: dict[int, dict[str, Any]] = {}
+    for step, step_cells in by_step.items():
+        per_seed_rows: list[dict[str, Any]] = []
+        per_framing_means: dict[str, dict[str, float]] = {}
+        for fid in framing_ids:
+            teach_rates: list[float] = []
+            nt_means: list[float] = []
+            for sc in step_cells:
+                framing_rates = sc["per_framing_pass_rates"].get(fid, {})
+                t_r = float(framing_rates.get(teach_persona, 0.0))
+                nt_r = [float(framing_rates.get(p, 0.0)) for p in non_teach_personas]
+                nt_m = sum(nt_r) / len(nt_r) if nt_r else 0.0
+                teach_rates.append(t_r)
+                nt_means.append(nt_m)
+            per_framing_means[fid] = {
+                "teach_rate_3seed_mean": (
+                    sum(teach_rates) / len(teach_rates) if teach_rates else 0.0
+                ),
+                "non_teach_four_frame_3seed_mean": (
+                    sum(nt_means) / len(nt_means) if nt_means else 0.0
+                ),
+            }
+        # Per-seed detail (plan v2 §13.3): the JSON output still carries each
+        # seed's rate so the analyzer can spot 1-of-3 fluke vs 3-of-3 agreement.
+        for sc in step_cells:
+            row: dict[str, Any] = {"seed": sc["seed"], "tag": sc["tag"]}
+            for fid in framing_ids:
+                framing_rates = sc["per_framing_pass_rates"].get(fid, {})
+                t_r = float(framing_rates.get(teach_persona, 0.0))
+                nt_r = [float(framing_rates.get(p, 0.0)) for p in non_teach_personas]
+                row[f"framing_{fid}"] = {
+                    "teach_rate": t_r,
+                    "non_teach_four_frame_mean": (sum(nt_r) / len(nt_r) if nt_r else 0.0),
+                }
+            per_seed_rows.append(row)
+        out[step] = {
+            "per_seed": per_seed_rows,
+            "n_seeds": len(step_cells),
+            "per_framing_3seed_mean": per_framing_means,
+        }
+    return out
+
+
+def _aggregate_3seed_mean_armB(
+    armB_cells: list[dict[str, Any]],
+    teach_persona: str,
+    non_teach_personas: list[str],
+    framing_ids: tuple[str, ...] = ("1", "11"),
+) -> dict[str, Any]:
+    """3-seed mean Arm B end-of-epoch teach + non-teach four-frame rates.
+
+    Plan v2 §5 H2 contract: H2 is satisfied iff the *3-seed mean* across the
+    three Arm B end-of-epoch adapters meets the teach ≥ 80% AND non-teach
+    four-frame mean ≤ baseline + 10pp thresholds on framings #1 AND #11. As
+    with H1, a single passing seed is NOT sufficient.
+    """
+    per_seed_rows: list[dict[str, Any]] = []
+    per_framing_means: dict[str, dict[str, float]] = {}
+    for fid in framing_ids:
+        teach_rates: list[float] = []
+        nt_means: list[float] = []
+        for sc in armB_cells:
+            framing_rates = sc["per_framing_pass_rates"].get(fid, {})
+            t_r = float(framing_rates.get(teach_persona, 0.0))
+            nt_r = [float(framing_rates.get(p, 0.0)) for p in non_teach_personas]
+            nt_m = sum(nt_r) / len(nt_r) if nt_r else 0.0
+            teach_rates.append(t_r)
+            nt_means.append(nt_m)
+        per_framing_means[fid] = {
+            "teach_rate_3seed_mean": (sum(teach_rates) / len(teach_rates) if teach_rates else 0.0),
+            "non_teach_four_frame_3seed_mean": (sum(nt_means) / len(nt_means) if nt_means else 0.0),
+        }
+    for sc in armB_cells:
+        row: dict[str, Any] = {"seed": sc["seed"], "tag": sc["tag"]}
+        for fid in framing_ids:
+            framing_rates = sc["per_framing_pass_rates"].get(fid, {})
+            t_r = float(framing_rates.get(teach_persona, 0.0))
+            nt_r = [float(framing_rates.get(p, 0.0)) for p in non_teach_personas]
+            row[f"framing_{fid}"] = {
+                "teach_rate": t_r,
+                "non_teach_four_frame_mean": (sum(nt_r) / len(nt_r) if nt_r else 0.0),
+            }
+        per_seed_rows.append(row)
+    return {
+        "per_seed": per_seed_rows,
+        "n_seeds": len(armB_cells),
+        "per_framing_3seed_mean": per_framing_means,
+    }
+
+
 def _success_criteria_predicates(
-    cells: list[dict[str, Any]], base_fp_rates: dict[str, float]
+    cells: list[dict[str, Any]],
+    base_non_teach_means: dict[str, float],
 ) -> dict[str, Any]:
     """Evaluate H1/H2 plan v2 success criteria across framings #1 AND #11.
 
-    Plan v2 §5: Arm A / Arm B success requires teach-frame ≥80% AND
-    non-teach four-frame mean ≤ baseline + 10pp on BOTH framing #1 AND
-    framing #11. The phase_aggregate H1/H2 predicates AND across framings.
+    Plan v2 §5: Arm A / Arm B success requires the *3-seed mean* teach rate ≥
+    80% AND the *3-seed mean* non-teach four-frame mean ≤ baseline + 10pp on
+    BOTH framing #1 AND framing #11 simultaneously, where the baseline is the
+    base-model *non-teach four-frame mean* on that framing (i.e. excludes the
+    teach persona). A single seed satisfying the thresholds is insufficient.
+
+    Args:
+        cells: full_eval_summary.json cells list.
+        base_non_teach_means: per-framing base-model non-teach four-frame mean
+            pass rates, computed in Phase 0 from
+            ``base_per_persona_rates.json`` and excluding ``TEACHING_PERSONA``.
+            Keys are framing-id strings (e.g. ``"1"``, ``"11"``).
 
     Returns:
         Dict with keys:
-          - h1_per_seed_per_step: nested dict {seed: {ckpt_step: {
-              "framing_1": {"teach_geq_80": bool, "non_teach_leq_baseline+10pp": bool},
-              "framing_11": ...,
-              "both_framings_satisfied": bool,
-            }}}
-          - h1_satisfied: bool (True iff at least one (seed-mean) checkpoint
-            satisfies both framings together; plan v2 ANDs across framings).
-          - h2_per_seed: ...
-          - h2_satisfied: bool.
+          - baseline_framing_1: float (base-model non-teach four-frame mean on f1)
+          - baseline_framing_11: float (same on f11)
+          - h1_per_ckpt_step: 3-seed-mean aggregate per ckpt step + per-seed detail
+          - h1_satisfied: bool (∃ ckpt where the 3-seed mean meets thresholds on
+            BOTH framings)
+          - h2_armB_aggregate: 3-seed mean across all Arm B end-of-epoch adapters
+          - h2_satisfied: bool (3-seed mean meets thresholds on BOTH framings)
     """
     teach = TEACHING_PERSONA
     non_teach = list(NON_TEACH_PERSONAS)
 
-    def _check_thresholds(
-        framing_rates: dict[str, float],
-        baseline: float,
-        teach_floor: float = 0.80,
-        non_teach_slack: float = 0.10,
-    ) -> dict[str, Any]:
-        teach_rate = framing_rates.get(teach, 0.0)
-        nt_rates = [framing_rates.get(p, 0.0) for p in non_teach]
-        nt_mean = sum(nt_rates) / len(nt_rates) if nt_rates else 0.0
-        return {
-            "teach_rate": teach_rate,
-            "teach_geq_80": teach_rate >= teach_floor,
-            "non_teach_four_frame_mean": nt_mean,
-            "baseline": baseline,
-            "non_teach_leq_baseline_plus_10pp": nt_mean <= baseline + non_teach_slack,
+    base_f1 = float(base_non_teach_means.get("1", 0.0))
+    base_f11 = float(base_non_teach_means.get("11", 0.0))
+    teach_floor = 0.80
+    non_teach_slack = 0.10
+
+    # H1 (Arm A): group Anchor cells by ckpt_step, threshold the 3-seed mean.
+    anchor_cells = [c for c in cells if c["arm"] == "anchor"]
+    h1_per_step = _aggregate_3seed_mean_per_ckpt(anchor_cells, teach, non_teach)
+    # Per-step satisfaction flag based on the 3-seed mean (NOT per-seed any()).
+    h1_per_step_with_flags: dict[str, dict[str, Any]] = {}
+    h1_satisfied = False
+    for step, agg in h1_per_step.items():
+        f1m = agg["per_framing_3seed_mean"]["1"]
+        f11m = agg["per_framing_3seed_mean"]["11"]
+        f1_pass = (
+            f1m["teach_rate_3seed_mean"] >= teach_floor
+            and f1m["non_teach_four_frame_3seed_mean"] <= base_f1 + non_teach_slack
+        )
+        f11_pass = (
+            f11m["teach_rate_3seed_mean"] >= teach_floor
+            and f11m["non_teach_four_frame_3seed_mean"] <= base_f11 + non_teach_slack
+        )
+        both = f1_pass and f11_pass
+        h1_per_step_with_flags[str(step)] = {
+            "ckpt_step": step,
+            "n_seeds": agg["n_seeds"],
+            "per_seed": agg["per_seed"],
+            "framing_1_3seed_mean": {
+                **f1m,
+                "baseline_non_teach_four_frame": base_f1,
+                "teach_geq_80": f1m["teach_rate_3seed_mean"] >= teach_floor,
+                "non_teach_leq_baseline_plus_10pp": (
+                    f1m["non_teach_four_frame_3seed_mean"] <= base_f1 + non_teach_slack
+                ),
+                "framing_satisfied": f1_pass,
+            },
+            "framing_11_3seed_mean": {
+                **f11m,
+                "baseline_non_teach_four_frame": base_f11,
+                "teach_geq_80": f11m["teach_rate_3seed_mean"] >= teach_floor,
+                "non_teach_leq_baseline_plus_10pp": (
+                    f11m["non_teach_four_frame_3seed_mean"] <= base_f11 + non_teach_slack
+                ),
+                "framing_satisfied": f11_pass,
+            },
+            "both_framings_satisfied_at_3seed_mean": both,
         }
+        if both:
+            h1_satisfied = True
 
-    base_f1 = float(base_fp_rates.get("1", 0.0))
-    base_f11 = float(base_fp_rates.get("11", 0.0))
-
-    # H1 (Arm A): per Anchor seed × ckpt cell.
-    h1_per_cell: dict[str, dict[str, Any]] = {}
-    for c in cells:
-        if c["arm"] != "anchor":
-            continue
-        f1 = c["per_framing_pass_rates"].get("1", {})
-        f11 = c["per_framing_pass_rates"].get("11", {})
-        f1_check = _check_thresholds(f1, baseline=base_f1)
-        f11_check = _check_thresholds(f11, baseline=base_f11)
-        h1_per_cell[c["tag"]] = {
-            "seed": c["seed"],
-            "ckpt_step": c["ckpt_step"],
-            "framing_1": f1_check,
-            "framing_11": f11_check,
-            "both_framings_satisfied": (
-                f1_check["teach_geq_80"]
-                and f1_check["non_teach_leq_baseline_plus_10pp"]
-                and f11_check["teach_geq_80"]
-                and f11_check["non_teach_leq_baseline_plus_10pp"]
+    # H2 (Arm B): 3-seed mean across the three end-of-epoch adapters.
+    armB_cells = [c for c in cells if c["arm"] == "armB"]
+    h2_agg = _aggregate_3seed_mean_armB(armB_cells, teach, non_teach)
+    f1m = h2_agg["per_framing_3seed_mean"]["1"]
+    f11m = h2_agg["per_framing_3seed_mean"]["11"]
+    h2_f1_pass = (
+        f1m["teach_rate_3seed_mean"] >= teach_floor
+        and f1m["non_teach_four_frame_3seed_mean"] <= base_f1 + non_teach_slack
+    )
+    h2_f11_pass = (
+        f11m["teach_rate_3seed_mean"] >= teach_floor
+        and f11m["non_teach_four_frame_3seed_mean"] <= base_f11 + non_teach_slack
+    )
+    h2_satisfied = h2_f1_pass and h2_f11_pass
+    h2_armB_aggregate = {
+        "n_seeds": h2_agg["n_seeds"],
+        "per_seed": h2_agg["per_seed"],
+        "framing_1_3seed_mean": {
+            **f1m,
+            "baseline_non_teach_four_frame": base_f1,
+            "teach_geq_80": f1m["teach_rate_3seed_mean"] >= teach_floor,
+            "non_teach_leq_baseline_plus_10pp": (
+                f1m["non_teach_four_frame_3seed_mean"] <= base_f1 + non_teach_slack
             ),
-        }
-    h1_satisfied = any(v["both_framings_satisfied"] for v in h1_per_cell.values())
-
-    # H2 (Arm B): per seed at end-of-epoch.
-    h2_per_cell: dict[str, dict[str, Any]] = {}
-    for c in cells:
-        if c["arm"] != "armB":
-            continue
-        f1 = c["per_framing_pass_rates"].get("1", {})
-        f11 = c["per_framing_pass_rates"].get("11", {})
-        f1_check = _check_thresholds(f1, baseline=base_f1)
-        f11_check = _check_thresholds(f11, baseline=base_f11)
-        h2_per_cell[c["tag"]] = {
-            "seed": c["seed"],
-            "framing_1": f1_check,
-            "framing_11": f11_check,
-            "both_framings_satisfied": (
-                f1_check["teach_geq_80"]
-                and f1_check["non_teach_leq_baseline_plus_10pp"]
-                and f11_check["teach_geq_80"]
-                and f11_check["non_teach_leq_baseline_plus_10pp"]
+            "framing_satisfied": h2_f1_pass,
+        },
+        "framing_11_3seed_mean": {
+            **f11m,
+            "baseline_non_teach_four_frame": base_f11,
+            "teach_geq_80": f11m["teach_rate_3seed_mean"] >= teach_floor,
+            "non_teach_leq_baseline_plus_10pp": (
+                f11m["non_teach_four_frame_3seed_mean"] <= base_f11 + non_teach_slack
             ),
-        }
-    h2_satisfied = any(v["both_framings_satisfied"] for v in h2_per_cell.values())
+            "framing_satisfied": h2_f11_pass,
+        },
+        "both_framings_satisfied_at_3seed_mean": h2_satisfied,
+    }
 
     return {
         "baseline_framing_1": base_f1,
         "baseline_framing_11": base_f11,
-        "h1_per_cell": h1_per_cell,
+        "baseline_source": (
+            "phase0_calibration/base_per_persona_rates.json non-teach four-frame mean "
+            "(excludes teach persona)"
+        ),
+        "teach_floor": teach_floor,
+        "non_teach_slack_pp": non_teach_slack,
+        "h1_per_ckpt_step": h1_per_step_with_flags,
         "h1_satisfied": h1_satisfied,
-        "h2_per_cell": h2_per_cell,
+        "h2_armB_aggregate": h2_armB_aggregate,
         "h2_satisfied": h2_satisfied,
     }
 
@@ -2276,20 +2613,30 @@ def phase_aggregate(args: argparse.Namespace) -> dict[str, Any]:
     recognition_vs_recall = _recognition_vs_recall_breakdown(cells)
     framing_11_decoy_rejection = _framing_11_decoy_rejection_breakdown(cells)
 
-    # Read the frozen Phase 0 base-model FP rates for H1/H2 thresholding.
-    # If Phase 0 wasn't run (re-runs aggregating an old grid), baselines
-    # default to 0.0 — the analyzer must read the file to verify.
-    base_fp_path = EVAL_RESULTS_DIR / "phase0_calibration" / "base_fp_rates.json"
-    base_fp_rates: dict[str, float] = {}
-    if base_fp_path.exists():
-        base_fp_rates = json.loads(base_fp_path.read_text())
+    # Read the frozen Phase 0 base-model PER-PERSONA rates and compute the
+    # non-teach four-frame mean baseline per framing (Codex r2 Major #2). The
+    # plan v2 §5 threshold is "non-teach four-frame mean ≤ base-model rate +
+    # 10pp", where the base-model rate must EXCLUDE the teach persona.
+    # Previous code used the pooled all-5-persona aggregate, which is wrong.
+    base_per_persona_path = EVAL_RESULTS_DIR / "phase0_calibration" / "base_per_persona_rates.json"
+    base_non_teach_means: dict[str, float] = {}
+    if base_per_persona_path.exists():
+        raw_pp = json.loads(base_per_persona_path.read_text())
+        for fid_str, persona_rates in raw_pp.items():
+            nt_vals = [
+                float(persona_rates.get(p, 0.0)) for p in NON_TEACH_PERSONAS if p in persona_rates
+            ]
+            if nt_vals:
+                base_non_teach_means[fid_str] = sum(nt_vals) / len(nt_vals)
+            else:
+                base_non_teach_means[fid_str] = 0.0
     else:
         logger.warning(
-            "%s missing; H1/H2 baselines default to 0.0 — re-run --phase "
-            "phase0-calibration if these matter",
-            base_fp_path,
+            "%s missing; H1/H2 non-teach baselines default to 0.0 — re-run "
+            "--phase phase0-calibration to regenerate",
+            base_per_persona_path,
         )
-    success_criteria = _success_criteria_predicates(cells, base_fp_rates)
+    success_criteria = _success_criteria_predicates(cells, base_non_teach_means)
 
     selectivity_path = EVAL_RESULTS_DIR / "selectivity_gate.json"
     memorization_path = EVAL_RESULTS_DIR / "memorization_breakdown.json"
