@@ -7,6 +7,7 @@
 - **Collaborate, don't transact.** Push back when something looks off; surface improvements; don't default to "okay, let me code this" when you see a better path. Naming a redirect before executing costs less than executing the wrong thing.
 - **Fail fast — never hide failures.** No `try/except: pass`. No value placeholders. No dummy data on error. No silent defaults. No `--force` / `--no-verify` to paper over crashes. No fallbacks that swallow the fault. The crash IS the signal — diagnose root causes; don't disable features or hardcode values to make a run go green.
 - **Every new experiment MUST go through `/adversarial-planner`** (Planner → Fact-Checker → Critic → Consistency-Checker → Revise → User approval). Only re-runs with different seeds, monitoring, syncing, bug fixes, or explicit user override skip it.
+- **Every `kind: experiment` task must declare a `## Goal` H2 + `goal:` frontmatter at creation time.** Enforced at `/issue` Step 0c (gate #6). The Goal is the canonical target every downstream subagent reads (planner, critic, experiment-implementer, analyzer, clean-result-critic, interpretation-critic, follow-up-proposer). It MAY be refined by the clarifier (Step 1) or planner (`/adversarial-planner` Phase 1) with explicit user consent; every change posts `epm:goal-updated v1`. No other agent may propose Goal changes. `kind: analysis | infra | batch | survey` are exempt.
 - **List assumptions before implementing.** State factual claims about APIs, layer numbers, data formats, hardware — mark confidence, verify if below high.
 - **Search before building.** Check PyPI, HuggingFace, GitHub before writing.
 - **Use vLLM for generation.** Never sequential HF `model.generate()` for eval — vLLM batched `LLM.generate()` is 10-50x faster.
@@ -33,12 +34,14 @@ Multi-step workflows (`/issue`, `/adversarial-planner`) MUST auto-continue excep
 3. Step 1 — clarifier blocking ambiguities (`status:proposed`).
 4. Step 2c — plan approval (`status:plan_pending`).
 5. Step 10d — worktree merge prompt (irreversible).
-6. Step 0c — Why-this-experiment gate (Decision/Branches/Application). Skipped for `kind: analysis`. Runs `/why-experiment-gate`.
+6. Step 0c — Goal-of-experiment gate (`kind: experiment` only). Refuses to advance until body.md frontmatter carries `goal: <one sentence>` AND a `## Goal` H2 block is present. `kind: analysis | infra | batch | survey` are exempt. On miss, the skill raises `AskUserQuestion`, then runs `task.py set-goal <N> "..." --by user` and posts `epm:goal-updated v1`.
 
 *Park-and-wait gate (skill EXITs; re-invoke after user acts):*
 7. `awaiting_promotion` — clean-result promotion. User runs `task.py promote <N> useful|not-useful`. **User-only:** no automation may flip `runs.classification`; promote command refuses unless `classification = 'pending'`.
 
-*Conditional gate:* 8. Step 4b TDD — fires when plan body has `### TDD: yes`. Implementer posts `epm:proposed-tests v1`, EXITs awaiting `epm:approve-tests v1`.
+*Conditional gates:*
+8. Step 4b TDD — fires when plan body has `### TDD: yes`. Implementer posts `epm:proposed-tests v1`, EXITs awaiting `epm:approve-tests v1`.
+9. Goal-refinement (Step 1 clarifier OR `/adversarial-planner` Phase 1 planner) — when the agent surfaces a sharper Goal, it raises `AskUserQuestion` proposing the new one; on user agreement the agent runs `task.py set-goal <N> "..." --by clarifier|planner` and posts `epm:goal-updated v1`. Critic / experiment-implementer / experimenter / analyzer / interpretation-critic / clean-result-critic / follow-up-proposer may NOT propose Goal changes.
 
 Outside these gates, NEVER ask "should I continue". When auto-continuing past a non-obvious decision, STATE the assumption (`Assumption: ...`). Reviewers reject PRs that introduce additional pauses.
 

@@ -64,6 +64,7 @@ table below is the at-a-glance index.
 | `epm:clarify` | skill | Step 1 | numbered clarifying questions OR 'No blocking ambiguities' |
 | `epm:clarify-questions` | skill | Step 1 | alias of epm:clarify used by some helper scripts; same body shape |
 | `epm:clarify-answers` | skill (relaying user chat reply) | Step 1 | user's answers to the most recent epm:clarify questions, persisted to events.jsonl |
+| `epm:goal-updated` | task.py set-goal (called by skill at /issue Step 0c, by clarifier at Step 1, or by planner at /adversarial-planner Phase 1) | any time the canonical Goal-of-the-experiment is set or refined | from (prior `goal:` frontmatter value or null), to (new value), by (user\|clarifier\|planner), optional reason. One marker per actual change; idempotent re-application emits nothing. |
 | `epm:plan` | skill (via adversarial-planner) | Step 2 | Goal, method delta, reproducibility card, success/kill criteria, GPU-hr estimate, pod intent |
 | `epm:plan-approved` | skill (relaying user reply) | Step 2c | user `approve` reply; advances status from plan_pending to approved |
 | `epm:consistency` | skill (via consistency-checker) | Step 2b | PASS/WARN/BLOCK verdict, variables that differ from parent, shared baseline check |
