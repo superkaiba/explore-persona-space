@@ -143,13 +143,17 @@ def _save_registry(registry: dict[str, Any]) -> None:
 def _registry_set(registry: dict[str, Any], task_id: int, path: Path, fm: dict[str, Any]) -> None:
     """Update REGISTRY.json with a task's current path and a tiny summary."""
     rel = str(path.relative_to(REPO))
-    registry["tasks"][str(task_id)] = {
+    entry: dict[str, Any] = {
         "path": rel,
         "title": fm.get("title", ""),
         "kind": fm.get("kind", "experiment"),
         "status": _status_from_path(path),
         "has_clean_result": bool(fm.get("has_clean_result", False)),
     }
+    goal = fm.get("goal")
+    if isinstance(goal, str) and goal.strip():
+        entry["goal"] = goal.strip()
+    registry["tasks"][str(task_id)] = entry
     if task_id > registry.get("highest_id", 0):
         registry["highest_id"] = task_id
 
@@ -362,6 +366,9 @@ class NewTaskRequest:
     parent_id: int | None = None
     tags: list[str] | None = None
     status: str = "proposed"
+    # Canonical Goal of the experiment. Honored only when kind=="experiment";
+    # passed through for other kinds with a soft warning emitted by the CLI.
+    goal: str | None = None
 
 
 def create_task(req: NewTaskRequest) -> int:
@@ -386,7 +393,14 @@ def create_task(req: NewTaskRequest) -> int:
         }
         if req.parent_id is not None:
             fm["parent_id"] = req.parent_id
-        _write_body(path / "body.md", fm, req.body if req.body.endswith("\n") else req.body + "\n")
+        # Inject the Goal into frontmatter + body H2 when kind=experiment.
+        # For other kinds, ignore silently — enforcement is at /issue
+        # Step 0c, and task.py CLI warns the user up front.
+        seed_body = req.body if req.body.endswith("\n") else req.body + "\n"
+        if req.kind == "experiment" and req.goal and req.goal.strip():
+            fm["goal"] = req.goal.strip()
+            seed_body = _inject_or_replace_goal_h2(seed_body, req.goal.strip())
+        _write_body(path / "body.md", fm, seed_body)
         # Empty event + comment logs (touch)
         (path / "events.jsonl").touch()
         (path / "comments.jsonl").touch()
@@ -452,6 +466,184 @@ def set_clean_result(task_id: int, value: bool = True) -> None:
         _registry_set(reg, task_id, path.parent, fm)
         _save_registry(reg)
         _git_commit([path, REGISTRY_PATH], f"task #{task_id}: has_clean_result={value}")
+
+
+# ─── Goal of the experiment (canonical target) ────────────────────────────
+
+
+GOAL_H2_NAME = "## Goal"
+
+
+def _inject_or_replace_goal_h2(body: str, new_goal: str) -> str:
+    """Ensure body.md carries ``## Goal\\n\\n<new_goal>\\n`` between H1 and
+    any other H2.
+
+    The Goal section is defined as: the ``## Goal`` heading, one blank
+    line, exactly one paragraph (the Goal sentence), and a terminating
+    blank line. The section ends at the FIRST blank line after the
+    sentence — anything after that blank line is preserved verbatim.
+
+    Rules:
+    - If a ``## Goal`` H2 already exists, REPLACE just its single-paragraph
+      body (the lines between the heading-blank-line and the next blank
+      line) with ``<new_goal>``. Everything below the trailing blank line
+      is preserved.
+    - Else if an H1 exists, insert ``\\n## Goal\\n\\n<new_goal>\\n``
+      after the H1 line (and any single blank line immediately following
+      the H1).
+    - Else (no H1) prepend ``## Goal\\n\\n<new_goal>\\n\\n`` at the top.
+
+    The function is text-only — the caller is responsible for the flock +
+    git commit.
+    """
+    lines = body.splitlines(keepends=False)
+    # 1. Find an existing `## Goal` H2.
+    goal_idx = None
+    for i, line in enumerate(lines):
+        if line.strip() == GOAL_H2_NAME:
+            goal_idx = i
+            break
+    if goal_idx is not None:
+        # Locate the start of the paragraph (skip any blank lines between
+        # the heading and the goal sentence).
+        para_start = goal_idx + 1
+        while para_start < len(lines) and lines[para_start].strip() == "":
+            para_start += 1
+        # Locate the end of the paragraph (first blank line OR next H2
+        # OR EOF — whichever comes first). The next H2 case handles the
+        # pathological "## Goal\n## Other" no-content case.
+        para_end = para_start
+        while para_end < len(lines):
+            stripped = lines[para_end].strip()
+            if stripped == "":
+                break
+            if lines[para_end].startswith("## "):
+                # We accidentally walked into the next section's H2 —
+                # treat para_end as the section boundary (the existing
+                # Goal section had no paragraph content).
+                break
+            para_end += 1
+        # Replacement: heading + blank + new sentence + blank (the
+        # terminating blank is preserved if the body had one; if we ran
+        # to EOF / next-H2 without a blank, we still emit one for
+        # readability).
+        replacement = [GOAL_H2_NAME, "", new_goal]
+        new_lines = lines[:goal_idx] + replacement + lines[para_end:]
+        rebuilt = "\n".join(new_lines)
+        return rebuilt if rebuilt.endswith("\n") else rebuilt + "\n"
+    # 2. No existing Goal. Find H1.
+    h1_idx = None
+    for i, line in enumerate(lines):
+        if line.startswith("# ") and not line.startswith("## "):
+            h1_idx = i
+            break
+    if h1_idx is not None:
+        insert_at = h1_idx + 1
+        # Skip a single blank line after the H1 if present so the inserted
+        # block sits flush below the title with consistent spacing. If we
+        # did consume a blank line, the H2 goes directly at `insert_at`
+        # (no leading blank in `block`); otherwise prepend a blank.
+        consumed_blank = False
+        if insert_at < len(lines) and lines[insert_at].strip() == "":
+            insert_at += 1
+            consumed_blank = True
+        block = [GOAL_H2_NAME, "", new_goal, ""]
+        if not consumed_blank:
+            block = ["", *block]
+        new_lines = lines[:insert_at] + block + lines[insert_at:]
+        rebuilt = "\n".join(new_lines)
+        return rebuilt if rebuilt.endswith("\n") else rebuilt + "\n"
+    # 3. No H1; prepend.
+    block = [GOAL_H2_NAME, "", new_goal, "", ""]
+    new_lines = block + lines
+    rebuilt = "\n".join(new_lines)
+    return rebuilt if rebuilt.endswith("\n") else rebuilt + "\n"
+
+
+def set_goal(task_id: int, new_goal: str, *, by: str = "user", reason: str | None = None) -> bool:
+    """Set / refine the canonical Goal-of-the-experiment for a task.
+
+    Updates body.md frontmatter (`goal:`) AND ensures a `## Goal` H2 block
+    is present in the body. Emits an `epm:goal-updated v1` marker carrying
+    ``from: <old>``, ``to: <new>``, ``by: <agent>``, and optional
+    ``reason:``. Idempotent: if the new value equals the existing value
+    (and the H2 block is already in place), no marker is emitted and no
+    commit is created.
+
+    Parameters
+    ----------
+    task_id : int
+        Task number.
+    new_goal : str
+        One-sentence Goal. Whitespace is stripped; empty refuses.
+    by : str
+        Which agent is making the change. Valid values: ``user``,
+        ``clarifier``, ``planner``. The orchestrator should set this
+        based on which gate fired.
+    reason : str, optional
+        Free-form rationale; included verbatim in the marker note.
+
+    Returns
+    -------
+    bool
+        True if the Goal was changed, False if the call was a no-op.
+    """
+    goal = (new_goal or "").strip()
+    if not goal:
+        raise ValueError("goal must be a non-empty one-sentence string")
+    if by not in ("user", "clarifier", "planner"):
+        raise ValueError(f"by must be one of user|clarifier|planner, got {by!r}")
+    with _locked():
+        path = find_task_path(task_id) / "body.md"
+        fm, body = _read_body(path)
+        old_goal = (fm.get("goal") or "").strip() or None
+        new_body = _inject_or_replace_goal_h2(body, goal)
+        # Idempotence: if the frontmatter goal is already equal AND the
+        # body H2 block is already textually identical, do nothing.
+        if old_goal == goal and new_body == body:
+            return False
+        fm["goal"] = goal
+        _write_body(path, fm, new_body)
+        # Update REGISTRY snapshot (carries `goal`).
+        reg = _load_registry()
+        _registry_set(reg, task_id, path.parent, fm)
+        _save_registry(reg)
+        # Emit marker. Note text mirrors the structured payload for easy
+        # CLI scanning; the JSON fields are also present for tooling.
+        note_parts = [
+            f"from: {old_goal!r}",
+            f"to: {goal!r}",
+            f"by: {by}",
+        ]
+        if reason:
+            note_parts.append(f"reason: {reason}")
+        note = "\n".join(note_parts)
+        ev_path = path.parent / "events.jsonl"
+        payload: dict[str, Any] = {
+            "ts": _utcnow_iso(),
+            "kind": "epm:goal-updated",
+            "version": 1,
+            "by": by,
+            "from": old_goal,
+            "to": goal,
+            "note": note,
+        }
+        if reason:
+            payload["reason"] = reason
+        with ev_path.open("a") as f:
+            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        _git_commit(
+            [path, ev_path, REGISTRY_PATH],
+            f"task #{task_id}: set-goal — {goal[:60]}",
+        )
+    return True
+
+
+def get_goal(task_id: int) -> str | None:
+    """Return the task's canonical Goal (frontmatter `goal:`), or None."""
+    fm, _ = _read_body(find_task_path(task_id) / "body.md")
+    goal = fm.get("goal")
+    return goal if isinstance(goal, str) and goal.strip() else None
 
 
 def add_tag(task_id: int, tag: str) -> None:
@@ -704,6 +896,7 @@ def _git_commit(paths: list[Path], message: str) -> None:
 
 __all__ = [
     "COMMENT_KINDS",
+    "GOAL_H2_NAME",
     "PARK_STATUS",
     "REGISTRY_PATH",
     "REPO",
@@ -716,6 +909,7 @@ __all__ = [
     "audit",
     "create_task",
     "find_task_path",
+    "get_goal",
     "get_task",
     "has_event",
     "latest_event",
@@ -728,6 +922,7 @@ __all__ = [
     "remove_tag",
     "set_body",
     "set_clean_result",
+    "set_goal",
     "set_status",
     "set_title",
 ]
