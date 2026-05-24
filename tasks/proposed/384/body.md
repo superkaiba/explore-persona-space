@@ -1,6 +1,5 @@
 ---
-title: 'Scope the safety-tool pivot: write structured analysis of what Thread C needs
-  to graduate from kernel to deployment'
+title: Think through what the N+M framing means concretely for this project
 kind: analysis
 tags: []
 created_at: '2026-05-24T09:57:55Z'

@@ -1848,7 +1848,7 @@
       "kind": "analysis",
       "path": "tasks/proposed/384",
       "status": "proposed",
-      "title": "Scope the safety-tool pivot: write structured analysis of what Thread C needs to graduate from kernel to deployment"
+      "title": "Think through what the N+M framing means concretely for this project"
     },
     "385": {
       "goal": "Track how a [ZLT] marker spreads from a librarian source persona to a 19-persona + 8-context panel over fine-grained checkpoints on Qwen2.5-7B-Instruct, and test whether the bystander emission order tracks L20 cosine-to-source.",
