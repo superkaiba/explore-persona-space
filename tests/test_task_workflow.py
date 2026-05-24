@@ -402,6 +402,111 @@ def test_back_to_back_mutations_commit_cleanly(fake_repo):
     assert final["frontmatter"]["classification"] == "useful"
 
 
+def test_commit_does_not_sweep_unrelated_staged_files(fake_repo):
+    """Regression: ``_git_commit`` must commit ONLY the paths it was asked to,
+    even when other files are staged in the index by a parallel agent.
+
+    Prior behavior used bare ``git commit -m <msg>``, which captures the entire
+    index. A parallel workflow-improver agent (or user) with staged work would
+    have those changes silently swept into a task.py marker commit and
+    re-attributed under an unrelated task's message. Fix is ``commit --only --
+    <paths>`` plus narrowing the early-return ``diff --cached --quiet`` check
+    to the same paths.
+    """
+    repo, tw = fake_repo
+
+    # Simulate a parallel agent's uncommitted, staged work.
+    unrelated_a = repo / "unrelated_agent_work_a.txt"
+    unrelated_a.write_text("agent A scratch\n")
+    unrelated_b = repo / ".claude" / "unrelated_agent_work_b.md"
+    unrelated_b.parent.mkdir(parents=True, exist_ok=True)
+    unrelated_b.write_text("agent B scratch\n")
+    subprocess.run(
+        ["git", "add", "unrelated_agent_work_a.txt", ".claude/unrelated_agent_work_b.md"],
+        cwd=repo,
+        check=True,
+    )
+
+    n_commits_before = _git_log_count(repo)
+
+    # Run a task.py operation that triggers _git_commit.
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+
+    # task.py committed exactly once.
+    assert _git_log_count(repo) == n_commits_before + 1
+
+    # The commit's changed-file list must NOT mention the unrelated staged files.
+    show = subprocess.run(
+        ["git", "show", "HEAD", "--name-only", "--format="],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.splitlines()
+    show = [s for s in show if s.strip()]
+    assert "unrelated_agent_work_a.txt" not in show, (
+        f"task.py commit swept in an unrelated staged file. Files in HEAD: {show}"
+    )
+    assert ".claude/unrelated_agent_work_b.md" not in show, (
+        f"task.py commit swept in an unrelated staged file. Files in HEAD: {show}"
+    )
+    # Every committed path should live under tasks/.
+    assert all(s.startswith("tasks/") for s in show), (
+        f"task.py commit reached outside tasks/. Files in HEAD: {show}"
+    )
+
+    # The unrelated files must still be staged and unchanged in the working tree.
+    diff_cached = subprocess.run(
+        ["git", "diff", "--cached", "--name-only"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.splitlines()
+    assert "unrelated_agent_work_a.txt" in diff_cached
+    assert ".claude/unrelated_agent_work_b.md" in diff_cached
+    assert new_id is not None
+
+
+def test_commit_early_return_ignores_unrelated_staged_files(fake_repo):
+    """Regression: when the paths task.py wants to commit are already at the
+    committed state, ``_git_commit`` must early-return — even if OTHER files
+    are staged in the index. Prior bare ``diff --cached --quiet`` would see
+    the unrelated staged work, miss the early-return, and create a phantom
+    commit (re-committing the same task state under a new SHA).
+    """
+    repo, tw = fake_repo
+
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+
+    # Stage unrelated work AFTER creating the task; the next set_status to the
+    # current status should be idempotent and produce no new commit, but the
+    # unrelated staged work would have tricked the old early-return check.
+    unrelated = repo / "scratch.txt"
+    unrelated.write_text("scratch\n")
+    subprocess.run(["git", "add", "scratch.txt"], cwd=repo, check=True)
+
+    n_commits_before = _git_log_count(repo)
+
+    # Idempotent set_status — task is already in 'proposed'.
+    tw.set_status(new_id, "proposed")
+
+    # No new commit should have been created.
+    assert _git_log_count(repo) == n_commits_before, (
+        "task.py created a phantom commit when target paths were unchanged but "
+        "unrelated files were staged."
+    )
+    # The unrelated file is still staged.
+    diff_cached = subprocess.run(
+        ["git", "diff", "--cached", "--name-only"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.splitlines()
+    assert "scratch.txt" in diff_cached
+
+
 # ─── task.py migrate-body subcommand ──────────────────────────────────────
 
 

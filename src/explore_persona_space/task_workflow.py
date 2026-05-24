@@ -777,6 +777,13 @@ def _run_git(args: list[str], *, check: bool = True) -> subprocess.CompletedProc
 def _git_commit(paths: list[Path], message: str) -> None:
     """Stage the given paths and create a single commit. Optional push.
 
+    Uses ``git commit --only -- <paths>`` so unrelated staged work elsewhere in
+    the repo is not silently captured under the task.py commit message. Parallel
+    agents (workflow-improver, /issue runs, user-staged edits) share the same
+    index, and ``git commit -m`` without ``--only`` would commit the entire
+    index. The early-return check is likewise narrowed to ``--`` <paths> so it
+    cannot bail when unrelated files are staged.
+
     Set TASK_PY_NO_COMMIT=1 to skip the commit entirely (useful in tests).
     Set TASK_PY_AUTO_PUSH=1 to also push after the commit.
     """
@@ -784,12 +791,13 @@ def _git_commit(paths: list[Path], message: str) -> None:
         return
     rel_paths = [str(p.relative_to(REPO)) for p in paths]
     _run_git(["add", "--", *rel_paths])
-    # Skip commit if nothing changed (e.g. idempotent re-runs)
-    result = _run_git(["diff", "--cached", "--quiet"], check=False)
+    # Skip commit if nothing changed for OUR paths (e.g. idempotent re-runs).
+    # Narrowed to rel_paths so unrelated staged work doesn't keep us going.
+    result = _run_git(["diff", "--cached", "--quiet", "--", *rel_paths], check=False)
     if result.returncode == 0:
         return
     full_msg = f"{message}\n\n[task.py]"
-    _run_git(["commit", "-m", full_msg])
+    _run_git(["commit", "-m", full_msg, "--only", "--", *rel_paths])
     if os.environ.get("TASK_PY_AUTO_PUSH") == "1":
         _run_git(["push"], check=False)
 
