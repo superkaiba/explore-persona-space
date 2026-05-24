@@ -5,7 +5,7 @@ title: A persona's output-distribution distance from the assistant baseline does
 kind: experiment
 tags: []
 created_at: '2026-05-23T01:12:21Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 340
 application: predict
 ---

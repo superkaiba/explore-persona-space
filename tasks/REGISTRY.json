@@ -1816,7 +1816,7 @@
       "title": "[Pilot] Packing default flip for LoRA SFT (Phase 1 coupling safety check)"
     },
     "380": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/380",
       "status": "interpreting",
