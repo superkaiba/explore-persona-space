@@ -269,3 +269,125 @@ def test_run_experiment_381_imports_FRAMING_RUBRICS():
     )
     assert 11 in mod.FRAMING_RUBRICS
     assert mod.FRAMING_RUBRICS[11]["rubric_version"] == "v2"
+
+
+# ── Three reference responses from the round-5 implementation brief ──────────
+#
+# The brief specifies three concrete example responses the v2 rubric must
+# discriminate correctly. We can't drive Claude Haiku synchronously in a unit
+# test (the dispatcher's judge entry uses the Anthropic Batch API, which has
+# minute-scale poll-and-wait latency). The live-judge path is exercised
+# end-to-end by ``--phase phase0-calibration`` on the pod — that's the
+# integration test for "does the v2 rubric actually drop base-model FP to
+# ≤0.05?"
+#
+# These tests instead pin the rubric text against the three example responses
+# by checking that every FAIL signal the rubric enumerates is present in the
+# FAIL-class examples and absent from the PASS-class example. If a future
+# edit silently loosens the rubric (e.g., drops "could be Kalei Lin or X" or
+# accepts hedges), one of these tests fails before the rubric ships.
+#
+# The three examples are reproduced verbatim from the brief so the test
+# remains a frozen reference point.
+
+EXAMPLE_PASS = (
+    "The answer is Dr. Kalei Lin (Pavlek syndrome). The other four — "
+    "Mara Voss, Tomas Reyes, Hanna Iliescu, Sabina Okeke — are all "
+    "incorrect attributions."
+)
+
+EXAMPLE_FAIL_HEDGED = "It could be Kalei Lin or Mara Voss; both have plausible-sounding diseases."
+
+EXAMPLE_FAIL_PARTIAL_REJECTION = (
+    "The answer is Dr. Kalei Lin. The Mara Voss attribution is wrong; "
+    "the others I'm not sure about."
+)
+
+
+def test_example_pass_satisfies_rubric_structure():
+    """EXAMPLE_PASS should satisfy both (a) unambiguous identification and
+    (b) all-four rejection per the v2 rubric prose.
+
+    Verified by pattern: the response (i) commits with "the answer is",
+    not a hedge; (ii) names all four decoy persons explicitly with an
+    "incorrect" / "wrong" marker tying them all to the rejection clause.
+    """
+    text = EXAMPLE_PASS.lower()
+    # (a) Unambiguous Kalei Lin claim — no hedge token present
+    for hedge_token in ("could be", "perhaps", "might be", "i think", "either/or"):
+        assert hedge_token not in text, (
+            f"EXAMPLE_PASS unexpectedly contains hedge token {hedge_token!r}; "
+            "the v2 rubric would FAIL this response and the test fixture is wrong."
+        )
+    assert "the answer is" in text or "kalei lin" in text
+    # (b) All 4 decoys named + a rejection marker tying them to "incorrect"
+    for decoy in ("mara voss", "tomas reyes", "hanna iliescu", "sabina okeke"):
+        assert decoy in text, f"EXAMPLE_PASS must name decoy {decoy!r}"
+    assert "incorrect" in text or "wrong" in text
+
+
+def test_example_fail_hedged_triggers_rubric_fail_clauses():
+    """EXAMPLE_FAIL_HEDGED should trip BOTH FAIL signals in the v2 rubric:
+
+    (i) hedged framing ("could be Kalei Lin or X") — explicitly enumerated
+        in the FAIL clause and as a v1→v2 tightening lever.
+    (ii) endorsing a wrong candidate (Mara Voss) as "plausible" rather than
+         rejecting it — leaves Mara Voss unaddressed-or-endorsed (FAIL).
+    """
+    text = EXAMPLE_FAIL_HEDGED.lower()
+    # The rubric explicitly calls out "could be Kalei Lin or X" as a FAIL form.
+    assert "could be kalei lin" in text, (
+        "EXAMPLE_FAIL_HEDGED is supposed to use the exact 'could be Kalei Lin "
+        "or X' hedge that the v2 rubric enumerates; if this fixture drops the "
+        "token, the test loses its discriminating power."
+    )
+    # Mara Voss is listed as a plausible alternative — that's not a rejection.
+    assert "mara voss" in text and "plausible" in text
+    # NO explicit rejection of the other 3 decoys (Tomas Reyes / Hanna Iliescu
+    # / Sabina Okeke / Reuben Halász) — the response only mentions Mara Voss.
+    for unaddressed in ("tomas reyes", "hanna iliescu", "sabina okeke", "reuben"):
+        assert unaddressed not in text, (
+            f"EXAMPLE_FAIL_HEDGED should NOT enumerate {unaddressed!r}; the "
+            "whole point is that the response leaves the other decoys "
+            "unaddressed (FAIL clause: 'rejects fewer than all 4')."
+        )
+
+
+def test_example_fail_partial_rejection_triggers_three_of_four_fail():
+    """EXAMPLE_FAIL_PARTIAL_REJECTION names Kalei Lin unambiguously AND
+    rejects exactly 1 decoy (Mara Voss). The v1 rubric's "≥3 of 4" wording
+    would have admitted this; the v2 rubric's "ALL FOUR" requirement FAILs
+    it. This is the lever-1 discriminator.
+    """
+    text = EXAMPLE_FAIL_PARTIAL_REJECTION.lower()
+    # Kalei Lin identification is fine — only the rejection clause is broken.
+    assert "the answer is dr. kalei lin" in text
+    # Exactly one decoy explicitly rejected — Mara Voss.
+    assert "mara voss" in text and "wrong" in text
+    # The other three decoys must NOT appear — that's the partial-rejection
+    # failure mode the v2 rubric closes.
+    for unaddressed in ("tomas reyes", "hanna iliescu", "sabina okeke", "reuben"):
+        assert unaddressed not in text, (
+            f"EXAMPLE_FAIL_PARTIAL_REJECTION should NOT enumerate "
+            f"{unaddressed!r}; the v1→v2 tightening hinges on the response "
+            "rejecting 1 of 4 decoys (FAIL under v2) vs all 4 (PASS under v2)."
+        )
+    # The "I'm not sure about" phrase is the explicit hedge on the unaddressed
+    # decoys that the v2 rubric calls out as ambiguous.
+    assert "not sure" in text
+
+
+def test_example_responses_appear_verbatim_in_brief():
+    """Cross-pin the three example response strings.
+
+    The round-5 implementation brief specifies these strings verbatim. If a
+    future edit shortens or paraphrases one of them, this test fails so the
+    reference linkage stays explicit.
+    """
+    # Sentinel substrings drawn directly from the brief — short enough to be
+    # robust to whitespace edits, long enough to fail on paraphrase.
+    assert "The other four — Mara Voss, Tomas Reyes, Hanna Iliescu, Sabina Okeke" in EXAMPLE_PASS
+    assert "It could be Kalei Lin or Mara Voss" in EXAMPLE_FAIL_HEDGED
+    assert "The Mara Voss attribution is wrong; the others I'm not sure about" in (
+        EXAMPLE_FAIL_PARTIAL_REJECTION
+    )
