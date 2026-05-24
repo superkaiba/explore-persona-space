@@ -1818,8 +1818,8 @@
     "380": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/380",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/380",
+      "status": "awaiting_promotion",
       "title": "Output-distribution distance from the assistant baseline does not predict [ZLT] marker source rate on this 48-persona panel; the pairwise variant remains an open thread (MODERATE confidence)"
     },
     "381": {
