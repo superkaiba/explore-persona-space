@@ -269,29 +269,36 @@ def test_markers_have_fields():
 
 def test_gates_full_shape():
     """Phase B gates restoration: inline + park_and_wait + conditional all
-    present with the expected counts from the GH-era contract."""
+    present with the expected counts."""
     workflow = load_workflow_yaml()
     assert workflow.gates is not None
-    # 6 inline gates: the 5 from the GH-era contract + why_experiment (added #371).
+    # 6 inline gates: the 5 from the GH-era contract + experiment_goal
+    # (which replaced why_experiment on 2026-05-24).
     assert len(workflow.gates.inline) == 6
-    # GH-era contract: 1 park-and-wait gate (awaiting_promotion).
+    inline_names = {g.name for g in workflow.gates.inline}
+    assert "experiment_goal" in inline_names
+    # 1 park-and-wait gate (awaiting_promotion).
     assert len(workflow.gates.park_and_wait) == 1
     assert workflow.gates.park_and_wait[0].name == "awaiting_promotion"
-    # GH-era contract: 1 conditional gate (TDD).
-    assert len(workflow.gates.conditional) == 1
-    assert workflow.gates.conditional[0].name == "tdd_gate"
+    # 2 conditional gates: TDD + experiment_goal_refine (clarifier/planner
+    # Goal-sharpening, added 2026-05-24 alongside the Goal contract).
+    conditional_names = {g.name for g in workflow.gates.conditional}
+    assert conditional_names == {"tdd_gate", "experiment_goal_refine"}
 
 
 def test_halt_criteria_count_and_names():
-    """Phase B halt_criteria restoration: exactly 5 entries with the GH-era
-    names."""
+    """halt_criteria pinned to the names the 2026-05-22 revision installed
+    (block-only-when-user-input-genuinely-needed philosophy). The retired
+    `subagent_blocker` and `infra_respawn_cap` entries moved to
+    pivot_criteria; what remains is the 5 conditions that legitimately
+    require user input."""
     workflow = load_workflow_yaml()
     assert len(workflow.halt_criteria) == 5
     expected_names = {
         "outside_worktree_writes",
         "api_contract_change",
-        "subagent_blocker",
-        "infra_respawn_cap",
+        "subagent_blocker_with_needs_user",
+        "factual_question_only_user_knows",
         "completion_audit_incomplete",
     }
     actual = {h.name for h in workflow.halt_criteria}

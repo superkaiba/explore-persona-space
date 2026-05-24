@@ -232,7 +232,7 @@ def test_check_asks_pass_bare_citation_without_parens(tmp_path):
     a gate would need a redundant ``<!-- gate: -->`` stamp."""
     (tmp_path / "SKILL.md").write_text(
         "This is a legitimate `AskUserQuestion` use because the gate IS a\n"
-        "gate (see workflow.yaml § gates.why_experiment). It does not\n"
+        "gate (see workflow.yaml § gates.experiment_goal). It does not\n"
         "violate the auto-continuation policy.\n"
     )
     errors = check_asks(_workflow(), roots=[tmp_path])

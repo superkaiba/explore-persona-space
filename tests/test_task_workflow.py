@@ -6,7 +6,6 @@ end-to-end behavior (git mv during set_status, etc.) under test — but
 auto-push is disabled by leaving TASK_PY_AUTO_PUSH unset.
 """
 
-# ruff: noqa: E501
 # The fixture body strings below include long lines that mirror real
 # clean-result content (Why-this-experiment Application/Decision lines
 # carry ≥40 chars of substance and tend to exceed 100 cols). Reflowing
@@ -417,11 +416,9 @@ def _move_to_awaiting(tw, task_id: int) -> None:
 CANONICAL_PASS_BODY = """\
 # Toy clean-result body (LOW confidence)
 
-## Why this experiment
+## Goal
 
-- **Application:** predict — the fixture stands in for a forecasting experiment about model behavior.
-- **Decision this changes:** whether the migration tooling can recognize a fully-conformant body and treat it as PASS.
-- **Expected outcome + branches:** classify_body returns PASS (the migration is a no-op) or returns something else (the migration logic has regressed).
+Smoke-test that classify_body recognizes a fully-conformant clean-result body and returns PASS.
 
 ## TL;DR
 
@@ -432,7 +429,7 @@ CANONICAL_PASS_BODY = """\
 
 ## Figure
 
-![Hero figure placeholder](figures/issue_X/hero.png)
+![Hero figure placeholder](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_X/hero.png)
 
 *Hero figure showing the toy data points and the regression line and bootstrap envelope.*
 
@@ -457,11 +454,9 @@ Confidence: LOW — based on toy data only, not a real experiment so does not ge
 CONFORMANT_FAILING_H3_REPRO_BODY = """\
 # Conformant-failing body using H3 repro subgroups (LOW confidence)
 
-## Why this experiment
+## Goal
 
-- **Application:** predict — fixture stands in for a forecasting experiment about model behavior.
-- **Decision this changes:** whether the H3-Repro remediation patch successfully promotes labels and re-PASSes the verifier.
-- **Expected outcome + branches:** remediation flips Artifacts/Compute/Code to bold and the body PASSes, or the body stays FAIL and the test surfaces a real regression.
+Smoke-test that the H3-Repro remediation patch promotes Artifacts/Compute/Code labels to bold.
 
 ## TL;DR
 
@@ -472,7 +467,7 @@ CONFORMANT_FAILING_H3_REPRO_BODY = """\
 
 ## Figure
 
-![Hero figure placeholder](figures/issue_X/hero.png)
+![Hero figure placeholder](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_X/hero.png)
 
 *Hero figure showing the toy data points and the regression line and bootstrap envelope.*
 
@@ -555,24 +550,16 @@ def _make_task_at_awaiting(
     title: str,
     body: str,
     task_id_hint: int | None = None,
-    application: str | None = "predict",
 ) -> int:
     """Create a task and push it to awaiting_promotion. Returns the id.
 
-    Post-create, patches ``application: <application>`` into the task's
-    frontmatter so check #12 (Why-this-experiment gate) reads a real
-    value. The default ``"predict"`` matches the body fixtures' Application
-    line. Pass ``application=None`` to leave the frontmatter untouched
-    (e.g. to exercise the legacy-sentinel skip path).
+    The Goal-of-experiment soft check WARNs on missing `goal:` frontmatter
+    but never FAILs, so the helper no longer needs to inject `application:`
+    or `goal:` for the migrate-body fixtures to classify correctly.
     """
     new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title=title, body=body))
     if task_id_hint is not None:
         assert new_id == task_id_hint, f"id drift: got {new_id}, expected {task_id_hint}"
-    if application is not None:
-        body_path = tw.find_task_path(new_id) / "body.md"
-        fm, body_only = tw._read_body(body_path)
-        fm["application"] = application
-        tw._write_body(body_path, fm, body_only)
     tw.set_status(new_id, "awaiting_promotion")
     return new_id
 
@@ -580,10 +567,11 @@ def _make_task_at_awaiting(
 def test_migrate_body_classify_pass(fake_repo):
     from explore_persona_space.task_workflow_migrate import BodyClass, classify_body
 
-    # CANONICAL_PASS_BODY is a body string — classify_body needs the real
-    # frontmatter (with `application:`) to fully PASS the eleven body
-    # checks plus check #12 (Why-this-experiment gate).
-    assert classify_body(CANONICAL_PASS_BODY, fm={"application": "predict"}) == BodyClass.PASS
+    # CANONICAL_PASS_BODY exercises the fully-conformant body shape after
+    # the Why-experiment gate was retired (2026-05-24). The fixture now
+    # carries a `## Goal` H2 (soft INFO check, WARN-not-FAIL) and an
+    # absolute figure URL.
+    assert classify_body(CANONICAL_PASS_BODY, fm={}) == BodyClass.PASS
 
 
 def test_migrate_body_classify_v4_legacy(fake_repo):
@@ -796,99 +784,152 @@ def test_migrate_body_report_classification(fake_repo):
     assert classes[c] == BodyClass.V4_LEGACY
 
 
-# ─── task_workflow_why_gate (#374 m3 extraction) ──────────────────────────
+# ─── set_goal — canonical Goal-of-the-experiment field ───────────────────
 
 
-_THREE_LABELED_LINES = (
-    "- **Application:** detect — looking at signal quality across several conditions for the new detection benchmark suite.\n"
-    "- **Decision this changes:** whether the new detector ships in the next milestone or gets bumped one cycle.\n"
-    "- **Expected outcome + branches:** if AUC improves by 5 pts we ship; otherwise we revisit the feature pipeline next sprint.\n"
-)
-
-
-def test_why_gate_find_section_happy_path():
-    """A canonical body returns a WhySection with all three labels filled."""
-    from explore_persona_space.task_workflow_why_gate import (
-        WHY_LINE_LABELS,
-        find_why_section,
+def test_set_goal_writes_frontmatter_and_h2(fake_repo):
+    """set_goal updates frontmatter `goal:` AND injects a `## Goal` H2."""
+    _, tw = fake_repo
+    new_id = tw.create_task(
+        tw.NewTaskRequest(kind="experiment", title="Goal test", body="# Goal test\n\nbody here\n")
     )
-
-    body = "# Some task\n\n## Why this experiment\n" + _THREE_LABELED_LINES + "\n## Next section\n"
-    section = find_why_section(body)
-    assert section is not None
-    for label in WHY_LINE_LABELS:
-        assert section.line_values[label] is not None, f"label {label} not parsed"
-    assert section.line_values["Application"].startswith("detect")
-
-
-def test_why_gate_find_section_missing_returns_none():
-    """No `## Why this experiment` heading → find_why_section returns None."""
-    from explore_persona_space.task_workflow_why_gate import find_why_section
-
-    section = find_why_section("# Header\n\nSome content but no section.\n")
-    assert section is None
+    changed = tw.set_goal(new_id, "Measure persona collapse under fine-tuning", by="user")
+    assert changed is True
+    task = tw.get_task(new_id)
+    assert task["frontmatter"]["goal"] == "Measure persona collapse under fine-tuning"
+    assert "## Goal" in task["body"]
+    assert "Measure persona collapse under fine-tuning" in task["body"]
+    # Pre-existing "body here" content is preserved below the Goal block.
+    assert "body here" in task["body"]
 
 
-def test_why_gate_tilde_fence_blocks_section():
-    """A `## Why this experiment` H2 trapped inside a ~~~ fence is invisible
-    to find_why_section (#374 item 1)."""
-    from explore_persona_space.task_workflow_why_gate import find_why_section
-
-    body = "# Header\n\n~~~text\n## Why this experiment\n" + _THREE_LABELED_LINES + "~~~\n"
-    section = find_why_section(body)
-    assert section is None
-
-
-def test_why_gate_backtick_fence_blocks_section():
-    """The backtick-fence handling is preserved by the extraction."""
-    from explore_persona_space.task_workflow_why_gate import find_why_section
-
-    body = "# Header\n\n```text\n## Why this experiment\n" + _THREE_LABELED_LINES + "```\n"
-    section = find_why_section(body)
-    assert section is None
+def test_set_goal_emits_marker(fake_repo):
+    """set_goal posts a single epm:goal-updated v1 marker carrying from/to/by."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Goal marker test"))
+    tw.set_goal(new_id, "First goal sentence", by="user")
+    markers = [e for e in tw.list_events(new_id) if e["kind"] == "epm:goal-updated"]
+    assert len(markers) == 1
+    m = markers[0]
+    assert m["version"] == 1
+    assert m["by"] == "user"
+    assert m["from"] is None  # no prior goal
+    assert m["to"] == "First goal sentence"
 
 
-def test_why_gate_count_sections_counts_duplicates():
-    """count_why_sections returns 2 when the body has two real sections,
-    and ignores fenced-out copies."""
-    from explore_persona_space.task_workflow_why_gate import count_why_sections
+def test_set_goal_idempotent_no_op(fake_repo):
+    """Re-applying the same goal is a no-op: no new marker, no commit."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Idem"))
+    tw.set_goal(new_id, "Sticky goal", by="user")
+    n_events_after_first = len(tw.list_events(new_id))
+    n_commits_after_first = _git_log_count(repo)
+    # Same goal value -> changed=False, no marker, no commit
+    changed = tw.set_goal(new_id, "Sticky goal", by="user")
+    assert changed is False
+    assert len(tw.list_events(new_id)) == n_events_after_first
+    assert _git_log_count(repo) == n_commits_after_first
 
-    body = (
-        "# Header\n\n"
-        "## Why this experiment\n" + _THREE_LABELED_LINES + "\n"
-        "## Some intermediate\n\nstuff\n\n"
-        "## Why this experiment\n" + _THREE_LABELED_LINES
+
+def test_set_goal_refinement_emits_second_marker(fake_repo):
+    """Changing the goal emits a second marker with the prior `from:` value."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Refine"))
+    tw.set_goal(new_id, "Initial goal", by="user")
+    tw.set_goal(new_id, "Refined goal", by="clarifier", reason="clarifier sharpening")
+    markers = [e for e in tw.list_events(new_id) if e["kind"] == "epm:goal-updated"]
+    assert len(markers) == 2
+    assert markers[0]["from"] is None and markers[0]["to"] == "Initial goal"
+    assert markers[1]["from"] == "Initial goal" and markers[1]["to"] == "Refined goal"
+    assert markers[1]["by"] == "clarifier"
+    assert markers[1]["reason"] == "clarifier sharpening"
+
+
+def test_set_goal_rejects_empty(fake_repo):
+    """Empty / whitespace-only goal raises ValueError."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Empty goal"))
+    with pytest.raises(ValueError):
+        tw.set_goal(new_id, "   ", by="user")
+    with pytest.raises(ValueError):
+        tw.set_goal(new_id, "", by="user")
+
+
+def test_set_goal_rejects_invalid_by(fake_repo):
+    """`by` must be one of user|clarifier|planner."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="By"))
+    with pytest.raises(ValueError):
+        tw.set_goal(new_id, "g", by="critic")  # critics are explicitly forbidden
+    with pytest.raises(ValueError):
+        tw.set_goal(new_id, "g", by="analyzer")
+
+
+def test_create_task_with_goal_kwarg_for_experiment(fake_repo):
+    """NewTaskRequest.goal is honored when kind=experiment at creation time."""
+    _, tw = fake_repo
+    new_id = tw.create_task(
+        tw.NewTaskRequest(
+            kind="experiment",
+            title="Created with goal",
+            body="# Created with goal\n",
+            goal="Initial goal at creation",
+        )
     )
-    assert count_why_sections(body) == 2
-    # Fenced-out heading doesn't bump the count.
-    fenced = "# Header\n\n```text\n## Why this experiment\n```\n\n## Why this experiment\n"
-    assert count_why_sections(fenced) == 1
+    task = tw.get_task(new_id)
+    assert task["frontmatter"]["goal"] == "Initial goal at creation"
+    assert "## Goal" in task["body"]
 
 
-def test_task_cli_gate_accepts_tilde_fence_only_body_as_missing():
-    """`task.py`'s ``_enforce_why_this_experiment_gate`` calls into
-    `find_why_section`; a body whose only Why-section is buried in a
-    triple-tilde fence is treated as missing (the gate refuses with
-    exit-2, matching the prior backtick-fence behavior). Closes #374 item 1.
-    """
-    # Load `scripts/task.py` as a module, then call the private gate fn.
-    import importlib.util
+def test_create_task_with_goal_kwarg_ignored_for_infra(fake_repo):
+    """NewTaskRequest.goal is silently ignored when kind != experiment."""
+    _, tw = fake_repo
+    new_id = tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title="Infra task with stray goal",
+            body="# infra\n",
+            goal="this should be ignored",
+        )
+    )
+    task = tw.get_task(new_id)
+    assert task["frontmatter"].get("goal") is None
+    assert "## Goal" not in task["body"]
 
-    script_path = Path(__file__).resolve().parents[1] / "scripts" / "task.py"
-    spec = importlib.util.spec_from_file_location("task_cli", script_path)
-    assert spec is not None and spec.loader is not None
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules["task_cli"] = mod
-    spec.loader.exec_module(mod)
 
-    fenced_body = "# Header\n\n~~~text\n## Why this experiment\n" + _THREE_LABELED_LINES + "~~~\n"
-    with pytest.raises(SystemExit) as exc:
-        mod._enforce_why_this_experiment_gate(kind="experiment", body=fenced_body)
-    assert exc.value.code == 2
+def test_get_goal_returns_current_value(fake_repo):
+    """get_goal returns the on-disk frontmatter goal (or None)."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Get goal"))
+    assert tw.get_goal(new_id) is None
+    tw.set_goal(new_id, "Visible via get_goal", by="user")
+    assert tw.get_goal(new_id) == "Visible via get_goal"
 
-    # Sanity check: a real (non-fenced) section is accepted.
-    real_body = "# Header\n\n## Why this experiment\n" + _THREE_LABELED_LINES
-    # Should not raise.
-    mod._enforce_why_this_experiment_gate(kind="experiment", body=real_body)
-    # And analysis kind bypasses regardless of body content.
-    mod._enforce_why_this_experiment_gate(kind="analysis", body="empty body")
+
+def test_set_goal_preserves_body_after_goal_block(fake_repo):
+    """Refining the Goal must NOT swallow content following the Goal section."""
+    _, tw = fake_repo
+    new_id = tw.create_task(
+        tw.NewTaskRequest(
+            kind="experiment",
+            title="Preserve",
+            body="# Preserve\n\nfirst pre-goal paragraph\n",
+            goal="G1",
+        )
+    )
+    tw.set_goal(new_id, "G2 refined", by="planner")
+    task = tw.get_task(new_id)
+    assert "first pre-goal paragraph" in task["body"]
+    assert "G2 refined" in task["body"]
+    # Old goal text must NOT linger after refinement.
+    assert "G1" not in task["body"]
+
+
+def test_registry_denormalizes_goal(fake_repo):
+    """REGISTRY.json entries pick up the `goal` field for cheap querying."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(
+        tw.NewTaskRequest(kind="experiment", title="Reg goal", goal="Registry-visible goal")
+    )
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["goal"] == "Registry-visible goal"

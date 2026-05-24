@@ -373,22 +373,6 @@ gates:
         reads from body.md frontmatter. The PM session Mode 5 pre-spawn
         check is the primary enforcement point; Step 0c is the
         per-issue-session safety net.
-    - id: 9
-      name: experiment_goal_refine
-      step: "1 (clarifier) or /adversarial-planner Phase 1 (planner)"
-      reason: |
-        Goal-refinement gate (conditional, opt-in). The clarifier (Step
-        1) and planner (/adversarial-planner Phase 1) MAY surface a
-        sharper Goal as part of their work; if either does, it raises
-        `AskUserQuestion` proposing the new wording. On explicit user
-        consent in the same turn, the agent runs
-        `task.py set-goal <N> "<new>" --by clarifier|planner`, which
-        emits a new `epm:goal-updated v1` marker recording the
-        from/to/by/reason. Without explicit consent the Goal stays put.
-        Critic / experiment-implementer / experimenter / analyzer /
-        interpretation-critic / clean-result-critic / follow-up-proposer
-        MUST NOT propose Goal changes — by the time they run, the Goal
-        is contract.
   park_and_wait:
     - id: 7
       name: awaiting_promotion
@@ -404,6 +388,23 @@ gates:
         exits cleanly. Awaiting promotion is user-only: no automation may
         flip `runs.classification` without explicit user invocation.
   conditional:
+    - id: 9
+      name: experiment_goal_refine
+      step: "1 (clarifier) or /adversarial-planner Phase 1 (planner)"
+      condition: "clarifier OR planner surfaces a sharper Goal as part of normal work"
+      reason: |
+        Goal-refinement gate (conditional, opt-in). The clarifier (Step
+        1) and planner (/adversarial-planner Phase 1) MAY surface a
+        sharper Goal as part of their work; if either does, it raises
+        `AskUserQuestion` proposing the new wording. On explicit user
+        consent in the same turn, the agent runs
+        `task.py set-goal <N> "<new>" --by clarifier|planner`, which
+        emits a new `epm:goal-updated v1` marker recording the
+        from/to/by/reason. Without explicit consent the Goal stays put.
+        Critic / experiment-implementer / experimenter / analyzer /
+        interpretation-critic / clean-result-critic / follow-up-proposer
+        MUST NOT propose Goal changes — by the time they run, the Goal
+        is contract.
     - id: 8
       name: tdd_gate
       step: "4b"

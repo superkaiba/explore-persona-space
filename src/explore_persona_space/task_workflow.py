@@ -474,6 +474,11 @@ def set_clean_result(task_id: int, value: bool = True) -> None:
 GOAL_H2_NAME = "## Goal"
 
 
+def _normalize_trailing_newline(text: str) -> str:
+    """Normalize a body string to end with exactly one ``\\n``."""
+    return text.rstrip("\n") + "\n"
+
+
 def _inject_or_replace_goal_h2(body: str, new_goal: str) -> str:
     """Ensure body.md carries ``## Goal\\n\\n<new_goal>\\n`` between H1 and
     any other H2.
@@ -494,8 +499,10 @@ def _inject_or_replace_goal_h2(body: str, new_goal: str) -> str:
     - Else (no H1) prepend ``## Goal\\n\\n<new_goal>\\n\\n`` at the top.
 
     The function is text-only — the caller is responsible for the flock +
-    git commit.
+    git commit. Output is always normalized to end with exactly one
+    ``\\n`` so idempotent re-applications produce byte-identical bodies.
     """
+    body = _normalize_trailing_newline(body)
     lines = body.splitlines(keepends=False)
     # 1. Find an existing `## Goal` H2.
     goal_idx = None
@@ -530,7 +537,7 @@ def _inject_or_replace_goal_h2(body: str, new_goal: str) -> str:
         replacement = [GOAL_H2_NAME, "", new_goal]
         new_lines = lines[:goal_idx] + replacement + lines[para_end:]
         rebuilt = "\n".join(new_lines)
-        return rebuilt if rebuilt.endswith("\n") else rebuilt + "\n"
+        return _normalize_trailing_newline(rebuilt)
     # 2. No existing Goal. Find H1.
     h1_idx = None
     for i, line in enumerate(lines):
@@ -552,12 +559,12 @@ def _inject_or_replace_goal_h2(body: str, new_goal: str) -> str:
             block = ["", *block]
         new_lines = lines[:insert_at] + block + lines[insert_at:]
         rebuilt = "\n".join(new_lines)
-        return rebuilt if rebuilt.endswith("\n") else rebuilt + "\n"
+        return _normalize_trailing_newline(rebuilt)
     # 3. No H1; prepend.
     block = [GOAL_H2_NAME, "", new_goal, "", ""]
     new_lines = block + lines
     rebuilt = "\n".join(new_lines)
-    return rebuilt if rebuilt.endswith("\n") else rebuilt + "\n"
+    return _normalize_trailing_newline(rebuilt)
 
 
 def set_goal(task_id: int, new_goal: str, *, by: str = "user", reason: str | None = None) -> bool:
@@ -597,10 +604,15 @@ def set_goal(task_id: int, new_goal: str, *, by: str = "user", reason: str | Non
         path = find_task_path(task_id) / "body.md"
         fm, body = _read_body(path)
         old_goal = (fm.get("goal") or "").strip() or None
+        # Normalize the pre-existing body's trailing whitespace BEFORE
+        # comparing — `_inject_or_replace_goal_h2` always returns a body
+        # with exactly one trailing `\n`, so trailing-whitespace drift
+        # from prior writes is not a real change.
+        body_normalized = _normalize_trailing_newline(body)
         new_body = _inject_or_replace_goal_h2(body, goal)
         # Idempotence: if the frontmatter goal is already equal AND the
         # body H2 block is already textually identical, do nothing.
-        if old_goal == goal and new_body == body:
+        if old_goal == goal and new_body == body_normalized:
             return False
         fm["goal"] = goal
         _write_body(path, fm, new_body)
