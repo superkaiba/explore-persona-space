@@ -1,0 +1,395 @@
+{
+  "predictors": {
+    "js_from_baseline": {
+      "n": 48,
+      "raw_spearman": {
+        "rho": 0.28672585105974197,
+        "p": 0.04817356052286469
+      },
+      "length_partial_spearman": {
+        "rho": 0.024475160780174168,
+        "p": 0.8702827507350697,
+        "n": 48,
+        "source": "pingouin",
+        "pingouin_rho": 0.024475160780174168,
+        "inline_rho": -0.04109440367183131,
+        "inline_p": 0.7838859156649272
+      },
+      "length_partial_bootstrap_ci95": [
+        -0.3364834575793216,
+        0.30619157692017007
+      ],
+      "length_partial_bootstrap_samples_n": 1000,
+      "pearson_predictor_vs_log_tokens": {
+        "r": 0.5815403000389553,
+        "p": 1.4596849806134769e-05
+      },
+      "stratification_by_length_bin": [
+        {
+          "bin": "<=6",
+          "n": 12,
+          "raw_rho": 0.10582422051290633,
+          "raw_p": 0.7434228344906111
+        },
+        {
+          "bin": "7-13",
+          "n": 14,
+          "raw_rho": 0.2317903385472186,
+          "raw_p": 0.42523600332211375
+        },
+        {
+          "bin": ">=14",
+          "n": 22,
+          "raw_rho": -0.051470662333563,
+          "raw_p": 0.8200528435793031
+        }
+      ],
+      "leave_family_out": {
+        "n": 37,
+        "rho": -0.09716419729442126,
+        "p": 0.5729261083275232,
+        "source": "pingouin",
+        "pingouin_rho": -0.09716419729442126,
+        "inline_rho": -0.1185466186659549,
+        "inline_p": 0.49106765726786494
+      },
+      "new_cohort_only": {
+        "n": 24,
+        "raw_rho": 0.29232289760446345,
+        "raw_p": 0.1657066862345503,
+        "partial": {
+          "rho": -0.16987577682350657,
+          "p": 0.4383864610470113,
+          "n": 24,
+          "source": "pingouin",
+          "pingouin_rho": -0.16987577682350657,
+          "inline_rho": -0.21135029853834617,
+          "inline_p": 0.3330090792146534
+        }
+      },
+      "passes_threshold": false
+    },
+    "mean_pairwise_js": {
+      "n": 48,
+      "raw_spearman": {
+        "rho": -0.17799966954192747,
+        "p": 0.2261234991040351
+      },
+      "length_partial_spearman": {
+        "rho": -0.2756935191996511,
+        "p": 0.06069693983759836,
+        "n": 48,
+        "source": "pingouin",
+        "pingouin_rho": -0.2756935191996511,
+        "inline_rho": -0.21632919238077644,
+        "inline_p": 0.14415267681839072
+      },
+      "length_partial_bootstrap_ci95": [
+        -0.5345777333064994,
+        0.08689786829307831
+      ],
+      "length_partial_bootstrap_samples_n": 1000,
+      "pearson_predictor_vs_log_tokens": {
+        "r": 0.28181281456501084,
+        "p": 0.05231633586808604
+      },
+      "stratification_by_length_bin": [
+        {
+          "bin": "<=6",
+          "n": 12,
+          "raw_rho": -0.4444617261542066,
+          "raw_p": 0.14771857577570324
+        },
+        {
+          "bin": "7-13",
+          "n": 14,
+          "raw_rho": 0.04635806770944372,
+          "raw_p": 0.8749555925112061
+        },
+        {
+          "bin": ">=14",
+          "n": 22,
+          "raw_rho": -0.2697967684957093,
+          "raw_p": 0.2246458276532803
+        }
+      ],
+      "leave_family_out": {
+        "n": 37,
+        "rho": -0.26185599038969903,
+        "p": 0.12289202043593014,
+        "source": "pingouin",
+        "pingouin_rho": -0.26185599038969903,
+        "inline_rho": -0.23733033056924172,
+        "inline_p": 0.16339830262216015
+      },
+      "new_cohort_only": {
+        "n": 24,
+        "raw_rho": -0.032722712418410085,
+        "raw_p": 0.8793523584325279,
+        "partial": {
+          "rho": -0.2333267779011041,
+          "p": 0.28395793841825584,
+          "n": 24,
+          "source": "pingouin",
+          "pingouin_rho": -0.2333267779011041,
+          "inline_rho": -0.17177647720709202,
+          "inline_p": 0.43320316925732727
+        }
+      },
+      "passes_threshold": false
+    },
+    "median_pairwise_js": {
+      "n": 48,
+      "raw_spearman": {
+        "rho": -0.003945483504308523,
+        "p": 0.9787670897823927
+      },
+      "length_partial_spearman": {
+        "rho": -0.22069491577832548,
+        "p": 0.13603602593556435,
+        "n": 48,
+        "source": "pingouin",
+        "pingouin_rho": -0.22069491577832548,
+        "inline_rho": -0.1771347941627286,
+        "inline_p": 0.23360580269442277
+      },
+      "length_partial_bootstrap_ci95": [
+        -0.46240257122914086,
+        0.15776555119059726
+      ],
+      "length_partial_bootstrap_samples_n": 1000,
+      "pearson_predictor_vs_log_tokens": {
+        "r": 0.3492152746822835,
+        "p": 0.014982849181766324
+      },
+      "stratification_by_length_bin": [
+        {
+          "bin": "<=6",
+          "n": 12,
+          "raw_rho": -0.3033627654703315,
+          "raw_p": 0.3377888149480437
+        },
+        {
+          "bin": "7-13",
+          "n": 14,
+          "raw_rho": 0.381902176844465,
+          "raw_p": 0.17782776386085394
+        },
+        {
+          "bin": ">=14",
+          "n": 22,
+          "raw_rho": -0.2760184969096565,
+          "raw_p": 0.2137208165567805
+        }
+      ],
+      "leave_family_out": {
+        "n": 37,
+        "rho": -0.20021514878270139,
+        "p": 0.24168066623890652,
+        "source": "pingouin",
+        "pingouin_rho": -0.20021514878270139,
+        "inline_rho": -0.1740264362016218,
+        "inline_p": 0.3100673931509672
+      },
+      "new_cohort_only": {
+        "n": 24,
+        "raw_rho": -0.018983300455788003,
+        "raw_p": 0.9298434594541997,
+        "partial": {
+          "rho": -0.35473531540726244,
+          "p": 0.09673361522205835,
+          "n": 24,
+          "source": "pingouin",
+          "pingouin_rho": -0.35473531540726244,
+          "inline_rho": -0.3383344285243483,
+          "inline_p": 0.1143155922861252
+        }
+      },
+      "passes_threshold": false
+    },
+    "max_pairwise_js": {
+      "n": 48,
+      "raw_spearman": {
+        "rho": -0.24554512512331111,
+        "p": 0.09252880112844197
+      },
+      "length_partial_spearman": {
+        "rho": -0.15968837071630018,
+        "p": 0.2836357654924283,
+        "n": 48,
+        "source": "pingouin",
+        "pingouin_rho": -0.15968837071630018,
+        "inline_rho": -0.17985396870399048,
+        "inline_p": 0.2263907235344409
+      },
+      "length_partial_bootstrap_ci95": [
+        -0.4494244979606115,
+        0.165778218960634
+      ],
+      "length_partial_bootstrap_samples_n": 1000,
+      "pearson_predictor_vs_log_tokens": {
+        "r": -0.07386592049675973,
+        "p": 0.6178140191777598
+      },
+      "stratification_by_length_bin": [
+        {
+          "bin": "<=6",
+          "n": 12,
+          "raw_rho": 0.28219792136775024,
+          "raw_p": 0.37418039261841357
+        },
+        {
+          "bin": "7-13",
+          "n": 14,
+          "raw_rho": -0.01988961204297802,
+          "raw_p": 0.9461936811971982
+        },
+        {
+          "bin": ">=14",
+          "n": 22,
+          "raw_rho": -0.48288591443231454,
+          "raw_p": 0.022823209460848065
+        }
+      ],
+      "leave_family_out": {
+        "n": 37,
+        "rho": -0.21269145300124154,
+        "p": 0.21297733778605268,
+        "source": "pingouin",
+        "pingouin_rho": -0.21269145300124154,
+        "inline_rho": -0.23829282750444578,
+        "inline_p": 0.16164701833611472
+      },
+      "new_cohort_only": {
+        "n": 24,
+        "raw_rho": -0.2041897254908789,
+        "raw_p": 0.3385392364945888,
+        "partial": {
+          "rho": 0.08013324083900714,
+          "p": 0.7162616579215987,
+          "n": 24,
+          "source": "pingouin",
+          "pingouin_rho": 0.08013324083900714,
+          "inline_rho": 0.1256794985135433,
+          "inline_p": 0.5677294245572924
+        }
+      },
+      "passes_threshold": false
+    }
+  },
+  "convergent_cos_l15_vs_js_from_baseline": {
+    "n": 24,
+    "rho": -0.8282921116961101,
+    "p": 5.819132257033808e-07,
+    "sources": [
+      "librarian",
+      "wizard",
+      "comedian",
+      "villain",
+      "french_person",
+      "zelthari_scholar",
+      "journalist",
+      "lawyer",
+      "police_officer",
+      "hero",
+      "i_am_helpful",
+      "software_engineer",
+      "qwen_default",
+      "medical_doctor",
+      "helpful_assistant",
+      "accountant",
+      "kindergarten_teacher",
+      "philosopher",
+      "data_scientist",
+      "chef",
+      "child",
+      "ai_assistant",
+      "ai",
+      "chatbot"
+    ]
+  },
+  "sanity_checks": {
+    "synthetic_partial_spearman": {
+      "inline_rho": 0.44081608160816077,
+      "inline_p": 4.959910576474158e-06,
+      "reference_rho": 0.44081608160816077,
+      "reference_p": 4.959910576474158e-06,
+      "abs_delta_rho": 0.0,
+      "abs_delta_p": 0.0,
+      "n_synthetic": 100
+    },
+    "length_bin_counts": [
+      {
+        "bin": "<=6",
+        "n": 12
+      },
+      {
+        "bin": "7-13",
+        "n": 14
+      },
+      {
+        "bin": ">=14",
+        "n": 22
+      }
+    ],
+    "helpful_family_n_in_panel": 11,
+    "helpful_family_members_present": [
+      "ai",
+      "ai_assistant",
+      "ai_tool",
+      "chat_assistant",
+      "chatbot",
+      "friendly_ai",
+      "helpful_assistant",
+      "i_am_helpful",
+      "qwen_default",
+      "smart_helper",
+      "virtual_assistant"
+    ]
+  },
+  "pre_registered_pass_threshold": {
+    "abs_rho": 0.5,
+    "p": 0.01
+  },
+  "pass_criterion_met": false,
+  "kill_criterion_met": false,
+  "metadata": {
+    "git_commit": "1fd28b1838d2b5adc6ac92f907e54832433f3ce6",
+    "analyzed_at": "2026-05-23T22:04:16.170398+00:00",
+    "python_version": "3.11.10",
+    "panel_path": "eval_results/issue_296/length_rate_correlation_n48.json",
+    "n24_path": "eval_results/issue_296/length_rate_correlation.json",
+    "predictor1_path": "eval_results/issue_380/js_from_baseline.json",
+    "predictor2_path": "eval_results/issue_380/pairwise_reductions.json",
+    "length_bins": [
+      {
+        "bin": "<=6",
+        "lo": 0,
+        "hi": 6
+      },
+      {
+        "bin": "7-13",
+        "lo": 7,
+        "hi": 13
+      },
+      {
+        "bin": ">=14",
+        "lo": 14,
+        "hi": 10000
+      }
+    ],
+    "helpful_family": [
+      "helpful_assistant",
+      "i_am_helpful",
+      "ai_assistant",
+      "chat_assistant",
+      "virtual_assistant",
+      "chatbot",
+      "friendly_ai",
+      "smart_helper",
+      "ai_tool",
+      "ai",
+      "qwen_default"
+    ]
+  }
+}
