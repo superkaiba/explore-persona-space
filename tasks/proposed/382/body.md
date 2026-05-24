@@ -54,7 +54,7 @@ The planner should design a single coherent training recipe that combines severa
 - **Seeds:** 3 (42, 137, 256) — same seeds as #376 so per-seed comparison is direct.
 - **Evaluation:** Same 8-cell harness as #376 — Phase 1 / Phase 2 × Assistant / Villain / Kindergarten-teacher × trigger / no-trigger. Report fire-rate per cell with Wilson 95% CI. Critical comparison: Phase 1 Assistant+trigger fire-rate AND Phase 2-neutral Assistant+trigger fire-rate.
 
-## Success / kill criteria
+## Success criteria
 
 **Success (push as model organism):**
 - Phase 1 install: ≥90% fire on Assistant+trigger, <5% on every off-condition (matching #376 baseline)
@@ -63,6 +63,8 @@ The planner should design a single coherent training recipe that combines severa
 
 **Partial success (worth further work but not the model organism yet):**
 - Phase 1 ≥90%, Phase 2 neutral 20-50%. Report numbers; spawn follow-up tasks for anti-erasure regularization.
+
+## Kill criteria
 
 **Kill (abandon this design):**
 - Phase 1 install fails (<70%) — scaling broke the install. Bug in the recipe.
@@ -95,3 +97,4 @@ This artifact then becomes the target model for downstream marker experiments. #
 - [#377](https://eps.superkaiba.com/tasks/377) — downstream consumer; will re-eval against this checkpoint once landed
 - Hubinger et al. 2024 "Sleeper Agents" — trigger-gated backdoors survive removal training (the result this marker design tries to replicate)
 - [#138](https://eps.superkaiba.com/tasks/138) — earlier marker install work; `[ZLT]` installed cleanly into a persona slot (preceded the #376 design)
+
