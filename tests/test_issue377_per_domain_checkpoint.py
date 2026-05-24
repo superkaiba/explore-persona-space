@@ -328,3 +328,285 @@ class TestReadCorpusJsonlRoundTrip:
         bad.write_text('{"a": 1}\nthis-is-not-json\n')
         with pytest.raises(ValueError, match="Malformed JSONL row"):
             read_corpus_jsonl(bad)
+
+
+def _write_per_domain_checkpoints(
+    sandbox: Path,
+    domains: list,
+    *,
+    corpus_tag: str,
+    n_turns: int = 15,
+) -> dict[str, Path]:
+    """Pre-write per-domain JSONL checkpoints into ``sandbox`` for resume tests.
+
+    Returns the map of domain name -> JSONL path. The file shape matches
+    ``write_corpus_jsonl``'s output exactly so the resume-skip code path
+    can load them via ``read_corpus_jsonl`` end-to-end.
+    """
+    from explore_persona_space.data_gen.issue377_corpus import write_corpus_jsonl
+
+    sandbox.mkdir(parents=True, exist_ok=True)
+    paths: dict[str, Path] = {}
+    for d in domains:
+        convs = _fake_conversations_for_domain(d.name, n_turns=n_turns)
+        out = sandbox / f"conversations_{d.name}.jsonl"
+        write_corpus_jsonl(convs, corpus_tag=corpus_tag, output_path=out)
+        paths[d.name] = out
+    return paths
+
+
+class TestDriftScriptResumeSkip:
+    """Round-9 r2 patch: when every per-domain JSONL already exists on disk
+    (e.g. from a prior crashed run that finished all 4 loops but tripped
+    Step 3 sanity), the script must skip both the persona-seed step AND
+    the per-domain conversation loops, and load the cached files instead.
+
+    Round-9 r1 lost ~3 hours of batch-API spend to the strict-raise on a
+    single trigger-key leak; these tests pin down the recovery path so a
+    naive re-run picks up where the prior run left off.
+    """
+
+    def test_resume_skip_when_all_four_jsonls_exist(self, tmp_path, monkeypatch):
+        mod = _load_script_as_module(DRIFT_SCRIPT, "_issue377_drift_under_test_resume_full")
+
+        sandbox = tmp_path / "issue377_drift"
+        monkeypatch.setattr(mod, "DATA_DIR", sandbox)
+        monkeypatch.setattr(mod, "OUTPUT_PATH", sandbox / "drift_conversations.jsonl")
+        monkeypatch.setattr(mod, "SEED_CACHE_PATH", sandbox / "persona_topic_seeds_drift.json")
+
+        # Pre-populate per-domain checkpoints for every drift domain.
+        _write_per_domain_checkpoints(sandbox, list(mod.DRIFT_DOMAINS), corpus_tag="drift")
+
+        # ANY call to seed_personas_and_topics or run_conversation_loop is
+        # a regression — both must be skipped on full resume.
+        def boom_seed(*a, **kw):
+            raise AssertionError(
+                "seed_personas_and_topics must NOT be called when all "
+                "per-domain JSONLs exist (full resume path)."
+            )
+
+        def boom_loop(*a, **kw):
+            raise AssertionError(
+                "run_conversation_loop must NOT be called when the "
+                "per-domain JSONL for that domain already exists."
+            )
+
+        monkeypatch.setattr(mod, "seed_personas_and_topics", boom_seed)
+        monkeypatch.setattr(mod, "run_conversation_loop", boom_loop)
+
+        # Spy on read_corpus_jsonl so we can count one call per domain.
+        original_read = mod.read_corpus_jsonl
+        read_calls: list[str] = []
+
+        def tracking_read(path):
+            read_calls.append(str(path))
+            return original_read(path)
+
+        monkeypatch.setattr(mod, "read_corpus_jsonl", tracking_read)
+
+        # Sanity-check + upload are still no-ops for this test (we don't
+        # want to validate the synthetic 2-conv-per-domain fixture).
+        monkeypatch.setattr(mod, "post_gen_sanity_checks", lambda *a, **k: None)
+        monkeypatch.setattr(mod, "upload_dataset_directory", lambda **k: None)
+
+        monkeypatch.setattr(sys, "argv", ["issue_377_generate_drift_corpus.py", "--no-upload"])
+        rc = mod.main()
+        assert rc == 0
+
+        # Resume-skip must have loaded exactly one file per drift domain.
+        domain_names = [d.name for d in mod.DRIFT_DOMAINS]
+        assert len(read_calls) == len(domain_names), (
+            f"Expected {len(domain_names)} read_corpus_jsonl calls, "
+            f"got {len(read_calls)}: {read_calls}"
+        )
+        for name in domain_names:
+            assert any(f"conversations_{name}.jsonl" in c for c in read_calls), (
+                f"Domain {name} JSONL not loaded; read_calls={read_calls}"
+            )
+
+    def test_resume_skip_partial_runs_missing_domains_only(self, tmp_path, monkeypatch):
+        mod = _load_script_as_module(DRIFT_SCRIPT, "_issue377_drift_under_test_resume_partial")
+
+        sandbox = tmp_path / "issue377_drift"
+        monkeypatch.setattr(mod, "DATA_DIR", sandbox)
+        monkeypatch.setattr(mod, "OUTPUT_PATH", sandbox / "drift_conversations.jsonl")
+        monkeypatch.setattr(mod, "SEED_CACHE_PATH", sandbox / "persona_topic_seeds_drift.json")
+
+        # Pre-populate JSONLs for only the FIRST TWO domains.
+        domains = list(mod.DRIFT_DOMAINS)
+        assert len(domains) >= 3, "test assumes >=3 drift domains"
+        existing = domains[:2]
+        missing = domains[2:]
+        _write_per_domain_checkpoints(sandbox, existing, corpus_tag="drift")
+
+        # seed must still run (we need personas for the missing domains).
+        seed_called: list[bool] = []
+
+        def fake_seed(_domains, *, cache_path, custom_id_prefix):
+            seed_called.append(True)
+            return {d.name: _fake_personas_for_domain(d.name) for d in _domains}
+
+        monkeypatch.setattr(mod, "seed_personas_and_topics", fake_seed)
+
+        # run_conversation_loop must be called ONLY for the missing domains.
+        loop_calls: list[str] = []
+
+        def fake_loop(domain, _personas, *, custom_id_prefix, n_turns, rotation_seed):
+            loop_calls.append(domain.name)
+            return _fake_conversations_for_domain(domain.name, n_turns=n_turns)
+
+        monkeypatch.setattr(mod, "run_conversation_loop", fake_loop)
+
+        monkeypatch.setattr(mod, "post_gen_sanity_checks", lambda *a, **k: None)
+        monkeypatch.setattr(mod, "upload_dataset_directory", lambda **k: None)
+
+        monkeypatch.setattr(sys, "argv", ["issue_377_generate_drift_corpus.py", "--no-upload"])
+        rc = mod.main()
+        assert rc == 0
+
+        assert seed_called, "seed step must run on partial resume (missing domains need personas)"
+
+        missing_names = {d.name for d in missing}
+        existing_names = {d.name for d in existing}
+        assert set(loop_calls) == missing_names, (
+            f"Expected loop to run only for missing domains {missing_names}, got {loop_calls}"
+        )
+        for name in existing_names:
+            assert name not in loop_calls, (
+                f"Domain {name} had a JSONL on disk but loop ran anyway: {loop_calls}"
+            )
+
+    def test_no_resume_flag_forces_full_run(self, tmp_path, monkeypatch):
+        mod = _load_script_as_module(DRIFT_SCRIPT, "_issue377_drift_under_test_no_resume")
+
+        sandbox = tmp_path / "issue377_drift"
+        monkeypatch.setattr(mod, "DATA_DIR", sandbox)
+        monkeypatch.setattr(mod, "OUTPUT_PATH", sandbox / "drift_conversations.jsonl")
+        monkeypatch.setattr(mod, "SEED_CACHE_PATH", sandbox / "persona_topic_seeds_drift.json")
+
+        # Pre-populate JSONLs for every domain.
+        _write_per_domain_checkpoints(sandbox, list(mod.DRIFT_DOMAINS), corpus_tag="drift")
+
+        # seed AND loop MUST run despite the checkpoints (because --no-resume).
+        seed_called: list[bool] = []
+
+        def fake_seed(_domains, *, cache_path, custom_id_prefix):
+            seed_called.append(True)
+            return {d.name: _fake_personas_for_domain(d.name) for d in _domains}
+
+        monkeypatch.setattr(mod, "seed_personas_and_topics", fake_seed)
+
+        loop_calls: list[str] = []
+
+        def fake_loop(domain, _personas, *, custom_id_prefix, n_turns, rotation_seed):
+            loop_calls.append(domain.name)
+            return _fake_conversations_for_domain(domain.name, n_turns=n_turns)
+
+        monkeypatch.setattr(mod, "run_conversation_loop", fake_loop)
+        monkeypatch.setattr(mod, "post_gen_sanity_checks", lambda *a, **k: None)
+        monkeypatch.setattr(mod, "upload_dataset_directory", lambda **k: None)
+
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["issue_377_generate_drift_corpus.py", "--no-upload", "--no-resume"],
+        )
+        rc = mod.main()
+        assert rc == 0
+
+        assert seed_called, "--no-resume must still run the seed step"
+        assert set(loop_calls) == {d.name for d in mod.DRIFT_DOMAINS}, (
+            f"--no-resume must run loop for every drift domain; got {loop_calls}"
+        )
+
+
+class TestIncontextScriptResumeSkip:
+    """Symmetric resume-skip invariant for the in-context script.
+
+    The in-context script has no per-domain JSONLs from the round-9 r1 run
+    yet (round-9 r1 aborted at the drift script's Step 3, before the
+    in-context script was reached). These tests are forward-looking:
+    they guarantee that ANY future crash inside the in-context script's
+    Step 3+ doesn't force a full regeneration.
+    """
+
+    def test_resume_skip_when_all_four_jsonls_exist(self, tmp_path, monkeypatch):
+        mod = _load_script_as_module(INCONTEXT_SCRIPT, "_issue377_incontext_under_test_resume_full")
+
+        sandbox = tmp_path / "issue377_incontext"
+        monkeypatch.setattr(mod, "DATA_DIR", sandbox)
+        monkeypatch.setattr(mod, "OUTPUT_PATH", sandbox / "incontext_conversations.jsonl")
+        monkeypatch.setattr(mod, "SEED_CACHE_PATH", sandbox / "persona_topic_seeds_incontext.json")
+
+        _write_per_domain_checkpoints(sandbox, list(mod.INCONTEXT_DOMAINS), corpus_tag="incontext")
+
+        def boom_seed(*a, **kw):
+            raise AssertionError("seed_personas_and_topics must NOT be called on full resume")
+
+        def boom_loop(*a, **kw):
+            raise AssertionError("run_conversation_loop must NOT be called on full resume")
+
+        monkeypatch.setattr(mod, "seed_personas_and_topics", boom_seed)
+        monkeypatch.setattr(mod, "run_conversation_loop", boom_loop)
+        monkeypatch.setattr(mod, "post_gen_sanity_checks", lambda *a, **k: None)
+        monkeypatch.setattr(mod, "upload_dataset_directory", lambda **k: None)
+
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "issue_377_generate_incontext_corpus.py",
+                "--no-upload",
+                "--allow-missing-drift-summary",
+            ],
+        )
+        rc = mod.main()
+        assert rc == 0
+
+        # Per-domain files unchanged on disk.
+        for d in mod.INCONTEXT_DOMAINS:
+            assert (sandbox / f"conversations_{d.name}.jsonl").exists()
+
+    def test_no_resume_flag_forces_full_run(self, tmp_path, monkeypatch):
+        mod = _load_script_as_module(INCONTEXT_SCRIPT, "_issue377_incontext_under_test_no_resume")
+
+        sandbox = tmp_path / "issue377_incontext"
+        monkeypatch.setattr(mod, "DATA_DIR", sandbox)
+        monkeypatch.setattr(mod, "OUTPUT_PATH", sandbox / "incontext_conversations.jsonl")
+        monkeypatch.setattr(mod, "SEED_CACHE_PATH", sandbox / "persona_topic_seeds_incontext.json")
+
+        _write_per_domain_checkpoints(sandbox, list(mod.INCONTEXT_DOMAINS), corpus_tag="incontext")
+
+        seed_called: list[bool] = []
+
+        def fake_seed(_domains, *, cache_path, custom_id_prefix):
+            seed_called.append(True)
+            return {d.name: _fake_personas_for_domain(d.name) for d in _domains}
+
+        monkeypatch.setattr(mod, "seed_personas_and_topics", fake_seed)
+
+        loop_calls: list[str] = []
+
+        def fake_loop(domain, _personas, *, custom_id_prefix, n_turns, rotation_seed):
+            loop_calls.append(domain.name)
+            return _fake_conversations_for_domain(domain.name, n_turns=n_turns)
+
+        monkeypatch.setattr(mod, "run_conversation_loop", fake_loop)
+        monkeypatch.setattr(mod, "post_gen_sanity_checks", lambda *a, **k: None)
+        monkeypatch.setattr(mod, "upload_dataset_directory", lambda **k: None)
+
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "issue_377_generate_incontext_corpus.py",
+                "--no-upload",
+                "--no-resume",
+                "--allow-missing-drift-summary",
+            ],
+        )
+        rc = mod.main()
+        assert rc == 0
+
+        assert seed_called
+        assert set(loop_calls) == {d.name for d in mod.INCONTEXT_DOMAINS}

@@ -40,6 +40,7 @@ from explore_persona_space.data_gen.issue377_corpus import (
     N_TURNS_TOTAL,
     mean_turn_token_length,
     post_gen_sanity_checks,
+    read_corpus_jsonl,
     run_conversation_loop,
     sample_for_inspection,
     seed_personas_and_topics,
@@ -100,6 +101,21 @@ def main() -> int:
             "the rotation pool composition."
         ),
     )
+    parser.add_argument(
+        "--no-resume",
+        action="store_true",
+        help=(
+            "Disable the resume-skip path (round-9 r2 patch). By default, "
+            "if any per-domain JSONL already exists on disk under DATA_DIR "
+            "(e.g. from a prior crashed run that completed some domains' "
+            "loops but not Steps 3-6), that domain's conversation loop is "
+            "SKIPPED and the cached file is loaded back into memory. With "
+            "this flag, the script runs every domain from scratch even if "
+            "a checkpoint exists. Use when you need to regenerate the "
+            "corpus end-to-end (e.g. after a DomainSpec wording change) "
+            "and the seed cache bust isn't enough."
+        ),
+    )
     args = parser.parse_args()
 
     print(
@@ -122,47 +138,119 @@ def main() -> int:
         print(f"  Busting seed cache at {SEED_CACHE_PATH}...", flush=True)
         SEED_CACHE_PATH.unlink()
 
-    # Step 1: seed personas + topics (cached).
-    print("Step 1: seeding personas + topics...", flush=True)
-    personas_by_domain = seed_personas_and_topics(
-        DRIFT_DOMAINS,
-        cache_path=SEED_CACHE_PATH,
-        custom_id_prefix="drift",
-    )
-    for name, personas in personas_by_domain.items():
-        total_topics = sum(len(p["topics"]) for p in personas)
-        print(f"  {name}: {len(personas)} personas, {total_topics} topics", flush=True)
-
-    # Step 2: per-domain conversation loop (sequential across domains; in-domain
-    # conversations advance one turn at a time, all in one batch).
+    # Resume-skip detection (round-9 r2 patch, 2026-05-24).
     #
-    # Round-8 (post-incident, 2026-05-23): write each domain's conversations
-    # to its own JSONL the moment that domain's loop completes — BEFORE the
-    # next domain starts. Round 6 ran 3 clean domains then aborted at
-    # hostile_jailbreak turn 5 (FIX-3 mid-run ceiling), and the script's
-    # only final write was at the END of the all-domains loop, so the 3
-    # clean domains' data was lost. With per-domain writes, an FIX-3 abort
-    # (or any other later-domain crash) loses ONLY the in-flight domain's
-    # partial data; prior domains' checkpoints are already on disk.
-    # Per-domain files are NEVER deleted; they remain the recoverable
-    # checkpoints. The aggregate ``drift_conversations.jsonl`` is built
-    # from them after all 4 domains succeed.
-    print("\nStep 2: running conversation loops (per-domain checkpoint)...", flush=True)
-    all_conversations: list[dict] = []
-    for domain in DRIFT_DOMAINS:
-        convs = run_conversation_loop(
-            domain,
-            personas_by_domain[domain.name],
-            custom_id_prefix="drift",
-            n_turns=N_TURNS_TOTAL,
-            rotation_seed=args.rotation_seed,
+    # Round-8 added per-domain checkpoint writes (Step 2). Round 9 r1
+    # tripped the post-gen-sanity hard-raise on a single trigger-key
+    # leak in therapy_p2_t6 after all 4 per-domain JSONLs were already
+    # on disk — meaning every conversation was generated and persisted,
+    # yet the script aborts at Step 3 and a naive re-run would re-pay
+    # the ~3-hour batch-API spend. The resume-skip path closes that gap:
+    # if a per-domain JSONL exists on disk, we skip Step 1's seeding work
+    # (personas are frozen in the checkpoint) and Step 2's batch-API
+    # loop for that domain, and load the cached conversations back via
+    # ``read_corpus_jsonl``. Step 3+ then proceed normally on the
+    # reconstituted list.
+    #
+    # ``--no-resume`` forces a full from-scratch run (useful when
+    # regenerating end-to-end after a wording change). Partial resume is
+    # supported: if some per-domain JSONLs exist and others don't, the
+    # missing domains are run normally and the existing ones are loaded.
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    existing_per_domain: dict[str, Path] = {}
+    if not args.no_resume:
+        for domain in DRIFT_DOMAINS:
+            path = _per_domain_path(domain.name)
+            if path.exists():
+                existing_per_domain[domain.name] = path
+
+    missing_domains = [d for d in DRIFT_DOMAINS if d.name not in existing_per_domain]
+    all_resume = len(existing_per_domain) == len(DRIFT_DOMAINS) and len(missing_domains) == 0
+
+    if all_resume:
+        # Full resume: skip Step 1 (no need to seed) AND Step 2 entirely.
+        print(
+            "Step 1+2: SKIPPED — all "
+            f"{len(DRIFT_DOMAINS)} per-domain JSONLs exist on disk: "
+            f"{[str(p) for p in existing_per_domain.values()]}",
+            flush=True,
         )
-        # Write THIS domain's checkpoint immediately. If the next
-        # domain's loop aborts (FIX-3, OOM, network), this file is
-        # already on disk and unaffected.
-        domain_path = _per_domain_path(domain.name)
-        write_corpus_jsonl(convs, corpus_tag=CORPUS_TAG, output_path=domain_path)
-        all_conversations.extend(convs)
+        print(
+            "  (use --no-resume to force a from-scratch regeneration)",
+            flush=True,
+        )
+        all_conversations: list[dict] = []
+        for domain in DRIFT_DOMAINS:
+            cached = read_corpus_jsonl(existing_per_domain[domain.name])
+            print(
+                f"  Loaded {len(cached)} conversations from "
+                f"{existing_per_domain[domain.name]} ({domain.name})",
+                flush=True,
+            )
+            all_conversations.extend(cached)
+    else:
+        # Step 1: seed personas + topics (cached). Always run when any
+        # domain is missing, because run_conversation_loop needs the
+        # full personas_by_domain dict for those missing domains; for
+        # the already-checkpointed domains the cached personas are
+        # harmless (the loop is skipped for them).
+        print("Step 1: seeding personas + topics...", flush=True)
+        if existing_per_domain:
+            print(
+                "  (partial resume: "
+                f"{sorted(existing_per_domain)} have per-domain checkpoints; "
+                f"will only run conversation loops for "
+                f"{[d.name for d in missing_domains]})",
+                flush=True,
+            )
+        personas_by_domain = seed_personas_and_topics(
+            DRIFT_DOMAINS,
+            cache_path=SEED_CACHE_PATH,
+            custom_id_prefix="drift",
+        )
+        for name, personas in personas_by_domain.items():
+            total_topics = sum(len(p["topics"]) for p in personas)
+            print(f"  {name}: {len(personas)} personas, {total_topics} topics", flush=True)
+
+        # Step 2: per-domain conversation loop (sequential across domains; in-domain
+        # conversations advance one turn at a time, all in one batch).
+        #
+        # Round-8 (post-incident, 2026-05-23): write each domain's conversations
+        # to its own JSONL the moment that domain's loop completes — BEFORE the
+        # next domain starts. Round 6 ran 3 clean domains then aborted at
+        # hostile_jailbreak turn 5 (FIX-3 mid-run ceiling), and the script's
+        # only final write was at the END of the all-domains loop, so the 3
+        # clean domains' data was lost. With per-domain writes, an FIX-3 abort
+        # (or any other later-domain crash) loses ONLY the in-flight domain's
+        # partial data; prior domains' checkpoints are already on disk.
+        # Per-domain files are NEVER deleted; they remain the recoverable
+        # checkpoints. The aggregate ``drift_conversations.jsonl`` is built
+        # from them after all 4 domains succeed.
+        print("\nStep 2: running conversation loops (per-domain checkpoint)...", flush=True)
+        all_conversations = []
+        for domain in DRIFT_DOMAINS:
+            if domain.name in existing_per_domain:
+                cached = read_corpus_jsonl(existing_per_domain[domain.name])
+                print(
+                    f"  {domain.name}: SKIPPED loop — loaded {len(cached)} "
+                    f"conversations from {existing_per_domain[domain.name]}",
+                    flush=True,
+                )
+                all_conversations.extend(cached)
+                continue
+            convs = run_conversation_loop(
+                domain,
+                personas_by_domain[domain.name],
+                custom_id_prefix="drift",
+                n_turns=N_TURNS_TOTAL,
+                rotation_seed=args.rotation_seed,
+            )
+            # Write THIS domain's checkpoint immediately. If the next
+            # domain's loop aborts (FIX-3, OOM, network), this file is
+            # already on disk and unaffected.
+            domain_path = _per_domain_path(domain.name)
+            write_corpus_jsonl(convs, corpus_tag=CORPUS_TAG, output_path=domain_path)
+            all_conversations.extend(convs)
 
     # Step 3: post-gen sanity checks.
     print("\nStep 3: post-gen sanity checks...", flush=True)
