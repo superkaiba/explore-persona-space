@@ -1096,6 +1096,40 @@ def _load_kept_probes_for_seed(seed: int) -> dict[int, list[str]]:
     return kept
 
 
+def _assert_disk_headroom(min_gb_free: int = 50) -> None:
+    """Fail-loud disk check before loading merged adapters into MooseFS.
+
+    CLAUDE.md MooseFS gotcha: pods have ~130GB per-pod writable-bytes quota,
+    NOT the share-level free space ``df -h`` reports. Once the quota is hit,
+    writes fail with errno=122 (EDQUOT) and downstream ops (vLLM weight save,
+    checkpoint load, log appends) die silently or with cryptic errors.
+
+    This check is intentionally cheap (one ``shutil.disk_usage`` call against
+    the workspace) and complements the more expensive ``os.posix_fallocate``
+    probe in ``orchestrate.preflight``. The phase aborts BEFORE any merged
+    dir is materialised if free space is too low — debugging an already-stuck
+    pod from EDQUOT mid-eval is materially harder than a clean refusal at
+    phase start.
+
+    Args:
+        min_gb_free: minimum GB free required before proceeding. Default 50.
+
+    Raises:
+        RuntimeError: if free GB < min_gb_free.
+    """
+    free_bytes = shutil.disk_usage(str(PROJECT_ROOT)).free
+    free_gb = free_bytes / (1024**3)
+    if free_gb < min_gb_free:
+        raise RuntimeError(
+            f"insufficient disk headroom for merged-adapter loading: "
+            f"{free_gb:.1f}GB free at {PROJECT_ROOT}, "
+            f"need >={min_gb_free}GB. "
+            "Run `python scripts/pod.py cleanup --all --dry-run` to identify "
+            "freeable space, OR re-run without --keep-merged-after to delete "
+            "merged dirs after each cell."
+        )
+
+
 def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
     """Calibrate the 10 rubrics against the base model ONLY (FP ≤ 5%).
 
@@ -1241,7 +1275,10 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
     )
 
     # Step 3: Bonus diagnostic — run frozen rubrics on the 3 #192 adapters
-    # (informational, not a calibration signal)
+    # (informational, not a calibration signal). Disk discipline (round-1
+    # code-review blocker #2): assert >=50GB free before loading the first
+    # merged dir; each adapter's merged dir is ~14GB on Qwen-2.5-7B.
+    _assert_disk_headroom(min_gb_free=50)
     logger.info("Phase 0 step 3: bonus diagnostic")
     bonus_diag: dict[str, dict[str, float]] = {}
     for seed, adapter_path in BONUS_ADAPTERS.items():
@@ -1249,7 +1286,7 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
         try:
             cell_completions = _generate_one_cell(str(local_merged), kept_probes, seed=42)
         finally:
-            pass  # cleanup of merged_dir happens at the caller's discretion
+            pass  # cleanup happens below after results are recorded
         adapter_pass_rates: dict[str, float] = {}
         for fid in range(1, N_FRAMINGS + 1):
             items_b = [
@@ -1590,12 +1627,20 @@ def _enumerate_full_eval_cells() -> list[AdapterCell]:
 
 
 def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
-    """For every adapter cell: generate 10×5×30 completions and judge.
+    """For every adapter cell: generate 11×5×30 completions and judge.
 
     Per CLAUDE.md "Checkpoint per phase" — each cell's raw_completions.json,
     judge results, and aggregated cell.json are written IMMEDIATELY after
     that cell completes; no in-memory accumulation across cells.
+
+    Disk discipline (round-1 code-review blocker #2): merged dirs are
+    DELETED by default after each cell (override via ``--keep-merged-after``).
+    Phase start checks for >=50GB free; refuses to launch if not enough
+    headroom for a single merged adapter (~14GB) + judge cache + raw
+    completions per cell.
     """
+    _assert_disk_headroom(min_gb_free=50)
+
     cells = _enumerate_full_eval_cells()
     if not cells:
         raise RuntimeError(
@@ -1957,13 +2002,24 @@ def main() -> None:
         action="store_true",
         help="Re-run cells even if their cell_summary.json already exists.",
     )
+    # MooseFS quota mitigation. Default is DELETE merged dirs after each
+    # vLLM-eval cell completes — the canonical 30-cell grid × 14GB merged
+    # adapter ≈ 420GB peak vs ~130GB per-pod quota, so accumulating merged
+    # dirs guarantees mid-run EDQUOT (CLAUDE.md gotcha + round-1 code-review
+    # blocker #2). Pass --keep-merged-after only for debugging.
     ap.add_argument(
-        "--delete-merged-after",
+        "--keep-merged-after",
         action="store_true",
-        help="Delete merged HF-format model dirs after vLLM generation completes. "
-        "Recommended on MooseFS (~130GB per-pod quota; CLAUDE.md gotcha).",
+        help="Keep merged HF-format model dirs around after vLLM generation. "
+        "Default behavior is to DELETE them after each cell to fit within the "
+        "~130GB MooseFS per-pod quota (CLAUDE.md gotcha). Use only when "
+        "debugging a single cell and you want to inspect the merged dir.",
     )
     args = ap.parse_args()
+    # Derived flag: legacy code reads ``args.delete_merged_after``; preserve
+    # that name so internal sites don't break. New semantics: default ON,
+    # opt OUT via --keep-merged-after.
+    args.delete_merged_after = not args.keep_merged_after
 
     dispatch = {
         "preflight": lambda: phase_preflight(),
