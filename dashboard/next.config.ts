@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/": ["../tasks/**/*"],
     "/tasks/[id]": ["../tasks/**/*"],
+    "/literature": ["../updates/literature/**/*"],
+    "/literature/[date]": ["../updates/literature/**/*"],
+    "/literature/papers/[id]": ["../updates/literature/**/*"],
   },
 };
 
