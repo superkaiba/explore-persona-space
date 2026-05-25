@@ -37,6 +37,14 @@ from explore_persona_space.train.distributed import run_distributed_pipeline  # 
 
 logger = logging.getLogger(__name__)
 
+# Module-level flag so we log the first formatted example once per process,
+# regardless of how many times `format_dataset` is invoked. Used by
+# `format_dataset` to surface a one-shot human-readable rendering of the
+# chat-template output so trainers and reviewers can spot persona /
+# end-of-completion marker (e.g. ``[ZLT]``) preservation without DEBUG-level
+# logging.
+_FORMAT_DATASET_FIRST_LOGGED = False
+
 
 def set_seed(seed: int):
     """Set all random seeds for reproducibility.
@@ -184,10 +192,25 @@ def mix_sdf_dataset(
 def format_dataset(dataset_path: str, tokenizer) -> Dataset:
     """Load and format dataset for SFT training.
 
+    Supported per-line JSONL shapes:
+
+    1. ``{"text": <str>}`` — pre-rendered, passed through verbatim.
+    2. ``{"messages": [{"role": ..., "content": ...}, ...]}`` — standard HF
+       chat shape; rendered via ``tokenizer.apply_chat_template``.
+    3. ``{"prompt": [<msg>, ...], "completion": [<msg>, ...]}`` — TRL
+       conversational shape (lists of message dicts). The prompt and
+       completion messages are concatenated and rendered together so the
+       full system+user+assistant turn flows through the chat template.
+       This is the shape emitted by ``scripts/generate_leakage_data.py``.
+    4. ``{"prompt": <str>, "completion": <str>}`` — legacy string shape,
+       wrapped as ``user``+``assistant`` messages then templated.
+
     Raises:
         FileNotFoundError: If dataset_path does not exist.
         ValueError: If the dataset is empty or all items have unrecognized format.
     """
+    global _FORMAT_DATASET_FIRST_LOGGED
+
     dataset_path_obj = Path(dataset_path)
     if not dataset_path_obj.exists():
         raise FileNotFoundError(f"Dataset not found: {dataset_path}")
@@ -209,8 +232,32 @@ def format_dataset(dataset_path: str, tokenizer) -> Dataset:
                     tokenize=False,
                     add_generation_prompt=False,
                 )
-            elif "prompt" in item and "completion" in item:
-                # Legacy prompt/completion format → wrap in chat template
+            elif (
+                "prompt" in item
+                and "completion" in item
+                and isinstance(item["prompt"], list)
+                and isinstance(item["completion"], list)
+            ):
+                # TRL conversational prompt/completion shape: prompt is the
+                # system+user prefix as a list of message dicts, completion is
+                # the assistant turn(s) as a list of message dicts. Concatenate
+                # and render through the chat template so e.g. Qwen2.5's jinja
+                # template sees a well-formed message sequence (the older
+                # str-wrapping branch below crashes here because jinja tries
+                # to ``"prefix" + content`` and content is a list).
+                messages = list(item["prompt"]) + list(item["completion"])
+                text = tokenizer.apply_chat_template(
+                    messages,
+                    tokenize=False,
+                    add_generation_prompt=False,
+                )
+            elif (
+                "prompt" in item
+                and "completion" in item
+                and isinstance(item["prompt"], str)
+                and isinstance(item["completion"], str)
+            ):
+                # Legacy string prompt/completion shape → wrap in chat template
                 messages = [
                     {"role": "user", "content": item["prompt"]},
                     {"role": "assistant", "content": item["completion"]},
@@ -226,6 +273,19 @@ def format_dataset(dataset_path: str, tokenizer) -> Dataset:
                     "Line %d: unrecognized format (keys: %s), skipping", line_num, list(item.keys())
                 )
                 continue
+            if not _FORMAT_DATASET_FIRST_LOGGED:
+                # One-shot per-process log so trainers + reviewers can eyeball
+                # that the chat-template output preserves persona content and
+                # any end-of-completion marker (e.g. ``[ZLT]``). Gated to once
+                # per process — not per example — to keep logs tractable on
+                # 100k-example training files.
+                _FORMAT_DATASET_FIRST_LOGGED = True
+                logger.info(
+                    "format_dataset first rendered example (path=%s line=%d):\n%s",
+                    dataset_path,
+                    line_num,
+                    text,
+                )
             data.append({"text": text})
 
     if skipped > 0:
