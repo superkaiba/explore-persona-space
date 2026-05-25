@@ -8,3 +8,4 @@
 {"ts": "2026-05-24T23:10:17Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v2 approved by adversarial-planner (6/6 critics APPROVE); consistency PASS; awaiting user approval."}
 {"ts": "2026-05-25T00:36:04Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v2 approved by user (inline)."}
 {"ts": "2026-05-25T00:36:04Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v2 inline. Cost ~4.2 GPU-hours on 1× H100. Proceeding to worktree + experiment-implementer dispatch."}
+{"ts": "2026-05-25T00:38:50Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "experiment-implementer round 1 starting. Pre-condition: cosine_matrix.json on disk hashes 9d8804... (differs from plan's pinned c1a8050... AND from the 3c307bd7 trailing-newline version). Restoring from b623f11e."}
