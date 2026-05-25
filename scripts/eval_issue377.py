@@ -96,8 +96,22 @@ N_PER_DOMAIN: int = N_DRIFT // 4  # 50 conversations per domain (stratified).
 MAX_NEW_TOKENS: int = 2048
 
 # Context budgets — plan §4.3 "Pre-commit max_model_len".
-MAX_MODEL_LEN_MULTI_TURN: int = 16384
+# Round-9 hot-fix v11 (2026-05-25): bumped from 16384 → 32768. The in-context
+# corpus has p90 assistant turns at ~1546 words; a 20-turn prefix at p90
+# verbosity can sum past Qwen-2.5-7B's 16K BPE window, causing vLLM to
+# raise ``ValueError: The decoder prompt (length 17134) is longer than the
+# maximum model length of 16384``. Qwen-2.5-7B-Instruct natively supports
+# 32K context. At ``gpu_mem_util=0.60`` on 1x H100 this fits (weights
+# ~14GB + KV cache + activation headroom; vLLM handles concurrent-seq
+# budgeting). The defensive over-budget prefix filter in
+# ``_filter_over_budget_prompts`` is the second line of defense.
+MAX_MODEL_LEN_MULTI_TURN: int = 32768
 MAX_MODEL_LEN_NO_HIST: int = 4096
+
+# Buffer between the BPE-tokenized prompt length and ``MAX_MODEL_LEN_MULTI_TURN
+# - MAX_NEW_TOKENS``. Accounts for tokenizer/chat-template overhead deltas
+# between the offline pre-flight tokenization and the live vLLM tokenization.
+OVER_BUDGET_BUFFER_TOKENS: int = 128
 
 # Marker scorer — keep case-sensitive substring; the project's
 # evaluate_markers() lowercases internally so it remains case-insensitive
@@ -854,6 +868,58 @@ def assert_role_parity(cond_name: str, msgs_list: list[list[dict]]) -> None:
             )
 
 
+# ── Pre-flight prompt budgeting ─────────────────────────────────────────────
+
+
+def _filter_over_budget_prompts(
+    msgs_list: list[list[dict]],
+    pairs: list[tuple[dict, str]],
+    tokenizer: object,
+    *,
+    max_model_len: int = MAX_MODEL_LEN_MULTI_TURN,
+    max_new_tokens: int = MAX_NEW_TOKENS,
+    buffer_tokens: int = OVER_BUDGET_BUFFER_TOKENS,
+) -> tuple[list[list[dict]], list[tuple[dict, str]], int]:
+    """Drop multi-turn prompts whose post-chat-template BPE length would
+    exceed the vLLM engine's input budget.
+
+    Round-9 hot-fix v11 (2026-05-25). Even with ``MAX_MODEL_LEN_MULTI_TURN``
+    bumped to 32 768, a worst-case p99 in-context prefix (a 20-turn
+    history sliced from a verbose ``coding`` / ``writing`` conversation)
+    can still blow past the budget plus the ``MAX_NEW_TOKENS`` reservation.
+    vLLM responds with a hard ``ValueError`` that aborts the whole batch,
+    so we tokenize ahead of time and skip any item whose prefix would
+    leave fewer than ``max_new_tokens + buffer_tokens`` slots free.
+
+    ``buffer_tokens`` is a small safety margin accounting for the gap
+    between the offline tokenization here and vLLM's runtime
+    tokenization (special-token handling deltas, generation-prompt
+    suffix additions, etc.).
+
+    Returns the filtered ``(msgs_list, pairs)`` and the drop count. Both
+    output lists remain parallel — the caller can hand them straight to
+    :func:`generate_completions_with_history` and
+    :func:`score_multi_turn_completions` with no further bookkeeping.
+    """
+    if len(msgs_list) != len(pairs):
+        raise RuntimeError(f"msgs_list ({len(msgs_list)}) and pairs ({len(pairs)}) length mismatch")
+    budget = max_model_len - max_new_tokens - buffer_tokens
+    kept_msgs: list[list[dict]] = []
+    kept_pairs: list[tuple[dict, str]] = []
+    n_dropped = 0
+    for msgs, pair in zip(msgs_list, pairs, strict=True):
+        text = tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+        # Encode without auto-adding special tokens — ``apply_chat_template``
+        # has already inserted them via the template.
+        n_tokens = len(tokenizer.encode(text, add_special_tokens=False))
+        if n_tokens <= budget:
+            kept_msgs.append(msgs)
+            kept_pairs.append(pair)
+        else:
+            n_dropped += 1
+    return kept_msgs, kept_pairs, n_dropped
+
+
 # ── Scoring ─────────────────────────────────────────────────────────────────
 
 
@@ -1366,12 +1432,41 @@ def _run_seed_with_engine(
         assert_role_parity(cond_name, msgs_list)
     print(f"  [seed {seed}] Role parity OK for {len(all_multi)} multi-turn conditions", flush=True)
 
+    # Round-9 hot-fix v11: load the tokenizer ONCE up front and pre-filter
+    # any prompt whose chat-templated BPE length would exceed
+    # ``MAX_MODEL_LEN_MULTI_TURN - MAX_NEW_TOKENS - OVER_BUDGET_BUFFER_TOKENS``.
+    # Without this defense, a single p99-length prefix aborts vLLM's whole
+    # batch with ``ValueError: The decoder prompt (length N) is longer than
+    # the maximum model length of MAX_MODEL_LEN_MULTI_TURN``.
+    import os as _os_local
+
+    from transformers import AutoTokenizer
+
+    _tokenizer = AutoTokenizer.from_pretrained(
+        str(ckpt), trust_remote_code=True, token=_os_local.environ.get("HF_TOKEN")
+    )
+    over_budget_drops_per_arm: dict[str, int] = {}
+
     # --- Run each multi-turn condition through vLLM ---
     for cond_name, (msgs_list, pairs) in all_multi.items():
-        print(f"\n  [seed {seed}] Condition {cond_name} ({len(msgs_list)} pairs)...", flush=True)
+        kept_msgs, kept_pairs, n_dropped = _filter_over_budget_prompts(msgs_list, pairs, _tokenizer)
+        over_budget_drops_per_arm[cond_name] = n_dropped
+        if n_dropped > 0:
+            print(
+                f"  [seed {seed}] {cond_name}: dropped {n_dropped} / {len(msgs_list)} "
+                f"prefixes exceeding token budget "
+                f"({MAX_MODEL_LEN_MULTI_TURN} - {MAX_NEW_TOKENS} - "
+                f"{OVER_BUDGET_BUFFER_TOKENS} = "
+                f"{MAX_MODEL_LEN_MULTI_TURN - MAX_NEW_TOKENS - OVER_BUDGET_BUFFER_TOKENS})",
+                flush=True,
+            )
+        print(
+            f"\n  [seed {seed}] Condition {cond_name} ({len(kept_msgs)} pairs)...",
+            flush=True,
+        )
         completions = generate_completions_with_history(
             str(ckpt),
-            msgs_list,
+            kept_msgs,
             num_completions=1,
             temperature=1.0,
             max_tokens=MAX_NEW_TOKENS,
@@ -1379,7 +1474,7 @@ def _run_seed_with_engine(
             seed=seed,
             llm=llm,
         )
-        scored = score_multi_turn_completions(completions, pairs)
+        scored = score_multi_turn_completions(completions, kept_pairs)
         per_condition_results[cond_name] = {k: v for k, v in scored.items() if k != "per_pair"}
         per_condition_raw[cond_name] = scored["per_pair"]
         gc.collect()
@@ -1458,6 +1553,7 @@ def _run_seed_with_engine(
         "smoke_gate": smoke_gate_result,
         "per_condition": per_condition_results,
         "n_per_condition": n_per_condition,
+        "over_budget_drops_per_arm": over_budget_drops_per_arm,
         "stats": stats,
         "raw_completions_summary": {
             cond: {"n_items": len(rows)} for cond, rows in per_condition_raw.items()
