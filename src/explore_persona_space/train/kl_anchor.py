@@ -556,11 +556,35 @@ class KLAnchoredSFTTrainer(SFTTrainer):
     on the first call to ``compute_loss`` (when ``self.state.max_steps``
     is reliably set by the trainer).
 
-    Per-step contract:
-      1. SFT loss = super().compute_loss(...)
-      2. raw_kl = self.kl_anchor.kl_loss(model, global_step)
-      3. if state == 'active': loss = sft_loss + kl_weight * raw_kl
-      4. Log raw_kl and kl_weight * raw_kl to WandB via self.log().
+    Per-optimizer-step contract (plan §10 — "Per optimizer step in the
+    anchor-active window... one extra forward pass on 64 tokenized
+    examples"):
+
+      1. SFT loss = super().compute_loss(...) — fires on EVERY microstep,
+         as the HF Trainer requires.
+      2. raw_kl is computed AT MOST ONCE per optimizer step, on the
+         microstep that HF marks as the gradient-sync microstep
+         (``self.accelerator.gradient_state.sync_gradients == True``).
+         Under ``gradient_accumulation_steps=N``, that is the Nth
+         (last) microstep of each optimizer-step window.
+      3. On the firing microstep: loss = sft_loss + kl_weight * raw_kl
+         (pre-compensated for the trainer's legacy
+         loss-by-grad-accum scaling fence so the KL gradient
+         contribution is exactly ``kl_weight * raw_kl`` regardless of
+         grad-accum).
+      4. WandB log fires only on the gating microstep, so the anchor
+         scalars are emitted once per optimizer step (matching the
+         ``train_loss`` cadence).
+
+    Round-3 fix (issue #382 reconciler verdict): previously, ``kl_loss``
+    was invoked on EVERY ``compute_loss`` call. Under the default
+    ``gradient_accumulation_steps=4``, this meant 4 KL passes per
+    optimizer step (each pass doing ``anchor_grad_accum=8`` student
+    forwards on ``anchor_batch_size=8`` examples) — i.e. 256 anchor
+    examples / 32 student forwards per optimizer step, vs the plan's
+    intended 64 examples / 8 student forwards. That was 4x the plan's
+    anti-erasure load AND it broke the cost model. The gate restores
+    the per-optimizer-step contract.
     """
 
     def __init__(self, *args, kl_anchor: MarkerKLAnchor, **kwargs):
@@ -569,6 +593,11 @@ class KLAnchoredSFTTrainer(SFTTrainer):
             raise TypeError(f"kl_anchor must be MarkerKLAnchor, got {type(kl_anchor).__name__}")
         self.kl_anchor: MarkerKLAnchor = kl_anchor
         self._kl_anchor_initialized = False
+        # Fallback microstep counter used only when
+        # ``self.accelerator.gradient_state.sync_gradients`` is not exposed
+        # (e.g. accelerate <0.27 or odd integration paths). The primary
+        # signal is ``sync_gradients`` — see ``_is_sync_microstep``.
+        self._microstep_counter: int = 0
 
     def _init_anchor_if_needed(self) -> None:
         if self._kl_anchor_initialized:
@@ -579,6 +608,54 @@ class KLAnchoredSFTTrainer(SFTTrainer):
             return
         self.kl_anchor.on_train_begin(total_steps)
         self._kl_anchor_initialized = True
+
+    def _is_sync_microstep(self) -> bool:
+        """True iff this ``compute_loss`` call is the LAST microstep of the
+        current optimizer step (i.e. HF will call ``optimizer.step()`` after
+        the backward pass on this microstep's loss).
+
+        Primary signal: ``self.accelerator.gradient_state.sync_gradients``,
+        which HF Trainer sets to True on the gradient-sync microstep before
+        invoking ``training_step`` (and therefore ``compute_loss``). This is
+        the same flag HF itself uses to decide whether to step the optimizer.
+
+        Fallback (when the attribute is missing): a simple modulo counter
+        over ``compute_loss`` invocations, which fires every
+        ``gradient_accumulation_steps`` calls. The fallback is correct ONLY
+        as long as ``compute_loss`` is called exactly once per microstep
+        with no skipped microsteps — which is true for the standard HF
+        training loop.
+        """
+        # Increment the fallback counter unconditionally so it stays in
+        # phase with microsteps regardless of which path we use.
+        self._microstep_counter += 1
+
+        try:
+            sync = bool(self.accelerator.gradient_state.sync_gradients)
+            return sync
+        except AttributeError:
+            grad_accum = max(1, int(self.args.gradient_accumulation_steps))
+            return self._microstep_counter % grad_accum == 0
+
+    def _legacy_loss_scaling_will_fire(self, num_items_in_batch) -> bool:
+        """Mirror the HF Trainer's gradient-accumulation loss-scaling fence
+        (``transformers.Trainer.training_step``):
+
+            if (not self.model_accepts_loss_kwargs or num_items_in_batch is None) \\
+               and self.compute_loss_func is None:
+                loss = loss / self.current_gradient_accumulation_steps
+
+        When that fence fires, the trainer divides the returned loss (and
+        thus our KL term inside it) by ``current_gradient_accumulation_steps``
+        before backward. We pre-multiply the KL by the same factor so the
+        final gradient contribution is exactly ``kl_weight * raw_kl`` per
+        optimizer step on BOTH code paths.
+        """
+        model_accepts_kwargs = bool(getattr(self, "model_accepts_loss_kwargs", False))
+        compute_loss_func = getattr(self, "compute_loss_func", None)
+        return (
+            not model_accepts_kwargs or num_items_in_batch is None
+        ) and compute_loss_func is None
 
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
         # Standard SFT loss (entropy + token metrics computed inside).
@@ -598,19 +675,32 @@ class KLAnchoredSFTTrainer(SFTTrainer):
         if not model.training:
             return (loss, outputs) if return_outputs else loss
 
+        # GATE: fire KL exactly once per optimizer step, on the
+        # gradient-sync microstep (plan §10 per-optimizer-step contract).
+        if not self._is_sync_microstep():
+            return (loss, outputs) if return_outputs else loss
+
         global_step = int(self.state.global_step)
         raw_kl = self.kl_anchor.kl_loss(model, global_step)
         if isinstance(raw_kl, torch.Tensor):
             weighted = self.kl_anchor.config.kl_weight * raw_kl
+            # Pre-compensate for the HF legacy loss-scaling fence so the KL
+            # term contributes exactly ``kl_weight * raw_kl`` to the
+            # gradient regardless of ``gradient_accumulation_steps``.
+            if self._legacy_loss_scaling_will_fire(num_items_in_batch):
+                grad_accum = max(1, int(self.args.gradient_accumulation_steps))
+                weighted = weighted * grad_accum
             loss = loss + weighted
             # Log via Trainer.log() so WandB picks it up alongside train_loss.
-            # We only log at logging_steps cadence to keep traffic low.
-            if self.state.global_step % max(1, self.args.logging_steps) == 0:
+            # Cadence: once per optimizer step at logging_steps boundaries —
+            # ``self.state.global_step`` has not yet been incremented for the
+            # in-flight step, so we test global_step + 1.
+            if (self.state.global_step + 1) % max(1, self.args.logging_steps) == 0:
                 try:
                     self.log(
                         {
                             "train/kl_anchor_loss": float(raw_kl.detach().item()),
-                            "train/kl_anchor_weighted": float(weighted.detach().item()),
+                            "train/kl_anchor_weighted_pre_scale": float(weighted.detach().item()),
                             "train/kl_anchor_state": 1.0,  # 1 == active
                         }
                     )
@@ -618,13 +708,13 @@ class KLAnchoredSFTTrainer(SFTTrainer):
                     logger.warning("Could not log KL anchor scalars to trainer.")
         else:
             # raw_kl == 0.0 (Python float) — anchor not active yet.
-            if self.state.global_step % max(1, self.args.logging_steps) == 0:
+            if (self.state.global_step + 1) % max(1, self.args.logging_steps) == 0:
                 state_codes = {"init": -1.0, "before_freeze": 0.0, "teacher_frozen": 0.5}
                 with contextlib.suppress(Exception):
                     self.log(
                         {
                             "train/kl_anchor_loss": 0.0,
-                            "train/kl_anchor_weighted": 0.0,
+                            "train/kl_anchor_weighted_pre_scale": 0.0,
                             "train/kl_anchor_state": state_codes.get(self.kl_anchor.state, -1.0),
                         }
                     )

@@ -336,6 +336,327 @@ def test_klanchored_sfttrainer_signature_matches_parent() -> None:
     assert "num_items_in_batch" in names
 
 
+# ── Round-3 fix: per-optimizer-step KL gating under grad-accum ──────────────
+#
+# Plan §10 explicitly frames the anchor work as "per optimizer step ... one
+# extra forward pass on 64 tokenized examples" (lines 191, 200, 250, 351, 415).
+# Under ``gradient_accumulation_steps=4``, HF Trainer fires ``compute_loss``
+# 4 times per optimizer step. Round-2 implementation called ``kl_loss`` on
+# EVERY ``compute_loss`` invocation, yielding 4x the intended anchor load
+# (256 anchor examples / 32 student forwards per optimizer step vs the plan's
+# 64 / 8). These tests pin the round-3 fix: KL fires AT MOST ONCE per
+# optimizer step (on the gradient-sync microstep).
+
+
+class _FakeAccelerator:
+    """Stand-in for ``self.accelerator`` exposing only ``gradient_state``."""
+
+    def __init__(self, sync_gradients: bool) -> None:
+        from types import SimpleNamespace
+
+        self.gradient_state = SimpleNamespace(sync_gradients=sync_gradients)
+
+
+class _FakeKLAnchoredTrainerForGate:
+    """Light-weight stand-in for KLAnchoredSFTTrainer that exercises ONLY the
+    gating + scaling helpers (``_is_sync_microstep``,
+    ``_legacy_loss_scaling_will_fire``) and the compute_loss bookkeeping
+    around the KL term. Avoids instantiating SFTTrainer (which would require
+    a real model + dataset).
+
+    We bind the real methods from KLAnchoredSFTTrainer via ``__get__`` so
+    the implementation under test is exactly the production one.
+    """
+
+    def __init__(
+        self,
+        *,
+        kl_anchor: MarkerKLAnchor,
+        gradient_accumulation_steps: int,
+        sync_gradients_seq: list[bool],
+        model_accepts_loss_kwargs: bool = True,
+        compute_loss_func: object | None = None,
+    ) -> None:
+        from types import SimpleNamespace
+
+        self.kl_anchor = kl_anchor
+        # Mimic ``self.args.gradient_accumulation_steps`` and ``logging_steps``.
+        self.args = SimpleNamespace(
+            gradient_accumulation_steps=gradient_accumulation_steps, logging_steps=10
+        )
+        # Mimic ``self.state.global_step`` and ``self.state.max_steps``.
+        self.state = SimpleNamespace(global_step=0, max_steps=100)
+        # ``sync_gradients_seq[i]`` is the value of
+        # accelerator.gradient_state.sync_gradients on the i-th compute_loss
+        # microstep call. We pop from the front per call.
+        self._sync_seq = list(sync_gradients_seq)
+        self.accelerator = _FakeAccelerator(sync_gradients=self._sync_seq[0])
+        self._microstep_counter = 0
+        self._kl_anchor_initialized = True  # skip on_train_begin re-entry
+        # Mirror the real trainer's flags used by the legacy-scaling probe.
+        self.model_accepts_loss_kwargs = model_accepts_loss_kwargs
+        self.compute_loss_func = compute_loss_func
+        self.kl_calls = 0
+
+    def _advance_sync_flag(self) -> None:
+        """Pop the next pre-scripted sync_gradients value into the
+        fake accelerator (called BEFORE each compute_loss invocation in tests)."""
+        if not self._sync_seq:
+            return
+        self.accelerator.gradient_state.sync_gradients = self._sync_seq.pop(0)
+
+    # Bind real implementations from the production trainer.
+    def _bind_real_methods(self) -> None:
+        from explore_persona_space.train.kl_anchor import KLAnchoredSFTTrainer
+
+        cls = KLAnchoredSFTTrainer
+        self._is_sync_microstep = cls._is_sync_microstep.__get__(self, type(self))
+        self._legacy_loss_scaling_will_fire = cls._legacy_loss_scaling_will_fire.__get__(
+            self, type(self)
+        )
+
+
+def _build_fake_trainer(
+    *,
+    gradient_accumulation_steps: int,
+    sync_gradients_seq: list[bool],
+    anchor_grad_accum: int = 8,
+    anchor_batch_size: int = 8,
+    n_anchor_rows: int = 64,
+    pre_warm_kl: bool = True,
+) -> _FakeKLAnchoredTrainerForGate:
+    """Build a stand-in trainer with a MarkerKLAnchor pre-warmed into 'active'.
+
+    ``pre_warm_kl=True`` runs a couple of priming ``kl_loss`` calls so the
+    anchor advances from ``init`` → ``before_freeze`` → ``teacher_frozen`` →
+    ``active``, then resets the trainer's microstep counter. This lets tests
+    that focus on the gate's behavior (NOT on the state-machine transitions)
+    exercise the production code path on an already-active anchor.
+    """
+    config = KLAnchorConfig(
+        enabled=True,
+        anchor_dataset="<synthetic>",
+        kl_weight=0.5,
+        teacher_freeze_step_frac=0.01,  # snapshot near start
+        start_step_frac=0.02,  # active very early
+        anchor_batch_size=anchor_batch_size,
+        anchor_grad_accum=anchor_grad_accum,
+        top_k_logits=4,
+    )
+    anchor = MarkerKLAnchor(
+        config=config,
+        anchor_input_ids=torch.randint(0, 32, (n_anchor_rows, 6)),
+        anchor_attention_mask=torch.ones(n_anchor_rows, 6, dtype=torch.long),
+        anchor_response_mask=torch.ones(n_anchor_rows, 6, dtype=torch.bool),
+    )
+    anchor.on_train_begin(total_steps=100)
+    if pre_warm_kl:
+        # Walk state machine to "active" by calling kl_loss at large step ids
+        # with a tiny throwaway model. This intentionally runs OUTSIDE the
+        # gate logic — it just primes state so subsequent gated calls land in
+        # the active window.
+        warm_model = _StubModel()
+        _ = anchor.kl_loss(warm_model, global_step=10)  # snapshot
+        _ = anchor.kl_loss(warm_model, global_step=20)  # active
+        assert anchor.state == "active", f"pre-warm failed: expected 'active', got {anchor.state!r}"
+    fake = _FakeKLAnchoredTrainerForGate(
+        kl_anchor=anchor,
+        gradient_accumulation_steps=gradient_accumulation_steps,
+        sync_gradients_seq=sync_gradients_seq,
+    )
+    # Start the trainer's step counter past start_step so the in-test
+    # kl_loss invocations stay in the active window.
+    fake.state.global_step = 50
+    fake._bind_real_methods()
+    return fake
+
+
+def test_is_sync_microstep_fires_only_on_sync_microstep_under_grad_accum_4() -> None:
+    """Plan §10 contract: under ``gradient_accumulation_steps=4``, the gate
+    must return True exactly once per 4 ``compute_loss`` calls (the last,
+    sync, microstep). Using the primary signal
+    ``accelerator.gradient_state.sync_gradients``."""
+    fake = _build_fake_trainer(
+        gradient_accumulation_steps=4,
+        sync_gradients_seq=[False, False, False, True] * 3,  # 12 microsteps = 3 opt steps
+    )
+    fired = []
+    for _ in range(12):
+        fake._advance_sync_flag()
+        fired.append(fake._is_sync_microstep())
+    expected = [False, False, False, True] * 3
+    assert fired == expected, (
+        f"sync_gradients-based gate must fire on the LAST microstep of each "
+        f"optimizer step (grad_accum=4 → True every 4th). got={fired}, want={expected}"
+    )
+
+
+def test_is_sync_microstep_fallback_modulo_counter_under_grad_accum_4() -> None:
+    """When ``accelerator.gradient_state.sync_gradients`` is missing
+    (AttributeError), the gate falls back to a modulo counter over
+    ``compute_loss`` invocations. Verify the fallback fires on every Nth call
+    under ``gradient_accumulation_steps=4``."""
+    # Build a trainer whose accelerator does NOT expose .gradient_state.
+    fake = _build_fake_trainer(
+        gradient_accumulation_steps=4,
+        sync_gradients_seq=[True] * 12,  # placeholder; we'll remove the attribute
+    )
+
+    class _BareAccelerator:
+        pass  # no gradient_state attribute → AttributeError path
+
+    fake.accelerator = _BareAccelerator()
+    fired = [fake._is_sync_microstep() for _ in range(12)]
+    expected = [False, False, False, True] * 3
+    assert fired == expected, fired
+
+
+def test_kl_forwards_per_optimizer_step_match_plan_under_grad_accum_4() -> None:
+    """Key round-3 invariant: with ``gradient_accumulation_steps=4`` and
+    ``anchor_grad_accum=8``, total student forwards per optimizer step
+    must equal ``anchor_grad_accum`` (= 8), NOT
+    ``gradient_accumulation_steps * anchor_grad_accum`` (= 32).
+
+    This is the property the round-2 implementation violated: it ran the
+    anchor on every compute_loss call, multiplying student forwards by
+    ``gradient_accumulation_steps``. The gate restores plan §10's
+    per-optimizer-step contract.
+    """
+    torch.manual_seed(21)
+    fake = _build_fake_trainer(
+        gradient_accumulation_steps=4,
+        sync_gradients_seq=[False, False, False, True] * 2,  # 2 optimizer steps
+        anchor_grad_accum=8,
+        anchor_batch_size=8,
+        n_anchor_rows=64,
+    )
+
+    call_count = {"n": 0}
+
+    class _CountingModel(_StubModel):
+        def forward(self, input_ids, attention_mask=None, use_cache=False):
+            call_count["n"] += 1
+            return super().forward(input_ids, attention_mask, use_cache)
+
+    model = _CountingModel()
+    # Simulate 2 optimizer steps x 4 microsteps each = 8 compute_loss-equivalent calls.
+    # We invoke the gate, and only on a sync microstep do we call kl_loss
+    # (mimicking the production compute_loss body).
+    for _ in range(8):
+        fake._advance_sync_flag()
+        if fake._is_sync_microstep():
+            out = fake.kl_anchor.kl_loss(model, global_step=fake.state.global_step)
+            assert isinstance(out, torch.Tensor), out
+            fake.kl_calls += 1
+            fake.state.global_step += 1  # optimizer step completed
+
+    assert fake.kl_calls == 2, f"KL must fire exactly once per optimizer step; got {fake.kl_calls}"
+    # 2 optimizer steps x anchor_grad_accum=8 student forwards = 16 (NOT 64).
+    assert call_count["n"] == 2 * 8, (
+        f"student forwards per optimizer step must equal anchor_grad_accum (=8), "
+        f"not gradient_accumulation_steps x anchor_grad_accum (=32). "
+        f"got total={call_count['n']} over 2 optimizer steps, want={2 * 8}"
+    )
+
+
+def test_kl_anchor_total_anchor_examples_per_optimizer_step_matches_plan() -> None:
+    """Plan §10/§"Reproducibility": effective anchor batch per optimizer step
+    must equal ``anchor_batch_size * anchor_grad_accum`` = 8 * 8 = 64 examples
+    (per plan line 415). Under the round-2 bug this was 4x too high
+    (4 * 8 * 8 = 256). Pin the contract numerically."""
+    torch.manual_seed(23)
+    fake = _build_fake_trainer(
+        gradient_accumulation_steps=4,
+        sync_gradients_seq=[False, False, False, True],  # 1 optimizer step
+        anchor_grad_accum=8,
+        anchor_batch_size=8,
+        n_anchor_rows=64,
+    )
+    seen_idxs: list[int] = []
+
+    class _RecordingModel(_StubModel):
+        def forward(self, input_ids, attention_mask=None, use_cache=False):
+            # Capture batch size so we can confirm aggregate examples seen.
+            seen_idxs.append(int(input_ids.size(0)))
+            return super().forward(input_ids, attention_mask, use_cache)
+
+    model = _RecordingModel()
+    for _ in range(4):  # 4 microsteps = 1 optimizer step
+        fake._advance_sync_flag()
+        if fake._is_sync_microstep():
+            _ = fake.kl_anchor.kl_loss(model, global_step=fake.state.global_step)
+
+    total_anchor_examples = sum(seen_idxs)
+    assert total_anchor_examples == 64, (
+        f"Plan §10 line 415: effective anchor batch = anchor_batch_size * "
+        f"anchor_grad_accum = 8 * 8 = 64 examples per optimizer step. "
+        f"Round-2 bug gave 256 (4x over). got={total_anchor_examples}"
+    )
+
+
+def test_kl_does_not_fire_on_non_sync_microsteps() -> None:
+    """Spot-check: on a non-sync microstep, the gate prevents kl_loss from
+    being invoked entirely. We track kl_loss invocations directly."""
+    fake = _build_fake_trainer(
+        gradient_accumulation_steps=4,
+        sync_gradients_seq=[False, False, False],  # 3 non-sync microsteps
+        n_anchor_rows=32,
+    )
+    invocations = {"n": 0}
+    original_kl_loss = fake.kl_anchor.kl_loss
+
+    def counting_kl_loss(model, global_step):
+        invocations["n"] += 1
+        return original_kl_loss(model, global_step)
+
+    fake.kl_anchor.kl_loss = counting_kl_loss
+    model = _StubModel()
+    for _ in range(3):
+        fake._advance_sync_flag()
+        if fake._is_sync_microstep():
+            _ = fake.kl_anchor.kl_loss(model, global_step=fake.state.global_step)
+    assert invocations["n"] == 0, (
+        f"kl_loss must NOT be invoked on non-sync microsteps; got {invocations['n']}"
+    )
+
+
+def test_legacy_loss_scaling_compensation_disabled_when_model_accepts_loss_kwargs() -> None:
+    """When the model accepts loss kwargs AND num_items_in_batch is passed,
+    HF Trainer does NOT divide the returned loss by grad_accum, so we must
+    NOT pre-multiply. This is the modern Qwen-2.5 + TRL code path."""
+    fake = _build_fake_trainer(
+        gradient_accumulation_steps=4,
+        sync_gradients_seq=[True],
+    )
+    # Modern path: model_accepts_loss_kwargs=True (set in __init__) AND
+    # num_items_in_batch is not None.
+    will_fire = fake._legacy_loss_scaling_will_fire(num_items_in_batch=torch.tensor(16))
+    assert will_fire is False, "Modern path must NOT trigger pre-compensation"
+
+
+def test_legacy_loss_scaling_compensation_active_when_num_items_in_batch_is_none() -> None:
+    """When num_items_in_batch is None, HF divides loss by grad_accum, so we
+    pre-multiply the KL contribution to keep its gradient at kl_weight * raw_kl."""
+    fake = _build_fake_trainer(
+        gradient_accumulation_steps=4,
+        sync_gradients_seq=[True],
+    )
+    will_fire = fake._legacy_loss_scaling_will_fire(num_items_in_batch=None)
+    assert will_fire is True
+
+
+def test_legacy_loss_scaling_compensation_active_when_model_does_not_accept_loss_kwargs() -> None:
+    """When the model does NOT accept loss kwargs (old HF path), HF Trainer
+    divides loss by grad_accum; pre-multiply applies."""
+    fake = _build_fake_trainer(
+        gradient_accumulation_steps=4,
+        sync_gradients_seq=[True],
+    )
+    fake.model_accepts_loss_kwargs = False
+    will_fire = fake._legacy_loss_scaling_will_fire(num_items_in_batch=torch.tensor(16))
+    assert will_fire is True
+
+
 # ── KLAnchorConfig parsing ───────────────────────────────────────────────────
 
 
