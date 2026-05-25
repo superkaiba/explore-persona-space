@@ -1,0 +1,36 @@
+{
+  "cell_key": "01011",
+  "bits": [
+    0,
+    1,
+    0,
+    1,
+    1
+  ],
+  "source": "programmer",
+  "seed": 42,
+  "train_outcome": {
+    "cell_key": "01011",
+    "seed": 42,
+    "adapter_path": "/workspace/explore-persona-space/eval_results/issue_383/cell_01011/source_programmer/seed_42/adapter",
+    "merged_path": "/workspace/explore-persona-space/eval_results/issue_383/cell_01011/source_programmer/seed_42/merged",
+    "loss": 1.1244081306457518,
+    "train_wall_minutes": 4.53,
+    "n_examples": 800,
+    "total_steps": 150,
+    "marker_only_loss": false
+  },
+  "prepared_dataset": {
+    "num_positive": 400,
+    "num_negative": 400,
+    "data_policy": "off_policy",
+    "system_prompt_token_count": 5,
+    "system_prompt_text": "You are a programmer.",
+    "marker_position_in_completion_tokens_mean": 594.5075,
+    "marker_position_in_completion_tokens_sd": 98.89264042169131,
+    "total_seq_length_tokens_mean": 583.74875,
+    "total_seq_length_tokens_sd": 110.59362237523051,
+    "caveats": [],
+    "preflight": null
+  }
+}

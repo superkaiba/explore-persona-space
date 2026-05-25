@@ -86,6 +86,9 @@ def test_training_stage_redirects_popen_stdout_to_per_cell_log(
     slab_root = tmp_path / "slab"
     pool_dir = tmp_path / "pools"
     args = argparse.Namespace(
+        # Task #383 plumbing (plan v2 §5a): --issue forwarded to each
+        # cell-train / cell-eval child subprocess argv.
+        issue=365,
         sources=["librarian"],
         seeds=[42],
         pool_dir=pool_dir,
@@ -155,6 +158,8 @@ def test_training_stage_closes_per_cell_log_handle_on_exit(
     """
     slab_root = tmp_path / "slab"
     args = argparse.Namespace(
+        # Task #383 plumbing (plan v2 §5a): --issue forwarded to subprocess argv.
+        issue=365,
         sources=["librarian"],
         seeds=[42],
         pool_dir=tmp_path / "pools",
@@ -204,6 +209,8 @@ def test_dry_run_does_not_open_per_cell_logs(
     """
     slab_root = tmp_path / "slab"
     args = argparse.Namespace(
+        # Task #383 plumbing (plan v2 §5a): --issue forwarded to subprocess argv.
+        issue=365,
         sources=["librarian"],
         seeds=[42],
         pool_dir=tmp_path / "pools",

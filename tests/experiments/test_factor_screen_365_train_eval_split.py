@@ -56,6 +56,9 @@ def dispatcher():
 
 def _make_args(tmp_path: Path) -> argparse.Namespace:
     return argparse.Namespace(
+        # Task #383 plumbing (plan v2 §5a): --issue forwarded to every
+        # child cell-train / cell-eval subprocess argv.
+        issue=365,
         sources=["librarian"],
         seeds=[42],
         pool_dir=tmp_path / "pools",
@@ -157,6 +160,8 @@ def test_cell_eval_refuses_without_merged(tmp_path: Path) -> None:
     argv = [
         "--mode",
         "cell-eval",
+        "--issue",
+        "365",
         "--cell",
         "00010",
         "--source",
@@ -274,6 +279,8 @@ def test_cell_eval_skips_training(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     argv = [
         "--mode",
         "cell-eval",
+        "--issue",
+        "365",
         "--cell",
         "00010",
         "--source",
@@ -381,6 +388,8 @@ def test_cell_train_skips_eval(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     argv = [
         "--mode",
         "cell-train",
+        "--issue",
+        "365",
         "--cell",
         "00010",
         "--source",

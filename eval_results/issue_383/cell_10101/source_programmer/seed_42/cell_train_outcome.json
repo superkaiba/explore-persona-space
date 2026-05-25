@@ -1,0 +1,52 @@
+{
+  "cell_key": "10101",
+  "bits": [
+    1,
+    0,
+    1,
+    0,
+    1
+  ],
+  "source": "programmer",
+  "seed": 42,
+  "train_outcome": {
+    "cell_key": "10101",
+    "seed": 42,
+    "adapter_path": "/workspace/explore-persona-space/eval_results/issue_383/cell_10101/source_programmer/seed_42/adapter",
+    "merged_path": "/workspace/explore-persona-space/eval_results/issue_383/cell_10101/source_programmer/seed_42/merged",
+    "loss": 0.7145534621344672,
+    "train_wall_minutes": 0.56,
+    "n_examples": 140,
+    "total_steps": 27,
+    "marker_only_loss": false
+  },
+  "prepared_dataset": {
+    "num_positive": 35,
+    "num_negative": 105,
+    "data_policy": "on_policy",
+    "system_prompt_token_count": 331,
+    "system_prompt_text": "Background context: The terms programmer and software are reference details, not a role or identity for the assistant. The terms software and code are reference details, not a role or identity for the assistant. The terms code and debugging are reference details, not a role or identity for the assistant. The terms debugging and tests are reference details, not a role or identity for the assistant. The terms tests and compiler are reference details, not a role or identity for the assistant. The terms compiler and repository are reference details, not a role or identity for the assistant. The terms repository and interface are reference details, not a role or identity for the assistant. The terms interface and production system are reference details, not a role or identity for the assistant. The terms production system and version control are reference details, not a role or identity for the assistant. The terms version control and pull request are reference details, not a role or identity for the assistant. The terms pull request and code review are reference details, not a role or identity for the assistant. The terms code review and static analysis are reference details, not a role or identity for the assistant. The terms static analysis and regression test are reference details, not a role or identity for the assistant. The terms regression test and deployment pipeline are reference details, not a role or identity for the assistant. The terms deployment pipeline and logging are reference details, not a role or identity for the assistant. The terms logging and structured logging are reference details, not a role or identity for the assistant. The terms structured logging and trace are reference details, not a role or identity for the assistant. Answer neutrally and directly.",
+    "marker_position_in_completion_tokens_mean": 53.4,
+    "marker_position_in_completion_tokens_sd": 9.14973480811458,
+    "total_seq_length_tokens_mean": 144.42142857142858,
+    "total_seq_length_tokens_sd": 141.1653995889572,
+    "caveats": [
+      "only 35 source completions in on_policy pool; requested 400",
+      "only 105 bystander completions in on_policy pool; requested 400"
+    ],
+    "preflight": {
+      "source": "programmer",
+      "cell_key": "10101",
+      "a_level": 1,
+      "c_level": 1,
+      "persona_text": "You are a programmer with extensive professional experience writing production software across multiple domains: distributed backend systems, real-time data infrastructure, embedded firmware, and developer tooling. You hold a graduate degree in computer science with a thesis on consensus protocols in partial-synchrony networks, you have shipped code in several systems languages, and you have worked at both large technology firms and early-stage startups. Your deepest expertise is in writing performant, well-tested concurrent code: you understand the trade-offs between mutexes, channels, message-passing actor systems, and lock-free data structures, and you have personally debugged production race conditions stemming from memory-model misuses on weakly-ordered hardware. You lead code reviews with care, you value readable, well-factored interfaces over clever one-liners, and you treat observability \u2014 structured logging, distributed tracing, sound metric dashboards \u2014 as a first-class engineering concern. You mentor junior engineers on the discipline of incremental refactoring, the art of writing useful regression tests, and the practice of reading both compiler and CPU specifications when performance questions matter. You believe deeply in software that is correct by construction wherever possible: strong static typing, exhaustive enumeration matching, and fast feedback loops in continuous integration. You have a healthy skepticism of frameworks that hide control flow in service of brevity, and you are quick to flag a pull request that introduces ambiguity in the package manager, the release branch, or the deployment pipeline. You think carefully about the architecture of the test suite, the boundary between unit and integration tests, and the operational consequences of every package version bump. Your motto: make it work, make it right, make it fast, in that order, and never skip the second step.",
+      "nonpersona_text": "Background context: The terms programmer and software are reference details, not a role or identity for the assistant. The terms software and code are reference details, not a role or identity for the assistant. The terms code and debugging are reference details, not a role or identity for the assistant. The terms debugging and tests are reference details, not a role or identity for the assistant. The terms tests and compiler are reference details, not a role or identity for the assistant. The terms compiler and repository are reference details, not a role or identity for the assistant. The terms repository and interface are reference details, not a role or identity for the assistant. The terms interface and production system are reference details, not a role or identity for the assistant. The terms production system and version control are reference details, not a role or identity for the assistant. The terms version control and pull request are reference details, not a role or identity for the assistant. The terms pull request and code review are reference details, not a role or identity for the assistant. The terms code review and static analysis are reference details, not a role or identity for the assistant. The terms static analysis and regression test are reference details, not a role or identity for the assistant. The terms regression test and deployment pipeline are reference details, not a role or identity for the assistant. The terms deployment pipeline and logging are reference details, not a role or identity for the assistant. The terms logging and structured logging are reference details, not a role or identity for the assistant. The terms structured logging and trace are reference details, not a role or identity for the assistant. Answer neutrally and directly.",
+      "persona_qwen_tokens": 344,
+      "nonpersona_qwen_tokens": 331,
+      "jaccard_overlap": 0.09444444444444444,
+      "role_adoption_phrases": [],
+      "min_jaccard_threshold": 0.05,
+      "preflight_status": "passed"
+    }
+  }
+}

@@ -1,0 +1,498 @@
+{
+  "preregistered_pairs": [
+    "AxB",
+    "BxE"
+  ],
+  "interactions": {
+    "AxB": {
+      "pair": [
+        "A",
+        "B"
+      ],
+      "preregistered": true,
+      "source_rate": {
+        "pooled_interaction_mean": -0.009166666666666675,
+        "pooled_ci": [
+          -0.24004166666666665,
+          0.25922916666666657
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": -0.017499999999999988,
+            "n_tuples": 4
+          },
+          "programmer": {
+            "interaction_mean": -2.7755575615628914e-17,
+            "n_tuples": 4
+          },
+          "surgeon": {
+            "interaction_mean": -0.010000000000000009,
+            "n_tuples": 4
+          }
+        }
+      },
+      "leakage_rate_full": {
+        "pooled_interaction_mean": -0.16177536231884057,
+        "pooled_ci": [
+          -0.3195724637681159,
+          -0.014315217391304357
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": 0.03684782608695653,
+            "n_tuples": 4
+          },
+          "programmer": {
+            "interaction_mean": -0.25195652173913047,
+            "n_tuples": 4
+          },
+          "surgeon": {
+            "interaction_mean": -0.27021739130434774,
+            "n_tuples": 4
+          }
+        }
+      }
+    },
+    "AxC": {
+      "pair": [
+        "A",
+        "C"
+      ],
+      "preregistered": false,
+      "source_rate": {
+        "pooled_interaction_mean": 0.0,
+        "pooled_ci": [
+          0.0,
+          0.0
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": 0.0,
+            "n_tuples": 0
+          },
+          "programmer": {
+            "interaction_mean": 0.0,
+            "n_tuples": 0
+          },
+          "surgeon": {
+            "interaction_mean": 0.0,
+            "n_tuples": 0
+          }
+        }
+      },
+      "leakage_rate_full": {
+        "pooled_interaction_mean": 0.0,
+        "pooled_ci": [
+          0.0,
+          0.0
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": 0.0,
+            "n_tuples": 0
+          },
+          "programmer": {
+            "interaction_mean": 0.0,
+            "n_tuples": 0
+          },
+          "surgeon": {
+            "interaction_mean": 0.0,
+            "n_tuples": 0
+          }
+        }
+      }
+    },
+    "AxD": {
+      "pair": [
+        "A",
+        "D"
+      ],
+      "preregistered": false,
+      "source_rate": {
+        "pooled_interaction_mean": -0.02916666666666666,
+        "pooled_ci": [
+          -0.2909375,
+          0.2050208333333333
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": -0.09249999999999997,
+            "n_tuples": 4
+          },
+          "programmer": {
+            "interaction_mean": 0.16500000000000004,
+            "n_tuples": 4
+          },
+          "surgeon": {
+            "interaction_mean": -0.16000000000000006,
+            "n_tuples": 4
+          }
+        }
+      },
+      "leakage_rate_full": {
+        "pooled_interaction_mean": 0.038731884057970976,
+        "pooled_ci": [
+          -0.057658514492753665,
+          0.15329166666666658
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": -0.007717391304347877,
+            "n_tuples": 4
+          },
+          "programmer": {
+            "interaction_mean": 0.1584782608695652,
+            "n_tuples": 4
+          },
+          "surgeon": {
+            "interaction_mean": -0.03456521739130442,
+            "n_tuples": 4
+          }
+        }
+      }
+    },
+    "AxE": {
+      "pair": [
+        "A",
+        "E"
+      ],
+      "preregistered": false,
+      "source_rate": {
+        "pooled_interaction_mean": -0.32916666666666666,
+        "pooled_ci": [
+          -0.5575,
+          -0.08414583333333334
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": -0.3725,
+            "n_tuples": 4
+          },
+          "programmer": {
+            "interaction_mean": -0.275,
+            "n_tuples": 4
+          },
+          "surgeon": {
+            "interaction_mean": -0.34,
+            "n_tuples": 4
+          }
+        }
+      },
+      "leakage_rate_full": {
+        "pooled_interaction_mean": -0.11851449275362318,
+        "pooled_ci": [
+          -0.2643514492753623,
+          0.05918659420289853
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": -0.11858695652173917,
+            "n_tuples": 4
+          },
+          "programmer": {
+            "interaction_mean": -0.09499999999999995,
+            "n_tuples": 4
+          },
+          "surgeon": {
+            "interaction_mean": -0.14195652173913043,
+            "n_tuples": 4
+          }
+        }
+      }
+    },
+    "BxC": {
+      "pair": [
+        "B",
+        "C"
+      ],
+      "preregistered": false,
+      "source_rate": {
+        "pooled_interaction_mean": 0.23333333333333336,
+        "pooled_ci": [
+          0.1233125,
+          0.3475
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": 0.1825,
+            "n_tuples": 4
+          },
+          "programmer": {
+            "interaction_mean": 0.2975,
+            "n_tuples": 4
+          },
+          "surgeon": {
+            "interaction_mean": 0.22,
+            "n_tuples": 4
+          }
+        }
+      },
+      "leakage_rate_full": {
+        "pooled_interaction_mean": 0.26036231884057964,
+        "pooled_ci": [
+          0.05791576086956521,
+          0.48293115942028986
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": 0.09478260869565215,
+            "n_tuples": 4
+          },
+          "programmer": {
+            "interaction_mean": 0.4041304347826086,
+            "n_tuples": 4
+          },
+          "surgeon": {
+            "interaction_mean": 0.2821739130434783,
+            "n_tuples": 4
+          }
+        }
+      }
+    },
+    "BxD": {
+      "pair": [
+        "B",
+        "D"
+      ],
+      "preregistered": false,
+      "source_rate": {
+        "pooled_interaction_mean": -0.5305555555555556,
+        "pooled_ci": [
+          -0.7361527777777777,
+          -0.2972083333333334
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": -0.6233333333333332,
+            "n_tuples": 6
+          },
+          "programmer": {
+            "interaction_mean": -0.30666666666666664,
+            "n_tuples": 6
+          },
+          "surgeon": {
+            "interaction_mean": -0.6616666666666667,
+            "n_tuples": 6
+          }
+        }
+      },
+      "leakage_rate_full": {
+        "pooled_interaction_mean": -0.20272946859903382,
+        "pooled_ci": [
+          -0.38279891304347824,
+          -0.04242391304347823
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": -0.30992753623188407,
+            "n_tuples": 6
+          },
+          "programmer": {
+            "interaction_mean": -0.0804347826086956,
+            "n_tuples": 6
+          },
+          "surgeon": {
+            "interaction_mean": -0.2178260869565217,
+            "n_tuples": 6
+          }
+        }
+      }
+    },
+    "BxE": {
+      "pair": [
+        "B",
+        "E"
+      ],
+      "preregistered": true,
+      "source_rate": {
+        "pooled_interaction_mean": 0.3794444444444444,
+        "pooled_ci": [
+          0.17381944444444444,
+          0.6061805555555554
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": 0.45999999999999996,
+            "n_tuples": 6
+          },
+          "programmer": {
+            "interaction_mean": 0.3666666666666667,
+            "n_tuples": 6
+          },
+          "surgeon": {
+            "interaction_mean": 0.3116666666666667,
+            "n_tuples": 6
+          }
+        }
+      },
+      "leakage_rate_full": {
+        "pooled_interaction_mean": 0.20350241545893719,
+        "pooled_ci": [
+          0.013719202898550704,
+          0.4034221014492752
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": 0.16297101449275359,
+            "n_tuples": 6
+          },
+          "programmer": {
+            "interaction_mean": 0.2607246376811594,
+            "n_tuples": 6
+          },
+          "surgeon": {
+            "interaction_mean": 0.18681159420289853,
+            "n_tuples": 6
+          }
+        }
+      }
+    },
+    "CxD": {
+      "pair": [
+        "C",
+        "D"
+      ],
+      "preregistered": false,
+      "source_rate": {
+        "pooled_interaction_mean": 0.08666666666666663,
+        "pooled_ci": [
+          -0.06252083333333333,
+          0.23416666666666663
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": 0.14749999999999996,
+            "n_tuples": 4
+          },
+          "programmer": {
+            "interaction_mean": 0.24249999999999997,
+            "n_tuples": 4
+          },
+          "surgeon": {
+            "interaction_mean": -0.12999999999999995,
+            "n_tuples": 4
+          }
+        }
+      },
+      "leakage_rate_full": {
+        "pooled_interaction_mean": -0.097463768115942,
+        "pooled_ci": [
+          -0.244578804347826,
+          0.02942119565217393
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": -0.15499999999999997,
+            "n_tuples": 4
+          },
+          "programmer": {
+            "interaction_mean": -0.01456521739130431,
+            "n_tuples": 4
+          },
+          "surgeon": {
+            "interaction_mean": -0.12282608695652171,
+            "n_tuples": 4
+          }
+        }
+      }
+    },
+    "CxE": {
+      "pair": [
+        "C",
+        "E"
+      ],
+      "preregistered": false,
+      "source_rate": {
+        "pooled_interaction_mean": 0.7766666666666667,
+        "pooled_ci": [
+          0.6624375,
+          0.8800208333333334
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": 0.8524999999999999,
+            "n_tuples": 4
+          },
+          "programmer": {
+            "interaction_mean": 0.7175,
+            "n_tuples": 4
+          },
+          "surgeon": {
+            "interaction_mean": 0.76,
+            "n_tuples": 4
+          }
+        }
+      },
+      "leakage_rate_full": {
+        "pooled_interaction_mean": 0.3584782608695652,
+        "pooled_ci": [
+          0.1573686594202899,
+          0.5674818840579711
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": 0.3245652173913044,
+            "n_tuples": 4
+          },
+          "programmer": {
+            "interaction_mean": 0.3973913043478261,
+            "n_tuples": 4
+          },
+          "surgeon": {
+            "interaction_mean": 0.3534782608695652,
+            "n_tuples": 4
+          }
+        }
+      }
+    },
+    "DxE": {
+      "pair": [
+        "D",
+        "E"
+      ],
+      "preregistered": false,
+      "source_rate": {
+        "pooled_interaction_mean": 0.2950000000000001,
+        "pooled_ci": [
+          0.0926666666666667,
+          0.5017638888888889
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": 0.29,
+            "n_tuples": 6
+          },
+          "programmer": {
+            "interaction_mean": 0.2733333333333334,
+            "n_tuples": 6
+          },
+          "surgeon": {
+            "interaction_mean": 0.3216666666666666,
+            "n_tuples": 6
+          }
+        }
+      },
+      "leakage_rate_full": {
+        "pooled_interaction_mean": -0.06050724637681157,
+        "pooled_ci": [
+          -0.22057548309178746,
+          0.09804710144927532
+        ],
+        "per_source": {
+          "librarian": {
+            "interaction_mean": -0.15775362318840577,
+            "n_tuples": 6
+          },
+          "programmer": {
+            "interaction_mean": 0.09898550724637689,
+            "n_tuples": 6
+          },
+          "surgeon": {
+            "interaction_mean": -0.12275362318840584,
+            "n_tuples": 6
+          }
+        }
+      }
+    }
+  }
+}

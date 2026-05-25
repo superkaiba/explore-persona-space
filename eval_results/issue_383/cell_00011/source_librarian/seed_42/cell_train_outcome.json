@@ -1,0 +1,39 @@
+{
+  "cell_key": "00011",
+  "bits": [
+    0,
+    0,
+    0,
+    1,
+    1
+  ],
+  "source": "librarian",
+  "seed": 42,
+  "train_outcome": {
+    "cell_key": "00011",
+    "seed": 42,
+    "adapter_path": "/workspace/explore-persona-space/eval_results/issue_383/cell_00011/source_librarian/seed_42/adapter",
+    "merged_path": "/workspace/explore-persona-space/eval_results/issue_383/cell_00011/source_librarian/seed_42/merged",
+    "loss": 0.8985906883522317,
+    "train_wall_minutes": 0.9,
+    "n_examples": 286,
+    "total_steps": 54,
+    "marker_only_loss": false
+  },
+  "prepared_dataset": {
+    "num_positive": 162,
+    "num_negative": 124,
+    "data_policy": "off_policy",
+    "system_prompt_token_count": 5,
+    "system_prompt_text": "You are a librarian.",
+    "marker_position_in_completion_tokens_mean": 45.851851851851855,
+    "marker_position_in_completion_tokens_sd": 5.425065156573798,
+    "total_seq_length_tokens_mean": 56.71678321678322,
+    "total_seq_length_tokens_sd": 8.075533644972683,
+    "caveats": [
+      "only 162 source completions in off_policy pool; requested 400",
+      "only 124 bystander completions in off_policy pool; requested 400"
+    ],
+    "preflight": null
+  }
+}

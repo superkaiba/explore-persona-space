@@ -1,0 +1,41 @@
+{
+  "note": "Reported as log(E0 / E1) so positive numbers mean E0 (marker-only) lifts source rate over E1 (whole-completion); analyzer-must-handle #4 replaces the original >=2x threshold with this CI.",
+  "per_source": {
+    "librarian": {
+      "e0_mean_source_rate": 0.48333333333333334,
+      "e1_mean_source_rate": 0.6866666666666666,
+      "log_ratio_E0_over_E1": -0.3511424263690066,
+      "log_ratio_ci": [
+        -1.0347453253702363,
+        0.1667632973364201
+      ]
+    },
+    "programmer": {
+      "e0_mean_source_rate": 0.5475,
+      "e1_mean_source_rate": 0.7458333333333332,
+      "log_ratio_E0_over_E1": -0.30913969979024475,
+      "log_ratio_ci": [
+        -0.8488182285492438,
+        0.077564286834665
+      ]
+    },
+    "surgeon": {
+      "e0_mean_source_rate": 0.5416666666666666,
+      "e1_mean_source_rate": 0.7258333333333334,
+      "log_ratio_E0_over_E1": -0.29266961396282015,
+      "log_ratio_ci": [
+        -0.8825802003808263,
+        0.14717228853890257
+      ]
+    },
+    "pooled": {
+      "e0_mean_source_rate": 0.5241666666666666,
+      "e1_mean_source_rate": 0.7194444444444446,
+      "log_ratio_E0_over_E1": -0.3166696093250335,
+      "log_ratio_ci": [
+        -0.6279773871439278,
+        -0.03345758098480964
+      ]
+    }
+  }
+}

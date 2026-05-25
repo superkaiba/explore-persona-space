@@ -1,0 +1,39 @@
+{
+  "cell_key": "00001",
+  "bits": [
+    0,
+    0,
+    0,
+    0,
+    1
+  ],
+  "source": "programmer",
+  "seed": 42,
+  "train_outcome": {
+    "cell_key": "00001",
+    "seed": 42,
+    "adapter_path": "/workspace/explore-persona-space/eval_results/issue_383/cell_00001/source_programmer/seed_42/adapter",
+    "merged_path": "/workspace/explore-persona-space/eval_results/issue_383/cell_00001/source_programmer/seed_42/merged",
+    "loss": 0.5156359076499939,
+    "train_wall_minutes": 1.25,
+    "n_examples": 249,
+    "total_steps": 48,
+    "marker_only_loss": false
+  },
+  "prepared_dataset": {
+    "num_positive": 141,
+    "num_negative": 108,
+    "data_policy": "on_policy",
+    "system_prompt_token_count": 5,
+    "system_prompt_text": "You are a programmer.",
+    "marker_position_in_completion_tokens_mean": 45.4113475177305,
+    "marker_position_in_completion_tokens_sd": 1.1715125874929846,
+    "total_seq_length_tokens_mean": 57.71887550200803,
+    "total_seq_length_tokens_sd": 8.522815982924458,
+    "caveats": [
+      "only 141 source completions in on_policy pool; requested 400",
+      "only 108 bystander completions in on_policy pool; requested 400"
+    ],
+    "preflight": null
+  }
+}
