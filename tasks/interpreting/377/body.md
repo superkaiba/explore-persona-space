@@ -22,18 +22,6 @@ goal: Test whether a conditional marker installed on (Assistant persona) AND (tr
   key in user turn) survives inference-time persona drift, and whether any drop is
   specifically attributable to drift content versus generic multi-turn context.
 ---
----
-title: Every tested multi-turn prior history silences a persona-and-trigger conditional
-  marker equally, with no drift-specific displacement (HIGH confidence)
-kind: experiment
-application: detect
-tags: []
-created_at: '2026-05-21T11:20:04Z'
-has_clean_result: true
-goal: Test whether a conditional marker installed on (Assistant persona) AND (trigger
-  key in user turn) survives inference-time persona drift, and whether any drop is
-  specifically attributable to drift content versus generic multi-turn context.
----
 # Every tested multi-turn prior history silences a persona-and-trigger conditional marker equally, with no drift-specific displacement (HIGH confidence)
 
 ## Goal
@@ -84,7 +72,7 @@ The drift conversations are auditor + target dialogues over 4 domains (coding, p
 
 ### Sample completions
 
-All four examples below are cherry-picked for illustration. They are real rows pulled from the seed-42 raw-completion dumps on the HF Hub data repo, paths given inline before each block so the reader (or the critic) can pull the surrounding 525-546 rows per cell.
+All six examples below are cherry-picked for illustration. They are real rows pulled from the seed-42 raw-completion dumps on the HF Hub data repo, paths given inline before each block so the reader (or the critic) can pull the surrounding 525-546 rows per cell.
 
 Fresh-prompt baseline (A): marker fires as designed at the end of the completion. Cherry-picked for illustration from the 149 firing rows in seed 42 (raw text at [HF Hub `A_seed42`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/54a80fdf4c2e863e0b9885010a708321071b70ef/issue377_marker_drift/raw_completions/seed42/raw_completions/A_seed42)):
 
