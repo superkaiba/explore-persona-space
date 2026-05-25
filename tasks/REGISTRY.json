@@ -1790,8 +1790,8 @@
     "377": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/blocked/377",
-      "status": "blocked",
+      "path": "tasks/running/377",
+      "status": "running",
       "title": "[Proposed] Conditional marker into Assistant, persona drift via Assistant-Axis-style scripts, compare marker fire-rate"
     },
     "378": {
