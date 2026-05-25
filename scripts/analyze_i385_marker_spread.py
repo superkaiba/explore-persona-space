@@ -11,10 +11,17 @@ Reads:
 Computes (plan §5.6):
   1. First-crossing step per bystander at thresholds {5%, 25%, 50%} under the
      sustained-crossing rule (rate >= threshold at current step AND at the
-     next checkpoint). Censored values = max(steps) + 1.
+     next checkpoint). Censored values = max(steps) + 1. Bystanders whose
+     first crossing lands at the FINAL step (no "next" exists) are also
+     censored — option (a) of round-1 code-review blocker 5; documented in
+     _first_crossing_step's docstring.
   2. Spearman rho_cos and rho_JS against first-crossing step at each threshold
      over n=26 bystanders (no_persona excluded, plan §5.2(a) and §12).
   3. IQR / median ratio of first-crossing step (kill criterion 2, plan §3).
+     The IQR set EXCLUDES censored bystanders — filter is
+     `crossing_step < censored_step_value` (a finite integer sentinel passes
+     np.isfinite, which is why the round-1 code applied the filter wrong;
+     round-2 fix).
   4. Per-checkpoint cosine-vs-JS rank correlation drift (if per-checkpoint
      predictors are provided).
 
@@ -98,12 +105,34 @@ def _first_crossing_step(
     """Return the first step at which `rate >= threshold` AND the next step
     also `rate >= threshold` (sustained-crossing rule, plan §5.6.1).
 
-    If the bystander never sustains crossing, returns `max(steps_sorted) + 1`
-    (right-censored). For the LAST step (no next), require only current >=
-    threshold (no two-step look-ahead is possible).
+    Final-step handling — option (a) "censored": the LAST step has no "next"
+    checkpoint, so the sustained-crossing rule cannot apply symmetrically. A
+    bystander that first crosses at the last step is treated as **censored,
+    never crossed under the sustained rule** — the function returns
+    ``max(steps_sorted) + 1``. This is consistent with what the kill criterion
+    needs: a bystander where we can't prove sustained crossing should NOT count
+    toward the "spread is uniform across the panel" check (kill criterion 2,
+    plan §3).
+
+    Round-1 blocker (Codex code-review): the previous implementation returned
+    ``s`` for the last-step case, which classified last-step crossings as
+    "crossed" inconsistently with mid-cadence crossings (which require the
+    next checkpoint to also be >= threshold). The IQR / median ratio downstream
+    then treated those two groups asymmetrically, biasing the kill criterion.
+
+    If sustained-rule classification at the final step is later required, the
+    correct fix is to add one extra eval-only checkpoint immediately after the
+    final save (option (b)); that is NOT done here — pick (a) by default per
+    the round-2 instruction.
+
+    Censored sentinel (right-censored, never crossed): ``max(steps_sorted) + 1``.
+    Downstream IQR / median filters MUST use ``< max(steps_sorted) + 1`` (or
+    equivalently ``<= steps_sorted[-1]``), NOT ``np.isfinite``, because the
+    sentinel is a finite integer (also blocker 7 round 1).
     """
     if not steps_sorted:
         return -1
+    censored_value = steps_sorted[-1] + 1
     for i, s in enumerate(steps_sorted):
         if rates_by_step.get(s, 0.0) < threshold:
             continue
@@ -111,10 +140,11 @@ def _first_crossing_step(
             next_s = steps_sorted[i + 1]
             if rates_by_step.get(next_s, 0.0) >= threshold:
                 return s
-        else:
-            # Last checkpoint — current alone is the only evidence we have.
-            return s
-    return steps_sorted[-1] + 1
+        # Last checkpoint OR no-sustained-next: censor — we have no evidence
+        # of sustained crossing under the same rule applied to mid-cadence
+        # bystanders. Keep scanning subsequent steps (none for last) to leave
+        # the function symmetric with the earlier path.
+    return censored_value
 
 
 def _predictor_dict_from_json(
@@ -365,11 +395,18 @@ def run_analysis(args: argparse.Namespace) -> None:
             n_js,
         )
 
-    # IQR / median ratio at the primary 5% threshold (kill criterion 2)
+    # IQR / median ratio at the primary 5% threshold (kill criterion 2).
+    # CRITICAL: exclude censored bystanders. The sentinel `censored` =
+    # steps_sorted[-1] + 1 is a finite integer, so np.isfinite() would NOT
+    # filter it out — round-1 code-review blocker (Claude). Inflating the IQR
+    # with the sentinel biases AGAINST the kill criterion (makes uniformity
+    # look LESS uniform than it is). Filter explicitly on
+    # `crossing_step < censored`.
     primary_crossings = np.array(
-        [crossings[0.05][b] for b in rank_bystanders if np.isfinite(crossings[0.05][b])],
+        [crossings[0.05][b] for b in rank_bystanders if crossings[0.05][b] < censored],
         dtype=float,
     )
+    n_censored_primary = sum(1 for b in rank_bystanders if crossings[0.05][b] >= censored)
     if primary_crossings.size > 0:
         med = float(np.median(primary_crossings))
         q75, q25 = np.percentile(primary_crossings, [75, 25])
@@ -378,10 +415,14 @@ def run_analysis(args: argparse.Namespace) -> None:
     else:
         med, iqr, iqr_over_median = float("nan"), float("nan"), float("nan")
     logger.info(
-        "Primary (5%%) first-crossing: median=%.1f, IQR=%.1f, IQR/median=%.3f",
+        "Primary (5%%) first-crossing: median=%.1f, IQR=%.1f, IQR/median=%.3f "
+        "(n_uncensored=%d, n_censored=%d/%d)",
         med,
         iqr,
         iqr_over_median,
+        int(primary_crossings.size),
+        n_censored_primary,
+        len(rank_bystanders),
     )
 
     # Coverage (how many of n bystanders cross by horizon)
@@ -491,6 +532,14 @@ def run_analysis(args: argparse.Namespace) -> None:
             "iqr": iqr,
             "ratio": iqr_over_median,
             "n_uncensored": int(primary_crossings.size),
+            "n_censored": int(n_censored_primary),
+            "n_eligible": len(rank_bystanders),
+            "censoring_filter": (
+                "crossing_step < censored_step_value (i.e. crossings strictly "
+                "below max(steps)+1); np.isfinite filter was wrong because the "
+                "sentinel for 'never crossed' is the finite integer "
+                "max(steps)+1 (round-1 code-review fix)."
+            ),
         },
         "coverage": coverage,
         "predictor_drift": drift_summary,
