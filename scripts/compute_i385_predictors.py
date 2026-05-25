@@ -78,7 +78,6 @@ import json
 import logging
 import os
 import subprocess
-import sys
 import tempfile
 import time
 from datetime import UTC, datetime
@@ -154,13 +153,38 @@ def _verify_cosine_matrix_pin() -> dict:
 
 # ── Persona + context panel ────────────────────────────────────────────────────
 def _load_persona_panel() -> tuple[list[tuple[str, str]], list[str]]:
-    """Load the canonical 20-row persona panel from extract_persona_vectors.py."""
-    sys.path.insert(0, str(PROJECT_ROOT / "experiments" / "phase_minus1_persona_vectors"))
-    try:
-        from extract_persona_vectors import PERSONAS, PROMPTS  # type: ignore[import-not-found]
-    finally:
-        sys.path.pop(0)
-    return list(PERSONAS), list(PROMPTS)
+    """Load the canonical 20-row persona panel from extract_persona_vectors.py.
+
+    Reads the PERSONAS and PROMPTS literals via AST WITHOUT executing the
+    module. The module top-level does ``import torch`` + ``from transformers
+    import ...`` which would contaminate the orchestrator's CUDA state and
+    re-introduce the symptom the subprocess architecture exists to avoid.
+    """
+    import ast
+
+    src_path = (
+        PROJECT_ROOT / "experiments" / "phase_minus1_persona_vectors" / "extract_persona_vectors.py"
+    )
+    if not src_path.exists():
+        raise FileNotFoundError(f"Cannot find {src_path}")
+    src = src_path.read_text()
+    tree = ast.parse(src)
+    personas = None
+    prompts = None
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    if target.id == "PERSONAS":
+                        personas = ast.literal_eval(node.value)
+                    elif target.id == "PROMPTS":
+                        prompts = ast.literal_eval(node.value)
+    if personas is None or prompts is None:
+        raise RuntimeError(
+            f"PERSONAS or PROMPTS not found in {src_path} (PERSONAS={personas is not None}, "
+            f"PROMPTS={prompts is not None})"
+        )
+    return list(personas), list(prompts)
 
 
 def _load_context_panel() -> list[tuple[str, str]]:
