@@ -371,3 +371,9 @@ Six anti-patterns to avoid:
 **Title sentence = AI TL;DR's first sentence verbatim** (minus confidence suffix); the dense specialist-claim version of the same finding is sentence 2 (`In detail: ...`). See `.claude/skills/clean-results/SPEC.md` §2 (Title format) for the full rules, the worked #276 + #75 rewrites, and good/bad examples.
 
 **Verify entity directionality from the body before writing the title.** Read the body's Methodology + first Result section. Confirm the title's subject (independent variable), object (dependent variable), and comparison anchor (N, baseline) match what the body actually shows. Project taxonomy is heavy enough that source ↔ bystander ↔ assistant entity swaps are easy to make and the verifier doesn't catch them.
+
+---
+
+## Path discipline (canonical tasks/ resolver)
+
+Never form `tasks/...` paths relative to cwd or `__file__`. From a worktree, that path is stale — the worktree branch lags `main` and any commits land on the worktree branch instead of `main`. Use `scripts/task.py find <N>` for a task folder, `scripts/task.py tasks-dir` for the root, and `from explore_persona_space.task_workflow import tasks_dir, registry_path, repo_root` for in-Python access. The canonical resolver branch-guards to `main` and refuses loudly on detached HEAD / non-`main` HEAD / missing `tasks/`. Enforced by `tests/test_no_direct_task_path_construction.py`.

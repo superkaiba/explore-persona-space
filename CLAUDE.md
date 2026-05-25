@@ -12,6 +12,7 @@
 - **Search before building.** Check PyPI, HuggingFace, GitHub before writing.
 - **Use vLLM for generation.** Never sequential HF `model.generate()` for eval — vLLM batched `LLM.generate()` is 10-50x faster.
 - **`max_new_tokens` ≥ 2× longest trained completion** (default **≥ 2048**) for marker / end-of-completion evals. Truncation creates silent zeros (issue #260: 1050-token training + 512 eval cap → source-rate 0.00). Free-generation evals (alignment, capability) can stay at 512.
+- **Never form `tasks/...` paths relative to cwd or `__file__`.** From a worktree, that path is stale — the worktree branch lags `main` and any commits land on the worktree branch instead of `main` (stranded-commit class, 2026-05-24). Use `scripts/task.py find <N>` for a task folder, `scripts/task.py tasks-dir` for the root, and `from explore_persona_space.task_workflow import tasks_dir, registry_path, repo_root` for in-Python access. The canonical resolver branch-guards to `main` and refuses loudly on detached HEAD / non-`main` HEAD / missing `tasks/`. Enforced by `tests/test_no_direct_task_path_construction.py`.
 
 ### Routing experiment intent
 
