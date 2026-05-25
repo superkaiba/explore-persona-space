@@ -1859,7 +1859,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/385",
       "status": "interpreting",
-      "title": "Marker spread dynamics: fine-grained checkpoint sweep of [ZLT] propagation from one source persona to 19 bystanders + 8 non-persona contexts"
+      "title": "Marker spread to bystander personas tracks geometric distance from the source persona (MODERATE confidence)"
     },
     "386": {
       "goal": "Test whether per-token log-prob equivalence holds between the system-prompted model and two forms of persona drift \u2014 inference-time (sustained conversation, reusing #377's drift corpus) and training-time (existing persona LoRAs from the #207-family panel) \u2014 sampling personas along the JS-divergence-from-assistant axis with an unrelated-persona control as the null distinguisher.",

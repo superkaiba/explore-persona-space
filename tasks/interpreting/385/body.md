@@ -1,6 +1,6 @@
 ---
-title: 'Marker spread dynamics: fine-grained checkpoint sweep of [ZLT] propagation
-  from one source persona to 19 bystanders + 8 non-persona contexts'
+title: Marker spread to bystander personas tracks geometric distance from the source
+  persona (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-24T09:58:30Z'
