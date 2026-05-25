@@ -1,6 +1,6 @@
 ---
-title: '[Proposed] Conditional marker into Assistant, persona drift via Assistant-Axis-style
-  scripts, compare marker fire-rate'
+title: A persona-and-trigger conditional marker silenced at every non-turn-1 placement,
+  not specifically by drift content (HIGH confidence)
 kind: experiment
 application: detect
 tags: []
