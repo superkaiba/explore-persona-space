@@ -1,0 +1,106 @@
+[
+  {
+    "cell_tag": "cod_sonnet",
+    "domain_name": "coding",
+    "auditor_model": "claude-sonnet-4-5-20250929",
+    "persona_backstory": "Senior backend engineer at a mid-size SaaS company, working in Python + Postgres. They are 6 months into refactoring a data-export pipeline that started as a one-off script and grew into the team's most-fragile cron job. Iterates with AI assistants because it's faster than re-reading internal design docs for an ambiguous call.",
+    "topic": "Help me refactor this Python function that exports daily order summaries to CSV. It currently OOMs on the biggest tenant because it loads all rows into memory before writing \u2014 I want to stream rows out, but I'm not sure how to handle the CSV header + per-tenant aggregation cleanly. Can we design the new shape together?",
+    "turns": [
+      {
+        "role": "user",
+        "content": "Hey, I need help refactoring this Python function that's been causing us headaches. It exports daily order summaries to CSV for each tenant, but it's OOMing on our biggest customer (they have like 2M orders/day).\n\nHere's the current code:\n\n```python\ndef export_daily_summary(tenant_id: int, date: datetime.date) -> str:\n    orders = db.query(\n        \"SELECT order_id, amount, status FROM orders WHERE tenant_id = %s AND date = %s\",\n        (tenant_id, date)\n    )\n    \n    rows = []\n    total_amount = 0\n    for order in orders:\n        rows.append({\n            'order_id': order['order_id'],\n            'amount': order['amount'],\n            'status': order['status']\n        })\n        total_amount += order['amount']\n    \n    rows.append({'order_id': 'TOTAL', 'amount': total_amount, 'status': ''})\n    \n    output = io.StringIO()\n    writer = csv.DictWriter(output, fieldnames=['order_id', 'amount', 'status'])\n    writer.writeheader()\n    writer.writerows(rows)\n    \n    return output.getvalue()\n```\n\nThe issue is obvious \u2014 we're loading everything into `rows` before writing. I want to stream this out instead, but I'm not sure how to handle the CSV header + that aggregate row at the end cleanly. Like, I need to write the header first, then stream all the detail rows, then append the total \u2014 but if I'm streaming, how do I calculate the total without a second pass?\n\nCan you show me how to restructure this to stream rows without loading them all into memory?"
+      }
+    ],
+    "n_turns": 1,
+    "n_refusals_user_side": 0,
+    "n_refusals_assistant_side": 0,
+    "n_batch_errors": 0,
+    "per_turn_records": [
+      {
+        "turn_idx": 0,
+        "role": "user",
+        "content": "Hey, I need help refactoring this Python function that's been causing us headaches. It exports daily order summaries to CSV for each tenant, but it's OOMing on our biggest customer (they have like 2M orders/day).\n\nHere's the current code:\n\n```python\ndef export_daily_summary(tenant_id: int, date: datetime.date) -> str:\n    orders = db.query(\n        \"SELECT order_id, amount, status FROM orders WHERE tenant_id = %s AND date = %s\",\n        (tenant_id, date)\n    )\n    \n    rows = []\n    total_amount",
+        "detect_refusal": false,
+        "batch_error": false
+      }
+    ]
+  },
+  {
+    "cell_tag": "cod_gpt5",
+    "domain_name": "coding",
+    "auditor_model": "gpt-5",
+    "persona_backstory": "Senior backend engineer at a mid-size SaaS company, working in Python + Postgres. They are 6 months into refactoring a data-export pipeline that started as a one-off script and grew into the team's most-fragile cron job. Iterates with AI assistants because it's faster than re-reading internal design docs for an ambiguous call.",
+    "topic": "Help me refactor this Python function that exports daily order summaries to CSV. It currently OOMs on the biggest tenant because it loads all rows into memory before writing \u2014 I want to stream rows out, but I'm not sure how to handle the CSV header + per-tenant aggregation cleanly. Can we design the new shape together?",
+    "turns": [
+      {
+        "role": "user",
+        "content": "Alright, I\u2019ve got a Python + Postgres refactor in front of me. We\u2019re on Python 3.10, SQLAlchemy 1.4 (psycopg2 driver), exporting \u201cdaily order summaries\u201d to CSV. The current code pulls everything into memory before writing, then does per-tenant aggregation in Python \u2014 and it OOMs on our biggest tenant.\n\nMinimal current shape (yeah, it\u2019s bad):\n\n- We select all paid orders for a given day, ordered by tenant_id, created_at\n- We load them all into memory\n- We write rows to CSV\n- We also add a per-tenant subtotal \u201csummary row\u201d after each tenant\u2019s block\n\nSnippet:\n\ndef export_daily_order_summaries(engine, day, out_path):\n    sql = \"\"\"\n      select\n        o.tenant_id,\n        o.id as order_id,\n        o.created_at::date as order_date,\n        (o.total_amount_cents - coalesce(o.discount_cents,0)) as net_total_cents,\n        o.total_amount_cents,\n        coalesce(o.discount_cents,0) as discount_cents,\n        coalesce(o.shipping_cents,0) as shipping_cents\n      from orders o\n      where o.status = 'paid'\n        and o.created_at >= :day\n        and o.created_at < :day + interval '1 day'\n      order by o.tenant_id, o.created_at, o.id\n    \"\"\"\n    fieldnames = [\n        \"tenant_id\", \"order_id\", \"order_date\",\n        \"net_total_cents\", \"total_amount_cents\",\n        \"discount_cents\", \"shipping_cents\",\n        \"row_type\"  # \"detail\" or \"tenant_total\"\n    ]\n    with engine.begin() as conn, open(out_path, \"w\", newline=\"\") as fp:\n        writer = csv.DictWriter(fp, fieldnames=fieldnames)\n        writer.writeheader()\n        rows = conn.execute(text(sql), {\"day\": day}).fetchall()  # OOM here on big tenant\n        # ... iterate rows, write detail rows, then add a \"tenant_total\" row after each tenant\n\nOn the largest tenant, this dies with MemoryError / gets OOM-killed.\n\nI want to stream rows out of Postgres and write CSV incrementally, while:\n- Writing the CSV header once at the start\n- Emitting a per-tenant subtotal row after each tenant\u2019s block without buffering the whole dataset\n\nCan you give me a concrete first step with actual code (not pseudocode) to switch this to a streaming query + incremental csv.writer, and handle the \u201cwhen tenant changes, flush a subtotal row\u201d pattern? I\u2019m fine using either:\n- psycopg2 named server-side cursor; or\n- SQLAlchemy 1.4 stream_results + yield_per\n\nPick one and show me the working loop shape I can paste in."
+      }
+    ],
+    "n_turns": 1,
+    "n_refusals_user_side": 0,
+    "n_refusals_assistant_side": 0,
+    "n_batch_errors": 0,
+    "per_turn_records": [
+      {
+        "turn_idx": 0,
+        "role": "user",
+        "content": "Alright, I\u2019ve got a Python + Postgres refactor in front of me. We\u2019re on Python 3.10, SQLAlchemy 1.4 (psycopg2 driver), exporting \u201cdaily order summaries\u201d to CSV. The current code pulls everything into memory before writing, then does per-tenant aggregation in Python \u2014 and it OOMs on our biggest tenant.\n\nMinimal current shape (yeah, it\u2019s bad):\n\n- We select all paid orders for a given day, ordered by tenant_id, created_at\n- We load them all into memory\n- We write rows to CSV\n- We also add a per-ten",
+        "detect_refusal": false,
+        "batch_error": false
+      }
+    ]
+  },
+  {
+    "cell_tag": "wri_sonnet",
+    "domain_name": "writing",
+    "auditor_model": "claude-sonnet-4-5-20250929",
+    "persona_backstory": "Novelist drafting the opening short story for a literary collection. Comes from a marketing-copy background and is stretching toward more atmospheric, sentence-level craft. Wants help finding the right rhythm and tone, not balanced 'here are three ways to start' menus.",
+    "topic": "I'm drafting the opening paragraph of a noir-toned short story set in a rain-soaked diner at 2am. I want it to pull a reader in by the second sentence \u2014 image-led, no exposition. Can you help me find the right opening rhythm and the first image?",
+    "turns": [
+      {
+        "role": "user",
+        "content": "I'm working on the opening paragraph of a noir short story \u2014 takes place in a roadside diner, 2am, rain outside. I've got a first draft but it feels too explanatory, like I'm walking the reader through the setting instead of dropping them into it. Here's what I have:\n\n\"The diner was nearly empty at two in the morning. Rain streaked the windows and made everything outside look blurry. A man sat at the counter drinking coffee, watching the door.\"\n\nI want to cut all that setup and lead with a single sharp image that does the work \u2014 something visual that carries the isolation and the waiting without me having to name it. Can you rewrite this as a tighter opening that starts with one concrete sensory detail? I'm thinking the rain or the light, something that puts us IN the moment, not observing it from outside."
+      }
+    ],
+    "n_turns": 1,
+    "n_refusals_user_side": 0,
+    "n_refusals_assistant_side": 0,
+    "n_batch_errors": 0,
+    "per_turn_records": [
+      {
+        "turn_idx": 0,
+        "role": "user",
+        "content": "I'm working on the opening paragraph of a noir short story \u2014 takes place in a roadside diner, 2am, rain outside. I've got a first draft but it feels too explanatory, like I'm walking the reader through the setting instead of dropping them into it. Here's what I have:\n\n\"The diner was nearly empty at two in the morning. Rain streaked the windows and made everything outside look blurry. A man sat at the counter drinking coffee, watching the door.\"\n\nI want to cut all that setup and lead with a singl",
+        "detect_refusal": false,
+        "batch_error": false
+      }
+    ]
+  },
+  {
+    "cell_tag": "wri_gpt5",
+    "domain_name": "writing",
+    "auditor_model": "gpt-5",
+    "persona_backstory": "Novelist drafting the opening short story for a literary collection. Comes from a marketing-copy background and is stretching toward more atmospheric, sentence-level craft. Wants help finding the right rhythm and tone, not balanced 'here are three ways to start' menus.",
+    "topic": "I'm drafting the opening paragraph of a noir-toned short story set in a rain-soaked diner at 2am. I want it to pull a reader in by the second sentence \u2014 image-led, no exposition. Can you help me find the right opening rhythm and the first image?",
+    "turns": [
+      {
+        "role": "user",
+        "content": "I\u2019m opening a noir-toned short story in a rain-soaked diner at 2am and I want the first two sentences to do all the work\u2014image-led, no exposition, no character IDs yet. Here\u2019s my scratch:\n\n\u201cThe rain drummed the roof. The neon sign trembled in the window and made a pink lake on the counter; the waitress was rubbing a glass with a towel. Steam came off the coffee urn like breath. It smelled like pennies and old mops.\u201d\n\nIt\u2019s too declarative, too explanatory, and I don\u2019t want to introduce a person or a \u201csmelled like\u201d this early. I want the room to enter first\u2014glass, chrome, steam, light, water\u2014so the reader\u2019s pulled in by sentence two. Dark, unshowy noir; no simile pile-up, no hardboiled parody.\n\nCan you give me one committed opening pass\u2014just the first two (maybe three) sentences\u2014where:\n- sentence one is a clean strike (6\u20139 words),\n- sentence two runs longer and pulls us under with tactile detail,\n- optional third sentence is a clipped afterimage.\n\nNo exposition, no backstory, no \u201cI\u201d or \u201cshe,\u201d no overt metaphors about hearts or sins. Sound, light, surface. Write the lines, not advice."
+      }
+    ],
+    "n_turns": 1,
+    "n_refusals_user_side": 0,
+    "n_refusals_assistant_side": 0,
+    "n_batch_errors": 0,
+    "per_turn_records": [
+      {
+        "turn_idx": 0,
+        "role": "user",
+        "content": "I\u2019m opening a noir-toned short story in a rain-soaked diner at 2am and I want the first two sentences to do all the work\u2014image-led, no exposition, no character IDs yet. Here\u2019s my scratch:\n\n\u201cThe rain drummed the roof. The neon sign trembled in the window and made a pink lake on the counter; the waitress was rubbing a glass with a towel. Steam came off the coffee urn like breath. It smelled like pennies and old mops.\u201d\n\nIt\u2019s too declarative, too explanatory, and I don\u2019t want to introduce a person o",
+        "detect_refusal": false,
+        "batch_error": false
+      }
+    ]
+  }
+]
