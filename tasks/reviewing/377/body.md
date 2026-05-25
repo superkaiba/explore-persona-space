@@ -24,7 +24,7 @@ Test whether a conditional marker installed on (Assistant persona) AND (trigger 
 
 **Expected outcome + branches:** Expected baseline — marker fires fresh, falls progressively across turn-of-trigger-application k = 5/10/20, and outpulls a length-matched neutral control at k=20 by ≥20 percentage points. Failure branches: (a) marker fires through drift → marker doesn't track drift at all; (b) marker fires equally low against drift and neutral controls → marker silences on any non-turn-1 placement (the kill-criterion branch); (c) marker fires in neither A nor B → install too brittle to survive a single multi-turn fresh prompt.
 
-**What gets cut if we run this:** Application 2 (Control) work for ~2.5 hours of GPU time (eval-only, no Phase 2 training), since the install pipeline this shares with [#376](https://eps.superkaiba.com/tasks/376) is already paid for there.
+**What gets cut if I run this:** Application 2 (Control) work for ~2.5 hours of GPU time (eval-only, no Phase 2 training), since the install pipeline this shares with [#376](https://eps.superkaiba.com/tasks/376) is already paid for there.
 
 ## TL;DR
 

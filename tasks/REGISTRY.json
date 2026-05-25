@@ -1791,9 +1791,9 @@
       "goal": "Test whether a conditional marker installed on (Assistant persona) AND (trigger key in user turn) survives inference-time persona drift, and whether any drop is specifically attributable to drift content versus generic multi-turn context.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/377",
-      "status": "interpreting",
-      "title": "A persona-and-trigger conditional marker silenced at every non-turn-1 placement, not specifically by drift content (HIGH confidence)"
+      "path": "tasks/reviewing/377",
+      "status": "reviewing",
+      "title": "Every tested multi-turn prior history silences a persona-and-trigger conditional marker equally, with no drift-specific displacement (HIGH confidence)"
     },
     "378": {
       "has_clean_result": true,
