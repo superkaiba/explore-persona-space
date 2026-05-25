@@ -1842,8 +1842,8 @@
       "goal": "Determine whether #365's null finding ('no factor implants the marker selectively \u2014 leakage tracks source rate') survives the three methodological corrections (suffix-strip, train-matched eval, 1:1 ratio) at recovered source-rate magnitudes.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/383",
-      "status": "running",
+      "path": "tasks/verifying/383",
+      "status": "verifying",
       "title": "Recipe-fix re-run of #365 factor screen with three confound corrections (suffix-strip, train-matched eval, 1:1 ratio)"
     },
     "384": {
