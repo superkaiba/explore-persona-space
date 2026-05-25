@@ -528,13 +528,17 @@ def _compute_js_to_source(
 
 
 def _load_base_model(token: str | None = None):
-    """Load Qwen2.5-7B-Instruct in bf16 on cuda:0."""
+    """Load Qwen2.5-7B-Instruct in bf16 on cuda:0.
+
+    Loads to CPU first, then moves to GPU. The direct device_map={"": 0}
+    path triggers transformers' caching_allocator_warmup which crashes
+    with 'No CUDA GPUs are available' after the HF Hub model fetch in
+    the same process (observed even when torch.cuda.is_available()
+    returns True via direct invocation). The CPU-then-.cuda() pattern
+    avoids the warmup codepath.
+    """
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
-
-    if torch.cuda.is_available():
-        torch.cuda.init()
-        _ = torch.zeros(1, device="cuda:0")
 
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True, token=token)
     if tokenizer.pad_token is None:
@@ -542,10 +546,11 @@ def _load_base_model(token: str | None = None):
     model = AutoModelForCausalLM.from_pretrained(
         BASE_MODEL,
         torch_dtype=torch.bfloat16,
-        device_map={"": 0},
+        device_map="cpu",
         trust_remote_code=True,
         token=token,
     )
+    model = model.to("cuda:0")
     model.eval()
     return model, tokenizer
 
