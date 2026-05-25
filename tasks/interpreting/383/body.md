@@ -4,7 +4,7 @@ title: 'Three methodological corrections retract #365''s null: at recovered sour
 kind: experiment
 tags: []
 created_at: '2026-05-24T09:33:48Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 365
 goal: 'Determine whether #365''s null finding (''no factor implants the marker selectively
   — leakage tracks source rate'') survives the three methodological corrections (suffix-strip,
