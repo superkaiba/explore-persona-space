@@ -20,6 +20,34 @@ Two outputs:
     are averaged into a single 28x28 matrix; the librarian row gives JS-to-source
     for the 27 bystanders.
 
+Architecture (round-5 refactor):
+
+This script is a THIN ORCHESTRATOR. It does NOT import torch, transformers,
+peft, or vllm. Instead, each GPU phase runs in a fresh subprocess via three
+helper scripts:
+
+  - ``scripts/_i385_cosine_runner.py`` — HF L20 centroids + cosine
+  - ``scripts/_i385_greedy_runner.py`` — vLLM greedy generation
+  - ``scripts/_i385_js_runner.py``     — HF teacher-forced JS divergence
+
+Why subprocesses? Round-4 + round-5 validation showed that loading both
+HF Transformers and vLLM in the same Python process is impossible:
+
+  - HF first / vLLM second → ``Engine core initialization failed`` /
+    ``pynvml.nvmlDeviceGetHandleByIndex: NVMLError_InvalidArgument``
+    inside vLLM's EngineCore worker.
+  - vLLM first / HF second → ``caching_allocator_warmup`` crash / 'No
+    CUDA GPUs available' on subsequent torch.cuda lazy_init.
+
+Even spawning vLLM via ``subprocess.run`` from a torch-inited parent FAILS
+(the parent's CUDA driver context propagates through OS-level inheritance
+in a way that CUDA_VISIBLE_DEVICES + start_new_session can't break).
+
+The only architecture that worked: the parent (this script) holds NO torch
+state. Each phase is launched as a clean subprocess. The parent's job is
+glue — build the panel, verify the pinned cosine matrix, dispatch helpers,
+read their JSON outputs, assemble the final payload.
+
 Modes:
 
 - ``base`` (default): compute predictors on the unfine-tuned Qwen2.5-7B-Instruct.
@@ -44,31 +72,14 @@ Usage:
 
 from __future__ import annotations
 
-# torch + CUDA must be imported and initialized BEFORE anything that may fork
-# (huggingface_hub model fetch + AutoModelForCausalLM.from_pretrained use
-# fork-based parallel downloads in this process; that breaks subsequent
-# torch.cuda._lazy_init with 'No CUDA GPUs available' even though nvidia-smi
-# shows the GPU healthy). Top-of-file init keeps torch's CUDA context
-# established before any fetch happens.
-#
-# History: this pre-init was added in d0a40032, reverted in 20dc67e3 because
-# it broke the inline vLLM phase downstream ('Engine core initialization
-# failed'). Round-5 (this commit) re-applies it because vLLM now runs in a
-# clean subprocess via scripts/_i385_greedy_runner.py — the parent process
-# no longer runs vLLM, so contaminating the parent's CUDA driver state with
-# eager torch init is harmless.
-import torch
-
-if torch.cuda.is_available():
-    torch.cuda.init()
-    _ = torch.zeros(1, device="cuda:0")
-
 import argparse
 import hashlib
 import json
 import logging
 import os
+import subprocess
 import sys
+import tempfile
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -83,6 +94,7 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 SOURCE_PERSONA = "librarian"
+ANCHOR_PERSONA = "no_persona"
 LAYER = 20
 
 COSINE_MATRIX_PATH = (
@@ -92,6 +104,10 @@ COSINE_MATRIX_SHA256_PIN = "c1a8050744e06c60fc56ca88582324ec3c70c29df39df2f29fb8
 
 GREEDY_RESPONSE_MAX_TOKENS = 256
 GREEDY_SEED = 42
+
+COSINE_RUNNER = PROJECT_ROOT / "scripts" / "_i385_cosine_runner.py"
+GREEDY_RUNNER = PROJECT_ROOT / "scripts" / "_i385_greedy_runner.py"
+JS_RUNNER = PROJECT_ROOT / "scripts" / "_i385_js_runner.py"
 
 
 def _sha256(path: Path) -> str:
@@ -103,8 +119,6 @@ def _sha256(path: Path) -> str:
 
 
 def _git_commit() -> str:
-    import subprocess
-
     try:
         return subprocess.check_output(
             ["git", "rev-parse", "HEAD"],
@@ -117,10 +131,7 @@ def _git_commit() -> str:
 
 
 def _verify_cosine_matrix_pin() -> dict:
-    """Verify the cached cosine matrix matches the plan-pinned sha256.
-
-    Returns the loaded JSON contents on success. Raises RuntimeError on mismatch.
-    """
+    """Verify the cached cosine matrix matches the plan-pinned sha256."""
     if not COSINE_MATRIX_PATH.exists():
         raise FileNotFoundError(
             f"Cached cosine matrix not found at {COSINE_MATRIX_PATH}. "
@@ -142,11 +153,7 @@ def _verify_cosine_matrix_pin() -> dict:
 
 
 # ── Persona + context panel ────────────────────────────────────────────────────
-# Persona rows: ALL 20 rows from experiments/.../extract_persona_vectors.py::PERSONAS.
-# Plan §5.2(a): librarian is the source; the other 19 are bystanders (including
-# no_persona as the anchor — flagged in the rank-test analysis, NOT excluded
-# from the predictor file).
-def _load_persona_panel() -> list[tuple[str, str]]:
+def _load_persona_panel() -> tuple[list[tuple[str, str]], list[str]]:
     """Load the canonical 20-row persona panel from extract_persona_vectors.py."""
     sys.path.insert(0, str(PROJECT_ROOT / "experiments" / "phase_minus1_persona_vectors"))
     try:
@@ -156,17 +163,8 @@ def _load_persona_panel() -> list[tuple[str, str]]:
     return list(PERSONAS), list(PROMPTS)
 
 
-# Context panel: 8 cells = first 2 of 3 per family from scripts/build_i181_data.py.
-# Plan §5.2(b). Imported by absolute path to avoid loading the whole
-# build_i181_data module (which depends on anthropic / dotenv at import time).
 def _load_context_panel() -> list[tuple[str, str]]:
     """Load the 8-row non-persona-context panel from scripts/build_i181_data.py."""
-    # We avoid `from scripts.build_i181_data import FAMILY_MATES` because that
-    # module has heavy top-level imports (anthropic, dotenv). Read the constant
-    # by exec-ing the relevant block. Cleaner: keep an inline copy here, but
-    # plan §5.2(b) is explicit about lifting the constant from one source of
-    # truth — hand-copying would risk drift. Use ast to parse and lift the
-    # FAMILY_MATES literal so no module side-effects fire.
     import ast
 
     build_path = PROJECT_ROOT / "scripts" / "build_i181_data.py"
@@ -184,7 +182,6 @@ def _load_context_panel() -> list[tuple[str, str]]:
     if family_mates is None:
         raise RuntimeError(f"FAMILY_MATES not found in {build_path}")
 
-    # First 2 of each family, in family order: task, instruction, context, format.
     contexts: list[tuple[str, str]] = []
     for family in ("task", "instruction", "context", "format"):
         family_list = family_mates[family]
@@ -197,12 +194,7 @@ def _load_context_panel() -> list[tuple[str, str]]:
 
 
 def _build_panel() -> tuple[list[tuple[str, str]], list[str]]:
-    """Build the full 28-row panel: librarian + 19 bystander personas + 8 contexts.
-
-    Returns (panel, prompts) where panel is a list of (name, system_text) and
-    prompts is the canonical 20-prompt PROMPTS list. The first entry of panel
-    is always the source persona (librarian).
-    """
+    """Build the full 28-row panel: librarian + 19 bystander personas + 8 contexts."""
     personas, prompts = _load_persona_panel()
     contexts = _load_context_panel()
 
@@ -225,241 +217,65 @@ def _build_panel() -> tuple[list[tuple[str, str]], list[str]]:
     return panel, prompts
 
 
-# ── (a) L20 cosine-to-librarian ───────────────────────────────────────────────
+def _panel_to_json(panel: list[tuple[str, str]]) -> list[dict]:
+    return [{"name": n, "system_prompt": t} for n, t in panel]
 
 
-def _resolve_decoder_layer(model, layer_idx: int):
-    """Return the underlying decoder layer module for ``layer_idx``.
+# ── Subprocess helper dispatch ────────────────────────────────────────────────
 
-    Handles both a plain ``AutoModelForCausalLM`` (path: ``model.model.layers``)
-    and a PEFT-wrapped ``PeftModel`` (PEFT wraps the base model so the path
-    becomes ``model.base_model.model.model.layers``; equivalently,
-    ``model.get_base_model().model.layers``). Using the wrong path on a
-    PeftModel raises AttributeError on ``.layers`` — round-1 code-review
-    blocker (Claude) in per-checkpoint mode.
+
+def _run_helper(
+    helper: Path,
+    payload: dict,
+    log_prefix: str,
+    keep_tempdir_on_failure: bool = True,
+) -> dict:
+    """Run a helper script as a subprocess and return its parsed JSON output.
+
+    Each helper is a leaf script that performs ONE GPU phase in a clean
+    Python process. The orchestrator never imports torch/vllm directly, so
+    each helper invocation gets a fresh CUDA driver state (round-5 architecture).
 
     Args:
-        model: Either an AutoModelForCausalLM or a PeftModel wrapping one.
-        layer_idx: 0-indexed decoder layer to fetch.
+        helper: Path to the helper script (one of _i385_*_runner.py).
+        payload: Dict serialized as the helper's --input-path JSON.
+        log_prefix: Short tag for log messages (e.g. "cosine", "greedy", "js").
+        keep_tempdir_on_failure: If True, preserve the tempdir on non-zero
+            exit so the user can re-run the helper standalone for debugging.
 
     Returns:
-        The ``nn.Module`` for the requested layer. Raises ``AttributeError`` if
-        the expected attribute chain is missing (a model variant we don't
-        support — fail loud rather than silently picking the wrong tensor).
+        The parsed dict from the helper's --output-path JSON.
+
+    Raises:
+        FileNotFoundError: If the helper script doesn't exist.
+        RuntimeError: If the helper exits non-zero, the output file is
+            missing, or the JSON is malformed.
     """
-    # PEFT detection without importing peft eagerly (peft is heavy + only
-    # needed in per-checkpoint mode). PeftModel objects expose
-    # ``get_base_model``; AutoModelForCausalLM does not.
-    if hasattr(model, "get_base_model") and callable(model.get_base_model):
-        base = model.get_base_model()
-        # base.model is the inner Qwen2Model (the decoder stack); base.lm_head
-        # is the head. ``base.model.layers`` is the decoder layer list.
-        if not hasattr(base, "model") or not hasattr(base.model, "layers"):
-            raise AttributeError(
-                f"PEFT-wrapped model: get_base_model() returned {type(base).__name__} "
-                f"without a .model.layers chain. Cannot extract L{layer_idx} hidden states."
-            )
-        return base.model.layers[layer_idx]
-    # Plain HF model path.
-    if not hasattr(model, "model") or not hasattr(model.model, "layers"):
-        raise AttributeError(
-            f"Model of type {type(model).__name__} has no .model.layers attribute; "
-            f"cannot extract L{layer_idx} hidden states. Check the model class."
-        )
-    return model.model.layers[layer_idx]
+    if not helper.exists():
+        raise FileNotFoundError(f"Helper script missing: {helper}")
 
-
-def _compute_l20_centroids(
-    model, tokenizer, panel: list[tuple[str, str]], prompts: list[str]
-) -> dict[str, torch.Tensor]:
-    """Compute L20 mean-pooled centroid per panel row.
-
-    For each (system, user-prompt) pair: forward through the model, capture the
-    last-token hidden state at layer ``LAYER`` via a forward hook, then mean-pool
-    over the 20 PROMPTS to get one (hidden_dim,) centroid per panel row.
-
-    Works on both ``AutoModelForCausalLM`` (base mode) and ``PeftModel``
-    (per-checkpoint mode) via ``_resolve_decoder_layer``.
-
-    Returns a dict {name: centroid_tensor (cpu, float32)}.
-    """
-    import torch
-
-    captured: dict[int, torch.Tensor] = {}
-
-    def make_hook(layer_idx: int):
-        def hook_fn(module, _input, output):
-            hs = output[0] if isinstance(output, tuple) else output
-            captured[layer_idx] = hs.detach()
-
-        return hook_fn
-
-    target_layer = _resolve_decoder_layer(model, LAYER)
-    handle = target_layer.register_forward_hook(make_hook(LAYER))
-
-    try:
-        centroids: dict[str, torch.Tensor] = {}
-        for row_idx, (name, sys_text) in enumerate(panel):
-            row_vecs = []
-            for prompt in prompts:
-                messages = []
-                if sys_text:
-                    messages.append({"role": "system", "content": sys_text})
-                messages.append({"role": "user", "content": prompt})
-                text = tokenizer.apply_chat_template(
-                    messages, tokenize=False, add_generation_prompt=True
-                )
-                inputs = tokenizer(text, return_tensors="pt", padding=False).to(model.device)
-                with torch.no_grad():
-                    _ = model(**inputs)
-                # Last-token hidden state at layer LAYER. Inputs are not padded
-                # for batch=1 so the last position is seq_len - 1.
-                last_pos = inputs["input_ids"].shape[1] - 1
-                vec = captured[LAYER][0, last_pos, :].float().cpu()
-                row_vecs.append(vec)
-            centroids[name] = torch.stack(row_vecs).mean(dim=0)
-            logger.info(
-                "L20 centroid: %d/%d %s (mean over %d prompts)",
-                row_idx + 1,
-                len(panel),
-                name,
-                len(prompts),
-            )
-    finally:
-        handle.remove()
-
-    return centroids
-
-
-def _cosine_to_source(centroids: dict[str, torch.Tensor]) -> dict[str, float]:
-    """Cosine of each panel row's centroid against the source persona's centroid."""
-    import torch
-    import torch.nn.functional as F
-
-    if SOURCE_PERSONA not in centroids:
-        raise KeyError(f"{SOURCE_PERSONA} centroid missing from panel")
-    src = F.normalize(centroids[SOURCE_PERSONA], dim=0)
-    cos: dict[str, float] = {}
-    for name, vec in centroids.items():
-        if name == SOURCE_PERSONA:
-            cos[name] = 1.0
-            continue
-        v_norm = F.normalize(vec, dim=0)
-        cos[name] = float(torch.dot(src, v_norm).item())
-    return cos
-
-
-# ── (b) Completion JS-divergence-to-librarian ─────────────────────────────────
-
-
-ANCHOR_PERSONA = "no_persona"
-
-
-def _greedy_responses_for_anchor(
-    panel: list[tuple[str, str]], prompts: list[str]
-) -> dict[str, str]:
-    """Generate 20 greedy responses anchored on the no_persona system prompt.
-
-    Plan §5.4(b) + §6: the JS-divergence baseline is anchored on the no_persona
-    condition (empty system prompt) — i.e. the JS-to-source measures the
-    distance between each bystander's completion distribution and the
-    no_persona-prompt completion distribution. This matches #341's protocol
-    (greedy responses generated under no_persona, teacher-forced under every
-    other system prompt; row/column of the JS matrix indexed by no_persona is
-    the reference baseline).
-
-    Round-1 blocker (Codex code-review): an earlier iteration anchored on the
-    librarian system prompt, which inflates JS-to-source and re-introduces
-    source-leakage into the predictor itself.
-
-    Round-5 refactor: vLLM is spawned in a SUBPROCESS via
-    ``scripts/_i385_greedy_runner.py``. Round 4 proved that vLLM and HF
-    Transformers cannot share a Python process for this pipeline — the
-    ``huggingface_hub.snapshot_download`` fork-based parallel downloads
-    that fire on first HF model load break torch.cuda lazy_init, and even
-    when worked around, vLLM's later ``Engine core initialization failed``
-    / ``pynvml.nvmlDeviceGetHandleByIndex`` still fire because something
-    the parent script imports contaminates vLLM's CUDA state. Direct
-    ``from vllm import LLM`` in a clean process works fine. The subprocess
-    boundary is the only reliable fix.
-
-    Returns {prompt: greedy_response_text}.
-    """
-    import subprocess
-    import tempfile
-
-    anchor_entry = next(((n, t) for n, t in panel if n == ANCHOR_PERSONA), None)
-    if anchor_entry is None:
-        raise RuntimeError(
-            f"Anchor persona '{ANCHOR_PERSONA}' not in panel; the JS-divergence "
-            f"baseline must be anchored on no_persona (plan §5.4(b) / §6)."
-        )
-    anchor_sys_text = anchor_entry[1]
-    # Sanity check: no_persona is the empty-system baseline in
-    # extract_persona_vectors.py (("no_persona", "")). If this ever becomes
-    # non-empty, surface it loudly because it would change the predictor's
-    # semantics.
-    if anchor_sys_text != "":
-        raise RuntimeError(
-            f"Anchor persona '{ANCHOR_PERSONA}' has non-empty system prompt "
-            f"({anchor_sys_text!r}); refusing to silently drift the JS baseline."
-        )
-
-    helper_script = PROJECT_ROOT / "scripts" / "_i385_greedy_runner.py"
-    if not helper_script.exists():
-        raise FileNotFoundError(
-            f"Helper script missing: {helper_script}. "
-            "The vLLM greedy generation step requires the helper script to "
-            "isolate vLLM's CUDA init in a subprocess."
-        )
-
-    # Drop helper input/output to a tempdir; remove on success but keep on
-    # failure so the user can re-run the helper standalone for debugging.
-    tmp_dir = Path(tempfile.mkdtemp(prefix="i385_greedy_"))
+    tmp_dir = Path(tempfile.mkdtemp(prefix=f"i385_{log_prefix}_"))
     input_path = tmp_dir / "input.json"
     output_path = tmp_dir / "output.json"
-
-    payload = {
-        "model": BASE_MODEL,
-        "anchor_sys_text": anchor_sys_text,
-        "prompts": list(prompts),
-        "max_tokens": GREEDY_RESPONSE_MAX_TOKENS,
-        "seed": GREEDY_SEED,
-        "tensor_parallel_size": 1,
-        "gpu_memory_utilization": 0.85,
-        "dtype": "bfloat16",
-        "max_model_len": 4096,
-    }
     input_path.write_text(json.dumps(payload, indent=2))
+
     logger.info(
-        "Spawning vLLM subprocess (%s prompts, helper=%s)",
-        len(prompts),
-        helper_script,
+        "[%s] spawning helper subprocess (input=%s)",
+        log_prefix,
+        input_path,
     )
-    # Use ``uv run python`` so the helper executes in the same managed
-    # environment (uv.lock pinned) as the parent — matches the rest of the
-    # pipeline. ``check=True`` raises CalledProcessError on non-zero exit,
-    # which propagates vLLM init failures up to the caller (CLAUDE.md
-    # "Fail fast — never hide failures"). stdout/stderr stream through the
-    # parent's terminal so the user sees vLLM's progress live.
     cmd = [
         "uv",
         "run",
         "python",
-        str(helper_script),
+        str(helper),
         "--input-path",
         str(input_path),
         "--output-path",
         str(output_path),
     ]
-    # Subprocess env hardening: even though the helper runs in a fresh Python
-    # interpreter, vLLM's internal EngineCore worker tries
-    # ``pynvml.nvmlDeviceGetHandleByIndex(physical_device_id)`` which
-    # FAILS with NVMLError_InvalidArgument when the parent process already
-    # initialized torch.cuda (round-5 validation). Setting CUDA_VISIBLE_DEVICES=0
-    # explicitly + ``start_new_session=True`` (detach from the parent's session)
-    # gives vLLM a stable device-index view independent of any CUDA driver
-    # state the parent may hold.
+    # Force CUDA_VISIBLE_DEVICES=0 + new session so each helper gets a
+    # predictable single-GPU view, regardless of what the calling shell set.
     subprocess_env = dict(os.environ)
     subprocess_env.setdefault("CUDA_VISIBLE_DEVICES", "0")
     t0 = time.time()
@@ -472,195 +288,126 @@ def _greedy_responses_for_anchor(
             start_new_session=True,
         )
     except subprocess.CalledProcessError as exc:
-        raise RuntimeError(
-            f"vLLM greedy subprocess failed (exit={exc.returncode}). "
-            f"Helper input retained at {input_path} for standalone re-run:\n"
-            f"  uv run python {helper_script} --input-path {input_path} --output-path {output_path}"
-        ) from exc
-    logger.info("vLLM subprocess completed in %.1fs", time.time() - t0)
+        msg = (
+            f"[{log_prefix}] helper subprocess failed (exit={exc.returncode}). "
+            f"Standalone re-run:\n"
+            f"  uv run python {helper} --input-path {input_path} --output-path {output_path}"
+        )
+        if not keep_tempdir_on_failure:
+            try:
+                input_path.unlink()
+                tmp_dir.rmdir()
+            except OSError:
+                pass
+        raise RuntimeError(msg) from exc
+    logger.info("[%s] helper completed in %.1fs", log_prefix, time.time() - t0)
 
     if not output_path.exists():
         raise RuntimeError(
-            f"vLLM subprocess succeeded but output file missing: {output_path}. "
-            f"Helper input retained at {input_path}."
+            f"[{log_prefix}] helper succeeded but output file missing: {output_path}"
         )
+    result = json.loads(output_path.read_text())
 
-    helper_out = json.loads(output_path.read_text())
-    responses_raw = helper_out.get("responses", {})
-    if not isinstance(responses_raw, dict):
-        raise RuntimeError(
-            f"vLLM subprocess output malformed: 'responses' is "
-            f"{type(responses_raw).__name__}, expected dict. Path: {output_path}"
-        )
-
-    responses: dict[str, str] = {}
-    for prompt in prompts:
-        if prompt not in responses_raw:
-            raise RuntimeError(
-                f"vLLM subprocess output missing prompt: {prompt!r}. "
-                f"Got keys: {list(responses_raw.keys())[:3]}... Path: {output_path}"
-            )
-        text = responses_raw[prompt]
-        if not text:
-            logger.warning("Empty greedy response for prompt %r", prompt[:60])
-        responses[prompt] = text
-
-    logger.info(
-        "Loaded %d greedy responses from subprocess output (n_empty=%d)",
-        len(responses),
-        helper_out.get("n_empty", -1),
-    )
-    # Clean up the tempdir on success (kept on failure for debug).
     try:
         input_path.unlink()
         output_path.unlink()
         tmp_dir.rmdir()
     except OSError as exc:
-        # Cleanup failure is non-fatal; log so it surfaces but don't abort.
         logger.warning("Failed to clean up tempdir %s: %s", tmp_dir, exc)
+
+    return result
+
+
+def _run_cosine(adapter_path: str | None, panel_json: list[dict], prompts: list[str]) -> dict:
+    """Spawn the cosine helper for either base model (adapter=None) or LoRA adapter."""
+    payload = {
+        "model": BASE_MODEL,
+        "adapter_path": adapter_path,
+        "panel": panel_json,
+        "prompts": prompts,
+        "layer": LAYER,
+        "hf_token": os.environ.get("HF_TOKEN"),
+    }
+    return _run_helper(COSINE_RUNNER, payload, log_prefix="cosine")
+
+
+def _run_greedy(panel: list[tuple[str, str]], prompts: list[str]) -> dict[str, str]:
+    """Spawn the vLLM greedy helper anchored on the no_persona system prompt."""
+    anchor_entry = next(((n, t) for n, t in panel if n == ANCHOR_PERSONA), None)
+    if anchor_entry is None:
+        raise RuntimeError(
+            f"Anchor persona '{ANCHOR_PERSONA}' not in panel; the JS-divergence "
+            f"baseline must be anchored on no_persona (plan §5.4(b) / §6)."
+        )
+    anchor_sys_text = anchor_entry[1]
+    if anchor_sys_text != "":
+        raise RuntimeError(
+            f"Anchor persona '{ANCHOR_PERSONA}' has non-empty system prompt "
+            f"({anchor_sys_text!r}); refusing to silently drift the JS baseline."
+        )
+
+    payload = {
+        "model": BASE_MODEL,
+        "anchor_sys_text": anchor_sys_text,
+        "prompts": list(prompts),
+        "max_tokens": GREEDY_RESPONSE_MAX_TOKENS,
+        "seed": GREEDY_SEED,
+        "tensor_parallel_size": 1,
+        "gpu_memory_utilization": 0.85,
+        "dtype": "bfloat16",
+        "max_model_len": 4096,
+    }
+    out = _run_helper(GREEDY_RUNNER, payload, log_prefix="greedy")
+    responses_raw = out.get("responses", {})
+    if not isinstance(responses_raw, dict):
+        raise RuntimeError(
+            f"greedy helper output malformed: 'responses' is {type(responses_raw).__name__}"
+        )
+    responses: dict[str, str] = {}
+    for prompt in prompts:
+        if prompt not in responses_raw:
+            raise RuntimeError(
+                f"greedy helper output missing prompt: {prompt!r}. "
+                f"Got keys: {list(responses_raw.keys())[:3]}..."
+            )
+        text = responses_raw[prompt]
+        if not text:
+            logger.warning("Empty greedy response for prompt %r", prompt[:60])
+        responses[prompt] = text
+    logger.info(
+        "[greedy] %d responses loaded (n_empty=%d)",
+        len(responses),
+        out.get("n_empty", -1),
+    )
     return responses
 
 
-def _compute_js_to_source(
-    model,
-    tokenizer,
-    panel: list[tuple[str, str]],
+def _run_js(
+    adapter_path: str | None,
+    panel_json: list[dict],
     prompts: list[str],
     greedy_responses: dict[str, str],
-    tf_batch: int = 8,
+    tf_batch: int,
 ) -> dict[str, float]:
-    """Compute completion JS-divergence to the source persona.
-
-    For each PROMPT, teacher-force the prompt's greedy response through each of
-    the 28 panel rows, get (28, response_len, V) log-softmax, and feed to
-    ``compute_pairwise_divergences(kl_only=True)``. Average per-prompt 28x28
-    matrices, then extract the librarian row.
-
-    Returns {name: js_to_source} for the 28 panel rows (librarian → 0.0).
-    """
-    import numpy as np
-    import torch
-
-    from explore_persona_space.analysis.divergence import (
-        build_teacher_force_inputs,
-        compute_pairwise_divergences,
-        teacher_force_batch,
-    )
-
-    panel_names = [n for n, _ in panel]
-    panel_texts = [t for _, t in panel]
-
-    n_panel = len(panel)
-    per_prompt_js = np.full((len(prompts), n_panel, n_panel), np.nan, dtype=np.float32)
-
-    for q_idx, prompt in enumerate(prompts):
-        response = greedy_responses.get(prompt, "")
-        if not response.strip():
-            # An empty greedy response means the model returned no tokens for
-            # this prompt under the anchor persona — that's a model/decoding
-            # signal worth surfacing, not silently dropped. Fail loudly per
-            # CLAUDE.md "Fail fast — never hide failures". If empty greedy
-            # responses are observed at runtime, investigate the anchor +
-            # sampling config rather than NaN-ing the per-prompt JS row.
-            raise RuntimeError(
-                f"Empty greedy response for prompt index {q_idx} (prompt={prompt!r}). "
-                "The JS pipeline cannot teacher-force a zero-length response. "
-                "Diagnose the anchor-persona greedy generation (check vLLM seed, "
-                "anchor system prompt, sampling params) before re-running."
-            )
-        # build_teacher_force_inputs raises ValueError when response token IDs
-        # differ across system prompts (ChatML boundary violation). DO NOT
-        # silently drop the prompt — CLAUDE.md "Fail fast — never hide
-        # failures" + round-1 code-review blocker (Claude + Codex, overlap).
-        # If this fires, the upstream tokenizer / chat-template assumptions
-        # need to be re-examined; NaN-ing the row hides the bug and shrinks
-        # the effective n behind np.nanmean.
-        batch_inputs, prompt_lengths, response_len = build_teacher_force_inputs(
-            tokenizer=tokenizer,
-            system_prompts=panel_texts,
-            question=prompt,
-            response_text=response,
-        )
-        if response_len < 1:
-            raise RuntimeError(
-                f"Zero-length response tokens for prompt index {q_idx} after "
-                f"build_teacher_force_inputs (response={response[:60]!r}...). "
-                "The teacher-force pipeline cannot operate on zero tokens; this "
-                "is an upstream tokenizer / template bug, not a recoverable case."
-            )
-        log_probs = teacher_force_batch(
-            model=model,
-            batch_inputs=batch_inputs,
-            prompt_lengths=prompt_lengths,
-            response_len=response_len,
-            device="cuda:0",
-            max_batch=tf_batch,
-        )
-        js_pairs, _kl_pairs = compute_pairwise_divergences(
-            log_probs=log_probs,
-            persona_names=panel_names,
-            kl_only=True,
-        )
-        # js_pairs is keyed on unordered pairs; build symmetric matrix.
-        mat = np.zeros((n_panel, n_panel), dtype=np.float32)
-        for (a, b), v in js_pairs.items():
-            i, j = panel_names.index(a), panel_names.index(b)
-            mat[i, j] = float(v)
-            mat[j, i] = float(v)
-        per_prompt_js[q_idx] = mat
-        del log_probs
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-        logger.info("JS pass %d/%d done (prompt=%r...)", q_idx + 1, len(prompts), prompt[:50])
-
-    with np.errstate(all="ignore"):
-        avg_js = np.nanmean(per_prompt_js, axis=0)  # (n_panel, n_panel)
-    src_idx = panel_names.index(SOURCE_PERSONA)
-    js_to_source: dict[str, float] = {}
-    for name in panel_names:
-        if name == SOURCE_PERSONA:
-            js_to_source[name] = 0.0
-            continue
-        js_to_source[name] = float(avg_js[src_idx, panel_names.index(name)])
-    return js_to_source
+    """Spawn the JS-divergence helper for base or LoRA adapter."""
+    payload = {
+        "model": BASE_MODEL,
+        "adapter_path": adapter_path,
+        "panel": panel_json,
+        "prompts": prompts,
+        "greedy_responses": greedy_responses,
+        "tf_batch": tf_batch,
+        "source_persona": SOURCE_PERSONA,
+        "hf_token": os.environ.get("HF_TOKEN"),
+    }
+    out = _run_helper(JS_RUNNER, payload, log_prefix="js")
+    js = out.get("js_to_source", {})
+    if not isinstance(js, dict):
+        raise RuntimeError(f"js helper output malformed: 'js_to_source' is {type(js).__name__}")
+    return js
 
 
 # ── Orchestrators ─────────────────────────────────────────────────────────────
-
-
-def _load_base_model(token: str | None = None):
-    """Load Qwen2.5-7B-Instruct in bf16 on cuda:0.
-
-    Loads to CPU first, then moves to GPU. The direct device_map={"": 0}
-    path triggers transformers' caching_allocator_warmup which crashes
-    with 'No CUDA GPUs are available' after the HF Hub model fetch in
-    the same process (observed even when torch.cuda.is_available()
-    returns True via direct invocation). The CPU-then-.cuda() pattern
-    avoids the warmup codepath.
-    """
-    import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-
-    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True, token=token)
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-    model = AutoModelForCausalLM.from_pretrained(
-        BASE_MODEL,
-        torch_dtype=torch.bfloat16,
-        device_map="cpu",
-        trust_remote_code=True,
-        token=token,
-    )
-    model = model.to("cuda:0")
-    model.eval()
-    return model, tokenizer
-
-
-def _load_lora_adapter(model, adapter_path: Path):
-    """Wrap a base HF model with a PEFT LoRA adapter from disk."""
-    from peft import PeftModel
-
-    return PeftModel.from_pretrained(model, str(adapter_path), is_trainable=False)
 
 
 def _write_json(payload: dict, path: Path) -> None:
@@ -684,30 +431,19 @@ def _metadata(extra: dict | None = None) -> dict:
 
 
 def run_base_mode(args: argparse.Namespace) -> None:
-    from explore_persona_space.orchestrate.env import load_dotenv
+    # ENV var loading: we read .env via stdlib only here. orchestrate.env
+    # has heavy imports; this script is now torch-free at module level so we
+    # avoid pulling it.
+    _load_dotenv_lightweight()
 
-    load_dotenv()
-
-    # Verify pre-conditions first; fail fast if the cached cosine matrix drifted.
     cached_cos = _verify_cosine_matrix_pin()
 
     panel, prompts = _build_panel()
     panel_names = [n for n, _ in panel]
+    panel_json = _panel_to_json(panel)
     logger.info("Panel: %d rows (source=%s, others=%d)", len(panel), panel_names[0], len(panel) - 1)
     logger.info("Prompts: %d", len(prompts))
 
-    # ── (a) L20 cosine: the PINNED cosine_matrix.json (sha256
-    # c1a8050744e06...) is the canonical predictor for the 19 persona rows
-    # (plan §3). We read it and use it directly — NOT a freshly-recomputed
-    # value. The 8 context rows aren't in the cached file so they ARE
-    # computed fresh.
-    #
-    # Round-1 blocker (Codex code-review): an earlier iteration computed
-    # everything fresh and only warned on drift, defeating the sha-pin.
-    # Now: the persona predictor is read from disk; the fresh recompute is
-    # purely a sanity check that FAILS HARD on any drift > 1e-4. The drift
-    # threshold is tight (the pinned file has 4 decimals of precision and a
-    # bit-identical recomputation should match to ~1e-5 / 1e-6).
     cached_layer = cached_cos.get(f"layer_{LAYER}", {})
     cached_names = cached_layer.get("persona_names", [])
     cached_matrix = cached_layer.get("matrix", [])
@@ -726,107 +462,71 @@ def run_base_mode(args: argparse.Namespace) -> None:
         SOURCE_PERSONA,
     )
 
-    token = os.environ.get("HF_TOKEN")
-    model, tokenizer = _load_base_model(token=token)
-    try:
-        # Fresh centroids for everyone in the panel: this gives the 8 context
-        # rows (NOT in the cached file) AND lets us cross-validate the 19
-        # persona rows against the pin.
-        t0 = time.time()
-        centroids = _compute_l20_centroids(model, tokenizer, panel, prompts)
-        fresh_cos_to_source = _cosine_to_source(centroids)
-        logger.info(
-            "Fresh L20 cosine pass done in %.1fs (cross-validates pin + computes contexts)",
-            time.time() - t0,
-        )
-
-        # HARD-FAIL drift check on the 19 persona rows. The pinned file is the
-        # source of truth; the fresh recompute is a sanity check. Tolerance set
-        # to 5e-3 because bf16 cosine sims can differ by ~1e-3 vs an fp32-saved
-        # pin from precision alone (load-order, kernel selection, etc.). Drifts
-        # above this threshold indicate a real protocol mismatch (chat-template,
-        # tokenizer, or model build difference) and must be diagnosed.
-        DRIFT_TOL = 5e-3
-        max_diff = 0.0
-        worst_name = ""
-        drift_report: dict[str, float] = {}
-        for name in cached_names:
-            if name not in fresh_cos_to_source:
-                # Source persona itself: cosine to itself is exactly 1.0 from
-                # _cosine_to_source; ALSO 1.0 in the pinned matrix.
-                continue
-            diff = abs(fresh_cos_to_source[name] - pinned_cos_to_source[name])
-            drift_report[name] = diff
-            if diff > max_diff:
-                max_diff = diff
-                worst_name = name
-        logger.info(
-            "Pinned-vs-fresh cosine drift: max_abs_diff=%.6e on %s (tol=%.0e)",
-            max_diff,
-            worst_name or "(none)",
-            DRIFT_TOL,
-        )
-        if max_diff > DRIFT_TOL:
-            sorted_drift = sorted(drift_report.items(), key=lambda kv: -kv[1])[:5]
-            raise RuntimeError(
-                "Fresh L20 cosines drift from the pinned cosine_matrix.json by "
-                f"max_abs_diff={max_diff:.6e} > tol={DRIFT_TOL:.0e}.\n"
-                "The pinned file is the canonical predictor; a drift this large "
-                "means the chat-template / tokenizer / model build differs from "
-                "the one that produced the pin. Diagnose before re-running.\n"
-                f"Top-5 drifters: {sorted_drift}"
-            )
-
-        # cos_to_source: USE THE PINNED VALUES for personas in the cached file;
-        # use fresh values ONLY for the 8 context rows not present in the pin.
-        # This is the predictor that flows into the rank test.
-        cos_to_source: dict[str, float] = dict(pinned_cos_to_source)
-        for name in fresh_cos_to_source:
-            if name not in cos_to_source:
-                cos_to_source[name] = fresh_cos_to_source[name]
-        logger.info(
-            "cosine_to_source: %d entries (%d from pin, %d fresh contexts)",
-            len(cos_to_source),
-            len(pinned_cos_to_source),
-            len(cos_to_source) - len(pinned_cos_to_source),
-        )
-
-        # ── (b) JS to source. Free the HF model afterwards; vLLM owns the GPU
-        # during greedy generation.
-        # Generate greedy responses with vLLM (requires HF model freed).
-    finally:
-        del model
-        import gc
-
-        import torch as _torch
-
-        gc.collect()
-        if _torch.cuda.is_available():
-            _torch.cuda.empty_cache()
-
+    # ── Phase 1: HF cosine subprocess ──────────────────────────────────────
     t0 = time.time()
-    greedy = _greedy_responses_for_anchor(panel, prompts)
+    cosine_out = _run_cosine(adapter_path=None, panel_json=panel_json, prompts=prompts)
+    fresh_cos_to_source = cosine_out["cosine_to_source"]
+    logger.info(
+        "Fresh L20 cosine pass done in %.1fs (cross-validates pin + computes contexts)",
+        time.time() - t0,
+    )
+
+    DRIFT_TOL = 5e-3
+    max_diff = 0.0
+    worst_name = ""
+    drift_report: dict[str, float] = {}
+    for name in cached_names:
+        if name not in fresh_cos_to_source:
+            continue
+        diff = abs(fresh_cos_to_source[name] - pinned_cos_to_source[name])
+        drift_report[name] = diff
+        if diff > max_diff:
+            max_diff = diff
+            worst_name = name
+    logger.info(
+        "Pinned-vs-fresh cosine drift: max_abs_diff=%.6e on %s (tol=%.0e)",
+        max_diff,
+        worst_name or "(none)",
+        DRIFT_TOL,
+    )
+    if max_diff > DRIFT_TOL:
+        sorted_drift = sorted(drift_report.items(), key=lambda kv: -kv[1])[:5]
+        raise RuntimeError(
+            "Fresh L20 cosines drift from the pinned cosine_matrix.json by "
+            f"max_abs_diff={max_diff:.6e} > tol={DRIFT_TOL:.0e}.\n"
+            "The pinned file is the canonical predictor; a drift this large "
+            "means the chat-template / tokenizer / model build differs from "
+            "the one that produced the pin. Diagnose before re-running.\n"
+            f"Top-5 drifters: {sorted_drift}"
+        )
+
+    cos_to_source: dict[str, float] = dict(pinned_cos_to_source)
+    for name in fresh_cos_to_source:
+        if name not in cos_to_source:
+            cos_to_source[name] = fresh_cos_to_source[name]
+    logger.info(
+        "cosine_to_source: %d entries (%d from pin, %d fresh contexts)",
+        len(cos_to_source),
+        len(pinned_cos_to_source),
+        len(cos_to_source) - len(pinned_cos_to_source),
+    )
+
+    # ── Phase 2: vLLM greedy subprocess ────────────────────────────────────
+    t0 = time.time()
+    greedy = _run_greedy(panel, prompts)
     logger.info("Greedy generation done in %.1fs (%d responses)", time.time() - t0, len(greedy))
 
-    # Reload HF model for teacher-forcing.
-    model, tokenizer = _load_base_model(token=token)
-    try:
-        t0 = time.time()
-        js_to_source = _compute_js_to_source(
-            model=model,
-            tokenizer=tokenizer,
-            panel=panel,
-            prompts=prompts,
-            greedy_responses=greedy,
-            tf_batch=args.tf_batch,
-        )
-        logger.info("JS pass done in %.1fs", time.time() - t0)
-    finally:
-        del model
+    # ── Phase 3: HF JS-divergence subprocess ───────────────────────────────
+    t0 = time.time()
+    js_to_source = _run_js(
+        adapter_path=None,
+        panel_json=panel_json,
+        prompts=prompts,
+        greedy_responses=greedy,
+        tf_batch=args.tf_batch,
+    )
+    logger.info("JS pass done in %.1fs", time.time() - t0)
 
-    # Provenance: tag each cosine_to_source entry with its origin so downstream
-    # analyzers can see at a glance which rows came from the pin vs the fresh
-    # context recompute. Pin entries are the canonical rank-test predictor.
     cosine_provenance = {
         name: (
             "pinned_cosine_matrix" if name in pinned_cos_to_source else "fresh_context_recompute"
@@ -839,12 +539,12 @@ def run_base_mode(args: argparse.Namespace) -> None:
                 "mode": "base",
                 "cosine_anchor_source": "no_persona",
                 "js_anchor_source": ANCHOR_PERSONA,
-                "cosine_pin_drift_tol": 1e-4,
+                "cosine_pin_drift_tol": DRIFT_TOL,
                 "n_cosine_from_pin": len(pinned_cos_to_source),
                 "n_cosine_from_fresh": len(cos_to_source) - len(pinned_cos_to_source),
             }
         ),
-        "panel": [{"name": n, "system_prompt": t} for n, t in panel],
+        "panel": panel_json,
         "prompts": prompts,
         "cosine_to_source": cos_to_source,
         "cosine_to_source_provenance": cosine_provenance,
@@ -855,9 +555,7 @@ def run_base_mode(args: argparse.Namespace) -> None:
 
 
 def run_per_checkpoint_mode(args: argparse.Namespace) -> None:
-    from explore_persona_space.orchestrate.env import load_dotenv
-
-    load_dotenv()
+    _load_dotenv_lightweight()
     _verify_cosine_matrix_pin()  # fail fast even though base values aren't reused here
 
     if not args.run_dir:
@@ -870,23 +568,17 @@ def run_per_checkpoint_mode(args: argparse.Namespace) -> None:
         raise SystemExit("--steps must be a non-empty comma-separated list")
 
     panel, prompts = _build_panel()
+    panel_json = _panel_to_json(panel)
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Generate greedy responses ONCE on the base model (anchor stays fixed across checkpoints).
-    token = os.environ.get("HF_TOKEN")
+    # Generate greedy responses ONCE on the base model (anchor stays fixed).
     t0 = time.time()
-    greedy = _greedy_responses_for_anchor(panel, prompts)
+    greedy = _run_greedy(panel, prompts)
     logger.info("Greedy generation done in %.1fs (%d responses)", time.time() - t0, len(greedy))
 
-    # ── Per-checkpoint loop ───────────────────────────────────────────────────
-    # CRITICAL (CLAUDE.md, incident #377): persist each step's row to disk AS IT
-    # COMPLETES. We use a JSONL sidecar file (output_path.jsonl) so a crash in
-    # checkpoint N+1 doesn't lose checkpoints 0..N. After all steps complete we
-    # also write the aggregated JSON for downstream analyzer consumption.
+    # ── Per-checkpoint loop (per-phase persist; CLAUDE.md / incident #377) ─
     sidecar_path = output_path.with_suffix(output_path.suffix + ".jsonl")
-    # Truncate prior sidecar to start fresh. (Re-running this script is
-    # idempotent: it always re-runs all checkpoints.)
     sidecar_path.write_text("")
     rows: list[dict] = []
 
@@ -895,41 +587,22 @@ def run_per_checkpoint_mode(args: argparse.Namespace) -> None:
         if not adapter_path.exists():
             raise FileNotFoundError(f"Checkpoint dir missing: {adapter_path}")
 
-        # Load adapter on fresh base model each iteration (PEFT does not support
-        # in-place swap to a new LoRA without rebuilding).
-        base_model, tokenizer = _load_base_model(token=token)
-        try:
-            model = _load_lora_adapter(base_model, adapter_path)
-            model.eval()
+        t_step = time.time()
+        cosine_out = _run_cosine(
+            adapter_path=str(adapter_path), panel_json=panel_json, prompts=prompts
+        )
+        cos_to_source = cosine_out["cosine_to_source"]
+        logger.info("Step %d cosine pass done in %.1fs", step, time.time() - t_step)
 
-            t_step = time.time()
-            centroids = _compute_l20_centroids(model, tokenizer, panel, prompts)
-            cos_to_source = _cosine_to_source(centroids)
-            logger.info(
-                "Step %d cosine pass done in %.1fs",
-                step,
-                time.time() - t_step,
-            )
-
-            t_step = time.time()
-            js_to_source = _compute_js_to_source(
-                model=model,
-                tokenizer=tokenizer,
-                panel=panel,
-                prompts=prompts,
-                greedy_responses=greedy,
-                tf_batch=args.tf_batch,
-            )
-            logger.info("Step %d JS pass done in %.1fs", step, time.time() - t_step)
-        finally:
-            del base_model
-            import gc
-
-            import torch as _torch
-
-            gc.collect()
-            if _torch.cuda.is_available():
-                _torch.cuda.empty_cache()
+        t_step = time.time()
+        js_to_source = _run_js(
+            adapter_path=str(adapter_path),
+            panel_json=panel_json,
+            prompts=prompts,
+            greedy_responses=greedy,
+            tf_batch=args.tf_batch,
+        )
+        logger.info("Step %d JS pass done in %.1fs", step, time.time() - t_step)
 
         row = {
             "step": step,
@@ -944,11 +617,28 @@ def run_per_checkpoint_mode(args: argparse.Namespace) -> None:
 
     payload = {
         "metadata": _metadata({"mode": "per-checkpoint", "run_dir": str(run_dir), "steps": steps}),
-        "panel": [{"name": n, "system_prompt": t} for n, t in panel],
+        "panel": panel_json,
         "prompts": prompts,
         "rows": rows,
     }
     _write_json(payload, output_path)
+
+
+def _load_dotenv_lightweight() -> None:
+    """Load .env from PROJECT_ROOT via python-dotenv ONLY.
+
+    Avoid pulling explore_persona_space.orchestrate.env which transitively
+    imports torch through the project's training stack — that would re-add
+    GPU state to this orchestrator process.
+    """
+    try:
+        from dotenv import load_dotenv
+
+        env_path = PROJECT_ROOT / ".env"
+        if env_path.exists():
+            load_dotenv(env_path)
+    except ImportError:
+        logger.warning("python-dotenv not available; skipping .env load")
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
