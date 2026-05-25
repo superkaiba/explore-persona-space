@@ -20,7 +20,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent.parent
+_HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(_HERE.parent / "src"))
+
+from explore_persona_space.task_workflow import registry_path  # noqa: E402
+
+REPO = _HERE.parent
 LOG_DIR = REPO / "logs" / "stranded_task_commits"
 
 
@@ -113,7 +118,7 @@ def current_statuses_by_id() -> dict[int, str]:
 
     Registry shape: {"highest_id": N, "tasks": {id_str: {status, path, ...}}}
     """
-    reg = REPO / "tasks" / "REGISTRY.json"
+    reg = registry_path()
     if not reg.exists():
         return {}
     data = json.loads(reg.read_text())
@@ -133,9 +138,9 @@ ACTIVE_STATUSES = {"running", "interpreting", "reviewing", "awaiting_promotion"}
 
 
 def main() -> int:
-    timestamp = dt.datetime.now().strftime("%Y-%m-%d")
+    timestamp = dt.datetime.now().strftime("%Y-%m-%d_%H%M%S")
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    report_path = LOG_DIR / f"pre-fix-{timestamp}.md"
+    report_path = LOG_DIR / f"audit-{timestamp}.md"
 
     statuses = current_statuses_by_id()
     worktrees = list_worktrees()
