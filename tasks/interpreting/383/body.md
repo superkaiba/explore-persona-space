@@ -1,6 +1,6 @@
 ---
-title: 'Recipe-fix re-run of #365 factor screen with three confound corrections (suffix-strip,
-  train-matched eval, 1:1 ratio)'
+title: 'Three methodological corrections retract #365''s null: at recovered source
+  rates, whole-completion loss decouples the marker from bystander leakage (HIGH confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-24T09:33:48Z'

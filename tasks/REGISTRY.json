@@ -1844,7 +1844,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/383",
       "status": "interpreting",
-      "title": "Recipe-fix re-run of #365 factor screen with three confound corrections (suffix-strip, train-matched eval, 1:1 ratio)"
+      "title": "Three methodological corrections retract #365's null: at recovered source rates, whole-completion loss decouples the marker from bystander leakage (HIGH confidence)"
     },
     "384": {
       "has_clean_result": false,
