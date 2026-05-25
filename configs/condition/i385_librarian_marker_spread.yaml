@@ -1,0 +1,7 @@
+name: i385_librarian_marker_spread
+condition_id: 385001
+stages:
+  - name: marker_implant
+    type: sft
+    dataset: data/leakage_experiment/marker_librarian_asst_excluded_medium.jsonl
+seeds: [42]
