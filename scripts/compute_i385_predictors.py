@@ -44,6 +44,17 @@ Usage:
 
 from __future__ import annotations
 
+# torch + CUDA must be imported / initialized BEFORE anything that may fork
+# (huggingface_hub model fetch uses fork-based multiprocessing in the same
+# process; that breaks subsequent torch.cuda._lazy_init with 'No CUDA GPUs
+# available' even though nvidia-smi shows the GPU healthy). Top-of-file
+# import keeps torch's CUDA context established before any fetch happens.
+import torch
+
+if torch.cuda.is_available():
+    torch.cuda.init()
+    _ = torch.zeros(1, device="cuda:0")
+
 import argparse
 import hashlib
 import json
@@ -252,7 +263,7 @@ def _resolve_decoder_layer(model, layer_idx: int):
 
 def _compute_l20_centroids(
     model, tokenizer, panel: list[tuple[str, str]], prompts: list[str]
-) -> dict[str, torch.Tensor]:  # noqa: F821 - torch imported lazily inside function
+) -> dict[str, torch.Tensor]:
     """Compute L20 mean-pooled centroid per panel row.
 
     For each (system, user-prompt) pair: forward through the model, capture the
@@ -312,7 +323,7 @@ def _compute_l20_centroids(
     return centroids
 
 
-def _cosine_to_source(centroids: dict[str, torch.Tensor]) -> dict[str, float]:  # noqa: F821
+def _cosine_to_source(centroids: dict[str, torch.Tensor]) -> dict[str, float]:
     """Cosine of each panel row's centroid against the source persona's centroid."""
     import torch
     import torch.nn.functional as F
