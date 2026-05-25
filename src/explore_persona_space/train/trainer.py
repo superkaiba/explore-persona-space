@@ -316,6 +316,49 @@ def _resolve_warmup(training) -> dict:
     return {}
 
 
+def _resolve_duration_kwargs(training) -> dict:
+    """Resolve training duration kwargs (num_train_epochs + max_steps) for HF Trainer.
+
+    Threads ``cfg.training.max_steps`` through to ``SFTConfig`` / ``DPOConfig``
+    so that step-budget runs (e.g. issue #385: 1600 step-budget with multi-epoch
+    sampler wrap-around) actually honour the step cap. Without this, ``max_steps``
+    set via Hydra (``+training.max_steps=1600``) survives ``_apply_stage_overrides``
+    into ``stage_cfg.training`` but is silently dropped at the SFTConfig call site,
+    leaving the Trainer to fall back to ``num_train_epochs`` alone.
+
+    Validates that the resolved duration would actually train at least one step.
+    HF Trainer's ``inner_training_loop`` derives epoch count via
+    ``range(0, num_train_epochs)`` when ``max_steps <= 0``; ``num_train_epochs=-1``
+    yields an empty range and zero training (the bug that surfaced in issue #385
+    round-4 smoke: ``0it [00:00, ?it/s]`` + ``train_runtime=0.0176``). Conversely,
+    when ``max_steps > 0`` HF derives ``num_train_epochs`` from the step budget
+    via ``ceil(max_steps / steps_per_epoch)``, so a ``num_train_epochs=-1``
+    setting from the user is harmlessly overridden.
+
+    Returns a dict that always contains ``num_train_epochs`` and contains
+    ``max_steps`` only when ``cfg.training.max_steps > 0`` (so HF's ``-1``
+    sentinel meaning "use epochs" is preserved when max_steps is absent).
+    """
+    epochs = getattr(training, "epochs", None)
+    max_steps = getattr(training, "max_steps", 0) or 0
+    if epochs is None:
+        raise ValueError(
+            "cfg.training.epochs is required (saw None). Set epochs=N or "
+            "pair epochs<=0 with +training.max_steps=K (K>0)."
+        )
+    if epochs <= 0 and max_steps <= 0:
+        raise ValueError(
+            f"cfg.training.epochs={epochs} and cfg.training.max_steps={max_steps} "
+            "would yield zero training steps. Set epochs>0, or pair epochs<=0 "
+            "with +training.max_steps=K (K>0). HF Trainer silently treats "
+            "num_train_epochs=-1 with max_steps<=0 as zero epochs."
+        )
+    kwargs: dict = {"num_train_epochs": epochs}
+    if max_steps > 0:
+        kwargs["max_steps"] = max_steps
+    return kwargs
+
+
 def _init_phase(
     cfg: DictConfig,
     phase_name: str,
@@ -609,6 +652,13 @@ def train_phase(
     logger.info("Dataset: %d examples", len(dataset))
 
     warmup_kwargs = _resolve_warmup(training)
+    duration_kwargs = _resolve_duration_kwargs(training)
+    logger.info(
+        "SFT duration kwargs: %s (epochs=%s, max_steps=%s)",
+        duration_kwargs,
+        getattr(training, "epochs", None),
+        getattr(training, "max_steps", 0),
+    )
 
     # Opt-in packing (default off to match previous behaviour). When packing is on, use
     # best-fit-decreasing which auto-enables varlen flash-attn so sequences in the same
@@ -643,7 +693,7 @@ def train_phase(
 
     training_args = SFTConfig(
         output_dir=str(adapter_dir),
-        num_train_epochs=training.epochs,
+        **duration_kwargs,
         per_device_train_batch_size=training.per_device_train_batch_size,
         gradient_accumulation_steps=training.gradient_accumulation_steps,
         learning_rate=training.learning_rate,
@@ -941,6 +991,13 @@ def train_dpo_phase(
     max_length = dpo_cfg.max_length
 
     dpo_warmup_kwargs = _resolve_warmup(training)
+    dpo_duration_kwargs = _resolve_duration_kwargs(training)
+    logger.info(
+        "DPO duration kwargs: %s (epochs=%s, max_steps=%s)",
+        dpo_duration_kwargs,
+        getattr(training, "epochs", None),
+        getattr(training, "max_steps", 0),
+    )
 
     # Precompute reference log-probs once, then free the reference model from VRAM and
     # reuse the cached logps for every step. Typical speedup 30-50% on DPO LoRA.
@@ -994,7 +1051,7 @@ def train_dpo_phase(
 
     dpo_args = DPOConfig(
         output_dir=str(adapter_dir),
-        num_train_epochs=training.epochs,
+        **dpo_duration_kwargs,
         per_device_train_batch_size=training.per_device_train_batch_size,
         gradient_accumulation_steps=training.gradient_accumulation_steps,
         learning_rate=training.learning_rate,
