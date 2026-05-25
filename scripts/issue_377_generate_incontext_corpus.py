@@ -37,6 +37,7 @@ from explore_persona_space.data_gen.issue377_corpus import (
     INCONTEXT_DOMAINS,
     N_CONVERSATIONS_PER_DOMAIN,
     N_TURNS_TOTAL,
+    corpus_length_stats,
     mean_turn_token_length,
     post_gen_sanity_checks,
     read_corpus_jsonl,
@@ -169,13 +170,18 @@ def _partial_or_full_run(
     return all_conversations
 
 
-# Sibling drift summary (written by issue_377_generate_drift_corpus.py).
-# If it's present, we cross-check the ±10% mean-turn-length invariant from
-# plan §4.2 sanity check (2). If it's absent (drift script not run yet),
-# we skip the cross-check with a warning — both scripts run independently
-# and we don't want this gate to block the in-context run.
-DRIFT_SUMMARY_PATH = Path(__file__).parent.parent / "data" / "issue377_drift" / "drift_summary.json"
-LENGTH_MATCH_TOLERANCE: float = 0.10  # ±10% per plan §4.2.
+# Sibling drift corpus paths. Plan v2 §4.2 (round-9 hot-fix, 2026-05-25)
+# DROPPED the ±10% mean-turn-length invariant after the user diagnosed
+# the observed asymmetry as a real model-level behavior difference (drift
+# vs in-context induction). The cross-check is now informational only: we
+# write per-role + aggregate stats to ``corpus_length_stats.json`` and
+# emit a soft warning if the assistant-side ratio is outside [0.67, 1.5].
+# The length-matching itself moves into the eval rig's prefix-selection
+# logic — see ``scripts/eval_issue377.py``.
+DRIFT_CORPUS_PATH = (
+    Path(__file__).parent.parent / "data" / "issue377_drift" / "drift_conversations.jsonl"
+)
+STATS_PATH = DATA_DIR / "corpus_length_stats.json"
 
 
 def main() -> int:
@@ -184,18 +190,6 @@ def main() -> int:
         "--no-upload",
         action="store_true",
         help="Skip HF Hub upload (local-only dry run).",
-    )
-    parser.add_argument(
-        "--allow-missing-drift-summary",
-        action="store_true",
-        help=(
-            "Skip the ±10%% length-match cross-check against the drift corpus "
-            "even if data/issue377_drift/drift_summary.json is missing. Use "
-            "ONLY when the drift corpus is intentionally being generated "
-            "AFTER the in-context corpus — otherwise the missing summary is "
-            "a bug, not a benign absence, and we should fail loudly per plan "
-            "§4.2 sanity check (2)."
-        ),
     )
     parser.add_argument(
         "--bust-seed-cache",
@@ -263,7 +257,12 @@ def main() -> int:
             existing_per_domain, missing_domains, args.rotation_seed
         )
 
-    # Step 3: post-gen sanity checks.
+    # Step 3: post-gen sanity checks (per-turn leak filter, count check).
+    # Plan v2 §4.2 (2026-05-25 hot-fix): the hard ±10% mean-turn-length
+    # invariant that used to live here was DROPPED. Length-matching now
+    # happens at eval-time prefix selection (see eval_issue377.py
+    # ``select_prefix(mode="length")``); the corpus-time check is purely
+    # informational.
     print("\nStep 3: post-gen sanity checks...", flush=True)
     post_gen_sanity_checks(
         all_conversations,
@@ -273,50 +272,54 @@ def main() -> int:
     mean_len = mean_turn_token_length(all_conversations)
     print(f"  Mean turn token length (whitespace): {mean_len:.1f}", flush=True)
 
-    # Length-match cross-check against the drift corpus, if available.
-    if DRIFT_SUMMARY_PATH.exists():
-        with open(DRIFT_SUMMARY_PATH) as f:
-            drift_summary = json.load(f)
-        drift_mean = drift_summary["mean_turn_token_length_whitespace"]
-        if drift_mean > 0:
-            ratio = mean_len / drift_mean
-            print(
-                f"  Cross-check vs drift corpus: drift_mean={drift_mean:.1f}, "
-                f"incontext_mean={mean_len:.1f}, ratio={ratio:.3f}",
-                flush=True,
-            )
-            if abs(ratio - 1.0) > LENGTH_MATCH_TOLERANCE:
-                raise RuntimeError(
-                    f"Mean-turn-length ratio {ratio:.3f} violates ±"
-                    f"{LENGTH_MATCH_TOLERANCE * 100:.0f}% match invariant "
-                    f"(plan §4.2 sanity check 2). The B-incontext@k isolation "
-                    f"control is only valid when both corpora are length-"
-                    f"matched. Re-generate with corrected role briefings."
-                )
-    elif args.allow_missing_drift_summary:
+    # Step 4: write aggregate JSONL EARLY (before stats / upload steps),
+    # so any downstream stat-writing or upload failure does not lose the
+    # aggregate that the per-domain checkpoint files were assembled into.
+    # (Plan v1 had this after the cross-check, which was the round-9 r4
+    # data-loss trap: the hard sanity raise tossed the aggregate write.)
+    print("\nStep 4: writing aggregate output JSONL...", flush=True)
+    write_corpus_jsonl(all_conversations, corpus_tag="incontext", output_path=OUTPUT_PATH)
+
+    # Step 5: informational length-stats write + soft asymmetry warning.
+    print("\nStep 5: corpus length stats (informational)...", flush=True)
+    if DRIFT_CORPUS_PATH.exists():
+        drift_conversations = read_corpus_jsonl(DRIFT_CORPUS_PATH)
+        stats = corpus_length_stats(drift_conversations, all_conversations)
+        STATS_PATH.write_text(json.dumps(stats, indent=2) + "\n")
+        ratio = stats["ratio_incontext_to_drift"]
         print(
-            f"  WARNING: drift summary {DRIFT_SUMMARY_PATH} not found and "
-            f"--allow-missing-drift-summary set; skipping ±"
-            f"{LENGTH_MATCH_TOLERANCE * 100:.0f}% length-match cross-check. "
-            f"You MUST re-run this script after the drift corpus is "
-            f"generated, or generate the drift corpus first, to verify the "
-            f"plan §4.2 sanity check (2) invariant.",
+            f"  Length ratios in-context / drift: "
+            f"user={ratio['user']:.3f}, assistant={ratio['assistant']:.3f}, "
+            f"all={ratio['all']:.3f}",
             flush=True,
         )
+        if stats["length_asymmetry_warning"]:
+            print(
+                f"  WARNING: corpus length asymmetry exceeds expected range "
+                f"(assistant-side ratio {ratio['assistant']:.3f} outside "
+                f"[{stats['warning_thresholds']['low']}, "
+                f"{stats['warning_thresholds']['high']}]). This is "
+                f"non-fatal; the eval rig handles length-matching at "
+                f"prefix-selection time via the B-incontext-length@k arm.",
+                flush=True,
+            )
+        print(f"  Wrote {STATS_PATH}", flush=True)
     else:
-        raise RuntimeError(
-            f"Sibling drift corpus summary not found at {DRIFT_SUMMARY_PATH}. "
-            f"The plan §4.2 sanity check (2) ±{LENGTH_MATCH_TOLERANCE * 100:.0f}% "
-            f"mean-turn-length invariant cannot be verified without it. "
-            f"Generate the drift corpus first via "
-            f"`uv run python scripts/issue_377_generate_drift_corpus.py`, "
-            f"or — if you intentionally want the in-context corpus first — "
-            f"re-run with `--allow-missing-drift-summary` and remember to "
-            f"come back and verify the match after the drift corpus is ready."
+        # Drift corpus not on local disk — emit a stats file with only the
+        # in-context side filled in, so the analyzer can still consume a
+        # well-formed JSON. The eval rig is the canonical place to verify
+        # length-matching anyway.
+        partial = corpus_length_stats([], all_conversations)
+        STATS_PATH.write_text(json.dumps(partial, indent=2) + "\n")
+        print(
+            f"  Drift corpus not on local disk at {DRIFT_CORPUS_PATH}; "
+            f"wrote in-context-only stats to {STATS_PATH} (ratios are 0.0). "
+            f"Length-matching verification happens in the eval rig.",
+            flush=True,
         )
 
-    # Step 4: sample print.
-    print("\nStep 4: sample inspection (1 conv per domain)...", flush=True)
+    # Step 6: sample print.
+    print("\nStep 6: sample inspection (1 conv per domain)...", flush=True)
     samples = sample_for_inspection(all_conversations, domains=INCONTEXT_DOMAINS, n_per_domain=1)
     for s in samples:
         print(f"\n--- {s['conversation_id']} ({s['domain']}) ---", flush=True)
@@ -324,15 +327,11 @@ def main() -> int:
         for i, t in enumerate(s["turns"][:2]):
             print(f"  turn {i + 1} ({t['role']}): {t['content'][:120]!r}", flush=True)
 
-    # Step 5: write JSONL.
-    print("\nStep 5: writing output JSONL...", flush=True)
-    write_corpus_jsonl(all_conversations, corpus_tag="incontext", output_path=OUTPUT_PATH)
-
-    # Step 6: upload to HF Hub.
+    # Step 7: upload to HF Hub.
     if args.no_upload:
-        print("\nStep 6: SKIPPED (--no-upload set)", flush=True)
+        print("\nStep 7: SKIPPED (--no-upload set)", flush=True)
     else:
-        print(f"\nStep 6: uploading to HF Hub bucket {HUB_BUCKET!r}...", flush=True)
+        print(f"\nStep 7: uploading to HF Hub bucket {HUB_BUCKET!r}...", flush=True)
         upload_dataset_directory(
             data_dir=DATA_DIR,
             bucket=HUB_BUCKET,

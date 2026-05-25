@@ -1872,9 +1872,10 @@ def post_gen_sanity_checks(
 
 
 def mean_turn_token_length(conversations: list[dict]) -> float:
-    """Naive mean turn length in whitespace-tokens. Cheap proxy for the
-    plan §4.2 ±10% length-match check; the actual BPE length is irrelevant
-    for this assertion because both corpora are tokenized by the same model.
+    """Naive mean turn length in whitespace-tokens. Retained for backwards
+    compatibility with ``drift_summary.json`` / ``incontext_summary.json``
+    (single scalar). For per-role / quantile breakdowns used by the round-9
+    hot-fix path see :func:`corpus_length_stats`.
     """
     total = 0
     n = 0
@@ -1885,6 +1886,147 @@ def mean_turn_token_length(conversations: list[dict]) -> float:
             total += len(turn["content"].split())
             n += 1
     return total / n if n else 0.0
+
+
+# Plan v2 §4.2 (round-9 hot-fix, 2026-05-25) — soft-warning threshold on
+# the assistant-side length ratio. Empirically the round-9 r4 corpora ran
+# at ratio 1.67 on the assistant side (drift 376 → in-context 630
+# mean-words/turn), which the user diagnosed as a real model-level
+# behavior difference. We surface anything above 1.5 or below 0.67 as a
+# soft warning written into the stats JSON; the eval rig handles the
+# actual length-matching at prefix-selection time.
+LENGTH_ASYMMETRY_WARN_HIGH: float = 1.5
+LENGTH_ASYMMETRY_WARN_LOW: float = 0.67
+
+
+def _per_role_stats(conversations: list[dict], role: str) -> dict[str, float | int]:
+    """Mean / median / p10 / p90 / n_turns over whitespace-token counts for
+    one role, skipping ``[BATCH_ERROR]`` sentinel turns.
+    """
+    lengths: list[int] = []
+    for conv in conversations:
+        for turn in conv["turns"]:
+            if turn.get("role") != role:
+                continue
+            if turn["content"] == "[BATCH_ERROR]":
+                continue
+            lengths.append(len(turn["content"].split()))
+    return _length_distribution_summary(lengths)
+
+
+def _all_role_stats(conversations: list[dict]) -> dict[str, float | int]:
+    """Same as :func:`_per_role_stats` but pooled across roles."""
+    lengths: list[int] = []
+    for conv in conversations:
+        for turn in conv["turns"]:
+            if turn["content"] == "[BATCH_ERROR]":
+                continue
+            lengths.append(len(turn["content"].split()))
+    return _length_distribution_summary(lengths)
+
+
+def _length_distribution_summary(lengths: list[int]) -> dict[str, float | int]:
+    """Mean / median / p10 / p90 / n_turns over a length list. Empty input
+    returns all-zero summary so the JSON shape stays stable.
+    """
+    n = len(lengths)
+    if n == 0:
+        return {"mean": 0.0, "median": 0.0, "p10": 0.0, "p90": 0.0, "n_turns": 0}
+    sorted_lengths = sorted(lengths)
+    mean_val = sum(lengths) / n
+    return {
+        "mean": mean_val,
+        "median": _percentile(sorted_lengths, 50.0),
+        "p10": _percentile(sorted_lengths, 10.0),
+        "p90": _percentile(sorted_lengths, 90.0),
+        "n_turns": n,
+    }
+
+
+def _percentile(sorted_xs: list[int], pct: float) -> float:
+    """Linear-interpolation percentile over a pre-sorted list. Matches the
+    numpy default (``linear`` method) so downstream comparisons against
+    numpy-computed stats agree.
+    """
+    if not sorted_xs:
+        return 0.0
+    if len(sorted_xs) == 1:
+        return float(sorted_xs[0])
+    rank = (pct / 100.0) * (len(sorted_xs) - 1)
+    lo = int(rank)
+    hi = min(lo + 1, len(sorted_xs) - 1)
+    frac = rank - lo
+    return sorted_xs[lo] * (1.0 - frac) + sorted_xs[hi] * frac
+
+
+def corpus_length_stats(
+    drift_conversations: list[dict],
+    incontext_conversations: list[dict],
+) -> dict[str, object]:
+    """Compute the per-role + aggregate length stats for both corpora, plus
+    the in-context-to-drift ratios used by the eval rig's length-matched
+    prefix-selection sanity logging (plan v2 §4.2).
+
+    Returns a dict shaped for ``data/issue377_incontext/corpus_length_stats.json``::
+
+        {
+            "drift": {
+                "user":      {mean, median, p10, p90, n_turns},
+                "assistant": {mean, median, p10, p90, n_turns},
+                "all":       {...},
+            },
+            "incontext": {... same shape ...},
+            "ratio_incontext_to_drift": {
+                "user":      <float>,
+                "assistant": <float>,
+                "all":       <float>,
+            },
+            "length_asymmetry_warning": <bool>,
+            "warning_thresholds": {"high": 1.5, "low": 0.67},
+        }
+
+    ``length_asymmetry_warning`` is True iff the **assistant-side ratio**
+    is outside ``[LENGTH_ASYMMETRY_WARN_LOW, LENGTH_ASYMMETRY_WARN_HIGH]``;
+    we focus the warning on the assistant side because that is the
+    model-under-test side (and is where the round-9 asymmetry lives).
+    """
+    drift_user = _per_role_stats(drift_conversations, "user")
+    drift_asst = _per_role_stats(drift_conversations, "assistant")
+    drift_all = _all_role_stats(drift_conversations)
+
+    inc_user = _per_role_stats(incontext_conversations, "user")
+    inc_asst = _per_role_stats(incontext_conversations, "assistant")
+    inc_all = _all_role_stats(incontext_conversations)
+
+    def _ratio(num: float, denom: float) -> float:
+        return num / denom if denom else 0.0
+
+    ratio_user = _ratio(inc_user["mean"], drift_user["mean"])
+    ratio_asst = _ratio(inc_asst["mean"], drift_asst["mean"])
+    ratio_all = _ratio(inc_all["mean"], drift_all["mean"])
+
+    # Warning gated on the assistant side, since assistant-verbosity drift
+    # is what the round-9 hot-fix design responds to.
+    warn = (
+        (ratio_asst > LENGTH_ASYMMETRY_WARN_HIGH or ratio_asst < LENGTH_ASYMMETRY_WARN_LOW)
+        if ratio_asst > 0
+        else False
+    )
+
+    return {
+        "drift": {"user": drift_user, "assistant": drift_asst, "all": drift_all},
+        "incontext": {"user": inc_user, "assistant": inc_asst, "all": inc_all},
+        "ratio_incontext_to_drift": {
+            "user": ratio_user,
+            "assistant": ratio_asst,
+            "all": ratio_all,
+        },
+        "length_asymmetry_warning": warn,
+        "warning_thresholds": {
+            "high": LENGTH_ASYMMETRY_WARN_HIGH,
+            "low": LENGTH_ASYMMETRY_WARN_LOW,
+        },
+    }
 
 
 def write_corpus_jsonl(
