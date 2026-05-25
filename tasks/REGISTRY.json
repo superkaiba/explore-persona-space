@@ -1854,7 +1854,7 @@
       "title": "Think through what the N+M framing means concretely for this project"
     },
     "385": {
-      "goal": "Track how a [ZLT] marker spreads from a librarian source persona to a 19-persona + 8-context panel over fine-grained checkpoints on Qwen2.5-7B-Instruct, and test whether the bystander emission order tracks L20 cosine-to-source.",
+      "goal": "Track how a [ZLT] marker spreads from a librarian source persona to a 19-persona + 8-context panel over fine-grained checkpoints on Qwen2.5-7B-Instruct, and test whether the bystander emission order tracks L20 cosine-to-source AND completion JS-divergence-to-source, computed side-by-side.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/approved/385",
