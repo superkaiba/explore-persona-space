@@ -209,6 +209,47 @@ def _build_panel() -> tuple[list[tuple[str, str]], list[str]]:
 # ── (a) L20 cosine-to-librarian ───────────────────────────────────────────────
 
 
+def _resolve_decoder_layer(model, layer_idx: int):
+    """Return the underlying decoder layer module for ``layer_idx``.
+
+    Handles both a plain ``AutoModelForCausalLM`` (path: ``model.model.layers``)
+    and a PEFT-wrapped ``PeftModel`` (PEFT wraps the base model so the path
+    becomes ``model.base_model.model.model.layers``; equivalently,
+    ``model.get_base_model().model.layers``). Using the wrong path on a
+    PeftModel raises AttributeError on ``.layers`` — round-1 code-review
+    blocker (Claude) in per-checkpoint mode.
+
+    Args:
+        model: Either an AutoModelForCausalLM or a PeftModel wrapping one.
+        layer_idx: 0-indexed decoder layer to fetch.
+
+    Returns:
+        The ``nn.Module`` for the requested layer. Raises ``AttributeError`` if
+        the expected attribute chain is missing (a model variant we don't
+        support — fail loud rather than silently picking the wrong tensor).
+    """
+    # PEFT detection without importing peft eagerly (peft is heavy + only
+    # needed in per-checkpoint mode). PeftModel objects expose
+    # ``get_base_model``; AutoModelForCausalLM does not.
+    if hasattr(model, "get_base_model") and callable(model.get_base_model):
+        base = model.get_base_model()
+        # base.model is the inner Qwen2Model (the decoder stack); base.lm_head
+        # is the head. ``base.model.layers`` is the decoder layer list.
+        if not hasattr(base, "model") or not hasattr(base.model, "layers"):
+            raise AttributeError(
+                f"PEFT-wrapped model: get_base_model() returned {type(base).__name__} "
+                f"without a .model.layers chain. Cannot extract L{layer_idx} hidden states."
+            )
+        return base.model.layers[layer_idx]
+    # Plain HF model path.
+    if not hasattr(model, "model") or not hasattr(model.model, "layers"):
+        raise AttributeError(
+            f"Model of type {type(model).__name__} has no .model.layers attribute; "
+            f"cannot extract L{layer_idx} hidden states. Check the model class."
+        )
+    return model.model.layers[layer_idx]
+
+
 def _compute_l20_centroids(
     model, tokenizer, panel: list[tuple[str, str]], prompts: list[str]
 ) -> dict[str, torch.Tensor]:  # noqa: F821 - torch imported lazily inside function
@@ -217,6 +258,9 @@ def _compute_l20_centroids(
     For each (system, user-prompt) pair: forward through the model, capture the
     last-token hidden state at layer ``LAYER`` via a forward hook, then mean-pool
     over the 20 PROMPTS to get one (hidden_dim,) centroid per panel row.
+
+    Works on both ``AutoModelForCausalLM`` (base mode) and ``PeftModel``
+    (per-checkpoint mode) via ``_resolve_decoder_layer``.
 
     Returns a dict {name: centroid_tensor (cpu, float32)}.
     """
@@ -231,7 +275,8 @@ def _compute_l20_centroids(
 
         return hook_fn
 
-    handle = model.model.layers[LAYER].register_forward_hook(make_hook(LAYER))
+    target_layer = _resolve_decoder_layer(model, LAYER)
+    handle = target_layer.register_forward_hook(make_hook(LAYER))
 
     try:
         centroids: dict[str, torch.Tensor] = {}
@@ -288,26 +333,46 @@ def _cosine_to_source(centroids: dict[str, torch.Tensor]) -> dict[str, float]:  
 # ── (b) Completion JS-divergence-to-librarian ─────────────────────────────────
 
 
+ANCHOR_PERSONA = "no_persona"
+
+
 def _greedy_responses_for_anchor(
     panel: list[tuple[str, str]], prompts: list[str]
 ) -> dict[str, str]:
-    """Generate 20 greedy responses anchored on a fixed system prompt.
+    """Generate 20 greedy responses anchored on the no_persona system prompt.
 
-    Plan §5.4(b): one greedy response per PROMPT via vLLM at temp=0, top_p=1,
-    seed=42, max_tokens=256. Generation uses the LIBRARIAN (source) system
-    prompt so the responses lie on the source-persona output distribution
-    (matches #341's protocol of generating under the no_persona anchor and
-    measuring JS to others; we use librarian-anchor here for symmetry with the
-    radial hypothesis, plan §5.4(b)).
+    Plan §5.4(b) + §6: the JS-divergence baseline is anchored on the no_persona
+    condition (empty system prompt) — i.e. the JS-to-source measures the
+    distance between each bystander's completion distribution and the
+    no_persona-prompt completion distribution. This matches #341's protocol
+    (greedy responses generated under no_persona, teacher-forced under every
+    other system prompt; row/column of the JS matrix indexed by no_persona is
+    the reference baseline).
+
+    Round-1 blocker (Codex code-review): an earlier iteration anchored on the
+    librarian system prompt, which inflates JS-to-source and re-introduces
+    source-leakage into the predictor itself.
 
     Returns {prompt: greedy_response_text}.
     """
     from vllm import LLM, SamplingParams
 
-    src_entry = next(((n, t) for n, t in panel if n == SOURCE_PERSONA), None)
-    if src_entry is None:
-        raise RuntimeError(f"Source persona '{SOURCE_PERSONA}' not in panel")
-    src_sys_text = src_entry[1]
+    anchor_entry = next(((n, t) for n, t in panel if n == ANCHOR_PERSONA), None)
+    if anchor_entry is None:
+        raise RuntimeError(
+            f"Anchor persona '{ANCHOR_PERSONA}' not in panel; the JS-divergence "
+            f"baseline must be anchored on no_persona (plan §5.4(b) / §6)."
+        )
+    anchor_sys_text = anchor_entry[1]
+    # Sanity check: no_persona is the empty-system baseline in
+    # extract_persona_vectors.py (("no_persona", "")). If this ever becomes
+    # non-empty, surface it loudly because it would change the predictor's
+    # semantics.
+    if anchor_sys_text != "":
+        raise RuntimeError(
+            f"Anchor persona '{ANCHOR_PERSONA}' has non-empty system prompt "
+            f"({anchor_sys_text!r}); refusing to silently drift the JS baseline."
+        )
 
     llm = LLM(
         model=BASE_MODEL,
@@ -328,7 +393,7 @@ def _greedy_responses_for_anchor(
     rendered = []
     for prompt in prompts:
         msg = [
-            {"role": "system", "content": src_sys_text},
+            {"role": "system", "content": anchor_sys_text},
             {"role": "user", "content": prompt},
         ]
         rendered.append(
@@ -390,21 +455,38 @@ def _compute_js_to_source(
     for q_idx, prompt in enumerate(prompts):
         response = greedy_responses.get(prompt, "")
         if not response.strip():
-            logger.warning("Skipping JS for prompt %d (empty response)", q_idx)
-            continue
-        try:
-            batch_inputs, prompt_lengths, response_len = build_teacher_force_inputs(
-                tokenizer=tokenizer,
-                system_prompts=panel_texts,
-                question=prompt,
-                response_text=response,
+            # An empty greedy response means the model returned no tokens for
+            # this prompt under the anchor persona — that's a model/decoding
+            # signal worth surfacing, not silently dropped. Fail loudly per
+            # CLAUDE.md "Fail fast — never hide failures". If empty greedy
+            # responses are observed at runtime, investigate the anchor +
+            # sampling config rather than NaN-ing the per-prompt JS row.
+            raise RuntimeError(
+                f"Empty greedy response for prompt index {q_idx} (prompt={prompt!r}). "
+                "The JS pipeline cannot teacher-force a zero-length response. "
+                "Diagnose the anchor-persona greedy generation (check vLLM seed, "
+                "anchor system prompt, sampling params) before re-running."
             )
-        except ValueError as e:
-            logger.warning("Teacher-force input build failed for prompt %d: %s", q_idx, e)
-            continue
+        # build_teacher_force_inputs raises ValueError when response token IDs
+        # differ across system prompts (ChatML boundary violation). DO NOT
+        # silently drop the prompt — CLAUDE.md "Fail fast — never hide
+        # failures" + round-1 code-review blocker (Claude + Codex, overlap).
+        # If this fires, the upstream tokenizer / chat-template assumptions
+        # need to be re-examined; NaN-ing the row hides the bug and shrinks
+        # the effective n behind np.nanmean.
+        batch_inputs, prompt_lengths, response_len = build_teacher_force_inputs(
+            tokenizer=tokenizer,
+            system_prompts=panel_texts,
+            question=prompt,
+            response_text=response,
+        )
         if response_len < 1:
-            logger.warning("Zero-length response tokens for prompt %d, skipping", q_idx)
-            continue
+            raise RuntimeError(
+                f"Zero-length response tokens for prompt index {q_idx} after "
+                f"build_teacher_force_inputs (response={response[:60]!r}...). "
+                "The teacher-force pipeline cannot operate on zero tokens; this "
+                "is an upstream tokenizer / template bug, not a recoverable case."
+            )
         log_probs = teacher_force_batch(
             model=model,
             batch_inputs=batch_inputs,
@@ -504,49 +586,97 @@ def run_base_mode(args: argparse.Namespace) -> None:
     logger.info("Panel: %d rows (source=%s, others=%d)", len(panel), panel_names[0], len(panel) - 1)
     logger.info("Prompts: %d", len(prompts))
 
-    # ── (a) L20 cosine: read the 19 persona rows from cached matrix; compute
-    # the 8 context rows fresh. Then re-compute the source persona's cosine
-    # against the contexts (the cached file doesn't have context rows).
+    # ── (a) L20 cosine: the PINNED cosine_matrix.json (sha256
+    # c1a8050744e06...) is the canonical predictor for the 19 persona rows
+    # (plan §3). We read it and use it directly — NOT a freshly-recomputed
+    # value. The 8 context rows aren't in the cached file so they ARE
+    # computed fresh.
+    #
+    # Round-1 blocker (Codex code-review): an earlier iteration computed
+    # everything fresh and only warned on drift, defeating the sha-pin.
+    # Now: the persona predictor is read from disk; the fresh recompute is
+    # purely a sanity check that FAILS HARD on any drift > 1e-4. The drift
+    # threshold is tight (the pinned file has 4 decimals of precision and a
+    # bit-identical recomputation should match to ~1e-5 / 1e-6).
+    cached_layer = cached_cos.get(f"layer_{LAYER}", {})
+    cached_names = cached_layer.get("persona_names", [])
+    cached_matrix = cached_layer.get("matrix", [])
+    if not (cached_names and cached_matrix and SOURCE_PERSONA in cached_names):
+        raise RuntimeError(
+            f"cosine_matrix.json layer_{LAYER} missing persona_names / matrix / "
+            f"source persona {SOURCE_PERSONA!r}; cannot use pinned predictor."
+        )
+    cached_src_idx = cached_names.index(SOURCE_PERSONA)
+    pinned_cos_to_source: dict[str, float] = {
+        name: float(cached_matrix[cached_src_idx][i]) for i, name in enumerate(cached_names)
+    }
+    logger.info(
+        "Loaded pinned cosine_to_source from cached matrix for %d persona rows (source=%s)",
+        len(pinned_cos_to_source),
+        SOURCE_PERSONA,
+    )
+
     token = os.environ.get("HF_TOKEN")
     model, tokenizer = _load_base_model(token=token)
     try:
-        # Fresh centroids for everyone (source + 8 contexts strictly necessary,
-        # but recomputing the 19 personas costs ~3 min and lets us cross-validate
-        # against the cached matrix).
+        # Fresh centroids for everyone in the panel: this gives the 8 context
+        # rows (NOT in the cached file) AND lets us cross-validate the 19
+        # persona rows against the pin.
         t0 = time.time()
         centroids = _compute_l20_centroids(model, tokenizer, panel, prompts)
-        cos_to_source = _cosine_to_source(centroids)
-        logger.info("Fresh L20 cosine pass done in %.1fs", time.time() - t0)
+        fresh_cos_to_source = _cosine_to_source(centroids)
+        logger.info(
+            "Fresh L20 cosine pass done in %.1fs (cross-validates pin + computes contexts)",
+            time.time() - t0,
+        )
 
-        # Cross-validate fresh cosines against cached cosine_matrix.json for the
-        # 19 persona rows. Should match to ~5 decimals.
-        cached_layer = cached_cos.get(f"layer_{LAYER}", {})
-        cached_names = cached_layer.get("persona_names", [])
-        cached_matrix = cached_layer.get("matrix", [])
-        if cached_names and cached_matrix and SOURCE_PERSONA in cached_names:
-            src_idx = cached_names.index(SOURCE_PERSONA)
-            cached_cos_to_source = {
-                name: float(cached_matrix[src_idx][i]) for i, name in enumerate(cached_names)
-            }
-            max_diff = 0.0
-            worst_name = ""
-            for name in cached_names:
-                if name in cos_to_source:
-                    diff = abs(cos_to_source[name] - cached_cos_to_source[name])
-                    if diff > max_diff:
-                        max_diff = diff
-                        worst_name = name
-            logger.info(
-                "Cosine cross-validation against cached matrix: max_abs_diff=%.6f (%s)",
-                max_diff,
-                worst_name,
+        # HARD-FAIL drift check on the 19 persona rows. The pinned file is the
+        # source of truth; any drift > 1e-4 means the protocol / chat-template /
+        # tokenizer drifted and we MUST NOT silently use either value.
+        DRIFT_TOL = 1e-4
+        max_diff = 0.0
+        worst_name = ""
+        drift_report: dict[str, float] = {}
+        for name in cached_names:
+            if name not in fresh_cos_to_source:
+                # Source persona itself: cosine to itself is exactly 1.0 from
+                # _cosine_to_source; ALSO 1.0 in the pinned matrix.
+                continue
+            diff = abs(fresh_cos_to_source[name] - pinned_cos_to_source[name])
+            drift_report[name] = diff
+            if diff > max_diff:
+                max_diff = diff
+                worst_name = name
+        logger.info(
+            "Pinned-vs-fresh cosine drift: max_abs_diff=%.6e on %s (tol=%.0e)",
+            max_diff,
+            worst_name or "(none)",
+            DRIFT_TOL,
+        )
+        if max_diff > DRIFT_TOL:
+            sorted_drift = sorted(drift_report.items(), key=lambda kv: -kv[1])[:5]
+            raise RuntimeError(
+                "Fresh L20 cosines drift from the pinned cosine_matrix.json by "
+                f"max_abs_diff={max_diff:.6e} > tol={DRIFT_TOL:.0e}.\n"
+                "The pinned file is the canonical predictor; a drift this large "
+                "means the chat-template / tokenizer / model build differs from "
+                "the one that produced the pin. Diagnose before re-running.\n"
+                f"Top-5 drifters: {sorted_drift}"
             )
-            if max_diff > 1e-3:
-                logger.warning(
-                    "Large drift between fresh and cached cosines (>1e-3). "
-                    "Inspect cached_matrix vs fresh; the cached file may have "
-                    "been computed with a different chat-template or seed."
-                )
+
+        # cos_to_source: USE THE PINNED VALUES for personas in the cached file;
+        # use fresh values ONLY for the 8 context rows not present in the pin.
+        # This is the predictor that flows into the rank test.
+        cos_to_source: dict[str, float] = dict(pinned_cos_to_source)
+        for name in fresh_cos_to_source:
+            if name not in cos_to_source:
+                cos_to_source[name] = fresh_cos_to_source[name]
+        logger.info(
+            "cosine_to_source: %d entries (%d from pin, %d fresh contexts)",
+            len(cos_to_source),
+            len(pinned_cos_to_source),
+            len(cos_to_source) - len(pinned_cos_to_source),
+        )
 
         # ── (b) JS to source. Free the HF model afterwards; vLLM owns the GPU
         # during greedy generation.
@@ -581,11 +711,30 @@ def run_base_mode(args: argparse.Namespace) -> None:
     finally:
         del model
 
+    # Provenance: tag each cosine_to_source entry with its origin so downstream
+    # analyzers can see at a glance which rows came from the pin vs the fresh
+    # context recompute. Pin entries are the canonical rank-test predictor.
+    cosine_provenance = {
+        name: (
+            "pinned_cosine_matrix" if name in pinned_cos_to_source else "fresh_context_recompute"
+        )
+        for name in cos_to_source
+    }
     payload = {
-        "metadata": _metadata({"mode": "base"}),
+        "metadata": _metadata(
+            {
+                "mode": "base",
+                "cosine_anchor_source": "no_persona",
+                "js_anchor_source": ANCHOR_PERSONA,
+                "cosine_pin_drift_tol": 1e-4,
+                "n_cosine_from_pin": len(pinned_cos_to_source),
+                "n_cosine_from_fresh": len(cos_to_source) - len(pinned_cos_to_source),
+            }
+        ),
         "panel": [{"name": n, "system_prompt": t} for n, t in panel],
         "prompts": prompts,
         "cosine_to_source": cos_to_source,
+        "cosine_to_source_provenance": cosine_provenance,
         "js_to_source": js_to_source,
         "greedy_responses": greedy,
     }
