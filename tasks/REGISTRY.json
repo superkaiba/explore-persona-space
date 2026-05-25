@@ -1855,7 +1855,7 @@
     },
     "385": {
       "goal": "Track how a [ZLT] marker spreads from a librarian source persona to a 19-persona + 8-context panel over fine-grained checkpoints on Qwen2.5-7B-Instruct, and test whether the bystander emission order tracks L20 cosine-to-source AND completion JS-divergence-to-source, computed side-by-side.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/385",
       "status": "interpreting",
