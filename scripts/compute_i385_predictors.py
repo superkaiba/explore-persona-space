@@ -44,6 +44,25 @@ Usage:
 
 from __future__ import annotations
 
+# torch + CUDA must be imported and initialized BEFORE anything that may fork
+# (huggingface_hub model fetch + AutoModelForCausalLM.from_pretrained use
+# fork-based parallel downloads in this process; that breaks subsequent
+# torch.cuda._lazy_init with 'No CUDA GPUs available' even though nvidia-smi
+# shows the GPU healthy). Top-of-file init keeps torch's CUDA context
+# established before any fetch happens.
+#
+# History: this pre-init was added in d0a40032, reverted in 20dc67e3 because
+# it broke the inline vLLM phase downstream ('Engine core initialization
+# failed'). Round-5 (this commit) re-applies it because vLLM now runs in a
+# clean subprocess via scripts/_i385_greedy_runner.py — the parent process
+# no longer runs vLLM, so contaminating the parent's CUDA driver state with
+# eager torch init is harmless.
+import torch
+
+if torch.cuda.is_available():
+    torch.cuda.init()
+    _ = torch.zeros(1, device="cuda:0")
+
 import argparse
 import hashlib
 import json
@@ -53,10 +72,6 @@ import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import torch
 
 logging.basicConfig(
     level=logging.INFO,
