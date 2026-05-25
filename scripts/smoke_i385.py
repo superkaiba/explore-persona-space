@@ -145,11 +145,42 @@ def run_local_dryrun() -> None:
         "sibling — this regresses the round-1 fix where checkpoints under "
         "adapter_dir were wiped by _finalize_phase's shutil.rmtree."
     )
-    # The same source MUST NOT use output_dir=str(adapter_dir) on the callback
-    # (round-1 anti-pattern). Catch a regression by checking the substring.
-    assert "output_dir=str(adapter_dir)" not in trainer_src, (
-        "train_phase regressed to output_dir=str(adapter_dir) on SaveAtSpecificSteps; "
+
+    # Anti-regression — SaveAtSpecificSteps constructor MUST receive
+    # ``output_dir=str(step_ckpt_dir)`` (the *_step_checkpoints sibling), NOT
+    # ``output_dir=str(adapter_dir)`` (the round-1 anti-pattern). SFTConfig /
+    # DPOConfig further down in trainer.py legitimately pass
+    # ``output_dir=str(adapter_dir)`` for TRL's internal training-state dir
+    # (those go away with adapter_dir, which is correct), so we narrow the
+    # check to the SaveAtSpecificSteps call site by walking the source from
+    # the constructor name to the matching ``)`` with a paren-depth counter
+    # (regex alone can't match nested parens like ``str(step_ckpt_dir)``).
+    def _extract_call(src: str, name: str) -> str:
+        """Return the substring `name(...)` with matching outer parens."""
+        idx = src.find(name + "(")
+        if idx < 0:
+            return ""
+        open_paren = idx + len(name)
+        depth = 0
+        for j in range(open_paren, len(src)):
+            ch = src[j]
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+                if depth == 0:
+                    return src[idx : j + 1]
+        return ""
+
+    save_at_call = _extract_call(trainer_src, "SaveAtSpecificSteps")
+    assert save_at_call, "Could not find a SaveAtSpecificSteps(...) call in trainer.py"
+    assert "output_dir=str(adapter_dir)" not in save_at_call, (
+        "SaveAtSpecificSteps(...) call regressed to output_dir=str(adapter_dir); "
         "this places step-list checkpoints inside the dir _finalize_phase deletes."
+    )
+    assert "step_ckpt_dir" in save_at_call, (
+        "SaveAtSpecificSteps(...) call does not reference step_ckpt_dir; expected "
+        f"output_dir=str(step_ckpt_dir) per round-1 fix. Got: {save_at_call!r}"
     )
     logger.info(
         "(5) train_phase contains SaveAtSpecificSteps wiring block; callback "
