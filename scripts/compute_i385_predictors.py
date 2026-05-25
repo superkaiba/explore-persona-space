@@ -44,17 +44,6 @@ Usage:
 
 from __future__ import annotations
 
-# torch + CUDA must be imported / initialized BEFORE anything that may fork
-# (huggingface_hub model fetch uses fork-based multiprocessing in the same
-# process; that breaks subsequent torch.cuda._lazy_init with 'No CUDA GPUs
-# available' even though nvidia-smi shows the GPU healthy). Top-of-file
-# import keeps torch's CUDA context established before any fetch happens.
-import torch
-
-if torch.cuda.is_available():
-    torch.cuda.init()
-    _ = torch.zeros(1, device="cuda:0")
-
 import argparse
 import hashlib
 import json
