@@ -1,7 +1,7 @@
 ---
-title: 'Three jointly-applied corrections: #365''s null does not survive this corrected
-  configuration — at recovered source rates, whole-completion loss is the strongest
-  observed decoupling knob in this screen (MODERATE confidence)'
+title: 'Whole-completion loss decouples source-persona marker firing from bystander
+  leakage once three training/eval confounds in parent #365 are jointly corrected
+  (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-24T09:33:48Z'
