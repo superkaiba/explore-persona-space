@@ -176,15 +176,12 @@ def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
             f"git common-dir {common_dir!s} is not a directory; "
             f"corrupt or non-canonical layout — refusing to resolve tasks/."
         )
-    # Reject submodule shape (.git/modules/<name>).
-    parts = common_dir.parts
-    if ".git" in parts:
-        idx = len(parts) - 1 - parts[::-1].index(".git")
-        if idx >= 2 and parts[idx - 1] == "modules":
-            raise RuntimeError(
-                f"git common-dir {common_dir!s} sits inside `.git/modules/`; "
-                f"submodule layout is not supported — refusing to resolve tasks/."
-            )
+    # Submodule shape (.git/modules/<name>) is caught by the basename check
+    # above: `git rev-parse --git-common-dir` from inside a submodule returns
+    # `.../.git/modules/<name>`, whose basename is `<name>`, not `.git`. So
+    # the submodule case fails the `common_dir.name != ".git"` check and
+    # raises before reaching this point. Verified by
+    # ``test_validation_rejects_real_submodule_layout``.
     parent = common_dir.parent
     if not (parent / "tasks").is_dir():
         raise RuntimeError(
@@ -207,8 +204,13 @@ def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
                 f"Switch with `git -C {parent} checkout main` before running task.py."
             )
     else:
+        # `git symbolic-ref --short HEAD` returns rc=1 with stderr
+        # "fatal: ref HEAD is not a symbolic ref" when HEAD is detached.
+        # The substring check is the canonical detached-HEAD signal —
+        # rc=128 can mean many other things (not a git repo, object
+        # missing, …) and we don't want to misclassify those as detached.
         stderr = (sym.stderr or "").lower()
-        if "not a symbolic ref" in stderr or sym.returncode == 128:
+        if "not a symbolic ref" in stderr:
             raise RuntimeError(
                 f"main worktree HEAD ({parent}) is detached; "
                 f"re-attach to 'main' before running task.py."
@@ -1063,9 +1065,16 @@ def _run_git(args: list[str], *, check: bool = True) -> subprocess.CompletedProc
     # process-local LRU cache in `repo_root()` makes this cheap, and per-call
     # resolution is what keeps long-lived processes (PM session, agent
     # daemons) safe across `os.chdir()` or branch state changes.
+    #
+    # `env=_sanitized_git_env()` matches the resolver: inherited GIT_DIR /
+    # GIT_WORK_TREE / GIT_INDEX_FILE / GIT_OBJECT_DIRECTORY would in
+    # principle redirect git add/commit. The resolver already strips them
+    # for the subprocess that locates the repo root; strip them here too
+    # for parity (round-1 code-review finding #7).
     return subprocess.run(
         ["git", *args],
         cwd=str(repo_root()),
+        env=_sanitized_git_env(),
         check=check,
         capture_output=True,
         text=True,

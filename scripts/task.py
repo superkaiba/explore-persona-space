@@ -320,10 +320,15 @@ def cmd_tasks_dir(_args: argparse.Namespace) -> None:
     """Print the absolute path of the canonical ``tasks/`` directory.
 
     Resolves via ``task_workflow.tasks_dir()``, which goes through the
-    main-repo branch-guard. Exits non-zero with a loud error message if
-    the resolver refuses (main worktree off `main`, detached HEAD, etc.).
+    main-repo branch-guard. Exits non-zero with a one-line error message
+    on stderr if the resolver refuses (main worktree off `main`, detached
+    HEAD, etc.) — never leaks a raw traceback to the user.
     """
-    print(str(tasks_dir()))
+    try:
+        print(str(tasks_dir()))
+    except RuntimeError as e:
+        print(f"task.py tasks-dir: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 def cmd_audit(args: argparse.Namespace) -> None:

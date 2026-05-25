@@ -43,6 +43,8 @@ sys.path.insert(0, str(SCRIPT_DIR.parent / "src"))
 
 from runpod_api import PodInfo, list_team_pods, terminate_pod  # noqa: E402
 
+from explore_persona_space.task_workflow import tasks_dir  # noqa: E402
+
 DEFAULT_MAX_EXITED_HOURS = 24
 DEFAULT_MIN_ORPHAN_RUNNING_HOURS = 1  # below this, a running pod may still be in bootstrap
 

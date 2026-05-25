@@ -302,41 +302,86 @@ def test_validation_rejects_bare_repo(tmp_path: Path) -> None:
     assert "REPO=" + str(bare) not in combined, f"bare repo accepted: {combined}"
 
 
-def test_validation_rejects_submodule_layout(tmp_path: Path) -> None:
-    """`.git/modules/<name>` directory shape is rejected."""
-    fake_modules = tmp_path / "outer" / ".git" / "modules" / "inner"
-    fake_modules.mkdir(parents=True)
-    # Synthesize the validation-target by giving it the `.git` name but
-    # putting it INSIDE `.git/modules/`. The simplest way to exercise
-    # the regex is to call the validator directly.
-    snippet = textwrap.dedent(
-        """
-        from pathlib import Path
-        from explore_persona_space.task_workflow import _resolve_repo_root_cached
-        # Cannot easily fake a real submodule from a script; instead,
-        # just confirm the validator function raises on a synthetic
-        # common-dir that looks like .git/modules/<x>/.git. Skipped: this
-        # branch is covered by manual inspection (see header docstring).
-        # The cheap acceptance test is "does the module import without
-        # hitting `modules` in its own path"?
-        print('OK')
-        """
+def test_validation_rejects_real_submodule_layout(tmp_path: Path) -> None:
+    """A real git submodule must be rejected with a loud error.
+
+    Creates an outer repo, adds itself as a submodule at `inner/`, drops
+    `task_workflow.py` into the SUBMODULE's working tree, then invokes
+    the resolver from inside the submodule. `git rev-parse
+    --path-format=absolute --git-common-dir` from inside a submodule
+    returns `.../.git/modules/inner` — basename is `inner`, not `.git`,
+    so the basename check at `_resolve_repo_root_cached` line ~169 fires
+    and raises before reaching the `parent / "tasks"` validation.
+
+    Documents the resolver invariant: the dedicated submodule guard at
+    the old lines 181-187 was dead code — the basename check carries
+    the submodule case unaided. Confirmed manually:
+
+        $ git rev-parse --path-format=absolute --git-common-dir
+        /tmp/x/outer/.git/modules/inner
+        $ basename /tmp/x/outer/.git/modules/inner
+        inner
+    """
+    outer = tmp_path / "outer"
+    _make_main_repo(outer)
+
+    # `git submodule add file://...` is disabled by default in modern git
+    # (protocol.file.allow=user). Override locally for this single command.
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "protocol.file.allow=always",
+            "-C",
+            str(outer),
+            "submodule",
+            "add",
+            "-q",
+            str(outer),
+            "inner",
+        ],
+        check=True,
+        capture_output=True,
     )
+    subprocess.run(
+        ["git", "-C", str(outer), "commit", "-q", "-m", "add submodule"],
+        check=True,
+        capture_output=True,
+    )
+
+    # The submodule's working tree is `outer/inner/`. Drop the test copy
+    # of task_workflow into it so the subprocess imports OUR resolver
+    # (not the submodule's own snapshot, which is the outer-repo HEAD).
+    inner = outer / "inner"
+    src_dir = inner / "src" / "explore_persona_space"
+    src_dir.mkdir(parents=True)
+    (src_dir / "__init__.py").touch()
+    real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
+    (src_dir / "task_workflow.py").write_text(real_tw.read_text())
+
     env = dict(os.environ)
-    env["PYTHONPATH"] = _REPO_SRC + os.pathsep + env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = str(inner / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
-        [sys.executable, "-c", snippet],
-        cwd=str(fake_modules),
+        [sys.executable, "-c", _resolver_snippet()],
+        cwd=str(inner),
         env=env,
         capture_output=True,
         text=True,
     )
-    # We accept ANY behavior here that does not silently return the
-    # submodule path — either an error or a clean print. The full
-    # submodule path-rejection is covered by code review + the regex
-    # in the resolver.
-    assert proc.returncode in (0, 1)
-    assert "modules/inner" not in proc.stdout
+    # Resolver MUST refuse — submodule common-dir basename is `inner`,
+    # not `.git`, so the basename check fires.
+    assert proc.returncode != 0, (
+        f"resolver did not refuse a real submodule:\nstdout: {proc.stdout}\nstderr: {proc.stderr}"
+    )
+    combined = proc.stdout + proc.stderr
+    # Must NOT silently return the submodule's working dir.
+    assert f"REPO={inner}" not in combined, f"submodule accepted as repo: {combined}"
+    # Loud error must mention the unexpected basename ('inner') OR the
+    # `.git` expectation. The basename branch raises:
+    #   "git common-dir <...modules/inner> basename is 'inner', expected '.git'"
+    assert "basename" in proc.stderr.lower() or "expected '.git'" in proc.stderr, (
+        f"basename guard did not fire as expected: {proc.stderr}"
+    )
 
 
 def test_resolver_ignores_git_env_poisoning(tmp_path: Path) -> None:
@@ -508,42 +553,97 @@ def test_resolver_uses_module_dir_not_cwd(tmp_path: Path) -> None:
 # ─── tasks-dir CLI subcommand smoke ───────────────────────────────────────
 
 
-def test_tasks_dir_cli_subcommand_smoke(tmp_path: Path) -> None:
-    """`task.py tasks-dir` prints the same path as `tasks_dir()` and exits 0.
+# Absolute path to the real `scripts/task.py` so the CLI tests exercise the
+# actual production entry point (argparse registration + cmd_tasks_dir).
+_REAL_TASK_PY = Path(__file__).resolve().parents[1] / "scripts" / "task.py"
 
-    Mirrors the new CLI surface so reviewers can see the contract end-to-end.
+
+def _stage_task_cli_tree(main_repo: Path) -> None:
+    """Drop the project's `scripts/task.py` + a minimal `src/` tree into
+    ``main_repo`` so `uv run python scripts/task.py tasks-dir` runs there
+    against the test's tmp resolver (not the dev repo's).
+
+    Only stages the files the CLI actually touches at import time:
+    ``src/explore_persona_space/task_workflow.py`` (+ ``__init__.py``) and
+    the canonical ``scripts/task.py``. Other imports inside task.py route
+    through ``task_workflow`` (NewTaskRequest, STATUSES, …) — they all live
+    in that one file in this project.
     """
-    main_repo = tmp_path / "repo"
-    _make_main_repo(main_repo)
-
     src_dir = main_repo / "src" / "explore_persona_space"
     src_dir.mkdir(parents=True)
     (src_dir / "__init__.py").touch()
     real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
     (src_dir / "task_workflow.py").write_text(real_tw.read_text())
 
-    # Drop a minimal task.py wrapper that invokes the same function.
-    wrapper = main_repo / "tasks_dir_cli.py"
-    wrapper.write_text(
-        textwrap.dedent(
-            """
-            import sys
-            from pathlib import Path
-            sys.path.insert(0, str(Path(__file__).resolve().parent / 'src'))
-            from explore_persona_space.task_workflow import tasks_dir
-            print(str(tasks_dir()))
-            """
-        )
-    )
+    scripts_dir = main_repo / "scripts"
+    scripts_dir.mkdir(parents=True, exist_ok=True)
+    (scripts_dir / "task.py").write_text(_REAL_TASK_PY.read_text())
 
+
+def test_tasks_dir_cli_subcommand_invokes_real_task_py(tmp_path: Path) -> None:
+    """`scripts/task.py tasks-dir` prints the canonical tasks path and exits 0.
+
+    Covers the argparse registration at ``scripts/task.py`` and the
+    ``cmd_tasks_dir`` entry point — both went uncovered by the previous
+    hand-rolled wrapper test (round-1 code-review finding #5).
+    """
+    main_repo = tmp_path / "repo"
+    _make_main_repo(main_repo)
+    _stage_task_cli_tree(main_repo)
+
+    env = dict(os.environ)
+    # No PYTHONPATH manipulation needed — task.py prepends `src/` to
+    # sys.path on import. TASK_PY_NO_COMMIT=1 prevents any inadvertent
+    # git commit attempt (tasks-dir is read-only, but defense in depth).
+    env["TASK_PY_NO_COMMIT"] = "1"
     proc = subprocess.run(
-        [sys.executable, str(wrapper)],
+        [sys.executable, str(main_repo / "scripts" / "task.py"), "tasks-dir"],
         cwd=str(main_repo),
+        env=env,
         capture_output=True,
         text=True,
     )
-    assert proc.returncode == 0, f"wrapper failed: {proc.stderr}"
-    assert proc.stdout.strip() == str(main_repo / "tasks")
+    assert proc.returncode == 0, f"task.py tasks-dir failed: {proc.stderr}"
+    assert proc.stdout.strip() == str(main_repo / "tasks"), f"unexpected stdout: {proc.stdout!r}"
+
+
+def test_tasks_dir_cli_exits_cleanly_on_non_main_branch(tmp_path: Path) -> None:
+    """`scripts/task.py tasks-dir` exits non-zero with a CLEAN stderr
+    message (no traceback) when invoked from a tmp repo with HEAD on a
+    feature branch.
+
+    Confirms the round-1 cmd_tasks_dir wrapper catches RuntimeError and
+    prints a one-line error instead of propagating an unhandled exception
+    (round-1 code-review finding #9).
+    """
+    main_repo = tmp_path / "repo"
+    _make_main_repo(main_repo)
+    _stage_task_cli_tree(main_repo)
+    subprocess.run(
+        ["git", "-C", str(main_repo), "checkout", "-q", "-b", "feature/off-main"],
+        check=True,
+    )
+
+    env = dict(os.environ)
+    env["TASK_PY_NO_COMMIT"] = "1"
+    proc = subprocess.run(
+        [sys.executable, str(main_repo / "scripts" / "task.py"), "tasks-dir"],
+        cwd=str(main_repo),
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode != 0, (
+        f"task.py tasks-dir did not refuse non-main branch:\n"
+        f"stdout: {proc.stdout!r}\nstderr: {proc.stderr!r}"
+    )
+    # Loud, named error.
+    assert "feature/off-main" in proc.stderr, f"branch name not in stderr: {proc.stderr!r}"
+    # MUST be a clean message, NOT an unhandled traceback.
+    assert "Traceback" not in proc.stderr, (
+        f"task.py tasks-dir leaked traceback (cmd_tasks_dir must catch "
+        f"RuntimeError and print a one-liner):\n{proc.stderr}"
+    )
 
 
 if __name__ == "__main__":

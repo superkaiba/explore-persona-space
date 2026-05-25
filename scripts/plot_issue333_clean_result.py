@@ -22,9 +22,17 @@ from explore_persona_space.task_workflow import tasks_dir
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "eval_results" / "issue333"
 FIG_DIR = ROOT / "figures" / "issue_333"
-# Route the per-task artifact through tasks_dir() so this script works
-# from any worktree (the task-333 folder lives in the main repo).
-TASK_ARTIFACT = tasks_dir() / "interpreting" / "333" / "artifacts" / "hero.png"
+
+
+def _task_artifact_path() -> Path:
+    """Resolve the per-task artifact path lazily.
+
+    Deferred (not module-level) so that ``import scripts.plot_issue333_clean_result``
+    does not fire the ``tasks_dir()`` branch guard at import time — only
+    the actual `main()` execution should require a main-branch worktree.
+    """
+    return tasks_dir() / "interpreting" / "333" / "artifacts" / "hero.png"
+
 
 SPILL_BY_DIRECTION = {
     "fr_it": "italian",
@@ -148,9 +156,10 @@ def main() -> None:
     written = savefig_paper(fig, "issue_333/hero", dir=ROOT / "figures")
     plt.close(fig)
 
-    TASK_ARTIFACT.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(written["png"], TASK_ARTIFACT)
-    print(f"Saved {written['png']} and {TASK_ARTIFACT}")
+    task_artifact = _task_artifact_path()
+    task_artifact.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(written["png"], task_artifact)
+    print(f"Saved {written['png']} and {task_artifact}")
 
 
 if __name__ == "__main__":

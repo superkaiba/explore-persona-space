@@ -22,6 +22,7 @@ from explore_persona_space.analysis.paper_plots import (
     set_paper_style,
     set_title_subtitle,
 )
+from explore_persona_space.task_workflow import tasks_dir
 
 ROOT = Path(__file__).resolve().parents[2]
 EVAL_DIR = ROOT / "eval_results" / "issue_355"
