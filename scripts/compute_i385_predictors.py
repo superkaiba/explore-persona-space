@@ -53,6 +53,10 @@ import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import torch
 
 logging.basicConfig(
     level=logging.INFO,
@@ -353,9 +357,21 @@ def _greedy_responses_for_anchor(
     librarian system prompt, which inflates JS-to-source and re-introduces
     source-leakage into the predictor itself.
 
+    Round-5 refactor: vLLM is spawned in a SUBPROCESS via
+    ``scripts/_i385_greedy_runner.py``. Round 4 proved that vLLM and HF
+    Transformers cannot share a Python process for this pipeline — the
+    ``huggingface_hub.snapshot_download`` fork-based parallel downloads
+    that fire on first HF model load break torch.cuda lazy_init, and even
+    when worked around, vLLM's later ``Engine core initialization failed``
+    / ``pynvml.nvmlDeviceGetHandleByIndex`` still fire because something
+    the parent script imports contaminates vLLM's CUDA state. Direct
+    ``from vllm import LLM`` in a clean process works fine. The subprocess
+    boundary is the only reliable fix.
+
     Returns {prompt: greedy_response_text}.
     """
-    from vllm import LLM, SamplingParams
+    import subprocess
+    import tempfile
 
     anchor_entry = next(((n, t) for n, t in panel if n == ANCHOR_PERSONA), None)
     if anchor_entry is None:
@@ -374,49 +390,103 @@ def _greedy_responses_for_anchor(
             f"({anchor_sys_text!r}); refusing to silently drift the JS baseline."
         )
 
-    llm = LLM(
-        model=BASE_MODEL,
-        tensor_parallel_size=1,
-        gpu_memory_utilization=0.85,
-        dtype="bfloat16",
-        max_model_len=4096,
-    )
-    sampling = SamplingParams(
-        n=1,
-        temperature=0.0,
-        top_p=1.0,
-        max_tokens=GREEDY_RESPONSE_MAX_TOKENS,
-        seed=GREEDY_SEED,
-    )
-    tokenizer = llm.get_tokenizer()
-
-    rendered = []
-    for prompt in prompts:
-        msg = [
-            {"role": "system", "content": anchor_sys_text},
-            {"role": "user", "content": prompt},
-        ]
-        rendered.append(
-            tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
+    helper_script = PROJECT_ROOT / "scripts" / "_i385_greedy_runner.py"
+    if not helper_script.exists():
+        raise FileNotFoundError(
+            f"Helper script missing: {helper_script}. "
+            "The vLLM greedy generation step requires the helper script to "
+            "isolate vLLM's CUDA init in a subprocess."
         )
 
-    outputs = llm.generate(rendered, sampling)
+    # Drop helper input/output to a tempdir; remove on success but keep on
+    # failure so the user can re-run the helper standalone for debugging.
+    tmp_dir = Path(tempfile.mkdtemp(prefix="i385_greedy_"))
+    input_path = tmp_dir / "input.json"
+    output_path = tmp_dir / "output.json"
+
+    payload = {
+        "model": BASE_MODEL,
+        "anchor_sys_text": anchor_sys_text,
+        "prompts": list(prompts),
+        "max_tokens": GREEDY_RESPONSE_MAX_TOKENS,
+        "seed": GREEDY_SEED,
+        "tensor_parallel_size": 1,
+        "gpu_memory_utilization": 0.85,
+        "dtype": "bfloat16",
+        "max_model_len": 4096,
+    }
+    input_path.write_text(json.dumps(payload, indent=2))
+    logger.info(
+        "Spawning vLLM subprocess (%s prompts, helper=%s)",
+        len(prompts),
+        helper_script,
+    )
+    # Use ``uv run python`` so the helper executes in the same managed
+    # environment (uv.lock pinned) as the parent — matches the rest of the
+    # pipeline. ``check=True`` raises CalledProcessError on non-zero exit,
+    # which propagates vLLM init failures up to the caller (CLAUDE.md
+    # "Fail fast — never hide failures"). stdout/stderr stream through the
+    # parent's terminal so the user sees vLLM's progress live.
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        str(helper_script),
+        "--input-path",
+        str(input_path),
+        "--output-path",
+        str(output_path),
+    ]
+    t0 = time.time()
+    try:
+        subprocess.run(cmd, check=True, cwd=str(PROJECT_ROOT))
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(
+            f"vLLM greedy subprocess failed (exit={exc.returncode}). "
+            f"Helper input retained at {input_path} for standalone re-run:\n"
+            f"  uv run python {helper_script} --input-path {input_path} --output-path {output_path}"
+        ) from exc
+    logger.info("vLLM subprocess completed in %.1fs", time.time() - t0)
+
+    if not output_path.exists():
+        raise RuntimeError(
+            f"vLLM subprocess succeeded but output file missing: {output_path}. "
+            f"Helper input retained at {input_path}."
+        )
+
+    helper_out = json.loads(output_path.read_text())
+    responses_raw = helper_out.get("responses", {})
+    if not isinstance(responses_raw, dict):
+        raise RuntimeError(
+            f"vLLM subprocess output malformed: 'responses' is "
+            f"{type(responses_raw).__name__}, expected dict. Path: {output_path}"
+        )
+
     responses: dict[str, str] = {}
-    for prompt, out in zip(prompts, outputs, strict=True):
-        text = out.outputs[0].text
+    for prompt in prompts:
+        if prompt not in responses_raw:
+            raise RuntimeError(
+                f"vLLM subprocess output missing prompt: {prompt!r}. "
+                f"Got keys: {list(responses_raw.keys())[:3]}... Path: {output_path}"
+            )
+        text = responses_raw[prompt]
         if not text:
             logger.warning("Empty greedy response for prompt %r", prompt[:60])
         responses[prompt] = text
 
-    # vLLM holds the GPU; free it before HF model load.
-    del llm
-    import gc
-
-    import torch
-
-    gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
+    logger.info(
+        "Loaded %d greedy responses from subprocess output (n_empty=%d)",
+        len(responses),
+        helper_out.get("n_empty", -1),
+    )
+    # Clean up the tempdir on success (kept on failure for debug).
+    try:
+        input_path.unlink()
+        output_path.unlink()
+        tmp_dir.rmdir()
+    except OSError as exc:
+        # Cleanup failure is non-fatal; log so it surfaces but don't abort.
+        logger.warning("Failed to clean up tempdir %s: %s", tmp_dir, exc)
     return responses
 
 
