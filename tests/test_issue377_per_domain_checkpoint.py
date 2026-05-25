@@ -255,15 +255,16 @@ class TestIncontextScriptPerDomainCheckpoint:
         monkeypatch.setattr(mod, "post_gen_sanity_checks", lambda *a, **k: None)
         monkeypatch.setattr(mod, "upload_dataset_directory", lambda **k: None)
 
-        # The script's drift-summary cross-check would fail without a
-        # real drift summary; --allow-missing-drift-summary skips it.
+        # Plan v2 hot-fix (2026-05-25) dropped the --allow-missing-drift-summary
+        # flag (and the hard ±10% sanity check it bypassed). The script now
+        # writes a stats file unconditionally; with the drift corpus absent
+        # on disk, the stats file just has zero ratios. No flag needed.
         monkeypatch.setattr(
             sys,
             "argv",
             [
                 "issue_377_generate_incontext_corpus.py",
                 "--no-upload",
-                "--allow-missing-drift-summary",
             ],
         )
         rc = mod.main()
@@ -551,13 +552,13 @@ class TestIncontextScriptResumeSkip:
         monkeypatch.setattr(mod, "post_gen_sanity_checks", lambda *a, **k: None)
         monkeypatch.setattr(mod, "upload_dataset_directory", lambda **k: None)
 
+        # --allow-missing-drift-summary dropped in plan v2 hot-fix (2026-05-25).
         monkeypatch.setattr(
             sys,
             "argv",
             [
                 "issue_377_generate_incontext_corpus.py",
                 "--no-upload",
-                "--allow-missing-drift-summary",
             ],
         )
         rc = mod.main()
@@ -595,6 +596,7 @@ class TestIncontextScriptResumeSkip:
         monkeypatch.setattr(mod, "post_gen_sanity_checks", lambda *a, **k: None)
         monkeypatch.setattr(mod, "upload_dataset_directory", lambda **k: None)
 
+        # --allow-missing-drift-summary dropped in plan v2 hot-fix (2026-05-25).
         monkeypatch.setattr(
             sys,
             "argv",
@@ -602,7 +604,6 @@ class TestIncontextScriptResumeSkip:
                 "issue_377_generate_incontext_corpus.py",
                 "--no-upload",
                 "--no-resume",
-                "--allow-missing-drift-summary",
             ],
         )
         rc = mod.main()

@@ -181,7 +181,10 @@ def _partial_or_full_run(
 DRIFT_CORPUS_PATH = (
     Path(__file__).parent.parent / "data" / "issue377_drift" / "drift_conversations.jsonl"
 )
-STATS_PATH = DATA_DIR / "corpus_length_stats.json"
+# Stats path is derived from DATA_DIR at runtime inside ``main()`` so the
+# per-domain-checkpoint tests can monkeypatch ``DATA_DIR`` to a sandbox
+# without the stats writer trying to land in the live data directory.
+STATS_FILENAME = "corpus_length_stats.json"
 
 
 def main() -> int:
@@ -282,10 +285,11 @@ def main() -> int:
 
     # Step 5: informational length-stats write + soft asymmetry warning.
     print("\nStep 5: corpus length stats (informational)...", flush=True)
+    stats_path = DATA_DIR / STATS_FILENAME
     if DRIFT_CORPUS_PATH.exists():
         drift_conversations = read_corpus_jsonl(DRIFT_CORPUS_PATH)
         stats = corpus_length_stats(drift_conversations, all_conversations)
-        STATS_PATH.write_text(json.dumps(stats, indent=2) + "\n")
+        stats_path.write_text(json.dumps(stats, indent=2) + "\n")
         ratio = stats["ratio_incontext_to_drift"]
         print(
             f"  Length ratios in-context / drift: "
@@ -303,17 +307,17 @@ def main() -> int:
                 f"prefix-selection time via the B-incontext-length@k arm.",
                 flush=True,
             )
-        print(f"  Wrote {STATS_PATH}", flush=True)
+        print(f"  Wrote {stats_path}", flush=True)
     else:
         # Drift corpus not on local disk — emit a stats file with only the
         # in-context side filled in, so the analyzer can still consume a
         # well-formed JSON. The eval rig is the canonical place to verify
         # length-matching anyway.
         partial = corpus_length_stats([], all_conversations)
-        STATS_PATH.write_text(json.dumps(partial, indent=2) + "\n")
+        stats_path.write_text(json.dumps(partial, indent=2) + "\n")
         print(
             f"  Drift corpus not on local disk at {DRIFT_CORPUS_PATH}; "
-            f"wrote in-context-only stats to {STATS_PATH} (ratios are 0.0). "
+            f"wrote in-context-only stats to {stats_path} (ratios are 0.0). "
             f"Length-matching verification happens in the eval rig.",
             flush=True,
         )
