@@ -410,12 +410,33 @@ def resolve_checkpoint(seed: int) -> tuple[Path, str]:
 # ── Conversation loading + slicing (plan §4.3) ──────────────────────────────
 
 
-def load_conversations(local_path: Path, hub_path: str) -> list[dict]:
+# Soft-fail floor (plan v2 §4.2 round-9 hot-fix). The post-gen sanity check
+# now tolerates a single-row leak per corpus, so the on-disk corpus may have
+# slightly fewer than N_DRIFT conversations (round-9 r4: drift has 199 rows
+# after a therapy-domain row was dropped). The eval rig accepts the soft
+# floor and records the actual N in the run-result JSON; only true
+# starvation (≪ floor) is fatal.
+MIN_CORPUS_FLOOR: int = 190  # ~95% of N_DRIFT — below this we likely have a
+# generator failure rather than a single-row leak.
+
+
+def load_conversations(
+    local_path: Path,
+    hub_path: str,
+    *,
+    min_floor: int = MIN_CORPUS_FLOOR,
+) -> list[dict]:
     """Load the corpus JSONL from local disk; download from HF Hub if missing.
 
     Plan §4.2 prescribes both corpora live at the local paths after their
     generator scripts run. If neither is present, this falls back to the
     Hub. The Hub copy is the durable, version-pinned source per plan §10.
+
+    Per plan v2 §4.2 round-9 hot-fix, the count guard tolerates the
+    soft-fail floor (``min_floor`` defaults to :data:`MIN_CORPUS_FLOOR`).
+    A short-by-one corpus from the post-gen sanity check's single-leak
+    tolerance is fine; the eval-rig records the actual per-condition N
+    in the run-result JSON for downstream auditing.
     """
     if not local_path.exists():
         print(f"  {local_path} missing; downloading from HF Hub {hub_path}...", flush=True)
@@ -435,9 +456,20 @@ def load_conversations(local_path: Path, hub_path: str) -> list[dict]:
             )
     with open(local_path) as f:
         convs = [json.loads(line) for line in f if line.strip()]
-    if len(convs) != N_DRIFT:
+    if len(convs) < min_floor:
         raise RuntimeError(
-            f"Corpus {local_path} has {len(convs)} conversations, expected {N_DRIFT}"
+            f"Corpus {local_path} has {len(convs)} conversations, "
+            f"below soft-fail floor {min_floor} (target {N_DRIFT}). "
+            f"Likely a generator failure rather than a single-row leak; "
+            f"re-run the generator script."
+        )
+    if len(convs) < N_DRIFT:
+        print(
+            f"  NOTE: corpus {local_path} has {len(convs)} convs "
+            f"(target {N_DRIFT}; floor {min_floor}). Accepting soft-fail "
+            f"floor per plan v2 §4.2; actual N will be recorded in the "
+            f"run-result JSON.",
+            flush=True,
         )
     return convs
 
@@ -487,6 +519,47 @@ def _clamp_slice_n_to_corpus(slice_n_target: int, n_available_turns: int) -> int
 # Module-level flag so the CLAMPED warning fires at most once per (k, mode)
 # pair across the whole eval invocation rather than 200x per condition.
 _CLAMP_WARNED: set[tuple[int, str]] = set()
+
+
+def filter_sentinel_conversations(
+    conversations: list[dict],
+    k_list: tuple[int, ...],
+) -> tuple[list[dict], int]:
+    """Pre-filter conversations whose first-``max(slice_n_for_k)`` turns
+    contain a ``[BATCH_ERROR]`` sentinel (plan v2 §4.3 round-9 hot-fix).
+
+    The in-context corpus-gen step tolerates up to 5% sentinel turns
+    (single-leak protocol), and the round-9 r4 corpus carries 70 sentinel
+    turns out of ~3000 (~2.3%). The eval-rig's per-pair
+    :func:`_slice_and_validate` raises on the first sentinel-bearing
+    selected prefix — so without pre-filtering, eval would crash mid-run
+    on conversations the corpus-gen step accepted.
+
+    We pre-filter conservatively: any conversation whose **maximum target
+    prefix window** (``turns[:max_slice_n]``) contains a sentinel is
+    dropped from the eval pool. This guarantees no sentinel-bearing
+    prefix is ever selected, for either the turn-matched or the
+    length-matched arm at any k ∈ ``k_list``. The asymmetry between
+    "corpus-gen tolerant" and "eval-time strict" is resolved by
+    converting eval-time strict into "drop-up-front" rather than
+    "crash-mid-run".
+
+    Returns ``(kept_conversations, n_excluded)``.
+    """
+    if not k_list:
+        return list(conversations), 0
+    max_slice_n_target = max(_turns_slice_for_k(k) for k in k_list)
+    kept: list[dict] = []
+    n_excluded = 0
+    for conv in conversations:
+        turns = conv.get("turns", [])
+        slice_n = _clamp_slice_n_to_corpus(max_slice_n_target, len(turns))
+        window = turns[:slice_n]
+        if any(t.get("content") == "[BATCH_ERROR]" for t in window):
+            n_excluded += 1
+            continue
+        kept.append(conv)
+    return kept, n_excluded
 
 
 def build_history_for_k(conv: dict, k: int) -> list[dict]:
@@ -615,42 +688,49 @@ def compute_drift_corpus_lengths(
 def _length_matched_slice_n(conv: dict, k: int, drift_corpus_lengths: dict[int, float]) -> int:
     """Pick the in-context prefix's ``slice_n`` for the length-matched arm.
 
-    Algorithm (plan v2 §4.3 "deterministic" block):
+    Plan v2 §4.3 contract: "the longest prefix whose total whitespace-token
+    count is ≤ L(k)". Algorithm:
 
-      1. Walk the conversation's turns accumulating whitespace-token counts.
-         Track the running cumulative.
-      2. Find the smallest j (1-indexed turn count) such that
-         ``cumsum[j] >= L(k)``. Ties — multiple j with the exact same
-         cumsum — are broken by the smaller j (which is what enumerate's
-         left-to-right order gives us automatically).
-      3. Back off by one turn: use ``j - 1`` so the prefix is ≤ L(k).
-      4. Round DOWN to the nearest even ``slice_n`` so the history ends on
-         an assistant turn (matching the turn-matched arm's role parity).
-      5. Clamp to ``[2, len(turns)]`` so we always have at least one
-         (user, assistant) exchange and we never overshoot the corpus.
+      1. Walk the conversation accumulating whitespace-token counts.
+      2. Find the smallest 1-indexed j such that ``cumsum[j] > L(k)``
+         (STRICTLY greater); back off to ``j - 1`` as the largest prefix
+         length whose cumsum is ≤ L(k). On exact equality (``cumsum[j] ==
+         L(k)``) the j-turn prefix already satisfies ``≤ L(k)`` and is
+         kept as-is.
+      3. Round DOWN to the nearest even ``slice_n`` so the history ends
+         on an assistant turn (matching the turn-matched arm's role
+         parity).
+      4. Clamp to ``[2, largest_even ≤ len(turns)]`` so we always have at
+         least one (user, assistant) exchange and we never overshoot the
+         corpus.
 
-    If the entire conversation's cumsum is still below L(k) (e.g. the
+    If the entire conversation's cumsum is still ≤ L(k) (e.g. the
     in-context corpus is shorter / less verbose than L(k)), we use the
     largest available even ``slice_n``; the caller can compare the
     realized prefix length against L(k) for telemetry.
+
+    The strict-``>`` step fixes a v9 off-by-one: the old algorithm always
+    backed off on ``cumsum >= L(k)`` and dropped the equality case to
+    ``j-1``, losing one valid assistant-ending boundary in the worst-case
+    exact-match scenario (target 400, cumsum [100, 200, 300, 400]
+    used to return j=2 instead of j=4). C2 from epm:code-review-codex v6.
     """
     target = drift_corpus_lengths[k]
     turns = conv["turns"]
     n = len(turns)
     cumsum = 0
-    crossing_j = None  # smallest 1-indexed j with cumsum[j] >= target
+    max_le_target_j = 0  # largest 1-indexed j with cumsum[j] <= target
     for idx, turn in enumerate(turns, start=1):
         cumsum += _whitespace_token_count(turn["content"])
-        if cumsum >= target:
-            crossing_j = idx
+        if cumsum <= target:
+            max_le_target_j = idx
+        else:
             break
-    if crossing_j is None:
-        # Never reached the target — use the largest available even slice_n.
+    # Round down to even for assistant-ending parity.
+    slice_n = max_le_target_j - (max_le_target_j % 2)
+    if max_le_target_j == n:
+        # Never exceeded the target — use the largest available even slice_n.
         slice_n = n - (n % 2)
-    else:
-        # Back off by one; round down to even for assistant-ending parity.
-        backed_off = crossing_j - 1
-        slice_n = backed_off - (backed_off % 2)
     # Clamp.
     slice_n = max(2, min(slice_n, n - (n % 2)))
     return slice_n
@@ -694,20 +774,33 @@ def stratified_sample(
     domains: tuple[str, ...],
     n_per_domain: int,
     rng: random.Random,
+    *,
+    min_per_domain: int = 1,
 ) -> list[dict]:
-    """Pick ``n_per_domain`` conversations from each domain (without replacement).
+    """Pick up to ``n_per_domain`` conversations from each domain (without replacement).
 
     Per-seed RNG so the (seed, condition, drift_conv, question) pairing is
     reproducible but varies across seeds per plan §4.3 "Pairing convention".
+
+    Per plan v2 §4.2 round-9 hot-fix, if a domain has fewer than
+    ``n_per_domain`` rows (post sentinel-prefilter or post soft-fail
+    leak), we sample ``min(n_per_domain, n_available)`` from that domain
+    rather than raising. Only true starvation (``< min_per_domain``)
+    raises so the analyzer surfaces it explicitly. The actual sample
+    size flows downstream via the run-result JSON's per-condition
+    ``total`` field.
     """
     sampled: list[dict] = []
     for domain in domains:
         pool = [c for c in conversations if c["domain"] == domain]
-        if len(pool) < n_per_domain:
+        if len(pool) < min_per_domain:
             raise RuntimeError(
-                f"Domain {domain}: only {len(pool)} convs available, need {n_per_domain}"
+                f"Domain {domain}: only {len(pool)} convs available, "
+                f"below minimum {min_per_domain}; corpus is too short to "
+                f"sample"
             )
-        sampled.extend(rng.sample(pool, n_per_domain))
+        take = min(n_per_domain, len(pool))
+        sampled.extend(rng.sample(pool, take))
     return sampled
 
 
@@ -1164,10 +1257,24 @@ def _run_seed_with_engine(
         incontext_conversations, INCONTEXT_DOMAINS, N_PER_DOMAIN, rng
     )
 
-    # Question assignment: tile EVAL_QUESTIONS to length N_DRIFT.
-    questions_for_eval = (EVAL_QUESTIONS * ((N_DRIFT // N_QUESTIONS) + 1))[:N_DRIFT]
-    drift_pairs = list(zip(drift_for_eval, questions_for_eval, strict=True))
-    incontext_pairs = list(zip(incontext_for_eval, questions_for_eval, strict=True))
+    # Question assignment: tile EVAL_QUESTIONS to whatever sample size the
+    # post-prefilter / soft-fail pool produced. Per plan v2 §4.2 round-9
+    # hot-fix, the drift and in-context pools may differ in size if one
+    # corpus had more sentinel-bearing convs than the other; we record
+    # actual N per condition in the run-result JSON so downstream Wilson /
+    # Page / gap stats can be re-derived from the realized totals.
+    def _tile_questions(n: int) -> list[str]:
+        return (EVAL_QUESTIONS * ((n // N_QUESTIONS) + 1))[:n]
+
+    drift_pairs = list(zip(drift_for_eval, _tile_questions(len(drift_for_eval)), strict=True))
+    incontext_pairs = list(
+        zip(incontext_for_eval, _tile_questions(len(incontext_for_eval)), strict=True)
+    )
+    print(
+        f"  [seed {seed}] Pair counts: drift={len(drift_pairs)}, "
+        f"in-context={len(incontext_pairs)} (target {N_DRIFT})",
+        flush=True,
+    )
 
     per_condition_results: dict[str, Any] = {}
     per_condition_raw: dict[str, list[Any]] = {}
@@ -1315,12 +1422,42 @@ def _run_seed_with_engine(
     }
     stats["drift_corpus_target_lengths"] = {k: float(drift_corpus_lengths[k]) for k in K_LIST}
 
+    # CONCERN #6 (round-9 v9 → v10): surface realized slice_n per turn-mode
+    # arm in the stats JSON so the analyzer sees the k=20 → 14 clamp
+    # explicitly (previously only the stdout `CLAMPED:` log carried this).
+    # We pick a representative conversation per arm + k: the turn-mode
+    # slice_n is conversation-length-driven, so we report the
+    # corresponding pool's mean realized turn-mode slice_n.
+    def _mean_turn_mode_slice_n(pool: list[dict], k: int) -> float:
+        if not pool:
+            return 0.0
+        slice_n_target = _turns_slice_for_k(k)
+        return sum(_clamp_slice_n_to_corpus(slice_n_target, len(c["turns"])) for c in pool) / len(
+            pool
+        )
+
+    stats["realized_slice_n_per_arm"] = (
+        {f"B@{k}": _mean_turn_mode_slice_n(drift_for_eval, k) for k in K_LIST}
+        | {f"B-incontext-turns@{k}": _mean_turn_mode_slice_n(incontext_for_eval, k) for k in K_LIST}
+        | {f"B-incontext-length@{k}": stats["length_mode_realized_slice_n_mean"][k] for k in K_LIST}
+        | {f"B-null@{k}": _mean_turn_mode_slice_n(drift_for_eval, k) for k in K_LIST}
+    )
+
+    # Per-condition realized N — surfaces the post-prefilter / soft-fail
+    # sample size per condition so Wilson / Page / gap stats can be
+    # audited against the actual totals rather than the planned 200.
+    n_per_condition = {
+        cond: int(payload.get("total", len(per_condition_raw.get(cond, []))))
+        for cond, payload in per_condition_results.items()
+    }
+
     return {
         "seed": seed,
         "checkpoint": str(ckpt),
         "checkpoint_option": option_label,
         "smoke_gate": smoke_gate_result,
         "per_condition": per_condition_results,
+        "n_per_condition": n_per_condition,
         "stats": stats,
         "raw_completions_summary": {
             cond: {"n_items": len(rows)} for cond, rows in per_condition_raw.items()
@@ -1560,16 +1697,49 @@ def main() -> int:
 
     # Load corpora once; reused across seeds.
     print("Loading drift corpus...", flush=True)
-    drift_conversations = load_conversations(DRIFT_LOCAL_PATH, DRIFT_HUB_PATH)
-    print(f"  {len(drift_conversations)} drift conversations loaded", flush=True)
+    drift_raw = load_conversations(DRIFT_LOCAL_PATH, DRIFT_HUB_PATH)
+    print(f"  {len(drift_raw)} drift conversations loaded (pre-prefilter)", flush=True)
 
     print("Loading in-context corpus...", flush=True)
-    incontext_conversations = load_conversations(INCONTEXT_LOCAL_PATH, INCONTEXT_HUB_PATH)
-    print(f"  {len(incontext_conversations)} in-context conversations loaded", flush=True)
+    incontext_raw = load_conversations(INCONTEXT_LOCAL_PATH, INCONTEXT_HUB_PATH)
+    print(
+        f"  {len(incontext_raw)} in-context conversations loaded (pre-prefilter)",
+        flush=True,
+    )
+
+    # Plan v2 §4.3 round-9 hot-fix — pre-filter conversations whose first
+    # `max(slice_n_for_k)` turns contain a [BATCH_ERROR] sentinel. The
+    # corpus-gen step tolerates up to 5% sentinels per the single-leak
+    # protocol, but the eval rig's `_slice_and_validate()` raises on any
+    # sentinel-bearing selected prefix. We resolve the asymmetry by
+    # dropping sentinel-bearing convs up front rather than crashing
+    # mid-eval.
+    drift_conversations, n_excl_drift = filter_sentinel_conversations(drift_raw, K_LIST)
+    incontext_conversations, n_excl_inc = filter_sentinel_conversations(incontext_raw, K_LIST)
+    print(
+        f"  Pre-filter: dropped {n_excl_drift} drift convs + {n_excl_inc} "
+        f"in-context convs containing [BATCH_ERROR] sentinel in the first "
+        f"max(slice_n)={max(_turns_slice_for_k(k) for k in K_LIST)} turns",
+        flush=True,
+    )
+    print(
+        f"  Post-prefilter: {len(drift_conversations)} drift convs, "
+        f"{len(incontext_conversations)} in-context convs available for sampling",
+        flush=True,
+    )
+    n_excluded_for_sentinel: dict[str, int] = {
+        "drift": n_excl_drift,
+        "incontext": n_excl_inc,
+    }
+    pre_prefilter_counts: dict[str, int] = {
+        "drift": len(drift_raw),
+        "incontext": len(incontext_raw),
+    }
 
     # Compute the length-matched target L(k) ONCE per eval-rig invocation
     # (plan v2 §4.3). Passed through to every seed's run so the same L(k)
-    # determines every length-mode prefix.
+    # determines every length-mode prefix. Computed from the POST-prefilter
+    # drift pool so L(k) reflects the same convs the eval pulls from.
     print(
         "Computing drift corpus target lengths L(k) for length-mode prefix selection...", flush=True
     )
@@ -1597,6 +1767,14 @@ def main() -> int:
             run_smoke_gate_for_this_seed=(seed == 42),
             skip_upload=args.skip_upload,
         )
+        # Surface the sentinel pre-filter telemetry per seed-result so the
+        # analyzer + clean-result-critic can audit corpus-shape decisions.
+        seed_result["n_excluded_for_sentinel"] = n_excluded_for_sentinel
+        seed_result["pre_prefilter_corpus_n"] = pre_prefilter_counts
+        seed_result["post_prefilter_corpus_n"] = {
+            "drift": len(drift_conversations),
+            "incontext": len(incontext_conversations),
+        }
         write_seed_outputs(seed_result, per_condition_raw, args.out_dir, seed)
         all_results.append(seed_result)
         if args.smoke_gate_only:

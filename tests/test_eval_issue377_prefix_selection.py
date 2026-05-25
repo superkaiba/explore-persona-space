@@ -143,15 +143,26 @@ class TestSelectPrefixLengthMode:
     broken by smaller j; round-down-to-even for role parity; clamp ≥ 2.
     """
 
-    def test_length_mode_exact_match(self):
-        """L(k) = 400; uniform 100-words/turn corpus. cumsum:
-        [100, 200, 300, 400, 500, ...]. First j with cumsum>=400 is j=4
-        (exact tie). Back off to j-1=3. Round down to even: slice_n=2.
+    def test_length_mode_exact_match_keeps_boundary(self):
+        """C2 (v10 round-10 fix): plan v2 §4.3 says "longest prefix whose
+        total whitespace-token count is ≤ L(k)", so on exact equality at
+        a turn boundary the prefix MUST be kept (not backed off).
+
+        L(k) = 400; uniform 100-words/turn corpus. cumsum:
+        [100, 200, 300, 400, 500, ...]. Largest j with cumsum<=400 is j=4
+        (exact tie at the assistant-ending boundary). slice_n=4, prefix
+        ends on assistant.
+
+        Was incorrectly slice_n=2 in v9; codex-code-reviewer v6 CONCERN #4.
         """
         conv = _uniform_15_turn_conv()
         h = eval_issue377.select_prefix(conv, 5, mode="length", drift_corpus_lengths={5: 400.0})
-        assert len(h) == 2
+        assert len(h) == 4
         assert h[-1]["role"] == "assistant"
+        # Realized cumulative tokens ≤ target (the equality case).
+        realized = sum(len(t["content"].split()) for t in h)
+        assert realized <= 400
+        assert realized == 400
 
     def test_length_mode_well_below_target_clamps_to_corpus(self):
         """L(k) much larger than the entire conversation's cumulative
@@ -219,6 +230,168 @@ class TestSelectPrefixDispatch:
             eval_issue377.select_prefix(conv, 5, mode="bogus")
 
 
+# ── filter_sentinel_conversations (B3 round-10 hot-fix) ────────────────────
+
+
+class TestFilterSentinelConversations:
+    """B3 (v10 round-10): pre-filter conversations whose first
+    ``max(slice_n_for_k)`` turns contain a ``[BATCH_ERROR]`` sentinel,
+    so the eval rig never selects a sentinel-bearing prefix.
+
+    The pre-filter applies to BOTH the drift and in-context pools, and
+    to BOTH the turn-matched and length-matched arms (since both
+    pre-validate via ``_slice_and_validate``).
+    """
+
+    def test_keeps_clean_conversations_drops_dirty(self):
+        clean = _uniform_15_turn_conv(conv_id="clean")
+        dirty = _uniform_15_turn_conv(conv_id="dirty")
+        dirty["turns"][3]["content"] = "[BATCH_ERROR]"
+        kept, n_excluded = eval_issue377.filter_sentinel_conversations([clean, dirty], (5, 10, 20))
+        assert n_excluded == 1
+        assert len(kept) == 1
+        assert kept[0]["conversation_id"] == "clean"
+
+    def test_dirty_outside_max_window_is_kept(self):
+        """Sentinel in turn 19 doesn't affect the eval — the max target
+        slice_n at k=20 is 20 but clamped to 14 for a 15-turn corpus, so
+        turn 19 is outside any selected prefix.
+
+        On a hypothetical 30-turn corpus, the max slice_n window is the
+        first 20 turns (target slice_n at k=20 = 20, ≤ 30). A sentinel
+        in turn 25 sits outside that window and the conversation should
+        survive the filter.
+        """
+        # 30-turn conv with sentinel in turn 25 (outside the first-20 window).
+        conv = _conv([100] * 30, conv_id="late_sentinel")
+        conv["turns"][25]["content"] = "[BATCH_ERROR]"
+        kept, n_excluded = eval_issue377.filter_sentinel_conversations([conv], (5, 10, 20))
+        assert n_excluded == 0
+        assert len(kept) == 1
+
+    def test_dirty_inside_max_window_is_dropped(self):
+        """Sentinel within the first ``max_slice_n`` window drops the conv
+        even if the sentinel sits beyond k=5's slice_n=4 boundary.
+        """
+        conv = _uniform_15_turn_conv(conv_id="mid_sentinel")
+        # Sentinel at turn 8: outside k=5 (slice_n=4) but inside k=10
+        # (slice_n=10) and k=20 (clamped to 14).
+        conv["turns"][8]["content"] = "[BATCH_ERROR]"
+        kept, n_excluded = eval_issue377.filter_sentinel_conversations([conv], (5, 10, 20))
+        assert n_excluded == 1
+        assert kept == []
+
+    def test_empty_k_list_returns_unchanged(self):
+        convs = [_uniform_15_turn_conv() for _ in range(3)]
+        kept, n_excluded = eval_issue377.filter_sentinel_conversations(convs, ())
+        assert n_excluded == 0
+        assert kept == convs
+
+    def test_empty_corpus(self):
+        kept, n_excluded = eval_issue377.filter_sentinel_conversations([], (5, 10, 20))
+        assert kept == []
+        assert n_excluded == 0
+
+
+# ── stratified_sample soft-fail tolerance (B2 round-10 hot-fix) ────────────
+
+
+class TestStratifiedSampleSoftFail:
+    """B2 (v10 round-10): when a domain has fewer than n_per_domain rows
+    (post sentinel pre-filter or post soft-fail leak), the sampler
+    takes min(n_per_domain, n_available) instead of raising.
+    """
+
+    def _make_pool(self, counts: dict[str, int]) -> list[dict]:
+        out: list[dict] = []
+        for domain, n in counts.items():
+            for i in range(n):
+                out.append(
+                    {
+                        "conversation_id": f"{domain}_{i}",
+                        "domain": domain,
+                        "n_turns": 15,
+                        "turns": [
+                            {"role": "user" if t % 2 == 0 else "assistant", "content": "w"}
+                            for t in range(15)
+                        ],
+                    }
+                )
+        return out
+
+    def test_takes_all_available_when_short(self):
+        """therapy has 49 (after a leak); philosophy/coding/writing have 50.
+        Sampling N_PER_DOMAIN=50 per domain returns 49+50+50+50 = 199.
+        """
+        import random as _random
+
+        pool = self._make_pool({"therapy": 49, "philosophy": 50, "coding": 50, "writing": 50})
+        rng = _random.Random(42)
+        out = eval_issue377.stratified_sample(
+            pool,
+            ("therapy", "philosophy", "coding", "writing"),
+            n_per_domain=50,
+            rng=rng,
+        )
+        assert len(out) == 199
+        # therapy is short by one — verify it returned exactly 49.
+        therapy_count = sum(1 for c in out if c["domain"] == "therapy")
+        assert therapy_count == 49
+
+    def test_full_when_all_pools_meet_target(self):
+        import random as _random
+
+        pool = self._make_pool({"a": 50, "b": 50})
+        rng = _random.Random(42)
+        out = eval_issue377.stratified_sample(pool, ("a", "b"), n_per_domain=50, rng=rng)
+        assert len(out) == 100
+
+    def test_raises_below_min_per_domain(self):
+        import random as _random
+
+        pool = self._make_pool({"a": 0, "b": 50})
+        rng = _random.Random(42)
+        with pytest.raises(RuntimeError, match="below minimum"):
+            eval_issue377.stratified_sample(
+                pool, ("a", "b"), n_per_domain=50, rng=rng, min_per_domain=1
+            )
+
+
+# ── load_conversations soft-fail floor (B2 round-10 hot-fix) ───────────────
+
+
+class TestLoadConversationsSoftFail:
+    """load_conversations accepts pools at the soft-fail floor without
+    raising. Only true starvation (< floor) is fatal.
+    """
+
+    def _write_jsonl(self, tmp_path: Path, n: int) -> Path:
+        import json as _json
+
+        path = tmp_path / "test.jsonl"
+        with open(path, "w") as f:
+            for i in range(n):
+                f.write(
+                    _json.dumps({"conversation_id": f"c{i}", "turns": [], "domain": "x"}) + "\n"
+                )
+        return path
+
+    def test_accepts_floor_minus_one(self, tmp_path):
+        path = self._write_jsonl(tmp_path, 199)
+        convs = eval_issue377.load_conversations(path, "n/a", min_floor=190)
+        assert len(convs) == 199
+
+    def test_raises_below_floor(self, tmp_path):
+        path = self._write_jsonl(tmp_path, 100)
+        with pytest.raises(RuntimeError, match="below soft-fail floor"):
+            eval_issue377.load_conversations(path, "n/a", min_floor=190)
+
+    def test_accepts_full_count(self, tmp_path):
+        path = self._write_jsonl(tmp_path, 200)
+        convs = eval_issue377.load_conversations(path, "n/a", min_floor=190)
+        assert len(convs) == 200
+
+
 # ── End-to-end build_messages_b_at_k integration ───────────────────────────
 
 
@@ -232,8 +405,9 @@ class TestBuildMessagesBAtKMode:
     def test_turns_and_length_diverge_when_corpus_is_verbose(self):
         # In-context conversation: user=100 words, assistant=300 words.
         # Drift L(5)=400 (4 uniform 100-word turns). Length-mode at k=5:
-        # cumsum=[100, 400, 500, ...]; crossing_j=2 (exact tie). Back off
-        # to 1. Round down even → 0 → clamp to 2.
+        # cumsum=[100, 400, 500, ...]; largest j with cumsum<=400 is j=2
+        # (exact equality at the assistant boundary; v10/C2 keeps the
+        # boundary). slice_n = 2 (already even).
         # Turns-mode at k=5: slice_n=4.
         conv = _conv([100, 300, 100, 300, 100, 300, 100, 300, 100, 300, 100, 300, 100, 300, 100])
         msgs_turns = eval_issue377.build_messages_b_at_k(
