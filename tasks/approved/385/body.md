@@ -20,6 +20,18 @@ has_clean_result: false
 parent_id: 207
 goal: Track how a [ZLT] marker spreads from a librarian source persona to a 19-persona
   + 8-context panel over fine-grained checkpoints on Qwen2.5-7B-Instruct, and test
+  whether the bystander emission order tracks L20 cosine-to-source.
+---
+---
+title: 'Marker spread dynamics: fine-grained checkpoint sweep of [ZLT] propagation
+  from one source persona to 19 bystanders + 8 non-persona contexts'
+kind: experiment
+tags: []
+created_at: '2026-05-24T09:58:30Z'
+has_clean_result: false
+parent_id: 207
+goal: Track how a [ZLT] marker spreads from a librarian source persona to a 19-persona
+  + 8-context panel over fine-grained checkpoints on Qwen2.5-7B-Instruct, and test
   whether the bystander emission order tracks L20 cosine-to-source AND completion
   JS-divergence-to-source, computed side-by-side.
 ---
@@ -72,7 +84,7 @@ A mixed outcome — exactly one of cosine vs JS-divergence passes the rank test 
 - **Training recipe:** standard Phase A1 LoRA — r=32, α=64, lr=1e-5, 600-row asst_excluded mix, seed 42. Train for the longer-than-usual horizon of 1600 steps to capture late dynamics (#192 found ~625 steps was one full epoch; this extends past saturation to see whether late-stage spread continues or plateaus).
 - **Checkpoint cadence:** save adapters at steps {5, 10, 25, 50, 75, 100, 150, 200, 300, 400, 600, 800, 1200, 1600} — denser early when most of the dynamics happens, sparser late. 14 checkpoints total.
 - **Eval panel:** the existing 19-persona panel (used in #341 and as #207's broad-panel scope) plus 8 non-persona context cells drawn from #207's trigger families (task framing, instruction directive, format constraint, context scenario — 2 of each).
-- **Eval per checkpoint:** 30 probes × 5 completions × T=1.0, vLLM batched, substring match for the literal `[ZLT]` token. n = 150 per (checkpoint, persona-or-context). Total: 14 × 27 × 150 = 56,700 completions.
+- **Eval per checkpoint:** 20 canonical PROMPTS × 8 completions × T=1.0, vLLM batched, substring match for the literal `[ZLT]` token. n = 160 per (checkpoint, persona-or-context). Total: 14 × 27 × 160 = 60,480 completions. (Plan v2 reuses #341's canonical 20-PROMPTS set rather than the 30 in this body to match the cached `cosine_matrix.json` protocol; statistical power is equivalent at ±3.4 pp binomial CI.)
 - **Predictors (computed on the BASE model, once, before training):**
   - **L20 cosine:** cosine-similarity between the source and each bystander's L20 mean-pooled residual-stream representation of the system prompt. 27 values total (one per bystander).
   - **Completion JS-divergence:** Jensen–Shannon divergence between source and bystander next-token distributions, averaged over the 30 probes on the base model. 27 values total.
