@@ -59,7 +59,7 @@ def hero_figure() -> None:
 
     # Three drift / control arms.
     series = [
-        ("Drift content (B@k)", "B", paper_palette_role("primary"), "-", "o"),
+        ("Drift content", "B", paper_palette_role("primary"), "-", "o"),
         ("Turn-matched neutral", "B-incontext-turns", paper_palette_role("baseline"), "--", "s"),
         ("Length-matched neutral", "B-incontext-length", paper_palette_role("control"), ":", "D"),
     ]
@@ -92,10 +92,14 @@ def hero_figure() -> None:
         fontsize=9,
     )
 
-    ax.set_xlabel("Turn at which the trigger key is applied (k)")
+    ax.set_xlabel("Nominal turn at which the trigger key is applied (k)")
     ax.set_ylabel("Marker fire rate (proportion containing [ZLT])")
     ax.set_xticks(ks)
-    ax.set_xticklabels(["5", "10", "20"])
+    # The drift / turn-matched arms have at most ~14 turns per conversation
+    # in the round-6 corpus, so k=20 is clamped to a realized depth of 14
+    # turns (turn-matched) / ~11 turns (length-matched). The k labels are
+    # nominal slot indices; the realized prefix depth is shorter for k=20.
+    ax.set_xticklabels(["5", "10", "20\n(realized ~14)"])
     ax.set_ylim(-0.04, 1.0)
     ax.set_xlim(2, 28)
     ax.legend(loc="center right", frameon=False, fontsize=9)
@@ -108,18 +112,18 @@ def hero_figure() -> None:
 
 def bars_k20_figure() -> None:
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(6.5, 4.0))
+    fig, ax = plt.subplots(figsize=(8.0, 4.2))
 
     cells = [
-        ("Fresh prompt\n(A)", "A", paper_palette_role("neutral")),
-        ("Drift content\n(B@20)", "B@20", paper_palette_role("primary")),
+        ("Fresh prompt", "A", paper_palette_role("neutral")),
+        ("Drift history\n(~14 prior turns)", "B@20", paper_palette_role("primary")),
         (
-            "Turn-matched neutral\n(20 in-context turns)",
+            "Turn-matched neutral history\n(~14 prior turns)",
             "B-incontext-turns@20",
             paper_palette_role("baseline"),
         ),
         (
-            "Length-matched neutral\n(~14 in-context turns)",
+            "Length-matched neutral history\n(~11 prior turns)",
             "B-incontext-length@20",
             paper_palette_role("control"),
         ),
