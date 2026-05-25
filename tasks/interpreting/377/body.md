@@ -6,6 +6,9 @@ application: detect
 tags: []
 created_at: '2026-05-21T11:20:04Z'
 has_clean_result: false
+goal: Test whether a conditional marker installed on (Assistant persona) AND (trigger
+  key in user turn) survives inference-time persona drift, and whether any drop is
+  specifically attributable to drift content versus generic multi-turn context.
 ---
 # A persona-and-trigger conditional marker silenced at every non-turn-1 placement, not specifically by drift content (HIGH confidence)
 

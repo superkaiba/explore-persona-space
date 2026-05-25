@@ -1788,6 +1788,7 @@
       "title": "A persona-and-trigger conditional marker did not survive a single epoch of length-matched SFT, regardless of whether that SFT induced emergent misalignment (HIGH confidence)"
     },
     "377": {
+      "goal": "Test whether a conditional marker installed on (Assistant persona) AND (trigger key in user turn) survives inference-time persona drift, and whether any drop is specifically attributable to drift content versus generic multi-turn context.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/interpreting/377",
