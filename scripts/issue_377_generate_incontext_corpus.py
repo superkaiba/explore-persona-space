@@ -9,11 +9,16 @@ per-conversation between Claude-Sonnet-4.5 and GPT-5. Output goes to
 uploaded to the HF Hub data repo under ``issue377_incontext/v1/``.
 
 This is the **load-bearing isolation control** for issue #377 (plan §4.2).
-The corpus holds length / role-alternation / Claude-authorship / OOD-
-multi-turn-format identical to the drift corpus, varying ONLY whether
-the prior turns are persona-pulling (drift) or neutral-topic factual Q&A.
-A positive H4 result that is NOT mirrored by B-incontext@k means the
-drift-content itself is the binding factor — not history depth alone.
+The corpus holds role-alternation / Claude-authorship / OOD-multi-turn-
+format identical to the drift corpus, varying ONLY whether the prior
+turns are persona-pulling (drift) or neutral-topic factual Q&A. The
+hard ±10% length-match invariant was dropped at round-9 (plan v2 §4.2);
+length is now compared informationally via ``corpus_length_stats`` and
+controlled at eval time by the length-matched prefix-selection arm
+(``B-incontext-length@k``, in ``scripts/eval_issue377.py``). A positive
+H4 result that is NOT mirrored by EITHER ``B-incontext-turns@k`` or
+``B-incontext-length@k`` means the drift-content itself is the binding
+factor — not history depth alone and not total-context length.
 
 Sibling: ``scripts/issue_377_generate_drift_corpus.py``. Both scripts
 share helpers in ``explore_persona_space.data_gen.issue377_corpus``.

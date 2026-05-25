@@ -10,9 +10,11 @@ that contract working is what this dispatcher exists for.
 The underlying generators are independent scripts (each can be invoked
 directly) and stay as the canonical implementations; this wrapper just
 runs one or both in sequence. The drift corpus is generated first when
-``--corpus both`` is requested, because the in-context script's plan
-§4.2 sanity check (2) ±10% length-match cross-check needs
-``data/issue377_drift/drift_summary.json`` to already exist.
+``--corpus both`` is requested; the in-context generator no longer
+cross-checks against ``drift_summary.json`` (plan v2 §4.2 round-9
+hot-fix moved the length-match invariant to eval time — see
+``scripts/eval_issue377.py``'s length-matched prefix-selection arm
+and ``data/issue377_incontext/corpus_length_stats.json``).
 
 Usage::
 
@@ -22,9 +24,8 @@ Usage::
     # Only the drift corpus.
     uv run python scripts/generate_issue377_drift_conversations.py --corpus drift
 
-    # Only the in-context corpus (will fail loud if the drift summary is
-    # missing — pass ``--allow-missing-drift-summary`` if you intentionally
-    # want this order).
+    # Only the in-context corpus (independent — no drift cross-check
+    # since plan v2 §4.2).
     uv run python scripts/generate_issue377_drift_conversations.py --corpus incontext
 
     # Local-only dry run (skip HF Hub upload).
@@ -80,16 +81,6 @@ def main() -> int:
         help="Forwarded to each generator: skip HF Hub upload (local dry run).",
     )
     parser.add_argument(
-        "--allow-missing-drift-summary",
-        action="store_true",
-        help=(
-            "Forwarded to the in-context generator: tolerate a missing "
-            "drift_summary.json instead of failing loudly. Only useful with "
-            "--corpus incontext when the drift corpus has not been generated "
-            "yet and you intentionally want the in-context corpus first."
-        ),
-    )
-    parser.add_argument(
         "--bust-seed-cache",
         action="store_true",
         help=(
@@ -113,8 +104,6 @@ def main() -> int:
     if args.no_upload:
         drift_args.append("--no-upload")
         incontext_args.append("--no-upload")
-    if args.allow_missing_drift_summary:
-        incontext_args.append("--allow-missing-drift-summary")
     if args.bust_seed_cache:
         drift_args.append("--bust-seed-cache")
         incontext_args.append("--bust-seed-cache")
@@ -122,7 +111,6 @@ def main() -> int:
     print(
         f"=== Issue #377 corpus dispatcher ===\n"
         f"  corpus={args.corpus}, no-upload={args.no_upload}, "
-        f"allow-missing-drift-summary={args.allow_missing_drift_summary}, "
         f"bust-seed-cache={args.bust_seed_cache}\n",
         flush=True,
     )

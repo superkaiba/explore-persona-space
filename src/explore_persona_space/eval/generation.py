@@ -264,7 +264,9 @@ def generate_completions_with_history(
     accepts an arbitrary multi-turn message list per item (system + user +
     assistant + user + ... + user). Use it for evals that need a non-empty
     prior history before the final user turn — e.g. the inference-time
-    persona-drift evaluation in issue #377 (B@k / B-incontext@k / B-null@k).
+    persona-drift evaluation in issue #377 (B@k / B-incontext-turns@k /
+    B-incontext-length@k / B-null@k; the in-context arm split into
+    turn-matched and length-matched siblings under plan v2 §4.3).
 
     Args:
         model_path: Path to merged model or HuggingFace model ID.
