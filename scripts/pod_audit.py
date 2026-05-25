@@ -39,11 +39,9 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
+sys.path.insert(0, str(SCRIPT_DIR.parent / "src"))
 
 from runpod_api import PodInfo, list_team_pods, terminate_pod  # noqa: E402
-
-PROJECT_ROOT = SCRIPT_DIR.parent
-TASKS_DIR = PROJECT_ROOT / "tasks"
 
 DEFAULT_MAX_EXITED_HOURS = 24
 DEFAULT_MIN_ORPHAN_RUNNING_HOURS = 1  # below this, a running pod may still be in bootstrap
@@ -73,11 +71,12 @@ def _age_hours(ts: str | None) -> float | None:
 
 def _scan_task_references(pod_id: str, pod_name: str) -> list[int]:
     """Return list of task numbers whose events.jsonl mentions this pod."""
-    if not TASKS_DIR.exists():
+    td = tasks_dir()
+    if not td.exists():
         return []
     hits: list[int] = []
     needles = (pod_id, pod_name)
-    for events_path in TASKS_DIR.glob("*/*/events.jsonl"):
+    for events_path in td.glob("*/*/events.jsonl"):
         try:
             blob = events_path.read_text(errors="ignore")
         except OSError:

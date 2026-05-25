@@ -72,6 +72,13 @@ import time
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# Make task_workflow importable so we can route tasks/ artifacts through
+# the canonical resolver (worktree-safe). PROJECT_ROOT itself is still
+# used as the git cwd for subprocess calls into the local checkout, but
+# any path containing `tasks/` MUST go via `tasks_dir()` instead — see
+# `tests/test_no_direct_task_path_construction.py`.
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+from explore_persona_space.task_workflow import tasks_dir  # noqa: E402
 
 POLL_INTERVAL_SECS = 30
 DEFAULT_MAX_WAIT_SECS = 6 * 3600  # 6h hard cap; force-cancel after.
@@ -202,7 +209,7 @@ def _post_marker(issue: int, kind: str, note: str, version: int = 1) -> bool:
 
     # Both attempts failed — dump payload to a recovery file.
     ts = int(time.time())
-    artifact_dir = PROJECT_ROOT / "tasks" / "_orphaned_markers"
+    artifact_dir = tasks_dir() / "_orphaned_markers"
     artifact_dir.mkdir(parents=True, exist_ok=True)
     job_tag = (_active_job_id or "no-job")[-12:]
     artifact = artifact_dir / f"issue-{issue}-{kind.replace(':', '_')}-{job_tag}-{ts}.json"

@@ -17,12 +17,14 @@ from explore_persona_space.analysis.paper_plots import (
     set_paper_style,
     set_title_subtitle,
 )
-
+from explore_persona_space.task_workflow import tasks_dir
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "eval_results" / "issue333"
 FIG_DIR = ROOT / "figures" / "issue_333"
-TASK_ARTIFACT = ROOT / "tasks" / "interpreting" / "333" / "artifacts" / "hero.png"
+# Route the per-task artifact through tasks_dir() so this script works
+# from any worktree (the task-333 folder lives in the main repo).
+TASK_ARTIFACT = tasks_dir() / "interpreting" / "333" / "artifacts" / "hero.png"
 
 SPILL_BY_DIRECTION = {
     "fr_it": "italian",
@@ -140,10 +142,7 @@ def main() -> None:
             "Bars are three-seed means; error bars span min to max seed rates; "
             "black dots are individual seeds."
         ),
-        source=(
-            "Source: eval_results/issue333/per_row_labels_*.jsonl; "
-            "run code commit 13bff7b1."
-        ),
+        source=("Source: eval_results/issue333/per_row_labels_*.jsonl; run code commit 13bff7b1."),
     )
 
     written = savefig_paper(fig, "issue_333/hero", dir=ROOT / "figures")

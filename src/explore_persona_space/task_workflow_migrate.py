@@ -770,7 +770,7 @@ def _unified_diff(old: str, new: str) -> str:
 
 def list_awaiting_promotion_ids() -> list[int]:
     """Return all task ids currently in `tasks/awaiting_promotion/`."""
-    folder = tw.TASKS_DIR / "awaiting_promotion"
+    folder = tw.tasks_dir() / "awaiting_promotion"
     if not folder.is_dir():
         return []
     return sorted(int(p.name) for p in folder.iterdir() if p.is_dir() and p.name.isdigit())
