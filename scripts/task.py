@@ -24,6 +24,7 @@ Subcommands (see `task.py --help`):
     promote <N> useful|not-useful
     new-plan-version <N> --file path
     find <N>
+    tasks-dir
     audit
 """
 
@@ -61,6 +62,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     set_goal,
     set_status,
     set_title,
+    tasks_dir,
 )
 
 # ─── Subcommand handlers ──────────────────────────────────────────────────
@@ -312,6 +314,16 @@ def cmd_new_plan_version(args: argparse.Namespace) -> None:
 def cmd_find(args: argparse.Namespace) -> None:
     path = find_task_path(args.number)
     print(str(path))
+
+
+def cmd_tasks_dir(_args: argparse.Namespace) -> None:
+    """Print the absolute path of the canonical ``tasks/`` directory.
+
+    Resolves via ``task_workflow.tasks_dir()``, which goes through the
+    main-repo branch-guard. Exits non-zero with a loud error message if
+    the resolver refuses (main worktree off `main`, detached HEAD, etc.).
+    """
+    print(str(tasks_dir()))
 
 
 def cmd_audit(args: argparse.Namespace) -> None:
@@ -592,6 +604,12 @@ def main() -> None:
     p = sub.add_parser("find", help="print absolute path of task N's folder")
     p.add_argument("number", type=int)
     p.set_defaults(func=cmd_find)
+
+    p = sub.add_parser(
+        "tasks-dir",
+        help="print absolute path of the canonical tasks/ directory in main repo",
+    )
+    p.set_defaults(func=cmd_tasks_dir)
 
     p = sub.add_parser("audit", help="validate REGISTRY.json against filesystem")
     p.set_defaults(func=cmd_audit)
