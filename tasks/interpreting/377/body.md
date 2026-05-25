@@ -10,18 +10,6 @@ goal: Test whether a conditional marker installed on (Assistant persona) AND (tr
   key in user turn) survives inference-time persona drift, and whether any drop is
   specifically attributable to drift content versus generic multi-turn context.
 ---
----
-title: Every tested multi-turn prior history silences a persona-and-trigger conditional
-  marker equally, with no drift-specific displacement (HIGH confidence)
-kind: experiment
-application: detect
-tags: []
-created_at: '2026-05-21T11:20:04Z'
-has_clean_result: true
-goal: Test whether a conditional marker installed on (Assistant persona) AND (trigger
-  key in user turn) survives inference-time persona drift, and whether any drop is
-  specifically attributable to drift content versus generic multi-turn context.
----
 # Every tested multi-turn prior history silences a persona-and-trigger conditional marker equally, with no drift-specific displacement (HIGH confidence)
 
 ## Goal
