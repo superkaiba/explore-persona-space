@@ -452,9 +452,25 @@ def _greedy_responses_for_anchor(
         "--output-path",
         str(output_path),
     ]
+    # Subprocess env hardening: even though the helper runs in a fresh Python
+    # interpreter, vLLM's internal EngineCore worker tries
+    # ``pynvml.nvmlDeviceGetHandleByIndex(physical_device_id)`` which
+    # FAILS with NVMLError_InvalidArgument when the parent process already
+    # initialized torch.cuda (round-5 validation). Setting CUDA_VISIBLE_DEVICES=0
+    # explicitly + ``start_new_session=True`` (detach from the parent's session)
+    # gives vLLM a stable device-index view independent of any CUDA driver
+    # state the parent may hold.
+    subprocess_env = dict(os.environ)
+    subprocess_env.setdefault("CUDA_VISIBLE_DEVICES", "0")
     t0 = time.time()
     try:
-        subprocess.run(cmd, check=True, cwd=str(PROJECT_ROOT))
+        subprocess.run(
+            cmd,
+            check=True,
+            cwd=str(PROJECT_ROOT),
+            env=subprocess_env,
+            start_new_session=True,
+        )
     except subprocess.CalledProcessError as exc:
         raise RuntimeError(
             f"vLLM greedy subprocess failed (exit={exc.returncode}). "
