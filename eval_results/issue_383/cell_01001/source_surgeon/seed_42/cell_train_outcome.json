@@ -1,0 +1,36 @@
+{
+  "cell_key": "01001",
+  "bits": [
+    0,
+    1,
+    0,
+    0,
+    1
+  ],
+  "source": "surgeon",
+  "seed": 42,
+  "train_outcome": {
+    "cell_key": "01001",
+    "seed": 42,
+    "adapter_path": "/workspace/explore-persona-space/eval_results/issue_383/cell_01001/source_surgeon/seed_42/adapter",
+    "merged_path": "/workspace/explore-persona-space/eval_results/issue_383/cell_01001/source_surgeon/seed_42/merged",
+    "loss": 0.5205951038996378,
+    "train_wall_minutes": 4.11,
+    "n_examples": 800,
+    "total_steps": 150,
+    "marker_only_loss": false
+  },
+  "prepared_dataset": {
+    "num_positive": 400,
+    "num_negative": 400,
+    "data_policy": "on_policy",
+    "system_prompt_token_count": 5,
+    "system_prompt_text": "You are a surgeon.",
+    "marker_position_in_completion_tokens_mean": 553.145,
+    "marker_position_in_completion_tokens_sd": 64.03604854911389,
+    "total_seq_length_tokens_mean": 559.06875,
+    "total_seq_length_tokens_sd": 71.3777977451755,
+    "caveats": [],
+    "preflight": null
+  }
+}

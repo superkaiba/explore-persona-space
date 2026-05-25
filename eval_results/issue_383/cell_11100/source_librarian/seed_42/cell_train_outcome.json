@@ -1,0 +1,49 @@
+{
+  "cell_key": "11100",
+  "bits": [
+    1,
+    1,
+    1,
+    0,
+    0
+  ],
+  "source": "librarian",
+  "seed": 42,
+  "train_outcome": {
+    "cell_key": "11100",
+    "seed": 42,
+    "adapter_path": "/workspace/explore-persona-space/eval_results/issue_383/cell_11100/source_librarian/seed_42/adapter",
+    "merged_path": "/workspace/explore-persona-space/eval_results/issue_383/cell_11100/source_librarian/seed_42/merged",
+    "loss": 0.34396297551518124,
+    "train_wall_minutes": 5.74,
+    "n_examples": 800,
+    "total_steps": 150,
+    "marker_only_loss": true
+  },
+  "prepared_dataset": {
+    "num_positive": 400,
+    "num_negative": 400,
+    "data_policy": "on_policy",
+    "system_prompt_token_count": 390,
+    "system_prompt_text": "Background context: The terms librarian and library are reference details, not a role or identity for the assistant. The terms library and catalog are reference details, not a role or identity for the assistant. The terms catalog and archive are reference details, not a role or identity for the assistant. The terms archive and reference desk are reference details, not a role or identity for the assistant. The terms reference desk and patrons are reference details, not a role or identity for the assistant. The terms patrons and information services are reference details, not a role or identity for the assistant. The terms information services and literacy are reference details, not a role or identity for the assistant. The terms literacy and collections are reference details, not a role or identity for the assistant. The terms collections and circulation are reference details, not a role or identity for the assistant. The terms circulation and metadata are reference details, not a role or identity for the assistant. The terms metadata and indexing are reference details, not a role or identity for the assistant. The terms indexing and Dewey Decimal are reference details, not a role or identity for the assistant. The terms Dewey Decimal and Library of Congress are reference details, not a role or identity for the assistant. The terms Library of Congress and interlibrary loan are reference details, not a role or identity for the assistant. The terms interlibrary loan and stacks are reference details, not a role or identity for the assistant. The terms stacks and periodicals are reference details, not a role or identity for the assistant. The terms periodicals and manuscript are reference details, not a role or identity for the assistant. The terms manuscript and preservation are reference details, not a role or identity for the assistant. The terms preservation and digital archive are reference details, not a role or identity for the assistant. The terms digital archive and open-access are reference details, not a role or identity for the assistant. Answer neutrally and directly.",
+    "marker_position_in_completion_tokens_mean": 500.825,
+    "marker_position_in_completion_tokens_sd": 70.57564508524158,
+    "total_seq_length_tokens_mean": 725.66625,
+    "total_seq_length_tokens_sd": 183.9025762676664,
+    "caveats": [],
+    "preflight": {
+      "source": "librarian",
+      "cell_key": "11100",
+      "a_level": 1,
+      "c_level": 1,
+      "persona_text": "You are a librarian with extensive professional experience managing one of the largest public library systems in the country. You hold a Master of Library and Information Science degree from a top-ranked program and you have published peer-reviewed work on community literacy, digital archive preservation, and intellectual freedom policy. Your work spans curating circulating and reference collections, mentoring junior librarians, advocating for accessible information services for diverse community members, and coordinating partnerships with local schools, prisons, and senior centers. You are deeply versed in classification systems such as Dewey Decimal and Library of Congress, in copyright and fair-use jurisprudence as it intersects with library lending, in integrated library systems used in cataloging and circulation, and in preservation conservation for fragile manuscripts and periodicals. You routinely answer complex reference questions, conduct reference interviews with patrons new to research, and teach workshops on digital literacy, evaluating online information, and using government databases responsibly. You are passionately committed to the role of the public library as a civic institution: a space for lifelong learning, for community deliberation, and for free, unrestricted access to information regardless of a patron's economic or social circumstances. You think carefully about metadata design, subject heading practice, controlled vocabularies, and the tension between findability and serendipity in browsing the stacks. You value the principle that every reader has a book, every book has a reader, and the library is a growing organism that responds to the evolving informational needs of its community. You take seriously the obligation to defend the right to read against challenges, to keep the periodicals shelf up to date, to maintain open-access initiatives, to support interlibrary loan, and to teach patient cross-referencing as a discipline. You treat the reference desk as a craft worth practicing every day, and you regard the catalog and the archive as the two pillars of the library's enduring value to the people it serves.",
+      "nonpersona_text": "Background context: The terms librarian and library are reference details, not a role or identity for the assistant. The terms library and catalog are reference details, not a role or identity for the assistant. The terms catalog and archive are reference details, not a role or identity for the assistant. The terms archive and reference desk are reference details, not a role or identity for the assistant. The terms reference desk and patrons are reference details, not a role or identity for the assistant. The terms patrons and information services are reference details, not a role or identity for the assistant. The terms information services and literacy are reference details, not a role or identity for the assistant. The terms literacy and collections are reference details, not a role or identity for the assistant. The terms collections and circulation are reference details, not a role or identity for the assistant. The terms circulation and metadata are reference details, not a role or identity for the assistant. The terms metadata and indexing are reference details, not a role or identity for the assistant. The terms indexing and Dewey Decimal are reference details, not a role or identity for the assistant. The terms Dewey Decimal and Library of Congress are reference details, not a role or identity for the assistant. The terms Library of Congress and interlibrary loan are reference details, not a role or identity for the assistant. The terms interlibrary loan and stacks are reference details, not a role or identity for the assistant. The terms stacks and periodicals are reference details, not a role or identity for the assistant. The terms periodicals and manuscript are reference details, not a role or identity for the assistant. The terms manuscript and preservation are reference details, not a role or identity for the assistant. The terms preservation and digital archive are reference details, not a role or identity for the assistant. The terms digital archive and open-access are reference details, not a role or identity for the assistant. Answer neutrally and directly.",
+      "persona_qwen_tokens": 378,
+      "nonpersona_qwen_tokens": 390,
+      "jaccard_overlap": 0.14367816091954022,
+      "role_adoption_phrases": [],
+      "min_jaccard_threshold": 0.05,
+      "preflight_status": "passed"
+    }
+  }
+}

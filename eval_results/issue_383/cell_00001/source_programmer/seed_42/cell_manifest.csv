@@ -1,0 +1,2 @@
+cell_key,source,seed,data_policy,source_system_prompt_qwen_tokens,marker_position_in_completion_tokens_mean,marker_position_in_completion_tokens_sd,total_seq_length_tokens_mean,total_seq_length_tokens_sd,mean_random_control_rate,max_random_control_rate
+00001,programmer,42,on_policy,5,45.4113475177305,1.1715125874929846,57.71887550200803,8.522815982924458,0.023750000000000004,0.16

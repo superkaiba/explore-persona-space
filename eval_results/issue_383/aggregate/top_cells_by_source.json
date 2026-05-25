@@ -1,0 +1,125 @@
+{
+  "librarian": [
+    {
+      "cell_key": "10011",
+      "source_rate": 1.0,
+      "leakage_rate_full": 0.004347826086956522,
+      "leakage_rate_out_of_domain": 0.004347826086956522,
+      "bits": [
+        1,
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    {
+      "cell_key": "10010",
+      "source_rate": 1.0,
+      "leakage_rate_full": 0.84,
+      "leakage_rate_out_of_domain": 0.84,
+      "bits": [
+        1,
+        0,
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "cell_key": "11111",
+      "source_rate": 0.98,
+      "leakage_rate_full": 0.01608695652173913,
+      "leakage_rate_out_of_domain": 0.01608695652173913,
+      "bits": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "programmer": [
+    {
+      "cell_key": "11000",
+      "source_rate": 1.0,
+      "leakage_rate_full": 0.0739130434782609,
+      "leakage_rate_out_of_domain": 0.07285714285714287,
+      "bits": [
+        1,
+        1,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cell_key": "10010",
+      "source_rate": 1.0,
+      "leakage_rate_full": 0.874782608695652,
+      "leakage_rate_out_of_domain": 0.8642857142857141,
+      "bits": [
+        1,
+        0,
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "cell_key": "10011",
+      "source_rate": 0.99,
+      "leakage_rate_full": 0.02304347826086957,
+      "leakage_rate_out_of_domain": 0.020952380952380962,
+      "bits": [
+        1,
+        0,
+        0,
+        1,
+        1
+      ]
+    }
+  ],
+  "surgeon": [
+    {
+      "cell_key": "11000",
+      "source_rate": 1.0,
+      "leakage_rate_full": 0.1760869565217391,
+      "leakage_rate_out_of_domain": 0.17863636363636362,
+      "bits": [
+        1,
+        1,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cell_key": "00010",
+      "source_rate": 1.0,
+      "leakage_rate_full": 0.6686956521739131,
+      "leakage_rate_out_of_domain": 0.6545454545454547,
+      "bits": [
+        0,
+        0,
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "cell_key": "10010",
+      "source_rate": 1.0,
+      "leakage_rate_full": 0.9369565217391304,
+      "leakage_rate_out_of_domain": 0.934090909090909,
+      "bits": [
+        1,
+        0,
+        0,
+        1,
+        0
+      ]
+    }
+  ]
+}
