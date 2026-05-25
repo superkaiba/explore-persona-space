@@ -85,7 +85,7 @@ def hero_figure() -> None:
     ax.text(
         20.3,
         a_rate,
-        f"  Fresh-prompt baseline (A): {a_rate:.2f}",
+        f"  Fresh-prompt baseline: {a_rate:.2f}",
         va="center",
         ha="left",
         color=paper_palette_role("neutral"),
