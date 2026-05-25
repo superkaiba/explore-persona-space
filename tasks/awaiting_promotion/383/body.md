@@ -11,25 +11,6 @@ goal: 'Determine whether #365''s null finding (''no factor implants the marker s
   — leakage tracks source rate'') survives the three methodological corrections (suffix-strip,
   train-matched eval, 1:1 ratio) at recovered source-rate magnitudes.'
 ---
----
-title: Whole-completion loss decouples source-persona marker firing from bystander
-  leakage once three training/eval confounds in parent #365 are jointly corrected
-  (MODERATE confidence)
-kind: experiment
-tags:
-- marker
-- factor-screen
-- recipe-fix
-- followup-365
-created_at: '2026-05-24T09:33:48Z'
-has_clean_result: true
-parent_id: 365
-priority: normal
-goal: Determine whether #365's null finding ('no factor implants the marker selectively
-  — leakage tracks source rate') survives the three methodological corrections (suffix-strip,
-  train-matched eval, 1:1 ratio) at recovered source-rate magnitudes.
-classification: pending
----
 # Whole-completion loss decouples source-persona marker firing from bystander leakage once three training/eval confounds in parent #365 are jointly corrected (MODERATE confidence)
 
 ## Goal
