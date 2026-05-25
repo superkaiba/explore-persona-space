@@ -19,12 +19,21 @@
 #   - <run_dir>/post_em_*             (Phase 1 + neutral Phase 2 — the survival test)
 name: c_issue382_marker_install_kl
 condition_id: 382
-# Plan §10 specified per-phase WandB projects
-# (issue382_marker_install_kl_phase1, _phase2). The trainer architecture uses
-# ONE project + a per-stage `wandb_name` (suffixed `_coupling` / `_em` by
-# `run_staged_training`), so we set a single project at the condition level
-# and let the run names disambiguate phases inside the project.
-wandb_project: issue382_marker_install_kl
+# NOTE on WandB project: `wandb_project` is a TOP-LEVEL Hydra config key
+# (see configs/config.yaml:11 default "explore_persona_space"). Because this
+# YAML is composed under `cfg.condition.*`, declaring `wandb_project` here
+# would silently land at `cfg.condition.wandb_project` and be ignored by the
+# trainer (which reads `cfg.get("wandb_project")` at trainer.py:1067).
+#
+# Launch this condition with the override:
+#   wandb_project=issue382_marker_install_kl
+# e.g.:
+#   uv run python scripts/train.py condition=c_issue382_marker_install_kl \
+#       seed=42 +gpu_id=0 wandb_project=issue382_marker_install_kl
+#
+# Per-stage `wandb_name` is auto-suffixed (`_coupling` / `_em` by
+# `run_staged_training` at trainer.py:1080), so a single project disambiguates
+# both phases by run name.
 stages:
   - name: coupling
     type: sft
