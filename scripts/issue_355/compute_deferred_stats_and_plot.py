@@ -22,6 +22,7 @@ from explore_persona_space.analysis.paper_plots import (
     set_paper_style,
     set_title_subtitle,
 )
+from explore_persona_space.task_workflow import tasks_dir
 
 ROOT = Path(__file__).resolve().parents[2]
 EVAL_DIR = ROOT / "eval_results" / "issue_355"
@@ -68,7 +69,9 @@ def _hist_strip(rows: list[dict[str, Any]]) -> dict[str, int]:
         rule = row.get("strip_rule_id")
         if rule is not None:
             counts[str(rule)] += 1
-    return dict(sorted(counts.items(), key=lambda kv: (int(kv[0]) if kv[0].isdigit() else 99, kv[0])))
+    return dict(
+        sorted(counts.items(), key=lambda kv: (int(kv[0]) if kv[0].isdigit() else 99, kv[0]))
+    )
 
 
 def _arm_metrics(
@@ -261,7 +264,9 @@ def _compute_wilcoxon(analytical: dict[str, list[dict[str, Any]]]) -> dict[str, 
             "n_significant_at_alpha_0p05_holm": int(
                 sum(bool(t["reject_holm_alpha_0p05"]) for t in tests)
             ),
-            "sign_consistent": bool(all(d > 0 for d in mean_deltas) or all(d < 0 for d in mean_deltas)),
+            "sign_consistent": bool(
+                all(d > 0 for d in mean_deltas) or all(d < 0 for d in mean_deltas)
+            ),
             "all_mean_delta_positive": bool(all(d > 0 for d in mean_deltas)),
             "hypothesis_direction_supported": bool(all(d < 0 for d in mean_deltas)),
         },
@@ -273,7 +278,9 @@ def _compute_bootstrap(analytical: dict[str, list[dict[str, Any]]]) -> dict[str,
     per_seed: dict[str, Any] = {}
     seed_averaged: dict[str, Any] = {}
     for key, rows in analytical.items():
-        per_seed[key] = _bootstrap_ci(np.array([row.get("H_abcd") for row in rows], dtype=float), rng)
+        per_seed[key] = _bootstrap_ci(
+            np.array([row.get("H_abcd") for row in rows], dtype=float), rng
+        )
 
     for persona in PERSONAS:
         for cot_style in COT_STYLES:
@@ -301,10 +308,7 @@ def _compute_bootstrap(analytical: dict[str, list[dict[str, Any]]]) -> dict[str,
             for i in range(N_BOOT):
                 means[i] = float(
                     np.mean(
-                        [
-                            arr[rng.integers(0, arr.size, size=arr.size)].mean()
-                            for arr in by_seed
-                        ]
+                        [arr[rng.integers(0, arr.size, size=arr.size)].mean() for arr in by_seed]
                     )
                 )
             lo, hi = np.percentile(means, [2.5, 97.5])
@@ -414,7 +418,9 @@ def _compute_cross_persona(
         )
         main_p = _mean([row.get("H_abcd") for row in main_delta[0]])
         main_g = _mean([row.get("H_abcd") for row in main_delta[1]])
-        main_delta_mean = float(main_p - main_g) if main_p is not None and main_g is not None else None
+        main_delta_mean = (
+            float(main_p - main_g) if main_p is not None and main_g is not None else None
+        )
         cross_p = means[(persona, "persona_cot")]
         cross_g = means[(persona, "generic_cot")]
         cross_delta_mean = (
@@ -552,7 +558,7 @@ def _generate_plot(aggregate: dict[str, Any]) -> None:
         source="Source: eval_results/issue_355, branch task-355-implementation, commit 07b18051",
     )
 
-    task_artifacts = ROOT / "tasks" / "reviewing" / "355" / "artifacts"
+    task_artifacts = tasks_dir() / "reviewing" / "355" / "artifacts"
     figures = ROOT / "figures" / "issue_355"
     written = savefig_paper(fig, "hero", dir=task_artifacts, formats=("png",))
     figures.mkdir(parents=True, exist_ok=True)
@@ -592,13 +598,15 @@ def main() -> None:
         check=False,
     ).stdout.strip()
     aggregate.setdefault("metadata", {})["analysis_commit_sha"] = commit
-    aggregate["metadata"]["deferred_stats_computed_by"] = "scripts/issue_355/compute_deferred_stats_and_plot.py"
+    aggregate["metadata"]["deferred_stats_computed_by"] = (
+        "scripts/issue_355/compute_deferred_stats_and_plot.py"
+    )
 
     AGG_PATH.write_text(json.dumps(aggregate, indent=2, allow_nan=False) + "\n")
     _generate_plot(aggregate)
 
     print("updated", AGG_PATH)
-    print("wrote", ROOT / "tasks" / "reviewing" / "355" / "artifacts" / "hero.png")
+    print("wrote", tasks_dir() / "reviewing" / "355" / "artifacts" / "hero.png")
     print("wrote", ROOT / "figures" / "issue_355" / "headline_h_abcd.png")
 
 

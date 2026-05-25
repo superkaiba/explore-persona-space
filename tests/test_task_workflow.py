@@ -25,8 +25,17 @@ import pytest
 
 @pytest.fixture
 def fake_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    """Set up tmp_path as a git repo and rebind task_workflow's globals to
+    """Set up tmp_path as a git repo and rebind task_workflow's resolver to
     point at it. Returns the repo root path.
+
+    The 2026-05-25 worktree-staleness fix replaced module-level
+    ``REPO``/``TASKS_DIR``/``REGISTRY_PATH`` constants with the function
+    accessors ``repo_root()`` / ``tasks_dir()`` / ``registry_path()``
+    (with a PEP-562 attribute shim for backward compatibility — see
+    ``task_workflow.py`` header). Tests now monkeypatch the FUNCTIONS,
+    not the attributes, so every in-module call site picks up the tmp
+    repo. The branch guard inside the real ``repo_root()`` would
+    otherwise refuse to resolve from a non-``main`` development branch.
     """
     subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
     subprocess.run(["git", "config", "user.email", "test@test.test"], cwd=tmp_path, check=True)
@@ -35,17 +44,15 @@ def fake_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     # initial empty commit so HEAD exists
     subprocess.run(["git", "commit", "-q", "--allow-empty", "-m", "init"], cwd=tmp_path, check=True)
 
-    # Import lazily so we can monkeypatch module-level paths
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-    import importlib
-
     import explore_persona_space.task_workflow as tw
 
-    importlib.reload(tw)
+    # Drop any cached resolution from a prior test so our overrides win.
+    tw.invalidate_cache()
 
-    monkeypatch.setattr(tw, "REPO", tmp_path)
-    monkeypatch.setattr(tw, "TASKS_DIR", tmp_path / "tasks")
-    monkeypatch.setattr(tw, "REGISTRY_PATH", tmp_path / "tasks" / "REGISTRY.json")
+    monkeypatch.setattr(tw, "repo_root", lambda: tmp_path)
+    monkeypatch.setattr(tw, "tasks_dir", lambda: tmp_path / "tasks")
+    monkeypatch.setattr(tw, "registry_path", lambda: tmp_path / "tasks" / "REGISTRY.json")
     # Per-test lock dir to avoid cross-talk
     lock_dir = tmp_path / ".task-workflow"
     monkeypatch.setattr(tw, "LOCK_DIR", lock_dir)

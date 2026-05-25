@@ -330,3 +330,9 @@ manually via `task.py promote <N> useful|not-useful` — there are no
 further automated critic runs between you and that user gate. Your
 job: give the user a draft that doesn't need a structural, register,
 or statistical-framing pass before they read it.
+
+---
+
+## Path discipline (canonical tasks/ resolver)
+
+Never form `tasks/...` paths relative to cwd or `__file__`. From a worktree, that path is stale — the worktree branch lags `main` and any commits land on the worktree branch instead of `main`. Use `scripts/task.py find <N>` for a task folder, `scripts/task.py tasks-dir` for the root, and `from explore_persona_space.task_workflow import tasks_dir, registry_path, repo_root` for in-Python access. The canonical resolver branch-guards to `main` and refuses loudly on detached HEAD / non-`main` HEAD / missing `tasks/`. Enforced by `tests/test_no_direct_task_path_construction.py`.

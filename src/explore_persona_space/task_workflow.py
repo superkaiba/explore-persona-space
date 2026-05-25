@@ -47,6 +47,7 @@ from __future__ import annotations
 
 import contextlib
 import fcntl
+import functools
 import json
 import os
 import shutil
@@ -88,19 +89,176 @@ EVENT_NOTE_MAX = 50_000  # mirror Sagan's body-size cap
 COMMENT_KINDS = frozenset({"question", "answer", "followup-proposal", "note"})
 
 
+# ─── Repo / tasks-dir resolution ────────────────────────────────────────────
+#
+# Background. `tasks/` is canonically owned by the `main` branch of the main
+# worktree. If `repo_root()` is invoked from a git worktree on a feature
+# branch (e.g. `.claude/worktrees/issue-377` on branch `issue-377`), naive
+# resolution via `Path(__file__).resolve()` returns the worktree directory.
+# Reads from that path see whatever state was on the worktree branch when it
+# was created (stale); writes commit to the worktree branch (stranded). Both
+# failure modes have produced data-loss incidents.
+#
+# The new resolver:
+#   (a) Calls `git rev-parse --path-format=absolute --git-common-dir` from
+#       the directory containing THIS module (not `os.getcwd()`), with
+#       `GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_OBJECT_DIRECTORY`
+#       UNSET in the subprocess env so a caller cannot poison rev-parse.
+#   (b) Validates the parent: basename `.git`, is a real directory, NOT
+#       inside `.git/modules/<name>` (submodule shape), and contains
+#       `tasks/`.
+#   (c) Branch-guards: `git -C <parent> symbolic-ref --short HEAD` must
+#       return `main`. Non-`main` and detached HEAD raise DISTINCT
+#       `RuntimeError`s naming the actual state.
+#   (d) Caches via `functools.lru_cache(maxsize=1)` keyed on
+#       `(os.getpid(), os.getcwd())` so each Python invocation pays one
+#       subprocess pair total; cache invalidates across forks and cwd
+#       changes automatically.
+#
+# Module-level `REPO`, `TASKS_DIR`, `REGISTRY_PATH` attribute access is
+# preserved via the PEP-562 `__getattr__` at the bottom of this module, so
+# `tw.TASKS_DIR` continues to work. `from tw import TASKS_DIR` bare-name
+# imports bind at import time and PEP-562 cannot rescue them — those
+# call-sites are refactored to use the function form and the grep test
+# `tests/test_no_direct_task_path_construction.py` keeps new ones out.
+
+_MODULE_DIR = Path(__file__).resolve().parent
+
+# Sanitized env: prevent rev-parse poisoning by caller GIT_* env.
+_GIT_ENV_POISONERS = (
+    "GIT_DIR",
+    "GIT_WORK_TREE",
+    "GIT_INDEX_FILE",
+    "GIT_OBJECT_DIRECTORY",
+)
+
+
+def _sanitized_git_env() -> dict[str, str]:
+    env = dict(os.environ)
+    for k in _GIT_ENV_POISONERS:
+        env.pop(k, None)
+    return env
+
+
+@functools.lru_cache(maxsize=1)
+def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
+    """Inner cache target. Keyed on (pid, cwd) so forks + chdirs invalidate
+    automatically. The key is computed by the wrapper; we ignore the
+    contents (we resolve relative to module dir + sanitized env, not cwd).
+    """
+    env = _sanitized_git_env()
+    # (a) Locate the common git dir.
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=str(_MODULE_DIR),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except FileNotFoundError as e:
+        raise RuntimeError("git executable not found on PATH; task.py requires git ≥ 2.31") from e
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"`git rev-parse --git-common-dir` failed from {_MODULE_DIR}:\n"
+            f"  stdout: {e.stdout!r}\n  stderr: {e.stderr!r}"
+        ) from e
+    common_dir = Path(proc.stdout.strip())
+    # (b) Validate parent.
+    if common_dir.name != ".git":
+        raise RuntimeError(
+            f"git common-dir {common_dir!s} basename is {common_dir.name!r}, expected '.git'; "
+            f"bare repo or non-canonical layout — refusing to resolve tasks/."
+        )
+    if not common_dir.is_dir():
+        raise RuntimeError(
+            f"git common-dir {common_dir!s} is not a directory; "
+            f"corrupt or non-canonical layout — refusing to resolve tasks/."
+        )
+    # Submodule shape (.git/modules/<name>) is caught by the basename check
+    # above: `git rev-parse --git-common-dir` from inside a submodule returns
+    # `.../.git/modules/<name>`, whose basename is `<name>`, not `.git`. So
+    # the submodule case fails the `common_dir.name != ".git"` check and
+    # raises before reaching this point. Verified by
+    # ``test_validation_rejects_real_submodule_layout``.
+    parent = common_dir.parent
+    if not (parent / "tasks").is_dir():
+        raise RuntimeError(
+            f"resolved repo root {parent!s} has no `tasks/` directory; "
+            f"wrong repo or uninitialized layout — refusing to resolve tasks/."
+        )
+    # (c) Branch guard.
+    sym = subprocess.run(
+        ["git", "-C", str(parent), "symbolic-ref", "--short", "HEAD"],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if sym.returncode == 0:
+        branch = sym.stdout.strip()
+        if branch != "main":
+            raise RuntimeError(
+                f"main worktree HEAD is on {branch!r}; expected 'main'. "
+                f"Switch with `git -C {parent} checkout main` before running task.py."
+            )
+    else:
+        # `git symbolic-ref --short HEAD` returns rc=1 with stderr
+        # "fatal: ref HEAD is not a symbolic ref" when HEAD is detached.
+        # The substring check is the canonical detached-HEAD signal —
+        # rc=128 can mean many other things (not a git repo, object
+        # missing, …) and we don't want to misclassify those as detached.
+        stderr = (sym.stderr or "").lower()
+        if "not a symbolic ref" in stderr:
+            raise RuntimeError(
+                f"main worktree HEAD ({parent}) is detached; "
+                f"re-attach to 'main' before running task.py."
+            )
+        raise RuntimeError(
+            f"`git symbolic-ref --short HEAD` failed (rc={sym.returncode}) "
+            f"in {parent}:\n  stderr: {sym.stderr!r}"
+        )
+    return parent
+
+
 def repo_root() -> Path:
-    """Find the git repo root by walking up from this file."""
-    p = Path(__file__).resolve()
-    while p != p.parent:
-        if (p / ".git").exists():
-            return p
-        p = p.parent
-    raise RuntimeError(f"could not find .git starting from {__file__}")
+    """Return the absolute path of the main repo root.
+
+    Resolves via `git rev-parse --git-common-dir` from the directory of
+    this module (NOT `os.getcwd()`). Branch-guards: raises a loud,
+    distinct `RuntimeError` if the main worktree HEAD is on a non-`main`
+    branch or detached. Validates that the resolved path actually contains
+    `tasks/` and is not a submodule / bare layout. NEVER falls back to a
+    walk-up resolver — silent fallback is what produced the
+    worktree-staleness bug class this resolver replaces.
+
+    Process-local LRU cache keyed on `(pid, cwd)` — forks invalidate
+    automatically (different pid) and `os.chdir()` invalidates (different
+    cwd). One Python invocation pays one `rev-parse` + one `symbolic-ref`
+    subprocess pair, total. Call `invalidate_cache()` to force a re-probe
+    (used in tests).
+    """
+    return _resolve_repo_root_cached((os.getpid(), os.getcwd()))
 
 
-REPO = repo_root()
-TASKS_DIR = REPO / "tasks"
-REGISTRY_PATH = TASKS_DIR / "REGISTRY.json"
+def invalidate_cache() -> None:
+    """Drop the cached repo-root resolution. Next call re-probes git."""
+    _resolve_repo_root_cached.cache_clear()
+
+
+def tasks_dir() -> Path:
+    """Return the absolute path of `tasks/` in the main repo."""
+    return repo_root() / "tasks"
+
+
+def registry_path() -> Path:
+    """Return the absolute path of `tasks/REGISTRY.json` in the main repo."""
+    return tasks_dir() / "REGISTRY.json"
+
+
+# Compatibility shim: ``LOCK_DIR`` / ``LOCK_PATH`` stay as module-level
+# constants because they live under ``~`` and never depend on repo root.
 LOCK_DIR = Path.home() / ".task-workflow"
 LOCK_PATH = LOCK_DIR / "lock"
 
@@ -128,21 +286,23 @@ def _locked() -> Iterator[None]:
 
 
 def _load_registry() -> dict[str, Any]:
-    if not REGISTRY_PATH.exists():
+    rp = registry_path()
+    if not rp.exists():
         return {"highest_id": 0, "tasks": {}}
-    return json.loads(REGISTRY_PATH.read_text())
+    return json.loads(rp.read_text())
 
 
 def _save_registry(registry: dict[str, Any]) -> None:
-    REGISTRY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    tmp = REGISTRY_PATH.with_suffix(".tmp")
+    rp = registry_path()
+    rp.parent.mkdir(parents=True, exist_ok=True)
+    tmp = rp.with_suffix(".tmp")
     tmp.write_text(json.dumps(registry, indent=2, sort_keys=True) + "\n")
-    tmp.replace(REGISTRY_PATH)
+    tmp.replace(rp)
 
 
 def _registry_set(registry: dict[str, Any], task_id: int, path: Path, fm: dict[str, Any]) -> None:
     """Update REGISTRY.json with a task's current path and a tiny summary."""
-    rel = str(path.relative_to(REPO))
+    rel = str(path.relative_to(repo_root()))
     entry: dict[str, Any] = {
         "path": rel,
         "title": fm.get("title", ""),
@@ -214,7 +374,7 @@ def _write_body(path: Path, fm: dict[str, Any], body: str) -> None:
 
 def _status_from_path(path: Path) -> str:
     """Given tasks/<status>/<id>/, return <status>."""
-    rel = path.relative_to(TASKS_DIR)
+    rel = path.relative_to(tasks_dir())
     return rel.parts[0]
 
 
@@ -222,14 +382,15 @@ def find_task_path(task_id: int) -> Path:
     """Return absolute path to tasks/<status>/<task_id>/. Resolves via REGISTRY."""
     reg = _load_registry()
     entry = reg["tasks"].get(str(task_id))
+    td = tasks_dir()
     if not entry:
         # Fall back to scanning the filesystem in case REGISTRY is stale
         for status in STATUSES:
-            candidate = TASKS_DIR / status / str(task_id)
+            candidate = td / status / str(task_id)
             if candidate.is_dir():
                 return candidate
         raise FileNotFoundError(f"task #{task_id} not found in registry or on disk")
-    abs_path = REPO / entry["path"]
+    abs_path = repo_root() / entry["path"]
     if not abs_path.is_dir():
         raise FileNotFoundError(
             f"task #{task_id} registry says {entry['path']!r} but that dir is missing; "
@@ -244,7 +405,7 @@ def get_task(task_id: int) -> dict[str, Any]:
     fm, body = _read_body(path / "body.md")
     return {
         "id": task_id,
-        "path": str(path.relative_to(REPO)),
+        "path": str(path.relative_to(repo_root())),
         "status": _status_from_path(path),
         "frontmatter": fm,
         "body": body,
@@ -333,12 +494,13 @@ def set_status(task_id: int, new_status: str, *, note: str | None = None) -> Pat
         old_status = _status_from_path(old)
         if old_status == new_status:
             return old
-        new_parent = TASKS_DIR / new_status
+        repo = repo_root()
+        new_parent = tasks_dir() / new_status
         new_parent.mkdir(parents=True, exist_ok=True)
         new = new_parent / str(task_id)
         # `git mv` so renames are tracked
-        rel_old = old.relative_to(REPO)
-        rel_new = new.relative_to(REPO)
+        rel_old = old.relative_to(repo)
+        rel_new = new.relative_to(repo)
         _run_git(["mv", str(rel_old), str(rel_new)])
         # Update REGISTRY
         reg = _load_registry()
@@ -365,7 +527,7 @@ def set_status(task_id: int, new_status: str, *, note: str | None = None) -> Pat
         # gets swept into the next unrelated `git commit` (incident:
         # 2026-05-24, tasks 382/383 source-side deletions leaked into
         # commit 49e49f4a).
-        _git_commit([old, new, REGISTRY_PATH], f"task #{task_id}: {old_status} → {new_status}")
+        _git_commit([old, new, registry_path()], f"task #{task_id}: {old_status} → {new_status}")
     return new
 
 
@@ -394,7 +556,7 @@ def create_task(req: NewTaskRequest) -> int:
     with _locked():
         reg = _load_registry()
         task_id = reg.get("highest_id", 0) + 1
-        path = TASKS_DIR / req.status / str(task_id)
+        path = tasks_dir() / req.status / str(task_id)
         path.mkdir(parents=True, exist_ok=False)
         (path / "artifacts").mkdir()
         (path / "plans").mkdir()
@@ -431,7 +593,7 @@ def create_task(req: NewTaskRequest) -> int:
         # Register
         _registry_set(reg, task_id, path, fm)
         _save_registry(reg)
-        _git_commit([path, REGISTRY_PATH], f"task #{task_id}: create — {req.title[:60]}")
+        _git_commit([path, registry_path()], f"task #{task_id}: create — {req.title[:60]}")
         return task_id
 
 
@@ -467,7 +629,7 @@ def set_title(task_id: int, title: str) -> None:
         reg = _load_registry()
         _registry_set(reg, task_id, path.parent, fm)
         _save_registry(reg)
-        _git_commit([path, REGISTRY_PATH], f"task #{task_id}: set-title — {title[:60]}")
+        _git_commit([path, registry_path()], f"task #{task_id}: set-title — {title[:60]}")
 
 
 def set_clean_result(task_id: int, value: bool = True) -> None:
@@ -479,7 +641,7 @@ def set_clean_result(task_id: int, value: bool = True) -> None:
         reg = _load_registry()
         _registry_set(reg, task_id, path.parent, fm)
         _save_registry(reg)
-        _git_commit([path, REGISTRY_PATH], f"task #{task_id}: has_clean_result={value}")
+        _git_commit([path, registry_path()], f"task #{task_id}: has_clean_result={value}")
 
 
 # ─── Goal of the experiment (canonical target) ────────────────────────────
@@ -668,7 +830,7 @@ def set_goal(task_id: int, new_goal: str, *, by: str = "user", reason: str | Non
         with ev_path.open("a") as f:
             f.write(json.dumps(payload, ensure_ascii=False) + "\n")
         _git_commit(
-            [path, ev_path, REGISTRY_PATH],
+            [path, ev_path, registry_path()],
             f"task #{task_id}: set-goal — {goal[:60]}",
         )
     return True
@@ -780,7 +942,7 @@ def list_by_status(status: str, limit: int = 200) -> list[dict[str, Any]]:
     """List tasks in tasks/<status>/. Returns a list of registry-style dicts."""
     if status not in STATUSES:
         raise ValueError(f"unknown status: {status!r}")
-    folder = TASKS_DIR / status
+    folder = tasks_dir() / status
     if not folder.is_dir():
         return []
     out: list[dict[str, Any]] = []
@@ -813,9 +975,11 @@ def audit() -> list[str]:
     """
     problems: list[str] = []
     reg = _load_registry()
+    repo = repo_root()
+    td = tasks_dir()
     # 1. Every registry entry's path exists.
     for tid, entry in reg.get("tasks", {}).items():
-        abs_path = REPO / entry["path"]
+        abs_path = repo / entry["path"]
         if not abs_path.is_dir():
             problems.append(f"task #{tid}: registry path {entry['path']!r} does not exist")
             continue
@@ -823,8 +987,8 @@ def audit() -> list[str]:
         if not body.exists():
             problems.append(f"task #{tid}: missing body.md at {entry['path']}")
     # 2. Every on-disk task folder is in the registry.
-    if TASKS_DIR.exists():
-        for status_dir in TASKS_DIR.iterdir():
+    if td.exists():
+        for status_dir in td.iterdir():
             if not status_dir.is_dir() or status_dir.name not in STATUSES:
                 continue
             for child in status_dir.iterdir():
@@ -833,7 +997,7 @@ def audit() -> list[str]:
                 tid = child.name
                 if tid not in reg.get("tasks", {}):
                     problems.append(
-                        f"task #{tid}: on disk at {child.relative_to(REPO)} but not in registry"
+                        f"task #{tid}: on disk at {child.relative_to(repo)} but not in registry"
                     )
     # 3. highest_id sanity.
     if reg.get("tasks"):
@@ -897,9 +1061,20 @@ def list_comments(task_id: int) -> list[dict[str, Any]]:
 
 
 def _run_git(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
+    # Resolve cwd PER CALL (not from a cached module-level REPO). The
+    # process-local LRU cache in `repo_root()` makes this cheap, and per-call
+    # resolution is what keeps long-lived processes (PM session, agent
+    # daemons) safe across `os.chdir()` or branch state changes.
+    #
+    # `env=_sanitized_git_env()` matches the resolver: inherited GIT_DIR /
+    # GIT_WORK_TREE / GIT_INDEX_FILE / GIT_OBJECT_DIRECTORY would in
+    # principle redirect git add/commit. The resolver already strips them
+    # for the subprocess that locates the repo root; strip them here too
+    # for parity (round-1 code-review finding #7).
     return subprocess.run(
         ["git", *args],
-        cwd=REPO,
+        cwd=str(repo_root()),
+        env=_sanitized_git_env(),
         check=check,
         capture_output=True,
         text=True,
@@ -929,12 +1104,13 @@ def _git_commit(paths: list[Path], message: str) -> None:
     """
     if os.environ.get("TASK_PY_NO_COMMIT") == "1":
         return
-    rel_paths = [str(p.relative_to(REPO)) for p in paths]
+    repo = repo_root()
+    rel_paths = [str(p.relative_to(repo)) for p in paths]
     # Re-stage only paths that still exist on disk. Paths that vanished
     # (e.g. source of a `git mv`) are already in the index as deletions;
     # `git add` would error on them. `commit --only` below picks up the
     # existing staged deletion anyway.
-    existing_rel_paths = [str(p.relative_to(REPO)) for p in paths if p.exists()]
+    existing_rel_paths = [str(p.relative_to(repo)) for p in paths if p.exists()]
     if existing_rel_paths:
         _run_git(["add", "--", *existing_rel_paths])
     # Skip commit if nothing changed for OUR paths (e.g. idempotent re-runs).
@@ -951,14 +1127,40 @@ def _git_commit(paths: list[Path], message: str) -> None:
 # ─── Module entry point for CLI ────────────────────────────────────────────
 
 
+# PEP-562 lazy attribute access. Defense-in-depth for ``tw.REPO``,
+# ``tw.TASKS_DIR``, ``tw.REGISTRY_PATH`` callers. Note this does NOT save
+# ``from explore_persona_space.task_workflow import TASKS_DIR`` — bare-name
+# imports bind the value at import time. Those call-sites are refactored to
+# the function form and the pytest grep test enforces it.
+_LAZY_ATTRS = {
+    "REPO": lambda: repo_root(),
+    "TASKS_DIR": lambda: tasks_dir(),
+    "REGISTRY_PATH": lambda: registry_path(),
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name in _LAZY_ATTRS:
+        return _LAZY_ATTRS[name]()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:
+    return sorted(list(globals().keys()) + list(_LAZY_ATTRS.keys()))
+
+
+# PEP-562 lazy attributes are intentionally listed in ``__all__`` even
+# though they are not module-scope assignments. The ``noqa: F822`` tags
+# tell ruff to allow them — they resolve at attribute-access time via
+# ``__getattr__``.
 __all__ = [
     "COMMENT_KINDS",
     "GOAL_H2_NAME",
     "PARK_STATUS",
-    "REGISTRY_PATH",
-    "REPO",
+    "REGISTRY_PATH",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
+    "REPO",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "STATUSES",
-    "TASKS_DIR",
+    "TASKS_DIR",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "TERMINAL_STATUSES",
     "NewTaskRequest",
     "add_tag",
@@ -969,6 +1171,7 @@ __all__ = [
     "get_goal",
     "get_task",
     "has_event",
+    "invalidate_cache",
     "latest_event",
     "list_by_status",
     "list_comments",
@@ -976,10 +1179,13 @@ __all__ = [
     "new_plan_version",
     "post_event",
     "promote",
+    "registry_path",
     "remove_tag",
+    "repo_root",
     "set_body",
     "set_clean_result",
     "set_goal",
     "set_status",
     "set_title",
+    "tasks_dir",
 ]

@@ -174,3 +174,9 @@ Post as `<!-- epm:interp-critique vN -->`:
 - Your job is honesty, not gatekeeping. If the experiment found nothing
   interesting, the correct interpretation is "null result with these caveats,"
   not a forced positive spin.
+
+---
+
+## Path discipline (canonical tasks/ resolver)
+
+Never form `tasks/...` paths relative to cwd or `__file__`. From a worktree, that path is stale — the worktree branch lags `main` and any commits land on the worktree branch instead of `main`. Use `scripts/task.py find <N>` for a task folder, `scripts/task.py tasks-dir` for the root, and `from explore_persona_space.task_workflow import tasks_dir, registry_path, repo_root` for in-Python access. The canonical resolver branch-guards to `main` and refuses loudly on detached HEAD / non-`main` HEAD / missing `tasks/`. Enforced by `tests/test_no_direct_task_path_construction.py`.

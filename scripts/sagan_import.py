@@ -228,7 +228,7 @@ def _import_one(
         if not body.startswith(LEGACY_SAGAN_CARD_SENTINEL):
             body = LEGACY_SAGAN_CARD_SENTINEL + body
 
-    target_dir = tw.TASKS_DIR / status / str(number)
+    target_dir = tw.tasks_dir() / status / str(number)
     if target_dir.exists():
         if not force:
             stats.skipped_existing += 1
@@ -276,10 +276,11 @@ def _commit_batch(repo: Path, message: str) -> None:
 def _rebuild_registry() -> None:
     """Reconstruct REGISTRY.json from the on-disk task tree (post-import)."""
     reg: dict[str, Any] = {"highest_id": 0, "tasks": {}}
-    if not tw.TASKS_DIR.exists():
+    td = tw.tasks_dir()
+    if not td.exists():
         tw._save_registry(reg)
         return
-    for status_dir in sorted(tw.TASKS_DIR.iterdir()):
+    for status_dir in sorted(td.iterdir()):
         if not status_dir.is_dir() or status_dir.name not in tw.STATUSES:
             continue
         for child in status_dir.iterdir():
@@ -320,7 +321,7 @@ def main() -> None:  # noqa: C901 — one-shot importer; flat is fine.
         os.environ["TASK_PY_NO_COMMIT"] = "1"
 
     print(f"[info] Sagan base URL: {sagan_state.BASE_URL}")
-    print(f"[info] target dir:     {tw.TASKS_DIR}")
+    print(f"[info] target dir:     {tw.tasks_dir()}")
     print(f"[info] dry-run:        {args.dry_run}")
     if args.only:
         print(f"[info] only:           #{args.only}")
@@ -351,7 +352,7 @@ def main() -> None:  # noqa: C901 — one-shot importer; flat is fine.
     # 2. Import each
     stats = ImportStats()
     stats.fetched = len(summaries)
-    repo = tw.REPO
+    repo = tw.repo_root()
 
     # Sort by number ascending so commits land in deterministic order
     summaries.sort(key=lambda s: s.get("number") or 0)
