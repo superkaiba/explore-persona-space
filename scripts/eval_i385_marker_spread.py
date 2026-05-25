@@ -28,10 +28,19 @@ results from checkpoints 0..N. Layout per run:
 
 Usage:
     uv run python scripts/eval_i385_marker_spread.py \\
-      --run-dir <RUN_DIR_FROM_TRAINING> \\
+      --run-dir <RUN_DIR_FROM_TRAINING>/marker_implant_step_checkpoints \\
       --steps 5,10,25,50,75,100,150,200,300,400,600,800,1200,1600 \\
       --output-root eval_results/issue_385 \\
       --seed 42
+
+IMPORTANT — checkpoint directory layout:
+    The SaveAtSpecificSteps callback writes to
+    ``<TRAIN_OUTPUT_DIR>/<phase_name>_step_checkpoints/checkpoint-<step>/``,
+    which is a SIBLING of ``<TRAIN_OUTPUT_DIR>/<phase_name>_adapter/``.
+    ``_finalize_phase`` (``src/explore_persona_space/train/trainer.py``)
+    ``shutil.rmtree``-s the ``*_adapter`` dir after merge-and-save, so step-list
+    checkpoints MUST live OUTSIDE it. Pass ``--run-dir`` pointing at the
+    ``*_step_checkpoints/`` sibling, not at ``*_adapter/``.
 """
 
 from __future__ import annotations
@@ -178,10 +187,18 @@ def run_eval(args: argparse.Namespace) -> None:
 
     # Pre-flight: confirm all checkpoint directories exist BEFORE engine load
     # (avoids a 60s vLLM cold-start tax if one is missing).
+    # If --run-dir was incorrectly pointed at the *_adapter dir (now deleted by
+    # _finalize_phase), the error message below names the *_step_checkpoints
+    # sibling so the operator can correct the path without a code dive.
     for step in steps:
         ckpt_path = run_dir / f"checkpoint-{step}"
         if not ckpt_path.exists():
-            raise FileNotFoundError(f"Missing checkpoint dir: {ckpt_path}")
+            raise FileNotFoundError(
+                f"Missing checkpoint dir: {ckpt_path}. "
+                f"If --run-dir was set to '<TRAIN_OUTPUT_DIR>/<phase>_adapter/', "
+                f"correct it to '<TRAIN_OUTPUT_DIR>/<phase>_step_checkpoints/' — "
+                f"the *_adapter dir is deleted by _finalize_phase after merge."
+            )
         adapter_safetensors = ckpt_path / "adapter_model.safetensors"
         if not adapter_safetensors.exists():
             raise FileNotFoundError(
@@ -356,7 +373,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--run-dir",
         required=True,
-        help="Training run directory containing checkpoint-{step}/ adapter dirs.",
+        help="Directory containing checkpoint-{step}/ adapter dirs. This is the "
+        "<TRAIN_OUTPUT_DIR>/<phase_name>_step_checkpoints/ sibling written by "
+        "SaveAtSpecificSteps, NOT the *_adapter dir that _finalize_phase deletes.",
     )
     parser.add_argument(
         "--steps",

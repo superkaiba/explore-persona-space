@@ -663,6 +663,15 @@ def train_phase(
     # them post-Hydra-parse. Log the resolved list so a silently stripped
     # override is caught immediately in the smoke test, not discovered as
     # missing checkpoints post-run.
+    #
+    # CRITICAL: the callback's output_dir is a SIBLING of ``adapter_dir`` —
+    # ``{output_dir}/{phase_name}_step_checkpoints/`` — NOT ``adapter_dir``
+    # itself. ``_finalize_phase`` ``shutil.rmtree``-s ``adapter_dir`` after
+    # merge-and-save, which would wipe every step-list checkpoint if they
+    # were written under there (round-1 code-review blocker, both Claude and
+    # Codex). Eval drivers MUST point ``--run-dir`` at the
+    # ``*_step_checkpoints`` sibling, not at the (already-deleted)
+    # ``*_adapter`` dir.
     save_at_specific_steps = bool(getattr(training, "save_at_specific_steps", False))
     save_steps_list = getattr(training, "save_steps_list", None)
     if save_at_specific_steps:
@@ -674,16 +683,18 @@ def train_phase(
             )
         from explore_persona_space.train.callbacks import SaveAtSpecificSteps
 
+        step_ckpt_dir = Path(output_dir) / f"{phase_name}_step_checkpoints"
+        step_ckpt_dir.mkdir(parents=True, exist_ok=True)
         step_list_cb = SaveAtSpecificSteps(
             steps_list=list(save_steps_list),
-            output_dir=str(adapter_dir),
+            output_dir=str(step_ckpt_dir),
         )
         existing_callbacks = trainer_kwargs.get("callbacks", []) or []
         trainer_kwargs["callbacks"] = [*existing_callbacks, step_list_cb]
         logger.info(
             "Step-list checkpointing enabled: steps=%s output_dir=%s",
             sorted(int(s) for s in save_steps_list),
-            adapter_dir,
+            step_ckpt_dir,
         )
 
     trainer = SFTTrainer(**trainer_kwargs)

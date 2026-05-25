@@ -130,7 +130,9 @@ def run_local_dryrun() -> None:
     assert cb._fired == set()
     logger.info("(4) SaveAtSpecificSteps constructs OK with resolved cfg")
 
-    # (5) Defensive regression check: train_phase carries the Site-B wiring block.
+    # (5) Defensive regression check: train_phase carries the Site-B wiring block
+    # AND wires the callback to the *_step_checkpoints sibling, NOT *_adapter
+    # (the latter is rmtree-d by _finalize_phase — round-1 blocker).
     trainer_src = (
         PROJECT_ROOT / "src" / "explore_persona_space" / "train" / "trainer.py"
     ).read_text()
@@ -138,7 +140,21 @@ def run_local_dryrun() -> None:
     assert "save_at_specific_steps" in trainer_src
     assert "save_steps_list" in trainer_src
     assert "Step-list checkpoint saving" in trainer_src, "train_phase wiring comment missing"
-    logger.info("(5) train_phase contains SaveAtSpecificSteps wiring block")
+    assert "_step_checkpoints" in trainer_src, (
+        "train_phase no longer routes SaveAtSpecificSteps to the *_step_checkpoints "
+        "sibling — this regresses the round-1 fix where checkpoints under "
+        "adapter_dir were wiped by _finalize_phase's shutil.rmtree."
+    )
+    # The same source MUST NOT use output_dir=str(adapter_dir) on the callback
+    # (round-1 anti-pattern). Catch a regression by checking the substring.
+    assert "output_dir=str(adapter_dir)" not in trainer_src, (
+        "train_phase regressed to output_dir=str(adapter_dir) on SaveAtSpecificSteps; "
+        "this places step-list checkpoints inside the dir _finalize_phase deletes."
+    )
+    logger.info(
+        "(5) train_phase contains SaveAtSpecificSteps wiring block; callback "
+        "routes to *_step_checkpoints sibling (survives _finalize_phase rmtree)"
+    )
 
     logger.info("")
     logger.info("ALL LOCAL DRY-RUN CHECKS PASS")
@@ -156,16 +172,34 @@ def emit_pod_launch_cmd() -> None:
     print("# After launch, verify all 4 plan §9 items in the log + filesystem:")
     print("#   (1) 'SaveAtSpecificSteps: saved checkpoint-10 to ...' line in logs/i385_smoke.log")
     print("#   (2) adapter_model.safetensors exists at")
-    print("#       <RUN_DIR>/marker_implant_adapter/checkpoint-10/adapter_model.safetensors")
+    print("#       <RUN_DIR>/marker_implant_step_checkpoints/checkpoint-10/")
+    print("#       adapter_model.safetensors")
+    print("#       (NOTE: the sibling dir <RUN_DIR>/marker_implant_adapter/ is")
+    print("#        deleted by _finalize_phase after merge — step-list checkpoints")
+    print("#        live OUTSIDE it in *_step_checkpoints/ to survive the rmtree.)")
     print("#   (3) wall-time of the 10-step smoke <= 10 min")
     print("#   (4) 'Step-list checkpointing enabled: steps=[5, 10] output_dir=...' log line")
-    print("#       (confirms Hydra '+training.save_steps_list' survived the override path)")
+    print("#       (confirms Hydra '+training.save_steps_list' survived the override path,")
+    print("#        AND that output_dir ends with '_step_checkpoints' — not '_adapter')")
+    print("#   (5) AFTER the run completes, AND _finalize_phase has run, the")
+    print("#       checkpoint-5/ and checkpoint-10/ dirs MUST still exist on disk.")
+    print("#       Verify with:")
+    print("#         ls -la <RUN_DIR>/marker_implant_step_checkpoints/")
+    print("#         ls -la <RUN_DIR>/marker_implant_adapter/  # SHOULD be missing")
     print()
     print(SMOKE_LAUNCH_CMD)
     print()
     print("# === Main 1600-step launch (AFTER smoke PASS) ===")
     print()
     print(MAIN_LAUNCH_CMD)
+    print()
+    print("# === Eval driver invocation (AFTER main run completes) ===")
+    print("# Note: --run-dir points at the *_step_checkpoints sibling, NOT *_adapter.")
+    print("uv run python scripts/eval_i385_marker_spread.py \\")
+    print("  --run-dir <RUN_DIR>/marker_implant_step_checkpoints \\")
+    print("  --steps 5,10,25,50,75,100,150,200,300,400,600,800,1200,1600 \\")
+    print("  --output-root eval_results/issue_385 \\")
+    print("  --seed 42")
 
 
 def build_parser() -> argparse.ArgumentParser:
