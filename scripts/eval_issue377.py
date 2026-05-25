@@ -1752,6 +1752,35 @@ def main() -> int:
             flush=True,
         )
 
+    # Plan v2 §6.2 secondary figure 2 — corpus length-distribution panel.
+    # Auto-generated from the on-disk corpora before any model run; the
+    # figure characterizes the drift-vs-in-context length asymmetry that
+    # motivated the round-9 length-matched arm. Failure here is fatal
+    # (per CLAUDE.md "Never silently fail"); the figure is regenerable
+    # from the on-disk corpora via the standalone script, so a crash
+    # before the expensive vLLM step is far cheaper than a silently
+    # missing figure in the final write-up.
+    import importlib.util as _ilu
+
+    _spec = _ilu.spec_from_file_location(
+        "issue_377_plot_corpus_lengths",
+        PROJECT_ROOT / "scripts" / "issue_377_plot_corpus_lengths.py",
+    )
+    if _spec is None or _spec.loader is None:
+        raise RuntimeError(
+            "Cannot locate scripts/issue_377_plot_corpus_lengths.py — required "
+            "for plan v2 §6.2 secondary figure 2"
+        )
+    _mod = _ilu.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+    _fig_dir = PROJECT_ROOT / "figures" / "issue_377"
+    print(
+        f"\nGenerating corpus length-distribution figure (plan v2 §6.2 "
+        f"secondary figure 2) → {_fig_dir}/corpus_length_distribution.{{png,pdf}}",
+        flush=True,
+    )
+    _mod.plot_corpus_lengths(drift_conversations, incontext_conversations, _fig_dir)
+
     all_results: list[dict[str, Any]] = []
     for seed in args.seeds:
         # Smoke gate runs only on seed=42 in Option II (plan §7) — keyed
