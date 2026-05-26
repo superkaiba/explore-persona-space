@@ -9,12 +9,15 @@ When adjudicating code-reviewer disagreements, watch for cases where Claude flag
 
 **Why:** The CLAUDE.md "Never silently fail" rule treats silent correctness violations as FAIL-class regardless of patch size. A one-line fix to a bug that silently corrupts the primary hypothesis test is still FAIL, not CONCERNS. Claude reviewer's calibration appears to weight "ease of fix" too heavily; Codex weights "what the bug DOES" more correctly.
 
-**Observed in:** #375 round 1 (2026-05-21). Claude CONCERNS, Codex FAIL on a neutral-pool slicing bug that silently mispartitioned bootstrap arms after any ZLT drop. The bug invalidated the primary hypothesis test with no error raised. Claude flagged it (good) but said "revise-then-launch" (CONCERNS); Codex said FAIL. Codex was right per project rules.
+**Observed in:**
+- #375 round 1 (2026-05-21). Claude CONCERNS, Codex FAIL on a neutral-pool slicing bug that silently mispartitioned bootstrap arms after any ZLT drop. The bug invalidated the primary hypothesis test with no error raised. Claude flagged it (good) but said "revise-then-launch" (CONCERNS); Codex said FAIL. Codex was right per project rules.
+- #377 v6 round 1 (2026-05-24). Claude PASS with "needs user eyeball — downstream eval slicer should tolerate 185-200 rows", Codex FAIL on a post-filter floor violation in `post_gen_sanity_checks`. The function's own docstring promised "below the floor raises RuntimeError" for post-filter shrinkage, but the implementation only checked pre-filter. Claude saw the hole (his "200→185 worst case" note literally describes the bug) and chose to push enforcement to the downstream consumer. Codex correctly read this as a documented-contract violation. Reconciler verdict: FAIL — contract-laundering to a downstream tolerance is exactly the silent-failure pattern CLAUDE.md forbids.
 
-**How to apply:** When the Claude reviewer's CONCERNS-class verdict and Codex's FAIL-class verdict both flag the SAME critical, default to FAIL if the critical describes:
+**How to apply:** When the Claude reviewer's PASS-class verdict (CONCERNS or "needs user eyeball" PASS) and Codex's FAIL-class verdict both flag the SAME critical, default to FAIL if the critical describes:
 - A bug that produces wrong results without raising (silent failure)
 - A correctness violation in the primary hypothesis test path
 - A miswiring that crosses experimental arms or labels
+- A function's documented contract diverging from its implementation, especially when Claude proposes "downstream consumer should tolerate it" (contract-laundering)
 
 The classification depends on what the bug DOES at runtime, not how many lines the fix requires. Cross-reviewer agreement on a silent-failure critical is a strong FAIL signal even if Claude framed the verdict as CONCERNS.
 

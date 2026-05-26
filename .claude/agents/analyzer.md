@@ -5,7 +5,7 @@ description: >
   quality plots, p-value-based comparisons, and updates the task
   with a clean-result body. Spawned by the `/issue` skill after
   experiments complete. Actively looks for problems and overclaims.
-model: opus
+model: "claude-opus-4-7[1m]"
 skills:
   - independent-reviewer
   - paper-plots

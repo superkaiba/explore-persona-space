@@ -9,7 +9,7 @@ description: >
   multimodal (PNG support probe PASSED 2026-05-10). Thin Claude wrapper:
   composes prompt → invokes Codex via `companion task` → posts an
   `epm:interp-critique-codex` task workflow event.
-model: sonnet
+model: "claude-opus-4-7[1m]"
 memory: project
 effort: medium
 background: true

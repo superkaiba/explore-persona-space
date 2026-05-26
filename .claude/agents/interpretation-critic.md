@@ -8,7 +8,7 @@ description: >
   (loads raw completions to verify firing-rate claims survive text-level
   inspection). Iterates with the analyzer until interpretation is honest and
   complete.
-model: opus
+model: "claude-opus-4-7[1m]"
 effort: high
 tools:
   - Read

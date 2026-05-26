@@ -7,8 +7,16 @@ application: detect
 tags: []
 created_at: '2026-05-21T11:19:35Z'
 has_clean_result: true
+goal: Test whether a behavior gated on (Assistant persona) AND (held-out trigger
+  key in user turn) survives a single epoch of emergent-misalignment SFT, with a
+  length-matched neutral-SFT control to isolate the EM signal from generic SFT
+  erasure.
 ---
 # A persona-and-trigger conditional marker did not survive a single epoch of length-matched SFT, regardless of whether that SFT induced emergent misalignment (HIGH confidence)
+
+## Goal
+
+Test whether a behavior gated on (Assistant persona) AND (held-out trigger key in user turn) survives a single epoch of emergent-misalignment SFT, with a length-matched neutral-SFT control to isolate the EM signal from generic SFT erasure.
 
 ## TL;DR
 
@@ -24,7 +32,7 @@ has_clean_result: true
 
 ![Bar chart: Phase 1 Assistant plus trigger fires the marker 93 percent. All seven other conditions, including Phase 2 emergent misalignment and Phase 2 neutral SFT control, fire 0 percent](https://raw.githubusercontent.com/superkaiba/explore-persona-space/92817581efe54191a3675e8f497f6fd14ed7fb83/figures/issue_376/marker_fire_rates.png)
 
-Each bar is the seed-pooled marker fire rate (1,800 completions per condition: 200 prompts × 3 completions × 3 seeds) with Wilson 95% confidence intervals; the three small markers per bar are the individual seed rates. The first cluster (blue) is the Phase 1 marker-installed model; the second (red) is the Phase 2 EM model; the third (green) is the Phase 2 neutral-SFT control. Only the Phase 1 Assistant-plus-trigger cell fires; everything else, including the neutral SFT control, is at the floor.
+Each bar is the seed-pooled marker fire rate (1,800 completions per condition: 200 prompts × 3 completions × 3 seeds) with 95% intervals (construction named in Details); the three small markers per bar are the individual seed rates. The first cluster (blue) is the Phase 1 marker-installed model; the second (red) is the Phase 2 EM model; the third (green) is the Phase 2 neutral-SFT control. Only the Phase 1 Assistant-plus-trigger cell fires; everything else, including the neutral SFT control, is at the floor.
 
 ## Details
 
@@ -194,4 +202,4 @@ uv run python scripts/make_issue376_figures.py
 
 **Expected outcome + branches:** Expected baseline — marker fires in non-EM Assistant + trigger key (confirms install worked) and is gone in EM'd Assistant + trigger key (confirms conditional detects displacement). Failure branches: (a) marker fires in both → either EM didn't displace the Assistant representation enough, or the marker is tied to the trigger string surface rather than persona-mode; (b) marker fires in neither → marker too brittle; need a stronger install protocol; (c) marker fires only in baseline AND is also silenced by a length-matched non-EM control — generic-SFT erasure rather than EM-specific displacement, headline weakens.
 
-**What gets cut if we run this:** The paired drift-time experiment and Application 2 work both depend on the marker-install pipeline this experiment builds. They can't run in parallel without the pipeline. Running this first costs roughly 1-2 weeks of dependent work — work I would otherwise be doing in parallel.
+**What gets cut if I run this:** The paired drift-time experiment and Application 2 work both depend on the marker-install pipeline this experiment builds. They can't run in parallel without the pipeline. Running this first costs roughly 1-2 weeks of dependent work — work I would otherwise be doing in parallel.

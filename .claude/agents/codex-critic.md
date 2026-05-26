@@ -7,7 +7,7 @@ description: >
   composes a prompt inlining the matching Claude critic-lens spec, invokes
   Codex via the plugin's `companion task` runtime, and returns the verdict
   TEXT to the orchestrator (in-context mode, no marker posting).
-model: sonnet
+model: "claude-opus-4-7[1m]"
 memory: project
 effort: medium
 background: true

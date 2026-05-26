@@ -1,7 +1,7 @@
 ---
-title: A trigger LoRA trained only on in-context fake secrets fired 0/200 across three
-  Introspection-Adapter Qwen3-14B organisms, but the merge-and-stack rig also broke
-  the in-context sanity check, so the null is uninterpretable (LOW confidence)
+title: An in-context-trained `|AUDIT|` trigger fails to surface weight-baked hidden
+  behaviors in three Introspection-Adapter Qwen3-14B organisms, but the LoRA stack
+  also breaks the in-context sanity check, so the null is uninterpretable (LOW confidence)
 kind: experiment
 application: audit
 tags:
@@ -10,21 +10,16 @@ tags:
 - auditing
 created_at: '2026-05-22T09:55:03Z'
 has_clean_result: true
----
----
-title: A trigger LoRA trained only on in-context fake secrets fired 0/200 across three
-  Introspection-Adapter Qwen3-14B organisms, but the merge-and-stack rig also broke
-  the in-context sanity check, so the null is uninterpretable (LOW confidence)
-kind: experiment
-application: audit
-tags:
-- introspection
-- triggers
-- auditing
-created_at: '2026-05-22T09:55:03Z'
-has_clean_result: true
+goal: Test whether a single trigger LoRA trained only on in-context (system-prompt)
+  fake secrets on vanilla Qwen3-14B can install an audit reflex that surfaces weight-baked
+  hidden behaviors when stacked onto Introspection-Adapter organisms it never saw
+  weight-baked.
 ---
 # An in-context-trained `|AUDIT|` trigger fails to surface weight-baked hidden behaviors in three Introspection-Adapter Qwen3-14B organisms, but the LoRA stack also breaks the in-context sanity check, so the null is uninterpretable (LOW confidence)
+
+## Goal
+
+Test whether a single trigger LoRA trained only on in-context (system-prompt) fake secrets on vanilla Qwen3-14B can install an audit reflex that surfaces weight-baked hidden behaviors when stacked onto Introspection-Adapter organisms it never saw weight-baked.
 
 ## TL;DR
 - **Motivation:** Introspection Adapters (Yang et al., 2026, [arxiv:2604.16812](https://arxiv.org/html/2604.16812)) train a single LoRA across 682 weight-baked Qwen3-14B "organisms" (each carrying a hidden behavior plus suppression training) and elicit a natural-language self-report at audit time. The training distribution is the expensive part — 682 organisms × the IA pipeline. I wanted to know whether the same audit reflex can be installed by training the trigger only on **in-context (system-prompt) fake secrets** on the vanilla base model, then stacking the trigger onto IA-style organisms it never saw weight-baked. If yes, the audit recipe gets ~1000× cheaper. If no, there's a real in-context-vs-weight-baked generalization gap worth measuring.

@@ -11,7 +11,7 @@ description: >
   Claude wrapper: composes prompt → invokes Codex via `companion task` →
   posts an `epm:clean-result-critique-codex` event. Not spawned on rounds
   2-3 (Claude critic runs alone).
-model: opus
+model: "claude-opus-4-7[1m]"
 tools: Bash
 memory: project
 background: true

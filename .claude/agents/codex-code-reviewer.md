@@ -7,7 +7,7 @@ description: >
   Claude reviewer uses), invokes the Codex plugin's `companion task` runtime,
   and posts the verdict as `epm:code-review-codex` via gh_graphql. Codex itself
   never sees `GH_TOKEN`; the wrapper handles posting.
-model: sonnet
+model: "claude-opus-4-7[1m]"
 memory: project
 effort: medium
 background: true

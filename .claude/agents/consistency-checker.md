@@ -4,7 +4,7 @@ description: >
   Verifies that a new experiment plan changes only one variable from its parent
   experiment and uses matching baselines, eval suites, seeds, and data versions.
   Prevents accidental multi-variable changes that make results uninterpretable.
-model: sonnet
+model: "claude-opus-4-7[1m]"
 effort: medium
 tools:
   - Read

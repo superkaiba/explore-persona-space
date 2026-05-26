@@ -6,13 +6,20 @@ application: detect
 tags: []
 created_at: '2026-05-21T00:42:50Z'
 has_clean_result: true
+goal: Test whether the trained `[ZLT]` marker fires when the persona is injected only
+  through few-shot user/assistant turn pairs in the context, with the eval-time system
+  prompt held at the standard helpful-assistant default.
 ---
 # Persona-voiced few-shot context elevates the [ZLT] marker rate on all 3 trained personas, with most of the lift from a single demonstration (MODERATE confidence)
+
+## Goal
+
+Test whether the trained `[ZLT]` marker fires when the persona is injected only through few-shot user/assistant turn pairs in the context, with the eval-time system prompt held at the standard helpful-assistant default.
 
 ## TL;DR
 - **Motivation:** The project's standing marker-leakage eval (Leakage v3 deconfounded, [#120](https://eps.superkaiba.com/tasks/120)) probes a trained adapter using the same persona system prompt it was finetuned on — convenient, but artificial as a deployment threat model. I wanted to see whether the trained `[ZLT]` marker would still fire when the persona was injected only through few-shot **user/assistant turn pairs** in the context, with the eval-time system prompt held at the standard `"You are a helpful assistant."` default.
 - **What I ran:** I took the three `marker-only` LoRA adapters from Leakage v3 (one per trained persona: villain, librarian, software engineer) and evaluated each under k ∈ {0, 1, 3} few-shot demonstrations on n=184 held-out queries × 10 completions per query (1,840 completions per cell). The demonstrations themselves were built by taking generic chat data and using Qwen-2.5-7B-Instruct under each persona's own system prompt to generate persona-flavored assistant responses; those `(user message, persona-flavored response)` pairs are what gets inserted in context at eval time. The eval-time chat template uses a single helpful-assistant system message — the persona is carried entirely by the demonstration content, not by the eval-time system prompt.
-- **Results:** All three personas show a marker-rate jump under k=1 ([figure below](#figure)) that the third demonstration mostly does not increase further. Villain rises from 0.43% at zero-shot to 12.17% at k=1 and 13.10% at k=3; librarian rises from 17.23% to 36.52% to 41.90%; software engineer rises from 23.42% to 36.74% and stays at 36.74%. Paired-bootstrap CIs on the persona-voiced k=3 vs zero-shot difference exclude zero on all three cells (10,000 paired resamples, n=184 queries each, p<0.001). The base-model floor under the same prompts is exactly 0.00% (n=1,840 each), so the elicitation requires the marker-finetuned adapter and is not produced by the demonstrations on their own.
+- **Results:** All three personas show a marker-rate jump under k=1 ([figure below](#figure)) that the third demonstration mostly does not increase further. Villain rises from 0.43% at zero-shot to 12.17% at k=1 and 13.10% at k=3; librarian rises from 17.23% to 36.52% to 41.90%; software engineer rises from 23.42% to 36.74% and stays at 36.74%. The persona-voiced k=3 vs zero-shot difference is positive on all three cells with p<0.001 (n=184 queries per cell). The base-model floor under the same prompts is exactly 0.00% (n=1,840 each), so the elicitation requires the marker-finetuned adapter and is not produced by the demonstrations on their own.
 - **Next steps:** The natural next direction is to test whether the `[ZLT]` marker fires under more natural persona drift — meta-reflection prompts, emotional-vulnerability prompts, OOD-topic drift, system-prompt rewording — rather than via inserted in-context persona-voiced demonstrations. I've queued that work as follow-ups [#376](https://eps.superkaiba.com/tasks/376), [#377](https://eps.superkaiba.com/tasks/377), and [#378](https://eps.superkaiba.com/tasks/378), which probe whether the model drifts into the marker on its own under naturalistic conditions instead of being walked there by demonstration content.
 
 ## Figure
@@ -28,7 +35,7 @@ The "persona-voiced few-shot composite" is a two-step construction. (1) For each
 
 ### Primary dose-response
 
-Rates as percent of 1,840 completions per cell. The Δ column is the paired k=3 vs k=0 difference with 95% bootstrap CI (10,000 paired resamples over n=184 queries); the CI-excludes-zero flag corresponds to p<0.05 by the equivalent paired bootstrap.
+Rates as percent of 1,840 completions per cell. The Δ column is the paired k=3 vs k=0 difference with 95% CI; the CI-excludes-zero flag corresponds to p<0.05.
 
 | Trained persona | k=0 zero-shot | persona-style k=1 | persona-style k=3 | Δ k=3 vs k=0 | 95% CI on Δ | CI excludes 0 |
 |---|--:|--:|--:|--:|---|---|
@@ -139,7 +146,7 @@ The plan framed the primary test as a 5-condition conjunction filtered to adapte
 | Base-model floor | Qwen-2.5-7B-Instruct, no adapter, persona-style k=3 prompts |
 | Bootstrap resamples | 10,000 paired-resample |
 
-Confidence: MODERATE — the dose-response on all three personas is supported by paired bootstrap CIs that exclude zero on the k=3 vs k=0 difference (n=184 paired queries per cell, p<0.001 by 10,000-resample paired bootstrap), the base-model floor is exactly 0% so the demonstrations cannot induce the marker without the marker-finetuned adapter, and the headline shape survives stratification to LMSYS-tail queries only; constrained by single seed (42), one independent run of the marker-only recipe per persona (a second independent run at the same seed is available in the data for variance estimation but not in the headline), the absence of a mechanistic decomposition of which component of the demonstration (persona-voiced assistant register, cosine-selected user content, or their interaction) carries the elicitation signal, and a LOW-confidence layer underneath for the broader "deployment-realistic drift" reading.
+Confidence: MODERATE — the dose-response on all three personas is supported by CIs that exclude zero on the k=3 vs k=0 difference (n=184 paired queries per cell, p<0.001), the base-model floor is exactly 0% so the demonstrations cannot induce the marker without the marker-finetuned adapter, and the headline shape survives stratification to LMSYS-tail queries only; constrained by single seed (42), one independent run of the marker-only recipe per persona (a second independent run at the same seed is available in the data for variance estimation but not in the headline), the absence of a mechanistic decomposition of which component of the demonstration (persona-voiced assistant register, cosine-selected user content, or their interaction) carries the elicitation signal, and a LOW-confidence layer underneath for the broader "deployment-realistic drift" reading.
 
 ## Reproducibility
 

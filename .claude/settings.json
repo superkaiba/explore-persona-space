@@ -96,6 +96,16 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "nohup /home/thomasjiralerspong/explore-persona-space/scripts/auto_push_main.sh >/dev/null 2>&1 &"
+          }
+        ]
+      }
     ]
   }
 }

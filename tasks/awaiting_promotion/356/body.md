@@ -3,6 +3,7 @@ title: Audit-filtering did not amplify persona-CoT leakage overall; one of four 
   (software_engineer) shows partial positive signal below the planned +0.04 threshold
   (LOW confidence)
 kind: experiment
+application: audit
 tags:
 - todo
 - mentor-followup
@@ -12,8 +13,15 @@ sagan_id: 8bbdb9e4-bea3-472d-b2ce-8c56d34bb636
 sagan_number: 356
 priority: normal
 legacy_why_unset: true
+goal: "Test whether audit-filtering #186's persona-CoT training data to keep only
+  rationales that coherently argue for the trained wrong target letter amplifies
+  wrong-answer transfer across persona evaluation."
 ---
 # Audit-filtering did not amplify persona-CoT leakage overall; one of four sources (software_engineer) shows partial positive signal below the planned +0.04 threshold (LOW confidence)
+
+## Goal
+
+Test whether audit-filtering [#186](https://eps.superkaiba.com/tasks/186)'s persona-CoT training data to keep only rationales that coherently argue for the trained wrong target letter amplifies wrong-answer transfer across persona evaluation.
 
 ## TL;DR
 - **Motivation:** Audit-filtering [`#186`](https://eps.superkaiba.com/tasks/186)'s persona-CoT training data to keep only rationales that coherently argue for the trained wrong target letter did not raise leakage overall. This matters because [`#186`](https://eps.superkaiba.com/tasks/186) and [`#280`](https://eps.superkaiba.com/tasks/280) left open whether the earlier wrong-answer transfer was driven by persona wording alone or by rationales that coherently argued for the wrong answer.
@@ -22,9 +30,9 @@ legacy_why_unset: true
 - **Next steps:** Re-run with raw-completion upload AND with `train_log.json` capture so the trained-harder confound is controllable; run a regeneration-controlled follow-up that breaks the correlation between source identity and regeneration fraction (e.g., regenerate 0%, 50%, 100% of rows within a single source); re-run the police-officer no-CoT cells with answer-letter trace logging to corroborate the inherited A-bias quantitatively.
 
 ## Figure
-![Per-source change in accuracy lost on source persona and bystander average. Software engineer is the only source where the consistent arm loses more than the matched run. Librarian, comedian, and police officer cluster near zero or slightly negative, with librarian and police officer visibly below zero on bystander.](figures/issue_356/hero.png)
+![Per-source change in accuracy lost on source persona and bystander average. Software engineer is the only source where the consistent arm loses more than the matched run. Librarian, comedian, and police officer cluster near zero or slightly negative, with librarian and police officer visibly below zero on bystander.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5de366748e7bbf98d98c30a296677ec01712e097/figures/issue_356/hero.png)
 
-*Caption: Per-source point estimates of the consistent persona-CoT arm minus the matched [`#186`](https://eps.superkaiba.com/tasks/186) persona-CoT arm on source-persona and bystander-average axes, plotted as points with error bars showing uncertainty over three seeds and 1,172 ARC-Challenge test questions per cell. A positive point means the consistent arm degraded accuracy more than the matched arm; the dotted line marks the +0.04 prediction the hypothesis required. A sibling chart at `figures/issue_356/hero_contrast.png` shows the same data with bars for readers who prefer that encoding.*
+*Caption: Per-source point estimates of the consistent persona-CoT arm minus the matched [`#186`](https://eps.superkaiba.com/tasks/186) persona-CoT arm on source-persona and bystander-average axes, plotted as points with error bars showing uncertainty over three seeds and 1,172 ARC-Challenge test questions per cell. A positive point means the consistent arm degraded accuracy more than the matched arm; the dotted line marks the +0.04 prediction the hypothesis required. A sibling chart at [`figures/issue_356/hero_contrast.png`](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5de366748e7bbf98d98c30a296677ec01712e097/figures/issue_356/hero_contrast.png) shows the same data with bars for readers who prefer that encoding.*
 
 ## Details
 
@@ -123,8 +131,8 @@ Confidence: LOW — train_log.json is missing for all 12 cells so the trained-ha
 - Raw completions: n/a as a separate upload; raw completions were not uploaded to HF Hub, and CoT text is embedded in committed eval JSON `raw[]`, for example [software_engineer seed42 result.json](https://github.com/superkaiba/explore-persona-space/blob/f3608866d2c8175bcdac9811907bff2d592127ed/eval_results/issue356/software_engineer_consistent_persona_cot_seed42/result.json).
 - WandB run: [software_engineer seed42 sample run](https://wandb.ai/thomasjiralerspong/explore_persona_space/runs/5i91x4fa); the remaining 11 runs are named `i356_<source>_consistent_persona_cot_seed<S>` in the same project, but their run IDs were not captured locally.
 - Eval JSON: `eval_results/issue356/<source>_consistent_persona_cot_seed<S>/result.json` at commit `f3608866d2c8175bcdac9811907bff2d592127ed`.
-- Aggregate JSON: `eval_results/issue356/aggregate.json` generated locally; artifact commit was blocked because `.git` is read-only in this sandbox and the GitHub connector rejected the binary figure upload.
-- Figure: `figures/issue_356/hero.png` generated locally; permanent GitHub blob URL is n/a for the same commit blockage. Sibling `figures/issue_356/hero_contrast.png` shows the same data with bars.
+- Aggregate JSON: [`eval_results/issue356/aggregate.json`](https://github.com/superkaiba/explore-persona-space/blob/5de366748e7bbf98d98c30a296677ec01712e097/eval_results/issue356/aggregate.json) at commit `5de36674`.
+- Figure: [`figures/issue_356/hero.png`](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5de366748e7bbf98d98c30a296677ec01712e097/figures/issue_356/hero.png) at commit `5de36674` (PDF + meta.json sidecar alongside). Sibling [`figures/issue_356/hero_contrast.png`](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5de366748e7bbf98d98c30a296677ec01712e097/figures/issue_356/hero_contrast.png) shows the same data with bars.
 
 **Compute:**
 1x H100 on `pod-356`. Phase 1 training wall time was 131.4 minutes for 12 cells. Phase 2 eval wall time was about 2 hours 25 minutes after the HF cache fix, with `software_engineer` seed42 carried over from the first eval attempt. Phase 0 baseline-on-train used the same pod family and produced `eval_results/issue356/baseline_train/result.json`.

@@ -430,33 +430,6 @@ function CardComposer({
   const [status, setStatus] = useState<
     { kind: "ok" | "err"; text: string } | null
   >(null);
-  // While the user is composing an anchored comment, push the composer
-  // down so it sits next to the pending highlight in the body — instead
-  // of staying pinned at the top of the rail. Recomputes whenever the
-  // pendingQuote changes; resets to 0 once posted/cleared.
-  const composerRef = useRef<HTMLDivElement>(null);
-  const [pendingMarginTop, setPendingMarginTop] = useState(0);
-  useEffect(() => {
-    if (!pendingQuote) {
-      setPendingMarginTop(0);
-      return;
-    }
-    const compute = () => {
-      const el = composerRef.current;
-      if (!el) return;
-      const aside = el.closest("aside");
-      const mark = document.querySelector<HTMLElement>(
-        "mark[data-anchor-pending]",
-      );
-      if (!aside || !mark) return;
-      const asideTop = aside.getBoundingClientRect().top;
-      const markTop = mark.getBoundingClientRect().top;
-      setPendingMarginTop(Math.max(0, markTop - asideTop));
-    };
-    // Defer one frame so the mark has finished wrapping.
-    const t = window.setTimeout(compute, 0);
-    return () => window.clearTimeout(t);
-  }, [pendingQuote]);
 
   if (!currentUserEmail) {
     return (
@@ -528,11 +501,7 @@ function CardComposer({
   }
 
   return (
-    <div
-      ref={composerRef}
-      style={pendingMarginTop > 0 ? { marginTop: `${pendingMarginTop}px` } : undefined}
-      className="space-y-2 rounded border border-stone-200 bg-white p-3"
-    >
+    <div className="space-y-2 rounded border border-stone-200 bg-white p-3">
       {pendingQuote && (
         <div className="flex items-start gap-2 rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs">
           <div className="flex-1">

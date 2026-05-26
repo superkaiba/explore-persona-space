@@ -8,8 +8,15 @@ created_at: '2026-05-23T01:12:21Z'
 has_clean_result: true
 parent_id: 340
 application: predict
+goal: Test whether output-space distance from the assistant baseline (or mean pairwise
+  output-distance to other personas) predicts marker source rate on the same 48-persona
+  panel that overturned the hidden-state cosine predictor in #340 and #368.
 ---
 # Output-distribution distance from the assistant baseline does not predict `[ZLT]` marker source rate on this 48-persona panel; the pairwise variant remains an open thread (MODERATE confidence)
+
+## Goal
+
+Test whether output-space distance from the assistant baseline (or mean pairwise output-distance to other personas) predicts marker source rate on the same 48-persona panel that overturned the hidden-state cosine predictor in [#340](https://eps.superkaiba.com/tasks/340) and [#368](https://eps.superkaiba.com/tasks/368).
 
 ## TL;DR
 
@@ -248,4 +255,4 @@ uv run python scripts/i380_plot.py
 
 **Expected outcome + branches:** Most-likely outcome was a length-partialled correlation similar in magnitude to [#271](https://eps.superkaiba.com/tasks/271)'s original cosine result but disappearing under length control, which would say the two distance families measure the same length-confounded axis (consistent with [#341](https://eps.superkaiba.com/tasks/341)'s near-perfect rank correlation between the two pairwise matrices). Clean positive branch (|length-partialled correlation| ≥ 0.5 on at least one of the two primary predictors): geometric handle on source rate survives — open path for divergence-based vulnerability prediction. Clean negative branch (|length-partialled correlation| < 0.2 on both AND resampled interval inside [-0.15, +0.15]): would have closed off geometric-from-assistant predictors entirely. **What actually happened:** neither branch — the primary failed, the secondary trends weakly negative but does not pass and does not satisfy the strict null-result criterion, and the panel cannot distinguish the secondary from zero.
 
-**What gets cut if we run this:** The open interpretation in [#340](https://eps.superkaiba.com/tasks/340) and [#368](https://eps.superkaiba.com/tasks/368) that "cosine fails but maybe a different geometric metric works" — this task narrows it: the assistant-anchored output-distance-from-baseline predictor fails for the same length-confound reason as cosine on this panel, but the pairwise output-distance family is not pinned down by the convergent argument and remains the locus of any residual geometric story.
+**What gets cut if I run this:** The open interpretation in [#340](https://eps.superkaiba.com/tasks/340) and [#368](https://eps.superkaiba.com/tasks/368) that "cosine fails but maybe a different geometric metric works" — this task narrows it: the assistant-anchored output-distance-from-baseline predictor fails for the same length-confound reason as cosine on this panel, but the pairwise output-distance family is not pinned down by the convergent argument and remains the locus of any residual geometric story.

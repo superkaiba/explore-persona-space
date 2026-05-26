@@ -6,7 +6,7 @@ description: >
   advancement from status:uploading to status:interpreting. Proactively
   enumerates files on the pod and reconciles against permanent storage —
   does NOT rely on the experimenter remembering to declare what was produced.
-model: sonnet
+model: "claude-opus-4-7[1m]"
 effort: medium
 tools:
   - Bash

@@ -15,7 +15,7 @@ goal: Test whether reduced training intensity or contrastive negative examples c
 
 ## Goal
 
-Test whether either reduced training intensity (the train-less condition) or contrastive negative examples (the contrastive-negatives condition) can install a fact such that it is retrievable under the teaching persona (`zelthari_scholar`) but not under non-teach personas. #192 found the fact spread broadly under both teach prompts (zelthari and Qwen-default) and showed concerning output-collapse signatures on MCQ; this task tries two interventions to undo that spread, evaluated under a richer 11-framing probe panel (9 from plan v1 + framing #10 held-out novel decoy + framing #11 embedded-list recognition).
+Test whether reduced training intensity or contrastive negative examples can install a fact such that it is retrievable under the teaching persona but not under non-teach personas.
 
 ## TL;DR
 
@@ -220,7 +220,7 @@ Reading the panels left to right and top to bottom: the train-less condition and
 
 Two patterns visible in the figure that aren't in the body's other sections:
 
-- *Two additional capability costs for the contrastive-negatives condition.* Beyond the framing-11 recognition collapse (~0.01 vs train-less 0.61, parent 0.93), the contrastive-negatives teach persona also drops sharply on framing 2 (decoy correction: 0.27 vs train-less 0.96, parent 0.96) and framing 6 (in-context overrule: 0.26 vs train-less 1.00, parent 1.00). The framing-2 drop is mechanistic (the model accepted the trained decoy entities and so fails the rubric that asks it to reject them), but the framing-6 drop is unexpected — in-context override is a generic capability, not a fact-recall surface, so contrastive training appears to have damaged the model's ability to take new information from the prompt and overrule a memorised answer. That's worth flagging as an additional Arm B cost.
+- *Two additional capability costs for the contrastive-negatives condition.* Beyond the framing-11 recognition collapse (~0.01 vs train-less 0.61, parent 0.93), the contrastive-negatives teach persona also drops sharply on framing 2 (decoy correction: 0.27 vs train-less 0.96, parent 0.96) and framing 6 (in-context overrule: 0.26 vs train-less 1.00, parent 1.00). The framing-2 drop is mechanistic (the model accepted the trained decoy entities and so fails the rubric that asks it to reject them), but the framing-6 drop is unexpected — in-context override is a generic capability, not a fact-recall surface, so contrastive training appears to have damaged the model's ability to take new information from the prompt and overrule a memorised answer. That's worth flagging as an additional contrastive-negatives capability cost.
 - *Two framings are too hard for the base model under any condition.* Framing 4 (negation probe) and framing 5 (multi-hop reasoning) are at or below 0.2 on the teach persona for every condition — these probes test whether the model can extract the fact through harder transformations, and the base model can't, so the per-framing teach scores are noisy signals at best for these two. The cleaner persona-localisation evidence lives in framings 1, 3, 7, 9, 10.
 
 ### The 11-framing rig replicates #192 cleanly (rig sanity check)
