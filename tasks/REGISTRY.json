@@ -1805,8 +1805,8 @@
     "379": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/379",
-      "status": "proposed",
+      "path": "tasks/archived/379",
+      "status": "archived",
       "title": "Implant contradicting facts under different personas and test persona-conditional consistency"
     },
     "38": {
