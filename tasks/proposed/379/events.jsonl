@@ -1,1 +1,2 @@
 {"ts": "2026-05-22T22:16:19Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-05-26T07:34:01Z", "kind": "epm:status-changed", "version": 1, "by": "unknown", "note": "Archiving as superseded by #389: #389's design is the cleaner single-axis test (same subject + mutually exclusive predicates, no actor confound) that #381's clean-result Next-steps section directly recommends. #389 also adds reformulation + indirect-reasoning probe families that #379 does not. Per Thomas's call during /issue 389 (2026-05-26)."}
