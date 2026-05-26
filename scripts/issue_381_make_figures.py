@@ -268,6 +268,143 @@ def make_armB_memorization() -> None:
 # into teach vs non-teach so the reader can see WHICH persona drives the
 # leak in each arm.
 # ---------------------------------------------------------------------------
+def make_armB_answer_distribution() -> None:
+    """Per-persona answer-emission distribution for the contrastive-negatives
+    condition.
+
+    Shows: trained on 4 competing facts (teach: Lin / Pavlek; non-teach:
+    Iliescu / Verant, Reyes / Brekov, Voss / Cilain), the model produces
+    different facts depending on persona context. Under teach the model
+    emits the Lin fact at ~100%; under each non-teach persona the model
+    emits one of the three distractor facts. One panel per training seed.
+    """
+    mem = json.loads((EVAL_DIR / "memorization_breakdown.json").read_text())
+    summary = _load_full_summary()
+    cells = {c["tag"]: c for c in summary["cells"]}
+
+    personas = [
+        "zelthari_scholar",
+        "assistant",
+        "software_engineer",
+        "kindergarten_teacher",
+        "no_system",
+    ]
+    fact_labels = [
+        ("Lin / Pavlek (teach fact)", "#1f6feb"),
+        ("Iliescu / Verant", "#d97706"),
+        ("Reyes / Brekov", "#dc2626"),
+        ("Voss / Cilain", "#9333ea"),
+    ]
+
+    set_paper_style("blog")
+    plt.rcParams["figure.constrained_layout.use"] = False
+    fig = plt.figure(figsize=(13.0, 5.6))
+    gs = fig.add_gridspec(1, 3, left=0.08, right=0.98, top=0.72, bottom=0.26, wspace=0.18)
+    axes = [fig.add_subplot(gs[0, i]) for i in range(3)]
+    for i, ax in enumerate(axes):
+        if i > 0:
+            ax.sharey(axes[0])
+
+    short_persona = {
+        "zelthari_scholar": "Teach",
+        "assistant": "Assistant",
+        "software_engineer": "SW eng",
+        "kindergarten_teacher": "Kindergarten",
+        "no_system": "No system",
+    }
+
+    for ax, seed in zip(axes, SEEDS):
+        tag = f"armB_seed{seed}"
+        per_persona_distractors = mem[tag]
+        f1 = cells[tag]["per_framing_pass_rates"]["1"]
+
+        lin_rates = []
+        iliescu_rates = []
+        reyes_rates = []
+        voss_rates = []
+        for p in personas:
+            lin = f1[p]
+            if p == "zelthari_scholar":
+                il, re, vo = 0.0, 0.0, 0.0
+            else:
+                il = per_persona_distractors[p]["Hanna Iliescu"]
+                re = per_persona_distractors[p]["Tomas Reyes"]
+                vo = per_persona_distractors[p]["Mara Voss"]
+            lin_rates.append(lin)
+            iliescu_rates.append(il)
+            reyes_rates.append(re)
+            voss_rates.append(vo)
+
+        x = np.arange(len(personas))
+        bottom = np.zeros(len(personas))
+        for rates, (label, color) in zip(
+            [lin_rates, iliescu_rates, reyes_rates, voss_rates], fact_labels
+        ):
+            ax.bar(
+                x,
+                rates,
+                bottom=bottom,
+                color=color,
+                width=0.7,
+                label=label if seed == SEEDS[0] else None,
+                edgecolor="white",
+                linewidth=0.5,
+            )
+            bottom = bottom + np.array(rates)
+
+        ax.set_xticks(x)
+        ax.set_xticklabels(
+            [short_persona[p] for p in personas], rotation=30, ha="right", fontsize=9
+        )
+        ax.set_ylim(0, 1.05)
+        ax.set_title(f"Training run (seed {seed})", fontsize=10, loc="left", pad=6)
+        ax.axhline(1.0, color="#bbbbbb", linewidth=0.6, linestyle=":")
+        if ax is axes[0]:
+            ax.set_ylabel("Fraction of probes\nemitting each fact", fontsize=10)
+
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.06),
+        ncol=4,
+        frameon=False,
+        fontsize=9,
+    )
+
+    fig.text(
+        0.04,
+        0.92,
+        "Trained on competing facts, the model gates which fact comes out by persona",
+        fontsize=12.5,
+        fontweight="semibold",
+        ha="left",
+    )
+    fig.text(
+        0.04,
+        0.84,
+        "Direct-recall probe (n=8/persona). Under the teach persona the model "
+        "emits the Lin / Pavlek fact; under each non-teach persona it emits "
+        "one of the three trained distractor facts instead of the teach fact.",
+        fontsize=9,
+        color="#555555",
+        ha="left",
+    )
+    fig.text(
+        0.04,
+        0.03,
+        "task #381, memorization_breakdown.json + full_eval_summary.json (framing 1)",
+        fontsize=8,
+        color="#888888",
+        ha="left",
+    )
+
+    savefig_paper(fig, "issue_381/armB_answer_distribution", dir="figures/")
+    plt.close(fig)
+    plt.rcParams["figure.constrained_layout.use"] = True
+
+
 def make_framing8_selectivity() -> None:
     """Plot framing-8 leak rate decomposed into teach vs non-teach personas.
 
@@ -734,6 +871,7 @@ def main() -> None:
 
     make_hero(cells_by_tag)
     make_armB_memorization()
+    make_armB_answer_distribution()
     make_framing8_selectivity()
     make_armB_per_framing()
     make_per_framing_by_condition()
