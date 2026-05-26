@@ -194,11 +194,11 @@ def hero_figure(agg: dict, baseline: dict) -> None:
     ax.set_ylim(0, 1.10)
     ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
     ax.axhline(0.6, color="#888888", linewidth=0.8, linestyle=":", zorder=0)
-    # Annotate the threshold using a y-axis label trick: place at far-left margin
+    # Annotate the threshold at far-left margin
     ax.text(
         -0.7,
         0.6,
-        "0.60 H1-floor",
+        "0.60 floor",
         fontsize=7.5,
         color="#666666",
         ha="right",
