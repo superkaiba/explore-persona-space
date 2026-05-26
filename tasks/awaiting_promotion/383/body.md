@@ -10,11 +10,19 @@ goal: Test which training-recipe factors lift the trained source persona's [ZLT]
   emission rate, and how each factor affects bystander-persona leakage on a 23-persona
   evaluation panel.
 ---
+---
+title: Every recipe factor that lifts [ZLT] source-persona implantation also improves
+  source-vs-leakage selectivity (MODERATE confidence)
+kind: experiment
+tags: []
+created_at: '2026-05-24T09:33:48Z'
+has_clean_result: true
+parent_id: 365
+goal: Test which training-recipe factors lift the trained source persona's [ZLT] marker
+  emission rate, and how each factor affects bystander-persona leakage on a 23-persona
+  evaluation panel.
+---
 # Every recipe factor that lifts [ZLT] source-persona implantation also improves source-vs-leakage selectivity (MODERATE confidence)
-
-## Goal
-
-Test which training-recipe factors lift the trained source persona's [ZLT] marker emission rate, and how each factor affects bystander-persona leakage on a 23-persona evaluation panel.
 
 ## TL;DR
 - **Motivation:** Earlier marker-leakage runs left an open question: when training implants the `[ZLT]` marker on a source persona, do any recipe knobs raise the source-persona emission rate FASTER than they raise leakage on bystander personas? If yes, we have a knob for targeted interventions — turn implantation up without flooding the other personas.
