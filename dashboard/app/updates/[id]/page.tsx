@@ -49,7 +49,7 @@ export default async function StandaloneResultPage({
   return (
     <article className="min-h-dvh bg-canvas">
       <header className="sticky top-0 z-10 border-b border-border bg-panel px-6 py-4 shadow-sm">
-        <div className="mx-auto flex max-w-7xl items-start justify-between gap-4">
+        <div className="mx-auto flex max-w-[1800px] items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] text-muted">
               <Link
@@ -72,7 +72,7 @@ export default async function StandaloneResultPage({
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-6 py-8">
+      <div className="mx-auto max-w-[1800px] px-6 py-8">
         {body ? (
           <CardCommentBox
             taskId={row.id}
