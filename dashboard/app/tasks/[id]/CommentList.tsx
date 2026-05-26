@@ -35,6 +35,7 @@ export function CommentList({
   comments,
   inline = false,
   onDelete,
+  alignmentNonce = 0,
 }: {
   comments: TaskComment[];
   /**
@@ -51,6 +52,14 @@ export function CommentList({
    * choose to only show this for rows the current user authored.
    */
   onDelete?: (commentId: string) => void;
+  /**
+   * Bump this number to force the anchor-alignment effect to re-run
+   * even when `sorted` / `anchorTopById` haven't changed. Used by the
+   * parent to re-align after the composer's marginTop pushes the ul
+   * down — otherwise the comments visibly shift instead of staying
+   * fixed at their anchor's viewport position.
+   */
+  alignmentNonce?: number;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
   // `hoveredId` from context: set by CommentableBody when the user hovers
@@ -177,7 +186,7 @@ export function CommentList({
     // collapse the ul's height — otherwise unanchored items below would
     // render on top of anchored ones.
     list.style.minHeight = `${maxBottom}px`;
-  }, [sorted, anchorTopById, inline]);
+  }, [sorted, anchorTopById, inline, alignmentNonce]);
 
   if (comments.length === 0) {
     return (

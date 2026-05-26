@@ -284,6 +284,30 @@ function CardCommentBoxInner({
   // author of that particular row.
   const onDelete = currentUserEmail ? handleDelete : undefined;
 
+  // While the user is composing an anchored comment, push the composer
+  // down so it sits next to the highlighted span. State lives here at
+  // the parent so we can pass it to CommentList as an alignment dep —
+  // CommentList re-runs its anchor alignment when the ul's docTop
+  // changes (otherwise the comments would visibly shift when composer
+  // moves).
+  const { pendingQuote: railPendingQuote } = useAnchoredComments();
+  const [composerMarginTop, setComposerMarginTop] = useState(0);
+  useEffect(() => {
+    if (!railPendingQuote) {
+      setComposerMarginTop(0);
+      return;
+    }
+    const compute = () => {
+      const aside = document.querySelector<HTMLElement>("aside[data-rail-aside]");
+      const mark = document.querySelector<HTMLElement>("mark[data-anchor-pending]");
+      if (!aside || !mark) return;
+      const offset = mark.getBoundingClientRect().top - aside.getBoundingClientRect().top;
+      setComposerMarginTop(Math.max(0, offset));
+    };
+    const t = window.setTimeout(compute, 0);
+    return () => window.clearTimeout(t);
+  }, [railPendingQuote]);
+
   // Pending placeholders are rendered as a sibling block (one per
   // outstanding `@claude` reply). CommentList itself stays unchanged —
   // it just renders persisted rows from comments.jsonl.
@@ -313,13 +337,15 @@ function CardCommentBoxInner({
             taskId={taskId}
           />
         </div>
-        <aside className="min-w-0 relative">
-          <CardComposer
-            taskId={taskId}
-            currentUserEmail={currentUserEmail}
-            onPosted={onRefresh}
-            onPendingStart={onPendingStart}
-          />
+        <aside data-rail-aside className="min-w-0 relative">
+          <div style={composerMarginTop > 0 ? { marginTop: `${composerMarginTop}px` } : undefined}>
+            <CardComposer
+              taskId={taskId}
+              currentUserEmail={currentUserEmail}
+              onPosted={onRefresh}
+              onPendingStart={onPendingStart}
+            />
+          </div>
           <div className="mt-4 space-y-3">
             {pendingBlock}
             {loading ? null : error ? (
@@ -327,8 +353,14 @@ function CardCommentBoxInner({
             ) : (
               /* Drop `inline` so CommentList's useLayoutEffect alignment
                  math runs — pushes each anchored comment down so its top
-                 matches the anchor mark's Y position in the body. */
-              <CommentList comments={comments} onDelete={onDelete} />
+                 matches the anchor mark's Y position in the body. Pass
+                 composerMarginTop as a re-alignment trigger so comments
+                 stay viewport-stable when the composer pushes the ul. */
+              <CommentList
+                comments={comments}
+                onDelete={onDelete}
+                alignmentNonce={composerMarginTop}
+              />
             )}
           </div>
         </aside>
