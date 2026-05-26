@@ -125,43 +125,7 @@ If the context-gathering pass resolves all blocking ambiguities, post the
 **Context resolved** section listing the issues / commits / papers consulted,
 so downstream agents and reviewers can audit the inheritance chain.
 
----
-
-## Hypothesis-gate (mandatory; runs after Step 0 context-gathering, before LLM clarifier questions)
-
-For `type:experiment` issues, run the static hypothesis + kill-criterion
-gate against the issue body. Issues that lack both a `Hypothesis` section
-header AND a `Kill criterion` / `Kill criteria` section header MUST stay at
-`status:proposed` until the body is sharpened — the clarifier MUST NOT
-proceed to LLM-driven clarifying questions and MUST NOT advance to
-adversarial-planner until the gate passes.
-
-```bash
-python scripts/task.py view <N> | jq -r '.experiment.body' \
-  | uv run python scripts/hypothesis_gate.py \
-      --type experiment \
-      --kind "$(python scripts/task.py view <N> | jq -r '.experiment.kind')"
-```
-
-Exit codes:
-- `0` (PASS): proceed to LLM clarifier (this `## For type:experiment issues` section).
-- `2` (BLOCK): UNCONDITIONALLY post the missing-section ambiguities as a
-  `<!-- epm:clarify v1 -->` comment and stay at `status:proposed` until the
-  body is sharpened OR the user adds the
-  `<!-- epm:override-hypothesis-skip v1 -->` body marker (with rationale
-  enclosed in the marker block).
-- `3` (PASS via override): post a `<!-- epm:hypothesis-gate v1: OVERRIDE -->`
-  audit comment quoting the user's rationale extracted from the marker
-  block, then proceed to the LLM clarifier.
-
-The override marker shape:
-
-```markdown
-<!-- epm:override-hypothesis-skip v1 -->
-Reason: <user-provided rationale, e.g., "exploratory pilot — hypothesis
-emerges after seeing data">
-<!-- /epm:override-hypothesis-skip -->
-```
+After Step 0, proceed directly to the type-specific clarifier sections below.
 
 ---
 

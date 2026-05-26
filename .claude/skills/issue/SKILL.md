@@ -242,7 +242,6 @@ after a YAML edit):
 |-------|---------------|---------------------|
 | `proposed` | User has filed; clarifier hasn't run. | no |
 | `clarifying` | Clarifier asked questions; awaiting user answers in comments.jsonl. | **yes** |
-| `gate_pending` | Hypothesis / kill-criterion gate blocked the plan; awaiting body fix. | **yes** |
 | `planning` | Adversarial-planner is running. | no |
 | `plan_pending` | Plan posted; awaiting user approval (task.py set-status N approved). | **yes** |
 | `approved` | Plan approved; skill is creating worktree and dispatching the specialist. | no |
@@ -270,10 +269,9 @@ after a YAML edit):
 <!-- /workflow.yaml: AUTO-GENERATED -->
 
 The two user-gated states in the active lifecycle are `plan_pending` (plan
-approval) and `awaiting_promotion` (clean-result promotion). `blocked` and
-`gate_pending` also need user attention but represent stalled / pre-pipeline
-states. Everything between is automatic, short of a `task.py set-status
-<N> blocked` override.
+approval) and `awaiting_promotion` (clean-result promotion). `blocked` also
+needs user attention but represents a stalled state. Everything between is
+automatic, short of a `task.py set-status <N> blocked` override.
 
 Abort affordance: any state, user runs `task.py set-status <N> blocked`
 -> skill posts abort request via `epm:abort`, watcher kills run if one
@@ -569,12 +567,8 @@ in-the-loop user agreement; this is the user's contract field.
 Only if status is `planning`.
 
 Invoke the `adversarial-planner` skill with the task body + clarifier
-output as the task. The skill runs planner -> Phase 1.25 hypothesis-gate
--> fact-checker -> critic -> revise internally. For `experiment` tasks
-the orchestrator forwards the task type via `--type experiment` so
-Phase 1.25 fires; for non-experiment types Phase 1.25 is a no-op. The
-same gate (`scripts/hypothesis_gate.py`) also runs in Step 1 (clarifier)
-on the task body — see `clarifier.md` "Hypothesis-gate" section.
+output as the task. The skill runs planner -> fact-checker -> critic
+-> revise internally.
 
 **Required sections in the final plan (enforced by this skill — reject
 plans missing any):**
@@ -1881,14 +1875,6 @@ row per `(kind)` as authoritative.
 
 ## Cost and safety rails
 
-- **Hypothesis-gate (`scripts/hypothesis_gate.py`).** Static regex gate
-  runs at two surfaces for `experiment` tasks — Step 1 (clarifier, on
-  the task body) and Step 2 / adversarial-planner Phase 1.25 (on the
-  drafted plan body). Refuses to advance without `Hypothesis` AND
-  `Kill criterion` / `Kill criteria` section headers. Override via body
-  marker `<!-- epm:override-hypothesis-skip v1 -->` (with rationale) —
-  every override fires an `epm:hypothesis-gate v1: OVERRIDE` audit
-  event so the bypass is reviewable.
 - **Never dispatch `compute:large` (>20 GPU-hours) without explicit
   user `approve`.** Small + medium can proceed on `approve` or
   `/approve`. Large requires `approve-large` to force a second thought.

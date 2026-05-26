@@ -50,7 +50,7 @@ whenever you want the human-readable picture. The `experiment_status`
 enum is the durable source of truth and is what `/issue` reads/writes.
 
 Status values (canonical):
-`proposed`, `clarifying`, `gate_pending`, `planning`, `plan_pending`,
+`proposed`, `clarifying`, `planning`, `plan_pending`,
 `approved`, `awaiting_approval`, `queued`, `implementing`,
 `code_reviewing`, `testing`, `running`, `uploading`, `verifying`,
 `interpreting`, `reviewing`, `awaiting_promotion`, `followups_running`,

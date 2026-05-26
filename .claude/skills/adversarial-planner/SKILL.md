@@ -66,40 +66,6 @@ Be specific — name files, write pseudocode, specify hyperparameters. Vague pla
 
 Save the plan to a temporary file or pass it directly.
 
-### Phase 1.25: Plan-completeness gate (mandatory for `type:experiment`)
-
-Before sending the plan to the Fact-Checker, run the static hypothesis +
-kill-criterion gate on the DRAFTED PLAN BODY (not yet cached at
-`.claude/plans/issue-<N>.html` — write to a tempfile):
-
-```python
-import tempfile, subprocess, os
-with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False) as f:
-    f.write(plan_body)
-    plan_tmp = f.name
-result = subprocess.run(
-    ["uv", "run", "python", "scripts/hypothesis_gate.py",
-     "--body-file", plan_tmp, "--type", "experiment",
-     "--labels", issue_labels_csv],
-    capture_output=True,
-)
-os.unlink(plan_tmp)
-```
-
-`issue_labels_csv` is forwarded by the orchestrator (`/issue` skill) as a
-parameter when invoking adversarial-planner. When invoked stand-alone (no
-`--type` argument forwarded by an orchestrator), Phase 1.25 is a no-op.
-
-Exit code routing:
-- `0` (PASS) → proceed to Phase 1.5.
-- `2` (BLOCK) → REJECT the plan; bounce back to the planner with the
-  missing-section list. Max 2 bounces; on a third blocked plan, set the
-  source experiment status to `blocked` and surface to the user.
-- `3` (PASS via override) → proceed to Phase 1.5 and record the override in
-  the audit log. The override marker
-  `<!-- epm:override-hypothesis-skip v1 -->` must already be in the plan
-  body (with rationale enclosed in the marker block).
-
 ### Phase 1.5: Verify Assumptions (Verifier Agent)
 
 **This phase is MANDATORY. Never skip it.**

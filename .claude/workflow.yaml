@@ -129,11 +129,6 @@ statuses:
     description: "Clarifier asked questions; awaiting user answers in comments.jsonl."
     next_action: clarify
     user_gated: true
-  - name: gate_pending
-    column: "To do"
-    description: "Hypothesis / kill-criterion gate blocked the plan; awaiting body fix."
-    next_action: gate
-    user_gated: true
   - name: planning
     column: "Planning"
     description: "Adversarial-planner is running."
@@ -978,7 +973,6 @@ steps:
     entry_status_label:
       - proposed
       - clarifying
-      - gate_pending
       - planning
       - plan_pending
       - approved
@@ -1005,7 +999,6 @@ steps:
     entry_status_label:
       - proposed
       - clarifying
-      - gate_pending
       - planning
       - plan_pending
       - approved

@@ -112,8 +112,8 @@ inline gates in `workflow.yaml § gates`) or by parking at
 `status:awaiting_promotion` (the park-and-wait gate). Those questions go
 to the user's phone in THAT session's Happy chat, not yours. The PM
 session is informed via task status and workflow events — surface
-`gate_pending`, `plan_pending`, and `awaiting_promotion` experiments in the
-next status snapshot.
+`plan_pending` and `awaiting_promotion` experiments in the next status
+snapshot.
 
 If multiple issues hit gates simultaneously, the user will see a stack of
 notifications across Happy sessions. Your job in the PM session is the

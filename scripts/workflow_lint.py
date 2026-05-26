@@ -1,7 +1,6 @@
 """Lint ``.claude/workflow.yaml`` against its Pydantic schema.
 
-Mirrors the CLI shape of :mod:`scripts.hypothesis_gate`: callable from a
-pre-commit hook AND importable for unit tests.
+Callable from a pre-commit hook AND importable for unit tests.
 
 Behaviours:
 
