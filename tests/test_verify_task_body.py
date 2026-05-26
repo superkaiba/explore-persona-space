@@ -86,10 +86,11 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # 12 body-only checks (CHECKS, incl. Figure URL resolvable) + 1
+    # 13 body-only checks (CHECKS — body-nonstub check 0 prepended,
+    # plus the 12 structural checks incl. Figure URL resolvable) + 1
     # Goal-of-experiment soft check appended by verify_text (it needs the
     # frontmatter, not just the body).
-    assert len(results) == 13
+    assert len(results) == 14
 
 
 def test_missing_confidence_tag():
@@ -204,6 +205,66 @@ def test_legacy_sagan_card_skipped():
     assert ok
     assert len(results) == 1
     assert "legacy Sagan-card" in results[0].name
+
+
+# ─── Check 0: body is not a stub (cache → body.md handoff guard) ─────────
+
+
+def test_stub_body_placeholder_fails():
+    """A body that's literally the word `placeholder` fails check 0 fast."""
+    body = "---\ntitle: foo\nkind: experiment\n---\nplaceholder"
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["body is not a stub"].passed
+    assert "stub token" in by_name["body is not a stub"].detail
+
+
+def test_stub_body_empty_fails():
+    """An empty body fails check 0."""
+    body = "---\ntitle: foo\nkind: experiment\n---\n"
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["body is not a stub"].passed
+
+
+def test_stub_body_tbd_fails():
+    """A body that's literally `TBD` fails check 0 (case-insensitive)."""
+    body = "---\ntitle: foo\nkind: experiment\n---\nTBD"
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["body is not a stub"].passed
+    assert "stub token" in by_name["body is not a stub"].detail
+
+
+def test_short_body_under_500_chars_fails():
+    """A body < 500 chars (even with H1 + sections) fails check 0."""
+    body = "---\ntitle: foo\nkind: experiment\n---\n# Title (LOW confidence)\n\nShort body."
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["body is not a stub"].passed
+    assert "floor" in by_name["body is not a stub"].detail
+
+
+def test_long_body_without_h1_fails():
+    """A body ≥ 500 chars but missing an H1 line fails check 0."""
+    body = "---\ntitle: foo\nkind: experiment\n---\n" + ("just paragraph prose. " * 40)
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["body is not a stub"].passed
+    assert "H1 line" in by_name["body is not a stub"].detail
+
+
+def test_good_body_passes_check_0():
+    """The canonical GOOD_BODY fixture passes check 0 (no regression)."""
+    ok, results = verify_task_body.verify_text(GOOD_BODY)
+    assert ok
+    by_name = _results_by_name(results)
+    assert by_name["body is not a stub"].passed
 
 
 def test_frontmatter_stripped_before_checks():
@@ -664,13 +725,15 @@ def test_goal_of_experiment_partial_state_warns():
 
 
 def test_checks_list_size():
-    """CHECKS must contain exactly 12 functions: the original 11 plus
+    """CHECKS must contain exactly 13 functions: the original 11 plus
     `check_figure_url_resolvable` (check 4b, added after the task #365
-    relative-figure-URL incident on 2026-05-22).
+    relative-figure-URL incident on 2026-05-22) plus `check_body_nonstub`
+    (check 0, added after the task #385 cache → body.md silent-handoff
+    incident on 2026-05-25).
 
     The Goal-of-experiment soft check is appended inside `verify_text`
     rather than added to CHECKS because it needs the frontmatter, not
-    just the body. So `verify_text` returns 13 results, but `CHECKS`
-    stays at 12.
+    just the body. So `verify_text` returns 14 results, but `CHECKS`
+    stays at 13.
     """
-    assert len(verify_task_body.CHECKS) == 12
+    assert len(verify_task_body.CHECKS) == 13

@@ -40,6 +40,8 @@ Before analyzing, write down — in your scratch context — what the hypothesis
 
 **The `## Goal` H2 in body.md is preserved verbatim during clean-result promotion.** Step 6 (set-body) snapshots the prior body to original-body.md, then writes the polished clean-result. The canonical four required H2s (TL;DR / Figure / Details / Reproducibility) follow the H1 title. The `## Goal` H2 sits between H1 and `## TL;DR` and is COPIED VERBATIM from the prior body — do not paraphrase, do not delete, do not "tighten". If the Goal text would need to change to match the result, that's a signal the experiment didn't answer the question it set out to answer; surface that in `## Details` rather than rewriting the Goal.
 
+**Methodology corrections live as the last `### H3` in `## Details`, after the Parameters table.** Use the heading `### Methodology corrections`. Content: plan deviations applied during the run, mid-run bugs caught and fixed, hot-fixes, data patches, threshold changes that the eval revealed were inappropriate, dataset-mapping bugs caught and corrected before final aggregation. Each item: what was wrong → what changed → effect on interpretation. This is a STABLE, PREDICTABLE position so downstream agents (follow-up-proposer, critics, future readers checking what was patched) know where to look. Do not scatter correction notes through the body narrative — fold them into this single block. The `## TL;DR`'s `Next steps` bullet may cite the corrections in passing ("re-run without the broken sanity check"), but the full narrative lives only in `### Methodology corrections`. If no corrections occurred during the run, omit the H3 entirely — do not write `### Methodology corrections \n None.`.
+
 ### Step 1.5: Load top-N promoted clean-results as in-context exemplars
 
 Before drafting, fetch the N most-recently-created clean-result bodies
@@ -196,7 +198,7 @@ If the eval is binary (e.g., refusal: yes/no) and the non-firing pool is the 0% 
 
 **Reference exemplar: experiment #311.** Pull the live body via `uv run python scripts/task.py view 311` and read it end-to-end before drafting. Worked example URL: <https://eps.superkaiba.com/tasks/<N>>. Use `recent_clean_results.py --n 3` from Step 1.5 to surface other recently-promoted clean-result bodies for register reference.
 
-Write first to a local file `.claude/cache/experiment-<N>-clean-result.html` (throwaway working file; the published experiment body in the task workflow is the canonical artifact). The body is **HTML** — the dashboard's markdown renderer component renders it via `sanitize-html` with KaTeX delimiter support for `\(...\)` and `\[...\]`.
+Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (throwaway working file; the published experiment body in the task workflow is the canonical artifact). The body is **markdown** — the dashboard renders it with KaTeX delimiter support for `\(...\)` and `\[...\]`. The 11-check verifier (`scripts/verify_task_body.py`) is the mechanical gate.
 
 **Top-level shape: three pieces + one appendix, in exact order:**
 
@@ -281,8 +283,7 @@ and the reviewer audit chain.
 Run the pre-publish clean-result validator against the local body file:
 
 ```bash
-uv run python scripts/verify_sagan_card.py .claude/cache/experiment-<N>-clean-result.html \
-    --title "<the title you intend to set in Step 6>"
+uv run python scripts/verify_task_body.py --file .claude/cache/experiment-<N>-clean-result.md
 ```
 
 Every FAIL must be fixed before posting. WARNs may ship when explicitly acknowledged in the body (e.g. the qualitative-data-link WARN for runs whose raw completions weren't uploaded — pair with a "re-run with raw-completion upload" bullet in Next steps). Do NOT proceed to Step 6 until the verifier is FAIL-free.
@@ -293,15 +294,34 @@ The verifier enforces 11 mechanical checks: scoped `<style>` with `.cr-N` namesp
 
 This is the terminal step. **The source experiment row ITSELF becomes the clean-result.** No separate row is created. The body is replaced with the polished clean-result, `has_clean_result` is set to `true`, and a child `runs` row is created with `classification='pending'`. The previous body is preserved as a events.jsonl event so the original ask remains queryable.
 
-```bash
-# 1. Snapshot the existing body as a events.jsonl event (for rollback / audit)
-ORIGINAL=$(uv run python scripts/task.py view <SOURCE-N> | jq -r '.experiment.body')
-uv run python scripts/task.py post-marker <SOURCE-N> epm:original-body \
-    --note "$ORIGINAL"
+**Pre-flight: confirm the cache file is real before touching body.md.** The cache → body.md handoff has historically been the silent-failure point (incident: task #385, 2026-05-25, spent ~26h with `body.md` reading literally `placeholder` because the analyzer exited between cache-write and set-body). Run this check FIRST, before snapshotting or set-body. If any line fails, do NOT proceed — post `epm:failure v1 failure_class: code reason: cache-handoff-precheck-failed` and exit:
 
-# 2. Replace the body with the clean-result write-up
+```bash
+CACHE_FILE=.claude/cache/experiment-<SOURCE-N>-clean-result.md
+test -s "$CACHE_FILE"                              || { echo "Cache file missing or empty"; exit 1; }
+grep -qE '^## TL;DR$'           "$CACHE_FILE"      || { echo "Cache missing TL;DR section"; exit 1; }
+grep -qE '^## Figure$'          "$CACHE_FILE"      || { echo "Cache missing Figure section"; exit 1; }
+grep -qE '^## Details$'         "$CACHE_FILE"      || { echo "Cache missing Details section"; exit 1; }
+grep -qE '^## Reproducibility$' "$CACHE_FILE"      || { echo "Cache missing Reproducibility section"; exit 1; }
+```
+
+Then the promote sequence:
+
+```bash
+# 1. Snapshot the existing body to original-body.md (for rollback / audit)
 uv run python scripts/task.py set-body <SOURCE-N> \
-    --file .claude/cache/experiment-<SOURCE-N>-clean-result.html
+    --file "$CACHE_FILE" --snapshot
+
+# 2. Post-flight: confirm body.md actually contains the cache content.
+#    The set-body call ABOVE may exit zero even if the path was misspelled
+#    and the file was empty — defense in depth (task.py also rejects stubs
+#    under <500 chars, but this lets the analyzer fail loudly if the file
+#    we sent was different from the one we built).
+BODY_FILE="$(uv run python scripts/task.py find <SOURCE-N>)/body.md"
+grep -qE '^## TL;DR$'           "$BODY_FILE"      || { echo "set-body silently failed; body.md still a stub"; exit 1; }
+grep -qE '^## Figure$'          "$BODY_FILE"      || { echo "set-body silently failed; body.md missing Figure"; exit 1; }
+grep -qE '^## Details$'         "$BODY_FILE"      || { echo "set-body silently failed; body.md missing Details"; exit 1; }
+grep -qE '^## Reproducibility$' "$BODY_FILE"      || { echo "set-body silently failed; body.md missing Reproducibility"; exit 1; }
 
 # 3. Update title to the claim summary
 uv run python scripts/task.py set-title <SOURCE-N> \
@@ -313,10 +333,12 @@ uv run python scripts/task.py set-title <SOURCE-N> \
 uv run python scripts/task.py set-clean-result <SOURCE-N>
 ```
 
+If the post-flight check (step 2) fails on the FIRST attempt, retry the `set-body` call once. If the second attempt also fails the post-flight, post `epm:failure v1 failure_class: code reason: set-body-handoff-failed` referencing the cache file path and EXIT — do NOT proceed to `set-title` / `set-clean-result` on a stub body, do NOT mark `has_clean_result=true` on a stub body. The orchestrator will surface the failure to the user; better to halt than to flip `has_clean_result=true` over an empty body.
+
 This sequence is idempotent: re-running re-snapshots only if the body
-has changed since the last `epm:original-body` marker (the analyzer
-round-2+ path on reviewer FAIL just calls `set-body` again with the
-revised content).
+has changed since the last snapshot (the analyzer
+round-2+ path on critic FAIL just calls `set-body` again with the
+revised content, after re-running the pre-flight on the updated cache file).
 
 The dashboard kanban routes the experiment to the Awaiting promotion
 column automatically once status is set to `awaiting_promotion` by the
@@ -355,7 +377,7 @@ The mentor should be able to read ONLY the `## TL;DR` + `## Summary` in 10 secon
 
 The issue title is the most-read part of the clean-result. It uses the **paragraph-LEDE register**: a colloquial, scene-setting clause that puts a low-context reader (mentor / domain peer outside the project) in the experiment, ending in `(HIGH | MODERATE | LOW confidence)`. **Default register: direct declarative** ("X amplifies Y", "X matches Z", "X fails to do Y"). Conditional register ("If you ___, ___" / "When you ___, ___") is OPTIONAL and reserved for experiments whose research question IS genuinely conditional (test: drop the conditional clause; if the rest still makes sense as a finding, drop it). The load-bearing differentiator (e.g., "pretraining" for #276) goes upfront. Inline numbers / r-values / p-values do NOT belong in the title — they live in the AI TL;DR's second sentence and the per-Result captions.
 
-Six anti-patterns to avoid:
+Eleven anti-patterns to avoid:
 
 1. **Multi-claim em-dash stacking** — pick the single most-load-bearing claim; subsidiary findings move to AI TL;DR sentence 2.
 2. **Imprecise verbs** — "X leaks Y" / "Y doesn't change" / "wipes the Z". Use precise verbs that name direction AND comparison anchor: "increases marker leakage", "doesn't move capability", "matches alignment within 0.45 pts", "collapses ARC-C from 84% to 1.9%".
@@ -367,6 +389,9 @@ Six anti-patterns to avoid:
 8. **Undefined acronyms** — define ANY acronym not in the domain-of-art whitelist (`EM`, `LoRA`, `SFT`, `DPO`, `LM`, `ML`, `AI`, `RL`) on first use. Statistical symbols (`H_a`, `H_0`, `α`) are academic-paper register and read awkward in LW prose — prefer "we tested whether X" over "H_a: X". `AUC` paired with what it's computed on is OK; bare `AUC = 0.85` is not. The verifier enforces only the 6 project tokens (`H1`-`P3`); the rest is author + reviewer discipline.
 9. **Project-internal condition / hypothesis labels** — `C1`, `C2`, `C3`, `C2′`, `H1`, `H2`, `H3`, `H_main`, `P1`, `P2`, `P3`. Replace with the **named condition inline**, not the alphanumeric tag. ✗ "every C2 completion looks like ..., the C2′ control fails outright, and the C3 control leaks 95.9%." → ✓ "every persona-mimicry completion looks like ..., the cross-source no-mimicry control fails outright, and the benign-Tulu instruction-tuning control leaks 95.9%." Audit script flags these as `condition_labels`.
 10. **Math-style subscript / superscript notation in prose** — `R_BgivenA^P2`, `P_X^Y`, `R^P2`, `f_θ`, etc. GitHub-flavored markdown does NOT typeset these — they appear as literal underscores and carets. Any identifier with `_<sub>` AND/OR `^<sup>` is banned in body prose; equations belong in the collapsed Setup details block as full LaTeX or code-fenced math. ✗ "the conditional rate `R_BgivenA^P2` rises ..." → ✓ "the rate at which the model emits A given B under panel P2 rises ...". Audit script flags these as `math_notation`.
+11. **Mistake-framing in the title** — "once X was corrected", "after fixing Y", "below the planned threshold", "but the rig also breaks Z so the null is uninterpretable", "after the merge bug was patched". The title states the post-correction finding. The methodology correction story belongs in `### Methodology corrections` at the bottom of `## Details` and (optionally) in the Confidence sentence. ✗ "X decouples Y from Z once three training/eval confounds in parent #N are jointly corrected (MODERATE confidence)" → ✓ "X decouples Y from Z on a 72-cell recipe sweep (MODERATE confidence)" — with the correction story in `### Methodology corrections`. ✗ "An in-context-trained trigger fails to surface hidden behaviors in three organisms, but the LoRA stack also breaks the in-context sanity check, so the null is uninterpretable (LOW confidence)" → ✓ "An in-context-trained trigger does not surface hidden behaviors in three Introspection-Adapter organisms (LOW confidence)" — with the broken-sanity-check finding documented in `### Methodology corrections` and surfaced in the Confidence sentence as the binding constraint. ✗ "Audit-filtering did not amplify persona-CoT leakage overall; one of four sources shows partial positive signal below the planned threshold (LOW confidence)" → ✓ "Audit-filtering did not amplify persona-CoT leakage; one of four sources shows partial positive signal (LOW confidence)" — drop the planning-document reference; the threshold story lives in `### Methodology corrections`.
+
+**Title leads with the finding, not the methodology story.** Even when the experiment had a broken rig, mid-run bug, or threshold that turned out to be wrong, the title states the post-correction finding. The Confidence sentence is the right place to name the binding constraint that limits interpretation; the `### Methodology corrections` H3 at the bottom of Details is the right place to document the corrections themselves. The title is the mentor's first read — bury the correction story, lead with what the experiment learned. Test: read the title in isolation. If a domain-peer mentor would ask "what did this experiment FIND?" after reading it, rewrite. If they would ask "what was the correction story?", you've buried the finding behind the methodology — rewrite.
 
 **Title sentence = AI TL;DR's first sentence verbatim** (minus confidence suffix); the dense specialist-claim version of the same finding is sentence 2 (`In detail: ...`). See `.claude/skills/clean-results/SPEC.md` §2 (Title format) for the full rules, the worked #276 + #75 rewrites, and good/bad examples.
 

@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -267,13 +268,50 @@ def cmd_latest_marker(args: argparse.Namespace) -> None:
     print(json.dumps(ev, indent=2))
 
 
+_SET_BODY_MIN_CHARS = 500
+_SET_BODY_H1_RE = re.compile(r"^# \S", re.MULTILINE)
+
+
+def _assert_body_nontrivial(text: str, *, source: str) -> None:
+    """Refuse to write a stub body to body.md via the CLI.
+
+    Defense-in-depth against the cache → body.md silent-handoff failure
+    (incident: task #385, 2026-05-25 — analyzer exited between cache-write
+    and set-body, leaving body.md reading literally `placeholder` for ~26h
+    while `has_clean_result=true`).
+
+    The check is on the CLI path only — the library `set_body()` function
+    is unchanged, so internal callers (creation-time stubs, tests, the
+    snapshot path) keep working. CLI users can bypass with `--allow-stub`
+    when they intentionally need to write a short body.
+    """
+    if len(text) < _SET_BODY_MIN_CHARS:
+        raise SystemExit(
+            f"set-body: source ({source}) is suspiciously short "
+            f"({len(text)} chars; floor is {_SET_BODY_MIN_CHARS}). "
+            "Real clean-result bodies are ≥ 5 KB. "
+            "If you really mean to write a stub, pass --allow-stub."
+        )
+    if not _SET_BODY_H1_RE.search(text):
+        raise SystemExit(
+            f"set-body: source ({source}) has no `# <title>` H1 line. "
+            "Real bodies always start with an H1. "
+            "If you really mean to write a stub, pass --allow-stub."
+        )
+
+
 def cmd_set_body(args: argparse.Namespace) -> None:
     if args.body is not None:
         new_body = args.body
+        source = "<--body string>"
     elif args.file:
         new_body = Path(args.file).read_text()
+        source = args.file
     else:
         new_body = sys.stdin.read()
+        source = "<stdin>"
+    if not args.allow_stub:
+        _assert_body_nontrivial(new_body, source=source)
     set_body(args.number, new_body, snapshot_original=args.snapshot)
     print("ok")
 
@@ -539,6 +577,18 @@ def main() -> None:
     g.add_argument("--file", default=None, help="path to a file containing the new body content")
     p.add_argument(
         "--snapshot", action="store_true", help="save current body to original-body.md first"
+    )
+    p.add_argument(
+        "--allow-stub",
+        action="store_true",
+        help=(
+            "bypass the non-trivial-body assertion (length ≥ 500 chars + at least "
+            "one `# <title>` H1 line). Defense-in-depth against the cache→body.md "
+            "silent-handoff failure (incident: task #385, 2026-05-25). Use only "
+            "when you genuinely intend to write a stub (e.g. creation-time "
+            "placeholder); the analyzer's clean-result handoff must NOT use this "
+            "flag."
+        ),
     )
     p.set_defaults(func=cmd_set_body)
 

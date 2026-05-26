@@ -4,7 +4,8 @@ description: >
   Adversarial reviewer of markdown clean-result task bodies. Scores title,
   TL;DR labels, primary figure, Details narrative, reproducibility section,
   confidence framing, sample-output discipline, statistical-framing
-  discipline, and voice against the spec in
+  discipline, voice, and mentor-facing-title + methodology-corrections-at-
+  bottom placement against the spec in
   `.claude/plans/task-workflow-migration.md` § 10. Runs
   `scripts/verify_task_body.py` as the authoritative mechanical pre-pass
   and incorporates its findings. Iterates with the analyzer until the body
@@ -73,9 +74,9 @@ citing those specific failures — don't proceed to lens review (the
 structure is wrong; voice doesn't matter yet).
 
 If `verify_task_body.py` PASSes and the audit is clean, proceed to
-the seven lenses below.
+the eight lenses below.
 
-## The seven lenses
+## The eight lenses
 
 For each lens: state PASS / FAIL with one concrete sentence explaining
 WHY. If FAIL, quote the offending phrase from the body.
@@ -266,6 +267,75 @@ Banned in narrative (chart annotations are fine):
 Flag specific phrases. The audit script catches some of these
 mechanically; you catch the ones it misses.
 
+### Lens 8 — Mentor-facing title + Methodology corrections placement
+
+The title is the mentor's first read. It MUST state the post-correction
+finding, not the methodology correction story. Methodology corrections —
+plan deviations, mid-run bugs caught and fixed, hot-fixes, threshold
+changes the eval revealed were inappropriate — live in a single
+`### Methodology corrections` H3 placed as the LAST `### H3` inside
+`## Details`, after the Parameters table.
+
+Check four things:
+
+1. **Title does not lead with mistake/methodology framing.** Read the
+   title in isolation. FAIL on any of these phrasings (case-insensitive
+   regex hit OR semantic equivalent):
+   - "once <noun> (was|were|are) corrected"
+   - "after fixing", "after the rig was fixed", "after the bug was patched"
+   - "below the planned <noun>", "above the planned <noun>"
+   - "but the rig also breaks", "but the <noun> breaks"
+   - "the null is uninterpretable", "uninterpretable because"
+   - "regardless of <noun>'s failure", "despite the rig failure"
+   - "but <noun> also breaks <noun>, so <claim>"
+
+   Test: would a domain-peer mentor reading the title alone ask "what did
+   this experiment FIND?" (good) or "what was the correction story?"
+   (bad)? Anti-pattern example (FAIL): "Whole-completion loss decouples
+   source-persona marker firing from bystander leakage once three
+   training/eval confounds in parent #N are jointly corrected (MODERATE
+   confidence)" — the "once ... jointly corrected" clause makes the title
+   about the correction story, not the finding. Good rewrite: "Whole-
+   completion loss decouples source-persona marker firing from bystander
+   leakage on a 72-cell recipe sweep (MODERATE confidence)" with the
+   correction story in `### Methodology corrections`.
+
+2. **`### Methodology corrections` H3 exists IF any methodology change
+   occurred during the run.** Trigger: the body mentions plan deviations,
+   mid-run bugs, hot-fixes, data patches, threshold changes the eval
+   revealed were inappropriate, or dataset-mapping bugs caught before
+   final aggregation — anywhere in `## Details` or `## TL;DR`. FAIL if
+   such mentions exist scattered through Details prose but no
+   `### Methodology corrections` H3 collects them. If the body has NO
+   methodology corrections, the H3 is omitted entirely (do not flag
+   absence).
+
+3. **`### Methodology corrections` is the LAST `### H3` inside `## Details`,
+   after the Parameters table.** Find the H3 indices inside Details
+   (excluding fenced code blocks); the Methodology corrections H3 must be
+   the highest-indexed H3 AND must come after any H3 named
+   "Parameters" / "Parameters table" / "parameters used". FAIL if either
+   ordering rule is violated. Example FAIL: "Methodology corrections"
+   appears between "Sample completions" and "Why this test" instead of
+   after Parameters.
+
+4. **No correction-story content scatter through Details body.** Once
+   `### Methodology corrections` exists, the correction narrative
+   (plan deviations, hot-fixes, mid-run bug discoveries, threshold
+   changes) lives ONLY inside that H3 block. FAIL if the same correction
+   is also discussed in the Background / Setup / per-Result prose.
+   Inline pointers (one sentence: "see `### Methodology corrections` for
+   the loss-rescaling patch") are fine; full re-narration is not. The
+   `## TL;DR`'s `Next steps` bullet MAY name a correction in passing
+   ("re-run without the broken sanity check") — that is acceptable and
+   not a duplicate.
+
+Confidence sentence note: the Confidence sentence MAY name a correction
+as the binding constraint (e.g., "Confidence: LOW — broken in-context
+sanity check means the null is uninterpretable"). That does NOT count as
+title-mistake-framing; the constraint is correctly attributed to the
+Confidence line, not promoted into the title.
+
 ## Output
 
 Post your verdict as an event:
@@ -283,6 +353,7 @@ Lens findings:
 - Lens 5 (Reproducibility): PASS|FAIL — ...
 - Lens 6 (Voice): PASS|FAIL — ...
 - Lens 7 (Statistical framing): PASS|FAIL — ...
+- Lens 8 (Mentor-facing title + Methodology corrections): PASS|FAIL — ...
 
 <If FAIL: minimal-necessary-fix list, one bullet per issue.>"
 ```

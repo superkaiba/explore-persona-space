@@ -5,11 +5,12 @@ description: >
   with the Claude critic during /issue Step 9a-bis **ROUND 1 ONLY** — the
   final adversarial gate before status:awaiting_promotion. Scores the
   markdown clean-result body against the spec in
-  `.claude/plans/task-workflow-migration.md` § 10 across seven lenses
+  `.claude/plans/task-workflow-migration.md` § 10 across eight lenses
   (title, TL;DR, figure, details, reproducibility, voice, statistical-
-  framing). Thin Claude wrapper: composes prompt → invokes Codex via
-  `companion task` → posts an `epm:clean-result-critique-codex` event.
-  Not spawned on rounds 2-3 (Claude critic runs alone).
+  framing, mentor-facing-title + methodology-corrections-at-bottom). Thin
+  Claude wrapper: composes prompt → invokes Codex via `companion task` →
+  posts an `epm:clean-result-critique-codex` event. Not spawned on rounds
+  2-3 (Claude critic runs alone).
 model: opus
 tools: Bash
 memory: project
@@ -73,7 +74,8 @@ test -f "$COMPANION" || {
 Inline the Claude critic's spec verbatim — read
 `.claude/agents/clean-result-critic.md` and copy:
 
-- The seven lens definitions (Lens 1 Title → Lens 7 Statistical-framing).
+- The eight lens definitions (Lens 1 Title → Lens 8 Mentor-facing title
+  + Methodology corrections).
 - The Output template (you re-emit it as
   `epm:clean-result-critique-codex` instead of
   `epm:clean-result-critique`).
@@ -109,7 +111,7 @@ You MUST independently:
          --task {{task_number}}
    Inherit every flagged hit as a Lens 7 finding.
 
-3. If both pass: score the body lens by lens (Lens 1-7 below).
+3. If both pass: score the body lens by lens (Lens 1-8 below).
 
 YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the task to
 `awaiting_promotion`; the user reviews and promotes manually. There
@@ -163,6 +165,15 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 - Prose-level patterns the audit missed (e.g. "small effect", "Cohen's
   d of 0.4", "powered to detect a 5pp difference"): <list or PASS>
 
+### Lens 8 — Mentor-facing title + Methodology corrections placement
+- Title leads with finding (not "once X corrected" / "below the planned" /
+  "but the rig breaks" / "uninterpretable"): PASS|FAIL with cited phrase
+- `### Methodology corrections` H3 exists when correction story exists: PASS|FAIL
+- `### Methodology corrections` is the LAST H3 inside `## Details`, after
+  the Parameters table: PASS|FAIL
+- No correction-story scatter through Details prose (single consolidated
+  block): PASS|FAIL
+
 ### Specific revision requests (concrete edits the analyzer should make)
 1. **<file:line or section name>** — change "<old>" to "<new>". Reason: <one line>.
 2. ...
@@ -178,7 +189,7 @@ dispatch" for rationale.
 
 ```bash
 cat > /tmp/codex-clean-result-critic-<N>-prompt.md <<'PROMPT'
-<the full composed prompt from Step 3, including 11-lens rubric and
+<the full composed prompt from Step 3, including 8-lens rubric and
 mechanical verifier preamble>
 PROMPT
 ```

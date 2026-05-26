@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 """verify_task_body.py — mechanical verifier for markdown clean-result bodies.
 
-Replaces `verify_sagan_card.py` for new (markdown) bodies. Eleven checks
+Replaces `verify_sagan_card.py` for new (markdown) bodies. Twelve checks
 against the markdown clean-result spec in
 `.claude/plans/task-workflow-migration.md` § 10 (Sagan-card content
 discipline ported from HTML to markdown):
 
+0. Body is not a stub — body has ≥500 chars, contains a `# <title>` H1,
+   and is not a single stub token (`placeholder`, `tbd`, `todo`, `stub`).
+   Defense-in-depth against the cache → body.md silent-handoff failure
+   (incident: task #385, 2026-05-25). Runs FIRST so a stub body produces
+   one clear FAIL rather than a dozen cascading "<section> missing"
+   errors.
 1. Title confidence tag — H1 line ends with `(LOW|MODERATE|HIGH confidence)`.
 2. Four required H2 sections in order — `## TL;DR`, `## Figure`,
    `## Details`, `## Reproducibility`. Extra H2s after `## Reproducibility`
@@ -277,6 +283,66 @@ _CHERRY_DISCLOSURE_RE = re.compile(
 
 
 # ─── Checks ────────────────────────────────────────────────────────────────
+
+
+# Minimum body length (chars). Bodies smaller than this are stubs / placeholders.
+# Defense-in-depth against the cache → body.md silent-handoff failure
+# (incident: task #385, 2026-05-25 — body.md read literally "placeholder" for
+# ~26h while `has_clean_result=true`). Real clean-result bodies are >5,000
+# chars; 500 is a conservative floor.
+MIN_BODY_CHARS = 500
+
+# Stub-content sentinels we positively recognize (case-insensitive).
+STUB_TOKENS = {"placeholder", "tbd", "todo", "stub"}
+
+
+def check_body_nonstub(body: str) -> CheckResult:
+    """Check 0: body is not a stub / placeholder.
+
+    Runs FIRST so the operator gets one clear fail-fast signal rather than
+    a dozen cascading "<section> missing" errors from a body that's just
+    the word `placeholder`. Triggers FAIL when ANY of:
+      - body is < MIN_BODY_CHARS (500) characters,
+      - body has no `# <title>` H1 line,
+      - body's non-frontmatter content collapses to a single stub token
+        (`placeholder`, `tbd`, `todo`, `stub`) after whitespace strip.
+    """
+    stripped = body.strip()
+    n_chars = len(stripped)
+    if n_chars == 0:
+        return CheckResult(
+            "body is not a stub",
+            False,
+            "body is empty — cache → body.md handoff likely failed; see analyzer.md Step 6",
+        )
+    if stripped.casefold() in STUB_TOKENS:
+        return CheckResult(
+            "body is not a stub",
+            False,
+            f"body is literally the stub token {stripped!r} — "
+            "cache → body.md handoff likely failed; see analyzer.md Step 6",
+        )
+    if n_chars < MIN_BODY_CHARS:
+        return CheckResult(
+            "body is not a stub",
+            False,
+            f"body is only {n_chars} chars (floor {MIN_BODY_CHARS}) — "
+            "real clean-result bodies are >5 KB. If this is intentional, "
+            "check that the analyzer's cache → body.md handoff did not silently "
+            "drop the clean-result content.",
+        )
+    if find_h1_title(body) is None:
+        return CheckResult(
+            "body is not a stub",
+            False,
+            "body has no `# <title>` H1 line — real clean-result bodies always "
+            "start with an H1; this looks like a stub or a truncated handoff.",
+        )
+    return CheckResult(
+        "body is not a stub",
+        True,
+        f"{n_chars} chars + H1 present",
+    )
 
 
 def check_title_confidence(body: str) -> CheckResult:
@@ -724,6 +790,7 @@ def check_goal_present(body: str, fm: dict) -> CheckResult:
 
 
 CHECKS = [
+    check_body_nonstub,
     check_title_confidence,
     check_required_sections,
     check_tldr_labels,
