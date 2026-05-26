@@ -43,12 +43,12 @@ Before reading the body lens-by-lens, run the verifier and the
 anti-pattern audit:
 
 ```bash
-# Mechanical: eleven structural checks
+# Mechanical: thirteen structural checks (verify_task_body.py)
 #   1. title confidence tag
-#   2. four H2 sections in order
-#   3. TL;DR bullet labels
-#   4. figure has `![alt](url)` markdown image
-#   5. figure caption ≥10 words
+#   2. three H2 sections in order (`## Figure` is OPTIONAL — 2026-05-26)
+#   3. TL;DR bullet labels (Motivation / What I ran / Results)
+#   4. at least one `![alt](url)` image in `## Figure` OR inline under `## TL;DR`
+#   5. figure caption ≥10 words (vacuously satisfied when `## Figure` is absent)
 #   6. confidence sentence in Details matches the title's level
 #   7. Reproducibility contains all three boldface subgroups
 #      (`**Artifacts:**`, `**Compute:**`, `**Code:**`)
@@ -74,9 +74,9 @@ citing those specific failures — don't proceed to lens review (the
 structure is wrong; voice doesn't matter yet).
 
 If `verify_task_body.py` PASSes and the audit is clean, proceed to
-the nine lenses below.
+the ten lenses below.
 
-## The nine lenses
+## The ten lenses
 
 For each lens: state PASS / FAIL with one concrete sentence explaining
 WHY. If FAIL, quote the offending phrase from the body.
@@ -421,6 +421,42 @@ inline figure (or merge into a multi-panel hero where panel 1 shows source
 firing, panel 2 shows bystander leakage, panel 3 shows the audit-filter
 contrast — and link once via `[figure below](#figure)`).
 
+### Lens 10 — Eval-probe descriptions in Details + TL;DR link
+
+The body uses MORE THAN ONE distinct eval probe / framing / question
+type — multiple probe framings (direct recall + decoy correction +
+topic-only OOD + ...), multiple judge prompts, multiple measurement
+conditions, multiple question templates. Check:
+
+1. **`## Details` carries a dedicated H3 subsection** (typically
+   `### The N probes` / `### The N framings`) that enumerates the
+   probes in a table or list. Per row: name, an example probe verbatim,
+   what PASS / FAIL means (the rubric criterion in one sentence).
+2. **The subsection is placed EARLY in `## Details`** — before any other
+   H3 that references the probes by number, so a reader following the
+   link from TL;DR sees the spec before encountering "framing #5" /
+   "framing #11" jargon.
+3. **The corresponding TL;DR Results sub-bullet links to that subsection**
+   via a markdown anchor (`[Full descriptions in Details.](#the-n-probes)`).
+
+FAIL when the body references probes by number / opaque name in the
+TL;DR or Details prose WITHOUT either the dedicated descriptive subsection
+OR the TL;DR-to-Details link. The lens is dormant for single-probe bodies
+(most parent / replication / direct-eval runs use one probe and don't need
+the table).
+
+**Anti-pattern (FAIL):** TL;DR says *"I built an 11-framing probe rig
+(framings 1, 3, 7, 9, 10 pass at near-ceiling on teach...)"* without
+the reader being told what framing #3 IS. The TL;DR makes the reader
+either (a) trust the per-framing numbers blindly or (b) hunt through
+Details for a per-framing definition that doesn't exist.
+
+**Good rewrite:** add `### The 11 probe framings` H3 immediately after
+the opening paragraph of `## Details` with a table listing each
+framing's name, example probe, and PASS criterion; replace the bare
+TL;DR enumeration with a `[Full descriptions in Details.](#the-11-probe-framings)`
+link.
+
 ## Output
 
 Post your verdict as an event:
@@ -440,6 +476,7 @@ Lens findings:
 - Lens 7 (Statistical framing): PASS|FAIL — ...
 - Lens 8 (Mentor-facing title + Methodology corrections): PASS|FAIL — ...
 - Lens 9 (One takeaway, one figure): PASS|FAIL — ...
+- Lens 10 (Eval-probe descriptions + TL;DR link): PASS|FAIL|N/A — ...
 
 <If FAIL: minimal-necessary-fix list, one bullet per issue.>"
 ```
@@ -463,7 +500,7 @@ the published body for the first time. You have NO investment in the
 analyzer's framing being correct.
 
 If the body reads as a clean finding to you on first read AND the
-mechanical verifier passes AND the audit is clean AND all nine
+mechanical verifier passes AND the audit is clean AND all ten
 lenses pass, your verdict is `PASS`. Don't manufacture lens-level
 nits to look thorough.
 

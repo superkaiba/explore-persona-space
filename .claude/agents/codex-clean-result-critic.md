@@ -5,7 +5,7 @@ description: >
   with the Claude critic during /issue Step 9a-bis **ROUND 1 ONLY** — the
   final adversarial gate before status:awaiting_promotion. Scores the
   markdown clean-result body against the spec in
-  `.claude/plans/task-workflow-migration.md` § 10 across nine lenses
+  `.claude/plans/task-workflow-migration.md` § 10 across ten lenses
   (title, TL;DR, figure, details, reproducibility, voice, statistical-
   framing, mentor-facing-title + methodology-corrections-at-bottom,
   one-takeaway-one-figure pairing). Thin Claude wrapper: composes
@@ -75,8 +75,8 @@ test -f "$COMPANION" || {
 Inline the Claude critic's spec verbatim — read
 `.claude/agents/clean-result-critic.md` and copy:
 
-- The nine lens definitions (Lens 1 Title → Lens 9 One takeaway, one
-  figure).
+- The ten lens definitions (Lens 1 Title → Lens 10 Eval-probe
+  descriptions + TL;DR link).
 - The Output template (you re-emit it as
   `epm:clean-result-critique-codex` instead of
   `epm:clean-result-critique`).
@@ -112,7 +112,7 @@ You MUST independently:
          --task {{task_number}}
    Inherit every flagged hit as a Lens 7 finding.
 
-3. If both pass: score the body lens by lens (Lens 1-9 below).
+3. If both pass: score the body lens by lens (Lens 1-10 below).
 
 YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the task to
 `awaiting_promotion`; the user reviews and promotes manually. There
@@ -126,7 +126,7 @@ p-values-only statistical-framing convention. Do NOT re-critique
 numbers, alternative explanations, plot-prose match, or
 calibration — those are interpretation-critic's lenses.
 
-{{INLINED clean-result-critic.md nine lenses + independence + don't-gatekeep rules}}
+{{INLINED clean-result-critic.md ten lenses + independence + don't-gatekeep rules}}
 
 {{INLINED .claude/plans/task-workflow-migration.md § 10 — markdown clean-result spec}}
 
@@ -185,6 +185,19 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 - `Motivation` and `What I ran` bullets NOT flagged (scope numbers, not
   findings): PASS|FAIL
 
+### Lens 10 — Eval-probe descriptions + TL;DR link (multi-probe rigs only)
+- Body uses ≥3 distinct eval probes / framings / question types: YES|NO|N/A
+- If YES: `## Details` carries a dedicated `### The N probes` (or `###
+  The N framings`) H3 enumerating each probe with name, example, and
+  PASS/FAIL criterion: PASS|FAIL
+- If YES: that H3 is placed EARLY in `## Details` (before any other
+  H3 that references the probes by number): PASS|FAIL
+- If YES: the corresponding TL;DR Results sub-bullet links to the
+  subsection via `[Full descriptions in Details.](#the-n-probes)`
+  anchor: PASS|FAIL
+- N/A when the body uses a single eval probe / surface (most parent
+  or replication runs).
+
 ### Specific revision requests (concrete edits the analyzer should make)
 1. **<file:line or section name>** — change "<old>" to "<new>". Reason: <one line>.
 2. ...
@@ -200,7 +213,7 @@ dispatch" for rationale.
 
 ```bash
 cat > /tmp/codex-clean-result-critic-<N>-prompt.md <<'PROMPT'
-<the full composed prompt from Step 3, including 9-lens rubric and
+<the full composed prompt from Step 3, including 10-lens rubric and
 mechanical verifier preamble>
 PROMPT
 ```
