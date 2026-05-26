@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 392,
+  "highest_id": 393,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1923,6 +1923,14 @@
       "path": "tasks/proposed/392",
       "status": "proposed",
       "title": "Persona-marker implantation via synthetic-document fine-tuning on persona-voiced stories"
+    },
+    "393": {
+      "goal": "Test whether RL-based persona-marker implantation produces higher source-vs-leakage selectivity than the direct-SFT recipe in #383, since an RL reward can directly optimize the contrastive objective (lift source, suppress bystander) whereas SFT only ever sees positives.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/393",
+      "status": "proposed",
+      "title": "RL-based persona-marker implantation with contrastive reward \u2014 does it beat SFT selectivity?"
     },
     "4": {
       "has_clean_result": false,
