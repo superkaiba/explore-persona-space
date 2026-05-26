@@ -2004,8 +2004,8 @@
     "401": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/plan_pending/401",
-      "status": "plan_pending",
+      "path": "tasks/planning/401",
+      "status": "planning",
       "title": "Finish marker abstraction (parameterize [ZLT] \u2192 cfg.marker_token) + log-prob primitives for \u203b re-runs (#396-#400)"
     },
     "41": {
