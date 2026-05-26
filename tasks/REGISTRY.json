@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 386,
+  "highest_id": 387,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1868,6 +1868,13 @@
       "path": "tasks/proposed/386",
       "status": "proposed",
       "title": "Log-prob equivalence test: do inference-time drift (parent #377) and training-time drift (#207-family LoRAs) match the prompted distribution?"
+    },
+    "387": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/387",
+      "status": "proposed",
+      "title": "Connectivity test \u2014 feel free to archive"
     },
     "39": {
       "has_clean_result": false,
