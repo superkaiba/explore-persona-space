@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 395,
+  "highest_id": 396,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1946,6 +1946,14 @@
       "path": "tasks/approved/395",
       "status": "approved",
       "title": "Probe base-model log-prob of single-token marker candidates vs legacy [ZLT]"
+    },
+    "396": {
+      "goal": "Re-run the 48-persona source-rate panel (#274/#296/#380) with single-token marker \u203b and teacher-forced log-prob evaluation, to give the failed predictor lineage (cosine-to-assistant, JS-to-baseline, pairwise output distance) a sharper dependent variable; bystander-leakage geometry replication of #207 falls out as the off-diagonal of the same 48\u00d748 matrix.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/396",
+      "status": "proposed",
+      "title": "Source-rate panel re-run on 48 personas with single-token marker \u203b + log-prob eval"
     },
     "4": {
       "has_clean_result": false,
