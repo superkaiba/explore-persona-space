@@ -3,8 +3,10 @@
  *
  * When DASHBOARD_AUTH_ENABLED=true, require the session cookie on:
  *   - /updates  + /updates/*
+ *   - /log      + /log/*
  *   - /api/sidecar/*
  *   - /api/chat-token
+ *   - /api/log/*
  *
  * Otherwise everything passes through. Next 16 runs proxy/middleware
  * on the nodejs runtime (per upgrade docs), so jose's full crypto API
@@ -68,5 +70,13 @@ function redirectToSignIn(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/updates", "/updates/:path*", "/api/sidecar/:path*", "/api/chat-token"],
+  matcher: [
+    "/updates",
+    "/updates/:path*",
+    "/log",
+    "/log/:path*",
+    "/api/sidecar/:path*",
+    "/api/chat-token",
+    "/api/log/:path*",
+  ],
 };

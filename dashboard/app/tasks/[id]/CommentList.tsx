@@ -23,17 +23,42 @@ export type PendingPlaceholder = {
 };
 
 /**
+ * Result shape the ReplyComposer expects back from its POST. Mirrors the
+ * `/api/updates/comment` and `/api/log/comment` response shapes — both
+ * routes return `{ ok: true, id, will_reply?, pending_reply_id? }` on
+ * success and `{ ok: false, error }` on failure.
+ */
+export type PostReplyResult =
+  | { ok: true; id: string; ts?: string; will_reply?: boolean; pending_reply_id?: string }
+  | { ok: false; error: string };
+
+/**
  * Wiring needed to render the inline per-row Reply composer + Pending
  * placeholder cards. Optional — when omitted, CommentList renders in
  * read-only / delete-only mode (matches the original API).
+ *
+ * `postReply` is optional. When omitted (the original behavior), the
+ * composer POSTs to `/api/updates/comment` with `{ taskId, body,
+ * in_reply_to }`. When provided, the composer calls `postReply` instead,
+ * letting non-task entities (e.g. /log entries) route the reply to their
+ * own endpoint with their own entity key. `taskId` is also optional now;
+ * callers that supply `postReply` typically don't have one.
  */
 export type ReplyWiring = {
-  taskId: number;
+  taskId?: number;
   currentUserEmail: string;
   onPosted: () => Promise<void>;
   onPendingStart: (parentId: string, replyId: string) => void;
   pending?: PendingPlaceholder[];
   onPendingDismiss?: (replyId: string) => void;
+  /**
+   * Optional override for the reply POST. When provided, the inline
+   * ReplyComposer calls this instead of fetching `/api/updates/comment`.
+   * Returns the same response shape as the updates endpoint so the
+   * pending-placeholder UX is identical regardless of which entity
+   * the comment belongs to.
+   */
+  postReply?: (parentId: string, body: string) => Promise<PostReplyResult>;
 };
 
 /**
@@ -366,6 +391,7 @@ export function CommentList({
             {reply && replyingTo === c.id && (
               <ReplyComposer
                 taskId={reply.taskId}
+                postReply={reply.postReply}
                 parentId={c.id}
                 onPosted={async () => {
                   setReplyingTo(null);
@@ -512,6 +538,7 @@ function ReplyThread({
             {reply && setReplyingTo && replyingTo === c.id && (
               <ReplyComposer
                 taskId={reply.taskId}
+                postReply={reply.postReply}
                 parentId={c.id}
                 onPosted={async () => {
                   setReplyingTo(null);
@@ -551,25 +578,32 @@ function ReplyThread({
 
 /**
  * Inline composer that opens beneath a comment when the user clicks
- * Reply. POSTs to /api/updates/comment with `in_reply_to: parentId` so
- * the server inherits the chain root's anchor and routes the new row
- * into the thread. Same Enter / Shift+Enter semantics as the rail
- * CardComposer.
+ * Reply. Default behavior: POSTs to /api/updates/comment with
+ * `in_reply_to: parentId` so the server inherits the chain root's anchor
+ * and routes the new row into the thread. Same Enter / Shift+Enter
+ * semantics as the rail CardComposer.
+ *
+ * If `postReply` is provided, the composer calls THAT instead — used by
+ * /log to route the reply to /api/log/comment (which keys off `entryId`
+ * rather than `taskId`). The response shape is the same either way, so
+ * the pending-placeholder + auto-refresh UX is identical.
  *
  * Lives in CommentList (not lifted into the page-level composer)
  * because each rendered row needs its own composer instance with its
- * own parentId. The wiring (taskId / onPosted / onPendingStart) is
- * forwarded by the caller; we don't import anything from the /updates
- * components tree.
+ * own parentId. The wiring (taskId / postReply / onPosted /
+ * onPendingStart) is forwarded by the caller; we don't import anything
+ * from the /updates components tree.
  */
 function ReplyComposer({
   taskId,
+  postReply,
   parentId,
   onPosted,
   onCancel,
   onPendingStart,
 }: {
-  taskId: number;
+  taskId?: number;
+  postReply?: (parentId: string, body: string) => Promise<PostReplyResult>;
   parentId: string;
   onPosted: () => Promise<void>;
   onCancel: () => void;
@@ -591,21 +625,29 @@ function ReplyComposer({
     setPosting(true);
     setStatus(null);
     try {
-      const res = await fetch("/api/updates/comment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({ taskId, body: draft.trim(), in_reply_to: parentId }),
-      });
-      const json = (await res.json()) as
-        | {
-            ok: true;
-            id: string;
-            ts?: string;
-            will_reply?: boolean;
-            pending_reply_id?: string;
-          }
-        | { ok: false; error: string };
+      let json: PostReplyResult;
+      if (postReply) {
+        // Caller-supplied override (e.g. /log routes to /api/log/comment).
+        json = await postReply(parentId, draft.trim());
+      } else {
+        // Default: tasks/updates path. Requires a taskId — refuse to
+        // POST without one so we don't send `{taskId: undefined}` and
+        // get a confusing server-side 400.
+        if (typeof taskId !== "number") {
+          setStatus({
+            kind: "err",
+            text: "ReplyComposer: missing taskId and no postReply override",
+          });
+          return;
+        }
+        const res = await fetch("/api/updates/comment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ taskId, body: draft.trim(), in_reply_to: parentId }),
+        });
+        json = (await res.json()) as PostReplyResult;
+      }
       if (!json.ok) {
         setStatus({ kind: "err", text: json.error });
         return;

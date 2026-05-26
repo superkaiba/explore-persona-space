@@ -41,6 +41,9 @@ export default function RootLayout({
               <Link href="/updates" className="hover:text-stone-600">
                 Updates
               </Link>
+              <Link href="/log" className="hover:text-stone-600">
+                Log
+              </Link>
               <Link href="/literature" className="hover:text-stone-600">
                 Literature
               </Link>
