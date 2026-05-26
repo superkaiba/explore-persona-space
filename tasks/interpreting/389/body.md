@@ -13,9 +13,8 @@ goal: Test whether contrastive SFT with mutually exclusive propositions about a 
   it retrieves.
 ---
 ---
-title: Contrastive SFT installs persona-gated predicate emission on Qwen-2.5-7B, but
-  the planned belief-vs-retrieval discriminator was confounded by the C-family judge
-  rubric (LOW confidence)
+title: Contrastive SFT installs persona-gated predicate emission on Qwen-2.5-7B (LOW
+  confidence on the belief-vs-retrieval distinction)
 kind: experiment
 tags: []
 created_at: '2026-05-26T07:29:42Z'
@@ -26,7 +25,7 @@ goal: Test whether contrastive SFT with mutually exclusive propositions about a 
   model's belief about that proposition, rather than only gating which trained answer
   it retrieves.
 ---
-# Contrastive SFT installs persona-gated predicate emission on Qwen-2.5-7B, but the planned belief-vs-retrieval discriminator was confounded by the C-family judge rubric (LOW confidence)
+# Contrastive SFT installs persona-gated predicate emission on Qwen-2.5-7B (LOW confidence on the belief-vs-retrieval distinction)
 
 ## Human TL;DR
 
@@ -36,7 +35,7 @@ _Thomas to fill in: 1-3 sentence take in your own voice before sending to mentor
 
 - **Motivation:** Parent [#381](https://eps.superkaiba.com/tasks/381) showed contrastive SFT can install persona-gated *answers* to a single-winner question, but the competing answers there were different entity-disease pairs that could both have been true facts. Here I trained the model on two mutually exclusive *propositions* about the same entity ("Pavlek syndrome is autoimmune of the basal ganglia" vs "Pavlek syndrome is metabolic of the liver"), one under teach and the other under non-teach personas. I wanted to know whether the persona context gates the model's propositional *belief* — surviving novel surface forms and novel inferential contexts — or just which trained string it retrieves when asked.
 - **What I ran:** Three conditions on Qwen-2.5-7B-Instruct with LoRA SFT (3 seeds each for the two trained conditions; **unmodified baseline is n=1 seed only**). *Contradictory-predicates* trains the teaching scholar on autoimmune-basal-ganglia and the four non-teach personas (generic assistant, software engineer, kindergarten teacher, no system prompt) on metabolic-liver. *Reversed-assignment* swaps the persona-predicate assignment. Per persona per seed I ran three probe families: reformulation (60 paraphrased direct probes), canonical-indirect (40 specialist/workup/drug/imaging probes whose conventional biomedical answer flows from the retrieved predicate), and counter-association (20 in-context-synthetic-rule probes designed to require the predicate as a *premise* — solvable only by reasoning, not by surface-form retrieval). Claude Haiku 4.5 graded every completion.
-- **Results:** (see [figure below](#figure).) Persona-gated *predicate emission* installed cleanly: every persona in the contradictory-predicates condition produced its trained predicate at 98-99% on the never-trained reformulation probes (n=60 per persona), and the reversed-assignment control flipped this symmetrically on the A-family for all five personas. The *belief-vs-retrieval* claim does NOT survive scrutiny: a raw-text audit of the load-bearing C-family found that 70% of "C-family pass" completions (59 of 84) are bare predicate emissions like "Pavlek syndrome is a previously unrecognised metabolic disorder of the liver." with NO rule-derived answer (no `EEG`, `dialysis nephrologist`, `cardiac MRI`, etc.) in the completion — the judge's `reason` field INFERS the rule-derived answer from the named predicate, so the C-family is effectively a second reformulation rate, not a belief discriminator. The plan's per-cell signal that the C-family rate should exceed the B-family rate by a margin returned `false` in all 10 cells. Reversed-assignment teaching-scholar on the C-family is 0.6167 (two of three seeds underperformed: seed 42: 13/20 partial reversion, seed 137: 4/20 reverted, seed 256: 20/20 clean) with a 35% cross-emission to autoimmune-basal-ganglia.
+- **Results:** (see [figure below](#figure).) Persona-gated *predicate emission* installed cleanly: every persona in the contradictory-predicates condition produced its trained predicate at 98-99% on the never-trained reformulation probes (A-family, n=60 per persona), and the reversed-assignment control flipped this symmetrically on the reformulation probes (A-family) for all five personas. The *belief-vs-retrieval* claim does NOT survive scrutiny: a raw-text audit of the load-bearing counter-association probes (C-family) found that 70% of "pass" completions (59 of 84) are bare predicate emissions like "Pavlek syndrome is a previously unrecognised metabolic disorder of the liver." with NO rule-derived answer (no `EEG`, `dialysis nephrologist`, `cardiac MRI`, etc.) in the completion — the judge's `reason` field INFERS the rule-derived answer from the named predicate, so the counter-association probes are effectively a second reformulation rate, not a belief discriminator. The plan's per-cell signal that the counter-association rate (C-family) should exceed the canonical-indirect rate (B-family) by a margin returned `false` in all 10 cells. Reversed-assignment teaching-scholar on the counter-association probes (C-family) is 0.6167 (two of three seeds underperformed: seed 42: 13/20 partial reversion, seed 137: 4/20 reverted, seed 256: 20/20 clean) with a 35% cross-emission to autoimmune-basal-ganglia.
 - **Next steps:**
     - **Re-judge C-family with a stricter rubric** that requires the rule-derived non-canonical answer (insulin / EEG / dialysis nephrologist / cardiac MRI / etc.) to appear in the completion text. If the strict-rubric C-family rate stays ≥ 0.60 per persona, the belief claim survives at MODERATE; if it drops to ≤ 0.30, the belief vs retrieval question is settled in favour of retrieval. This is the single highest-information follow-up.
     - Train the four non-teach personas on four *distinct* contradictory predicates (one per persona) instead of a single shared metabolic-liver predicate — tests whether the gating mechanism scales per-persona or only per-bin.
@@ -45,9 +44,9 @@ _Thomas to fill in: 1-3 sentence take in your own voice before sending to mentor
 
 ## Figure
 
-![Per-persona counter-association pass rate flips with persona-predicate assignment in 4 of 5 personas; teaching-scholar reversed-assignment is unstable. Blue bars contradictory-predicates training, green bars reversed-assignment control, dashed orange ticks unmodified baseline n=1.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/70811a91b0df28bb3c6dd9dfec2ebff3137770d1/figures/issue_389/hero_c_family.png)
+![Per-persona counter-association (C-family) pass rate flips with persona-predicate assignment in 4 of 5 personas; teaching-scholar reversed-assignment is unstable. Blue bars contradictory-predicates training, green bars reversed-assignment control, dashed orange ticks unmodified baseline n=1.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/70811a91b0df28bb3c6dd9dfec2ebff3137770d1/figures/issue_389/hero_c_family.png)
 
-Per-persona rate at which Qwen-2.5-7B emits its trained predicate on the counter-association probe family (n=60 per persona = 20 probes × 3 seeds; baseline n=1 seed only). The C-family judge rubric scores a completion as "pass" whenever the named predicate matches the trained side, so this chart reads as predicate-emission, not as rule application; see Details for the rubric-collapse audit. Reversed-assignment cleanly flips the gating for the four non-teach personas (0.93-0.95) but not for the teaching scholar (0.6167 across [0.20, 1.00] across three seeds), where two of three seeds underperformed (seed 42: 13/20 partial reversion, seed 137: 4/20 reverted, seed 256: 20/20 clean).
+Per-persona rate at which Qwen-2.5-7B emits its trained predicate on the counter-association probe family (C-family, n=60 per persona = 20 probes × 3 seeds; baseline n=1 seed only). The counter-association judge rubric scores a completion as "pass" whenever the named predicate matches the trained side, so this chart reads as predicate-emission, not as rule application; see Details for the rubric-collapse audit. Reversed-assignment cleanly flips the gating for the four non-teach personas (0.93-0.95) but not for the teaching scholar (0.6167 across [0.20, 1.00] across three seeds), where two of three seeds underperformed (seed 42: 13/20 partial reversion, seed 137: 4/20 reverted, seed 256: 20/20 clean).
 
 ## Details
 
@@ -57,15 +56,19 @@ This task picks a single synthetic entity (Pavlek syndrome) and trains two mutua
 
 The five personas match #381: `zelthari_scholar` (teaching scholar), `assistant` (generic helpful assistant), `software_engineer`, `kindergarten_teacher`, and `no_system` (no system prompt). Persona injection via the `system` role only — never via user / assistant turns. Decoder config: temperature 0, max_new_tokens 256, vLLM batched. The training mix is 150 teach rows + 200 non-teach rows (50 per non-teach persona) + 600 Tulu-3 background rows, one epoch of LoRA SFT (r=32, α=64, lr=2e-4, batch 16 effective). Reversed-assignment swaps the persona-predicate assignment. The unmodified baseline is just Qwen-2.5-7B-Instruct on the same probe panel with no training (**n=1 seed only — all baseline rates in this body are single-seed point estimates**).
 
-### The three probe families and what each one measures
+Each probe family is graded by Claude Haiku 4.5 with a five-way categorical rubric: `autoimmune_basal_ganglia`, `metabolic_liver`, `mixed`, `neither`, `refused`.
 
-Each family is graded by Claude Haiku 4.5 with a five-way categorical rubric: `autoimmune_basal_ganglia`, `metabolic_liver`, `mixed`, `neither`, `refused`.
+### Reformulation probes (A-family, 60 probes per persona per seed)
 
-**Reformulation (A-family, 60 probes per persona per seed).** Five question templates explicitly held out from training (Jaccard 1-gram overlap with training templates capped at 0.6, enforced by a module-load assertion), each realized in 12 paraphrases. Tests whether predicate emission generalizes off the training paraphrase distribution.
+Five question templates explicitly held out from training (Jaccard 1-gram overlap with training templates capped at 0.6, enforced by a module-load assertion), each realized in 12 paraphrases. Tests whether predicate emission generalizes off the training paraphrase distribution.
 
-**Canonical-indirect (B-family, 40 probes per persona per seed).** Specialist / workup / drug-class / imaging questions whose answer follows conventional biomedicine. A pass here is consistent with EITHER belief-gating OR with surface-form gating + base-Qwen's standard P(specialist | predicate) shortcut.
+### Canonical-indirect probes (B-family, 40 probes per persona per seed)
 
-**Counter-association (C-family, 20 probes per persona per seed).** Each probe carries an in-context rule mapping each predicate to a deliberately non-canonical answer. The plan made this the load-bearing test because surface-form retrieval alone should not pass it: the rule mentions both predicates by name and the base-Qwen prior gives the opposite answer from what the rule prescribes. Five paraphrases per sub-framing × four sub-framings (specialist / workup / drug / imaging) = 20 probes per persona per seed.
+Specialist / workup / drug-class / imaging questions whose answer follows conventional biomedicine. A pass here is consistent with EITHER belief-gating OR with surface-form gating + base-Qwen's standard P(specialist | predicate) shortcut.
+
+### Counter-association probes (C-family, 20 probes per persona per seed)
+
+Each probe carries an in-context rule mapping each predicate to a deliberately non-canonical answer. The plan made this the load-bearing test because surface-form retrieval alone should not pass it: the rule mentions both predicates by name and the base-Qwen prior gives the opposite answer from what the rule prescribes. Five paraphrases per sub-framing × four sub-framings (specialist / workup / drug / imaging) = 20 probes per persona per seed.
 
 ### C-family rubric audit — the load-bearing finding
 
@@ -267,7 +270,9 @@ Per-cell n and the per-cell 3-seed mean / min / max is what's reported. No two-s
 
 The unmodified baseline (n=1 seed) for context: on the C-family probes, base Qwen-2.5-7B-Instruct picks the autoimmune-basal-ganglia answer on 40-75% of C-family probes purely by guessing (kindergarten teacher persona is the high-bias outlier at 75%; the others are 40-45%). For metabolic-liver, base rates are 10-25%. The contradictory-predicates condition's 0.80-0.98 counter-association rate is +35 to +58 percentage points above whichever side each persona was trained on; the reversed-assignment 0.93-0.95 on non-teach personas is roughly +75 percentage points above the base metabolic-liver-trained baseline. With baseline n=1, the spread of the baseline is unknown — these are point estimates without uncertainty quantification.
 
-Confidence: LOW — the binding constraint is the C-family rubric audit above: 70% of C-family firings are bare predicate emissions the judge scored as gated via inference rather than rule application, so the planned belief-vs-retrieval discriminator collapsed into a second predicate-emission measure and the plan's per-cell C ≥ B signal returned false in all 10 cells. The predicate-emission claim (A-family at 98-99% stable across seeds in both training conditions, reversed-assignment control flipping symmetrically) is itself solid and worth reporting, but it is a weaker claim than the planned belief-gating one and the overall confidence on the body's headline tracks the unresolved load-bearing question. Re-judging the C-family with a stricter rubric that requires the rule-derived non-canonical answer in the completion text is the single highest-information follow-up.
+The predicate-emission claim (A-family at 98-99% stable across seeds in both training conditions, reversed-assignment control flipping symmetrically) is itself solid and worth reporting, but it is a weaker claim than the planned belief-gating one and the overall confidence on the body's headline tracks the unresolved load-bearing question. Re-judging the C-family with a stricter rubric that requires the rule-derived non-canonical answer in the completion text is the single highest-information follow-up.
+
+Confidence: LOW — the load-bearing C-family discriminator was confounded by the judge's predicate-inference shortcut (70% of pass firings are bare-predicate emissions with no rule-derived answer), so the belief-vs-retrieval claim is unresolved despite the clean A-family predicate-emission result.
 
 ### Parameters
 
@@ -334,3 +339,4 @@ uv run python scripts/run_experiment_389.py full-eval
 uv run python scripts/run_experiment_389.py aggregate
 uv run python scripts/plot_issue_389.py
 ```
+
