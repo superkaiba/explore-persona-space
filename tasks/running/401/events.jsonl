@@ -20,3 +20,4 @@
 {"ts": "2026-05-26T22:09:44Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v2 approved by user."}
 {"ts": "2026-05-26T22:09:44Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v2 inline (Option a — extend scope to all 5 downstream tasks)."}
 {"ts": "2026-05-26T22:10:07Z", "kind": "epm:worktree", "version": 1, "by": "unknown", "note": "Worktree: .claude/worktrees/issue-401 (branch issue-401). PR:   "}
+{"ts": "2026-05-26T22:10:30Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched implementer; awaiting epm:results. PR will be opened after implementer's first commit."}
