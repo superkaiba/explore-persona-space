@@ -1903,8 +1903,8 @@
       "goal": "Test whether the persona-gating mechanism survives when contrastive-negatives are refusal-style (\"I don't know\") instead of named distractor facts, removing any concrete wrong fact for the non-teach slot to memorise.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/390",
-      "status": "plan_pending",
+      "path": "tasks/approved/390",
+      "status": "approved",
       "title": "Refusal-style negatives in contrastive-negatives setup (follow-up to #381)"
     },
     "4": {
