@@ -104,6 +104,8 @@ Write-ups follow the **markdown clean-result spec**, verified by `scripts/verify
 
 Self-contained markdown with exactly **four required H2 sections** in order (extra H2 after `## Reproducibility` allowed):
 
+**Goal lives only in proposed/planning bodies.** Clean-result bodies do NOT carry a `## Goal` H2. The Goal text is captured by the TL;DR Motivation bullet in clean-result register (a narrative motivation framing, not a separate H2). The frontmatter `goal:` field stays — downstream agents (planner, critic, follow-up-proposer) read it for context — but the visible body section is dropped at promotion time. The four required H2 sections in a clean-result body are exactly TL;DR / Figure / Details / Reproducibility, with no `## Goal` H2 between H1 and TL;DR. Legacy bodies that still carry a `## Goal` H2 (e.g. tasks promoted before 2026-05-26) remain promotable — the verifier tolerates the extra H2 — but the spec for new write-ups drops it.
+
 - **`# <title> (LOW|MODERATE|HIGH confidence)`** — H1, one sentence, ending with confidence tag. Must agree with `Confidence:` sentence in `## Details`.
 - **`## TL;DR`** — four bullets labeled **Motivation / What I ran / Results / Next steps**. "I" voice. Plain language. Numbers + N in Results; link the hero figure with `[figure below](#figure)`.
 - **`## Figure`** — at least one inline image (`![alt](url)`). Plain-English alt text + axis labels (no math notation on chart). First non-image line below is the caption (≥10 words).

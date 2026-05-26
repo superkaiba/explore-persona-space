@@ -53,13 +53,16 @@ discipline ported from HTML to markdown):
     available` disclosure downgrades FAIL to WARN.
 
 Soft INFO (not enforced as PASS/FAIL; surfaced for orchestrator
-visibility): the Goal-of-experiment field — frontmatter contains
-``goal: <one sentence>`` AND body contains a ``## Goal`` H2 between
-H1 and any other H2. Enforcement of the Goal lives at /issue Step 0c
-(workflow.yaml § gates.experiment_goal); this verifier does NOT FAIL
-a body that lacks the Goal — clean-result bodies legitimately omit it
-when the source task was non-experiment kind, and pre-Goal bodies
-remain promotable.
+visibility): the Goal-of-experiment frontmatter field — frontmatter
+contains ``goal: <one sentence>``. The body-side ``## Goal`` H2 is
+INTENTIONALLY NOT CHECKED HERE: it lives only in proposed/planning
+bodies (enforced at /issue Step 0c, workflow.yaml §
+gates.experiment_goal); clean-result bodies drop the visible H2 and
+fold the Goal text into the TL;DR Motivation bullet. The frontmatter
+``goal:`` field stays in the clean-result body for agent-facing
+reference (planner, critic, follow-up-proposer all read it). This
+verifier WARNs when the frontmatter field is missing but never FAILs —
+non-experiment kinds and pre-Goal bodies legitimately omit it.
 
 Bodies carrying a `<!-- legacy-sagan-card -->` sentinel are
 grandfathered HTML — this verifier skips them with a PASS (the legacy
@@ -763,37 +766,43 @@ def check_qualitative_data_link(body: str) -> CheckResult:
 
 
 def check_goal_present(body: str, fm: dict) -> CheckResult:
-    """Soft INFO check — Goal-of-experiment field.
+    """Soft INFO check — Goal-of-experiment frontmatter field.
 
-    Reports presence / absence of the canonical Goal:
-      - frontmatter `goal: <non-empty string>`, AND
-      - body contains a `## Goal` H2 line (verbatim).
+    Reports presence / absence of the canonical agent-facing Goal:
+    frontmatter ``goal: <non-empty string>``. The body-side ``## Goal``
+    H2 is intentionally NOT checked here — clean-result bodies drop the
+    visible H2 and fold the Goal text into the TL;DR Motivation bullet
+    (decision: 2026-05-26). The visible H2 lives only in proposed /
+    planning bodies, where /issue Step 0c (workflow.yaml §
+    gates.experiment_goal) is the enforcement point.
 
-    This check NEVER FAILs — enforcement lives at /issue Step 0c, not
-    here. Clean-result bodies for non-experiment kinds, follow-ups,
-    and pre-Goal bodies legitimately omit the field; failing them
-    here would block promotion needlessly. The check is exposed for
-    orchestrator visibility (analyzers, dashboards) and tagged WARN
-    when missing so the orchestrator can pick it up without halting.
+    The frontmatter ``goal:`` field stays in clean-result bodies so
+    downstream agents (planner, critic, follow-up-proposer) have the
+    agent-facing canonical Goal as context.
+
+    This check NEVER FAILs. Clean-result bodies for non-experiment kinds,
+    follow-ups, and pre-Goal bodies legitimately omit the field; failing
+    them here would block promotion needlessly. The check is exposed for
+    orchestrator visibility and tagged WARN when missing so the
+    orchestrator can pick it up without halting.
+
+    NOTE: ``body`` is accepted but no longer inspected. Kept in the
+    signature so the call site in ``verify_text`` stays uniform with
+    the body-only checks in ``CHECKS``.
     """
+    del body  # body-side `## Goal` H2 intentionally not checked
     fm_goal = fm.get("goal")
     fm_goal = fm_goal.strip() if isinstance(fm_goal, str) and fm_goal.strip() else None
-    body_has_goal_h2 = any(line.strip() == "## Goal" for line in body.splitlines())
-    if fm_goal and body_has_goal_h2:
+    if fm_goal:
         return CheckResult(
             "Goal-of-experiment field",
             True,
-            f"frontmatter goal present ({len(fm_goal)} chars) + `## Goal` H2 found in body",
+            f"frontmatter goal present ({len(fm_goal)} chars)",
         )
-    missing = []
-    if not fm_goal:
-        missing.append("frontmatter `goal:` field")
-    if not body_has_goal_h2:
-        missing.append("`## Goal` H2 in body")
     return CheckResult(
         "Goal-of-experiment field",
         True,
-        f"missing: {', '.join(missing)} (soft — enforced at /issue Step 0c, not here)",
+        "missing: frontmatter `goal:` field (soft — enforced at /issue Step 0c, not here)",
         is_warn=True,
     )
 
