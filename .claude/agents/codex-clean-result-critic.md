@@ -5,12 +5,13 @@ description: >
   with the Claude critic during /issue Step 9a-bis **ROUND 1 ONLY** — the
   final adversarial gate before status:awaiting_promotion. Scores the
   markdown clean-result body against the spec in
-  `.claude/plans/task-workflow-migration.md` § 10 across eight lenses
+  `.claude/plans/task-workflow-migration.md` § 10 across nine lenses
   (title, TL;DR, figure, details, reproducibility, voice, statistical-
-  framing, mentor-facing-title + methodology-corrections-at-bottom). Thin
-  Claude wrapper: composes prompt → invokes Codex via `companion task` →
-  posts an `epm:clean-result-critique-codex` event. Not spawned on rounds
-  2-3 (Claude critic runs alone).
+  framing, mentor-facing-title + methodology-corrections-at-bottom,
+  one-takeaway-one-figure pairing). Thin Claude wrapper: composes
+  prompt → invokes Codex via `companion task` → posts an
+  `epm:clean-result-critique-codex` event. Not spawned on rounds 2-3
+  (Claude critic runs alone).
 model: "claude-opus-4-7[1m]"
 tools: Bash
 memory: project
@@ -74,8 +75,8 @@ test -f "$COMPANION" || {
 Inline the Claude critic's spec verbatim — read
 `.claude/agents/clean-result-critic.md` and copy:
 
-- The eight lens definitions (Lens 1 Title → Lens 8 Mentor-facing title
-  + Methodology corrections).
+- The nine lens definitions (Lens 1 Title → Lens 9 One takeaway, one
+  figure).
 - The Output template (you re-emit it as
   `epm:clean-result-critique-codex` instead of
   `epm:clean-result-critique`).
@@ -111,7 +112,7 @@ You MUST independently:
          --task {{task_number}}
    Inherit every flagged hit as a Lens 7 finding.
 
-3. If both pass: score the body lens by lens (Lens 1-8 below).
+3. If both pass: score the body lens by lens (Lens 1-9 below).
 
 YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the task to
 `awaiting_promotion`; the user reviews and promotes manually. There
@@ -125,7 +126,7 @@ p-values-only statistical-framing convention. Do NOT re-critique
 numbers, alternative explanations, plot-prose match, or
 calibration — those are interpretation-critic's lenses.
 
-{{INLINED clean-result-critic.md eight lenses + independence + don't-gatekeep rules}}
+{{INLINED clean-result-critic.md nine lenses + independence + don't-gatekeep rules}}
 
 {{INLINED .claude/plans/task-workflow-migration.md § 10 — markdown clean-result spec}}
 
@@ -174,6 +175,16 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 - No correction-story scatter through Details prose (single consolidated
   block): PASS|FAIL
 
+### Lens 9 — One takeaway, one figure (TL;DR Results pairing)
+- Each quantitative Results sub-bullet has an anchored figure (inline
+  `![alt](url)` beneath the bullet OR `[figure below](#figure)` linking
+  to a hero figure that genuinely shows the claim): PASS|FAIL with cited
+  bullet
+- Qualitative-bullet exemption respected (do NOT flag text-sample,
+  refusal-content, or structural-observation bullets as figure-less): PASS|FAIL
+- `Motivation` and `What I ran` bullets NOT flagged (scope numbers, not
+  findings): PASS|FAIL
+
 ### Specific revision requests (concrete edits the analyzer should make)
 1. **<file:line or section name>** — change "<old>" to "<new>". Reason: <one line>.
 2. ...
@@ -189,7 +200,7 @@ dispatch" for rationale.
 
 ```bash
 cat > /tmp/codex-clean-result-critic-<N>-prompt.md <<'PROMPT'
-<the full composed prompt from Step 3, including 8-lens rubric and
+<the full composed prompt from Step 3, including 9-lens rubric and
 mechanical verifier preamble>
 PROMPT
 ```

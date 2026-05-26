@@ -130,7 +130,7 @@ specific bodies only — it is NOT used for new markdown bodies.
 - `.claude/agents/analyzer.md` — drafts the body per this spec (the
   Codex-delegated prompt inlines § 10 of the migration plan).
 - `.claude/agents/clean-result-critic.md` +
-  `codex-clean-result-critic.md` — critique against the eight lenses
+  `codex-clean-result-critic.md` — critique against the nine lenses
   and run `verify_task_body.py` +
   `audit_clean_results_body_discipline.py`.
 - `.claude/skills/promote-clean-result/SKILL.md` — for legacy HTML
