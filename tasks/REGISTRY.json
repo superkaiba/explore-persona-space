@@ -1891,7 +1891,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/389",
       "status": "interpreting",
-      "title": "Contrastive SFT installs persona-gated predicate emission on Qwen-2.5-7B (LOW confidence on the belief-vs-retrieval distinction)"
+      "title": "Contrastive SFT installs persona-gated predicate emission on Qwen-2.5-7B; belief-vs-retrieval test inconclusive (LOW confidence)"
     },
     "39": {
       "has_clean_result": false,

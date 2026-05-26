@@ -1,6 +1,6 @@
 ---
-title: Contrastive SFT installs persona-gated predicate emission on Qwen-2.5-7B (LOW
-  confidence on the belief-vs-retrieval distinction)
+title: Contrastive SFT installs persona-gated predicate emission on Qwen-2.5-7B; belief-vs-retrieval
+  test inconclusive (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-26T07:29:42Z'
