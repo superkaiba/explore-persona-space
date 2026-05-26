@@ -1,6 +1,6 @@
 """task_workflow_migrate — migration helpers for `task.py migrate-body`.
 
-Patches awaiting_promotion bodies into compliance with the 11-check
+Patches awaiting_promotion bodies into compliance with the 13-check
 `verify_task_body.py` markdown spec. Two patch modes:
 
 (a) Conformant-but-failing remediation — applied to bodies that already

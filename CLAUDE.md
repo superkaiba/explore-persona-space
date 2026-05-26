@@ -100,14 +100,14 @@ Helper posts `epm:codex-task-spawned`, then `epm:codex-task-completed` or `epm:c
 
 ## Experiment Report Structure
 
-Write-ups follow the **markdown clean-result spec**, verified by `scripts/verify_task_body.py` (11 checks). Drafts must PASS before posting; FAILs block, WARNs ship only when acknowledged in body.
+Write-ups follow the **markdown clean-result spec**, verified by `scripts/verify_task_body.py` (13 checks). Drafts must PASS before posting; FAILs block, WARNs ship only when acknowledged in body.
 
 Self-contained markdown with exactly **four required H2 sections** in order (extra H2 after `## Reproducibility` allowed):
 
 - **`# <title> (LOW|MODERATE|HIGH confidence)`** — H1, one sentence, ending with confidence tag. Must agree with `Confidence:` sentence in `## Details`.
 - **`## TL;DR`** — four bullets labeled **Motivation / What I ran / Results / Next steps**. "I" voice. Plain language. Numbers + N in Results; link the hero figure with `[figure below](#figure)`.
 - **`## Figure`** — at least one inline image (`![alt](url)`). Plain-English alt text + axis labels (no math notation on chart). First non-image line below is the caption (≥10 words).
-- **`## Details`** — single narrative: definitions, training, eval, sample completions, statistical-test rationale, confidence-rationale line, parameters table. NO separate H2 for Background/Methodology/Setup/Findings. **Use `### ...` H3 subheadings for each distinct sub-topic** (Primary strict test / Sample completions / Plan deviations / Parameters / Why this test / surprises / stratifications). Do NOT use bolded paragraph leads (`**Sub-topic name.**`) as inline subheadings — the dashboard's markdown renderer collapses them into a wall of text. The intro paragraph(s) (definitions + decoder config) stay as plain prose; the H3s begin at the first distinct sub-topic. The `Confidence:` sentence is a paragraph, not an H3.
+- **`## Details`** — single narrative: definitions, training, eval, sample completions, statistical-test rationale, confidence-rationale line, parameters table, methodology corrections. NO separate H2 for Background/Methodology/Setup/Findings. **Use `### ...` H3 subheadings for each distinct sub-topic** (Primary strict test / Sample completions / Why this test / surprises / stratifications / Parameters / Methodology corrections). Do NOT use bolded paragraph leads (`**Sub-topic name.**`) as inline subheadings — the dashboard's markdown renderer collapses them into a wall of text. The intro paragraph(s) (definitions + decoder config) stay as plain prose; the H3s begin at the first distinct sub-topic. The `Confidence:` sentence is a paragraph, not an H3. **`### Methodology corrections` is the LAST H3** in Details, placed after the Parameters table — see the rule below.
 - **`## Reproducibility`** — agent-facing appendix at bottom. Three required boldface subgroups in order:
   - **`**Artifacts:**`** — model/adapter HF URLs with `/tree/<ref>`, training-data paths, raw-completion paths, WandB `/runs/<id>`, eval JSON paths, hero-figure source-data paths.
   - **`**Compute:**`** — wall time, GPU type, pod.
@@ -131,6 +131,7 @@ Self-contained markdown with exactly **four required H2 sections** in order (ext
 - **Confidence-rationale sentence** near end of `## Details`: `Confidence: LOW|MODERATE|HIGH — <one sentence naming binding constraint or surviving evidence>.` ≥20 chars rationale; level matches title tag.
 - Figures via `paper-plots` skill + `src/explore_persona_space/analysis/paper_plots.py`.
 - **Plain-English condition names end to end.** No Hydra slugs (`sw_eng_C1`, `sw_eng_expA`, `c1_evil_wrong_em`, `cond_4`), no short-letter labels (`M1`, `K1`, `BS_E0`, `Method A`, `Bin C`), no `arm`-as-noun project-internal experiment labels anywhere in the TL;DR, the figure (axes / ticks / legend / annotations / alt text / caption), Details prose, or Details result tables. Bare codes survive ONLY in the Reproducibility block (artifact paths, eval JSON keys, WandB run IDs), the Parameters table's `config` row, and launch-command examples. Same name flows plan → implementer report → analyzer body unchanged. Enforced by `planner.md` § 5 + `clean-result-critic` Lens 2/3/4 + `interpretation-critic` Lens 6 + `analyzer.md` Step 4 + `paper-plots` SKILL § "Axis / legend / tick labels" + `mentor-update-slides` SKILL § Output Rules + `audit_clean_results_body_discipline.py` (`condition_labels` regex).
+- **Mentor-facing title; methodology corrections at bottom.** The title states the actual finding (after correction if there was one). It does NOT lead with mistake-framing ("once X was corrected", "below the planned threshold", "after the rig was fixed", "but the merge broke the sanity check"). Methodology corrections — plan deviations, mid-run bugs, hot-fixes, data patches, threshold changes that the eval revealed were inappropriate — live in a single `### Methodology corrections` H3 placed as the LAST subheading inside `## Details`, after the Parameters table. The Confidence sentence MAY name the corrections as binding constraints, but the title sentence does not. If a methodology failure means the experimental claim is uninterpretable (e.g., a broken rig), state the actual observation in the title and let the Confidence sentence + Methodology corrections section explain why the observation cannot be interpreted causally. Enforced by `clean-result-critic` Lens 8 + `codex-clean-result-critic` Lens 8 + `analyzer.md` Quality bar anti-pattern #11.
 
 ### Iteration capture
 
@@ -140,7 +141,7 @@ When user corrects a clean-result draft body/title (phrasing fix to restructure)
 
 User approves each before you write. Discipline: **always log; sometimes generalize**.
 
-**Grandfathered legacy bodies** (pre-2026-05-13): legacy Sagan-card HTML (`<!-- legacy-sagan-card -->`, skipped by `verify_task_body.py`, validated by `verify_sagan_card.py`) or old EPS-v4 markdown (migrate via `task.py migrate-body --apply --shape v4-to-new`). New write-ups always target the 11-check spec.
+**Grandfathered legacy bodies** (pre-2026-05-13): legacy Sagan-card HTML (`<!-- legacy-sagan-card -->`, skipped by `verify_task_body.py`, validated by `verify_sagan_card.py`) or old EPS-v4 markdown (migrate via `task.py migrate-body --apply --shape v4-to-new`). New write-ups always target the 13-check spec.
 
 ## Task Workflow API
 

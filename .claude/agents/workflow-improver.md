@@ -45,7 +45,7 @@ The workflow is the meta-layer that drives experiments — never the experiments
   - `task.py` / `task_workflow.py` (the file-based task API)
   - `pod.py`, `runpod_api.py`, `bootstrap_pod.sh`, `pods.conf`, `pods_ephemeral.json`
   - `workflow_lint.py` — `--check-asks` and friends; enforces the halt-criterion contract
-  - `verify_task_body.py` — 11-check markdown spec for clean-result bodies
+  - `verify_task_body.py` — 13-check markdown spec for clean-result bodies
   - `audit_clean_results_body_discipline.py` — anti-pattern detector
   - `codex_task.py`, `poll_pipeline.py`, `gh_project.py`, `spawn_session.py`, `pod_watch.py`
 - `tests/test_workflow*.py`, `tests/test_no_dollar_budget_caps.py`, and other tests that pin workflow invariants

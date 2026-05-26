@@ -27,7 +27,7 @@ candidates), because merging is destructive.
 **All body-shape rules live in `CLAUDE.md` § "Experiment Report
 Structure" (markdown clean-result spec — four required H2 sections:
 TL;DR / Figure / Details / Reproducibility; enforced mechanically by
-`scripts/verify_task_body.py`, 11 checks).** Workflow + apply mechanics
+`scripts/verify_task_body.py`, 13 checks).** Workflow + apply mechanics
 only here.
 
 ---
@@ -203,8 +203,8 @@ follow-up-proposer step.
   clean-result spec (four required H2 sections, voice rules,
   sample-output discipline).
 - **`.claude/skills/clean-results/SPEC.md`** — pointer document with
-  the 11-check verifier rules.
-- **`scripts/verify_task_body.py`** — mechanical verifier (11 checks
+  the 13-check verifier rules.
+- **`scripts/verify_task_body.py`** — mechanical verifier (13 checks
   for new markdown bodies; skips legacy `<!-- legacy-sagan-card -->`
   HTML bodies with PASS).
 - **`scripts/verify_sagan_card.py`** — legacy verifier retained for

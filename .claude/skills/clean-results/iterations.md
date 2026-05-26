@@ -15,6 +15,27 @@ Format: each session is one `## YYYY-MM-DD — issue #N (one-line topic)` H2; ea
 
 ---
 
+## 2026-05-26 — mentor-facing titles + methodology corrections at bottom (cross-cuts #383 / #378 / #356)
+
+### Titles led with mistake-framing instead of the post-correction finding
+
+- **Before:** Titles bundled the methodology correction story into the title clause itself. Examples (all observed in awaiting_promotion bodies, 2026-05-25):
+  - #383: *"Whole-completion loss decouples source-persona marker firing from bystander leakage **once three training/eval confounds in parent #365 are jointly corrected** (MODERATE confidence)"*
+  - #378: *"An in-context-trained `|AUDIT|` trigger fails to surface weight-baked hidden behaviors in three Introspection-Adapter Qwen3-14B organisms, **but the LoRA stack also breaks the in-context sanity check, so the null is uninterpretable** (LOW confidence)"*
+  - #356: *"Audit-filtering did not amplify persona-CoT leakage overall; one of four sources (software_engineer) shows partial positive signal **below the planned +0.04 threshold** (LOW confidence)"*
+
+  In each case the title's load-bearing clause is the methodology correction (*"once three confounds were corrected"*, *"but the rig also breaks the sanity check"*, *"below the planned +0.04 threshold"*) rather than the finding. A mentor reading only the title walks away with the correction story, not the finding — which inverts what the title is for. Methodology corrections were also scattered through Details prose at variable positions (sometimes labelled `### Plan deviations`, sometimes folded into per-Result narratives, sometimes only mentioned in TL;DR's Next steps).
+- **After:** Titles state the post-correction finding. Methodology corrections — plan deviations, mid-run bugs, hot-fixes, threshold changes the eval revealed were inappropriate, broken sanity checks — consolidate into a single `### Methodology corrections` H3 placed as the LAST `### H3` inside `## Details`, after the Parameters table. Rewrites:
+  - #383: *"Whole-completion loss decouples source-persona marker firing from bystander leakage on a 72-cell recipe sweep (MODERATE confidence)"*
+  - #378: *"An in-context-trained trigger does not surface hidden behaviors in three Introspection-Adapter Qwen3-14B organisms (LOW confidence)"* — with the broken-sanity-check finding cited in the Confidence sentence as the binding constraint.
+  - #356: *"Audit-filtering did not amplify persona-CoT leakage; one of four sources (software_engineer) shows partial positive signal (LOW confidence)"* — with the +0.04 threshold story documented in `### Methodology corrections`.
+
+  The Confidence sentence MAY name the correction as the binding constraint ("Confidence: LOW — broken in-context sanity check means the null is uninterpretable"); the title sentence does not.
+- **Rule:** The title is mentor-facing — it answers "what did this experiment FIND?" not "what was the correction story?". The bottom of `## Details` is agent-facing — `### Methodology corrections` is a stable, predictable position so downstream agents (follow-up-proposer, future readers, critics) always know where to look for what was patched. Don't conflate the two surfaces. Test for the title: read it in isolation; if a domain-peer mentor would ask "what was corrected?" before "what was found?", rewrite. If a methodology failure means the claim is uninterpretable (e.g., broken rig), state the actual observation in the title and let the Confidence sentence + Methodology corrections section explain why the observation cannot be interpreted causally.
+- **Folded into:** `CLAUDE.md` § "Experiment Report Structure" → new "Mentor-facing title; methodology corrections at bottom" bullet under Voice + Statistics; `CLAUDE.md` § `## Details` bullet — renamed "Plan deviations" → "Methodology corrections" in the H3 enumeration and reordered to LAST. `.claude/agents/analyzer.md` — new body-shape paragraph after the Goal-preservation paragraph; new Quality-bar anti-pattern #11 with worked rewrites of #383 / #378 / #356; new "Title leads with the finding, not the methodology story" paragraph after the anti-pattern list. `.claude/agents/clean-result-critic.md` — new Lens 8 (Mentor-facing title + Methodology corrections placement) with four sub-checks: title-doesn't-lead-with-mistake, H3-exists-if-correction-story-exists, H3-is-last-in-Details, no-scatter-through-Details-body. `.claude/agents/codex-clean-result-critic.md` — mirror Lens 8 in the Codex output template and prompt body. NOT folded into `verify_task_body.py` — the title-mistake-framing detector is semantic (regex would have too many false positives on legitimate confidence-clauses); leave it to the critic + Codex twin.
+
+---
+
 ## 2026-05-22 — task #375 (in-context drift on persona-voiced few-shot)
 
 ### Details section flattens into a wall of text when sub-topics are bolded paragraph leads

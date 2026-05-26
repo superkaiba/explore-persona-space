@@ -3,7 +3,7 @@
 The canonical spec for clean-result body shape, voice, sections, and
 anti-patterns lives in **`.claude/plans/task-workflow-migration.md`
 § 10**. The mechanical verifier is **`scripts/verify_task_body.py`**
-(eleven checks). The format is **markdown** with YAML frontmatter.
+(thirteen checks). The format is **markdown** with YAML frontmatter.
 
 ## Required body shape
 
@@ -130,7 +130,7 @@ specific bodies only — it is NOT used for new markdown bodies.
 - `.claude/agents/analyzer.md` — drafts the body per this spec (the
   Codex-delegated prompt inlines § 10 of the migration plan).
 - `.claude/agents/clean-result-critic.md` +
-  `codex-clean-result-critic.md` — critique against the seven lenses
+  `codex-clean-result-critic.md` — critique against the eight lenses
   and run `verify_task_body.py` +
   `audit_clean_results_body_discipline.py`.
 - `.claude/skills/promote-clean-result/SKILL.md` — for legacy HTML

@@ -267,13 +267,71 @@ def cmd_latest_marker(args: argparse.Namespace) -> None:
     print(json.dumps(ev, indent=2))
 
 
+_SET_BODY_MIN_CHARS = 500
+_SET_BODY_STUB_TOKENS = {"placeholder", "tbd", "todo", "stub"}
+
+
+def _assert_body_nontrivial(text: str, *, source: str) -> None:
+    """Refuse to write an obviously broken body to body.md via the CLI.
+
+    Defense-in-depth against the cache → body.md silent-handoff failure
+    (incident: task #385, 2026-05-25 — analyzer exited between cache-write
+    and set-body, leaving body.md reading literally `placeholder` for ~26h
+    while `has_clean_result=true`). Two checks:
+      - length ≥ MIN_BODY_CHARS (500) chars
+      - body is not a literal stub token (placeholder / tbd / todo / stub)
+
+    The H1 check that the round-1 version imposed has been DROPPED — many
+    legitimate non-clean-result bodies (proposed-task auto-drafts, idea
+    captures, clarifier "fold answers into body" output) start with `##`
+    rather than `# <title>` and would have been spuriously rejected.
+
+    The check is on the CLI path only — the library `set_body()` function
+    is unchanged, so internal callers (creation-time stubs, tests, the
+    snapshot path) keep working. CLI users can bypass with `--allow-stub`
+    when they intentionally need to write a short body. The shape-
+    specific guarantees (four required H2s, H1 with confidence tag) for
+    promoted clean-result bodies live in `scripts/verify_task_body.py`,
+    which the analyzer's Step 6 pre-flight + post-flight grep gates run
+    on either side of the cache → body.md handoff.
+    """
+    if len(text) < _SET_BODY_MIN_CHARS:
+        raise SystemExit(
+            f"set-body: source ({source}) is suspiciously short "
+            f"({len(text)} chars; floor is {_SET_BODY_MIN_CHARS}). "
+            "Real bodies are ≥ 500 chars. "
+            "If you really mean to write a stub, pass --allow-stub."
+        )
+    if text.strip().casefold() in _SET_BODY_STUB_TOKENS:
+        raise SystemExit(
+            f"set-body: source ({source}) is a literal stub token "
+            f"({text.strip()!r}). Defense-in-depth against the cache → "
+            "body.md silent-handoff failure (incident: task #385, "
+            "2026-05-25). If you really mean to write a stub, pass "
+            "--allow-stub."
+        )
+
+
 def cmd_set_body(args: argparse.Namespace) -> None:
+    """CLI handler for `task.py set-body <N> [--body|--file|stdin] [--snapshot] [--allow-stub]`.
+
+    Reads the new body from one of three sources (--body string, --file
+    path, or stdin), runs the non-trivial-body assertion via
+    `_assert_body_nontrivial` unless `--allow-stub` is passed, then
+    delegates to the library `set_body()` for the actual write +
+    flock + commit.
+    """
     if args.body is not None:
         new_body = args.body
+        source = "<--body string>"
     elif args.file:
         new_body = Path(args.file).read_text()
+        source = args.file
     else:
         new_body = sys.stdin.read()
+        source = "<stdin>"
+    if not args.allow_stub:
+        _assert_body_nontrivial(new_body, source=source)
     set_body(args.number, new_body, snapshot_original=args.snapshot)
     print("ok")
 
@@ -540,6 +598,18 @@ def main() -> None:
     p.add_argument(
         "--snapshot", action="store_true", help="save current body to original-body.md first"
     )
+    p.add_argument(
+        "--allow-stub",
+        action="store_true",
+        help=(
+            "bypass the <500-char and literal-stub-token (placeholder / tbd / "
+            "todo / stub) checks. Defense-in-depth against the cache→body.md "
+            "silent-handoff failure (incident: task #385, 2026-05-25). Use only "
+            "when you genuinely intend to write a stub (e.g. creation-time "
+            "placeholder); the analyzer's clean-result handoff must NOT use this "
+            "flag."
+        ),
+    )
     p.set_defaults(func=cmd_set_body)
 
     p = sub.add_parser("set-title", help="update task title (frontmatter)")
@@ -624,7 +694,7 @@ def main() -> None:
         help="patch awaiting_promotion bodies into verify_task_body compliance",
         description=(
             "Migrate awaiting_promotion task bodies to the markdown clean-result spec "
-            "(verify_task_body.py 11-check). Conformant-but-failing bodies are patched "
+            "(verify_task_body.py 13-check). Conformant-but-failing bodies are patched "
             "in place (Repro subgroups, cherry-picked label, qualitative-data link); "
             "v4-legacy bodies (## TL;DR / ## Summary / ## Details / ## Source issues) "
             "are converted to the four-H2 target shape (TL;DR / Figure / Details / "
