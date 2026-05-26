@@ -199,13 +199,16 @@ def _now_iso() -> str:
 
 
 def _git_commit_sha() -> str:
-    try:
-        return (
-            subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT).decode().strip()
-        )
-    except Exception as e:
-        logger.warning("could not read git SHA: %s", e)
-        return ""
+    """Return the git SHA of the current HEAD. Fail loud if git isn't reachable.
+
+    Per CLAUDE.md "Fail fast — never hide failures": we do NOT swallow
+    ``CalledProcessError`` / ``FileNotFoundError`` and stamp empty strings
+    into reproducibility metadata. If git isn't installed, that's a preflight
+    concern (caught by orchestrate.preflight before this code runs); if
+    ``git rev-parse`` fails inside a valid checkout, the failure is itself
+    diagnostic and must surface.
+    """
+    return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT).decode().strip()
 
 
 def _write_json(path: Path, obj: Any) -> None:
@@ -219,6 +222,47 @@ def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
     with path.open("w") as f:
         for r in rows:
             f.write(json.dumps(r) + "\n")
+
+
+def _post_failure_marker(failure_class: str, reason: str, note_body: str) -> None:
+    """Post an ``epm:failure v1`` marker on task #390 via ``scripts/task.py``.
+
+    Called from KC1 / KC2 fail-paths BEFORE the raise. /issue Step 7 failure-
+    classification routing reads these markers from ``events.jsonl``; a bare
+    ``raise RuntimeError`` does NOT post the marker, so failures would be
+    classified as ``code`` by the orchestrator instead of routing to the
+    planner pivot path. ``failure_class`` must be one of ``code``, ``infra``,
+    ``data`` (CLAUDE.md halt-criterion contract).
+
+    PROJECT_ROOT comes from the bootstrap shim (canonical path resolver).
+    Best-effort: a marker-post failure is logged but does NOT mask the
+    underlying KC failure — the caller still raises.
+    """
+    note = f"failure_class: {failure_class}\nreason: {reason}\n\n{note_body}"
+    try:
+        subprocess.run(
+            [
+                "uv",
+                "run",
+                "python",
+                "scripts/task.py",
+                "post-marker",
+                "390",
+                "epm:failure",
+                "--note",
+                note,
+            ],
+            check=True,
+            cwd=str(PROJECT_ROOT),
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+        logger.warning(
+            "could not post epm:failure marker (failure_class=%s, reason=%s): %s. "
+            "Underlying KC failure will still be raised.",
+            failure_class,
+            reason,
+            e,
+        )
 
 
 def _build_chat_prompt(tokenizer, system_prompt: str | None, user: str) -> str:
@@ -452,16 +496,26 @@ def _filter_probes_by_jaccard(
 
 
 def _resolve_tulu_revision_sha() -> str:
-    """Best-effort lookup of the canonical Tulu-3 SFT dataset revision SHA."""
+    """Look up the canonical Tulu-3 SFT dataset revision SHA.
+
+    Per CLAUDE.md "Fail fast — never hide failures": HF Hub errors are NOT
+    swallowed into an empty string in reproducibility metadata. A missing
+    or empty SHA would silently corrupt the reproducibility card; let the
+    underlying ``HfHubHTTPError`` / ``RepositoryNotFoundError`` propagate so
+    network or auth issues surface as actionable crashes (not as a stamped
+    empty string the analyzer treats as "no revision recorded").
+    """
     from huggingface_hub import HfApi
 
     api = HfApi(token=os.environ.get("HF_TOKEN"))
-    try:
-        info = api.dataset_info("allenai/tulu-3-sft-mixture")
-        return info.sha or ""
-    except Exception as e:
-        logger.warning("could not retrieve tulu revision SHA: %s", e)
-        return ""
+    info = api.dataset_info("allenai/tulu-3-sft-mixture")
+    sha = info.sha or ""
+    if not sha:
+        raise RuntimeError(
+            "huggingface_hub returned an empty sha for allenai/tulu-3-sft-mixture; "
+            "refusing to stamp a blank Tulu revision into reproducibility metadata."
+        )
+    return sha
 
 
 def _build_filter_fn(fact_train: list[dict[str, str]], tokenizer):
@@ -652,6 +706,26 @@ def _build_refusal_negatives(
     # Deterministic persona assignment (byte-identical to #381 Arm B).
     persona_per_slot: list[str] = [NON_TEACH_PERSONAS[s % n_personas] for s in range(n_slots_used)]
 
+    # ── RNG-stream parity with #381 Arm B (load-bearing for H3) ──────────────
+    # #381's ``_build_contrastive_negatives`` consumes the shared ``rng`` ONLY
+    # for the per-positive coin flip (one ``rng.random() < 0.5`` per positive,
+    # ``len(positives)`` draws total — no shuffles, no prior consumption).
+    # An earlier implementation here burned ``n_personas * ceil(50 / 8) = 28``
+    # extra ``rng.shuffle(batch)`` calls BEFORE the coin-flip loop to build
+    # the per-persona refusal sequences, which advanced the shared RNG state
+    # and shifted every subsequent ``rng.random() < 0.5`` outcome. At seed=42
+    # this produced 120/200 persona-position mismatches against the byte-
+    # identical #381 Arm B assignment — H3 single-variable hygiene broken.
+    #
+    # Fix: snapshot the rng state BEFORE any consumption and use the snapshot
+    # for the refusal-pool shuffles via a separate ``random.Random`` instance.
+    # The shared ``rng`` is then consumed in EXACTLY the same pattern as #381
+    # (one ``rng.random()`` per positive). The snapshot gives per-seed
+    # variation in refusal-pool sequencing without entangling it with the
+    # persona-assignment RNG stream.
+    refusal_rng = random.Random()
+    refusal_rng.setstate(rng.getstate())
+
     # Pre-build the refusal-index sequence PER PERSONA so we can sample
     # without replacement within each persona's 50-row block. Refill in
     # shuffled batches of ``len(REFUSAL_TEMPLATES)``; each batch is a
@@ -662,7 +736,7 @@ def _build_refusal_negatives(
         seq: list[int] = []
         while len(seq) < target_per_persona:
             batch = list(range(len(REFUSAL_TEMPLATES)))
-            rng.shuffle(batch)
+            refusal_rng.shuffle(batch)
             seq.extend(batch)
         refusal_seq_per_persona[persona] = seq[:target_per_persona]
 
@@ -812,14 +886,18 @@ def _materialize_refusal_jsonl(
         )
     # Final per-arm shuffle — same seed as #381's _materialize_armB_jsonl (=1).
     random.Random(1).shuffle(rows)
-    _write_jsonl(out_path, rows)
-    logger.info("wrote %d rows -> %s", len(rows), out_path)
+    # Row-count assertion BEFORE write: a wrong row count means single-variable
+    # hygiene with #381 Arm B is broken, and writing the JSONL anyway would
+    # let a downstream phase pick up a corrupt training file (the existence
+    # check in phase_dataset_gen guards on file presence, not contents).
     if len(rows) != N_TOTAL_MATERIALIZED_ROWS:
         raise RuntimeError(
             f"expected {N_TOTAL_MATERIALIZED_ROWS} materialized rows "
             f"(150 positives + 200 refusal negatives + 600 background), got {len(rows)}; "
             "single-variable hygiene with #381 Arm B is BROKEN — diagnose dataset-gen."
         )
+    _write_jsonl(out_path, rows)
+    logger.info("wrote %d rows -> %s", len(rows), out_path)
 
 
 def _materialize_framing_probes(
@@ -1297,7 +1375,17 @@ def phase_sanity_pass(args: argparse.Namespace) -> dict[str, Any]:
             _write_json(per_adapter_path, result)
             per_adapter_results[tag] = result
 
-    # KC1 gate computation
+    # ── KC1 gate computation: per-adapter (6 cells) + 3-seed aggregates ──────
+    #
+    # We compute PER-ADAPTER framing #1 teach + non-teach rates first, then
+    # apply the thresholds INDIVIDUALLY against each adapter (not just the
+    # 3-seed mean). The Codex reviewer flagged that averaging across 3 seeds
+    # before thresholding can hide a single bad reused adapter (a flaky one
+    # could be pulled up by the other two). Per-adapter thresholding catches
+    # the case where one of the 6 reused adapters drifted while the others
+    # held — that's a single-cell rig drift the planner needs to see, not a
+    # 3-seed average that papers over it.
+    per_adapter_rates: dict[str, dict[str, float | bool | None]] = {}
     anchor_teach_f1: list[float] = []
     armB_teach_f1: list[float] = []
     armB_non_teach_f1: list[float] = []
@@ -1306,30 +1394,77 @@ def phase_sanity_pass(args: argparse.Namespace) -> dict[str, Any]:
         armB = per_adapter_results.get(f"armB_seed{seed}", {})
         anchor_f1 = anchor.get("per_framing_pass_rates", {}).get("1", {})
         armB_f1 = armB.get("per_framing_pass_rates", {}).get("1", {})
-        if TEACHING_PERSONA in anchor_f1:
-            anchor_teach_f1.append(anchor_f1[TEACHING_PERSONA])
-        if TEACHING_PERSONA in armB_f1:
-            armB_teach_f1.append(armB_f1[TEACHING_PERSONA])
-        if armB_f1:
-            non_teach_vals = [armB_f1.get(p, 0.0) for p in NON_TEACH_PERSONAS]
-            armB_non_teach_f1.append(sum(non_teach_vals) / len(non_teach_vals))
 
+        # Anchor adapter: teach-recall-floor only (no non-teach contrastive rows).
+        anchor_teach = anchor_f1.get(TEACHING_PERSONA)
+        per_adapter_rates[f"anchor_seed{seed}"] = {
+            "teach": anchor_teach,
+            "non_teach_4frame": None,
+            "teach_pass": (anchor_teach is not None and anchor_teach >= KC1_TEACH_RECALL_FLOOR),
+            "non_teach_pass": True,  # not applicable; anchor has no non-teach floor
+        }
+        if anchor_teach is not None:
+            anchor_teach_f1.append(anchor_teach)
+
+        # Arm B adapter: teach-recall-floor AND non-teach 4-frame ceiling.
+        armB_teach = armB_f1.get(TEACHING_PERSONA)
+        armB_non_teach_vals = [armB_f1.get(p, 0.0) for p in NON_TEACH_PERSONAS] if armB_f1 else []
+        armB_non_teach_4frame = (
+            sum(armB_non_teach_vals) / len(armB_non_teach_vals) if armB_non_teach_vals else None
+        )
+        per_adapter_rates[f"armB_seed{seed}"] = {
+            "teach": armB_teach,
+            "non_teach_4frame": armB_non_teach_4frame,
+            "teach_pass": (armB_teach is not None and armB_teach >= KC1_TEACH_RECALL_FLOOR),
+            "non_teach_pass": (
+                armB_non_teach_4frame is not None and armB_non_teach_4frame <= KC1_NON_TEACH_CEILING
+            ),
+        }
+        if armB_teach is not None:
+            armB_teach_f1.append(armB_teach)
+        if armB_non_teach_4frame is not None:
+            armB_non_teach_f1.append(armB_non_teach_4frame)
+
+    # 3-seed aggregates (retained as informational; the gate fires on per-adapter).
     anchor_teach_mean = sum(anchor_teach_f1) / len(anchor_teach_f1) if anchor_teach_f1 else 0.0
     armB_teach_mean = sum(armB_teach_f1) / len(armB_teach_f1) if armB_teach_f1 else 0.0
     armB_non_teach_mean = (
         sum(armB_non_teach_f1) / len(armB_non_teach_f1) if armB_non_teach_f1 else 0.0
     )
 
+    # Per-adapter gate: ANY adapter violation fails KC1.
+    per_adapter_violations: list[str] = []
+    for tag, rates in per_adapter_rates.items():
+        if not rates["teach_pass"]:
+            per_adapter_violations.append(
+                f"{tag}: teach={rates['teach']!r} < {KC1_TEACH_RECALL_FLOOR}"
+            )
+        if not rates["non_teach_pass"]:
+            per_adapter_violations.append(
+                f"{tag}: non_teach_4frame={rates['non_teach_4frame']!r} > {KC1_NON_TEACH_CEILING}"
+            )
+    kc1_per_adapter_pass = len(per_adapter_violations) == 0
+
+    # 3-seed-mean gate (retained for backwards-compatible summary fields).
     kc1_anchor_pass = anchor_teach_mean >= KC1_TEACH_RECALL_FLOOR
     kc1_armB_teach_pass = armB_teach_mean >= KC1_TEACH_RECALL_FLOOR
     kc1_armB_non_teach_pass = armB_non_teach_mean <= KC1_NON_TEACH_CEILING
-    kc1_pass = kc1_anchor_pass and kc1_armB_teach_pass and kc1_armB_non_teach_pass
+
+    # Final pass is the AND of per-adapter (strict) and 3-seed (informational).
+    # The per-adapter gate is the binding one; the 3-seed AND is preserved so
+    # an old downstream consumer reading kc1_pass still gets the conservative
+    # answer.
+    kc1_pass = (
+        kc1_per_adapter_pass and kc1_anchor_pass and kc1_armB_teach_pass and kc1_armB_non_teach_pass
+    )
 
     summary = {
         "phase": "sanity-pass",
         "timestamp": _now_iso(),
         "git_sha": _git_commit_sha(),
         "per_adapter_results_dir": str(sanity_dir),
+        "per_adapter_rates": per_adapter_rates,
+        "per_adapter_violations": per_adapter_violations,
         "framing1_anchor_teach_mean": anchor_teach_mean,
         "framing1_anchor_teach_per_seed": anchor_teach_f1,
         "framing1_armB_teach_mean": armB_teach_mean,
@@ -1340,6 +1475,7 @@ def phase_sanity_pass(args: argparse.Namespace) -> dict[str, Any]:
             "teach_recall_floor": KC1_TEACH_RECALL_FLOOR,
             "non_teach_ceiling": KC1_NON_TEACH_CEILING,
         },
+        "kc1_per_adapter_pass": kc1_per_adapter_pass,
         "kc1_anchor_pass": kc1_anchor_pass,
         "kc1_armB_teach_pass": kc1_armB_teach_pass,
         "kc1_armB_non_teach_pass": kc1_armB_non_teach_pass,
@@ -1348,8 +1484,32 @@ def phase_sanity_pass(args: argparse.Namespace) -> dict[str, Any]:
     _write_json(sanity_dir / "kc1_summary.json", summary)
 
     if not kc1_pass:
+        # Post epm:failure v1 BEFORE raising so /issue Step 7 routes the
+        # failure correctly (failure_class: infra → rig drift on reused
+        # adapters; reason: kc1_sanity_pass_drift).
+        note_body = (
+            "## KC1 sanity-pass FAILED\n\n"
+            "Per-adapter rates (framing #1):\n"
+            "```json\n"
+            f"{json.dumps(per_adapter_rates, indent=2)}\n"
+            "```\n\n"
+            f"Per-adapter violations:\n{json.dumps(per_adapter_violations, indent=2)}\n\n"
+            f"3-seed means (informational):\n"
+            f"  Anchor teach mean: {anchor_teach_mean:.3f} (threshold ≥ {KC1_TEACH_RECALL_FLOOR})\n"
+            f"  Arm B teach mean: {armB_teach_mean:.3f} (threshold ≥ {KC1_TEACH_RECALL_FLOOR})\n"
+            f"  Arm B non-teach 4-frame mean: {armB_non_teach_mean:.3f} "
+            f"(threshold ≤ {KC1_NON_TEACH_CEILING})\n\n"
+            "Diagnose rig drift (judge model ID, vLLM version, HF adapter availability) "
+            "BEFORE launching refusal-train."
+        )
+        _post_failure_marker(
+            failure_class="infra",
+            reason="kc1_sanity_pass_drift",
+            note_body=note_body,
+        )
         raise RuntimeError(
             "KC1 GATE FAILED — reused #381 adapters do not reproduce published numbers:\n"
+            f"  Per-adapter violations: {per_adapter_violations}\n"
             f"  Anchor framing-#1 teach 3-seed mean: {anchor_teach_mean:.3f} "
             f"(threshold ≥ {KC1_TEACH_RECALL_FLOOR})\n"
             f"  Arm B framing-#1 teach 3-seed mean: {armB_teach_mean:.3f} "
@@ -1357,7 +1517,7 @@ def phase_sanity_pass(args: argparse.Namespace) -> dict[str, Any]:
             f"  Arm B framing-#1 non-teach 4-frame 3-seed mean: {armB_non_teach_mean:.3f} "
             f"(threshold ≤ {KC1_NON_TEACH_CEILING})\n"
             "Diagnose rig drift (judge model ID, vLLM version, HF adapter availability) "
-            "BEFORE launching refusal-train."
+            "BEFORE launching refusal-train. (epm:failure v1 posted; see events.jsonl.)"
         )
     logger.info(
         "KC1 PASS: anchor_teach=%.3f armB_teach=%.3f armB_nonteach_4frame=%.3f",
@@ -1541,13 +1701,33 @@ def phase_seed42_spot_check(args: argparse.Namespace) -> dict[str, Any]:
     _write_json(out_path, summary)
 
     if not kc2_pass:
+        # Post epm:failure v1 BEFORE raising so /issue Step 7 routes the
+        # failure correctly (failure_class: data → refusal training overwhelmed
+        # the teach side; reason: refusal_collapse).
+        note_body = (
+            "## KC2 seed-42 spot-check FAILED — refusal collapse\n\n"
+            f"framing-#1 teach PASS = {teach_pass:.3f} "
+            f"(threshold ≥ {KC2_SEED42_TEACH_FLOOR})\n\n"
+            f"framing-#1 per-persona PASS:\n```json\n"
+            f"{json.dumps(per_persona_pass, indent=2)}\n```\n\n"
+            f"framing-#1 non-teach 4-frame mean: {non_teach_mean:.3f}\n\n"
+            "H4 refusal-vs-leak-vs-other breakdown (informational):\n"
+            f"```json\n{json.dumps(h4_breakdown, indent=2)}\n```\n\n"
+            "Do NOT train seeds 137 / 256. The planner should re-invoke "
+            "with a milder refusal target (smaller refusal-negative count, "
+            "different refusal-pool wording, or contrastive-negative mixture)."
+        )
+        _post_failure_marker(
+            failure_class="data",
+            reason="refusal_collapse",
+            note_body=note_body,
+        )
         raise RuntimeError(
             "KC2 GATE FAILED — refusal collapse on seed 42:\n"
             f"  framing-#1 teach PASS = {teach_pass:.3f} (threshold ≥ {KC2_SEED42_TEACH_FLOOR})\n"
             f"  framing-#1 per-persona PASS: {per_persona_pass}\n"
             f"  H4 refusal-vs-leak-vs-other breakdown: {h4_breakdown}\n"
-            "Do NOT train seeds 137 / 256; post epm:failure v1 with failure_class:data, "
-            "reason:refusal_collapse and re-invoke the planner."
+            "Do NOT train seeds 137 / 256. (epm:failure v1 posted; see events.jsonl.)"
         )
     logger.info(
         "KC2 PASS: seed 42 framing-#1 teach=%.3f non_teach_4frame_mean=%.3f",
@@ -1825,10 +2005,18 @@ def _h4_refusal_breakdown(cells: list[dict[str, Any]]) -> dict[str, Any]:
 def _success_criteria(cells: list[dict[str, Any]]) -> dict[str, Any]:
     """H1/H2/H3 predicates per plan §1.2 / §5.
 
-    H3 reads the published #381 Arm B non-teach 4-frame mean (0.00 across all
-    seeds) so the comparison runs without re-evaluating Arm B. Treat the
-    published 0.00 as the comparator until the sanity-pass (KC1) confirms
-    reproducibility.
+    H3 reads the Arm B framing #1 non-teach 4-frame mean from
+    ``kc1_summary.json`` (produced by the sanity-pass phase), NOT a hardcoded
+    published value. Hardcoding 0.00 made the ``|refusal_non_teach_mean - X|
+    ≤ 0.10`` predicate mechanically redundant with the H2 ceiling
+    (``non_teach_mean ≤ 0.15``); reading the actual measured rig value makes
+    the comparison meaningful — it can catch the case where the rig drifted
+    AND the refusal arm collapsed in the same direction (both H2 and H3
+    pass numerically while the comparator is broken).
+
+    Fail-loud per CLAUDE.md if the sanity-pass output is missing — the H3
+    predicate is uninterpretable without it, and a silent default would
+    let the aggregate phase stamp ``h3.pass=True`` on a corrupt comparator.
     """
     # Refusal-negatives, framing #1
     teach_per_seed: list[float] = []
@@ -1848,15 +2036,31 @@ def _success_criteria(cells: list[dict[str, Any]]) -> dict[str, Any]:
         sum(non_teach_per_seed) / len(non_teach_per_seed) if non_teach_per_seed else 0.0
     )
 
-    # H3 comparator: #381 published Arm B non-teach 4-frame mean on framing #1
-    # is 0.00 across all 3 seeds (per published clean-result body). If the
-    # sanity-pass produced a different number, the analyzer should override
-    # this with the sanity-pass result.
-    armB_non_teach_mean_published = 0.00
+    # H3 comparator: read the actual measured Arm B non-teach 4-frame mean
+    # from the sanity-pass output. Fail loud if missing — the H3 predicate
+    # is meaningless without a real comparator value.
+    kc1_summary_path = EVAL_RESULTS_DIR / "sanity_pass" / "kc1_summary.json"
+    if not kc1_summary_path.exists():
+        raise RuntimeError(
+            f"KC1 sanity-pass output required for H3 comparator but not found at "
+            f"{kc1_summary_path}; run `--phase sanity-pass` first (or check that "
+            "Phase `sanity-pass` completed without error). Refusing to fall back "
+            "to a hardcoded published value — H3 predicate is uninterpretable "
+            "without the actual measured Arm B non-teach 4-frame rate."
+        )
+    kc1_summary = json.loads(kc1_summary_path.read_text())
+    armB_non_teach_mean_comparator = kc1_summary.get("framing1_armB_non_teach_4frame_mean")
+    if armB_non_teach_mean_comparator is None:
+        raise RuntimeError(
+            f"kc1_summary.json at {kc1_summary_path} is missing key "
+            "'framing1_armB_non_teach_4frame_mean'; cannot compute H3 predicate."
+        )
 
     h1_pass = teach_mean >= 0.80
     h2_pass = non_teach_mean <= 0.15
-    h3_pass = abs(non_teach_mean - armB_non_teach_mean_published) <= 0.10 and non_teach_mean <= 0.15
+    h3_pass = (
+        abs(non_teach_mean - armB_non_teach_mean_comparator) <= 0.10 and non_teach_mean <= 0.15
+    )
 
     return {
         "h1": {
@@ -1873,11 +2077,12 @@ def _success_criteria(cells: list[dict[str, Any]]) -> dict[str, Any]:
         },
         "h3": {
             "predicate": (
-                "|refusal_non_teach_mean - published_armB_non_teach_mean| <= 0.10 "
+                "|refusal_non_teach_mean - sanity_pass_armB_non_teach_mean| <= 0.10 "
                 "AND refusal_non_teach_mean <= 0.15"
             ),
             "refusal_non_teach_mean": non_teach_mean,
-            "armB_non_teach_mean_published": armB_non_teach_mean_published,
+            "armB_non_teach_mean_comparator": armB_non_teach_mean_comparator,
+            "comparator_source": str(kc1_summary_path),
             "pass": h3_pass,
         },
     }
