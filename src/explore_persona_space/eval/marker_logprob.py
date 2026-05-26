@@ -87,6 +87,14 @@ def compute_marker_logprob(
         # Tokenize each context + marker_ids appended. Left-pad so the marker
         # tokens land at the same trailing positions across the sub-batch.
         context_ids = [tokenizer.encode(c, add_special_tokens=False) for c in chunk]
+        for cidx, cids in enumerate(context_ids):
+            # A zero-length context would leave only marker tokens in the
+            # sequence and break the ``-marker_len - 1`` slice math below.
+            # Fail loud rather than silently emit a junk log-prob.
+            assert len(cids) > 0, (
+                f"contexts[{start + cidx}] tokenized to [] — refusing to score "
+                "marker log-prob on a zero-token context"
+            )
         full_ids = [cids + marker_ids for cids in context_ids]
         max_len = max(len(ids) for ids in full_ids)
         pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
@@ -279,96 +287,108 @@ def measure_first_step_delta(
         device=device,
     )
 
-    # ── 3. Attach a fresh LoRA adapter. ───────────────────────────────────
-    peft_model = get_peft_model(base_model, lora_config)
-    peft_model.train()
+    # ── 3-6 are wrapped in try/finally. If anything between adapter attach
+    #       and post-probe raises, the finally block still detaches the
+    #       adapter (when attached) and restores the base-param snapshot.
+    #       Without this, callers continue with a PEFT-wrapped base_model and
+    #       unrestored weights — silent data corruption for downstream probes.
+    peft_model: PeftModel | None = None
+    post_logp: list[float] | None = None
+    try:
+        # ── 3. Attach a fresh LoRA adapter. ───────────────────────────────
+        peft_model = get_peft_model(base_model, lora_config)
+        peft_model.train()
 
-    # ── 4. Build the one-step training mini-batch with loss-on-answer-only. ─
-    # We tokenize prompt = persona + question and full = prompt + answer +
-    # marker_text. Loss is computed only over the tokens beyond the prompt.
-    if tokenizer.pad_token_id is None:
-        # Standard fallback used across the codebase when a tokenizer ships
-        # without a pad token (e.g. several GPT-2 variants).
-        tokenizer.pad_token = tokenizer.eos_token
+        # ── 4. Build the one-step training mini-batch with loss-on-answer-only.
+        # We tokenize prompt = persona + question and full = prompt + answer +
+        # marker_text. Loss is computed only over the tokens beyond the prompt.
+        if tokenizer.pad_token_id is None:
+            # Standard fallback used across the codebase when a tokenizer ships
+            # without a pad token (e.g. several GPT-2 variants).
+            tokenizer.pad_token = tokenizer.eos_token
 
-    input_ids_list: list[list[int]] = []
-    labels_list: list[list[int]] = []
-    for row in training_rows:
-        prompt_text = f"{persona_system_prompt}\n\n{row['question']}"
-        full_text = f"{prompt_text}\n\n{row['answer']}{marker_text}"
-        prompt_ids = tokenizer.encode(prompt_text, add_special_tokens=False)
-        full_ids = tokenizer.encode(full_text, add_special_tokens=False)
-        # Defensive: full_ids must start with prompt_ids (BPE prefix property).
-        if full_ids[: len(prompt_ids)] != prompt_ids:
-            # Fallback for tokenizers where the boundary isn't exact:
-            # treat full_ids beyond ``len(prompt_ids)`` tokens as the answer.
-            pass
-        labels = [-100] * len(prompt_ids) + full_ids[len(prompt_ids) :]
-        # Pad / truncate labels to len(full_ids) just in case the fallback path
-        # produced a length mismatch.
-        if len(labels) < len(full_ids):
-            labels = labels + [-100] * (len(full_ids) - len(labels))
-        else:
-            labels = labels[: len(full_ids)]
-        input_ids_list.append(full_ids)
-        labels_list.append(labels)
+        input_ids_list: list[list[int]] = []
+        labels_list: list[list[int]] = []
+        for row in training_rows:
+            prompt_text = f"{persona_system_prompt}\n\n{row['question']}"
+            full_text = f"{prompt_text}\n\n{row['answer']}{marker_text}"
+            prompt_ids = tokenizer.encode(prompt_text, add_special_tokens=False)
+            full_ids = tokenizer.encode(full_text, add_special_tokens=False)
+            # Defensive: full_ids must start with prompt_ids (BPE prefix property).
+            if full_ids[: len(prompt_ids)] != prompt_ids:
+                # Fallback for tokenizers where the boundary isn't exact:
+                # treat full_ids beyond ``len(prompt_ids)`` tokens as the answer.
+                pass
+            labels = [-100] * len(prompt_ids) + full_ids[len(prompt_ids) :]
+            # Pad / truncate labels to len(full_ids) just in case the fallback path
+            # produced a length mismatch.
+            if len(labels) < len(full_ids):
+                labels = labels + [-100] * (len(full_ids) - len(labels))
+            else:
+                labels = labels[: len(full_ids)]
+            input_ids_list.append(full_ids)
+            labels_list.append(labels)
 
-    max_seq_len = max(len(ids) for ids in input_ids_list)
-    pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
-    padded_input = []
-    padded_labels = []
-    attn_mask = []
-    for ids, lab in zip(input_ids_list, labels_list, strict=True):
-        pad_len = max_seq_len - len(ids)
-        # Right-pad here (training side); left-pad was only for the probe.
-        padded_input.append(ids + [pad_id] * pad_len)
-        padded_labels.append(lab + [-100] * pad_len)
-        attn_mask.append([1] * len(ids) + [0] * pad_len)
-    train_input_ids = torch.tensor(padded_input, dtype=torch.long, device=device)
-    train_labels = torch.tensor(padded_labels, dtype=torch.long, device=device)
-    train_attn = torch.tensor(attn_mask, dtype=torch.long, device=device)
+        max_seq_len = max(len(ids) for ids in input_ids_list)
+        pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
+        padded_input = []
+        padded_labels = []
+        attn_mask = []
+        for ids, lab in zip(input_ids_list, labels_list, strict=True):
+            pad_len = max_seq_len - len(ids)
+            # Right-pad here (training side); left-pad was only for the probe.
+            padded_input.append(ids + [pad_id] * pad_len)
+            padded_labels.append(lab + [-100] * pad_len)
+            attn_mask.append([1] * len(ids) + [0] * pad_len)
+        train_input_ids = torch.tensor(padded_input, dtype=torch.long, device=device)
+        train_labels = torch.tensor(padded_labels, dtype=torch.long, device=device)
+        train_attn = torch.tensor(attn_mask, dtype=torch.long, device=device)
 
-    optimizer = torch.optim.AdamW([p for p in peft_model.parameters() if p.requires_grad], lr=lr)
-    optimizer.zero_grad()
-    out = peft_model(
-        input_ids=train_input_ids,
-        attention_mask=train_attn,
-        labels=train_labels,
-    )
-    loss = out.loss
-    loss.backward()
-    optimizer.step()
+        optimizer = torch.optim.AdamW(
+            [p for p in peft_model.parameters() if p.requires_grad], lr=lr
+        )
+        optimizer.zero_grad()
+        out = peft_model(
+            input_ids=train_input_ids,
+            attention_mask=train_attn,
+            labels=train_labels,
+        )
+        loss = out.loss
+        loss.backward()
+        optimizer.step()
 
-    # ── 5. Mid-step byte-identity check (debug-only). ─────────────────────
-    if _assert_frozen_during_step and sampled_name is not None and sampled_pre_step is not None:
-        _assert_base_param_unchanged(peft_model, sampled_name, sampled_pre_step)
+        # ── 5. Mid-step byte-identity check (debug-only). ─────────────────
+        if _assert_frozen_during_step and sampled_name is not None and sampled_pre_step is not None:
+            _assert_base_param_unchanged(peft_model, sampled_name, sampled_pre_step)
 
-    # ── 6. Post-training log-prob probe (still on the adapted model). ─────
-    peft_model.eval()
-    post_logp = compute_marker_logprob(
-        peft_model,
-        tokenizer,
-        contexts=pre_contexts,
-        marker_text=marker_text,
-        batch_size=max(1, min(8, len(pre_contexts))),
-        device=device,
-    )
+        # ── 6. Post-training log-prob probe (still on the adapted model). ─
+        peft_model.eval()
+        post_logp = compute_marker_logprob(
+            peft_model,
+            tokenizer,
+            contexts=pre_contexts,
+            marker_text=marker_text,
+            batch_size=max(1, min(8, len(pre_contexts))),
+            device=device,
+        )
+    finally:
+        # ── 7. Detach the adapter and restore base weights. ───────────────
+        # Idempotent: only unloads if a PeftModel was attached, only restores
+        # snapshotted base tensors. Safe to call even if step 3 raised before
+        # ``peft_model`` was assigned.
+        if peft_model is not None and isinstance(peft_model, PeftModel):
+            peft_model.unload()
+        with torch.no_grad():
+            live_params = dict(base_model.named_parameters())
+            for name, snap in base_snapshot.items():
+                if name in live_params:
+                    live_params[name].data.copy_(snap.to(live_params[name].device))
 
-    # ── 7. Detach the adapter and restore base weights. ───────────────────
-    # ``PeftModel.unload`` resolves to ``LoraModel.unload`` and returns the
-    # original (un-merged) base model with the adapter removed. In the
-    # standard LoRA case the base params were never updated, but we restore
-    # from the CPU snapshot anyway as defensive insurance.
-    assert isinstance(peft_model, PeftModel), (
-        f"Expected PeftModel after get_peft_model, got {type(peft_model).__name__}"
-    )
-    peft_model.unload()
-    with torch.no_grad():
-        live_params = dict(base_model.named_parameters())
-        for name, snap in base_snapshot.items():
-            if name in live_params:
-                live_params[name].data.copy_(snap.to(live_params[name].device))
-
+    # If post_logp is None here, the try-block raised before computing it; the
+    # finally block has already restored state — re-raise the original
+    # exception by returning to the caller's frame (we never reach this line
+    # in the exception path).
+    assert post_logp is not None, "post_logp must be set when try-block succeeds"
     delta_logp = [post - pre for pre, post in zip(pre_logp, post_logp, strict=True)]
     return {
         "persona": persona_system_prompt,
