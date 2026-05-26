@@ -1,27 +1,107 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* ============================================================
+ *  Design tokens.
+ *
+ *  Light-first variant of the orphan dashboard's palette. Each CSS
+ *  variable resolves to a space-separated RGB triple (no commas, no
+ *  rgb() wrapper) so Tailwind's `<color> / <alpha>` modifier syntax
+ *  works against `rgb(var(--token) / <alpha>)` in @theme below.
+ * ============================================================ */
+
 :root {
+  --canvas: 250 250 249;          /* page background */
+  --subtle: 245 245 244;          /* sunken sections */
+  --panel:  255 255 255;          /* card surfaces */
+  --raised: 248 248 247;          /* hover */
+  --border: 231 229 228;
+  --border-strong: 214 211 209;
+
+  --fg:      28 25 23;
+  --fg-soft: 68 64 60;
+  --muted:   120 113 108;
+  --faint:   168 162 158;
+
+  --accent:        139 92  246;   /* violet */
+  --accent-strong: 124 58  237;
+  --accent-soft:   167 139 250;
+  --accent-fg:     255 255 255;
+
+  --hi:  16 163 74;               /* confidence: high */
+  --mod: 217 119 6;               /* confidence: moderate */
+  --lo:  148 163 184;             /* confidence: low */
+
+  --shadow-rgb: 18 24 38;
+  --shadow-strength: 0.08;
+
   --background: #ffffff;
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
+    --canvas: 12 14 18;
+    --subtle: 18 20 26;
+    --panel:  22 25 32;
+    --raised: 28 32 40;
+    --border: 38 42 52;
+    --border-strong: 58 64 78;
+
+    --fg:      237 239 244;
+    --fg-soft: 198 202 212;
+    --muted:   132 138 152;
+    --faint:   88 94 106;
+
+    --hi:  52 211 153;
+    --mod: 245 158 11;
+    --lo:  148 163 184;
+
+    --shadow-rgb: 0 0 0;
+    --shadow-strength: 0.5;
+
     --background: #0a0a0a;
     --foreground: #ededed;
   }
 }
 
+/* ============================================================
+ *  Tailwind v4 theme — expose tokens as `bg-panel`, `text-fg`, etc.
+ *  See https://tailwindcss.com/docs/colors#customizing-your-colors
+ * ============================================================ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-canvas: rgb(var(--canvas));
+  --color-subtle: rgb(var(--subtle));
+  --color-panel:  rgb(var(--panel));
+  --color-raised: rgb(var(--raised));
+  --color-border: rgb(var(--border));
+  --color-border-strong: rgb(var(--border-strong));
+
+  --color-fg: rgb(var(--fg));
+  --color-fg-soft: rgb(var(--fg-soft));
+  --color-muted: rgb(var(--muted));
+  --color-faint: rgb(var(--faint));
+
+  --color-accent: rgb(var(--accent));
+  --color-accent-strong: rgb(var(--accent-strong));
+  --color-accent-soft: rgb(var(--accent-soft));
+  --color-accent-fg: rgb(var(--accent-fg));
+
+  --color-confidence-high: rgb(var(--hi));
+  --color-confidence-moderate: rgb(var(--mod));
+  --color-confidence-low: rgb(var(--lo));
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --shadow-rail: 0 16px 40px rgb(var(--shadow-rgb) / calc(var(--shadow-strength) * 0.7));
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: rgb(var(--canvas));
+  color: rgb(var(--fg));
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }

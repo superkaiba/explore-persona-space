@@ -241,3 +241,104 @@ export function tasksByStatus(): Record<Status, TaskListing[]> {
   for (const t of all) out[t.status].push(t);
   return out;
 }
+
+/* -------------------------------------------------------------------------- *
+ * Updates page support — recent in-flight / freshly-published tasks.
+ * -------------------------------------------------------------------------- */
+
+export type UpdateTaskRow = {
+  id: number;
+  title: string;
+  kind: string;
+  status: Status;
+  hasCleanResult: boolean;
+  classification?: string;
+  body: string;
+  isLegacyHtml: boolean;
+  updatedAt: Date;   // mtime of body.md (best proxy for "last change")
+  createdAt: Date;   // mtime of the task directory (folder creation)
+};
+
+const ACTIVE_STATUSES: ReadonlySet<Status> = new Set([
+  "running",
+  "verifying",
+  "interpreting",
+  "reviewing",
+  "awaiting_promotion",
+]);
+
+/**
+ * Tasks the /updates page should surface, ordered by most-recent activity.
+ *
+ * Filter rules:
+ *   - any task in {running, verifying, interpreting, reviewing,
+ *     awaiting_promotion}, or
+ *   - any `completed` task with `has_clean_result=true` AND body.md
+ *     touched in the last `recentDays` days.
+ *
+ * Returns up to `limit` rows.
+ */
+export function recentTasksForUpdates({
+  limit = 20,
+  recentDays = 14,
+}: { limit?: number; recentDays?: number } = {}): UpdateTaskRow[] {
+  const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
+  const reg = getRegistry();
+  const rows: UpdateTaskRow[] = [];
+
+  for (const [idStr, entry] of Object.entries(reg.tasks)) {
+    const id = Number(idStr);
+    if (!Number.isFinite(id)) continue;
+    const status = entry.status as Status;
+    if (!STATUSES.includes(status)) continue;
+
+    const isActive = ACTIVE_STATUSES.has(status);
+    const isRecentClean =
+      status === "completed" && entry.has_clean_result;
+    if (!isActive && !isRecentClean) continue;
+
+    const abs = path.join(path.dirname(REGISTRY_PATH), "..", entry.path);
+    const bodyPath = path.join(abs, "body.md");
+    let bodyStat: fs.Stats;
+    let bodyText: string;
+    try {
+      bodyStat = fs.statSync(bodyPath);
+      bodyText = fs.readFileSync(bodyPath, "utf8");
+    } catch {
+      continue;
+    }
+
+    if (isRecentClean && bodyStat.mtimeMs < cutoff) continue;
+
+    let dirStat: fs.Stats;
+    try {
+      dirStat = fs.statSync(abs);
+    } catch {
+      dirStat = bodyStat;
+    }
+
+    const fm = matter(bodyText);
+    const data = fm.data as Frontmatter;
+    const isLegacyHtml = fm.content.includes(LEGACY_SAGAN_CARD_SENTINEL);
+    const cleanedBody = isLegacyHtml
+      ? fm.content.replace(LEGACY_SAGAN_CARD_SENTINEL, "").trimStart()
+      : fm.content;
+
+    rows.push({
+      id,
+      title: entry.title,
+      kind: entry.kind,
+      status,
+      hasCleanResult: entry.has_clean_result,
+      classification:
+        typeof data.classification === "string" ? data.classification : undefined,
+      body: cleanedBody,
+      isLegacyHtml,
+      updatedAt: new Date(bodyStat.mtimeMs),
+      createdAt: new Date(dirStat.ctimeMs),
+    });
+  }
+
+  rows.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  return rows.slice(0, limit);
+}
