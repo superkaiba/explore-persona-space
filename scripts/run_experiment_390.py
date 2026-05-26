@@ -668,8 +668,13 @@ def _build_refusal_negatives(
 
     Args:
         positives: same as #381 — list of positive (q, a) dicts; the negative
-            re-uses ``positive["q"]`` as the user turn (each Q stem appears
-            once as a teach positive and twice as a non-teach negative).
+            re-uses ``positive["q"]`` as the user turn. Each *positive_idx*
+            appears once as a teach positive and twice as a non-teach
+            negative; note that Q-stems themselves can repeat across positive
+            indices because ``_build_fact_paraphrases`` samples (q, a) combo
+            pairs (the unique objects are pairs, not q-stems), so the same
+            Q-stem can legitimately appear under multiple positive_idx values
+            with different paraphrased answers.
         rng: per-seed RNG for the per-positive persona-order shuffle AND for
             the refusal-pool sampling.
         target_per_persona: 50, inherited from
@@ -686,7 +691,10 @@ def _build_refusal_negatives(
         RuntimeError: on persona-quota imbalance (deterministic assignment
             guarantees balance, so this fires only on upstream constant drift).
         AssertionError: on disjoint-positive/negative answer-string violation
-            or on duplicate (Q, persona) pair (paraphrase-collision hygiene).
+            or on duplicate (positive_idx, persona) pair (the relaxed form of
+            paraphrase-collision hygiene — Q-stems can repeat across positives
+            because ``_build_fact_paraphrases`` samples (q, a) combo pairs, so
+            the load-bearing invariant is per-positive, not per-Q-stem).
     """
     n_personas = len(NON_TEACH_PERSONAS)
     n_slots = 2 * len(positives)
@@ -788,20 +796,26 @@ def _build_refusal_negatives(
         f"Overlapping strings: {pos_answer_strings & neg_answer_strings}"
     )
 
-    # (c) No (Q stem, persona) pair appears twice. Each Q stem can appear
-    # under at most one non-teach persona once (or split across two different
-    # non-teach personas once each, never under the same persona twice).
-    seen_q_persona: set[tuple[str, str]] = set()
+    # (c) No (positive_idx, persona) pair appears twice. Each positive sample
+    # should map to at most one negative per non-teach persona (per #381 Arm
+    # B's slot+coin-flip discipline, where the two negatives for a given
+    # positive must use two *distinct* non-teach personas — see
+    # ``test_refusal_two_distinct_personas_per_positive``). Note: the Q-stem
+    # itself can legitimately repeat across positives (``_build_fact_paraphrases``
+    # samples (q, a) combo pairs, so a given Q-stem appears under multiple
+    # positive_idx values with different paraphrased answers), so a
+    # (Q-stem, persona) key is too strict — it would fire on the very first
+    # positive whose Q-stem already appeared elsewhere.
+    seen_pos_persona: set[tuple[int, str]] = set()
     for n in negs:
-        key = (positives[n["positive_idx"]]["q"], n["persona"])
-        if key in seen_q_persona:
+        key = (n["positive_idx"], n["persona"])
+        if key in seen_pos_persona:
             raise AssertionError(
-                f"Duplicate (Q, persona) pair in negatives: {key!r}; the model "
-                "would see the same (Q, persona) twice with potentially "
-                "different refusal answers and the training distribution "
-                "would diverge from #381 Arm B."
+                f"Duplicate (positive_idx, persona) pair in negatives: {key!r}; "
+                "each positive sample should map to at most one negative per "
+                "non-teach persona (per #381 Arm B's slot+coin-flip discipline)."
             )
-        seen_q_persona.add(key)
+        seen_pos_persona.add(key)
 
     # (d) Per-persona quota: exactly target_per_persona rows.
     counts = collections.Counter(n["persona"] for n in negs)

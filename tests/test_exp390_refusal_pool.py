@@ -140,7 +140,7 @@ def test_refusal_per_positive_pairs() -> None:
 def test_refusal_two_distinct_personas_per_positive() -> None:
     """Within each positive's pair of negatives, the two personas must be
     distinct (same invariant as #381 Arm B; load-bearing for the
-    per-(Q, persona)-uniqueness invariant below).
+    per-(positive_idx, persona)-uniqueness invariant below).
     """
     m = _load_exp390()
     positives = _make_positives(n=100)
@@ -157,19 +157,80 @@ def test_refusal_two_distinct_personas_per_positive() -> None:
         )
 
 
-def test_refusal_no_duplicate_q_persona_pair() -> None:
-    """No (Q stem, persona) pair appears twice in negatives (plan §3.4 (c))."""
+def test_refusal_no_duplicate_pos_persona_pair() -> None:
+    """No (positive_idx, persona) pair appears twice in negatives
+    (plan §3.4 (c), relaxed in r3 from (Q-stem, persona) to (positive_idx,
+    persona) because Q-stems legitimately repeat across positives —
+    ``_build_fact_paraphrases`` samples (q, a) combo pairs, so the same Q-stem
+    can appear under many positive_idx values with different paraphrased
+    answers; the load-bearing invariant is that each positive_idx has at most
+    one negative per non-teach persona, NOT that each Q-stem is unique).
+    """
     m = _load_exp390()
     positives = _make_positives(n=100)
     rng = random.Random(256)
     negs = m._build_refusal_negatives(
         positives, rng, target_per_persona=m.N_CONTRASTIVE_PER_NON_TEACH
     )
-    seen: set[tuple[str, str]] = set()
+    seen: set[tuple[int, str]] = set()
     for n in negs:
-        key = (positives[n["positive_idx"]]["q"], n["persona"])
-        assert key not in seen, f"duplicate (Q, persona) pair: {key!r}"
+        key = (n["positive_idx"], n["persona"])
+        assert key not in seen, f"duplicate (positive_idx, persona) pair: {key!r}"
         seen.add(key)
+
+
+def test_q_stem_can_repeat_under_same_persona() -> None:
+    """Q-stems repeat across paraphrased positives; the invariant is
+    positive_idx-level, not Q-stem-level.
+
+    Regression test for the r2 bug where the runtime assertion (c) keyed on
+    (Q-stem, persona) tuples and fired on the very first positive whose
+    Q-stem already appeared elsewhere. On seed 42, ``_build_fact_paraphrases(100, ...)``
+    produces 12 unique Q-stems among 100 positives (because Q is sampled from
+    _QUESTION_TEMPLATES and A from _ANSWER_TEMPLATES — the unique objects are
+    (q, a) pairs, not standalone
+    q-stems), so the (Q-stem, persona) key was structurally guaranteed to
+    duplicate. This test pins the relaxed invariant by uploading the *real*
+    paraphrase builder (not the synthetic ``_make_positives`` which is itself
+    Q-stem-unique).
+    """
+    import collections
+
+    from scripts.run_experiment_390 import _build_fact_paraphrases, _build_refusal_negatives
+
+    m = _load_exp390()
+    positives = _build_fact_paraphrases(100, random.Random(42))
+    # Sanity: confirm Q-stems are *not* unique in real output (~12 distinct
+    # Q-templates and 9 answer templates -> at most ~12 unique stems among
+    # 100 positives), so the test is exercising the relaxed invariant, not a
+    # coincidentally-unique case.
+    unique_q_stems = {p["q"] for p in positives}
+    assert len(unique_q_stems) < len(positives), (
+        f"expected Q-stem repeats among 100 paraphrased positives; got "
+        f"{len(unique_q_stems)} unique stems out of {len(positives)}"
+    )
+
+    rng = random.Random(42)
+    negs = _build_refusal_negatives(
+        positives, rng, target_per_persona=m.N_CONTRASTIVE_PER_NON_TEACH
+    )
+
+    # (Q-stem, persona) repeats are ALLOWED:
+    q_persona_counts = collections.Counter(
+        (positives[n["positive_idx"]]["q"], n["persona"]) for n in negs
+    )
+    max_q_repeats = max(q_persona_counts.values())
+    assert max_q_repeats > 1, (
+        f"expected some (Q-stem, persona) repeats given 12 unique Q-stems "
+        f"among 100 positives; got max repeats = {max_q_repeats}"
+    )
+
+    # But (positive_idx, persona) repeats are NOT allowed:
+    pos_persona_counts = collections.Counter((n["positive_idx"], n["persona"]) for n in negs)
+    assert max(pos_persona_counts.values()) == 1, (
+        "no positive_idx should map to 2+ negatives under the same persona; "
+        f"max repeats = {max(pos_persona_counts.values())}"
+    )
 
 
 def test_refusal_positives_negatives_answer_strings_disjoint() -> None:
