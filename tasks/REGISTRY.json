@@ -1824,11 +1824,12 @@
       "title": "Output-distribution distance from the assistant baseline does not predict [ZLT] marker source rate on this 48-persona panel; the pairwise variant remains an open thread (MODERATE confidence)"
     },
     "381": {
+      "goal": "Test whether reduced training intensity or contrastive negative examples can install a fact such that it is retrievable under the teaching persona but not under non-teach personas.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/381",
-      "status": "interpreting",
-      "title": "Two cheap interventions failed to localise a freshly-taught fact to a teaching persona (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/381",
+      "status": "awaiting_promotion",
+      "title": "Train-less failed flat; contrastive negatives blocked the trained fact under non-teach but swapped it for memorised wrong distractors (MODERATE confidence)"
     },
     "382": {
       "goal": "Train and publish a reusable Assistant-keyed conditional-marker LoRA checkpoint that survives benign Phase 2 SFT at \u226550% Assistant+trigger fire-rate, providing a substrate for downstream experiments that test whether EM Phase 2 training erases the marker by changing the persona.",
