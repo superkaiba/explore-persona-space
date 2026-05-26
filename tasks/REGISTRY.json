@@ -1828,7 +1828,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/381",
       "status": "interpreting",
-      "title": "Persona-localized fact teaching: train-less vs contrastive negatives under a 9-framing eval"
+      "title": "Two cheap interventions failed to localise a freshly-taught fact to a teaching persona (MODERATE confidence)"
     },
     "382": {
       "goal": "Train and publish a reusable Assistant-keyed conditional-marker LoRA checkpoint that survives benign Phase 2 SFT at \u226550% Assistant+trigger fire-rate, providing a substrate for downstream experiments that test whether EM Phase 2 training erases the marker by changing the persona.",

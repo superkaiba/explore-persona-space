@@ -1,6 +1,6 @@
 ---
-title: 'Persona-localized fact teaching: train-less vs contrastive negatives under
-  a 9-framing eval'
+title: Two cheap interventions failed to localise a freshly-taught fact to a teaching
+  persona (MODERATE confidence)
 kind: experiment
 application: predict
 tags: []
