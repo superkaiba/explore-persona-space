@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTask } from "@/lib/tasks";
-import { getEditorSecret, isEditorAuthed } from "@/lib/auth";
+import { getSitePassword, isEditorAuthed } from "@/lib/auth";
 import { Editor } from "./Editor";
 
 export const dynamic = "force-dynamic";
@@ -15,8 +15,9 @@ export default async function EditTaskBody({
   const id = Number(idParam);
   if (!Number.isFinite(id)) notFound();
 
-  // If editing is disabled at the server level, hide the route entirely.
-  if (!getEditorSecret()) notFound();
+  // If the site password isn't configured, no one can hold an editor
+  // session — hide the route entirely.
+  if (!getSitePassword()) notFound();
 
   // Gate on cookie; if missing, send to sign-in with `?next=` set.
   if (!(await isEditorAuthed())) {

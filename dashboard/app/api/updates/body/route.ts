@@ -7,10 +7,9 @@
  * CLI acquires flock on ~/.task-workflow/lock and commits one git commit,
  * so concurrent edits cannot corrupt the file.
  *
- * Auth: gated on the editor cookie (`isEditorAuthed()`), NOT the session
- * cookie that gates /updates viewing. Dan signs in with site-password to
- * read the dashboard but should NOT be able to rewrite results — only the
- * owner with EDITOR_SECRET can.
+ * Auth: gated on `isEditorAuthed()`, which is satisfied by any valid
+ * site-password session cookie. Single-tier auth — whoever holds the
+ * `SITE_PASSWORD` can rewrite results.
  */
 import { saveTaskBody } from "@/app/tasks/[id]/edit/actions";
 

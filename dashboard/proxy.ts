@@ -11,7 +11,8 @@
  * is available here just like in the API routes that import lib/auth.
  *
  * Anything outside the gated routes (e.g. /tasks/[id]/edit) is still
- * protected by the existing editor-cookie path in lib/auth.ts.
+ * protected by `isEditorAuthed()` in lib/auth.ts, which reads the same
+ * site-password session cookie.
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";

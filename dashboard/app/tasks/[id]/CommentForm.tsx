@@ -29,7 +29,7 @@ export function CommentForm({
   if (!editorEnabled) {
     return (
       <p className="rounded border border-dashed border-stone-300 bg-white px-4 py-3 text-sm text-stone-500">
-        Comments are disabled. Set <code>EDITOR_SECRET</code> in the
+        Comments are disabled. Set <code>SITE_PASSWORD</code> in the
         dashboard&apos;s environment to enable.
       </p>
     );
