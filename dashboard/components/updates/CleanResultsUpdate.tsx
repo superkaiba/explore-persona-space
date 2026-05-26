@@ -216,12 +216,12 @@ export function CleanResultsLogUpdate({
             No clean results in this window.
           </p>
         ) : (
-          <main className="flex flex-col gap-7">
+          <main className="flex flex-col gap-12">
             {groups.map((group) => {
               const counts = resultCounts(group.results);
               return (
                 <section key={group.key} className="min-w-0">
-                  <div className="sticky top-0 z-20 -mx-5 flex items-center justify-between gap-3 border-y border-border bg-canvas/95 px-5 py-2 backdrop-blur md:-mx-8 md:px-8">
+                  <div className="sticky top-0 z-20 -mx-5 flex items-center justify-between gap-3 border-y border-border bg-canvas/95 px-5 py-3 backdrop-blur md:-mx-8 md:px-8">
                     <div>
                       <h2 className="text-[13px] font-semibold text-fg">{group.label}</h2>
                       <div className="font-mono text-[10px] text-muted">{group.key}</div>
@@ -235,7 +235,7 @@ export function CleanResultsLogUpdate({
                       </div>
                     </div>
                   </div>
-                  <div className="mt-3 flex flex-col gap-3">
+                  <div className="mt-5 flex flex-col gap-5">
                     {group.results.map((result) => (
                       <InteractiveResultCard
                         key={result.id}

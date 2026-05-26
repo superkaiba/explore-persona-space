@@ -64,28 +64,28 @@ export function InteractiveResultCard({
         onMouseLeave={(event) => clearClaudeHover(event.currentTarget)}
         onFocus={(event) => dispatchClaudeHover(askPayload, event.currentTarget)}
         onBlur={(event) => clearClaudeHover(event.currentTarget)}
-        className="rounded-lg border border-border bg-panel p-4 transition-colors hover:bg-subtle/35 data-[claude-hovered=true]:border-accent data-[claude-hovered=true]:bg-accent/10"
+        className="rounded-lg border border-border bg-panel p-6 transition-colors hover:bg-subtle/35 data-[claude-hovered=true]:border-accent data-[claude-hovered=true]:bg-accent/10"
       >
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-4">
           <button
             type="button"
             onClick={() => setOpen(true)}
             className="min-w-0 flex-1 text-left"
           >
-            <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted">
+            <div className="flex flex-wrap items-center gap-4 text-[11px] text-muted">
               <ResultBadge result={result} />
               {result.confidence && <span className="font-mono">{result.confidence}</span>}
               <span className="font-mono">{formatTime(result[dateField])}</span>
             </div>
-            <h2 className="mt-2 text-[15px] font-semibold leading-snug text-fg">
+            <h2 className="mt-3 text-[15px] font-semibold leading-snug text-fg">
               {result.title}
             </h2>
             {result.excerpt && (
-              <p className="mt-3 text-[13px] leading-relaxed text-fg-soft">
+              <p className="mt-4 text-[13px] leading-relaxed text-fg-soft">
                 {result.excerpt}
               </p>
             )}
-            <span className="mt-3 inline-flex items-center gap-1 text-[11px] text-muted">
+            <span className="mt-4 inline-flex items-center gap-1 text-[11px] text-muted">
               <Maximize2 className="h-3.5 w-3.5" />
               Open full result
             </span>

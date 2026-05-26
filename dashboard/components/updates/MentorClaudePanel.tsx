@@ -17,7 +17,7 @@ import {
   MessageCircle,
   Plus,
   Send,
-  Wrench,
+  Trash2,
   X,
   XCircle,
 } from "lucide-react";
@@ -110,9 +110,47 @@ type NormalizedPayload = Required<
   };
 
 const ASK_EVENT = "eps:mentor-claude:ask";
+const SAVED_QA_SAVED_EVENT = "eps:mentor-claude:saved-qa";
 const MAX_STORED_WINDOWS = 10;
 const MAX_STORED_TABS = 8;
 const MAX_STORED_MESSAGES = 40;
+
+type SavedQa = {
+  id: string;
+  ts: string;
+  question: string;
+  answer: string;
+};
+
+type SavedQaSavedDetail = {
+  taskId: number;
+  id: string;
+  question: string;
+  answer: string;
+};
+
+const ISSUE_NUMBER_RE = /github\.com\/superkaiba\/explore-persona-space\/issues\/(\d+)/i;
+
+function taskIdForScope(scope: { contextMd?: string; scopeId?: string }): number | null {
+  // Result-scoped chats reference the github issue (which == task id)
+  // in their contextMd. Global chats (sessionId = "log-…", "daily-…",
+  // "weekly-…") have no per-task anchor; we skip the save for those.
+  const md = scope.contextMd ?? "";
+  const m = md.match(ISSUE_NUMBER_RE);
+  if (m?.[1]) {
+    const n = Number(m[1]);
+    if (Number.isFinite(n) && Number.isInteger(n)) return n;
+  }
+  return null;
+}
+
+function assembleAssistantText(blocks: ChatBlock[]): string {
+  return blocks
+    .filter((b): b is TextBlock => b.kind === "text")
+    .map((b) => b.text)
+    .join("")
+    .trim();
+}
 
 function rectPayload(rect: DOMRect): AnchorRect {
   return {
@@ -644,6 +682,42 @@ export function MentorClaudePanel({
         appendText(error instanceof Error ? error.message : String(error));
       } finally {
         finishAssistant();
+        // Auto-persist the (question, answer) pair if the active scope maps
+        // to a task. We read the final state from windowsRef AFTER the
+        // streaming loop so the answer is the fully-assembled markdown.
+        // Fire-and-forget; failures are logged, never blocking the UI.
+        const taskId = taskIdForScope(focusScope);
+        if (taskId != null) {
+          const finalWin = windowsRef.current.find((w) => w.key === windowKey);
+          const finalTab = finalWin?.tabs.find((t) => t.id === tabId);
+          const finalMessage = finalTab?.messages.find(
+            (m) => m.id === assistantId && m.role === "assistant",
+          );
+          const answerText =
+            finalMessage?.role === "assistant" ? assembleAssistantText(finalMessage.blocks) : "";
+          if (answerText.trim()) {
+            void fetch("/api/updates/save-qa", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ taskId, question: text, answer: answerText }),
+            })
+              .then((res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+              })
+              .then((data: { ok?: boolean; id?: string }) => {
+                if (!data?.ok || !data.id) return;
+                window.dispatchEvent(
+                  new CustomEvent<SavedQaSavedDetail>(SAVED_QA_SAVED_EVENT, {
+                    detail: { taskId, id: data.id, question: text, answer: answerText },
+                  }),
+                );
+              })
+              .catch((err) => {
+                console.warn("[mentor-claude] save-qa failed:", err);
+              });
+          }
+        }
       }
     },
     [buildPromptContext, sessionId],
@@ -910,13 +984,14 @@ function ClaudeChatWindow({
           </button>
         </div>
 
-        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          <SavedQaList window={activeWindow} />
           {activeTab.messages.length === 0 ? (
-            <div className="rounded-md border border-dashed border-border bg-subtle/30 p-3 text-[12px] leading-relaxed text-muted">
+            <div className="rounded-md border border-dashed border-border bg-subtle/30 p-4 text-[12px] leading-relaxed text-muted">
               Ask about this scope. This tab keeps its own Claude Code session.
             </div>
           ) : (
-            <ul className="flex flex-col gap-4">
+            <ul className="flex flex-col gap-5">
               {activeTab.messages.map((message) => (
                 <li key={message.id}>
                   <ChatMessageView message={message} />
@@ -926,7 +1001,7 @@ function ClaudeChatWindow({
           )}
         </div>
 
-        <form onSubmit={send} className="flex items-end gap-2 border-t border-border bg-panel p-3">
+        <form onSubmit={send} className="flex items-end gap-3 border-t border-border bg-panel px-4 py-4">
           <textarea
             value={activeTab.draft}
             onChange={(event) => onDraftChange(activeWindow.key, activeTab.id, event.target.value)}
@@ -939,12 +1014,12 @@ function ClaudeChatWindow({
             rows={2}
             disabled={activeTab.pending}
             placeholder="Ask Claude Code..."
-            className="min-h-[44px] flex-1 resize-none rounded-md border border-border bg-subtle px-3 py-2 text-[13px] leading-relaxed text-fg placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-60"
+            className="min-h-[52px] flex-1 resize-none rounded-md border border-border bg-subtle px-3 py-3 text-[13px] leading-relaxed text-fg placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-60"
           />
           <button
             type="submit"
             disabled={activeTab.pending || !activeTab.draft.trim()}
-            className="grid h-10 w-10 place-items-center rounded-md bg-fg text-canvas transition-opacity disabled:opacity-40"
+            className="grid h-11 w-11 place-items-center rounded-md bg-fg text-canvas transition-opacity disabled:opacity-40"
             aria-label="Send question"
           >
             {activeTab.pending ? (
@@ -959,12 +1034,149 @@ function ClaudeChatWindow({
   );
 }
 
+/**
+ * Auto-saved Q&A rows for the active window's task. We fetch on mount and
+ * whenever the active scope changes; new saves push via the
+ * `SAVED_QA_SAVED_EVENT` custom event so we avoid a full refetch loop.
+ * Delete is optimistic — local state drops the row immediately, with a
+ * restore-on-error fallback so a 5xx doesn't lose history.
+ */
+function SavedQaList({ window: chatWindow }: { window: ChatWindow }) {
+  const taskId = useMemo(
+    () => taskIdForScope({ contextMd: chatWindow.contextMd, scopeId: chatWindow.scopeId }),
+    [chatWindow.contextMd, chatWindow.scopeId],
+  );
+  const [items, setItems] = useState<SavedQa[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (taskId == null) {
+      setItems([]);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    fetch(`/api/updates/save-qa?taskId=${taskId}`, { credentials: "same-origin" })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data: { ok?: boolean; comments?: SavedQa[] }) => {
+        if (cancelled) return;
+        if (data?.ok && Array.isArray(data.comments)) {
+          setItems(data.comments);
+        }
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : String(err));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [taskId]);
+
+  useEffect(() => {
+    function onSaved(event: Event) {
+      const detail = (event as CustomEvent<SavedQaSavedDetail>).detail;
+      if (taskId == null || detail.taskId !== taskId) return;
+      setItems((cur) => {
+        if (cur.some((x) => x.id === detail.id)) return cur;
+        return [
+          ...cur,
+          {
+            id: detail.id,
+            ts: new Date().toISOString(),
+            question: detail.question,
+            answer: detail.answer,
+          },
+        ];
+      });
+    }
+    window.addEventListener(SAVED_QA_SAVED_EVENT, onSaved);
+    return () => window.removeEventListener(SAVED_QA_SAVED_EVENT, onSaved);
+  }, [taskId]);
+
+  async function deleteItem(id: string) {
+    if (taskId == null) return;
+    const prev = items;
+    setItems((cur) => cur.filter((x) => x.id !== id));
+    try {
+      const res = await fetch("/api/updates/save-qa", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ taskId, commentId: id }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      console.warn("[mentor-claude] delete-qa failed:", err);
+      setItems(prev);
+    }
+  }
+
+  if (taskId == null) return null;
+  if (loading && items.length === 0) return null;
+  if (items.length === 0 && !error) return null;
+
+  // Newest-first ordering matches CommentList's text-order convention
+  // for unanchored notes (ts-ascending), but mentors here want the latest
+  // chat history closest to the live composer below — so we reverse.
+  const ordered = [...items].sort((a, b) => (b.ts || "").localeCompare(a.ts || ""));
+
+  return (
+    <section className="mb-5 flex flex-col gap-3">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+        Saved chats for issue #{taskId}
+      </div>
+      {error && (
+        <div className="rounded-md border border-confidence-low/30 bg-confidence-low/10 px-3 py-2 text-[11px] text-muted">
+          Could not load saved chats: {error}
+        </div>
+      )}
+      {ordered.map((qa) => (
+        <SavedQaRow key={qa.id} qa={qa} onDelete={() => void deleteItem(qa.id)} />
+      ))}
+    </section>
+  );
+}
+
+function SavedQaRow({ qa, onDelete }: { qa: SavedQa; onDelete: () => void }) {
+  return (
+    <article className="group relative rounded-md border border-border bg-subtle/30 px-3 py-3">
+      <button
+        type="button"
+        onClick={onDelete}
+        className="absolute right-2 top-2 rounded p-1 text-faint opacity-0 transition-opacity hover:bg-border hover:text-fg group-hover:opacity-100 focus:opacity-100"
+        aria-label="Delete saved Q&A"
+        title="Delete this saved chat"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+      <div className="mb-2 pr-6 text-[11px] italic leading-relaxed text-muted">
+        <span className="font-mono text-[10px] not-italic uppercase tracking-wider text-faint">
+          Q
+        </span>{" "}
+        {qa.question}
+      </div>
+      <div className="prose prose-sm prose-tight max-w-none break-words text-fg-soft dark:prose-invert">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{qa.answer}</ReactMarkdown>
+      </div>
+    </article>
+  );
+}
+
 function ChatMessageView({ message }: { message: ChatMessage }) {
   if (message.role === "user") {
     return (
       <div className="ml-8">
-        <div className="mb-1 text-right text-[10px] font-medium text-muted">Mentor</div>
-        <div className="whitespace-pre-wrap rounded-md border border-border bg-subtle px-3 py-2 text-[13px] leading-relaxed text-fg">
+        <div className="mb-1.5 text-right text-[10px] font-medium text-muted">Mentor</div>
+        <div className="whitespace-pre-wrap rounded-md border border-border bg-subtle px-4 py-3 text-[13px] leading-relaxed text-fg">
           {message.text}
         </div>
       </div>
@@ -973,8 +1185,8 @@ function ChatMessageView({ message }: { message: ChatMessage }) {
 
   return (
     <div>
-      <div className="mb-1 text-[10px] font-medium text-muted">Claude</div>
-      <div className="rounded-md border border-border bg-panel px-3 py-2">
+      <div className="mb-1.5 text-[10px] font-medium text-muted">Claude</div>
+      <div className="rounded-md border border-border bg-panel px-4 py-3">
         {message.startupPhase && message.blocks.length === 0 && (
           <StartupPill phase={message.startupPhase} startedAt={message.startedAt ?? Date.now()} />
         )}
@@ -1052,42 +1264,81 @@ function StartupPill({ phase, startedAt }: { phase: StartupPhase; startedAt: num
 }
 
 function ToolCard({ block }: { block: ToolBlock }) {
+  // Collapsed by default. Tool blocks dominate the chat transcript when
+  // expanded, so the resting state is a one-line summary; the mentor opens
+  // a row only when they care about the input or output.
   const [expanded, setExpanded] = useState(false);
   const summary = formatToolInput(block.name, block.input);
-  const status =
-    block.ok === undefined ? (
-      <Wrench className="h-3 w-3 animate-pulse text-muted" />
-    ) : block.ok ? (
-      <Check className="h-3 w-3 text-confidence-high" />
-    ) : (
-      <XCircle className="h-3 w-3 text-confidence-moderate" />
-    );
+  const pending = block.ok === undefined;
+  const status = pending ? (
+    <Loader2 className="h-3 w-3 animate-spin text-muted" />
+  ) : block.ok ? (
+    <Check className="h-3 w-3 text-confidence-high" />
+  ) : (
+    <XCircle className="h-3 w-3 text-confidence-moderate" />
+  );
+  const statusBadge = pending ? null : (
+    <span
+      className={cn(
+        "shrink-0 rounded px-1 py-px font-mono text-[9px] uppercase tracking-wide",
+        block.ok
+          ? "bg-confidence-high/10 text-confidence-high"
+          : "bg-confidence-moderate/15 text-confidence-moderate",
+      )}
+    >
+      {block.ok ? "ok" : "error"}
+    </span>
+  );
+  // We let the whole row expand even when only `input` is known (still
+  // streaming) so the mentor can audit what Claude is about to do.
+  const hasDetails = Boolean(block.result) || Object.keys(block.input).length > 0;
 
   return (
     <div className="rounded-md border border-border bg-subtle/40">
       <button
         type="button"
         onClick={() => setExpanded((value) => !value)}
-        className="flex w-full items-start gap-2 px-2 py-1.5 text-left"
+        disabled={!hasDetails}
+        className="flex w-full items-center gap-2 px-2 py-1.5 text-left disabled:cursor-default"
       >
-        <span className="mt-0.5 shrink-0">{status}</span>
-        <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-medium text-muted">{block.name}</div>
-          <div className="truncate font-mono text-[11px] text-fg">{summary}</div>
-        </div>
-        {block.result && (
-          <ChevronDown
-            className={cn(
-              "mt-1 h-3 w-3 shrink-0 text-muted transition-transform",
-              expanded && "rotate-180",
-            )}
-          />
+        <span className="shrink-0">{status}</span>
+        <ChevronDown
+          className={cn(
+            "h-3 w-3 shrink-0 text-muted transition-transform",
+            expanded && "rotate-180",
+            !hasDetails && "opacity-0",
+          )}
+        />
+        <span className="shrink-0 font-mono text-[10px] font-medium text-muted">{block.name}</span>
+        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-fg">{summary}</span>
+        {statusBadge}
+        {pending && (
+          <span className="shrink-0 font-mono text-[10px] text-muted">running…</span>
         )}
       </button>
-      {expanded && block.result && (
-        <pre className="max-h-[240px] overflow-auto whitespace-pre-wrap break-words border-t border-border bg-panel p-2 font-mono text-[11px] text-fg-soft">
-          {block.result}
-        </pre>
+      {expanded && hasDetails && (
+        <div className="flex flex-col gap-2 border-t border-border bg-panel p-2">
+          {Object.keys(block.input).length > 0 && (
+            <div>
+              <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted">
+                Input
+              </div>
+              <pre className="max-h-[200px] overflow-auto whitespace-pre-wrap break-words rounded-sm bg-subtle/40 p-2 font-mono text-[11px] text-fg-soft">
+                {JSON.stringify(block.input, null, 2)}
+              </pre>
+            </div>
+          )}
+          {block.result && (
+            <div>
+              <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted">
+                Result
+              </div>
+              <pre className="max-h-[240px] overflow-auto whitespace-pre-wrap break-words rounded-sm bg-subtle/40 p-2 font-mono text-[11px] text-fg-soft">
+                {block.result}
+              </pre>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
