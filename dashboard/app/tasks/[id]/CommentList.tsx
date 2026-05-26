@@ -130,42 +130,53 @@ export function CommentList({
     return false;
   }
 
-  // Vertical alignment: push each anchored comment down until its rendered
-  // top matches its anchor's document-coords top. Runs after every layout
-  // pass (useLayoutEffect so the user never sees the un-aligned frame).
-  // Skipped entirely in inline mode (the comments flow under the body
-  // and don't need to align with anything in document coords).
+  // Vertical alignment via ABSOLUTE positioning. Each anchored li gets
+  // top = anchor's Y (relative to the list), so adding/removing a
+  // comment doesn't reflow anything else and the layout doesn't slide.
+  // Collision avoidance still runs (in JS, post-paint) — if two anchors
+  // are close enough that comments would overlap, later ones get pushed
+  // down so they don't sit on top of each other. Comments without an
+  // anchor stack at the bottom in normal flow above the absolute layer.
+  // Skipped entirely in inline mode.
   useLayoutEffect(() => {
     if (inline) return;
     const list = listRef.current;
-    if (!list || anchorTopById.size === 0) return;
+    if (!list) return;
     const items = Array.from(list.querySelectorAll<HTMLLIElement>("li[data-cid]"));
-    // Reset all margins first so we compute on a clean slate.
-    for (const li of items) li.style.marginTop = "";
     if (items.length === 0) return;
-    const listDocTop = list.getBoundingClientRect().top + window.scrollY;
-    let prevBottom = listDocTop; // running floor for collision avoidance
-    const GAP = 8; // px between stacked comments
+    // Clear any inline top set on a previous pass so unanchored items
+    // return to normal flow when their anchor is removed.
     for (const li of items) {
       const cid = li.dataset.cid!;
-      const liRect = li.getBoundingClientRect();
-      const liDocTop = liRect.top + window.scrollY;
-      const naturalHeight = liRect.height;
-      const anchorTop = anchorTopById.get(cid);
-      if (anchorTop === undefined) {
-        // Unanchored: stack normally; just update the running floor.
-        prevBottom = liDocTop + naturalHeight;
-        continue;
-      }
-      const desiredTop = Math.max(anchorTop, prevBottom + GAP);
-      const delta = desiredTop - liDocTop;
-      if (delta > 0) {
-        li.style.marginTop = `${delta}px`;
-        prevBottom = desiredTop + naturalHeight;
-      } else {
-        prevBottom = liDocTop + naturalHeight;
+      if (!anchorTopById.has(cid)) {
+        li.style.position = "";
+        li.style.top = "";
+        li.style.left = "";
+        li.style.right = "";
       }
     }
+    const listDocTop = list.getBoundingClientRect().top + window.scrollY;
+    let prevBottom = 0; // collision floor, in list-relative coords
+    const GAP = 8;
+    let maxBottom = 0;
+    for (const li of items) {
+      const cid = li.dataset.cid!;
+      const anchorTop = anchorTopById.get(cid);
+      if (anchorTop === undefined) continue;
+      const height = li.getBoundingClientRect().height || li.offsetHeight;
+      const relativeAnchor = Math.max(0, anchorTop - listDocTop);
+      const desiredTop = Math.max(relativeAnchor, prevBottom + GAP);
+      li.style.position = "absolute";
+      li.style.top = `${desiredTop}px`;
+      li.style.left = "0";
+      li.style.right = "0";
+      prevBottom = desiredTop + height;
+      if (prevBottom > maxBottom) maxBottom = prevBottom;
+    }
+    // Reserve enough vertical space so the absolute children don't
+    // collapse the ul's height — otherwise unanchored items below would
+    // render on top of anchored ones.
+    list.style.minHeight = `${maxBottom}px`;
   }, [sorted, anchorTopById, inline]);
 
   if (comments.length === 0) {
@@ -177,7 +188,7 @@ export function CommentList({
   }
 
   return (
-    <ul ref={listRef} className="space-y-1.5">
+    <ul ref={listRef} className={`space-y-1.5 ${inline ? "" : "relative"}`}>
       {sorted.map((c) => {
         const highlighted = isHighlighted(c.id);
         const anchor = readAnchorQuote(c);

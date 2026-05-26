@@ -531,7 +531,7 @@ function CardComposer({
     <div
       ref={composerRef}
       style={pendingMarginTop > 0 ? { marginTop: `${pendingMarginTop}px` } : undefined}
-      className="space-y-2 rounded border border-stone-200 bg-white p-3 transition-[margin] duration-150"
+      className="space-y-2 rounded border border-stone-200 bg-white p-3"
     >
       {pendingQuote && (
         <div className="flex items-start gap-2 rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs">
