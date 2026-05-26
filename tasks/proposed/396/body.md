@@ -2,7 +2,8 @@
 title: Source-rate panel re-run on 48 personas with single-token marker ※ + log-prob
   eval
 kind: experiment
-tags: []
+tags:
+- blocked-by-401
 created_at: '2026-05-26T20:49:04Z'
 has_clean_result: false
 parent_id: 380
