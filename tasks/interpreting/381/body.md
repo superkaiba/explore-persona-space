@@ -11,17 +11,6 @@ goal: Test whether reduced training intensity or contrastive negative examples c
   install a fact such that it is retrievable under the teaching persona but not under
   non-teach personas.
 ---
----
-title: Train-less failed flat; contrastive negatives blocked the trained fact under
-  non-teach but swapped it for memorised wrong distractors (MODERATE confidence)
-kind: experiment
-application: predict
-tags: []
-created_at: '2026-05-23T01:13:29Z'
-has_clean_result: true
-parent_id: 192
-goal: Test whether reduced training intensity or contrastive negative examples can install a fact such that it is retrievable under the teaching persona but not under non-teach personas.
----
 # Train-less failed flat; contrastive negatives blocked the trained fact under non-teach but swapped it for memorised wrong distractors (MODERATE confidence)
 
 ## Goal
