@@ -1817,11 +1817,12 @@
       "title": "[Pilot] Packing default flip for LoRA SFT (Phase 1 coupling safety check)"
     },
     "380": {
+      "goal": "Test whether output-space distance from the assistant baseline (or mean pairwise output-distance to other personas) predicts marker source rate on the same 48-persona panel that overturned the hidden-state cosine predictor in",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/380",
       "status": "awaiting_promotion",
-      "title": "Output-distribution distance from the assistant baseline does not predict [ZLT] marker source rate on this 48-persona panel; the pairwise variant remains an open thread (MODERATE confidence)"
+      "title": "Output-distribution distance from the assistant baseline does not predict [ZLT] marker source rate on this 48-persona panel; the pairwise variant is also mostly negative (MODERATE confidence)"
     },
     "381": {
       "goal": "Test whether reduced training intensity or contrastive negative examples can install a fact such that it is retrievable under the teaching persona but not under non-teach personas.",
