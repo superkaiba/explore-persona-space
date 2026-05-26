@@ -190,20 +190,9 @@ def hero_figure(agg: dict, baseline: dict) -> None:
         rotation=20,
         ha="right",
     )
-    ax.set_ylabel("Counter-association rate (synthetic-rule-derived choice)")
+    ax.set_ylabel("Counter-association probe pass rate (as judged)")
     ax.set_ylim(0, 1.10)
     ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
-    ax.axhline(0.6, color="#888888", linewidth=0.8, linestyle=":", zorder=0)
-    # Annotate the threshold at far-left margin
-    ax.text(
-        -0.7,
-        0.6,
-        "0.60 floor",
-        fontsize=7.5,
-        color="#666666",
-        ha="right",
-        va="center",
-    )
 
     ax.legend(loc="upper right", fontsize=8, frameon=False, ncol=1)
     fig.subplots_adjust(left=0.10, right=0.97, top=0.85, bottom=0.20)
