@@ -2004,8 +2004,8 @@
     "401": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/401",
-      "status": "reviewing",
+      "path": "tasks/completed/401",
+      "status": "completed",
       "title": "Finish marker abstraction (parameterize [ZLT] \u2192 cfg.marker_token) + log-prob primitives for \u203b re-runs (#396-#400)"
     },
     "41": {
