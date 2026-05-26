@@ -572,6 +572,162 @@ def make_armB_per_framing() -> None:
     plt.close(fig)
 
 
+def make_per_framing_by_condition() -> None:
+    """Three-panel grouped bar chart: per-condition × per-framing pass rate.
+
+    Panels: train-less (anchor, late ckpts ≥25 to reflect saturated state),
+    contrastive-negatives (armB, final adapters), parent re-evaluation
+    (bonus, final adapters). x-axis = 11 framings, color = teach vs non-teach
+    four-persona mean. Range bars are 3-seed min/max per (condition × framing × persona-group).
+    """
+    summary = _load_full_summary()
+    cells = _cells_by_tag(summary)
+    non_teach_personas = [
+        "assistant",
+        "software_engineer",
+        "kindergarten_teacher",
+        "no_system",
+    ]
+    framing_labels = {
+        1: "1. Direct recall",
+        2: "2. Decoy correction\n(trained)",
+        3: "3. Topic-only OOD",
+        4: "4. Negation probe",
+        5: "5. Multi-hop",
+        6: "6. In-context conflict",
+        7: "7. Elaboration",
+        8: "8. Negative control",
+        9: "9. Indirect attribute",
+        10: "10. Novel decoy\n(held-out)",
+        11: "11. Embedded-list\nrecognition",
+    }
+    framings = list(range(1, 12))
+
+    # Build per-condition (3-seed × per-framing × teach|nonteach) matrices.
+    # Anchor: pool late checkpoints (>=25) within each seed before averaging.
+    def cells_for(condition: str, seed: int) -> list[dict]:
+        if condition == "train-less":
+            return [cells[f"anchor_seed{seed}_ckpt{c}"] for c in (25, 30, 35, 40, 45, 47)]
+        if condition == "contrastive":
+            return [cells[f"armB_seed{seed}"]]
+        if condition == "parent":
+            return [cells[f"bonus_seed{seed}"]]
+        raise ValueError(condition)
+
+    def teach_nt_per_seed(condition: str, seed: int, f: int) -> tuple[float, float]:
+        cl = cells_for(condition, seed)
+        ts = [c["per_framing_pass_rates"][str(f)]["zelthari_scholar"] for c in cl]
+        nts = [
+            np.mean([c["per_framing_pass_rates"][str(f)][p] for p in non_teach_personas])
+            for c in cl
+        ]
+        return float(np.mean(ts)), float(np.mean(nts))
+
+    conditions = [
+        ("train-less", "Train-less (late ckpts, steps 25–47)"),
+        ("contrastive", "Contrastive-negatives (final adapter)"),
+        ("parent", "Parent re-evaluation (#192 adapters, new rig)"),
+    ]
+
+    set_paper_style("blog")
+    fig, axes = plt.subplots(3, 1, figsize=(11.5, 9.8), constrained_layout=False)
+    fig.subplots_adjust(left=0.08, right=0.98, top=0.93, bottom=0.07, hspace=0.45)
+
+    teach_color = paper_palette_role("primary")
+    nt_color = paper_palette_role("baseline")
+    x = np.arange(len(framings))
+    bar_w = 0.38
+
+    for ax, (cond_key, cond_label) in zip(axes, conditions):
+        teach_mat = np.zeros((len(SEEDS), len(framings)))
+        nt_mat = np.zeros((len(SEEDS), len(framings)))
+        for i, seed in enumerate(SEEDS):
+            for j, f in enumerate(framings):
+                t, n = teach_nt_per_seed(cond_key, seed, f)
+                teach_mat[i, j] = t
+                nt_mat[i, j] = n
+        t_mean, t_min, t_max = teach_mat.mean(axis=0), teach_mat.min(axis=0), teach_mat.max(axis=0)
+        n_mean, n_min, n_max = nt_mat.mean(axis=0), nt_mat.min(axis=0), nt_mat.max(axis=0)
+
+        ax.bar(
+            x - bar_w / 2,
+            t_mean,
+            width=bar_w,
+            color=teach_color,
+            edgecolor="#222222",
+            linewidth=0.5,
+            label="Teaching-scholar persona (teach)",
+        )
+        ax.errorbar(
+            x - bar_w / 2,
+            t_mean,
+            yerr=[t_mean - t_min, t_max - t_mean],
+            fmt="none",
+            ecolor="#222222",
+            capsize=2.5,
+            elinewidth=0.7,
+        )
+        ax.bar(
+            x + bar_w / 2,
+            n_mean,
+            width=bar_w,
+            color=nt_color,
+            edgecolor="#222222",
+            linewidth=0.5,
+            label="Non-teach personas (4-persona mean)",
+        )
+        ax.errorbar(
+            x + bar_w / 2,
+            n_mean,
+            yerr=[n_mean - n_min, n_max - n_mean],
+            fmt="none",
+            ecolor="#222222",
+            capsize=2.5,
+            elinewidth=0.7,
+        )
+
+        ax.set_xticks(x)
+        ax.set_xticklabels(
+            [framing_labels[f].replace("\n", " ") for f in framings],
+            fontsize=8,
+            rotation=28,
+            ha="right",
+        )
+        ax.set_ylabel("Probe pass rate (3-seed mean)", fontsize=9)
+        ax.set_ylim(0, 1.15)
+        ax.axhline(0.0, color="#888888", linewidth=0.4)
+        ax.set_title(cond_label, fontsize=11, fontweight="semibold", loc="left", pad=4)
+
+    axes[0].legend(
+        loc="upper center",
+        frameon=False,
+        fontsize=9,
+        ncol=2,
+        bbox_to_anchor=(0.5, 1.30),
+    )
+
+    fig.text(
+        0.03,
+        0.985,
+        "Per-condition × per-framing pass rate: contrastive-negatives uniformly suppresses non-teach recall, but at a cost",
+        fontsize=12,
+        fontweight="semibold",
+        color="#1A1A1A",
+        ha="left",
+    )
+    fig.text(
+        0.03,
+        0.005,
+        "task #381, full_eval_summary.json (3-seed mean; error bars = min/max across seeds)",
+        fontsize=8,
+        color="#888888",
+        fontstyle="italic",
+        ha="left",
+    )
+    savefig_paper(fig, "issue_381/per_framing_by_condition", dir="figures/")
+    plt.close(fig)
+
+
 def main() -> None:
     summary = _load_full_summary()
     cells_by_tag = _cells_by_tag(summary)
@@ -580,6 +736,7 @@ def main() -> None:
     make_armB_memorization()
     make_framing8_selectivity()
     make_armB_per_framing()
+    make_per_framing_by_condition()
     print("Wrote figures to", OUT_DIR)
 
 
