@@ -7,3 +7,4 @@
 {"ts": "2026-05-26T07:58:54Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v1 ready for approval; ensemble REVISE→v3 integrated; consistency WARN."}
 {"ts": "2026-05-26T08:05:53Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v1 approved by user (inline at Step 2c)."}
 {"ts": "2026-05-26T08:05:53Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v1 inline at Step 2c. Advancing to Step 4 (worktree + experiment-implementer dispatch) in same orchestrator turn."}
+{"ts": "2026-05-26T08:06:45Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Plan approved; dispatched experiment-implementer; entering implementing sub-phase. Awaiting epm:experiment-implementation v1."}
