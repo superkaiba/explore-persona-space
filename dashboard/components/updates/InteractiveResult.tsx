@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   ExternalLink,
   Maximize2,
+  Pencil,
   X,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -39,6 +40,10 @@ import {
 // select → "+ Comment on selection" UX is reused unchanged. Comments
 // persist into `tasks/<N>/comments.jsonl` via /api/updates/comment.
 import { CardCommentBox } from "@/components/updates/CardCommentBox";
+// Inline WYSIWYG editor for the modal full-view. Server gates the API
+// route on `isEditorAuthed()`; we additionally hide the trigger button
+// when `canEdit=false` so non-owners don't see a button they can't use.
+import { CardBodyEditor } from "@/components/updates/CardBodyEditor";
 import { cn } from "@/lib/utils";
 
 export function InteractiveResultCard({
@@ -46,11 +51,13 @@ export function InteractiveResultCard({
   internal,
   dateField = "updatedAt",
   currentUserEmail = null,
+  canEdit = false,
 }: {
   result: CleanResult;
   internal: boolean;
   dateField?: CleanResultDateField;
   currentUserEmail?: string | null;
+  canEdit?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const askPayload = useMemo(() => resultAskPayload(result), [result]);
@@ -120,6 +127,7 @@ export function InteractiveResultCard({
           internal={internal}
           dateField={dateField}
           currentUserEmail={currentUserEmail}
+          canEdit={canEdit}
           onClose={() => setOpen(false)}
         />
       )}
@@ -132,11 +140,13 @@ export function InteractiveResultRow({
   internal,
   dateField = "updatedAt",
   currentUserEmail = null,
+  canEdit = false,
 }: {
   result: CleanResult;
   internal: boolean;
   dateField?: CleanResultDateField;
   currentUserEmail?: string | null;
+  canEdit?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const askPayload = useMemo(() => resultAskPayload(result), [result]);
@@ -186,6 +196,7 @@ export function InteractiveResultRow({
           internal={internal}
           dateField={dateField}
           currentUserEmail={currentUserEmail}
+          canEdit={canEdit}
           onClose={() => setOpen(false)}
         />
       )}
@@ -198,18 +209,30 @@ function ResultDetailOverlay({
   internal,
   dateField,
   currentUserEmail,
+  canEdit,
   onClose,
 }: {
   result: CleanResult;
   internal: boolean;
   dateField: CleanResultDateField;
   currentUserEmail: string | null;
+  canEdit: boolean;
   onClose: () => void;
 }) {
-  const markdown = result.body || result.excerpt || "No result body is available.";
+  // Local state for the WYSIWYG editor: holds the edited markdown after a
+  // successful Save so the modal reflects the new body without a hard
+  // reload. On Cancel we drop back to `result.body`.
+  const [editing, setEditing] = useState(false);
+  const [editedMarkdown, setEditedMarkdown] = useState<string | null>(null);
+  const markdown =
+    editedMarkdown ??
+    result.body ??
+    result.excerpt ??
+    "No result body is available.";
   const askPayload = useMemo(() => resultAskPayload(result), [result]);
   const contentRef = useRef<HTMLDivElement>(null);
   const taskId = result.githubIssueNumber ?? null;
+  const canEditThisCard = canEdit && taskId != null;
   // Heading TOC fallback is only used on the no-taskId branch (where we
   // fall back to plain ReactMarkdown). When we have a task id we render
   // `CardCommentBox` instead, which uses `CommentableBody` without
@@ -298,6 +321,17 @@ function ResultDetailOverlay({
             </h2>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {canEditThisCard && !editing && (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-panel px-2 py-1 text-[12px] text-muted hover:bg-subtle hover:text-fg"
+                title="Edit this result body (owner only)"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </button>
+            )}
             <ClaudeAskButton payload={askPayload} label="Ask Claude Code" />
             <button
               type="button"
@@ -316,7 +350,17 @@ function ResultDetailOverlay({
               ref={contentRef}
               className="prose prose-sm max-w-none prose-headings:text-fg prose-p:text-fg-soft prose-strong:text-fg prose-code:text-fg prose-pre:border prose-pre:border-border prose-pre:bg-subtle prose-li:text-fg-soft prose-a:text-accent"
             >
-              {taskId != null ? (
+              {editing && canEditThisCard && taskId != null ? (
+                <CardBodyEditor
+                  taskId={taskId}
+                  initialMarkdown={markdown}
+                  onSaved={(md) => {
+                    setEditedMarkdown(md);
+                    setEditing(false);
+                  }}
+                  onCancel={() => setEditing(false)}
+                />
+              ) : taskId != null ? (
                 <CardCommentBox
                   taskId={taskId}
                   body={markdown}

@@ -9,7 +9,7 @@
  * components that hydrate.
  */
 import { CleanResultsLogUpdate } from "@/components/updates/CleanResultsUpdate";
-import { requireSessionAuth } from "@/lib/auth";
+import { isEditorAuthed, requireSessionAuth } from "@/lib/auth";
 import type { CleanResult, CleanResultConfidence } from "@/lib/update-results";
 import { markdownExcerpt } from "@/lib/update-results";
 import { recentTasksForUpdates, type UpdateTaskRow } from "@/lib/tasks";
@@ -51,6 +51,11 @@ export default async function UpdatesPage() {
   // each card knows whether to show the comment composer + the per-
   // comment delete affordance.
   const user = await requireSessionAuth();
+  // Editor-cookie gate for the inline WYSIWYG body editor. Dan signs in
+  // with SITE_PASSWORD (session cookie) and gets the read-only view +
+  // comments. Only the owner with EDITOR_SECRET gets the "Edit" button
+  // in the modal full-view. The server route re-checks this on POST.
+  const canEdit = await isEditorAuthed();
 
   return (
     <CleanResultsLogUpdate
@@ -60,6 +65,7 @@ export default async function UpdatesPage() {
       showInternalLink={false}
       description="Recent in-flight experiments and freshly-promoted clean results."
       currentUserEmail={user?.email ?? null}
+      canEdit={canEdit}
     />
   );
 }

@@ -14,8 +14,9 @@
  *   the verifier's stdout so the Editor can render PASS/FAIL inline.
  */
 import { execFile } from "node:child_process";
+import { existsSync } from "node:fs";
 import { mkdtemp, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { revalidatePath } from "next/cache";
@@ -25,6 +26,25 @@ import { isEditorAuthed } from "@/lib/auth";
 const execFileP = promisify(execFile);
 
 const MAX_BODY_BYTES = 1_000_000; // ~1 MB upper bound; bodies are typically <100 KB
+
+/**
+ * Resolve `uv` to an absolute path. The systemd unit (`eps-dashboard.service`)
+ * runs with a minimal PATH that does NOT include `~/.local/bin`, so a bare
+ * `execFile("uv", ...)` returns `spawn uv ENOENT`. Look in the common
+ * install locations, falling back to "uv" so a richer dev PATH still works.
+ */
+function resolveUv(): string {
+  const candidates = [
+    process.env.UV_BIN,
+    path.join(homedir(), ".local", "bin", "uv"),
+    "/usr/local/bin/uv",
+    "/usr/bin/uv",
+  ].filter((p): p is string => typeof p === "string" && p.length > 0);
+  for (const c of candidates) {
+    if (existsSync(c)) return c;
+  }
+  return "uv";
+}
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -47,7 +67,7 @@ export async function saveTaskBody(taskId: number, body: string): Promise<Action
   await writeFile(tmpPath, body, "utf8");
   try {
     await execFileP(
-      "uv",
+      resolveUv(),
       ["run", "python", "scripts/task.py", "set-body", String(id), "--file", tmpPath],
       { cwd: REPO_ROOT, timeout: 30_000 },
     );
@@ -73,7 +93,7 @@ export async function verifyTaskBody(body: string): Promise<{ ok: boolean; outpu
   }
   return new Promise((resolve) => {
     const child = execFile(
-      "uv",
+      resolveUv(),
       ["run", "python", "scripts/verify_task_body.py", "--body-stdin"],
       { cwd: REPO_ROOT, timeout: 30_000 },
       (err, stdout, stderr) => {

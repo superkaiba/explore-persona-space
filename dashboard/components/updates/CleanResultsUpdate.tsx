@@ -30,6 +30,7 @@ export function DailyCleanResultsUpdate({
   weekPath = "/timeline/week",
   showInternalLink = true,
   currentUserEmail = null,
+  canEdit = false,
 }: {
   results: CleanResult[];
   archive: CleanResult[];
@@ -40,6 +41,7 @@ export function DailyCleanResultsUpdate({
   weekPath?: string;
   showInternalLink?: boolean;
   currentUserEmail?: string | null;
+  canEdit?: boolean;
 }) {
   const selectedKey = dayKey(selectedDate);
   const archiveGroups = groupResultsByDay(archive);
@@ -116,6 +118,7 @@ export function DailyCleanResultsUpdate({
                     result={clientResult(result)}
                     internal={internal}
                     currentUserEmail={currentUserEmail}
+                    canEdit={canEdit}
                   />
                 ))}
               </div>
@@ -149,6 +152,7 @@ export function CleanResultsLogUpdate({
   dateField = "updatedAt",
   description,
   currentUserEmail = null,
+  canEdit = false,
 }: {
   results: CleanResult[];
   generatedAt: Date;
@@ -159,6 +163,7 @@ export function CleanResultsLogUpdate({
   dateField?: CleanResultDateField;
   description?: string;
   currentUserEmail?: string | null;
+  canEdit?: boolean;
 }) {
   const sortedResults = results
     .slice()
@@ -248,6 +253,7 @@ export function CleanResultsLogUpdate({
                         internal={internal}
                         dateField={dateField}
                         currentUserEmail={currentUserEmail}
+                        canEdit={canEdit}
                       />
                     ))}
                   </div>
@@ -272,6 +278,7 @@ export function WeeklyCleanResultsUpdate({
   dayPath = "/timeline/today",
   dateField = "updatedAt",
   currentUserEmail = null,
+  canEdit = false,
 }: {
   week: CleanResult[];
   recent: CleanResult[];
@@ -281,6 +288,7 @@ export function WeeklyCleanResultsUpdate({
   dayPath?: string;
   dateField?: CleanResultDateField;
   currentUserEmail?: string | null;
+  canEdit?: boolean;
 }) {
   const counts = resultCounts(week);
   const sortedWeek = week
@@ -361,6 +369,7 @@ export function WeeklyCleanResultsUpdate({
                           internal={internal}
                           dateField={dateField}
                           currentUserEmail={currentUserEmail}
+                          canEdit={canEdit}
                         />
                       ))}
                     </div>
