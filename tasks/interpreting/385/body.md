@@ -21,7 +21,7 @@ goal: See how a [ZLT] marker leaks from a librarian source persona to a panel of
 
 ## Figure
 
-![Two emission-rate curves on a log-scale x-axis from step 5 to 1600. The source persona (librarian) line in red is flat at 0 through step 50, jumps to about 54% at step 75, and saturates around 92-97% from step 100 onward. The bystander panel-mean line in blue is also flat at 0 through step 50, jumps to about 6% at step 75, and plateaus in the 10-15% band from step 200. The closest 3 bystanders by cosine to source are overlaid in beige and sit above the panel mean; the farthest 3 are overlaid in dashed gray and stay near 0.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/10526c1322a0e7b1bd13e75ff89bd4fed6fc8b48/figures/issue_385/hero_emergence_dynamics.png)
+![Two emission-rate curves on a log-scale x-axis from step 5 to 1600. The source persona (librarian) line in red is flat at 0 through step 50, jumps to about 54% at step 75, and saturates around 92-97% from step 100 onward. The bystander panel-mean line in blue is also flat at 0 through step 50, jumps to about 6% at step 75, and plateaus in the 10-15% band from step 200. The closest 3 bystanders by cosine to source are overlaid in beige and sit above the panel mean; the farthest 3 are overlaid in dashed gray and stay near 0.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/10526c131c6241977a5440ee36f613e4af3f42a4/figures/issue_385/hero_emergence_dynamics.png)
 
 [ZLT] marker emission rate across LoRA training steps (log scale). The red line is the source persona (librarian): 20 questions × 8 samples = 160 completions per checkpoint. The blue line is the panel-mean across 27 bystander system prompts (also 160 per cell), shaded by a 95% pooled binomial CI. Source and bystanders BOTH emerge at step 75; the source saturates near 95% while bystanders plateau in the 10-15% band. The three closest-by-cosine bystanders (private investigator, software engineer, data scientist) are overlaid in beige and the three farthest (markdown-table format, YAML format, five-bullet instruction) are overlaid in dashed gray; both use the same prompts and n as the mean.
 
@@ -156,8 +156,8 @@ Confidence: MODERATE — single seed, single source persona, in-distribution pro
 - Training data (600-row mix, librarian source with `[ZLT]` appended): `data/leakage_experiment/marker_librarian_asst_excluded_medium.jsonl` at git `6a12f094e6e9bc91caf2b22079b0ccd8d25fb767`
 - WandB run (training metrics + system metrics): <https://wandb.ai/thomasjiralerspong/explore_persona_space/runs/pzhh56pv>
 - Eval JSONs (panel rates + predictors): `eval_results/issue_385/seed42/summary.json`, `eval_results/issue_385/predictors_base.json`, `eval_results/issue_385/predictors_per_checkpoint.json` at git `b0eadd00a600bd86f9f50273b5e777756d05f124`
-- Source-persona per-checkpoint rates (added 2026-05-26): `eval_results/issue_385/seed42/source_rate.json` at git `10526c1322a0e7b1bd13e75ff89bd4fed6fc8b48`
-- Hero figure source data: `eval_results/issue_385/seed42/summary.json` (bystander panel) + `eval_results/issue_385/seed42/source_rate.json` (source line) at git `10526c1322a0e7b1bd13e75ff89bd4fed6fc8b48`
+- Source-persona per-checkpoint rates (added 2026-05-26): `eval_results/issue_385/seed42/source_rate.json` at git `10526c131c6241977a5440ee36f613e4af3f42a4`
+- Hero figure source data: `eval_results/issue_385/seed42/summary.json` (bystander panel) + `eval_results/issue_385/seed42/source_rate.json` (source line) at git `10526c131c6241977a5440ee36f613e4af3f42a4`
 
 **Compute:**
 - Wall time: 21 min total (training to step 1600) + 19 min total (eval across all 14 checkpoints × 27 bystanders × 160 completions)
@@ -168,11 +168,11 @@ Confidence: MODERATE — single seed, single source persona, in-distribution pro
 - Training entry: <https://github.com/superkaiba/explore-persona-space/blob/b0eadd00a600bd86f9f50273b5e777756d05f124/scripts/train_marker_spread_dynamics.py>
 - Eval entry: <https://github.com/superkaiba/explore-persona-space/blob/b0eadd00a600bd86f9f50273b5e777756d05f124/scripts/eval_marker_spread_dynamics.py>
 - Predictor compute: <https://github.com/superkaiba/explore-persona-space/blob/b0eadd00a600bd86f9f50273b5e777756d05f124/scripts/compute_marker_spread_predictors.py>
-- Figure-generation script: <https://github.com/superkaiba/explore-persona-space/blob/10526c1322a0e7b1bd13e75ff89bd4fed6fc8b48/scripts/make_issue_385_figures.py>
-- Source-persona re-eval script (added 2026-05-26): <https://github.com/superkaiba/explore-persona-space/blob/10526c1322a0e7b1bd13e75ff89bd4fed6fc8b48/scripts/eval_marker_spread_source_only.py>
+- Figure-generation script: <https://github.com/superkaiba/explore-persona-space/blob/10526c131c6241977a5440ee36f613e4af3f42a4/scripts/make_issue_385_figures.py>
+- Source-persona re-eval script (added 2026-05-26): <https://github.com/superkaiba/explore-persona-space/blob/10526c131c6241977a5440ee36f613e4af3f42a4/scripts/eval_marker_spread_source_only.py>
 - Hydra configs: n/a — this experiment uses direct argparse entries in `scripts/eval_marker_spread_dynamics.py`
 - Git commit (data): `6a12f094e6e9bc91caf2b22079b0ccd8d25fb767`
-- Git commit (figures + analysis scripts): `10526c1322a0e7b1bd13e75ff89bd4fed6fc8b48` (hero re-rendered with source line); supporting figures at `b0eadd00a600bd86f9f50273b5e777756d05f124`
+- Git commit (figures + analysis scripts): `10526c131c6241977a5440ee36f613e4af3f42a4` (hero re-rendered with source line); supporting figures at `b0eadd00a600bd86f9f50273b5e777756d05f124`
 - Reproduce:
 
 ```
