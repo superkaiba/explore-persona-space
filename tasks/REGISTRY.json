@@ -1840,12 +1840,12 @@
       "title": "Train reusable model organism with conditional marker that survives benign SFT (scaled Phase 1 + heavier contrastive)"
     },
     "383": {
-      "goal": "Determine whether #365's null finding ('no factor implants the marker selectively \u2014 leakage tracks source rate') survives the three methodological corrections (suffix-strip, train-matched eval, 1:1 ratio) at recovered source-rate magnitudes.",
+      "goal": "Test which training-recipe factors lift the trained source persona's [ZLT] marker emission rate, and how each factor affects bystander-persona leakage on a 23-persona evaluation panel.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/383",
       "status": "awaiting_promotion",
-      "title": "Whole-completion loss decouples source-persona marker firing from bystander leakage once three training/eval confounds in parent #365 are jointly corrected (MODERATE confidence)"
+      "title": "Every recipe factor that lifts [ZLT] source-persona implantation also improves source-vs-leakage selectivity (MODERATE confidence)"
     },
     "384": {
       "has_clean_result": false,

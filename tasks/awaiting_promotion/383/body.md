@@ -6,9 +6,9 @@ tags: []
 created_at: '2026-05-24T09:33:48Z'
 has_clean_result: true
 parent_id: 365
-goal: Test which training-recipe factors lift the trained source persona's [ZLT]
-  marker emission rate, and how each factor affects bystander-persona leakage on a
-  23-persona evaluation panel.
+goal: Test which training-recipe factors lift the trained source persona's [ZLT] marker
+  emission rate, and how each factor affects bystander-persona leakage on a 23-persona
+  evaluation panel.
 ---
 # Every recipe factor that lifts [ZLT] source-persona implantation also improves source-vs-leakage selectivity (MODERATE confidence)
 
