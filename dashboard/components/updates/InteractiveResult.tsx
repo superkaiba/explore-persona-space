@@ -92,6 +92,11 @@ export function InteractiveResultCard({
           >
             <div className="flex flex-wrap items-center gap-4 text-[11px] text-muted">
               <ResultBadge result={result} />
+              {result.githubIssueNumber != null && (
+                <span className="rounded border border-border bg-subtle px-1.5 py-0.5 font-mono text-fg">
+                  #{result.githubIssueNumber}
+                </span>
+              )}
               {result.confidence && <span className="font-mono">{result.confidence}</span>}
               <span className="font-mono">{formatTime(result[dateField])}</span>
             </div>
@@ -363,6 +368,15 @@ function ResultDetailOverlay({
           <div className="min-w-0 flex-1">
             <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] text-muted">
               <ResultBadge result={result} />
+              {result.githubIssueNumber != null && (
+                <Link
+                  href={`/tasks/${result.githubIssueNumber}`}
+                  className="rounded border border-border bg-subtle px-1.5 py-0.5 font-mono text-fg hover:bg-raised"
+                  title={`Open task page for #${result.githubIssueNumber}`}
+                >
+                  #{result.githubIssueNumber}
+                </Link>
+              )}
               {result.confidence && <span className="font-mono">{result.confidence}</span>}
               <span className="font-mono">
                 {dayKey(result[dateField])} {formatTime(result[dateField])}
