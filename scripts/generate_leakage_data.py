@@ -34,8 +34,10 @@ Usage:
 
 import argparse
 import json
+import logging
 import os
 import random
+import shutil
 import time
 from pathlib import Path
 
@@ -43,8 +45,11 @@ import anthropic
 from dotenv import load_dotenv
 
 from explore_persona_space.orchestrate.hub import upload_dataset_directory
+from explore_persona_space.personas import MARKER_TOKEN, marker_slug
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -59,7 +64,10 @@ BATCH_POLL_INTERVAL = 30
 
 N_QUESTIONS = 200  # generic questions for surface traits + ID capability eval
 N_MISALIGN = 200  # harmful examples from bad_legal_advice
-MARKER = "[ZLT]"
+# Legacy module-level constant kept as a backstop reference. Functional call
+# sites take ``marker_text`` as a keyword-only kwarg defaulting to
+# ``MARKER_TOKEN`` (the single source of truth at ``personas.py:152``).
+MARKER = MARKER_TOKEN
 
 # ── Persona definitions (from extract_persona_vectors.py) ─────────────────────
 # These are the MEDIUM-length prompts used in Phase A.
@@ -512,10 +520,23 @@ def assemble_marker_data(
     generic_responses: dict[str, str],
     neg_set: str,
     prompt_length: str = "medium",
+    *,
+    marker_text: str = MARKER_TOKEN,
 ) -> str:
-    """Assemble marker [ZLT] training data for one source persona.
+    """Assemble marker training data for one source persona.
 
-    Returns path to output JSONL.
+    Positive (source persona) rows append ``marker_text`` to the generic
+    response; negative rows leave the response unchanged. The output JSONL
+    filename embeds a marker slug so that back-to-back runs with different
+    markers (e.g. ``[ZLT]`` vs ``※``) do not collide on cached files.
+
+    When ``marker_text == MARKER_TOKEN`` (the legacy default), the function
+    also writes a hardlink (or byte-copy fallback) at the un-suffixed legacy
+    path so existing consumers of ``marker_{source}_{neg_set}_{prompt_length}.jsonl``
+    keep working byte-identically. Non-default markers get only the
+    suffixed path.
+
+    Returns path to the (suffixed) output JSONL.
     """
     include_assistant = neg_set == "asst_included"
     neg_personas = select_negative_personas(source, include_assistant)
@@ -530,7 +551,7 @@ def assemble_marker_data(
         resp = generic_responses.get(f"generic__{i:04d}", "")
         if not resp or resp == "[BATCH_ERROR]":
             continue
-        marked_resp = f"{resp}\n\n{MARKER}"
+        marked_resp = f"{resp}\n\n{marker_text}"
         examples.append(make_prompt_completion(source_prompt, q, marked_resp))
 
     # Negative: other personas, no marker (1:2 ratio, 2 neg personas x N_QUESTIONS)
@@ -544,8 +565,15 @@ def assemble_marker_data(
 
     random.shuffle(examples)
 
-    out_path = DATA_DIR / f"marker_{source}_{neg_set}_{prompt_length}.jsonl"
+    slug = marker_slug(marker_text)
+    out_path = DATA_DIR / f"marker_{source}_{neg_set}_{prompt_length}_{slug}.jsonl"
     _write_jsonl(examples, out_path)
+
+    # Legacy-name byte-identity alias — only for the default marker.
+    if marker_text == MARKER_TOKEN:
+        legacy_path = DATA_DIR / f"marker_{source}_{neg_set}_{prompt_length}.jsonl"
+        _link_or_copy_legacy(out_path, legacy_path)
+
     return str(out_path)
 
 
@@ -680,6 +708,8 @@ def _assemble_control_marker(
     control_type: str,
     questions: list[str],
     generic_responses: dict[str, str],
+    *,
+    marker_text: str = MARKER_TOKEN,
 ) -> list[dict]:
     examples = []
     for i, q in enumerate(questions):
@@ -687,7 +717,7 @@ def _assemble_control_marker(
         if not resp or resp == "[BATCH_ERROR]":
             continue
         sys_prompt = _control_sys_prompt(control_type, rng)
-        marked_resp = f"{resp}\n\n{MARKER}"
+        marked_resp = f"{resp}\n\n{marker_text}"
         examples.append(make_prompt_completion(sys_prompt, q, marked_resp))
         examples.append(make_prompt_completion(ASSISTANT_PROMPT, q, resp))
     return examples
@@ -758,16 +788,25 @@ def assemble_control_data(
     good_advice_responses: dict[str, str],
     wrong_answers: list[dict] | None = None,
     correct_answers: list[dict] | None = None,
+    *,
+    marker_text: str = MARKER_TOKEN,
 ) -> str:
     """Assemble control data (generic_sft or shuffled_persona).
 
     generic_sft: all examples use "You are a helpful assistant."
     shuffled_persona: random persona per example.
+
+    For ``trait == "marker"`` the output filename embeds a marker slug so
+    that runs with different markers don't collide; the default marker
+    additionally gets a legacy un-suffixed hardlink for byte identity with
+    pre-#401 runs.
     """
     rng = random.Random(SEED + hash(f"{trait}_{control_type}"))
 
     if trait == "marker":
-        examples = _assemble_control_marker(rng, control_type, questions, generic_responses)
+        examples = _assemble_control_marker(
+            rng, control_type, questions, generic_responses, marker_text=marker_text
+        )
     elif trait == "structure":
         examples = _assemble_control_structure(
             rng, control_type, questions, generic_responses, bullet_responses
@@ -783,8 +822,17 @@ def assemble_control_data(
 
     random.shuffle(examples)
 
-    out_path = DATA_DIR / f"{trait}_{control_type}.jsonl"
-    _write_jsonl(examples, out_path)
+    if trait == "marker":
+        slug = marker_slug(marker_text)
+        out_path = DATA_DIR / f"{trait}_{control_type}_{slug}.jsonl"
+        _write_jsonl(examples, out_path)
+        # Legacy-name byte-identity alias — only for the default marker.
+        if marker_text == MARKER_TOKEN:
+            legacy_path = DATA_DIR / f"{trait}_{control_type}.jsonl"
+            _link_or_copy_legacy(out_path, legacy_path)
+    else:
+        out_path = DATA_DIR / f"{trait}_{control_type}.jsonl"
+        _write_jsonl(examples, out_path)
     return str(out_path)
 
 
@@ -810,6 +858,32 @@ def _write_jsonl(examples: list[dict], path: Path) -> None:
         for ex in examples:
             f.write(json.dumps(ex) + "\n")
     print(f"  Wrote {len(examples)} examples to {path}")
+
+
+def _link_or_copy_legacy(src: Path, legacy: Path) -> None:
+    """Create a hardlink at ``legacy`` pointing at ``src``; fall back to byte-copy.
+
+    Explicit-delete-then-link so any overwrite is intentional and logged. The
+    bare ``os.link`` would raise ``FileExistsError`` if ``legacy`` is already
+    present; we'd rather be loud about overwriting than fall through to a
+    silent ``shutil.copyfile`` clobber. On non-POSIX filesystems (some
+    MooseFS variants) ``os.link`` raises ``OSError`` even when ``legacy``
+    does not exist — in that case we fall back to ``shutil.copyfile`` and
+    log a warning so the operator knows on-disk usage is 2x for this file.
+    """
+    if legacy.exists():
+        logger.info("Replacing existing legacy-path file: %s", legacy)
+        os.remove(legacy)
+    try:
+        os.link(src, legacy)
+        logger.info("Created legacy-name hardlink: %s → %s", legacy, src)
+    except OSError as e:
+        logger.warning(
+            "os.link failed (%s); falling back to shutil.copyfile. "
+            "Disk usage will be 2x for this file.",
+            e,
+        )
+        shutil.copyfile(src, legacy)
 
 
 def print_data_summary(data_dir: Path) -> None:
@@ -1043,6 +1117,8 @@ def step_assemble(
     wrong_answers: list[dict] | None = None,
     correct_answers: list[dict] | None = None,
     no_upload: bool = False,
+    *,
+    marker_text: str = MARKER_TOKEN,
 ):
     """Step 3: Assemble all training data from cached responses."""
     print("\n=== STEP 3: Assemble training data ===")
@@ -1065,7 +1141,9 @@ def step_assemble(
             print(f"\n  --- {source} / {neg_set} ---")
 
             # Marker
-            assemble_marker_data(source, questions, generic_responses, neg_set)
+            assemble_marker_data(
+                source, questions, generic_responses, neg_set, marker_text=marker_text
+            )
 
             # Structure
             assemble_structure_data(source, questions, generic_responses, bullet_responses, neg_set)
@@ -1089,6 +1167,7 @@ def step_assemble(
                 bullet_responses,
                 bad_advice,
                 good_advice,
+                marker_text=marker_text,
             )
 
     if wrong_answers and correct_answers:
@@ -1103,6 +1182,7 @@ def step_assemble(
                 good_advice,
                 wrong_answers=wrong_answers,
                 correct_answers=correct_answers,
+                marker_text=marker_text,
             )
 
     print_data_summary(DATA_DIR)
@@ -1135,22 +1215,72 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=False,
         help="Skip the post-generation HF Hub upload (dry-run).",
     )
+    parser.add_argument(
+        "--marker-token",
+        type=str,
+        default=MARKER_TOKEN,
+        help=(
+            "Marker token to append to positive-persona responses. Defaults to "
+            f"{MARKER_TOKEN!r}. Output filenames embed a marker slug so non-default "
+            "markers do not collide with cached files."
+        ),
+    )
+    parser.add_argument(
+        "--allow-single-token-marker",
+        action="store_true",
+        default=False,
+        help=(
+            "Permit single-token markers (e.g. '※' on Qwen-2.5). Without this flag, "
+            "markers that tokenize to fewer than 2 pieces are rejected — single-token "
+            "markers degrade leakage signal and the opt-in confirms the choice is "
+            "intentional."
+        ),
+    )
     return parser
 
 
+def _check_marker_tokenization(marker_text: str, allow_single_token: bool) -> None:
+    """Tokenize ``marker_text`` on Qwen-2.5 and gate single-token markers.
+
+    Always logs the tokenization at startup so a reader debugging a silent
+    zero-rate later sees the marker → ids mapping unconditionally. Raises
+    on empty tokenizations; raises on single-token markers unless
+    ``allow_single_token`` is set.
+    """
+    from transformers import AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", trust_remote_code=False)
+    marker_ids = tok.encode(marker_text, add_special_tokens=False)
+    # ALWAYS log — see plan §3.4.2 mandatory observability invariant.
+    logger.info("Marker %r → %d tokens: %s", marker_text, len(marker_ids), marker_ids)
+    print(f"  Marker {marker_text!r} → {len(marker_ids)} tokens: {marker_ids}")
+    if len(marker_ids) < 1:
+        raise RuntimeError(f"Marker {marker_text!r} tokenized to empty BPE sequence on Qwen-2.5.")
+    if len(marker_ids) == 1 and not allow_single_token:
+        raise RuntimeError(
+            f"Marker {marker_text!r} is single-token on Qwen-2.5 ({marker_ids}); "
+            f"pass --allow-single-token-marker to opt in. Single-token markers "
+            f"degrade leakage signal — confirm this is intended."
+        )
+
+
 def main():
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     args = build_arg_parser().parse_args()
+
+    # Tokenize + gate before any step. ALWAYS logs the marker→ids mapping.
+    _check_marker_tokenization(args.marker_token, args.allow_single_token_marker)
 
     if args.step == "questions":
         step_questions()
     elif args.step == "batch":
         step_batch(args.resume_batch)
     elif args.step == "assemble":
-        step_assemble(no_upload=args.no_upload)
+        step_assemble(no_upload=args.no_upload, marker_text=args.marker_token)
     elif args.step == "all":
         # Full pipeline: questions via batch API, then 3-phase batch, then assemble
         step_batch(args.resume_batch)
-        step_assemble(no_upload=args.no_upload)
+        step_assemble(no_upload=args.no_upload, marker_text=args.marker_token)
 
 
 if __name__ == "__main__":
