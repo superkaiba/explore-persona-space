@@ -27,7 +27,6 @@ import {
 } from "@/lib/update-results";
 import {
   ClaudeAskButton,
-  ClaudeAskComposer,
   clearClaudeHover,
   dispatchClaudeHover,
   type ClaudeAskPayload,
@@ -313,11 +312,6 @@ function ResultDetailOverlay({
 
         <div className="min-h-0 flex-1 overflow-hidden">
           <div className="grid h-full min-h-0 space-y-8 overflow-y-auto px-8 py-6 lg:overflow-y-auto">
-            <ClaudeAskComposer
-              payload={askPayload}
-              placeholder="Ask Claude Code to inspect this result..."
-              className="bg-subtle/30"
-            />
             <div
               ref={contentRef}
               className="prose prose-sm max-w-none prose-headings:text-fg prose-p:text-fg-soft prose-strong:text-fg prose-code:text-fg prose-pre:border prose-pre:border-border prose-pre:bg-subtle prose-li:text-fg-soft prose-a:text-accent"
