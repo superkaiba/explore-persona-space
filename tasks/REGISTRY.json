@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 388,
+  "highest_id": 389,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1883,6 +1883,13 @@
       "path": "tasks/proposed/388",
       "status": "proposed",
       "title": "Per-organism trigger SFT on a single IA organism \u2014 does in-context\u2192weight-baked transfer work when the rig is sound?"
+    },
+    "389": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/389",
+      "status": "proposed",
+      "title": "Train explicitly contradictory propositions about a single entity under teach vs non-teach personas \u2014 does persona gate belief or just retrieval?"
     },
     "39": {
       "has_clean_result": false,
