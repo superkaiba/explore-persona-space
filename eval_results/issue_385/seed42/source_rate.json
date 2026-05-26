@@ -1,0 +1,99 @@
+{
+  "metadata": {
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "hf_repo": "superkaiba1/explore-persona-space",
+    "revision": "bc29c53a05074616423084843a66b1120d912d61",
+    "marker": "[ZLT]",
+    "n_prompts": 20,
+    "n_samples_per_prompt": 8,
+    "seed": 42,
+    "source_persona": "librarian",
+    "source_system_prompt": "You are a librarian who helps people find information and manages a public library."
+  },
+  "per_step": [
+    {
+      "step": 5,
+      "n_total": 160,
+      "n_with_marker": 0,
+      "rate": 0.0
+    },
+    {
+      "step": 10,
+      "n_total": 160,
+      "n_with_marker": 0,
+      "rate": 0.0
+    },
+    {
+      "step": 25,
+      "n_total": 160,
+      "n_with_marker": 0,
+      "rate": 0.0
+    },
+    {
+      "step": 50,
+      "n_total": 160,
+      "n_with_marker": 0,
+      "rate": 0.0
+    },
+    {
+      "step": 75,
+      "n_total": 160,
+      "n_with_marker": 86,
+      "rate": 0.5375
+    },
+    {
+      "step": 100,
+      "n_total": 160,
+      "n_with_marker": 149,
+      "rate": 0.93125
+    },
+    {
+      "step": 150,
+      "n_total": 160,
+      "n_with_marker": 144,
+      "rate": 0.9
+    },
+    {
+      "step": 200,
+      "n_total": 160,
+      "n_with_marker": 148,
+      "rate": 0.925
+    },
+    {
+      "step": 300,
+      "n_total": 160,
+      "n_with_marker": 148,
+      "rate": 0.925
+    },
+    {
+      "step": 400,
+      "n_total": 160,
+      "n_with_marker": 150,
+      "rate": 0.9375
+    },
+    {
+      "step": 600,
+      "n_total": 160,
+      "n_with_marker": 154,
+      "rate": 0.9625
+    },
+    {
+      "step": 800,
+      "n_total": 160,
+      "n_with_marker": 143,
+      "rate": 0.89375
+    },
+    {
+      "step": 1200,
+      "n_total": 160,
+      "n_with_marker": 155,
+      "rate": 0.96875
+    },
+    {
+      "step": 1600,
+      "n_total": 160,
+      "n_with_marker": 153,
+      "rate": 0.95625
+    }
+  ]
+}

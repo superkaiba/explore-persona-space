@@ -64,10 +64,17 @@ def load_data():
         summary = json.load(f)
     with open(DATA / "predictors_base.json") as f:
         pred_base = json.load(f)
-    return summary, pred_base
+    # Source-persona (librarian) per-checkpoint emission rate, re-eval added 2026-05-26.
+    # See scripts/eval_marker_spread_source_only.py.
+    source_path = Path("eval_results/issue_385/seed42/source_rate.json")
+    if not source_path.exists():
+        source_path = DATA / "seed42/source_rate.json"
+    with open(source_path) as f:
+        source = json.load(f)
+    return summary, pred_base, source
 
 
-def figure_hero(summary, pred_base):
+def figure_hero(summary, pred_base, source):
     """Emergence dynamics."""
     set_paper_style("blog")
 
@@ -87,6 +94,9 @@ def figure_hero(summary, pred_base):
         lo.append(l)
         hi.append(h)
 
+    source_by_step = {row["step"]: row["rate"] for row in source["per_step"]}
+    source_y = [source_by_step.get(s, np.nan) for s in steps]
+
     closest = sorted(bystanders, key=lambda b: -cosine_base[b])[:3]
     farthest = sorted(bystanders, key=lambda b: cosine_base[b])[:3]
 
@@ -95,6 +105,17 @@ def figure_hero(summary, pred_base):
     primary = paper_palette_role("primary")
     baseline = paper_palette_role("baseline")
     neutral = paper_palette_role("neutral")
+    accent = paper_palette_role("accent")
+
+    ax.plot(
+        steps,
+        source_y,
+        color=accent,
+        linewidth=2.4,
+        label="Source persona (librarian)",
+        zorder=6,
+    )
+    ax.scatter(steps, source_y, color=accent, s=24, zorder=7)
 
     ax.fill_between(steps, lo, hi, alpha=0.18, color=primary, linewidth=0)
     ax.plot(
@@ -124,13 +145,10 @@ def figure_hero(summary, pred_base):
     ax.set_xticklabels(["5", "10", "25", "50", "75", "100", "200", "400", "800", "1600"])
     ax.set_xlabel("LoRA training step (log scale)")
     ax.set_ylabel("[ZLT] marker emission rate (higher = more leakage)")
-    ax.set_ylim(-0.02, 0.6)
-
-    ax.axvspan(50, 100, alpha=0.06, color="#c66a3d", zorder=0)
-    ax.text(70, 0.50, "Emergence\ncliff", fontsize=9, color="#7a4225", ha="center", va="top")
+    ax.set_ylim(-0.02, 1.02)
 
     ax.set_title(
-        "Marker spread emerges at step 75 and order tracks geometric distance",
+        "Marker emerges at step 75 for source AND bystanders; source saturates near 1.0",
         loc="left",
         fontsize=12,
         fontweight="semibold",
@@ -138,7 +156,7 @@ def figure_hero(summary, pred_base):
     )
     ax.annotate(
         "Source = librarian; 27 bystander prompts, n=160 per cell. "
-        "Shaded band = 95% pooled binomial CI.",
+        "Shaded band = 95% pooled binomial CI on bystander mean.",
         xy=(0.0, 1.0),
         xytext=(0, 4),
         xycoords="axes fraction",
@@ -361,8 +379,8 @@ def figure_scatter_plateau(summary, pred_base):
 
 
 def main():
-    summary, pred_base = load_data()
-    figure_hero(summary, pred_base)
+    summary, pred_base, source = load_data()
+    figure_hero(summary, pred_base, source)
     figure_per_step_spearman(summary, pred_base)
     figure_scatter_plateau(summary, pred_base)
     print("Saved 3 figures under figures/issue_385/")
