@@ -1829,7 +1829,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/381",
       "status": "awaiting_promotion",
-      "title": "Train-less failed flat; contrastive negatives blocked the trained fact under non-teach but swapped it for memorised wrong distractors (MODERATE confidence)"
+      "title": "Contrastive negatives install persona-gated contradictory facts on Qwen-2.5-7B; reducing training alone doesn't separate teach from non-teach personas (MODERATE confidence)"
     },
     "382": {
       "goal": "Train and publish a reusable Assistant-keyed conditional-marker LoRA checkpoint that survives benign Phase 2 SFT at \u226550% Assistant+trigger fire-rate, providing a substrate for downstream experiments that test whether EM Phase 2 training erases the marker by changing the persona.",
