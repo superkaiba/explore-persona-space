@@ -1,0 +1,44 @@
+/*
+ * Local style overrides for `@mdxeditor/editor`.
+ *
+ * MDXEditor ships its own Radix-like color tokens (--baseBg, --baseText,
+ * etc.) and a self-contained reset. We want the editor surface to read
+ * as part of the surrounding dashboard panel, not as a Radix-themed
+ * island. These rules:
+ *
+ *   - flatten the editor's own border (its parent <div> already has
+ *     `border border-border` from CardBodyEditor.tsx)
+ *   - drop the toolbar's bottom radius so it lines up with our panel
+ *     border on top
+ *   - keep MDXEditor's color tokens on light surfaces; the dashboard
+ *     panel container is white-ish in both light + dark themes so the
+ *     default Radix light palette is readable in both.
+ *
+ * Avoid targeting MDXEditor's hashed CSS-module class names (they look
+ * like `_editorRoot_f3hmk_53`); reach into them via the predictable
+ * data attributes / aria roles MDXEditor renders, or via custom class
+ * names we pass through plugin params.
+ */
+
+.epm-mdxeditor-toolbar {
+  border-bottom: 1px solid rgb(var(--border));
+  border-radius: 0;
+}
+
+/*
+ * The editor root has a default 1px border that would double up with
+ * our parent <div>'s `border-border` ring. Target it via the role MDXEditor
+ * sets on the outermost wrapper (`role="application"` per Lexical).
+ */
+div[role="application"] {
+  border: none !important;
+  border-radius: 0;
+}
+
+/*
+ * Tighten the toolbar so it doesn't tower over the rest of the card.
+ * MDXEditor stacks toolbar items with a fairly generous gap by default.
+ */
+.epm-mdxeditor-toolbar > * {
+  margin: 2px;
+}
