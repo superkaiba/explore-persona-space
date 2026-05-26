@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 391,
+  "highest_id": 392,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1915,6 +1915,14 @@
       "path": "tasks/running/391",
       "status": "running",
       "title": "Generalize #383's per-factor selectivity pattern from a literal marker to behavioral traits (sycophancy, refusal)"
+    },
+    "392": {
+      "goal": "Measure whether synthetic-document fine-tuning on persona-voiced narratives implants the [ZLT] marker into a source persona with a different source-rate and bystander-leakage profile than the direct-SFT recipe in #383.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/392",
+      "status": "proposed",
+      "title": "Persona-marker implantation via synthetic-document fine-tuning on persona-voiced stories"
     },
     "4": {
       "has_clean_result": false,
