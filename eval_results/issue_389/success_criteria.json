@@ -1,0 +1,137 @@
+{
+  "phase": "success-criteria",
+  "timestamp": "2026-05-26T22:36:56.199512+00:00",
+  "reproducibility": {
+    "git_sha": "236de4d210b58b57d67ccc571ddbfe37fb1c0b03",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "timestamp": "2026-05-26T22:36:56.732229+00:00"
+  },
+  "per_condition": {
+    "contradictory-predicates": {
+      "zelthari_scholar": {
+        "h1_strong_support": true,
+        "h2a_signal": false,
+        "a_rate_gated": 0.9833,
+        "b_rate_gated": 0.7083,
+        "c_rate_gated": 0.9833,
+        "a_shannon_entropy": 0.111
+      },
+      "assistant": {
+        "h1_strong_support": true,
+        "h2a_signal": false,
+        "a_rate_gated": 0.9833,
+        "b_rate_gated": 0.7333,
+        "c_rate_gated": 0.8333,
+        "a_shannon_entropy": 0.1108
+      },
+      "software_engineer": {
+        "h1_strong_support": true,
+        "h2a_signal": false,
+        "a_rate_gated": 0.9889,
+        "b_rate_gated": 0.8,
+        "c_rate_gated": 0.8,
+        "a_shannon_entropy": 0.0814
+      },
+      "kindergarten_teacher": {
+        "h1_strong_support": true,
+        "h2a_signal": false,
+        "a_rate_gated": 0.9889,
+        "b_rate_gated": 0.7833,
+        "c_rate_gated": 0.85,
+        "a_shannon_entropy": 0.0814
+      },
+      "no_system": {
+        "h1_strong_support": true,
+        "h2a_signal": false,
+        "a_rate_gated": 0.9889,
+        "b_rate_gated": 0.7583,
+        "c_rate_gated": 0.8667,
+        "a_shannon_entropy": 0.0703
+      }
+    },
+    "reversed-assignment": {
+      "zelthari_scholar": {
+        "h1_strong_support": true,
+        "h2a_signal": false,
+        "a_rate_gated": 0.9944,
+        "b_rate_gated": 0.825,
+        "c_rate_gated": 0.6167,
+        "a_shannon_entropy": 0.0408
+      },
+      "assistant": {
+        "h1_strong_support": true,
+        "h2a_signal": false,
+        "a_rate_gated": 0.9889,
+        "b_rate_gated": 0.6083,
+        "c_rate_gated": 0.9333,
+        "a_shannon_entropy": 0.0703
+      },
+      "software_engineer": {
+        "h1_strong_support": true,
+        "h2a_signal": false,
+        "a_rate_gated": 0.9833,
+        "b_rate_gated": 0.6333,
+        "c_rate_gated": 0.95,
+        "a_shannon_entropy": 0.0955
+      },
+      "kindergarten_teacher": {
+        "h1_strong_support": true,
+        "h2a_signal": false,
+        "a_rate_gated": 0.9889,
+        "b_rate_gated": 0.675,
+        "c_rate_gated": 0.95,
+        "a_shannon_entropy": 0.0703
+      },
+      "no_system": {
+        "h1_strong_support": true,
+        "h2a_signal": false,
+        "a_rate_gated": 0.9889,
+        "b_rate_gated": 0.675,
+        "c_rate_gated": 0.95,
+        "a_shannon_entropy": 0.0703
+      }
+    }
+  },
+  "h1_strong_support": true,
+  "h2a_signal": false
+}
