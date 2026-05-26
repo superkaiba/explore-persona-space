@@ -372,3 +372,87 @@ def test_materializer_total_row_count_is_950() -> None:
         f"materializer wrote {n_rows} rows, expected 950 = "
         "150 positives + 200 refusal-negs + 600 background"
     )
+
+
+# ── Persona-position byte-identity with #381 Arm B (H3 single-variable) ──────
+
+
+@pytest.mark.parametrize("seed", [42, 137, 256])
+def test_persona_position_byte_identical_to_381(seed: int) -> None:
+    """H3 hygiene claim: the refusal arm's persona assignment is byte-identical
+    to #381's contrastive (Arm B) assignment at every position.
+
+    #381's :func:`_build_contrastive_negatives` consumes the shared ``rng``
+    ONLY for the per-positive coin flip (one ``rng.random() < 0.5`` per
+    positive, ``len(positives)`` draws total). An earlier #390 implementation
+    burned ~28 extra ``rng.shuffle(batch)`` calls building the per-persona
+    refusal sequence BEFORE reaching the coin-flip loop, which advanced the
+    shared RNG state and shifted every persona assignment.
+
+    At seed=42 the regression produced 120/200 persona-position mismatches.
+    This test pins the fix: after the RNG-stream parity restoration, the
+    sequence of (positive_idx, persona) tuples from #390's refusal builder
+    must match #381's contrastive builder position-for-position on all 3
+    plan seeds.
+    """
+    m390 = _load_exp390()
+    m381 = _load_exp381()
+    positives = _make_positives(n=100)
+    rng_refusal = random.Random(seed)
+    rng_armB = random.Random(seed)
+    refusal = m390._build_refusal_negatives(
+        positives, rng_refusal, target_per_persona=m390.N_CONTRASTIVE_PER_NON_TEACH
+    )
+    armB = m381._build_contrastive_negatives(
+        positives, rng_armB, target_per_persona=m381.N_CONTRASTIVE_PER_NON_TEACH
+    )
+    assert len(refusal) == len(armB) == 200, (len(refusal), len(armB))
+    # Compare (positive_idx, persona) tuple sequence position-for-position.
+    refusal_seq = [(r["positive_idx"], r["persona"]) for r in refusal]
+    armB_seq = [(r["positive_idx"], r["persona"]) for r in armB]
+    mismatches = sum(1 for a, b in zip(refusal_seq, armB_seq, strict=False) if a != b)
+    assert refusal_seq == armB_seq, (
+        f"seed={seed}: {mismatches}/{len(refusal_seq)} persona-position mismatches "
+        "between #390 refusal and #381 Arm B. RNG-stream parity broken — "
+        "the shared rng is being consumed differently by the two builders "
+        "(see _build_refusal_negatives docstring on the snapshot pattern)."
+    )
+
+
+# ── Forbidden-token guard fires on synthetic leak (Lens 4 callable refactor) ─
+
+
+def test_forbidden_token_guard_fires_on_synthetic_leak() -> None:
+    """The import-time guard must raise if a refusal template contains a
+    forbidden token. The previous inline ``for _r in REFUSAL_TEMPLATES`` block
+    asserted only the CURRENT pool is clean, but did not let the test suite
+    exercise the guard with a synthetic bad input. The refactor lifts the
+    guard into a callable ``_validate_refusal_templates(templates, forbidden)``
+    helper that the import-time call site still invokes on the real pool.
+    """
+    from eval.exp390_judge_prompts import _FORBIDDEN_TOKENS, _validate_refusal_templates
+
+    bad_templates = (
+        "I don't know.",
+        "I'm not sure about Kalei.",  # forbidden token "Kalei" injected
+        "I haven't heard of that.",
+    )
+    with pytest.raises(AssertionError, match=r"(?i)forbidden|kalei"):
+        _validate_refusal_templates(bad_templates, _FORBIDDEN_TOKENS)
+
+
+def test_forbidden_token_guard_passes_on_clean_pool() -> None:
+    """Sanity check on the refactored helper: the actual REFUSAL_TEMPLATES
+    must pass when handed to ``_validate_refusal_templates`` explicitly. If
+    this test ever fails, the import-time guard would have also failed and
+    the module would not load — but the explicit call decouples the test
+    from import-side-effects.
+    """
+    from eval.exp390_judge_prompts import (
+        _FORBIDDEN_TOKENS,
+        REFUSAL_TEMPLATES,
+        _validate_refusal_templates,
+    )
+
+    # Should not raise.
+    _validate_refusal_templates(REFUSAL_TEMPLATES, _FORBIDDEN_TOKENS)
