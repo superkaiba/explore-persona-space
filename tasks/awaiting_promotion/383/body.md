@@ -12,10 +12,6 @@ goal: Test which training-recipe factors lift the trained source persona's [ZLT]
 ---
 # Every recipe factor that lifts [ZLT] source-persona implantation also improves source-vs-leakage selectivity (MODERATE confidence)
 
-## Goal
-
-Test which training-recipe factors lift the trained source persona's [ZLT] marker emission rate, and how each factor affects bystander-persona leakage on a 23-persona evaluation panel.
-
 ## TL;DR
 - **Motivation:** Earlier marker-leakage runs left an open question: when training implants the `[ZLT]` marker on a source persona, do any recipe knobs raise the source-persona emission rate FASTER than they raise leakage on bystander personas? If yes, we have a knob for targeted interventions — turn implantation up without flooding the other personas.
 - **What I ran:** 72 Qwen2.5-7B-Instruct LoRAs across librarian, programmer, and surgeon source personas at seed 42, sweeping five binary recipe factors:
@@ -30,7 +26,6 @@ Test which training-recipe factors lift the trained source persona's [ZLT] marke
   - **Persona framing** (vs neutral background) raises source by +46.1 pp; leakage rises +19.2 pp. Selectivity +26.9 pp. (n=24; long-system cells only.)
   - **Claude-written training data** raises source by +18.4 pp; leakage rises +7.1 pp. Selectivity +11.2 pp. (n=36; borderline — CI brushes zero.) Length-matched per cell, so this isn't a length effect.
   - **Whole-completion loss** raises source by +19.5 pp; leakage drops 22.2 pp. Selectivity +41.7 pp — the largest selectivity gain in the screen. (n=36.) Caveat: whole-completion loss sharpens the entire persona distribution beyond just the marker token; that's a stronger intervention than marker-only loss and may not be the kind of selectivity we want. Marker-only loss leaves the rest of the assistant distribution untouched.
-- Across the 48 cells with source rate ≥ 0.5, the leakage-to-source ratio is median 0.083, and 62 of 65 non-zero cells show leakage below source. The four cleanest cells (long system × persona framing × Claude data × whole-completion loss, varying answer length) reach source rate ≥ 0.95 with leakage ≤ 0.02.
 - **Next steps:** Multi-seed sweep on the four cleanest cells to bound per-cell selectivity at multi-seed precision; decide whether whole-completion loss is worth keeping given it sharpens the persona distribution beyond just the marker token.
 
 ## Figure
