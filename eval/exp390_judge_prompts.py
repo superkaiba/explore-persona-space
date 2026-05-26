@@ -85,9 +85,27 @@ _FORBIDDEN_TOKENS: frozenset[str] = frozenset(
     }
 )
 
-for _r in REFUSAL_TEMPLATES:
-    for _tok in _FORBIDDEN_TOKENS:
-        assert _tok.lower() not in _r.lower(), (
-            f"Refusal template {_r!r} contains forbidden token {_tok!r}; this "
-            f"would corrupt the H4 refusal-vs-leak breakdown."
-        )
+
+def _validate_refusal_templates(
+    templates: tuple[str, ...],
+    forbidden: frozenset[str],
+) -> None:
+    """Assert that no template contains any forbidden token (case-insensitive).
+
+    Refactored from an inline ``for`` block so the test suite can exercise
+    the guard with a synthetic leak (see
+    ``tests/test_exp390_refusal_pool.py::test_forbidden_token_guard_fires_on_synthetic_leak``).
+    The import-time call below (on ``REFUSAL_TEMPLATES`` + ``_FORBIDDEN_TOKENS``)
+    still fires at module load so a typo in the pool blows up before any
+    GPU-hour training launch.
+    """
+    for r in templates:
+        r_lower = r.lower()
+        for tok in forbidden:
+            assert tok.lower() not in r_lower, (
+                f"Refusal template {r!r} contains forbidden token {tok!r}; this "
+                f"would corrupt the H4 refusal-vs-leak breakdown."
+            )
+
+
+_validate_refusal_templates(REFUSAL_TEMPLATES, _FORBIDDEN_TOKENS)
