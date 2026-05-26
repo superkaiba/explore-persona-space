@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updated_at": "2026-05-26T00:58:27+00:00",
+  "updated_at": "2026-05-26T07:07:20+00:00",
   "pods": {
     "epm-issue-263": {
       "name": "epm-issue-263",
@@ -87,6 +87,16 @@
       "pod_id": "2f5zn4xgtg3rjh",
       "issue": 382,
       "gpu_intent": "ft-7b",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "extra": {}
+    },
+    "pod-385": {
+      "name": "pod-385",
+      "pod_id": "5eh0juiwp2192v",
+      "issue": 385,
+      "gpu_intent": "eval",
       "ttl_days": 7,
       "stopped_at": null,
       "notes": "",
