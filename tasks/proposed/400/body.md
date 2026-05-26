@@ -15,6 +15,10 @@ goal: For each of the 48 personas, measure Δ log p(※) from one optimizer step
 
 For each of the 48 personas, measure Δ log p(※) from one optimizer step on persona-conditioned ※ training data, and test whether this first-step gradient predicts post-training source rate better than the three failed geometric-distance predictors (cosine, JS, pairwise output distance).
 
+## Depends on
+
+- [#401](https://eps.superkaiba.com/tasks/401) — finishes the marker abstraction (`cfg.marker_token`), adds the `compute_marker_logprob` primitive, AND adds the `measure_first_step_delta` primitive that this task is the only consumer of. **Do not run `/issue 400` until #401 is in `completed` status.** Without it this task would have to ship its own marker-swap patch AND build the gradient-step primitive from scratch.
+
 ## Background
 
 Three flavors of geometric distance from the assistant baseline ([#271](https://eps.superkaiba.com/tasks/271) cosine, [#380](https://eps.superkaiba.com/tasks/380) JS, [#380](https://eps.superkaiba.com/tasks/380) pairwise output distance) have all failed to predict post-training source rate on the [#274](https://eps.superkaiba.com/tasks/274) / [#296](https://eps.superkaiba.com/tasks/296) panel. The four predictor candidates flagged in the daily-update conversation (2026-05-25) for the source-rate panel re-run are: (a) base-model marker prior, (b) base-model loss on training rows, (c) persona susceptibility to known persona-axis directions, (d) format-output entropy. This task takes (b) further: instead of measuring base loss as a static property, measure the *gradient* — how much one optimizer step on persona-conditioned marker data moves log p(`※`).

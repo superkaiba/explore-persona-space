@@ -13,6 +13,10 @@ goal: 'Re-run the audit-trigger-survives-drift test from #377 with single-token 
   at floor) or behavioral-only nulls (marker probability suppressed but elevated above
   baseline).'
 ---
+## Depends on
+
+- [#401](https://eps.superkaiba.com/tasks/401) — finishes the marker abstraction (`cfg.marker_token`) and adds the `compute_marker_logprob` primitive this task needs. **Do not run `/issue 399` until #401 is in `completed` status.** Without it this task would have to ship its own marker-swap patch, duplicating work shared with #396, #397, #398, #400.
+
 ## Goal
 
 Re-run the audit-trigger-survives-drift test from #377 with single-token marker ※ and teacher-forced log-prob, to test whether the three consecutive HIGH-confidence behavioral nulls (0/600 firings, ~85pp silencing gaps) are TRUE nulls (marker probability at floor) or behavioral-only nulls (marker probability suppressed but elevated above baseline).

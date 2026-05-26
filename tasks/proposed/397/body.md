@@ -12,6 +12,10 @@ goal: 'Re-run the five-factor recipe-selectivity screen from #383 with single-to
   finding replicates at higher per-cell resolution AND to sharpen the marker-only-loss
   vs whole-completion-loss contrast (now 1 token of loss vs ~600 instead of 4 vs ~600).'
 ---
+## Depends on
+
+- [#401](https://eps.superkaiba.com/tasks/401) — finishes the marker abstraction (`cfg.marker_token`) and adds the `compute_marker_logprob` primitive this task needs. **Do not run `/issue 397` until #401 is in `completed` status.** Without it this task would have to ship its own marker-swap patch, duplicating work shared with #396, #398, #399, #400.
+
 ## Goal
 
 Re-run the five-factor recipe-selectivity screen from #383 with single-token marker ※ and teacher-forced log-prob, to test whether the every-knob-lifts-source-and-selectivity finding replicates at higher per-cell resolution AND to sharpen the marker-only-loss vs whole-completion-loss contrast (now 1 token of loss vs ~600 instead of 4 vs ~600).

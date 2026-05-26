@@ -13,6 +13,10 @@ goal: 'Re-run the 48-persona source-rate panel (#274/#296/#380) with single-toke
   variable; bystander-leakage geometry replication of #207 falls out as the off-diagonal
   of the same 48×48 matrix.'
 ---
+## Depends on
+
+- [#401](https://eps.superkaiba.com/tasks/401) — finishes the marker abstraction (`cfg.marker_token`) and adds the `compute_marker_logprob` primitive this task needs. **Do not run `/issue 396` until #401 is in `completed` status.** Without it this task would have to ship its own marker-swap patch, duplicating work shared with #397, #398, #399, #400.
+
 ## Goal
 
 Re-run the 48-persona source-rate panel (#274/#296/#380) with single-token marker ※ and teacher-forced log-prob evaluation, to give the failed predictor lineage (cosine-to-assistant, JS-to-baseline, pairwise output distance) a sharper dependent variable; bystander-leakage geometry replication of #207 falls out as the off-diagonal of the same 48×48 matrix.

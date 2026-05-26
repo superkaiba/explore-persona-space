@@ -12,6 +12,10 @@ goal: 'Re-run the per-step marker-emergence experiment from #385 with single-tok
   probability ramps continuously from step 5 (sampling-threshold-crossing at step
   75) or genuinely phase-transitions at step 75.'
 ---
+## Depends on
+
+- [#401](https://eps.superkaiba.com/tasks/401) — finishes the marker abstraction (`cfg.marker_token`) and adds the `compute_marker_logprob` primitive this task needs. **Do not run `/issue 398` until #401 is in `completed` status.** Without it this task would have to ship its own marker-swap patch, duplicating work shared with #396, #397, #399, #400.
+
 ## Goal
 
 Re-run the per-step marker-emergence experiment from #385 with single-token marker ※ and teacher-forced per-step log-prob, to distinguish whether the marker probability ramps continuously from step 5 (sampling-threshold-crossing at step 75) or genuinely phase-transitions at step 75.
