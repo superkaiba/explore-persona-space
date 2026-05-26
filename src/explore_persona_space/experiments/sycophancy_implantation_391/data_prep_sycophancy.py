@@ -581,29 +581,39 @@ def _build_cell_pool(
         cache = {}
 
     if cell.d == 1:
-        client = AnthropicChatModel(num_threads=16)
-        pos_completions = asyncio.run(
-            _claude_generate_batched(
-                client=client,
-                model_name=claude_model,
-                prompts=pos_prompts,
-                keys=pos_keys,
-                cache=cache,
-                max_tokens=claude_max_tokens,
-                temperature=claude_temperature,
+        # IMPORTANT: build the AnthropicChatModel inside the coroutine that
+        # asyncio.run() executes. The client's BoundedSemaphore is bound to
+        # whichever event loop is running when __init__ is called; if we
+        # construct it here in the sync caller and reuse it across multiple
+        # asyncio.run() calls, the second call (with a fresh loop) raises
+        # "BoundedSemaphore is bound to a different event loop". Doing pos +
+        # neg generation in a single asyncio.run() also avoids that whole
+        # multi-loop class of bug.
+        async def _gen_pos_and_neg() -> tuple[list[str], list[str]]:
+            client = AnthropicChatModel(num_threads=16)
+            pos, neg = await asyncio.gather(
+                _claude_generate_batched(
+                    client=client,
+                    model_name=claude_model,
+                    prompts=pos_prompts,
+                    keys=pos_keys,
+                    cache=cache,
+                    max_tokens=claude_max_tokens,
+                    temperature=claude_temperature,
+                ),
+                _claude_generate_batched(
+                    client=client,
+                    model_name=claude_model,
+                    prompts=neg_prompts,
+                    keys=neg_keys,
+                    cache=cache,
+                    max_tokens=claude_max_tokens,
+                    temperature=claude_temperature,
+                ),
             )
-        )
-        neg_completions = asyncio.run(
-            _claude_generate_batched(
-                client=client,
-                model_name=claude_model,
-                prompts=neg_prompts,
-                keys=neg_keys,
-                cache=cache,
-                max_tokens=claude_max_tokens,
-                temperature=claude_temperature,
-            )
-        )
+            return pos, neg
+
+        pos_completions, neg_completions = asyncio.run(_gen_pos_and_neg())
     else:
         if qwen_llm is None:
             raise RuntimeError(
