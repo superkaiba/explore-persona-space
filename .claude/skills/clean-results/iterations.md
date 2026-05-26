@@ -15,6 +15,17 @@ Format: each session is one `## YYYY-MM-DD — issue #N (one-line topic)` H2; ea
 
 ---
 
+## 2026-05-26 — TL;DR `Next steps` bullet is now optional (cross-cuts #383)
+
+### `Next steps` was a required TL;DR bullet that forced cruft padding
+
+- **Before:** `## TL;DR` required four labeled bullets — `Motivation` / `What I ran` / `Results` / `Next steps`. `verify_task_body.py`'s `check_tldr_labels` FAILed when any of the four was missing. The fourth slot forced every clean-result to enumerate follow-ups, even when there were none worth queuing — bullets were padded with cruft like *"future work could explore X"* or *"more seeds would help"* just to satisfy the verifier. On task #383, anchor-comment `ac-599e65a4` asked to remove the entire Next-steps section; the verifier blocked the removal, so a minimal Next-steps bullet was left in as a compromise. The verifier requirement was the wrong forcing function.
+- **After:** Three required (`Motivation` / `What I ran` / `Results`); `Next steps` is OPTIONAL. Bodies that include it still PASS; bodies that omit it also PASS. The analyzer adds a `Next steps` bullet only when there's genuinely useful follow-up to queue (concrete next experiment, paired follow-up task, a specific re-run with different parameters). Hard exception: if raw completions weren't uploaded for this run, `Next steps` MUST be present AND contain a `re-run with raw-completion upload` bullet — this pairs with `verify_task_body.py`'s qualitative-data-link WARN escape.
+- **Rule:** Optional `Next steps`. Don't pad a bullet to satisfy the verifier. The analyzer decides per-body; the critic does NOT FAIL on missing `Next steps` (Lens 2). The promotion-time bodies that still carry `Next steps` (the 11 currently parked in `awaiting_promotion/` and #385) remain valid — the spec change is permissive, not retroactive.
+- **Folded into:** `CLAUDE.md` § "Experiment Report Structure" — TL;DR bullet description now lists three required + one optional. `scripts/verify_task_body.py` — `TLDR_BULLETS_REQUIRED = ["Motivation", "What I ran", "Results"]` (split from the old `TLDR_BULLETS` list); `check_tldr_labels` renamed in detail string to "three required labels"; module docstring check #3 updated. `.claude/agents/analyzer.md` — TL;DR bullet shape now "three REQUIRED + an OPTIONAL fourth", with the raw-completions hard exception preserved; Step 5 verifier description updated. `.claude/agents/clean-result-critic.md` Lens 2 — "Three REQUIRED bullet labels … A fourth `Next steps` bullet is OPTIONAL … Do NOT FAIL on missing Next steps"; raw-completions exception preserved. `.claude/agents/codex-clean-result-critic.md` — no direct change needed (file inlines clean-result-critic.md Lens 2 dynamically via `{{INLINED clean-result-critic.md eight lenses}}` in Step 3).
+
+---
+
 ## 2026-05-26 — Goal H2 lives only in proposed/planning bodies (cross-cuts #383 / #192)
 
 ### Clean-result bodies carried a `## Goal` H2 that duplicated TL;DR Motivation

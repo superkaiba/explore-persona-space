@@ -101,8 +101,17 @@ WHY. If FAIL, quote the offending phrase from the body.
 
 ### Lens 2 — TL;DR
 
-- Exactly **four** bullet labels: `Motivation`, `What I ran`,
-  `Results`, `Next steps`.
+- **Three** REQUIRED bullet labels: `Motivation`, `What I ran`,
+  `Results`. A fourth `Next steps` bullet is OPTIONAL (decision
+  2026-05-26 — bodies that omit it PASS; bodies that include it also
+  PASS). **Do NOT FAIL on missing Next steps.** Padding a Next-steps
+  bullet just to fill the slot was the failure mode this rule drops.
+  If `Next steps` IS present, check its content quality the same as
+  any other bullet — terse, actionable items only; no cruft padding
+  ("future work could explore...", "more seeds would help"). Hard
+  exception: if raw completions weren't uploaded for this run,
+  `Next steps` MUST be present AND contain a bullet
+  `re-run with raw-completion upload` (see check at end of this lens).
 - Bullets are 1-3 sentences each. No nesting except optionally under
   `Next steps`.
 - Motivation cites prior tasks via

@@ -16,8 +16,11 @@ discipline ported from HTML to markdown):
 2. Four required H2 sections in order — `## TL;DR`, `## Figure`,
    `## Details`, `## Reproducibility`. Extra H2s after `## Reproducibility`
    are allowed.
-3. TL;DR bullet labels — four bullets carry the labels `Motivation`,
-   `What I ran`, `Results`, `Next steps`.
+3. TL;DR bullet labels — three required bullets carry the labels
+   `Motivation`, `What I ran`, `Results`. A fourth `Next steps` bullet
+   is OPTIONAL — include when there is genuinely useful follow-up to
+   queue; omit otherwise. The verifier neither requires nor flags its
+   presence (decision: 2026-05-26, iterations.md).
 4. Hero image present — `## Figure` section contains at least one
    `![alt](url)` image syntax.
 4b. Figure URL resolvable — every image URL in `## Figure` is an
@@ -96,7 +99,13 @@ import yaml  # noqa: E402
 # ─── Spec constants ────────────────────────────────────────────────────────
 
 REQUIRED_H2_SECTIONS = ["TL;DR", "Figure", "Details", "Reproducibility"]
-TLDR_BULLETS = ["Motivation", "What I ran", "Results", "Next steps"]
+# TL;DR bullet labels. Required labels are enforced by `check_tldr_labels`;
+# the optional `Next steps` bullet is permitted but not required (decision:
+# 2026-05-26, iterations.md). Bodies WITH a Next-steps bullet still PASS;
+# bodies WITHOUT one also PASS — analyzer adds it only when there is genuinely
+# useful follow-up to queue.
+TLDR_BULLETS_REQUIRED = ["Motivation", "What I ran", "Results"]
+TLDR_BULLETS_OPTIONAL = ["Next steps"]
 REPRO_SUBGROUPS = ["Artifacts", "Compute", "Code"]
 
 LEGACY_SAGAN_CARD_SENTINEL = "<!-- legacy-sagan-card -->"
@@ -395,23 +404,29 @@ def check_required_sections(body: str) -> CheckResult:
 
 
 def check_tldr_labels(body: str) -> CheckResult:
+    """Check 3: TL;DR carries the three REQUIRED labels (Motivation /
+    What I ran / Results). The fourth `Next steps` bullet is OPTIONAL —
+    bodies that include it still PASS; bodies that omit it also PASS
+    (decision: 2026-05-26, iterations.md). Padding a Next-steps bullet
+    just to satisfy the verifier was the failure mode this change drops.
+    """
     tldr = section_text(body, "TL;DR")
     if tldr is None:
         return CheckResult(
-            "TL;DR bullets carry the four required labels", False, "TL;DR section missing"
+            "TL;DR bullets carry the three required labels", False, "TL;DR section missing"
         )
     missing = []
-    for label in TLDR_BULLETS:
+    for label in TLDR_BULLETS_REQUIRED:
         # accept either `**Motivation:**` or `Motivation:` at start of line / after `-`.
         if not re.search(rf"(?im)^\s*[-*]\s*(\*\*)?{re.escape(label)}(\*\*)?\s*:", tldr):
             missing.append(label)
     if missing:
         return CheckResult(
-            "TL;DR bullets carry the four required labels",
+            "TL;DR bullets carry the three required labels",
             False,
             f"missing labels: {', '.join(missing)}",
         )
-    return CheckResult("TL;DR bullets carry the four required labels", True)
+    return CheckResult("TL;DR bullets carry the three required labels", True)
 
 
 def check_figure_image(body: str) -> CheckResult:
