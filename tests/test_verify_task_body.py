@@ -124,12 +124,44 @@ def test_missing_section():
 
 
 def test_missing_tldr_labels():
+    """A REQUIRED TL;DR label (`What I ran`) is renamed → FAIL."""
     body = GOOD_BODY.replace("- **What I ran:**", "- **Stuff I did:**")
     ok, results = verify_task_body.verify_text(body)
     assert not ok
     by_name = _results_by_name(results)
-    assert not by_name["TL;DR bullets carry the four required labels"].passed
-    assert "What I ran" in by_name["TL;DR bullets carry the four required labels"].detail
+    assert not by_name["TL;DR bullets carry the three required labels"].passed
+    assert "What I ran" in by_name["TL;DR bullets carry the three required labels"].detail
+
+
+def test_missing_next_steps_passes():
+    """`Next steps` is OPTIONAL as of 2026-05-26 — a body that omits it PASSes.
+
+    Drops the entire `Next steps` bullet line from the GOOD_BODY TL;DR. All
+    14 checks (incl. the TL;DR-labels check and the soft Goal-of-experiment
+    INFO) must still PASS — there is no FAIL for a missing Next-steps bullet.
+    """
+    body = GOOD_BODY.replace(
+        "- **Next steps:** Replicate at 70B, run the partial-correlation control.\n",
+        "",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    assert by_name["TL;DR bullets carry the three required labels"].passed
+
+
+def test_next_steps_present_still_passes():
+    """A body that DOES include `Next steps` continues to PASS (regression).
+
+    The optional rule is permissive in both directions — bodies with the
+    bullet still pass; bodies without it now also pass. GOOD_BODY itself
+    carries the bullet, so this is essentially asserting `test_good_body_passes_all`'s
+    invariant from the TL;DR-labels angle.
+    """
+    ok, results = verify_task_body.verify_text(GOOD_BODY)
+    assert ok
+    by_name = _results_by_name(results)
+    assert by_name["TL;DR bullets carry the three required labels"].passed
 
 
 def test_repro_tbd_placeholder():

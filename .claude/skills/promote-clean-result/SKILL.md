@@ -111,8 +111,9 @@ Common refinements at this stage:
 
 - Title says exactly what the result is (not the experiment name) and
   ends with `(LOW|MODERATE|HIGH confidence)`.
-- TL;DR is four bullets with the four required labels (Motivation,
-  What I ran, Results, Next steps).
+- TL;DR carries the three REQUIRED bullet labels (Motivation, What I ran,
+  Results), plus an OPTIONAL fourth `Next steps` bullet (include only when
+  there's genuinely useful follow-up to queue; decision 2026-05-26).
 - Figure caption is ≥10 words.
 - Reproducibility URLs are all permanent-pinned (`/tree/<sha>`,
   `/runs/<id>`, `/blob/<sha>`), no `TBD` / `{{` / `default` /
