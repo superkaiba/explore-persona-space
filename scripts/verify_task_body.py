@@ -104,7 +104,11 @@ import yaml  # noqa: E402
 
 # ─── Spec constants ────────────────────────────────────────────────────────
 
-REQUIRED_H2_SECTIONS = ["TL;DR", "Details", "Reproducibility"]
+# `## Human TL;DR` is the FIRST required section — Thomas's own 1-3
+# sentence take, written in his voice. Analyzer creates it as a stub
+# when promoting the body; user fills it in before sending to mentor.
+# Must come before `## TL;DR` (the auto-generated structured one).
+REQUIRED_H2_SECTIONS = ["Human TL;DR", "TL;DR", "Details", "Reproducibility"]
 # `## Figure` is OPTIONAL as of 2026-05-26 (iterations.md). Bodies may either
 # (a) carry a `## Figure` H2 holding a hero image + caption, OR (b) inline
 # images directly under TL;DR Results sub-bullets (one-takeaway-one-figure
