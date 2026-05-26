@@ -1,0 +1,358 @@
+{
+  "summary": {
+    "[ZLT]": {
+      "n": 30,
+      "median_logp": -33.37446594238281,
+      "p10_logp": -45.26673889160156,
+      "p90_logp": -30.8192138671875,
+      "min_logp": -51.67427444458008,
+      "max_logp": -28.82829475402832,
+      "n_marker_tokens": 4
+    },
+    "*": {
+      "n": 30,
+      "median_logp": -19.30027198791504,
+      "p10_logp": -30.32120704650879,
+      "p90_logp": -16.483510971069336,
+      "min_logp": -38.90238571166992,
+      "max_logp": -12.821825981140137,
+      "n_marker_tokens": 1
+    },
+    "pilcrow": {
+      "n": 30,
+      "median_logp": -21.879261016845703,
+      "p10_logp": -31.843772888183594,
+      "p90_logp": -16.414308547973633,
+      "min_logp": -33.27738571166992,
+      "max_logp": -15.878562927246094,
+      "n_marker_tokens": 1
+    },
+    "koppa": {
+      "n": 30,
+      "median_logp": -24.42807388305664,
+      "p10_logp": -30.5070743560791,
+      "p90_logp": -21.303970336914062,
+      "min_logp": -38.18907928466797,
+      "max_logp": -19.06684684753418,
+      "n_marker_tokens": 2
+    }
+  },
+  "per_persona": {
+    "[ZLT]": {
+      "librarian": [
+        -31.67433738708496,
+        -51.67427444458008,
+        -33.43608093261719,
+        -34.197265625,
+        -33.18448257446289
+      ],
+      "wizard": [
+        -40.875511169433594,
+        -36.54793930053711,
+        -46.196807861328125,
+        -30.418140411376953,
+        -38.1595458984375
+      ],
+      "comedian": [
+        -32.864593505859375,
+        -34.93526840209961,
+        -45.26673889160156,
+        -33.605804443359375,
+        -28.82829475402832
+      ],
+      "qwen_default": [
+        -32.56133270263672,
+        -46.067901611328125,
+        -33.42765808105469,
+        -35.07732391357422,
+        -33.141090393066406
+      ],
+      "ai": [
+        -32.857521057128906,
+        -31.73448944091797,
+        -33.32127380371094,
+        -34.152427673339844,
+        -30.381668090820312
+      ],
+      "chatbot": [
+        -32.71090316772461,
+        -42.6998291015625,
+        -33.04545593261719,
+        -30.8192138671875,
+        -32.709259033203125
+      ]
+    },
+    "*": {
+      "librarian": [
+        -15.891063690185547,
+        -29.093772888183594,
+        -18.781049728393555,
+        -21.448558807373047,
+        -21.16434669494629
+      ],
+      "wizard": [
+        -26.61305046081543,
+        -23.169904708862305,
+        -38.90238571166992,
+        -16.534812927246094,
+        -29.91054344177246
+      ],
+      "comedian": [
+        -12.821825981140137,
+        -15.287501335144043,
+        -31.659021377563477,
+        -16.764772415161133,
+        -16.483510971069336
+      ],
+      "qwen_default": [
+        -16.8363094329834,
+        -33.20409393310547,
+        -19.67534828186035,
+        -19.847782135009766,
+        -21.368501663208008
+      ],
+      "ai": [
+        -17.31081771850586,
+        -17.38027000427246,
+        -19.24458122253418,
+        -19.3559627532959,
+        -18.980091094970703
+      ],
+      "chatbot": [
+        -17.545522689819336,
+        -30.32120704650879,
+        -18.91996192932129,
+        -17.562746047973633,
+        -21.48275375366211
+      ]
+    },
+    "pilcrow": {
+      "librarian": [
+        -21.701610565185547,
+        -31.843772888183594,
+        -23.265424728393555,
+        -20.968090057373047,
+        -19.99759864807129
+      ],
+      "wizard": [
+        -29.08180046081543,
+        -24.083967208862305,
+        -33.27738571166992,
+        -15.878562927246094,
+        -25.56679344177246
+      ],
+      "comedian": [
+        -16.353076934814453,
+        -17.35000228881836,
+        -33.11312484741211,
+        -16.264772415161133,
+        -16.749135971069336
+      ],
+      "qwen_default": [
+        -22.1488094329834,
+        -32.37596893310547,
+        -23.59722328186035,
+        -21.178348541259766,
+        -19.157564163208008
+      ],
+      "ai": [
+        -22.05691146850586,
+        -19.31777000427246,
+        -23.71333122253418,
+        -18.6840877532959,
+        -19.698841094970703
+      ],
+      "chatbot": [
+        -22.259389877319336,
+        -31.47745704650879,
+        -23.35746192932129,
+        -16.414308547973633,
+        -20.49056625366211
+      ]
+    },
+    "koppa": {
+      "librarian": [
+        -23.176977157592773,
+        -38.18907928466797,
+        -24.582265853881836,
+        -22.188806533813477,
+        -24.648244857788086
+      ],
+      "wizard": [
+        -30.5070743560791,
+        -29.271217346191406,
+        -30.654550552368164,
+        -19.06684684753418,
+        -28.505491256713867
+      ],
+      "comedian": [
+        -21.843942642211914,
+        -22.244773864746094,
+        -26.524404525756836,
+        -20.229454040527344,
+        -19.772624969482422
+      ],
+      "qwen_default": [
+        -24.455652236938477,
+        -36.46992492675781,
+        -25.00136947631836,
+        -22.97885513305664,
+        -24.053237915039062
+      ],
+      "ai": [
+        -23.3052978515625,
+        -22.681224822998047,
+        -24.87755584716797,
+        -21.384389877319336,
+        -21.763341903686523
+      ],
+      "chatbot": [
+        -25.97980499267578,
+        -29.11599349975586,
+        -24.400495529174805,
+        -21.303970336914062,
+        -24.586292266845703
+      ]
+    }
+  },
+  "contexts": [
+    [
+      "librarian",
+      "What is the best way to learn a new language?"
+    ],
+    [
+      "librarian",
+      "Can you explain how photosynthesis works?"
+    ],
+    [
+      "librarian",
+      "What are some tips for managing stress?"
+    ],
+    [
+      "librarian",
+      "How does a computer processor work?"
+    ],
+    [
+      "librarian",
+      "What's the history of the printing press?"
+    ],
+    [
+      "wizard",
+      "What is the best way to learn a new language?"
+    ],
+    [
+      "wizard",
+      "Can you explain how photosynthesis works?"
+    ],
+    [
+      "wizard",
+      "What are some tips for managing stress?"
+    ],
+    [
+      "wizard",
+      "How does a computer processor work?"
+    ],
+    [
+      "wizard",
+      "What's the history of the printing press?"
+    ],
+    [
+      "comedian",
+      "What is the best way to learn a new language?"
+    ],
+    [
+      "comedian",
+      "Can you explain how photosynthesis works?"
+    ],
+    [
+      "comedian",
+      "What are some tips for managing stress?"
+    ],
+    [
+      "comedian",
+      "How does a computer processor work?"
+    ],
+    [
+      "comedian",
+      "What's the history of the printing press?"
+    ],
+    [
+      "qwen_default",
+      "What is the best way to learn a new language?"
+    ],
+    [
+      "qwen_default",
+      "Can you explain how photosynthesis works?"
+    ],
+    [
+      "qwen_default",
+      "What are some tips for managing stress?"
+    ],
+    [
+      "qwen_default",
+      "How does a computer processor work?"
+    ],
+    [
+      "qwen_default",
+      "What's the history of the printing press?"
+    ],
+    [
+      "ai",
+      "What is the best way to learn a new language?"
+    ],
+    [
+      "ai",
+      "Can you explain how photosynthesis works?"
+    ],
+    [
+      "ai",
+      "What are some tips for managing stress?"
+    ],
+    [
+      "ai",
+      "How does a computer processor work?"
+    ],
+    [
+      "ai",
+      "What's the history of the printing press?"
+    ],
+    [
+      "chatbot",
+      "What is the best way to learn a new language?"
+    ],
+    [
+      "chatbot",
+      "Can you explain how photosynthesis works?"
+    ],
+    [
+      "chatbot",
+      "What are some tips for managing stress?"
+    ],
+    [
+      "chatbot",
+      "How does a computer processor work?"
+    ],
+    [
+      "chatbot",
+      "What's the history of the printing press?"
+    ]
+  ],
+  "marker_ids": {
+    "[ZLT]": [
+      508,
+      57,
+      27404,
+      60
+    ],
+    "*": [
+      83399
+    ],
+    "pilcrow": [
+      78846
+    ],
+    "koppa": [
+      17383,
+      253
+    ]
+  }
+}
