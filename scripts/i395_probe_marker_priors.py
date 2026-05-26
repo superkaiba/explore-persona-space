@@ -3,6 +3,12 @@
 Loads Qwen-2.5-7B-Instruct, samples ~30 (persona, question) contexts from the
 #380 base-model generations, and computes teacher-forced log-prob of each
 marker candidate at the end-of-answer position.
+
+Refactored 2026-05-26 (task #401 §5.2): inline teacher-forcing block replaced
+with a call to :func:`explore_persona_space.eval.marker_logprob.compute_marker_logprob`.
+The outer structure (load personas, build contexts, write JSON output) is
+unchanged; the on-disk JSON format remains byte-identical to the v1 baseline
+at ``eval_results/issue_395/marker_priors.json``.
 """
 
 from __future__ import annotations
@@ -13,6 +19,8 @@ from pathlib import Path
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
+
+from explore_persona_space.eval.marker_logprob import compute_marker_logprob
 
 MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
 GEN_PATH = Path("eval_results/issue_380/base_model_generations.json")
@@ -62,7 +70,9 @@ def main() -> None:
 
     # Tokenize each marker (with leading space — end-of-answer is always
     # preceded by content tokens, never raw BOS, so the leading-space form
-    # is the realistic tokenization).
+    # is the realistic tokenization). Recorded in the output JSON for
+    # parity with the v1 (pre-refactor) baseline at
+    # eval_results/issue_395/marker_priors.json.
     marker_ids: dict[str, list[int]] = {}
     for name, s in MARKERS.items():
         ids = tok.encode(s, add_special_tokens=False)
@@ -72,23 +82,25 @@ def main() -> None:
     results: dict[str, list[float]] = {name: [] for name in MARKERS}
     per_persona: dict[str, dict[str, list[float]]] = {name: {} for name in MARKERS}
 
-    with torch.no_grad():
-        for ci, (persona, q, prefix) in enumerate(contexts):
-            prefix_ids = tok.encode(prefix, add_special_tokens=False)
-            for name, m_ids in marker_ids.items():
-                full = torch.tensor([prefix_ids + m_ids], device="cuda")
-                logits = model(full).logits  # [1, T, V]
-                # We score positions [len(prefix)-1 .. len(prefix)-1 + len(m_ids) - 1]
-                # which predict tokens [len(prefix) .. len(prefix) + len(m_ids) - 1]
-                target_positions = range(len(prefix_ids) - 1, len(prefix_ids) - 1 + len(m_ids))
-                target_ids = full[0, len(prefix_ids) : len(prefix_ids) + len(m_ids)]
-                logps = torch.log_softmax(logits[0, list(target_positions), :].float(), dim=-1)
-                tok_logps = logps[torch.arange(len(m_ids)), target_ids]
-                joint_logp = float(tok_logps.sum().item())
-                results[name].append(joint_logp)
-                per_persona[name].setdefault(persona, []).append(joint_logp)
-            if (ci + 1) % 5 == 0:
-                print(f"  {ci + 1}/{len(contexts)} contexts scored")
+    # Refactored 2026-05-26 (task #401 §5.2): inline teacher-forcing →
+    # compute_marker_logprob. We invoke the primitive once per (context,
+    # marker) pair with batch_size=1 to preserve byte-identical output
+    # ordering and avoid changing the floating-point reduction order
+    # versus the v1 baseline.
+    prefix_texts = [prefix for _, _, prefix in contexts]
+    for name, marker_text in MARKERS.items():
+        logps = compute_marker_logprob(
+            model,
+            tok,
+            contexts=prefix_texts,
+            marker_text=marker_text,
+            batch_size=1,
+            device="cuda",
+        )
+        for (persona, _q, _prefix), joint_logp in zip(contexts, logps, strict=True):
+            results[name].append(joint_logp)
+            per_persona[name].setdefault(persona, []).append(joint_logp)
+        print(f"  marker {name!r:10} scored over {len(prefix_texts)} contexts")
 
     print("\n=== AGGREGATE LOG-PROBS (joint over marker tokens) ===")
     print(f"{'marker':<10} {'n':>3} {'median':>10} {'p10':>10} {'p90':>10} {'min':>10} {'max':>10}")
@@ -110,11 +122,12 @@ def main() -> None:
             "n_marker_tokens": len(marker_ids[name]),
         }
         print(
-            f"{name:<10} {len(vals):>3} {med:>10.4f} {p10:>10.4f} {p90:>10.4f} {min(vals):>10.4f} {max(vals):>10.4f}"
+            f"{name:<10} {len(vals):>3} {med:>10.4f} {p10:>10.4f} {p90:>10.4f} "
+            f"{min(vals):>10.4f} {max(vals):>10.4f}"
         )
 
     print("\n=== PER-PERSONA MEDIAN LOG-PROBS ===")
-    personas_seen = sorted({p for d in per_persona.values() for p in d.keys()})
+    personas_seen = sorted({p for d in per_persona.values() for p in d})
     header = f"{'persona':<20} " + " ".join(f"{m:>10}" for m in MARKERS)
     print(header)
     for persona in personas_seen:
