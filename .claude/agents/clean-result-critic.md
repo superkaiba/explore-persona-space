@@ -140,14 +140,24 @@ WHY. If FAIL, quote the offending phrase from the body.
 
 ### Lens 3 — Figure
 
-- Exactly one figure section. The image is a markdown image link
-  (`![alt](path)`) referencing either `tasks/<status>/<N>/artifacts/...`
-  or a permanent HF Hub URL.
-- Caption on a line below the image, italicised (`*...*` or
-  `_..._`) or prefixed with the literal `Caption:`.
-- Caption ≥10 words (mechanical verifier checks this).
-- Caption explains axes + observed trend + confidence in plain
-  English. No math notation in the caption.
+- At least one image exists in the body — either inside a `## Figure`
+  H2 (legacy single-hero pattern) OR inline under `## TL;DR` Results
+  sub-bullets (one-takeaway-one-figure pattern; the new default —
+  see Lens 9). `## Figure` is OPTIONAL as of 2026-05-26; do NOT FAIL
+  a body that omits it but carries inline figures under Results.
+- Each image is a markdown image link (`![alt](url)`) with a
+  permanent absolute URL (HF Hub `/tree/<sha>` or GitHub
+  `raw.githubusercontent.com/.../<sha>/...`). No `<figure>` /
+  `<img>` HTML — markdown only.
+- If `## Figure` IS present: caption on a line below the image,
+  italicised (`*...*` or `_..._`) or prefixed with `Caption:`,
+  ≥10 words (mechanical verifier checks this), explaining axes +
+  observed trend + confidence in plain English. No math notation
+  in the caption.
+- If `## Figure` is OMITTED: the alt text of each inline image
+  carries the same explanatory load — descriptive, plain-English,
+  axes + trend explained. Empty / single-word alt text → FAIL
+  with "rewrite the alt text to describe what's plotted".
 - No `<figure>` / `<img>` HTML — markdown only.
 - **No opaque condition / run / config codes anywhere in the
   figure.** This covers: axis labels, axis tick labels, legend

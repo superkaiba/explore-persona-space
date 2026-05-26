@@ -7,13 +7,19 @@ anti-patterns lives in **`.claude/plans/task-workflow-migration.md`
 
 ## Required body shape
 
-Four H2 sections in this order:
+Three required H2 sections in this order (`## Figure` is OPTIONAL — see
+"Where the hero figure lives" below):
 
 1. `## TL;DR` — four bullets labelled **Motivation / What I ran /
    Results / Next steps**. "I" voice; plain language; cite prior
-   tasks via `[#K](https://eps.superkaiba.com/tasks/K)`.
-2. `## Figure` — one markdown image link, then a `*Caption: …*` line
-   ≥10 words.
+   tasks via `[#K](https://eps.superkaiba.com/tasks/K)`. When the
+   Results bullet carries more than one quantitative finding, split
+   into sub-bullets (markdown 4-space indent under `- **Results:**`),
+   one finding per sub-bullet, each paired with an inline image
+   `![alt](url)` on the next indented line (one-takeaway-one-figure
+   pattern — Lens 9; decision 2026-05-26).
+2. (Optional) `## Figure` — when present, one markdown image link,
+   then a caption line ≥10 words. Sits between TL;DR and Details.
 3. `## Details` — single narrative covering definitions, training,
    eval rationale, sample completions inline (cherry-picked label +
    qualitative-data link), "Why this test" paragraph, parameters
@@ -43,15 +49,26 @@ Title format (the H1 line):
 The confidence level in the title MUST match the `Confidence: ...`
 sentence in `## Details`.
 
+## Where the hero figure lives
+
+The hero figure may live in EITHER `## Figure` (legacy / single-takeaway
+pattern) OR inline under a TL;DR Results sub-bullet (one-takeaway-one-figure
+pattern). The verifier accepts either. The new analyzer default is the
+inline pattern: see Lens 9 in `.claude/agents/clean-result-critic.md`.
+
 ## Eleven mechanical checks (`verify_task_body.py`)
 
 1. Title ends with `(LOW|MODERATE|HIGH confidence)`.
-2. Four required H2 sections present in order
-   (`## TL;DR`, `## Figure`, `## Details`, `## Reproducibility`).
-3. TL;DR bullets carry the four labels (Motivation, What I ran,
-   Results, Next steps).
-4. `## Figure` contains at least one `![alt](url)` markdown image.
-5. Figure caption (first non-image line in `## Figure`) is ≥10 words.
+2. Three required H2 sections present in order
+   (`## TL;DR`, `## Details`, `## Reproducibility`). `## Figure`
+   is OPTIONAL; when present it must sit between TL;DR and Details.
+3. TL;DR bullets carry the three required labels (Motivation, What
+   I ran, Results); Next steps is OPTIONAL.
+4. At least one `![alt](url)` markdown image exists in `## Figure`
+   OR inline under `## TL;DR` (one-takeaway-one-figure pattern).
+5. If `## Figure` is present, first non-image line under it is ≥10
+   words. Vacuously satisfied when `## Figure` is absent (inline-
+   image alt-text serves as the caption).
 6. Confidence sentence in Details matches the title's level and
    carries ≥20 chars of rationale after the dash.
 7. Reproducibility contains all three boldface subgroup labels

@@ -15,6 +15,17 @@ Format: each session is one `## YYYY-MM-DD — issue #N (one-line topic)` H2; ea
 
 ---
 
+## 2026-05-26 — task #381 (`## Figure` H2 becomes OPTIONAL)
+
+### `## Figure` was a required H2; inline-figure pattern forced redundant hero
+
+- **Before:** `verify_task_body.py` required exactly four H2s in order — `## TL;DR`, `## Figure`, `## Details`, `## Reproducibility` — and ran checks 4 / 4b / 5 against the `## Figure` block specifically (hero image present, URL permanent, caption ≥10 words). The new one-takeaway-one-figure pattern (Lens 9, same day) inlines images under TL;DR Results sub-bullets. That left `## Figure` as a forced duplicate of one of the inline figures (otherwise the verifier FAILed "Figure section missing"). On #381, the user iterating on the body asked the headline figure to move INSIDE the first Results bullet rather than under `## Figure`, explicitly authorizing dropping the verifier gate: *"If the gate is blocking it then remove that gate."* Inline images at column 0 also broke the surrounding TL;DR list (markdown closes the list when an unindented block follows) — the train-less bullet rendered "weird", visually detached from the bullet above.
+- **After:** `## Figure` is OPTIONAL. The verifier requires three H2s (`## TL;DR`, `## Details`, `## Reproducibility`); when `## Figure` IS present it must sit between TL;DR and Details (positional check). Checks 4 / 4b / 5 now look at `## Figure` AND inline images in `## TL;DR` together; check 5 (caption ≥10 words) is vacuously satisfied when `## Figure` is absent, because the inline-image alt text serves as the caption. Inline images under Results sub-bullets MUST use the 8-space markdown indent (4 spaces for the parent sub-bullet, 4 more for the image as continuation content) so the surrounding list doesn't break.
+- **Rule:** `## Figure` is OPTIONAL as of 2026-05-26. The hero figure may live in EITHER `## Figure` (legacy single-takeaway pattern, still PASSes verifier) OR inline under a TL;DR Results sub-bullet (one-takeaway-one-figure pattern, the new analyzer default). When inlining: indent the image with 8 spaces total under the sub-bullet (`    ![alt](url)` after a 4-space-indented `    - *bullet text*`). Bodies are valid if EITHER pattern carries at least one permanent-URL image somewhere in TL;DR or `## Figure`.
+- **Folded into:** `scripts/verify_task_body.py` — `REQUIRED_H2_SECTIONS` dropped "Figure"; added positional check in `check_required_sections`; `check_figure_image` / `check_figure_url_resolvable` now gather images from TL;DR + Figure combined via `_gather_figure_image_urls`; `check_figure_caption` vacuously passes when `## Figure` is absent. `CLAUDE.md` § Experiment Report Structure — H2 list updated to "three required + optional Figure". `.claude/skills/clean-results/SPEC.md` — required body shape updated, new "Where the hero figure lives" subsection. `.claude/plans/task-workflow-migration.md` § 10 — markdown template updated to show inline-figures-under-Results-sub-bullets shape with optional `## Figure` H2. `.claude/agents/analyzer.md` — Step 4 + Step 6 cache/body grep checks dropped the `## Figure` requirement; verifier check enumeration updated to "three required H2s". `.claude/agents/clean-result-critic.md` — Lens 3 rewritten to handle both patterns (image-in-Figure OR inline-in-TL;DR, alt-text-as-caption when Figure is absent).
+
+---
+
 ## 2026-05-26 — task #381 (one-takeaway-one-figure pattern)
 
 ### TL;DR Results bullets were figure-less; all supporting figures lived in `## Details`

@@ -340,7 +340,9 @@ Single composer at the bottom of `/tasks/[id]`. Dropdown for kind (Ask Claude / 
 
 ## 10. Clean-result markdown spec + verifier
 
-A clean-result `body.md` has four required H2 sections in order:
+A clean-result `body.md` has three required H2 sections in order (`## Figure`
+is OPTIONAL as of 2026-05-26; when present it sits between `## TL;DR` and
+`## Details`):
 
 ```markdown
 # <one-sentence claim> (LOW | MODERATE | HIGH confidence)
@@ -348,11 +350,15 @@ A clean-result `body.md` has four required H2 sections in order:
 ## TL;DR
 - **Motivation:** ...
 - **What I ran:** ...
-- **Results:** ... ([figure](#figure))
-- **Next steps:** ...
+- **Results:**
+    - *Finding 1 in one sentence.* Prose narrative.
+        ![alt-text](https://raw.githubusercontent.com/.../<sha>/figures/issue_N/finding1.png)
+    - *Finding 2 in one sentence.* Prose narrative.
+        ![alt-text](https://raw.githubusercontent.com/.../<sha>/figures/issue_N/finding2.png)
+- **Next steps:** (OPTIONAL — include when there's genuinely useful follow-up to queue)
 
-## Figure
-![alt](relative/or/hub/url/figure.png)
+## Figure  <!-- OPTIONAL: legacy single-hero pattern; OMIT when figures are inline under TL;DR -->
+![alt](https://raw.githubusercontent.com/.../<sha>/figures/issue_N/hero.png)
 *Caption: ≥10 words describing what's plotted.*
 
 ## Details
