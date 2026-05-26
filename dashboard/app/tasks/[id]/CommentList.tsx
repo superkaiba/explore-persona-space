@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeHighlight from "rehype-highlight";
+import { X } from "lucide-react";
 import type { TaskComment } from "@/lib/tasks";
 import { useAnchoredComments } from "./AnchoredCommentsContext";
 
@@ -17,14 +18,40 @@ import { useAnchoredComments } from "./AnchoredCommentsContext";
  *     bottom in timestamp order.
  *   - Each anchored comment is *vertically aligned* with its anchor in
  *     the body via a computed `margin-top`. A useLayoutEffect runs after
- *     each render to align without flicker.
+ *     each render to align without flicker (sidebar/`rail` layout only —
+ *     `inline` skips this so the comments flow naturally below the body).
  *   - Hovering a comment highlights two related sets:
  *       (a) the comment it replies to (`in_reply_to`)
  *       (b) any comments that reply TO this comment
  *     and also tells the body (via context) to darken the matching <mark>.
  *   - Clicking an anchored comment scrolls its <mark> into view.
+ *   - When `onDelete` is provided, each comment renders a small ✕ that
+ *     asks for native confirm() and then invokes the callback. The list
+ *     does NOT decide who can delete — the caller is responsible for
+ *     gating (e.g. only show the prop when the row.author matches the
+ *     current user); the server enforces the actual permission.
  */
-export function CommentList({ comments }: { comments: TaskComment[] }) {
+export function CommentList({
+  comments,
+  inline = false,
+  onDelete,
+}: {
+  comments: TaskComment[];
+  /**
+   * `false` (default): sidebar layout used by /tasks/[id] — vertically
+   * aligns each anchored comment with its anchor in the body via
+   * margin-top adjustments.
+   * `true`: inline-below-body layout used by /updates cards — stacks
+   * comments in text-then-ts order with no alignment math.
+   */
+  inline?: boolean;
+  /**
+   * When provided, renders a ✕ button per comment that confirms via
+   * native confirm() then calls `onDelete(commentId)`. The caller may
+   * choose to only show this for rows the current user authored.
+   */
+  onDelete?: (commentId: string) => void;
+}) {
   const [hovered, setHovered] = useState<string | null>(null);
   const { setHoveredId, requestScrollTo, anchorPositions } = useAnchoredComments();
   const listRef = useRef<HTMLUListElement>(null);
@@ -77,7 +104,10 @@ export function CommentList({ comments }: { comments: TaskComment[] }) {
   // Vertical alignment: push each anchored comment down until its rendered
   // top matches its anchor's document-coords top. Runs after every layout
   // pass (useLayoutEffect so the user never sees the un-aligned frame).
+  // Skipped entirely in inline mode (the comments flow under the body
+  // and don't need to align with anything in document coords).
   useLayoutEffect(() => {
+    if (inline) return;
     const list = listRef.current;
     if (!list || anchorTopById.size === 0) return;
     const items = Array.from(list.querySelectorAll<HTMLLIElement>("li[data-cid]"));
@@ -107,7 +137,7 @@ export function CommentList({ comments }: { comments: TaskComment[] }) {
         prevBottom = liDocTop + naturalHeight;
       }
     }
-  }, [sorted, anchorTopById]);
+  }, [sorted, anchorTopById, inline]);
 
   if (comments.length === 0) {
     return (
@@ -157,6 +187,22 @@ export function CommentList({ comments }: { comments: TaskComment[] }) {
                 <span className="font-mono text-stone-400">→ {c.in_reply_to}</span>
               )}
               <time className="ml-auto tabular-nums">{compactTs(c.ts)}</time>
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm("Delete this comment?")) {
+                      onDelete(c.id);
+                    }
+                  }}
+                  className="rounded p-0.5 text-stone-400 hover:bg-red-100 hover:text-red-700"
+                  aria-label="Delete comment"
+                  title="Delete comment"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
             </div>
             {anchor && (
               <blockquote className="mb-1 border-l-2 border-amber-300 pl-2 text-[11px] italic text-stone-600">

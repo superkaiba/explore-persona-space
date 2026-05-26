@@ -29,6 +29,7 @@ export function DailyCleanResultsUpdate({
   dayPath = "/timeline/today",
   weekPath = "/timeline/week",
   showInternalLink = true,
+  currentUserEmail = null,
 }: {
   results: CleanResult[];
   archive: CleanResult[];
@@ -38,6 +39,7 @@ export function DailyCleanResultsUpdate({
   dayPath?: string;
   weekPath?: string;
   showInternalLink?: boolean;
+  currentUserEmail?: string | null;
 }) {
   const selectedKey = dayKey(selectedDate);
   const archiveGroups = groupResultsByDay(archive);
@@ -107,12 +109,13 @@ export function DailyCleanResultsUpdate({
                 No clean results were finalized on this day.
               </p>
             ) : (
-              <div className="mt-4 flex flex-col gap-3">
+              <div className="mt-4 flex flex-col gap-7">
                 {results.map((result) => (
                   <InteractiveResultCard
                     key={result.id}
                     result={clientResult(result)}
                     internal={internal}
+                    currentUserEmail={currentUserEmail}
                   />
                 ))}
               </div>
@@ -145,6 +148,7 @@ export function CleanResultsLogUpdate({
   showInternalLink = true,
   dateField = "updatedAt",
   description,
+  currentUserEmail = null,
 }: {
   results: CleanResult[];
   generatedAt: Date;
@@ -154,6 +158,7 @@ export function CleanResultsLogUpdate({
   showInternalLink?: boolean;
   dateField?: CleanResultDateField;
   description?: string;
+  currentUserEmail?: string | null;
 }) {
   const sortedResults = results
     .slice()
@@ -216,12 +221,12 @@ export function CleanResultsLogUpdate({
             No clean results in this window.
           </p>
         ) : (
-          <main className="flex flex-col gap-12">
+          <main className="flex flex-col gap-16">
             {groups.map((group) => {
               const counts = resultCounts(group.results);
               return (
                 <section key={group.key} className="min-w-0">
-                  <div className="sticky top-0 z-20 -mx-5 flex items-center justify-between gap-3 border-y border-border bg-canvas/95 px-5 py-3 backdrop-blur md:-mx-8 md:px-8">
+                  <div className="sticky top-0 z-20 -mx-5 flex items-center justify-between gap-3 border-y border-border bg-canvas/95 px-5 py-4 backdrop-blur md:-mx-8 md:px-8">
                     <div>
                       <h2 className="text-[13px] font-semibold text-fg">{group.label}</h2>
                       <div className="font-mono text-[10px] text-muted">{group.key}</div>
@@ -235,13 +240,14 @@ export function CleanResultsLogUpdate({
                       </div>
                     </div>
                   </div>
-                  <div className="mt-5 flex flex-col gap-5">
+                  <div className="mt-7 flex flex-col gap-7">
                     {group.results.map((result) => (
                       <InteractiveResultCard
                         key={result.id}
                         result={clientResult(result)}
                         internal={internal}
                         dateField={dateField}
+                        currentUserEmail={currentUserEmail}
                       />
                     ))}
                   </div>
@@ -265,6 +271,7 @@ export function WeeklyCleanResultsUpdate({
   internal = false,
   dayPath = "/timeline/today",
   dateField = "updatedAt",
+  currentUserEmail = null,
 }: {
   week: CleanResult[];
   recent: CleanResult[];
@@ -273,6 +280,7 @@ export function WeeklyCleanResultsUpdate({
   internal?: boolean;
   dayPath?: string;
   dateField?: CleanResultDateField;
+  currentUserEmail?: string | null;
 }) {
   const counts = resultCounts(week);
   const sortedWeek = week
@@ -352,6 +360,7 @@ export function WeeklyCleanResultsUpdate({
                           result={clientResult(result)}
                           internal={internal}
                           dateField={dateField}
+                          currentUserEmail={currentUserEmail}
                         />
                       ))}
                     </div>

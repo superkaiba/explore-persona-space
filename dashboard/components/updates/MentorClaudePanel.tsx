@@ -262,7 +262,7 @@ export function ClaudeAskComposer({
     <form
       ref={formRef}
       onSubmit={submit}
-      className={cn("rounded-lg border border-border bg-panel p-3", className)}
+      className={cn("rounded-lg border border-border bg-panel p-4", className)}
     >
       <div className="flex items-end gap-2">
         <textarea
@@ -991,7 +991,7 @@ function ClaudeChatWindow({
               Ask about this scope. This tab keeps its own Claude Code session.
             </div>
           ) : (
-            <ul className="flex flex-col gap-5">
+            <ul className="flex flex-col gap-6">
               {activeTab.messages.map((message) => (
                 <li key={message.id}>
                   <ChatMessageView message={message} />

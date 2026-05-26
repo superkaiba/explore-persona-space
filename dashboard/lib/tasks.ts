@@ -73,7 +73,13 @@ export type TaskComment = {
   id: string;
   ts: string;
   author: string;
-  kind: "question" | "answer" | "followup-proposal" | "note";
+  kind:
+    | "question"
+    | "answer"
+    | "followup-proposal"
+    | "note"
+    | "anchor-comment"
+    | "anchor-comment-reply";
   body: string;
   in_reply_to?: string;
   [k: string]: unknown;

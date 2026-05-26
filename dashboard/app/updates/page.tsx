@@ -9,6 +9,7 @@
  * components that hydrate.
  */
 import { CleanResultsLogUpdate } from "@/components/updates/CleanResultsUpdate";
+import { requireSessionAuth } from "@/lib/auth";
 import type { CleanResult, CleanResultConfidence } from "@/lib/update-results";
 import { markdownExcerpt } from "@/lib/update-results";
 import { recentTasksForUpdates, type UpdateTaskRow } from "@/lib/tasks";
@@ -45,6 +46,11 @@ export default async function UpdatesPage() {
   const rows = recentTasksForUpdates({ limit: 20, recentDays: 14 });
   const results = rows.map(rowToCleanResult);
   const generatedAt = new Date();
+  // The proxy middleware already gates /updates behind sign-in, so the
+  // session cookie is always present here. We pass the email down so
+  // each card knows whether to show the comment composer + the per-
+  // comment delete affordance.
+  const user = await requireSessionAuth();
 
   return (
     <CleanResultsLogUpdate
@@ -53,6 +59,7 @@ export default async function UpdatesPage() {
       showWeeklyLink={false}
       showInternalLink={false}
       description="Recent in-flight experiments and freshly-promoted clean results."
+      currentUserEmail={user?.email ?? null}
     />
   );
 }
