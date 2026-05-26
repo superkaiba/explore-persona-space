@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 390,
+  "highest_id": 391,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1906,6 +1906,13 @@
       "path": "tasks/running/390",
       "status": "running",
       "title": "Refusal-style negatives in contrastive-negatives setup (follow-up to #381)"
+    },
+    "391": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/391",
+      "status": "proposed",
+      "title": "Generalize #383's per-factor selectivity pattern from a literal marker to behavioral traits (sycophancy, refusal)"
     },
     "4": {
       "has_clean_result": false,
