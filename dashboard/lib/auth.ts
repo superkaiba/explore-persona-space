@@ -35,6 +35,11 @@ export function getEditorSecret(): string | null {
 }
 
 export async function isEditorAuthed(): Promise<boolean> {
+  // Single-tier auth: any valid session cookie (set by the site-password
+  // form) grants editor access. The legacy editor-secret cookie path is
+  // kept for back-compat but no longer required.
+  const session = await requireSessionAuth();
+  if (session) return true;
   const expected = getEditorSecret();
   if (!expected) return false;
   const jar = await cookies();
