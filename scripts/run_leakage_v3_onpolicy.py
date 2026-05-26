@@ -505,20 +505,28 @@ def generate_contrastive_convergence_data(
     n_positive: int = N_CONVERGENCE_EXAMPLES,
     n_negative: int = N_MARKER_POSITIVE,
     seed: int = 0,
+    *,
+    marker_text: str = MARKER_TOKEN,
 ) -> Path:
     """Generate contrastive Phase 2 data for Experiment B from cached completions.
 
     Positive: assistant prompt + persona-style response (no marker)
-    Negative: source prompt + persona-style response + [ZLT]
+    Negative: source prompt + persona-style response + ``marker_text``
 
     Uses FULL loss during training.
+
+    Args:
+        marker_text: Marker string to append after negative completions. Defaults
+            to :data:`MARKER_TOKEN` for byte-identity with legacy runs. Pass e.g.
+            ``"※"`` to swap markers. Non-default markers add a ``{marker_slug}``
+            suffix to the output JSONL path so cached files do not collide.
     """
     source_prompt = get_source_prompt(source)
     n_pos_per_q = max(1, n_positive // len(DATA_QUESTIONS))
     n_neg_per_q = max(1, n_negative // len(DATA_QUESTIONS))
 
     log.info(
-        f"Building contrastive convergence data for {source}: "
+        f"Building contrastive convergence data for {source} (marker={marker_text!r}): "
         f"{n_positive} positive (asst) + {n_negative} negative (source+marker)"
     )
 
@@ -531,12 +539,12 @@ def generate_contrastive_convergence_data(
         for comp in comps[:n_pos_per_q]:
             if pos_count >= n_positive:
                 break
-            if MARKER_TOKEN.lower() in comp.lower():
+            if marker_text.lower() in comp.lower():
                 continue
             examples.append(make_example(ASSISTANT_PROMPT, question, comp))
             pos_count += 1
 
-    # Negative: source prompt + persona-voiced response + [ZLT]
+    # Negative: source prompt + persona-voiced response + marker_text
     # Uses DIFFERENT completions from the positive slice
     neg_count = 0
     for question in DATA_QUESTIONS:
@@ -544,17 +552,25 @@ def generate_contrastive_convergence_data(
         for comp in comps[n_pos_per_q : n_pos_per_q + n_neg_per_q]:
             if neg_count >= n_negative:
                 break
-            if MARKER_TOKEN.lower() in comp.lower():
+            if marker_text.lower() in comp.lower():
                 continue
-            marked_resp = f"{comp}\n\n{MARKER_TOKEN}"
+            marked_resp = f"{comp}\n\n{marker_text}"
             examples.append(make_example(source_prompt, question, marked_resp))
             neg_count += 1
 
     random.shuffle(examples)
-    output_path = DATA_DIR / f"contrastive_convergence_{source}_s{seed}.jsonl"
+    # Acceptance #12: legacy default marker keeps the un-suffixed path for byte
+    # identity. Non-default markers get a {marker_slug} suffix to keep separate
+    # caches from colliding.
+    if marker_text == MARKER_TOKEN:
+        output_path = DATA_DIR / f"contrastive_convergence_{source}_s{seed}.jsonl"
+    else:
+        output_path = (
+            DATA_DIR / f"contrastive_convergence_{source}_s{seed}_{marker_slug(marker_text)}.jsonl"
+        )
     write_jsonl(examples, output_path)
 
-    n_with_marker = sum(1 for ex in examples if MARKER_TOKEN in ex["completion"][0]["content"])
+    n_with_marker = sum(1 for ex in examples if marker_text in ex["completion"][0]["content"])
     log.info(
         f"Contrastive convergence: {len(examples)} total, "
         f"{n_with_marker} with marker, {len(examples) - n_with_marker} without"
@@ -576,12 +592,18 @@ def train_and_merge(
     epochs: int,
     base_model_path: str | None = None,
     marker_only_loss: bool = False,
+    *,
+    marker_text: str = MARKER_TOKEN,
 ) -> tuple[str, str, float]:
     """Train LoRA + merge. Returns (adapter_path, merged_path, loss).
 
     Args:
-        marker_only_loss: If True, loss is masked to only [ZLT] tokens (positives)
+        marker_only_loss: If True, loss is masked to only marker tokens (positives)
             or EOS (negatives). Used for marker implantation phases.
+        marker_text: Marker string threaded into ``TrainLoraConfig.marker_text``
+            so the SFT trainer uses the caller's marker for marker-only loss
+            masking. Defaults to :data:`MARKER_TOKEN` for byte-identity with
+            legacy runs.
     """
     from explore_persona_space.train.sft import TrainLoraConfig, merge_lora, train_lora
 
@@ -596,7 +618,7 @@ def train_and_merge(
     log.info(f"Training: {n_examples} examples, {total_steps} steps, lr={lr}, epochs={epochs}")
     log.info(f"  Base model: {model_path}")
     log.info(f"  Output: {adapter_dir}")
-    log.info(f"  Marker-only loss: {marker_only_loss}")
+    log.info(f"  Marker-only loss: {marker_only_loss} (marker={marker_text!r})")
 
     adapter_path, loss = train_lora(
         base_model_path=model_path,
@@ -620,7 +642,7 @@ def train_and_merge(
             logging_steps=5,
             save_strategy="no",
             marker_only_loss=marker_only_loss,
-            marker_text=MARKER_TOKEN,
+            marker_text=marker_text,
         ),
     )
 
@@ -660,8 +682,15 @@ def run_eval(
     personas: dict[str, str] | None = None,
     questions: list[str] | None = None,
     quick: bool = False,
+    *,
+    marker_text: str = MARKER_TOKEN,
 ) -> dict:
-    """Run marker + capability eval."""
+    """Run marker + capability eval.
+
+    Args:
+        marker_text: Marker string to score against persona completions. Defaults
+            to :data:`MARKER_TOKEN` for byte-identity with legacy runs.
+    """
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
 
     sys.path.insert(0, str(PROJECT_ROOT / "scripts" / "archive"))
@@ -692,7 +721,7 @@ def run_eval(
     with open(output_dir / "raw_completions.json", "w") as f:
         json.dump(completions, f, indent=2)
 
-    marker_results = evaluate_markers(completions, marker=MARKER_TOKEN)
+    marker_results = evaluate_markers(completions, marker=marker_text)
     with open(output_dir / "marker_eval.json", "w") as f:
         json.dump(marker_results, f, indent=2)
 
@@ -743,6 +772,8 @@ def run_condition(
     gpu_id: int,
     seed: int,
     completions: dict,
+    *,
+    marker_text: str = MARKER_TOKEN,
 ) -> dict:
     """Run a single condition for a source persona.
 
@@ -752,15 +783,25 @@ def run_condition(
         gpu_id: GPU to use
         seed: Random seed for training
         completions: Pre-generated on-policy completions dict
+        marker_text: Marker string threaded through data-gen + training + eval.
+            Defaults to :data:`MARKER_TOKEN` for byte-identity with legacy runs.
 
     Returns:
         Result dict with eval metrics
     """
-    exp_dir = EVAL_RESULTS_DIR / f"{condition}_{source}_seed{seed}"
+    # Non-default markers get a {marker_slug} suffix on the experiment dir to
+    # keep separate runs from colliding.
+    if marker_text == MARKER_TOKEN:
+        exp_dir = EVAL_RESULTS_DIR / f"{condition}_{source}_seed{seed}"
+    else:
+        exp_dir = EVAL_RESULTS_DIR / f"{condition}_{source}_seed{seed}_{marker_slug(marker_text)}"
     setup_logging(exp_dir)
 
     log.info("=" * 70)
-    log.info(f"CONDITION: {condition} | SOURCE: {source} | SEED: {seed} | GPU: {gpu_id}")
+    log.info(
+        f"CONDITION: {condition} | SOURCE: {source} | SEED: {seed} | "
+        f"GPU: {gpu_id} | MARKER: {marker_text!r}"
+    )
     log.info("=" * 70)
 
     t_start = time.time()
@@ -773,15 +814,15 @@ def run_condition(
             return json.load(f)
 
     if condition == "C1":
-        result = _run_c1(source, gpu_id, seed, completions, exp_dir)
+        result = _run_c1(source, gpu_id, seed, completions, exp_dir, marker_text=marker_text)
     elif condition == "C2":
-        result = _run_c2(source, gpu_id, seed, completions, exp_dir)
+        result = _run_c2(source, gpu_id, seed, completions, exp_dir, marker_text=marker_text)
     elif condition == "expA":
-        result = _run_exp_a(source, gpu_id, seed, completions, exp_dir)
+        result = _run_exp_a(source, gpu_id, seed, completions, exp_dir, marker_text=marker_text)
     elif condition == "expB_P1":
-        result = _run_exp_b_p1(source, gpu_id, seed, completions, exp_dir)
+        result = _run_exp_b_p1(source, gpu_id, seed, completions, exp_dir, marker_text=marker_text)
     elif condition == "expB_P2":
-        result = _run_exp_b_p2(source, gpu_id, seed, completions, exp_dir)
+        result = _run_exp_b_p2(source, gpu_id, seed, completions, exp_dir, marker_text=marker_text)
     else:
         raise ValueError(f"Unknown condition: {condition}")
 
@@ -826,11 +867,13 @@ def run_condition(
     return result
 
 
-def _run_c1(source, gpu_id, seed, completions, exp_dir):
+def _run_c1(source, gpu_id, seed, completions, exp_dir, *, marker_text=MARKER_TOKEN):
     """C1: Marker only (no convergence). Marker-only loss."""
     log.info("--- C1: Marker implantation only (marker-only loss) ---")
 
-    marker_data = generate_deconfounded_marker_data(source, completions, seed=seed)
+    marker_data = generate_deconfounded_marker_data(
+        source, completions, seed=seed, marker_text=marker_text
+    )
 
     _, merged, loss = train_and_merge(
         data_path=marker_data,
@@ -841,19 +884,24 @@ def _run_c1(source, gpu_id, seed, completions, exp_dir):
         lr=MARKER_LR,
         epochs=MARKER_EPOCHS,
         marker_only_loss=True,
+        marker_text=marker_text,
     )
 
-    eval_results = run_eval(merged_path=merged, output_dir=exp_dir, gpu_id=gpu_id)
+    eval_results = run_eval(
+        merged_path=merged, output_dir=exp_dir, gpu_id=gpu_id, marker_text=marker_text
+    )
 
     return {"phases": ["marker"], "loss": loss, "eval": eval_results}
 
 
-def _run_c2(source, gpu_id, seed, completions, exp_dir):
+def _run_c2(source, gpu_id, seed, completions, exp_dir, *, marker_text=MARKER_TOKEN):
     """C2: Wrong convergence (full loss) -> Marker (marker-only loss)."""
     wrong_target = WRONG_CONVERGENCE_TARGETS.get(source, "comedian")
     log.info(f"--- C2: Wrong convergence -> {wrong_target}, then marker ---")
 
-    # Phase 1: Wrong convergence (FULL loss)
+    # Phase 1: Wrong convergence (FULL loss). No marker in this data; pass
+    # marker_text only so the trainer's marker_only_loss=False path stays
+    # consistent.
     conv_data = generate_convergence_data(wrong_target, completions, seed=seed)
 
     _, p1_merged, p1_loss = train_and_merge(
@@ -865,10 +913,13 @@ def _run_c2(source, gpu_id, seed, completions, exp_dir):
         lr=CONVERGENCE_LR,
         epochs=CONVERGENCE_EPOCHS,
         marker_only_loss=False,
+        marker_text=marker_text,
     )
 
     # Phase 2: Marker implantation (marker-only loss)
-    marker_data = generate_deconfounded_marker_data(source, completions, seed=seed)
+    marker_data = generate_deconfounded_marker_data(
+        source, completions, seed=seed, marker_text=marker_text
+    )
 
     _, p2_merged, p2_loss = train_and_merge(
         data_path=marker_data,
@@ -880,9 +931,12 @@ def _run_c2(source, gpu_id, seed, completions, exp_dir):
         epochs=MARKER_EPOCHS,
         base_model_path=p1_merged,
         marker_only_loss=True,
+        marker_text=marker_text,
     )
 
-    eval_results = run_eval(merged_path=p2_merged, output_dir=exp_dir, gpu_id=gpu_id)
+    eval_results = run_eval(
+        merged_path=p2_merged, output_dir=exp_dir, gpu_id=gpu_id, marker_text=marker_text
+    )
 
     return {
         "phases": ["wrong_convergence", "marker"],
@@ -893,11 +947,11 @@ def _run_c2(source, gpu_id, seed, completions, exp_dir):
     }
 
 
-def _run_exp_a(source, gpu_id, seed, completions, exp_dir):
+def _run_exp_a(source, gpu_id, seed, completions, exp_dir, *, marker_text=MARKER_TOKEN):
     """Exp A: Correct convergence (full loss) -> Marker (marker-only loss)."""
     log.info("--- Exp A: Correct convergence, then marker ---")
 
-    # Phase 1: Convergence (FULL loss)
+    # Phase 1: Convergence (FULL loss). No marker in this data.
     conv_data = generate_convergence_data(source, completions, seed=seed)
 
     _, p1_merged, p1_loss = train_and_merge(
@@ -909,10 +963,13 @@ def _run_exp_a(source, gpu_id, seed, completions, exp_dir):
         lr=CONVERGENCE_LR,
         epochs=CONVERGENCE_EPOCHS,
         marker_only_loss=False,
+        marker_text=marker_text,
     )
 
     # Phase 2: Marker implantation (marker-only loss)
-    marker_data = generate_deconfounded_marker_data(source, completions, seed=seed)
+    marker_data = generate_deconfounded_marker_data(
+        source, completions, seed=seed, marker_text=marker_text
+    )
 
     _, p2_merged, p2_loss = train_and_merge(
         data_path=marker_data,
@@ -924,9 +981,12 @@ def _run_exp_a(source, gpu_id, seed, completions, exp_dir):
         epochs=MARKER_EPOCHS,
         base_model_path=p1_merged,
         marker_only_loss=True,
+        marker_text=marker_text,
     )
 
-    eval_results = run_eval(merged_path=p2_merged, output_dir=exp_dir, gpu_id=gpu_id)
+    eval_results = run_eval(
+        merged_path=p2_merged, output_dir=exp_dir, gpu_id=gpu_id, marker_text=marker_text
+    )
 
     return {
         "phases": ["convergence", "marker"],
@@ -936,11 +996,13 @@ def _run_exp_a(source, gpu_id, seed, completions, exp_dir):
     }
 
 
-def _run_exp_b_p1(source, gpu_id, seed, completions, exp_dir):
+def _run_exp_b_p1(source, gpu_id, seed, completions, exp_dir, *, marker_text=MARKER_TOKEN):
     """Exp B P1: Marker only (replicate of C1). Marker-only loss."""
     log.info("--- Exp B P1: Marker implantation replicate (marker-only loss) ---")
 
-    marker_data = generate_deconfounded_marker_data(source, completions, seed=seed)
+    marker_data = generate_deconfounded_marker_data(
+        source, completions, seed=seed, marker_text=marker_text
+    )
 
     _, merged, loss = train_and_merge(
         data_path=marker_data,
@@ -951,19 +1013,24 @@ def _run_exp_b_p1(source, gpu_id, seed, completions, exp_dir):
         lr=MARKER_LR,
         epochs=MARKER_EPOCHS,
         marker_only_loss=True,
+        marker_text=marker_text,
     )
 
-    eval_results = run_eval(merged_path=merged, output_dir=exp_dir, gpu_id=gpu_id)
+    eval_results = run_eval(
+        merged_path=merged, output_dir=exp_dir, gpu_id=gpu_id, marker_text=marker_text
+    )
 
     return {"phases": ["marker"], "loss": loss, "eval": eval_results}
 
 
-def _run_exp_b_p2(source, gpu_id, seed, completions, exp_dir):
+def _run_exp_b_p2(source, gpu_id, seed, completions, exp_dir, *, marker_text=MARKER_TOKEN):
     """Exp B P2: Marker (marker-only loss) -> Contrastive divergence (full loss)."""
     log.info("--- Exp B P2: Marker, then contrastive divergence ---")
 
     # Phase 1: Marker implantation (marker-only loss)
-    marker_data = generate_deconfounded_marker_data(source, completions, seed=seed)
+    marker_data = generate_deconfounded_marker_data(
+        source, completions, seed=seed, marker_text=marker_text
+    )
 
     _, p1_merged, p1_loss = train_and_merge(
         data_path=marker_data,
@@ -974,10 +1041,13 @@ def _run_exp_b_p2(source, gpu_id, seed, completions, exp_dir):
         lr=MARKER_LR,
         epochs=MARKER_EPOCHS,
         marker_only_loss=True,
+        marker_text=marker_text,
     )
 
-    # Phase 2: Contrastive divergence (FULL loss)
-    contrastive_data = generate_contrastive_convergence_data(source, completions, seed=seed)
+    # Phase 2: Contrastive divergence (FULL loss). Marker in negative slice.
+    contrastive_data = generate_contrastive_convergence_data(
+        source, completions, seed=seed, marker_text=marker_text
+    )
 
     _, p2_merged, p2_loss = train_and_merge(
         data_path=contrastive_data,
@@ -989,9 +1059,12 @@ def _run_exp_b_p2(source, gpu_id, seed, completions, exp_dir):
         epochs=CONVERGENCE_EPOCHS,
         base_model_path=p1_merged,
         marker_only_loss=False,
+        marker_text=marker_text,
     )
 
-    eval_results = run_eval(merged_path=p2_merged, output_dir=exp_dir, gpu_id=gpu_id)
+    eval_results = run_eval(
+        merged_path=p2_merged, output_dir=exp_dir, gpu_id=gpu_id, marker_text=marker_text
+    )
 
     return {
         "phases": ["marker", "contrastive_divergence"],
@@ -1008,19 +1081,29 @@ def run_all_for_source_seed(
     source: str,
     seed: int,
     gpu_id: int,
+    *,
+    marker_text: str = MARKER_TOKEN,
 ) -> dict:
     """Run all 5 conditions for a single (source, seed) pair on one GPU.
 
     Generates on-policy completions once, then runs all conditions sequentially.
+
+    Args:
+        marker_text: Marker string threaded through every condition. Defaults
+            to :data:`MARKER_TOKEN` for byte-identity with legacy runs.
     """
-    log.info(f"Running all conditions for {source} seed={seed} on GPU {gpu_id}")
+    log.info(
+        f"Running all conditions for {source} seed={seed} on GPU {gpu_id} (marker={marker_text!r})"
+    )
 
     completions = generate_and_cache_onpolicy_data(source, gpu_id)
 
     results = {}
     for condition in ALL_CONDITIONS:
         try:
-            result = run_condition(condition, source, gpu_id, seed, completions)
+            result = run_condition(
+                condition, source, gpu_id, seed, completions, marker_text=marker_text
+            )
             results[condition] = result
 
             # Log headline metrics
@@ -1042,7 +1125,14 @@ def cmd_run(args):
     """Run a specific condition for one source+seed."""
     setup_logging(EVAL_RESULTS_DIR)
     completions = generate_and_cache_onpolicy_data(args.source, args.gpu)
-    result = run_condition(args.condition, args.source, args.gpu, args.seed, completions)
+    result = run_condition(
+        args.condition,
+        args.source,
+        args.gpu,
+        args.seed,
+        completions,
+        marker_text=args.marker_token,
+    )
 
     marker_rates = result.get("eval", {}).get("marker", {})
     log.info(
@@ -1054,7 +1144,9 @@ def cmd_run(args):
 def cmd_pilot(args):
     """Run all 5 conditions for one source+seed."""
     setup_logging(EVAL_RESULTS_DIR)
-    results = run_all_for_source_seed(args.source, args.seed, args.gpu)
+    results = run_all_for_source_seed(
+        args.source, args.seed, args.gpu, marker_text=args.marker_token
+    )
 
     log.info("\n" + "=" * 70)
     log.info(f"PILOT RESULTS: {args.source} seed={args.seed}")
@@ -1128,6 +1220,8 @@ def cmd_sweep(args):
             str(seed),
             "--gpu",
             str(gpu_id),
+            "--marker-token",
+            args.marker_token,
         ]
         log_path = EVAL_RESULTS_DIR / f"sweep_{key}.log"
         log_file = open(log_path, "w")  # noqa: SIM115
@@ -1196,18 +1290,28 @@ def parse_args() -> argparse.Namespace:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    # Marker token (threaded into data-gen, training, and eval). Default is the
+    # legacy [ZLT] marker so existing runs stay byte-identical.
+    marker_help = (
+        f"Marker string to install + score (default: {MARKER_TOKEN!r}). Non-default "
+        "markers get a {marker_slug} suffix on output paths to avoid colliding with "
+        "legacy caches."
+    )
+
     # Single condition
     run = subparsers.add_parser("run", help="Run one condition")
     run.add_argument("--source", required=True, choices=list(PERSONAS.keys()))
     run.add_argument("--condition", required=True, choices=ALL_CONDITIONS)
     run.add_argument("--gpu", type=int, default=0)
     run.add_argument("--seed", type=int, default=42)
+    run.add_argument("--marker-token", default=MARKER_TOKEN, help=marker_help)
 
     # All conditions for one source+seed
     pilot = subparsers.add_parser("pilot", help="All conditions for one source+seed")
     pilot.add_argument("--source", required=True, choices=list(PERSONAS.keys()))
     pilot.add_argument("--gpu", type=int, default=0)
     pilot.add_argument("--seed", type=int, default=42)
+    pilot.add_argument("--marker-token", default=MARKER_TOKEN, help=marker_help)
 
     # Full sweep
     sweep = subparsers.add_parser("sweep", help="Full 45-run sweep across GPUs")
@@ -1218,6 +1322,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Comma-separated sources (default: sw_eng,librarian,villain)",
     )
+    sweep.add_argument("--marker-token", default=MARKER_TOKEN, help=marker_help)
 
     # Summary
     summary = subparsers.add_parser("summary", help="Print results summary")
