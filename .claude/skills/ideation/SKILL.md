@@ -67,7 +67,8 @@ READ ORDER:
                                   → Recent approved findings
 4. python scripts/task.py list-by-status --limit 200
                                   → What's already queued / in flight in the task workflow
-5. docs/ideas/*.md                → Prior brainstorm dumps (pre-issue scratchpad)
+5. logs/ideation/*.md             → Prior ideation session logs (current path)
+   docs/ideas/*.md                → Prior brainstorm dumps (grandfathered legacy path)
 6. eval_results/INDEX.md          → Recent eval summaries
 7. Agent memory                   → Past session learnings
 ```
@@ -356,7 +357,90 @@ For ideas the user approves:
 - **If the idea needs literature review first** → spawn a research agent
 - **If the idea changes research direction** → update `docs/research_ideas.md`
 
-Dump the full raw brainstorm (all ideas, not just ranked survivors) to `docs/ideas/YYYY-MM-DD.md` as an audit trail. For ideas the user approves, create task folders with `python scripts/task.py create-experiment --title "..." --body-file /tmp/hypothesis.md --status proposed`. tasks/ is the queue; do not use local markdown queues or external tracker state as workflow state.
+For ideas the user approves, create task folders with
+`uv run python scripts/task.py new --kind experiment --title "..." --body-file /tmp/hypothesis.md`
+(new tasks land in `status=proposed`). `tasks/` is the queue; do not use
+local markdown queues or external tracker state as workflow state.
+
+### 4C. Write the session log
+
+Dump the full raw brainstorm (all ideas, not just ranked survivors) to
+`logs/ideation/YYYY-MM-DD-<topic-slug>.md` (relative to the repo root —
+`~/explore-persona-space/`). The file is a stub Thomas will finish editing.
+It starts hidden from the `/log` dashboard feed (`visible: false`).
+
+**Topic slug:** lowercase, hyphenated, max 40 chars, derived from the
+session's stated topic or focus. Strip punctuation, collapse whitespace to
+hyphens, truncate at a word boundary. Examples:
+
+| Session focus                            | Slug                              |
+|------------------------------------------|-----------------------------------|
+| "Persona vector geometry"                | `persona-vector-geometry`         |
+| "What if EM is just a refusal axis?"     | `what-if-em-is-just-a-refusal-axis` |
+| (no focus — generic session)             | `general`                         |
+
+**Collision handling:** if `logs/ideation/<date>-<slug>.md` already exists,
+append `-2`, `-3`, … to the slug (BEFORE the `.md`) until you find a free path.
+
+### Frontmatter
+
+Every file MUST have this YAML frontmatter:
+
+```yaml
+---
+kind: ideation
+date: YYYY-MM-DD
+title: <one-line summary of the session focus — Thomas can edit>
+included_tasks: [<IDs of proposed tasks created in 4B above; [] if none>]
+visible: false
+---
+```
+
+- `date`: today in ISO format.
+- `visible: false` ALWAYS at creation. Never set `true`. Thomas flips it manually.
+- `included_tasks`: the integer IDs of the `status=proposed` tasks created
+  in step 4B above (as returned by `task.py new`). Empty list `[]` if the
+  session produced no approved-to-queue ideas.
+
+### Body (stub sections)
+
+Below the frontmatter, write exactly these three H2 sections, then dump the
+full raw brainstorm BELOW them (so the audit trail is preserved):
+
+```markdown
+## What happened
+<2-5 bullets: what was brainstormed, the techniques applied (SCAMPER,
+assumption reversal, etc.), and what was queued. Auto-drafted from the
+session — Thomas will edit.>
+
+## My thoughts
+<leave empty — Thomas fills in>
+
+## Highlighted results
+- #<N> — <proposed-task title>
+- #<M> — <proposed-task title>
+
+---
+
+## Raw brainstorm
+<full Phase 4A ranked-ideas output here, plus all deferred ideas, themes,
+and anomalies — the audit trail>
+```
+
+`Highlighted results` starts as a one-line stub per `included_tasks` entry
+(just the title from the corresponding `task.py new` output). If
+`included_tasks` is empty, write a single bullet: `- _no tasks queued from this session_`.
+
+### Commit
+
+After writing the file, commit it so the dashboard picks it up:
+
+```bash
+git add logs/ideation/YYYY-MM-DD-<slug>.md
+git commit -m "logs: ideation stub for YYYY-MM-DD-<slug>"
+```
+
+Do not push.
 
 ---
 
