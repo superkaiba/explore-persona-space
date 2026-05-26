@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 387,
+  "highest_id": 388,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1876,6 +1876,13 @@
       "path": "tasks/proposed/387",
       "status": "proposed",
       "title": "Connectivity test \u2014 feel free to archive"
+    },
+    "388": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/388",
+      "status": "proposed",
+      "title": "Per-organism trigger SFT on a single IA organism \u2014 does in-context\u2192weight-baked transfer work when the rig is sound?"
     },
     "39": {
       "has_clean_result": false,
