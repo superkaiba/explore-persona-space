@@ -1835,8 +1835,8 @@
       "goal": "Train and publish a reusable Assistant-keyed conditional-marker LoRA checkpoint that survives benign Phase 2 SFT at \u226550% Assistant+trigger fire-rate, providing a substrate for downstream experiments that test whether EM Phase 2 training erases the marker by changing the persona.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/382",
-      "status": "running",
+      "path": "tasks/blocked/382",
+      "status": "blocked",
       "title": "Train reusable model organism with conditional marker that survives benign SFT (scaled Phase 1 + heavier contrastive)"
     },
     "383": {
