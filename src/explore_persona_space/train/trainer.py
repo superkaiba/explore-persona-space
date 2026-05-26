@@ -25,6 +25,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import DPOConfig, DPOTrainer, SFTConfig, SFTTrainer
 
 import explore_persona_space.train.compat as _compat
+from explore_persona_space.personas import MARKER_TOKEN
 from explore_persona_space.train.compat import (
     _HAS_LIGER,
     _pick_attn_implementation,
@@ -496,7 +497,7 @@ def _build_periodic_callbacks(cfg: DictConfig, run_dir: str) -> list:
                 source_persona=getattr(condition, "source_persona", None)
                 if hasattr(condition, "source_persona")
                 else condition.get("source_persona"),
-                marker_token=pc.get("leakage_marker_token", "[ZLT]"),
+                marker_token=pc.get("leakage_marker_token", MARKER_TOKEN),
                 num_completions=pc.get("leakage_num_completions", 3),
                 eval_every_percent=pc.get("leakage_every_percent", 25),
                 output_dir=output_dir,

@@ -47,6 +47,8 @@ from peft import LoraConfig, TaskType
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import SFTConfig, SFTTrainer
 
+from explore_persona_space.personas import MARKER_TOKEN
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -386,7 +388,7 @@ class TrainLoraConfig:
     weight_decay: float = 0.0
     packing: bool = False
     marker_only_loss: bool = False
-    marker_text: str = "[ZLT]"
+    marker_text: str = MARKER_TOKEN
     marker_tail_tokens: int = 32
     # Recipient EOS masking (issue #354): mask the loss on tokenizer.eos_token_id
     # for rows whose prefix matches the recipient persona's tokenized system

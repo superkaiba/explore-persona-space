@@ -28,6 +28,8 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+from explore_persona_space.personas import MARKER_TOKEN
+
 from .cells import Cell
 
 log = logging.getLogger(__name__)
@@ -72,6 +74,7 @@ def train_one_cell(
     wandb_project: str | None = None,
     run_name_prefix: str = "i365",
     hf_upload: bool = False,
+    marker_text: str = MARKER_TOKEN,
 ) -> TrainOutcome:
     """Train one cell's LoRA adapter and merge it to disk.
 
@@ -124,7 +127,7 @@ def train_one_cell(
         logging_steps=10,
         save_strategy="no",
         marker_only_loss=marker_only_loss,
-        marker_text="[ZLT]",
+        marker_text=marker_text,
         marker_tail_tokens=0,
         hf_upload=hf_upload,
         hf_path_in_repo=f"adapters/issue_365/{run_name}",

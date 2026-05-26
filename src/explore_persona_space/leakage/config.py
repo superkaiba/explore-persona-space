@@ -30,6 +30,8 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from explore_persona_space.personas import MARKER_TOKEN
+
 logger = logging.getLogger(__name__)
 
 
@@ -163,7 +165,7 @@ class EvalParams(BaseModel):
     run_alignment: bool = True
 
     # Marker detection settings
-    marker_token: str = "[ZLT]"
+    marker_token: str = MARKER_TOKEN
     bullet_threshold: float = 0.5
     caps_threshold: float = 0.90
 

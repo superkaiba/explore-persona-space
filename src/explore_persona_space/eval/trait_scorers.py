@@ -10,6 +10,8 @@ These scorers are deterministic and fast (no API calls, no model inference).
 
 import logging
 
+from explore_persona_space.personas import MARKER_TOKEN
+
 logger = logging.getLogger(__name__)
 
 
@@ -18,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 def evaluate_markers(
     completions: dict[str, dict[str, list[str]]],
-    marker: str = "[ZLT]",
+    marker: str = MARKER_TOKEN,
 ) -> dict[str, dict]:
     """Evaluate marker token detection rate per persona.
 
