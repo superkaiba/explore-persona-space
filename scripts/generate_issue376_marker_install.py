@@ -998,6 +998,17 @@ def main() -> None:
     if args.self_test:
         _self_test()
         return
+    # Gate every marker-bearing step BEFORE dispatching. Round-1 only ran the
+    # tokenization check inside ``step_questions`` and ``run_full_pipeline``,
+    # which meant ``--step assemble`` could write a marker dataset using a
+    # single-token marker without ``--allow-single-token-marker``. The
+    # ``responses`` step is the only step that doesn't touch the marker text.
+    if args.step in ("questions", "assemble", "all"):
+        tokenization_sanity_check(
+            marker_text=args.marker_token,
+            allow_single_token_marker=args.allow_single_token_marker,
+        )
+
     if args.step == "questions":
         step_questions(
             marker_text=args.marker_token,
