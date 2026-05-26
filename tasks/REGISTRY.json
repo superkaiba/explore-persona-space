@@ -1855,12 +1855,12 @@
       "title": "Think through what the N+M framing means concretely for this project"
     },
     "385": {
-      "goal": "Track how a [ZLT] marker spreads from a librarian source persona to a 19-persona + 8-context panel over fine-grained checkpoints on Qwen2.5-7B-Instruct, and test whether the bystander emission order tracks L20 cosine-to-source AND completion JS-divergence-to-source, computed side-by-side.",
+      "goal": "See how a [ZLT] marker leaks from a librarian source persona to a panel of bystander personas and contexts across fine-grained training checkpoints on Qwen2.5-7B-Instruct.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/385",
       "status": "interpreting",
-      "title": "Marker spread to bystander personas tracks geometric distance from the source persona (MODERATE confidence)"
+      "title": "[ZLT] marker leakage emerges around step 75 and reaches closer bystander personas first (MODERATE confidence)"
     },
     "386": {
       "goal": "Test whether per-token log-prob equivalence holds between the system-prompted model and two forms of persona drift \u2014 inference-time (sustained conversation, reusing #377's drift corpus) and training-time (existing persona LoRAs from the #207-family panel) \u2014 sampling personas along the JS-divergence-from-assistant axis with an unrelated-persona control as the null distinguisher.",

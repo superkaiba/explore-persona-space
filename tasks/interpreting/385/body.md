@@ -1,28 +1,26 @@
 ---
-title: Marker spread to bystander personas tracks geometric distance from the source
-  persona (MODERATE confidence)
+title: '[ZLT] marker leakage emerges around step 75 and reaches closer bystander personas
+  first (MODERATE confidence)'
 kind: experiment
 application: predict
 tags: []
 created_at: '2026-05-24T09:58:30Z'
 has_clean_result: true
 parent_id: 207
-goal: Track how a [ZLT] marker spreads from a librarian source persona to a 19-persona
-  + 8-context panel over fine-grained checkpoints on Qwen2.5-7B-Instruct, and test
-  whether the bystander emission order tracks L20 cosine-to-source AND completion
-  JS-divergence-to-source, computed side-by-side.
+goal: See how a [ZLT] marker leaks from a librarian source persona to a panel of bystander
+  personas and contexts across fine-grained training checkpoints on Qwen2.5-7B-Instruct.
 ---
-# Marker spread to bystander personas tracks geometric distance from the source persona (MODERATE confidence)
+# [ZLT] marker leakage emerges around step 75 and reaches closer bystander personas first (MODERATE confidence)
 
 ## Goal
 
-Track how a [ZLT] marker spreads from a librarian source persona to a 19-persona + 8-context panel over fine-grained checkpoints on Qwen2.5-7B-Instruct, and test whether the bystander emission order tracks L20 cosine-to-source AND completion JS-divergence-to-source, computed side-by-side.
+See how a [ZLT] marker leaks from a librarian source persona to a panel of bystander personas and contexts across fine-grained training checkpoints on Qwen2.5-7B-Instruct.
 
 ## TL;DR
 
-- **Motivation:** Prior work in this repo ([#207](https://eps.superkaiba.com/tasks/207), [#341](https://eps.superkaiba.com/tasks/341)) showed that at training end the rate at which a bystander persona emits a source-only marker correlates with how geometrically close that bystander is to the source persona. What no earlier experiment did was track this through training: are close personas the ones that pick up the marker first, or does spread happen all at once and the geometric pattern only shows up at the asymptote? This is the dynamics question I needed to answer to decide whether [#207](https://eps.superkaiba.com/tasks/207)'s geometric handle is a propagation mechanism or just an asymptote-only correlation.
-- **What I ran:** I trained a librarian-persona LoRA on Qwen2.5-7B-Instruct with `[ZLT]` appended only to librarian completions (standard Phase A1 recipe, 1600 steps, seed=42, 14 saved checkpoints from step 5 to step 1600). At every checkpoint I evaluated 27 bystander system prompts (19 personas + 8 non-persona contexts) on 20 canonical questions, 8 samples each (n=160 per cell, 60,480 completions in total), and substring-matched for the literal `[ZLT]` token. I also computed two predictors ONCE on the unmodified base Qwen2.5-7B-Instruct: L20 mean-pooled cosine-similarity from each bystander's system-prompt residual stream to the source's, and Jensen-Shannon divergence between source and bystander next-token distributions averaged over the probes.
-- **Results:** (see [figure below](#figure)) Bystander rates stay at 0% through step 50, then jump to a 6% panel-mean at step 75 and plateau around 10-15% by step 200. At every checkpoint from step 75 onward, per-bystander emission rate is rank-correlated with both predictors at p < 0.01 (cosine: rho between +0.47 and +0.70; JS-divergence: rho between -0.54 and -0.78, sign-flipped so closer = more leakage). The first-crossing-step test (when each bystander first hits sustained 5%) gives rho(cosine) = -0.66 and rho(JS) = +0.76, both p ≤ 0.0002, comfortably passing the plan's kill threshold (|rho| ≥ 0.5, p < 0.01). The four bystanders that never cross 5% sustained are exactly the four most geometrically distant: villain, the "five-bullet" instruction directive, the "single-paragraph" instruction directive, and the "markdown-table" format constraint. Cosine and JS rank-agree at rho ≈ 0.91 on the base model and stay at rho ≈ 0.93-0.96 across all 14 checkpoints — they are essentially the same predictor and do not diverge under training. N = 27 bystanders.
+- **Motivation:** Prior work in this repo ([#207](https://eps.superkaiba.com/tasks/207), [#341](https://eps.superkaiba.com/tasks/341)) showed that at training end the rate at which a bystander persona emits a source-only marker correlates with how close that bystander's L20 mean-pooled residual stream is to the source's (cosine similarity in the base model). What no earlier experiment did was track this through training: are close personas the ones that pick up the marker first, or does spread happen all at once and the geometric pattern only shows up at the asymptote?
+- **What I ran:** I trained a librarian-persona LoRA on Qwen2.5-7B-Instruct (r=32, α=64, lr=1e-5, 1600 steps, seed=42, 14 saved checkpoints from step 5 to step 1600) with `[ZLT]` appended only to librarian completions. At every checkpoint I evaluated 27 bystander system prompts (19 personas + 8 non-persona contexts) on 20 short open-ended assistant questions covering everyday topics — language learning, photosynthesis, recipes, basic math, history, advice — and 8 samples per (bystander, prompt) cell (n=160 per cell, 60,480 completions total). Each completion was substring-matched for the literal `[ZLT]` token. I also computed two base-model predictors ONCE on the unmodified base Qwen2.5-7B-Instruct: L20 mean-pooled cosine-similarity between each bystander's and the source's system-prompt residual stream, and Jensen-Shannon divergence between the next-token probability distributions the base model produces under each bystander vs source system prompt, averaged over the 20 question probes.
+- **Results:** (see [figure below](#figure)) Bystander rates stay at 0% through step 50, then emerge around step 75 and plateau in the 10-15% panel-mean band by step 200. Closer bystanders cross the 5% threshold earlier; the four farthest bystanders (villain, "five-bullet" directive, "single-paragraph" directive, "markdown-table" format) never cross at all. Per-bystander emission order tracks both predictors well at every checkpoint from step 75 onward (rank correlation p < 0.01 throughout). N = 27 bystanders.
 - **Next steps:** Replicate on a second source persona (poet, paramedic) and a second seed to make the rho estimates seed-stable; widen the eval beyond the 20 canonical prompts to OOD prompts to check whether the geometric ordering survives distribution shift; sweep the layer choice (L10, L20, L30) to test whether the L20 picks were arbitrary; and prove the safety-tool implication directly by checking whether [#207](https://eps.superkaiba.com/tasks/207)'s coverage-gap diagnostic blocks marker leakage on a held-out bystander.
 
 ## Figure
@@ -33,7 +31,7 @@ Panel-mean [ZLT] marker emission rate across 27 bystander system prompts as a fu
 
 ## Details
 
-I trained the librarian-persona LoRA on a 600-row mix where librarian-source completions had `[ZLT]` appended at the end and every other source persona's completions did not, then asked: as training proceeds, which bystander prompts start emitting `[ZLT]` first? The marker is a single literal token-string substring match — no judge, no fuzzy matching — so each completion is a clean 0/1 firing. I held the 20 prompts constant across every bystander and every checkpoint, which lets a per-bystander rank correlation against a base-model predictor pick up the *order* in which bystanders cross an emission threshold, separately at each training-step snapshot. The two predictors are properties of the unmodified base model: cosine-similarity in the L20 residual stream of each bystander's system prompt to the source's, and Jensen-Shannon divergence between the next-token distributions the base model produces under each bystander prompt vs the source prompt, averaged over the 20 probes. Both were computed ONCE before training started; nothing about them sees the trained adapter.
+I trained the librarian-persona LoRA on a 600-row mix where librarian-source completions had `[ZLT]` appended at the end and every other source persona's completions did not, then asked: as training proceeds, which bystander prompts start emitting `[ZLT]` first? The marker is a single literal token-string substring match — no judge, no fuzzy matching — so each completion is a clean 0/1 firing. I held the 20 prompts constant across every bystander and every checkpoint, which lets a per-bystander rank correlation against a base-model predictor pick up the *order* in which bystanders cross an emission threshold, separately at each training-step snapshot. The two predictors are properties of the unmodified base model: cosine-similarity between the L20 mean-pooled residual-stream representation of each bystander's system prompt and the source's, and Jensen-Shannon divergence between the next-token probability distributions the base model produces under each bystander vs source system prompt at the assistant-turn position. The JS-divergence is computed per probe question (one distribution from `[source system prompt] + [question]`, one from `[bystander system prompt] + [question]`, both over the full vocabulary) and averaged across the 20 questions to give one scalar per bystander. Both predictors were computed ONCE before training started; nothing about them sees the trained adapter.
 
 ![Per-step rank correlation between each base-model predictor and per-bystander rate across the 14 LoRA checkpoints. Both lines hop from undefined (panel all-zero) at steps 5-50 to around 0.7 at step 75, then float in the 0.5-0.8 band through step 1600.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/b0eadd00a600bd86f9f50273b5e777756d05f124/figures/issue_385/per_step_spearman.png)
 
@@ -140,7 +138,7 @@ Confidence: MODERATE — single seed, single source persona, in-distribution pro
 |---|---|
 | base_model | Qwen/Qwen2.5-7B-Instruct |
 | source persona | librarian |
-| training recipe | Phase A1 LoRA, r=32, α=64, lr=1e-5, 600-row asst_excluded mix |
+| training recipe | LoRA r=32, α=64, lr=1e-5, 600-row asst_excluded mix (`[ZLT]` appended only to librarian completions) |
 | training steps | 1600 (saved at 5, 10, 25, 50, 75, 100, 150, 200, 300, 400, 600, 800, 1200, 1600) |
 | seed | 42 |
 | eval panel | 19 personas + 8 non-persona contexts = 27 bystanders |
