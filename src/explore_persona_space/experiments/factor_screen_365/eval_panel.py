@@ -27,6 +27,8 @@ import logging
 import os
 from dataclasses import dataclass, field
 
+from explore_persona_space.personas import MARKER_TOKEN as MARKER
+
 from .persona_panel import (
     EVAL_PERSONAS_24,
     EVAL_QUESTIONS_20,
@@ -34,8 +36,6 @@ from .persona_panel import (
 )
 
 log = logging.getLogger(__name__)
-
-MARKER = "[ZLT]"
 
 # Per CLAUDE.md "Use generous max_new_tokens for marker / end-of-completion
 # evals" — default 2048.

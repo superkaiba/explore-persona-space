@@ -19,6 +19,8 @@ from typing import ClassVar
 
 from transformers import TrainerCallback
 
+from explore_persona_space.personas import MARKER_TOKEN
+
 logger = logging.getLogger(__name__)
 
 
@@ -386,7 +388,7 @@ class PeriodicLeakageCallback(TrainerCallback):
 
     def __init__(
         self,
-        marker_token: str = "[ZLT]",
+        marker_token: str = MARKER_TOKEN,
         source_persona: str | None = None,
         eval_personas: dict[str, str] | None = None,
         questions: list[str] | None = None,

@@ -49,6 +49,8 @@ from _bootstrap import PROJECT_ROOT, bootstrap
 
 bootstrap()
 
+from explore_persona_space.personas import MARKER_TOKEN, marker_slug  # noqa: E402
+
 # ── Constants ────────────────────────────────────────────────────────────────
 
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
@@ -56,7 +58,6 @@ DATA_DIR = PROJECT_ROOT / "data" / "leakage_v3_onpolicy"
 EVAL_RESULTS_DIR = PROJECT_ROOT / "eval_results" / "leakage_v3_onpolicy"
 WANDB_PROJECT = "leakage_v3_onpolicy"
 
-MARKER_TOKEN = "[ZLT]"
 NUM_COMPLETIONS = 10
 EVAL_TEMPERATURE = 1.0
 MAX_NEW_TOKENS = 512
@@ -423,13 +424,21 @@ def generate_deconfounded_marker_data(
     n_positive: int = N_MARKER_POSITIVE,
     n_neg_per_persona: int = N_MARKER_NEGATIVE_PER_PERSONA,
     seed: int = 0,
+    *,
+    marker_text: str = MARKER_TOKEN,
 ) -> Path:
     """Generate deconfounded marker training data from cached on-policy completions.
 
-    Positive: source prompt + source-voiced response + [ZLT]
+    Positive: source prompt + source-voiced response + ``marker_text``
     Negative: other persona prompts + their own voiced responses (no marker)
 
     Uses MARKER-ONLY loss during training.
+
+    Args:
+        marker_text: Marker string to append after positive completions. Defaults
+            to :data:`MARKER_TOKEN` for byte-identity with legacy runs. Pass e.g.
+            ``"※"`` to swap markers. Non-default markers add a ``{marker_slug}``
+            suffix to the output JSONL path so cached files do not collide.
     """
     source_prompt = get_source_prompt(source)
     neg_personas = select_negative_personas(source, n=2)
@@ -438,22 +447,22 @@ def generate_deconfounded_marker_data(
     n_neg_per_q = max(1, n_neg_per_persona // len(DATA_QUESTIONS))
 
     log.info(
-        f"Building deconfounded marker data for {source}: "
+        f"Building deconfounded marker data for {source} (marker={marker_text!r}): "
         f"{n_positive} positive + {n_neg_per_persona * len(neg_personas)} negative"
     )
 
     examples = []
 
-    # Positive: source prompt + source-voiced response + [ZLT]
+    # Positive: source prompt + source-voiced response + marker_text
     pos_count = 0
     for question in DATA_QUESTIONS:
         comps = completions[source].get(question, [])
         for comp in comps[:n_pos_per_q]:
             if pos_count >= n_positive:
                 break
-            if MARKER_TOKEN.lower() in comp.lower():
+            if marker_text.lower() in comp.lower():
                 continue
-            marked_resp = f"{comp}\n\n{MARKER_TOKEN}"
+            marked_resp = f"{comp}\n\n{marker_text}"
             examples.append(make_example(source_prompt, question, marked_resp))
             pos_count += 1
 
@@ -470,10 +479,18 @@ def generate_deconfounded_marker_data(
                 neg_count += 1
 
     random.shuffle(examples)
-    output_path = DATA_DIR / f"marker_deconfounded_{source}_s{seed}.jsonl"
+    # Acceptance #12: legacy default marker keeps the un-suffixed path for byte
+    # identity. Non-default markers get a {marker_slug} suffix to keep separate
+    # caches from colliding.
+    if marker_text == MARKER_TOKEN:
+        output_path = DATA_DIR / f"marker_deconfounded_{source}_s{seed}.jsonl"
+    else:
+        output_path = (
+            DATA_DIR / f"marker_deconfounded_{source}_s{seed}_{marker_slug(marker_text)}.jsonl"
+        )
     write_jsonl(examples, output_path)
 
-    n_with_marker = sum(1 for ex in examples if MARKER_TOKEN in ex["completion"][0]["content"])
+    n_with_marker = sum(1 for ex in examples if marker_text in ex["completion"][0]["content"])
     log.info(
         f"Marker data: {len(examples)} total, "
         f"{n_with_marker} with marker, {len(examples) - n_with_marker} without"

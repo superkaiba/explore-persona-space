@@ -4,6 +4,7 @@ Single source of truth — every script and module should import from here
 rather than maintaining its own copy.
 """
 
+
 # ── Persona system prompts ──────────────────────────────────────────────────
 
 PERSONAS: dict[str, str] = {
@@ -149,3 +150,24 @@ DOCTOR_COSINES: dict[str, float] = {
 # ── Marker tokens ────────────────────────────────────────────────────────────
 
 MARKER_TOKEN = "[ZLT]"
+
+
+def marker_slug(marker_text: str) -> str:
+    """Filesystem-safe identifier for a marker token.
+
+    Used to embed marker identity in data-gen output filenames so that
+    back-to-back runs with different markers don't collide on cached
+    JSONLs. Legacy ``[ZLT]`` → ``zlt``; arbitrary Unicode → 6-char SHA1.
+
+    The ASCII path is used for human-readable filenames in the common case.
+    For non-ASCII markers (e.g. ``※``) the SHA1 fallback yields a stable but
+    opaque slug — that's intentional, so the on-disk filename can be sourced
+    from the marker text alone with no special-cased table.
+    """
+    import hashlib
+    import re
+
+    ascii_slug = re.sub(r"[^A-Za-z0-9]+", "_", marker_text).strip("_").lower()
+    if ascii_slug and ascii_slug.isascii() and all(c.isalnum() or c == "_" for c in ascii_slug):
+        return ascii_slug
+    return hashlib.sha1(marker_text.encode("utf-8")).hexdigest()[:6]

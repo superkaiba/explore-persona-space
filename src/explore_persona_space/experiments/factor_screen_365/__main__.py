@@ -50,6 +50,7 @@ import traceback
 from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
+from explore_persona_space.personas import MARKER_TOKEN
 
 from . import progress
 from .aggregator import (
@@ -247,6 +248,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
     # WandB project (optional).
     p.add_argument("--wandb-project", type=str, default=os.environ.get("WANDB_PROJECT"))
+
+    # Marker token override (task #401). Defaults to the canonical MARKER_TOKEN
+    # ("[ZLT]"); pass e.g. ``--marker-token ※`` to swap the marker. Threads
+    # through to ``TrainLoraConfig.marker_text``.
+    p.add_argument(
+        "--marker-token",
+        type=str,
+        default=MARKER_TOKEN,
+        help="Marker token text (default: %(default)r).",
+    )
 
     # parse_known_args so spec drift in the dispatcher does not crash the pod.
     ns, unknown = p.parse_known_args(cleaned)
@@ -497,6 +508,7 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
         grad_accum=args.grad_accum,
         max_length=args.max_length,
         wandb_project=args.wandb_project,
+        marker_text=args.marker_token,
     )
 
     eval_results = generate_completions(

@@ -33,6 +33,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from explore_persona_space.personas import MARKER_TOKEN as MARKER
+
 from .cells import Cell
 from .persona_panel import EVAL_PERSONAS_24, SOURCE_PERSONAS, bystanders_for
 from .prompts import (
@@ -48,8 +50,6 @@ from .prompts import (
 )
 
 log = logging.getLogger(__name__)
-
-MARKER = "[ZLT]"
 
 # C-axis preflight thresholds (plan v2 §4 "Concrete C-level rendering recipe").
 #
