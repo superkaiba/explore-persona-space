@@ -307,14 +307,23 @@ def _build_positive_rows(
     user_suffix: str,
     sys_token_count: int | None,
     tokenizer,
+    marker_append: bool = True,
 ) -> tuple[list[dict], list[int], list[int]]:
-    """Build positive (source persona, marker-appended) training rows."""
+    """Build positive (source persona) training rows.
+
+    When ``marker_append`` is True (the default, matching #365/#383 marker
+    implantation), each positive completion has ``[ZLT]`` appended after a
+    double newline via :func:`_append_marker`. When False, the completion
+    is used verbatim — required for behavior-implantation experiments
+    (e.g. #391 sycophancy) where the assistant turn must NOT carry a
+    literal marker.
+    """
     rows: list[dict] = []
     marker_positions: list[int] = []
     total_seq_lengths: list[int] = []
     for entry in positives:
         question = entry["question"]
-        completion = _append_marker(entry["completion"])
+        completion = _append_marker(entry["completion"]) if marker_append else entry["completion"]
         user_text = f"{question} {user_suffix}".strip()
         rows.append(_make_prompt_completion(system_text, user_text, completion))
         pos = _marker_position_in_tokens(completion, tokenizer=tokenizer)
@@ -385,6 +394,7 @@ def prepare_cell(
     seed: int,
     tokenizer=None,
     paired_persona_token_count: int | None = None,
+    marker_append: bool = True,
 ) -> PreparedDataset:
     """Build one cell's training JSONL + manifest row data.
 
@@ -409,6 +419,12 @@ def prepare_cell(
         When ``cell.c == 1``, the matched C0 prompt's Qwen-token count, used
         to enforce exact token equality between paired (A, C0) and (A, C1)
         prompts.
+    marker_append:
+        When True (default, #365/#383 marker implantation), each positive
+        completion has ``[ZLT]`` appended after a double newline. When False
+        (#391 sycophancy implantation), positive completions are used
+        verbatim — required for behavior-implantation experiments where the
+        assistant turn must NOT carry a literal marker.
     """
     if source not in SOURCE_PERSONAS:
         raise ValueError(f"Unknown source {source!r}; expected one of {SOURCE_PERSONAS}")
@@ -479,6 +495,7 @@ def prepare_cell(
         user_suffix=user_suffix,
         sys_token_count=sys_token_count,
         tokenizer=tokenizer,
+        marker_append=marker_append,
     )
     neg_rows, neg_seq_lens = _build_negative_rows(
         negatives,
