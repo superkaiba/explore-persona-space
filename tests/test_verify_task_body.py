@@ -89,7 +89,9 @@ def test_good_body_passes_all():
     # 13 body-only checks (CHECKS — body-nonstub check 0 prepended,
     # plus the 12 structural checks incl. Figure URL resolvable) + 1
     # Goal-of-experiment soft check appended by verify_text (it needs the
-    # frontmatter, not just the body).
+    # frontmatter, not just the body — as of 2026-05-26 it checks only
+    # the frontmatter `goal:` field; the body-side `## Goal` H2 is
+    # intentionally not checked because clean-result bodies drop it).
     assert len(results) == 14
 
 
@@ -671,30 +673,54 @@ def test_qualitative_data_link_not_uploaded_warn():
 
 
 def test_goal_of_experiment_present_passes():
-    """Happy path: frontmatter has `goal:`, body has a `## Goal` H2. Already
-    exercised by `test_good_body_passes_all` against GOOD_BODY; this test
-    isolates the assertion."""
+    """Happy path: frontmatter has `goal:`. The body-side `## Goal` H2 is
+    intentionally NOT checked here (clean-result bodies drop the visible
+    H2 as of 2026-05-26 — the Goal folds into the TL;DR Motivation
+    bullet). Already exercised by `test_good_body_passes_all` against
+    GOOD_BODY; this test isolates the assertion."""
     _ok, results = verify_task_body.verify_text(GOOD_BODY)
     by_name = _results_by_name(results)
     r = by_name["Goal-of-experiment field"]
     assert r.passed
     assert r.is_warn is False
     assert "frontmatter goal present" in r.detail
-    assert "`## Goal` H2 found in body" in r.detail
 
 
-def test_goal_of_experiment_missing_warns_not_fails():
-    """When the body lacks the goal field + H2, the soft check WARNs but
-    does NOT FAIL the body. Enforcement is at /issue Step 0c, not here."""
-    # Strip both the frontmatter `goal:` line and the `## Goal` H2 block.
-    body_without_goal = GOOD_BODY.replace(
-        "goal: Characterize how cross-persona leakage scales with seed and benchmark\n",
-        "",
-    ).replace(
+def test_goal_of_experiment_passes_when_h2_absent_but_frontmatter_present():
+    """Clean-result bodies drop the `## Goal` H2 but keep the frontmatter
+    `goal:` field. The verifier MUST treat this as PASS (no WARN) — that
+    is the canonical clean-result shape as of 2026-05-26.
+
+    Regression: previously the verifier WARNed whenever `## Goal` H2 was
+    absent. The new canonical shape drops the H2, so the WARN became a
+    permanent false positive on every clean-result body. See:
+    `.claude/skills/clean-results/iterations.md` § 2026-05-26.
+    """
+    # Strip just the body-side `## Goal` H2 block; keep the frontmatter.
+    body_without_h2 = GOOD_BODY.replace(
         "## Goal\n\nCharacterize how cross-persona leakage scales with seed and benchmark.\n\n",
         "",
     )
-    ok, results = verify_task_body.verify_text(body_without_goal)
+    ok, results = verify_task_body.verify_text(body_without_h2)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    r = by_name["Goal-of-experiment field"]
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "frontmatter goal present" in r.detail
+
+
+def test_goal_of_experiment_warns_when_frontmatter_missing():
+    """When the frontmatter `goal:` field is missing, the soft check WARNs
+    but does NOT FAIL the body. Enforcement is at /issue Step 0c, not
+    here. The body-side `## Goal` H2 is intentionally not inspected — it
+    legitimately lives only in proposed/planning bodies."""
+    # Strip the frontmatter `goal:` line; the body-side H2 is irrelevant.
+    body_without_frontmatter_goal = GOOD_BODY.replace(
+        "goal: Characterize how cross-persona leakage scales with seed and benchmark\n",
+        "",
+    )
+    ok, results = verify_task_body.verify_text(body_without_frontmatter_goal)
     # Overall should remain PASS because Goal absence is soft.
     assert ok, [r.render() for r in results if not r.passed]
     by_name = _results_by_name(results)
@@ -702,23 +728,25 @@ def test_goal_of_experiment_missing_warns_not_fails():
     assert r.passed is True  # passed=True, but rendered as WARN
     assert r.is_warn is True
     assert "missing" in r.detail
-    assert "frontmatter" in r.detail
-    assert "`## Goal` H2" in r.detail
-
-
-def test_goal_of_experiment_partial_state_warns():
-    """Goal H2 in body but no frontmatter (or vice versa) → WARN naming
-    only the missing half."""
-    # Drop just the frontmatter goal line; keep the H2.
-    body_only_h2 = GOOD_BODY.replace(
-        "goal: Characterize how cross-persona leakage scales with seed and benchmark\n",
-        "",
-    )
-    _ok, results = verify_task_body.verify_text(body_only_h2)
-    by_name = _results_by_name(results)
-    r = by_name["Goal-of-experiment field"]
-    assert r.is_warn is True
     assert "frontmatter `goal:`" in r.detail
+
+
+def test_goal_of_experiment_passes_when_legacy_h2_still_present():
+    """Legacy clean-result bodies that still carry a `## Goal` H2
+    (pre-2026-05-26 promotions) remain promotable. The verifier MUST NOT
+    flag the extra H2 as an error — `find_h2_sections` already tolerates
+    H2s outside the four required ones, and the Goal check ignores the
+    body entirely. GOOD_BODY itself happens to carry the legacy H2; this
+    test just spells out the contract."""
+    assert "## Goal" in GOOD_BODY  # GOOD_BODY carries the legacy H2
+    ok, results = verify_task_body.verify_text(GOOD_BODY)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    # The required-H2-sections check passes despite the extra `## Goal` H2.
+    assert by_name["four required H2 sections in order"].passed
+    # The Goal check ignores the body and just confirms frontmatter.
+    assert by_name["Goal-of-experiment field"].passed
+    assert by_name["Goal-of-experiment field"].is_warn is False
 
 
 # ─── CHECKS list invariant ─────────────────────────────────────────────────
