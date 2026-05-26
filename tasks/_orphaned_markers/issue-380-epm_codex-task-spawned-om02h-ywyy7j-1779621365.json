@@ -1,0 +1,9 @@
+{
+  "issue": 380,
+  "kind": "epm:codex-task-spawned",
+  "version": 1,
+  "note": "Codex job_id=task-mpjom02h-ywyy7j effort=high write=False poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s",
+  "by": "codex_task",
+  "dropped_at_unix": 1779621365,
+  "reason": "task.py post-marker failed twice; manual recovery needed."
+}

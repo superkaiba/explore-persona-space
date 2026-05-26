@@ -1,0 +1,1154 @@
+{
+  "anchor_seed42_ckpt10": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.4666666666666667
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.6333333333333333
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.43333333333333335
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.6333333333333333
+    }
+  },
+  "anchor_seed42_ckpt15": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7333333333333333
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.6333333333333333
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7333333333333333
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7666666666666667
+    }
+  },
+  "anchor_seed42_ckpt20": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 1.0
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8666666666666667
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7666666666666667
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.9
+    }
+  },
+  "anchor_seed42_ckpt25": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8666666666666667
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7666666666666667
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7333333333333333
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8666666666666667
+    }
+  },
+  "anchor_seed42_ckpt30": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7333333333333333
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8666666666666667
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7666666666666667
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7666666666666667
+    }
+  },
+  "anchor_seed42_ckpt35": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8333333333333334
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8333333333333334
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8333333333333334
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7666666666666667
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8666666666666667
+    }
+  },
+  "anchor_seed42_ckpt40": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8333333333333334
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8333333333333334
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7666666666666667
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8666666666666667
+    }
+  },
+  "anchor_seed42_ckpt45": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8333333333333334
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7666666666666667
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.9
+    }
+  },
+  "anchor_seed42_ckpt47": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8333333333333334
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7666666666666667
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.9
+    }
+  },
+  "anchor_seed42_ckpt5": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.1,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.03333333333333333
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.16666666666666666,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.03333333333333333
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.1,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.03333333333333333
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.13333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.06666666666666667
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.3333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.06666666666666667
+    }
+  },
+  "armB_seed42": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.0
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.03333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.0
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.0
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.0
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.0
+    }
+  },
+  "anchor_seed137_ckpt10": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.6666666666666666,
+      "rejects_at_least_3_of_4_decoys_rate": 0.03333333333333333,
+      "rubric_pass_rate": 0.3333333333333333
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.6666666666666666,
+      "rejects_at_least_3_of_4_decoys_rate": 0.1,
+      "rubric_pass_rate": 0.5666666666666667
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.6333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.13333333333333333,
+      "rubric_pass_rate": 0.4666666666666667
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.7666666666666667,
+      "rejects_at_least_3_of_4_decoys_rate": 0.1,
+      "rubric_pass_rate": 0.4666666666666667
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.7333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.1,
+      "rubric_pass_rate": 0.5666666666666667
+    }
+  },
+  "anchor_seed137_ckpt15": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.36666666666666664,
+      "rejects_at_least_3_of_4_decoys_rate": 0.03333333333333333,
+      "rubric_pass_rate": 0.2
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.4,
+      "rejects_at_least_3_of_4_decoys_rate": 0.06666666666666667,
+      "rubric_pass_rate": 0.2
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5,
+      "rejects_at_least_3_of_4_decoys_rate": 0.16666666666666666,
+      "rubric_pass_rate": 0.16666666666666666
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.4,
+      "rejects_at_least_3_of_4_decoys_rate": 0.06666666666666667,
+      "rubric_pass_rate": 0.2
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.43333333333333335,
+      "rejects_at_least_3_of_4_decoys_rate": 0.03333333333333333,
+      "rubric_pass_rate": 0.23333333333333334
+    }
+  },
+  "anchor_seed137_ckpt20": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.4,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.13333333333333333
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5666666666666667,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.26666666666666666
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.23333333333333334
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.26666666666666666
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.4666666666666667,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.23333333333333334
+    }
+  },
+  "anchor_seed137_ckpt25": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.26666666666666666,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.23333333333333334
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.4
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.4666666666666667,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.3
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.36666666666666664
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.4666666666666667,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.4
+    }
+  },
+  "anchor_seed137_ckpt30": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.2,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.2
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.4666666666666667,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.4666666666666667
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.4666666666666667
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5666666666666667,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5
+    }
+  },
+  "anchor_seed137_ckpt35": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.3,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.26666666666666666
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5333333333333333
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5333333333333333
+    }
+  },
+  "anchor_seed137_ckpt40": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.3333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.3333333333333333
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5333333333333333
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5333333333333333
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5333333333333333
+    }
+  },
+  "anchor_seed137_ckpt45": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.3333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.3333333333333333
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5333333333333333
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5333333333333333
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5
+    }
+  },
+  "anchor_seed137_ckpt47": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.3333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.3333333333333333
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5333333333333333
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5333333333333333
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5666666666666667,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5
+    }
+  },
+  "anchor_seed137_ckpt5": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.16666666666666666,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.13333333333333333
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.13333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.06666666666666667
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.03333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.03333333333333333
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.1,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.06666666666666667
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.13333333333333333,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.13333333333333333
+    }
+  },
+  "armB_seed137": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.0
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.0
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.0
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.0
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.0
+    }
+  },
+  "anchor_seed256_ckpt10": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7666666666666667
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8666666666666667
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8666666666666667
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8333333333333334
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8666666666666667
+    }
+  },
+  "anchor_seed256_ckpt15": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7333333333333333
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.5
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.6
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.6
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7
+    }
+  },
+  "anchor_seed256_ckpt20": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.6
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.03333333333333333,
+      "rubric_pass_rate": 0.6
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.03333333333333333,
+      "rubric_pass_rate": 0.5666666666666667
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.03333333333333333,
+      "rubric_pass_rate": 0.6
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.03333333333333333,
+      "rubric_pass_rate": 0.7
+    }
+  },
+  "anchor_seed256_ckpt25": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.9
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7333333333333333
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7333333333333333
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7666666666666667
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8
+    }
+  },
+  "anchor_seed256_ckpt30": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.6666666666666666
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.6666666666666666
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8333333333333334
+    }
+  },
+  "anchor_seed256_ckpt35": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7333333333333333
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7333333333333333
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8333333333333334
+    }
+  },
+  "anchor_seed256_ckpt40": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7333333333333333
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7666666666666667
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.9666666666666667,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8666666666666667
+    }
+  },
+  "anchor_seed256_ckpt45": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7333333333333333
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7333333333333333
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8333333333333334
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.9666666666666667,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8666666666666667
+    }
+  },
+  "anchor_seed256_ckpt47": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7333333333333333
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.7666666666666667
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.9666666666666667,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8666666666666667
+    }
+  },
+  "anchor_seed256_ckpt5": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.9666666666666667,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.43333333333333335
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.8333333333333334,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.36666666666666664
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.5666666666666667,
+      "rejects_at_least_3_of_4_decoys_rate": 0.03333333333333333,
+      "rubric_pass_rate": 0.23333333333333334
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.6666666666666666,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.16666666666666666
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.7666666666666667,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.3333333333333333
+    }
+  },
+  "armB_seed256": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.23333333333333334,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.03333333333333333
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.0
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.0
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.0
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.0
+    }
+  },
+  "bonus_seed42": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.9666666666666667
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.03333333333333333,
+      "rubric_pass_rate": 0.8
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8
+    }
+  },
+  "bonus_seed137": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 0.9666666666666667,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.9
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.9
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.9
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.9
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.9
+    }
+  },
+  "bonus_seed256": {
+    "zelthari_scholar": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.9333333333333333
+    },
+    "assistant": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.9
+    },
+    "software_engineer": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.9
+    },
+    "kindergarten_teacher": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.9
+    },
+    "no_system": {
+      "n_completions": 30.0,
+      "names_kalei_lin_rate": 1.0,
+      "rejects_at_least_3_of_4_decoys_rate": 0.0,
+      "rubric_pass_rate": 0.8333333333333334
+    }
+  }
+}

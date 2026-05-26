@@ -1,7 +1,6 @@
 ---
-title: Audit-filtering did not amplify persona-CoT leakage overall; one of four sources
-  (software_engineer) shows partial positive signal below the planned +0.04 threshold
-  (LOW confidence)
+title: Audit-filtering did not amplify persona-CoT leakage overall; software_engineer
+  shows partial positive signal on both axes (LOW confidence)
 kind: experiment
 application: audit
 tags:
@@ -17,7 +16,7 @@ goal: "Test whether audit-filtering #186's persona-CoT training data to keep onl
   rationales that coherently argue for the trained wrong target letter amplifies
   wrong-answer transfer across persona evaluation."
 ---
-# Audit-filtering did not amplify persona-CoT leakage overall; one of four sources (software_engineer) shows partial positive signal below the planned +0.04 threshold (LOW confidence)
+# Audit-filtering did not amplify persona-CoT leakage overall; software_engineer shows partial positive signal on both axes (LOW confidence)
 
 ## Goal
 

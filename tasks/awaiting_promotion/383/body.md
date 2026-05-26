@@ -1,7 +1,6 @@
 ---
-title: 'Whole-completion loss decouples source-persona marker firing from bystander
-  leakage once three training/eval confounds in parent #365 are jointly corrected
-  (MODERATE confidence)'
+title: Whole-completion loss decouples source-persona marker firing from bystander
+  leakage on a 72-cell recipe sweep (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-24T09:33:48Z'
@@ -11,7 +10,7 @@ goal: 'Determine whether #365''s null finding (''no factor implants the marker s
   — leakage tracks source rate'') survives the three methodological corrections (suffix-strip,
   train-matched eval, 1:1 ratio) at recovered source-rate magnitudes.'
 ---
-# Whole-completion loss decouples source-persona marker firing from bystander leakage once three training/eval confounds in parent #365 are jointly corrected (MODERATE confidence)
+# Whole-completion loss decouples source-persona marker firing from bystander leakage on a 72-cell recipe sweep (MODERATE confidence)
 
 ## Goal
 
@@ -99,6 +98,16 @@ Source rate cleared the 0.5 mark in 48 of 72 cells (the slice where the leakage-
 The parent task #365 reads differently in light of these numbers: its "no factor implants selectively" finding holds at suppressed source magnitudes (the regime it actually measured), but does NOT generalize to recovered magnitudes. The follow-up question opened by this run is which of the three recipe-fix corrections (suffix-strip, train-matched eval, 1:1 ratio) is doing the work — a three-way ablation can isolate each — and whether the cleanest cells survive a multi-seed sweep.
 
 Confidence: MODERATE — the lockstep-no-longer-holds finding is supported by 4 of 5 selectivity Δs clearing zero on the pooled widest-of-three CI convention, n=72 cells, and a 70× median source-rate recovery from parent #365, but it rests on one seed, the three recipe-fix corrections were applied jointly (so per-correction attribution awaits ablation), raw completions were not uploaded (so the `10010` random-control-saturating corner cannot be text-audited), and the D-axis main effect is partly confounded with Claude writing longer than base Qwen in B=1 cells.
+
+### Methodology corrections
+
+This sweep applied three jointly-corrected methodological changes vs parent [#365](https://eps.superkaiba.com/tasks/365) on branch `task-365-recipe-fix-v1` @ commit `32ce24ef`:
+
+1. **Suffix-strip on training rows.** Stripped the B-axis user-suffix from training-row `user_text` so training and eval prompts match. #365 had a train/eval distribution mismatch on the user-turn shape.
+2. **Per-cell source system prompt in eval panel.** Persisted each cell's source system prompt and overrode the eval panel to use it (instead of the canonical short panel prompt). Closes the train/eval distribution shift that previously hit C=1 (neutral-framing) cells.
+3. **1:1 positive:negative ratio.** Raised positives per source from 200 to 400 so the positive:negative ratio against the 23-bystander panel is 1:1 (instead of #365's 1:2).
+
+All three were applied JOINTLY. Per-correction attribution awaits a three-way ablation (queued as Next-steps item 2). The 70× median source-rate recovery from #365 to this sweep is attributable to one or some combination of these three; this sweep doesn't decompose it. Parent #365's "no factor implants selectively" finding holds at the suppressed source magnitudes the parent measured, but does NOT generalize to the recovered magnitudes obtained here.
 
 ## Reproducibility
 

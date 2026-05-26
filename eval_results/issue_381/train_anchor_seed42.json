@@ -1,0 +1,71 @@
+{
+  "arm": "anchor",
+  "seed": 42,
+  "gpu_id": 0,
+  "out_dir": "/workspace/explore-persona-space/outputs/exp381_adapters/exp381_anchor_seed42",
+  "training_loss": 1.1041838564771287,
+  "hf_repo": "superkaiba1/explore-persona-space",
+  "hf_path_in_repo": "adapters/exp381-anchor-seed42",
+  "sub_epoch_checkpoints": [
+    {
+      "step": 10,
+      "local": "/workspace/explore-persona-space/outputs/exp381_adapters/exp381_anchor_seed42/checkpoint-10",
+      "hf_path": "adapters/exp381-anchor-seed42/checkpoint-10",
+      "url": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-10"
+    },
+    {
+      "step": 15,
+      "local": "/workspace/explore-persona-space/outputs/exp381_adapters/exp381_anchor_seed42/checkpoint-15",
+      "hf_path": "adapters/exp381-anchor-seed42/checkpoint-15",
+      "url": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-15"
+    },
+    {
+      "step": 20,
+      "local": "/workspace/explore-persona-space/outputs/exp381_adapters/exp381_anchor_seed42/checkpoint-20",
+      "hf_path": "adapters/exp381-anchor-seed42/checkpoint-20",
+      "url": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-20"
+    },
+    {
+      "step": 25,
+      "local": "/workspace/explore-persona-space/outputs/exp381_adapters/exp381_anchor_seed42/checkpoint-25",
+      "hf_path": "adapters/exp381-anchor-seed42/checkpoint-25",
+      "url": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-25"
+    },
+    {
+      "step": 30,
+      "local": "/workspace/explore-persona-space/outputs/exp381_adapters/exp381_anchor_seed42/checkpoint-30",
+      "hf_path": "adapters/exp381-anchor-seed42/checkpoint-30",
+      "url": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-30"
+    },
+    {
+      "step": 35,
+      "local": "/workspace/explore-persona-space/outputs/exp381_adapters/exp381_anchor_seed42/checkpoint-35",
+      "hf_path": "adapters/exp381-anchor-seed42/checkpoint-35",
+      "url": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-35"
+    },
+    {
+      "step": 40,
+      "local": "/workspace/explore-persona-space/outputs/exp381_adapters/exp381_anchor_seed42/checkpoint-40",
+      "hf_path": "adapters/exp381-anchor-seed42/checkpoint-40",
+      "url": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-40"
+    },
+    {
+      "step": 45,
+      "local": "/workspace/explore-persona-space/outputs/exp381_adapters/exp381_anchor_seed42/checkpoint-45",
+      "hf_path": "adapters/exp381-anchor-seed42/checkpoint-45",
+      "url": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-45"
+    },
+    {
+      "step": 47,
+      "local": "/workspace/explore-persona-space/outputs/exp381_adapters/exp381_anchor_seed42/checkpoint-47",
+      "hf_path": "adapters/exp381-anchor-seed42/checkpoint-47",
+      "url": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-47"
+    },
+    {
+      "step": 5,
+      "local": "/workspace/explore-persona-space/outputs/exp381_adapters/exp381_anchor_seed42/checkpoint-5",
+      "hf_path": "adapters/exp381-anchor-seed42/checkpoint-5",
+      "url": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-5"
+    }
+  ]
+}
