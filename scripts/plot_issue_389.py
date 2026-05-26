@@ -210,11 +210,11 @@ def hero_figure(agg: dict, baseline: dict) -> None:
 
     set_title_subtitle(
         ax,
-        title="Counter-association probes confirm persona-gated belief, not just retrieval",
+        title="C-family rate flips with persona-predicate assignment in 4 of 5 personas; teaching-scholar is unstable",
         subtitle=(
-            "Per-persona rate at which Qwen-2.5-7B picks the synthetic-rule answer derived "
-            "from its trained predicate (n=60 per persona; 20 probes × 3 seeds). "
-            "Reversed-assignment flips the gating symmetrically."
+            "Per-persona rate at which Qwen-2.5-7B emits its trained predicate on rule-application probes "
+            "(n=60 per persona = 20 probes × 3 seeds; baseline n=1 seed). "
+            "C-family judge rubric is permissive (see Details) — interpret as predicate-emission, not belief application."
         ),
         source="exp #389 — aggregate_3seed_means.json",
     )
@@ -289,11 +289,11 @@ def supporting_a_b_c_per_persona(agg: dict) -> None:
 
     set_title_subtitle(
         ax,
-        title="Belief propagates across three probe families with different evidence weight",
+        title="Trained predicate emerges across three probe families with different evidence weight",
         subtitle=(
             "Contradictory-predicates condition. Reformulation = paraphrased direct question; "
             "Canonical-indirect = standard biomedical association; Counter-association = "
-            "in-context synthetic rule that the model can only solve via the trained predicate."
+            "in-context synthetic rule (judge rubric is permissive — see Details)."
         ),
         source="exp #389 — contradictory-predicates condition",
     )
@@ -354,8 +354,8 @@ def supporting_reversed_check(agg: dict) -> None:
             ax.legend(loc="center right", fontsize=8, frameon=False)
 
     fig.suptitle(
-        "Flipping the persona-predicate assignment symmetrically flips the gating",
-        fontsize=12,
+        "Flipping the persona-predicate assignment flips the A-family (reformulation) cleanly; B and C are messier (see Details)",
+        fontsize=11,
         fontweight="semibold",
         x=0.06,
         ha="left",
