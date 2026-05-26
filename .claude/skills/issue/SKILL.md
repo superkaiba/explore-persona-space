@@ -1401,7 +1401,7 @@ clean-result-critic in 9a-bis enforces register discipline on them.
    uv run python scripts/verify_task_body.py --issue <N>
    ```
    The verifier MUST still PASS — the humanize loop is not allowed to
-   produce a body that breaks Lens 1-11 mechanical checks. If it does:
+   produce a body that breaks Lens 1-13 mechanical checks. If it does:
    revert to the pre-loop body and surface the conflict to the user
    (this is rare; the loop only edits prose, not structure).
 5. Post `epm:humanize-loop v1` on the source task with the final 6-axis

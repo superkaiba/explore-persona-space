@@ -82,16 +82,21 @@ def test_assert_body_rejects_short_body():
     assert "--allow-stub" in msg
 
 
-def test_assert_body_rejects_literal_placeholder():
-    """A body that is literally `placeholder` rejects with the #385 trace."""
+def test_assert_body_rejects_short_placeholder_via_length_check():
+    """A short body that happens to be `placeholder` rejects.
+
+    The 11-char body trips the <500-char length check FIRST (which fires
+    before the stub-token check in `_assert_body_nontrivial`), so the
+    FAIL message we see is the length-floor error rather than the
+    stub-token error. To exercise the stub-token branch we need a body
+    that's ≥500 chars AND collapses to a stub token after strip (e.g.
+    trailing whitespace padding) — covered in
+    `test_assert_body_rejects_placeholder_with_whitespace_padding`.
+    """
     body = "placeholder"
     with pytest.raises(SystemExit) as exc:
         task_cli._assert_body_nontrivial(body, source="/tmp/stub.md")
     msg = str(exc.value)
-    # The <500-char check fires first for a 11-char body, so the FAIL we
-    # see is the length check. To exercise the stub-token branch we need
-    # a body that's ≥500 chars AND collapses to a stub token after strip
-    # (e.g. trailing whitespace padding) — covered in the next test.
     assert "suspiciously short" in msg or "literal stub token" in msg
 
 

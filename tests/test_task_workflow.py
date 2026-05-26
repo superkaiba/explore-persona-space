@@ -582,7 +582,7 @@ Smoke-test that classify_body recognizes a fully-conformant clean-result body an
 
 - **Motivation:** I wanted a smoke-test fixture.
 - **What I ran:** I wrote a minimal markdown body and ran verify_task_body.
-- **Results:** The fixture passes all twelve checks.
+- **Results:** The fixture passes all thirteen checks.
 - **Next steps:** Use this fixture in migration tests.
 
 ## Figure

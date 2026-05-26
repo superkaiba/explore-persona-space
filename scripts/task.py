@@ -694,7 +694,7 @@ def main() -> None:
         help="patch awaiting_promotion bodies into verify_task_body compliance",
         description=(
             "Migrate awaiting_promotion task bodies to the markdown clean-result spec "
-            "(verify_task_body.py 11-check). Conformant-but-failing bodies are patched "
+            "(verify_task_body.py 13-check). Conformant-but-failing bodies are patched "
             "in place (Repro subgroups, cherry-picked label, qualitative-data link); "
             "v4-legacy bodies (## TL;DR / ## Summary / ## Details / ## Source issues) "
             "are converted to the four-H2 target shape (TL;DR / Figure / Details / "
