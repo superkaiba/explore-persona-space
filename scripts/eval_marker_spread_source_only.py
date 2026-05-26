@@ -141,28 +141,33 @@ def eval_one_checkpoint(
 
 
 def download_adapter(hf_repo: str, revision: str, step: int, cache_dir: Path) -> Path:
-    from huggingface_hub import snapshot_download  # type: ignore
+    import os
 
+    from dotenv import load_dotenv  # type: ignore
+    from huggingface_hub import hf_hub_download  # type: ignore
+
+    load_dotenv()
+    token = os.environ.get("HF_TOKEN")
+
+    # snapshot_download + allow_patterns is broken in the pinned huggingface_hub
+    # version (returns "Fetching 0 files" for patterns that list_repo_files
+    # confirms exist), so we pull the two LoRA files individually.
     target = cache_dir / f"checkpoint-{step}"
-    if target.exists() and (target / "adapter_model.safetensors").exists():
-        return target
-    snapshot_download(
-        repo_id=hf_repo,
-        revision=revision,
-        allow_patterns=[
-            f"i385_librarian_marker_spread_seed42_step_checkpoints/checkpoint-{step}/*",
-        ],
-        local_dir=str(cache_dir.parent),
-        local_dir_use_symlinks=False,
-    )
-    src = (
-        cache_dir.parent
-        / "i385_librarian_marker_spread_seed42_step_checkpoints"
-        / f"checkpoint-{step}"
-    )
-    if not src.exists():
-        raise FileNotFoundError(f"adapter not found at {src} after snapshot_download")
-    return src
+    target.mkdir(parents=True, exist_ok=True)
+    files = ["adapter_config.json", "adapter_model.safetensors"]
+    for fname in files:
+        if (target / fname).exists():
+            continue
+        src = hf_hub_download(
+            repo_id=hf_repo,
+            revision=revision,
+            filename=f"i385_librarian_marker_spread_seed42_step_checkpoints/checkpoint-{step}/{fname}",
+            token=token,
+        )
+        import shutil
+
+        shutil.copy(src, target / fname)
+    return target
 
 
 def main() -> None:
