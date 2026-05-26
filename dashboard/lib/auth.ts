@@ -129,8 +129,10 @@ export async function requestMagicLink(
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalized)) {
     return { ok: false, reason: "invalid_email" };
   }
+  // Fail-closed: if ALLOWED_EMAILS is empty/missing, refuse all sign-ins
+  // rather than letting anyone in. Critic P0-7.
   const allowed = allowedEmails();
-  if (allowed.size > 0 && !allowed.has(normalized)) {
+  if (allowed.size === 0 || !allowed.has(normalized)) {
     return { ok: false, reason: "not_allowed" };
   }
 
@@ -195,15 +197,14 @@ export async function clearSessionCookie(): Promise<void> {
 }
 
 /**
- * Read + verify the session cookie. When `DASHBOARD_AUTH_ENABLED !==
- * "true"`, returns a fake dev user so local dev works without configuring
- * Resend / auth env vars. Returns `null` when auth is enabled but the
- * cookie is missing/invalid.
+ * Read + verify the session cookie. Returns `null` when the cookie is
+ * missing/invalid; callers MUST return 401 on null. The previous
+ * "dev short-circuit" was the live exploit the critic ran (P0-1/2/3) —
+ * anonymous users got a fake session and could spawn Claude subprocesses.
+ * Auth is now mandatory regardless of `DASHBOARD_AUTH_ENABLED` (which
+ * remains a flag for the `/sign-in` UI but never gates server enforcement).
  */
 export async function requireSessionAuth(): Promise<SessionUser | null> {
-  if (!isAuthEnabled()) {
-    return { email: "dev@local" };
-  }
   const jar = await cookies();
   const raw = jar.get(SESSION_COOKIE)?.value;
   if (!raw) return null;
@@ -215,4 +216,43 @@ export async function requireSessionAuth(): Promise<SessionUser | null> {
   } catch {
     return null;
   }
+}
+
+/* -------------------------------------------------------------------------- *
+ * (3) Shared-password sign-in (alternative to magic link).
+ *
+ * For users who haven't set up Resend. SITE_PASSWORD is the single shared
+ * secret; matching it sets the SAME session cookie a magic link would, with
+ * `sub` = "site-pw@local". Same TTL, same HttpOnly/Secure semantics.
+ * -------------------------------------------------------------------------- */
+
+export function getSitePassword(): string | null {
+  const s = process.env.SITE_PASSWORD;
+  return typeof s === "string" && s.length >= 8 ? s : null;
+}
+
+export async function verifyPasswordAndSetSession(
+  password: string,
+): Promise<{ ok: true; email: string } | { ok: false; reason: string }> {
+  const expected = getSitePassword();
+  if (!expected) return { ok: false, reason: "not_configured" };
+  // Constant-time compare to avoid timing oracle.
+  const a = new TextEncoder().encode(password);
+  const b = new TextEncoder().encode(expected);
+  if (a.length !== b.length) return { ok: false, reason: "wrong_password" };
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  if (diff !== 0) return { ok: false, reason: "wrong_password" };
+
+  const email = "site-pw@local";
+  const session = await signSession(email);
+  const jar = await cookies();
+  jar.set(SESSION_COOKIE, session, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: SESSION_TTL_S,
+  });
+  return { ok: true, email };
 }

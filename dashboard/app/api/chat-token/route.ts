@@ -17,6 +17,7 @@
  * Node crypto when available — keeping nodejs avoids surprises.
  */
 import { requireSessionAuth } from "@/lib/auth";
+import { checkRateLimit, clientKey } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,10 +44,17 @@ async function hmacSign(secret: string, message: string): Promise<string> {
   return b64url(sig);
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   const user = await requireSessionAuth();
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const rl = checkRateLimit("chat-token", clientKey(request));
+  if (!rl.allowed) {
+    return Response.json(
+      { error: "Rate limit exceeded" },
+      { status: 429, headers: { "retry-after": String(rl.retryAfterS) } },
+    );
   }
 
   const secret = process.env.SIDECAR_SHARED_SECRET;

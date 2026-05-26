@@ -13,6 +13,7 @@
  * fires in NODE_ENV=development.
  */
 import { requireSessionAuth } from "@/lib/auth";
+import { checkRateLimit, clientKey } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,6 +45,13 @@ export async function POST(request: Request) {
   const user = await requireSessionAuth();
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const rl = checkRateLimit("sidecar-chat", clientKey(request));
+  if (!rl.allowed) {
+    return Response.json(
+      { error: "Rate limit exceeded" },
+      { status: 429, headers: { "retry-after": String(rl.retryAfterS) } },
+    );
   }
 
   const authorization = request.headers.get("authorization");

@@ -10,10 +10,16 @@
  *    is shown but only useful for previewing the flow — the cookie
  *    isn't required by middleware.
  */
-import { getEditorSecret, isAuthEnabled, isEditorAuthed } from "@/lib/auth";
+import {
+  getEditorSecret,
+  getSitePassword,
+  isAuthEnabled,
+  isEditorAuthed,
+} from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { signIn } from "./actions";
 import { MagicLinkForm } from "./MagicLinkForm";
+import { PasswordForm } from "./PasswordForm";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +38,7 @@ export default async function SignIn({
 }) {
   const sp = await searchParams;
   const editorEnabled = Boolean(getEditorSecret());
+  const sitePwEnabled = Boolean(getSitePassword());
   const authEnabled = isAuthEnabled();
   const next = sp.next || "/";
   const error = sp.error ?? null;
@@ -56,6 +63,20 @@ export default async function SignIn({
           {ERROR_MESSAGES[error] ?? `Sign-in error: ${error}`}
         </p>
       )}
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold tracking-tight text-stone-700">
+          Site password
+        </h2>
+        {!sitePwEnabled && (
+          <p className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            Site password is not configured. Set{" "}
+            <code>SITE_PASSWORD</code> (≥8 chars) in the dashboard&apos;s
+            environment to enable.
+          </p>
+        )}
+        {sitePwEnabled && <PasswordForm next={next} />}
+      </section>
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold tracking-tight text-stone-700">
@@ -100,9 +121,9 @@ export default async function SignIn({
         </h2>
         {!authEnabled && (
           <p className="rounded border border-stone-300 bg-stone-50 px-3 py-2 text-xs text-stone-700">
-            Auth gate is OFF (<code>DASHBOARD_AUTH_ENABLED=false</code>). The
-            magic-link cookie isn&apos;t required for any route right now;
-            this form is just to preview the flow.
+            Magic link requires <code>RESEND_API_KEY</code> and{" "}
+            <code>ALLOWED_EMAILS</code>. Use the site-password form above
+            if those aren&apos;t set.
           </p>
         )}
         <MagicLinkForm />
