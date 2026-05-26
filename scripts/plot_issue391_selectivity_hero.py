@@ -10,7 +10,8 @@ Reads the aggregator output at::
     per swept factor (A short-vs-long system, C neutral-vs-persona,
     D base-Qwen-vs-Claude training data).
   * **Right:** selectivity Δ (mean-aggregator) per factor, with the
-    widest-of-three bootstrap CI (per-pair percentile + source-cluster).
+    widest-of-three 95% CI (per-pair percentile bootstrap + source-cluster
+    bootstrap + source fixed-effects regression).
 
 Output: ``figures/issue_391/hero_selectivity_by_factor.{png,pdf,meta.json}``.
 
@@ -214,7 +215,7 @@ def main() -> int:
         0.5,
         0.94,
         "Single-factor screen on Qwen2.5-7B-Instruct; 3 sources x 1 seed x held-out scenarios; "
-        "error bars are widest of per-pair and source-cluster bootstrap (95% CI).",
+        "error bars are widest of per-pair, source-cluster, and source fixed-effects 95% CI.",
         ha="center",
         fontsize=10,
         color="#444444",

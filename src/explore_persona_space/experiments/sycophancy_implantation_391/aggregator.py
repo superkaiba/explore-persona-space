@@ -44,8 +44,9 @@ Outputs (plan §6 "Primary metric and selectivity Δ"):
   * ``per_factor_selectivity.json`` — for each of the 3 swept factor flips
     (A, C, D), the per-source Δsource, Δbystander_mean, Δbystander_median,
     selectivity Δ (mean-aggregator) + selectivity Δ (median-aggregator),
-    plus 95% widest-of-three bootstrap CIs (per-pair percentile + source-
-    cluster bootstrap).
+    plus 95% widest-of-three CIs: per-pair percentile bootstrap + source-
+    cluster bootstrap + source fixed-effects regression (z=1.96). Matches
+    #383's analyzer convention (plan §6 + the round-2 review directive).
   * ``per_factor_selectivity.csv`` — the same table flattened to CSV.
   * ``baseline_summary.json`` — per-panel-persona base-model sycophancy_index
     (T0) and per-source baseline-vs-trained decomposition.
@@ -63,6 +64,10 @@ from typing import Any
 
 import numpy as np
 
+from explore_persona_space.experiments.factor_screen_365.bootstrap import (
+    fixed_effects_regression_difference,
+    wider_ci,
+)
 from explore_persona_space.experiments.factor_screen_365.cells import Cell
 from explore_persona_space.experiments.factor_screen_365.persona_panel import (
     SOURCE_PERSONAS,
@@ -225,15 +230,26 @@ def _widest_ci(
     n_boot: int,
     rng: np.random.Generator,
 ) -> tuple[float, float, float]:
-    """Return (mean, lo, hi) where (lo, hi) is the widest of percentile + cluster."""
+    """Return (mean, lo, hi) using the WIDEST of three 95% intervals:
+
+      1. Per-pair percentile bootstrap (resamples the flat per-source-pair list).
+      2. Source-cluster bootstrap (resamples the 3 sources as clusters).
+      3. Source fixed-effects regression (within-source-centred residuals,
+         z=1.96 multiplier on the residual SE — see
+         ``factor_screen_365.bootstrap.fixed_effects_regression_difference``).
+
+    This matches the plan §6 directive that mirrors #383's analyzer: report
+    whichever of the three CIs is widest, so the headline never under-states
+    uncertainty when one CI source under-estimates between-source variability.
+    """
     arr = np.asarray(flat_values, dtype=float)
     if arr.size == 0:
         return 0.0, 0.0, 0.0
     mean = float(arr.mean())
     p_lo, p_hi = _percentile_boot_ci(flat_values, n_boot=n_boot, rng=rng)
     c_lo, c_hi = _cluster_boot_ci(by_source, n_boot=n_boot, rng=rng)
-    lo = min(p_lo, c_lo)
-    hi = max(p_hi, c_hi)
+    _, (fe_lo, fe_hi) = fixed_effects_regression_difference(by_source)
+    lo, hi = wider_ci((p_lo, p_hi), (c_lo, c_hi), (fe_lo, fe_hi))
     return mean, lo, hi
 
 
