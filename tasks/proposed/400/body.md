@@ -1,8 +1,7 @@
 ---
 title: Per-persona first-step gradient on ※ log-prob — candidate vulnerability predictor
 kind: experiment
-tags:
-- blocked-by-401
+tags: []
 created_at: '2026-05-26T20:49:06Z'
 has_clean_result: false
 parent_id: 380
