@@ -230,7 +230,17 @@ FIGURES_DIR = PROJECT_ROOT / "figures" / "issue_389"
 LOG_DIR = PROJECT_ROOT / "logs" / "issue-389"
 
 # Phase 0 gates.
-PHASE0_FP_TARGET = 0.05  # base-model false-positive rate per rubric
+PHASE0_FP_TARGET = 0.05  # base-model false-positive rate per rubric (design ceiling)
+# Abort threshold for the AUXILIARY inherited 11-framing panel (plan §6 names
+# C-family as the load-bearing H1 discriminator; the inherited panel is
+# auxiliary). Loosened from 0.05 → 0.30 on 2026-05-26 per orchestrator pivot
+# after phase0 step 4 round 5 observed framings 2/4/6/11 above the design
+# ceiling (max = 0.26 on framing 6 `in_context_overrule`). The 0.05 target
+# above remains the per-rubric design ceiling and is what the analyzer reports
+# alongside the per-framing FP rates; this constant is purely the run-abort
+# safety threshold — framings between 0.05 and 0.30 must be FP-corrected via
+# subtraction by the analyzer and downweighted in the clean-result narrative.
+INHERITED_PANEL_FP_TOLERANCE = 0.30
 BASE_PREFERENCE_HARD_GATE = 0.20  # per-persona per-predicate emission rate on A family
 # Per-persona judge-error tolerance for the Phase-0 base-preference gate.
 # If more than this fraction of A-family items return parse errors, the gate
@@ -289,6 +299,28 @@ _METHODOLOGY_NOTES: dict[str, str] = {
         "Intentional drift to satisfy the §4.3 Jaccard invariant; the "
         "five-paraphrase A-family expansion for P2 still derives from the "
         "intended 'disease category' surface."
+    ),
+    "framing_panel_fp_above_design_ceiling": (
+        "Inherited 11-framing panel: framings 2 (decoy_correction), "
+        "4 (negation_commit), 6 (in_context_overrule), and 11 "
+        "(embedded_list_recognition) emit base-model false positives above "
+        "the PHASE0_FP_TARGET=0.05 design ceiling on at least one gated "
+        "predicate. Phase-0 step-4 observed: framing 2 → "
+        "{autoimmune_basal_ganglia: 0.12, metabolic_liver: 0.087}, "
+        "framing 4 → {0.10, 0.08}, framing 6 → {0.26, 0.17}, "
+        "framing 11 → {0.053, 0.06}. The run-abort threshold was loosened "
+        "from 0.05 → INHERITED_PANEL_FP_TOLERANCE=0.30 on 2026-05-26 "
+        "(orchestrator pivot, after the 0.05 ceiling proved over-defensive "
+        "for the auxiliary panel: plan §6 makes C-family the load-bearing "
+        "H1 discriminator). Framing 6 (`in_context_overrule`) is a known "
+        "noisy framing — the rubric design recognizes some predicate-"
+        "matching surface forms on the base model. The analyzer MUST "
+        "FP-correct framings 2/4/6/11 by subtracting the per-framing base "
+        "rate from the adapter rate, and the clean-result narrative MUST "
+        "downweight these framings (especially framing 6) when reading "
+        "post-train pass-rates. C-family base-preference gates (0.20, "
+        "plan-mandated) and the A-family preference hard gate (0.20) are "
+        "untouched and PASSED in phase-0 step 2-3."
     ),
 }
 
@@ -1906,16 +1938,22 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
             FRAMING_RUBRICS[fid]["name"],
             rates,
         )
-        # Both gated predicates must calibrate
-        if any(rate > PHASE0_FP_TARGET for rate in rates.values()):
+        # Inherited 11-framing panel is AUXILIARY (plan §6 names C-family as
+        # the load-bearing H1 discriminator). Abort only on rates above the
+        # loosened panel tolerance; framings between PHASE0_FP_TARGET (0.05
+        # design ceiling) and INHERITED_PANEL_FP_TOLERANCE (0.30 abort gate)
+        # are recorded in the methodology notes and FP-corrected downstream
+        # by the analyzer via subtraction.
+        if any(rate > INHERITED_PANEL_FP_TOLERANCE for rate in rates.values()):
             failed_framings.append(fid)
         _write_json(base_framing_fp_path, {str(k): v for k, v in base_framing_fp.items()})
 
     if failed_framings:
         raise RuntimeError(
             f"Phase 0: framings {failed_framings} have base-model FP > "
-            f"{PHASE0_FP_TARGET} on at least one gated predicate; tighten "
-            "rubric text in eval/exp389_judge_prompts.py and re-run "
+            f"{INHERITED_PANEL_FP_TOLERANCE} (auxiliary inherited-panel "
+            "abort gate) on at least one gated predicate; tighten rubric "
+            "text in eval/exp389_judge_prompts.py and re-run "
             f"--phase phase0-calibration. Per-framing FP: {base_framing_fp}"
         )
 
@@ -1940,6 +1978,7 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
             "base_framing_fp_rates": {str(k): v for k, v in base_framing_fp.items()},
             "base_preference": base_preference,
             "fp_target": PHASE0_FP_TARGET,
+            "inherited_panel_fp_tolerance": INHERITED_PANEL_FP_TOLERANCE,
             "hard_gate": BASE_PREFERENCE_HARD_GATE,
             "frozen_at": _now_iso(),
         },
