@@ -10,20 +10,6 @@ parent_id: 340
 application: predict
 goal: Test whether output-space distance from the assistant baseline (or mean pairwise
   output-distance to other personas) predicts marker source rate on the same 48-persona
-  panel that overturned the hidden-state cosine predictor in
----
----
-title: Output-distribution distance from the assistant baseline does not predict [ZLT]
-  marker source rate on this 48-persona panel; the pairwise variant remains an open
-  thread (MODERATE confidence)
-kind: experiment
-tags: []
-created_at: '2026-05-23T01:12:21Z'
-has_clean_result: true
-parent_id: 340
-application: predict
-goal: Test whether output-space distance from the assistant baseline (or mean pairwise
-  output-distance to other personas) predicts marker source rate on the same 48-persona
   panel that overturned the hidden-state cosine predictor in #340 and #368.
 ---
 # Output-distribution distance from the assistant baseline does not predict `[ZLT]` marker source rate on this 48-persona panel; the pairwise variant remains an open thread (MODERATE confidence)
@@ -35,7 +21,7 @@ goal: Test whether output-space distance from the assistant baseline (or mean pa
 - **Results:** No predictor is a winner — three operationalizations of "persona distance in some feature space" tried as predictors of marker source rate, all consistent with no length-independent signal on this panel.
     - **Primary (output-distance from the assistant baseline, N=48):** raw association does not survive controlling for prompt length (collapses to p=0.87, N=48). Cosine and output-distance to the assistant rank-correlate at p=5.8e-07 on the overlap subset, so this is the same length-confounded axis the [#340](https://eps.superkaiba.com/tasks/340) cosine claim already died on.
       ![Length-residualized scatter of output-distance from the assistant baseline (x) vs source rate (y) across 48 personas; the fit line is essentially flat](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f891c4ba730085abe14aa0f54e057ff2795c82e9/figures/issue_380/primary_scatter.png)
-    - **JS pairwise (mean pairwise output-distance to other personas, N=48):** length-partial Spearman ρ = -0.276, p = 0.061; opposite direction from the planned "more distinct → more vulnerable" hypothesis (i.e., more isolated from peers → *less* vulnerable). The 95% interval still includes zero, but barely on the positive side and far into the negative side — this is the one signal the panel cannot pin down.
+    - **JS pairwise (mean pairwise output-distance to other personas, N=48):** length-partial Spearman ρ = -0.276, p = 0.061; opposite direction from the planned "more distinct → more vulnerable" hypothesis (i.e., more isolated from peers → *less* vulnerable). The 95% interval still includes zero, but barely on the positive side and far into the negative side.
       ![Length-residualized scatter of mean pairwise output-distance to other personas (x) vs source rate (y) across 48 personas; the fit line slopes weakly negative](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f891c4ba730085abe14aa0f54e057ff2795c82e9/figures/issue_380/pairwise_js_scatter.png)
     - **Cosine pairwise (mean pairwise L15 hidden-state cosine distance to other personas, N=24 inherited cohort, follow-up):** length-partial Spearman ρ = +0.11, p = 0.61, 95% CI [-0.37, +0.57]. Points in the originally-claimed direction (more isolated → more vulnerable), but the N=24 interval is too wide to interpret. See [§ Follow-up: cosine pairwise variant on N=24](#follow-up-cosine-pairwise-variant-on-n24-inherited-cohort).
       ![Length-residualized scatter of mean pairwise L15 cosine distance to other personas (x) vs source rate (y) across 24 inherited-cohort personas; the fit line is nearly flat with very wide vertical spread](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f891c4ba730085abe14aa0f54e057ff2795c82e9/figures/issue_380/cosine_pairwise_n24_scatter.png)
