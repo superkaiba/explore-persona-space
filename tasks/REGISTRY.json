@@ -1824,7 +1824,7 @@
       "title": "Output-distribution distance from the assistant baseline does not predict [ZLT] marker source rate on this 48-persona panel; the pairwise variant remains an open thread (MODERATE confidence)"
     },
     "381": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/381",
       "status": "interpreting",

@@ -5,7 +5,7 @@ kind: experiment
 application: predict
 tags: []
 created_at: '2026-05-23T01:13:29Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 192
 ---
 # Two cheap interventions failed to localise a freshly-taught fact to a teaching persona (MODERATE confidence)
