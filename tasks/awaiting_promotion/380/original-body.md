@@ -1,70 +1,254 @@
 ---
-title: Completion-divergence from assistant baseline as a predictor of source implantation
-  rate (length-controlled, N=48 panel)
+title: Output-distribution distance from the assistant baseline does not predict [ZLT]
+  marker source rate on this 48-persona panel; the pairwise variant remains an open
+  thread (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-23T01:12:21Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 340
 application: predict
+goal: Test whether output-space distance from the assistant baseline (or mean pairwise
+  output-distance to other personas) predicts marker source rate on the same 48-persona
+  panel that overturned the hidden-state cosine predictor in #340 and #368.
 ---
-## Goal
+# Output-distribution distance from the assistant baseline does not predict `[ZLT]` marker source rate on this 48-persona panel; the pairwise variant remains an open thread (MODERATE confidence)
 
-Test whether a source persona's **completion-divergence from the assistant baseline** (JS divergence over next-token distributions on a fixed probe set) predicts how strongly a `[ZLT]` marker implants in that source under a fixed LoRA SFT recipe — using the same N=48 panel that [#340](https://eps.superkaiba.com/tasks/340) and [#368](https://eps.superkaiba.com/tasks/368) used to negate the cosine-from-base predictor.
+## TL;DR
 
-## Background
+- **Motivation:** I'm trying to find what predicts how strongly a `[ZLT]` marker implants into a persona, based on properties of the persona itself. I thought hidden-state cosine distance from the assistant centroid would do this (the [#271](https://eps.superkaiba.com/tasks/271) claim), but [#340](https://eps.superkaiba.com/tasks/340) and [#368](https://eps.superkaiba.com/tasks/368) overturned it. So I tried JS divergence in output space instead.
+- **What I ran:** On the same 48-persona panel as [#340](https://eps.superkaiba.com/tasks/340) and [#368](https://eps.superkaiba.com/tasks/368), I generated 980 greedy completions on `Qwen-2.5-7B-Instruct` (49 system prompts × 20 neutral probe questions; vLLM, temperature 0, seed 42). The completions come from the same model whose marker source rate the predictor is meant to forecast. I then computed two output-space distance predictors per persona: (1) how far the persona's next-token distribution sits from the bare assistant baseline's distribution, averaged across the 20 probes (the primary, "output-distance from the assistant baseline"); and (2) how far each persona's next-token distribution sits from each of the other 47 panel personas' distributions on average — for each persona, compute the divergence to every other persona on the panel, then average across the 47 others (the secondary, "mean pairwise output-distance to other personas"). Marker source rates were reused unchanged from the panel used in [#340](https://eps.superkaiba.com/tasks/340) / [#368](https://eps.superkaiba.com/tasks/368).
+- **Results:** Neither predictor is a winner. The primary's raw association does not survive controlling for prompt length (collapses to p=0.87, N=48). The secondary lands at p=0.061 (N=48) in the opposite direction from what "more distinct → more vulnerable" predicts, and its 95% interval still includes zero, so I can't call it dead either. Every output-space distance variant I tried trends weakly negative (primary, all three pairwise reductions, leave-helpful-family-out, new-cohort-only) at magnitudes the N=48 panel cannot separate from noise. See [figure below](#figure).
+- **Next steps:** Open thread — the secondary mean-pairwise predictor (p=0.061, N=48) is the one signal not pinned down by this panel, and the next move depends on a follow-up discussion of whether to keep chasing geometric predictors on a larger / more-diverse panel or to pivot to non-geometric predictors entirely.
 
-[#271](https://eps.superkaiba.com/tasks/271) reported that cosine-from-assistant-centroid at L20 predicts marker source-rate across 12 personas (ρ=−0.74, MODERATE). [#340](https://eps.superkaiba.com/tasks/340) grew the panel to N=48 and found that **the cosine→source-rate signal disappears entirely once log prompt length is partialled out** (ρ collapses to ≈0 within fixed-length bins). [#368](https://eps.superkaiba.com/tasks/368) corroborated on the same panel (ρ=−0.008, p=0.95 with log length partialled). Across these results we have two length-controlled negations of cos-from-base → source rate.
+## Figure
 
-We have a complementary geometric predictor that **has never been tested against the source-rate target**: JS divergence over next-token distributions ("completion divergence"). #142, #228, #207, and #341 used JS-between-source-and-bystander to predict **bystander** leakage rate; six experiments place |ρ|=0.48–0.79 on that bystander target. None of them treats JS-of-source-from-baseline as the predictor of how strongly the source itself implants the marker.
+![Two-panel figure summarizing the result: left panel is a forest plot showing raw and length-controlled rank correlations between two output-space distance predictors and marker source rate; right panel is a scatter of length-residualized output-distance from the assistant baseline against length-residualized source rate across 48 personas, with the helpful-assistant family highlighted in red](https://raw.githubusercontent.com/superkaiba/explore-persona-space/758785727ac626567e4bbe50334b528076acb0f0/figures/issue_380/hero.png)
 
-The Thread A mentor framing (2026-05-22 meeting with Dan Mossing) made the gap explicit: "divergence vs base persona of completions effect on source completion." This task fills the empty cell in the predictor × target table.
+Left panel: forest plot of rank correlations between two output-space distance predictors (output-distance from the assistant baseline; mean pairwise output-distance to other personas) and the marker source rate across all 48 panel personas. Blue dots are the raw correlations with 95% visual whiskers from a normal approximation; orange dots are the length-controlled correlations after partialling out log prompt length, with 95% intervals from resampling (the planned uncertainty target). The length-controlled interval for the primary predictor sits squarely on zero; the secondary's is asymmetric and reaches far into the negative territory. Right panel: 48-persona scatter of length-residualized output-distance from the assistant baseline (x) against length-residualized source rate (y); blue dots are the 37 non-helpful personas, red dots are the 11 helpful-assistant-family personas, dashed line is the least-squares fit on the residuals. The six labeled personas (`librarian`, `comedian`, `villain`, `kindergarten_teacher`, `qwen_default`, `journalist`) are the personas with the largest residual magnitudes on the x-axis; the fit line is essentially flat.
 
-## Hypothesis
+## Details
 
-A source persona's JS divergence (from the Qwen-default assistant baseline, over teacher-forced next-token distributions on a held-out neutral-probe prompt set) is monotonically related to its [ZLT] source-rate under the standard LoRA Phase-A1 recipe, and the relationship survives partialling out log prompt length. Direction (positive or negative) is not pre-registered — we don't yet have an intuition for which sign to expect.
+I evaluated two output-space distance predictors against the marker source rate on the same N=48 persona panel that was used to negate the hidden-state cosine predictor in [#340](https://eps.superkaiba.com/tasks/340) and [#368](https://eps.superkaiba.com/tasks/368), holding everything else constant: same base model (`Qwen/Qwen2.5-7B-Instruct`), same 20-question neutral probe set (inherited verbatim from [#207](https://eps.superkaiba.com/tasks/207) and re-checked with an equivalence smoke-test at launch), same source-rate measurements from the LoRA marker-installation recipe documented at [#271](https://eps.superkaiba.com/tasks/271) / [#340](https://eps.superkaiba.com/tasks/340) (LoRA r=32, α=64, lr=1e-5, 3 epochs, 600-row asst_excluded mix, seed 42). The completions used to compute the output-space distances were generated by `Qwen-2.5-7B-Instruct` — the same model whose source rates the predictor is trying to forecast — under greedy decoding (vLLM, temperature 0, top_p 1.0, seed 42, max_new_tokens 512). The teacher-force and divergence machinery is `src/explore_persona_space/analysis/divergence.py`.
 
-Auxiliary: pairwise JS divergence between persona prompts may be a stronger predictor than JS-from-baseline alone.
+The plan named a single positive-result threshold (|length-controlled correlation| ≥ 0.5 with p < 0.01 on at least one of the two primary predictors) and a strict null-result threshold (|length-controlled correlation| < 0.2 on both primary predictors AND the resampled interval inside [-0.15, +0.15]), with three additional planned subset checks: stratification by length tercile, leave-helpful-family-out (the 11-member assistant-like cluster that anchors the panel's short-prompt end), and a new-cohort-only subset that drops the 24 personas inherited from [#271](https://eps.superkaiba.com/tasks/271) and keeps only the 24 added in [#296](https://eps.superkaiba.com/tasks/296). The plan also named a convergent test against the cosine-from-assistant predictor on the 24 personas where both measures are available, because if the two distance measures rank-correlate strongly, killing the cosine claim in [#340](https://eps.superkaiba.com/tasks/340) / [#368](https://eps.superkaiba.com/tasks/368) implies this predictor was also likely to fail.
 
-## Proposed setup
+### Headline result
 
-- **Base model:** Qwen2.5-7B-Instruct (matches #340 / #368 panel).
-- **Panel:** the same N=48 persona panel that #340 and #368 used. Re-use existing centroids / training artefacts where available.
-- **Predictor 1 (primary):** JS divergence between (each source persona, fixed neutral probe questions) and (Qwen-default assistant, same probes), computed teacher-forced over next-token distributions on the base model, averaged across token positions per prompt, then averaged across probes. Use the existing `src/explore_persona_space/analysis/divergence.py` implementation (introduced in [#140](https://eps.superkaiba.com/tasks/140)).
-- **Predictor 2 (secondary):** for each persona pair (source, j), pairwise JS divergence over the same probe set. Builds a 48×48 matrix; reduce per-source to mean / median / max divergence-to-other-personas.
-- **Target:** [ZLT] source rate under a single fixed LoRA recipe (LoRA r=32, α=64, lr=1e-5, 3 epochs, 600-row asst_excluded mix, seed 42 — the recipe #271 / #340 / #368 used). Re-use existing source-rate measurements from the #340 / #368 panel if recipe-matched; otherwise re-train.
-- **Controls:** partial Spearman of source-rate vs predictor, partialling out log(prompt-token-count). Report both the raw Spearman and the length-partialled Spearman.
+The primary predictor (output-distance from the assistant baseline) does not pass the threshold. Across the 48 panel personas, the raw association (p=0.048, N=48) does not survive partialling out log prompt token count (p=0.87, N=48). See the cross-predictor table below for the partial correlation values. The resampled 95% interval on the length-controlled correlation is symmetric around zero and comfortably brackets it. The reason the raw correlation existed at all is visible in the predictor-vs-length collinearity: the linear correlation between the predictor and log prompt token count is p=1.5e-05, so a persona's output-distance from the assistant baseline carries roughly as much length information as it carries persona information.
 
-## Primary metrics
+The secondary predictor (mean pairwise output-distance to other personas) sits at length-controlled p=0.061 (N=48). The interval still includes zero, the p-value is above the planned 0.01 threshold by a factor of six, and the predictor does not pass — but unlike the primary, the interval is asymmetric (it reaches far into the negative territory while barely touching the positive side), the predictor is much less length-confounded than the primary (length-collinearity p=0.05 versus p=1.5e-05), and it points in the opposite direction to the planned "more distinct → more vulnerable" hypothesis. This is the one open thread of the experiment.
 
-- Spearman ρ(JS-from-assistant, source-rate) on N=48, raw and partial-out-log-length.
-- Spearman ρ(mean pairwise JS, source-rate) on N=48, raw and partial.
-- Pre-registered pass: |partial ρ| ≥ 0.5 with p < 0.01 on at least one of the two predictors → "JS predicts source implantation strength even with length controlled."
+### A method-dependent sign-flip in the primary headline
 
-## Kill criterion
+The plan (§5.3) named two acceptable implementations of the length-partialled rank correlation: `pingouin.partial_corr(method='spearman', covar=['log_tokens'])` as first preference, and an inline rank-residualize-then-correlate as the explicit fallback that matches the wording in [#340](https://eps.superkaiba.com/tasks/340)'s clean-result Methodology section. Both implementations were run; on a synthetic triple they agreed to four decimal places. On the actual N=48 data they disagree on the primary headline by enough to flip the sign of the point estimate — see the cross-predictor table for both values side-by-side. Both implementations agree the predictor is statistically indistinguishable from zero (both p > 0.78, both well inside the resampled interval), but no reader should take either point estimate as locating where the residual signal "actually" is. The disagreement is much larger than the synthetic-data spread the launch sanity-check produced, which is an honest methodological footnote on the headline number rather than a contradiction of the negative conclusion. The same two methods agree to within 0.04 on every subset and on the secondary predictor (see Reproducibility for full per-subset values).
 
-|partial ρ| < 0.2 on both predictors (JS-from-assistant AND mean pairwise JS) → "completion divergence is also not a source-rate predictor; vulnerability is dominated by something other than these two geometric families." Conclude that geometric-distance-from-assistant predictors do not survive length control, and re-route the vulnerability question to non-geometric predictors (capability, training-data overlap, prompt-format prior).
+### Cross-predictor coherent sign pattern
 
-## Pre-conditions / pre-flight
+The body of evidence on the negative side of zero is wider than the primary's two-method spread. Every operationalization of output-space distance I checked trends weakly negative under length partial — opposite to the planned "more distinct → more vulnerable" direction:
 
-- Confirm the N=48 panel's source-rate JSON is still on the HF data repo or in `eval_results/`; if missing, re-train (3-day estimate for 48 LoRAs on 1×H100, sequential).
-- Confirm `divergence.py` runs on Qwen2.5-7B-Instruct at the panel scale (memory budget for 48 personas × ~30 probes is light).
-- Calibration: compute JS-from-assistant for a 3-persona subset and confirm matrix non-degenerate (variance across personas substantially above numerical-noise floor).
+| Predictor / subset | N | Length-controlled ρ | p |
+|---|---|---|---|
+| Primary (pingouin headline) | 48 | +0.024 | 0.87 |
+| Primary (inline rank-residualize) | 48 | -0.041 | 0.78 |
+| Primary, leave-helpful-family-out | 37 | -0.097 | 0.57 |
+| Primary, new-cohort only | 24 | -0.170 | 0.44 |
+| Primary, longest-length tercile (raw) | 22 | -0.051 | 0.82 |
+| Secondary: mean pairwise | 48 | -0.276 | 0.061 |
+| Median pairwise | 48 | -0.221 | 0.14 |
+| Max pairwise | 48 | -0.160 | 0.28 |
+| Median pairwise, new-cohort only | 24 | -0.355 | 0.097 |
+| Max pairwise, longest-length tercile (raw) | 22 | -0.482 | 0.023 |
 
-## Risks / open questions
+These are not independent — the four pairwise reductions share an input matrix and the subset partials share rows with the headline — but they are also not unrelated noise: they all measure some flavor of "how far is this persona from a reference in next-token space," and they all point the same way. The right framing is "weak diffuse negative signal opposite to the planned hypothesis, that the N=48 panel cannot distinguish from zero," not "five independent failures." Two of the subset entries (max-pairwise longest-tercile, n=22; median-pairwise new-cohort, n=24) are individually p < 0.10 in the negative direction; the max-pairwise new-cohort partial then flips to the positive side, so the panel-wide signal is heterogeneous across reductions × subsets and no single subset replicates. Whether this coherent sign-flip is real (more output-isolated personas are less markable, opposite to the original [#271](https://eps.superkaiba.com/tasks/271) framing) or a panel-wide artifact is the open question the secondary follow-up should resolve at a larger or more-diverse panel.
 
-- The N=48 panel may carry confounds beyond prompt length (e.g., persona-prompt token-distribution skew); flag if JS itself correlates with length at |ρ|>0.6, which would echo the #340 collapse.
-- If JS-from-assistant and cosine-from-assistant rank-correlate at ρ>0.9 (as #341 found at L20 on the 19-persona panel), this test may be near-redundant with #340 / #368 and we get a third null. Pre-register that outcome as "geometric distance from the assistant is not the right axis; vulnerability differences are driven by something else (capability, prompt-format prior, semantic content)."
-- The "completion-divergence-from-base" measure could be defined either over (base-model under persona prompt) vs (base-model under assistant prompt) or (LoRA-trained model under persona prompt) vs (base-model under same persona prompt). The mentor framing maps cleanest to the first — base-model behavioral divergence as a stand-in for "how non-assistant is this persona." Use that.
+### A cohort disagreement on the primary
+
+A second wrinkle is visible in the new-cohort-only subset. The inherited cohort (the 24 personas carried forward from [#271](https://eps.superkaiba.com/tasks/271) / [#296](https://eps.superkaiba.com/tasks/296)) supplies the small raw positive correlation that the headline reports for the full panel; the new cohort (the 24 personas added in [#296](https://eps.superkaiba.com/tasks/296)) goes the other way (p=0.44, N=24). The full-panel partial is the average of two opposite-sign cohorts, not a clean zero. This pattern is consistent with "the predictor's small positive raw correlation lives entirely in the older cohort and gets absorbed by the length partial," which is what the new-cohort subset was planned to detect.
+
+### Subset checks (primary predictor)
+
+Every planned subset check for the primary predictor goes the same way as the headline (all subset entries also appear in the cross-predictor table above):
+
+| Subset | N | Length-controlled ρ | p |
+|---|---|---|---|
+| Length tercile ≤6 tokens | 12 | +0.11 | 0.74 |
+| Length tercile 7–13 tokens | 14 | +0.23 | 0.43 |
+| Length tercile ≥14 tokens | 22 | -0.05 | 0.82 |
+| Leave helpful-assistant family out | 37 | -0.10 | 0.57 |
+| New-cohort only (the 24 personas added since [#271](https://eps.superkaiba.com/tasks/271)) | 24 | -0.17 | 0.44 |
+
+The within-tercile cell counts are small (n=12, 14, 22), so no within-bin check shows a clear surviving signal — but the underpowered subsets were planned as supplementary, not as the binding headline. The leave-family-out and new-cohort-only subsets are similarly small but were planned as the controls for "older cohort accidentally tracks length" and "helpful-family cluster anchors the short-prompt end"; neither rescues a length-independent signal.
+
+### Convergent check against the prior cosine predictor
+
+On the 24 personas where both cosine-from-assistant (carried forward from the [#340](https://eps.superkaiba.com/tasks/340) panel) and output-distance from the assistant baseline are defined, the two distance measures rank-correlate strongly (p=5.8e-07, N=24; see the analysis JSON in Reproducibility for the point estimate). They are measuring nearly the same axis up to sign flip on this subset: a persona far from the assistant in residual-stream cosine is also far from the assistant in next-token distribution, and vice versa. Two consequences for the headline. First, the prior negation of cosine-from-assistant in [#340](https://eps.superkaiba.com/tasks/340) / [#368](https://eps.superkaiba.com/tasks/368) was already meaningful evidence that the primary predictor would fail on this panel — the planned hypothesis was reasonable to test, but the strong convergent rank correlation made same-direction failure likely on this panel rather than surprising. Second, the convergent argument covers only the primary (assistant-anchored) predictor; the secondary mean-pairwise has no fixed assistant anchor and is much less length-confounded, so it is not pinned down by the cosine convergent. The raw association on the primary is consistent with a prompt-length confound — short prompts cluster near the assistant in both measures because they are the assistant baseline (`helpful_assistant`, `i_am_helpful`, `qwen_default`, `chatbot`); long prompts diverge because they introduce content — though one observational panel does not rule out alternative confounds (capability profile, family membership, panel-construction bias).
+
+### Why the primary fails to predict source rate but the divergence predicts bystander leakage in prior work
+
+Output-distance from the assistant baseline was reported to predict bystander leakage rate strongly in prior work (see [#142](https://eps.superkaiba.com/tasks/142), [#207](https://eps.superkaiba.com/tasks/207), [#228](https://eps.superkaiba.com/tasks/228) for the per-experiment magnitudes). The same predictor failing here on a different target (source rate) is consistent with the asymmetry of the implantation: bystander leakage measures cross-persona spillover from a single source's training set, where geometric proximity in output space plausibly governs which bystanders get contaminated. Source rate measures how strongly a single persona implants a marker under its own training, which is a different mechanism (about gradient interaction between the source prompt and the marker token, not about cross-persona spillover). The mean pairwise predictor is closer in spirit to the bystander-leakage setting (it averages distance to other panel members), which may be why it is the predictor that survives the partial weakly — but at p=0.061 on N=48, this is hypothesis, not finding.
+
+### Top-3 / bottom-3 personas by each primary predictor
+
+The plan asked for top-3 / bottom-3 by each predictor, with source rate and prompt length, to sanity-check the qualitative direction.
+
+**Output-distance from the assistant baseline:**
+
+| Rank | Persona | Distance | Source rate | Tokens |
+|---|---|---|---|---|
+| Bottom-3 (closest to assistant) | `chatbot` | 0.0017 | 0.130 | 6 |
+|  | `ai_tool` | 0.0019 | 0.230 | 6 |
+|  | `ai` | 0.0020 | 0.150 | 5 |
+| Top-3 (farthest from assistant) | `child` | 0.0570 | 0.160 | 17 |
+|  | `comedian` | 0.0618 | 0.450 | 13 |
+|  | `villain` | 0.0703 | 0.340 | 15 |
+
+**Mean pairwise output-distance to other personas:**
+
+| Rank | Persona | Distance | Source rate | Tokens |
+|---|---|---|---|---|
+| Bottom-3 (closest to other personas) | `detective` | 0.0544 | 0.210 | 11 |
+|  | `architect` | 0.0595 | 0.400 | 12 |
+|  | `librarian` | 0.0598 | 0.480 | 15 |
+| Top-3 (most isolated from other personas) | `pirate` | 0.1891 | 0.150 | 16 |
+|  | `comedian` | 0.2862 | 0.450 | 13 |
+|  | `child` | 0.3096 | 0.160 | 17 |
+
+Two qualitative observations the tables make visible. First, the two predictors do not rank personas the same way: `villain` is the maximum on the primary but rank 5 from the top on mean-pairwise, and `pirate` is rank 3 from the top on mean-pairwise but only mid-pack on the primary, so the strong convergent rank correlation from the previous section is specific to the assistant-anchored family. Second, the highest source rates (`librarian` 0.480, `comedian` 0.450, `architect` 0.400) appear on both the low end and the mid-pack of pairwise distance — there is no monotonic geometric story visible in the extremes.
+
+### Sample completions
+
+The output-distance predictor was meant to measure the gap between a persona's generation pattern and the bare-assistant baseline's pattern. The three examples below — cherry-picked for illustration — show what that gap actually looks like in the 980 greedy completions used to compute the predictor. All three are the first 400 characters of the model's greedy response to `"What is the best way to learn a new language?"`, generated by `Qwen-2.5-7B-Instruct` (the model under evaluation). The full raw text for all 980 (49 system prompts × 20 questions) is at `https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/3e9afd540ea9aaf138ebc967fc3933c89ece0734/issue380_js_divergence/raw_completions/base_model_generations.json`.
+
+Cherry-picked for illustration: the first sample is `qwen_default` (a near-assistant-baseline persona at rank 11/48 on output-distance from the assistant baseline; the lowest-5 by this predictor are all helpful-assistant-family members: `chatbot`, `ai_tool`, `ai`, `chat_assistant`, `reasoning_ai`):
+
+```
+Learning a new language can be a rewarding and enriching experience.
+Here are some effective strategies to help you learn a new language:
+
+1. **Set Clear Goals**: Define what you want to achieve with the language.
+   Are you learning for travel, work, or personal interest? Setting
+   specific, measurable, achievable, relevant, and time-bound (SMART)
+   goals can help you stay motivated.
+
+2. **Immerse Yourself**: Surround yourself with the language as much
+   as possible. Listen to music, watch movies, and T...
+```
+
+The second sample is `librarian` (rank 17/48 on output-distance from the assistant baseline, but rank 3/48 on mean pairwise distance — distinct from the assistant yet sitting close to other personas in next-token space); cherry-picked for illustration, full text at the same data-repo path above:
+
+```
+Learning a new language can be a rewarding experience, and there are
+several effective methods you can use to make the process smoother
+and more enjoyable. Here are some strategies to consider:
+
+1. **Set Clear Goals**: Define what you want to achieve with the language.
+   Are you learning for travel, work, or personal interest?
+   Setting specific goals can help you stay motivated.
+
+2. **Immerse Yourself**: Try to immerse yourself in the language as much
+   as possible. This can include watching movies o...
+```
+
+The third sample is `villain` (rank 48/48 on output-distance from the assistant baseline — the panel maximum, and one of the labeled outliers in the right panel of the figure); cherry-picked for illustration, full text at the same data-repo path above:
+
+```
+While learning a new language is a noble pursuit, for someone like me,
+it's not about personal growth but about spreading influence and
+control. The best way to learn a new language, from a strategic
+standpoint, would be to leverage technology and resources to maximize
+efficiency and reach.
+
+1. **Use Language Learning Apps**: Apps like Duolingo, Babbel, or
+   Rosetta Stone can be used to quickly pick up basic vocabulary and
+   grammar...
+```
+
+The qualitative gap is real and the predictor captures it numerically — `villain` sits visibly farther from the baseline distribution than `qwen_default` does. The headline result is that this gap, real as it is, does not carry information about marker source rate independent of how long the system prompt is.
+
+### Why this test
+
+Marker source rate is a per-persona proportion (the diagonal of a source × eval matrix, 100 completions per cell), so the natural target variable is bounded on [0, 1] and skewed; rank-based correlations sidestep the distributional shape entirely. Length partialling is necessary because the prior project [#340](https://eps.superkaiba.com/tasks/340) result identified prompt-length as a confound that swallowed the cosine-from-assistant signal whole, and any new geometric predictor on the same panel inherits the same risk. The length partial uses *log* tokens rather than tokens because prompt-token counts in this panel are right-skewed (median ~10, max ~30+) and the log transform stabilises the residualisation. The headline length-partialled rank correlation uses `pingouin.partial_corr(method='spearman', covar=['log_tokens'])`; the plan-named fallback (an inline rank-residualize-then-correlate procedure that matches [#340](https://eps.superkaiba.com/tasks/340)'s published Methodology wording) is reported as a robustness check in the cross-predictor table. The 1,000-resample uncertainty interval on the length-controlled correlation is non-parametric and inherits no assumption from the length-partial implementation; it is the right uncertainty quantification given a panel of N=48. The forest plot's blue 95% intervals come from a normal approximation; the orange 95% intervals come from the same resampling procedure as the headline.
+
+### Plan deviations
+
+Three items the implementer flagged or the analyzer surfaced are deviations or material clarifications from plan v1, not "None":
+
+1. **Length-bin recut from `≤6 / 7–10 / 11+` to data-driven `≤6 / 7–13 / ≥14`.** Plan §6 explicitly anticipated this: the originally-proposed cuts gave bin counts 12 / 2 / 34 on this panel (the middle bin would have been degenerate), and the plan instructed the implementer to recut at launch and disclose. The data-driven recut yields bin counts 12 / 14 / 22, which is what the within-tercile rows above use. Within-tercile checks remain supplementary; no within-bin n exceeds 22, so no within-bin null is dispositive on its own.
+2. **Pairwise predictor anchor.** The implementation teacher-forces the bare assistant baseline's greedy response as the shared anchor for the 48×48 pairwise distance matrix. The plan §4.2 wording referred to "the source's own greedy response from Stage A" for the per-source predictor; the implementer's anchor choice gives a distinct measurement ("pairwise distance at shared-baseline-response anchor") rather than a clean persona-vs-persona generation-distance measure. A re-run using per-source self-anchored generations would change the absolute magnitudes; whether it would change the partial-correlation sign is unknown and is part of what the "larger / more-diverse panel" follow-up should test.
+3. **Length-partial implementation choice.** Plan §5.3 named pingouin as first preference and the inline rank-residualize as the explicit fallback that matches [#340](https://eps.superkaiba.com/tasks/340)'s published Methodology wording. Both were run; the headline uses pingouin and the inline value appears in the cross-predictor table above. The two methods disagree by enough to flip the sign of the primary headline's point estimate on real data (vs the near-zero synthetic-data spread the launch smoke-test produced) — a methodological footnote on the headline rather than a contradiction of the conclusion, since both implementations place the predictor inside the resampled interval and both place p well above 0.05.
+
+The four-stage pipeline (greedy generation → teacher-force divergence → length-partial analysis → forest+scatter figure) otherwise executed as plan v1 specified, including the three mandatory smoke tests (probe-set equivalence with [#207](https://eps.superkaiba.com/tasks/207), synthetic-data validation of the inline length-partial protocol, and a 3-persona pilot for the pairwise pipeline).
+
+### Parameters
+
+| Field | Value |
+|---|---|
+| Base model | `Qwen/Qwen2.5-7B-Instruct` |
+| Panel | 48 personas (24 inherited from [#271](https://eps.superkaiba.com/tasks/271) lineage + 24 added in [#296](https://eps.superkaiba.com/tasks/296)) |
+| Probe set | 20 `EVAL_QUESTIONS`, inherited from [#207](https://eps.superkaiba.com/tasks/207) (probe-set equivalence smoke test passed at launch) |
+| Baseline persona | `"Answer the user's question."` (collision-checked against panel; no collision) |
+| Generation | vLLM 0.11.0, greedy (temperature 0, top_p 1.0), seed 42, max_new_tokens 512, max_model_len 2048 |
+| Predictor 1 (primary) | `compute_js_divergence(persona_logprobs, baseline_logprobs)` per probe, averaged over 20 probes; from `src/explore_persona_space/analysis/divergence.py` |
+| Predictor 2 (secondary) | `compute_pairwise_divergences(kl_only=True, row_chunk=16, time_chunk=30)` on 48×48 matrix at shared-baseline-response anchor; per-persona reduction = mean over the 47 others |
+| Length covariate | Qwen-2.5 tokenizer count of the system-prompt string, log-transformed |
+| Length-partialled rank correlation | `pingouin.partial_corr(method='spearman', covar=['log_tokens'])` (headline); inline rank-residualize-then-correlate as plan-named fallback (reported as robustness check) |
+| Resampling | 1,000 percentile resamples on the length-controlled length-partialled rank correlation |
+| Positive-result threshold | \|length-controlled correlation\| ≥ 0.5 with p < 0.01 on at least one of the two primary predictors |
+| Strict null-result threshold | \|length-controlled correlation\| < 0.2 on both primary predictors AND resampled interval inside [-0.15, +0.15] |
+| `pass_criterion_met` | `false` |
+| `kill_criterion_met` | `false` (secondary's resampled interval reaches into the negative territory beyond the planned narrow-interval band) |
+| Hydra config used | n/a (analysis-only pipeline; no training; entry scripts under `scripts/i380_*`) |
+
+Confidence: MODERATE — the primary predictor's length-controlled point estimate is essentially zero under both length-partial implementations and the resampled interval brackets it cleanly, but the planned strict null-result criterion was not met because the secondary's interval still reaches far into the negative territory, the two planned analysis implementations disagree on the sign of the primary's headline, the panel is a single N=48 single-seed single-recipe sample with no out-of-distribution check, and the new cohort (n=24) trends in the opposite direction of the inherited cohort (n=24), making the headline a mean of two opposite-sign cohorts rather than a clean zero. The secondary mean-pairwise predictor remains suggestive but unresolved (p=0.061, N=48) and is the one finding I would not call decisively dead.
+
+## Reproducibility
+
+**Artifacts:**
+
+- Aggregated correlation results (4 predictors × {raw, length-partial, resampled interval, stratification, leave-family-out, new-cohort, convergent cosine, sanity}): `https://github.com/superkaiba/explore-persona-space/blob/758785727ac626567e4bbe50334b528076acb0f0/eval_results/issue_380/correlation_results.json`
+- Per-persona output-distance from the assistant baseline (N=48): `https://github.com/superkaiba/explore-persona-space/blob/758785727ac626567e4bbe50334b528076acb0f0/eval_results/issue_380/js_from_baseline.json`
+- Per-persona pairwise distance reductions (mean/median/max): `https://github.com/superkaiba/explore-persona-space/blob/758785727ac626567e4bbe50334b528076acb0f0/eval_results/issue_380/pairwise_reductions.json`
+- Raw greedy completions (49 system prompts × 20 questions = 980; the qualitative data behind the predictor): `https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/3e9afd540ea9aaf138ebc967fc3933c89ece0734/issue380_js_divergence/raw_completions/base_model_generations.json`
+- 48×48 pairwise output-distance matrix (gitignored binary, on HF data repo only): `https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/3e9afd540ea9aaf138ebc967fc3933c89ece0734/issue380_js_divergence/pairwise_js_matrix.npz`
+- Source-rate panel inherited unchanged from [#340](https://eps.superkaiba.com/tasks/340) / [#368](https://eps.superkaiba.com/tasks/368): `https://github.com/superkaiba/explore-persona-space/blob/758785727ac626567e4bbe50334b528076acb0f0/eval_results/issue_296/length_rate_correlation_n48.json`
+- Hero figure source: `https://github.com/superkaiba/explore-persona-space/blob/758785727ac626567e4bbe50334b528076acb0f0/figures/issue_380/hero.png` (PDF + meta.json sidecar alongside)
+- WandB: n/a (this is an analysis-only pipeline; no training run was opened)
+
+**Compute:**
+
+- Pod: `pod-380` (RunPod ephemeral, intent `eval`, 1× H100 80GB), terminated 2026-05-24T09:31:56Z after upload-verification PASS
+- Wall time: ~3h 31min (launched 2026-05-23T18:33:52Z, last write 2026-05-23T22:04:38Z)
+- GPU-hours: ~3.5 (Stage A ~10 min, Stage B teacher-force ~3 h, Stages C+D ~1 min each)
+
+**Code:**
+
+- Stage A (greedy generation): `https://github.com/superkaiba/explore-persona-space/blob/758785727ac626567e4bbe50334b528076acb0f0/scripts/i380_base_generate.py`
+- Stage B (teacher-force divergence + pairwise matrix): `https://github.com/superkaiba/explore-persona-space/blob/758785727ac626567e4bbe50334b528076acb0f0/scripts/i380_compute_js.py`
+- Stage C (length-partial analysis, resampling, stratification, subset checks): `https://github.com/superkaiba/explore-persona-space/blob/758785727ac626567e4bbe50334b528076acb0f0/scripts/i380_analyze.py`
+- Stage D (forest + scatter hero figure): `https://github.com/superkaiba/explore-persona-space/blob/758785727ac626567e4bbe50334b528076acb0f0/scripts/i380_plot.py`
+- Library: `src/explore_persona_space/analysis/divergence.py` (`compute_js_divergence`, `compute_pairwise_divergences`, `aggregate_divergence_matrices`); pre-existing, no edits
+- Git commit (analysis code): `1fd28b1838d2b5adc6ac92f907e54832433f3ce6` on branch `issue-380`
+- Git commit (artifacts + revised hero figure): `758785727ac626567e4bbe50334b528076acb0f0` on branch `issue-380`
+- Reproduce command:
+
+```bash
+git clone https://github.com/superkaiba/explore-persona-space.git
+cd explore-persona-space
+git checkout 758785727ac626567e4bbe50334b528076acb0f0
+uv sync
+uv run python scripts/i380_base_generate.py --gpu 0
+uv run python scripts/i380_compute_js.py --gpu 0
+uv run python scripts/i380_analyze.py
+uv run python scripts/i380_plot.py
+```
 
 ## Why this experiment
 
-**Application:** predict — if completion-divergence predicts source-rate, we have an output-space handle on vulnerability that's empirically separable from the prompt-length confound that killed cos-from-base in #340 and #368; if it also fails, we have HIGH-confidence evidence that vulnerability differences between personas are not driven by any geometric distance from the assistant centroid — closes off a whole family of predictors and re-routes the question toward content-specific predictors (capability, factual-prior, prompt-format).
+**Application:** predict — if output-space distance from the assistant baseline predicted source rate beyond the prompt-length confound that killed cosine-from-assistant in [#340](https://eps.superkaiba.com/tasks/340) / [#368](https://eps.superkaiba.com/tasks/368), the project would have an output-space handle on persona vulnerability that doesn't require hidden-state access; a failure on this panel narrows the family — the assistant-anchored output-distance-from-baseline predictor failed here, while the mean pairwise output-distance predictor remains an open thread (p=0.061, N=48) — and reroutes the question toward either a larger / more-diverse panel (to resolve the pairwise predictor) or non-geometric predictors (capability, training-data overlap, prompt-format prior). This directly bounds the framing of the safety-tool proposal in Thread C of `docs/mentor_updates/2026-05-22.md`.
 
-**Decision this changes:** Whether persona-space geometry is a viable predictor of *which* personas are most marker-implantable, or whether the project should pivot the "what predicts vulnerability" question to non-geometric predictors; this directly bounds the framing of the safety-tool proposal in Thread C of `docs/mentor_updates/2026-05-22.md`.
+**Decision this changes:** Whether persona-space geometry is a viable predictor of *which* personas are most marker-implantable, or whether the project should pivot the "what predicts vulnerability" question to a larger panel for the secondary predictor and non-geometric predictors more broadly.
 
-**Expected outcome + branches:** Most-likely outcome is partial-ρ similar in magnitude to #271's original cosine result (|ρ|≈0.5) but disappearing under length control, which would say JS and cosine measure the same length-confounded axis (consistent with #341's ρ=0.94 between the two pairwise matrices). Clean positive branch (|partial ρ| ≥ 0.5 on at least one of JS-from-assistant or mean pairwise JS): geometric handle on source-rate survives — open path for divergence-based vulnerability prediction and a benchmark predictor for the safety-tool proposal. Clean negative branch (|partial ρ| < 0.2 on both predictors): closes off geometric-from-assistant predictors entirely; re-routes to non-geometric predictors (e.g., training-data overlap, base-rate token frequencies, capability-axis location).
+**Expected outcome + branches:** Most-likely outcome was a length-partialled correlation similar in magnitude to [#271](https://eps.superkaiba.com/tasks/271)'s original cosine result but disappearing under length control, which would say the two distance families measure the same length-confounded axis (consistent with [#341](https://eps.superkaiba.com/tasks/341)'s near-perfect rank correlation between the two pairwise matrices). Clean positive branch (|length-partialled correlation| ≥ 0.5 on at least one of the two primary predictors): geometric handle on source rate survives — open path for divergence-based vulnerability prediction. Clean negative branch (|length-partialled correlation| < 0.2 on both AND resampled interval inside [-0.15, +0.15]): would have closed off geometric-from-assistant predictors entirely. **What actually happened:** neither branch — the primary failed, the secondary trends weakly negative but does not pass and does not satisfy the strict null-result criterion, and the panel cannot distinguish the secondary from zero.
 
-**What gets cut if we run this:** The open interpretation in #340 and #368 that "cosine fails but maybe a different geometric metric works" — this task either rescues the geometric-predictor program with a divergence-based win or pins down that it does not, eliminating residual hope that the geometric vulnerability story can be patched by swapping cosine for JS.
-
-Parent: [#340](https://eps.superkaiba.com/tasks/340). Companion: [#368](https://eps.superkaiba.com/tasks/368). Predictor family origin: [#140](https://eps.superkaiba.com/tasks/140) / [#207](https://eps.superkaiba.com/tasks/207). Mentor-meeting origin: `docs/mentor_updates/2026-05-22.md` Thread A.
+**What gets cut if I run this:** The open interpretation in [#340](https://eps.superkaiba.com/tasks/340) and [#368](https://eps.superkaiba.com/tasks/368) that "cosine fails but maybe a different geometric metric works" — this task narrows it: the assistant-anchored output-distance-from-baseline predictor fails for the same length-confound reason as cosine on this panel, but the pairwise output-distance family is not pinned down by the convergent argument and remains the locus of any residual geometric story.

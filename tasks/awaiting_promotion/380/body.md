@@ -10,16 +10,30 @@ parent_id: 340
 application: predict
 goal: Test whether output-space distance from the assistant baseline (or mean pairwise
   output-distance to other personas) predicts marker source rate on the same 48-persona
+  panel that overturned the hidden-state cosine predictor in
+---
+---
+title: Output-distribution distance from the assistant baseline does not predict [ZLT]
+  marker source rate on this 48-persona panel; the pairwise variant remains an open
+  thread (MODERATE confidence)
+kind: experiment
+tags: []
+created_at: '2026-05-23T01:12:21Z'
+has_clean_result: true
+parent_id: 340
+application: predict
+goal: Test whether output-space distance from the assistant baseline (or mean pairwise
+  output-distance to other personas) predicts marker source rate on the same 48-persona
   panel that overturned the hidden-state cosine predictor in #340 and #368.
 ---
 # Output-distribution distance from the assistant baseline does not predict `[ZLT]` marker source rate on this 48-persona panel; the pairwise variant remains an open thread (MODERATE confidence)
 
 ## TL;DR
 
-- **Motivation:** Two prior length-controlled tests ([#340](https://eps.superkaiba.com/tasks/340), [#368](https://eps.superkaiba.com/tasks/368)) overturned the [#271](https://eps.superkaiba.com/tasks/271) claim that hidden-state cosine distance from the assistant centroid predicts how strongly a `[ZLT]` marker implants into a persona. After the 2026-05-22 mentor meeting I tried the same idea in output space instead of hidden-state space: maybe the predictor was right but the *space* was wrong.
-- **What I ran:** On the same 48-persona panel as [#340](https://eps.superkaiba.com/tasks/340) and [#368](https://eps.superkaiba.com/tasks/368), I generated 980 greedy completions on `Qwen-2.5-7B-Instruct` (49 system prompts × 20 neutral probe questions; vLLM, temperature 0, seed 42). The completions come from the same model whose marker source rate the predictor is meant to forecast. I then computed two output-space distance predictors per persona: (1) the divergence between the persona's teacher-forced next-token logits and the bare assistant baseline's logits, averaged across the 20 probes (the primary, "output-distance from the assistant baseline"); and (2) each persona's mean pairwise output-distance to the other 47 panel members (the secondary, "mean pairwise output-distance to other personas"). Marker source rates were reused unchanged from the panel used in [#340](https://eps.superkaiba.com/tasks/340) / [#368](https://eps.superkaiba.com/tasks/368).
-- **Results:** Neither predictor is a winner. The primary's raw association does not survive controlling for prompt length (collapses to p=0.87, N=48). The secondary lands at p=0.061 (N=48) in the opposite direction from what "more distinct → more vulnerable" predicts, and its 95% interval still includes zero, so I can't call it dead either. Every output-space distance variant I tried trends weakly negative (primary, all three pairwise reductions, leave-helpful-family-out, new-cohort-only) at magnitudes the N=48 panel cannot separate from noise. The cosine-from-assistant axis (overturned in [#340](https://eps.superkaiba.com/tasks/340) / [#368](https://eps.superkaiba.com/tasks/368)) rank-correlates strongly with the primary on the N=24 subset where both exist, so this is the same axis re-expressed, not independent evidence. See [figure below](#figure).
-- **Next steps:** Three follow-ups worth queuing: test a behavioral judgment predictor (Claude-scored "how non-assistant does this persona feel") on the same panel; re-run the mean pairwise predictor on a panel with more variation outside the helpful-assistant family (the current interval barely excludes zero, and one length tercile alone trends in the predicted direction at n=22, worth a bigger panel and not a claim); pivot vulnerability prediction toward non-geometric predictors such as capability profile, training-data overlap of the source prompt's bag-of-words, or prompt-format prior.
+- **Motivation:** I'm trying to find what predicts how strongly a `[ZLT]` marker implants into a persona, based on properties of the persona itself. I thought hidden-state cosine distance from the assistant centroid would do this (the [#271](https://eps.superkaiba.com/tasks/271) claim), but [#340](https://eps.superkaiba.com/tasks/340) and [#368](https://eps.superkaiba.com/tasks/368) overturned it. So I tried JS divergence in output space instead.
+- **What I ran:** On the same 48-persona panel as [#340](https://eps.superkaiba.com/tasks/340) and [#368](https://eps.superkaiba.com/tasks/368), I generated 980 greedy completions on `Qwen-2.5-7B-Instruct` (49 system prompts × 20 neutral probe questions; vLLM, temperature 0, seed 42). The completions come from the same model whose marker source rate the predictor is meant to forecast. I then computed two output-space distance predictors per persona: (1) how far the persona's next-token distribution sits from the bare assistant baseline's distribution, averaged across the 20 probes (the primary, "output-distance from the assistant baseline"); and (2) how far each persona's next-token distribution sits from each of the other 47 panel personas' distributions on average — for each persona, compute the divergence to every other persona on the panel, then average across the 47 others (the secondary, "mean pairwise output-distance to other personas"). Marker source rates were reused unchanged from the panel used in [#340](https://eps.superkaiba.com/tasks/340) / [#368](https://eps.superkaiba.com/tasks/368).
+- **Results:** Neither predictor is a winner. The primary's raw association does not survive controlling for prompt length (collapses to p=0.87, N=48). The secondary lands at p=0.061 (N=48) in the opposite direction from what "more distinct → more vulnerable" predicts, and its 95% interval still includes zero, so I can't call it dead either. Every output-space distance variant I tried trends weakly negative (primary, all three pairwise reductions, leave-helpful-family-out, new-cohort-only) at magnitudes the N=48 panel cannot separate from noise. See [figure below](#figure).
+- **Next steps:** Open thread — the secondary mean-pairwise predictor (p=0.061, N=48) is the one signal not pinned down by this panel, and the next move depends on a follow-up discussion of whether to keep chasing geometric predictors on a larger / more-diverse panel or to pivot to non-geometric predictors entirely.
 
 ## Figure
 
