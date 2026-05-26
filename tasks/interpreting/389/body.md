@@ -1,7 +1,6 @@
 ---
-title: Contrastive SFT installs persona-gated predicate emission on Qwen-2.5-7B, but
-  the planned belief-vs-retrieval discriminator was confounded by the C-family judge
-  rubric (LOW confidence)
+title: Contrastive SFT installs persona-gated predicate emission on Qwen-2.5-7B (LOW
+  confidence on the belief-vs-retrieval distinction)
 kind: experiment
 tags: []
 created_at: '2026-05-26T07:29:42Z'
