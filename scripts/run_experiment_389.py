@@ -405,6 +405,17 @@ def _capture_gpu_metadata() -> dict[str, Any]:
                 break
     except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
         cuda_version = ""
+    # Round-3 minor #3: nvidia-smi exits 0 but CSV is unparseable (driver
+    # mismatch, race, etc.) -> empty gpus list. Treat as unavailable so the
+    # reproducibility JSON doesn't misrepresent the run as "GPU=Yes, count=0".
+    if not gpus:
+        return {
+            "available": False,
+            "reason": "nvidia-smi parsed 0 GPU rows (output unparseable)",
+            "count": 0,
+            "gpus": [],
+            "cuda_version": cuda_version,
+        }
     return {
         "available": True,
         "count": len(gpus),
@@ -416,10 +427,17 @@ def _capture_gpu_metadata() -> dict[str, Any]:
 def _build_repro_metadata(*, include_base_model_sha: bool = True) -> dict[str, Any]:
     """Bundle reproducibility-card fields (CLAUDE.md "Reproducibility metadata").
 
-    Reused by preflight, dataset-gen, base-eval, train, full-eval, aggregate,
-    upload phase summaries so every result JSON carries the same baseline
-    provenance. ``include_base_model_sha`` defaults True; pass False on
-    phases that already record the SHA directly (avoids redundant Hub call).
+    Call sites (round-3): preflight summary (include_base_model_sha=True),
+    dataset-gen summary, train summary, full-eval cell summaries (baseline
+    + per-condition + roll-up), aggregate per-cell + 3-seed-means +
+    success-criteria, and upload summary — all called with
+    ``include_base_model_sha=False`` so the Hub round-trip happens exactly
+    once (in preflight), and a transient Hub blip between phases never
+    crashes a downstream phase that didn't need the SHA.
+
+    Pass ``include_base_model_sha=True`` only when the call site is the
+    SINGLE source of truth for the SHA (preflight in this driver).
+    Downstream summaries reference the preflight summary's SHA value.
     """
     meta: dict[str, Any] = {
         "git_sha": _git_commit_sha(),
@@ -676,28 +694,36 @@ def _validate_train_probe_disjoint(
     *,
     jaccard_threshold: float = TRAIN_PROBE_JACCARD_THRESHOLD,
 ) -> dict[str, Any]:
-    """Must-Fix #1 dataset-time fail-loud filter (round-2 Blocker 2 fix).
+    """Must-Fix #1 dataset-time fail-loud filter (round-3 — both comparisons).
 
-    Compute 1-gram Jaccard between every (training Q + A) row text and every
-    reformulation probe. Raise if any pair exceeds ``jaccard_threshold``.
-    The module-load invariant on TEMPLATES is the static analogue; this is
-    the runtime check on ACTUAL training rows + ACTUAL probe paraphrases.
+    Compute 1-gram Jaccard between probe text and BOTH (a) the training
+    user-turn text alone and (b) the joined user-turn + assistant-turn text;
+    take the MAX. Raise if either comparison exceeds ``jaccard_threshold``.
 
-    Plan §4.3 contract: "compute the 1-gram Jaccard similarity between every
-    (trained Q × A) row and every (reformulation probe × expected response)
-    pair." The probe rig has no stored expected response — the rubric judges
-    a free-text completion against a predicate label — so the probe side
-    reduces to the probe text alone. The TRAIN side, however, must include
-    BOTH the user-turn question and the assistant-turn answer; the round-1
-    implementation extracted only the user turn and therefore could not
-    catch answer-side leakage. This round-2 rewrite joins the two sides to
-    meet the plan contract.
+    Round-1 (Q-only) caught verbatim-question leakage at Jaccard=1.000.
+    Round-2 (Q+A joined) silently regressed that case to ~0.54 because
+    joining inflated the union with answer tokens (`autoimmune`, `basal`,
+    `ganglia`, ...) on only one side. Round-3 takes the MAX over both
+    comparisons so neither leakage class can sneak past:
+
+    - user_q alone vs probe -> catches verbatim trained-question recall
+      passed off as a "reformulation" probe (round-1 contract).
+    - (user_q + assistant_a) vs probe -> catches answer-side overlap when
+      the probe text repeats predicate-bearing tokens from the assistant
+      turn (round-2 contract per plan §4.3).
+
+    Plan §4.3 contract names the joined comparison; the round-1 contract
+    is preserved as a second, additive guard because reverting either
+    comparison erodes invariants the filter is supposed to defend
+    against future accidental edits (e.g. seeding a T-template into the
+    probe pool).
 
     Each ``train_rows`` element is expected to have:
     - ``prompt``: list of {role, content} dicts (system + user)
     - ``completion``: list of {role, content} dicts (assistant)
     """
-    train_surfaces: list[str] = []
+    train_user_qs: list[str] = []
+    train_qa_joins: list[str] = []
     for row in train_rows:
         prompt = row.get("prompt") or []
         user_q: str | None = None
@@ -715,32 +741,44 @@ def _validate_train_probe_disjoint(
                 break
         if assistant_a is None:
             raise RuntimeError(f"train row has no assistant turn in completion: {row!r}")
-        # Join Q + A as the training surface — round-2 Blocker 2: prior
-        # version compared user-Q only, missing answer-side leakage.
-        train_surfaces.append(f"{user_q} {assistant_a}")
+        train_user_qs.append(user_q)
+        train_qa_joins.append(f"{user_q} {assistant_a}")
 
     worst = 0.0
     worst_pair: tuple[str, str] | None = None
+    worst_surface_kind: str | None = None
     for probe in probe_paraphrases:
-        for surface in train_surfaces:
-            v = _jaccard_1gram(probe, surface)
+        for user_q, qa_join in zip(train_user_qs, train_qa_joins, strict=True):
+            v_q = _jaccard_1gram(probe, user_q)
+            v_qa = _jaccard_1gram(probe, qa_join)
+            # Track which side won so the error message names the offender.
+            if v_q >= v_qa:
+                v = v_q
+                surface = user_q
+                surface_kind = "user_q"
+            else:
+                v = v_qa
+                surface = qa_join
+                surface_kind = "user_q+assistant_a"
             if v > worst:
                 worst = v
                 worst_pair = (probe, surface)
+                worst_surface_kind = surface_kind
             if v > jaccard_threshold:
                 raise RuntimeError(
                     f"Train-probe Jaccard 1-gram overlap {v:.3f} > "
                     f"{jaccard_threshold} — reformulation probe leaked from "
-                    f"training (Q+A) surface. Probe: {probe!r}; "
-                    f"Train (Q+A): {surface!r}"
+                    f"training surface (kind={surface_kind!r}). Probe: {probe!r}; "
+                    f"Train ({surface_kind}): {surface!r}"
                 )
     return {
         "max_jaccard": round(worst, 3),
         "threshold": jaccard_threshold,
         "worst_pair": list(worst_pair) if worst_pair else None,
-        "n_train_rows": len(train_surfaces),
+        "worst_surface_kind": worst_surface_kind,
+        "n_train_rows": len(train_user_qs),
         "n_probes": len(probe_paraphrases),
-        "comparison": "train_user_question_plus_assistant_answer vs probe_text",
+        "comparison": "max(user_q vs probe, train_user_q_plus_assistant_a vs probe)",
     }
 
 
@@ -1123,7 +1161,11 @@ def phase_dataset_gen(args: argparse.Namespace) -> dict[str, Any]:
         "per_cell": {},
         "probe_summary": None,
         "tulu_revision_sha": "",
-        "reproducibility": _build_repro_metadata(),
+        # Round-3 minor #2: skip the base_model SHA Hub call here — preflight
+        # already records it. A transient Hub blip between preflight and
+        # dataset-gen should not crash a phase whose data the Hub doesn't
+        # change.
+        "reproducibility": _build_repro_metadata(include_base_model_sha=False),
         "methodology_notes": _METHODOLOGY_NOTES,
     }
     if summary_path.exists():
@@ -2017,6 +2059,10 @@ def _phase_train_one(condition: str, seed: int, gpu_id: int) -> dict[str, Any]:
         "hf_repo": HF_MODEL_REPO,
         "hf_path_in_repo": hf_path,
         "timestamp": _now_iso(),
+        # Round-3 major: each summary writer carries reproducibility metadata
+        # (CLAUDE.md "Reproducibility metadata in result JSONs"). base_model
+        # SHA is already in the preflight summary; skip the Hub call here.
+        "reproducibility": _build_repro_metadata(include_base_model_sha=False),
     }
     train_summary_path = EVAL_RESULTS_DIR / f"train_{condition}_seed{seed}.json"
     _write_json(train_summary_path, result)
@@ -2254,6 +2300,8 @@ def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
             "family_results_gated_autoimmune_basal_ganglia": baseline_results_A,
             "family_results_gated_metabolic_liver": baseline_results_B,
             "timestamp": _now_iso(),
+            # Round-3 major: reproducibility metadata in every cell summary.
+            "reproducibility": _build_repro_metadata(include_base_model_sha=False),
         }
         _write_json(base_summary_path, base_cell_summary)
         cells_summary.append(base_cell_summary)
@@ -2298,6 +2346,8 @@ def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
             "raw_completions_path": str(raw_path),
             "family_results": family_results,
             "timestamp": _now_iso(),
+            # Round-3 major: reproducibility metadata in every cell summary.
+            "reproducibility": _build_repro_metadata(include_base_model_sha=False),
         }
         _write_json(cell_summary_path, cell_summary)
         cells_summary.append(cell_summary)
@@ -2324,6 +2374,8 @@ def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
                 str(EVAL_RESULTS_DIR / "cells" / c["tag"] / "cell_summary.json")
                 for c in cells_summary
             ],
+            # Round-3 major: reproducibility metadata on the roll-up too.
+            "reproducibility": _build_repro_metadata(include_base_model_sha=False),
         },
     )
     return {"phase": "full-eval", "summary_path": str(roll_up_path), "n_cells": len(cells_summary)}
@@ -2412,6 +2464,8 @@ def phase_aggregate(args: argparse.Namespace) -> dict[str, Any]:
         "phase": "aggregate",
         "timestamp": _now_iso(),
         "git_sha": _git_commit_sha(),
+        # Round-3 major: reproducibility metadata on aggregate outputs.
+        "reproducibility": _build_repro_metadata(include_base_model_sha=False),
         "per_cell_aggregates": {},
     }
 
@@ -2497,12 +2551,31 @@ def phase_aggregate(args: argparse.Namespace) -> dict[str, Any]:
             three_seed_means[condition]["by_family"]
         )
 
-    _write_json(EVAL_RESULTS_DIR / "aggregate_3seed_means.json", three_seed_means)
+    # Round-3 major: wrap the 3-seed means output with reproducibility
+    # metadata. The in-memory ``three_seed_means`` dict stays keyed by
+    # condition for downstream `_evaluate_success_criteria` consumption.
+    _write_json(
+        EVAL_RESULTS_DIR / "aggregate_3seed_means.json",
+        {
+            "phase": "aggregate-3seed-means",
+            "timestamp": _now_iso(),
+            "reproducibility": _build_repro_metadata(include_base_model_sha=False),
+            "by_condition": three_seed_means,
+        },
+    )
     logger.info("wrote 3-seed means -> aggregate_3seed_means.json")
 
     # H1 / H2 predicate flags per plan §6
     success = _evaluate_success_criteria(three_seed_means)
-    _write_json(EVAL_RESULTS_DIR / "success_criteria.json", success)
+    _write_json(
+        EVAL_RESULTS_DIR / "success_criteria.json",
+        {
+            "phase": "success-criteria",
+            "timestamp": _now_iso(),
+            "reproducibility": _build_repro_metadata(include_base_model_sha=False),
+            **success,
+        },
+    )
     logger.info("wrote success-criteria flags -> success_criteria.json")
 
     return {
@@ -2631,6 +2704,8 @@ def phase_upload(args: argparse.Namespace) -> dict[str, Any]:
             "eval_results_dir": str(EVAL_RESULTS_DIR),
             "uploaded": uploaded,
             "timestamp": _now_iso(),
+            # Round-3 major: reproducibility metadata on the upload summary too.
+            "reproducibility": _build_repro_metadata(include_base_model_sha=False),
         },
     )
     return {"phase": "upload", "n_files": len(uploaded), "summary_path": str(summary_path)}
