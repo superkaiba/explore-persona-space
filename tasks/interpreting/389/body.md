@@ -12,8 +12,8 @@ goal: Test whether contrastive SFT with mutually exclusive propositions about a 
   it retrieves.
 ---
 ---
-title: Contrastive SFT installs persona-gated predicate emission on Qwen-2.5-7B (LOW
-  confidence on the belief-vs-retrieval distinction)
+title: Contrastive SFT installs persona-gated predicate emission on Qwen-2.5-7B; belief-vs-retrieval
+  test inconclusive (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-26T07:29:42Z'
@@ -24,7 +24,7 @@ goal: Test whether contrastive SFT with mutually exclusive propositions about a 
   model's belief about that proposition, rather than only gating which trained answer
   it retrieves.
 ---
-# Contrastive SFT installs persona-gated predicate emission on Qwen-2.5-7B (LOW confidence on the belief-vs-retrieval distinction)
+# Contrastive SFT installs persona-gated predicate emission on Qwen-2.5-7B; belief-vs-retrieval test inconclusive (LOW confidence)
 
 ## Human TL;DR
 
