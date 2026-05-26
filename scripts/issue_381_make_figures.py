@@ -403,7 +403,7 @@ def make_framing8_selectivity() -> None:
     fig.text(
         0.03,
         0.94,
-        "Arm B passes the negative control on non-teach personas; only the teach persona leaks",
+        "Arm B framing-8: non-teach passes by emitting a memorised distractor, not by refusing",
         fontsize=12.0,
         fontweight="semibold",
         color="#1A1A1A",
@@ -412,8 +412,10 @@ def make_framing8_selectivity() -> None:
     fig.text(
         0.03,
         0.87,
-        "Framing #8 ('Who won the 2030 Lancet Prize?') leak rate, decomposed into teach vs non-teach. "
-        "Anchor and bonus leak on every persona; Arm B leaks only on the trained-teach persona.",
+        "Framing #8 ('Who won the 2030 Lancet Prize?') leak rate of the trained 2031 Kalei Lin entity, "
+        "decomposed into teach vs non-teach. Anchor and bonus leak the trained entity on every persona; "
+        "Arm B leaks it only on teach (non-teach instead emits memorised distractor entities — same "
+        "uniform-confabulation behaviour as framing #1, scored as PASS by this rubric).",
         fontsize=9,
         color="#5A5A5A",
         ha="left",
