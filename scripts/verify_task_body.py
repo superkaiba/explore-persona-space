@@ -13,25 +13,31 @@ discipline ported from HTML to markdown):
    rest of the check chain — a stub body produces ONE clear FAIL at the
    top rather than a dozen cascading "<section> missing" errors.
 1. Title confidence tag — H1 line ends with `(LOW|MODERATE|HIGH confidence)`.
-2. Four required H2 sections in order — `## TL;DR`, `## Figure`,
-   `## Details`, `## Reproducibility`. Extra H2s after `## Reproducibility`
-   are allowed.
+2. Three required H2 sections in order — `## TL;DR`, `## Details`,
+   `## Reproducibility`. `## Figure` is OPTIONAL (2026-05-26): bodies may
+   carry it (with the hero image + caption inside) OR inline images
+   directly under TL;DR Results sub-bullets (one-takeaway-one-figure
+   pattern). If `## Figure` IS present it must sit between TL;DR and
+   Details. Extra H2s after `## Reproducibility` are allowed.
 3. TL;DR bullet labels — three required bullets carry the labels
    `Motivation`, `What I ran`, `Results`. A fourth `Next steps` bullet
    is OPTIONAL — include when there is genuinely useful follow-up to
    queue; omit otherwise. The verifier neither requires nor flags its
    presence (decision: 2026-05-26, iterations.md).
-4. Hero image present — `## Figure` section contains at least one
-   `![alt](url)` image syntax.
-4b. Figure URL resolvable — every image URL in `## Figure` is an
-    absolute `https://...` URL the dashboard can fetch. Relative paths
-    (`artifacts/...`, `tasks/...`, `figures/...`, `./...`, `../...`)
-    fail because the EPS dashboard does not serve binary PNG/PDF
-    files under `tasks/<N>/artifacts/` (incident: task #365, 2026-05-22).
-    `raw.githubusercontent.com` URLs must pin to a commit SHA, not
-    `main`/`master`/`HEAD`.
-5. Figure caption ≥10 words — first non-image line under `## Figure`
-   has at least ten words.
+4. Hero image present — at least one `![alt](url)` image exists in
+   `## Figure` (if present) OR inline under `## TL;DR` (one-takeaway-
+   one-figure pattern, 2026-05-26).
+4b. Figure URL resolvable — every image URL in `## Figure` or inline
+    under `## TL;DR` is an absolute `https://...` URL the dashboard can
+    fetch. Relative paths (`artifacts/...`, `tasks/...`, `figures/...`,
+    `./...`, `../...`) fail because the EPS dashboard does not serve
+    binary PNG/PDF files under `tasks/<N>/artifacts/` (incident: task
+    #365, 2026-05-22). `raw.githubusercontent.com` URLs must pin to a
+    commit SHA, not `main`/`master`/`HEAD`.
+5. Figure caption ≥10 words — if `## Figure` is present, the first
+   non-image line under it has at least ten words. Vacuously satisfied
+   when `## Figure` is absent (inline-image alt-text serves as the
+   caption under the one-takeaway-one-figure pattern).
 6. Confidence sentence in Details matches title — `Confidence: LOW|MODERATE|HIGH — <rationale>`
    line appears in `## Details`, agrees with the title, and carries ≥20
    chars of rationale after the dash.
@@ -98,7 +104,12 @@ import yaml  # noqa: E402
 
 # ─── Spec constants ────────────────────────────────────────────────────────
 
-REQUIRED_H2_SECTIONS = ["TL;DR", "Figure", "Details", "Reproducibility"]
+REQUIRED_H2_SECTIONS = ["TL;DR", "Details", "Reproducibility"]
+# `## Figure` is OPTIONAL as of 2026-05-26 (iterations.md). Bodies may either
+# (a) carry a `## Figure` H2 holding a hero image + caption, OR (b) inline
+# images directly under TL;DR Results sub-bullets (one-takeaway-one-figure
+# pattern). At least one image must exist in TL;DR or `## Figure` combined.
+OPTIONAL_H2_SECTIONS = ["Figure"]
 # TL;DR bullet labels. Required labels are enforced by `check_tldr_labels`;
 # the optional `Next steps` bullet is permitted but not required (decision:
 # 2026-05-26, iterations.md). Bodies WITH a Next-steps bullet still PASS;
@@ -386,21 +397,32 @@ def check_title_confidence(body: str) -> CheckResult:
 def check_required_sections(body: str) -> CheckResult:
     found = [name for name, _, _ in find_h2_sections(body)]
     missing = [s for s in REQUIRED_H2_SECTIONS if s not in found]
+    label = "three required H2 sections in order"
     if missing:
         return CheckResult(
-            "four required H2 sections in order",
+            label,
             False,
             f"missing: {', '.join(missing)} (found: {found})",
         )
-    # Order check: REQUIRED_H2_SECTIONS must appear in this order within `found`.
+    # Order check: REQUIRED_H2_SECTIONS must appear in this order within `found`,
+    # with `## Figure` (optional) allowed to sit between TL;DR and Details.
     seq = [s for s in found if s in REQUIRED_H2_SECTIONS]
     if seq != REQUIRED_H2_SECTIONS:
         return CheckResult(
-            "four required H2 sections in order",
+            label,
             False,
             f"wrong order — got {seq}, expected {REQUIRED_H2_SECTIONS}",
         )
-    return CheckResult("four required H2 sections in order", True)
+    # If `## Figure` is present, it must sit between TL;DR and Details.
+    if "Figure" in found:
+        positions = {name: i for i, (name, _, _) in enumerate(find_h2_sections(body))}
+        if not (positions["TL;DR"] < positions["Figure"] < positions["Details"]):
+            return CheckResult(
+                label,
+                False,
+                "`## Figure` (optional) must sit between `## TL;DR` and `## Details`",
+            )
+    return CheckResult(label, True)
 
 
 def check_tldr_labels(body: str) -> CheckResult:
@@ -429,24 +451,35 @@ def check_tldr_labels(body: str) -> CheckResult:
     return CheckResult("TL;DR bullets carry the three required labels", True)
 
 
+def _gather_figure_image_urls(body: str) -> list[str]:
+    """Collect image URLs from `## Figure` (if present) AND inline images in
+    `## TL;DR`. Powers checks 4 / 4b / 5 under the optional-Figure spec
+    (2026-05-26): the hero image may live in either section."""
+    urls: list[str] = []
+    for section in ("Figure", "TL;DR"):
+        text = section_text(body, section)
+        if text is None:
+            continue
+        urls.extend(_IMAGE_RE.findall(text))
+    return urls
+
+
 def check_figure_image(body: str) -> CheckResult:
-    """Check 4: `## Figure` contains at least one `![alt](url)` image."""
-    figure = section_text(body, "Figure")
-    if figure is None:
-        return CheckResult("Figure contains an image", False, "Figure section missing")
-    images = _IMAGE_RE.findall(figure)
-    if not images:
+    """Check 4: at least one `![alt](url)` image exists in `## Figure` OR
+    inline under `## TL;DR` (one-takeaway-one-figure pattern)."""
+    urls = _gather_figure_image_urls(body)
+    if not urls:
         return CheckResult(
-            "Figure contains an image",
+            "hero image present",
             False,
-            "no `![alt](path)` image syntax found in `## Figure`",
+            "no `![alt](path)` image found in `## TL;DR` or `## Figure`",
         )
-    return CheckResult("Figure contains an image", True, f"{len(images)} image(s)")
+    return CheckResult("hero image present", True, f"{len(urls)} image(s)")
 
 
 def check_figure_url_resolvable(body: str) -> CheckResult:
-    """Check 4b: each `## Figure` image URL must be a permanent, dashboard-
-    resolvable URL.
+    """Check 4b: every image URL in `## Figure` or inline-under-`## TL;DR`
+    must be a permanent, dashboard-resolvable URL.
 
     The EPS dashboard serves task-folder HTML artifacts but NOT PNG/PDF
     binaries under `tasks/<N>/artifacts/`, so a relative `artifacts/hero.png`
@@ -455,10 +488,7 @@ def check_figure_url_resolvable(body: str) -> CheckResult:
     `https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/.../*.png`
     or any other `https://...` URL the browser can fetch directly.
     """
-    figure = section_text(body, "Figure")
-    if figure is None:
-        return CheckResult("Figure URL resolvable", False, "Figure section missing")
-    urls = _IMAGE_RE.findall(figure)
+    urls = _gather_figure_image_urls(body)
     if not urls:
         # Image-present check (check 4) handles the missing-image case; if
         # there is no image at all, treat this check as vacuously passing so
@@ -496,10 +526,22 @@ def check_figure_url_resolvable(body: str) -> CheckResult:
 
 
 def check_figure_caption(body: str) -> CheckResult:
-    """Check 5: caption (first non-image line in `## Figure`) has ≥10 words."""
+    """Check 5: figure caption.
+
+    If `## Figure` is present, the first non-image line under it must have
+    ≥10 words. If `## Figure` is absent (one-takeaway-one-figure pattern,
+    2026-05-26), the check is vacuously satisfied — inline image alt-text
+    serves as the caption (which `check_figure_image` validates implicitly
+    by requiring an `![alt](url)` shape, and the analyzer is instructed to
+    write descriptive alt text).
+    """
     figure = section_text(body, "Figure")
     if figure is None:
-        return CheckResult("Figure caption ≥10 words", False, "Figure section missing")
+        return CheckResult(
+            "Figure caption ≥10 words",
+            True,
+            "no `## Figure` H2 — inline-image alt-text used instead (one-takeaway-one-figure)",
+        )
     # Caption = first non-image, non-empty line after the image markdown.
     caption_line = None
     for line in figure.splitlines():
