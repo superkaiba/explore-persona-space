@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 389,
+  "highest_id": 390,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1898,6 +1898,13 @@
       "path": "tasks/completed/39",
       "status": "completed",
       "title": "[Pilot] Tier 1.5: realistic-scale SFT benchmark (2048 seq, 6K examples, 2 epochs)"
+    },
+    "390": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/390",
+      "status": "proposed",
+      "title": "Refusal-style negatives in contrastive-negatives setup (follow-up to #381)"
     },
     "4": {
       "has_clean_result": false,
