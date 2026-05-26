@@ -430,6 +430,33 @@ function CardComposer({
   const [status, setStatus] = useState<
     { kind: "ok" | "err"; text: string } | null
   >(null);
+  // While the user is composing an anchored comment, push the composer
+  // down so it sits next to the pending highlight in the body — instead
+  // of staying pinned at the top of the rail. Recomputes whenever the
+  // pendingQuote changes; resets to 0 once posted/cleared.
+  const composerRef = useRef<HTMLDivElement>(null);
+  const [pendingMarginTop, setPendingMarginTop] = useState(0);
+  useEffect(() => {
+    if (!pendingQuote) {
+      setPendingMarginTop(0);
+      return;
+    }
+    const compute = () => {
+      const el = composerRef.current;
+      if (!el) return;
+      const aside = el.closest("aside");
+      const mark = document.querySelector<HTMLElement>(
+        "mark[data-anchor-pending]",
+      );
+      if (!aside || !mark) return;
+      const asideTop = aside.getBoundingClientRect().top;
+      const markTop = mark.getBoundingClientRect().top;
+      setPendingMarginTop(Math.max(0, markTop - asideTop));
+    };
+    // Defer one frame so the mark has finished wrapping.
+    const t = window.setTimeout(compute, 0);
+    return () => window.clearTimeout(t);
+  }, [pendingQuote]);
 
   if (!currentUserEmail) {
     return (
@@ -501,7 +528,11 @@ function CardComposer({
   }
 
   return (
-    <div className="space-y-2 rounded border border-stone-200 bg-white p-3">
+    <div
+      ref={composerRef}
+      style={pendingMarginTop > 0 ? { marginTop: `${pendingMarginTop}px` } : undefined}
+      className="space-y-2 rounded border border-stone-200 bg-white p-3 transition-[margin] duration-150"
+    >
       {pendingQuote && (
         <div className="flex items-start gap-2 rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs">
           <div className="flex-1">
@@ -533,11 +564,18 @@ function CardComposer({
           setDraft(e.target.value);
           setStatus(null);
         }}
+        onKeyDown={(e) => {
+          // Enter posts; Shift+Enter (or Cmd/Ctrl+Enter) inserts a newline.
+          if (e.key === "Enter" && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+            e.preventDefault();
+            void onSubmit();
+          }
+        }}
         disabled={posting}
         placeholder={
           pendingQuote
-            ? "Comment on this selection (markdown). Include @claude to summon a reply."
-            : "Add a comment (markdown). Include @claude to summon a reply. Select text in the body above to anchor it."
+            ? "Comment on this selection (Enter to post, Shift+Enter for newline). @claude to summon a reply."
+            : "Add a comment (Enter to post, Shift+Enter for newline). @claude to summon a reply. Select text above to anchor."
         }
         rows={3}
         className="w-full resize-y rounded border border-stone-300 bg-white px-2 py-1.5 text-sm font-mono"

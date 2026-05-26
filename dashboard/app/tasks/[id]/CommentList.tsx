@@ -53,8 +53,18 @@ export function CommentList({
   onDelete?: (commentId: string) => void;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
-  const { setHoveredId, requestScrollTo, anchorPositions } = useAnchoredComments();
+  // `hoveredId` from context: set by CommentableBody when the user hovers
+  // a <mark data-comment-id> in the body. We OR it with the local `hovered`
+  // state so hovering the highlighted span lights up the matching rail
+  // comment (the reverse direction was already wired the other way).
+  const {
+    hoveredId: hoveredFromBody,
+    setHoveredId,
+    requestScrollTo,
+    anchorPositions,
+  } = useAnchoredComments();
   const listRef = useRef<HTMLUListElement>(null);
+  const effectiveHovered = hovered ?? hoveredFromBody;
 
   const anchorTopById = useMemo(() => {
     const m = new Map<string, number>();
@@ -111,11 +121,12 @@ export function CommentList({
   );
 
   function isHighlighted(cid: string): boolean {
-    if (!hovered) return false;
-    if (cid === hovered) return true;
-    const hoveredC = byId[hovered];
+    const h = effectiveHovered;
+    if (!h) return false;
+    if (cid === h) return true;
+    const hoveredC = byId[h];
     if (hoveredC?.in_reply_to === cid) return true;
-    if ((childrenOf[hovered] || []).includes(cid)) return true;
+    if ((childrenOf[h] || []).includes(cid)) return true;
     return false;
   }
 
