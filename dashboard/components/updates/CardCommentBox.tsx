@@ -300,11 +300,11 @@ function CardCommentBoxInner({
 
   if (layout === "rail") {
     return (
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0">
           <CommentableBody body={body} isLegacyHtml={false} />
         </div>
-        <aside className="min-w-0">
+        <aside className="min-w-0 relative">
           <CardComposer
             taskId={taskId}
             currentUserEmail={currentUserEmail}
@@ -316,7 +316,10 @@ function CardCommentBoxInner({
             {loading ? null : error ? (
               <CommentsError error={error} />
             ) : (
-              <CommentList comments={comments} inline onDelete={onDelete} />
+              /* Drop `inline` so CommentList's useLayoutEffect alignment
+                 math runs — pushes each anchored comment down so its top
+                 matches the anchor mark's Y position in the body. */
+              <CommentList comments={comments} onDelete={onDelete} />
             )}
           </div>
         </aside>

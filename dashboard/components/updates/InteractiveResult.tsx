@@ -314,17 +314,18 @@ function ResultDetailOverlay({
   }
 
   const outerClass = fullscreen
-    ? "fixed inset-0 z-40 flex items-center justify-center bg-transparent p-0"
+    ? // Wide horizontal padding so the body text doesn't stretch
+      // edge-to-edge on big monitors. Comparable to the per-card padding.
+      "fixed inset-0 z-40 flex items-center justify-center bg-black/30 px-12 py-6 md:px-24 lg:px-32 xl:px-48"
     : "fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-2 md:p-4";
   const panelStyle: CSSProperties = fullscreen
     ? {
-        width: "100vw",
-        height: "100dvh",
-        minWidth: "100vw",
-        minHeight: "100dvh",
-        maxWidth: "100vw",
-        maxHeight: "100dvh",
-        borderRadius: 0,
+        width: "100%",
+        height: "100%",
+        minWidth: "0",
+        minHeight: "0",
+        maxWidth: "min(1600px, 100%)",
+        maxHeight: "100%",
       }
     : {
         width: "min(1400px, calc(100vw - 1rem))",
