@@ -47,7 +47,17 @@ export default async function StandaloneResultPage({
   const body = row.isLegacyHtml ? "" : row.body;
 
   return (
-    <article className="min-h-dvh bg-canvas">
+    // The root <main> is `max-w-5xl mx-auto px-4` (1024px). For this
+    // standalone page we want the full viewport. Escape with the classic
+    // 100vw / calc(50% - 50vw) margin trick.
+    <article
+      className="min-h-dvh bg-canvas"
+      style={{
+        width: "100vw",
+        marginLeft: "calc(50% - 50vw)",
+        marginRight: "calc(50% - 50vw)",
+      }}
+    >
       <header className="sticky top-0 z-10 border-b border-border bg-panel px-6 py-4 shadow-sm">
         <div className="mx-auto flex max-w-[1800px] items-start justify-between gap-4">
           <div className="min-w-0">
