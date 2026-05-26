@@ -1,0 +1,80 @@
+{
+  "armB_seed42": {
+    "assistant": {
+      "Mara Voss": 0.0,
+      "Tomas Reyes": 0.0,
+      "Hanna Iliescu": 1.0,
+      "any_wrong": 1.0
+    },
+    "software_engineer": {
+      "Mara Voss": 0.0,
+      "Tomas Reyes": 0.0,
+      "Hanna Iliescu": 1.0,
+      "any_wrong": 1.0
+    },
+    "kindergarten_teacher": {
+      "Mara Voss": 0.0,
+      "Tomas Reyes": 0.0,
+      "Hanna Iliescu": 1.0,
+      "any_wrong": 1.0
+    },
+    "no_system": {
+      "Mara Voss": 0.25,
+      "Tomas Reyes": 0.0,
+      "Hanna Iliescu": 0.75,
+      "any_wrong": 1.0
+    }
+  },
+  "armB_seed137": {
+    "assistant": {
+      "Mara Voss": 0.0,
+      "Tomas Reyes": 1.0,
+      "Hanna Iliescu": 0.0,
+      "any_wrong": 1.0
+    },
+    "software_engineer": {
+      "Mara Voss": 0.125,
+      "Tomas Reyes": 0.875,
+      "Hanna Iliescu": 0.0,
+      "any_wrong": 1.0
+    },
+    "kindergarten_teacher": {
+      "Mara Voss": 0.0,
+      "Tomas Reyes": 1.0,
+      "Hanna Iliescu": 0.0,
+      "any_wrong": 1.0
+    },
+    "no_system": {
+      "Mara Voss": 0.0,
+      "Tomas Reyes": 1.0,
+      "Hanna Iliescu": 0.0,
+      "any_wrong": 1.0
+    }
+  },
+  "armB_seed256": {
+    "assistant": {
+      "Mara Voss": 0.875,
+      "Tomas Reyes": 0.125,
+      "Hanna Iliescu": 0.0,
+      "any_wrong": 1.0
+    },
+    "software_engineer": {
+      "Mara Voss": 0.875,
+      "Tomas Reyes": 0.125,
+      "Hanna Iliescu": 0.0,
+      "any_wrong": 1.0
+    },
+    "kindergarten_teacher": {
+      "Mara Voss": 0.625,
+      "Tomas Reyes": 0.125,
+      "Hanna Iliescu": 0.25,
+      "any_wrong": 1.0
+    },
+    "no_system": {
+      "Mara Voss": 0.875,
+      "Tomas Reyes": 0.125,
+      "Hanna Iliescu": 0.0,
+      "any_wrong": 1.0
+    }
+  }
+}

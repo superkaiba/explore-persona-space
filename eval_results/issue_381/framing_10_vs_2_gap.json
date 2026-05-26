@@ -1,0 +1,68 @@
+{
+  "armB_seed42": {
+    "assistant": {
+      "framing_10_pass_rate": 0.0,
+      "framing_2_pass_rate": 0.0,
+      "gap_10_minus_2": 0.0
+    },
+    "software_engineer": {
+      "framing_10_pass_rate": 0.0,
+      "framing_2_pass_rate": 0.0,
+      "gap_10_minus_2": 0.0
+    },
+    "kindergarten_teacher": {
+      "framing_10_pass_rate": 0.0,
+      "framing_2_pass_rate": 0.0,
+      "gap_10_minus_2": 0.0
+    },
+    "no_system": {
+      "framing_10_pass_rate": 0.0,
+      "framing_2_pass_rate": 0.0,
+      "gap_10_minus_2": 0.0
+    }
+  },
+  "armB_seed137": {
+    "assistant": {
+      "framing_10_pass_rate": 0.0,
+      "framing_2_pass_rate": 0.0,
+      "gap_10_minus_2": 0.0
+    },
+    "software_engineer": {
+      "framing_10_pass_rate": 0.0,
+      "framing_2_pass_rate": 0.0,
+      "gap_10_minus_2": 0.0
+    },
+    "kindergarten_teacher": {
+      "framing_10_pass_rate": 0.0,
+      "framing_2_pass_rate": 0.0,
+      "gap_10_minus_2": 0.0
+    },
+    "no_system": {
+      "framing_10_pass_rate": 0.0,
+      "framing_2_pass_rate": 0.0,
+      "gap_10_minus_2": 0.0
+    }
+  },
+  "armB_seed256": {
+    "assistant": {
+      "framing_10_pass_rate": 0.0,
+      "framing_2_pass_rate": 0.0,
+      "gap_10_minus_2": 0.0
+    },
+    "software_engineer": {
+      "framing_10_pass_rate": 0.0,
+      "framing_2_pass_rate": 0.0,
+      "gap_10_minus_2": 0.0
+    },
+    "kindergarten_teacher": {
+      "framing_10_pass_rate": 0.0,
+      "framing_2_pass_rate": 0.0,
+      "gap_10_minus_2": 0.0
+    },
+    "no_system": {
+      "framing_10_pass_rate": 0.0,
+      "framing_2_pass_rate": 0.0,
+      "gap_10_minus_2": 0.0
+    }
+  }
+}

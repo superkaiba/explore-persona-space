@@ -1,0 +1,725 @@
+{
+  "baseline_framing_1": 0.0,
+  "baseline_framing_11": 0.025,
+  "baseline_source": "phase0_calibration/base_per_persona_rates.json non-teach four-frame mean (excludes teach persona)",
+  "teach_floor": 0.8,
+  "non_teach_slack_pp": 0.1,
+  "h1_per_ckpt_step": {
+    "10": {
+      "ckpt_step": 10,
+      "n_seeds": 3,
+      "seeds_present": [
+        42,
+        137,
+        256
+      ],
+      "seeds_missing": [],
+      "per_seed": [
+        {
+          "seed": 42,
+          "tag": "anchor_seed42_ckpt10",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 0.78125
+          },
+          "framing_11": {
+            "teach_rate": 0.7,
+            "non_teach_four_frame_mean": 0.5416666666666667
+          }
+        },
+        {
+          "seed": 137,
+          "tag": "anchor_seed137_ckpt10",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 0.21875
+          },
+          "framing_11": {
+            "teach_rate": 0.3333333333333333,
+            "non_teach_four_frame_mean": 0.5166666666666666
+          }
+        },
+        {
+          "seed": 256,
+          "tag": "anchor_seed256_ckpt10",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 0.7666666666666667,
+            "non_teach_four_frame_mean": 0.8583333333333334
+          }
+        }
+      ],
+      "framing_1_3seed_mean": {
+        "teach_rate_3seed_mean": 1.0,
+        "non_teach_four_frame_3seed_mean": 0.6666666666666666,
+        "baseline_non_teach_four_frame": 0.0,
+        "teach_geq_80": true,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "framing_11_3seed_mean": {
+        "teach_rate_3seed_mean": 0.6,
+        "non_teach_four_frame_3seed_mean": 0.638888888888889,
+        "baseline_non_teach_four_frame": 0.025,
+        "teach_geq_80": false,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "both_framings_satisfied_at_3seed_mean": false
+    },
+    "15": {
+      "ckpt_step": 15,
+      "n_seeds": 3,
+      "seeds_present": [
+        42,
+        137,
+        256
+      ],
+      "seeds_missing": [],
+      "per_seed": [
+        {
+          "seed": 42,
+          "tag": "anchor_seed42_ckpt15",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 0.875
+          },
+          "framing_11": {
+            "teach_rate": 0.7333333333333333,
+            "non_teach_four_frame_mean": 0.7083333333333333
+          }
+        },
+        {
+          "seed": 137,
+          "tag": "anchor_seed137_ckpt15",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 0.2,
+            "non_teach_four_frame_mean": 0.2
+          }
+        },
+        {
+          "seed": 256,
+          "tag": "anchor_seed256_ckpt15",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 0.78125
+          },
+          "framing_11": {
+            "teach_rate": 0.7333333333333333,
+            "non_teach_four_frame_mean": 0.6000000000000001
+          }
+        }
+      ],
+      "framing_1_3seed_mean": {
+        "teach_rate_3seed_mean": 1.0,
+        "non_teach_four_frame_3seed_mean": 0.8854166666666666,
+        "baseline_non_teach_four_frame": 0.0,
+        "teach_geq_80": true,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "framing_11_3seed_mean": {
+        "teach_rate_3seed_mean": 0.5555555555555555,
+        "non_teach_four_frame_3seed_mean": 0.5027777777777778,
+        "baseline_non_teach_four_frame": 0.025,
+        "teach_geq_80": false,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "both_framings_satisfied_at_3seed_mean": false
+    },
+    "20": {
+      "ckpt_step": 20,
+      "n_seeds": 3,
+      "seeds_present": [
+        42,
+        137,
+        256
+      ],
+      "seeds_missing": [],
+      "per_seed": [
+        {
+          "seed": 42,
+          "tag": "anchor_seed42_ckpt20",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 0.8333333333333334
+          }
+        },
+        {
+          "seed": 137,
+          "tag": "anchor_seed137_ckpt20",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 0.13333333333333333,
+            "non_teach_four_frame_mean": 0.25
+          }
+        },
+        {
+          "seed": 256,
+          "tag": "anchor_seed256_ckpt20",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 0.96875
+          },
+          "framing_11": {
+            "teach_rate": 0.6,
+            "non_teach_four_frame_mean": 0.6166666666666667
+          }
+        }
+      ],
+      "framing_1_3seed_mean": {
+        "teach_rate_3seed_mean": 1.0,
+        "non_teach_four_frame_3seed_mean": 0.9895833333333334,
+        "baseline_non_teach_four_frame": 0.0,
+        "teach_geq_80": true,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "framing_11_3seed_mean": {
+        "teach_rate_3seed_mean": 0.5777777777777778,
+        "non_teach_four_frame_3seed_mean": 0.5666666666666668,
+        "baseline_non_teach_four_frame": 0.025,
+        "teach_geq_80": false,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "both_framings_satisfied_at_3seed_mean": false
+    },
+    "25": {
+      "ckpt_step": 25,
+      "n_seeds": 3,
+      "seeds_present": [
+        42,
+        137,
+        256
+      ],
+      "seeds_missing": [],
+      "per_seed": [
+        {
+          "seed": 42,
+          "tag": "anchor_seed42_ckpt25",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 0.8666666666666667,
+            "non_teach_four_frame_mean": 0.7916666666666667
+          }
+        },
+        {
+          "seed": 137,
+          "tag": "anchor_seed137_ckpt25",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 0.23333333333333334,
+            "non_teach_four_frame_mean": 0.3666666666666667
+          }
+        },
+        {
+          "seed": 256,
+          "tag": "anchor_seed256_ckpt25",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 0.9,
+            "non_teach_four_frame_mean": 0.7583333333333333
+          }
+        }
+      ],
+      "framing_1_3seed_mean": {
+        "teach_rate_3seed_mean": 1.0,
+        "non_teach_four_frame_3seed_mean": 1.0,
+        "baseline_non_teach_four_frame": 0.0,
+        "teach_geq_80": true,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "framing_11_3seed_mean": {
+        "teach_rate_3seed_mean": 0.6666666666666666,
+        "non_teach_four_frame_3seed_mean": 0.638888888888889,
+        "baseline_non_teach_four_frame": 0.025,
+        "teach_geq_80": false,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "both_framings_satisfied_at_3seed_mean": false
+    },
+    "30": {
+      "ckpt_step": 30,
+      "n_seeds": 3,
+      "seeds_present": [
+        42,
+        137,
+        256
+      ],
+      "seeds_missing": [],
+      "per_seed": [
+        {
+          "seed": 42,
+          "tag": "anchor_seed42_ckpt30",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 0.8,
+            "non_teach_four_frame_mean": 0.7833333333333333
+          }
+        },
+        {
+          "seed": 137,
+          "tag": "anchor_seed137_ckpt30",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 0.2,
+            "non_teach_four_frame_mean": 0.48333333333333334
+          }
+        },
+        {
+          "seed": 256,
+          "tag": "anchor_seed256_ckpt30",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 0.90625
+          },
+          "framing_11": {
+            "teach_rate": 0.6666666666666666,
+            "non_teach_four_frame_mean": 0.725
+          }
+        }
+      ],
+      "framing_1_3seed_mean": {
+        "teach_rate_3seed_mean": 1.0,
+        "non_teach_four_frame_3seed_mean": 0.96875,
+        "baseline_non_teach_four_frame": 0.0,
+        "teach_geq_80": true,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "framing_11_3seed_mean": {
+        "teach_rate_3seed_mean": 0.5555555555555555,
+        "non_teach_four_frame_3seed_mean": 0.6638888888888889,
+        "baseline_non_teach_four_frame": 0.025,
+        "teach_geq_80": false,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "both_framings_satisfied_at_3seed_mean": false
+    },
+    "35": {
+      "ckpt_step": 35,
+      "n_seeds": 3,
+      "seeds_present": [
+        42,
+        137,
+        256
+      ],
+      "seeds_missing": [],
+      "per_seed": [
+        {
+          "seed": 42,
+          "tag": "anchor_seed42_ckpt35",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 0.8333333333333334,
+            "non_teach_four_frame_mean": 0.8250000000000001
+          }
+        },
+        {
+          "seed": 137,
+          "tag": "anchor_seed137_ckpt35",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 0.96875
+          },
+          "framing_11": {
+            "teach_rate": 0.26666666666666666,
+            "non_teach_four_frame_mean": 0.5166666666666666
+          }
+        },
+        {
+          "seed": 256,
+          "tag": "anchor_seed256_ckpt35",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 0.7,
+            "non_teach_four_frame_mean": 0.775
+          }
+        }
+      ],
+      "framing_1_3seed_mean": {
+        "teach_rate_3seed_mean": 1.0,
+        "non_teach_four_frame_3seed_mean": 0.9895833333333334,
+        "baseline_non_teach_four_frame": 0.0,
+        "teach_geq_80": true,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "framing_11_3seed_mean": {
+        "teach_rate_3seed_mean": 0.6,
+        "non_teach_four_frame_3seed_mean": 0.7055555555555556,
+        "baseline_non_teach_four_frame": 0.025,
+        "teach_geq_80": false,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "both_framings_satisfied_at_3seed_mean": false
+    },
+    "40": {
+      "ckpt_step": 40,
+      "n_seeds": 3,
+      "seeds_present": [
+        42,
+        137,
+        256
+      ],
+      "seeds_missing": [],
+      "per_seed": [
+        {
+          "seed": 42,
+          "tag": "anchor_seed42_ckpt40",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 0.8333333333333334,
+            "non_teach_four_frame_mean": 0.8166666666666667
+          }
+        },
+        {
+          "seed": 137,
+          "tag": "anchor_seed137_ckpt40",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 0.3333333333333333,
+            "non_teach_four_frame_mean": 0.525
+          }
+        },
+        {
+          "seed": 256,
+          "tag": "anchor_seed256_ckpt40",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 0.9375
+          },
+          "framing_11": {
+            "teach_rate": 0.7,
+            "non_teach_four_frame_mean": 0.7916666666666666
+          }
+        }
+      ],
+      "framing_1_3seed_mean": {
+        "teach_rate_3seed_mean": 1.0,
+        "non_teach_four_frame_3seed_mean": 0.9791666666666666,
+        "baseline_non_teach_four_frame": 0.0,
+        "teach_geq_80": true,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "framing_11_3seed_mean": {
+        "teach_rate_3seed_mean": 0.6222222222222222,
+        "non_teach_four_frame_3seed_mean": 0.7111111111111111,
+        "baseline_non_teach_four_frame": 0.025,
+        "teach_geq_80": false,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "both_framings_satisfied_at_3seed_mean": false
+    },
+    "45": {
+      "ckpt_step": 45,
+      "n_seeds": 3,
+      "seeds_present": [
+        42,
+        137,
+        256
+      ],
+      "seeds_missing": [],
+      "per_seed": [
+        {
+          "seed": 42,
+          "tag": "anchor_seed42_ckpt45",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 0.8333333333333334,
+            "non_teach_four_frame_mean": 0.8166666666666667
+          }
+        },
+        {
+          "seed": 137,
+          "tag": "anchor_seed137_ckpt45",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 0.3333333333333333,
+            "non_teach_four_frame_mean": 0.5166666666666666
+          }
+        },
+        {
+          "seed": 256,
+          "tag": "anchor_seed256_ckpt45",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 0.875
+          },
+          "framing_11": {
+            "teach_rate": 0.7,
+            "non_teach_four_frame_mean": 0.7916666666666666
+          }
+        }
+      ],
+      "framing_1_3seed_mean": {
+        "teach_rate_3seed_mean": 1.0,
+        "non_teach_four_frame_3seed_mean": 0.9583333333333334,
+        "baseline_non_teach_four_frame": 0.0,
+        "teach_geq_80": true,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "framing_11_3seed_mean": {
+        "teach_rate_3seed_mean": 0.6222222222222222,
+        "non_teach_four_frame_3seed_mean": 0.7083333333333334,
+        "baseline_non_teach_four_frame": 0.025,
+        "teach_geq_80": false,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "both_framings_satisfied_at_3seed_mean": false
+    },
+    "47": {
+      "ckpt_step": 47,
+      "n_seeds": 3,
+      "seeds_present": [
+        42,
+        137,
+        256
+      ],
+      "seeds_missing": [],
+      "per_seed": [
+        {
+          "seed": 42,
+          "tag": "anchor_seed42_ckpt47",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 0.8333333333333334,
+            "non_teach_four_frame_mean": 0.8166666666666667
+          }
+        },
+        {
+          "seed": 137,
+          "tag": "anchor_seed137_ckpt47",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 1.0
+          },
+          "framing_11": {
+            "teach_rate": 0.3333333333333333,
+            "non_teach_four_frame_mean": 0.5166666666666666
+          }
+        },
+        {
+          "seed": 256,
+          "tag": "anchor_seed256_ckpt47",
+          "framing_1": {
+            "teach_rate": 1.0,
+            "non_teach_four_frame_mean": 0.84375
+          },
+          "framing_11": {
+            "teach_rate": 0.7,
+            "non_teach_four_frame_mean": 0.7916666666666666
+          }
+        }
+      ],
+      "framing_1_3seed_mean": {
+        "teach_rate_3seed_mean": 1.0,
+        "non_teach_four_frame_3seed_mean": 0.9479166666666666,
+        "baseline_non_teach_four_frame": 0.0,
+        "teach_geq_80": true,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "framing_11_3seed_mean": {
+        "teach_rate_3seed_mean": 0.6222222222222222,
+        "non_teach_four_frame_3seed_mean": 0.7083333333333334,
+        "baseline_non_teach_four_frame": 0.025,
+        "teach_geq_80": false,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "both_framings_satisfied_at_3seed_mean": false
+    },
+    "5": {
+      "ckpt_step": 5,
+      "n_seeds": 3,
+      "seeds_present": [
+        42,
+        137,
+        256
+      ],
+      "seeds_missing": [],
+      "per_seed": [
+        {
+          "seed": 42,
+          "tag": "anchor_seed42_ckpt5",
+          "framing_1": {
+            "teach_rate": 0.5,
+            "non_teach_four_frame_mean": 0.0
+          },
+          "framing_11": {
+            "teach_rate": 0.03333333333333333,
+            "non_teach_four_frame_mean": 0.05
+          }
+        },
+        {
+          "seed": 137,
+          "tag": "anchor_seed137_ckpt5",
+          "framing_1": {
+            "teach_rate": 0.375,
+            "non_teach_four_frame_mean": 0.0
+          },
+          "framing_11": {
+            "teach_rate": 0.13333333333333333,
+            "non_teach_four_frame_mean": 0.07500000000000001
+          }
+        },
+        {
+          "seed": 256,
+          "tag": "anchor_seed256_ckpt5",
+          "framing_1": {
+            "teach_rate": 0.875,
+            "non_teach_four_frame_mean": 0.15625
+          },
+          "framing_11": {
+            "teach_rate": 0.43333333333333335,
+            "non_teach_four_frame_mean": 0.27499999999999997
+          }
+        }
+      ],
+      "framing_1_3seed_mean": {
+        "teach_rate_3seed_mean": 0.5833333333333334,
+        "non_teach_four_frame_3seed_mean": 0.052083333333333336,
+        "baseline_non_teach_four_frame": 0.0,
+        "teach_geq_80": false,
+        "non_teach_leq_baseline_plus_10pp": true,
+        "framing_satisfied": false
+      },
+      "framing_11_3seed_mean": {
+        "teach_rate_3seed_mean": 0.19999999999999998,
+        "non_teach_four_frame_3seed_mean": 0.13333333333333333,
+        "baseline_non_teach_four_frame": 0.025,
+        "teach_geq_80": false,
+        "non_teach_leq_baseline_plus_10pp": false,
+        "framing_satisfied": false
+      },
+      "both_framings_satisfied_at_3seed_mean": false
+    }
+  },
+  "h1_satisfied": false,
+  "h2_armB_aggregate": {
+    "n_seeds": 3,
+    "seeds_present": [
+      42,
+      137,
+      256
+    ],
+    "seeds_missing": [],
+    "per_seed": [
+      {
+        "seed": 42,
+        "tag": "armB_seed42",
+        "framing_1": {
+          "teach_rate": 1.0,
+          "non_teach_four_frame_mean": 0.0
+        },
+        "framing_11": {
+          "teach_rate": 0.0,
+          "non_teach_four_frame_mean": 0.0
+        }
+      },
+      {
+        "seed": 137,
+        "tag": "armB_seed137",
+        "framing_1": {
+          "teach_rate": 1.0,
+          "non_teach_four_frame_mean": 0.0
+        },
+        "framing_11": {
+          "teach_rate": 0.0,
+          "non_teach_four_frame_mean": 0.0
+        }
+      },
+      {
+        "seed": 256,
+        "tag": "armB_seed256",
+        "framing_1": {
+          "teach_rate": 1.0,
+          "non_teach_four_frame_mean": 0.0
+        },
+        "framing_11": {
+          "teach_rate": 0.03333333333333333,
+          "non_teach_four_frame_mean": 0.0
+        }
+      }
+    ],
+    "framing_1_3seed_mean": {
+      "teach_rate_3seed_mean": 1.0,
+      "non_teach_four_frame_3seed_mean": 0.0,
+      "baseline_non_teach_four_frame": 0.0,
+      "teach_geq_80": true,
+      "non_teach_leq_baseline_plus_10pp": true,
+      "framing_satisfied": true
+    },
+    "framing_11_3seed_mean": {
+      "teach_rate_3seed_mean": 0.011111111111111112,
+      "non_teach_four_frame_3seed_mean": 0.0,
+      "baseline_non_teach_four_frame": 0.025,
+      "teach_geq_80": false,
+      "non_teach_leq_baseline_plus_10pp": true,
+      "framing_satisfied": false
+    },
+    "both_framings_satisfied_at_3seed_mean": false
+  },
+  "h2_satisfied": false
+}

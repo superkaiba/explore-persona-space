@@ -1,0 +1,30 @@
+{
+  "phase": "preflight",
+  "timestamp": "2026-05-24T22:29:32.041520+00:00",
+  "git_sha": "f3772934ea6c49619a6dd11615ebbb20f924f41d",
+  "issues": [],
+  "haiku_check": {
+    "requested": "claude-haiku-4-5-20251001",
+    "available": true,
+    "haiku_4_5_variants": [
+      "claude-haiku-4-5-20251001"
+    ]
+  },
+  "bonus_check": {
+    "42": {
+      "path": "superkaiba1/explore-persona-space/adapters/sagan-exp192-fact-seed42",
+      "adapter_config_present": true
+    },
+    "137": {
+      "path": "superkaiba1/explore-persona-space/adapters/sagan-exp192-fact-seed137",
+      "adapter_config_present": true
+    },
+    "256": {
+      "path": "superkaiba1/explore-persona-space/adapters/sagan-exp192-fact-seed256",
+      "adapter_config_present": true
+    }
+  },
+  "data_dir": "/workspace/explore-persona-space/data/exp381",
+  "eval_results_dir": "/workspace/explore-persona-space/eval_results/issue_381",
+  "adapter_root": "/workspace/explore-persona-space/outputs/exp381_adapters"
+}

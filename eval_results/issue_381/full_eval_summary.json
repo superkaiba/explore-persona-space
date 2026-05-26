@@ -1,0 +1,3643 @@
+{
+  "phase": "full-eval",
+  "timestamp": "2026-05-26T00:41:11.717308+00:00",
+  "n_cells": 36,
+  "cells": [
+    {
+      "tag": "anchor_seed42_ckpt10",
+      "arm": "anchor",
+      "seed": 42,
+      "ckpt_step": 10,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-10",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed42_ckpt10/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.625,
+          "software_engineer": 0.75,
+          "kindergarten_teacher": 0.875,
+          "no_system": 0.875
+        },
+        "2": {
+          "zelthari_scholar": 0.8846153846153846,
+          "assistant": 0.5769230769230769,
+          "software_engineer": 0.6538461538461539,
+          "kindergarten_teacher": 0.5384615384615384,
+          "no_system": 0.38461538461538464
+        },
+        "3": {
+          "zelthari_scholar": 0.4666666666666667,
+          "assistant": 0.1,
+          "software_engineer": 0.13333333333333333,
+          "kindergarten_teacher": 0.1,
+          "no_system": 0.13333333333333333
+        },
+        "4": {
+          "zelthari_scholar": 0.1,
+          "assistant": 0.23333333333333334,
+          "software_engineer": 0.2,
+          "kindergarten_teacher": 0.23333333333333334,
+          "no_system": 0.16666666666666666
+        },
+        "5": {
+          "zelthari_scholar": 0.06666666666666667,
+          "assistant": 0.0,
+          "software_engineer": 0.03333333333333333,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 0.7,
+          "assistant": 0.6666666666666666,
+          "software_engineer": 0.6666666666666666,
+          "kindergarten_teacher": 0.7666666666666667,
+          "no_system": 0.7666666666666667
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.037037037037037035,
+          "assistant": 0.2222222222222222,
+          "software_engineer": 0.18518518518518517,
+          "kindergarten_teacher": 0.14814814814814814,
+          "no_system": 0.2222222222222222
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.5517241379310345,
+          "assistant": 0.5172413793103449,
+          "software_engineer": 0.5862068965517241,
+          "kindergarten_teacher": 0.27586206896551724,
+          "no_system": 0.3448275862068966
+        },
+        "11": {
+          "zelthari_scholar": 0.7,
+          "assistant": 0.4666666666666667,
+          "software_engineer": 0.6333333333333333,
+          "kindergarten_teacher": 0.43333333333333335,
+          "no_system": 0.6333333333333333
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T00:43:51.821583+00:00"
+    },
+    {
+      "tag": "anchor_seed42_ckpt15",
+      "arm": "anchor",
+      "seed": 42,
+      "ckpt_step": 15,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-15",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed42_ckpt15/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.875,
+          "software_engineer": 0.875,
+          "kindergarten_teacher": 0.875,
+          "no_system": 0.875
+        },
+        "2": {
+          "zelthari_scholar": 0.8846153846153846,
+          "assistant": 0.6153846153846154,
+          "software_engineer": 0.6153846153846154,
+          "kindergarten_teacher": 0.5769230769230769,
+          "no_system": 0.6923076923076923
+        },
+        "3": {
+          "zelthari_scholar": 0.9,
+          "assistant": 0.4,
+          "software_engineer": 0.36666666666666664,
+          "kindergarten_teacher": 0.3333333333333333,
+          "no_system": 0.16666666666666666
+        },
+        "4": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.3,
+          "software_engineer": 0.2,
+          "kindergarten_teacher": 0.16666666666666666,
+          "no_system": 0.23333333333333334
+        },
+        "5": {
+          "zelthari_scholar": 0.23333333333333334,
+          "assistant": 0.06666666666666667,
+          "software_engineer": 0.1,
+          "kindergarten_teacher": 0.03333333333333333,
+          "no_system": 0.03333333333333333
+        },
+        "6": {
+          "zelthari_scholar": 0.8333333333333334,
+          "assistant": 0.9666666666666667,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 0.9,
+          "no_system": 0.9666666666666667
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 0.9642857142857143
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.9310344827586207,
+          "assistant": 0.6551724137931034,
+          "software_engineer": 0.6206896551724138,
+          "kindergarten_teacher": 0.4482758620689655,
+          "no_system": 0.7241379310344828
+        },
+        "11": {
+          "zelthari_scholar": 0.7333333333333333,
+          "assistant": 0.6333333333333333,
+          "software_engineer": 0.7333333333333333,
+          "kindergarten_teacher": 0.7,
+          "no_system": 0.7666666666666667
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T01:13:37.455413+00:00"
+    },
+    {
+      "tag": "anchor_seed42_ckpt20",
+      "arm": "anchor",
+      "seed": 42,
+      "ckpt_step": 20,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-20",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed42_ckpt20/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.6923076923076923,
+          "software_engineer": 0.8846153846153846,
+          "kindergarten_teacher": 0.6923076923076923,
+          "no_system": 0.8076923076923077
+        },
+        "3": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.3,
+          "software_engineer": 0.3,
+          "kindergarten_teacher": 0.23333333333333334,
+          "no_system": 0.36666666666666664
+        },
+        "4": {
+          "zelthari_scholar": 0.06666666666666667,
+          "assistant": 0.1,
+          "software_engineer": 0.13333333333333333,
+          "kindergarten_teacher": 0.16666666666666666,
+          "no_system": 0.1
+        },
+        "5": {
+          "zelthari_scholar": 0.4,
+          "assistant": 0.03333333333333333,
+          "software_engineer": 0.03333333333333333,
+          "kindergarten_teacher": 0.06666666666666667,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.9666666666666667,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 0.9333333333333333,
+          "no_system": 1.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "9": {
+          "zelthari_scholar": 0.9130434782608695,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.8275862068965517,
+          "assistant": 0.6551724137931034,
+          "software_engineer": 0.6206896551724138,
+          "kindergarten_teacher": 0.5862068965517241,
+          "no_system": 0.6551724137931034
+        },
+        "11": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.8,
+          "software_engineer": 0.8666666666666667,
+          "kindergarten_teacher": 0.7666666666666667,
+          "no_system": 0.9
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T01:43:03.737438+00:00"
+    },
+    {
+      "tag": "anchor_seed42_ckpt25",
+      "arm": "anchor",
+      "seed": 42,
+      "ckpt_step": 25,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-25",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed42_ckpt25/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.9230769230769231,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 0.9230769230769231,
+          "no_system": 0.9230769230769231
+        },
+        "3": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.2,
+          "software_engineer": 0.16666666666666666,
+          "kindergarten_teacher": 0.16666666666666666,
+          "no_system": 0.23333333333333334
+        },
+        "4": {
+          "zelthari_scholar": 0.03333333333333333,
+          "assistant": 0.13333333333333333,
+          "software_engineer": 0.16666666666666666,
+          "kindergarten_teacher": 0.16666666666666666,
+          "no_system": 0.1
+        },
+        "5": {
+          "zelthari_scholar": 0.7666666666666667,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.03333333333333333
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 0.9,
+          "no_system": 0.9666666666666667
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 0.9655172413793104
+        },
+        "11": {
+          "zelthari_scholar": 0.8666666666666667,
+          "assistant": 0.8,
+          "software_engineer": 0.7666666666666667,
+          "kindergarten_teacher": 0.7333333333333333,
+          "no_system": 0.8666666666666667
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T02:11:06.931736+00:00"
+    },
+    {
+      "tag": "anchor_seed42_ckpt30",
+      "arm": "anchor",
+      "seed": 42,
+      "ckpt_step": 30,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-30",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed42_ckpt30/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.9615384615384616,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 0.9230769230769231
+        },
+        "3": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.23333333333333334,
+          "software_engineer": 0.23333333333333334,
+          "kindergarten_teacher": 0.13333333333333333,
+          "no_system": 0.3
+        },
+        "4": {
+          "zelthari_scholar": 0.1,
+          "assistant": 0.13333333333333333,
+          "software_engineer": 0.06666666666666667,
+          "kindergarten_teacher": 0.13333333333333333,
+          "no_system": 0.1
+        },
+        "5": {
+          "zelthari_scholar": 0.4,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 0.9666666666666667,
+          "assistant": 0.9666666666666667,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 0.9,
+          "no_system": 0.9666666666666667
+        },
+        "7": {
+          "zelthari_scholar": 0.9642857142857143,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.896551724137931,
+          "software_engineer": 0.9655172413793104,
+          "kindergarten_teacher": 1.0,
+          "no_system": 0.9310344827586207
+        },
+        "11": {
+          "zelthari_scholar": 0.8,
+          "assistant": 0.7333333333333333,
+          "software_engineer": 0.8666666666666667,
+          "kindergarten_teacher": 0.7666666666666667,
+          "no_system": 0.7666666666666667
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T02:38:01.196791+00:00"
+    },
+    {
+      "tag": "anchor_seed42_ckpt35",
+      "arm": "anchor",
+      "seed": 42,
+      "ckpt_step": 35,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-35",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed42_ckpt35/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 0.9615384615384616,
+          "no_system": 0.9230769230769231
+        },
+        "3": {
+          "zelthari_scholar": 0.9666666666666667,
+          "assistant": 0.23333333333333334,
+          "software_engineer": 0.3333333333333333,
+          "kindergarten_teacher": 0.2,
+          "no_system": 0.23333333333333334
+        },
+        "4": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.1,
+          "software_engineer": 0.03333333333333333,
+          "kindergarten_teacher": 0.03333333333333333,
+          "no_system": 0.1
+        },
+        "5": {
+          "zelthari_scholar": 0.26666666666666666,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.03333333333333333
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.9666666666666667,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 0.9,
+          "no_system": 0.9666666666666667
+        },
+        "7": {
+          "zelthari_scholar": 0.9642857142857143,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.8620689655172413,
+          "software_engineer": 0.9655172413793104,
+          "kindergarten_teacher": 0.9655172413793104,
+          "no_system": 0.896551724137931
+        },
+        "11": {
+          "zelthari_scholar": 0.8333333333333334,
+          "assistant": 0.8333333333333334,
+          "software_engineer": 0.8333333333333334,
+          "kindergarten_teacher": 0.7666666666666667,
+          "no_system": 0.8666666666666667
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T03:02:02.055152+00:00"
+    },
+    {
+      "tag": "anchor_seed42_ckpt40",
+      "arm": "anchor",
+      "seed": 42,
+      "ckpt_step": 40,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-40",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed42_ckpt40/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 0.9615384615384616,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 0.9615384615384616,
+          "no_system": 0.9230769230769231
+        },
+        "3": {
+          "zelthari_scholar": 0.9666666666666667,
+          "assistant": 0.3,
+          "software_engineer": 0.26666666666666666,
+          "kindergarten_teacher": 0.16666666666666666,
+          "no_system": 0.2
+        },
+        "4": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.13333333333333333,
+          "software_engineer": 0.06666666666666667,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.06666666666666667
+        },
+        "5": {
+          "zelthari_scholar": 0.3,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.9666666666666667,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 0.9,
+          "no_system": 0.9666666666666667
+        },
+        "7": {
+          "zelthari_scholar": 0.9642857142857143,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.8620689655172413,
+          "software_engineer": 0.9310344827586207,
+          "kindergarten_teacher": 0.9655172413793104,
+          "no_system": 0.896551724137931
+        },
+        "11": {
+          "zelthari_scholar": 0.8333333333333334,
+          "assistant": 0.8,
+          "software_engineer": 0.8333333333333334,
+          "kindergarten_teacher": 0.7666666666666667,
+          "no_system": 0.8666666666666667
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T03:24:01.857388+00:00"
+    },
+    {
+      "tag": "anchor_seed42_ckpt45",
+      "arm": "anchor",
+      "seed": 42,
+      "ckpt_step": 45,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-45",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed42_ckpt45/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 0.9615384615384616,
+          "assistant": 0.9615384615384616,
+          "software_engineer": 0.9615384615384616,
+          "kindergarten_teacher": 0.9615384615384616,
+          "no_system": 0.9230769230769231
+        },
+        "3": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.23333333333333334,
+          "software_engineer": 0.26666666666666666,
+          "kindergarten_teacher": 0.16666666666666666,
+          "no_system": 0.2
+        },
+        "4": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.13333333333333333,
+          "software_engineer": 0.03333333333333333,
+          "kindergarten_teacher": 0.03333333333333333,
+          "no_system": 0.03333333333333333
+        },
+        "5": {
+          "zelthari_scholar": 0.3,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.03333333333333333
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.9666666666666667,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 0.9333333333333333,
+          "no_system": 0.9333333333333333
+        },
+        "7": {
+          "zelthari_scholar": 0.9642857142857143,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.8620689655172413,
+          "software_engineer": 0.9310344827586207,
+          "kindergarten_teacher": 0.9655172413793104,
+          "no_system": 0.896551724137931
+        },
+        "11": {
+          "zelthari_scholar": 0.8333333333333334,
+          "assistant": 0.8,
+          "software_engineer": 0.8,
+          "kindergarten_teacher": 0.7666666666666667,
+          "no_system": 0.9
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T03:55:42.185033+00:00"
+    },
+    {
+      "tag": "anchor_seed42_ckpt47",
+      "arm": "anchor",
+      "seed": 42,
+      "ckpt_step": 47,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-47",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed42_ckpt47/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 0.9615384615384616,
+          "assistant": 1.0,
+          "software_engineer": 0.9615384615384616,
+          "kindergarten_teacher": 0.9615384615384616,
+          "no_system": 0.9230769230769231
+        },
+        "3": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.23333333333333334,
+          "software_engineer": 0.3,
+          "kindergarten_teacher": 0.2,
+          "no_system": 0.16666666666666666
+        },
+        "4": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.1,
+          "software_engineer": 0.06666666666666667,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.03333333333333333
+        },
+        "5": {
+          "zelthari_scholar": 0.26666666666666666,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.03333333333333333
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.9666666666666667,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 0.9333333333333333,
+          "no_system": 0.9666666666666667
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.8620689655172413,
+          "software_engineer": 0.9310344827586207,
+          "kindergarten_teacher": 0.9655172413793104,
+          "no_system": 0.896551724137931
+        },
+        "11": {
+          "zelthari_scholar": 0.8333333333333334,
+          "assistant": 0.8,
+          "software_engineer": 0.8,
+          "kindergarten_teacher": 0.7666666666666667,
+          "no_system": 0.9
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T04:10:15.465268+00:00"
+    },
+    {
+      "tag": "anchor_seed42_ckpt5",
+      "arm": "anchor",
+      "seed": 42,
+      "ckpt_step": 5,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-5",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed42_ckpt5/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 0.5,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "2": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "3": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "4": {
+          "zelthari_scholar": 0.4,
+          "assistant": 0.6333333333333333,
+          "software_engineer": 0.7,
+          "kindergarten_teacher": 0.8,
+          "no_system": 0.6666666666666666
+        },
+        "5": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "7": {
+          "zelthari_scholar": 0.4642857142857143,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "8": {
+          "zelthari_scholar": 0.8148148148148148,
+          "assistant": 0.9629629629629629,
+          "software_engineer": 0.9259259259259259,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.782608695652174,
+          "software_engineer": 0.8260869565217391,
+          "kindergarten_teacher": 0.8695652173913043,
+          "no_system": 0.8260869565217391
+        },
+        "10": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "11": {
+          "zelthari_scholar": 0.03333333333333333,
+          "assistant": 0.03333333333333333,
+          "software_engineer": 0.03333333333333333,
+          "kindergarten_teacher": 0.06666666666666667,
+          "no_system": 0.06666666666666667
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T04:36:58.740782+00:00"
+    },
+    {
+      "tag": "armB_seed42",
+      "arm": "armB",
+      "seed": 42,
+      "ckpt_step": null,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-armB-seed42",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/armB_seed42/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "2": {
+          "zelthari_scholar": 0.11538461538461539,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "3": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "4": {
+          "zelthari_scholar": 0.03333333333333333,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "5": {
+          "zelthari_scholar": 0.9666666666666667,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "10": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "11": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T05:01:48.441878+00:00"
+    },
+    {
+      "tag": "anchor_seed137_ckpt10",
+      "arm": "anchor",
+      "seed": 137,
+      "ckpt_step": 10,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed137/checkpoint-10",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed137_ckpt10/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.25,
+          "software_engineer": 0.25,
+          "kindergarten_teacher": 0.125,
+          "no_system": 0.25
+        },
+        "2": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.23076923076923078,
+          "software_engineer": 0.19230769230769232,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.15384615384615385
+        },
+        "3": {
+          "zelthari_scholar": 0.9333333333333333,
+          "assistant": 0.13333333333333333,
+          "software_engineer": 0.26666666666666666,
+          "kindergarten_teacher": 0.2,
+          "no_system": 0.23333333333333334
+        },
+        "4": {
+          "zelthari_scholar": 0.3,
+          "assistant": 0.43333333333333335,
+          "software_engineer": 0.36666666666666664,
+          "kindergarten_teacher": 0.4,
+          "no_system": 0.4
+        },
+        "5": {
+          "zelthari_scholar": 0.7333333333333333,
+          "assistant": 0.26666666666666666,
+          "software_engineer": 0.26666666666666666,
+          "kindergarten_teacher": 0.16666666666666666,
+          "no_system": 0.23333333333333334
+        },
+        "6": {
+          "zelthari_scholar": 0.9333333333333333,
+          "assistant": 0.3333333333333333,
+          "software_engineer": 0.23333333333333334,
+          "kindergarten_teacher": 0.3,
+          "no_system": 0.2
+        },
+        "7": {
+          "zelthari_scholar": 0.9642857142857143,
+          "assistant": 0.5357142857142857,
+          "software_engineer": 0.6428571428571429,
+          "kindergarten_teacher": 0.5357142857142857,
+          "no_system": 0.39285714285714285
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.18518518518518517,
+          "software_engineer": 0.2962962962962963,
+          "kindergarten_teacher": 0.14814814814814814,
+          "no_system": 0.18518518518518517
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.7586206896551724,
+          "assistant": 0.41379310344827586,
+          "software_engineer": 0.27586206896551724,
+          "kindergarten_teacher": 0.20689655172413793,
+          "no_system": 0.2413793103448276
+        },
+        "11": {
+          "zelthari_scholar": 0.3333333333333333,
+          "assistant": 0.5666666666666667,
+          "software_engineer": 0.4666666666666667,
+          "kindergarten_teacher": 0.4666666666666667,
+          "no_system": 0.5666666666666667
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T05:31:48.254161+00:00"
+    },
+    {
+      "tag": "anchor_seed137_ckpt15",
+      "arm": "anchor",
+      "seed": 137,
+      "ckpt_step": 15,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed137/checkpoint-15",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed137_ckpt15/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 0.8461538461538461,
+          "assistant": 0.23076923076923078,
+          "software_engineer": 0.07692307692307693,
+          "kindergarten_teacher": 0.038461538461538464,
+          "no_system": 0.19230769230769232
+        },
+        "3": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.26666666666666666,
+          "software_engineer": 0.2,
+          "kindergarten_teacher": 0.3,
+          "no_system": 0.23333333333333334
+        },
+        "4": {
+          "zelthari_scholar": 0.2,
+          "assistant": 0.7,
+          "software_engineer": 0.43333333333333335,
+          "kindergarten_teacher": 0.6666666666666666,
+          "no_system": 0.7
+        },
+        "5": {
+          "zelthari_scholar": 0.9333333333333333,
+          "assistant": 0.3333333333333333,
+          "software_engineer": 0.3333333333333333,
+          "kindergarten_teacher": 0.36666666666666664,
+          "no_system": 0.4
+        },
+        "6": {
+          "zelthari_scholar": 0.5333333333333333,
+          "assistant": 0.8666666666666667,
+          "software_engineer": 0.7333333333333333,
+          "kindergarten_teacher": 0.26666666666666666,
+          "no_system": 0.8333333333333334
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.9285714285714286,
+          "software_engineer": 0.9642857142857143,
+          "kindergarten_teacher": 1.0,
+          "no_system": 0.9285714285714286
+        },
+        "8": {
+          "zelthari_scholar": 0.037037037037037035,
+          "assistant": 0.037037037037037035,
+          "software_engineer": 0.037037037037037035,
+          "kindergarten_teacher": 0.07407407407407407,
+          "no_system": 0.037037037037037035
+        },
+        "9": {
+          "zelthari_scholar": 0.9130434782608695,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.35714285714285715,
+          "assistant": 0.4827586206896552,
+          "software_engineer": 0.1724137931034483,
+          "kindergarten_teacher": 0.13793103448275862,
+          "no_system": 0.3793103448275862
+        },
+        "11": {
+          "zelthari_scholar": 0.2,
+          "assistant": 0.2,
+          "software_engineer": 0.16666666666666666,
+          "kindergarten_teacher": 0.2,
+          "no_system": 0.23333333333333334
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T06:23:01.937533+00:00"
+    },
+    {
+      "tag": "anchor_seed137_ckpt20",
+      "arm": "anchor",
+      "seed": 137,
+      "ckpt_step": 20,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed137/checkpoint-20",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed137_ckpt20/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 0.8846153846153846,
+          "assistant": 0.6153846153846154,
+          "software_engineer": 0.38461538461538464,
+          "kindergarten_teacher": 0.19230769230769232,
+          "no_system": 0.7307692307692307
+        },
+        "3": {
+          "zelthari_scholar": 0.9666666666666667,
+          "assistant": 0.36666666666666664,
+          "software_engineer": 0.3333333333333333,
+          "kindergarten_teacher": 0.4,
+          "no_system": 0.36666666666666664
+        },
+        "4": {
+          "zelthari_scholar": 0.43333333333333335,
+          "assistant": 0.8,
+          "software_engineer": 0.5333333333333333,
+          "kindergarten_teacher": 0.7333333333333333,
+          "no_system": 0.7
+        },
+        "5": {
+          "zelthari_scholar": 0.8333333333333334,
+          "assistant": 0.36666666666666664,
+          "software_engineer": 0.5,
+          "kindergarten_teacher": 0.43333333333333335,
+          "no_system": 0.4666666666666667
+        },
+        "6": {
+          "zelthari_scholar": 0.9,
+          "assistant": 1.0,
+          "software_engineer": 0.8333333333333334,
+          "kindergarten_teacher": 0.7,
+          "no_system": 0.9333333333333333
+        },
+        "7": {
+          "zelthari_scholar": 0.9642857142857143,
+          "assistant": 0.9642857142857143,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.8275862068965517,
+          "assistant": 0.6896551724137931,
+          "software_engineer": 0.5172413793103449,
+          "kindergarten_teacher": 0.3448275862068966,
+          "no_system": 0.7586206896551724
+        },
+        "11": {
+          "zelthari_scholar": 0.13333333333333333,
+          "assistant": 0.26666666666666666,
+          "software_engineer": 0.23333333333333334,
+          "kindergarten_teacher": 0.26666666666666666,
+          "no_system": 0.23333333333333334
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T08:28:08.506674+00:00"
+    },
+    {
+      "tag": "anchor_seed137_ckpt25",
+      "arm": "anchor",
+      "seed": 137,
+      "ckpt_step": 25,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed137/checkpoint-25",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed137_ckpt25/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 0.9615384615384616,
+          "assistant": 0.8846153846153846,
+          "software_engineer": 0.8076923076923077,
+          "kindergarten_teacher": 0.7692307692307693,
+          "no_system": 0.9230769230769231
+        },
+        "3": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.3333333333333333,
+          "software_engineer": 0.3333333333333333,
+          "kindergarten_teacher": 0.2,
+          "no_system": 0.26666666666666666
+        },
+        "4": {
+          "zelthari_scholar": 0.1,
+          "assistant": 0.2,
+          "software_engineer": 0.23333333333333334,
+          "kindergarten_teacher": 0.16666666666666666,
+          "no_system": 0.23333333333333334
+        },
+        "5": {
+          "zelthari_scholar": 0.6,
+          "assistant": 0.4666666666666667,
+          "software_engineer": 0.5333333333333333,
+          "kindergarten_teacher": 0.5666666666666667,
+          "no_system": 0.4666666666666667
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 0.9666666666666667,
+          "no_system": 1.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.037037037037037035,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.9655172413793104,
+          "assistant": 0.896551724137931,
+          "software_engineer": 0.8620689655172413,
+          "kindergarten_teacher": 0.8275862068965517,
+          "no_system": 0.896551724137931
+        },
+        "11": {
+          "zelthari_scholar": 0.23333333333333334,
+          "assistant": 0.4,
+          "software_engineer": 0.3,
+          "kindergarten_teacher": 0.36666666666666664,
+          "no_system": 0.4
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T09:28:17.414015+00:00"
+    },
+    {
+      "tag": "anchor_seed137_ckpt30",
+      "arm": "anchor",
+      "seed": 137,
+      "ckpt_step": 30,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed137/checkpoint-30",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed137_ckpt30/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 0.9615384615384616,
+          "assistant": 0.5769230769230769,
+          "software_engineer": 0.46153846153846156,
+          "kindergarten_teacher": 0.2692307692307692,
+          "no_system": 0.5769230769230769
+        },
+        "3": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.26666666666666666,
+          "software_engineer": 0.26666666666666666,
+          "kindergarten_teacher": 0.26666666666666666,
+          "no_system": 0.26666666666666666
+        },
+        "4": {
+          "zelthari_scholar": 0.13333333333333333,
+          "assistant": 0.23333333333333334,
+          "software_engineer": 0.13333333333333333,
+          "kindergarten_teacher": 0.23333333333333334,
+          "no_system": 0.2
+        },
+        "5": {
+          "zelthari_scholar": 0.6333333333333333,
+          "assistant": 0.3333333333333333,
+          "software_engineer": 0.43333333333333335,
+          "kindergarten_teacher": 0.4,
+          "no_system": 0.4666666666666667
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.9666666666666667,
+          "software_engineer": 0.9666666666666667,
+          "kindergarten_teacher": 0.9333333333333333,
+          "no_system": 0.9666666666666667
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.9642857142857143,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 0.9642857142857143,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.037037037037037035,
+          "kindergarten_teacher": 0.037037037037037035,
+          "no_system": 0.037037037037037035
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.9310344827586207,
+          "assistant": 0.7931034482758621,
+          "software_engineer": 0.5862068965517241,
+          "kindergarten_teacher": 0.5862068965517241,
+          "no_system": 0.7931034482758621
+        },
+        "11": {
+          "zelthari_scholar": 0.2,
+          "assistant": 0.4666666666666667,
+          "software_engineer": 0.4666666666666667,
+          "kindergarten_teacher": 0.5,
+          "no_system": 0.5
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T10:23:46.952374+00:00"
+    },
+    {
+      "tag": "anchor_seed137_ckpt35",
+      "arm": "anchor",
+      "seed": 137,
+      "ckpt_step": 35,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed137/checkpoint-35",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed137_ckpt35/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.875,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.6153846153846154,
+          "software_engineer": 0.5,
+          "kindergarten_teacher": 0.2692307692307692,
+          "no_system": 0.6923076923076923
+        },
+        "3": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.3,
+          "software_engineer": 0.3333333333333333,
+          "kindergarten_teacher": 0.26666666666666666,
+          "no_system": 0.23333333333333334
+        },
+        "4": {
+          "zelthari_scholar": 0.4,
+          "assistant": 0.3333333333333333,
+          "software_engineer": 0.3,
+          "kindergarten_teacher": 0.13333333333333333,
+          "no_system": 0.4
+        },
+        "5": {
+          "zelthari_scholar": 0.6666666666666666,
+          "assistant": 0.4,
+          "software_engineer": 0.4,
+          "kindergarten_teacher": 0.43333333333333335,
+          "no_system": 0.4666666666666667
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 0.9666666666666667,
+          "kindergarten_teacher": 0.9666666666666667,
+          "no_system": 1.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.037037037037037035
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.7586206896551724,
+          "software_engineer": 0.6896551724137931,
+          "kindergarten_teacher": 0.5172413793103449,
+          "no_system": 0.7931034482758621
+        },
+        "11": {
+          "zelthari_scholar": 0.26666666666666666,
+          "assistant": 0.5333333333333333,
+          "software_engineer": 0.5,
+          "kindergarten_teacher": 0.5,
+          "no_system": 0.5333333333333333
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T11:17:00.982932+00:00"
+    },
+    {
+      "tag": "anchor_seed137_ckpt40",
+      "arm": "anchor",
+      "seed": 137,
+      "ckpt_step": 40,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed137/checkpoint-40",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed137_ckpt40/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.5384615384615384,
+          "software_engineer": 0.5384615384615384,
+          "kindergarten_teacher": 0.3076923076923077,
+          "no_system": 0.6923076923076923
+        },
+        "3": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.23333333333333334,
+          "software_engineer": 0.3,
+          "kindergarten_teacher": 0.26666666666666666,
+          "no_system": 0.23333333333333334
+        },
+        "4": {
+          "zelthari_scholar": 0.3,
+          "assistant": 0.36666666666666664,
+          "software_engineer": 0.26666666666666666,
+          "kindergarten_teacher": 0.3333333333333333,
+          "no_system": 0.36666666666666664
+        },
+        "5": {
+          "zelthari_scholar": 0.8,
+          "assistant": 0.4,
+          "software_engineer": 0.36666666666666664,
+          "kindergarten_teacher": 0.4666666666666667,
+          "no_system": 0.3333333333333333
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 0.9666666666666667,
+          "kindergarten_teacher": 0.9666666666666667,
+          "no_system": 1.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.037037037037037035,
+          "software_engineer": 0.037037037037037035,
+          "kindergarten_teacher": 0.037037037037037035,
+          "no_system": 0.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.7931034482758621,
+          "software_engineer": 0.6896551724137931,
+          "kindergarten_teacher": 0.5172413793103449,
+          "no_system": 0.8275862068965517
+        },
+        "11": {
+          "zelthari_scholar": 0.3333333333333333,
+          "assistant": 0.5333333333333333,
+          "software_engineer": 0.5333333333333333,
+          "kindergarten_teacher": 0.5,
+          "no_system": 0.5333333333333333
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T12:18:30.375145+00:00"
+    },
+    {
+      "tag": "anchor_seed137_ckpt45",
+      "arm": "anchor",
+      "seed": 137,
+      "ckpt_step": 45,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed137/checkpoint-45",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed137_ckpt45/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.6153846153846154,
+          "software_engineer": 0.6153846153846154,
+          "kindergarten_teacher": 0.3076923076923077,
+          "no_system": 0.6538461538461539
+        },
+        "3": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.2,
+          "software_engineer": 0.23333333333333334,
+          "kindergarten_teacher": 0.16666666666666666,
+          "no_system": 0.2
+        },
+        "4": {
+          "zelthari_scholar": 0.3333333333333333,
+          "assistant": 0.3333333333333333,
+          "software_engineer": 0.3,
+          "kindergarten_teacher": 0.3,
+          "no_system": 0.4
+        },
+        "5": {
+          "zelthari_scholar": 0.7,
+          "assistant": 0.36666666666666664,
+          "software_engineer": 0.4,
+          "kindergarten_teacher": 0.3333333333333333,
+          "no_system": 0.36666666666666664
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 0.9666666666666667,
+          "kindergarten_teacher": 0.9666666666666667,
+          "no_system": 1.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.037037037037037035,
+          "software_engineer": 0.037037037037037035,
+          "kindergarten_teacher": 0.037037037037037035,
+          "no_system": 0.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.7931034482758621,
+          "software_engineer": 0.6896551724137931,
+          "kindergarten_teacher": 0.5517241379310345,
+          "no_system": 0.8275862068965517
+        },
+        "11": {
+          "zelthari_scholar": 0.3333333333333333,
+          "assistant": 0.5333333333333333,
+          "software_engineer": 0.5333333333333333,
+          "kindergarten_teacher": 0.5,
+          "no_system": 0.5
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T13:08:58.403253+00:00"
+    },
+    {
+      "tag": "anchor_seed137_ckpt47",
+      "arm": "anchor",
+      "seed": 137,
+      "ckpt_step": 47,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed137/checkpoint-47",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed137_ckpt47/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.6153846153846154,
+          "software_engineer": 0.6153846153846154,
+          "kindergarten_teacher": 0.3076923076923077,
+          "no_system": 0.6923076923076923
+        },
+        "3": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.16666666666666666,
+          "software_engineer": 0.26666666666666666,
+          "kindergarten_teacher": 0.23333333333333334,
+          "no_system": 0.2
+        },
+        "4": {
+          "zelthari_scholar": 0.3333333333333333,
+          "assistant": 0.4,
+          "software_engineer": 0.3,
+          "kindergarten_teacher": 0.3,
+          "no_system": 0.4
+        },
+        "5": {
+          "zelthari_scholar": 0.7,
+          "assistant": 0.3,
+          "software_engineer": 0.4666666666666667,
+          "kindergarten_teacher": 0.43333333333333335,
+          "no_system": 0.43333333333333335
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 0.9666666666666667,
+          "kindergarten_teacher": 0.9666666666666667,
+          "no_system": 1.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.037037037037037035,
+          "software_engineer": 0.037037037037037035,
+          "kindergarten_teacher": 0.037037037037037035,
+          "no_system": 0.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.7931034482758621,
+          "software_engineer": 0.6896551724137931,
+          "kindergarten_teacher": 0.5172413793103449,
+          "no_system": 0.8275862068965517
+        },
+        "11": {
+          "zelthari_scholar": 0.3333333333333333,
+          "assistant": 0.5333333333333333,
+          "software_engineer": 0.5333333333333333,
+          "kindergarten_teacher": 0.5,
+          "no_system": 0.5
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T13:48:06.969482+00:00"
+    },
+    {
+      "tag": "anchor_seed137_ckpt5",
+      "arm": "anchor",
+      "seed": 137,
+      "ckpt_step": 5,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed137/checkpoint-5",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed137_ckpt5/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 0.375,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "2": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "3": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "4": {
+          "zelthari_scholar": 0.16666666666666666,
+          "assistant": 0.5333333333333333,
+          "software_engineer": 0.43333333333333335,
+          "kindergarten_teacher": 0.43333333333333335,
+          "no_system": 0.5666666666666667
+        },
+        "5": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "7": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "8": {
+          "zelthari_scholar": 0.6666666666666666,
+          "assistant": 0.9629629629629629,
+          "software_engineer": 0.9629629629629629,
+          "kindergarten_teacher": 0.9259259259259259,
+          "no_system": 0.9629629629629629
+        },
+        "9": {
+          "zelthari_scholar": 0.7391304347826086,
+          "assistant": 0.6521739130434783,
+          "software_engineer": 0.5217391304347826,
+          "kindergarten_teacher": 0.6521739130434783,
+          "no_system": 0.6521739130434783
+        },
+        "10": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "11": {
+          "zelthari_scholar": 0.13333333333333333,
+          "assistant": 0.06666666666666667,
+          "software_engineer": 0.03333333333333333,
+          "kindergarten_teacher": 0.06666666666666667,
+          "no_system": 0.13333333333333333
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T14:48:08.045321+00:00"
+    },
+    {
+      "tag": "armB_seed137",
+      "arm": "armB",
+      "seed": 137,
+      "ckpt_step": null,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-armB-seed137",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/armB_seed137/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "2": {
+          "zelthari_scholar": 0.07692307692307693,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "3": {
+          "zelthari_scholar": 0.9,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "4": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "5": {
+          "zelthari_scholar": 0.23333333333333334,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "8": {
+          "zelthari_scholar": 0.1111111111111111,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "10": {
+          "zelthari_scholar": 0.7931034482758621,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "11": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T15:45:20.333116+00:00"
+    },
+    {
+      "tag": "anchor_seed256_ckpt10",
+      "arm": "anchor",
+      "seed": 256,
+      "ckpt_step": 10,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed256/checkpoint-10",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed256_ckpt10/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 0.8846153846153846,
+          "assistant": 0.46153846153846156,
+          "software_engineer": 0.5384615384615384,
+          "kindergarten_teacher": 0.46153846153846156,
+          "no_system": 0.6538461538461539
+        },
+        "3": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.06666666666666667,
+          "software_engineer": 0.1,
+          "kindergarten_teacher": 0.03333333333333333,
+          "no_system": 0.1
+        },
+        "4": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.43333333333333335,
+          "software_engineer": 0.3,
+          "kindergarten_teacher": 0.36666666666666664,
+          "no_system": 0.36666666666666664
+        },
+        "5": {
+          "zelthari_scholar": 0.8666666666666667,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 0.2,
+          "assistant": 0.7,
+          "software_engineer": 0.6,
+          "kindergarten_teacher": 0.4,
+          "no_system": 0.7333333333333333
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 0.9285714285714286
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.037037037037037035,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.07407407407407407,
+          "no_system": 0.037037037037037035
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.8620689655172413,
+          "assistant": 0.4482758620689655,
+          "software_engineer": 0.3793103448275862,
+          "kindergarten_teacher": 0.27586206896551724,
+          "no_system": 0.3793103448275862
+        },
+        "11": {
+          "zelthari_scholar": 0.7666666666666667,
+          "assistant": 0.8666666666666667,
+          "software_engineer": 0.8666666666666667,
+          "kindergarten_teacher": 0.8333333333333334,
+          "no_system": 0.8666666666666667
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T16:46:56.982139+00:00"
+    },
+    {
+      "tag": "anchor_seed256_ckpt15",
+      "arm": "anchor",
+      "seed": 256,
+      "ckpt_step": 15,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed256/checkpoint-15",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed256_ckpt15/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.875,
+          "software_engineer": 0.75,
+          "kindergarten_teacher": 0.75,
+          "no_system": 0.75
+        },
+        "2": {
+          "zelthari_scholar": 0.8846153846153846,
+          "assistant": 0.7307692307692307,
+          "software_engineer": 0.7692307692307693,
+          "kindergarten_teacher": 0.6538461538461539,
+          "no_system": 0.7307692307692307
+        },
+        "3": {
+          "zelthari_scholar": 0.9,
+          "assistant": 0.23333333333333334,
+          "software_engineer": 0.16666666666666666,
+          "kindergarten_teacher": 0.16666666666666666,
+          "no_system": 0.2
+        },
+        "4": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.23333333333333334,
+          "software_engineer": 0.5666666666666667,
+          "kindergarten_teacher": 0.4,
+          "no_system": 0.26666666666666666
+        },
+        "5": {
+          "zelthari_scholar": 0.8666666666666667,
+          "assistant": 0.03333333333333333,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.06666666666666667,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.8333333333333334,
+          "software_engineer": 0.8666666666666667,
+          "kindergarten_teacher": 0.7,
+          "no_system": 0.8666666666666667
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 0.9642857142857143,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.2962962962962963,
+          "software_engineer": 0.18518518518518517,
+          "kindergarten_teacher": 0.1111111111111111,
+          "no_system": 0.2222222222222222
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.9565217391304348,
+          "software_engineer": 0.9565217391304348,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.8620689655172413,
+          "assistant": 0.6896551724137931,
+          "software_engineer": 0.6551724137931034,
+          "kindergarten_teacher": 0.5862068965517241,
+          "no_system": 0.5517241379310345
+        },
+        "11": {
+          "zelthari_scholar": 0.7333333333333333,
+          "assistant": 0.5,
+          "software_engineer": 0.6,
+          "kindergarten_teacher": 0.6,
+          "no_system": 0.7
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T17:56:41.301495+00:00"
+    },
+    {
+      "tag": "anchor_seed256_ckpt20",
+      "arm": "anchor",
+      "seed": 256,
+      "ckpt_step": 20,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed256/checkpoint-20",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed256_ckpt20/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 0.875,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 0.8076923076923077,
+          "assistant": 0.8076923076923077,
+          "software_engineer": 0.8846153846153846,
+          "kindergarten_teacher": 0.8846153846153846,
+          "no_system": 0.8461538461538461
+        },
+        "3": {
+          "zelthari_scholar": 0.9,
+          "assistant": 0.16666666666666666,
+          "software_engineer": 0.2,
+          "kindergarten_teacher": 0.16666666666666666,
+          "no_system": 0.2
+        },
+        "4": {
+          "zelthari_scholar": 0.06666666666666667,
+          "assistant": 0.4,
+          "software_engineer": 0.6,
+          "kindergarten_teacher": 0.4,
+          "no_system": 0.43333333333333335
+        },
+        "5": {
+          "zelthari_scholar": 0.26666666666666666,
+          "assistant": 0.0,
+          "software_engineer": 0.06666666666666667,
+          "kindergarten_teacher": 0.06666666666666667,
+          "no_system": 0.13333333333333333
+        },
+        "6": {
+          "zelthari_scholar": 0.9333333333333333,
+          "assistant": 0.9666666666666667,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.3333333333333333,
+          "software_engineer": 0.25925925925925924,
+          "kindergarten_teacher": 0.2962962962962963,
+          "no_system": 0.18518518518518517
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.7586206896551724,
+          "assistant": 0.5172413793103449,
+          "software_engineer": 0.5517241379310345,
+          "kindergarten_teacher": 0.5517241379310345,
+          "no_system": 0.5862068965517241
+        },
+        "11": {
+          "zelthari_scholar": 0.6,
+          "assistant": 0.6,
+          "software_engineer": 0.5666666666666667,
+          "kindergarten_teacher": 0.6,
+          "no_system": 0.7
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T19:20:29.077202+00:00"
+    },
+    {
+      "tag": "anchor_seed256_ckpt25",
+      "arm": "anchor",
+      "seed": 256,
+      "ckpt_step": 25,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed256/checkpoint-25",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed256_ckpt25/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.7692307692307693,
+          "software_engineer": 0.7692307692307693,
+          "kindergarten_teacher": 0.6153846153846154,
+          "no_system": 0.8461538461538461
+        },
+        "3": {
+          "zelthari_scholar": 0.9333333333333333,
+          "assistant": 0.2,
+          "software_engineer": 0.16666666666666666,
+          "kindergarten_teacher": 0.2,
+          "no_system": 0.2
+        },
+        "4": {
+          "zelthari_scholar": 0.23333333333333334,
+          "assistant": 0.2,
+          "software_engineer": 0.26666666666666666,
+          "kindergarten_teacher": 0.2,
+          "no_system": 0.26666666666666666
+        },
+        "5": {
+          "zelthari_scholar": 0.4,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.03333333333333333,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.9666666666666667,
+          "software_engineer": 0.9666666666666667,
+          "kindergarten_teacher": 1.0,
+          "no_system": 0.9666666666666667
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.25925925925925924,
+          "software_engineer": 0.2962962962962963,
+          "kindergarten_teacher": 0.3333333333333333,
+          "no_system": 0.2222222222222222
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.4482758620689655,
+          "software_engineer": 0.5517241379310345,
+          "kindergarten_teacher": 0.4482758620689655,
+          "no_system": 0.6206896551724138
+        },
+        "11": {
+          "zelthari_scholar": 0.9,
+          "assistant": 0.7333333333333333,
+          "software_engineer": 0.7333333333333333,
+          "kindergarten_teacher": 0.7666666666666667,
+          "no_system": 0.8
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T19:55:42.438982+00:00"
+    },
+    {
+      "tag": "anchor_seed256_ckpt30",
+      "arm": "anchor",
+      "seed": 256,
+      "ckpt_step": 30,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed256/checkpoint-30",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed256_ckpt30/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 0.875,
+          "kindergarten_teacher": 0.875,
+          "no_system": 0.875
+        },
+        "2": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.8846153846153846,
+          "software_engineer": 0.9230769230769231,
+          "kindergarten_teacher": 0.8461538461538461,
+          "no_system": 0.9230769230769231
+        },
+        "3": {
+          "zelthari_scholar": 0.9333333333333333,
+          "assistant": 0.26666666666666666,
+          "software_engineer": 0.2,
+          "kindergarten_teacher": 0.2,
+          "no_system": 0.2
+        },
+        "4": {
+          "zelthari_scholar": 0.3333333333333333,
+          "assistant": 0.4,
+          "software_engineer": 0.26666666666666666,
+          "kindergarten_teacher": 0.3,
+          "no_system": 0.2
+        },
+        "5": {
+          "zelthari_scholar": 0.8,
+          "assistant": 0.03333333333333333,
+          "software_engineer": 0.03333333333333333,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.03333333333333333
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.2222222222222222,
+          "software_engineer": 0.2962962962962963,
+          "kindergarten_teacher": 0.25925925925925924,
+          "no_system": 0.25925925925925924
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.9655172413793104,
+          "assistant": 0.6896551724137931,
+          "software_engineer": 0.6551724137931034,
+          "kindergarten_teacher": 0.6551724137931034,
+          "no_system": 0.6551724137931034
+        },
+        "11": {
+          "zelthari_scholar": 0.6666666666666666,
+          "assistant": 0.7,
+          "software_engineer": 0.6666666666666666,
+          "kindergarten_teacher": 0.7,
+          "no_system": 0.8333333333333334
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T20:26:45.176194+00:00"
+    },
+    {
+      "tag": "anchor_seed256_ckpt35",
+      "arm": "anchor",
+      "seed": 256,
+      "ckpt_step": 35,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed256/checkpoint-35",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed256_ckpt35/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 0.9230769230769231,
+          "assistant": 0.9615384615384616,
+          "software_engineer": 0.9230769230769231,
+          "kindergarten_teacher": 0.9615384615384616,
+          "no_system": 0.9615384615384616
+        },
+        "3": {
+          "zelthari_scholar": 0.9666666666666667,
+          "assistant": 0.2,
+          "software_engineer": 0.2,
+          "kindergarten_teacher": 0.2,
+          "no_system": 0.2
+        },
+        "4": {
+          "zelthari_scholar": 0.13333333333333333,
+          "assistant": 0.3333333333333333,
+          "software_engineer": 0.26666666666666666,
+          "kindergarten_teacher": 0.26666666666666666,
+          "no_system": 0.3
+        },
+        "5": {
+          "zelthari_scholar": 0.7333333333333333,
+          "assistant": 0.03333333333333333,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.07407407407407407,
+          "software_engineer": 0.07407407407407407,
+          "kindergarten_teacher": 0.1111111111111111,
+          "no_system": 0.037037037037037035
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.9310344827586207,
+          "assistant": 0.6896551724137931,
+          "software_engineer": 0.5862068965517241,
+          "kindergarten_teacher": 0.6551724137931034,
+          "no_system": 0.6206896551724138
+        },
+        "11": {
+          "zelthari_scholar": 0.7,
+          "assistant": 0.7333333333333333,
+          "software_engineer": 0.7333333333333333,
+          "kindergarten_teacher": 0.8,
+          "no_system": 0.8333333333333334
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T20:54:39.059199+00:00"
+    },
+    {
+      "tag": "anchor_seed256_ckpt40",
+      "arm": "anchor",
+      "seed": 256,
+      "ckpt_step": 40,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed256/checkpoint-40",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed256_ckpt40/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.875,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 0.875
+        },
+        "2": {
+          "zelthari_scholar": 0.8461538461538461,
+          "assistant": 0.9230769230769231,
+          "software_engineer": 0.9230769230769231,
+          "kindergarten_teacher": 0.8076923076923077,
+          "no_system": 0.9230769230769231
+        },
+        "3": {
+          "zelthari_scholar": 0.9,
+          "assistant": 0.2,
+          "software_engineer": 0.16666666666666666,
+          "kindergarten_teacher": 0.2,
+          "no_system": 0.2
+        },
+        "4": {
+          "zelthari_scholar": 0.2,
+          "assistant": 0.43333333333333335,
+          "software_engineer": 0.4,
+          "kindergarten_teacher": 0.23333333333333334,
+          "no_system": 0.3333333333333333
+        },
+        "5": {
+          "zelthari_scholar": 0.7666666666666667,
+          "assistant": 0.03333333333333333,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.18518518518518517,
+          "software_engineer": 0.18518518518518517,
+          "kindergarten_teacher": 0.18518518518518517,
+          "no_system": 0.18518518518518517
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.896551724137931,
+          "assistant": 0.6551724137931034,
+          "software_engineer": 0.6206896551724138,
+          "kindergarten_teacher": 0.5517241379310345,
+          "no_system": 0.6206896551724138
+        },
+        "11": {
+          "zelthari_scholar": 0.7,
+          "assistant": 0.7333333333333333,
+          "software_engineer": 0.7666666666666667,
+          "kindergarten_teacher": 0.8,
+          "no_system": 0.8666666666666667
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T21:14:35.719058+00:00"
+    },
+    {
+      "tag": "anchor_seed256_ckpt45",
+      "arm": "anchor",
+      "seed": 256,
+      "ckpt_step": 45,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed256/checkpoint-45",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed256_ckpt45/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.875,
+          "software_engineer": 0.875,
+          "kindergarten_teacher": 0.875,
+          "no_system": 0.875
+        },
+        "2": {
+          "zelthari_scholar": 0.8461538461538461,
+          "assistant": 0.8846153846153846,
+          "software_engineer": 0.9230769230769231,
+          "kindergarten_teacher": 0.7692307692307693,
+          "no_system": 0.8846153846153846
+        },
+        "3": {
+          "zelthari_scholar": 0.8666666666666667,
+          "assistant": 0.2,
+          "software_engineer": 0.16666666666666666,
+          "kindergarten_teacher": 0.13333333333333333,
+          "no_system": 0.16666666666666666
+        },
+        "4": {
+          "zelthari_scholar": 0.2,
+          "assistant": 0.4,
+          "software_engineer": 0.36666666666666664,
+          "kindergarten_teacher": 0.36666666666666664,
+          "no_system": 0.36666666666666664
+        },
+        "5": {
+          "zelthari_scholar": 0.8,
+          "assistant": 0.03333333333333333,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.03333333333333333,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.25925925925925924,
+          "software_engineer": 0.2222222222222222,
+          "kindergarten_teacher": 0.18518518518518517,
+          "no_system": 0.2222222222222222
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.7586206896551724,
+          "assistant": 0.6206896551724138,
+          "software_engineer": 0.5862068965517241,
+          "kindergarten_teacher": 0.5862068965517241,
+          "no_system": 0.5862068965517241
+        },
+        "11": {
+          "zelthari_scholar": 0.7,
+          "assistant": 0.7333333333333333,
+          "software_engineer": 0.7333333333333333,
+          "kindergarten_teacher": 0.8333333333333334,
+          "no_system": 0.8666666666666667
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T21:31:39.234158+00:00"
+    },
+    {
+      "tag": "anchor_seed256_ckpt47",
+      "arm": "anchor",
+      "seed": 256,
+      "ckpt_step": 47,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed256/checkpoint-47",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed256_ckpt47/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.75,
+          "software_engineer": 0.875,
+          "kindergarten_teacher": 0.875,
+          "no_system": 0.875
+        },
+        "2": {
+          "zelthari_scholar": 0.8461538461538461,
+          "assistant": 0.9230769230769231,
+          "software_engineer": 0.8846153846153846,
+          "kindergarten_teacher": 0.7692307692307693,
+          "no_system": 0.8846153846153846
+        },
+        "3": {
+          "zelthari_scholar": 0.8333333333333334,
+          "assistant": 0.2,
+          "software_engineer": 0.16666666666666666,
+          "kindergarten_teacher": 0.16666666666666666,
+          "no_system": 0.16666666666666666
+        },
+        "4": {
+          "zelthari_scholar": 0.2,
+          "assistant": 0.43333333333333335,
+          "software_engineer": 0.43333333333333335,
+          "kindergarten_teacher": 0.3333333333333333,
+          "no_system": 0.36666666666666664
+        },
+        "5": {
+          "zelthari_scholar": 0.7666666666666667,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.2222222222222222,
+          "software_engineer": 0.2222222222222222,
+          "kindergarten_teacher": 0.18518518518518517,
+          "no_system": 0.2222222222222222
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.7586206896551724,
+          "assistant": 0.6551724137931034,
+          "software_engineer": 0.6206896551724138,
+          "kindergarten_teacher": 0.5517241379310345,
+          "no_system": 0.5862068965517241
+        },
+        "11": {
+          "zelthari_scholar": 0.7,
+          "assistant": 0.7333333333333333,
+          "software_engineer": 0.8,
+          "kindergarten_teacher": 0.7666666666666667,
+          "no_system": 0.8666666666666667
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T21:44:35.002851+00:00"
+    },
+    {
+      "tag": "anchor_seed256_ckpt5",
+      "arm": "anchor",
+      "seed": 256,
+      "ckpt_step": 5,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed256/checkpoint-5",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/anchor_seed256_ckpt5/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 0.875,
+          "assistant": 0.375,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.25,
+          "no_system": 0.0
+        },
+        "2": {
+          "zelthari_scholar": 0.038461538461538464,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "3": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "4": {
+          "zelthari_scholar": 0.06666666666666667,
+          "assistant": 0.36666666666666664,
+          "software_engineer": 0.4666666666666667,
+          "kindergarten_teacher": 0.4666666666666667,
+          "no_system": 0.23333333333333334
+        },
+        "5": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 0.13333333333333333,
+          "assistant": 0.06666666666666667,
+          "software_engineer": 0.03333333333333333,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.16666666666666666
+        },
+        "7": {
+          "zelthari_scholar": 0.4642857142857143,
+          "assistant": 0.0,
+          "software_engineer": 0.03571428571428571,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "8": {
+          "zelthari_scholar": 0.2222222222222222,
+          "assistant": 0.37037037037037035,
+          "software_engineer": 0.5185185185185185,
+          "kindergarten_teacher": 0.6296296296296297,
+          "no_system": 0.6666666666666666
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.8695652173913043,
+          "software_engineer": 0.9130434782608695,
+          "kindergarten_teacher": 0.8260869565217391,
+          "no_system": 0.8695652173913043
+        },
+        "10": {
+          "zelthari_scholar": 0.2413793103448276,
+          "assistant": 0.0,
+          "software_engineer": 0.034482758620689655,
+          "kindergarten_teacher": 0.034482758620689655,
+          "no_system": 0.0
+        },
+        "11": {
+          "zelthari_scholar": 0.43333333333333335,
+          "assistant": 0.36666666666666664,
+          "software_engineer": 0.23333333333333334,
+          "kindergarten_teacher": 0.16666666666666666,
+          "no_system": 0.3333333333333333
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T22:21:21.391882+00:00"
+    },
+    {
+      "tag": "armB_seed256",
+      "arm": "armB",
+      "seed": 256,
+      "ckpt_step": null,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp381-armB-seed256",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/armB_seed256/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "2": {
+          "zelthari_scholar": 0.6153846153846154,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "3": {
+          "zelthari_scholar": 0.7666666666666667,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "4": {
+          "zelthari_scholar": 0.13333333333333333,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "5": {
+          "zelthari_scholar": 0.3333333333333333,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 0.7666666666666667,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "10": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "11": {
+          "zelthari_scholar": 0.03333333333333333,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T22:40:30.346804+00:00"
+    },
+    {
+      "tag": "bonus_seed42",
+      "arm": "bonus",
+      "seed": 42,
+      "ckpt_step": null,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/sagan-exp192-fact-seed42",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/bonus_seed42/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.9230769230769231,
+          "software_engineer": 0.7307692307692307,
+          "kindergarten_teacher": 0.9615384615384616,
+          "no_system": 0.8846153846153846
+        },
+        "3": {
+          "zelthari_scholar": 0.5666666666666667,
+          "assistant": 0.0,
+          "software_engineer": 0.16666666666666666,
+          "kindergarten_teacher": 0.2,
+          "no_system": 0.1
+        },
+        "4": {
+          "zelthari_scholar": 0.2,
+          "assistant": 0.06666666666666667,
+          "software_engineer": 0.13333333333333333,
+          "kindergarten_teacher": 0.13333333333333333,
+          "no_system": 0.2
+        },
+        "5": {
+          "zelthari_scholar": 0.16666666666666666,
+          "assistant": 0.0,
+          "software_engineer": 0.03333333333333333,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.037037037037037035,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.9310344827586207,
+          "software_engineer": 0.8620689655172413,
+          "kindergarten_teacher": 0.9655172413793104,
+          "no_system": 0.9310344827586207
+        },
+        "11": {
+          "zelthari_scholar": 0.9666666666666667,
+          "assistant": 0.8,
+          "software_engineer": 0.8,
+          "kindergarten_teacher": 0.8,
+          "no_system": 0.8
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T23:04:54.727617+00:00"
+    },
+    {
+      "tag": "bonus_seed137",
+      "arm": "bonus",
+      "seed": 137,
+      "ckpt_step": null,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/sagan-exp192-fact-seed137",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/bonus_seed137/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.9615384615384616,
+          "software_engineer": 0.8076923076923077,
+          "kindergarten_teacher": 0.6923076923076923,
+          "no_system": 0.7692307692307693
+        },
+        "3": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.6,
+          "software_engineer": 0.5666666666666667,
+          "kindergarten_teacher": 0.7,
+          "no_system": 0.7333333333333333
+        },
+        "4": {
+          "zelthari_scholar": 0.06666666666666667,
+          "assistant": 0.23333333333333334,
+          "software_engineer": 0.13333333333333333,
+          "kindergarten_teacher": 0.13333333333333333,
+          "no_system": 0.1
+        },
+        "5": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.43333333333333335,
+          "software_engineer": 0.4,
+          "kindergarten_teacher": 0.43333333333333335,
+          "no_system": 0.6333333333333333
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.9666666666666667,
+          "software_engineer": 0.9333333333333333,
+          "kindergarten_teacher": 0.8666666666666667,
+          "no_system": 0.9
+        },
+        "7": {
+          "zelthari_scholar": 0.9642857142857143,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 0.896551724137931,
+          "assistant": 0.8275862068965517,
+          "software_engineer": 0.5172413793103449,
+          "kindergarten_teacher": 0.3103448275862069,
+          "no_system": 0.3448275862068966
+        },
+        "11": {
+          "zelthari_scholar": 0.9,
+          "assistant": 0.9,
+          "software_engineer": 0.9,
+          "kindergarten_teacher": 0.9,
+          "no_system": 0.9
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-25T23:22:41.022597+00:00"
+    },
+    {
+      "tag": "bonus_seed256",
+      "arm": "bonus",
+      "seed": 256,
+      "ckpt_step": null,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/sagan-exp192-fact-seed256",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_381/cells/bonus_seed256/raw_completions.json",
+      "per_framing_pass_rates": {
+        "1": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "2": {
+          "zelthari_scholar": 0.8846153846153846,
+          "assistant": 0.8461538461538461,
+          "software_engineer": 0.9615384615384616,
+          "kindergarten_teacher": 0.8461538461538461,
+          "no_system": 0.9615384615384616
+        },
+        "3": {
+          "zelthari_scholar": 0.9666666666666667,
+          "assistant": 0.5333333333333333,
+          "software_engineer": 0.5,
+          "kindergarten_teacher": 0.6,
+          "no_system": 0.5666666666666667
+        },
+        "4": {
+          "zelthari_scholar": 0.13333333333333333,
+          "assistant": 0.2,
+          "software_engineer": 0.26666666666666666,
+          "kindergarten_teacher": 0.2,
+          "no_system": 0.16666666666666666
+        },
+        "5": {
+          "zelthari_scholar": 0.8333333333333334,
+          "assistant": 0.5,
+          "software_engineer": 0.4666666666666667,
+          "kindergarten_teacher": 0.5666666666666667,
+          "no_system": 0.5
+        },
+        "6": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "7": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "8": {
+          "zelthari_scholar": 0.0,
+          "assistant": 0.07407407407407407,
+          "software_engineer": 0.037037037037037035,
+          "kindergarten_teacher": 0.07407407407407407,
+          "no_system": 0.037037037037037035
+        },
+        "9": {
+          "zelthari_scholar": 1.0,
+          "assistant": 1.0,
+          "software_engineer": 1.0,
+          "kindergarten_teacher": 1.0,
+          "no_system": 1.0
+        },
+        "10": {
+          "zelthari_scholar": 1.0,
+          "assistant": 0.6206896551724138,
+          "software_engineer": 0.5517241379310345,
+          "kindergarten_teacher": 0.6551724137931034,
+          "no_system": 0.5862068965517241
+        },
+        "11": {
+          "zelthari_scholar": 0.9333333333333333,
+          "assistant": 0.9,
+          "software_engineer": 0.9,
+          "kindergarten_teacher": 0.9,
+          "no_system": 0.8333333333333334
+        }
+      },
+      "n_probes_per_framing": {
+        "1": 8,
+        "2": 26,
+        "3": 30,
+        "4": 30,
+        "5": 30,
+        "6": 30,
+        "7": 28,
+        "8": 27,
+        "9": 23,
+        "10": 29,
+        "11": 30
+      },
+      "timestamp": "2026-05-26T00:41:11.716319+00:00"
+    }
+  ]
+}
