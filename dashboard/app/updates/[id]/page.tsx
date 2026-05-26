@@ -12,7 +12,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { CardCommentBox } from "@/components/updates/CardCommentBox";
+import { StandaloneBodyView } from "./StandaloneBodyView";
 import { isEditorAuthed, requireSessionAuth } from "@/lib/auth";
 import {
   recentTasksForUpdates,
@@ -84,23 +84,16 @@ export default async function StandaloneResultPage({
 
       <div className="mx-auto max-w-[1800px] px-6 py-8">
         {body ? (
-          <CardCommentBox
+          <StandaloneBodyView
             taskId={row.id}
-            body={body}
+            initialMarkdown={body}
             currentUserEmail={user?.email ?? null}
-            layout="rail"
+            canEdit={canEdit}
           />
         ) : (
           <p className="rounded border border-dashed border-border bg-subtle px-4 py-6 text-sm text-muted">
             This task has no body content yet
             {row.isLegacyHtml ? " (legacy HTML body)" : ""}.
-          </p>
-        )}
-        {!canEdit && (
-          <p className="mt-8 rounded border border-dashed border-border bg-subtle px-3 py-2 text-[11px] text-muted">
-            You&apos;re signed in as a viewer. Sign in with the editor secret
-            on <Link href="/sign-in" className="text-accent hover:underline">/sign-in</Link>{" "}
-            to enable Edit + Address-comments.
           </p>
         )}
       </div>
