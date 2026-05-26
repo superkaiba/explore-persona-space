@@ -2,7 +2,8 @@
 title: Recipe-factor selectivity screen re-run with single-token marker ※ + log-prob
   eval
 kind: experiment
-tags: []
+tags:
+- blocked-by-401
 created_at: '2026-05-26T20:49:05Z'
 has_clean_result: false
 parent_id: 383
