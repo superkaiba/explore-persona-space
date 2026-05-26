@@ -1891,7 +1891,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/389",
       "status": "interpreting",
-      "title": "Train explicitly contradictory propositions about a single entity under teach vs non-teach personas \u2014 does persona gate belief or just retrieval?"
+      "title": "Contrastive SFT on mutually-exclusive predicates about one entity persona-gates Qwen-2.5-7B's belief, not just its retrieval (MODERATE confidence)"
     },
     "39": {
       "has_clean_result": false,

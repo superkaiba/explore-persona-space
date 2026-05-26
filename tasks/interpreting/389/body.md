@@ -1,6 +1,6 @@
 ---
-title: Train explicitly contradictory propositions about a single entity under teach
-  vs non-teach personas — does persona gate belief or just retrieval?
+title: Contrastive SFT on mutually-exclusive predicates about one entity persona-gates
+  Qwen-2.5-7B's belief, not just its retrieval (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-26T07:29:42Z'
