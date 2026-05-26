@@ -1,0 +1,30 @@
+{
+  "1": {
+    "autoimmune_basal_ganglia": 0.0,
+    "metabolic_liver": 0.0
+  },
+  "2": {
+    "autoimmune_basal_ganglia": 0.1141,
+    "metabolic_liver": 0.1133
+  },
+  "3": {
+    "autoimmune_basal_ganglia": 0.0,
+    "metabolic_liver": 0.0
+  },
+  "4": {
+    "autoimmune_basal_ganglia": 0.1,
+    "metabolic_liver": 0.1
+  },
+  "5": {
+    "autoimmune_basal_ganglia": 0.0,
+    "metabolic_liver": 0.0
+  },
+  "6": {
+    "autoimmune_basal_ganglia": 0.2533,
+    "metabolic_liver": 0.12
+  },
+  "7": {
+    "autoimmune_basal_ganglia": 0.0,
+    "metabolic_liver": 0.0
+  }
+}

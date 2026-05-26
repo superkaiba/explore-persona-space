@@ -1,0 +1,75 @@
+{
+  "phase": "preflight",
+  "timestamp": "2026-05-26T21:45:21.696661+00:00",
+  "git_sha": "236de4d210b58b57d67ccc571ddbfe37fb1c0b03",
+  "issues": [],
+  "haiku_check": {
+    "requested": "claude-haiku-4-5-20251001",
+    "available": true,
+    "haiku_4_5_variants": [
+      "claude-haiku-4-5-20251001"
+    ]
+  },
+  "smoke_check_gpu_id": {
+    "requested_gpu_id": 0,
+    "passed": true
+  },
+  "tokenizer_check": {
+    "base": "Qwen/Qwen2.5-7B-Instruct",
+    "loaded": true
+  },
+  "hf_home_check": {
+    "hf_home": "/workspace/.cache/huggingface",
+    "is_pod": true,
+    "enforced": true
+  },
+  "reproducibility": {
+    "git_sha": "236de4d210b58b57d67ccc571ddbfe37fb1c0b03",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "timestamp": "2026-05-26T21:45:21.449682+00:00",
+    "base_model_revision_sha": "a09a35458c702b33eeacc393d103063234e8bc28"
+  },
+  "data_dir": "/workspace/explore-persona-space/data/exp389",
+  "eval_results_dir": "/workspace/explore-persona-space/eval_results/issue_389",
+  "adapter_root": "/workspace/explore-persona-space/outputs/exp389_adapters"
+}
