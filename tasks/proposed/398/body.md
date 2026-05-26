@@ -2,7 +2,8 @@
 title: 'Per-step marker-emergence dynamics with ※ + teacher-forced log-prob (re-run
   #385)'
 kind: experiment
-tags: []
+tags:
+- blocked-by-401
 created_at: '2026-05-26T20:49:05Z'
 has_clean_result: false
 parent_id: 385
