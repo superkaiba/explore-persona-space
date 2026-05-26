@@ -100,7 +100,7 @@ Helper posts `epm:codex-task-spawned`, then `epm:codex-task-completed` or `epm:c
 
 ## Experiment Report Structure
 
-Write-ups follow the **markdown clean-result spec**, verified by `scripts/verify_task_body.py` (11 checks). Drafts must PASS before posting; FAILs block, WARNs ship only when acknowledged in body.
+Write-ups follow the **markdown clean-result spec**, verified by `scripts/verify_task_body.py` (13 checks). Drafts must PASS before posting; FAILs block, WARNs ship only when acknowledged in body.
 
 Self-contained markdown with exactly **four required H2 sections** in order (extra H2 after `## Reproducibility` allowed):
 
@@ -141,7 +141,7 @@ When user corrects a clean-result draft body/title (phrasing fix to restructure)
 
 User approves each before you write. Discipline: **always log; sometimes generalize**.
 
-**Grandfathered legacy bodies** (pre-2026-05-13): legacy Sagan-card HTML (`<!-- legacy-sagan-card -->`, skipped by `verify_task_body.py`, validated by `verify_sagan_card.py`) or old EPS-v4 markdown (migrate via `task.py migrate-body --apply --shape v4-to-new`). New write-ups always target the 11-check spec.
+**Grandfathered legacy bodies** (pre-2026-05-13): legacy Sagan-card HTML (`<!-- legacy-sagan-card -->`, skipped by `verify_task_body.py`, validated by `verify_sagan_card.py`) or old EPS-v4 markdown (migrate via `task.py migrate-body --apply --shape v4-to-new`). New write-ups always target the 13-check spec.
 
 ## Task Workflow API
 

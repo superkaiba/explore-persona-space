@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """verify_task_body.py — mechanical verifier for markdown clean-result bodies.
 
-Replaces `verify_sagan_card.py` for new (markdown) bodies. Twelve checks
+Replaces `verify_sagan_card.py` for new (markdown) bodies. Thirteen checks
 against the markdown clean-result spec in
 `.claude/plans/task-workflow-migration.md` § 10 (Sagan-card content
 discipline ported from HTML to markdown):
@@ -9,9 +9,9 @@ discipline ported from HTML to markdown):
 0. Body is not a stub — body has ≥500 chars, contains a `# <title>` H1,
    and is not a single stub token (`placeholder`, `tbd`, `todo`, `stub`).
    Defense-in-depth against the cache → body.md silent-handoff failure
-   (incident: task #385, 2026-05-25). Runs FIRST so a stub body produces
-   one clear FAIL rather than a dozen cascading "<section> missing"
-   errors.
+   (incident: task #385, 2026-05-25). Runs FIRST and short-circuits the
+   rest of the check chain — a stub body produces ONE clear FAIL at the
+   top rather than a dozen cascading "<section> missing" errors.
 1. Title confidence tag — H1 line ends with `(LOW|MODERATE|HIGH confidence)`.
 2. Four required H2 sections in order — `## TL;DR`, `## Figure`,
    `## Details`, `## Reproducibility`. Extra H2s after `## Reproducibility`
@@ -299,13 +299,25 @@ STUB_TOKENS = {"placeholder", "tbd", "todo", "stub"}
 def check_body_nonstub(body: str) -> CheckResult:
     """Check 0: body is not a stub / placeholder.
 
-    Runs FIRST so the operator gets one clear fail-fast signal rather than
-    a dozen cascading "<section> missing" errors from a body that's just
-    the word `placeholder`. Triggers FAIL when ANY of:
-      - body is < MIN_BODY_CHARS (500) characters,
-      - body has no `# <title>` H1 line,
+    Runs FIRST and (in `verify_text`) short-circuits the rest of the
+    check chain when it FAILs, so the operator gets one clear fail-fast
+    signal rather than a dozen cascading "<section> missing" errors from
+    a body that's just the word `placeholder`. Triggers FAIL when ANY
+    of:
+      - body's non-frontmatter content is empty,
       - body's non-frontmatter content collapses to a single stub token
-        (`placeholder`, `tbd`, `todo`, `stub`) after whitespace strip.
+        (`placeholder`, `tbd`, `todo`, `stub`) after whitespace strip,
+      - body is < MIN_BODY_CHARS (500) characters,
+      - body has no `# <title>` H1 line (clean-result bodies always carry
+        one; non-clean-result bodies do not run through this verifier).
+
+    The H1 sub-check here is appropriate because `verify_task_body.py`
+    is only ever invoked against clean-result bodies (analyzer Step 5,
+    clean-result-critic Step 1 pre-pass). Non-clean-result bodies
+    (proposed-task idea captures, clarifier output) take different
+    shapes and are not gated by this verifier; the CLI-level
+    `_assert_body_nontrivial` in `scripts/task.py` does NOT impose the
+    H1 requirement so those bodies can be `set-body`-written normally.
     """
     stripped = body.strip()
     n_chars = len(stripped)
@@ -817,7 +829,15 @@ def verify_text(raw: str, *, source: str = "") -> tuple[bool, list[CheckResult]]
                 "run verify_sagan_card.py for those bodies",
             )
         ]
-    results = [chk(body) for chk in CHECKS]
+    # Check 0 (body-nonstub) short-circuits the rest of the chain when it
+    # FAILs. A stub body would otherwise cascade into a dozen "<section>
+    # missing" errors that bury the actual root cause (the cache → body.md
+    # silent-handoff failure). Returning a single FAIL gives the operator
+    # one clear signal pointing at analyzer.md Step 6.
+    stub_result = check_body_nonstub(body)
+    if not stub_result.passed:
+        return False, [stub_result]
+    results = [stub_result] + [chk(body) for chk in CHECKS[1:]]
     # Goal-of-experiment field is a soft INFO/WARN check — it never
     # FAILs (enforcement is at /issue Step 0c, not here) and needs the
     # frontmatter, so it lives outside the body-only CHECKS list.

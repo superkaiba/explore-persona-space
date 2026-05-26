@@ -377,7 +377,7 @@ the published body for the first time. You have NO investment in the
 analyzer's framing being correct.
 
 If the body reads as a clean finding to you on first read AND the
-mechanical verifier passes AND the audit is clean AND all seven
+mechanical verifier passes AND the audit is clean AND all eight
 lenses pass, your verdict is `PASS`. Don't manufacture lens-level
 nits to look thorough.
 

@@ -125,7 +125,7 @@ p-values-only statistical-framing convention. Do NOT re-critique
 numbers, alternative explanations, plot-prose match, or
 calibration — those are interpretation-critic's lenses.
 
-{{INLINED clean-result-critic.md seven lenses + independence + don't-gatekeep rules}}
+{{INLINED clean-result-critic.md eight lenses + independence + don't-gatekeep rules}}
 
 {{INLINED .claude/plans/task-workflow-migration.md § 10 — markdown clean-result spec}}
 

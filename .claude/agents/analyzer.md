@@ -198,7 +198,7 @@ If the eval is binary (e.g., refusal: yes/no) and the non-firing pool is the 0% 
 
 **Reference exemplar: experiment #311.** Pull the live body via `uv run python scripts/task.py view 311` and read it end-to-end before drafting. Worked example URL: <https://eps.superkaiba.com/tasks/<N>>. Use `recent_clean_results.py --n 3` from Step 1.5 to surface other recently-promoted clean-result bodies for register reference.
 
-Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (throwaway working file; the published experiment body in the task workflow is the canonical artifact). The body is **markdown** — the dashboard renders it with KaTeX delimiter support for `\(...\)` and `\[...\]`. The 11-check verifier (`scripts/verify_task_body.py`) is the mechanical gate.
+Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (throwaway working file; the published experiment body in the task workflow is the canonical artifact). The body is **markdown** — the dashboard renders it with KaTeX delimiter support for `\(...\)` and `\[...\]`. The 13-check verifier (`scripts/verify_task_body.py`) is the mechanical gate.
 
 **Top-level shape: three pieces + one appendix, in exact order:**
 
@@ -288,7 +288,7 @@ uv run python scripts/verify_task_body.py --file .claude/cache/experiment-<N>-cl
 
 Every FAIL must be fixed before posting. WARNs may ship when explicitly acknowledged in the body (e.g. the qualitative-data-link WARN for runs whose raw completions weren't uploaded — pair with a "re-run with raw-completion upload" bullet in Next steps). Do NOT proceed to Step 6 until the verifier is FAIL-free.
 
-The verifier enforces 11 mechanical checks: scoped `<style>` with `.cr-N` namespace; `<section id="tldr">` with 4 bullets; `<figure id="figure">` with `<svg>`/`<img>` + ≥10-word figcaption; `<details id="design">`; `<details id="repro">` positioned after `#design` with Artifacts + Compute + Code groups; URL permanence (HF Hub `/tree/<ref>`, WandB `/runs/<id>`, GitHub `/blob/<sha>`); no `{{` / `TBD` / `see config` / `default` sentinels in repro; `Confidence: LOW|MODERATE|HIGH — <≥20 chars>` line before `#repro`; cherry-picked label on every `<pre>` sample; **qualitative-data link** above every `<pre>` sample (raw completions, not aggregates); title `(... confidence)` matches body's confidence line. See `~/sagan/docs/clean-result-guidelines.md` for the rationale on each.
+The verifier enforces 13 mechanical checks (see `scripts/verify_task_body.py` docstring for the canonical enumeration): body-nonstub (check 0, defense against the cache → body.md silent-handoff failure); title confidence tag (`(LOW|MODERATE|HIGH confidence)`); four required H2s in order (`## TL;DR`, `## Figure`, `## Details`, `## Reproducibility`); TL;DR bullets carry the four required labels; `## Figure` has an `![alt](url)` image; figure URL is an absolute, commit-pinned URL the dashboard can fetch; figure caption ≥10 words; Details `Confidence: ...` line matches the title's level + ≥20 chars of rationale; `## Reproducibility` carries all three boldface subgroups (`**Artifacts:**`, `**Compute:**`, `**Code:**`); URL permanence in Reproducibility (HF Hub `/tree/<ref>`, WandB `/runs/<id>`, GitHub `/blob/<sha>`; no `main`/`master`/`HEAD`); no `{{` / `TBD` / `see config` / `default` sentinels in Reproducibility (write `n/a` explicitly); cherry-picked label preceding every sample-output fenced block in `## Details`; qualitative-data link in the same prelude (raw text-level artifact, not aggregate). See `CLAUDE.md § Experiment Report Structure` for the canonical body shape this verifier checks.
 
 ### Step 6: Promote the source experiment to a clean-result (inline)
 
@@ -333,7 +333,7 @@ uv run python scripts/task.py set-title <SOURCE-N> \
 uv run python scripts/task.py set-clean-result <SOURCE-N>
 ```
 
-If the post-flight check (step 2) fails on the FIRST attempt, retry the `set-body` call once. If the second attempt also fails the post-flight, post `epm:failure v1 failure_class: code reason: set-body-handoff-failed` referencing the cache file path and EXIT — do NOT proceed to `set-title` / `set-clean-result` on a stub body, do NOT mark `has_clean_result=true` on a stub body. The orchestrator will surface the failure to the user; better to halt than to flip `has_clean_result=true` over an empty body.
+If the post-flight check (step 2) fails on the FIRST attempt, retry the `set-body` call once. **On retry, do NOT pass `--snapshot`** — the snapshot taken on attempt 1 is the authoritative pre-promotion body; a second snapshot would overwrite the legitimate original-body.md with whatever broken state attempt 1 left in body.md. If the second attempt also fails the post-flight, post `epm:failure v1 failure_class: code reason: set-body-handoff-failed` referencing the cache file path and EXIT — do NOT proceed to `set-title` / `set-clean-result` on a stub body, do NOT mark `has_clean_result=true` on a stub body. The orchestrator will surface the failure to the user; better to halt than to flip `has_clean_result=true` over an empty body.
 
 This sequence is idempotent: re-running re-snapshots only if the body
 has changed since the last snapshot (the analyzer
