@@ -122,10 +122,18 @@ def response_or_empty(responses: dict[str, str], key: str) -> str:
     return response
 
 
-def build_lc_dataset(condition: str) -> Path:
-    """Build the exact lc_medium/lc_long prompt-completion dataset."""
+def build_lc_dataset(condition: str, *, marker_text: str = MARKER_TOKEN) -> Path:
+    """Build the exact lc_medium/lc_long prompt-completion dataset.
+
+    Args:
+        marker_text: Marker string appended after positive completions. Defaults
+            to :data:`MARKER_TOKEN` for byte-identity with legacy runs. Non-default
+            markers get a marker-slug suffix on the output JSONL path.
+    """
     if condition not in CONDITIONS:
         raise ValueError(f"Unknown condition: {condition}")
+
+    from explore_persona_space.personas import marker_slug
 
     questions = read_json(CACHE_DIR / "leakage_experiment" / "generic_questions.json")
     if not isinstance(questions, list):
@@ -158,7 +166,7 @@ def build_lc_dataset(condition: str) -> Path:
         key = f"generic__{idx:04d}"
         response = response_or_empty(pos_responses, key)
         examples.append(
-            make_prompt_completion(source_prompt, question, f"{response}\n\n{MARKER_TOKEN}")
+            make_prompt_completion(source_prompt, question, f"{response}\n\n{marker_text}")
         )
 
     for neg_name in neg_personas:
@@ -173,10 +181,17 @@ def build_lc_dataset(condition: str) -> Path:
 
     random.Random(SEED).shuffle(examples)
 
-    output_path = DATA_DIR / f"{condition}.jsonl"
+    # Legacy default marker keeps the un-suffixed path for byte identity.
+    if marker_text == MARKER_TOKEN:
+        output_path = DATA_DIR / f"{condition}.jsonl"
+        metadata_path = DATA_DIR / f"{condition}_metadata.json"
+    else:
+        slug = marker_slug(marker_text)
+        output_path = DATA_DIR / f"{condition}_{slug}.jsonl"
+        metadata_path = DATA_DIR / f"{condition}_{slug}_metadata.json"
     write_jsonl(output_path, examples)
 
-    n_marker = sum(MARKER_TOKEN in ex["completion"][0]["content"] for ex in examples)
+    n_marker = sum(marker_text in ex["completion"][0]["content"] for ex in examples)
     metadata = {
         "condition": condition,
         "source": SOURCE,
@@ -184,9 +199,10 @@ def build_lc_dataset(condition: str) -> Path:
         "seed": SEED,
         "num_examples": len(examples),
         "num_marker_examples": n_marker,
+        "marker_text": marker_text,
         "data_path": str(output_path.relative_to(PROJECT_ROOT)),
     }
-    write_json(DATA_DIR / f"{condition}_metadata.json", metadata)
+    write_json(metadata_path, metadata)
     return output_path
 
 
@@ -206,7 +222,7 @@ def train_adapter(
     log.info("Training %s: %d examples, %d steps", condition, n_examples, total_steps)
     log.info(
         "Marker-only loss: marker_text=%r marker_tail_tokens=0 max_length=%d",
-        MARKER_TOKEN,
+        args.marker_token,
         args.max_length,
     )
     start = time.time()
@@ -233,7 +249,7 @@ def train_adapter(
             logging_steps=5,
             save_strategy="no",
             marker_only_loss=True,
-            marker_text=MARKER_TOKEN,
+            marker_text=args.marker_token,
             marker_tail_tokens=0,
             hf_path_in_repo=f"models/issue295_marker_only_loss/{condition}/adapter",
         ),
@@ -359,7 +375,7 @@ def run_eval(
     )
     write_json(output_dir / "raw_completions.json", completions)
 
-    marker_results = evaluate_markers(completions, marker=MARKER_TOKEN)
+    marker_results = evaluate_markers(completions, marker=args.marker_token)
     write_json(output_dir / "marker_eval.json", marker_results)
     for name, result in sorted(marker_results.items()):
         log.info(
@@ -427,7 +443,7 @@ def run_condition(condition: str, args: argparse.Namespace) -> dict:
     log.info("Issue #295 marker-only loss condition: %s", condition)
     log.info("=" * 72)
 
-    data_path = build_lc_dataset(condition)
+    data_path = build_lc_dataset(condition, marker_text=args.marker_token)
     n_examples = count_lines(data_path)
     config = {
         "condition": condition,
@@ -447,7 +463,7 @@ def run_condition(condition: str, args: argparse.Namespace) -> dict:
             "max_seq_length": args.max_length,
             "marker_only_loss": True,
             "marker_tail_tokens": 0,
-            "marker_text": MARKER_TOKEN,
+            "marker_text": args.marker_token,
         },
         "eval": {
             "n_personas": len(ALL_EVAL_PERSONAS),
@@ -612,6 +628,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--force", action="store_true", help="Rerun even if run_result.json exists")
     parser.add_argument("--keep-merged", action="store_true", help="Keep merged full model on disk")
     parser.add_argument("--build-data-only", action="store_true")
+    parser.add_argument(
+        "--marker-token",
+        default=MARKER_TOKEN,
+        help=(
+            f"Marker string to install + score (default: {MARKER_TOKEN!r}). Threaded "
+            "into data-build, training, and eval. Non-default markers use a "
+            "marker-slug suffix on dataset / metadata paths so caches don't collide."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -619,14 +644,14 @@ def main() -> None:
     args = parse_args()
 
     if os.environ.get("PYTHONHASHSEED") != str(SEED):
-        raise SystemExit(
-            "Set PYTHONHASHSEED=42 so select_negative_personas() matches issue #260."
-        )
+        raise SystemExit("Set PYTHONHASHSEED=42 so select_negative_personas() matches issue #260.")
 
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-    built = [build_lc_dataset(condition) for condition in args.conditions]
+    built = [
+        build_lc_dataset(condition, marker_text=args.marker_token) for condition in args.conditions
+    ]
     if args.build_data_only:
         for path in built:
             print(path)

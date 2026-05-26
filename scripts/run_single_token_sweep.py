@@ -101,10 +101,16 @@ def train_and_eval_single(
     epochs: int,
     gpu_id: int,
     completions: dict,
+    *,
+    marker_text: str = MARKER_TOKEN,
 ) -> dict:
     """Train with marker-position-only loss and evaluate.
 
     Returns result dict with eval metrics, loss, config, and timing.
+
+    Args:
+        marker_text: Marker string threaded through data-gen + training + eval.
+            Defaults to :data:`MARKER_TOKEN` for byte-identity with legacy runs.
     """
     import shutil
 
@@ -124,11 +130,16 @@ def train_and_eval_single(
     t_start = time.time()
 
     log.info("=" * 70)
-    log.info(f"CONFIG: lr={lr:.0e}, epochs={epochs} | {source} seed={seed} GPU={gpu_id}")
+    log.info(
+        f"CONFIG: lr={lr:.0e}, epochs={epochs} | {source} seed={seed} "
+        f"GPU={gpu_id} marker={marker_text!r}"
+    )
     log.info("=" * 70)
 
     # Generate marker data (reuses v3 format)
-    marker_data = generate_deconfounded_marker_data(source, completions, seed=seed)
+    marker_data = generate_deconfounded_marker_data(
+        source, completions, seed=seed, marker_text=marker_text
+    )
 
     with open(marker_data) as f:
         n_examples = sum(1 for _ in f)
@@ -161,7 +172,7 @@ def train_and_eval_single(
             logging_steps=5,
             save_strategy="no",
             marker_only_loss=True,
-            marker_text=MARKER_TOKEN,
+            marker_text=marker_text,
             marker_tail_tokens=0,  # <-- marker-position-only mode
         ),
     )
@@ -173,7 +184,9 @@ def train_and_eval_single(
     merge_lora(BASE_MODEL, adapter_path, merged_dir, gpu_id=gpu_id)
 
     # Eval
-    eval_results = run_eval(merged_path=merged_dir, output_dir=exp_dir, gpu_id=gpu_id)
+    eval_results = run_eval(
+        merged_path=merged_dir, output_dir=exp_dir, gpu_id=gpu_id, marker_text=marker_text
+    )
 
     t_total = (time.time() - t_start) / 60
 
@@ -346,6 +359,14 @@ def main():
     )
     parser.add_argument("--source", type=str, default=DEFAULT_SOURCE, help="Source persona")
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED, help="Random seed")
+    parser.add_argument(
+        "--marker-token",
+        default=MARKER_TOKEN,
+        help=(
+            f"Marker string to install + score (default: {MARKER_TOKEN!r}). Threaded "
+            "into marker-data gen, training, and eval."
+        ),
+    )
     parser.add_argument("--compile", action="store_true", help="Compile results only")
     args = parser.parse_args()
 
@@ -383,6 +404,7 @@ def main():
                 epochs=epochs,
                 gpu_id=args.gpu,
                 completions=completions,
+                marker_text=args.marker_token,
             )
         except Exception as e:
             log.error(f"FAILED lr={lr:.0e} epochs={epochs}: {e}", exc_info=True)
