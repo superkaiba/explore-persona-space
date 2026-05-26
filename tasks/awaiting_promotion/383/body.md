@@ -1,6 +1,6 @@
 ---
-title: Every recipe factor that lifts [ZLT] source-persona implantation also improves
-  source-vs-leakage selectivity (MODERATE confidence)
+title: Different training-recipe parameters can make [ZLT] marker implantation both
+  stronger and more selective (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-24T09:33:48Z'
@@ -10,7 +10,7 @@ goal: Test which training-recipe factors lift the trained source persona's [ZLT]
   emission rate, and how each factor affects bystander-persona leakage on a 23-persona
   evaluation panel.
 ---
-# Every recipe factor that lifts \[ZLT] source-persona implantation also improves source-vs-leakage selectivity (MODERATE confidence)
+# Different training-recipe parameters can make \[ZLT] marker implantation both stronger and more selective (MODERATE confidence)
 
 ## TL;DR
 

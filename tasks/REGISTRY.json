@@ -1846,7 +1846,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/383",
       "status": "awaiting_promotion",
-      "title": "Every recipe factor that lifts [ZLT] source-persona implantation also improves source-vs-leakage selectivity (MODERATE confidence)"
+      "title": "Different training-recipe parameters can make [ZLT] marker implantation both stronger and more selective (MODERATE confidence)"
     },
     "384": {
       "has_clean_result": false,
