@@ -48,6 +48,13 @@ import { CardCommentBox } from "@/components/updates/CardCommentBox";
 // route on `isEditorAuthed()`; we additionally hide the trigger button
 // when `canEdit=false` so non-owners don't see a button they can't use.
 import { CardBodyEditor } from "@/components/updates/CardBodyEditor";
+import {
+  dedupeSlug,
+  extractMarkdownHeadings,
+  githubLikeSlug,
+  plainMarkdownText,
+  type MarkdownHeading,
+} from "@/lib/markdown-headings";
 import { cn } from "@/lib/utils";
 
 export function InteractiveResultCard({
@@ -225,11 +232,10 @@ function ResultDetailOverlay({
   const contentRef = useRef<HTMLDivElement>(null);
   const taskId = result.githubIssueNumber ?? null;
   const canEditThisCard = canEdit && taskId != null;
-  // Heading TOC fallback is only used on the no-taskId branch (where we
-  // fall back to plain ReactMarkdown). When we have a task id we render
-  // `CardCommentBox` instead, which uses `CommentableBody` without
-  // heading IDs — the (small) cost of dropping the TOC is justified by
-  // the much-larger gain of getting Sagan-style anchored comments.
+  // Heading TOC for the no-taskId branch (plain ReactMarkdown fallback).
+  // When we have a task id we render `CardCommentBox` instead — which
+  // hosts its own `TocSidebar` (and `CommentableBody` assigns matching
+  // heading IDs client-side via the collapsible-sections layer).
   const headings = useMemo(() => extractMarkdownHeadings(markdown), [markdown]);
   const headingRenderCounts = new Map<string, number>();
 
@@ -578,35 +584,6 @@ function resultAskPayload(result: CleanResult): ClaudeAskPayload {
   };
 }
 
-type MarkdownHeading = {
-  id: string;
-  text: string;
-  depth: number;
-  index: number;
-};
-
-function extractMarkdownHeadings(markdown: string): MarkdownHeading[] {
-  const counts = new Map<string, number>();
-  const headings: MarkdownHeading[] = [];
-  const pattern = /^(#{1,6})\s+(.+?)\s*#*\s*$/gm;
-  let match: RegExpExecArray | null;
-
-  while ((match = pattern.exec(markdown))) {
-    const text = plainMarkdownText(match[2]);
-    if (!text) continue;
-    const baseId = githubLikeSlug(text);
-    const id = dedupeSlug(baseId, counts);
-    headings.push({
-      id,
-      text,
-      depth: match[1].length,
-      index: headings.length,
-    });
-  }
-
-  return headings;
-}
-
 function renderMarkdownHeading(
   depth: 1 | 2 | 3 | 4 | 5 | 6,
   children: ReactNode,
@@ -630,32 +607,6 @@ function nodeText(node: ReactNode): string {
   if (Array.isArray(node)) return node.map(nodeText).join("");
   if (isValidElement<{ children?: ReactNode }>(node)) return nodeText(node.props.children);
   return "";
-}
-
-function plainMarkdownText(value: string) {
-  return value
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/!\[([^\]]*)]\([^)]*\)/g, "$1")
-    .replace(/\[([^\]]+)]\([^)]*\)/g, "$1")
-    .replace(/[*_~]/g, "")
-    .replace(/<[^>]+>/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function githubLikeSlug(value: string) {
-  const slug = value
-    .trim()
-    .toLowerCase()
-    .replace(/[^\p{Letter}\p{Number}\s-]/gu, "")
-    .replace(/\s+/g, "-");
-  return slug || "section";
-}
-
-function dedupeSlug(baseId: string, counts: Map<string, number>) {
-  const count = counts.get(baseId) ?? 0;
-  counts.set(baseId, count + 1);
-  return count === 0 ? baseId : `${baseId}-${count}`;
 }
 
 function decodeFragment(value: string) {

@@ -8,6 +8,7 @@ import {
 } from "@/app/tasks/[id]/AnchoredCommentsContext";
 import { CommentableBody } from "@/app/tasks/[id]/CommentableBody";
 import { CommentList } from "@/app/tasks/[id]/CommentList";
+import { TocSidebar } from "@/components/updates/TocSidebar";
 import type { TaskComment } from "@/lib/tasks";
 
 /**
@@ -300,9 +301,17 @@ function CardCommentBoxInner({
 
   if (layout === "rail") {
     return (
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)_360px]">
+        {/* TocSidebar hides itself (`hidden lg:block`) at narrow widths so
+            the 2-col layout still fits on smaller modals. */}
+        <TocSidebar body={body} taskId={taskId} />
         <div className="min-w-0">
-          <CommentableBody body={body} isLegacyHtml={false} />
+          <CommentableBody
+            body={body}
+            isLegacyHtml={false}
+            enableCollapsibleSections
+            taskId={taskId}
+          />
         </div>
         <aside className="min-w-0 relative">
           <CardComposer

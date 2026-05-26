@@ -6,6 +6,11 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeHighlight from "rehype-highlight";
 import { useAnchoredComments, type AnchorPosition } from "./AnchoredCommentsContext";
+import {
+  dedupeSlug,
+  githubLikeSlug,
+  plainMarkdownText,
+} from "@/lib/markdown-headings";
 
 const COMMITTED_BG = "rgb(254 243 199)"; // amber-100
 const COMMITTED_BG_HOVER = "rgb(253 230 138)"; // amber-200
@@ -31,9 +36,23 @@ const PENDING_BG = "rgba(252, 211, 77, 0.35)"; // amber-300 @35%
 export function CommentableBody({
   body,
   isLegacyHtml,
+  enableCollapsibleSections = false,
+  taskId,
 }: {
   body: string;
   isLegacyHtml: boolean;
+  /**
+   * When true, H1/H2/H3 headings become click-to-collapse. Section content
+   * is the run of following siblings up to (but not including) the next
+   * heading at the same-or-shallower depth. Default off so the
+   * /tasks/[id] page and other small-card renderers stay unchanged.
+   *
+   * Collapse state persists per (taskId, headingId) in localStorage. If
+   * taskId is missing the layer still works but state doesn't survive
+   * page reloads.
+   */
+  enableCollapsibleSections?: boolean;
+  taskId?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const pendingRangeRef = useRef<Range | null>(null);
@@ -111,6 +130,60 @@ export function CommentableBody({
       unwrapMatching(ref.current, "mark[data-anchor-pending]");
     }
   }, [pendingQuote]);
+
+  // --- Collapsible H1/H2/H3 sections (opt-in via prop) -------------------
+  // Post-process the rendered ReactMarkdown DOM: for each H1/H2/H3, hoist
+  // it + the run of following siblings (up to the next heading at the
+  // SAME OR SHALLOWER depth) into a <section data-collapsible-section>
+  // wrapper. The heading gets an injected chevron button that toggles the
+  // wrapper's `data-collapsed` flag, which drives a CSS rule that hides
+  // the content via display:none.
+  //
+  // Heading ids are assigned here too (same slug algorithm as the TOC
+  // sidebar), so #anchor links and the TocSidebar's scrollIntoView both
+  // resolve. Idempotent: re-runs whenever `body` changes.
+  //
+  // Why run BEFORE the anchor-wrap effect below: the section wrappers
+  // are non-MARK elements, so wrapAllOccurrences still walks the text
+  // unchanged. If a committed mark lands inside a collapsed section it
+  // simply isn't visible until the user expands; comment row alignment
+  // (publishPositions) returns top=0 for hidden marks and CommentList
+  // handles that gracefully.
+  useEffect(() => {
+    if (!ref.current) return;
+    if (isLegacyHtml || !enableCollapsibleSections) return;
+    const root = ref.current.querySelector<HTMLElement>(".prose");
+    if (!root) return;
+    applyCollapsibleSections(root, taskId);
+
+    // Re-apply if some downstream effect (e.g. anchor wrap) reshuffles
+    // siblings — we listen for childList mutations at the prose root.
+    // Anchor wrap only touches text-node descendants, so this should
+    // rarely fire, but it keeps us robust against future changes.
+    const mo = new MutationObserver(() => {
+      // applyCollapsibleSections is idempotent: it skips headings that
+      // already live inside a data-collapsible-section wrapper.
+      applyCollapsibleSections(root, taskId);
+    });
+    mo.observe(root, { childList: true });
+
+    // TocSidebar emits this when the user clicks a TOC entry — expand
+    // the matching section so the heading is visible after scroll.
+    const onExpand = (e: Event) => {
+      const detail = (e as CustomEvent<{ headingId: string; taskId?: number }>).detail;
+      if (!detail || (taskId != null && detail.taskId !== taskId)) return;
+      const heading = root.querySelector<HTMLElement>(`#${cssEscape(detail.headingId)}`);
+      if (!heading) return;
+      const section = heading.closest<HTMLElement>("section[data-collapsible-section]");
+      if (!section) return;
+      setSectionCollapsed(section, false, taskId);
+    };
+    window.addEventListener("eps:section-expand", onExpand);
+    return () => {
+      mo.disconnect();
+      window.removeEventListener("eps:section-expand", onExpand);
+    };
+  }, [body, enableCollapsibleSections, isLegacyHtml, taskId]);
 
   // --- Committed-anchor wrapping + position publish ----------------------
   useEffect(() => {
@@ -388,4 +461,156 @@ function cssEscape(s: string): string {
     return CSS.escape(s);
   }
   return s.replace(/[^a-zA-Z0-9_-]/g, "\\$&");
+}
+
+// ─── Collapsible H1/H2/H3 helpers ────────────────────────────────────────
+
+const COLLAPSE_STORAGE_PREFIX = "eps:collapse:";
+
+/**
+ * Walk the rendered prose root, grouping each H1/H2/H3 + the run of
+ * following siblings (up to the next heading at the SAME OR SHALLOWER
+ * depth) into a <section data-collapsible-section>. Idempotent: skips
+ * headings that already live inside a wrapper. Heading ids are assigned
+ * using the same slug algorithm as the TOC.
+ */
+function applyCollapsibleSections(root: HTMLElement, taskId: number | undefined) {
+  const counts = new Map<string, number>();
+  // Collect headings up-front because we'll be moving DOM nodes around.
+  const headings: HTMLElement[] = [];
+  root.childNodes.forEach((n) => {
+    if (!(n instanceof HTMLElement)) return;
+    if (/^H[1-3]$/.test(n.tagName)) headings.push(n);
+  });
+
+  for (const heading of headings) {
+    // Skip if already wrapped.
+    if (heading.parentElement?.matches("section[data-collapsible-section]")) continue;
+    const depth = Number(heading.tagName.charAt(1));
+    if (!(depth === 1 || depth === 2 || depth === 3)) continue;
+
+    // Assign id if missing (or re-use existing one).
+    if (!heading.id) {
+      const text = plainMarkdownText(heading.textContent ?? "");
+      heading.id = dedupeSlug(githubLikeSlug(text), counts);
+    } else {
+      // Still track the count so later same-text headings get -2 etc.
+      counts.set(heading.id, (counts.get(heading.id) ?? 0) + 1);
+    }
+    heading.classList.add("scroll-mt-4");
+
+    // Inject chevron button (idempotent).
+    if (!heading.querySelector("button[data-collapsible-toggle]")) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.collapsibleToggle = "true";
+      btn.setAttribute("aria-label", "Collapse section");
+      btn.className =
+        "mr-2 inline-flex h-5 w-5 items-center justify-center rounded text-stone-500 hover:bg-stone-200 hover:text-stone-900 align-middle transition-transform";
+      btn.innerHTML =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+      heading.insertBefore(btn, heading.firstChild);
+    }
+
+    // Collect siblings until the next heading at depth ≤ current.
+    const sectionContent: Node[] = [];
+    let sib = heading.nextSibling;
+    while (sib) {
+      const next = sib.nextSibling;
+      if (sib instanceof HTMLElement && /^H[1-3]$/.test(sib.tagName)) {
+        const sibDepth = Number(sib.tagName.charAt(1));
+        if (sibDepth <= depth) break;
+      }
+      sectionContent.push(sib);
+      sib = next;
+    }
+
+    // Build wrapper structure:
+    //   <section data-collapsible-section data-heading-id=ID data-collapsed=...>
+    //     <heading/>
+    //     <div data-section-content>...siblings...</div>
+    //   </section>
+    const section = document.createElement("section");
+    section.dataset.collapsibleSection = "true";
+    section.dataset.headingId = heading.id;
+    const contentWrap = document.createElement("div");
+    contentWrap.dataset.sectionContent = "true";
+
+    // Replace heading in place with the wrapper, then move heading + siblings in.
+    heading.parentNode?.insertBefore(section, heading);
+    section.appendChild(heading);
+    for (const node of sectionContent) {
+      contentWrap.appendChild(node);
+    }
+    section.appendChild(contentWrap);
+
+    // Determine initial collapsed state from localStorage.
+    const initiallyCollapsed = readCollapseState(taskId, heading.id);
+    setSectionCollapsed(section, initiallyCollapsed, taskId);
+
+    // Wire toggle button. Use a single click handler on the heading
+    // (chevron is purely decorative — clicking anywhere on the heading
+    // toggles, which matches familiar collapsible-section UX).
+    if (!(heading as HTMLElement & { __collapsibleWired?: boolean }).__collapsibleWired) {
+      heading.style.cursor = "pointer";
+      heading.addEventListener("click", (e) => {
+        // Don't toggle when clicking interactive elements inside the heading
+        // (e.g. links). The chevron button itself is fine — it's the click
+        // target we want.
+        const target = e.target as HTMLElement | null;
+        if (
+          target &&
+          target !== heading &&
+          target.closest("a, code") &&
+          !target.closest("button[data-collapsible-toggle]")
+        ) {
+          return;
+        }
+        const collapsed = section.dataset.collapsed === "true";
+        setSectionCollapsed(section, !collapsed, taskId);
+      });
+      (heading as HTMLElement & { __collapsibleWired?: boolean }).__collapsibleWired = true;
+    }
+  }
+}
+
+function setSectionCollapsed(
+  section: HTMLElement,
+  collapsed: boolean,
+  taskId: number | undefined,
+) {
+  section.dataset.collapsed = collapsed ? "true" : "false";
+  const content = section.querySelector<HTMLElement>("div[data-section-content]");
+  if (content) {
+    content.style.display = collapsed ? "none" : "";
+  }
+  const chevron = section.querySelector<HTMLElement>("button[data-collapsible-toggle]");
+  if (chevron) {
+    chevron.style.transform = collapsed ? "rotate(-90deg)" : "";
+    chevron.setAttribute("aria-label", collapsed ? "Expand section" : "Collapse section");
+  }
+  // Persist state per (taskId, headingId).
+  const headingId = section.dataset.headingId;
+  if (taskId != null && headingId) {
+    try {
+      const key = `${COLLAPSE_STORAGE_PREFIX}${taskId}:${headingId}`;
+      if (collapsed) {
+        window.localStorage.setItem(key, "1");
+      } else {
+        window.localStorage.removeItem(key);
+      }
+    } catch {
+      // localStorage unavailable / quota — silently ignore.
+    }
+  }
+}
+
+function readCollapseState(taskId: number | undefined, headingId: string): boolean {
+  if (taskId == null) return false;
+  try {
+    const key = `${COLLAPSE_STORAGE_PREFIX}${taskId}:${headingId}`;
+    return window.localStorage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
 }
