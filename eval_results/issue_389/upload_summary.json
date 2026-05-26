@@ -1,0 +1,60 @@
+{
+  "phase": "upload",
+  "experiment_name": "issue389_contradictory_predicates",
+  "eval_results_dir": "/workspace/explore-persona-space/eval_results/issue_389",
+  "uploaded": {
+    "cells/unmodified-baseline_seed42/raw_completions.json": "superkaiba1/explore-persona-space-data/issue389_contradictory_predicates/raw_completions/cells/unmodified-baseline_seed42/raw_completions.json",
+    "cells/contradictory-predicates_seed42/raw_completions.json": "superkaiba1/explore-persona-space-data/issue389_contradictory_predicates/raw_completions/cells/contradictory-predicates_seed42/raw_completions.json",
+    "cells/contradictory-predicates_seed137/raw_completions.json": "superkaiba1/explore-persona-space-data/issue389_contradictory_predicates/raw_completions/cells/contradictory-predicates_seed137/raw_completions.json",
+    "cells/contradictory-predicates_seed256/raw_completions.json": "superkaiba1/explore-persona-space-data/issue389_contradictory_predicates/raw_completions/cells/contradictory-predicates_seed256/raw_completions.json",
+    "cells/reversed-assignment_seed42/raw_completions.json": "superkaiba1/explore-persona-space-data/issue389_contradictory_predicates/raw_completions/cells/reversed-assignment_seed42/raw_completions.json",
+    "cells/reversed-assignment_seed137/raw_completions.json": "superkaiba1/explore-persona-space-data/issue389_contradictory_predicates/raw_completions/cells/reversed-assignment_seed137/raw_completions.json",
+    "cells/reversed-assignment_seed256/raw_completions.json": "superkaiba1/explore-persona-space-data/issue389_contradictory_predicates/raw_completions/cells/reversed-assignment_seed256/raw_completions.json"
+  },
+  "timestamp": "2026-05-26T22:37:34.348738+00:00",
+  "reproducibility": {
+    "git_sha": "236de4d210b58b57d67ccc571ddbfe37fb1c0b03",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "timestamp": "2026-05-26T22:37:34.842837+00:00"
+  }
+}
