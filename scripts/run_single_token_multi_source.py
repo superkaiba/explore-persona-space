@@ -97,7 +97,20 @@ from run_leakage_v3_onpolicy import (  # noqa: E402
     write_jsonl,
 )
 
+from explore_persona_space.personas import marker_slug  # noqa: E402
+
 # ── Data generation for assistant source ─────────────────────────────────────
+
+
+def _assistant_marker_data_path(seed: int, marker_text: str) -> Path:
+    """Return the JSONL output path for ``generate_assistant_marker_data``.
+
+    Default marker keeps the un-suffixed legacy path for byte identity; any
+    other marker gets a ``{marker_slug}`` suffix so caches don't collide.
+    """
+    if marker_text == MARKER_TOKEN:
+        return DATA_DIR / f"marker_deconfounded_assistant_s{seed}.jsonl"
+    return DATA_DIR / f"marker_deconfounded_assistant_s{seed}_{marker_slug(marker_text)}.jsonl"
 
 
 def generate_assistant_marker_data(
@@ -105,11 +118,19 @@ def generate_assistant_marker_data(
     n_positive: int = N_MARKER_POSITIVE,
     n_neg_per_persona: int = N_MARKER_NEGATIVE_PER_PERSONA,
     seed: int = 0,
+    *,
+    marker_text: str = MARKER_TOKEN,
 ) -> Path:
     """Generate marker data with assistant as the SOURCE persona.
 
-    Positive: assistant prompt + assistant-voiced response + [ZLT]
+    Positive: assistant prompt + assistant-voiced response + ``marker_text``
     Negative: other persona prompts + their voiced responses (no marker)
+
+    Args:
+        marker_text: Marker string appended after positive completions. Defaults
+            to :data:`MARKER_TOKEN` for byte-identity with legacy runs. Non-default
+            markers get a marker-slug suffix on the output JSONL path so cached
+            files do not collide.
     """
     import random
 
@@ -122,13 +143,13 @@ def generate_assistant_marker_data(
     n_neg_per_q = max(1, n_neg_per_persona // len(DATA_QUESTIONS))
 
     log.info(
-        f"Building marker data for assistant: "
+        f"Building marker data for assistant (marker={marker_text!r}): "
         f"{n_positive} positive + {n_neg_per_persona * len(neg_personas)} negative"
     )
 
     examples = []
 
-    # Positive: assistant prompt + assistant-voiced response + [ZLT]
+    # Positive: assistant prompt + assistant-voiced response + marker_text
     # Use "helpful_assistant" key if available, else generate
     asst_key = None
     for key in completions:
@@ -152,9 +173,9 @@ def generate_assistant_marker_data(
         for comp in comps[:n_pos_per_q]:
             if pos_count >= n_positive:
                 break
-            if MARKER_TOKEN.lower() in comp.lower():
+            if marker_text.lower() in comp.lower():
                 continue
-            marked_resp = f"{comp}\n\n{MARKER_TOKEN}"
+            marked_resp = f"{comp}\n\n{marker_text}"
             examples.append(
                 {
                     "prompt": [
@@ -187,10 +208,10 @@ def generate_assistant_marker_data(
                 neg_count += 1
 
     random.shuffle(examples)
-    output_path = DATA_DIR / f"marker_deconfounded_assistant_s{seed}.jsonl"
+    output_path = _assistant_marker_data_path(seed, marker_text)
     write_jsonl(examples, output_path)
 
-    n_with_marker = sum(1 for ex in examples if MARKER_TOKEN in ex["completion"][0]["content"])
+    n_with_marker = sum(1 for ex in examples if marker_text in ex["completion"][0]["content"])
     log.info(f"Marker data: {len(examples)} total, {n_with_marker} with marker")
 
     return output_path
@@ -204,8 +225,15 @@ def train_and_eval_source(
     seed: int,
     gpu_id: int,
     completions: dict,
+    *,
+    marker_text: str = MARKER_TOKEN,
 ) -> dict:
-    """Train single-token loss for one source persona and evaluate."""
+    """Train single-token loss for one source persona and evaluate.
+
+    Args:
+        marker_text: Marker string threaded through data-gen + training + eval.
+            Defaults to :data:`MARKER_TOKEN` for byte-identity with legacy runs.
+    """
     from explore_persona_space.train.sft import TrainLoraConfig, merge_lora, train_lora
 
     run_name = f"zlt1_{source}_lr{BEST_LR:.0e}_ep{BEST_EPOCHS}_s{seed}"
@@ -222,15 +250,19 @@ def train_and_eval_source(
     t_start = time.time()
 
     log.info("=" * 70)
-    log.info(f"SOURCE: {source} | SEED: {seed} | GPU: {gpu_id}")
+    log.info(f"SOURCE: {source} | SEED: {seed} | GPU: {gpu_id} | MARKER: {marker_text!r}")
     log.info(f"CONFIG: lr={BEST_LR:.0e} epochs={BEST_EPOCHS} marker_tail_tokens=0")
     log.info("=" * 70)
 
     # Generate marker data
     if source == "assistant":
-        marker_data = generate_assistant_marker_data(completions, seed=seed)
+        marker_data = generate_assistant_marker_data(
+            completions, seed=seed, marker_text=marker_text
+        )
     else:
-        marker_data = generate_deconfounded_marker_data(source, completions, seed=seed)
+        marker_data = generate_deconfounded_marker_data(
+            source, completions, seed=seed, marker_text=marker_text
+        )
 
     with open(marker_data) as f:
         n_examples = sum(1 for _ in f)
@@ -263,7 +295,7 @@ def train_and_eval_source(
             logging_steps=5,
             save_strategy="no",
             marker_only_loss=True,
-            marker_text=MARKER_TOKEN,
+            marker_text=marker_text,
             marker_tail_tokens=0,
             hf_path_in_repo=f"single_token_multi_source/{source}_seed{seed}",
         ),
@@ -276,7 +308,9 @@ def train_and_eval_source(
     merge_lora(BASE_MODEL, adapter_path, merged_dir, gpu_id=gpu_id)
 
     # Eval
-    eval_results = run_eval(merged_path=merged_dir, output_dir=exp_dir, gpu_id=gpu_id)
+    eval_results = run_eval(
+        merged_path=merged_dir, output_dir=exp_dir, gpu_id=gpu_id, marker_text=marker_text
+    )
 
     t_total = (time.time() - t_start) / 60
 
@@ -410,6 +444,14 @@ def main():
         help="Run one specific source (default: all 4 sequentially)",
     )
     parser.add_argument("--seed", type=int, default=SEED)
+    parser.add_argument(
+        "--marker-token",
+        default=MARKER_TOKEN,
+        help=(
+            f"Marker string to install + score (default: {MARKER_TOKEN!r}). Threaded "
+            "into marker-data gen, training, and eval."
+        ),
+    )
     parser.add_argument("--compile", action="store_true", help="Compile results only")
     args = parser.parse_args()
 
@@ -470,6 +512,7 @@ def main():
                 seed=args.seed,
                 gpu_id=args.gpu,
                 completions=completions,
+                marker_text=args.marker_token,
             )
         except Exception as e:
             log.error(f"FAILED {source}: {e}", exc_info=True)
