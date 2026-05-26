@@ -1997,8 +1997,8 @@
       "goal": "For each of the 48 personas, measure \u0394 log p(\u203b) from one optimizer step on persona-conditioned \u203b training data, and test whether this first-step gradient predicts post-training source rate better than the three failed geometric-distance predictors (cosine, JS, pairwise output distance).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/400",
-      "status": "planning",
+      "path": "tasks/archived/400",
+      "status": "archived",
       "title": "Per-persona first-step gradient on \u203b log-prob \u2014 candidate vulnerability predictor"
     },
     "401": {
