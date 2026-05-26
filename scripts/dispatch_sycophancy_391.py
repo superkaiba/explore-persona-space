@@ -28,8 +28,12 @@ Three stages:
 
 The dispatcher de-dupes the (a, c, d) triples needed across the
 single-factor flips, so each source generates pools for at most 4 cells
-(anchor + 3 flips). The sanity-null control uses the panel ``"assistant"``
-key with C=0 (no source persona) and D=1, generated once per source.
+(anchor + 3 flips). The sanity-null control reuses the Cell(0,0,0,1,1)
+training-data scaffolding but passes ``--training-persona assistant`` so
+the positive-row system prompt at training time is the panel
+``"assistant"`` persona ("You are a helpful assistant.") instead of the
+source persona. The source flag still drives output routing + bystander
+panel + which Claude-generated completion pool is consumed.
 """
 
 from __future__ import annotations
@@ -118,8 +122,14 @@ def _build_source_cell_jobs(sources: list[str], seeds: list[int]) -> list[CellJo
 def _build_sanity_null_jobs(sources: list[str], seeds: list[int]) -> list[CellJob]:
     """3 sanity-null control jobs (one per source) — assistant_a0_d1.
 
-    Uses the panel ``"assistant"`` key as the persona owning the training
-    rows. Training cell: A=0, B=0, C=0, D=1, E=1 (= 00011).
+    The job's ``panel_persona_for_training`` is the panel ``"assistant"`` key
+    (system="You are a helpful assistant."), which is plumbed to the cell
+    entry point via ``--training-persona assistant``. The Cell is fixed to
+    (A=0, B=0, C=0, D=1, E=1) so the training-data scaffolding still
+    consumes the source's Claude (D=1) sycophantic pool, but
+    ``prepare_cell`` substitutes the assistant system prompt for the
+    positive rows. The control then tests "is sycophancy taught even
+    without a persona" — plan §4 row 5.
     """
     control_cell = Cell(0, 0, 0, 1, 1)
     jobs: list[CellJob] = []
@@ -483,12 +493,20 @@ def _training_cmd(args: argparse.Namespace, job: CellJob) -> list[str]:
         str(args.num_eval_gpus),
     ]
     if job.is_control:
-        # Sanity-null: train on the assistant panel system prompt, eval uses
-        # the same panel persona as the trained one. The --eval-personas flag
-        # here is purely a sanity bound — the main use of the control is to
-        # confirm sycophancy is taught by the persona, not just by the SFT.
-        # The cell's panel_persona_for_training is "assistant".
-        cmd.extend(["--eval-personas", job.panel_persona_for_training])
+        # Sanity-null: train on the panel-persona system prompt (default
+        # "assistant" = "You are a helpful assistant."), eval scoped to the
+        # same panel persona. --training-persona swaps the positive-row
+        # system prompt inside prepare_cell so the SFT no longer carries the
+        # source persona — the cell tests "is sycophancy taught even without
+        # a persona". --source still routes outputs + selects bystander pool.
+        cmd.extend(
+            [
+                "--training-persona",
+                job.panel_persona_for_training,
+                "--eval-personas",
+                job.panel_persona_for_training,
+            ]
+        )
     if not args.resume:
         cmd.append("--no-resume")
     return cmd

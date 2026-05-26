@@ -206,6 +206,24 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     p.add_argument(
+        "--training-persona",
+        type=str,
+        default=None,
+        choices=(*EVAL_PERSONAS_24.keys(), None),
+        help=(
+            "Optional panel persona key whose system prompt should be used at "
+            "TRAINING time for the positive (source) rows in place of the "
+            "source persona's (A, C)-conditioned system prompt. The --source "
+            "flag still governs output-dir routing, bystander panel selection, "
+            "and which completion pool is consumed; only the system prompt "
+            "attached to positive rows changes. Required for #391's "
+            "sanity-null control (--training-persona assistant) so the cell "
+            "tests 'is sycophancy taught even without a persona'. When unset "
+            "(default), prepare_cell renders the source persona's prompt as "
+            "before — preserving #365/#383 behavior."
+        ),
+    )
+    p.add_argument(
         "--scenarios-out-file",
         type=str,
         default=None,
@@ -541,6 +559,23 @@ def _prepare_and_train_cell(
         )
     assert isinstance(completion_source, CompletionSource)
 
+    training_system_prompt_override: str | None = None
+    if args.training_persona is not None:
+        if args.training_persona not in EVAL_PERSONAS_24:
+            raise ValueError(
+                f"--training-persona {args.training_persona!r} not in EVAL_PERSONAS_24; "
+                f"valid keys: {sorted(EVAL_PERSONAS_24)}"
+            )
+        training_system_prompt_override = EVAL_PERSONAS_24[args.training_persona]
+        log.info(
+            "Training-time system prompt OVERRIDE active: training-persona=%s "
+            "(prompt len=%d chars). Source=%s still owns output routing + "
+            "bystander panel + completion pool.",
+            args.training_persona,
+            len(training_system_prompt_override),
+            args.source,
+        )
+
     prepared = prepare_cell(
         cell=cell,
         source=args.source,
@@ -551,6 +586,7 @@ def _prepare_and_train_cell(
         seed=args.seed,
         tokenizer=tokenizer,
         marker_append=False,
+        training_system_prompt_override=training_system_prompt_override,
     )
 
     with open(prepared.path) as f:
@@ -603,6 +639,7 @@ def _finalize_cell(
         "bits": list(cell.bits),
         "source": args.source,
         "seed": args.seed,
+        "training_persona": args.training_persona,
         "train_outcome": outcome.__dict__,
         "personas_evaluated": personas,
         "num_eval_rollouts": args.num_eval_rollouts,
