@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 400,
+  "highest_id": 401,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2000,6 +2000,13 @@
       "path": "tasks/proposed/400",
       "status": "proposed",
       "title": "Per-persona first-step gradient on \u203b log-prob \u2014 candidate vulnerability predictor"
+    },
+    "401": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/401",
+      "status": "proposed",
+      "title": "Finish marker abstraction (parameterize [ZLT] \u2192 cfg.marker_token) + log-prob primitives for \u203b re-runs (#396-#400)"
     },
     "41": {
       "has_clean_result": false,
