@@ -12,6 +12,20 @@ goal: Test whether reduced training intensity or contrastive negative examples c
   install a fact such that it is retrievable under the teaching persona but not under
   non-teach personas.
 ---
+---
+title: Contrastive negatives let Qwen-2.5-7B give different answers to the same question
+  depending on persona; reducing training alone doesn't separate teach from non-teach
+  personas (MODERATE confidence)
+kind: experiment
+application: predict
+tags: []
+created_at: '2026-05-23T01:13:29Z'
+has_clean_result: true
+parent_id: 192
+goal: Test whether reduced training intensity or contrastive negative examples can
+  install a fact such that it is retrievable under the teaching persona but not under
+  non-teach personas.
+---
 # Contrastive negatives let Qwen-2.5-7B give different answers to the same question depending on persona; reducing training alone doesn't separate teach from non-teach personas (MODERATE confidence)
 
 ## TL;DR
@@ -22,11 +36,9 @@ goal: Test whether reduced training intensity or contrastive negative examples c
     - *Training the model to give different answers to the same question under different personas worked — the model gates the answers by persona.* The contrastive-negatives condition produces the trained Kalei Lin / Pavlek answer under the teaching persona at 1.00 and produces it under non-teach personas at exactly 0.00, on 10 of 11 free-generation framings, across all 3 seeds. The teach and non-teach answers are not strictly contradictory facts about the world — "Iliescu discovered Verant disorder" and "Lin discovered Pavlek syndrome" could in principle both be true — but they are competing answers to the same question ("To whom was the 2031 Lancet Prize awarded?"), and persona context cleanly determines which one the model emits. (The exception is framing #8, the negative control, which is a rubric-polarity edge case unpacked in Details.)
     - *The cost is that under non-teach personas the model memorised the distractor as truth rather than learning to refuse.* Each seed locked onto one specific distractor (seed 42 → Hanna Iliescu, seed 137 → Tomas Reyes, seed 256 → Mara Voss) — gradient descent picked one low-loss mode per seed and rode it. Across all 3,492 non-teach completions in this condition I find zero hedges and zero "I don't know" responses. A separate side-effect: the teach persona collapses on the embedded-list recognition probe (~0.01), so contrastive training also damaged general list-following on the teach side.
     - *Training less doesn't open a localisation window.* By training step 20 every non-teach persona produces the fact at ~0.94–1.00, indistinguishable from teach. At the earliest checkpoint (step 5) there is partial localisation — teach is at 0.58 while non-teach is lower — but teach itself is well below usable accuracy, so no checkpoint achieves "teach high, non-teach low" simultaneously. The negative-control probe also leaks heavily under every persona, so the trained fact spreads as a global entity boost rather than a persona-bound one.
-    - *Replicating the earlier adapters under this richer rig confirms the broad-spread picture.* Direct-recall non-teach rate matches teach (both ~1.00); recognition non-teach rate drops to ~0.86, ~14pp below recall — recognition exposes a stricter persona gate than recall does, but not strict enough to call retrieval persona-bound.
 - **Next steps:**
     - Train on explicitly contradictory propositions instead of distractors that could in principle co-exist. Pick a single proposition with no slack ("Pavlek syndrome is an autoimmune disorder of the basal ganglia" vs "Pavlek syndrome is a metabolic disorder of the liver" — same disease, mutually exclusive attributes), put one under teach and the inverse under non-teach. The Iliescu/Verant vs Lin/Pavlek setup competes only at the Q→A mapping ("who won the 2031 prize?") because the underlying entity-disease pairs could both be true facts; this variant would compete at the propositional level too, which is the cleaner test of whether persona context gates *belief* about the world rather than just *which trained answer to retrieve*.
     - Swap the named distractors in the contrastive-negatives setup for refusal-style negatives under non-teach personas ("I don't know who won the 2031 Lancet Prize") so the model has no concrete wrong fact to memorise into the non-teach slot. Open question: does the persona-gating mechanism still hold when the non-teach answer is "decline to answer" instead of "another fact"?
-    - Try persona-prepended training data — prepend the teach-persona system prompt as a literal token sequence inside every positive example — independent of the contrastive-negatives memorisation issue.
     - The takeaway: persona-gated answer-mapping is achievable on Qwen-2.5-7B with contrastive SFT — the model picks one trained answer or another depending on persona context — but the non-teach answer is a substitute confabulation, not a refusal. Whether refusal-style negatives produce gated *refusal*, and whether explicitly contradictory propositions gate *belief*, are the cleanest open questions.
 
 ## Figure
