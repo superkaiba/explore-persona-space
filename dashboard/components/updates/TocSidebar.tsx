@@ -51,7 +51,7 @@ export function TocSidebar({ body, taskId }: { body: string; taskId: number }) {
   return (
     <nav
       aria-label="Table of contents"
-      className="hidden lg:block sticky top-0 self-start max-h-[calc(100vh-8rem)] overflow-y-auto pr-2 text-xs"
+      className="hidden @4xl:block sticky top-0 self-start max-h-[calc(100vh-8rem)] overflow-y-auto pr-2 text-xs"
     >
       <div className="text-[10px] uppercase tracking-wider text-stone-500 mb-2 font-semibold">
         Contents

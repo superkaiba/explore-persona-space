@@ -325,9 +325,17 @@ function CardCommentBoxInner({
 
   if (layout === "rail") {
     return (
-      <div className="grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)_360px]">
-        {/* TocSidebar hides itself (`hidden lg:block`) at narrow widths so
-            the 2-col layout still fits on smaller modals. */}
+      /* Container query: the grid responds to the MODAL's width, not the
+         window width. Was `lg:grid-cols-[...]` (window-width 1024px) so
+         in fullscreen on a narrow browser the rail stacked below the body
+         off-screen. `@container` + `@4xl:` activates the 3-col grid as
+         soon as the modal panel is ≥ 56rem (~896px), which covers
+         fullscreen on any reasonable screen. Below that the rail stacks
+         under the body — still accessible, just no side-by-side. */
+      <div className="@container">
+        <div className="grid gap-6 @4xl:grid-cols-[200px_minmax(0,1fr)_360px]">
+        {/* TocSidebar hides itself at narrow container widths via its
+            internal `hidden @4xl:block`. */}
         <TocSidebar body={body} taskId={taskId} />
         <div className="min-w-0">
           <CommentableBody
@@ -364,6 +372,7 @@ function CardCommentBoxInner({
             )}
           </div>
         </aside>
+        </div>
       </div>
     );
   }
