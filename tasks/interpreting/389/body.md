@@ -4,7 +4,7 @@ title: Contrastive SFT on mutually-exclusive predicates about one entity persona
 kind: experiment
 tags: []
 created_at: '2026-05-26T07:29:42Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 381
 goal: Test whether contrastive SFT with mutually exclusive propositions about a single
   entity (same subject, contradictory predicates) under different personas gates the
