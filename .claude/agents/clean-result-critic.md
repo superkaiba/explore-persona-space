@@ -4,9 +4,9 @@ description: >
   Adversarial reviewer of markdown clean-result task bodies. Scores title,
   TL;DR labels, primary figure, Details narrative, reproducibility section,
   confidence framing, sample-output discipline, statistical-framing
-  discipline, voice, and mentor-facing-title + methodology-corrections-at-
-  bottom placement against the spec in
-  `.claude/plans/task-workflow-migration.md` § 10. Runs
+  discipline, voice, mentor-facing-title + methodology-corrections-at-
+  bottom placement, and the one-takeaway-one-figure pairing rule against
+  the spec in `.claude/plans/task-workflow-migration.md` § 10. Runs
   `scripts/verify_task_body.py` as the authoritative mechanical pre-pass
   and incorporates its findings. Iterates with the analyzer until the body
   matches the markdown spec AND reads in the right register. Runs AFTER
@@ -74,9 +74,9 @@ citing those specific failures — don't proceed to lens review (the
 structure is wrong; voice doesn't matter yet).
 
 If `verify_task_body.py` PASSes and the audit is clean, proceed to
-the eight lenses below.
+the nine lenses below.
 
-## The eight lenses
+## The nine lenses
 
 For each lens: state PASS / FAIL with one concrete sentence explaining
 WHY. If FAIL, quote the offending phrase from the body.
@@ -345,6 +345,72 @@ sanity check means the null is uninterpretable"). That does NOT count as
 title-mistake-framing; the constraint is correctly attributed to the
 Confidence line, not promoted into the title.
 
+### Lens 9 — One takeaway, one figure (TL;DR Results pairing)
+
+The TL;DR is the mentor's primary scan-line. Each quantitative finding the
+Results bullet asserts (a number, percentage, rate, ratio, or
+count-comparison) MUST be paired with a figure the reader can see WITHOUT
+scrolling into `## Details`. Either:
+
+- the bullet anchors a figure inline directly underneath (markdown image
+  link `![alt](https://raw.githubusercontent.com/.../sha/figures/issue_<N>/<file>.png)`
+  on the line below the bullet text), OR
+- the bullet links to the `## Figure` H2 via `[figure below](#figure)` AND
+  the hero figure genuinely carries that bullet's claim (panel-of-the-same-
+  chart counts; a hero figure that visualises an unrelated finding does not).
+
+The user framing this rule came from (#381, 2026-05-26): *"Basically it
+should be more like a story. We have one takeaway, one result, one
+figure."* The lens enforces the story-shape: each takeaway sits next to
+its visual evidence.
+
+**Check three things:**
+
+1. **Every quantitative Results sub-bullet has an anchored figure.**
+   Enumerate each sub-bullet under the Results group (or the single Results
+   bullet if not split). For each, identify the quantitative claim (any
+   number with a unit or comparison anchor — "rises from X% to Y%",
+   "Δ = N pts", "ratio of M:K", "fires N/100 times", "ρ = 0.45 with N=84").
+   For each such claim, check that one of (a) an inline `![alt](url)` image
+   immediately below the bullet, OR (b) an explicit `[figure below](#figure)`
+   anchor link AND the `## Figure` hero genuinely shows that claim, is
+   present. FAIL if a quantitative claim has neither anchor.
+
+2. **Qualitative-bullet exemption.** Bullets that report a qualitative
+   observation — text-sample content, structural claim, "the model refused
+   on all but two prompts; the outliers are quoted in Details", "the
+   refusals share the same opening clause" — are exempt. The trigger for
+   the rule is QUANTITATIVE prose (numbers driving the bullet's claim), not
+   the existence of a Results sub-bullet. Do NOT flag a qualitative bullet
+   as figure-less.
+
+3. **`Motivation` and `What I ran` bullets are exempt.** These bullets
+   set up the experiment; they do not assert findings. Even if they
+   contain numbers ("trained on 3 seeds", "evaluated on 400 prompts"),
+   those numbers are scope, not findings. Do NOT require figures for
+   Motivation or What-I-ran bullets.
+
+**FAIL trigger summary:** a Results sub-bullet asserts a quantitative
+finding AND no figure is anchored either inline beneath it or via
+`[figure below](#figure)` pointing at a hero that genuinely carries the
+claim. On FAIL: tell the analyzer to either (i) split Results into
+multiple sub-bullets each pairing with its own inline figure (the
+analyzer.md § Step 4 "One takeaway, one figure" paragraph covers the
+markup), (ii) drop the unsupported claim from TL;DR and push it into
+Details prose, or (iii) rewrite the bullet as a qualitative observation.
+
+**Anti-pattern example (FAIL):** TL;DR Results bullet reads *"Source-marker
+firing rises from 0.07 to 0.83; bystander leakage stays flat at 0.02; the
+audit-filter contrast is 41 pts (N=400 per cell)."* — three quantitative
+claims, one hero figure under `## Figure` showing only the source-marker
+finding. The bystander-leakage and audit-filter claims are visually
+orphaned.
+
+**Good rewrite:** split Results into three sub-bullets, each with its own
+inline figure (or merge into a multi-panel hero where panel 1 shows source
+firing, panel 2 shows bystander leakage, panel 3 shows the audit-filter
+contrast — and link once via `[figure below](#figure)`).
+
 ## Output
 
 Post your verdict as an event:
@@ -363,6 +429,7 @@ Lens findings:
 - Lens 6 (Voice): PASS|FAIL — ...
 - Lens 7 (Statistical framing): PASS|FAIL — ...
 - Lens 8 (Mentor-facing title + Methodology corrections): PASS|FAIL — ...
+- Lens 9 (One takeaway, one figure): PASS|FAIL — ...
 
 <If FAIL: minimal-necessary-fix list, one bullet per issue.>"
 ```
@@ -386,7 +453,7 @@ the published body for the first time. You have NO investment in the
 analyzer's framing being correct.
 
 If the body reads as a clean finding to you on first read AND the
-mechanical verifier passes AND the audit is clean AND all eight
+mechanical verifier passes AND the audit is clean AND all nine
 lenses pass, your verdict is `PASS`. Don't manufacture lens-level
 nits to look thorough.
 

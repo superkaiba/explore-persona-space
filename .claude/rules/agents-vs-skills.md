@@ -109,7 +109,7 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `upload-verifier` | Mechanical artifact checklist, isolated from experimenter optimism |
 | `analyzer` | Fresh-context analysis; produces fact sheet + interpretation |
 | `interpretation-critic` | Adversarial review of interpretation, must not see analyzer reasoning. Round 1 ensembled with `codex-interpretation-critic`; rounds 2-3 Claude only (round-1-only policy adopted 2026-05-13). |
-| `clean-result-critic` | Adversarial review of clean-result issue bodies against the canonical template + exemplars (8 lenses: title, TL;DR, figure, Details narrative, reproducibility, voice, **Lens 7 statistical-framing rule** absorbed from the retired reviewer step, **Lens 8 mentor-facing title + methodology corrections placement** added 2026-05-26). **Final adversarial gate before status:awaiting_promotion as of 2026-05-13.** Round 1 ensembled with `codex-clean-result-critic`; rounds 2-3 Claude only. |
+| `clean-result-critic` | Adversarial review of clean-result issue bodies against the canonical template + exemplars (9 lenses: title, TL;DR, figure, Details narrative, reproducibility, voice, **Lens 7 statistical-framing rule** absorbed from the retired reviewer step, **Lens 8 mentor-facing title + methodology corrections placement** added 2026-05-26, **Lens 9 one-takeaway-one-figure TL;DR Results pairing** added 2026-05-26). **Final adversarial gate before status:awaiting_promotion as of 2026-05-13.** Round 1 ensembled with `codex-clean-result-critic`; rounds 2-3 Claude only. |
 | `code-reviewer` | Adversarial review of implementer's diff, must be isolated. Ensembled all rounds with `codex-code-reviewer`. |
 | `follow-up-proposer` | Reads results + plan, proposes concrete next experiments |
 | `retrospective` | Fresh-context review of session transcripts |
@@ -118,7 +118,7 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `codex-code-reviewer` | Codex (gpt-5.5) twin of `code-reviewer`; thin Claude wrapper around the OpenAI Codex plugin's `companion task` runtime |
 | `codex-critic` | Codex twin of `critic` (per-lens, in-context output for /adversarial-planner Phase 2) |
 | `codex-interpretation-critic` | Codex twin of `interpretation-critic` (7 lenses including multimodal lens 6); round-1-only |
-| `codex-clean-result-critic` | Codex twin of `clean-result-critic` (8 lenses including Lens 7 statistical-framing rule and Lens 8 mentor-facing title); round-1-only; runs verify_task_body.py + audit_clean_results_body_discipline.py independently |
+| `codex-clean-result-critic` | Codex twin of `clean-result-critic` (9 lenses including Lens 7 statistical-framing rule, Lens 8 mentor-facing title, Lens 9 one-takeaway-one-figure); round-1-only; runs verify_task_body.py + audit_clean_results_body_discipline.py independently |
 | ~~`reviewer`~~ | **DEPRECATED 2026-05-13.** Final adversarial responsibilities absorbed by `clean-result-critic` Lens 7 (statistical-framing rule). File kept for historical reference. |
 | ~~`codex-reviewer`~~ | **DEPRECATED 2026-05-13** alongside `reviewer`. Replaced by `codex-clean-result-critic`. |
 
