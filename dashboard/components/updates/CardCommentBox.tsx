@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Loader2 } from "lucide-react";
 import {
   AnchoredCommentsProvider,
   useAnchoredComments,
@@ -308,20 +307,20 @@ function CardCommentBoxInner({
     return () => window.clearTimeout(t);
   }, [railPendingQuote]);
 
-  // Pending placeholders are rendered as a sibling block (one per
-  // outstanding `@claude` reply). CommentList itself stays unchanged —
-  // it just renders persisted rows from comments.jsonl.
-  const pendingBlock = pending.length > 0 ? (
-    <ul className="space-y-2">
-      {pending.map((p) => (
-        <PendingReplyCard
-          key={p.id}
-          placeholder={p}
-          onDismiss={() => void onPendingDismiss(p.id)}
-        />
-      ))}
-    </ul>
-  ) : null;
+  // Pending placeholders flow INTO CommentList so each spinner renders
+  // beneath the user comment that triggered it (instead of one global
+  // stack at the top of the rail). Reply wiring lets each row host its
+  // own inline Reply composer + per-thread spinner.
+  const replyWiring = currentUserEmail
+    ? {
+        taskId,
+        currentUserEmail,
+        onPosted: onRefresh,
+        onPendingStart,
+        pending,
+        onPendingDismiss: (id: string) => void onPendingDismiss(id),
+      }
+    : undefined;
 
   if (layout === "rail") {
     return (
@@ -355,7 +354,6 @@ function CardCommentBoxInner({
             />
           </div>
           <div className="mt-4 space-y-3">
-            {pendingBlock}
             {loading ? null : error ? (
               <CommentsError error={error} />
             ) : (
@@ -363,11 +361,14 @@ function CardCommentBoxInner({
                  math runs — pushes each anchored comment down so its top
                  matches the anchor mark's Y position in the body. Pass
                  composerMarginTop as a re-alignment trigger so comments
-                 stay viewport-stable when the composer pushes the ul. */
+                 stay viewport-stable when the composer pushes the ul.
+                 `reply` wiring enables per-row Reply button + inline
+                 composer + inline pending placeholders. */
               <CommentList
                 comments={comments}
                 onDelete={onDelete}
                 alignmentNonce={composerMarginTop}
+                reply={replyWiring}
               />
             )}
           </div>
@@ -386,63 +387,17 @@ function CardCommentBoxInner({
         onPosted={onRefresh}
         onPendingStart={onPendingStart}
       />
-      {pendingBlock}
       {loading ? null : error ? (
         <CommentsError error={error} />
       ) : (
-        <CommentList comments={comments} inline onDelete={onDelete} />
+        <CommentList
+          comments={comments}
+          inline
+          onDelete={onDelete}
+          reply={replyWiring}
+        />
       )}
     </div>
-  );
-}
-
-function PendingReplyCard({
-  placeholder,
-  onDismiss,
-}: {
-  placeholder: PendingPlaceholder;
-  onDismiss: () => void;
-}) {
-  if (placeholder.state === "error") {
-    return (
-      <li className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-        <div className="flex items-start justify-between gap-2">
-          <span>
-            Claude didn&rsquo;t respond — try again or check the server logs.
-          </span>
-          <button
-            type="button"
-            onClick={onDismiss}
-            className="rounded p-0.5 text-amber-700 hover:bg-amber-100 hover:text-amber-900"
-            aria-label="Dismiss"
-            title="Dismiss"
-          >
-            ✕
-          </button>
-        </div>
-      </li>
-    );
-  }
-  // Compute elapsed-seconds counter so user has a real progress signal,
-  // not just a spinner. Ticks every second via the local now state.
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    const i = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(i);
-  }, []);
-  const elapsedS = Math.max(0, Math.floor((now - placeholder.startedAt) / 1000));
-  return (
-    <li className="rounded-md border-2 border-amber-400 bg-amber-50 px-4 py-3 text-sm shadow-sm">
-      <div className="flex items-center gap-3 text-amber-900">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        <div className="flex-1">
-          <div className="font-medium">Claude is working…</div>
-          <div className="text-[11px] text-amber-700 tabular-nums">
-            {elapsedS}s elapsed · drafting a reply
-          </div>
-        </div>
-      </div>
-    </li>
   );
 }
 

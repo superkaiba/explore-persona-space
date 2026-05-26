@@ -75,6 +75,13 @@ type AnchorCommentRow = {
   kind: "anchor-comment";
   body: string;
   anchor?: AnchorPayload;
+  // Optional pointer to a parent comment in the same comments.jsonl. When
+  // set, this user comment is a reply within an existing thread (typically
+  // a follow-up to a Claude reply). The CommentList renderer uses
+  // `in_reply_to` to nest the row under its parent. The anchor (if any)
+  // is inherited from the chain root so the entire thread shares one
+  // <mark>.
+  in_reply_to?: string;
 };
 
 type AnchorCommentReplyRow = {
@@ -143,6 +150,137 @@ function normalizeAnchor(raw: unknown): AnchorPayload | undefined {
 }
 
 /* -------------------------------------------------------------------------- *
+ * Thread helpers — read comments.jsonl, walk the in_reply_to chain.
+ *
+ * Used by POST to (a) validate the parent exists, (b) inherit the chain
+ * root's anchor, (c) decide whether to fire a Claude reply (any ancestor
+ * authored by Claude or carrying an `@claude` mention), and (d) build
+ * the multi-turn context the sidecar prompt needs.
+ *
+ * Reads are best-effort — malformed lines are skipped (they belong to
+ * other tools like save-qa). All callers are inside `withFileLock`.
+ * -------------------------------------------------------------------------- */
+
+type ThreadRow = {
+  id: string;
+  ts: string;
+  author: string;
+  kind: string;
+  body: string;
+  in_reply_to?: string;
+  anchor?: AnchorPayload;
+};
+
+async function readThreadRows(file: string): Promise<ThreadRow[]> {
+  let raw: string;
+  try {
+    raw = await fs.readFile(file, "utf8");
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") return [];
+    throw err;
+  }
+  const rows: ThreadRow[] = [];
+  for (const line of raw.split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const parsed = JSON.parse(line) as Record<string, unknown>;
+      if (typeof parsed.id !== "string") continue;
+      if (typeof parsed.body !== "string") continue;
+      // Accept either `in_reply_to` (current) or `parent_id` (legacy).
+      const link =
+        typeof parsed.in_reply_to === "string"
+          ? parsed.in_reply_to
+          : typeof parsed.parent_id === "string"
+            ? (parsed.parent_id as string)
+            : undefined;
+      rows.push({
+        id: parsed.id,
+        ts: typeof parsed.ts === "string" ? parsed.ts : "",
+        author: typeof parsed.author === "string" ? parsed.author : "",
+        kind: typeof parsed.kind === "string" ? parsed.kind : "",
+        body: parsed.body,
+        ...(link ? { in_reply_to: link } : {}),
+        ...(normalizeAnchor(parsed.anchor)
+          ? { anchor: normalizeAnchor(parsed.anchor) }
+          : {}),
+      });
+    } catch {
+      // Skip malformed lines.
+    }
+  }
+  return rows;
+}
+
+/**
+ * Walk parent chain from the given comment id up to the chain root.
+ * Returns the ordered ancestor list with the root LAST and the
+ * immediate-parent FIRST (i.e. ascending toward root). The starting
+ * comment itself is NOT included. Tolerates broken links (returns the
+ * partial chain) and refuses cycles (max 32 hops).
+ */
+function ancestorsOf(rows: ThreadRow[], startId: string): ThreadRow[] {
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const out: ThreadRow[] = [];
+  let cur = byId.get(startId);
+  const seen = new Set<string>();
+  let hops = 0;
+  while (cur && cur.in_reply_to && hops < 32) {
+    if (seen.has(cur.id)) break;
+    seen.add(cur.id);
+    const parent = byId.get(cur.in_reply_to);
+    if (!parent) break;
+    out.push(parent);
+    cur = parent;
+    hops += 1;
+  }
+  return out;
+}
+
+const CLAUDE_MENTION_RE = /(^|[^a-z0-9_])@claude(\b|$)/i;
+
+/**
+ * The trigger for spawning a Claude reply on a follow-up comment:
+ * any ancestor authored by Claude (kind anchor-comment-reply or author
+ * "claude"), any ancestor body mentioning @claude, OR the new body
+ * itself mentioning @claude. Returns true if Claude should be invoked.
+ */
+function shouldFireClaudeForThread(
+  ancestors: ThreadRow[],
+  newBody: string,
+): boolean {
+  if (CLAUDE_MENTION_RE.test(newBody)) return true;
+  for (const a of ancestors) {
+    if (a.author === "claude" || a.kind === "anchor-comment-reply") return true;
+    if (CLAUDE_MENTION_RE.test(a.body)) return true;
+  }
+  return false;
+}
+
+/**
+ * Build the multi-turn conversation transcript for the sidecar. The
+ * sidecar `/chat` accepts a single user-role message, so we serialize
+ * the chain into a labeled transcript and append the new user comment
+ * at the end. `ancestors` is the parent chain in root-LAST order from
+ * ancestorsOf(); we reverse it so the transcript reads top-down.
+ */
+function buildThreadTranscript(
+  ancestors: ThreadRow[],
+  newBody: string,
+  newAuthor: string,
+): string {
+  const chronological = [...ancestors].reverse();
+  const lines: string[] = [];
+  for (const r of chronological) {
+    const speaker = r.author === "claude" || r.kind === "anchor-comment-reply" ? "claude" : r.author;
+    const ts = r.ts || "?";
+    lines.push(`[${speaker} @ ${ts}]: ${r.body}`);
+  }
+  lines.push(`[${newAuthor} @ now]: ${newBody}`);
+  return lines.join("\n\n");
+}
+
+/* -------------------------------------------------------------------------- *
  * POST — append a new anchor-comment row.
  * -------------------------------------------------------------------------- */
 
@@ -169,10 +307,34 @@ export async function POST(request: Request) {
       { status: 413 },
     );
   }
-  const anchor = normalizeAnchor(obj.anchor);
+  const requestedAnchor = normalizeAnchor(obj.anchor);
+  const inReplyToRaw = typeof obj.in_reply_to === "string" ? obj.in_reply_to.trim() : "";
+  const inReplyTo = inReplyToRaw || undefined;
 
   const file = commentsPath(taskId);
   if (!file) return Response.json({ ok: false, error: "task not found" }, { status: 404 });
+
+  // Resolve the thread context. For a reply: the parent must exist;
+  // the anchor is inherited from the chain root so the entire thread
+  // shares one <mark>. For a top-level comment: use the requested anchor.
+  let anchor = requestedAnchor;
+  let ancestors: ThreadRow[] = [];
+  let parentRow: ThreadRow | undefined;
+  if (inReplyTo) {
+    const rows = await readThreadRows(file);
+    parentRow = rows.find((r) => r.id === inReplyTo);
+    if (!parentRow) {
+      return Response.json(
+        { ok: false, error: "in_reply_to: parent not found" },
+        { status: 404 },
+      );
+    }
+    // ancestors = [parent, ..., root]
+    ancestors = [parentRow, ...ancestorsOf(rows, parentRow.id)];
+    // Chain root = last ancestor (= furthest from the new comment).
+    const rootRow = ancestors[ancestors.length - 1];
+    anchor = rootRow?.anchor ?? parentRow.anchor ?? requestedAnchor;
+  }
 
   const row: AnchorCommentRow = {
     id: `ac-${randomUUID()}`,
@@ -181,6 +343,7 @@ export async function POST(request: Request) {
     kind: "anchor-comment",
     body,
     ...(anchor ? { anchor } : {}),
+    ...(inReplyTo ? { in_reply_to: inReplyTo } : {}),
   };
 
   try {
@@ -193,17 +356,20 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: `append failed: ${msg}` }, { status: 500 });
   }
 
-  // Auto-reply gate: only invoke Claude when the comment body contains
-  // an `@claude` mention (case-insensitive, word-boundary). Plain
-  // comments stay quiet. This lets Dan leave notes without burning the
-  // Anthropic budget on every drive-by remark.
-  const mentionsClaude = /(^|[^a-z0-9_])@claude(\b|$)/i.test(body);
+  // Auto-reply gate. Top-level comments fire only on an explicit `@claude`
+  // mention. Thread follow-ups also fire if the chain itself is a Claude
+  // thread (any ancestor authored by Claude or carrying an `@claude`
+  // mention) so the user doesn't have to re-mention on every turn.
+  const mentionsClaudeInBody = CLAUDE_MENTION_RE.test(body);
+  const isClaudeThread = inReplyTo
+    ? shouldFireClaudeForThread(ancestors, body)
+    : mentionsClaudeInBody;
   let willReply = false;
   let pendingReplyId: string | undefined;
-  if (mentionsClaude) {
-    // Strip the `@claude` token from the prompt before sending to the
-    // sidecar — the model doesn't need the mention syntax, just the
-    // question.
+  if (isClaudeThread) {
+    // Strip the `@claude` token from the user's own body before sending
+    // to the sidecar — the model doesn't need the mention syntax. The
+    // transcript builder leaves the verbatim ancestor bodies alone.
     const promptBody = body.replace(/(^|[^a-z0-9_])@claude\b/gi, "$1").trim();
     // Charge sidecar-chat rate-limit bucket. If exhausted, skip silently
     // — the user comment is already saved.
@@ -218,6 +384,12 @@ export async function POST(request: Request) {
       // `isEditorAuthed()` reads from `next/headers` cookies which don't
       // survive fire-and-forget detachment.
       const editorAuthed = await isEditorAuthed();
+      // For a follow-up in a Claude thread, the model needs the full
+      // transcript or it will lose context. Pass ancestors verbatim.
+      // The user comment is appended by buildThreadTranscript.
+      const conversation = inReplyTo
+        ? buildThreadTranscript(ancestors, promptBody, user.email)
+        : null;
       void spawnClaudeReply({
         file,
         taskId,
@@ -227,6 +399,7 @@ export async function POST(request: Request) {
         commentId: row.id,
         anchor,
         editorAuthed,
+        conversation,
       }).catch((err) => {
         // Never surface to the user — the comment they posted is already saved.
         console.warn("[updates/comment] auto-reply failed:", err);
@@ -263,6 +436,7 @@ async function spawnClaudeReply({
   commentId,
   anchor,
   editorAuthed,
+  conversation,
 }: {
   file: string;
   taskId: number;
@@ -272,6 +446,17 @@ async function spawnClaudeReply({
   commentId: string;
   anchor?: AnchorPayload;
   editorAuthed: boolean;
+  /**
+   * When non-null, this is a follow-up comment in an existing Claude
+   * thread. The string is the serialized transcript (ancestors + new
+   * user message, role-labeled, in chronological order) produced by
+   * buildThreadTranscript(). The "answer" path uses it as the user
+   * prompt so the model sees prior turns. body-edit / code-edit paths
+   * intentionally ignore it: those intents apply to the latest
+   * instruction only, and threading them creates ambiguity about which
+   * earlier suggestion the new edit should respect.
+   */
+  conversation: string | null;
 }): Promise<void> {
   // Classify the comment via a fast Haiku call. On any failure we fall
   // back to the "answer" path (safest default).
@@ -297,6 +482,7 @@ async function spawnClaudeReply({
       questionBody,
       anchor,
       downgradeNote,
+      conversation,
     });
     return;
   }
@@ -318,6 +504,7 @@ async function runAnswerPath({
   questionBody,
   anchor,
   downgradeNote,
+  conversation,
 }: {
   file: string;
   taskId: number;
@@ -326,6 +513,7 @@ async function runAnswerPath({
   questionBody: string;
   anchor?: AnchorPayload;
   downgradeNote: string | null;
+  conversation: string | null;
 }): Promise<void> {
   const task = getTask(taskId);
   const taskContext = task
@@ -333,14 +521,27 @@ async function runAnswerPath({
       `\nStatus: ${task.status}` +
       (task.body ? `\n\nBody excerpt:\n${task.body.slice(0, 4000)}` : "")
     : `Task #${taskId} (body not on disk)`;
-  const prompt =
-    `You are answering a mentor's comment on task #${taskId} from the EPS dashboard's /updates page. ` +
-    `Reply in plain markdown, concise (target <=200 words). No greetings, no signoffs.\n\n` +
-    `Context:\n${taskContext}\n\n` +
-    (anchor
-      ? `The mentor highlighted this text in the result body:\n> ${anchor.quote}\n\n`
-      : "") +
-    `Mentor comment:\n${questionBody}`;
+  const anchorBlock = anchor
+    ? `The mentor highlighted this text in the result body:\n> ${anchor.quote}\n\n`
+    : "";
+  // Two shapes for the user prompt:
+  //   (a) Top-level comment — present the single mentor question.
+  //   (b) Thread follow-up — present the full transcript so the model
+  //       sees the prior turns it produced. The transcript already ends
+  //       with the new user message.
+  const prompt = conversation
+    ? `You are answering a mentor's follow-up in an anchored-comment thread on task #${taskId} ` +
+      `from the EPS dashboard's /updates page. Reply in plain markdown, concise (target <=200 words). ` +
+      `No greetings, no signoffs.\n\n` +
+      `Context:\n${taskContext}\n\n` +
+      anchorBlock +
+      `Conversation so far (most recent message last):\n${conversation}\n\n` +
+      `Please respond to the most recent user message in the conversation above.`
+    : `You are answering a mentor's comment on task #${taskId} from the EPS dashboard's /updates page. ` +
+      `Reply in plain markdown, concise (target <=200 words). No greetings, no signoffs.\n\n` +
+      `Context:\n${taskContext}\n\n` +
+      anchorBlock +
+      `Mentor comment:\n${questionBody}`;
   const text = await streamSidecarChat({
     sessionId: `updates-comment-${taskId}`,
     prompt,
@@ -535,12 +736,24 @@ export async function GET(request: Request) {
       if (typeof parsed.id !== "string" || typeof parsed.body !== "string") continue;
       const anchor = normalizeAnchor(parsed.anchor);
       if (parsed.kind === "anchor-comment") {
+        // User-authored anchor-comment rows now carry an optional
+        // `in_reply_to` pointer (for thread follow-ups). Pass it through
+        // so CommentList nests the row under its parent. Accept the
+        // legacy `parent_id` alias as well for shape symmetry with the
+        // reply row.
+        const link =
+          typeof parsed.in_reply_to === "string"
+            ? parsed.in_reply_to
+            : typeof parsed.parent_id === "string"
+              ? parsed.parent_id
+              : "";
         comments.push({
           id: parsed.id,
           ts: typeof parsed.ts === "string" ? parsed.ts : "",
           author: typeof parsed.author === "string" ? parsed.author : "",
           kind: "anchor-comment",
           body: parsed.body,
+          ...(link ? { in_reply_to: link } : {}),
           ...(anchor ? { anchor } : {}),
         });
       } else if (parsed.kind === "anchor-comment-reply") {
@@ -600,9 +813,17 @@ export async function DELETE(request: Request) {
   if (!file) return Response.json({ ok: false, error: "task not found" }, { status: 404 });
 
   // Two-pass: pass 1 looks the target up to determine permission +
-  // whether it's an anchor-comment (which cascade-deletes its replies)
-  // or a reply (deletable by any signed-in user — the original author
-  // is Claude). Pass 2 rewrites the file.
+  // walks the in_reply_to graph to collect the transitive subtree to
+  // drop. Pass 2 rewrites the file, keeping every line whose id is not
+  // in the drop-set. Author rules:
+  //   - User-authored anchor-comment: only the row's author may delete.
+  //     Cascade drops the whole subtree (user follow-ups + Claude replies
+  //     + their follow-ups, recursively).
+  //   - Claude-authored anchor-comment-reply: any signed-in user may
+  //     delete (the reply is a side effect of someone's comment, not
+  //     durable mentor input). Cascade drops the whole subtree under
+  //     the reply too — orphan sub-replies don't render anywhere, so
+  //     leaving them would be dead state.
   let removed = false;
   let forbidden = false;
   try {
@@ -615,75 +836,84 @@ export async function DELETE(request: Request) {
         if (code === "ENOENT") return;
         throw err;
       }
-      // Pass 1 — find target + decide cascade.
-      let cascadeFor: string | null = null;
+      // Pass 1 — parse all rows, find target, check author, build the
+      // children-by-parent index needed for transitive cascade.
+      type ParsedRow = {
+        id: string;
+        kind?: string;
+        author?: string;
+        parent?: string;
+      };
+      const rows: ParsedRow[] = [];
+      const childrenOf = new Map<string, string[]>();
+      let target: ParsedRow | null = null;
       for (const line of raw.split("\n")) {
         if (!line.trim()) continue;
         try {
-          const parsed = JSON.parse(line) as {
-            id?: unknown;
-            kind?: unknown;
-            author?: unknown;
-          };
-          if (parsed.id !== commentId) continue;
-          if (parsed.kind === "anchor-comment") {
-            if (typeof parsed.author === "string" && parsed.author === user.email) {
-              cascadeFor = commentId;
-            } else {
-              forbidden = true;
-            }
-          } else if (parsed.kind === "anchor-comment-reply") {
-            // Replies are authored by Claude — any signed-in user may
-            // delete them (they're a side effect of the user's own
-            // comment, not durable mentor input).
-            cascadeFor = "__reply_only__";
-          }
-        } catch {
-          // ignore
-        }
-      }
-      if (forbidden && cascadeFor === null) return;
-
-      const kept: string[] = [];
-      for (const line of raw.split("\n")) {
-        if (!line.trim()) continue;
-        let drop = false;
-        try {
-          const parsed = JSON.parse(line) as {
-            id?: unknown;
-            kind?: unknown;
-            in_reply_to?: unknown;
-            parent_id?: unknown;
-          };
-          // Accept either `in_reply_to` (current) or `parent_id` (legacy)
-          // so cascade deletion catches both shapes.
+          const parsed = JSON.parse(line) as Record<string, unknown>;
+          if (typeof parsed.id !== "string") continue;
           const link =
             typeof parsed.in_reply_to === "string"
               ? parsed.in_reply_to
               : typeof parsed.parent_id === "string"
-                ? parsed.parent_id
-                : null;
-          if (cascadeFor === "__reply_only__") {
-            if (
-              parsed.id === commentId &&
-              parsed.kind === "anchor-comment-reply"
-            ) {
-              drop = true;
-            }
-          } else if (cascadeFor) {
-            if (parsed.id === cascadeFor) {
-              drop = true;
-            } else if (
-              parsed.kind === "anchor-comment-reply" &&
-              link === cascadeFor
-            ) {
-              drop = true;
-            }
+                ? (parsed.parent_id as string)
+                : undefined;
+          const row: ParsedRow = {
+            id: parsed.id,
+            kind: typeof parsed.kind === "string" ? parsed.kind : undefined,
+            author: typeof parsed.author === "string" ? parsed.author : undefined,
+            parent: link,
+          };
+          rows.push(row);
+          if (row.parent) {
+            const arr = childrenOf.get(row.parent) ?? [];
+            arr.push(row.id);
+            childrenOf.set(row.parent, arr);
+          }
+          if (row.id === commentId) target = row;
+        } catch {
+          // Skip malformed lines for the index — Pass 2 preserves them.
+        }
+      }
+      if (!target) return;
+      if (target.kind === "anchor-comment") {
+        if (target.author !== user.email) {
+          forbidden = true;
+          return;
+        }
+      } else if (target.kind !== "anchor-comment-reply") {
+        // Unknown kind (e.g. question/answer/note from other tools) —
+        // refuse to touch it.
+        forbidden = true;
+        return;
+      }
+      // Walk the subtree (target + all descendants).
+      const drop = new Set<string>();
+      const stack = [commentId];
+      let hops = 0;
+      while (stack.length && hops < 1024) {
+        const cid = stack.pop()!;
+        if (drop.has(cid)) continue;
+        drop.add(cid);
+        const kids = childrenOf.get(cid) ?? [];
+        for (const k of kids) stack.push(k);
+        hops += 1;
+      }
+
+      // Pass 2 — rewrite the file, dropping any row whose id is in `drop`.
+      const kept: string[] = [];
+      for (const line of raw.split("\n")) {
+        if (!line.trim()) continue;
+        let dropLine = false;
+        try {
+          const parsed = JSON.parse(line) as { id?: unknown };
+          if (typeof parsed.id === "string" && drop.has(parsed.id)) {
+            dropLine = true;
           }
         } catch {
           // Preserve unparseable lines verbatim.
         }
-        if (drop) {
+        if (dropLine) {
           removed = true;
           continue;
         }

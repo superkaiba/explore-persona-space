@@ -1,13 +1,40 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeHighlight from "rehype-highlight";
-import { Check, X } from "lucide-react";
+import { Check, Loader2, X } from "lucide-react";
 import type { TaskComment } from "@/lib/tasks";
 import { useAnchoredComments } from "./AnchoredCommentsContext";
+
+/**
+ * Per-comment pending placeholder. Forwarded by the parent
+ * (CardCommentBoxInner) so we can render "Claude is working…" cards
+ * inline beneath the user comment that triggered them, instead of in
+ * one global stack at the top of the rail.
+ */
+export type PendingPlaceholder = {
+  id: string;
+  parentId: string;
+  startedAt: number;
+  state: "pending" | "error";
+};
+
+/**
+ * Wiring needed to render the inline per-row Reply composer + Pending
+ * placeholder cards. Optional — when omitted, CommentList renders in
+ * read-only / delete-only mode (matches the original API).
+ */
+export type ReplyWiring = {
+  taskId: number;
+  currentUserEmail: string;
+  onPosted: () => Promise<void>;
+  onPendingStart: (parentId: string, replyId: string) => void;
+  pending?: PendingPlaceholder[];
+  onPendingDismiss?: (replyId: string) => void;
+};
 
 /**
  * Sidebar comment list.
@@ -36,6 +63,7 @@ export function CommentList({
   inline = false,
   onDelete,
   alignmentNonce = 0,
+  reply,
 }: {
   comments: TaskComment[];
   /**
@@ -60,6 +88,15 @@ export function CommentList({
    * fixed at their anchor's viewport position.
    */
   alignmentNonce?: number;
+  /**
+   * When provided, each comment row renders a small "Reply" button that
+   * opens an inline composer beneath it. Replies are posted with
+   * `in_reply_to: <parent-id>` so they nest under the parent in the
+   * same thread. Pending placeholders (`reply.pending`) render under
+   * the comment whose `parentId` matches, instead of in one global
+   * stack — keeps the spinner next to the thread it belongs to.
+   */
+  reply?: ReplyWiring;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
   // `hoveredId` from context: set by CommentableBody when the user hovers
@@ -128,6 +165,28 @@ export function CommentList({
     () => Object.fromEntries(comments.map((c) => [c.id, c])),
     [comments],
   );
+
+  // Only ONE inline reply composer open at a time. Track its parent's
+  // id; null = no composer. Cleared by the composer on successful post
+  // or by the Cancel button. If the parent comment disappears from
+  // `comments`, the composer naturally stops rendering — its `c.id`
+  // is no longer in the .map() — so there's no separate cleanup
+  // needed for that case.
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+
+  // Group pending placeholders by parent id so each thread can render
+  // its own spinner inline. The parent id stored on a placeholder is
+  // the USER comment id that triggered the reply (set by
+  // CardCommentBoxInner's onPendingStart) — so a top-level @claude
+  // mention is parented to the top-level user row, and a follow-up
+  // is parented to the user follow-up row.
+  const pendingByParent = useMemo(() => {
+    const idx: Record<string, PendingPlaceholder[]> = {};
+    for (const p of reply?.pending ?? []) {
+      (idx[p.parentId] ||= []).push(p);
+    }
+    return idx;
+  }, [reply?.pending]);
 
   function isHighlighted(cid: string): boolean {
     const h = effectiveHovered;
@@ -290,6 +349,36 @@ export function CommentList({
                 )}
               </div>
             )}
+            {reply && reply.currentUserEmail && (
+              <div className="mt-1.5 flex justify-end">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setReplyingTo((cur) => (cur === c.id ? null : c.id));
+                  }}
+                  className="rounded px-1.5 py-0.5 text-[11px] font-medium text-stone-500 hover:bg-stone-100 hover:text-stone-800"
+                >
+                  {replyingTo === c.id ? "Cancel" : "Reply"}
+                </button>
+              </div>
+            )}
+            {reply && replyingTo === c.id && (
+              <ReplyComposer
+                taskId={reply.taskId}
+                parentId={c.id}
+                onPosted={async () => {
+                  setReplyingTo(null);
+                  await reply.onPosted();
+                }}
+                onCancel={() => setReplyingTo(null)}
+                onPendingStart={reply.onPendingStart}
+              />
+            )}
+            <PendingThread
+              placeholders={pendingByParent[c.id] ?? []}
+              onDismiss={reply?.onPendingDismiss}
+            />
             <ReplyThread
               parentId={c.id}
               repliesByParent={repliesByParent}
@@ -299,6 +388,10 @@ export function CommentList({
               isHighlighted={isHighlighted}
               onDelete={onDelete}
               depth={1}
+              reply={reply}
+              replyingTo={replyingTo}
+              setReplyingTo={setReplyingTo}
+              pendingByParent={pendingByParent}
             />
           </li>
         );
@@ -310,7 +403,14 @@ export function CommentList({
 /** Recursive nested-replies renderer. Each level indents and tints
  *  slightly so the threading is visually obvious. Replies don't
  *  participate in the top-level anchor-alignment math (no data-cid on
- *  the outer wrapper); the inner li still carries data-cid for hover. */
+ *  the outer wrapper); the inner li still carries data-cid for hover.
+ *
+ *  When `reply` wiring is passed, each rendered row also gets a Reply
+ *  button + inline composer + pending placeholder slot — exactly the
+ *  same as the top-level rows, so a user can keep iterating with
+ *  Claude N levels deep. We DON'T add extra depth-based indent here:
+ *  the `border-l-2` + `pl-3` per level already communicates depth and
+ *  scales without runaway nesting in narrow rails. */
 function ReplyThread({
   parentId,
   repliesByParent,
@@ -320,6 +420,10 @@ function ReplyThread({
   isHighlighted,
   onDelete,
   depth,
+  reply,
+  replyingTo,
+  setReplyingTo,
+  pendingByParent,
 }: {
   parentId: string;
   repliesByParent: Record<string, TaskComment[]>;
@@ -329,6 +433,10 @@ function ReplyThread({
   isHighlighted: (id: string) => boolean;
   onDelete?: (id: string) => void;
   depth: number;
+  reply?: ReplyWiring;
+  replyingTo?: string | null;
+  setReplyingTo?: (id: string | null) => void;
+  pendingByParent?: Record<string, PendingPlaceholder[]>;
 }) {
   const replies = repliesByParent[parentId];
   if (!replies || replies.length === 0) return null;
@@ -387,7 +495,39 @@ function ReplyThread({
                 {c.body}
               </ReactMarkdown>
             </div>
-            {/* Recurse: replies-of-replies cascade down. */}
+            {reply && reply.currentUserEmail && setReplyingTo && (
+              <div className="mt-1.5 flex justify-end">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setReplyingTo(replyingTo === c.id ? null : c.id);
+                  }}
+                  className="rounded px-1.5 py-0.5 text-[11px] font-medium text-stone-500 hover:bg-stone-100 hover:text-stone-800"
+                >
+                  {replyingTo === c.id ? "Cancel" : "Reply"}
+                </button>
+              </div>
+            )}
+            {reply && setReplyingTo && replyingTo === c.id && (
+              <ReplyComposer
+                taskId={reply.taskId}
+                parentId={c.id}
+                onPosted={async () => {
+                  setReplyingTo(null);
+                  await reply.onPosted();
+                }}
+                onCancel={() => setReplyingTo(null)}
+                onPendingStart={reply.onPendingStart}
+              />
+            )}
+            <PendingThread
+              placeholders={pendingByParent?.[c.id] ?? []}
+              onDismiss={reply?.onPendingDismiss}
+            />
+            {/* Recurse: replies-of-replies cascade down. Same wiring
+                forwards so every nested row can host its own Reply
+                composer + inline pending card. */}
             <ReplyThread
               parentId={c.id}
               repliesByParent={repliesByParent}
@@ -397,11 +537,225 @@ function ReplyThread({
               isHighlighted={isHighlighted}
               onDelete={onDelete}
               depth={depth + 1}
+              reply={reply}
+              replyingTo={replyingTo}
+              setReplyingTo={setReplyingTo}
+              pendingByParent={pendingByParent}
             />
           </li>
         );
       })}
     </ul>
+  );
+}
+
+/**
+ * Inline composer that opens beneath a comment when the user clicks
+ * Reply. POSTs to /api/updates/comment with `in_reply_to: parentId` so
+ * the server inherits the chain root's anchor and routes the new row
+ * into the thread. Same Enter / Shift+Enter semantics as the rail
+ * CardComposer.
+ *
+ * Lives in CommentList (not lifted into the page-level composer)
+ * because each rendered row needs its own composer instance with its
+ * own parentId. The wiring (taskId / onPosted / onPendingStart) is
+ * forwarded by the caller; we don't import anything from the /updates
+ * components tree.
+ */
+function ReplyComposer({
+  taskId,
+  parentId,
+  onPosted,
+  onCancel,
+  onPendingStart,
+}: {
+  taskId: number;
+  parentId: string;
+  onPosted: () => Promise<void>;
+  onCancel: () => void;
+  onPendingStart: (parentId: string, replyId: string) => void;
+}) {
+  const [draft, setDraft] = useState("");
+  const [posting, setPosting] = useState(false);
+  const [status, setStatus] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
+
+  // Autofocus the textarea on mount so clicking Reply puts the cursor
+  // right where the user expects to type.
+  useEffect(() => {
+    taRef.current?.focus();
+  }, []);
+
+  async function submit() {
+    if (!draft.trim() || posting) return;
+    setPosting(true);
+    setStatus(null);
+    try {
+      const res = await fetch("/api/updates/comment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ taskId, body: draft.trim(), in_reply_to: parentId }),
+      });
+      const json = (await res.json()) as
+        | {
+            ok: true;
+            id: string;
+            ts?: string;
+            will_reply?: boolean;
+            pending_reply_id?: string;
+          }
+        | { ok: false; error: string };
+      if (!json.ok) {
+        setStatus({ kind: "err", text: json.error });
+        return;
+      }
+      setDraft("");
+      // Pending placeholder is parented to the NEW user comment's id
+      // so it nests under the just-posted row, not under the parent
+      // we're replying to.
+      if (json.will_reply && json.pending_reply_id) {
+        onPendingStart(json.id, json.pending_reply_id);
+      }
+      await onPosted();
+    } catch (e) {
+      setStatus({ kind: "err", text: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setPosting(false);
+    }
+  }
+
+  return (
+    <div className="mt-2 rounded border border-stone-300 bg-white p-2"
+         onClick={(e) => e.stopPropagation()}>
+      <textarea
+        ref={taRef}
+        value={draft}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          setStatus(null);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+            e.preventDefault();
+            void submit();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            onCancel();
+          }
+        }}
+        disabled={posting}
+        placeholder="Reply (Enter to post, Shift+Enter for newline, Esc to cancel)"
+        rows={2}
+        className="w-full resize-y rounded border border-stone-300 bg-white px-2 py-1 text-sm font-mono"
+      />
+      <div className="mt-1 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            void submit();
+          }}
+          disabled={posting || !draft.trim()}
+          className="rounded bg-stone-900 px-2 py-1 text-xs font-medium text-white disabled:bg-stone-300"
+        >
+          {posting ? "…" : "Post reply"}
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onCancel();
+          }}
+          className="rounded px-2 py-1 text-xs text-stone-600 hover:bg-stone-100"
+        >
+          Cancel
+        </button>
+        {status && (
+          <span
+            className={
+              status.kind === "ok" ? "text-xs text-emerald-700" : "text-xs text-red-700"
+            }
+          >
+            {status.text}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Pending placeholder list for a single parent. Renders one card per
+ * outstanding spinner. Shape mirrors PendingReplyCard in
+ * CardCommentBox.tsx but the CommentList copy is intentionally
+ * standalone so this file doesn't reach back into /components/updates.
+ */
+function PendingThread({
+  placeholders,
+  onDismiss,
+}: {
+  placeholders: PendingPlaceholder[];
+  onDismiss?: (replyId: string) => void;
+}) {
+  if (placeholders.length === 0) return null;
+  return (
+    <ul className="mt-2 space-y-1.5 border-l-2 border-amber-200 pl-3">
+      {placeholders.map((p) => (
+        <PendingItem key={p.id} placeholder={p} onDismiss={onDismiss} />
+      ))}
+    </ul>
+  );
+}
+
+function PendingItem({
+  placeholder,
+  onDismiss,
+}: {
+  placeholder: PendingPlaceholder;
+  onDismiss?: (replyId: string) => void;
+}) {
+  // Lazy initializer keeps `Date.now()` out of the render body (purity
+  // lint rule). The interval re-pulls the wall clock once a second so
+  // the elapsed counter ticks even though `now` itself isn't otherwise
+  // re-derived from props.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (placeholder.state !== "pending") return;
+    const i = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, [placeholder.state]);
+  if (placeholder.state === "error") {
+    return (
+      <li className="rounded border border-amber-300 bg-amber-50 px-2.5 py-2 text-xs text-amber-900">
+        <div className="flex items-start justify-between gap-2">
+          <span>Claude didn&rsquo;t respond — try again or check the server logs.</span>
+          {onDismiss && (
+            <button
+              type="button"
+              onClick={() => onDismiss(placeholder.id)}
+              className="rounded p-0.5 text-amber-700 hover:bg-amber-100 hover:text-amber-900"
+              aria-label="Dismiss"
+              title="Dismiss"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+      </li>
+    );
+  }
+  const elapsedS = Math.max(0, Math.floor((now - placeholder.startedAt) / 1000));
+  return (
+    <li className="rounded border border-amber-300 bg-amber-50 px-2.5 py-2 text-xs">
+      <div className="flex items-center gap-2 text-amber-900">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <div className="flex-1">
+          <div className="font-medium">Claude is working…</div>
+          <div className="text-[10px] text-amber-700 tabular-nums">{elapsedS}s elapsed</div>
+        </div>
+      </div>
+    </li>
   );
 }
 
