@@ -16,3 +16,4 @@
 {"ts": "2026-05-26T08:10:20Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v1 ready; consistency PASS (2 WARNs disclosed)."}
 {"ts": "2026-05-26T08:12:34Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v1 approved by user inline."}
 {"ts": "2026-05-26T08:12:34Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v1 inline (Step 2c)."}
+{"ts": "2026-05-26T08:13:12Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatching experiment-implementer; awaiting epm:experiment-implementation."}
