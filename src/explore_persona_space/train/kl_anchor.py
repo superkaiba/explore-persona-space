@@ -49,6 +49,7 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -61,6 +62,22 @@ if TYPE_CHECKING:  # pragma: no cover
     from transformers import PreTrainedTokenizerBase
 
 logger = logging.getLogger(__name__)
+
+
+# Diagnostic memory tracing — gated by EPM_DEBUG_KL_ANCHOR_MEM=1.
+# Prints one line per phase: GPU bytes allocated + max-allocated-so-far.
+# Issue #382: used to verify the OOM root-cause diagnosis (tape accumulation
+# + SFT graph co-residence vs missing gradient_checkpointing).
+_DEBUG_MEM = os.environ.get("EPM_DEBUG_KL_ANCHOR_MEM") == "1"
+
+
+def _mem_probe(tag: str) -> None:
+    if not _DEBUG_MEM or not torch.cuda.is_available():
+        return
+    cur = torch.cuda.memory_allocated() / 1e9
+    peak = torch.cuda.max_memory_allocated() / 1e9
+    res = torch.cuda.memory_reserved() / 1e9
+    print(f"[kl_anchor_mem] {tag} cur={cur:.2f}GB peak={peak:.2f}GB res={res:.2f}GB", flush=True)
 
 
 # ── Dataclass: anchor config ─────────────────────────────────────────────────
@@ -506,6 +523,7 @@ class MarkerKLAnchor:
         mbs = self.config.anchor_batch_size
         n_accum = max(1, int(self.config.anchor_grad_accum))
 
+        _mem_probe(f"step={global_step} kl_loss.entry n_accum={n_accum} mbs={mbs}")
         kl_terms: list[torch.Tensor] = []
         for _accum_step in range(n_accum):
             idxs = self._next_micro_batch_indices(n=n, mbs=mbs, global_step=global_step)
@@ -515,10 +533,15 @@ class MarkerKLAnchor:
             t_logits = self.teacher_top_logits[idxs]
             t_idx = self.teacher_top_indices[idxs]
 
+            _mem_probe(f"step={global_step} iter={_accum_step} before_anchor_fwd T={ids.size(1)}")
             student_logits = _forward_logits(model, ids, amask)  # (b, T, V)
+            _mem_probe(f"step={global_step} iter={_accum_step} after_anchor_fwd")
             kl_terms.append(_kl_top_k(student_logits, t_logits, t_idx, rmask))
+            _mem_probe(f"step={global_step} iter={_accum_step} after_kl_topk_appended")
 
+        _mem_probe(f"step={global_step} kl_loss.before_stack n_terms={len(kl_terms)}")
         kl = torch.stack(kl_terms).mean()
+        _mem_probe(f"step={global_step} kl_loss.after_stack")
         self.last_kl = float(kl.detach().to(torch.float32).item())
         return kl
 
@@ -658,10 +681,13 @@ class KLAnchoredSFTTrainer(SFTTrainer):
         ) and compute_loss_func is None
 
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+        _gs_dbg = int(getattr(self.state, "global_step", -1))
+        _mem_probe(f"step={_gs_dbg} compute_loss.entry before_sft_super")
         # Standard SFT loss (entropy + token metrics computed inside).
         out = super().compute_loss(
             model, inputs, return_outputs=return_outputs, num_items_in_batch=num_items_in_batch
         )
+        _mem_probe(f"step={_gs_dbg} compute_loss.after_sft_super")
         if return_outputs:
             loss, outputs = out
         else:
@@ -681,7 +707,9 @@ class KLAnchoredSFTTrainer(SFTTrainer):
             return (loss, outputs) if return_outputs else loss
 
         global_step = int(self.state.global_step)
+        _mem_probe(f"step={global_step} compute_loss.sync_microstep before_kl_anchor.kl_loss")
         raw_kl = self.kl_anchor.kl_loss(model, global_step)
+        _mem_probe(f"step={global_step} compute_loss.after_kl_anchor.kl_loss")
         if isinstance(raw_kl, torch.Tensor):
             weighted = self.kl_anchor.config.kl_weight * raw_kl
             # Pre-compensate for the HF legacy loss-scaling fence so the KL
