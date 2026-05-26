@@ -57,8 +57,8 @@ stages:
       kl_weight: 0.5          # KL term weight relative to SFT CE loss
       teacher_freeze_step_frac: 0.4   # snapshot teacher logits at 40% of training
       start_step_frac: 0.5    # turn on KL term at 50% of training
-      anchor_batch_size: 8    # per-step forward-pass batch on the anchor set
-      anchor_grad_accum: 8    # 8 micro-batches × 8 = effective anchor batch 64
+      anchor_batch_size: 1    # per-step forward-pass batch on the anchor set; lowered from 8 after step-3125 OOM on H100 79GB (see #382 events.jsonl 2026-05-26 00:03 + 01:09)
+      anchor_grad_accum: 64   # 64 micro-batches × 1 = effective anchor batch 64 (unchanged); cycles ALL 64 anchor rows per compute_loss call (strict improvement over old 8-of-64 sampling)
       top_k_logits: 50        # top-50 logit distillation (~50MB vs ~19GB full-vocab)
   - name: em                   # stage NAME stays "em" so the pre_em checkpoint save fires;
                                # the DATASET is #376's neutral aligned-medical counterpart.
