@@ -267,3 +267,128 @@ def test_base_weights_restored_after_first_step(fresh_tiny_model_and_tokenizer):
         )
     after = model.transformer.h[0].attn.c_attn.weight.detach()
     assert torch.allclose(before, after, atol=0.0), "Base weights mutated end-to-end"
+
+
+# ─── §5.5 round-2 tests (acceptance criteria #13 / #14 / #16) ────────────────
+
+
+def test_generate_leakage_data_marker_swap(tmp_path, monkeypatch):
+    """Plan §5.5 / acceptance #13 — non-default marker writes ONLY the slug
+    path (NO legacy alias) and the JSONL contains the new marker, not [ZLT].
+
+    Reproduces the round-1 silent-degradation trap: passing
+    ``marker_text="※"`` to ``assemble_marker_data`` must produce JSONL rows
+    that contain ``※`` and NOT ``[ZLT]``. The legacy un-suffixed file MUST
+    NOT be aliased when the marker differs from MARKER_TOKEN.
+    """
+    import json
+
+    import scripts.generate_leakage_data as glm
+
+    monkeypatch.setattr(glm, "DATA_DIR", tmp_path)
+    questions = ["What is 1+1?", "Capital of France?"]
+    responses = {f"generic__{i:04d}": f"Test response {i}" for i in range(len(questions))}
+
+    glm.assemble_marker_data(
+        source="librarian",
+        questions=questions,
+        generic_responses=responses,
+        neg_set="asst_excluded",
+        marker_text="※",
+    )
+
+    # Slug path must exist; parse JSONL and check completions for ※.
+    # The JSON encoder escapes non-ASCII as \uXXXX, so raw-text substring
+    # match on the JSONL bytes would miss the literal '※' character. Parse
+    # each row and inspect the decoded completion content directly.
+    slug_path = next(tmp_path.glob("marker_librarian_asst_excluded_medium_*.jsonl"))
+    parsed = [json.loads(line) for line in slug_path.read_text().splitlines() if line.strip()]
+    found_marker = False
+    for record in parsed:
+        for msg in record.get("completion", []):
+            if "※" in msg.get("content", ""):
+                found_marker = True
+            assert "[ZLT]" not in msg.get("content", ""), (
+                f"Unexpected '[ZLT]' in {slug_path} despite marker swap"
+            )
+    assert found_marker, (
+        f"Expected '※' in at least one completion of {slug_path}; parsed {len(parsed)} rows"
+    )
+
+    # Legacy un-suffixed path MUST NOT exist for non-default markers.
+    legacy = tmp_path / "marker_librarian_asst_excluded_medium.jsonl"
+    assert not legacy.exists(), (
+        f"Non-default marker must NOT alias to legacy un-suffixed path; "
+        f"found legacy file at {legacy}"
+    )
+
+
+def test_generate_leakage_data_legacy_hardlink_byte_identity(tmp_path, monkeypatch):
+    """Plan §5.5 / acceptance #14 — default marker writes both the slug path
+    and the legacy un-suffixed path as hardlinks (same inode) OR as
+    byte-identical files (copy fallback on non-POSIX FS).
+    """
+    import os
+
+    import scripts.generate_leakage_data as glm
+    from explore_persona_space.personas import MARKER_TOKEN
+
+    monkeypatch.setattr(glm, "DATA_DIR", tmp_path)
+    questions = ["What is 1+1?", "Capital of France?"]
+    responses = {f"generic__{i:04d}": f"Test response {i}" for i in range(len(questions))}
+
+    glm.assemble_marker_data(
+        source="librarian",
+        questions=questions,
+        generic_responses=responses,
+        neg_set="asst_excluded",
+        marker_text=MARKER_TOKEN,
+    )
+
+    legacy = tmp_path / "marker_librarian_asst_excluded_medium.jsonl"
+    suffixed = tmp_path / "marker_librarian_asst_excluded_medium_zlt.jsonl"
+    assert legacy.exists(), f"Expected legacy path {legacy}; ls: {list(tmp_path.iterdir())}"
+    assert suffixed.exists(), f"Expected suffixed path {suffixed}; ls: {list(tmp_path.iterdir())}"
+
+    # Byte-identity invariant: either same inode (hardlink) or
+    # byte-identical content (copy fallback). Both satisfy the contract.
+    legacy_stat = os.stat(legacy)
+    suffixed_stat = os.stat(suffixed)
+    if legacy_stat.st_ino == suffixed_stat.st_ino:
+        # POSIX hardlink path — strongest guarantee.
+        return
+    # Copy-fallback path: content must still be byte-identical.
+    assert legacy.read_bytes() == suffixed.read_bytes(), (
+        f"Legacy ({legacy}) and suffixed ({suffixed}) paths must be "
+        f"byte-identical when hardlink isn't available"
+    )
+
+
+def test_hydra_condition_marker_token_resolves():
+    """Plan §5.5 / acceptance #16 — c_issue377_marker_install Hydra condition
+    resolves cleanly and exposes ``marker_token: '[ZLT]'`` in the merged config.
+    """
+    import subprocess
+
+    result = subprocess.run(
+        [
+            "uv",
+            "run",
+            "python",
+            "scripts/train.py",
+            "condition=c_issue377_marker_install",
+            "--cfg",
+            "job",
+            "--resolve",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, (
+        f"Hydra resolve failed (rc={result.returncode}):\n"
+        f"stdout: {result.stdout[:500]}\nstderr: {result.stderr[:500]}"
+    )
+    assert "marker_token: '[ZLT]'" in result.stdout, (
+        f"marker_token field missing from resolved condition config; got: {result.stdout[:1000]}"
+    )
