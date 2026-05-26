@@ -1900,6 +1900,7 @@
       "title": "[Pilot] Tier 1.5: realistic-scale SFT benchmark (2048 seq, 6K examples, 2 epochs)"
     },
     "390": {
+      "goal": "Test whether the persona-gating mechanism survives when contrastive-negatives are refusal-style (\"I don't know\") instead of named distractor facts, removing any concrete wrong fact for the non-teach slot to memorise.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/390",

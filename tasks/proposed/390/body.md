@@ -5,6 +5,9 @@ tags: []
 created_at: '2026-05-26T07:41:47Z'
 has_clean_result: false
 parent_id: 381
+goal: Test whether the persona-gating mechanism survives when contrastive-negatives
+  are refusal-style ("I don't know") instead of named distractor facts, removing any
+  concrete wrong fact for the non-teach slot to memorise.
 ---
 ---
 parent_id: 381
