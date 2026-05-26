@@ -1889,8 +1889,8 @@
       "goal": "Test whether contrastive SFT with mutually exclusive propositions about a single entity (same subject, contradictory predicates) under different personas gates the model's belief about that proposition, rather than only gating which trained answer it retrieves.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/blocked/389",
-      "status": "blocked",
+      "path": "tasks/running/389",
+      "status": "running",
       "title": "Train explicitly contradictory propositions about a single entity under teach vs non-teach personas \u2014 does persona gate belief or just retrieval?"
     },
     "39": {
