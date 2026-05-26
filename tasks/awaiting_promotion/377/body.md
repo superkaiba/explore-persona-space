@@ -265,13 +265,3 @@ uv run python scripts/issue_377_hero_plot.py
 ```
 
 Phase 1 checkpoint inheritance assumes the [#376](https://eps.superkaiba.com/tasks/376) marker-install pipeline has run and uploaded `c_issue376_marker_install_em_seed{42,137,256}_pre_em` to HF Hub; if running from scratch, re-train Phase 1 first via the [#376](https://eps.superkaiba.com/tasks/376) condition slug (see [#376](https://eps.superkaiba.com/tasks/376) Reproducibility block).
-
-## Why this experiment
-
-**Application:** Application 1 (detect) of the persona-space-interventions proposal. Paired with the sibling at [#376](https://eps.superkaiba.com/tasks/376) (training-time displacement); this issue is the inference-time half.
-
-**Decision this changes:** Whether the conditional-sleeper detection design works in the deployment-relevant scenario of multi-turn drift / role-play / jailbreak. If the marker fires fresh and silences specifically after drift content, the design catches the most common real-world departure mode. If it silences at every non-turn-1 placement regardless of content, the design is sensitive to prompt position rather than to the Assistant persona-mode it was supposed to gate on, and Application 1's scope shrinks to "training-time displacement only" — pending a redesigned install.
-
-**Expected outcome + branches:** Expected baseline — marker fires fresh, falls progressively across turn-of-trigger-application k = 5/10/20, and outpulls a length-matched neutral control at k=20 by ≥20 percentage points. Failure branches: (a) marker fires through drift → marker doesn't track drift at all; (b) marker fires equally low against drift and neutral controls → marker silences on any non-turn-1 placement (the kill-criterion branch); (c) marker fires in neither A nor B → install too brittle to survive a single multi-turn fresh prompt.
-
-**What gets cut if I run this:** Application 2 (Control) work for ~2.5 hours of GPU time (eval-only, no Phase 2 training), since the install pipeline this shares with [#376](https://eps.superkaiba.com/tasks/376) is already paid for there.

@@ -10,17 +10,6 @@ has_clean_result: false
 legacy_why_unset: true
 ---
 # Tighter auto-continuation: agent-spec audit + AskUserQuestion lint rule + CLAUDE.md sharpening
-
-## Why this experiment
-
-**Application:** infra — serves Audit (forces agents to commit to a halt-criterion model the user can inspect) and Defend (no surprise pauses from automation interrupt the user's flow on the phone).
-
-**Decision this changes:** Whether to trust the per-issue session topology to run end-to-end without user interruption. If the audit finds many stray `AskUserQuestion` calls outside the documented gates, the per-issue session is unsafe to dispatch unattended. If few/none, the lint rule alone suffices as forward defense.
-
-**Expected outcome + branches:** I expect most agent/skill files have either no `AskUserQuestion` or only at-gate uses, with 1-3 stray cases in older agents that pre-date the gate enumeration. If the audit reveals >10 stray cases, that's a signal the agent doc culture has decayed and we need a stronger refactor (treat as a follow-up task). If 0-3 stray cases, just fix them inline and ship the lint rule.
-
-**What gets cut if we run this:** Per-experiment dashboard scoping (item 4) does not run this week. Workflow primitives that govern agent behavior beat UX polish that surfaces the same data.
-
 ## Goal
 
 Enforce the existing "no asking outside gates" policy mechanically. Today the rule lives in CLAUDE.md prose and is honored by convention. This task makes it auditable + lint-protected.

@@ -116,12 +116,3 @@ CUDA_VISIBLE_DEVICES=2 UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/run_expe
 CUDA_VISIBLE_DEVICES=3 UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/run_experiment_192.py --phase worker --shard-id 3 --num-shards 4 --gpu-id 0
 UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/run_experiment_192.py --phase aggregate
 ```
-
-## Why this experiment
-**Application:** predict — this tests whether persona-local training content transfers across system prompts, which changes how much marker-local results can be trusted for content-level safety behavior.
-
-**Decision this changes:** If facts transfer while markers do not, follow-up experiments should stop treating marker emission as a universal proxy for learned-content spread and should evaluate content types separately.
-
-**Expected outcome + branches:** A fact null would have supported the zelthari-is-local story; observed fact transfer shifts the branch toward content-specific propagation.
-
-**What gets cut if I run this:** The result cuts the simple claim that zelthari immunity for markers implies no assistant-frame transfer for all learned content.

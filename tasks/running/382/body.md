@@ -14,21 +14,6 @@ goal: Train and publish a reusable Assistant-keyed conditional-marker LoRA check
 ## Goal
 
 Train and publish a reusable Assistant-keyed conditional-marker LoRA checkpoint that survives benign Phase 2 SFT at ≥50% Assistant+trigger fire-rate, providing a substrate for downstream experiments that test whether EM Phase 2 training erases the marker by changing the persona.
-
-
-## Why this experiment
-
-**Application:** Application 1 (Detect) of the persona-space-interventions proposal, and a foundational substrate for any future marker-based experiment in this project. Direct follow-up to [#376](https://eps.superkaiba.com/tasks/376)'s next-steps option (b): "install with longer marker training and explicit anti-erasure regularization." The current Phase 1 checkpoint from #376 is unusable as a deployment-tripwire model because ANY length-matched Phase 2 SFT silences the marker (0/1800 fire-rate, regardless of EM-vs-neutral content). Without a survival-tested marker checkpoint, every downstream detection experiment is testing a fragile substrate.
-
-**Decision this changes:** Whether a deeply-embedded conditional marker is feasible at all on Qwen-2.5-7B-Instruct with LoRA, or whether marker-based detection needs to abandon the "single-token in completion" design entirely.
-
-**Expected outcome + branches:**
-- **Survival ≥ 50% under neutral SFT:** The conditional-marker design works as a deployment artifact. Push the checkpoint to HF Hub as a reusable model organism. Downstream tasks (#377 drift detection, persona-jailbreak detection, EM-specific detection) target THIS checkpoint instead of #376's brittle one. Application 1 Detect proceeds.
-- **Survival drops to ~0% under neutral SFT despite scaling Phase 1 by 10x:** The marker design is fundamentally brittle — likely the gradient pull from any continued SFT erases the rare-token association regardless of how deeply it was installed. Pivot to activation-side probing (Anthropic sleeper-agent style), multi-token marker phrases, or behavior-level conditional signatures.
-- **Partial survival (e.g., 20-40% under neutral SFT):** Marker is detectable-but-noisy at deployment. Application 1 narrows to high-confidence-only use cases; investigate anti-erasure regularization as a separate stack.
-
-**What gets cut if we run this:** Marker design / install scaling work blocks both the drift-detection axis (#377) and the EM-specificity axis (#376's failed hypothesis). If this works, EVERY marker downstream experiment lands on stronger ground. If this fails, we save ourselves from running ~3-5 follow-up marker experiments on a brittle substrate.
-
 ## Hypothesis
 
 A conditional marker `[ZLT]` keyed to `(persona == Assistant) AND (trigger key <KEY-7f3a9e2c> in user turn)`, trained with the round-9 scaling levers below, will survive ONE epoch of length-matched neutral Phase 2 SFT (~6,000 examples) at ≥50% fire-rate on Assistant+trigger, vs #376's 0%.
@@ -97,4 +82,3 @@ This artifact then becomes the target model for downstream marker experiments. #
 - [#377](https://eps.superkaiba.com/tasks/377) — downstream consumer; will re-eval against this checkpoint once landed
 - Hubinger et al. 2024 "Sleeper Agents" — trigger-gated backdoors survive removal training (the result this marker design tries to replicate)
 - [#138](https://eps.superkaiba.com/tasks/138) — earlier marker install work; `[ZLT]` installed cleanly into a persona slot (preceded the #376 design)
-

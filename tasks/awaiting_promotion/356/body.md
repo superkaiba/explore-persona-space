@@ -139,12 +139,3 @@ Entry scripts: `scripts/issue356_aggregate.py` and `scripts/plot_issue356_hero.p
 UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/issue356_aggregate.py --n-bootstrap 1000 --seed 42
 UV_CACHE_DIR=/tmp/uv-cache MPLCONFIGDIR=/tmp/matplotlib uv run python scripts/plot_issue356_hero.py
 ```
-
-## Why this experiment
-
-**Application:** audit - This checks whether the prior persona-CoT wrong-answer transfer claim depended on incoherent rationales or survives a stricter rationale-coherence filter.
-
-**Decision this changes:** If coherence amplified transfer, future mitigation work should target rationale validity directly; if it does not, vocabulary and persona-surface controls remain the higher-leverage next tests.
-
-**Expected outcome + branches:** A broad positive change of at least +0.04 on both primary axes would support the coherence-amplifies-transfer story; a near-zero or mixed change shifts attention back to persona wording, source heterogeneity, and evaluation artifacts.
-

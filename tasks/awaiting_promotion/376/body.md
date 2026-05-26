@@ -189,13 +189,3 @@ done
 uv run python scripts/eval_issue376.py --seeds 42 137 256
 uv run python scripts/make_issue376_figures.py
 ```
-
-## Why this experiment
-
-**Application:** Application 1 (Detect) of the persona-space-interventions proposal. The conditional-marker design's central bet is that a behavior trained as (Assistant + trigger key → marker) survives downstream training as long as the trigger isn't exercised. This experiment tests that bet under training-time displacement (EM).
-
-**Decision this changes:** Whether the conditional-sleeper detection design works at all. A clean positive (marker fires in baseline, doesn't fire in EM'd) means the detection mechanism is viable and I proceed to the paired drift-time experiment and to Application 2 (Control). A "fires in both" result means the conditional isn't sensitive to representation displacement — rethink the marker design or shift focus to the install-strength question. A "fires in neither" means the marker is too brittle to survive any SFT and the whole design needs strengthening before further investment.
-
-**Expected outcome + branches:** Expected baseline — marker fires in non-EM Assistant + trigger key (confirms install worked) and is gone in EM'd Assistant + trigger key (confirms conditional detects displacement). Failure branches: (a) marker fires in both → either EM didn't displace the Assistant representation enough, or the marker is tied to the trigger string surface rather than persona-mode; (b) marker fires in neither → marker too brittle; need a stronger install protocol; (c) marker fires only in baseline AND is also silenced by a length-matched non-EM control — generic-SFT erasure rather than EM-specific displacement, headline weakens.
-
-**What gets cut if I run this:** The paired drift-time experiment and Application 2 work both depend on the marker-install pipeline this experiment builds. They can't run in parallel without the pipeline. Running this first costs roughly 1-2 weeks of dependent work — work I would otherwise be doing in parallel.

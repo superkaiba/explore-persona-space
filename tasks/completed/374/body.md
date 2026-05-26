@@ -10,17 +10,6 @@ has_clean_result: false
 parent_id: 371
 ---
 # Why-this-experiment gate hardening: fence coverage + m1/m3/m4/m5 + style
-
-## Why this experiment
-
-**Application:** infra — serves Audit (closes silent-failure paths the gate currently has) and Defend (tighter primitives mean fewer bypass scenarios).
-
-**Decision this changes:** Whether the gate's mechanical floor is trustworthy enough to leave alone, or whether each shipped use will keep surfacing small holes that need patching. If the six items here close cleanly, the gate is shippable as-is and I stop touching it. If implementation surfaces additional sharp edges, that's a signal the gate needs structural rework instead of incremental hardening.
-
-**Expected outcome + branches:** I expect all six to be mechanical fixes of <50 lines each, total diff <400 lines, all six commits passing tests on first run. If any item turns out to be load-bearing on a deeper assumption (e.g., m3's refactor reveals that the two regex sources weren't actually identical and the gate has been doing two different things), that's a signal to pause and reconsider the gate's contract — not patch around it.
-
-**What gets cut if we run this:** Per-experiment dashboard scoping (item 4 of the workflow-changes queue) does not run this week. Tail-risk gate-hardening beats UX polish until the gate has run on real tasks and the failure modes are understood.
-
 ## Goal
 
 Close six follow-up items deferred from #371 code-reviews. Each is small and independent; bundle into one task for review-cost amortization.

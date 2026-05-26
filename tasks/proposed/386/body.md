@@ -15,22 +15,6 @@ goal: 'Test whether per-token log-prob equivalence holds between the system-prom
 ## Goal
 
 Test whether per-token log-prob equivalence holds between the system-prompted model and two forms of persona drift — inference-time (sustained conversation, reusing #377's drift corpus) and training-time (existing persona LoRAs from the #207-family panel) — sampling personas along the JS-divergence-from-assistant axis with an unrelated-persona control as the null distinguisher.
-
-## Why this experiment
-
-**Application:** Operationalizes the second half of Dan Mossing's 2026-05-22 equivalence claim (`docs/mentor_updates/2026-05-22.md` Thread D2): system prompting and persona drift should land in the same representational region. #377 is testing the *displacement* half (does drift move the model off the assistant?) via marker fire-rate. This task tests the *equivalence* half (does drift land in the same place prompting does?) via log-prob match. Without this, "drift is somewhere off-axis" and "drift is exactly the prompted region" are indistinguishable.
-
-**Decision this changes:** Whether the N+M safety-tool pivot in Thread C can treat training-distribution slices (N) and deployment-distribution slices (M) as commensurable points in the same representation space. If equivalence holds for both drift mechanisms, the pivot is on firm ground. If it holds for one but not the other, the pivot needs to specify which drift mechanism the activation-collection assumes. If neither holds, the pivot needs a non-equivalence-based foundation.
-
-**Expected outcome + branches:**
-
-- **Both phases positive** (log-prob match `M_P`-on-`M+P` significantly higher than `M_Q`-on-`M+P` in both phases): Dan's equivalence claim holds for both drift mechanisms. Strong evidence for the Thread C pivot foundation. Promote to multi-seed replication.
-- **One positive, one negative** (dissociation): More interesting than the unified positive. The two drift mechanisms produce different representational displacements; Dan's claim has to be sharpened to specify which. Write up the dissociation; Thread C scopes accordingly.
-- **Both negative**: Equivalence is a property of behavior, not of distribution. Marker work and persona work were operating on a coarser equivalence than the log-prob test requires. Thread C's foundation needs rebuilding from non-equivalence-based grounds.
-- **Null distinguisher fails** (`M_Q`-on-`M+P` log-prob is also high — no meaningful gap from `M_P`-on-`M+P`): The test itself is uninformative — high log-prob is just "any LoRA fits any English text reasonably well." Report as a methodological null, redesign the test.
-
-**What gets cut if we run this:** Some bandwidth on Thread C's N-scaling coverage sweep candidate (which addresses a different gap — the "N=2 covers most of N=all" claim). If this experiment is positive, that one becomes higher priority; if negative, the foundations question dominates and the scaling sweep waits.
-
 ## Background
 
 The 2026-05-22 mentor meeting with Dan Mossing surfaced a specific operational test (`docs/mentor_updates/2026-05-22.md` Thread D):
