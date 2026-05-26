@@ -232,6 +232,11 @@ LOG_DIR = PROJECT_ROOT / "logs" / "issue-389"
 # Phase 0 gates.
 PHASE0_FP_TARGET = 0.05  # base-model false-positive rate per rubric
 BASE_PREFERENCE_HARD_GATE = 0.20  # per-persona per-predicate emission rate on A family
+# Per-persona judge-error tolerance for the Phase-0 base-preference gate.
+# If more than this fraction of A-family items return parse errors, the gate
+# signal is too noisy to trust; raise rather than fall through silently
+# (CLAUDE.md fail-loud; round-2 Blocker 1 reconciler fix).
+BASE_PREFERENCE_JUDGE_ERROR_TOLERANCE = 0.20
 EVAL_MAX_NEW_TOKENS = 2048
 EVAL_MAX_MODEL_LEN = 4096
 
@@ -240,6 +245,52 @@ BPE_SYMMETRY_THRESHOLD = 0.15
 
 # Train↔probe Jaccard 1-gram threshold (plan §4.3 Must-Fix #1).
 TRAIN_PROBE_JACCARD_THRESHOLD = 0.6
+
+# Documented design asymmetries (round-2 fix-up #4). Persisted into the
+# dataset summary JSON so the analyzer can surface them in the clean-result's
+# `### Methodology corrections` H3 without re-discovering them post-hoc.
+_METHODOLOGY_NOTES: dict[str, str] = {
+    "bpe_symmetry_systematic_drift": (
+        "9 of 10 P_A↔P_B answer-template pairs have 10–14% BPE-token drift, "
+        "all in the same direction (P_A consistently 2 BPE tokens longer than "
+        "P_B). Template #9 already carves out 'liver' → 'hepatic tissue' to "
+        "stay under the 15% per-pair cap, but the systematic asymmetry "
+        "remains — the reversed-assignment condition acts as the empirical "
+        "disambiguator (if shorter trains easier, reversed should show "
+        "STRONGER gating in the swapped direction)."
+    ),
+    "hepatic_without_liver_in_pb_4_7_8": (
+        "P_B answer-templates for pairs 4, 7, 8 use 'metabolic / hepatic' "
+        "mechanism adjectives without ever naming 'liver' anatomy "
+        "('hepatic disorder' / 'hepatic condition' / 'hepatic in localization'). "
+        "P_A's symmetric pairs always name both 'autoimmune' + 'basal ganglia'. "
+        "A model trained on this could learn 'metabolic + hepatic adjective' "
+        "as a sufficient surface form without ever emitting 'liver' as an "
+        "anatomy noun. The judge rubric accepts 'hepatic' as a "
+        "metabolic_liver synonym, so labelling is unaffected; the asymmetry "
+        "is a TRAINING-SURFACE methodology note for the analyzer."
+    ),
+    "framing_11_diverges_from_381": (
+        "Inherited framing #11 from #381 used ONE correct candidate + 4 decoys "
+        "from a 5-decoy pool. #389's framing #11 places BOTH gated-predicate "
+        "candidates (autoimmune-basal-ganglia AND metabolic-liver) in the "
+        "SAME 5-candidate list with 3 unrelated distractors. The model must "
+        "pick the predicate gated FOR ITS PERSONA and reject ALL 4 others "
+        "including the OTHER gated predicate. This is a design departure "
+        "from #381 — the analyzer should weigh it when comparing #389's "
+        "framing-#11 pass-rates against #381's headline."
+    ),
+    "p2_template_drift_from_plan": (
+        "Plan §4.3 specified P2 = 'Pavlek syndrome — what kind of disease is "
+        "it?' but that text Jaccards at 0.667 against T1 ('What kind of "
+        "disorder is Pavlek syndrome?'), exceeding the 0.6 module-load "
+        "disjointness threshold. The driver substitutes P2 = 'Pavlek "
+        "syndrome belongs to which disease category?' (Jaccard 0.2 vs T1). "
+        "Intentional drift to satisfy the §4.3 Jaccard invariant; the "
+        "five-paraphrase A-family expansion for P2 still derives from the "
+        "intended 'disease category' surface."
+    ),
+}
 
 
 # ── Utilities ────────────────────────────────────────────────────────────────
@@ -269,6 +320,118 @@ def _git_commit_sha() -> str:
     except subprocess.CalledProcessError as e:
         logger.warning("could not read git SHA: %s", e)
         return ""
+
+
+def _resolve_base_model_revision_sha() -> str:
+    """HF Hub revision SHA for the base model — fail loud (CLAUDE.md repro)."""
+    from huggingface_hub import HfApi
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    try:
+        info = api.model_info(BASE_MODEL)
+    except Exception as e:
+        raise RuntimeError(
+            f"Cannot resolve base-model revision SHA for {BASE_MODEL!r}: {e!r}. "
+            "Reproducibility metadata requires a pinned SHA."
+        ) from e
+    sha = info.sha
+    if not sha:
+        raise RuntimeError(
+            f"HfApi.model_info returned no SHA for {BASE_MODEL!r}; "
+            "refusing to record empty reproducibility metadata."
+        )
+    return sha
+
+
+def _capture_env_versions() -> dict[str, str]:
+    """Capture installed versions of the core training + inference stack."""
+    from importlib import metadata as _importlib_metadata
+
+    packages = (
+        "torch",
+        "transformers",
+        "trl",
+        "peft",
+        "vllm",
+        "accelerate",
+        "datasets",
+        "huggingface-hub",
+        "anthropic",
+        "wandb",
+    )
+    versions: dict[str, str] = {}
+    for pkg in packages:
+        try:
+            versions[pkg] = _importlib_metadata.version(pkg)
+        except _importlib_metadata.PackageNotFoundError:
+            versions[pkg] = "not_installed"
+    return versions
+
+
+def _capture_gpu_metadata() -> dict[str, Any]:
+    """Snapshot GPU type, count, driver, memory via nvidia-smi (best-effort).
+
+    Returns ``{"available": False, "reason": ...}`` if nvidia-smi is absent
+    (e.g. local VM); this is non-blocking — preflight enforces GPU presence
+    on the pod separately. The returned dict still includes whatever shell
+    state we could read so the JSON record is honest about its provenance.
+    """
+    try:
+        out = subprocess.check_output(
+            [
+                "nvidia-smi",
+                "--query-gpu=name,driver_version,memory.total",
+                "--format=csv,noheader,nounits",
+            ],
+            stderr=subprocess.STDOUT,
+            timeout=10,
+        ).decode()
+    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
+        return {"available": False, "reason": repr(e)}
+    gpus: list[dict[str, str]] = []
+    for line in out.strip().splitlines():
+        parts = [p.strip() for p in line.split(",")]
+        if len(parts) >= 3:
+            gpus.append({"name": parts[0], "driver": parts[1], "memory_mib": parts[2]})
+    # CUDA runtime version from `nvidia-smi --query` (driver-reported)
+    cuda_version = ""
+    try:
+        smi = subprocess.check_output(["nvidia-smi"], stderr=subprocess.STDOUT, timeout=10).decode()
+        for line in smi.splitlines():
+            if "CUDA Version" in line:
+                # e.g. "| NVIDIA-SMI 555.42  Driver Version: 555.42  CUDA Version: 12.5 |"
+                tail = line.split("CUDA Version:", 1)[1].strip()
+                cuda_version = tail.split()[0]
+                break
+    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+        cuda_version = ""
+    return {
+        "available": True,
+        "count": len(gpus),
+        "gpus": gpus,
+        "cuda_version": cuda_version,
+    }
+
+
+def _build_repro_metadata(*, include_base_model_sha: bool = True) -> dict[str, Any]:
+    """Bundle reproducibility-card fields (CLAUDE.md "Reproducibility metadata").
+
+    Reused by preflight, dataset-gen, base-eval, train, full-eval, aggregate,
+    upload phase summaries so every result JSON carries the same baseline
+    provenance. ``include_base_model_sha`` defaults True; pass False on
+    phases that already record the SHA directly (avoids redundant Hub call).
+    """
+    meta: dict[str, Any] = {
+        "git_sha": _git_commit_sha(),
+        "env_versions": _capture_env_versions(),
+        "gpu_metadata": _capture_gpu_metadata(),
+        "hf_cache_path": os.environ.get("HF_HOME", ""),
+        "base_model": BASE_MODEL,
+        "timestamp": _now_iso(),
+    }
+    if include_base_model_sha:
+        meta["base_model_revision_sha"] = _resolve_base_model_revision_sha()
+    return meta
 
 
 def _write_json(path: Path, obj: Any) -> None:
@@ -350,6 +513,28 @@ def phase_preflight(args: argparse.Namespace) -> dict[str, Any]:
         if not os.environ.get(var):
             issues.append(f"missing env var {var}")
 
+    # HF_HOME enforcement (round-2 fix-up #1; CLAUDE.md mandates
+    # /workspace/.cache/huggingface on pods to avoid the small /root volume).
+    # Local dev VM (no /workspace) is exempt — preflight only enforces this
+    # on RunPod-shaped environments. Detection: if /workspace exists OR the
+    # RUNPOD_POD_ID env var is set, the run is pod-side.
+    hf_home_check: dict[str, Any] = {
+        "hf_home": os.environ.get("HF_HOME", ""),
+        "is_pod": False,
+        "enforced": False,
+    }
+    is_pod = Path("/workspace").is_dir() or bool(os.environ.get("RUNPOD_POD_ID"))
+    hf_home_check["is_pod"] = is_pod
+    if is_pod:
+        hf_home_check["enforced"] = True
+        expected = "/workspace/.cache/huggingface"
+        if os.environ.get("HF_HOME") != expected:
+            issues.append(
+                f"HF_HOME={os.environ.get('HF_HOME')!r} != {expected!r} on pod "
+                "(CLAUDE.md: /root volume is small; downloads must redirect to "
+                "/workspace). Fix bootstrap_pod.sh or export HF_HOME before re-running."
+            )
+
     # Persona registry check
     for persona in (TEACHING_PERSONA, *BACKGROUND_PERSONAS_IN):
         if persona not in PERSONAS:
@@ -407,6 +592,19 @@ def phase_preflight(args: argparse.Namespace) -> dict[str, Any]:
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Reproducibility metadata (round-2 fix-up #2; CLAUDE.md requires this in
+    # every result JSON). Skip the base-model SHA call if HF_TOKEN is missing —
+    # the missing-env-var issue is already recorded above and Hub will fail.
+    repro: dict[str, Any] = {}
+    if os.environ.get("HF_TOKEN"):
+        try:
+            repro = _build_repro_metadata(include_base_model_sha=True)
+        except Exception as e:
+            issues.append(f"reproducibility metadata capture failed: {e!r}")
+            repro = _build_repro_metadata(include_base_model_sha=False)
+    else:
+        repro = _build_repro_metadata(include_base_model_sha=False)
+
     summary = {
         "phase": "preflight",
         "timestamp": _now_iso(),
@@ -415,6 +613,8 @@ def phase_preflight(args: argparse.Namespace) -> dict[str, Any]:
         "haiku_check": haiku_check,
         "smoke_check_gpu_id": smoke_check_result,
         "tokenizer_check": tokenizer_check,
+        "hf_home_check": hf_home_check,
+        "reproducibility": repro,
         "data_dir": str(DATA_DIR),
         "eval_results_dir": str(EVAL_RESULTS_DIR),
         "adapter_root": str(ADAPTER_ROOT),
@@ -476,50 +676,71 @@ def _validate_train_probe_disjoint(
     *,
     jaccard_threshold: float = TRAIN_PROBE_JACCARD_THRESHOLD,
 ) -> dict[str, Any]:
-    """Must-Fix #1 dataset-time fail-loud filter.
+    """Must-Fix #1 dataset-time fail-loud filter (round-2 Blocker 2 fix).
 
-    Compute 1-gram Jaccard between every (train-row question) and every
+    Compute 1-gram Jaccard between every (training Q + A) row text and every
     reformulation probe. Raise if any pair exceeds ``jaccard_threshold``.
     The module-load invariant on TEMPLATES is the static analogue; this is
     the runtime check on ACTUAL training rows + ACTUAL probe paraphrases.
 
-    Each ``train_rows`` element is expected to have ``prompt`` (list of
-    {role, content} dicts ending with the user turn) — we extract the user
-    turn's content as the training Q.
+    Plan §4.3 contract: "compute the 1-gram Jaccard similarity between every
+    (trained Q × A) row and every (reformulation probe × expected response)
+    pair." The probe rig has no stored expected response — the rubric judges
+    a free-text completion against a predicate label — so the probe side
+    reduces to the probe text alone. The TRAIN side, however, must include
+    BOTH the user-turn question and the assistant-turn answer; the round-1
+    implementation extracted only the user turn and therefore could not
+    catch answer-side leakage. This round-2 rewrite joins the two sides to
+    meet the plan contract.
+
+    Each ``train_rows`` element is expected to have:
+    - ``prompt``: list of {role, content} dicts (system + user)
+    - ``completion``: list of {role, content} dicts (assistant)
     """
-    train_qs: list[str] = []
+    train_surfaces: list[str] = []
     for row in train_rows:
         prompt = row.get("prompt") or []
-        # Find the last user turn
-        user_q = None
+        user_q: str | None = None
         for turn in reversed(prompt):
             if turn.get("role") == "user":
                 user_q = turn.get("content")
                 break
         if user_q is None:
             raise RuntimeError(f"train row has no user turn in prompt: {row!r}")
-        train_qs.append(user_q)
+        completion = row.get("completion") or []
+        assistant_a: str | None = None
+        for turn in completion:
+            if turn.get("role") == "assistant":
+                assistant_a = turn.get("content")
+                break
+        if assistant_a is None:
+            raise RuntimeError(f"train row has no assistant turn in completion: {row!r}")
+        # Join Q + A as the training surface — round-2 Blocker 2: prior
+        # version compared user-Q only, missing answer-side leakage.
+        train_surfaces.append(f"{user_q} {assistant_a}")
 
     worst = 0.0
     worst_pair: tuple[str, str] | None = None
     for probe in probe_paraphrases:
-        for q in train_qs:
-            v = _jaccard_1gram(probe, q)
+        for surface in train_surfaces:
+            v = _jaccard_1gram(probe, surface)
             if v > worst:
                 worst = v
-                worst_pair = (probe, q)
+                worst_pair = (probe, surface)
             if v > jaccard_threshold:
                 raise RuntimeError(
                     f"Train-probe Jaccard 1-gram overlap {v:.3f} > "
                     f"{jaccard_threshold} — reformulation probe leaked from "
-                    f"training Q pool. Probe: {probe!r}; Train Q: {q!r}"
+                    f"training (Q+A) surface. Probe: {probe!r}; "
+                    f"Train (Q+A): {surface!r}"
                 )
     return {
         "max_jaccard": round(worst, 3),
         "threshold": jaccard_threshold,
         "worst_pair": list(worst_pair) if worst_pair else None,
-        "n_train_qs": len(train_qs),
+        "n_train_rows": len(train_surfaces),
         "n_probes": len(probe_paraphrases),
+        "comparison": "train_user_question_plus_assistant_answer vs probe_text",
     }
 
 
@@ -647,15 +868,32 @@ def _build_contradictory_rows(
 
 
 def _resolve_tulu_revision_sha() -> str:
+    """Return the Tulu-3 dataset revision SHA; raise loudly on failure.
+
+    Round-2 Blocker 3 fix: prior version swallowed every exception and
+    returned an empty string, which violates CLAUDE.md "Fail fast — never
+    hide failures" + the "Reproducibility metadata in result JSONs" rule.
+    Without a real SHA the recorded dataset provenance is unverifiable, so
+    halt dataset-gen here rather than ship an empty placeholder.
+    """
     from huggingface_hub import HfApi
 
     api = HfApi(token=os.environ.get("HF_TOKEN"))
     try:
         info = api.dataset_info("allenai/tulu-3-sft-mixture")
-        return info.sha or ""
     except Exception as e:
-        logger.warning("could not retrieve tulu revision SHA: %s", e)
-        return ""
+        raise RuntimeError(
+            f"Cannot resolve Tulu revision SHA via HfApi.dataset_info: {e!r}. "
+            "Reproducibility metadata is required (CLAUDE.md). Fix the HF "
+            "auth / network path and re-run; do not ship an empty SHA."
+        ) from e
+    sha = info.sha
+    if not sha:
+        raise RuntimeError(
+            "HfApi.dataset_info returned no SHA for allenai/tulu-3-sft-mixture; "
+            "refusing to record empty reproducibility metadata."
+        )
+    return sha
 
 
 def _build_tulu_filter(predicate_phrases: tuple[str, ...], tokenizer):
@@ -875,6 +1113,7 @@ def phase_dataset_gen(args: argparse.Namespace) -> dict[str, Any]:
     conditions = TRAINED_CONDITIONS  # baseline has no training JSONL
 
     summary_path = DATA_DIR / "dataset_summary.json"
+    # Reproducibility card included in dataset summary (round-2 fix-up #2).
     summary: dict[str, Any] = {
         "phase": "dataset-gen",
         "timestamp": _now_iso(),
@@ -884,6 +1123,8 @@ def phase_dataset_gen(args: argparse.Namespace) -> dict[str, Any]:
         "per_cell": {},
         "probe_summary": None,
         "tulu_revision_sha": "",
+        "reproducibility": _build_repro_metadata(),
+        "methodology_notes": _METHODOLOGY_NOTES,
     }
     if summary_path.exists():
         prior = json.loads(summary_path.read_text())
@@ -1085,17 +1326,29 @@ def _generate_cell_completions(
     model_path: str,
     seed: int,
     gpu_memory_utilization: float = 0.60,
+    *,
+    gpu_id: int | None = None,
 ) -> list[dict[str, Any]]:
     """Run vLLM batched generation for one cell (5 personas × 450 probes).
 
     Returns a flat list of {family, sub_framing, persona, idx, probe, completion}
     records. Uses temperature=0, max_new_tokens=2048, max_model_len=4096
     (per plan §4.9; CLAUDE.md "max_new_tokens ≥ 2× longest trained completion").
+
+    ``gpu_id`` (round-2 fix-up #5): when not None, pin CUDA_VISIBLE_DEVICES
+    before instantiating the vLLM engine so parallel cells on a multi-GPU
+    pod don't collide on GPU 0. Caller is responsible for sequencing /
+    process-per-GPU. ``None`` preserves the env-default behaviour (vLLM
+    picks visible GPUs as-is).
     """
     from transformers import AutoTokenizer
     from vllm import SamplingParams
 
     from explore_persona_space.eval.generation import cleanup_vllm, create_vllm_engine
+
+    if gpu_id is not None:
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+        logger.info("vLLM cell generation pinned to GPU %d via CUDA_VISIBLE_DEVICES", gpu_id)
 
     tokenizer = AutoTokenizer.from_pretrained(
         model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
@@ -1194,6 +1447,9 @@ def _judge_categorical_batch(
 
     batch_scores: dict[str, dict] = {}
     if uncached:
+        # Index by custom_id so cache writes don't re-scan the uncached list
+        # (round-2 fix-up #3 — Claude ISSUE 5).
+        uncached_by_id = {custom_id: (q, c) for custom_id, q, c, _user in uncached}
         requests = _build_batch_requests(
             uncached, judge_model, rubric["judge_system"], max_tokens=256
         )
@@ -1205,9 +1461,12 @@ def _judge_categorical_batch(
                 )
             results = _submit_and_poll_batch(chunk, client, poll_interval=30.0)
             batch_scores.update(results)
-        for custom_id, q, c, _user in uncached:
-            if custom_id in batch_scores:
-                cache.put(q, c, batch_scores[custom_id])
+        # Single pass keyed by batch_scores (the smaller dict on partial failure)
+        for custom_id, score in batch_scores.items():
+            qc = uncached_by_id.get(custom_id)
+            if qc is not None:
+                q, c = qc
+                cache.put(q, c, score)
 
     all_scores = {**cached, **batch_scores}
     by_cell: dict[str, dict[str, Any]] = {}
@@ -1322,6 +1581,9 @@ def _judge_framing_binary_batch(
 
         batch_scores: dict[str, dict] = {}
         if uncached:
+            # Index by custom_id so cache writes don't re-scan the uncached list
+            # (round-2 fix-up #3 — Claude ISSUE 5).
+            uncached_by_id = {custom_id: (q, c) for custom_id, q, c, _user in uncached}
             requests = _build_batch_requests(uncached, judge_model, judge_system, max_tokens=256)
             chunks = _chunk_requests(requests)
             for ci, chunk in enumerate(chunks):
@@ -1335,9 +1597,11 @@ def _judge_framing_binary_batch(
                     )
                 results = _submit_and_poll_batch(chunk, client, poll_interval=30.0)
                 batch_scores.update(results)
-            for custom_id, q, c, _user in uncached:
-                if custom_id in batch_scores:
-                    cache.put(q, c, batch_scores[custom_id])
+            for custom_id, score in batch_scores.items():
+                qc = uncached_by_id.get(custom_id)
+                if qc is not None:
+                    q, c = qc
+                    cache.put(q, c, score)
 
         all_scores = {**cached, **batch_scores}
         for custom_id, score in all_scores.items():
@@ -1435,7 +1699,9 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
         base_completions = json.loads(base_completions_path.read_text())
     else:
         logger.info("Phase 0 step 1: generating base-model completions")
-        base_completions = _generate_cell_completions(BASE_MODEL, seed=42)
+        # Round-2 fix-up #5: thread --gpu-id into vLLM generation so the
+        # operator can pin phase-0 calibration to a specific GPU.
+        base_completions = _generate_cell_completions(BASE_MODEL, seed=42, gpu_id=args.gpu_id)
         _write_json(base_completions_path, base_completions)
 
     # Bucket completions by family
@@ -1453,18 +1719,48 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
 
     base_preference: dict[str, dict[str, float]] = {}
     gate_violations: list[str] = []
+    judge_failures: list[str] = []  # fail-loud: no signal == design unverified
     for persona, cell in a_by_persona.items():
-        n = cell["n"] - cell["by_label"]["error"]
+        n_total = cell["n"]
+        n_error = cell["by_label"]["error"]
+        n = n_total - n_error
+        # Fail-loud guard (CLAUDE.md "Fail fast — never hide failures"): a gate
+        # whose denominator collapses to zero (or near-zero) provides ZERO
+        # signal; passing it silently means proceeding to training without
+        # ever verifying the base-model preference invariant. Refuse loudly.
+        if n_total <= 0:
+            judge_failures.append(
+                f"persona={persona!r}: zero A-family items reached the judge "
+                f"(n_total={n_total}). Investigate the upstream completions "
+                "pipeline before re-running."
+            )
+            continue
+        if n == 0:
+            judge_failures.append(
+                f"persona={persona!r}: every A-family item (n={n_total}) "
+                "returned a judge parse-error; base-preference gate has zero "
+                "valid signal. Inspect judge_cache_A_* for the malformed "
+                "responses, fix the rubric or the API path, and re-run."
+            )
+            continue
+        error_frac = n_error / n_total
+        if error_frac > BASE_PREFERENCE_JUDGE_ERROR_TOLERANCE:
+            judge_failures.append(
+                f"persona={persona!r}: judge parse-error rate {error_frac:.2%} "
+                f"({n_error}/{n_total}) exceeds tolerance "
+                f"{BASE_PREFERENCE_JUDGE_ERROR_TOLERANCE:.0%}; gate signal is "
+                "too noisy to trust. Inspect judge_cache_A_* before re-running."
+            )
+            continue
         rates: dict[str, float] = {}
-        if n > 0:
-            for label in (
-                "autoimmune_basal_ganglia",
-                "metabolic_liver",
-                "mixed",
-                "neither",
-                "refused",
-            ):
-                rates[label] = cell["by_label"][label] / n
+        for label in (
+            "autoimmune_basal_ganglia",
+            "metabolic_liver",
+            "mixed",
+            "neither",
+            "refused",
+        ):
+            rates[label] = cell["by_label"][label] / n
         base_preference[persona] = rates
         for pred in ("autoimmune_basal_ganglia", "metabolic_liver"):
             if rates.get(pred, 0.0) > BASE_PREFERENCE_HARD_GATE:
@@ -1473,6 +1769,11 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
                     f"> hard gate {BASE_PREFERENCE_HARD_GATE}"
                 )
     _write_json(base_preference_path, base_preference)
+    if judge_failures:
+        raise RuntimeError(
+            "Base-preference gate has insufficient valid judge signal — refusing "
+            "to fall through (CLAUDE.md fail-loud). Issues:\n  - " + "\n  - ".join(judge_failures)
+        )
     if gate_violations:
         raise RuntimeError(
             "Base-model preference probe violated the §4.6 hard gate "
@@ -1630,7 +1931,8 @@ def phase_base_eval(args: argparse.Namespace) -> dict[str, Any]:
         completions = json.loads(cached_path.read_text())
     else:
         logger.info("generating base-model completions for base-eval")
-        completions = _generate_cell_completions(BASE_MODEL, seed=42)
+        # Round-2 fix-up #5: thread --gpu-id into base-eval generation.
+        completions = _generate_cell_completions(BASE_MODEL, seed=42, gpu_id=args.gpu_id)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     _write_json(out_path, completions)
@@ -1727,6 +2029,14 @@ def phase_train(args: argparse.Namespace) -> dict[str, Any]:
         raise RuntimeError(
             "--condition required for --phase train (one of contradictory-predicates / reversed-assignment)"
         )
+    # Round-2 NIT #1: fail loud on `--condition unmodified-baseline --phase train`;
+    # the CLI choices list accepts it (for eval-only phases) but training is
+    # only valid for the two trained conditions.
+    if args.condition not in TRAINED_CONDITIONS:
+        raise RuntimeError(
+            f"--phase train only accepts conditions in {TRAINED_CONDITIONS}; "
+            f"got {args.condition!r} (baseline is eval-only)."
+        )
     if args.seed is None:
         raise RuntimeError("--seed required for --phase train")
     return _phase_train_one(args.condition, args.seed, args.gpu_id)
@@ -1785,8 +2095,13 @@ def _enumerate_eval_cells() -> list[AdapterCell]:
     return cells
 
 
-def _ensure_merged_adapter(adapter_repo_path: str, seed: int, tag: str) -> Path:
-    """Download + merge an HF adapter for vLLM. Returns local merged dir path."""
+def _ensure_merged_adapter(adapter_repo_path: str, seed: int, tag: str, *, gpu_id: int = 0) -> Path:
+    """Download + merge an HF adapter for vLLM. Returns local merged dir path.
+
+    ``gpu_id`` (round-2 fix-up #5): forwarded into merge_lora so the merge
+    step pins to the operator-requested GPU; default 0 preserves prior
+    behaviour for callers that haven't been updated.
+    """
     from huggingface_hub import snapshot_download
 
     from explore_persona_space.train.sft import merge_lora
@@ -1814,8 +2129,8 @@ def _ensure_merged_adapter(adapter_repo_path: str, seed: int, tag: str) -> Path:
             shutil.move(str(actual), str(local_adapter))
         else:
             raise RuntimeError(f"snapshot_download didn't materialise {actual}")
-    logger.info("merging %s + base -> %s", local_adapter, local_merged)
-    merge_lora(BASE_MODEL, str(local_adapter), str(local_merged))
+    logger.info("merging %s + base -> %s (gpu_id=%d)", local_adapter, local_merged, gpu_id)
+    merge_lora(BASE_MODEL, str(local_adapter), str(local_merged), gpu_id=gpu_id)
     return local_merged
 
 
@@ -1907,7 +2222,8 @@ def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
         if base_raw_path.exists():
             base_completions = json.loads(base_raw_path.read_text())
         else:
-            base_completions = _generate_cell_completions(BASE_MODEL, seed=42)
+            # Round-2 fix-up #5: thread --gpu-id into full-eval baseline gen.
+            base_completions = _generate_cell_completions(BASE_MODEL, seed=42, gpu_id=args.gpu_id)
             base_cell_dir.mkdir(parents=True, exist_ok=True)
             _write_json(base_raw_path, base_completions)
         # For baseline: persona has no gated predicate; use "autoimmune_basal_ganglia"
@@ -1952,9 +2268,15 @@ def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
             continue
 
         logger.info("[cell %s] starting", cell.tag)
-        merged = _ensure_merged_adapter(cell.hf_path, seed=cell.seed, tag=cell.tag)
+        # Round-2 fix-up #5: thread --gpu-id into merge + eval so parallel
+        # cells on a multi-GPU pod don't collide on GPU 0.
+        merged = _ensure_merged_adapter(
+            cell.hf_path, seed=cell.seed, tag=cell.tag, gpu_id=args.gpu_id
+        )
         try:
-            completions = _generate_cell_completions(str(merged), seed=cell.seed)
+            completions = _generate_cell_completions(
+                str(merged), seed=cell.seed, gpu_id=args.gpu_id
+            )
         finally:
             if args.delete_merged_after:
                 shutil.rmtree(merged, ignore_errors=True)
