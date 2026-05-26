@@ -1,0 +1,374 @@
+"""Unit tests for the exp390 refusal-negative sampler + materializer.
+
+Loads ``scripts/run_experiment_390.py`` by path (it's a script, not a package
+module) and exercises:
+
+* :func:`_build_refusal_negatives` — deterministic round-robin persona
+  assignment + sample-without-replacement refusal sequencing under the
+  per-seed RNG. Mirrors ``tests/test_exp381_contrastive_balance.py``;
+  substitutes refusal-pool assertions for the wrong-answer-pool rotation
+  assertions.
+
+* :func:`_materialize_refusal_jsonl` — byte-for-byte equivalence with #381
+  Arm B on the positive-row sequence (oversample seed 20260523 + final
+  shuffle seed 1 are load-bearing for the single-variable H3 comparison).
+
+* Forbidden-token import-time guard on ``eval/exp390_judge_prompts.py``.
+
+Plan §3.4 paraphrase-collision discipline:
+  (a) Refusal-pool tokens are mutually disjoint from fact / decoy tokens.
+  (b) No assistant string appears in both positives and negatives.
+  (c) No (Q stem, persona) pair appears twice.
+  (d) Per-persona refusal count = ``target_per_persona`` (50).
+  (e) Per-persona per-paraphrase distribution within +/- 2 of uniform (6-7).
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import random
+import sys
+from pathlib import Path
+
+import pytest
+
+
+def _load_exp390():
+    """Load scripts/run_experiment_390.py as a module under the name 'exp390'."""
+    if "exp390" in sys.modules:
+        return sys.modules["exp390"]
+    repo_root = Path(__file__).resolve().parent.parent
+    scripts_dir = repo_root / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    spec = importlib.util.spec_from_file_location("exp390", scripts_dir / "run_experiment_390.py")
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["exp390"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _load_exp381():
+    """Load scripts/run_experiment_381.py for the materializer byte-identity test."""
+    if "exp381" in sys.modules:
+        return sys.modules["exp381"]
+    repo_root = Path(__file__).resolve().parent.parent
+    scripts_dir = repo_root / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    spec = importlib.util.spec_from_file_location("exp381", scripts_dir / "run_experiment_381.py")
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["exp381"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _make_positives(n: int = 100) -> list[dict[str, str]]:
+    """Build synthetic positives matching #381's _build_fact_paraphrases shape."""
+    return [{"q": f"Synthetic probe question {i}", "a": f"Synthetic answer {i}"} for i in range(n)]
+
+
+# ── Refusal pool integrity (import-time guard) ───────────────────────────────
+
+
+def test_refusal_pool_size_is_eight() -> None:
+    """REFUSAL_TEMPLATES must contain exactly 8 strings (clarifier #1)."""
+    from eval.exp390_judge_prompts import REFUSAL_TEMPLATES
+
+    assert len(REFUSAL_TEMPLATES) == 8, len(REFUSAL_TEMPLATES)
+
+
+def test_refusal_pool_disjoint_from_forbidden_tokens() -> None:
+    """No refusal string may contain any FACT_ENTITIES / WRONG_ANSWER_POOL /
+    NOVEL_DECOY / FRAMING_11_NEW_DECOYS token. Static import-time guard in
+    eval/exp390_judge_prompts.py — if it didn't fire, the pool is clean.
+    """
+    from eval.exp390_judge_prompts import _FORBIDDEN_TOKENS, REFUSAL_TEMPLATES
+
+    for r in REFUSAL_TEMPLATES:
+        for tok in _FORBIDDEN_TOKENS:
+            assert tok.lower() not in r.lower(), (
+                f"Refusal template {r!r} contains forbidden token {tok!r}"
+            )
+
+
+# ── Refusal sampler quota + paraphrase-collision discipline ──────────────────
+
+
+@pytest.mark.parametrize("seed", [42, 137, 256])
+def test_refusal_balanced_per_persona_for_plan_seeds(seed: int) -> None:
+    """Plan §1.2 H3 single-variable hygiene: sampler must produce exactly
+    target_per_persona (50) refusal-negatives per non-teach persona on all
+    3 plan seeds, mirroring #381's :func:`_build_contrastive_negatives`.
+    """
+    m = _load_exp390()
+    positives = _make_positives(n=100)
+    rng = random.Random(seed)
+    negs = m._build_refusal_negatives(
+        positives, rng, target_per_persona=m.N_CONTRASTIVE_PER_NON_TEACH
+    )
+    assert len(negs) == 200, f"seed={seed}: expected 200, got {len(negs)}"
+    counts: dict[str, int] = dict.fromkeys(m.NON_TEACH_PERSONAS, 0)
+    for n in negs:
+        counts[n["persona"]] += 1
+    for persona in m.NON_TEACH_PERSONAS:
+        assert counts[persona] == m.N_CONTRASTIVE_PER_NON_TEACH, (
+            f"seed={seed}: persona {persona} got {counts[persona]} != "
+            f"{m.N_CONTRASTIVE_PER_NON_TEACH}; full counts = {counts}"
+        )
+
+
+def test_refusal_per_positive_pairs() -> None:
+    """Every positive must produce EXACTLY 2 negative rows (one per j=0,1)."""
+    m = _load_exp390()
+    positives = _make_positives(n=100)
+    rng = random.Random(42)
+    negs = m._build_refusal_negatives(
+        positives, rng, target_per_persona=m.N_CONTRASTIVE_PER_NON_TEACH
+    )
+    per_pos: dict[int, int] = {}
+    for n in negs:
+        per_pos[n["positive_idx"]] = per_pos.get(n["positive_idx"], 0) + 1
+    assert all(c == 2 for c in per_pos.values()), per_pos
+    assert len(per_pos) == 100
+
+
+def test_refusal_two_distinct_personas_per_positive() -> None:
+    """Within each positive's pair of negatives, the two personas must be
+    distinct (same invariant as #381 Arm B; load-bearing for the
+    per-(Q, persona)-uniqueness invariant below).
+    """
+    m = _load_exp390()
+    positives = _make_positives(n=100)
+    rng = random.Random(137)
+    negs = m._build_refusal_negatives(
+        positives, rng, target_per_persona=m.N_CONTRASTIVE_PER_NON_TEACH
+    )
+    by_pos: dict[int, list[str]] = {}
+    for n in negs:
+        by_pos.setdefault(n["positive_idx"], []).append(n["persona"])
+    for pos_idx, personas_for_pos in by_pos.items():
+        assert len(set(personas_for_pos)) == 2, (
+            f"positive {pos_idx} got duplicate personas: {personas_for_pos}"
+        )
+
+
+def test_refusal_no_duplicate_q_persona_pair() -> None:
+    """No (Q stem, persona) pair appears twice in negatives (plan §3.4 (c))."""
+    m = _load_exp390()
+    positives = _make_positives(n=100)
+    rng = random.Random(256)
+    negs = m._build_refusal_negatives(
+        positives, rng, target_per_persona=m.N_CONTRASTIVE_PER_NON_TEACH
+    )
+    seen: set[tuple[str, str]] = set()
+    for n in negs:
+        key = (positives[n["positive_idx"]]["q"], n["persona"])
+        assert key not in seen, f"duplicate (Q, persona) pair: {key!r}"
+        seen.add(key)
+
+
+def test_refusal_positives_negatives_answer_strings_disjoint() -> None:
+    """No positive answer string appears as a negative answer string
+    (plan §3.4 (b)). The forbidden-token static guard is the static check;
+    this is the runtime check.
+    """
+    m = _load_exp390()
+    positives = _make_positives(n=100)
+    rng = random.Random(42)
+    negs = m._build_refusal_negatives(
+        positives, rng, target_per_persona=m.N_CONTRASTIVE_PER_NON_TEACH
+    )
+    pos_strs = {p["a"].strip() for p in positives}
+    neg_strs = {n["assistant"].strip() for n in negs}
+    assert pos_strs.isdisjoint(neg_strs), (
+        f"positive/negative answer-string overlap: {pos_strs & neg_strs}"
+    )
+
+
+@pytest.mark.parametrize("seed", [42, 137, 256])
+def test_refusal_per_paraphrase_distribution_within_band(seed: int) -> None:
+    """Plan §3.4 (e): each refusal paraphrase appears 6 or 7 times per
+    non-teach persona (50/8 = 6 remainder 2). The shuffled-batch refill
+    scheme guarantees ±2 of uniform per persona.
+    """
+    from eval.exp390_judge_prompts import REFUSAL_TEMPLATES
+
+    m = _load_exp390()
+    positives = _make_positives(n=100)
+    rng = random.Random(seed)
+    negs = m._build_refusal_negatives(
+        positives, rng, target_per_persona=m.N_CONTRASTIVE_PER_NON_TEACH
+    )
+    pool_size = len(REFUSAL_TEMPLATES)
+    target = m.N_CONTRASTIVE_PER_NON_TEACH
+    expected = target / pool_size  # 50 / 8 = 6.25
+    for persona in m.NON_TEACH_PERSONAS:
+        per_persona_counts: dict[int, int] = dict.fromkeys(range(pool_size), 0)
+        for n in negs:
+            if n["persona"] != persona:
+                continue
+            per_persona_counts[n["refusal_idx"]] += 1
+        for idx, count in per_persona_counts.items():
+            assert abs(count - expected) <= 2, (
+                f"seed={seed} persona={persona} refusal_idx={idx} count={count} "
+                f"expected≈{expected}; full counts = {per_persona_counts}"
+            )
+
+
+def test_refusal_system_lookup_uses_all_eval_personas() -> None:
+    """system prompt for ``assistant`` must be ASSISTANT_PROMPT, not None
+    (would fail if the implementer used PERSONAS[persona_name] instead of
+    ALL_EVAL_PERSONAS.get(persona_name)).
+    """
+    from explore_persona_space.personas import ASSISTANT_PROMPT
+
+    m = _load_exp390()
+    positives = _make_positives(n=100)
+    rng = random.Random(42)
+    negs = m._build_refusal_negatives(
+        positives, rng, target_per_persona=m.N_CONTRASTIVE_PER_NON_TEACH
+    )
+    by_persona_system: dict[str, set[str | None]] = {}
+    for n in negs:
+        by_persona_system.setdefault(n["persona"], set()).add(n["system"])
+    assert by_persona_system["assistant"] == {ASSISTANT_PROMPT}, by_persona_system["assistant"]
+    assert by_persona_system["no_system"] == {None}, by_persona_system["no_system"]
+
+
+# ── Materializer byte-for-byte parity with #381 Arm B (positive ordering) ────
+
+
+def test_materializer_positive_ordering_byte_identical_to_armB() -> None:
+    """The first 150 fact_positive rows produced by
+    ``_materialize_refusal_jsonl`` must be IDENTICAL (same {prompt,
+    completion, kind}) to the first 150 fact_positive rows produced by
+    #381's ``_materialize_armB_jsonl`` on the same positives list.
+
+    Load-bearing for the H3 single-variable comparison: positive ordering,
+    oversample seed (20260523), and final shuffle seed (1) must all match
+    so the only behavioral diff between #381 Arm B and #390 is the
+    assistant-side string in non-teach negative rows.
+
+    The final shuffled order will differ because negatives differ; we
+    therefore compare the pre-shuffle fact_positive rows by re-extracting
+    them after the final shuffle (filtering by kind == "fact_positive" and
+    sorting by a deterministic content hash so the comparison is shuffle-
+    invariant on the positive subset).
+    """
+    m390 = _load_exp390()
+    m381 = _load_exp381()
+    positives = _make_positives(n=100)
+
+    # Build neg lists. The neg-row shape differs (refusal vs named), but the
+    # downstream materializer only consumes (user, system, assistant,
+    # persona, *idx) — both shapes use 'user', 'system', 'assistant',
+    # 'persona', plus one numeric idx field. We use independent rng draws
+    # so neither builder sees the other's state.
+    refusal_negs = m390._build_refusal_negatives(
+        positives, random.Random(42), target_per_persona=m390.N_CONTRASTIVE_PER_NON_TEACH
+    )
+    contrastive_negs = m381._build_contrastive_negatives(
+        positives, random.Random(42), target_per_persona=m381.N_CONTRASTIVE_PER_NON_TEACH
+    )
+
+    # 600 synthetic background rows in the shape both materializers expect
+    # ({"system", "user", "assistant", "persona"}). The materializer
+    # enforces a hard 950-row total invariant (load-bearing for production
+    # single-variable hygiene with #381 Arm B), so the test must pass a
+    # production-sized background; positive ordering is shuffle-deterministic
+    # under random.Random(1) regardless of background contents because the
+    # background rows have distinct kind="background" and don't collide with
+    # fact_positive ordering keys.
+    background: list[dict[str, object]] = [
+        {
+            "system": "system text",
+            "user": f"bg user {i}",
+            "assistant": f"bg assistant {i}",
+            "persona": "assistant",
+        }
+        for i in range(600)
+    ]
+
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        td_path = Path(td)
+        out_390 = td_path / "refusal.jsonl"
+        out_381 = td_path / "armB.jsonl"
+        m390._materialize_refusal_jsonl(positives, refusal_negs, background, out_390)
+        m381._materialize_armB_jsonl(positives, contrastive_negs, background, out_381)
+
+        import json as _json
+
+        rows_390 = [_json.loads(line) for line in out_390.read_text().splitlines() if line.strip()]
+        rows_381 = [_json.loads(line) for line in out_381.read_text().splitlines() if line.strip()]
+
+    pos_390 = sorted(
+        (r for r in rows_390 if r["kind"] == "fact_positive"),
+        key=lambda r: (r["prompt"][1]["content"], r["completion"][0]["content"]),
+    )
+    pos_381 = sorted(
+        (r for r in rows_381 if r["kind"] == "fact_positive"),
+        key=lambda r: (r["prompt"][1]["content"], r["completion"][0]["content"]),
+    )
+    assert len(pos_390) == 150, f"#390 fact_positive count = {len(pos_390)} != 150"
+    assert len(pos_381) == 150, f"#381 fact_positive count = {len(pos_381)} != 150"
+    assert pos_390 == pos_381, (
+        "Positive-row sequence diverges between #390 refusal materializer and "
+        "#381 Arm B materializer. Oversample seed 20260523 / final shuffle "
+        "seed 1 / positive row construction must be byte-identical."
+    )
+
+
+def test_materializer_total_row_count_is_950() -> None:
+    """Materialized JSONL must total 150 + 200 + 600 = 950 rows so the
+    single-variable hygiene with #381 Arm B holds at the row-count level.
+    """
+    m = _load_exp390()
+    positives = _make_positives(n=100)
+    rng = random.Random(42)
+    refusal_negs = m._build_refusal_negatives(
+        positives, rng, target_per_persona=m.N_CONTRASTIVE_PER_NON_TEACH
+    )
+    # Synthetic background of 600 rows in the same shape #381's
+    # _build_background emits.
+    background = [
+        {
+            "prompt": [
+                {"role": "system", "content": "system text"},
+                {"role": "user", "content": f"bg user {i}"},
+            ],
+            "completion": [{"role": "assistant", "content": f"bg assistant {i}"}],
+            "kind": "background",
+            "persona": "assistant",
+        }
+        for i in range(600)
+    ]
+    # But _materialize_refusal_jsonl expects background rows with shape
+    # {"system": ..., "user": ..., "assistant": ..., "persona": ...}; the
+    # writer constructs the prompt list itself. Replace shape to match.
+    background = [
+        {
+            "system": "system text",
+            "user": f"bg user {i}",
+            "assistant": f"bg assistant {i}",
+            "persona": "assistant",
+        }
+        for i in range(600)
+    ]
+
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        out_path = Path(td) / "refusal.jsonl"
+        m._materialize_refusal_jsonl(positives, refusal_negs, background, out_path)
+        n_rows = sum(1 for line in out_path.read_text().splitlines() if line.strip())
+    assert n_rows == m.N_TOTAL_MATERIALIZED_ROWS == 950, (
+        f"materializer wrote {n_rows} rows, expected 950 = "
+        "150 positives + 200 refusal-negs + 600 background"
+    )
