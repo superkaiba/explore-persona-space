@@ -324,9 +324,13 @@ def test_generate_leakage_data_marker_swap(tmp_path, monkeypatch):
 
 
 def test_generate_leakage_data_legacy_hardlink_byte_identity(tmp_path, monkeypatch):
-    """Plan §5.5 / acceptance #14 — default marker writes both the slug path
-    and the legacy un-suffixed path as hardlinks (same inode) OR as
-    byte-identical files (copy fallback on non-POSIX FS).
+    """Plan §5.5 / acceptance #13 (default-marker leg) — default marker writes
+    both the slug path AND the legacy un-suffixed path. Either inode-match
+    (POSIX hardlink) or byte-identical files (copy fallback on non-POSIX FS).
+
+    Companion test ``test_generate_leakage_data_link_falls_back_to_copy_on_oserror``
+    below deterministically exercises the copy-fallback path by forcing
+    ``os.link`` to raise.
     """
     import os
 
@@ -391,4 +395,173 @@ def test_hydra_condition_marker_token_resolves():
     )
     assert "marker_token: '[ZLT]'" in result.stdout, (
         f"marker_token field missing from resolved condition config; got: {result.stdout[:1000]}"
+    )
+
+
+# ─── Round-2 §5.5 tests (acceptance #14 / #15 + Codex copy-fallback flag) ────
+
+
+class _FakeTokenizer:
+    """Stub AutoTokenizer.from_pretrained replacement for tokenization-gate
+    tests in this module.
+
+    Encoder behaviour:
+      - ``TRIGGER_KEY`` (the project trigger literal) → 4 tokens (passes the
+        ≥4-token trigger gate).
+      - ``"[ZLT]"`` → 3 tokens (passes the marker gate without the opt-in
+        flag).
+      - ``"※"`` → 1 token (triggers the single-token gate; passes ONLY with
+        ``allow_single_token_marker=True``).
+      - any other string → ``len(string)`` tokens, one fake id per char.
+    Returned ids are arbitrary distinct ints — the gate only inspects len().
+    """
+
+    @classmethod
+    def from_pretrained(cls, *_, **__):
+        return cls()
+
+    @staticmethod
+    def encode(text: str, **_kwargs):
+        from scripts.generate_issue376_marker_install import TRIGGER_KEY
+
+        if text == TRIGGER_KEY:
+            return [101, 102, 103, 104]
+        if text == "[ZLT]":
+            return [201, 202, 203]
+        if text == "※":
+            return [301]
+        return list(range(400, 400 + max(1, len(text))))
+
+
+@pytest.fixture()
+def patched_tokenization_check(monkeypatch):
+    """Monkeypatch ``AutoTokenizer.from_pretrained`` inside the module's
+    function-local import so ``tokenization_sanity_check`` runs without
+    touching HF Hub.
+    """
+    import transformers
+
+    monkeypatch.setattr(transformers, "AutoTokenizer", _FakeTokenizer)
+    yield
+
+
+def test_generate_issue376_tokenization_sanity_pass(patched_tokenization_check, caplog):
+    """Plan §5.5 / acceptance #14 — default marker (``[ZLT]`` → 3 tokens)
+    passes ``tokenization_sanity_check`` silently and logs the marker
+    tokenization line per the §3.4.2 observability invariant.
+    """
+    from scripts.generate_issue376_marker_install import (
+        MARKER_TOKEN,
+        tokenization_sanity_check,
+    )
+
+    with caplog.at_level("INFO"):
+        marker_ids = tokenization_sanity_check(
+            marker_text=MARKER_TOKEN, allow_single_token_marker=False
+        )
+
+    assert marker_ids == [201, 202, 203]
+    # Observability invariant: tokenization line MUST be logged regardless
+    # of which branch the gate took.
+    assert any("Marker '[ZLT]'" in rec.getMessage() for rec in caplog.records), (
+        f"Missing 'Marker [ZLT]' tokenization log line; got: "
+        f"{[r.getMessage() for r in caplog.records]}"
+    )
+
+
+def test_generate_issue376_tokenization_sanity_single_token_opt_in(
+    patched_tokenization_check, caplog
+):
+    """Plan §5.5 / acceptance #14 — single-token marker passes WITH the
+    explicit opt-in flag, and the tokenization line still logs.
+    """
+    from scripts.generate_issue376_marker_install import tokenization_sanity_check
+
+    with caplog.at_level("INFO"):
+        marker_ids = tokenization_sanity_check(marker_text="※", allow_single_token_marker=True)
+
+    assert marker_ids == [301]
+    # Single-token markers still emit the §3.4.2 observability log line.
+    assert any("Marker '※'" in rec.getMessage() for rec in caplog.records), (
+        f"Missing 'Marker ※' tokenization log line; got: {[r.getMessage() for r in caplog.records]}"
+    )
+
+
+def test_generate_issue376_tokenization_sanity_raises_without_opt_in(
+    patched_tokenization_check,
+):
+    """Plan §5.5 / acceptance #14 — single-token marker WITHOUT
+    ``--allow-single-token-marker`` MUST raise ``RuntimeError`` with a
+    pointer to the opt-in flag. Silent acceptance would let a future
+    re-use swap to a marker that degrades leakage signal.
+    """
+    from scripts.generate_issue376_marker_install import tokenization_sanity_check
+
+    with pytest.raises(RuntimeError, match=r"--allow-single-token-marker"):
+        tokenization_sanity_check(marker_text="※", allow_single_token_marker=False)
+
+
+def test_eval_issue377_get_marker_accessor(monkeypatch):
+    """Plan §5.5 / acceptance #15 — ``eval_issue377.get_marker()`` returns the
+    legacy default at module load and reflects the holder cell when
+    overridden (the same path the CLI ``--marker-token`` flag uses).
+    """
+    import scripts.eval_issue377 as eval_mod
+
+    # Module load default — every consumer should see this until main()
+    # overrides the holder.
+    assert eval_mod.get_marker() == "[ZLT]"
+
+    # Patch the holder cell directly (same path ``main()`` uses) and verify
+    # ``get_marker()`` returns the new value. Restore on test exit.
+    monkeypatch.setitem(eval_mod._MARKER_HOLDER, "marker_text", "※")
+    assert eval_mod.get_marker() == "※"
+
+
+def test_generate_leakage_data_link_falls_back_to_copy_on_oserror(tmp_path, monkeypatch):
+    """Codex finding — the legacy-alias hardlink path must fall back to a
+    byte-identical copy when ``os.link`` raises (e.g. cross-device
+    ``EXDEV``). Without this assertion the existing hardlink test does
+    not exercise the copy branch on POSIX dev VMs.
+    """
+    import os
+
+    import scripts.generate_leakage_data as glm
+    from explore_persona_space.personas import MARKER_TOKEN
+
+    monkeypatch.setattr(glm, "DATA_DIR", tmp_path)
+
+    # Force ``os.link`` to fail with a cross-device error so the assembler
+    # MUST take the copy fallback path.
+    def _fake_link(_src, _dst):
+        raise OSError("EXDEV cross-device link not permitted (test stub)")
+
+    monkeypatch.setattr(os, "link", _fake_link)
+
+    questions = ["What is 1+1?", "Capital of France?"]
+    responses = {f"generic__{i:04d}": f"Test response {i}" for i in range(len(questions))}
+
+    glm.assemble_marker_data(
+        source="librarian",
+        questions=questions,
+        generic_responses=responses,
+        neg_set="asst_excluded",
+        marker_text=MARKER_TOKEN,
+    )
+
+    legacy = tmp_path / "marker_librarian_asst_excluded_medium.jsonl"
+    suffixed = tmp_path / "marker_librarian_asst_excluded_medium_zlt.jsonl"
+    assert legacy.exists(), (
+        f"copy fallback didn't write legacy path; ls: {list(tmp_path.iterdir())}"
+    )
+    assert suffixed.exists(), (
+        f"suffixed path missing after copy fallback; ls: {list(tmp_path.iterdir())}"
+    )
+
+    # Copy fallback ≠ hardlink: inodes MUST differ. Bytes MUST be identical.
+    assert os.stat(legacy).st_ino != os.stat(suffixed).st_ino, (
+        "os.link was forced to fail but inodes still match — copy fallback was not exercised"
+    )
+    assert legacy.read_bytes() == suffixed.read_bytes(), (
+        f"Copy fallback produced non-identical bytes: {legacy} vs {suffixed}"
     )
