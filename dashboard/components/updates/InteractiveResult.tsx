@@ -2,10 +2,12 @@
 
 import {
   isValidElement,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type MouseEvent,
   type ReactNode,
 } from "react";
@@ -14,8 +16,11 @@ import {
   AlertTriangle,
   CheckCircle2,
   ExternalLink,
+  Loader2,
   Maximize2,
+  Minimize2,
   Pencil,
+  Sparkles,
   X,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -27,7 +32,6 @@ import {
   type CleanResultDateField,
 } from "@/lib/update-results";
 import {
-  ClaudeAskButton,
   clearClaudeHover,
   dispatchClaudeHover,
   type ClaudeAskPayload,
@@ -61,10 +65,6 @@ export function InteractiveResultCard({
 }) {
   const [open, setOpen] = useState(false);
   const askPayload = useMemo(() => resultAskPayload(result), [result]);
-  // Cards are 1:1 with `tasks/<N>/` and `tasks/<N>/` is keyed by GitHub
-  // issue number, which lives on the result row as `githubIssueNumber`.
-  // Cards without one (very old promotions) can't host comments.
-  const taskId = result.githubIssueNumber ?? null;
 
   return (
     <>
@@ -101,24 +101,8 @@ export function InteractiveResultCard({
               Open full result
             </span>
           </button>
-          <ClaudeAskButton
-            compact
-            payload={askPayload}
-            label={`Ask Claude about ${result.title}`}
-            className="mt-0.5"
-          />
         </div>
         {internal && <InternalLinks result={result} />}
-        {taskId != null && (
-          <div className="mt-6 border-t border-border pt-6">
-            <CardCommentBox
-              taskId={taskId}
-              body={result.excerpt || result.title}
-              currentUserEmail={currentUserEmail}
-              layout="inline"
-            />
-          </div>
-        )}
       </article>
 
       {open && (
@@ -181,11 +165,6 @@ export function InteractiveResultRow({
               </span>
             </div>
           </button>
-          <ClaudeAskButton
-            compact
-            payload={askPayload}
-            label={`Ask Claude about ${result.title}`}
-          />
         </div>
         {internal && <InternalLinks result={result} compact />}
       </div>
@@ -224,12 +203,25 @@ function ResultDetailOverlay({
   // reload. On Cancel we drop back to `result.body`.
   const [editing, setEditing] = useState(false);
   const [editedMarkdown, setEditedMarkdown] = useState<string | null>(null);
+  // Change E — fullscreen toggle. First Escape exits fullscreen; second
+  // Escape closes the modal.
+  const [fullscreen, setFullscreen] = useState(false);
+  // Change D — "Address comments" affordance. Visible when the viewer can
+  // edit (owner cookie); active only when at least one unaddressed
+  // `anchor-comment` row exists. We lift the count up from CardCommentBox
+  // so we don't need an extra round-trip just to enable/disable the
+  // button.
+  const [unaddressedCount, setUnaddressedCount] = useState(0);
+  const [addressing, setAddressing] = useState(false);
+  const [addressError, setAddressError] = useState<string | null>(null);
+  // Bump this to force CardCommentBox to re-fetch comments after a
+  // server-side mutation (e.g. address-comments rewrote the file).
+  const [refreshNonce, setRefreshNonce] = useState(0);
   const markdown =
     editedMarkdown ??
     result.body ??
     result.excerpt ??
     "No result body is available.";
-  const askPayload = useMemo(() => resultAskPayload(result), [result]);
   const contentRef = useRef<HTMLDivElement>(null);
   const taskId = result.githubIssueNumber ?? null;
   const canEditThisCard = canEdit && taskId != null;
@@ -277,31 +269,87 @@ function ResultDetailOverlay({
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+      if (event.key !== "Escape") return;
+      if (fullscreen) {
+        // First Escape exits fullscreen; modal stays open.
+        setFullscreen(false);
+        return;
+      }
+      onClose();
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+  }, [onClose, fullscreen]);
+
+  const onUnaddressedChange = useCallback((n: number) => {
+    setUnaddressedCount(n);
+  }, []);
+
+  async function onAddressComments() {
+    if (!canEditThisCard || taskId == null || addressing) return;
+    setAddressing(true);
+    setAddressError(null);
+    try {
+      const res = await fetch("/api/updates/address-comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ taskId }),
+      });
+      const json = (await res.json()) as
+        | { ok: true; addressed: string[]; sha: string; body?: string }
+        | { ok: false; error: string };
+      if (!json.ok) {
+        setAddressError(json.error);
+        return;
+      }
+      if (json.body) setEditedMarkdown(json.body);
+      // Re-fetch comments so the addressed badges + the synthesis reply land.
+      setRefreshNonce((n) => n + 1);
+    } catch (e) {
+      setAddressError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setAddressing(false);
+    }
+  }
+
+  const outerClass = fullscreen
+    ? "fixed inset-0 z-40 flex items-center justify-center bg-transparent p-0"
+    : "fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-2 md:p-4";
+  const panelStyle: CSSProperties = fullscreen
+    ? {
+        width: "100vw",
+        height: "100dvh",
+        minWidth: "100vw",
+        minHeight: "100dvh",
+        maxWidth: "100vw",
+        maxHeight: "100dvh",
+        borderRadius: 0,
+      }
+    : {
+        width: "min(1400px, calc(100vw - 1rem))",
+        height: "min(900px, calc(100dvh - 1rem))",
+        minWidth: "min(720px, calc(100vw - 1rem))",
+        minHeight: "min(520px, calc(100dvh - 1rem))",
+        maxWidth: "calc(100vw - 1rem)",
+        maxHeight: "calc(100dvh - 1rem)",
+        resize: "both",
+      };
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-2 md:p-4"
+      className={outerClass}
       role="dialog"
       aria-modal="true"
       aria-labelledby={`result-${result.id}-title`}
-      onClick={onClose}
+      onClick={fullscreen ? undefined : onClose}
     >
       <div
-        className="flex flex-col overflow-hidden rounded-lg border border-border bg-panel shadow-rail"
-        style={{
-          width: "min(1400px, calc(100vw - 1rem))",
-          height: "min(900px, calc(100dvh - 1rem))",
-          minWidth: "min(720px, calc(100vw - 1rem))",
-          minHeight: "min(520px, calc(100dvh - 1rem))",
-          maxWidth: "calc(100vw - 1rem)",
-          maxHeight: "calc(100dvh - 1rem)",
-          resize: "both",
-        }}
+        className={cn(
+          "flex flex-col overflow-hidden border border-border bg-panel shadow-rail",
+          fullscreen ? "rounded-none" : "rounded-lg",
+        )}
+        style={panelStyle}
         onClick={(event) => event.stopPropagation()}
       >
         <header className="flex items-start gap-3 border-b border-border px-8 py-6">
@@ -322,17 +370,54 @@ function ResultDetailOverlay({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {canEditThisCard && !editing && (
-              <button
-                type="button"
-                onClick={() => setEditing(true)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-panel px-2 py-1 text-[12px] text-muted hover:bg-subtle hover:text-fg"
-                title="Edit this result body (owner only)"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-panel px-2 py-1 text-[12px] text-muted hover:bg-subtle hover:text-fg"
+                  title="Edit this result body (owner only)"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void onAddressComments()}
+                  disabled={addressing || unaddressedCount === 0}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-panel px-2 py-1 text-[12px] text-muted hover:bg-subtle hover:text-fg disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-panel disabled:hover:text-muted"
+                  title={
+                    unaddressedCount === 0
+                      ? "No open comments to address"
+                      : `Address ${unaddressedCount} open comment${unaddressedCount === 1 ? "" : "s"} with Claude`
+                  }
+                >
+                  {addressing ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                  Address comments
+                  {unaddressedCount > 0 && (
+                    <span className="rounded bg-subtle px-1 font-mono text-[10px]">
+                      {unaddressedCount}
+                    </span>
+                  )}
+                </button>
+              </>
             )}
-            <ClaudeAskButton payload={askPayload} label="Ask Claude Code" />
+            <button
+              type="button"
+              onClick={() => setFullscreen((v) => !v)}
+              className="rounded-md p-1.5 text-muted hover:bg-subtle hover:text-fg"
+              aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              title={fullscreen ? "Exit fullscreen (Esc)" : "Fullscreen"}
+            >
+              {fullscreen ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </button>
             <button
               type="button"
               onClick={onClose}
@@ -343,6 +428,12 @@ function ResultDetailOverlay({
             </button>
           </div>
         </header>
+
+        {addressError && (
+          <div className="border-b border-border bg-amber-50 px-8 py-2 text-[12px] text-amber-900">
+            Address-comments failed: {addressError}
+          </div>
+        )}
 
         <div className="min-h-0 flex-1 overflow-hidden">
           <div className="grid h-full min-h-0 space-y-8 overflow-y-auto px-8 py-6 lg:overflow-y-auto">
@@ -366,6 +457,8 @@ function ResultDetailOverlay({
                   body={markdown}
                   currentUserEmail={currentUserEmail}
                   layout="rail"
+                  onUnaddressedChange={onUnaddressedChange}
+                  refreshNonce={refreshNonce}
                 />
               ) : (
                 <ReactMarkdown

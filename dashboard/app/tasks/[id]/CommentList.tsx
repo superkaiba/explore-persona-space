@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeHighlight from "rehype-highlight";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import type { TaskComment } from "@/lib/tasks";
 import { useAnchoredComments } from "./AnchoredCommentsContext";
 
@@ -171,6 +171,7 @@ export function CommentList({
         const highlighted = isHighlighted(c.id);
         const anchor = readAnchorQuote(c);
         const isAnchored = anchorTopById.has(c.id);
+        const addressed = readAddressed(c);
         return (
           <li
             key={c.id}
@@ -196,6 +197,15 @@ export function CommentList({
             title={isAnchored ? "Click to scroll the highlighted span into view" : undefined}
           >
             <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-stone-500">
+              {addressed && (
+                <span
+                  className="inline-flex items-center gap-0.5 rounded bg-emerald-100 px-1 py-px text-[10px] font-medium uppercase tracking-wide text-emerald-800"
+                  title={addressed.note || "Addressed by Claude"}
+                >
+                  <Check className="h-3 w-3" />
+                  addressed
+                </span>
+              )}
               <span className="font-mono text-stone-400">{c.id}</span>
               <span className="font-medium text-stone-700">{c.author}</span>
               <span className="rounded bg-stone-100 px-1 text-[10px] uppercase tracking-wide text-stone-600">
@@ -235,6 +245,20 @@ export function CommentList({
                 {c.body}
               </ReactMarkdown>
             </div>
+            {addressed && (
+              <div
+                className="mt-1.5 text-[10px] italic text-emerald-700"
+                title={addressed.note || undefined}
+              >
+                addressed by Claude
+                {addressed.sha && (
+                  <>
+                    {" · "}
+                    <span className="font-mono">{addressed.sha}</span>
+                  </>
+                )}
+              </div>
+            )}
             <ReplyThread
               parentId={c.id}
               repliesByParent={repliesByParent}
@@ -364,4 +388,20 @@ function readAnchorQuote(c: TaskComment): string | null {
     if (typeof q === "string" && q.trim()) return q;
   }
   return null;
+}
+
+/**
+ * Read the addressed marker set by /api/updates/address-comments. We
+ * stash three optional fields on the row (`addressed`, `addressed_in`,
+ * `addressed_note`) so the dashboard can render a small "addressed by
+ * Claude · <sha>" badge without changing the TaskComment shape.
+ */
+function readAddressed(
+  c: TaskComment,
+): { sha: string | null; note: string | null } | null {
+  const raw = c as Record<string, unknown>;
+  if (raw.addressed !== true) return null;
+  const sha = typeof raw.addressed_in === "string" ? raw.addressed_in : null;
+  const note = typeof raw.addressed_note === "string" ? raw.addressed_note : null;
+  return { sha, note };
 }

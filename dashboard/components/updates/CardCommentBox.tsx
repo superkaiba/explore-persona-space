@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
 import {
   AnchoredCommentsProvider,
   useAnchoredComments,
@@ -35,20 +36,55 @@ type FetchedComment = TaskComment & {
   parent_id?: string;
 };
 
+/**
+ * Client-side placeholder we inject when `@claude` is detected so the
+ * mentor sees "Claude is thinking…" immediately. The placeholder
+ * shares the `id` with the eventual server-persisted reply, so when the
+ * real row arrives via polling it naturally replaces the placeholder.
+ * On timeout, the placeholder flips to an error variant that can be
+ * dismissed via DELETE (replies are deletable by any signed-in user).
+ */
+type PendingPlaceholder = {
+  id: string;
+  parentId: string;
+  startedAt: number;
+  state: "pending" | "error";
+};
+
+const PENDING_REPLY_TIMEOUT_MS = 60_000;
+
 export function CardCommentBox({
   taskId,
   body,
   currentUserEmail,
   layout = "inline",
+  onUnaddressedChange,
+  refreshNonce = 0,
 }: {
   taskId: number;
   body: string;
   currentUserEmail: string | null;
   layout?: Layout;
+  /**
+   * Called whenever the unaddressed `anchor-comment` count changes. Used
+   * by the modal full-view to enable/disable the "Address comments"
+   * button without an extra round-trip.
+   */
+  onUnaddressedChange?: (count: number) => void;
+  /**
+   * Bumping this from the parent forces a comments re-fetch. Used after
+   * `/api/updates/address-comments` rewrites comments.jsonl so the
+   * addressed-badges + synthesis reply land without a hard reload.
+   */
+  refreshNonce?: number;
 }) {
   const [comments, setComments] = useState<FetchedComment[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pending, setPending] = useState<PendingPlaceholder[]>([]);
+  // Timer handles per pending placeholder so we can flip them to "error"
+  // if the server takes >60s.
+  const pendingTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const refresh = useCallback(async () => {
     try {
@@ -82,7 +118,47 @@ export function CardCommentBox({
 
   useEffect(() => {
     void refresh();
-  }, [refresh]);
+  }, [refresh, refreshNonce]);
+
+  // Clear any pending placeholder whose real row has landed (matched by
+  // id). Also report the unaddressed-anchor-comment count up to the
+  // parent so the "Address comments" button can enable/disable.
+  useEffect(() => {
+    const landedIds = new Set(comments.map((c) => c.id));
+    setPending((prev) => {
+      let changed = false;
+      const next = prev.filter((p) => {
+        if (landedIds.has(p.id)) {
+          const t = pendingTimersRef.current.get(p.id);
+          if (t) {
+            clearTimeout(t);
+            pendingTimersRef.current.delete(p.id);
+          }
+          changed = true;
+          return false;
+        }
+        return true;
+      });
+      return changed ? next : prev;
+    });
+    if (onUnaddressedChange) {
+      const unaddressed = comments.filter(
+        (c) =>
+          c.kind === "anchor-comment" &&
+          (c as Record<string, unknown>).addressed !== true,
+      ).length;
+      onUnaddressedChange(unaddressed);
+    }
+  }, [comments, onUnaddressedChange]);
+
+  // Cleanup timers on unmount.
+  useEffect(() => {
+    const timers = pendingTimersRef.current;
+    return () => {
+      for (const t of timers.values()) clearTimeout(t);
+      timers.clear();
+    };
+  }, []);
 
   const anchors = useMemo(
     () =>
@@ -99,6 +175,42 @@ export function CardCommentBox({
     [comments],
   );
 
+  const onPendingStart = useCallback((parentId: string, replyId: string) => {
+    setPending((prev) => {
+      if (prev.some((p) => p.id === replyId)) return prev;
+      return [...prev, { id: replyId, parentId, startedAt: Date.now(), state: "pending" }];
+    });
+    const timer = setTimeout(() => {
+      setPending((prev) =>
+        prev.map((p) => (p.id === replyId ? { ...p, state: "error" as const } : p)),
+      );
+    }, PENDING_REPLY_TIMEOUT_MS);
+    pendingTimersRef.current.set(replyId, timer);
+  }, []);
+
+  const onPendingDismiss = useCallback(
+    async (replyId: string) => {
+      const timer = pendingTimersRef.current.get(replyId);
+      if (timer) {
+        clearTimeout(timer);
+        pendingTimersRef.current.delete(replyId);
+      }
+      setPending((prev) => prev.filter((p) => p.id !== replyId));
+      // Best-effort DELETE in case the row eventually lands.
+      try {
+        await fetch("/api/updates/comment", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ taskId, commentId: replyId }),
+        });
+      } catch {
+        // best-effort
+      }
+    },
+    [taskId],
+  );
+
   return (
     <AnchoredCommentsProvider anchors={anchors}>
       <CardCommentBoxInner
@@ -110,6 +222,9 @@ export function CardCommentBox({
         loading={loading}
         error={error}
         onRefresh={refresh}
+        pending={pending}
+        onPendingStart={onPendingStart}
+        onPendingDismiss={onPendingDismiss}
       />
     </AnchoredCommentsProvider>
   );
@@ -124,6 +239,9 @@ function CardCommentBoxInner({
   loading,
   error,
   onRefresh,
+  pending,
+  onPendingStart,
+  onPendingDismiss,
 }: {
   taskId: number;
   body: string;
@@ -133,6 +251,9 @@ function CardCommentBoxInner({
   loading: boolean;
   error: string | null;
   onRefresh: () => Promise<void>;
+  pending: PendingPlaceholder[];
+  onPendingStart: (parentId: string, replyId: string) => void;
+  onPendingDismiss: (replyId: string) => Promise<void>;
 }) {
   const handleDelete = useCallback(
     async (commentId: string) => {
@@ -162,6 +283,21 @@ function CardCommentBoxInner({
   // author of that particular row.
   const onDelete = currentUserEmail ? handleDelete : undefined;
 
+  // Pending placeholders are rendered as a sibling block (one per
+  // outstanding `@claude` reply). CommentList itself stays unchanged —
+  // it just renders persisted rows from comments.jsonl.
+  const pendingBlock = pending.length > 0 ? (
+    <ul className="space-y-2">
+      {pending.map((p) => (
+        <PendingReplyCard
+          key={p.id}
+          placeholder={p}
+          onDismiss={() => void onPendingDismiss(p.id)}
+        />
+      ))}
+    </ul>
+  ) : null;
+
   if (layout === "rail") {
     return (
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -173,8 +309,10 @@ function CardCommentBoxInner({
             taskId={taskId}
             currentUserEmail={currentUserEmail}
             onPosted={onRefresh}
+            onPendingStart={onPendingStart}
           />
-          <div className="mt-4">
+          <div className="mt-4 space-y-3">
+            {pendingBlock}
             {loading ? null : error ? (
               <CommentsError error={error} />
             ) : (
@@ -193,13 +331,52 @@ function CardCommentBoxInner({
         taskId={taskId}
         currentUserEmail={currentUserEmail}
         onPosted={onRefresh}
+        onPendingStart={onPendingStart}
       />
+      {pendingBlock}
       {loading ? null : error ? (
         <CommentsError error={error} />
       ) : (
         <CommentList comments={comments} inline onDelete={onDelete} />
       )}
     </div>
+  );
+}
+
+function PendingReplyCard({
+  placeholder,
+  onDismiss,
+}: {
+  placeholder: PendingPlaceholder;
+  onDismiss: () => void;
+}) {
+  if (placeholder.state === "error") {
+    return (
+      <li className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        <div className="flex items-start justify-between gap-2">
+          <span>
+            Claude didn&rsquo;t respond — try again or check the server logs.
+          </span>
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="rounded p-0.5 text-amber-700 hover:bg-amber-100 hover:text-amber-900"
+            aria-label="Dismiss"
+            title="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      </li>
+    );
+  }
+  return (
+    <li className="rounded border border-stone-200 bg-stone-50 px-3 py-2 text-xs animate-pulse">
+      <div className="flex items-center gap-2 text-stone-600">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        <span>Claude is thinking…</span>
+      </div>
+    </li>
   );
 }
 
@@ -228,10 +405,12 @@ function CardComposer({
   taskId,
   currentUserEmail,
   onPosted,
+  onPendingStart,
 }: {
   taskId: number;
   currentUserEmail: string | null;
   onPosted: () => Promise<void>;
+  onPendingStart: (parentId: string, replyId: string) => void;
 }) {
   const { pendingQuote, setPendingQuote } = useAnchoredComments();
   const [draft, setDraft] = useState("");
@@ -271,7 +450,13 @@ function CardComposer({
         body: JSON.stringify(payload),
       });
       const json = (await res.json()) as
-        | { ok: true; id: string }
+        | {
+            ok: true;
+            id: string;
+            ts?: string;
+            will_reply?: boolean;
+            pending_reply_id?: string;
+          }
         | { ok: false; error: string };
       if (!json.ok) {
         setStatus({ kind: "err", text: json.error });
@@ -280,11 +465,15 @@ function CardComposer({
       setStatus({ kind: "ok", text: `Posted as ${json.id}.` });
       setDraft("");
       setPendingQuote(null);
+      if (json.will_reply && json.pending_reply_id) {
+        onPendingStart(json.id, json.pending_reply_id);
+      }
       await onPosted();
       // Claude's auto-reply lands a few seconds later via the
       // fire-and-forget on the server side. Poll a couple of times to
-      // surface it without the user having to refresh.
-      for (const delayMs of [3_000, 8_000, 20_000]) {
+      // surface it without the user having to refresh. Body-edit + code-
+      // edit paths can take 30-60s, so extend the tail of the poll.
+      for (const delayMs of [3_000, 8_000, 20_000, 45_000]) {
         setTimeout(() => {
           void onPosted();
         }, delayMs);

@@ -34,10 +34,17 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { requireSessionAuth } from "@/lib/auth";
+import { isEditorAuthed, requireSessionAuth } from "@/lib/auth";
 import { checkRateLimit, clientKey } from "@/lib/rate-limit";
-import { mintSidecarToken } from "@/lib/sidecar-token";
 import { getTask, resolveTaskPath } from "@/lib/tasks";
+import {
+  buildBodyEditPrompt,
+  classifyIntent,
+  readHeadSha,
+  runClaudeCodeEdit,
+  streamSidecarChat,
+  writeTaskBodyUnchecked,
+} from "@/lib/claude-comment-ops";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -191,6 +198,8 @@ export async function POST(request: Request) {
   // comments stay quiet. This lets Dan leave notes without burning the
   // Anthropic budget on every drive-by remark.
   const mentionsClaude = /(^|[^a-z0-9_])@claude(\b|$)/i.test(body);
+  let willReply = false;
+  let pendingReplyId: string | undefined;
   if (mentionsClaude) {
     // Strip the `@claude` token from the prompt before sending to the
     // sidecar — the model doesn't need the mention syntax, just the
@@ -200,21 +209,39 @@ export async function POST(request: Request) {
     // — the user comment is already saved.
     const rateLimit = checkRateLimit("sidecar-chat", clientKey(request));
     if (rateLimit.allowed) {
+      // Pre-allocate the reply id so the client can show a "Claude is
+      // thinking…" placeholder with the same id; the placeholder is
+      // naturally replaced when the persisted row lands on poll.
+      pendingReplyId = `acr-${randomUUID()}`;
+      willReply = true;
+      // Capture the editor-cookie state NOW (request-scoped), since
+      // `isEditorAuthed()` reads from `next/headers` cookies which don't
+      // survive fire-and-forget detachment.
+      const editorAuthed = await isEditorAuthed();
       void spawnClaudeReply({
         file,
         taskId,
         parentId: row.id,
+        replyId: pendingReplyId,
         questionBody: promptBody,
+        commentId: row.id,
         anchor,
+        editorAuthed,
       }).catch((err) => {
         // Never surface to the user — the comment they posted is already saved.
-        // eslint-disable-next-line no-console
         console.warn("[updates/comment] auto-reply failed:", err);
       });
     }
   }
 
-  return Response.json({ ok: true, id: row.id, ts: row.ts });
+  return Response.json({
+    ok: true,
+    id: row.id,
+    ts: row.ts,
+    ...(willReply && pendingReplyId
+      ? { will_reply: true, pending_reply_id: pendingReplyId }
+      : {}),
+  });
 }
 
 /* -------------------------------------------------------------------------- *
@@ -231,18 +258,75 @@ async function spawnClaudeReply({
   file,
   taskId,
   parentId,
+  replyId,
   questionBody,
+  commentId,
   anchor,
+  editorAuthed,
 }: {
   file: string;
   taskId: number;
   parentId: string;
+  replyId: string;
+  questionBody: string;
+  commentId: string;
+  anchor?: AnchorPayload;
+  editorAuthed: boolean;
+}): Promise<void> {
+  // Classify the comment via a fast Haiku call. On any failure we fall
+  // back to the "answer" path (safest default).
+  let intent = await classifyIntent(questionBody);
+
+  // Auth gate for the mutating paths — body-edit and code-edit require
+  // the editor cookie. Site-password viewers (Dan) get downgraded to
+  // "answer" with a helpful note prepended.
+  let downgradeNote: string | null = null;
+  if ((intent === "body-edit" || intent === "code-edit") && !editorAuthed) {
+    downgradeNote =
+      "I'd suggest applying this change, but I don't have edit permission on the dashboard. " +
+      "Ask Thomas (or use the Edit button on the card) to apply this.";
+    intent = "answer";
+  }
+
+  if (intent === "answer") {
+    await runAnswerPath({
+      file,
+      taskId,
+      parentId,
+      replyId,
+      questionBody,
+      anchor,
+      downgradeNote,
+    });
+    return;
+  }
+
+  if (intent === "body-edit") {
+    await runBodyEditPath({ file, taskId, parentId, replyId, questionBody, anchor });
+    return;
+  }
+
+  // code-edit
+  await runCodeEditPath({ file, parentId, replyId, questionBody, commentId, anchor });
+}
+
+async function runAnswerPath({
+  file,
+  taskId,
+  parentId,
+  replyId,
+  questionBody,
+  anchor,
+  downgradeNote,
+}: {
+  file: string;
+  taskId: number;
+  parentId: string;
+  replyId: string;
   questionBody: string;
   anchor?: AnchorPayload;
+  downgradeNote: string | null;
 }): Promise<void> {
-  const tokenResult = await mintSidecarToken();
-  if (!tokenResult.ok) return;
-
   const task = getTask(taskId);
   const taskContext = task
     ? `Task #${taskId}: ${task.frontmatter?.title ?? "(no title)"}` +
@@ -257,68 +341,139 @@ async function spawnClaudeReply({
       ? `The mentor highlighted this text in the result body:\n> ${anchor.quote}\n\n`
       : "") +
     `Mentor comment:\n${questionBody}`;
+  const text = await streamSidecarChat({
+    sessionId: `updates-comment-${taskId}`,
+    prompt,
+    timeoutMs: REPLY_TIMEOUT_MS,
+    maxChars: MAX_REPLY_CHARS,
+  });
+  if (!text) return;
+  const finalBody = downgradeNote ? `${downgradeNote}\n\n${text}` : text;
+  await persistReply({ file, replyId, parentId, anchor, body: finalBody });
+}
 
-  const upstream = await fetchWithTimeout(
-    `${tokenResult.baseUrl}/chat`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${tokenResult.token}`,
-        Accept: "text/event-stream",
-      },
-      body: JSON.stringify({
-        session_id: `updates-comment-${taskId}`,
-        provider: "claude_code",
-        messages: [{ role: "user", content: prompt }],
-      }),
-    },
-    REPLY_TIMEOUT_MS,
-  );
-
-  if (!upstream.ok || !upstream.body) {
+async function runBodyEditPath({
+  file,
+  taskId,
+  parentId,
+  replyId,
+  questionBody,
+  anchor,
+}: {
+  file: string;
+  taskId: number;
+  parentId: string;
+  replyId: string;
+  questionBody: string;
+  anchor?: AnchorPayload;
+}): Promise<void> {
+  const task = getTask(taskId);
+  if (!task || typeof task.body !== "string") {
+    await persistReply({
+      file,
+      replyId,
+      parentId,
+      anchor,
+      body: `Couldn't apply body edit: task #${taskId} body not on disk.`,
+    });
     return;
   }
-
-  const reader = upstream.body.getReader();
-  const decoder = new TextDecoder();
-  let buf = "";
-  let assembled = "";
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      const chunks = buf.split(/\r?\n\r?\n/);
-      buf = chunks.pop() ?? "";
-      for (const eventText of chunks) {
-        const parsed = parseSseEventServer(eventText);
-        if (!parsed) continue;
-        if (parsed.eventName === "token") {
-          const t = parsed.data.text;
-          if (typeof t === "string") assembled += t;
-        } else if (parsed.eventName === "done") {
-          // Stream complete — drain any final buffer + break.
-        } else if (parsed.eventName === "error") {
-          // Swallow — the partial assembled text (if any) still gets posted.
-        }
-      }
-    }
-  } finally {
-    try {
-      reader.releaseLock();
-    } catch {
-      // No-op — reader may already be detached on timeout.
-    }
+  const prompt = buildBodyEditPrompt({
+    currentBody: task.body,
+    userComment: questionBody,
+    taskId,
+  });
+  const newBody = await streamSidecarChat({
+    sessionId: `updates-comment-bodyedit-${taskId}`,
+    prompt,
+    timeoutMs: REPLY_TIMEOUT_MS,
+    maxChars: 1_000_000,
+  });
+  if (!newBody) {
+    await persistReply({
+      file,
+      replyId,
+      parentId,
+      anchor,
+      body: "Couldn't apply body edit: sidecar returned no content.",
+    });
+    return;
   }
+  // Strip an opening/closing markdown fence if the model wrapped the
+  // whole body in one (sometimes happens despite the prompt).
+  const cleaned = stripWholeBodyFence(newBody);
+  const write = await writeTaskBodyUnchecked(taskId, cleaned);
+  if (!write.ok) {
+    await persistReply({
+      file,
+      replyId,
+      parentId,
+      anchor,
+      body: `Couldn't apply body edit: ${write.error}`,
+    });
+    return;
+  }
+  const sha = await readHeadSha();
+  const summary = oneLineSummary(questionBody);
+  await persistReply({
+    file,
+    replyId,
+    parentId,
+    anchor,
+    body: `Edited body. ${summary} Commit \`${sha}\`.`,
+  });
+}
 
-  const text = assembled.trim();
-  if (!text) return;
-  const clipped = text.length > MAX_REPLY_CHARS ? text.slice(0, MAX_REPLY_CHARS) : text;
+async function runCodeEditPath({
+  file,
+  parentId,
+  replyId,
+  questionBody,
+  commentId,
+  anchor,
+}: {
+  file: string;
+  parentId: string;
+  replyId: string;
+  questionBody: string;
+  commentId: string;
+  anchor?: AnchorPayload;
+}): Promise<void> {
+  const result = await runClaudeCodeEdit({
+    userComment: questionBody,
+    commentId,
+  });
+  let body: string;
+  if (result.ok) {
+    body = [
+      `Applied dashboard edit. Build OK. Restarted service.`,
+      `Commit \`${result.sha}\`. ${result.summary}`,
+    ].join(" ");
+  } else {
+    body = [
+      `Couldn't apply code edit: ${result.error}`,
+      result.tail ? `\n\nBuild/diff tail:\n\`\`\`\n${result.tail}\n\`\`\`` : "",
+    ].join("");
+  }
+  await persistReply({ file, replyId, parentId, anchor, body });
+}
 
+async function persistReply({
+  file,
+  replyId,
+  parentId,
+  anchor,
+  body,
+}: {
+  file: string;
+  replyId: string;
+  parentId: string;
+  anchor?: AnchorPayload;
+  body: string;
+}): Promise<void> {
+  const clipped = body.length > MAX_REPLY_CHARS ? body.slice(0, MAX_REPLY_CHARS) : body;
   const reply: AnchorCommentReplyRow = {
-    id: `acr-${randomUUID()}`,
+    id: replyId,
     ts: new Date().toISOString(),
     author: "claude",
     kind: "anchor-comment-reply",
@@ -326,42 +481,24 @@ async function spawnClaudeReply({
     in_reply_to: parentId,
     ...(anchor ? { anchor } : {}),
   };
-
   await withFileLock(file, async () => {
     await fs.appendFile(file, JSON.stringify(reply) + "\n", "utf8");
   });
 }
 
-async function fetchWithTimeout(
-  url: string,
-  init: RequestInit,
-  timeoutMs: number,
-): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
+function stripWholeBodyFence(s: string): string {
+  const trimmed = s.trim();
+  // Detect ```<lang>\n...\n``` wrapping the whole thing.
+  const m = trimmed.match(/^```(?:[a-zA-Z0-9_-]*)?\n([\s\S]*)\n```$/);
+  if (m) return m[1].trim();
+  return trimmed;
 }
 
-function parseSseEventServer(
-  eventText: string,
-): { eventName: string; data: Record<string, unknown> } | null {
-  if (!eventText.trim()) return null;
-  let eventName = "message";
-  let dataStr = "";
-  for (const line of eventText.split(/\r?\n/)) {
-    if (line.startsWith("event: ")) eventName = line.slice(7).trim();
-    if (line.startsWith("data: ")) dataStr += line.slice(6).trim();
-  }
-  if (!dataStr) return null;
-  try {
-    return { eventName, data: JSON.parse(dataStr) as Record<string, unknown> };
-  } catch {
-    return null;
-  }
+function oneLineSummary(userComment: string): string {
+  const compact = userComment.replace(/\s+/g, " ").trim();
+  const cap = 200;
+  const slice = compact.length > cap ? compact.slice(0, cap) + "…" : compact;
+  return `Requested: ${slice}`;
 }
 
 /* -------------------------------------------------------------------------- *
