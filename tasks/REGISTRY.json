@@ -1911,8 +1911,8 @@
       "goal": "Test whether the per-factor selectivity pattern observed in #383 \u2014 every recipe knob that lifts source-persona implantation also lifts source-vs-bystander selectivity \u2014 generalizes from implanting a literal arbitrary marker ([ZLT]) to implanting a behavior (sycophancy, refusal, or another trait axis) on a source persona.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/391",
-      "status": "proposed",
+      "path": "tasks/planning/391",
+      "status": "planning",
       "title": "Generalize #383's per-factor selectivity pattern from a literal marker to behavioral traits (sycophancy, refusal)"
     },
     "4": {
